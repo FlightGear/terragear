@@ -25,3 +25,10 @@ By default, this utility assigns the "DefaultArea" land cover type to
 the land mass.  You can optionally override this if you want to use
 something else.  TerraGear uses the land cover to assign textures in
 the final scenery.
+
+Example:
+
+  ./gshhs $input $work/GSHHS-LandMass 1
+  ./gshhs $input $work/GSHHS-Lakes 2 Lake
+  ./gshhs $input $work/GSHHS-Islands 3
+  ./gshhs $input $work/GSHHS-Ponds 4 Lake
