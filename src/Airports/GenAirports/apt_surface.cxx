@@ -153,6 +153,9 @@ TGAptSurface::TGAptSurface( const string& path,
     int xdivs = (int)(x_m / 1100.0) + 1;
     int ydivs = (int)(y_m / 1100.0) + 1;
 
+    if ( xdivs < 3 ) { xdivs = 3; }
+    if ( ydivs < 3 ) { ydivs = 3; }
+
     cout << "  M(" << xdivs << "," << ydivs << ")" << endl;
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
@@ -190,8 +193,10 @@ TGAptSurface::TGAptSurface( const string& path,
 
     // Create the nurbs surface
 
+    cout << "ready to create nurbs surface" << endl;
     apt_surf = new PlNurbsSurfacef;
     apt_surf->globalInterp( Pts, 3, 3);
+    cout << "  successful." << endl;
 }
 
 

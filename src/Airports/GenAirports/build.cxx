@@ -991,6 +991,7 @@ void build_airport( string airport_raw, float alt_m,
     max_deg.setlat( max_deg.lat() + 0.5 * dlat );
 
     TGAptSurface apt_surf( root, min_deg, max_deg );
+    cout << "Surface created" << endl;
 
     // calculate node elevations
     point_list geod_nodes = calc_elevations( apt_surf, nodes.get_node_list(),
