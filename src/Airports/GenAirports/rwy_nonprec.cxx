@@ -96,24 +96,133 @@ void gen_non_precision_rwy( const TGRunway& rwy_info,
 	       "This runway is not long enough for non-precision markings!");
     }
 
-    double start_pct = 0;
-    double end_pct = 0;
+    double start1_pct = 0.0;
+    double start2_pct = 0.0;
+    double end1_pct = 0.0;
+    double end2_pct = 0.0;
+
+    // 
+    // Displaced threshold if it exists
+    //
+
+    if ( rwy_info.disp_thresh1 > 0.0 ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "Forward displaced threshold = " 
+                << rwy_info.disp_thresh1 );
+
+        // reserve 90' for final arrows
+        double thresh = rwy_info.disp_thresh1 - 90.0;
+
+        // number of full center arrows
+        int count = (int)(thresh / 200.0);
+
+        // length of starting partial arrow
+        double part_len = thresh - ( count * 200.0 );
+        double tex_pct = (200.0 - part_len) / 200.0;
+
+        // starting (possibly partial chunk)
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( part_len / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, tex_pct, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "dspl_thresh",
+                            rwy_polys, texparams, accum );
+
+        // main chunks
+        for ( i = 0; i < count; ++i ) {
+            start2_pct = end2_pct;
+            end2_pct = start2_pct + ( 200.0 / length );
+            gen_runway_section( rwy_info, runway_b,
+                                start2_pct, end2_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                rwy_info.heading + 180.0,
+                                material, "dspl_thresh",
+                                rwy_polys, texparams, accum );
+        }
+
+        // final arrows
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 90.0 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "dspl_arrows",
+                            rwy_polys, texparams, accum );
+    }
+
+    if ( rwy_info.disp_thresh2 > 0.0 ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "Reverse displaced threshold = " 
+                << rwy_info.disp_thresh2 );
+
+        // reserve 90' for final arrows
+        double thresh = rwy_info.disp_thresh2 - 90.0;
+
+        // number of full center arrows
+        int count = (int)(thresh / 200.0);
+
+        // length of starting partial arrow
+        double part_len = thresh - ( count * 200.0 );
+        double tex_pct = (200.0 - part_len) / 200.0;
+
+        // starting (possibly partial chunk)
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( part_len / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, tex_pct, 1.0,
+                            rwy_info.heading,
+                            material, "dspl_thresh",
+                            rwy_polys, texparams, accum );
+
+        // main chunks
+        for ( i = 0; i < count; ++i ) {
+            start1_pct = end1_pct;
+            end1_pct = start1_pct + ( 200.0 / length );
+            gen_runway_section( rwy_info, runway_a,
+                                start1_pct, end1_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                rwy_info.heading,
+                                material, "dspl_thresh",
+                                rwy_polys, texparams, accum );
+        }
+
+        // final arrows
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 90.0 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "dspl_arrows",
+                            rwy_polys, texparams, accum );
+    }
 
     //
     // Threshold
     //
 
-    end_pct = start_pct + ( 192.0 / length );
+    start1_pct = end1_pct;
+    end1_pct = start1_pct + ( 202.0 / length );
     gen_runway_section( rwy_info, runway_a,
-			start_pct, end_pct,
+			start1_pct, end1_pct,
 			0.0, 1.0,
                         0.0, 1.0, 0.0, 1.0,
 			rwy_info.heading,
 			material, "threshold",
 			rwy_polys, texparams, accum );
 
+    start2_pct = end2_pct;
+    end2_pct = start2_pct + ( 202.0 / length );
     gen_runway_section( rwy_info, runway_b,
-			start_pct, end_pct,
+			start2_pct, end2_pct,
 			0.0, 1.0,
                         0.0, 1.0, 0.0, 1.0,
 			rwy_info.heading + 180.0,
@@ -145,18 +254,20 @@ void gen_non_precision_rwy( const TGRunway& rwy_info,
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
 
     if ( !letter.empty() ) {
-	start_pct = end_pct;
-	end_pct = start_pct + ( 90.0 / length );
+	start1_pct = end1_pct;
+	end1_pct = start1_pct + ( 90.0 / length );
 	gen_runway_section( rwy_info, runway_a,
-			    start_pct, end_pct,
+			    start1_pct, end1_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading,
 			    material, rev_letter,
 			    rwy_polys, texparams, accum );
 
+	start2_pct = end2_pct;
+	end2_pct = start2_pct + ( 90.0 / length );
 	gen_runway_section( rwy_info, runway_b,
-			    start_pct, end_pct,
+			    start2_pct, end2_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading + 180.0,
@@ -167,9 +278,6 @@ void gen_non_precision_rwy( const TGRunway& rwy_info,
     //
     // Runway designation number(s)
     //
-
-    start_pct = end_pct;
-    end_pct = start_pct + ( 100.0 / length );
 
     len = rwy_info.rwy_no.length();
     string snum = rwy_info.rwy_no;
@@ -185,78 +293,72 @@ void gen_non_precision_rwy( const TGRunway& rwy_info,
         num += 36;
     }
 
+    start2_pct = end2_pct;
+    end2_pct = start2_pct + ( 80.0 / length );
     gen_number_block( rwy_info, material, runway_b, rwy_info.heading + 180.0,
-		      num, start_pct, end_pct, rwy_polys, texparams, accum );
+		      num, start2_pct, end2_pct, rwy_polys, texparams, accum );
 
     num += 18;
     while ( num > 36 ) {
 	num -= 36;
     }
 
+    start1_pct = end1_pct;
+    end1_pct = start1_pct + ( 80.0 / length );
     gen_number_block( rwy_info, material, runway_a, rwy_info.heading,
-		      num, start_pct, end_pct, rwy_polys, texparams, accum );
+		      num, start1_pct, end1_pct, rwy_polys, texparams, accum );
 
-    if ( false ) {
+    if ( true ) {
 	//
 	// Intermediate area before aiming point ...
 	//
 
-	start_pct = end_pct;
-	end_pct = start_pct + ( 360.0 / length );
-	gen_runway_section( rwy_info, runway_a,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    rwy_info.heading,
-			    material, "rest",
-			    rwy_polys, texparams, accum );
+        for ( i = 0; i < 3; ++i ) {
+            start1_pct = end1_pct;
+            end1_pct = start1_pct + ( 200 / length );
+            gen_runway_section( rwy_info, runway_a,
+                                start1_pct, end1_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                rwy_info.heading,
+                                material, "centerline",
+                                rwy_polys, texparams, accum );
 
-	gen_runway_section( rwy_info, runway_b,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    rwy_info.heading + 180.0,
-			    material, "rest",
-			    rwy_polys, texparams, accum );
-
-	start_pct = end_pct;
-	end_pct = start_pct + ( 360.0 / length );
-	gen_runway_section( rwy_info, runway_a,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    rwy_info.heading,
-			    material, "rest",
-			    rwy_polys, texparams, accum );
-
-	gen_runway_section( rwy_info, runway_b,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-			    rwy_info.heading + 180.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    material, "rest",
-			    rwy_polys, texparams, accum );
+            start2_pct = end2_pct;
+            end2_pct = start2_pct + ( 200 / length );
+            gen_runway_section( rwy_info, runway_b,
+                                start2_pct, end2_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                rwy_info.heading + 180.0,
+                                material, "centerline",
+                                rwy_polys, texparams, accum );
+        }
 
 	//
 	// Aiming point
 	//
 
-	if ( end_pct >= 1.0 ) {
+	if ( end1_pct >= 1.0 ) {
 	    return;
 	}
-
-	start_pct = end_pct;
-	end_pct = start_pct + ( 500 / length );
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 400 / length );
 	gen_runway_section( rwy_info, runway_a,
-			    start_pct, end_pct,
+			    start1_pct, end1_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading,
 			    material, "aim",
 			    rwy_polys, texparams, accum );
 
+	if ( end2_pct >= 1.0 ) {
+	    return;
+	}
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 400 / length );
 	gen_runway_section( rwy_info, runway_b,
-			    start_pct, end_pct,
+			    start2_pct, end2_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading + 180.0,
@@ -272,23 +374,32 @@ void gen_non_precision_rwy( const TGRunway& rwy_info,
     // the remaining distance so we don't end up with a super short
     // section at the end.
     double ideal_rest_inc = ( 200.0 / length );
-    int divs = (int)((1.0 - end_pct) / ideal_rest_inc) + 1;
-    double rest_inc = (1.0 - end_pct) / divs;
+    int divs = (int)((1.0 - end1_pct) / ideal_rest_inc) + 1;
+    double rest1_inc = (1.0 - end1_pct) / divs;
 
-    while ( end_pct < 1.0 ) {
-	start_pct = end_pct;
-	end_pct = start_pct + rest_inc;
+    while ( end1_pct < 1.0 ) {
+	start1_pct = end1_pct;
+	end1_pct = start1_pct + rest1_inc;
 
 	gen_runway_section( rwy_info, runway_a,
-			    start_pct, end_pct,
+			    start1_pct, end1_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading,
 			    material, "rest",
 			    rwy_polys, texparams, accum );
+    }
+
+    ideal_rest_inc = ( 200.0 / length );
+    divs = (int)((1.0 - end2_pct) / ideal_rest_inc) + 1;
+    double rest2_inc = (1.0 - end2_pct) / divs;
+
+    while ( end2_pct < 1.0 ) {
+	start2_pct = end2_pct;
+	end2_pct = start2_pct + rest2_inc;
 
 	gen_runway_section( rwy_info, runway_b,
-			    start_pct, end_pct,
+			    start2_pct, end2_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading + 180.0,
