@@ -158,16 +158,12 @@ TGArray::parse( SGBucket& b ) {
     // Parse/load the fitted data file
     if ( fitted_in->is_open() ) {
         int fitted_size;
-        double x, y, z, error;
+        double x, y, z;
         *fitted_in >> fitted_size;
         for ( int i = 0; i < fitted_size; ++i ) {
             *fitted_in >> x >> y >> z;
-            if ( i < 4 ) {
-                // skip first 4 corner nodes
-            } else {
-                fitted_list.push_back( Point3D(x, y, z) );
-                cout << " loading fitted = " << Point3D(x, y, z) << endl;
-            }
+            fitted_list.push_back( Point3D(x, y, z) );
+            cout << " loading fitted = " << Point3D(x, y, z) << endl;
         }
     }
 
@@ -457,8 +453,8 @@ double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
             if ( dist < mindist && elev > -9000 ) {
                 mindist = dist;
                 minelev = elev;
-                cout << "dist = " << mindist;
-                cout << "  elev = " << elev << endl;
+                // cout << "dist = " << mindist;
+                // cout << "  elev = " << elev << endl;
             }
         }
     }
@@ -480,7 +476,7 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     int x1, x2, x3, y1, y2, y3;
     float z1, z2, z3;
     int xindex, yindex;
-
+ 
     /* determine if we are in the lower triangle or the upper triangle 
        ______
        |   /|
