@@ -485,6 +485,7 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 	FGRunway taxi;
 
         taxi.really_taxiway = true;
+        taxi.generated = false;
 
 	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
 	taxi.rwy_no = rwy_str.substr(2, 4);
@@ -556,12 +557,34 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     }
 
     // 4th pass: generate all taxiways
-    for ( i = 0; i < (int)taxiways.size(); ++i ) {
-        build_runway( taxiways[i], &rwy_polys, &texparams, &accum, &apt_base,
-                      &apt_clearing );
-    }
-    // write_polygon( accum, "accum" );
 
+    // we want to generate in order of largest size first so this will
+    // look a little weird, but that's all I'm doing, otherwise a
+    // simple list traversal would work fine.
+    bool done = false;
+    while ( !done ) {
+        // find the largest taxiway
+        int largest_idx = -1;
+        double max_size = 0;
+        for ( i = 0; i < (int)taxiways.size(); ++i ) {
+            double size = taxiways[i].length * taxiways[i].width;
+            if ( size > max_size && !taxiways[i].generated ) {
+                max_size = size;
+                largest_idx = i;
+            }
+        }
+
+        if ( largest_idx >= 0 ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "generating " << largest_idx );
+            build_runway( taxiways[largest_idx], &rwy_polys, &texparams, &accum,
+                          &apt_base, &apt_clearing );
+            taxiways[largest_idx].generated = true;
+        } else {
+            done = true;
+        }
+    }
+
+    // write_polygon( accum, "accum" );
     if ( apt_base.total_size() == 0 ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
 	return;

@@ -59,7 +59,7 @@ struct FGRunway {
     FGPolygon aim_point;
 
     bool really_taxiway;
-};
+    bool generated;};
 
 
 typedef vector < FGRunway > runway_list;
