@@ -110,7 +110,7 @@ static void usage( char *prog ) {
     cout << endl;
     cout << "The output file is called .fit and is simply a list of" << endl;
     cout << "from the resulting fitted surface nodes.  The user of the" << endl;
-    cout << ".fit file will need to retriangulate the surface." << endl;
+    cout << ".fit file will need to triangulate the surface." << endl;
     exit(-1);
 }
 
