@@ -324,8 +324,6 @@ main (int argc, const char **argv)
 
     else if (arg.find("--min-area=") == 0) {
         min_area = strtod(arg.substr(11).c_str(), 0);
-        if (max_area < min_area)
-            max_area = 999999999999.0;
         argPos++;
     }
 
@@ -414,12 +412,13 @@ main (int argc, const char **argv)
   cout << "Coverage name: " << coverage_name << endl;
   cout << "Feature name: " << feature_name << endl;
   cout << "Working directory: " << work_dir << endl;
-  if (max_area > 0) {
+  if (min_area > -1)
       cout << "Minimum area: " << min_area << endl;
+  if (max_area > -1)
       cout << "Maximum area: " << max_area << endl;
-  }
   cout << "Material type: " << get_area_name(material_type) << endl;
-  cout << "Point and line width (-1 for default): " << width << endl;
+  if (width > -1)
+      cout << "Point and line width: " << width << endl;
   for (int x = 0; x < attributes.size(); x++) {
     cout << "Attribute " << attributes[x].name
 	 << (attributes[x].state ? " = " : " != ")
@@ -495,9 +494,11 @@ main (int argc, const char **argv)
 	  continue;
 	shape = vpf2tg(polygon);
                                 // Filter by area if requested
-        if (max_area > 0) {
+        if (max_area > -1 || min_area > -1) {
             double area = getArea(shape);
-            if (area < min_area || area > max_area)
+            if (max_area > -1 && area > max_area)
+                continue;
+            if (min_area > -1 && area < min_area)
                 continue;
         }
 	break;
