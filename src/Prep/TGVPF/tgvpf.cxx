@@ -277,7 +277,7 @@ main (int argc, const char **argv)
   vector<Attribute> attributes;
 
 				// Enable logging.
-  sglog().setLogLevels( SG_ALL, SG_DEBUG );
+  sglog().setLogLevels( SG_ALL, SG_WARN );
 
 
 				// Default values

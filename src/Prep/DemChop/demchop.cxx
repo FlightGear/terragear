@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     int i, j;
     */
 
-    sglog().setLogLevels( SG_ALL, SG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_WARN );
 
     if ( argc != 3 ) {
 	SG_LOG( SG_GENERAL, SG_ALERT, 
