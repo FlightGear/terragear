@@ -29,6 +29,7 @@
 #include <simgear/misc/sgstream.hxx>
 
 #include <Polygon/names.hxx>
+#include <Osgb36/osgb36.hxx>
 
 #include "clipper.hxx"
 
@@ -135,6 +136,132 @@ bool FGClipper::load_polys(const string& path) {
     int area = (int)poly_type;
 
     add_poly(area, poly);
+
+    // FILE *ofp= fopen("outfile", "w");
+    // gpc_write_polygon(ofp, &polys.landuse);
+
+    return true;
+}
+
+
+// Load a polygon definition file containing osgb36 Eastings and Northings
+// and convert them to WGS84 Latitude and Longitude
+bool FGClipper::load_osgb36_polys(const string& path) {
+//   cout << "Loading osgb36 poly\n";
+    string poly_name;
+    AreaType poly_type = DefaultArea;
+    int contours, count, i, j;
+    int hole_flag;
+    double startx, starty, x, y, lastx, lasty;
+
+    SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << " ..." );
+
+    sg_gzifstream in( path );
+
+    if ( !in ) {
+        SG_LOG( SG_CLIPPER, SG_ALERT, "Cannot open file: " << path );
+	exit(-1);
+    }
+
+    // gpc_polygon *poly = new gpc_polygon;
+    // poly->num_contours = 0;
+    // poly->contour = NULL;
+    FGPolygon poly;
+
+    Point3D p;
+    Point3D OSRef;
+    Point3D OSLatLon;
+    Point3D OSCartesian;
+    Point3D WGS84Cartesian;
+    in >> skipcomment;
+    while ( !in.eof() ) {
+	in >> poly_name;
+	cout << "poly name = " << poly_name << endl;
+	poly_type = get_area_type( poly_name );
+	cout << "poly type (int) = " << (int)poly_type << endl;
+	in >> contours;
+	cout << "num contours = " << contours << endl;
+
+	poly.erase();
+
+	for ( i = 0; i < contours; ++i ) {
+	    in >> count;
+
+	    if ( count < 3 ) {
+		SG_LOG( SG_CLIPPER, SG_ALERT,
+			"Polygon with less than 3 data points." );
+		exit(-1);
+	    }
+
+	    in >> hole_flag;
+
+	    in >> startx;
+	    in >> starty;
+	    OSRef = Point3D(startx, starty, 0.0);
+
+            //Convert from OSGB36 Eastings/Northings to WGS84 Lat/Lon
+            //Note that startx and starty themselves must not be altered since we compare them with unaltered lastx and lasty later
+            OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
+            OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
+            WGS84Cartesian = ConvertOSGB36ToWGS84(OSCartesian);
+            p = ConvertGRS80CartesianToPolar(WGS84Cartesian);
+
+	    poly.add_node( i, p );
+	    SG_LOG( SG_CLIPPER, SG_BULK, "0 = "
+		    << startx << ", " << starty );
+
+	    for ( j = 1; j < count - 1; ++j ) {
+		in >> x;
+		in >> y;
+		OSRef = Point3D( x, y, 0.0 );
+
+                OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
+            	OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
+            	WGS84Cartesian = ConvertOSGB36ToWGS84(OSCartesian);
+            	p = ConvertGRS80CartesianToPolar(WGS84Cartesian);
+
+		poly.add_node( i, p );
+		SG_LOG( SG_CLIPPER, SG_BULK, j << " = " << x << ", " << y );
+	    }
+
+	    in >> lastx;
+	    in >> lasty;
+
+	    if ( (fabs(startx - lastx) < SG_EPSILON)
+		 && (fabs(starty - lasty) < SG_EPSILON) ) {
+		// last point same as first, discard
+	    } else {
+		OSRef = Point3D( lastx, lasty, 0.0 );
+
+                OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
+            	OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
+            	WGS84Cartesian = ConvertOSGB36ToWGS84(OSCartesian);
+            	p = ConvertGRS80CartesianToPolar(WGS84Cartesian);
+
+		poly.add_node( i, p );
+		SG_LOG( SG_CLIPPER, SG_BULK, count - 1 << " = "
+			<< lastx << ", " << lasty );
+	    }
+
+	    // gpc_add_contour( poly, &v_list, hole_flag );
+	}
+
+	in >> skipcomment;
+    }
+
+    int area = (int)poly_type;
+
+    // if ( area == OceanArea ) {
+    // TEST - Ignore
+    // } else
+
+    if ( area < FG_MAX_AREA_TYPES ) {
+	polys_in.polys[area].push_back(poly);
+    } else {
+	SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = "
+		<< (int)poly_type);
+	exit(-1);
+    }
 
     // FILE *ofp= fopen("outfile", "w");
     // gpc_write_polygon(ofp, &polys.landuse);

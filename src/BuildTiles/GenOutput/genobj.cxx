@@ -24,14 +24,16 @@
 
 #include <time.h>
 
+#ifdef _MSC_VER
+#  include <win32/mkdir.hpp>
+#endif
+
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
 #include <Polygon/names.hxx>
 
-#ifdef _MSC_VER
-#  include <win32/mkdir.hpp>
-#endif
+#include <Osgb36/osgbtc.hxx>
 
 #include "genobj.hxx"
 
@@ -155,6 +157,16 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
 #endif
 
 
+// This needs to get fixed!
+static int isInUK( Point3D p ) {
+    cout << "Exited in isInUK() because the function was not defined!!!"
+         << endl;
+    cout << "TerraGear/src/Construct/GenOutput/genobj.cxx: line # 164?"
+         << endl;
+    exit(-1);
+}
+
+
 // build the necessary output structures based on the triangulation
 // data
 int FGGenOutput::build( FGConstruct& c ) {
@@ -199,8 +211,20 @@ int FGGenOutput::build( FGConstruct& c ) {
 	    // int_list t_list = calc_tex_coords( c, geod_nodes, fans[i][j] );
 	    // cout << fans[i][j].size() << " === " 
 	    //      << t_list.size() << endl;
-	    point_list tp_list = calc_tex_coords( c.get_bucket(), 
-						  geod_nodes, fans[i][j] );
+	    SGBucket b = c.get_bucket();
+	    point_list tp_list;
+	    Point3D ourPosition;
+
+	    ourPosition.setlon(b.get_lon());
+	    ourPosition.setlat(b.get_lat());
+
+	    //dcl - here read the flag to check if we are building UK grid
+	    //If so - check if the bucket is within the UK lat & lon
+	    if( (c.get_useUKGrid()) && (isInUK(ourPosition)) )
+	    	tp_list = UK_calc_tex_coords( b, geod_nodes, fans[i][j], 1.0 );
+	    else
+	    	tp_list = calc_tex_coords( b, geod_nodes, fans[i][j] );
+
 	    int_list ti_list;
 	    ti_list.clear();
 	    for ( int k = 0; k < (int)tp_list.size(); ++k ) {

@@ -8,6 +8,7 @@ fgfs_construct_LDADD = \
 	$(top_builddir)/src/Construct/Clipper/libClipper.a \
 	$(top_builddir)/src/Construct/GenOutput/libGenOutput.a \
 	$(top_builddir)/src/Construct/Match/libMatch.a \
+	$(top_builddir)/src/Construct/Osgb36/libOsgb36.a \
 	$(top_builddir)/src/Construct/Triangulate/libTriangulate.a \
 	$(top_builddir)/src/Lib/Array/libArray.a \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \

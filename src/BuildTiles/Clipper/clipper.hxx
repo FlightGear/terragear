@@ -79,6 +79,9 @@ public:
     // Load a polygon definition file
     bool load_polys(const string& path);
 
+    // Load an Osgb36 polygon definition file
+    bool load_osgb36_polys(const string& path);
+
     // Add a polygon.
     void add_poly(int area, const FGPolygon &poly);
 

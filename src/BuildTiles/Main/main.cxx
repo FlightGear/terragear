@@ -150,22 +150,26 @@ static int actual_load_polys( const string& dir,
 
     // load all matching polygon files
     do {
-	file = de.name;
-	pos = file.find(".");
-	f_index = file.substr(0, pos);
+        file = de.name;
+        pos = file.find(".");
+        f_index = file.substr(0, pos);
 
-	if ( tile_str == f_index ) {
-	    ext = file.substr(pos + 1);
-	    cout << file << "  " << f_index << "  '" << ext << "'" << endl;
-	    full_path = dir + "/" + file;
-	    if ( (ext == "dem") || (ext == "dem.gz") ) {
-		// skip
-	    } else {
-		cout << "ext = '" << ext << "'" << endl;
-		clipper.load_polys( full_path );
-		++counter;
-	    }
-	}
+        if ( tile_str == f_index ) {
+            ext = file.substr(pos + 1);
+            cout << file << "  " << f_index << "  '" << ext << "'" << endl;
+            full_path = dir + "/" + file;
+            if ( (ext == "dem") || (ext == "dem.gz") ) {
+                // skip
+            } else if (ext == "osgb36") {
+                cout << "Loading osgb36 poly definition file\n";
+                clipper.load_osgb36_polys( full_path );
+                ++counter;
+            } else {
+                cout << "ext = '" << ext << "'" << endl;
+                clipper.load_polys( full_path );
+                ++counter;
+            }
+        }
     } while ( _findnext( hfile, &de ) == 0 );
 
 #else
@@ -180,22 +184,26 @@ static int actual_load_polys( const string& dir,
 
     // load all matching polygon files
     while ( (de = readdir(d)) != NULL ) {
-	file = de->d_name;
-	pos = file.find(".");
-	f_index = file.substr(0, pos);
+        file = de->d_name;
+        pos = file.find(".");
+        f_index = file.substr(0, pos);
 
-	if ( tile_str == f_index ) {
-	    ext = file.substr(pos + 1);
-	    cout << file << "  " << f_index << "  '" << ext << "'" << endl;
-	    full_path = dir + "/" + file;
-	    if ( (ext == "dem") || (ext == "dem.gz") || (ext == "ind") ) {
-		// skip
-	    } else {
-		cout << "ext = '" << ext << "'" << endl;
-		clipper.load_polys( full_path );
-		++counter;
-	    }
-	}
+        if ( tile_str == f_index ) {
+            ext = file.substr(pos + 1);
+            cout << file << "  " << f_index << "  '" << ext << "'" << endl;
+            full_path = dir + "/" + file;
+            if ( (ext == "dem") || (ext == "dem.gz") || (ext == "ind") ) {
+                // skip
+            } else if (ext == "osgb36") {
+                cout << "Loading osgb36 poly definition file\n";
+                clipper.load_osgb36_polys( full_path );
+                ++counter;
+            } else {
+                cout << "ext = '" << ext << "'" << endl;
+                clipper.load_polys( full_path );
+                ++counter;
+            }
+        }
     }
 
     closedir(d);
@@ -970,7 +978,8 @@ static void usage( const string name ) {
     cout << "  --lat=<degrees>" << endl;
     cout << "  --xdist=<degrees>" << endl;
     cout << "  --ydist=<degrees>" << endl;
-    cout << "<load directory...>" << endl;
+    cout << "  --useUKgrid" << endl;
+    cout << " ] <load directory...>" << endl;
     exit(-1);
 }
 
@@ -986,6 +995,10 @@ int main(int argc, char **argv) {
     double ydist = -1;
     long tile_id = -1;
 
+    // flag indicating whether UK grid should be used for in-UK
+    // texture coordinate generation
+    bool useUKgrid = false;
+    
     sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     //
@@ -1013,6 +1026,8 @@ int main(int argc, char **argv) {
 	    ydist = atof(arg.substr(8).c_str());
 	} else if (arg.find("--cover=") == 0) {
 	    cover = arg.substr(8);
+	} else if (arg.find("--useUKgrid") == 0) {
+		useUKgrid = true;
 	} else if (arg.find("--") == 0) {
 	    usage(argv[0]);
 	} else {
@@ -1069,14 +1084,14 @@ int main(int argc, char **argv) {
     c.set_cover( cover );
     c.set_work_base( work_dir );
     c.set_output_base( output_dir );
+    c.set_useUKGrid( useUKgrid );
 
     c.set_min_nodes( 50 );
     c.set_max_nodes( (int)(FG_MAX_NODES * 0.8) );
 
     if (tile_id == -1) {
 	if (xdist == -1 || ydist == -1) {
-	    // construct the tile around the 
-	    // specified location
+	    // construct the tile around the specified location
 	    cout << "Building single tile at " << lat << ',' << lon << endl;
 	    SGBucket b( lon, lat );
 	    c.set_bucket( b );

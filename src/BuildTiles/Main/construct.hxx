@@ -69,6 +69,10 @@ private:
     string work_base;
     string output_base;
 
+    // flag indicating whether to align texture coords within the UK
+    // with the UK grid
+    bool useUKGrid;
+
     // detail level constraints
     int min_nodes;
     int max_nodes;
@@ -125,6 +129,10 @@ public:
     inline void set_work_base( const string s ) { work_base = s; }
     inline string get_output_base() const { return output_base; }
     inline void set_output_base( const string s ) { output_base = s; }
+
+    // UK grid flag
+    inline bool get_useUKGrid() const { return useUKGrid; }
+    inline void set_useUKGrid( const bool b ) { useUKGrid = b; }
 
     // detail level constraints
     inline int get_min_nodes() const { return min_nodes; }

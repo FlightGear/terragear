@@ -301,6 +301,7 @@ AC_OUTPUT( \
 	src/Construct/Match/Makefile \
 	src/Construct/Triangulate/Makefile \
 	src/Construct/Main/Makefile \
+	src/Construct/Osgb36/Makefile \
 	src/Construct/Parallel/Makefile \
 	src/Lib/Makefile \
 	src/Lib/Array/Makefile \

@@ -1,4 +1,4 @@
-EXTRA_DIST = README README.howto README.gpc acsite.m4 scenery_version.hxx \
+EXTRA_DIST = README README.howto README.gpc acsite.m4 \
 	TerraGear.dsp TerraGear.dsw
 
 SUBDIRS = src
