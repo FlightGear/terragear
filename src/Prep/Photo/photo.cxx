@@ -53,7 +53,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
     bool done = false;
     point_list result = geod_nodes;
     int i, j;
-    FGArray array;
+    TGArray array;
 
     // set all elevations to -9999
     for ( i = 0; i < (int)result.size(); ++i ) {

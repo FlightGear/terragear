@@ -62,25 +62,25 @@ SG_USING_STD(cout);
 SG_USING_STD(endl);
 
 
-FGArray::FGArray( void ) {
-    // cout << "class FGArray CONstructor called." << endl;
+TGArray::TGArray( void ) {
+    // cout << "class TGArray CONstructor called." << endl;
     in_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 }
 
 
-FGArray::FGArray( const string &file ) {
-    // cout << "class FGArray CONstructor called." << endl;
+TGArray::TGArray( const string &file ) {
+    // cout << "class TGArray CONstructor called." << endl;
     in_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 
-    FGArray::open(file);
+    TGArray::open(file);
 }
 
 
 // open an Array file
 int
-FGArray::open( const string& file ) {
+TGArray::open( const string& file ) {
     // open input file (or read from stdin)
     if ( file ==  "-" ) {
 	cout << "  Opening array data pipe from stdin" << endl;
@@ -103,7 +103,7 @@ FGArray::open( const string& file ) {
 
 // close an Array file
 int
-FGArray::close() {
+TGArray::close() {
     // the sg_gzifstream doesn't seem to have a close()
 
     delete in;
@@ -115,7 +115,7 @@ FGArray::close() {
 // parse Array file, pass in the bucket so we can make up values when
 // the file wasn't found.
 int
-FGArray::parse( SGBucket& b ) {
+TGArray::parse( SGBucket& b ) {
     if ( in->is_open() ) {
 	// file open, parse
 	*in >> originx >> originy;
@@ -167,7 +167,7 @@ FGArray::parse( SGBucket& b ) {
 
 
 // add a node to the output corner node list
-void FGArray::add_corner_node( int i, int j, double val ) {
+void TGArray::add_corner_node( int i, int j, double val ) {
     
     double x = (originx + i * col_step) / 3600.0;
     double y = (originy + j * row_step) / 3600.0;
@@ -178,7 +178,7 @@ void FGArray::add_corner_node( int i, int j, double val ) {
 
 
 // add a node to the output fitted node list
-void FGArray::add_fit_node( int i, int j, double val ) {
+void TGArray::add_fit_node( int i, int j, double val ) {
     double x = (originx + i * col_step) / 3600.0;
     double y = (originy + j * row_step) / 3600.0;
     // cout << Point3D(x, y, val) << endl;
@@ -188,7 +188,7 @@ void FGArray::add_fit_node( int i, int j, double val ) {
 
 // Use least squares to fit a simpler data set to dem data.  Return
 // the number of fitted nodes
-int FGArray::fit( double error ) {
+int TGArray::fit( double error ) {
     double x[ARRAY_SIZE_1], y[ARRAY_SIZE_1];
     double m, b, max_error, error_sq;
     double x1, y1;
@@ -345,7 +345,7 @@ int FGArray::fit( double error ) {
 
 // return the current altitude based on grid data.  We should rewrite
 // this to interpolate exact values, but for now this is good enough
-double FGArray::interpolate_altitude( double lon, double lat ) const {
+double TGArray::interpolate_altitude( double lon, double lat ) const {
     // we expect incoming (lon,lat) to be in arcsec for now
 
     double xlocal, ylocal, dx, dy, zA, zB, elev;
@@ -464,7 +464,7 @@ double FGArray::interpolate_altitude( double lon, double lat ) const {
 // Check for an optional "index.node.ex" file in case there is a .poly
 // file to go along with this node file.  Include these nodes first
 // since they are referenced by position from the .poly file.
-void FGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
+void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 {
     double exnodes[MAX_EX_NODES][3];
     struct stat stat_buf;
@@ -578,8 +578,8 @@ void FGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 #endif
 
 
-FGArray::~FGArray( void ) {
-    // printf("class FGArray DEstructor called.\n");
+TGArray::~TGArray( void ) {
+    // printf("class TGArray DEstructor called.\n");
     delete [] in_data;
     // delete [] out_data;
 }

@@ -180,7 +180,7 @@ static point_list calc_elevations( const string& root,
     bool done = false;
     point_list result = geod_nodes;
     int i, j;
-    FGArray array;
+    TGArray array;
 
     // just bail if no work to do
     if ( ! result.size() ) {

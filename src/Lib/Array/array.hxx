@@ -50,7 +50,7 @@ SG_USING_STD(vector);
 #define ARRAY_SIZE_1 1201
 
 
-class FGArray {
+class TGArray {
 
 private:
 
@@ -78,11 +78,11 @@ private:
 public:
 
     // Constructor
-    FGArray( void );
-    FGArray( const string& file );
+    TGArray( void );
+    TGArray( const string& file );
 
     // Destructor
-    ~FGArray( void );
+    ~TGArray( void );
 
     // open an Array file (use "-" if input is coming from stdin)
     int open ( const string& file );

@@ -411,7 +411,7 @@ static int load_polys( FGConstruct& c ) {
 
 // Load elevation data from a DEM file, a regular grid of elevation
 // data--dem based) and return list of fitted nodes.
-static int load_dem( FGConstruct& c, FGArray& array) {
+static int load_dem( FGConstruct& c, TGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
     int i;
@@ -437,13 +437,13 @@ static int load_dem( FGConstruct& c, FGArray& array) {
 
 
 // fit dem nodes, return number of fitted nodes
-static int fit_dem(FGArray& array, int error) {
+static int fit_dem(TGArray& array, int error) {
     return array.fit( error );
 }
 
 
 // triangulate the data for each polygon ( first time before splitting )
-static void first_triangulate( FGConstruct& c, const FGArray& array,
+static void first_triangulate( FGConstruct& c, const TGArray& array,
 			       FGTriangle& t ) {
     // first we need to consolidate the points of the DEM fit list and
     // all the polygons into a more "Triangle" friendly format
@@ -490,7 +490,7 @@ static double distance2D( const Point3D p1, const Point3D p2 ) {
 
 
 // fix the elevations of the geodetic nodes
-static void fix_point_heights( FGConstruct& c, const FGArray& array ) {
+static void fix_point_heights( FGConstruct& c, const TGArray& array ) {
     int i;
     double z;
 
@@ -594,7 +594,7 @@ static void fix_point_heights( FGConstruct& c, const FGArray& array ) {
 
 
 // build the wgs-84 point list
-static void build_wgs_84_point_list( FGConstruct& c, const FGArray& array ) {
+static void build_wgs_84_point_list( FGConstruct& c, const TGArray& array ) {
     point_list geod_nodes;
     point_list wgs84_nodes;
     int i;
@@ -879,7 +879,7 @@ static void construct_tile( FGConstruct& c ) {
     }
 
     // load grid of elevation data (dem)
-    FGArray array;
+    TGArray array;
     load_dem( c, array );
 
     FGTriangle t;

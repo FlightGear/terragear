@@ -42,15 +42,6 @@ SG_USING_STD(string);
 
 
 int main(int argc, char **argv) {
-    /*
-    fgDEM dem;
-    SGBucket p;
-    string fg_root;
-    string filename;
-    double error;
-    int i, j;
-    */
-
     sglog().setLogLevels( SG_ALL, SG_WARN );
 
     if ( argc != 3 ) {

@@ -25,7 +25,7 @@ int main( int argc, char **argv ) {
     string arrayfile = path + "/" + b.gen_index_str() + ".dem";
     cout << "arrayfile = " << arrayfile << endl;
     
-    FGArray a(arrayfile);
+    TGArray a(arrayfile);
     a.parse( b );
 
     lon *= 3600;
