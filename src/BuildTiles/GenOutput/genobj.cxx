@@ -210,8 +210,8 @@ int TGGenOutput::build( TGConstruct& c ) {
 	    point_list tp_list;
 	    Point3D ourPosition;
 
-	    ourPosition.setlon(b.get_lon());
-	    ourPosition.setlat(b.get_lat());
+	    ourPosition.setlon(b.get_chunk_lon());
+	    ourPosition.setlat(b.get_chunk_lat());
 
 	    //dcl - here read the flag to check if we are building UK grid
 	    //If so - check if the bucket is within the UK lat & lon
