@@ -85,8 +85,8 @@ fi
 
 SUPPORT_FLAGS="`gts-config --cflags` `glib-config --cflags`"
 CPPFLAGS="$CPPFLAGS $SUPPORT_FLAGS"
-CFLAGS="$CFLAGS $SUPPORT_FLAGS"
-CXXFLAGS="$CXXFLAGS $SUPPORT_FLAGS"
+#CFLAGS="$CFLAGS $SUPPORT_FLAGS"
+#CXXFLAGS="$CXXFLAGS $SUPPORT_FLAGS"
 
 dnl Specify if we want logging (testing build) or not (release build)
 # set logging default value
