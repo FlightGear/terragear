@@ -38,11 +38,9 @@ public:
     inline Vec3 operator^(const Vec3& v) const;
 
 
-#ifdef IOSTREAMH
     // Input/Output methods
     friend ostream& operator<<(ostream&, const Vec3&);
     friend istream& operator>>(istream&, Vec3&);
-#endif
 
     // Additional vector methods
     inline real length();
@@ -165,7 +163,6 @@ inline real Vec3::unitize()
     return l;
 }
 
-#ifdef IOSTREAMH
 inline ostream& operator<<(ostream& out, const Vec3& v)
 {
     return out << "[" << v[0] << " " << v[1] << " " << v[2] << "]";
@@ -176,7 +173,6 @@ inline istream& operator>>(istream& in, Vec3& v)
     char c;
     return in >> c >> v[0] >> v[1] >> v[2] >> c;
 }
-#endif
 
 
 #endif

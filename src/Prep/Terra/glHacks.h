@@ -164,7 +164,6 @@ inline void glToPPM(FILE *out)
 }
 #endif
 
-#ifdef IOSTREAMH
 inline ostream& operator<<(ostream& out,const gfxPixel& p)
 {
     return out << p.channel.r << p.channel.g << p.channel.b;
@@ -188,7 +187,6 @@ inline void glToPPM(ostream& out)
 
     delete[] data;
 }
-#endif
 
 
 #endif

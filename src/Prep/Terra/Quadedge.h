@@ -72,11 +72,9 @@ inline boolean leftOf(const Vec2& x, const Edge *e)
 }
 
 
-#ifdef IOSTREAMH
 inline ostream& operator<<(ostream& out, const Edge *e)
 {
     return out << "{ " << e->Org() << " ---> " << e->Dest() << " }";
 }
-#endif
 
 #endif

@@ -83,13 +83,11 @@ public:
 };
 
 
-#ifdef IOSTREAMH
 inline ostream& operator<<(ostream& out, Triangle& t)
 {
     return out << "Triangle("<< t.point1() << " " << t.point2() << " "
 	       << t.point3() << ")";
 }
-#endif
 
 
 #endif

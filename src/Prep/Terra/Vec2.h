@@ -41,11 +41,9 @@ public:
     inline Vec2 operator/(real s) const;
     inline real operator*(const Vec2& v) const;
 
-#ifdef IOSTREAMH
     // Input/Output methods
     friend ostream& operator<<(ostream&, const Vec2&);
     friend istream& operator>>(istream&, Vec2&);
-#endif
 
     // Additional vector methods
     inline real length();
@@ -160,7 +158,6 @@ inline real Vec2::unitize()
     return l;
 }
 
-#ifdef IOSTREAMH
 inline ostream& operator<<(ostream& out, const Vec2& v)
 {
     return out << "[" << v[0] << " " << v[1] << "]";
@@ -171,7 +168,6 @@ inline istream& operator>>(istream& in, Vec2& v)
     char c;
     return in >> c >> v[0] >> v[1] >> c;
 }
-#endif
 
 
 #endif

@@ -166,17 +166,13 @@ public:
 	p[Y] = (c*l.a - a*l.c)/den;
     }
 
-#ifdef IOSTREAMH
     friend ostream& operator<<(ostream&, const Line&);
-#endif
 };
 
-#ifdef IOSTREAMH
 inline ostream& operator<<(ostream &out, const Line& l)
 {
     return out << "Line(a=" << l.a << " b=" << l.b << " c=" << l.c << ")";
 }
-#endif
 
 
 #endif

@@ -1,5 +1,3 @@
-AM_CXXFLAGS = -DIOSTREAMH
-
 bin_PROGRAMS = terra xterra
 
 terra_SOURCES = \
