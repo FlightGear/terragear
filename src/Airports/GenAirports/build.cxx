@@ -337,6 +337,9 @@ static void build_runway( const TGRunway& rwy_info,
 void build_airport( string airport_id, float alt_m,
                     string_list& runways_raw,
                     string_list& taxiways_raw,
+                    string_list& beacons_raw,
+                    string_list& towers_raw,
+                    string_list& windsocks_raw,                    
                     const string& root,
                     const string_list& elev_src )
 {
@@ -487,6 +490,75 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << taxi.surface_flags);
 
 	taxiways.push_back( taxi );
+    }
+
+    point_list beacons; beacons.clear();
+    for ( i = 0; i < (int)beacons_raw.size(); ++i ) {
+	string beacon_str = beacons_raw[i];
+
+	Point3D beacon;
+
+	SG_LOG(SG_GENERAL, SG_INFO, beacon_str);
+
+	string beacon_lat = beacon_str.substr(2, 10);
+	beacon.setlat( atof( beacon_lat.c_str() ) );
+
+	string beacon_lon = beacon_str.substr(13, 11);
+	beacon.setlon( atof( beacon_lon.c_str() ) );
+
+	string beacon_type = beacon_str.substr(25, 1);
+
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  beacon   = " << beacon );
+
+	beacons.push_back( beacon );
+    }
+
+    point_list towers; towers.clear();
+    for ( i = 0; i < (int)towers_raw.size(); ++i ) {
+	string tower_str = towers_raw[i];
+
+	Point3D tower;
+
+	SG_LOG(SG_GENERAL, SG_INFO, tower_str);
+
+	string tower_lat = tower_str.substr(2, 10);
+	tower.setlat( atof( tower_lat.c_str() ) );
+
+	string tower_lon = tower_str.substr(13, 11);
+	tower.setlon( atof( tower_lon.c_str() ) );
+
+	string tower_type = tower_str.substr(25, 1);
+
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  tower   = " << tower );
+
+	towers.push_back( tower );
+    }
+
+    point_list windsocks; windsocks.clear();
+    int_list windsock_types; windsock_types.clear();
+    for ( i = 0; i < (int)windsocks_raw.size(); ++i ) {
+	string windsock_str = windsocks_raw[i];
+
+	Point3D windsock;
+
+	SG_LOG(SG_GENERAL, SG_INFO, windsock_str);
+
+	string windsock_lat = windsock_str.substr(2, 10);
+	windsock.setlat( atof( windsock_lat.c_str() ) );
+
+	string windsock_lon = windsock_str.substr(13, 11);
+	windsock.setlon( atof( windsock_lon.c_str() ) );
+
+	string windsock_type = windsock_str.substr(25, 1);
+
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  windsock   = " << windsock );
+
+	windsocks.push_back( windsock );
+	if ( windsock_type == "0" ) {
+	    windsock_types.push_back( 0 );
+        } else {
+	    windsock_types.push_back( 1 );
+	}
     }
 
     TGSuperPoly sp;
@@ -950,6 +1022,10 @@ void build_airport( string airport_id, float alt_m,
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
+    point_list beacon_nodes = calc_elevations( apt_surf, beacons, 0.0 );
+    point_list tower_nodes = calc_elevations( apt_surf, towers, 0.0 );
+    point_list windsock_nodes = calc_elevations( apt_surf, windsocks, 0.0 );
+
     // add base skirt (to hide potential cracks)
     //
     // this has to happen after we've calculated the node elevations
@@ -1145,8 +1221,6 @@ void build_airport( string airport_id, float alt_m,
         SG_LOG(SG_GENERAL, SG_DEBUG, "geod pt = " << geod_nodes[i] );
         Point3D cart = sgGeodToCart( p );
         SG_LOG(SG_GENERAL, SG_DEBUG, "  cart pt = " << cart );
-        Point3D geod = sgCartToGeod( cart );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    remapped goed pt = " << geod );
 	wgs84_nodes.push_back( cart );
     }
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
@@ -1205,7 +1279,35 @@ void build_airport( string airport_id, float alt_m,
 		  fans_v, fans_tc, fan_materials );
 #endif
 
+    // write out airport object reference
     write_index( objpath, b, name );
+
+    // write out beacon references
+    for ( i = 0; i < (int)beacon_nodes.size(); ++i ) {
+        write_index_shared( objpath, b, beacon_nodes[i],
+                            "Models/Airport/beacon.xml",
+                            0.0 );
+    }
+
+    // write out tower references
+    for ( i = 0; i < (int)tower_nodes.size(); ++i ) {
+        write_index_shared( objpath, b, tower_nodes[i],
+                            "Models/Airport/tower.xml",
+                            0.0 );
+    }
+
+    // write out windsock references
+    for ( i = 0; i < (int)windsock_nodes.size(); ++i ) {
+	if ( windsock_types[i] == 0 ) {
+            write_index_shared( objpath, b, windsock_nodes[i],
+                                "Models/Airport/windsock.xml",
+                                0.0 );
+	} else {
+            write_index_shared( objpath, b, windsock_nodes[i],
+                                "Models/Airport/windsock_lit.xml",
+                                0.0 );
+	}
+    }
 
     string holepath = root + "/AirportArea";
     // long int poly_index = poly_index_next();

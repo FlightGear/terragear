@@ -118,7 +118,7 @@ int main( int argc, char **argv ) {
     string_list elev_src;
     elev_src.clear();
 
-    sglog().setLogLevels( SG_GENERAL, SG_DEBUG );
+    sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
     // parse arguments
     string work_dir = "";
@@ -230,7 +230,12 @@ int main( int argc, char **argv ) {
         exit(-1);
     }
 
-    string_list runways_list, taxiways_list;
+    string_list runways_list;
+    string_list taxiways_list;
+    string_list beacon_list;
+    string_list tower_list;
+    string_list windsock_list;
+
     string last_apt_id = "";
     string last_apt_info = "";
     string line;
@@ -286,6 +291,8 @@ int main( int argc, char **argv ) {
                         try {
                             build_airport( last_apt_id, elev * SG_FEET_TO_METER,
                                            runways_list, taxiways_list,
+                                           beacon_list, tower_list,
+                                           windsock_list,
                                            work_dir, elev_src );
                         } catch (sg_exception &e) {
                             SG_LOG( SG_GENERAL, SG_ALERT,
@@ -308,12 +315,24 @@ int main( int argc, char **argv ) {
             // clear runway list for start of next airport
             runways_list.clear();
             taxiways_list.clear();
+            beacon_list.clear();
+            tower_list.clear();
+            windsock_list.clear();
         } else if ( line[0] == 'R' ) {
             // runway entry
             runways_list.push_back(line);
         } else if ( line[0] == 'T' ) {
-            // runway entry
+            // taxiway entry
             taxiways_list.push_back(line);
+        } else if ( line[0] == 'B' ) {
+            // beacon entry
+            beacon_list.push_back(line);
+        } else if ( line[0] == 'C' ) {
+            // control tower entry
+            tower_list.push_back(line);
+        } else if ( line[0] == 'W' ) {
+            // control tower entry
+            windsock_list.push_back(line);
         } else {
             SG_LOG( SG_GENERAL, SG_ALERT, 
                     "Unknown line in file: " << line );
@@ -354,6 +373,8 @@ int main( int argc, char **argv ) {
                 try {
                     build_airport( last_apt_id, elev * SG_FEET_TO_METER,
                                    runways_list, taxiways_list,
+                                   beacon_list, tower_list,
+                                   windsock_list,
                                    work_dir, elev_src );
                 } catch (sg_exception &e) {
                     SG_LOG( SG_GENERAL, SG_ALERT,
