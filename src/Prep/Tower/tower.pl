@@ -7,9 +7,10 @@ require "calc-tile.pl";
 my( $arg );
 my( $infile ) = "";
 my( $outdir ) = "";
+my( $countonly ) = 0;
 
 sub usage {
-    die "Usage: $0 --input=<infile> --outdir=<output_dir_tree>\n";
+    die "Usage: $0 --input=<infile> --outdir=<output_dir_tree> --count-only\n";
 }
 
 
@@ -23,12 +24,14 @@ while( $arg = shift(@ARGV) ) {
         $arg =~ s/^--outdir=//;
         $outdir = $arg;
         print "outdir = $outdir\n";
+    } elsif ( $arg =~ m/^--count-only/ ) {
+        $countonly = 1;
     } else {
         usage();
     }
 }
 
-if ( $infile eq "" || $outdir eq "" ) {
+if ( $infile eq "" || ($countonly == 0 && $outdir eq "") ) {
     usage();
 }
 
@@ -86,18 +89,18 @@ while( <IN> ) {
     my( $model ) = "";
     my( $base_elev ) = 0.0;
 
-    if ( $height < 50.0 ) {
+    if ( $height < 100.0 ) {
         # short tower
         $model = "Models/Structures/radio-short.xml";
-        $base_elev = $top_msl - 50.0;
+        $base_elev = $top_msl - 100.0;
         $shortcount++;
 
         # but let's skip because too many of these just get too crazy
         next;
-    } elsif ( $height < 100.0 ) {
+    } elsif ( $height < 200.0 ) {
         # medium tower
         $model = "Models/Structures/radio-medium.xml";
-        $base_elev = $top_msl - 100.0;
+        $base_elev = $top_msl - 200.0;
         $mediumcount++;
     } else {
         # tall tower
@@ -108,14 +111,16 @@ while( <IN> ) {
 
     # printf("%11.6f %10.6f %.1f %.1f %.1f \n",
     #        $lon, $lat, $ground, $height, $top_msl);
-    printf(" %s/%s/%s.ind -> OBJECT_SHARED %s %.6f %.6f %.1f 0.00\n", $outdir, $dir, $index, $model, $lon, $lat, $base_elev );
+    # printf(" %s/%s/%s.ind -> OBJECT_SHARED %s %.6f %.6f %.1f 0.00\n", $outdir, $dir, $index, $model, $lon, $lat, $base_elev );
 
-    system( "mkdir -p $outdir/$dir" );
+    if ( ! $countonly ) {
+        system( "mkdir -p $outdir/$dir" );
     
-    my( $indfile ) = "$outdir/$dir/$index.ind";
-    open( INDEX, ">>$indfile" );
-    printf( INDEX "OBJECT_SHARED %s %.6f %.6f %.1f 0.00\n",
-            $model, $lon, $lat, $base_elev );
+        my( $indfile ) = "$outdir/$dir/$index.ind";
+        open( INDEX, ">>$indfile" );
+        printf( INDEX "OBJECT_SHARED %s %.6f %.6f %.1f 0.00\n",
+                $model, $lon, $lat, $base_elev );
+    }
 }
 
 print "short count = $shortcount\n";

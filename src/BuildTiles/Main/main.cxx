@@ -1195,11 +1195,14 @@ int main(int argc, char **argv) {
 
     cout << "Output directory is " << output_dir << endl;
     cout << "Working directory is " << work_dir << endl;
-    cout << "Tile id is " << tile_id << endl;
-    cout << "Center longitude is " << lon << endl;
-    cout << "Center latitude is " << lat << endl;
-    cout << "X distance is " << xdist << endl;
-    cout << "Y distance is " << ydist << endl;
+    if ( tile_id > 0 ) {
+        cout << "Tile id is " << tile_id << endl;
+    } else {
+        cout << "Center longitude is " << lon << endl;
+        cout << "Center latitude is " << lat << endl;
+        cout << "X distance is " << xdist << endl;
+        cout << "Y distance is " << ydist << endl;
+    }
     for (int i = arg_pos; i < argc; i++) {
 	load_dirs.push_back(argv[i]);
 	cout << "Load directory: " << argv[i] << endl;

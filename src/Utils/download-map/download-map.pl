@@ -2,7 +2,7 @@
 
 use GD;
 
-$version = "0.9.5";
+$version = "0.9.7";
 if ( $#ARGV < 0 ) {
     push( @ARGV, "/stage/fgfs01/ftp/pub/fgfs/Scenery-" . $version );
 }
@@ -71,7 +71,7 @@ print HTML "<MAP NAME=\"map\">\n";
 
 $toggle = 0;
 foreach $dir ( @ARGV ) {
-    @files = `ls $dir/*.tar.gz`;
+    @files = `ls $dir/*.tgz`;
 
     foreach $file ( @files ) {
         chop($file);
@@ -115,7 +115,7 @@ foreach $dir ( @ARGV ) {
         }
 
         $file =~ s/.*\///g;
-        $file =~ s/.tar.gz//;
+        $file =~ s/.tgz//;
         # print "$file\n";
         ($ew, $lon, $ns, $lat) = $file =~ m/(\w)(\d\d\d)(\w)(\d\d)/;
         # print "$ew $lon, $ns, $lat\n";
@@ -145,7 +145,7 @@ foreach $dir ( @ARGV ) {
         # $y1 = $height - $y1;
         # $y2 = $height - $y2;
         print HTML "<AREA SHAPE=rect COORDS=$x1,$y2,$x2,$y1 ";
-        print HTML "HREF=$ftpurl/$file.tar.gz ";
+        print HTML "HREF=$ftpurl/$file.tgz ";
         printf(HTML "ALT=\"%s  %.2f Mb  $date\">\n", $file, $mb);
     }
 

@@ -1,7 +1,5 @@
 dnl Process this file with aclocal ; automake -a ; autoconf to produce a 
 dnl working configure script.
-dnl
-dnl $Id$
 
 AC_INIT
 AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
@@ -10,7 +8,7 @@ AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
 AC_PREREQ(2.52)
 
 dnl Initialize the automake stuff
-AM_INIT_AUTOMAKE(TerraGear, 0.9.5)
+AM_INIT_AUTOMAKE(TerraGear, 0.9.8)
 
 dnl Checks for programs.
 AC_PROG_MAKE_SET
@@ -322,7 +320,7 @@ AC_TRY_RUN([
 
 #define MIN_MAJOR 0
 #define MIN_MINOR 3
-#define MIN_MICRO 6
+#define MIN_MICRO 8
 
 int main() {
     int major, minor, micro;

@@ -1,3 +1,24 @@
+New in 0.9.8
+* January 11, 2005
+
+* World builder:
+  - fixed a logical bug in the routine that strips out holes from a
+    multi-contour polygon
+
+* Airport generator:
+  - fixed a bug that caused threshold lighting to be omitted in some
+    situations.
+  - add airport surface bases for towers, windsocks, and beacons so
+    these are never floating or buried.
+  - much improved airport surface smoothing and fitting via a least
+    squares nurbs approximation.
+  - directly support Robin Peel's airport database format.
+  - fix a bug that could put the same airport object in the final .stg
+    file twice.  This never affected rendering, but could
+    significantly impact performance.  This bug has been around for a
+    while and we just noticed it now.  Dohhh!
+
+
 New in 0.9.5
 * July 30, 2004
 
