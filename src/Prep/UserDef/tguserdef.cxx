@@ -32,12 +32,12 @@ static const char *
 parse_point (const char * s, Point3D &p)
 {
   char * endptr;
-  float x = strtof(s, &endptr);
+  float x = strtod(s, &endptr);
   if (endptr == s)
     return 0;
   else
     s = endptr;
-  float y = strtof(s, &endptr);
+  float y = strtod(s, &endptr);
   if (endptr == s) {
     SG_LOG(SG_TERRAIN, SG_WARN, "Uneven number of vertices!!");
     return 0;
