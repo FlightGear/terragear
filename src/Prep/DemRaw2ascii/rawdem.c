@@ -59,6 +59,19 @@ double round( double a ) {
 #endif
 
 
+int reads(int fd, char *buf, unsigned int len) {
+  char c;
+  int res;
+  unsigned int i;
+  for (i=0;
+       (i < len) && ((res = read(fd, &c, 1)) != 0)
+        &&  ((c != '\n') && (c != '\r'));
+       i++)
+     buf[i] = c;
+  return res;
+}
+
+
 /* Read the DEM header to determine various key parameters for this
  * DEM file */
 void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
@@ -76,7 +89,8 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
     raw->big_endian = 1;
 
     /* process each line */
-    while ( (fgets(line, 256, hdr) != NULL) ) {
+    while ( (reads(fileno(hdr), line, 256) != NULL) ) {
+
 	/* printf("%s", line); */
 	len = strlen(line);
 
