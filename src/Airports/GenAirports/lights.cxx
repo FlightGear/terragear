@@ -897,7 +897,7 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
 }
 
 
-// generate ALSF-I/II and SALS/SALSF approach lighting schemes
+// generate ALSF-I/II and SALS approach lighting schemes
 static superpoly_list gen_alsf( const FGRunway& rwy_info,
                                 float alt_m, const string &kind, bool recip )
 {
@@ -985,20 +985,18 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     Point3D ref = ref_save;
 
     int count;
-    if ( kind == "2" ) {
+    if ( kind == "1" || kind == "2" ) {
+        // ALSF-I or ALSF-II
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
                             -100 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
-        cout = 30;
+        count = 30;
     } else {
+        // SALS
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
                             -300 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
-        if ( kind == "1" ) {
-            count = 28;
-        } else {
-            count = 13;
-        }
+        count = 13;
     }
 
     for ( i = 0; i < count; ++i ) {
@@ -1041,7 +1039,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
     ref = ref_save;
 
-    if ( kind == "1" ) {
+    if ( kind == "1" || kind == "O" ) {
         // Terminating bar
 
         // offset 200' downwind
@@ -1143,7 +1141,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         }
     }
 
-    if ( kind == "1" ) {
+    if ( kind == "1" || kind == "O" ) {
         // Generate pre-threshold bar
 
         ref = ref_save;
@@ -1231,6 +1229,49 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         }
     }
 
+    ref = ref_save;
+
+    if ( kind == "O" ) {
+        // generate SALS secondary threshold
+
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                            -200 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref = Point3D( lon, lat, 0.0 );
+        count = 30;
+
+        pt1 = ref;
+        r_lights.push_back( pt1 );
+        r_normals.push_back( normal );
+
+        // left 2 side lights
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt1 );
+        r_normals.push_back( normal );
+    
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt1 );
+        r_normals.push_back( normal );
+
+        pt1 = ref;
+
+        // right 2 side lights
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt1 );
+        r_normals.push_back( normal );
+    
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt1 );
+        r_normals.push_back( normal );
+    }
+
     // Generate -1000' extra horizontal row of lights
 
     ref = ref_save;
@@ -1274,23 +1315,25 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         w_normals.push_back( normal );
     }
 
-    // generate rabbit lights
-
     ref = ref_save;
 
-    // start 1010' downwind
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                        -1010 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
+    if ( kind == "1" || kind == "2" ) {
+        // generate rabbit lights
 
-    for ( i = 0; i < 21; ++i ) {
-        s_lights.push_back( ref );
-        s_normals.push_back( normal );
-
-        // offset 100' downwind
+        // start 1000' downwind
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                            -100 * SG_FEET_TO_METER, &lat, &lon, &r );
+                            -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
+
+        for ( i = 0; i < 21; ++i ) {
+            s_lights.push_back( ref );
+            s_normals.push_back( normal );
+
+            // offset 100' downwind
+            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                                -100 * SG_FEET_TO_METER, &lat, &lon, &r );
+            ref = Point3D( lon, lat, 0.0 );
+        }
     }
 
     FGPolygon lights_poly; lights_poly.erase();
@@ -1323,23 +1366,26 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     white.set_normals( normals_poly );
     white.set_material( "RWY_WHITE_LIGHTS" );
 
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( s_lights, false );
-    normals_poly.add_contour( s_normals, false );
-
-    FGSuperPoly sequenced;
-    sequenced.set_poly( lights_poly );
-    sequenced.set_normals( normals_poly );
-    sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
-
     superpoly_list result; result.clear();
 
     result.push_back( green );
     result.push_back( red );
     result.push_back( white );
-    result.push_back( sequenced );
 
+    if ( s_lights.size() ) {
+        lights_poly.erase();
+        normals_poly.erase();
+        lights_poly.add_contour( s_lights, false );
+        normals_poly.add_contour( s_normals, false );
+
+        FGSuperPoly sequenced;
+        sequenced.set_poly( lights_poly );
+        sequenced.set_normals( normals_poly );
+        sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
+
+        result.push_back( sequenced );
+    }
+ 
     return result;
 }
 
@@ -1537,9 +1583,9 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
         // generate 3 sequenced lights aligned with last 3 light bars
         ref = ref_save;
 
-        // start 1010' downwind
+        // start 1000' downwind
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                            -1010 * SG_FEET_TO_METER, &lat, &lon, &r );
+                            -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
         for ( i = 0; i < 3; ++i ) {
@@ -1800,9 +1846,9 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
         // generate 3 sequenced lights aligned with last 3 light bars
         ref = ref_save;
 
-        // start 1010' downwind
+        // start 1000' downwind
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                            -1010 * SG_FEET_TO_METER, &lat, &lon, &r );
+                            -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
         for ( i = 0; i < 3; ++i ) {
@@ -2059,9 +2105,6 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
             lights.push_back( s[i] );
         }
     }
-
-    // SALSF (Essentially ALSF-1 without the lead in rabbit lights,
-    // and a shorter center bar, but 3 sequenced flashing lights)
 
     // SSALS
     if ( rwy_info.end1_flags.substr(3,1) == "P" ) {
