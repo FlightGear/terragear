@@ -77,77 +77,6 @@ static Point3D gen_runway_light_vector( const FGRunway& rwy_info,
 }
 
 
-// calculate the runway length vector.  We take the center of one
-// runway end - the center of the other end to get the direction of
-// the runway.
-static Point3D gen_runway_length_vector( const FGRunway& rwy_info, bool recip )
-{
-    double length;
-
-    // Generate the 4 corners of the runway
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
-    point_list corner;
-    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
-
-    Point3D end1, end2;
-    if ( recip ) {
-        end2 = (corner[0] + corner[1]) / 2.0;
-        end1 = (corner[2] + corner[3]) / 2.0;
-    } else {
-        end1 = (corner[0] + corner[1]) / 2.0;
-        end2 = (corner[2] + corner[3]) / 2.0;
-    }
-    Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
-    Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
-    cout << "cart1 = " << cart1 << " cart2 = " << cart2 << endl;
-
-    Point3D rwy_vec = cart2 - cart1;
-    cout << "rwy_vec = " << rwy_vec << endl;
-
-    length = rwy_vec.distance3D( Point3D(0.0) );
-    rwy_vec = rwy_vec / length;
-
-    return rwy_vec;
-}
-
-
-// calculate a vector orthogonal to the runway direction in the
-// surface plane.  As you approach the runway, positive will be left.
-static Point3D gen_runway_left_vector( const FGRunway& rwy_info, bool recip )
-{
-    double length;
-
-    // Generate the 4 corners of the runway
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
-    point_list corner;
-    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
-
-    Point3D end1, end2;
-    if ( recip ) {
-        end1 = corner[2];
-        end2 = corner[3];
-    } else {
-        end1 = corner[0];
-        end2 = corner[1];
-    }
-    Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
-    Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
-    cout << "cart1 = " << cart1 << " cart2 = " << cart2 << endl;
-
-    Point3D left_vec = cart2 - cart1;
-    cout << "left_vec = " << left_vec << endl;
-
-    length = left_vec.distance3D( Point3D(0.0) );
-    left_vec = left_vec / length;
-
-    return left_vec;
-}
-
-
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
 static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
@@ -1473,6 +1402,97 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 }
 
 
+// generate ODALS lights
+static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
+                              bool recip )
+{
+    point_list lights; lights.clear();
+    point_list normals; normals.clear();
+    int i;
+
+    cout << "gen odals " << rwy_info.rwy_no << endl;
+
+    // ODALS lighting is omni-directional, but we generate a normal as
+    // a placeholder to keep everything happy.
+    Point3D normal( 0.0, 0.0, 0.0 );
+
+    // using FGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    // determine the start point.
+    Point3D ref1, ref2;
+    double length_hdg, left_hdg;
+    double lon, lat, r;
+    if ( recip ) {
+        ref1 = corner[0];
+        ref2 = corner[1];
+        length_hdg = rwy_info.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+    } else {
+        ref1 = corner[2];
+        ref2 = corner[3];
+        length_hdg = rwy_info.heading;
+    }
+    left_hdg = length_hdg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    cout << "length hdg = " << length_hdg
+         << " left heading = " << left_hdg << endl;
+
+    Point3D ref = ( ref1 + ref2 ) / 2.0;
+
+    // offset 40' downwind
+    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
+                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref1 = Point3D( lon, lat, 0.0 );
+    // offset 40' left
+    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), left_hdg, 
+                        40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref1 = Point3D( lon, lat, 0.0 );
+
+    lights.push_back( ref1 );
+    normals.push_back( normal );
+    
+    // offset 40' downwind
+    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), length_hdg, 
+                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref2 = Point3D( lon, lat, 0.0 );
+    // offset 40' left
+    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), left_hdg, 
+                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref2 = Point3D( lon, lat, 0.0 );
+
+    lights.push_back( ref2 );
+    normals.push_back( normal );
+
+    for ( i = 0; i < 5; ++i ) {
+        // offset 100m downwind
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                            -100, &lat, &lon, &r );
+        ref = Point3D( lon, lat, 0.0 );
+        lights.push_back( ref );
+        normals.push_back( normal );
+    }
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( lights, false );
+    normals_poly.add_contour( normals, false );
+
+    FGSuperPoly result;
+    result.set_poly( lights_poly );
+    result.set_normals( normals_poly );
+    result.set_material( "RWY_ODALS_LIGHTS" );
+
+    return result;
+}
+
+
 // generate SSALS, SSALF, and SSALR approach lighting scheme (kind =
 // S, F, or R)
 static superpoly_list gen_ssalx( const FGRunway& rwy_info,
@@ -2196,12 +2216,15 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
     // No clue ...
     ////////////////////////////////////////////////////////////
 
-    ////////////////////////////////////////////////////////////
-    // NOT IMPLIMENTED:
-    //
-    // code: "L" ODALS Omni-directional approach light system
-    //
-    ////////////////////////////////////////////////////////////
+    // ODALS Omni-directional approach light system
+    if ( rwy_info.end1_flags.substr(3,1) == "L" ) {
+        FGSuperPoly s = gen_odals( rwy_info, alt_m, false );
+        lights.push_back( s );
+    }
+    if ( rwy_info.end2_flags.substr(3,1) == "L" ) {
+        FGSuperPoly s = gen_odals( rwy_info, alt_m, true );
+        lights.push_back( s );
+    }
 
     ////////////////////////////////////////////////////////////
     // NOT IMPLIMENTED:
@@ -2212,7 +2235,6 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
     // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
     // a shorter center bar)
-
     if ( rwy_info.end1_flags.substr(3,1) == "O" ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "O", false );
         for ( i = 0; i < s.size(); ++i ) {
@@ -2269,9 +2291,14 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
     }
 
     // Many aproach lighting systems define the threshold lighting
-    // needed, but for those that don't (i.e. REIL) make threshold
-    // lighting
-    if ( rwy_info.end1_flags.substr(1,1) == "Y" ) {
+    // needed, but for those that don't (i.e. REIL, ODALS, or Edge
+    // lights defined but no approach lights.)
+    // Make threshold lighting
+    if ( rwy_info.end1_flags.substr(1,1) == "Y" ||
+         rwy_info.end1_flags.substr(3,1) == "L" ||
+         ( rwy_info.surface_flags.substr(3,1) != (string)"N" &&
+           rwy_info.end1_flags.substr(3,1) == "N") )
+    {
         // forward direction
         superpoly_list s = gen_runway_threshold_lights( rwy_info, edge_type,
                                                         alt_m, false );
@@ -2279,7 +2306,11 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(1,1) == "Y" ) {
+    if ( rwy_info.end2_flags.substr(1,1) == "Y" ||
+         rwy_info.end2_flags.substr(3,1) == "L" ||
+         ( rwy_info.surface_flags.substr(3,1) != (string)"N" &&
+           rwy_info.end2_flags.substr(3,1) == "N" ) )
+    {
         // reverse direction
         superpoly_list s = gen_runway_threshold_lights( rwy_info, edge_type,
                                                         alt_m, true );
