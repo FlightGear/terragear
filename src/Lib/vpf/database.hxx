@@ -59,6 +59,12 @@ public:
 
 
   /**
+   * Copy constructor.
+   */
+  VpfDataBase (const VpfDataBase &database);
+
+
+  /**
    * Get the name of the database.
    *
    * @return The database's name as a character string.
@@ -144,11 +150,6 @@ protected:
   virtual const VpfTable &getLAT () const;
 
 private:
-  /**
-   * Copy constructor.
-   */
-  VpfDataBase (const VpfDataBase &database);
-
 
   mutable VpfTableManager _table_manager;
   mutable const VpfTable * _dht;
