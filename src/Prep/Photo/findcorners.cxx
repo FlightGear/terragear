@@ -1,6 +1,13 @@
 // find (lat/lon) of each corner of an image
 
+#include <simgear/compiler.h>
+
 #include <stdlib.h>
+
+#include <iostream>
+
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 #include <simgear/math/sg_geodesy.hxx>
 

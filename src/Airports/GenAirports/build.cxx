@@ -36,6 +36,11 @@
 #include <list>
 #include STL_STRING
 
+#include <iostream>
+SG_USING_STD(cout);
+SG_USING_STD(cerr);
+SG_USING_STD(endl);
+
 #include <plib/sg.h>			// plib include
 
 #include <simgear/constants.h>

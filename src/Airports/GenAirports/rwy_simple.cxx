@@ -22,6 +22,13 @@
 //
 
 
+#include <simgear/compiler.h>
+
+#include <iostream>
+SG_USING_STD(cout);
+SG_USING_STD(cerr);
+SG_USING_STD(endl);
+
 #include <simgear/constants.h>
 
 #include "poly_extra.hxx"

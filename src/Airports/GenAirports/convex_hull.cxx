@@ -26,12 +26,16 @@
 #include <stdio.h>
 
 #include <map>
+#include <iostream>
 
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
 
 SG_USING_STD(less);
 SG_USING_STD(map);
+SG_USING_STD(cerr);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 #include <simgear/constants.h>
 

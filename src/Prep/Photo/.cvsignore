@@ -1,5 +1,6 @@
 .deps
 Makefile
 Makefile.in
+findcorners
 photo
 wgs84offset
