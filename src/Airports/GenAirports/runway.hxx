@@ -71,22 +71,22 @@ typedef runway_list::const_iterator const_runway_list_iterator;
 // factor (return result points in degrees)
 TGPolygon gen_runway_area_w_scale( const TGRunway& runway, 
                                    double alt_m,
-				   double len_scale = 1.0,
+				   double length_scale = 1.0,
 				   double width_scale = 1.0 );
 
 // generate an area for a runway with expansion specified in meters
 // (return result points in degrees)
 TGPolygon gen_runway_area_w_extend( const TGRunway& runway, 
                                     double alt_m,
-				    double len_extend = 0.0,
-				    double wid_extend = 0.0 );
+				    double length_extend = 0.0,
+				    double width_extend = 0.0 );
 
 
 // generate an area for half a runway
 TGPolygon gen_runway_w_mid( const TGRunway& runway,
                             double alt_m,
-			    double len_extend_m = 0.0,
-			    double wid_extend_m = 0.0 );
+			    double length_extend_m = 0.0,
+			    double width_extend_m = 0.0 );
 
 
 #endif // _RUNWAY_HXX

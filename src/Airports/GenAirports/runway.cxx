@@ -110,15 +110,15 @@ TGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
 // factor (return result points in degrees)
 TGPolygon gen_runway_area_w_scale( const TGRunway& runway,
                                    double alt_m,
-				   double len_scale,
+				   double length_scale,
 				   double width_scale ) {
 
     TGPolygon result_list;
     Point3D origin(runway.lon, runway.lat, 0);
 
     result_list = gen_wgs84_area( origin,
-                                  runway.length * len_scale * SG_FEET_TO_METER,
-                                  runway.width * len_scale * SG_FEET_TO_METER,
+                                  runway.length * length_scale * SG_FEET_TO_METER,
+                                  runway.width * width_scale * SG_FEET_TO_METER,
                                   runway.heading, alt_m, false );
 
     // display points
@@ -135,16 +135,16 @@ TGPolygon gen_runway_area_w_scale( const TGRunway& runway,
 // (return result points in degrees)
 TGPolygon gen_runway_area_w_extend( const TGRunway& runway,
                                     double alt_m,
-				    double len_extend,
-				    double wid_extend ) {
+				    double length_extend,
+				    double width_extend ) {
 
     TGPolygon result_list;
     Point3D origin(runway.lon, runway.lat, 0);
 
     result_list
         = gen_wgs84_area( origin,
-                          runway.length * SG_FEET_TO_METER + 2.0 * len_extend,
-                          runway.width * SG_FEET_TO_METER + 2.0 * len_extend,
+                          runway.length * SG_FEET_TO_METER + 2.0 * length_extend,
+                          runway.width * SG_FEET_TO_METER + 2.0 * width_extend,
                           runway.heading, alt_m, false );
 
     // display points
@@ -160,16 +160,16 @@ TGPolygon gen_runway_area_w_extend( const TGRunway& runway,
 // generate an area for a runway and include midpoints
 TGPolygon gen_runway_w_mid( const TGRunway& runway, 
                             double alt_m,
-			    double len_extend_m,
-			    double wid_extend_m ) {
+			    double length_extend_m,
+			    double width_extend_m ) {
     TGPolygon result_list;
     Point3D origin(runway.lon, runway.lat, 0);
 
     result_list = gen_wgs84_area( origin,
                                   runway.length * SG_FEET_TO_METER
-                                    + 2.0 * len_extend_m,
+                                    + 2.0 * length_extend_m,
                                   runway.width * SG_FEET_TO_METER
-                                    + 2.0 * wid_extend_m,
+                                    + 2.0 * width_extend_m,
                                   runway.heading, alt_m, true );
 
     // display points
