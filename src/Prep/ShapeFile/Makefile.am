@@ -8,12 +8,12 @@ shape_decode_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/shapelib/libshape.a \
-	-lsgdebug -lsgbucket -lsgmisc -lz -lgpc
+	-lsgdebug -lsgbucket -lsgmisc -lz -lgenpolyclip
 
 noaa_decode_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/shapelib/libshape.a \
-	-lsgdebug -lsgbucket -lsgmisc -lz -lgpc
+	-lsgdebug -lsgbucket -lsgmisc -lz -lgenpolyclip
 
 INCLUDES += -I$(top_srcdir)/src/Lib
