@@ -240,7 +240,6 @@ AC_OUTPUT( \
 	src/Include/Makefile \
 	src/Construct/Makefile \
 	src/Construct/Clipper/Makefile \
-	src/Construct/Combine/Makefile \
 	src/Construct/GenOutput/Makefile \
 	src/Construct/Match/Makefile \
 	src/Construct/Triangulate/Makefile \
@@ -250,6 +249,7 @@ AC_OUTPUT( \
 	src/Lib/Array/Makefile \
 	src/Lib/Build/Makefile \
 	src/Lib/DEM/Makefile \
+	src/Lib/Optimize/Makefile \
 	src/Lib/Polygon/Makefile \
 	src/Lib/poly2tri/Makefile \
 	src/Lib/shapelib/Makefile \

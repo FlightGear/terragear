@@ -40,7 +40,7 @@
 #include <simgear/math/fg_types.hxx>
 #include <simgear/math/point3d.hxx>
 
-#include <Combine/genfans.hxx>
+#include <Optimize/genfans.hxx>
 #include <Main/construct.hxx>
 #include <Triangulate/triangle.hxx>
 

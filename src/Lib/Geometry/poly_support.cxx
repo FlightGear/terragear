@@ -227,8 +227,8 @@ Point3D calc_point_inside( const FGPolygon& p, const int contour,
 
 // basic triangulation of a polygon with out adding points or
 // splitting edges
-static triele_list triangulate_poly( const point_list contour,
-				     const point_list holes ) {
+static triele_list triangulate_contour( const point_list contour,
+					const point_list holes ) {
     // triangle list
     triele_list elelist;
     struct triangulateio in, out, vorout;
@@ -384,7 +384,7 @@ static Point3D point_inside_hole( point_list contour ) {
     point_list holes;
     holes.clear();
 
-    triele_list elelist = triangulate_poly( contour, holes );
+    triele_list elelist = triangulate_contour( contour, holes );
     if ( elelist.size() <= 0 ) {
 	cout << "Error polygon triangulated to zero triangles!" << endl;
 	exit(-1);
@@ -416,7 +416,8 @@ static Point3D point_inside_contour( const FGPolygon p, int contour ) {
 	}
     }
 
-    triele_list elelist = triangulate_poly( p.get_contour( contour ), holes );
+    triele_list elelist = triangulate_contour( p.get_contour( contour ),
+					       holes );
     if ( elelist.size() <= 0 ) {
 	cout << "Error polygon triangulated to zero triangles!" << endl;
 	exit(-1);
