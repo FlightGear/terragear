@@ -150,15 +150,15 @@ TGAptSurface::TGAptSurface( const string& path,
 
     cout << "Area size = " << x_m << " x " << y_m << " (m)" << endl;
 
-    int xdivs = (int)(x_m / 800.0) + 1;
-    int ydivs = (int)(y_m / 800.0) + 1;
+    int xdivs = (int)(x_m / 1100.0) + 1;
+    int ydivs = (int)(y_m / 1100.0) + 1;
 
     cout << "  M(" << xdivs << "," << ydivs << ")" << endl;
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
     // Build the double res input grid
-    int mult = 4;
+    int mult = 10;
     Matrix_Point3Df dPts((xdivs+1) * mult, (ydivs + 1) * mult);
     for ( int i = 0; i < dPts.rows(); ++i ) {
         for ( int j = 0; j < dPts.cols(); ++j ) {

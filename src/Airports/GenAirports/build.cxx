@@ -982,6 +982,14 @@ void build_airport( string airport_raw, float alt_m,
         }
     }
 
+    // Extend the area a bit so we don't have wierd things on the edges
+    double dlon = max_deg.lon() - min_deg.lon();
+    double dlat = max_deg.lat() - min_deg.lat();
+    min_deg.setlon( min_deg.lon() - 0.5 * dlon );
+    max_deg.setlon( max_deg.lon() + 0.5 * dlon );
+    min_deg.setlat( min_deg.lat() - 0.5 * dlat );
+    max_deg.setlat( max_deg.lat() + 0.5 * dlat );
+
     TGAptSurface apt_surf( root, min_deg, max_deg );
 
     // calculate node elevations
