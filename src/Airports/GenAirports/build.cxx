@@ -61,6 +61,23 @@ typedef group_list::iterator group_list_iterator;
 typedef group_list::const_iterator const_group_list_iterator;
 
 
+void write_polygon( const FGPolygon& poly, const string& base ) {
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	char name[256];
+	sprintf(name, "%s%d", base.c_str(), i );
+	FILE *fp = fopen( name, "w" );
+
+	for ( int j = 0; j < poly.contour_size( i ); ++j ) {
+	    Point3D p0 = poly.get_pt(i, j);
+	    fprintf(fp, "%.8f %.8f\n", p0.x(), p0.y());
+	}
+	Point3D p0 = poly.get_pt(i, 0);
+	fprintf(fp, "%.8f %.8f\n", p0.x(), p0.y());
+	fclose(fp);
+    }
+}
+
+
 #if 0
 // calculate distance in meters between two lat/lon points
 static double gc_dist( Point3D p1, Point3D p2 ) {
@@ -407,6 +424,9 @@ static FGPolygon add_nodes_to_poly( const FGPolygon& poly,
 
 	// end of segment is beginning of next segment
 	result.add_node( i, p1 );
+
+	// maintain original hole flag setting
+	result.set_hole_flag( i, poly.get_hole_flag( i ) );
     }
 
     return result;
@@ -875,6 +895,12 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	cout << "result_b = " << result_b.contours() << endl;
 	accum = polygon_union( runway_b, accum );
 
+	char tmpa[256], tmpb[256];
+	sprintf( tmpa, "a%d", i );
+	sprintf( tmpb, "b%d", i );
+	write_polygon( result_a, tmpa );
+	write_polygon( result_b, tmpb );
+
 	// print runway points
 	cout << "clipped runway pts (a)" << endl;
 	for ( int j = 0; j < result_a.contours(); ++j ) {
@@ -903,14 +929,14 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	}
     }
 
-    // generate convex hull
-    FGPolygon hull = convex_hull(apt_pts);
-    FGPolygon base_nodes = polygon_diff( hull, accum );
-
     if ( apt_pts.size() == 0 ) {
 	cout << "no airport points generated" << endl;
 	return;
     }
+
+    // generate convex hull
+    FGPolygon hull = convex_hull(apt_pts);
+    FGPolygon base_nodes = polygon_diff( hull, accum );
 
     // add segments to polygons to remove any possible "T"
     // intersections
@@ -966,6 +992,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
     cout << "Ready to try new striper" << endl;
     cout << "First calculate a 'point inside' for each contour and hole" 
 	 << endl;
+    write_polygon( base_nodes, "base" );
+
     /* 1 */ calc_points_inside( base_nodes );
     for ( int i = 0; i < base_nodes.contours(); ++i ) {
 	cout << base_nodes.get_point_inside( i ) << endl;

@@ -23,6 +23,7 @@
 
 #include <Build/poly_support.hxx>
 #include <Polygon/polygon.hxx>
+#include <Triangle/tri_support.h>
 
 #include "triangle.hxx"
 
@@ -240,6 +241,7 @@ int FGTriangle::rebuild( FGConstruct& c ) {
 }
 
 
+#if 0
 static void write_out_data(struct triangulateio *out) {
     FILE *node = fopen("tile.node", "w");
     fprintf(node, "%d 2 %d 0\n", 
@@ -289,6 +291,7 @@ static void write_out_data(struct triangulateio *out) {
     }
     fclose(fp);
 }
+#endif
 
 
 // Front end triangulator for polygon list.  Allocates and builds up
@@ -429,7 +432,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
     
     // TEMPORARY
-    write_out_data(&in);
+    write_tri_data(&in);
 
     // Triangulate the points.  Switches are chosen to read and write
     // a PSLG (p), preserve the convex hull (c), number everything
@@ -462,7 +465,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
 
     // TEMPORARY
-    // write_out_data(&out);
+    // write_tri_data(&out);
 
     // now copy the results back into the corresponding FGTriangle
     // structures

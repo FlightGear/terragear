@@ -35,6 +35,7 @@
 extern "C" {
 #include <Triangle/triangle.h>
 }
+#include <Triangle/tri_support.h>
 
 #include "poly_support.hxx"
 #include "trinodes.hxx"
@@ -503,7 +504,7 @@ static triele_list contour_tesselate( const point_list contour ) {
     vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
     
     // TEMPORARY
-    // write_out_data(&in);
+    write_tri_data(&in);
 
     // Triangulate the points.  Switches are chosen to read and write
     // a PSLG (p), number everything from zero (z), and produce an
@@ -512,7 +513,8 @@ static triele_list contour_tesselate( const point_list contour ) {
     // splitting (YY), no quality refinement (q)
 
     string tri_options;
-    tri_options = "pzYYen";
+    // tri_options = "pzYYen";
+    tri_options = "zYYen";
     cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
@@ -630,6 +632,13 @@ void calc_points_inside( FGPolygon& p ) {
     cout << "calculating points for poly with contours = " << p.contours()
 	 << endl;
 
+    for ( int i = 0; i < p.contours(); ++i ) {
+	if ( p.get_hole_flag( i ) ) {
+	    cout << "contour " << i << " is a hole" << endl;
+	} else {
+	    cout << "contour " << i << " is not a hole" << endl;
+	}
+    }
     for ( int i = 0; i < p.contours(); ++i ) {
 	if ( p.get_hole_flag( i ) ) {
 	    cout << "  hole = " << i << endl;

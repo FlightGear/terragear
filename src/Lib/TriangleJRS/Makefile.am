@@ -13,7 +13,9 @@ CPPFLAGS += -DTRILIBRARY
 
 noinst_LIBRARIES = libTriangle.a
 
-libTriangle_a_SOURCES = triangle.c triangle.h
+libTriangle_a_SOURCES = \
+	triangle.c triangle.h \
+	tri_support.c tri_support.h
 
 if HAVE_XWINDOWS
 
