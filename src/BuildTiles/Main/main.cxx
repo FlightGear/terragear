@@ -133,8 +133,8 @@ static AreaType translateUSGSCover (int usgs_value)
 
 // Scan a directory and load polygon files.
 static int actual_load_polys( const string& dir,
-			      FGConstruct& c,
-			      FGClipper& clipper ) {
+			      TGConstruct& c,
+			      TGClipper& clipper ) {
     int counter = 0;
     string base = c.get_bucket().gen_base_path();
     string tile_str = c.get_bucket().gen_index_str();
@@ -288,15 +288,15 @@ static void make_area( const LandCover &cover, TGPolygon *polys,
 
 // Generate polygons from la and-cover raster.  Horizontally- or
 // vertically-adjacent polygons will be merged automatically.
-static int actual_load_landcover ( FGConstruct & c,
-				   FGClipper &clipper ) {
+static int actual_load_landcover ( TGConstruct & c,
+				   TGClipper &clipper ) {
 
     int count = 0;
 
     try {
 
         LandCover cover(c.get_cover());
-        TGPolygon polys[FG_MAX_AREA_TYPES];
+        TGPolygon polys[TG_MAX_AREA_TYPES];
         TGPolygon poly;		// working polygon
 
         double dx = 1.0 / 120.0;
@@ -350,7 +350,7 @@ static int actual_load_landcover ( FGConstruct & c,
         // Now that we're finished looking up land cover, we have a list
         // of lists of polygons, one (possibly-empty) list for each area
         // type.  Add the remaining polygons to the clipper.
-        for ( int i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
+        for ( int i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
             if ( polys[i].contours() ) {
                 clipper.add_poly( i, polys[i] );
                 count++;
@@ -368,8 +368,8 @@ static int actual_load_landcover ( FGConstruct & c,
 
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
-static int load_polys( FGConstruct& c ) {
-    FGClipper clipper;
+static int load_polys( TGConstruct& c ) {
+    TGClipper clipper;
     int i;
 
     string base = c.get_bucket().gen_base_path();
@@ -411,7 +411,7 @@ static int load_polys( FGConstruct& c ) {
 
 // Load elevation data from an Array file, a regular grid of elevation
 // data) and return list of fitted nodes.
-static bool load_array( FGConstruct& c, TGArray& array) {
+static bool load_array( TGConstruct& c, TGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
     int i;
@@ -436,21 +436,15 @@ static bool load_array( FGConstruct& c, TGArray& array) {
 }
 
 
-// fit array nodes, return number of fitted nodes
-static int fit_array(TGArray& array, int error) {
-    return array.fit( error );
-}
-
-
 // triangulate the data for each polygon ( first time before splitting )
-static void first_triangulate( FGConstruct& c, const TGArray& array,
-			       FGTriangle& t ) {
+static void first_triangulate( TGConstruct& c, const TGArray& array,
+			       TGTriangle& t ) {
     // first we need to consolidate the points of the Array fit list and
     // all the polygons into a more "Triangle" friendly format
 
     point_list corner_list = array.get_corner_node_list();
     point_list fit_list = array.get_fit_node_list();
-    FGPolyList gpc_polys = c.get_clipped_polys();
+    TGPolyList gpc_polys = c.get_clipped_polys();
 
     cout << "ready to build node list and polygons" << endl;
     t.build( corner_list, fit_list, gpc_polys );
@@ -464,7 +458,7 @@ static void first_triangulate( FGConstruct& c, const TGArray& array,
 
 // triangulate the data for each polygon ( second time after splitting
 // and reassembling )
-static void second_triangulate( FGConstruct& c, FGTriangle& t ) {
+static void second_triangulate( TGConstruct& c, TGTriangle& t ) {
     t.rebuild( c );
     cout << "done re building node list and polygons" << endl;
 
@@ -490,7 +484,8 @@ static double distance2D( const Point3D p1, const Point3D p2 ) {
 
 
 // fix the elevations of the geodetic nodes
-static void fix_point_heights( FGConstruct& c, const TGArray& array ) {
+static void fix_point_heights( TGConstruct& c, const TGArray& array )
+{
     int i;
     double z;
 
@@ -509,7 +504,7 @@ static void fix_point_heights( FGConstruct& c, const TGArray& array ) {
     cout << "flattening ocean connected nodes" << endl;
 
     triele_list tris = c.get_tri_elements();
-    FGTriEle t;
+    TGTriEle t;
     Point3D p;
     AreaType a;
     int n1, n2, n3;
@@ -591,7 +586,7 @@ static void fix_point_heights( FGConstruct& c, const TGArray& array ) {
 
 
 // build the wgs-84 point list
-static void build_wgs_84_point_list( FGConstruct& c, const TGArray& array ) {
+static void build_wgs_84_point_list( TGConstruct& c, const TGArray& array ) {
     point_list geod_nodes;
     point_list wgs84_nodes;
     int i;
@@ -624,7 +619,7 @@ static void build_wgs_84_point_list( FGConstruct& c, const TGArray& array ) {
 // build the node -> element (triangle) reverse lookup table.  there
 // is an entry for each point containing a list of all the triangles
 // that share that point.
-static belongs_to_list gen_node_ele_lookup_table( FGConstruct& c ) {
+static belongs_to_list gen_node_ele_lookup_table( TGConstruct& c ) {
     belongs_to_list reverse_ele_lookup;
     reverse_ele_lookup.clear();
 
@@ -657,7 +652,7 @@ static belongs_to_list gen_node_ele_lookup_table( FGConstruct& c ) {
 
 
 // caclulate the area for the specified triangle face
-static double tri_ele_area( const FGConstruct& c, const FGTriEle tri ) {
+static double tri_ele_area( const TGConstruct& c, const TGTriEle tri ) {
     point_list nodes = c.get_geod_nodes();
 
     Point3D p1 = nodes[ tri.get_n1() ];
@@ -669,7 +664,7 @@ static double tri_ele_area( const FGConstruct& c, const FGTriEle tri ) {
 
 
 // caclulate the normal for the specified triangle face
-static Point3D calc_normal( FGConstruct& c, int i ) {
+static Point3D calc_normal( TGConstruct& c, int i ) {
     sgVec3 v1, v2, normal;
 
     point_list wgs84_nodes = c.get_wgs84_nodes();
@@ -731,7 +726,7 @@ static Point3D calc_normal( FGConstruct& c, int i ) {
 
 
 // build the face normal list
-static point_list gen_face_normals( FGConstruct& c ) {
+static point_list gen_face_normals( TGConstruct& c ) {
     point_list face_normals;
 
     // traverse triangle structure building the face normal table
@@ -750,7 +745,7 @@ static point_list gen_face_normals( FGConstruct& c ) {
 
 
 // calculate the normals for each point in wgs84_nodes
-static point_list gen_point_normals( FGConstruct& c ) {
+static point_list gen_point_normals( TGConstruct& c ) {
     point_list point_normals;
 
     Point3D normal;
@@ -793,14 +788,14 @@ static point_list gen_point_normals( FGConstruct& c ) {
 
 
 // generate the flight gear scenery file
-static void do_output( FGConstruct& c, FGGenOutput& output ) {
+static void do_output( TGConstruct& c, TGGenOutput& output ) {
     output.build( c );
     output.write( c );
 }
 
 
 // collect custom objects and move to scenery area
-static void do_custom_objects( const FGConstruct& c ) {
+static void do_custom_objects( const TGConstruct& c ) {
     SGBucket b = c.get_bucket();
 
     // Create/open the output .stg file for writing
@@ -854,7 +849,7 @@ static void do_custom_objects( const FGConstruct& c ) {
 }
 
 // master construction routine
-static void construct_tile( FGConstruct& c ) {
+static void construct_tile( TGConstruct& c ) {
     cout << "Construct tile, bucket = " << c.get_bucket() << endl;
 
     // fit with ever increasing error tolerance until we produce <=
@@ -879,7 +874,7 @@ static void construct_tile( FGConstruct& c ) {
     TGArray array;
     load_array( c, array );
 
-    FGTriangle t;
+    TGTriangle t;
 
     while ( ! acceptable ) {
 	// do a least squares fit of the (array) data with the given
@@ -965,7 +960,7 @@ static void construct_tile( FGConstruct& c ) {
 
     // match tile edges with any neighbor tiles that have already been
     // generated
-    FGMatch m;
+    TGMatch m;
     m.load_neighbor_shared( c );
     m.split_tile( c );
     m.write_shared( c );
@@ -999,7 +994,7 @@ static void construct_tile( FGConstruct& c ) {
     build_wgs_84_point_list( c, array );
 
     // generate the output
-    FGGenOutput output;
+    TGGenOutput output;
     do_output( c, output );
 
     array.close();
@@ -1124,7 +1119,7 @@ int main(int argc, char **argv) {
 #endif  // end of stuff that crashes Cygwin
 
     // main construction data management class
-    FGConstruct c;
+    TGConstruct c;
 
     c.set_angle( min_angle );
     c.set_cover( cover );
@@ -1133,7 +1128,7 @@ int main(int argc, char **argv) {
     c.set_useUKGrid( useUKgrid );
 
     c.set_min_nodes( 50 );
-    c.set_max_nodes( (int)(FG_MAX_NODES * 0.8) );
+    c.set_max_nodes( (int)(TG_MAX_NODES * 0.8) );
 
     if (tile_id == -1) {
 	if (xdist == -1 || ydist == -1) {

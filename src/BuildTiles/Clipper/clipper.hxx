@@ -36,6 +36,7 @@
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 
+#include <Geometry/trinodes.hxx>
 #include <Polygon/polygon.hxx>
 
 #include STL_STRING
@@ -45,33 +46,34 @@ SG_USING_STD(string);
 SG_USING_STD(vector);
 
 
-#define FG_MAX_AREA_TYPES 128	// FIXME also defined in
+#define TG_MAX_AREA_TYPES 128	// FIXME also defined in
                                 // MergerClipper/clipper.hxx
 #define EXTRA_SAFETY_CLIP
 
 
-class FGPolyList
+class TGPolyList
 {
 public:
-    poly_list polys[FG_MAX_AREA_TYPES];
+    poly_list polys[TG_MAX_AREA_TYPES];
     TGPolygon safety_base;
 };
 
 
-class FGClipper 
+class TGClipper 
 {
 
 private:
 
-    FGPolyList polys_in, polys_clipped;
+    TGPolyList polys_in, polys_clipped;
+    TGTriNodes fixed_elevations;
 
 public:
 
     // Constructor.
-    FGClipper (void);
+    TGClipper (void);
 
     // Destructor.
-    ~FGClipper (void);
+    ~TGClipper (void);
 
     // Initialize Clipper (allocate and/or connect structures.)
     bool init();
@@ -93,13 +95,16 @@ public:
     // yields a polygon with no increased contours (i.e. the sliver is
     // adjacent and can be merged.)  If so, replace the clipped
     // polygon with the new polygon that has the sliver merged in.
-    void merge_slivers( FGPolyList& clipped, TGPolygon& slivers );
+    void merge_slivers( TGPolyList& clipped, TGPolygon& slivers );
     
     // Do actual clipping work.
     bool clip_all(const point2d& min, const point2d& max);
 
     // Return output poly list
-    inline FGPolyList get_polys_clipped() const { return polys_clipped; }
+    inline TGPolyList get_polys_clipped() const { return polys_clipped; }
+
+    // Return the fixed elevation points list
+    inline TGTriNodes get_fixed_elevations() const { return fixed_elevations; }
 };
 
 

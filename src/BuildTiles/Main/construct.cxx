@@ -26,8 +26,8 @@
 
 
 // Constructor
-FGConstruct::FGConstruct() { }
+TGConstruct::TGConstruct() { }
 
 
 // Destructor
-FGConstruct::~FGConstruct() { }
+TGConstruct::~TGConstruct() { }

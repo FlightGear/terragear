@@ -39,7 +39,7 @@ int main( int argc, char **argv ) {
     global_min.x = global_min.y = 200;
     global_max.y = global_max.x = -200;
 
-    FGClipper clipper;
+    TGClipper clipper;
     clipper.init();
 
     if ( argc < 2 ) {

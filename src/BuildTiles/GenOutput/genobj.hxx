@@ -52,7 +52,7 @@ typedef vector < int_list > tex_list;
 typedef tex_list::iterator tex_list_iterator;
 typedef tex_list::const_iterator const_tex_list_iterator;
 
-class FGGenOutput {
+class TGGenOutput {
 
 private:
 
@@ -66,10 +66,10 @@ private:
     TGTriNodes tex_coords;
 
     // fan list
-    opt_list fans[FG_MAX_AREA_TYPES];
+    opt_list fans[TG_MAX_AREA_TYPES];
 
     // textures pointer list
-    tex_list textures[FG_MAX_AREA_TYPES];
+    tex_list textures[TG_MAX_AREA_TYPES];
 
     // global bounding sphere
     Point3D gbs_center;
@@ -77,32 +77,32 @@ private:
 
     // calculate the global bounding sphere.  Center is the average of
     // the points.
-    void calc_gbs( FGConstruct& c );
+    void calc_gbs( TGConstruct& c );
 
     // caclulate the bounding sphere for a list of triangle faces
-    void calc_group_bounding_sphere( FGConstruct& c, const opt_list& fans, 
+    void calc_group_bounding_sphere( TGConstruct& c, const opt_list& fans, 
 				     Point3D *center, double *radius );
 
     // caclulate the bounding sphere for the specified triangle face
-    void calc_bounding_sphere( FGConstruct& c, const FGTriEle& t, 
+    void calc_bounding_sphere( TGConstruct& c, const TGTriEle& t, 
 			       Point3D *center, double *radius );
 
     // traverse the specified fan and attempt to calculate "none
     // stretching" texture coordinates
-    // int_list calc_tex_coords( FGConstruct& c, point_list geod_nodes, int_list fan );
+    // int_list calc_tex_coords( TGConstruct& c, point_list geod_nodes, int_list fan );
 
 public:
 
     // Constructor && Destructor
-    inline FGGenOutput() { }
-    inline ~FGGenOutput() { }
+    inline TGGenOutput() { }
+    inline ~TGGenOutput() { }
 
     // build the necessary output structures based on the
     // triangulation data
-    int build( FGConstruct& c );
+    int build( TGConstruct& c );
 
     // write out the fgfs scenery file
-    int write( FGConstruct &c );
+    int write( TGConstruct &c );
 };
 
 

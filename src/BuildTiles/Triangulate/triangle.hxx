@@ -34,7 +34,6 @@
 #include <simgear/math/point3d.hxx>
 
 #include <Array/array.hxx>
-#include <Clipper/clipper.hxx>
 #include <Main/construct.hxx>
 
 #include <Geometry/trinodes.hxx>
@@ -50,7 +49,7 @@ extern "C" {
 #include "trieles.hxx"
 
 
-class FGTriangle {
+class TGTriangle {
 
 private:
 
@@ -63,7 +62,7 @@ private:
     TGTriSegments out_segs;
 
     // polygon list
-    poly_list polylist[FG_MAX_AREA_TYPES];
+    poly_list polylist[TG_MAX_AREA_TYPES];
     
     // triangle list
     triele_list elelist;
@@ -71,8 +70,8 @@ private:
 public:
 
     // Constructor and destructor
-    FGTriangle( void );
-    ~FGTriangle( void );
+    TGTriangle( void );
+    ~TGTriangle( void );
 
     // add nodes from the dem fit
     int add_nodes();
@@ -80,10 +79,10 @@ public:
     // populate this class based on the specified gpc_polys list
     int build( const point_list& corner_list, 
 	       const point_list& fit_list,
-	       const FGPolyList& gpc_polys );
+	       const TGPolyList& gpc_polys );
 
     // populate this class based on the specified gpc_polys list
-    int rebuild( FGConstruct& c );
+    int rebuild( TGConstruct& c );
 
     // Front end triangulator for polygon list.  Allocates and builds
     // up all the needed structures for the triangulator, runs it,

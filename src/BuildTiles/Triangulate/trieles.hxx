@@ -38,7 +38,7 @@ SG_USING_STD(vector);
 
 
 // a segment is two integer pointers into the node list
-class FGTriEle {
+class TGTriEle {
     int n1, n2, n3;
 
     double attribute;
@@ -46,12 +46,12 @@ class FGTriEle {
 public:
 
     // Constructor and destructor
-    inline FGTriEle( void ) { };
-    inline FGTriEle( int i1, int i2, int i3, double a ) {
+    inline TGTriEle( void ) { };
+    inline TGTriEle( int i1, int i2, int i3, double a ) {
 	n1 = i1; n2 = i2; n3 = i3; attribute = a;
     }
 
-    inline ~FGTriEle( void ) { };
+    inline ~TGTriEle( void ) { };
 
     inline int get_n1() const { return n1; }
     inline void set_n1( int i ) { n1 = i; }
@@ -65,7 +65,7 @@ public:
 };
 
 
-typedef vector < FGTriEle > triele_list;
+typedef vector < TGTriEle > triele_list;
 typedef triele_list::iterator triele_list_iterator;
 typedef triele_list::const_iterator const_triele_list_iterator;
 

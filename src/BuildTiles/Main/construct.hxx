@@ -32,7 +32,7 @@
 
 
 // Maximum nodes per tile
-#define FG_MAX_NODES 4000
+#define TG_MAX_NODES 4000
 
 
 #include <simgear/compiler.h>
@@ -55,7 +55,7 @@ typedef belongs_to_list::iterator belongs_to_list_iterator;
 typedef belongs_to_list::const_iterator belongs_to_list_tripoly_iterator;
 
 
-class FGConstruct {
+class TGConstruct {
 
 private:
 
@@ -81,7 +81,7 @@ private:
     SGBucket bucket;
 
     // clipped polygons (gpc format)
-    FGPolyList clipped_polys;
+    TGPolyList clipped_polys;
 
     // raw node list (after triangulation)
     TGTriNodes tri_nodes;
@@ -111,10 +111,10 @@ private:
 public:
 
     // Constructor
-    FGConstruct();
+    TGConstruct();
 
     // Destructor
-    ~FGConstruct();
+    ~TGConstruct();
     
     // minimum interior angle for triangulation
     inline string get_angle() const { return angle; }
@@ -145,8 +145,8 @@ public:
     inline void set_bucket( const SGBucket b ) { bucket = b; } 
 
     // clipped polygons
-    inline FGPolyList get_clipped_polys() const { return clipped_polys; }
-    inline void set_clipped_polys( FGPolyList p ) { clipped_polys = p; }
+    inline TGPolyList get_clipped_polys() const { return clipped_polys; }
+    inline void set_clipped_polys( TGPolyList p ) { clipped_polys = p; }
 
     // node list (after triangulation)
     inline TGTriNodes get_tri_nodes() const { return tri_nodes; }

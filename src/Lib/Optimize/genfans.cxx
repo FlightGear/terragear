@@ -54,14 +54,14 @@ static void add_and_expand( opt_list& by_node, int n, int i ) {
 
 // given an input triangle, shuffle nodes so that "center" is the
 // first node, but maintain winding order.
-static FGTriEle canonify( const FGTriEle& t, int center ) {
+static TGTriEle canonify( const TGTriEle& t, int center ) {
     if ( t.get_n1() == center ) {
 	// already ok
 	return t;
     } else if ( t.get_n2() == center ) {
-	return FGTriEle( t.get_n2(), t.get_n3(), t.get_n1(), 0.0 );
+	return TGTriEle( t.get_n2(), t.get_n3(), t.get_n1(), 0.0 );
     } else if ( t.get_n3() == center ) {
-	return FGTriEle( t.get_n3(), t.get_n1(), t.get_n2(), 0.0 );
+	return TGTriEle( t.get_n3(), t.get_n1(), t.get_n2(), 0.0 );
     } else {
 	cout << "ERROR, index doesn't refer to this triangle!!!" << endl;
 	exit(-1);
@@ -86,8 +86,8 @@ static int_list make_best_fan( const triele_list& master_tris,
 	int_list tmp_result;
 	tmp_result.clear();
 
-	FGTriEle current_tri;
-	FGTriEle test;
+	TGTriEle current_tri;
+	TGTriEle test;
 	current_tri = canonify( master_tris[local_tris[start]], center );
 	tmp_result.push_back( local_tris[start] );
 
@@ -200,7 +200,7 @@ opt_list TGGenFans::greedy_build( triele_list tris ) {
 	int_list_iterator i_current = i_start;
 	int_list_iterator i_last = best_fan.end();
 	for ( ; i_current != i_last; ++i_current ) {
-	    FGTriEle t = canonify( tris[*i_current], index );
+	    TGTriEle t = canonify( tris[*i_current], index );
 	    if ( i_start == i_current ) {
 		node_list.push_back( t.get_n1() );
 		node_list.push_back( t.get_n2() );

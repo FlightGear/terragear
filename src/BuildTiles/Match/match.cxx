@@ -40,16 +40,16 @@ SG_USING_STD(cout);
 SG_USING_STD(endl);
 
 
-FGMatch::FGMatch( void ) {
+TGMatch::TGMatch( void ) {
 }
 
 
-FGMatch::~FGMatch( void ) {
+TGMatch::~TGMatch( void ) {
 }
 
 
 // scan the specified share file for the specified information
-void FGMatch::scan_share_file( const string& dir, const SGBucket& b, 
+void TGMatch::scan_share_file( const string& dir, const SGBucket& b, 
 			       neighbor_type search, neighbor_type dest )
 {
     string file = dir + "/"  + b.gen_base_path() + "/" + b.gen_index_str();
@@ -140,7 +140,7 @@ void FGMatch::scan_share_file( const string& dir, const SGBucket& b,
 
 
 // try to find info for the specified shared component
-void FGMatch::load_shared( const FGConstruct& c, neighbor_type n ) {
+void TGMatch::load_shared( const TGConstruct& c, neighbor_type n ) {
     SGBucket b = c.get_bucket();
 
     double clon = b.get_center_lon();
@@ -204,7 +204,7 @@ void FGMatch::load_shared( const FGConstruct& c, neighbor_type n ) {
 
 // load any previously existing shared data from all neighbors (if
 // shared data for a component exists set that components flag to true
-void FGMatch::load_neighbor_shared( FGConstruct& c ) {
+void TGMatch::load_neighbor_shared( TGConstruct& c ) {
     cout << "Loading existing shared data from neighbor tiles" << endl;
 
     // start with all flags false
@@ -289,7 +289,7 @@ Point3D tgFakeNormal( const Point3D& p ) {
 // segments and the body.  This must be done after calling
 // load_neighbor_data() and will ignore any shared data from the
 // current tile that already exists from a neighbor.
-void FGMatch::split_tile( FGConstruct& c ) {
+void TGMatch::split_tile( TGConstruct& c ) {
     int i;
 
     cout << "Spliting tile" << endl;
@@ -456,7 +456,7 @@ void FGMatch::split_tile( FGConstruct& c ) {
 
 // write the new shared edge points, normals, and segments for this
 // tile
-void FGMatch::write_shared( FGConstruct& c ) {
+void TGMatch::write_shared( TGConstruct& c ) {
     string base = c.get_work_base();
     SGBucket b = c.get_bucket();
 
@@ -635,7 +635,7 @@ void insert_normal( point_list& normals, Point3D n, int i ) {
 
 // reassemble the tile pieces (combining the shared data and our own
 // data)
-void FGMatch::assemble_tile( FGConstruct& c ) {
+void TGMatch::assemble_tile( TGConstruct& c ) {
     int i;
     TGTriNodes new_nodes;
     new_nodes.clear();

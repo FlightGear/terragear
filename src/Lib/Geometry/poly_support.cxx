@@ -382,7 +382,7 @@ void polygon_tesselate( const TGPolygon &p,
     // TEMPORARY
     // write_tri_data(&out);
 
-    // now copy the results back into the corresponding FGTriangle
+    // now copy the results back into the corresponding TGTriangle
     // structures
 
     // triangles
@@ -400,7 +400,7 @@ void polygon_tesselate( const TGPolygon &p,
 	}
 	// cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
 
-	elelist.push_back( FGTriEle( n1, n2, n3, attribute ) );
+	elelist.push_back( TGTriEle( n1, n2, n3, attribute ) );
     }
 
     // output points
@@ -468,7 +468,7 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
     // 3.  Convert the tesselated output to a list of tringles.
     //     basically a polygon with a contour for every triangle
     for ( i = 0; i < (int)trieles.size(); ++i ) {
-	FGTriEle t = trieles[i];
+	TGTriEle t = trieles[i];
 	Point3D p1 = nodes[ t.get_n1() ];
 	Point3D p2 = nodes[ t.get_n2() ];
 	Point3D p3 = nodes[ t.get_n3() ];
@@ -515,7 +515,7 @@ static void contour_tesselate( TGContourNode *node, const TGPolygon &p,
 	out_pts.push_back( Point3D(0, 0, 0) );
 	out_pts.push_back( Point3D(0, 1, 0) );
 	out_pts.push_back( Point3D(1, 1, 0) );
-	elelist.push_back( FGTriEle( 0, 1, 2, 0.0 ) );
+	elelist.push_back( TGTriEle( 0, 1, 2, 0.0 ) );
 	return;
     }
 #endif
@@ -661,7 +661,7 @@ static void contour_tesselate( TGContourNode *node, const TGPolygon &p,
     // TEMPORARY
     // write_tri_data(&out);
 
-    // now copy the results back into the corresponding FGTriangle
+    // now copy the results back into the corresponding TGTriangle
     // structures
 
     // triangles
@@ -679,7 +679,7 @@ static void contour_tesselate( TGContourNode *node, const TGPolygon &p,
 	}
 	// cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
 
-	elelist.push_back( FGTriEle( n1, n2, n3, attribute ) );
+	elelist.push_back( TGTriEle( n1, n2, n3, attribute ) );
     }
 
     // output points
@@ -728,7 +728,7 @@ static Point3D point_inside_hole( point_list contour ) {
 	exit(-1);
     }
 
-    FGTriEle t = elelist[0];
+    TGTriEle t = elelist[0];
     Point3D p1 = contour[ t.get_n1() ];
     Point3D p2 = contour[ t.get_n2() ];
     Point3D p3 = contour[ t.get_n3() ];
@@ -778,7 +778,7 @@ static Point3D point_inside_contour( TGContourNode *node, const TGPolygon &p ) {
     double max_area = 0.0;
     int biggest = 0;
     for ( i = 0; i < (int)elelist.size(); ++i ) {
-	FGTriEle t = elelist[i];
+	TGTriEle t = elelist[i];
 	Point3D p1 = out_pts[ t.get_n1() ];
 	Point3D p2 = out_pts[ t.get_n2() ];
 	Point3D p3 = out_pts[ t.get_n3() ];
@@ -791,7 +791,7 @@ static Point3D point_inside_contour( TGContourNode *node, const TGPolygon &p ) {
 
     // find center point of largest triangle
     cout << "biggest = " << biggest + 1 << " out of " << elelist.size() << endl;
-    FGTriEle t = elelist[biggest];
+    TGTriEle t = elelist[biggest];
     contour_num = node->get_contour_num();
     Point3D p1 = out_pts[ t.get_n1() ];
     Point3D p2 = out_pts[ t.get_n2() ];

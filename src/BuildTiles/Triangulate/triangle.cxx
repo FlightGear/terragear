@@ -33,20 +33,20 @@ SG_USING_STD(endl);
 
 
 // Constructor
-FGTriangle::FGTriangle( void ) {
+TGTriangle::TGTriangle( void ) {
 }
 
 
 // Destructor
-FGTriangle::~FGTriangle( void ) {
+TGTriangle::~TGTriangle( void ) {
 }
 
 
 // populate this class based on the specified gpc_polys list
 int 
-FGTriangle::build( const point_list& corner_list,
+TGTriangle::build( const point_list& corner_list,
 		   const point_list& fit_list, 
-		   const FGPolyList& gpc_polys )
+		   const TGPolyList& gpc_polys )
 {
     int debug_counter = 0;
     int index;
@@ -78,7 +78,7 @@ FGTriangle::build( const point_list& corner_list,
     // process polygons in priority order
     cout << "prepairing node list and polygons" << endl;
 
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	polylist[i].clear();
 
 	cout << "area type = " << i << " polys = " << gpc_polys.polys[i].size() 
@@ -198,7 +198,7 @@ FGTriangle::build( const point_list& corner_list,
 	index = in_nodes.course_add( fit_list[i] );
     }
 
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	if ( polylist[i].size() ) {
 	    cout << get_area_name((AreaType)i) << " = " 
 		 << polylist[i].size() << endl;
@@ -214,7 +214,7 @@ FGTriangle::build( const point_list& corner_list,
     point_list node_list = in_nodes.get_node_list();
     TGPolygon poly;
 
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	cout << "area type = " << i << endl;
 	poly_list_iterator tp_current, tp_last;
 	tp_current = polylist[i].begin();
@@ -265,7 +265,7 @@ FGTriangle::build( const point_list& corner_list,
 
 
 // populate this class based on the specified gpc_polys list
-int FGTriangle::rebuild( FGConstruct& c ) {
+int TGTriangle::rebuild( TGConstruct& c ) {
     in_nodes.clear();
     in_segs.clear();
 
@@ -338,7 +338,7 @@ static void write_out_data(struct triangulateio *out) {
 // generates extra nodes for a better triangulation.  2 = second pass
 // after split/reassem where we don't want any extra nodes generated.
 
-int FGTriangle::run_triangulate( const string& angle, const int pass ) {
+int TGTriangle::run_triangulate( const string& angle, const int pass ) {
     TGPolygon poly;
     Point3D p;
     struct triangulateio in, out, vorout;
@@ -420,7 +420,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 
     // region list
     in.numberofregions = 0;
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	poly_list_iterator h_current, h_last;
 	h_current = polylist[i].begin();
 	h_last = polylist[i].end();
@@ -436,7 +436,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 
     in.regionlist = (REAL *) malloc(in.numberofregions * 4 * sizeof(REAL));
     counter = 0;
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	poly_list_iterator h_current, h_last;
 	h_current = polylist[(int)i].begin();
 	h_last = polylist[(int)i].end();
@@ -504,7 +504,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 	tri_options = "pczYYAen";
     } else {
 	cout << "unknown pass number = " << pass 
-	     << " in FGTriangle::run_triangulate()" << endl;
+	     << " in TGTriangle::run_triangulate()" << endl;
 	exit(-1);
     }
     cout << "Triangulation with options = " << tri_options << endl;
@@ -514,7 +514,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     // TEMPORARY
     // write_tri_data(&out);
 
-    // now copy the results back into the corresponding FGTriangle
+    // now copy the results back into the corresponding TGTriangle
     // structures
 
     // nodes
@@ -548,7 +548,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 	}
 	// cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
 
-	elelist.push_back( FGTriEle( n1, n2, n3, attribute ) );
+	elelist.push_back( TGTriEle( n1, n2, n3, attribute ) );
     }
 
     // free mem allocated to the "Triangle" structures

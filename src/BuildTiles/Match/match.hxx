@@ -37,7 +37,7 @@
 #include <Main/construct.hxx>
 
 
-class FGMatch {
+class TGMatch {
 
 private:
 
@@ -73,36 +73,36 @@ public:
     };
 
     // Constructor
-    FGMatch( void );
+    TGMatch( void );
 
     // Destructor
-    ~FGMatch( void );
+    ~TGMatch( void );
 
     // load any previously existing shared data from all neighbors (if
     // shared data for a component exists set that components flag to
     // true
-    void load_neighbor_shared( FGConstruct& c );
+    void load_neighbor_shared( TGConstruct& c );
 
     // scan the specified share file for the specified information
     void scan_share_file( const string& dir, const SGBucket& b,
 			  neighbor_type search, neighbor_type dest );
 
     // try to find info for the specified shared component
-    void load_shared( const FGConstruct& c, neighbor_type n );
+    void load_shared( const TGConstruct& c, neighbor_type n );
 
     // split up the tile between the shared edge points, normals, and
     // segments and the body.  This must be done after calling
     // load_neighbor_data() and will ignore any shared data from the
     // current tile that already exists from a neighbor.
-    void split_tile( FGConstruct& c );
+    void split_tile( TGConstruct& c );
 
     // write the new shared edge points, normals, and segments for
     // this tile
-    void write_shared( FGConstruct& c );
+    void write_shared( TGConstruct& c );
 
     // reassemble the tile pieces (combining the shared data and our
     // own data)
-    void assemble_tile( FGConstruct& c );
+    void assemble_tile( TGConstruct& c );
 };
 
 

@@ -44,27 +44,28 @@ SG_USING_STD(cout);
 
 
 // Constructor.
-FGClipper::FGClipper() {
+TGClipper::TGClipper() {
 }
 
 
 // Destructor.
-FGClipper::~FGClipper() {
+TGClipper::~TGClipper() {
 }
 
 
 // Initialize the clipper (empty all the polygon buckets.)
-bool FGClipper::init() {
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+bool TGClipper::init() {
+    for ( int i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	polys_in.polys[i].clear();
     }
+    fixed_elevations.clear();
 
     return true;
 }
 
 
 // Load a polygon definition file.
-bool FGClipper::load_polys(const string& path) {
+bool TGClipper::load_polys(const string& path) {
     bool poly3d = false;
     string first_line;
     string poly_name;
@@ -127,9 +128,8 @@ bool FGClipper::load_polys(const string& path) {
                 startz = -9999.0;
             }
 	    p = Point3D(startx, starty, startz);
-	    // cout << "load poly's: poly pt = " << p << endl;
 	    poly.add_node( i, p );
-	    SG_LOG( SG_CLIPPER, SG_BULK, "0 = " << p );
+            fixed_elevations.unique_add( p );
 
 	    for ( j = 1; j < count - 1; ++j ) {
 		in >> x;
@@ -140,8 +140,8 @@ bool FGClipper::load_polys(const string& path) {
                     z = -9999.0;
                 }
 		p = Point3D( x, y, z );
-                // cout << "load poly's: poly pt = " << p << endl;
 		poly.add_node( i, p );
+                fixed_elevations.unique_add( p );
 	    }
 
 	    in >> lastx;
@@ -158,8 +158,8 @@ bool FGClipper::load_polys(const string& path) {
 		// last point same as first, discard
 	    } else {
 		p = Point3D( lastx, lasty, lastz );
-                // cout << "load poly's: poly pt = " << p << endl;
 		poly.add_node( i, p );
+                fixed_elevations.unique_add( p );
 	    }
 	}
 
@@ -179,7 +179,7 @@ bool FGClipper::load_polys(const string& path) {
 
 // Load a polygon definition file containing osgb36 Eastings and Northings
 // and convert them to WGS84 Latitude and Longitude
-bool FGClipper::load_osgb36_polys(const string& path) {
+bool TGClipper::load_osgb36_polys(const string& path) {
 //   cout << "Loading osgb36 poly\n";
     string poly_name;
     AreaType poly_type = DefaultArea;
@@ -288,7 +288,7 @@ bool FGClipper::load_osgb36_polys(const string& path) {
     // TEST - Ignore
     // } else
 
-    if ( area < FG_MAX_AREA_TYPES ) {
+    if ( area < TG_MAX_AREA_TYPES ) {
 	polys_in.polys[area].push_back(poly);
     } else {
 	SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = "
@@ -303,9 +303,9 @@ bool FGClipper::load_osgb36_polys(const string& path) {
 }
 
 // Add a polygon to the clipper.
-void FGClipper::add_poly( int area, const TGPolygon &poly )
+void TGClipper::add_poly( int area, const TGPolygon &poly )
 {
-    if ( area < FG_MAX_AREA_TYPES ) {
+    if ( area < TG_MAX_AREA_TYPES ) {
 	polys_in.polys[area].push_back(poly);
     } else {
 	SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = " 
@@ -316,7 +316,7 @@ void FGClipper::add_poly( int area, const TGPolygon &poly )
 
 
 // Move slivers from in polygon to out polygon.
-void FGClipper::move_slivers( TGPolygon& in, TGPolygon& out ) {
+void TGClipper::move_slivers( TGPolygon& in, TGPolygon& out ) {
     // traverse each contour of the polygon and attempt to identify
     // likely slivers
 
@@ -377,7 +377,7 @@ void FGClipper::move_slivers( TGPolygon& in, TGPolygon& out ) {
 // a polygon with no increased contours (i.e. the sliver is adjacent
 // and can be merged.)  If so, replace the clipped polygon with the
 // new polygon that has the sliver merged in.
-void FGClipper::merge_slivers( FGPolyList& clipped, TGPolygon& slivers ) {
+void TGClipper::merge_slivers( TGPolyList& clipped, TGPolygon& slivers ) {
     TGPolygon poly, result, sliver;
     point_list contour;
     int original_contours, result_contours;
@@ -393,7 +393,7 @@ void FGClipper::merge_slivers( FGPolyList& clipped, TGPolygon& slivers ) {
 	sliver.add_contour( contour, 0 );
 	done = false;
 
-	for ( area = 0; area < FG_MAX_AREA_TYPES && !done; ++area ) {
+	for ( area = 0; area < TG_MAX_AREA_TYPES && !done; ++area ) {
 
 	    if ( area == HoleArea ) {
 		// don't merge a non-hole sliver in with a hole
@@ -468,7 +468,7 @@ is_water_area (AreaType type)
 
 // Clip all the polygons against each other in a priority scheme based
 // on order of the polygon type in the polygon type enum.
-bool FGClipper::clip_all(const point2d& min, const point2d& max) {
+bool TGClipper::clip_all(const point2d& min, const point2d& max) {
     TGPolygon accum, tmp;
     TGPolygon slivers, remains;
     int i, j;
@@ -503,7 +503,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     // set up a mask for all water.
     TGPolygon water_mask;
     water_mask.erase();
-    for ( i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
         if (is_water_area(AreaType(i))) {
             for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
                 water_mask =
@@ -521,7 +521,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     }
 
     // process polygons in priority order
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	cout << "num polys of type (" << i << ") = " 
 	     << polys_in.polys[i].size() << endl;
 	// current = polys_in.polys[i].begin();

@@ -40,7 +40,7 @@ int TGTriNodes::unique_add( const Point3D& p ) {
     point_list_iterator current, last;
     int counter = 0;
 
-    // cout << p.x() << "," << p.y() << endl;
+    cout << "unique add = " << p << endl;
 
     // see if point already exists
     current = node_list.begin();
@@ -48,6 +48,12 @@ int TGTriNodes::unique_add( const Point3D& p ) {
     for ( ; current != last; ++current ) {
 	if ( close_enough_2d(p, *current) ) {
 	    // cout << "found an existing match!" << endl;
+
+            // update elevation if new point has better info
+            if ( p.z() > current->z() ) {
+                current->setz( p.z() );
+            }
+
 	    return counter;
 	}
 	
@@ -112,6 +118,12 @@ int TGTriNodes::course_add( const Point3D& p ) {
     for ( ; current != last; ++current ) {
 	if ( course_close_enough(p, *current) ) {
 	    // cout << "found an existing match!" << endl;
+
+            // update elevation if new point has better info
+            if ( p.z() > current->z() ) {
+                current->setz( p.z() );
+            }
+
 	    return counter;
 	}
 	

@@ -46,7 +46,7 @@ SG_USING_STD(endl);
 
 // calculate the global bounding sphere.  Center is the center of the
 // tile and zero elevation
-void FGGenOutput::calc_gbs( FGConstruct& c ) {
+void TGGenOutput::calc_gbs( TGConstruct& c ) {
     double dist_squared;
     double radius_squared = 0;
     
@@ -77,7 +77,7 @@ void FGGenOutput::calc_gbs( FGConstruct& c ) {
 
 // traverse the specified fan and attempt to calculate "none
 // stretching" texture coordinates
-int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
+int_list TGGenOutput::calc_tex_coords( TGConstruct& c, point_list geod_nodes,
 				       int_list fan )
 {
     // cout << "calculating texture coordinates for a specific fan of size = "
@@ -162,7 +162,7 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
 
 // build the necessary output structures based on the triangulation
 // data
-int FGGenOutput::build( FGConstruct& c ) {
+int TGGenOutput::build( TGConstruct& c ) {
     int i, j;
 
     TGTriNodes trinodes = c.get_tri_nodes();
@@ -176,7 +176,7 @@ int FGGenOutput::build( FGConstruct& c ) {
     // build the trifan list
     cout << "total triangles = " << tri_elements.size() << endl;
     TGGenFans f;
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	triele_list area_tris;
 	area_tris.erase( area_tris.begin(), area_tris.end() );
 
@@ -199,7 +199,7 @@ int FGGenOutput::build( FGConstruct& c ) {
     cout << "calculating texture coordinates" << endl;
     tex_coords.clear();
 
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	for ( j = 0; j < (int)fans[i].size(); ++j ) {
 	    // int_list t_list = calc_tex_coords( c, geod_nodes, fans[i][j] );
 	    // cout << fans[i][j].size() << " === " 
@@ -238,7 +238,7 @@ int FGGenOutput::build( FGConstruct& c ) {
 
 
 // caclulate the bounding sphere for a list of triangle faces
-void FGGenOutput::calc_group_bounding_sphere( FGConstruct& c, 
+void TGGenOutput::calc_group_bounding_sphere( TGConstruct& c, 
 					      const opt_list& fans, 
 					      Point3D *center, double *radius )
 {
@@ -290,7 +290,7 @@ void FGGenOutput::calc_group_bounding_sphere( FGConstruct& c,
 
 
 // caclulate the bounding sphere for the specified triangle face
-void FGGenOutput::calc_bounding_sphere( FGConstruct& c, const FGTriEle& t, 
+void TGGenOutput::calc_bounding_sphere( TGConstruct& c, const TGTriEle& t, 
 					Point3D *center, double *radius )
 {
     point_list wgs84_nodes = c.get_wgs84_nodes();
@@ -328,7 +328,7 @@ void FGGenOutput::calc_bounding_sphere( FGConstruct& c, const FGTriEle& t,
 
 #if 0
 // write out the fgfs scenery file
-int FGGenOutput::write_orig( FGConstruct &c ) {
+int TGGenOutput::write_orig( TGConstruct &c ) {
     Point3D p;
     int i;
 
@@ -410,7 +410,7 @@ int FGGenOutput::write_orig( FGConstruct &c ) {
     fprintf(fp, "\n");
 
     int total_tris = 0;
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	if ( (int)fans[i].size() > 0 ) {
 	    string attr_name = get_area_name( (AreaType)i );
 	    calc_group_bounding_sphere( c, fans[i], &center, &radius );
@@ -446,7 +446,7 @@ int FGGenOutput::write_orig( FGConstruct &c ) {
 
 
 // write out the fgfs scenery file
-int FGGenOutput::write( FGConstruct &c ) {
+int TGGenOutput::write( TGConstruct &c ) {
     int i;
 
     // Assemble all the data into the final format
@@ -475,7 +475,7 @@ int FGGenOutput::write( FGConstruct &c ) {
     group_list fans_v;   group_list fans_tc;   string_list fan_materials;
     fans_v.clear();      fans_tc.clear();      fan_materials.clear();
 
-    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	if ( (int)fans[i].size() > 0 ) {
 	    cout << "creating " << fans[i].size() << " fans of type "
 		 << i << endl;
