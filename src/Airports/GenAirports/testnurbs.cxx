@@ -1,7 +1,7 @@
 #include <math.h>
 
-#include <nurbs++/nurbsS.hh>
-#include <nurbs++/nurbsSub.hh>
+#include <nurbs++/nurbsS.h>
+#include <nurbs++/nurbsSub.h>
 
 
 int main(){

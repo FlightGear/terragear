@@ -23,8 +23,8 @@
 //
 
 
-#include <nurbs++/nurbsS.hh>
-#include <nurbs++/nurbsSub.hh>
+#include <nurbs++/nurbsS.h>
+#include <nurbs++/nurbsSub.h>
 
 #include <simgear/constants.h>
 #include <simgear/math/sg_types.hxx>

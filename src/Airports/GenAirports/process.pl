@@ -23,10 +23,10 @@
 
 # Edit the following values to set up your preferences:
 
-$workdir = "/stage/fgfs01/curt/Work";
+$workdir = "/stage/fgfs04/curt/Work";
 $inputfile = "./default.apt";
 $binary = "./genapts";
-$startid = "EGLL";
+$startid = "";
 
 # end of user configurable section
 

@@ -29,7 +29,7 @@
 
 #include <string>
 
-#include <nurbs++/nurbsS.hh>
+#include <nurbs++/nurbsS.h>
 
 #include <simgear/math/point3d.hxx>
 

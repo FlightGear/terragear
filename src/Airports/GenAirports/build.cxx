@@ -370,16 +370,17 @@ static void build_runway( const TGRunway& rwy_info,
 	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
     }
 
-    TGPolygon base;
+    TGPolygon base, safe_base;
     if ( rwy_info.really_taxiway ) {
 	base = gen_runway_area_w_extend( rwy_info, 10, 10 );
+        // also clear a safe area around the taxiway
+        safe_base = gen_runway_area_w_extend( rwy_info, 40, 40 );
     } else {
 	base = gen_runway_area_w_extend( rwy_info, 20, 20 );
-
         // also clear a safe area around the runway
-        TGPolygon safe_base = gen_runway_area_w_extend( rwy_info, 300, 120 );
-        *apt_clearing = polygon_union(safe_base, *apt_clearing);
+        safe_base = gen_runway_area_w_extend( rwy_info, 300, 120 );
     }
+    *apt_clearing = polygon_union(safe_base, *apt_clearing);
 
     // add base to apt_base
     *apt_base = polygon_union( base, *apt_base );
@@ -985,10 +986,10 @@ void build_airport( string airport_raw, float alt_m,
     // Extend the area a bit so we don't have wierd things on the edges
     double dlon = max_deg.lon() - min_deg.lon();
     double dlat = max_deg.lat() - min_deg.lat();
-    min_deg.setlon( min_deg.lon() - 0.5 * dlon );
-    max_deg.setlon( max_deg.lon() + 0.5 * dlon );
-    min_deg.setlat( min_deg.lat() - 0.5 * dlat );
-    max_deg.setlat( max_deg.lat() + 0.5 * dlat );
+    min_deg.setlon( min_deg.lon() - 0.25 * dlon );
+    max_deg.setlon( max_deg.lon() + 0.25 * dlon );
+    min_deg.setlat( min_deg.lat() - 0.25 * dlat );
+    max_deg.setlat( max_deg.lat() + 0.25 * dlat );
 
     TGAptSurface apt_surf( root, min_deg, max_deg );
     cout << "Surface created" << endl;
@@ -1220,7 +1221,6 @@ void build_airport( string airport_raw, float alt_m,
     obj.set_fan_materials( fan_materials );
 
     bool result;
-    /* result = obj.write_ascii( objpath, name, b ); */
     result = obj.write_bin( objpath, name, b );
     if ( !result ) {
         throw sg_exception("error writing file. :-(");
