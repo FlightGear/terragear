@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Convert the XP AirNav format to FlightGear's format
+# Convert the XP apt.dat format to FlightGear's "simple.apt" format
 #
 # Data source is:
 #
