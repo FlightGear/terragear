@@ -33,9 +33,11 @@
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 
+#include <iostream>
 #include <string>
 #include <vector>
 
+FG_USING_STD(ostream);
 FG_USING_STD(string);
 FG_USING_STD(vector);
 
@@ -139,6 +141,13 @@ public:
     inline void set_hole_flag( const int contour, const int flag ) {
 	hole_list[contour] = flag;
     }
+    inline bool has_holes () const {
+        for (int i = 0; i < contours(); i++) {
+	    if (get_hole_flag(i))
+	        return true;
+	}
+	return false;
+    }
 
     // shift every point in the polygon by lon, lat
     void shift( double lon, double lat );
@@ -199,6 +208,9 @@ FGPolygon polygon_xor( const FGPolygon& subject, const FGPolygon& clip );
 
 // Union
 FGPolygon polygon_union( const FGPolygon& subject, const FGPolygon& clip );
+
+// Output
+ostream &operator<< (ostream &output, const FGPolygon &poly);
 
 
 #endif // _POLYGON_HXX

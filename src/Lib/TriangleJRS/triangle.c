@@ -303,6 +303,7 @@
 #define ONETHIRD 0.333333333333333333333333333333333333333333333333333333333333
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #ifndef NO_TIMER
@@ -2728,7 +2729,7 @@ char **argv;
               k++;
             }
             workstring[k] = '\0';
-            minangle = (REAL) strtod(workstring, (char **) NULL);
+            minangle = (REAL) atof(workstring);
 	  } else {
             minangle = 20.0;
 	  }

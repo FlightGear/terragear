@@ -70,6 +70,8 @@ inline static void init ()
   set_area("Reservoir", ReservoirArea);
   set_area("Reservoir   Intermittent", IntReservoirArea);
   set_area("IntermittentReservoir", IntReservoirArea);
+  set_area("Road", RoadArea);
+  set_area("Railroad", RailroadArea);
   set_area("Stream", StreamArea);
   set_area("Canal", CanalArea);
   set_area("Glacier", GlacierArea);

@@ -45,41 +45,35 @@ FG_USING_STD(string);
 FG_USING_STD(vector);
 
 
-// typedef vector < gpc_polygon * > gpcpoly_container;
-// typedef gpcpoly_container::iterator gpcpoly_iterator;
-// typedef gpcpoly_container::const_iterator const_gpcpoly_iterator;
-
-
-#define FG_MAX_AREA_TYPES 40	// FIXME also defined in
+#define FG_MAX_AREA_TYPES 128	// FIXME also defined in
                                 // MergerClipper/clipper.hxx
 #define EXTRA_SAFETY_CLIP
-// #define FG_MAX_VERTICES 100000
 
 
-class FGPolyList {
+class FGPolyList
+{
 public:
     poly_list polys[FG_MAX_AREA_TYPES];
     FGPolygon safety_base;
 };
 
 
-class FGClipper {
+class FGClipper 
+{
 
 private:
 
-    // gpc_vertex_list v_list;
-    // static gpc_polygon poly;
     FGPolyList polys_in, polys_clipped;
 
 public:
 
-    // Constructor
-    FGClipper( void );
+    // Constructor.
+    FGClipper (void);
 
-    // Destructor
-    ~FGClipper( void );
+    // Destructor.
+    ~FGClipper (void);
 
-    // Initialize Clipper (allocate and/or connect structures)
+    // Initialize Clipper (allocate and/or connect structures.)
     bool init();
 
     // Load a polygon definition file
@@ -88,20 +82,20 @@ public:
     // Add a polygon.
     void add_poly(int area, const FGPolygon &poly);
 
-    // remove any slivers from in polygon and move them to out
+    // Remove any slivers from in polygon and move them to out
     // polygon.
     void move_slivers( FGPolygon& in, FGPolygon& out );
 
-    // for each sliver contour, see if a union with another polygon
+    // For each sliver contour, see if a union with another polygon
     // yields a polygon with no increased contours (i.e. the sliver is
     // adjacent and can be merged.)  If so, replace the clipped
     // polygon with the new polygon that has the sliver merged in.
     void merge_slivers( FGPolyList& clipped, FGPolygon& slivers );
     
-    // Do actually clipping work
+    // Do actual clipping work.
     bool clip_all(const point2d& min, const point2d& max);
 
-    // return output poly list
+    // Return output poly list
     inline FGPolyList get_polys_clipped() const { return polys_clipped; }
 };
 

@@ -1,6 +1,7 @@
 SUBDIRS = \
 	Array \
 	DEM \
+	e00 \
 	Geometry \
         landcover \
 	Optimize \

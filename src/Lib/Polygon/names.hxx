@@ -44,6 +44,8 @@ enum AreaType {
     IntLakeArea,
     ReservoirArea,
     IntReservoirArea,
+    RoadArea,
+    RailroadArea,
     StreamArea,
     CanalArea,
     GlacierArea,

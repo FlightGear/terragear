@@ -533,3 +533,20 @@ FGPolygon polygon_to_tristrip_old( const FGPolygon& in_poly ) {
     return result;
 }
 #endif
+
+
+// Send a polygon to standard output.
+ostream &
+operator<< (ostream &output, const FGPolygon &poly)
+{
+    int nContours = poly.contours();
+    output << nContours << endl;
+    for (int i = 0; i < nContours; i++) {
+	int nPoints = poly.contour_size(i);
+	output << nPoints << endl;
+	output << poly.get_hole_flag(i) << endl;
+	for (int j = 0; j < nPoints; j++) {
+	    output << poly.get_pt(i, j) << endl;
+	}
+    }
+}

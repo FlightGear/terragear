@@ -38,21 +38,18 @@ FG_USING_STD(cout);
 #define MASK_CLIP 1
 
 
-// Constructor
-FGClipper::FGClipper( void ) {
+// Constructor.
+FGClipper::FGClipper() {
 }
 
 
-// Destructor
-FGClipper::~FGClipper( void ) {
+// Destructor.
+FGClipper::~FGClipper() {
 }
 
 
-// Initialize Clipper (allocate and/or connect structures)
+// Initialize the clipper (empty all the polygon buckets.)
 bool FGClipper::init() {
-    // v_list.num_vertices = 0;
-    // v_list.vertex = new gpc_vertex[FG_MAX_VERTICES];;
-
     for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	polys_in.polys[i].clear();
     }
@@ -61,7 +58,7 @@ bool FGClipper::init() {
 }
 
 
-// Load a polygon definition file
+// Load a polygon definition file.
 bool FGClipper::load_polys(const string& path) {
     string poly_name;
     AreaType poly_type = DefaultArea;
@@ -78,9 +75,6 @@ bool FGClipper::load_polys(const string& path) {
 	exit(-1);
     }
 
-    // gpc_polygon *poly = new gpc_polygon;
-    // poly->num_contours = 0;
-    // poly->contour = NULL;
     FGPolygon poly;
 
     Point3D p;
@@ -133,18 +127,12 @@ bool FGClipper::load_polys(const string& path) {
 		// cout << "poly pt = " << p << endl;
 		poly.add_node( i, p );
 	    }
-
-	    // gpc_add_contour( poly, &v_list, hole_flag );
 	}
 
 	in >> skipcomment;
     }
 
     int area = (int)poly_type;
-
-    // if ( area == OceanArea ) {
-    // TEST - Ignore
-    // } else 
 
     add_poly(area, poly);
 
@@ -154,8 +142,8 @@ bool FGClipper::load_polys(const string& path) {
     return true;
 }
 
-
-void FGClipper::add_poly (int area, const FGPolygon &poly)
+// Add a polygon to the clipper.
+void FGClipper::add_poly( int area, const FGPolygon &poly )
 {
     if ( area < FG_MAX_AREA_TYPES ) {
 	polys_in.polys[area].push_back(poly);
@@ -167,7 +155,7 @@ void FGClipper::add_poly (int area, const FGPolygon &poly)
 }
 
 
-// remove any slivers from in polygon and move them to out polygon.
+// Move slivers from in polygon to out polygon.
 void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
     // traverse each contour of the polygon and attempt to identify
     // likely slivers
@@ -221,7 +209,9 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
 }
 
 
-// for each sliver contour, see if a union with another polygon yields
+// Attempt to merge slivers into a list of polygons.
+//
+// For each sliver contour, see if a union with another polygon yields
 // a polygon with no increased contours (i.e. the sliver is adjacent
 // and can be merged.)  If so, replace the clipped polygon with the
 // new polygon that has the sliver merged in.
@@ -289,7 +279,8 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 }
 
 
-// Do actually clipping work
+// Clip all the polygons against each other in a priority scheme based
+// on order of the polygon type in the polygon type enum.
 bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     FGPolygon accum, tmp;
     FGPolygon slivers, remains;
@@ -339,7 +330,6 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     }
 #endif
 
-    // int count = 0;
     // process polygons in priority order
     for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	cout << "num polys of type (" << i << ") = " 
@@ -376,13 +366,6 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	        tmp = polygon_diff( tmp, pond_mask );
 	    }
 #endif
-
-	    // clip current polygon against previous higher priority
-	    // stuff
-
-	    // result_diff = new gpc_polygon;
-	    // result_diff->num_contours = 0;
-	    // result_diff->contour = NULL;
 
 	    FGPolygon result_union, result_diff;
 

@@ -64,9 +64,7 @@ FG_USING_STD(vector);
 vector<string> load_dirs;
 
 
-/**
- * Translate USGS land cover into TerraGear.
- */
+// Translate USGS land cover values into TerraGear area types.
 static AreaType translateUSGSCover (int usgs_value)
 {
   switch (usgs_value) {
@@ -127,7 +125,7 @@ static AreaType translateUSGSCover (int usgs_value)
 }
 
 
-// do actual scan of directory and loading of files
+// Scan a directory and load polygon files.
 static int actual_load_polys( const string& dir,
 			      FGConstruct& c,
 			      FGClipper& clipper ) {
@@ -172,8 +170,10 @@ static int actual_load_polys( const string& dir,
 }
 
 
-// Merge a polygon with an existing one if possible, append a new
-// one otherwise; this function is used by actual_load_landcover, below,
+// Add a polygon to a list, merging if possible.
+//
+// Merge a polygon with an existing one if possible, append a new one
+// otherwise; this function is used by actual_load_landcover, below,
 // to reduce the number of separate polygons.
 static void inline add_to_polys ( FGPolygon &accum, const FGPolygon &poly) {
     if ( accum.contours() > 0 ) {
@@ -184,8 +184,8 @@ static void inline add_to_polys ( FGPolygon &accum, const FGPolygon &poly) {
 }
 
 
-// Generate polygons from land-cover raster.  Horizontally- or
-// vertically- adjacent polygons will be merged automatically.
+// Generate polygons from la and-cover raster.  Horizontally- or
+// vertically-adjacent polygons will be merged automatically.
 static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
 				   FGClipper &clipper ) {
 
@@ -261,8 +261,8 @@ static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
 }
 
 
-// load all 2d polygons matching the specified base path and clip
-// against each other to resolve any overlaps
+// load all 2d polygons from the specified load disk directories and
+// clip against each other to resolve any overlaps
 static int load_polys( FGConstruct& c ) {
     FGClipper clipper;
 
@@ -304,8 +304,8 @@ static int load_polys( FGConstruct& c ) {
 }
 
 
-// load regular grid of elevation data (dem based), return list of
-// fitted nodes
+// Load elevation data from a DEM file, a regular grid of elevation
+// data--dem based) and return list of fitted nodes.
 static int load_dem( FGConstruct& c, FGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
