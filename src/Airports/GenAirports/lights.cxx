@@ -147,9 +147,11 @@ static Point3D gen_runway_left_vector( const FGRunway& rwy_info, bool recip )
 
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
-static void gen_runway_edge_lights( const FGRunway& rwy_info, 
-                                    point_list *lights, point_list *normals,
-                                    bool recip ) {
+static FGSuperPoly gen_runway_edge_lights( const FGRunway& rwy_info,
+                                           bool recip )
+{
+    point_list lights; lights.clear();
+    point_list normals; normals.clear();
     int i;
 
     double len = rwy_info.length * SG_FEET_TO_METER;
@@ -181,26 +183,40 @@ static void gen_runway_edge_lights( const FGRunway& rwy_info,
         pt2 = corner[1];
     }
 
-    lights->push_back( pt1 );
-    normals->push_back( normal );
-    lights->push_back( pt2 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
+    lights.push_back( pt2 );
+    normals.push_back( normal );
 
     for ( i = 0; i < divs; ++i ) {
 	pt1 += inc1;
 	pt2 += inc2;
-	lights->push_back( pt1 );
-	normals->push_back( normal );
-	lights->push_back( pt2 );
-	normals->push_back( normal );
+	lights.push_back( pt1 );
+	normals.push_back( normal );
+	lights.push_back( pt2 );
+	normals.push_back( normal );
     }
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( lights, false );
+    normals_poly.add_contour( normals, false );
+
+    FGSuperPoly result;
+    result.set_poly( lights_poly );
+    result.set_normals( normals_poly );
+    result.set_material( "RWY_WHITE_LIGHTS" );
+
+    return result;
 }
 
 
 // generate a simple 2 bar VASI 
-static void gen_vasi( const FGRunway& rwy_info, float alt_m,
-                      point_list *lights, point_list *normals,
-                      bool recip ) {
+static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
+                             bool recip )
+{
+    point_list lights; lights.clear();
+    point_list normals; normals.clear();
     int i;
 
     cout << "gen vasi " << rwy_info.rwy_no << endl;
@@ -220,7 +236,7 @@ static void gen_vasi( const FGRunway& rwy_info, float alt_m,
     Point3D ref;
     double length_hdg, left_hdg;
     double lon, lat, r;
-   if ( recip ) {
+    if ( recip ) {
         ref = corner[0];
         length_hdg = 360.0 - rwy_info.heading;
     } else {
@@ -244,37 +260,37 @@ static void gen_vasi( const FGRunway& rwy_info, float alt_m,
 
     // unit1
     Point3D pt1 = ref;
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     
     // unit2
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
 
     // unit3
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
 
     // upwind bar
     normal = gen_runway_light_vector( rwy_info, 3.0, recip );
@@ -284,54 +300,74 @@ static void gen_vasi( const FGRunway& rwy_info, float alt_m,
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), length_hdg, 
                         700 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     
     // unit2
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
 
     // unit3
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights->push_back( pt1 );
-    normals->push_back( normal );
+    lights.push_back( pt1 );
+    normals.push_back( normal );
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( lights, false );
+    normals_poly.add_contour( normals, false );
+
+    FGSuperPoly result;
+    result.set_poly( lights_poly );
+    result.set_normals( normals_poly );
+    result.set_material( "RWY_VASI_LIGHTS" );
+
+    return result;
 }
 
 
 void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
-			point_list *lights, point_list *normals ) {
+			superpoly_list &lights ) {
 
     cout << "gen runway lights " << rwy_info.rwy_no << " " << rwy_info.end1_flags << " " << rwy_info.end2_flags << endl;;
 
     // Approach lighting
     if ( rwy_info.end1_flags.substr(2,1) == "V" ) {
-        gen_vasi( rwy_info, alt_m, lights, normals, false );
+        FGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
+        lights.push_back( s );
     }
     if ( rwy_info.end2_flags.substr(2,1) == "V" ) {
-        gen_vasi( rwy_info, alt_m, lights, normals, true );
+        FGSuperPoly s = gen_vasi( rwy_info, alt_m, true );
+        lights.push_back( s );
     }
 
     // Make edge lighting
-    gen_runway_edge_lights( rwy_info, lights, normals, false );
-    gen_runway_edge_lights( rwy_info, lights, normals, true );
+    {
+        FGSuperPoly s = gen_runway_edge_lights( rwy_info, false );
+        lights.push_back( s );
+    }
+    {
+        FGSuperPoly s = gen_runway_edge_lights( rwy_info, true );
+        lights.push_back( s );
+    }
 }

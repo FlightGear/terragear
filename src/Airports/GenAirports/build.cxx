@@ -564,10 +564,9 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     }
 
     // 5th pass: generate runway/taxiway lights
-    point_list rwy_lights; rwy_lights.clear();
-    point_list rwy_light_normals; rwy_light_normals.clear();
+    superpoly_list rwy_lights; rwy_lights.clear();
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	gen_runway_lights( runways[i], alt_m, &rwy_lights, &rwy_light_normals );
+	gen_runway_lights( runways[i], alt_m, rwy_lights );
     }
 
     // generate convex hull (no longer)
@@ -956,36 +955,41 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     }
 
     // add light points
-    FGTriNodes light_nodes;
-    light_nodes.clear();
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
-        p = rwy_lights[i];
-        index = light_nodes.simple_add( p );
+        FGTriNodes light_nodes;
+        light_nodes.clear();
+        point_list lights_v = rwy_lights[i].get_poly().get_contour(0);
+        for ( j = 0; j < (int)lights_v.size(); ++j ) {
+            p = lights_v[j];
+            index = light_nodes.simple_add( p );
+        }
+
+        // calculate light node elevations
+        point_list geod_light_nodes
+            = calc_elevations( root, light_nodes.get_node_list(), 0.5 );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Done with (light) calc_elevations()");
+
+        // this is a little round about, but what we want to calculate the
+        // light node elevations as ground + an offset so we do them
+        // seperately, then we add them back into nodes to get the index
+        // out, but also add them to geod_nodes to maintain consistancy
+        // between these two lists.
+        point_list light_normals = rwy_lights[i].get_normals().get_contour(0);
+        pt_v.clear();
+        pt_n.clear();
+        for ( j = 0; j < (int)geod_light_nodes.size(); ++j ) {
+            p = geod_light_nodes[j];
+            index = nodes.simple_add( p );
+            pt_v.push_back( index );
+            geod_nodes.push_back( p );
+
+            index = normals.unique_add( light_normals[j] );
+            pt_n.push_back( index );
+        }
+        pts_v.push_back( pt_v );
+        pts_n.push_back( pt_n );
+        pt_materials.push_back( rwy_lights[i].get_material() );
     }
-
-    // calculate light node elevations
-    point_list geod_light_nodes
-        = calc_elevations( root, light_nodes.get_node_list(), 0.5 );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with (light) calc_elevations()");
-
-    // this is a little round about, but what we want to calculate the
-    // light node elevations as ground + an offset so we do them
-    // seperately, then we add them back into nodes to get the index
-    // out, but also add them to geod_nodes to maintain consistancy
-    // between these two lists.
-    pt_v.clear();
-    for ( i = 0; i < (int)geod_light_nodes.size(); ++i ) {
-        p = geod_light_nodes[i];
-        index = nodes.simple_add( p );
-        pt_v.push_back( index );
-        geod_nodes.push_back( p );
-
-	index = normals.unique_add( rwy_light_normals[i] );
-	pt_n.push_back( index );
-    }
-    pts_v.push_back( pt_v );
-    pts_n.push_back( pt_n );
-    pt_materials.push_back( "RWY_LIGHTS" );
 
     // calculate wgs84 mapping of nodes
     point_list wgs84_nodes;
