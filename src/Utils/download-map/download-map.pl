@@ -2,18 +2,21 @@
 
 use GD;
 
+$version = "0.9.2";
 if ( $#ARGV < 0 ) {
-    $scenerydir = "/stage/fgfs01/ftp/pub/fgfs/Scenery";
-} else {
-    $scenerydir = shift(@ARGV);
+    push( @ARGV, "/stage/fgfs01/ftp/pub/fgfs/Scenery-" . $version );
 }
+
+$ftpurl = "ftp://ftp.flightgear.org/pub/fgfs/Scenery-" . $version;
+$htmlout = "scenery-" . $version . ".html";
+$mapout = "map-" . $version . ".png";
 $outputdir = "mapresult/";
 
 $daysecs = 3600*24;
 
 # load raw image
-open( INPUT, "rawmap.gif" ) || die "cannot open raw image\n";
-$im = newFromGif GD::Image( INPUT );
+open( INPUT, "rawmap.png" ) || die "cannot open raw image\n";
+$im = newFromPng GD::Image( INPUT );
 ($width, $height) = $im->getBounds();
 close( INPUT );
 
@@ -50,86 +53,111 @@ $im->line( $width / 2, 0, $width / 2, $height, $red3 );
 $im->line( 0, $height / 2, $width, $height / 2, $red3 );
 
 # create html file
-open ( HTML, ">$outputdir/world-scenery.html" ) || 
-    die "cannot open $outputdir/world-scenery.html\n";
+open ( HTML, ">$outputdir/$htmlout" ) || 
+    die "cannot open $outputdir/$htmlout\n";
 print HTML "<HTML>\n";
-print HTML "<TITLE>FGFS Scenery Downloads</TITLE>\n";
+print HTML "<TITLE>FGFS Scenery Downloads Version $version</TITLE>\n";
 print HTML "<BODY>\n";
-print HTML "<IMG SRC=\"download-map.gif\" WIDTH=\"$width\" HEIGHT=\"$height\" ";
+print HTML "<H2>FGFS Scenery Downloads Version $version</H2>\n";
+print HTML "Click on any of the 10x10 degree chunks in the image below to\n";
+print HTML "download that area.<BR>\n";
+print HTML "An area with no corresponding link means that area is all ocean\n";
+print HTML "so there is nothing to download.  (Or if a rebuild is in\n";
+print HTML "progress, that chunk may not yet be generated.)\n";
+print HTML "<P>\n";
+print HTML "<IMG SRC=\"$mapout\" WIDTH=\"$width\" HEIGHT=\"$height\" ";
 print HTML "USEMAP=\"#map\">\n";
 print HTML "<MAP NAME=\"map\">\n";
 
-@files = `ls $scenerydir/*.tar.gz`;
+$toggle = 0;
+foreach $dir ( @ARGV ) {
+    @files = `ls $dir/*.tar.gz`;
 
-foreach $file ( @files ) {
-    chop($file);
+    foreach $file ( @files ) {
+        chop($file);
 
-    ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime,
-     $mtime, $ctime, $blksize, $blocks) = stat($file);
+        ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime,
+         $mtime, $ctime, $blksize, $blocks) = stat($file);
 
-    $mb = $size / (1024*1024);
-    # print "$file size = $mb\n";
+        $mb = $size / (1024*1024);
+        # print "$file size = $mb\n";
 
-    # recover the modification date from the stat
-    ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
-        localtime($mtime);
+        # recover the modification date from the stat
+        ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
+            localtime($mtime);
 
-    $date = sprintf("%2d/%02d/%02d", $mon + 1, $mday, 1900 + $year);
+        $date = sprintf("%2d/%02d/%02d", $mon + 1, $mday, 1900 + $year);
 
-    $age = (time() - $mtime) / $daysecs;
+        $age = (time() - $mtime) / $daysecs;
 
-    if ( $age < 7 ) {
-	$color1 = $green1;
-	$color2 = $green2;
-    } elsif ( $age < 14 ) {
-	$color1 = $yellow1;
-	$color2 = $yellow2;
-    } else {
-	$color1 = $orange1;
-	$color2 = $orange2;
+        if ( !$toggle ) {
+            if ( $age < 7 ) {
+                $color1 = $green1;
+                $color2 = $green2;
+            } elsif ( $age < 14 ) {
+                $color1 = $yellow1;
+                $color2 = $yellow2;
+            } else {
+                $color1 = $orange1;
+                $color2 = $orange2;
+            }
+        } else {
+            if ( $age < 7 ) {
+                $color1 = $orange1;
+                $color2 = $orange2;
+            } elsif ( $age < 14 ) {
+                $color1 = $yellow1;
+                $color2 = $yellow2;
+            } else {
+                $color1 = $orange1;
+                $color2 = $orange2;
+            }
+        }
+
+        $file =~ s/.*\///g;
+        $file =~ s/.tar.gz//;
+        # print "$file\n";
+        ($ew, $lon, $ns, $lat) = $file =~ m/(\w)(\d\d\d)(\w)(\d\d)/;
+        # print "$ew $lon, $ns, $lat\n";
+
+        if ( $ew eq "w" ) {
+            $lon = $lon * -1;
+        } else {
+            $lon = $lon * 1;
+        }
+
+        if ( $ns eq "s" ) {
+            $lat = $lat * -1;
+        } else {
+            $lat = $lat * 1;
+        }
+
+        # print "$lon $lat\n";
+        $x1 = ($lon + 180) * $xstep / 10.0;
+        $y1 = $height - ($lat + 90) * $ystep / 10.0;
+        $x2 = ($lon + 10 + 180) * $xstep / 10.0;
+        $y2 = $height - ($lat + 10 + 90) * $ystep / 10.0;
+
+        $im->line($x1, $y1, $x2, $y2, $color1);
+        $im->line($x1, $y2, $x2, $y1, $color1);
+        $im->rectangle($x1, $y1, $x2, $y2, $color2);
+
+        # $y1 = $height - $y1;
+        # $y2 = $height - $y2;
+        print HTML "<AREA SHAPE=rect COORDS=$x1,$y2,$x2,$y1 ";
+        print HTML "HREF=$ftpurl/$file.tar.gz ";
+        printf(HTML "ALT=\"%s  %.2f Mb  $date\">\n", $file, $mb);
     }
 
-    $file =~ s/.*\///g;
-    $file =~ s/.tar.gz//;
-    # print "$file\n";
-    ($ew, $lon, $ns, $lat) = $file =~ m/(\w)(\d\d\d)(\w)(\d\d)/;
-    # print "$ew $lon, $ns, $lat\n";
-
-    if ( $ew eq "w" ) {
-	$lon = $lon * -1;
-    } else {
-	$lon = $lon * 1;
-    }
-
-    if ( $ns eq "s" ) {
-	$lat = $lat * -1;
-    } else {
-	$lat = $lat * 1;
-    }
-
-    # print "$lon $lat\n";
-    $x1 = ($lon + 180) * $xstep / 10.0;
-    $y1 = $height - ($lat + 90) * $ystep / 10.0;
-    $x2 = ($lon + 10 + 180) * $xstep / 10.0;
-    $y2 = $height - ($lat + 10 + 90) * $ystep / 10.0;
-
-    $im->line($x1, $y1, $x2, $y2, $color1);
-    $im->line($x1, $y2, $x2, $y1, $color1);
-    $im->rectangle($x1, $y1, $x2, $y2, $color2);
-
-    # $y1 = $height - $y1;
-    # $y2 = $height - $y2;
-    print HTML "<AREA SHAPE=rect COORDS=$x1,$y2,$x2,$y1 ";
-    print HTML "HREF=ftp://ftp.flightgear.org/pub/fgfs/Scenery/$file.tar.gz ";
-    printf(HTML "ALT=\"%s  %.2f Mb  $date\">\n", $file, $mb);
+    $toggle = !$toggle;
 }
 
 # write out gif
-$gif_data = $im->gif;
-open( OUTPUT, ">$outputdir/download-map.gif" ) || 
-    die "cannot open output $outputdir/download-map.gif\n";
+$png_data = $im->png;
+open( OUTPUT, ">$outputdir/$mapout" ) || 
+    die "cannot open output $outputdir/$mapout\n";
 binmode OUTPUT;
-print OUTPUT $gif_data;
+print OUTPUT $png_data;
 close OUTPUT;
 
 # finish off html file

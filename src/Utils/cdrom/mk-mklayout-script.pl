@@ -1,8 +1,16 @@
 #!/usr/bin/perl
 
-$layout_master = "./layout-0.9.2";
 $source = "/stage/fgfs03/curt/Scenery-0.9.2";
-$dest = "./Images";
+
+$layout_master = shift( @ARGV );
+$dest = shift( @ARGV );
+
+if ( $layout_master eq "" ) {
+    $layout_master = "./layout-disks-0.9.2";
+}
+if ( $dest eq "" ) {
+    $dest = "./Images";
+}
 
 @rawfiles = `ls $source/*`;
 
@@ -14,7 +22,14 @@ while ( <LAYOUT> ) {
     push( @layout, $_ );
 }
 
-system( "/bin/rm -rf $dest" );
+print "Delete current $dest (y/N): ";
+$response = <STDIN>;
+chomp($response);
+if ( $response eq "y" || $response eq "Y" ) {
+    system( "/bin/rm -rf $dest" );
+} else {
+    die "Stopped with no action.\n";
+}
 
 foreach $file ( @layout ) {
     $base = $file;
