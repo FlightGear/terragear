@@ -300,7 +300,7 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
     out.erase();
 
     double angle_cutoff = 10.0 * SGD_DEGREES_TO_RADIANS;
-    double area_cutoff = 0.000008;
+    double area_cutoff = 0.00000008;
     double min_angle;
     double area;
 
@@ -480,13 +480,25 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	    SG_LOG( SG_CLIPPER, SG_DEBUG, get_area_name( (AreaType)i ) 
 		    << " = " << current.contours() );
 
+            tmp = current;
+#if 0
+            // Update: 9/18/2001 from David Megginson: In clip_all(),
+            // no longer clip polygons against landmass.  This is bad
+            // for many reasons, not limited to the fact that roads,
+            // etc. may cross small bays and inlets.  It was also
+            // (once again) overstraining gpc and creating artifacts.
+            // Besides, since vmap0 treats the Great Lakes as ocean
+            // (i.e. not part of landmass), it was essential not to
+            // clip lakes against landmass anyway (or else all of the
+            // Great Lakes would have appeared as ocean areas at sea
+            // level).
+
 	    // if not a hole, clip the area to the land_mask
 	    if ( i != HoleArea ) {
 		// clip to land mask
 		tmp = polygon_int( current, land_mask );
-	    } else {
-		tmp = current;
 	    }
+#endif
 
 	    // if a water area, cut out potential islands
 	    if ( i == LakeArea || i == IntLakeArea || i == ReservoirArea ||
