@@ -1656,12 +1656,22 @@ void build_runway( const FGRunway& rwy_info,
         if ( !rwy_info.really_taxiway ) {
             material = "pc_";	// concrete
         } else {
-            material = "pc_taxiway";
+            if ( rwy_info.width > 150 ) {
+                material = "pc_tiedown";
+            } else {
+                material = "pc_taxiway";
+            }
         }
     } else if ( surface_flag == "D" ) {
         material = "dirt_rwy";
     } else if ( surface_flag == "G" ) {
         material = "grass_rwy";
+    } else if ( surface_flag == "L" ) {
+        if ( rwy_info.really_taxiway ) {
+            material = "lakebed_taxiway";
+        } else {
+            material = "dirt_rwy";
+        }
     } else if ( surface_flag == "T" ) {
         material = "grass_rwy";
     } else if ( surface_flag == "W" ) {
