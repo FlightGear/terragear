@@ -73,7 +73,7 @@ void gen_simple_rwy( const FGRunway& rwy_info,
 	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
 	
-    FGSuperPoly sp;
+    TGSuperPoly sp;
     FGTexParams tp;
 
     TGPolygon clipped_a = polygon_diff( runway_a, *accum );

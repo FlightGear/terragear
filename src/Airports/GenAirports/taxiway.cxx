@@ -73,7 +73,7 @@ void gen_taxiway( const FGRunway& rwy_info,
 	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
 	
-    FGSuperPoly sp;
+    TGSuperPoly sp;
     FGTexParams tp;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "len = " << rwy_info.length);

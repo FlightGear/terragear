@@ -532,7 +532,7 @@ void build_airport( string airport_raw, float alt_m,
 	taxiways.push_back( taxi );
     }
 
-    FGSuperPoly sp;
+    TGSuperPoly sp;
     FGTexParams tp;
 
     // First pass: generate the precision runways since these have
@@ -1036,7 +1036,7 @@ void build_airport( string airport_raw, float alt_m,
             = calc_elevations( root, light_nodes.get_node_list(), 0.5 );
         TGPolygon p;
         p.add_contour( geod_light_nodes, 0 );
-        FGSuperPoly s;
+        TGSuperPoly s;
         s.set_poly( p );
         tmp_light_list.push_back( s );
 

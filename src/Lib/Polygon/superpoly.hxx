@@ -47,7 +47,7 @@ SG_USING_STD(string);
 SG_USING_STD(vector);
 
 
-class FGSuperPoly {
+class TGSuperPoly {
 
 private:
 
@@ -62,8 +62,8 @@ private:
 public:
 
     // Constructor and destructor
-    FGSuperPoly( void );
-    ~FGSuperPoly( void );
+    TGSuperPoly( void );
+    ~TGSuperPoly( void );
 
     inline string get_material() const { return material; }
     inline void set_material( const string &m ) { material = m; }
@@ -92,7 +92,7 @@ public:
 };
 
 
-typedef vector < FGSuperPoly > superpoly_list;
+typedef vector < TGSuperPoly > superpoly_list;
 typedef superpoly_list::iterator superpoly_list_iterator;
 typedef superpoly_list::const_iterator const_superpoly_list_iterator;
 

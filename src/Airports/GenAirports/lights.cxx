@@ -148,7 +148,7 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
     lights_poly.add_contour( w_lights, false );
     normals_poly.add_contour( w_normals, false );
 
-    FGSuperPoly white;
+    TGSuperPoly white;
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     if ( kind == "H" ) {
@@ -164,7 +164,7 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
     lights_poly.add_contour( y_lights, false );
     normals_poly.add_contour( y_normals, false );
 
-    FGSuperPoly yellow;
+    TGSuperPoly yellow;
     yellow.set_poly( lights_poly );
     yellow.set_normals( normals_poly );
     if ( kind == "H" ) {
@@ -254,7 +254,7 @@ static superpoly_list gen_taxiway_edge_lights( const FGRunway& rwy_info,
     lights_poly.add_contour( b_lights, false );
     normals_poly.add_contour( b_normals, false );
 
-    FGSuperPoly blue;
+    TGSuperPoly blue;
     blue.set_poly( lights_poly );
     blue.set_normals( normals_poly );
     blue.set_material( "RWY_BLUE_TAXIWAY_LIGHTS" );
@@ -351,7 +351,7 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 
-    FGSuperPoly green;
+    TGSuperPoly green;
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
@@ -372,7 +372,7 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
     lights_poly.add_contour( r_lights, false );
     normals_poly.add_contour( r_normals, false );
 
-    FGSuperPoly red;
+    TGSuperPoly red;
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
     if ( kind == "H" ) {
@@ -470,7 +470,7 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
         lights_poly.add_contour( w_lights, false );
         normals_poly.add_contour( w_normals, false );
 
-        FGSuperPoly white;
+        TGSuperPoly white;
         white.set_poly( lights_poly );
         white.set_normals( normals_poly );
         white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
@@ -484,7 +484,7 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
         lights_poly.add_contour( r_lights, false );
         normals_poly.add_contour( r_normals, false );
 
-        FGSuperPoly red;
+        TGSuperPoly red;
         red.set_poly( lights_poly );
         red.set_normals( normals_poly );
         red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
@@ -497,7 +497,7 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
 
 
 // generate touch down zone lights
-static FGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
+static TGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
                                               float alt_m, bool recip )
 {
     point_list lights; lights.clear();
@@ -590,7 +590,7 @@ static FGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
-    FGSuperPoly result;
+    TGSuperPoly result;
     result.set_poly( lights_poly );
     result.set_normals( normals_poly );
     result.set_material( "RWY_WHITE_LIGHTS" );
@@ -600,7 +600,7 @@ static FGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
 
 
 // generate a simple 2 bar VASI for a 3 degree approach
-static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
                              bool recip )
 {
     point_list lights; lights.clear();
@@ -729,7 +729,7 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
-    FGSuperPoly result;
+    TGSuperPoly result;
     result.set_poly( lights_poly );
     result.set_normals( normals_poly );
     result.set_material( "RWY_VASI_LIGHTS" );
@@ -741,7 +741,7 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
 
 
 // generate a simple PAPI for a 3 degree approach 
-static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
                              bool recip )
 {
     point_list lights; lights.clear();
@@ -825,7 +825,7 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
-    FGSuperPoly result;
+    TGSuperPoly result;
     result.set_poly( lights_poly );
     result.set_normals( normals_poly );
     result.set_material( "RWY_VASI_LIGHTS" );
@@ -837,7 +837,7 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
 
 
 // generate REIL lights
-static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
                              bool recip )
 {
     point_list lights; lights.clear();
@@ -910,7 +910,7 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
-    FGSuperPoly result;
+    TGSuperPoly result;
     result.set_poly( lights_poly );
     result.set_normals( normals_poly );
     result.set_material( "RWY_REIL_LIGHTS" );
@@ -1381,7 +1381,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 
-    FGSuperPoly green;
+    TGSuperPoly green;
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
@@ -1392,7 +1392,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     lights_poly.add_contour( r_lights, false );
     normals_poly.add_contour( r_normals, false );
 
-    FGSuperPoly red;
+    TGSuperPoly red;
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
     red.set_material( "RWY_RED_LIGHTS" );
@@ -1403,7 +1403,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     lights_poly.add_contour( w_lights, false );
     normals_poly.add_contour( w_normals, false );
 
-    FGSuperPoly white;
+    TGSuperPoly white;
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     white.set_material( "RWY_WHITE_LIGHTS" );
@@ -1421,7 +1421,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         lights_poly.add_contour( s_lights, false );
         normals_poly.add_contour( s_normals, false );
 
-        FGSuperPoly sequenced;
+        TGSuperPoly sequenced;
         sequenced.set_poly( lights_poly );
         sequenced.set_normals( normals_poly );
         sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
@@ -1435,7 +1435,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
 
 // generate ODALS lights
-static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
                               bool recip )
 {
     point_list lights; lights.clear();
@@ -1519,7 +1519,7 @@ static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
-    FGSuperPoly result;
+    TGSuperPoly result;
     result.set_poly( lights_poly );
     result.set_normals( normals_poly );
     result.set_material( "RWY_ODALS_LIGHTS" );
@@ -1743,7 +1743,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 
-    FGSuperPoly green;
+    TGSuperPoly green;
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
@@ -1754,7 +1754,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     lights_poly.add_contour( r_lights, false );
     normals_poly.add_contour( r_normals, false );
 
-    FGSuperPoly red;
+    TGSuperPoly red;
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
     red.set_material( "RWY_RED_LIGHTS" );
@@ -1765,7 +1765,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     lights_poly.add_contour( w_lights, false );
     normals_poly.add_contour( w_normals, false );
 
-    FGSuperPoly white;
+    TGSuperPoly white;
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     white.set_material( "RWY_WHITE_LIGHTS" );
@@ -1783,7 +1783,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
         lights_poly.add_contour( s_lights, false );
         normals_poly.add_contour( s_normals, false );
 
-        FGSuperPoly sequenced;
+        TGSuperPoly sequenced;
         sequenced.set_poly( lights_poly );
         sequenced.set_normals( normals_poly );
         sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
@@ -2009,7 +2009,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 
-    FGSuperPoly green;
+    TGSuperPoly green;
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
@@ -2020,7 +2020,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     lights_poly.add_contour( r_lights, false );
     normals_poly.add_contour( r_normals, false );
 
-    FGSuperPoly red;
+    TGSuperPoly red;
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
     red.set_material( "RWY_RED_LIGHTS" );
@@ -2031,7 +2031,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     lights_poly.add_contour( w_lights, false );
     normals_poly.add_contour( w_normals, false );
 
-    FGSuperPoly white;
+    TGSuperPoly white;
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     white.set_material( "RWY_WHITE_LIGHTS" );
@@ -2049,7 +2049,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
         lights_poly.add_contour( s_lights, false );
         normals_poly.add_contour( s_normals, false );
 
-        FGSuperPoly sequenced;
+        TGSuperPoly sequenced;
         sequenced.set_poly( lights_poly );
         sequenced.set_normals( normals_poly );
         sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
@@ -2106,41 +2106,41 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
     // Touchdown zone lighting
     if ( rwy_info.end1_flags.substr(0,1) == "Y" ) {
-        FGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, false );
+        TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, false );
         lights.push_back( s );
     }
     if ( rwy_info.end2_flags.substr(0,1) == "Y" ) {
-        FGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, true );
+        TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
     // REIL lighting
     if ( rwy_info.end1_flags.substr(1,1) == "Y" ) {
-        FGSuperPoly s = gen_reil( rwy_info, alt_m, false );
+        TGSuperPoly s = gen_reil( rwy_info, alt_m, false );
         lights.push_back( s );
     }
     if ( rwy_info.end2_flags.substr(1,1) == "Y" ) {
-        FGSuperPoly s = gen_reil( rwy_info, alt_m, true );
+        TGSuperPoly s = gen_reil( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
     // PAPI lighting
     if ( rwy_info.end1_flags.substr(2,1) == "P" ) {
-        FGSuperPoly s = gen_papi( rwy_info, alt_m, false );
+        TGSuperPoly s = gen_papi( rwy_info, alt_m, false );
         lights.push_back( s );
     }
     if ( rwy_info.end2_flags.substr(2,1) == "P" ) {
-        FGSuperPoly s = gen_papi( rwy_info, alt_m, true );
+        TGSuperPoly s = gen_papi( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
     // VASI lighting
     if ( rwy_info.end1_flags.substr(2,1) == "V" ) {
-        FGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
+        TGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
         lights.push_back( s );
     }
     if ( rwy_info.end2_flags.substr(2,1) == "V" ) {
-        FGSuperPoly s = gen_vasi( rwy_info, alt_m, true );
+        TGSuperPoly s = gen_vasi( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
@@ -2261,11 +2261,11 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
     // ODALS Omni-directional approach light system
     if ( rwy_info.end1_flags.substr(3,1) == "L" ) {
-        FGSuperPoly s = gen_odals( rwy_info, alt_m, false );
+        TGSuperPoly s = gen_odals( rwy_info, alt_m, false );
         lights.push_back( s );
     }
     if ( rwy_info.end2_flags.substr(3,1) == "L" ) {
-        FGSuperPoly s = gen_odals( rwy_info, alt_m, true );
+        TGSuperPoly s = gen_odals( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 

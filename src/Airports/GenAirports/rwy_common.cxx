@@ -206,7 +206,7 @@ void gen_runway_section( const FGRunway& rwy_info,
 
     // Create the final output and push on to the runway super_polygon
     // list
-    FGSuperPoly sp;
+    TGSuperPoly sp;
     sp.erase();
     sp.set_poly( split );
     sp.set_material( prefix + material );

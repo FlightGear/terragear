@@ -45,7 +45,7 @@ enum fgSideType {
 // it was successful.
 
 TGPolygon horizontal_clip( const TGPolygon& in, const double y, 
-		      const fgSideType side );
+                           const fgSideType side );
 
 
 #endif // _SIMPLE_CLIP_HXX

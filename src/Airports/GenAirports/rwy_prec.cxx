@@ -86,7 +86,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     // into its various sections
     //
 
-    FGSuperPoly sp;
+    TGSuperPoly sp;
     FGTexParams tp;
 
     // we add 2' to the length for texture overlap.  This puts the
