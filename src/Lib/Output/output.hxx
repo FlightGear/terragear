@@ -46,8 +46,14 @@
 
 void write_polygon( const TGPolygon& poly, const string& base );
 
-// update index
-void write_index(const string& base, const SGBucket& b, const string& name);
+// update index file (list of objects to be included in final scenery build)
+void write_index( const string& base, const SGBucket& b, const string& name );
+
+// update index file (list of shared objects to be included in final
+// scenery build)
+void write_index_shared( const string &base, const SGBucket &b,
+                         const Point3D &p, const string& name,
+                         const double &heading );
 
 void write_boundary( const string& base, const SGBucket& b, 
 		     const TGPolygon& bounds, long int p_index );

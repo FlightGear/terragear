@@ -67,8 +67,9 @@ void write_polygon( const TGPolygon& poly, const string& base ) {
 }
 
 
-// update index
-void write_index(const string& base, const SGBucket& b, const string& name) {
+// update index file (list of objects to be included in final scenery build)
+void write_index( const string& base, const SGBucket& b, const string& name )
+{
     string dir = base + "/" + b.gen_base_path();
 #ifdef _MSC_VER
     fg_mkdir( dir.c_str() );
@@ -88,6 +89,36 @@ void write_index(const string& base, const SGBucket& b, const string& name) {
     }
 
     fprintf( fp, "OBJECT %s\n", name.c_str() );
+    fclose( fp );
+}
+
+
+// update index file (list of shared objects to be included in final
+// scenery build)
+void write_index_shared( const string &base, const SGBucket &b,
+                         const Point3D &p, const string& name,
+                         const double &heading )
+{
+    string dir = base + "/" + b.gen_base_path();
+#ifdef _MSC_VER
+    fg_mkdir( dir.c_str() );
+#else
+    string command = "mkdir -p " + dir;
+    system(command.c_str());
+#endif
+
+    string file = dir + "/" + b.gen_index_str() + ".ind";
+    // string file = dir + "/" + name;
+    cout << "Output file = " << file << endl;
+
+    FILE *fp;
+    if ( (fp = fopen( file.c_str(), "a" )) == NULL ) {
+	cout << "ERROR: opening " << file << " for writing!" << endl;
+	exit(-1);
+    }
+
+    fprintf( fp, "OBJECT_SHARED %s %.6f %.6f %.1f %.2f\n", name.c_str(),
+             p.lon(), p.lat(), p.elev(), heading );
     fclose( fp );
 }
 
