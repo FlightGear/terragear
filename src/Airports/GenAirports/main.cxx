@@ -310,7 +310,7 @@ int main( int argc, char **argv ) {
 	    // empty, skip
 	} else if ( line[0] == '#' ) {
 	    // comment, skip
-	} else if ( (line[0] == 'A') || (line[0] == 'S') ) {
+	} else if ( (line[0] == 'A') || (line[0] == 'H') || (line[0] == 'S') ) {
 	    // start of airport record
 	    airport = line;
 
