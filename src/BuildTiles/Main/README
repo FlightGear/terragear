@@ -1,0 +1,17 @@
+Sample command line to build a specific tile-id:
+
+./fgfs-construct  --min-angle=10 --work-dir=/stage/fgfs04/curt/Work --output-dir=/stage/fgfs04/curt/FlightGear --tile-id=942050 /stage/fgfs04/curt/Work/AirportArea /stage/fgfs04/curt/Work/AirportObj /stage/fgfs04/curt/Work/GSHHS-Ponds /stage/fgfs04/curt/Work/GSHHS-Islands /stage/fgfs04/curt/Work/GSHHS-Lakes /stage/fgfs04/curt/Work/GSHHS-LandMass /stage/fgfs04/curt/Work/USA-Hydro /stage/fgfs04/curt/Work/USA-Urban /stage/fgfs04/curt/Work/SRTM-1 2>&1 | less
+
+Sample command line to build tiles intersecting an area specified by a
+point and a lat/lon distance (in degrees.)
+
+./fgfs-construct  --min-angle=0 --work-dir=/stage/fgfs04/curt/Work --output-dir=/stage/fgfs04/curt/FlightGear --lon=-122.374843 --lat=37.619002 --xdist=0.5 --ydist=0.5 --cover=/stage/fgfs04/curt/Work/LC-Global/gusgs2_0ll.img.old /stage/fgfs04/curt/Work/AirportArea /stage/fgfs04/curt/Work/AirportObj /stage/fgfs04/curt/Work/GSHHS-Ponds /stage/fgfs04/curt/Work/GSHHS-Islands /stage/fgfs04/curt/Work/GSHHS-Lakes /stage/fgfs04/curt/Work/GSHHS-LandMass /stage/fgfs04/curt/Work/USA-Hydro /stage/fgfs04/curt/Work/USA-Urban /stage/fgfs04/curt/Work/SRTM-1
+
+Sample command line with standard airports:
+
+./fgfs-construct --output-dir=. --work-dir=/stage/fgfs01/curt/Work --cover=/stage/fgfs01/curt/Work/LC-Global/gusgs2_0ll.img --tile-id=958424 /stage/fgfs01/curt/Work/AirportArea /stage/fgfs01/curt/Work/AirportObj /stage/fgfs01/curt/Work/GSHHS-Ponds /stage/fgfs01/curt/Work/GSHHS-Islands /stage/fgfs01/curt/Work/GSHHS-Lakes /stage/fgfs01/curt/Work/GSHHS-LandMass /stage/fgfs01/curt/Work/USA-Hydro /stage/fgfs01/curt/Work/USA-Urban /stage/fgfs01/curt/Work/DEM-3 /stage/fgfs01/curt/Work/DEM-30
+
+Similar command line but using Photo airports:
+
+./fgfs-construct --output-dir=. --work-dir=/stage/fgfs01/curt/Work --cover=/stage/fgfs01/curt/Work/LC-Global/gusgs2_0ll.img --tile-id=958424 /stage/fgfs01/curt/Work/PhotoArea /stage/fgfs01/curt/Work/PhotoObj /stage/fgfs01/curt/Work/GSHHS-Ponds /stage/fgfs01/curt/Work/GSHHS-Islands /stage/fgfs01/curt/Work/GSHHS-Lakes /stage/fgfs01/curt/Work/GSHHS-LandMass /stage/fgfs01/curt/Work/USA-Hydro /stage/fgfs01/curt/Work/USA-Urban /stage/fgfs01/curt/Work/DEM-3 /stage/fgfs01/curt/Work/DEM-30
+

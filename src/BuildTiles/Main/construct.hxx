@@ -83,6 +83,10 @@ private:
     // clipped polygons (gpc format)
     TGPolyList clipped_polys;
 
+    // Fixed elevations (from polygon input data with z values
+    // pre-specified)
+    TGTriNodes fixed_elevations;
+
     // raw node list (after triangulation)
     TGTriNodes tri_nodes;
 
@@ -147,6 +151,11 @@ public:
     // clipped polygons
     inline TGPolyList get_clipped_polys() const { return clipped_polys; }
     inline void set_clipped_polys( TGPolyList p ) { clipped_polys = p; }
+
+    // Fixed elevations (from polygon input data with z values
+    // pre-specified)
+    inline TGTriNodes get_fixed_elevations() const { return fixed_elevations; }
+    inline void set_fixed_elevations( TGTriNodes n ) { fixed_elevations = n; }
 
     // node list (after triangulation)
     inline TGTriNodes get_tri_nodes() const { return tri_nodes; }

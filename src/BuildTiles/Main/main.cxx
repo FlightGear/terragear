@@ -404,6 +404,7 @@ static int load_polys( TGConstruct& c ) {
 
     // update main data repository
     c.set_clipped_polys( clipper.get_polys_clipped() );
+    c.set_fixed_elevations( clipper.get_fixed_elevations() );
 
     return count;
 }
@@ -494,11 +495,19 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
     point_list raw_nodes = c.get_tri_nodes().get_node_list();
 
     for ( i = 0; i < (int)raw_nodes.size(); ++i ) {
-        cout << "  fixing = " << raw_nodes[i] << " = ";
-        z = array.interpolate_altitude( raw_nodes[i].x() * 3600.0, 
-                                        raw_nodes[i].y() * 3600.0 );
+        cout << "  fixing = " << raw_nodes[i] << " ";
+        int index = c.get_fixed_elevations().find( raw_nodes[i] );
+        if ( index >= 0 ) {
+            // found an elevation we want to preserve
+            z = c.get_fixed_elevations().get_node(index).z();
+            cout << " forced = " << z << endl;
+        } else {
+            // interpolate point from DEM data.
+            z = array.interpolate_altitude( raw_nodes[i].x() * 3600.0, 
+                                            raw_nodes[i].y() * 3600.0 );
+            cout << " interpolated = " << z << endl;
+        }
         raw_nodes[i].setz( z );
-        cout << raw_nodes[i].z() << endl;
     }
 
     cout << "flattening ocean connected nodes" << endl;

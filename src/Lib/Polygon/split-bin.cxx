@@ -89,6 +89,9 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
     */
 
     result = polygon_int( base, shape );
+    if ( preserve3d ) {
+        result.inherit_elevations( shape );
+    }
 
     if ( result.contours() > 0 ) {
 	long int t_index = b.gen_index();

@@ -500,8 +500,8 @@ void build_airport( string airport_raw, float alt_m,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "P" ) {
 	    build_runway( runways[i], elev * SG_FEET_TO_METER,
-			  &rwy_polys, &texparams, &accum, &apt_base,
-                          &apt_clearing );
+			  &rwy_polys, &texparams, &accum,
+                          &apt_base, &apt_clearing );
 	}
     }
 
@@ -510,8 +510,8 @@ void build_airport( string airport_raw, float alt_m,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "R" || type_flag == "V" ) {
 	    build_runway( runways[i], elev * SG_FEET_TO_METER,
-			  &rwy_polys, &texparams, &accum, &apt_base,
-                          &apt_clearing );
+			  &rwy_polys, &texparams, &accum,
+                          &apt_base, &apt_clearing );
 	}
     }
 
@@ -521,8 +521,8 @@ void build_airport( string airport_raw, float alt_m,
 	if ( type_flag != string("P") && type_flag != string("R")
              && type_flag != string("V") ) {
 	    build_runway( runways[i], elev * SG_FEET_TO_METER,
-			  &rwy_polys, &texparams, &accum, &apt_base,
-                          &apt_clearing );
+			  &rwy_polys, &texparams, &accum,
+                          &apt_base, &apt_clearing );
 	}
     }
 
@@ -929,6 +929,8 @@ void build_airport( string airport_raw, float alt_m,
     point_list geod_nodes = calc_elevations( apt_surf, nodes.get_node_list(),
                                              0.0 );
     divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
+    cout << "DIVIDED" << endl;
+    cout << divided_base << endl;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 

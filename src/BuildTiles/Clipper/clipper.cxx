@@ -129,7 +129,9 @@ bool TGClipper::load_polys(const string& path) {
             }
 	    p = Point3D(startx, starty, startz);
 	    poly.add_node( i, p );
-            fixed_elevations.unique_add( p );
+            if ( poly3d ) {
+                fixed_elevations.unique_add( p );
+            }
 
 	    for ( j = 1; j < count - 1; ++j ) {
 		in >> x;
@@ -141,7 +143,9 @@ bool TGClipper::load_polys(const string& path) {
                 }
 		p = Point3D( x, y, z );
 		poly.add_node( i, p );
-                fixed_elevations.unique_add( p );
+                if ( poly3d ) {
+                    fixed_elevations.unique_add( p );
+                }
 	    }
 
 	    in >> lastx;
@@ -159,7 +163,9 @@ bool TGClipper::load_polys(const string& path) {
 	    } else {
 		p = Point3D( lastx, lasty, lastz );
 		poly.add_node( i, p );
-                fixed_elevations.unique_add( p );
+                if ( poly3d ) {
+                    fixed_elevations.unique_add( p );
+                }
 	    }
 	}
 
