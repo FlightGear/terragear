@@ -175,6 +175,9 @@ LIBS="$base_LIBS"
 AC_SUBST(base_LIBS)
 AC_SUBST(opengl_LIBS)
 
+# needed for plib 1.3.x and later 
+AC_CHECK_LIB(plibul, ulInit,,,)
+
 AM_CONDITIONAL(HAVE_XWINDOWS, test "x$ac_cv_lib_X11_XCreateWindow" = "xyes" )
 
 dnl Check for "plib" without which we cannot go on
