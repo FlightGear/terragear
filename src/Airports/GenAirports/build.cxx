@@ -754,6 +754,9 @@ void build_airport( string airport_raw, string_list& runways_raw,
     nodes.clear();
     texcoords.clear();
 
+    group_list pts_v; pts_v.clear();
+    string_list pt_materials; pt_materials.clear();
+
     group_list tris_v; tris_v.clear();
     group_list tris_tc; tris_tc.clear();
     string_list tri_materials; tri_materials.clear();
@@ -764,7 +767,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     Point3D tc;
     int index;
-    int_list tri_v, strip_v;
+    int_list pt_v, tri_v, strip_v;
     int_list tri_tc, strip_tc;
 
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
@@ -820,16 +823,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	tris_tc.push_back( base_tc );
     }
 
-    // add lights
-    FGTriNodes light_nodes;
-    light_nodes.clear();
-    for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
-	light_nodes.simple_add( rwy_lights[i] );
-    }
-
     // calculate node elevations
     point_list geod_nodes = calc_elevations( root, nodes.get_node_list() );
-    point_list geod_lights = calc_elevations( root, light_nodes.get_node_list() );
     cout << "Done with calc_elevations()" << endl;
 
     // add base skirt (to hide potential cracks)
@@ -908,6 +903,35 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	strips_tc.push_back( base_tc );
     }
 
+    // add light points
+    FGTriNodes light_nodes;
+    light_nodes.clear();
+    for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
+        p = rwy_lights[i];
+        index = light_nodes.simple_add( p );
+    }
+
+    // calculate light node elevations
+    point_list geod_light_nodes
+        = calc_elevations( root, light_nodes.get_node_list() );
+    cout << "Done with (light) calc_elevations()" << endl;
+
+    // this is a little round about, but what we want to calculate the
+    // light node elevations as ground + an offset so we do them
+    // seperately, then we add them back into nodes to get the index
+    // out, but also geod_nodes to maintain consistancy between these
+    // two lists.
+    pt_v.clear();
+    for ( i = 0; i < (int)geod_light_nodes.size(); ++i ) {
+        p = geod_light_nodes[i];
+        p.setz( p.z() + 0.5 );
+        index = nodes.simple_add( p );
+        pt_v.push_back( index );
+        geod_nodes.push_back( p );
+    }
+    pts_v.push_back( pt_v );
+    pt_materials.push_back( "LIGHTS" );
+
     // calculate wgs84 mapping of nodes
     point_list wgs84_nodes;
     for ( i = 0; i < (int)geod_nodes.size(); ++i ) {
@@ -916,17 +940,10 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	p.setz( geod_nodes[i].z() );
 	wgs84_nodes.push_back( sgGeodToCart( p ) );
     }
-    point_list wgs84_lights;
-    for ( i = 0; i < (int)geod_lights.size(); ++i ) {
-	p.setx( geod_lights[i].x() * SGD_DEGREES_TO_RADIANS );
-	p.sety( geod_lights[i].y() * SGD_DEGREES_TO_RADIANS );
-	p.setz( geod_lights[i].z() );
-	wgs84_lights.push_back( sgGeodToCart( p ) );
-    }
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
     cout << "Done with wgs84 node mapping" << endl;
 
-    // calculate normal(s) for this airport
+    // calculate normal for this airport
     p.setx( base_tris.get_pt(0, 0).x() * SGD_DEGREES_TO_RADIANS );
     p.sety( base_tris.get_pt(0, 0).y() * SGD_DEGREES_TO_RADIANS );
     p.setz( 0 );
@@ -939,9 +956,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     sgdNormalizeVec3( vn );
     point_list normals;
     normals.clear();
-    for ( i = 0; i < (int)nodes.size(); ++i ) {
-	normals.push_back( Point3D( vn[0], vn[1], vn[2] ) );
-    }
+    normals.push_back( Point3D( vn[0], vn[1], vn[2] ) );
     cout << "found normal for this airport = " << tmp << endl;
 
     // null structures
@@ -959,6 +974,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
     obj.set_wgs84_nodes( wgs84_nodes );
     obj.set_normals( normals );
     obj.set_texcoords( texcoords.get_node_list() );
+    obj.set_pts_v( pts_v );
+    obj.set_pt_materials( pt_materials );
     obj.set_tris_v( tris_v );
     obj.set_tris_tc( tris_tc ); 
     obj.set_tri_materials( tri_materials );

@@ -24,6 +24,7 @@
 
 #include "lights.hxx"
 
+#define FG_DIVS 40
 
 // generate runway lighting
 
@@ -39,15 +40,15 @@ void gen_runway_lights( const FGRunway& rwy_info, point_list *lights ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
     }
 
-    Point3D inc1 = (corner[3] - corner[0]) / 20.0;
-    Point3D inc2 = (corner[2] - corner[1]) / 20.0;
+    Point3D inc1 = (corner[3] - corner[0]) / FG_DIVS;
+    Point3D inc2 = (corner[2] - corner[1]) / FG_DIVS;
 
     Point3D pt1 = corner[0];
     Point3D pt2 = corner[1];
     lights->push_back( pt1 );
     lights->push_back( pt2 );
 
-    for ( i = 0; i < 20; ++i ) {
+    for ( i = 0; i < FG_DIVS; ++i ) {
 	pt1 += inc1;
 	pt2 += inc2;
 	lights->push_back( pt1 );
