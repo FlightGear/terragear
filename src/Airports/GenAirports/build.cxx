@@ -177,6 +177,13 @@ static point_list calc_elevations( const string& root,
                                    const point_list& geod_nodes,
                                    double offset )
 {
+    string_list elev_src;
+    elev_src.clear();
+    elev_src.push_back( "SRTM-1" );
+    elev_src.push_back( "SRTM-3" );
+    elev_src.push_back( "DEM-3" );
+    elev_src.push_back( "DEM-30" );
+
     bool done = false;
     point_list result = geod_nodes;
     int i, j;
@@ -205,25 +212,21 @@ static point_list calc_elevations( const string& root,
 	    SGBucket b( result[i].x(), result[i].y() );
 	    string base = b.gen_base_path();
 
-	    // try 3 arcsec arrays first
-	    string array_path = root + "/DEM-3/" + base 
-		+ "/" + b.gen_index_str() + ".arr";
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "array_path = " << array_path);
-	
-	    if ( ! array.open(array_path) ) {
-		SG_LOG(SG_GENERAL, SG_DEBUG, "ERROR: cannot open 3 arcsec file "
-                       << array_path);
-		SG_LOG(SG_GENERAL, SG_DEBUG, "trying 30 arcsec file");
-		
-		// try 30 arcsec array
-		array_path = root + "/DEM-30/" + base 
-		    + "/" + b.gen_index_str() + ".arr";
-		SG_LOG(SG_GENERAL, SG_DEBUG, "array_path = " << array_path);
-		if ( ! array.open(array_path) ) {
-		    SG_LOG(SG_GENERAL, SG_ALERT,
-			   "ERROR: cannot open 30 arcsec file " << array_path);
-		}
-	    }
+	    // try the various elevation sources
+            bool found_file = false;
+            unsigned int j = 0;
+            while ( !found_file && j < elev_src.size() ) {
+                string array_path = root + "/" + elev_src[j] + "/" + base 
+                    + "/" + b.gen_index_str() + ".arr";
+                if ( array.open(array_path) ) {
+                    found_file = true;
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "array_path = " << array_path);
+                }                    
+                j++;
+            }
+            
+            // this will fill in a zero structure if no array data
+            // found/opened
 	    array.parse( b );
 
 	    // update all the non-updated elevations that are inside
