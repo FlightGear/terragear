@@ -45,6 +45,7 @@
 #include <simgear/misc/sgstream.hxx>
 
 #include <Polygon/index.hxx>
+#include <Geometry/util.hxx>
 
 #include "build.hxx"
 #include "convex_hull.hxx"
@@ -61,7 +62,8 @@ static void usage( int argc, char **argv ) {
     SG_LOG(SG_GENERAL, SG_ALERT, 
 	   "Usage " << argv[0] << " --input=<apt_file> "
 	   << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]"
-	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>]");
+	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>]"
+           << "[--chunk=<chunk>]");
 }
 
 
@@ -104,6 +106,12 @@ int main( int argc, char **argv ) {
 	    min_lat = atof( arg.substr(10).c_str() );
 	} else if ( arg.find("--max-lat=") == 0 ) {
 	    max_lat = atof( arg.substr(10).c_str() );
+        } else if ( arg.find("--chunk=") == 0 ) {
+            tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str());
+            min_lon = rectangle.getMin().x();
+            min_lat = rectangle.getMin().y();
+            max_lon = rectangle.getMax().x();
+            max_lon = rectangle.getMax().y();
 	} else {
 	    usage( argc, argv );
 	    exit(-1);
