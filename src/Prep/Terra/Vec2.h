@@ -1,6 +1,8 @@
 #ifndef VEC2_INCLUDED // -*- C++ -*-
 #define VEC2_INCLUDED
 
+#include <iostream>
+
 class Vec2 {
 protected:
     real elt[2];

@@ -63,8 +63,11 @@ void subsample_insertion(int target_width)
 
 inline int goal_not_met()
 {
-    return mesh->maxError() > error_threshold &&
-	   mesh->pointCount() < point_limit;
+    return
+        ( mesh->maxError() > error_threshold &&
+          mesh->pointCount() < point_limit ) ||
+        mesh->pointCount() < min_points;
+        
 }
 
 static void announce_goal()

@@ -11,6 +11,7 @@ extern Map *DEM;
 extern ImportMask *MASK;
 
 extern real error_threshold;
+extern int min_points;
 extern int point_limit;
 extern real height_scale;
 enum FileFormat {NULLfile, TINfile, EPSfile, DEMfile, OBJfile, RMSfile};

@@ -433,12 +433,15 @@ void gui_interact()
 //
 ////////////////////////////////////////////////////////////////////////
 
+#if 0
 extern "C" {
 #include <GL/glutint.h>
 }
+#endif
 
 void xglutKeepAspect(float width, float height)
 {
+#if 0
     Window win;
     XSizeHints hints;
 
@@ -453,4 +456,5 @@ void xglutKeepAspect(float width, float height)
 
         XSetWMNormalHints(__glutDisplay, win, &hints);
     }
+#endif
 }

@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdlib.h>
 #include <fstream.h>
 #include <string.h>
@@ -11,6 +12,7 @@ ImportMask *MASK;
 
 
 real error_threshold = 0.0;
+int  min_points      = -1;
 int  point_limit     = -1;
 real height_scale    = 1.0;
 FileFormat output_format;
@@ -18,10 +20,11 @@ char *output_filename = NULL;
 char *mask_filename   = NULL;
 char *script_filename = NULL;
 
-static char *options = "e:p:h:o:m:s:";
+static char *options = "e:n:p:h:o:m:s:";
 
 static char *usage_string =
 "-e <thresh>      Sets the tolerable error threshold\n"
+"-n <count>       Sets the *minimum* number of points regardless of <thresh>\n"
 "-p <count>       Sets the maximum number of allowable points\n"
 "-h <factor>      Sets the height scaling factor.  For example,\n"
 "                 if grid points are 25m apart, use a factor of 0.04\n"
@@ -57,6 +60,11 @@ void process_cmdline(int argc, char **argv)
 	case 'e':
 	    error_threshold = atof(optarg);
 	    cerr << "    Setting error threshold to " <<error_threshold <<endl;
+	    break;
+
+	case 'n':
+	    min_points = atoi(optarg);
+	    cerr << "    Setting minumum points to " << min_points << endl;
 	    break;
 
 	case 'p':
@@ -158,6 +166,9 @@ void process_cmdline(int argc, char **argv)
 
 
     ////////////////////////////////////////////////////////////////
+
+    if( min_points < 0 )
+	min_points = 1;
 
     if( point_limit < 0 )
 	point_limit = DEM->width * DEM->height;

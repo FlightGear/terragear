@@ -1,6 +1,8 @@
 #ifndef GLHACKS_INCLUDED // -*- C++ -*-
 #define GLHACKS_INCLUDED
 
+#include <iostream>
+
 #include <GL/glx.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
