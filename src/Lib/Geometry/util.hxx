@@ -14,6 +14,9 @@
 #include <simgear/compiler.h>
 #include <simgear/math/point3d.hxx>
 
+#include <string>
+SG_USING_STD(string);
+
 #include <Polygon/polygon.hxx>
 
 #include "line.hxx"
@@ -82,6 +85,15 @@ void makePolygon (const Point3D &p, int width, FGPolygon &polygon);
  * @param polygon The object that will hold the new polygon.
  */
 void makePolygon (const Line &line, int width, FGPolygon &polygon);
+
+
+/**
+ * Parse a chunk string (like "w080n40") into a rectangle.
+ *
+ * @param s The string.
+ * @return A rectangle containing the bounds.
+ */
+Rectangle parseChunk (const string &s);
 
 
 #endif // __UTIL_HXX

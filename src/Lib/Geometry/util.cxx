@@ -8,6 +8,7 @@
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
+#include <simgear/misc/exception.hxx>
 
 #include <Polygon/polygon.hxx>
 
@@ -143,5 +144,39 @@ makePolygon (const Line &line, int width, FGPolygon &polygon)
   polygon.add_node(0, segment_list[0].get_pt(0, 3));
 }
 
+
+Rectangle
+parseChunk (const string &s)
+{
+  Rectangle bounds;
+  int x_factor;
+  int y_factor;
+
+  if (s.size() != 7)
+    throw sg_exception(string("Bad length for chunk specifier: ") + s);
+
+  if (s[0] == 'w')
+    x_factor = -1;
+  else if (s[0] == 'e')
+    x_factor = 1;
+  else
+    throw sg_exception(string("Chunk specifier must begin with 'e' or 'w': "
+			      + s));
+
+  if (s[4] == 's')
+    y_factor = -1;
+  else if (s[4] == 'n')
+    y_factor = 1;
+  else
+    throw sg_exception("Second part of chunk specifier must begin with 's' or 'n': " + s);
+
+  
+  double x = atoi(s.substr(1,3).c_str()) * x_factor;
+  double y = atoi(s.substr(5).c_str()) * y_factor;
+  bounds.setMin(Point3D(x, y, 0));
+  bounds.setMax(Point3D(x + 10, y + 10, 0));
+
+  return bounds;
+}
 
 // end of util.cxx
