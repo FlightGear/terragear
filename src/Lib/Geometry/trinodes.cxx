@@ -40,7 +40,7 @@ int TGTriNodes::unique_add( const Point3D& p ) {
     point_list_iterator current, last;
     int counter = 0;
 
-    cout << "unique add = " << p << endl;
+    // cout << "unique add = " << p << endl;
 
     // see if point already exists
     current = node_list.begin();
