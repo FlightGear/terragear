@@ -3,6 +3,7 @@ SUBDIRS = \
 	DEM \
 	e00 \
 	Geometry \
+	HGT \
         landcover \
 	Optimize \
 	Output \
