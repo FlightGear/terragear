@@ -122,20 +122,20 @@ void gen_clipped_polygon( const TGPolygon& shape, const TGPolygon& clip ) {
     upper_shape.erase();
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Clipping lower shape" );
-    lower_shape = polygon_int( lower_mask, shape );
+    lower_shape = tgPolygonInt( lower_mask, shape );
     lower_shape.shift( 360, 0 );
-    result = polygon_int( lower_shape, clip );
+    result = tgPolygonInt( lower_shape, clip );
     write_result( result );
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Clipping center shape" );
-    center_shape = polygon_int( center_mask, shape );
-    result = polygon_int( center_shape, clip );
+    center_shape = tgPolygonInt( center_mask, shape );
+    result = tgPolygonInt( center_shape, clip );
     write_result( result );
 
-    upper_shape = polygon_int( upper_mask, shape );
+    upper_shape = tgPolygonInt( upper_mask, shape );
     SG_LOG ( SG_GENERAL, SG_INFO, "Clipping upper shape" );
     upper_shape.shift( -360, 0 );
-    result = polygon_int( upper_shape, clip );
+    result = tgPolygonInt( upper_shape, clip );
     write_result( result );
 }
 

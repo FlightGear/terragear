@@ -32,6 +32,7 @@ extern "C" {
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/point3d.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/structure/exception.hxx>
 
 SG_USING_STD(endl);
@@ -242,7 +243,7 @@ bool TGPolygon::is_inside( int a, int b ) const {
     // B.write( "B" );
 
     // A is "inside" B if the polygon_diff( A, B ) is null.
-    TGPolygon result = polygon_diff( A, B );
+    TGPolygon result = tgPolygonDiff( A, B );
     // SG_LOG(SG_GENERAL, SG_DEBUG, "result size = " << result.total_size());
 
     // char junk;
@@ -416,24 +417,24 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
 
 
 // Difference
-TGPolygon polygon_diff(	const TGPolygon& subject, const TGPolygon& clip ) {
+TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_DIFF, subject, clip );
 }
 
 // Intersection
-TGPolygon polygon_int( const TGPolygon& subject, const TGPolygon& clip ) {
+TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_INT, subject, clip );
 }
 
 
 // Exclusive or
-TGPolygon polygon_xor( const TGPolygon& subject, const TGPolygon& clip ) {
+TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_XOR, subject, clip );
 }
 
 
 // Union
-TGPolygon polygon_union( const TGPolygon& subject, const TGPolygon& clip ) {
+TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_UNION, subject, clip );
 }
 
@@ -477,6 +478,98 @@ TGPolygon polygon_canonify( const TGPolygon& in_poly ) {
 	} else {
 	    result.add_contour( contour, hole_flag );
 	}
+    }
+
+    return result;
+}
+
+
+// Traverse a polygon and split edges until they are less than max_len
+// (specified in meters)
+TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len ) {
+    TGPolygon result;
+    Point3D p0, p1;
+    int i, j, k;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "split_long_edges()");
+
+    for ( i = 0; i < poly.contours(); ++i ) {
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
+	for ( j = 0; j < poly.contour_size(i) - 1; ++j ) {
+	    p0 = poly.get_pt( i, j );
+	    p1 = poly.get_pt( i, j + 1 );
+
+	    double az1, az2, s;
+	    geo_inverse_wgs_84( 0.0,
+				p0.y(), p0.x(), p1.y(), p1.x(),
+				&az1, &az2, &s );
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
+
+	    if ( s > max_len ) {
+		int segments = (int)(s / max_len) + 1;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "segments = " << segments);
+
+		double dx = (p1.x() - p0.x()) / segments;
+		double dy = (p1.y() - p0.y()) / segments;
+
+		for ( k = 0; k < segments; ++k ) {
+		    Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
+		    SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
+		    result.add_node( i, tmp );
+		}
+	    } else {
+		SG_LOG(SG_GENERAL, SG_DEBUG, p0);
+		result.add_node( i, p0 );
+	    }
+		
+	    // end of segment is beginning of next segment
+	}
+	p0 = poly.get_pt( i, poly.contour_size(i) - 1 );
+	p1 = poly.get_pt( i, 0 );
+
+	double az1, az2, s;
+	geo_inverse_wgs_84( 0.0,
+			    p0.y(), p0.x(), p1.y(), p1.x(),
+			    &az1, &az2, &s );
+	SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
+
+	if ( s > max_len ) {
+	    int segments = (int)(s / max_len) + 1;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "segments = " << segments);
+	    
+	    double dx = (p1.x() - p0.x()) / segments;
+	    double dy = (p1.y() - p0.y()) / segments;
+
+	    for ( k = 0; k < segments; ++k ) {
+		Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
+		SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
+		result.add_node( i, tmp );
+	    }
+	} else {
+	    SG_LOG(SG_GENERAL, SG_DEBUG, p0);
+	    result.add_node( i, p0 );
+	}
+
+	// maintain original hole flag setting
+	result.set_hole_flag( i, poly.get_hole_flag( i ) );
+    }
+
+    return result;
+}
+
+
+// Traverse a polygon and toss all the internal holes
+TGPolygon tgPolygonStripHoles( const TGPolygon &poly ) {
+    TGPolygon result; result.erase();
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "strip_out_holes()");
+
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
+        point_list contour = poly.get_contour( i );
+        if ( ! poly.get_hole_flag(i) ) {
+            result.add_contour( contour, poly.get_hole_flag(i) );
+        }
     }
 
     return result;

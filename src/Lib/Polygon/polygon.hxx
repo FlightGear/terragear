@@ -194,29 +194,38 @@ typedef poly_list::const_iterator const_poly_list_iterator;
 
 // canonify the polygon winding, outer contour must be anti-clockwise,
 // all inner contours must be clockwise.
-TGPolygon polygon_canonify( const TGPolygon& in_poly );
+TGPolygon tgPolygonCanonify( const TGPolygon& in_poly );
+
+
+// Traverse a polygon and split edges until they are less than max_len
+// (specified in meters)
+TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len );
+
+
+// Traverse a polygon and toss all the internal holes
+TGPolygon tgPolygonStripHoles( const TGPolygon &poly );
 
 
 // Wrapper for the fast Polygon Triangulation based on Seidel's
 // Algorithm by Atul Narkhede and Dinesh Manocha
 // http://www.cs.unc.edu/~dm/CODE/GEM/chapter.html
 
-TGPolygon polygon_to_tristrip( const TGPolygon& poly );
+TGPolygon tgPolygon2tristrip( const TGPolygon& poly );
 
 
 // wrapper functions for gpc polygon clip routines
 
 // Difference
-TGPolygon polygon_diff(	const TGPolygon& subject, const TGPolygon& clip );
+TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip );
 
 // Intersection
-TGPolygon polygon_int( const TGPolygon& subject, const TGPolygon& clip );
+TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip );
 
 // Exclusive or
-TGPolygon polygon_xor( const TGPolygon& subject, const TGPolygon& clip );
+TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip );
 
 // Union
-TGPolygon polygon_union( const TGPolygon& subject, const TGPolygon& clip );
+TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
 
 // Output
 ostream &operator<< (ostream &output, const TGPolygon &poly);

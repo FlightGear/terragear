@@ -75,13 +75,13 @@ void split_and_shift_chunk( const string& path, AreaType area,
     upper_shape.erase();
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Clipping lower shape" );
-    lower_shape = polygon_int( lower_mask, shape );
+    lower_shape = tgPolygonInt( lower_mask, shape );
     lower_shape.shift( 360, 0 );
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Clipping center shape" );
-    center_shape = polygon_int( center_mask, shape );
+    center_shape = tgPolygonInt( center_mask, shape );
 
-    upper_shape = polygon_int( upper_mask, shape );
+    upper_shape = tgPolygonInt( upper_mask, shape );
     SG_LOG ( SG_GENERAL, SG_INFO, "Clipping upper shape" );
     upper_shape.shift( -360, 0 );
 

@@ -326,10 +326,10 @@ static void build_runway( const TGRunway& rwy_info,
         safe_base
             = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, 0.0, 0.0, 50.0 );
     }
-    *apt_clearing = polygon_union(safe_base, *apt_clearing);
+    *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
 
     // add base to apt_base
-    *apt_base = polygon_union( base, *apt_base );
+    *apt_base = tgPolygonUnion( base, *apt_base );
 }
 
 
@@ -581,11 +581,11 @@ void build_airport( string airport_id, float alt_m,
     // generate convex hull (no longer)
     // TGPolygon hull = convex_hull(apt_pts);
 
-    TGPolygon filled_base = strip_out_holes( apt_base );
+    TGPolygon filled_base = tgPolygonStripHoles( apt_base );
     // write_polygon( filled_base, "filled-base" );
-    TGPolygon divided_base = split_long_edges( filled_base, 200.0 );
+    TGPolygon divided_base = tgPolygonSplitLongEdges( filled_base, 200.0 );
     // write_polygon( divided_base, "divided-base" );
-    TGPolygon base_poly = polygon_diff( divided_base, accum );
+    TGPolygon base_poly = tgPolygonDiff( divided_base, accum );
     // write_polygon( base_poly, "base-raw" );
 
     char buf[120];  // For debugging output

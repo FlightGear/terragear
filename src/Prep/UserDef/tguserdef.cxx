@@ -64,7 +64,7 @@ add_point (SGPropertyNode_ptr node)
     SG_LOG(SG_TERRAIN, SG_WARN, "More than one vertex supplied for point");
   TGPolygon poly;
   tg::makePolygon(p, node->getIntValue("width", 500), poly);
-  poly = polygon_int(poly, bounds_poly);
+  poly = tgPolygonInt(poly, bounds_poly);
   tgSplitPolygon(".", material, poly, false);
 }
 
@@ -85,7 +85,7 @@ add_line (SGPropertyNode_ptr node)
 
   TGPolygon poly;
   tg::makePolygon(line, node->getIntValue("width", 10), poly);
-  poly = polygon_int(poly, bounds_poly);
+  poly = tgPolygonInt(poly, bounds_poly);
   tgSplitPolygon(".", material, poly, false);
 }
 
@@ -107,7 +107,7 @@ add_polygon (SGPropertyNode_ptr node)
     }
     poly.set_hole_flag(i, contour_node->getBoolValue("hole", false));
   }
-  poly = polygon_int(poly, bounds_poly);
+  poly = tgPolygonInt(poly, bounds_poly);
   tgSplitPolygon(".", material, poly, false);
 }
 

@@ -89,8 +89,8 @@ void gen_taxiway( const TGRunway& rwy_info,
         twid = 250.0;
     }
 
-    TGPolygon clipped_a = polygon_diff( runway_a, *accum );
-    TGPolygon split_a = split_long_edges( clipped_a, 400.0 );
+    TGPolygon clipped_a = tgPolygonDiff( runway_a, *accum );
+    TGPolygon split_a = tgPolygonSplitLongEdges( clipped_a, 400.0 );
     sp.erase();
 
     sp.set_poly( split_a );
@@ -98,21 +98,21 @@ void gen_taxiway( const TGRunway& rwy_info,
     sp.set_flag( "taxi" );           // mark as a taxiway
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
-    *accum = polygon_union( runway_a, *accum );
+    *accum = tgPolygonUnion( runway_a, *accum );
     tp = TGTexParams( runway_a.get_pt(0,0),
                       twid * SG_FEET_TO_METER,
                       250 * SG_FEET_TO_METER,
                       rwy_info.heading );
     texparams->push_back( tp );
 
-    TGPolygon clipped_b = polygon_diff( runway_b, *accum );
-    TGPolygon split_b = split_long_edges( clipped_b, 400.0 );
+    TGPolygon clipped_b = tgPolygonDiff( runway_b, *accum );
+    TGPolygon split_b = tgPolygonSplitLongEdges( clipped_b, 400.0 );
     sp.erase();
     sp.set_poly( split_b );
     sp.set_material( material );
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
-    *accum = polygon_union( runway_b, *accum );
+    *accum = tgPolygonUnion( runway_b, *accum );
     tp = TGTexParams( runway_b.get_pt(0,0),
                       twid * SG_FEET_TO_METER,
                       250 * SG_FEET_TO_METER,

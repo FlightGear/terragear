@@ -12,6 +12,7 @@ testmerger_LDADD = \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgdebug -lsgbucket -lsgmisc -lsgstructure -lsgxml -lgenpolyclip -lz
+	-lsgdebug -lsgbucket -lsgmath -lsgmisc -lsgstructure -lsgxml \
+	-lgenpolyclip -lz
 
 INCLUDES = -I$(top_srcdir)/src/Lib

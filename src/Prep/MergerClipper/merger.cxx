@@ -171,7 +171,7 @@ void FGMerger::merge( FGPolyList& clipped ) {
 	  cout << "  polygon = " << j << endl;
 	  
 	  poly = clipped.polys[area][j];
-	  result = polygon_union( poly, result );
+	  result = tgPolygonUnion( poly, result );
 	  done=true;
 	}
       clipped.polys[area].clear();
@@ -200,8 +200,8 @@ void FGMerger::clip(FGPolyList& subject, FGPolyList& clip) {
 	cout << "  Clipping polygon with area = " << area << endl;
 	poly=subject.polys[area][0];
 	cliped=clip.polys[default_indx][0];
-	result = polygon_int(poly, cliped);
-	difference = polygon_diff(difference, result);
+	result = tgPolygonInt(poly, cliped);
+	difference = tgPolygonDiff(difference, result);
 	subject.polys[area][0]=result;
 	max_a[area] +=result.contour_size(0); // let's hope we have only 1 contour polygons (first approximation)
       }
@@ -216,7 +216,8 @@ void FGMerger::clip(FGPolyList& subject, FGPolyList& clip) {
   }
   
   
-  subject.polys[max_area][0] = polygon_union(subject.polys[max_area][0], difference);  
+  subject.polys[max_area][0]
+      = tgPolygonUnion(subject.polys[max_area][0], difference);  
 }
 
 void FGMerger::write(FGPolyList& subject, string& file) {

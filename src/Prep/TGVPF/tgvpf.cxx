@@ -519,9 +519,9 @@ main (int argc, const char **argv)
       }
 
       if (invert) {
-	mask = polygon_union(mask, shape);
+	mask = tgPolygonUnion(mask, shape);
       } else {
-	shape = polygon_int(shape, bounds_poly);
+	shape = tgPolygonInt(shape, bounds_poly);
 	if (shape.total_size() >= 3) {
 	  cout << "Polygon with " << shape.total_size() << " points in "
 	     << shape.contours() << " contour(s)" << endl;
@@ -534,7 +534,7 @@ main (int argc, const char **argv)
 				// wait until the end (and hope for
 				// not too large a polygon)
     if (invert) {
-      mask = polygon_diff(bounds_poly, mask);
+      mask = tgPolygonDiff(bounds_poly, mask);
       if (mask.total_size() >= 3) {
 	cout << "Inverse polygon with " << mask.total_size() << " points in "
 	     << mask.contours() << " contour(s)" << endl;

@@ -243,7 +243,7 @@ static int actual_load_polys( const string& dir,
 // to reduce the number of separate polygons.
 static void inline add_to_polys ( TGPolygon &accum, const TGPolygon &poly) {
     if ( accum.contours() > 0 ) {
-	accum = polygon_union( accum, poly );
+	accum = tgPolygonUnion( accum, poly );
     } else {
 	accum = poly;
     }

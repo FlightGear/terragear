@@ -47,13 +47,4 @@ TGPolygon add_nodes_to_poly( const TGPolygon& poly,
                              const TGTriNodes& tmp_nodes );
 
 
-// Traverse a polygon and split edges until they are less than max_len
-// (specified in meters)
-TGPolygon split_long_edges( const TGPolygon &poly, double max_len );
-
-
-// Traverse a polygon and toss all the internal holes
-TGPolygon strip_out_holes( const TGPolygon &poly );
-
-
 #endif // _POLY_EXTRA_HXX

@@ -91,7 +91,7 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
     fclose(bfp);
     */
 
-    result = polygon_int( base, shape );
+    result = tgPolygonInt( base, shape );
     if ( preserve3d ) {
         result.inherit_elevations( shape );
     }
@@ -259,7 +259,7 @@ void tgSplitPolygon( const string& path, AreaType area,
 	    bottom.add_node( 0, Point3D(180.0, clip_line, 0) );
 	    bottom.add_node( 0, Point3D(-180.0, clip_line, 0) );
 
-	    bottom_clip = polygon_int( bottom, shape );
+	    bottom_clip = tgPolygonInt( bottom, shape );
 	} else {
 	    bottom_clip = horizontal_clip( shape, clip_line, Below );
 	}
@@ -288,7 +288,7 @@ void tgSplitPolygon( const string& path, AreaType area,
 	    top.add_node( 0, Point3D(180.0, max.y(), 0) );
 	    top.add_node( 0, Point3D(-180.0, max.y(), 0) );
 
-	    top_clip = polygon_int( top, shape );
+	    top_clip = tgPolygonInt( top, shape );
 	} else {
 	    top_clip = horizontal_clip( shape, clip_line, Above );
 	}

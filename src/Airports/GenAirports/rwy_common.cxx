@@ -203,11 +203,11 @@ void gen_runway_section( const TGRunway& rwy_info,
     }
 
     // Clip the new polygon against what ever has already been created.
-    TGPolygon clipped = polygon_diff( section, *accum );
+    TGPolygon clipped = tgPolygonDiff( section, *accum );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
-    TGPolygon split = split_long_edges( clipped, 400.0 );
+    TGPolygon split = tgPolygonSplitLongEdges( clipped, 400.0 );
 
     // Create the final output and push on to the runway super_polygon
     // list
@@ -217,7 +217,7 @@ void gen_runway_section( const TGRunway& rwy_info,
     sp.set_material( prefix + material );
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
-    *accum = polygon_union( section, *accum );
+    *accum = tgPolygonUnion( section, *accum );
 
     // Store away what we need to know for texture coordinate
     // calculation.  (CLO 10/20/02: why can't we calculate texture

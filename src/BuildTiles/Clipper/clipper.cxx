@@ -402,7 +402,7 @@ void TGClipper::merge_slivers( TGPolyList& clipped, TGPolygon& slivers ) {
 
 		poly = clipped.polys[area][j];
 		original_contours = poly.contours();
-		result = polygon_union( poly, sliver );
+		result = tgPolygonUnion( poly, sliver );
 		result_contours = result.contours();
 
 		if ( original_contours == result_contours ) {
@@ -489,7 +489,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
     land_mask.erase();
     for ( i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
 	land_mask =
-	  polygon_union( land_mask, polys_in.polys[DefaultArea][i] );
+	  tgPolygonUnion( land_mask, polys_in.polys[DefaultArea][i] );
     }
 
     // set up a mask for all water.
@@ -499,7 +499,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
         if (is_water_area(AreaType(i))) {
             for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
                 water_mask =
-                    polygon_union( water_mask, polys_in.polys[i][j] );
+                    tgPolygonUnion( water_mask, polys_in.polys[i][j] );
             }
         }
     }
@@ -509,7 +509,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
     island_mask.erase();
     for ( i = 0; i < (int)polys_in.polys[IslandArea].size(); ++i ) {
 	island_mask =
-	  polygon_union( island_mask, polys_in.polys[IslandArea][i] );
+	  tgPolygonUnion( island_mask, polys_in.polys[IslandArea][i] );
     }
 
     // process polygons in priority order
@@ -528,20 +528,20 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
 
             // if not a hole, clip the area to the land_mask
             if ( i != HoleArea ) {
-                tmp = polygon_int( tmp, land_mask );
+                tmp = tgPolygonInt( tmp, land_mask );
             }
 
             // Airport areas are limited to existing land mass and
             // never override water.
             if ( i == AirportArea ) {
-                tmp = polygon_int( tmp, land_mask );
-                tmp = polygon_diff( tmp, water_mask );
+                tmp = tgPolygonInt( tmp, land_mask );
+                tmp = tgPolygonDiff( tmp, water_mask );
             }
 
 	    // if a water area, cut out potential islands
 	    if ( is_water_area(AreaType(i)) ) {
 	        // clip against island mask
-	        tmp = polygon_diff( tmp, island_mask );
+	        tmp = tgPolygonDiff( tmp, island_mask );
 	    }
 
 	    TGPolygon result_union, result_diff;
@@ -550,8 +550,8 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
 		result_diff = tmp;
 		result_union = tmp;
 	    } else {
-		result_diff = polygon_diff( tmp, accum);
-		result_union = polygon_union( tmp, accum);
+		result_diff = tgPolygonDiff( tmp, accum);
+		result_union = tgPolygonUnion( tmp, accum);
 	    }
 
 	    // only add to output list if the clip left us with a polygon
@@ -587,7 +587,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
     // remains = new gpc_polygon;
     // remains->num_contours = 0;
     // remains->contour = NULL;
-    remains = polygon_diff( polys_in.safety_base, accum );
+    remains = tgPolygonDiff( polys_in.safety_base, accum );
 
     if ( remains.contours() > 0 ) {
 	// cout << "remains contours = " << remains.contours() << endl;
