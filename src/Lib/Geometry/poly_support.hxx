@@ -40,10 +40,18 @@
 #include "trinodes.hxx"
 
 
-// basic triangulation of a polygon contour out adding points or
-// splitting edges.  If contour >= 0 just tesselate the specified
-// contour.
-triele_list polygon_tesselate( const FGPolygon poly, const int contour );
+// basic triangulation of a polygon with out adding points or
+// splitting edges
+void polygon_tesselate( const FGPolygon &p,
+			triele_list &elelist,
+			point_list &out_pts );
+
+// Alternate basic triangulation of a polygon with out adding points
+// or splitting edges and without regard for holes.  Returns a polygon
+// with one contour per tesselated triangle.  This is mostly just a
+// wrapper for the polygon_tesselate() function.  Note, this routine
+// will modify the points_inside list for your polygon.
+FGPolygon polygon_tesselate_alt( FGPolygon &p );
 
 // calculate some "arbitrary" point inside the specified contour for
 // assigning attribute areas.  This requires data structures outside

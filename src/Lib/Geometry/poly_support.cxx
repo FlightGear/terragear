@@ -228,39 +228,36 @@ Point3D calc_point_inside( const FGPolygon& p, const int contour,
 }
 
 
-// basic triangulation of a polygon contour out adding points or
-// splitting edges.  If contour >= 0 just tesselate the specified
-// contour.
-triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
-    // triangle list
-    triele_list elelist;
+// basic triangulation of a polygon with out adding points or
+// splitting edges
+void polygon_tesselate( const FGPolygon &p,
+			triele_list &elelist,
+			point_list &out_pts )
+{
     struct triangulateio in, out, vorout;
-    int counter, offset;
+    int counter, start, end;
 
-    // point list
-    double max_x = poly.get_contour(0)[0].x();
+    // list of points
+    double max_x = p.get_pt(0,0).x();
+
     int total_pts = 0;
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	if ( (contour < 0) || poly.get_hole_flag(i) || (i == contour) ) {
-	    total_pts += poly.contour_size( i );
-	}
+    for ( int i = 0; i < p.contours(); ++i ) {
+	total_pts += p.contour_size( i );
     }
 
     in.numberofpoints = total_pts;
     in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
 
     counter = 0;
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	if ( (contour < 0) || poly.get_hole_flag(i) || (i == contour) ) {
-	    point_list contour = poly.get_contour( i );
-	    for ( int j = 0; j < (int)contour.size(); ++j ) {
-		in.pointlist[2*counter] = contour[j].x();
-		in.pointlist[2*counter + 1] = contour[j].y();
-		if ( contour[j].x() > max_x ) {
+    for ( int i = 0; i < p.contours(); ++i ) {
+	point_list contour = p.get_contour( i );
+	for ( int j = 0; j < (int)contour.size(); ++j ) {
+	    in.pointlist[2*counter] = contour[j].x();
+	    in.pointlist[2*counter + 1] = contour[j].y();
+	    if ( contour[j].x() > max_x ) {
 		    max_x = contour[j].x();
-		}
-		++counter;
 	    }
+	    ++counter;
 	}
     }
 
@@ -269,13 +266,11 @@ triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
 					    in.numberofpointattributes *
 					    sizeof(REAL));
     counter = 0;
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	if ( (contour < 0) || poly.get_hole_flag(i) || (i == contour) ) {
-	    point_list contour = poly.get_contour( i );
-	    for ( int j = 0; j < (int)contour.size(); ++j ) {
-		in.pointattributelist[counter] = contour[j].z();
-		++counter;
-	    }
+    for ( int i = 0; i < p.contours(); ++i ) {
+	point_list contour = p.get_contour( i );
+	for ( int j = 0; j < (int)contour.size(); ++j ) {
+	    in.pointattributelist[counter] = contour[j].z();
+	    ++counter;
 	}
     }
 
@@ -288,46 +283,48 @@ triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
     in.numberoftriangles = 0;
 
     // segment list
-    in.numberofsegments = total_pts;
+    in.numberofsegments = in.numberofpoints;
     in.segmentlist = (int *) malloc(in.numberofsegments * 2 * sizeof(int));
     in.segmentmarkerlist = (int *) malloc(in.numberofsegments * sizeof(int));
-
     counter = 0;
-    offset = 0;
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	point_list contour = poly.get_contour( i );
-	for ( int j = 0; j < (int)contour.size() - 1; ++j ) {
-	    in.segmentlist[counter++] = i + offset;
-	    in.segmentlist[counter++] = i + offset + 1;
-	    in.segmentmarkerlist[i] = 0;
-	}
-	in.segmentlist[counter++] = (int)contour.size() + offset - 1;
-	in.segmentlist[counter++] = 0 + offset;
-	in.segmentmarkerlist[(int)contour.size() - 1] = 0;
+    start = 0;
+    end = -1;
 
-	offset += contour.size();
+    for ( int i = 0; i < p.contours(); ++i ) {
+	point_list contour = p.get_contour( i );
+	start = end + 1;
+	end = start + contour.size() - 1;
+	for ( int j = 0; j < (int)contour.size() - 1; ++j ) {
+	    in.segmentlist[counter++] = j + start;
+	    in.segmentlist[counter++] = j + start + 1;
+	}
+	in.segmentlist[counter++] = end;
+	in.segmentlist[counter++] = start;
+    }
+
+    for ( int i = 0; i < in.numberofsegments; ++i ) {
+	in.segmentmarkerlist[i] = 0;
     }
 
     // hole list
-    int hole_count = 0;
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	if ( poly.get_hole_flag( i ) ) {
-	    ++hole_count;
+    in.numberofholes = 1;
+    for ( int i = 0; i < p.contours(); ++i ) {
+	if ( p.get_hole_flag( i ) ) {
+	    ++in.numberofholes;
 	}
     }
-
-    in.numberofholes = hole_count + 1;
     in.holelist = (REAL *) malloc(in.numberofholes * 2 * sizeof(REAL));
-    counter = 0;
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	if ( poly.get_hole_flag( i ) ) {
-	    in.holelist[counter++] = poly.get_point_inside(i).x();
-	    in.holelist[counter++] = poly.get_point_inside(i).y();
-	}
-    }
     // outside of polygon
+    counter = 0;
     in.holelist[counter++] = max_x + 1.0;
     in.holelist[counter++] = 0.0;
+
+    for ( int i = 0; i < (int)p.contours(); ++i ) {
+	if ( p.get_hole_flag( i ) ) {
+	    in.holelist[counter++] = p.get_point_inside(i).x();
+	    in.holelist[counter++] = p.get_point_inside(i).y();
+	}
+    }
 
     // region list
     in.numberofregions = 0;
@@ -356,7 +353,7 @@ triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
     vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
     
     // TEMPORARY
-    // write_out_data(&in);
+    write_tri_data(&in);
 
     // Triangulate the points.  Switches are chosen to read and write
     // a PSLG (p), number everything from zero (z), and produce an
@@ -371,7 +368,7 @@ triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
 
     // TEMPORARY
-    // write_out_data(&out);
+    // write_tri_data(&out);
 
     // now copy the results back into the corresponding FGTriangle
     // structures
@@ -394,6 +391,16 @@ triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
 	elelist.push_back( FGTriEle( n1, n2, n3, attribute ) );
     }
 
+    // output points
+    out_pts.clear();
+    double x, y, z;
+    for ( int i = 0; i < out.numberofpoints; ++i ) {
+	x = out.pointlist[i * 2    ];
+	y = out.pointlist[i * 2 + 1];
+	z = out.pointattributelist[i];
+	out_pts.push_back( Point3D(x, y, z) );
+    }
+   
     // free mem allocated to the "Triangle" structures
     free(in.pointlist);
     free(in.pointattributelist);
@@ -414,18 +421,56 @@ triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
     free(vorout.pointattributelist);
     free(vorout.edgelist);
     free(vorout.normlist);
-
-    return elelist;
 }
 
 
-// basic triangulation of a polygon with out adding points or
-// splitting edges and without regard for holes
-static triele_list contour_tesselate( FGContourNode *node, const FGPolygon &p,
-				      const FGPolygon &hole_polys,
-				      const point_list &hole_pts ) {
-    // triangle list
-    triele_list elelist;
+// Alternate basic triangulation of a polygon with out adding points
+// or splitting edges and without regard for holes.  Returns a polygon
+// with one contour per tesselated triangle.  This is mostly just a
+// wrapper for the polygon_tesselate() function.  Note, this routine
+// will modify the points_inside list for your polygon.
+
+FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
+
+    // 1.  Robustly find a point inside each contour that is not
+    //     inside any other contour
+    calc_points_inside( p );
+    for ( int i = 0; i < p.contours(); ++i ) {
+	cout << "final point inside =" << p.get_point_inside( i )
+	     << endl;
+    }
+
+    // 2.  Do a final triangulation of the entire polygon
+    triele_list trieles;
+    point_list nodes;
+    polygon_tesselate( p, trieles, nodes );
+
+    // 3.  Convert the tesselated output to a list of tringles.
+    //     basically a polygon with a contour for every triangle
+    FGPolygon result;
+    result.erase();
+    for ( int i = 0; i < (int)trieles.size(); ++i ) {
+	FGTriEle t = trieles[i];
+	Point3D p1 = nodes[ t.get_n1() ];
+	Point3D p2 = nodes[ t.get_n2() ];
+	Point3D p3 = nodes[ t.get_n3() ];
+	result.add_node( i, p1 );
+	result.add_node( i, p2 );
+	result.add_node( i, p3 );
+    }
+
+    return result;
+}
+
+
+// basic triangulation of a contour with out adding points or
+// splitting edges but cuts out any of the specified holes
+static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
+			       const FGPolygon &hole_polys,
+			       const point_list &hole_pts,
+			       triele_list &elelist,
+			       point_list &out_pts )
+{
     struct triangulateio in, out, vorout;
     int counter, start, end;
 
@@ -514,11 +559,13 @@ static triele_list contour_tesselate( FGContourNode *node, const FGPolygon &p,
 	for ( int j = 0; j < (int)hole_contour.size() - 1; ++j ) {
 	    in.segmentlist[counter++] = j + start;
 	    in.segmentlist[counter++] = j + start + 1;
-	    in.segmentmarkerlist[i] = 0;
 	}
 	in.segmentlist[counter++] = end;
 	in.segmentlist[counter++] = start;
-	in.segmentmarkerlist[contour.size() - 1] = 0;
+    }
+
+    for ( int i = 0; i < in.numberofsegments; ++i ) {
+	in.segmentmarkerlist[i] = 0;
     }
 
     // hole list
@@ -598,6 +645,16 @@ static triele_list contour_tesselate( FGContourNode *node, const FGPolygon &p,
 	elelist.push_back( FGTriEle( n1, n2, n3, attribute ) );
     }
 
+    // output points
+    out_pts.clear();
+    double x, y, z;
+    for ( int i = 0; i < out.numberofpoints; ++i ) {
+	x = out.pointlist[i * 2    ];
+	y = out.pointlist[i * 2 + 1];
+	z = out.pointattributelist[i];
+	out_pts.push_back( Point3D(x, y, z) );
+    }
+   
     // free mem allocated to the "Triangle" structures
     free(in.pointlist);
     free(in.pointattributelist);
@@ -618,8 +675,6 @@ static triele_list contour_tesselate( FGContourNode *node, const FGPolygon &p,
     free(vorout.pointattributelist);
     free(vorout.edgelist);
     free(vorout.normlist);
-
-    return elelist;
 }
 
 
@@ -627,7 +682,7 @@ static triele_list contour_tesselate( FGContourNode *node, const FGPolygon &p,
 // Find a point inside the polygon without regard for holes
 static Point3D point_inside_hole( point_list contour ) {
 
-    triele_list elelist = contour_tesselate( contour );
+    triele_list elelist; = contour_tesselate( contour );
     if ( elelist.size() <= 0 ) {
 	cout << "Error polygon triangulated to zero triangles!" << endl;
 	exit(-1);
@@ -667,19 +722,19 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
 	hole_polys.add_contour( contour, 1 );
     }
 
-    triele_list elelist = contour_tesselate( node, p, hole_polys, hole_pts );
+    triele_list elelist;
+    point_list out_pts;
+    contour_tesselate( node, p, hole_polys, hole_pts, elelist, out_pts );
     if ( elelist.size() <= 0 ) {
 	cout << "Error polygon triangulated to zero triangles!" << endl;
 	exit(-1);
     }
 
-#error what is your point list here?
-
     FGTriEle t = elelist[0];
     contour_num = node->get_contour_num();
-    Point3D p1 = p.get_pt( contour_num, t.get_n1() );
-    Point3D p2 = p.get_pt( contour_num, t.get_n2() );
-    Point3D p3 = p.get_pt( contour_num, t.get_n3() );
+    Point3D p1 = out_pts[ t.get_n1() ];
+    Point3D p2 = out_pts[ t.get_n2() ];
+    Point3D p3 = out_pts[ t.get_n3() ];
     cout << "  " << p1 << endl << "  " << p2 << endl << "  " << p3 << endl;
     Point3D m1 = ( p1 + p2 ) / 2;
     Point3D m2 = ( p1 + p3 ) / 2;
@@ -849,5 +904,4 @@ void calc_points_inside( FGPolygon& p ) {
 	}
     }
 #endif
-
 }
