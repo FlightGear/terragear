@@ -1,0 +1,341 @@
+<HTML>
+<HEAD>
+<TITLE>Terra Height Field Simplification Software</TITLE>
+<!-- Created by: Michael Garland, 17-Jan-1996 -->
+<!-- Changed by: Michael Garland, 19-Jan-1996 -->
+</HEAD>
+
+<BODY>
+<H1>Terra Height Field Simplification Software</H1>
+
+<P>This software is in the public domain and is provided <STRONG>AS
+IS</STRONG>. Use it at <STRONG>YOUR OWN RISK</STRONG>.
+
+<P><HR>
+
+<P>This is Terra, the successor to Scape.  Not only is this software
+<STRONG>UNSUPPORTED</STRONG>, but it is in the early stages of
+development.  This software is clearly incomplete and may still have
+bugs.  However, the basic mechanisms do function properly; I have run
+several large terrains through Terra, and the results were correct.
+
+<P>For up-to-date information on Terra, Scape, and related topics,
+watch:
+<PRE>
+	<A HREF="http://www.cs.cmu.edu/~garland/scape/">http://www.cs.cmu.edu/~garland/scape/</A>
+</PRE>
+
+<P><HR>
+
+<H2>Introduction</H2>
+
+<P>This is <STRONG>Terra</STRONG>, a program for generating polygonal
+approximations of terrains and other height fields.  It is based on
+algorithms described in:
+<BLOCKQUOTE>
+<CITE>
+<A HREF="http://www.cs.cmu.edu/~garland/scape/scape.ps.gz">Fast
+Polygonal Approximation of Terrains
+and Height Fields</A>,<BR>by Michael Garland and Paul Heckbert
+(Technical Report CMU-CS-95-181).
+</CITE><BR>
+A <A HREF="http://www.cs.cmu.edu/~garland/scape/color.ps.gz">color plate</A>
+is included separately.
+</BLOCKQUOTE>
+
+<P>The <B>Scape</B> package is the companion software for this paper.
+It was written with speed and memory efficiency as the primary
+concerns.  Although it was designed strictly for the testing of the
+algorithms described in our paper, we made it available so that people
+interested in our results could examine it.  We also hoped that it
+might be of interest to people who were attempting to build terrain
+approximations.  However, Scape is not particularly easy to use and
+the code is definitely less than aesthetically pleasing.
+
+<P>I wrote Terra because I was dissatisfied with Scape.  I wanted code
+which was better structured and programs which were easier to use.
+Terra will also provide more features than Scape.
+
+<P><B>Disclaimer:</B> Please remember that both Terra and Scape are
+unsupported programs that I tinker with in my spare time.  As such,
+development is typically sporadic.
+
+
+<H3>Brief feature summary</H3>
+<DL>
+<DT><EM>PGM input files</EM>
+<DD>Terra uses the PGM file format for data input.  At first, this
+might seem odd; however, it has several advantages.  PGM is a standard
+format which provides for both textual (i.e., human editable) and
+binary data files.  Since PGM is an image file format, height field
+data is directly viewable with most available image viewers.  Plus,
+there are many programs available to perform various manipulations on
+PGM files.
+
+<P>In particular, many of the tools provided by the <B>NetPBM</B> package
+can be used to manipulate PGM terrain data.  The NetPBM package can be
+found online at:
+<PRE>
+	<A HREF="http://wuarchive.wustl.edu/graphics/graphics/packages/NetPBM/">http://wuarchive.wustl.edu/graphics/graphics/packages/NetPBM/</A>
+</PRE>
+or by anonymous ftp to:
+<PRE>
+	<A HREF="ftp://wuarchive.wustl.edu/graphics/graphics/packages/NetPBM/">wuarchive.wustl.edu:/graphics/graphics/packages/NetPBM</A>
+</PRE>
+
+<P><DT><EM>Flexible output</EM>
+<DD>Terra can output its approximations in several different formats.
+The supported formats are described below.
+
+<P><DT><EM>Extended approximation features</EM>
+<DD>Terra supports preinsertion scripts and importance masks.  See
+below for details on what these are and how they work.
+
+<P><DT><EM>Portable graphics</EM>
+<DD>The interactive program, <TT>xterra</TT>, uses the GLUT library
+for windowing and OpenGL for rendering.  In theory, this should make
+it portable to machines other than SGI's.
+</DL>
+
+<H3>Currently absent features</H3>
+<P>All these features are currently missing.  Ideally, I would like
+to include these and other features.  In reality, what gets done and
+how fast it gets done might be highly variable.
+<DL>
+<DT><EM>Multiple simultaneous height fields</EM>
+<DD>Scape provided for approximating height fields with RGB textures
+applied to them.  Ultimately, Terra will support the approximation of
+arbitrarily many simultaneous height fields.  Currently, however,
+Terra will only accept the input of a <EM>single</EM> height field.
+
+<P><DT><EM>Data-dependent triangulation</EM>
+<DD>One of the significant features of Scape was the option to use
+data-dependent triangulation.  This triangulation scheme has not yet
+been ported to Terra.
+
+<P><DT><EM>Data import facilities</EM>
+<DD>I would like to be able to import USGS DEM data into Terra.
+Although correcting for the spherical mapping of USGS data is beyond
+the scope of this project, Terra is in need of some simple tools to
+facilitate conversion of USGS data.  I definitely don't have the time
+to write these tools, so if someone wants to suggest some reasonable
+ones, please let me know.
+
+<P><DT><EM>Robust PGM input routines</EM>
+<DD>The PGM input routines are rather fragile at present.  You should
+make sure that there is no extraneous white space and <EM>no
+comments</EM> in the file.  For example, the <TT>xv</TT> program will
+insert a comment in the PGM file citing itself as the creator of the
+file.  You will need to remove this comment from the file.
+</DL>
+
+<H2>Installation</H2>
+
+<OL>
+<P><LI>In order to compile the interactive version of Terra (<TT>xterra</TT>),
+       you must obtain the GLUT library.  It can be found at:
+
+<PRE>
+	<A HREF="http://www.sgi.com/Technology/openGL/glut.html">http://www.sgi.com/Technology/openGL/glut.html</A>
+</PRE>
+	       
+       <P>or by anonymous ftp at:
+
+<PRE>
+	<A HREF="ftp://sgigate.sgi.com/pub/opengl/xjournal/GLUT/">sgigate.sgi.com:/pub/opengl/xjournal/GLUT</A>
+</PRE>
+
+      <P>NOTE: For proper viewing, <TT>xterra</TT> needs to set the aspect ratio
+       of its windows.  This is currently not supported via GLUT.
+       Therefore, I've had to hack things a bit by accessing GLUT
+       internals.  The file gui.cc includes the glutint.h header.
+       This is not installed by GLUT.  You must install this manually.
+       Again, this is only of importance if you want to build <TT>xterra</TT>.
+
+
+<P><LI>Edit the Makefile for local customization.  Basically, you
+       should set the compilation flags, the libraries you need, and
+       the location of GLUT if you are compiling <TT>xterra</TT>.
+
+<P><LI>Typing '<TT>make</TT>' will build both <TT>terra</TT> and
+       <TT>xterra</TT>.  However, you
+       can selectively compile either of them (e.g., '<TT>make terra</TT>').
+</OL>
+
+
+
+<H2>Using Terra</H2>
+
+<P>The Terra software provides two programs: <TT>terra</TT>, a simple
+batch program, and <TT>xterra</TT>, an interactive application which
+uses OpenGL to display the surface approximation being
+constructed. Both programs utilize the same command line interface;
+<TT>xterra</TT> simply layers an interactive interface on top of
+<TT>terra</TT>.  This section contains an outline of the operation of
+<TT>terra</TT>.  All this information applies to <TT>xterra</TT> as well.
+
+<P>The operation of Terra goes through a simple series of phases:
+<OL>
+<LI><EM>Data input</EM>.<BR>
+This will load the terrain data and the importance mask (if specified).
+
+<LI><EM>Pre-insertion</EM>.<BR>
+If you have specified a pre-insertion script, it will be executed at
+this point.
+
+<LI><EM>Greedy insertion</EM>.<BR>
+The iterative greedy insertion procedure will begin.  Terra will
+continue selecting points until it meets the goals that you have
+specified.
+
+<LI><EM>Output</EM>.<BR>
+Terra will output the approximation it has constructed.  You have a
+choice of a handful of different formats.
+</OL>
+
+<P>Currently, all the information Terra needs to run is communicated
+on the command line.  The correct usage of Terra is:
+<PRE>
+	usage: terra &lt;options&gt; filename
+	       where &lt;options&gt; is some combination of: 
+	-e &lt;thresh&gt;      Sets the tolerable error threshold
+	-p &lt;count&gt;       Sets the maximum number of allowable points
+	-o &lt;file&gt; &lt;type&gt; When finished, output the approximation to &lt;file&gt;.
+	                 Valid types:  tin, eps, dem, obj
+	-m &lt;file&gt;        Load the importance mask from &lt;file&gt;
+	-s &lt;file&gt;        Execute preinsertion script from &lt;file&gt;
+</PRE>
+
+<P>The error threshold and point limit set the termination criteria.
+Terra will continue adding points as long as it it below the point
+limit and above the error threshold.  The default error threshold is
+0; the default point limit is the total number of points in the input
+grid.
+
+<P>The type of output desired is also specified on the command line.
+The <TT>eps</TT> output format simply generates an Encapsulated
+PostScript rendering of the approximation mesh.  The <TT>dem</TT>
+output format creates an approximate DEM from the approximate mesh.
+This can be useful for comparison with the original.  Both the
+<TT>tin</TT> and <TT>obj</TT> output formats generate 3D surfaces.
+The <TT>obj</TT> format is just the Wavefront <TT>.OBJ</TT> file
+format.  The <TT>tin</TT> format is a very simple model description;
+it is a series of lines where each line is of the form:
+<PRE>
+	t x1 y1 z1 x2 y2 z2 x3 y3 z3
+</PRE>
+Each such line describes a triangle with the three corners (x1,y1,z1)
+(x2,y2,z2) (x3,y3,z3).
+
+<P>The remaining options, involving importance masks and preinsertion
+scripts, are described in detail below.
+
+<H2>Xterra User Interface</H2>
+
+<P><TT>xterra</TT> accepts the same options as <TT>terra</TT> and
+operates in much the same way.  It introduces one extra command line option:
+<PRE>
+	-h &lt;factor&gt;      Sets the height scaling factor.  For example,
+	                 if grid points are 25m apart, use a factor of 0.04
+</PRE>
+
+<P>This is used to properly scale the display of the height field in
+3D.  The input to Terra is specified in pixel coordinates; data
+samples are taken at integral pixel coordinates.  However, the height
+values are probably not given in pixel coordinates.  So, for display
+purposes, the height values are scaled by a constant factor to account
+for this loss of units in Terra.
+
+<P>When <TT>xterra</TT> starts up, it performs any preinsertion
+actions that you request, and then it displays two windows: a mesh
+view and a surface view.  It does not perform greedy insertion until
+told to do so.  The mesh view provides a 2D view of the triangulation
+being generated for the approximation of the height field.  The
+surface view displays the approximate surface in 3D.  The interaction
+with these windows is currently quite simple and will probably change
+in the future, but here is an outline of how they work at the moment:
+<PRE>
+	Surface view:
+	   Left mouse drag   :   spin the surface
+	   Middle mouse drag :   translate the camera side to side
+	   Right mouse drag  :   move the camera in and out
+
+	Mesh view:
+	   Left mouse click   :  insert a point at the mouse location
+	   Middle mouse click :  run greedy insertion until goal is met
+	   Right mouse click  :  popup menu -- allows output
+</PRE>
+
+<H2>Providing Input for Terra</H2>
+
+<P>As stated above, Terra uses PGM files to read and write height
+field data.  Unfortunately, Terra does not as yet provide any direct
+means of acquiring PGM data.  For now, you will have to use the
+conversion software provided with Scape.  The
+<TT>STM-tools/stm2pgm</TT> utility distributed with Scape can convert
+Scape's STM file format into PGM's appropriate for use with Terra.
+Given an STM file,
+<PRE>
+	<TT>stm2pgm sample.stm exact &gt; sample.pgm</TT>
+</PRE>
+will generate a PGM file.  Note that the keyword <TT>exact</TT> is
+very important.  Don't forget it!  The resulting file will be textual,
+so you can even edit by hand if you need to.
+
+<H2>Importance Masks</H2>
+
+<P>One of the new features in Terra not found in Scape is the use of
+importance masks.  In order to determine the next point for insertion,
+Terra ranks the available points by an importance measure.  Importance
+masks allow you to bias this ranking.  For each data point, the mask
+assigns a weight in the range [0..1] which multiplies the computed
+importance value.
+
+<P>Importance masks are PGM files, just like the height field input.
+However, their interpretation is slightly different.  The input values
+are all integers.  They are scaled such that their maximum value will
+be mapped to 1.  One significant point is that this maximum value is
+taken from the PGM header, not determined from the data.  Therefore,
+by controlling the stated "maximum", you have much greater flexibility
+over the mapping of PGM pixel values to importance mask weights.
+
+<P>Currently, no means for constructing importance masks is provided.
+
+<H2>Preinsertion Scripts</H2>
+
+<P>The other new feature of Terra is its support for preinsertion
+scripts.  An important feature of the greedy insertion algorithm is
+that essentially provides for progressive refinement of the
+approximation.  Thus, the initial approximation can be arbitrary.  The
+preinsertion scripts allow you set up an approximation before greedy
+insertion begins.
+
+<P>A preinsertion script is a series of lines, each of the form:
+<PRE>
+	&lt;op&gt; X Y
+</PRE>
+The values for <TT>X</TT> and <TT>Y</TT> are the coordinates of a
+particular data point.  The currently supported opcodes are:
+<PRE>
+	<B>s</B> -- Select this point for use in the approximation and insert
+	     it into the current mesh.
+
+	<B>i</B> -- Mark this point as one to be ignored.  Terra will never
+	     process this point for insertion or evaluation.
+
+	<B>u</B> -- Mark the height value at this point as unknown.
+</PRE>
+Currently, Terra makes no distinction between points to be ignored and
+points whose height value is unknown; it ignores them equally.
+
+<P><HR>
+
+<P>January 19, 1996
+<ADDRESS>
+<A HREF="http://www.cs.cmu.edu/~garland/home.html">Michael Garland</A>
+<BR>
+<A HREF="mailto:garland@cs.cmu.edu">garland@cs.cmu.edu</A>
+</ADDRESS>
+
+</BODY>
+</HTML>
