@@ -422,7 +422,7 @@ main (int argc, const char **argv)
   vector<Attribute> pat_list;
 
 				// Enable logging.
-  fglog().setLogLevels( FG_ALL, FG_DEBUG );
+  sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
 
 				// Default values
@@ -605,7 +605,7 @@ main (int argc, const char **argv)
 				// Grab command-line arguments.
     fg_gzifstream input(argv[argPos]);
     if ( !input.good() ) {
-      FG_LOG( FG_GENERAL, FG_ALERT, "Cannot open file: " << argv[argPos]);
+      SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << argv[argPos]);
       exit(-1);
     }
 
@@ -615,7 +615,7 @@ main (int argc, const char **argv)
     try {
       data.readE00(input);
     } catch (E00Exception &e) {
-      FG_LOG(FG_GENERAL, FG_ALERT, "Reading " << argv[argPos]
+      SG_LOG(SG_GENERAL, SG_ALERT, "Reading " << argv[argPos]
 	     << " failed with exception " << e.getMessage());
       exit(1);
     }

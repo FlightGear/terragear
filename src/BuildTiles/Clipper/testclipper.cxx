@@ -31,7 +31,7 @@
 int main( int argc, char **argv ) {
     point2d global_min, global_max;
 
-    fglog().setLogLevels( FG_ALL, FG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     global_min.x = global_min.y = 200;
     global_max.y = global_max.x = -200;
@@ -40,7 +40,7 @@ int main( int argc, char **argv ) {
     clipper.init();
 
     if ( argc < 2 ) {
-	FG_LOG( FG_CLIPPER, FG_ALERT, "Usage: " << argv[0] 
+	SG_LOG( SG_CLIPPER, SG_ALERT, "Usage: " << argv[0] 
 		<< " file1 file2 ..." );
 	exit(-1);
     }
@@ -86,7 +86,7 @@ int main( int argc, char **argv ) {
 	    min.y = -180.0;
 	    max.y = 180.0;
 	} else {
-	    FG_LOG ( FG_GENERAL, FG_ALERT, 
+	    SG_LOG ( SG_GENERAL, SG_ALERT, 
 		     "Out of range latitude in clip_and_write_poly() = " 
 		     << c.y );
 	}
@@ -103,7 +103,7 @@ int main( int argc, char **argv ) {
     // do the clipping
     clipper.clip_all(global_min, global_max);
 
-    FG_LOG( FG_CLIPPER, FG_INFO, "finished main" );
+    SG_LOG( SG_CLIPPER, SG_INFO, "finished main" );
 
     return 0;
 }

@@ -59,10 +59,10 @@ int main( int argc, char **argv ) {
     int k, max_east = 270000000;
     char source;
 
-    fglog().setLogLevels( FG_ALL, FG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     if ( argc < 4 ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, "Usage: " << argv[0] 
+	SG_LOG( SG_GENERAL, SG_ALERT, "Usage: " << argv[0] 
 		<< " <gshhs_file> <work_dir> <level> [ area_type ]" );
 	exit(-1);
     }
@@ -80,7 +80,7 @@ int main( int argc, char **argv ) {
     // get the specified data level
     int target_level = atoi(argv[3]);
     if ( target_level < 1 || target_level > 4) {
-	FG_LOG( FG_GENERAL, FG_ALERT, argv[0] << 
+	SG_LOG( SG_GENERAL, SG_ALERT, argv[0] << 
 		": level must be 1 (land), 2 (lake), 3 (island), or 4 (pond)");
 	exit(-1);
     }
@@ -101,11 +101,11 @@ int main( int argc, char **argv ) {
 
     gzFile fp;
     if ( (fp = gzopen (argv[1], "rb")) == NULL ) {
-        FG_LOG( FG_GENERAL, FG_ALERT, "Cannot open file: " << argv[1] );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << argv[1] );
         exit(-1);
     }
 
-    FG_LOG( FG_GENERAL, FG_DEBUG, "Opening " << argv[1] << " for reading." );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Opening " << argv[1] << " for reading." );
 
     while ( gzread(fp, (void *)&h, (unsigned)sizeof(struct GSHHS)) == 
 	    (unsigned)sizeof(struct GSHHS) )
@@ -144,7 +144,7 @@ int main( int argc, char **argv ) {
 	    if ( gzread(fp, (void *)&p, (unsigned)sizeof(struct POINT)) !=
 		 (unsigned)sizeof(struct POINT) )
 	    {
-		FG_LOG( FG_GENERAL, FG_ALERT, "Error reading file for polygon "
+		SG_LOG( SG_GENERAL, SG_ALERT, "Error reading file for polygon "
 			<< h.id << " point " << k );
 		exit(-1);
 	    }
@@ -184,7 +184,7 @@ int main( int argc, char **argv ) {
 	//     continue;
 	// }
 
-	FG_LOG( FG_GENERAL, FG_INFO, "  record = " << h.id << " size = " <<
+	SG_LOG( SG_GENERAL, SG_INFO, "  record = " << h.id << " size = " <<
 		shape.contour_size( 0 ) );
 
 	FILE *fp = fopen("junk", "w");

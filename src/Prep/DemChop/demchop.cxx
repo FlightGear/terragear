@@ -51,10 +51,10 @@ int main(int argc, char **argv) {
     int i, j;
     */
 
-    fglog().setLogLevels( FG_ALL, FG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     if ( argc != 3 ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, 
+	SG_LOG( SG_GENERAL, SG_ALERT, 
 		"Usage " << argv[0] << " <dem_file> <work_dir>" );
 	exit(-1);
     }

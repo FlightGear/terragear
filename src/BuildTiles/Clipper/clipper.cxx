@@ -66,12 +66,12 @@ bool FGClipper::load_polys(const string& path) {
     int hole_flag;
     double startx, starty, x, y, lastx, lasty;
 
-    FG_LOG( FG_CLIPPER, FG_INFO, "Loading " << path << " ..." );
+    SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << " ..." );
 
     fg_gzifstream in( path );
 
     if ( !in ) {
-        FG_LOG( FG_CLIPPER, FG_ALERT, "Cannot open file: " << path );
+        SG_LOG( SG_CLIPPER, SG_ALERT, "Cannot open file: " << path );
 	exit(-1);
     }
 
@@ -93,7 +93,7 @@ bool FGClipper::load_polys(const string& path) {
 	    in >> count;
 
 	    if ( count < 3 ) {
-		FG_LOG( FG_CLIPPER, FG_ALERT, 
+		SG_LOG( SG_CLIPPER, SG_ALERT, 
 			"Polygon with less than 3 data points." );
 		exit(-1);
 	    }
@@ -105,7 +105,7 @@ bool FGClipper::load_polys(const string& path) {
 	    p = Point3D(startx, starty, 0.0);
 	    // cout << "poly pt = " << p << endl;
 	    poly.add_node( i, p );
-	    FG_LOG( FG_CLIPPER, FG_BULK, "0 = " 
+	    SG_LOG( SG_CLIPPER, SG_BULK, "0 = " 
 		    << startx << ", " << starty );
 
 	    for ( j = 1; j < count - 1; ++j ) {
@@ -148,7 +148,7 @@ void FGClipper::add_poly( int area, const FGPolygon &poly )
     if ( area < FG_MAX_AREA_TYPES ) {
 	polys_in.polys[area].push_back(poly);
     } else {
-	FG_LOG( FG_CLIPPER, FG_ALERT, "Polygon type out of range = " 
+	SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = " 
 		<< area);
 	exit(-1);
     }
@@ -291,7 +291,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 
     // gpcpoly_iterator current, last;
 
-    FG_LOG( FG_CLIPPER, FG_INFO, "Running master clipper" );
+    SG_LOG( SG_CLIPPER, SG_INFO, "Running master clipper" );
 
     accum.erase();
 
@@ -344,7 +344,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	// for ( ; current != last; ++current ) {
 	for( j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
 	    FGPolygon current = polys_in.polys[i][j];
-	    FG_LOG( FG_CLIPPER, FG_DEBUG, get_area_name( (AreaType)i ) 
+	    SG_LOG( SG_CLIPPER, SG_DEBUG, get_area_name( (AreaType)i ) 
 		    << " = " << current.contours() );
 
 	    // if not a hole, clip the area to the land_mask

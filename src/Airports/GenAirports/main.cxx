@@ -63,7 +63,7 @@ int main( int argc, char **argv ) {
     char tmp[256];
     bool ready_to_go = true;
 
-    fglog().setLogLevels( FG_ALL, FG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     // parse arguments
     string work_dir = "";
@@ -82,7 +82,7 @@ int main( int argc, char **argv ) {
  	} else if ( arg.find("--nudge=") == 0 ) {
 	    nudge = atoi( arg.substr(8).c_str() );
 	} else {
-	    FG_LOG( FG_GENERAL, FG_ALERT, 
+	    SG_LOG( SG_GENERAL, SG_ALERT, 
 		    "Usage " << argv[0] << " --input=<apt_file> "
 		    << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]" );
 	    exit(-1);
@@ -94,13 +94,13 @@ int main( int argc, char **argv ) {
     cout << "Nudge = " << nudge << endl;
 
     if ( work_dir == "" ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, 
+	SG_LOG( SG_GENERAL, SG_ALERT, 
 		"Error: no work directory specified." );
 	exit(-1);
     }
 
     if ( input_file == "" ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, 
+	SG_LOG( SG_GENERAL, SG_ALERT, 
 		"Error: no input file." );
 	exit(-1);
     }
@@ -119,7 +119,7 @@ int main( int argc, char **argv ) {
 
     fg_gzifstream in( input_file );
     if ( !in ) {
-        FG_LOG( FG_GENERAL, FG_ALERT, "Cannot open file: " << input_file );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
         exit(-1);
     }
 
@@ -173,7 +173,7 @@ int main( int argc, char **argv ) {
 	    // end of file
 	    break;
 	} else {
-	    FG_LOG( FG_GENERAL, FG_ALERT, 
+	    SG_LOG( SG_GENERAL, SG_ALERT, 
 		    "Unknown line in file" << endl << line );
 	    exit(-1);
 	}

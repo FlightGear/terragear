@@ -144,7 +144,7 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
 	area = area.substr(0, area.length() - 1);
     }
 
-    FG_LOG( FG_GENERAL, FG_INFO, "  raw area = " << area );
+    SG_LOG( SG_GENERAL, SG_INFO, "  raw area = " << area );
 
     return get_area_type( area );
 }
@@ -154,15 +154,15 @@ int main( int argc, char **argv ) {
     FGPolygon shape;
     int i, j;
 
-    fglog().setLogLevels( FG_ALL, FG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     if ( argc < 3 ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, "Usage: " << argv[0] 
+	SG_LOG( SG_GENERAL, SG_ALERT, "Usage: " << argv[0] 
 		<< " <shape_file> <work_dir> [ area_string ]" );
 	exit(-1);
     }
 
-    FG_LOG( FG_GENERAL, FG_DEBUG, "Opening " << argv[1] << " for reading." );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Opening " << argv[1] << " for reading." );
 
     // make work directory
     string work_dir = argv[2];
@@ -190,7 +190,7 @@ int main( int argc, char **argv ) {
     dbffile += ".dbf";
     DBFHandle hDBF = DBFOpen( dbffile.c_str(), "rb" );
     if( hDBF == NULL ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, "DBFOpen(" << dbffile
+	SG_LOG( SG_GENERAL, SG_ALERT, "DBFOpen(" << dbffile
 		<< ",\"rb\") failed." );
         exit( -1 );
     }
@@ -199,7 +199,7 @@ int main( int argc, char **argv ) {
     shpfile += ".shp";
     SHPHandle hSHP = SHPOpen( shpfile.c_str(), "rb" );
     if( hSHP == NULL ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, "SHPOpen(" << shpfile
+	SG_LOG( SG_GENERAL, SG_ALERT, "SHPOpen(" << shpfile
 		<< ",\"rb\") failed." );
         exit( -1 );
     }
@@ -208,12 +208,12 @@ int main( int argc, char **argv ) {
     double adfMinBound[4], adfMaxBound[4];
     SHPGetInfo( hSHP, &nEntities, &nShapeType, adfMinBound, adfMaxBound );
 
-    FG_LOG( FG_GENERAL, FG_INFO, "shape file records = " << nEntities << endl );
+    SG_LOG( SG_GENERAL, SG_INFO, "shape file records = " << nEntities << endl );
 
     string shapetype = SHPTypeName( nShapeType );
 
     if ( shapetype != "Polygon" ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, "Can't handle non-polygon shape files" );
+	SG_LOG( SG_GENERAL, SG_ALERT, "Can't handle non-polygon shape files" );
 	exit(-1);
     }
 
@@ -227,22 +227,22 @@ int main( int argc, char **argv ) {
 
         psShape = SHPReadObject( hSHP, i );
 
-	FG_LOG( FG_GENERAL, FG_DEBUG, "Processing record = " << i 
+	SG_LOG( SG_GENERAL, SG_DEBUG, "Processing record = " << i 
 		<< "  rings = " << psShape->nParts
 		<< "  total vertices = " << psShape->nVertices );
 
 	AreaType area = DefaultArea;
 	if ( force_area_type.length() == 0 ) {
 	    area = get_shapefile_type(hDBF, i);
-	    FG_LOG( FG_GENERAL, FG_DEBUG, "  area type = " 
+	    SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " 
 		    << get_area_name(area) << " (" << (int)area << ")" );
 	} else {
 	    area = get_area_type( force_area_type );
 	}
 
-	FG_LOG( FG_GENERAL, FG_INFO, "  record type = " 
+	SG_LOG( SG_GENERAL, SG_INFO, "  record type = " 
 		<< SHPTypeName(psShape->nSHPType) );
-	FG_LOG( FG_GENERAL, FG_INFO, "  bounds = (" 
+	SG_LOG( SG_GENERAL, SG_INFO, "  bounds = (" 
 		<< psShape->dfXMin << "," << psShape->dfYMin << ")  "
 		<< psShape->dfZMin << "," <<  psShape->dfMMin
 		<< " to (" << psShape->dfXMax << "," << psShape->dfYMax << ")  "
@@ -303,7 +303,7 @@ int main( int argc, char **argv ) {
 	} else if ( area == OceanArea ) {
 	    // interior of polygon is ocean, holes are islands
 
-	    FG_LOG(  FG_GENERAL, FG_ALERT, "Ocean area ... SKIPPING!" );
+	    SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
 
 	    // Ocean data now comes from GSHHS so we want to ignore
 	    // all other ocean data
@@ -312,10 +312,10 @@ int main( int argc, char **argv ) {
 	    // interior is ????
 
 	    // skip for now
-	    FG_LOG(  FG_GENERAL, FG_ALERT, "Void area ... SKIPPING!" );
+	    SG_LOG(  SG_GENERAL, SG_ALERT, "Void area ... SKIPPING!" );
 
 	    if ( shape.contours() > 1 ) {
-		FG_LOG(  FG_GENERAL, FG_ALERT, "  Void area with holes!" );
+		SG_LOG(  SG_GENERAL, SG_ALERT, "  Void area with holes!" );
 		// exit(-1);
 	    }
 
@@ -324,10 +324,10 @@ int main( int argc, char **argv ) {
 	    // interior is ????
 
 	    // skip for now
-	    FG_LOG(  FG_GENERAL, FG_ALERT, "Null area ... SKIPPING!" );
+	    SG_LOG(  SG_GENERAL, SG_ALERT, "Null area ... SKIPPING!" );
 
 	    if ( shape.contours() > 1 ) {
-		FG_LOG(  FG_GENERAL, FG_ALERT, "  Null area with holes!" );
+		SG_LOG(  SG_GENERAL, SG_ALERT, "  Null area with holes!" );
 		// exit(-1);
 	    }
 

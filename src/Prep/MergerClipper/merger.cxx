@@ -58,12 +58,12 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
   int hole_flag;
   double startx, starty, x, y, lastx, lasty;
   
-  FG_LOG( FG_CLIPPER, FG_INFO, "Loading " << path << " ..." );
+  SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << " ..." );
   
   fg_gzifstream in( path );
   
   if ( !in ) {
-    FG_LOG( FG_CLIPPER, FG_ALERT, "Cannot open file: " << path );
+    SG_LOG( SG_CLIPPER, SG_ALERT, "Cannot open file: " << path );
     exit(-1);
   }
   
@@ -85,7 +85,7 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
       in >> count;
       
       if ( count < 3 ) {
-	FG_LOG( FG_CLIPPER, FG_ALERT, 
+	SG_LOG( SG_CLIPPER, SG_ALERT, 
 		"Polygon with less than 3 data points." );
 	exit(-1);
       }
@@ -96,7 +96,7 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
       in >> starty;
       p = Point3D(startx, starty, 0.0);
       poly.add_node( i, p );
-      /* FG_LOG( FG_CLIPPER, FG_BULK, "0 = " 
+      /* SG_LOG( SG_CLIPPER, SG_BULK, "0 = " 
 	      << startx << ", " << starty );
       */
       for ( j = 1; j < count - 1; ++j ) {
@@ -104,7 +104,7 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
 	in >> y;
 	p = Point3D( x, y, 0.0 );
 	poly.add_node( i, p );
-	FG_LOG( FG_CLIPPER, FG_BULK, j << " = " << x << ", " << y );
+	SG_LOG( SG_CLIPPER, SG_BULK, j << " = " << x << ", " << y );
       }
       
       in >> lastx;
@@ -116,7 +116,7 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
       } else {
 	p = Point3D( lastx, lasty, 0.0 );
 	poly.add_node( i, p );
-	FG_LOG( FG_CLIPPER, FG_BULK, count - 1 << " = " 
+	SG_LOG( SG_CLIPPER, SG_BULK, count - 1 << " = " 
 		<< lastx << ", " << lasty );
       }
       
@@ -135,7 +135,7 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
   if ( area < FG_MAX_AREA_TYPES ) {
     subject.polys[area].push_back(poly);
   } else {
-    FG_LOG( FG_CLIPPER, FG_ALERT, "Polygon type out of range = " 
+    SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = " 
 	    << (int)poly_type);
     exit(-1);
   }

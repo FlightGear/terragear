@@ -71,24 +71,24 @@ void split_and_shift_chunk( const string& path, AreaType area,
     center_shape.erase();
     upper_shape.erase();
 
-    FG_LOG ( FG_GENERAL, FG_INFO, "Clipping lower shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Clipping lower shape" );
     lower_shape = polygon_int( lower_mask, shape );
     lower_shape.shift( 360, 0 );
 
-    FG_LOG ( FG_GENERAL, FG_INFO, "Clipping center shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Clipping center shape" );
     center_shape = polygon_int( center_mask, shape );
 
     upper_shape = polygon_int( upper_mask, shape );
-    FG_LOG ( FG_GENERAL, FG_INFO, "Clipping upper shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Clipping upper shape" );
     upper_shape.shift( -360, 0 );
 
-    FG_LOG ( FG_GENERAL, FG_INFO, "Processing lower shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Processing lower shape" );
     split_polygon(path, area, lower_shape);
 
-    FG_LOG ( FG_GENERAL, FG_INFO, "Processing center shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Processing center shape" );
     split_polygon(path, area, center_shape);
 
-    FG_LOG ( FG_GENERAL, FG_INFO, "Processing upper shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Processing upper shape" );
     split_polygon(path, area, upper_shape);
 }
 

@@ -113,19 +113,19 @@ void gen_clipped_polygon( const FGPolygon& shape, const FGPolygon& clip ) {
     center_shape.erase();
     upper_shape.erase();
 
-    FG_LOG ( FG_GENERAL, FG_INFO, "Clipping lower shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Clipping lower shape" );
     lower_shape = polygon_int( lower_mask, shape );
     lower_shape.shift( 360, 0 );
     result = polygon_int( lower_shape, clip );
     write_result( result );
 
-    FG_LOG ( FG_GENERAL, FG_INFO, "Clipping center shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Clipping center shape" );
     center_shape = polygon_int( center_mask, shape );
     result = polygon_int( center_shape, clip );
     write_result( result );
 
     upper_shape = polygon_int( upper_mask, shape );
-    FG_LOG ( FG_GENERAL, FG_INFO, "Clipping upper shape" );
+    SG_LOG ( SG_GENERAL, SG_INFO, "Clipping upper shape" );
     upper_shape.shift( -360, 0 );
     result = polygon_int( upper_shape, clip );
     write_result( result );
@@ -140,21 +140,21 @@ int main( int argc, char **argv ) {
     int k, max_east = 270000000;
     char source;
 
-    fglog().setLogLevels( FG_ALL, FG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     if ( argc < 2 ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, "Usage: " << argv[0] 
+	SG_LOG( SG_GENERAL, SG_ALERT, "Usage: " << argv[0] 
 		<< " <gshhs_file>" );
 	exit(-1);
     }
 
     gzFile fp;
     if ( (fp = gzopen (argv[1], "rb")) == NULL ) {
-        FG_LOG( FG_GENERAL, FG_ALERT, "Cannot open file: " << argv[1] );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << argv[1] );
         exit(-1);
     }
 
-    FG_LOG( FG_GENERAL, FG_DEBUG, "Opening " << argv[1] << " for reading." );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Opening " << argv[1] << " for reading." );
 
     while ( gzread(fp, (void *)&h, (unsigned)sizeof(struct GSHHS)) == 
 	    (unsigned)sizeof(struct GSHHS) )
@@ -189,7 +189,7 @@ int main( int argc, char **argv ) {
 	    if ( gzread(fp, (void *)&p, (unsigned)sizeof(struct POINT)) !=
 		 (unsigned)sizeof(struct POINT) )
 	    {
-		FG_LOG( FG_GENERAL, FG_ALERT, "Error reading file for polygon "
+		SG_LOG( SG_GENERAL, SG_ALERT, "Error reading file for polygon "
 			<< h.id << " point " << k );
 		exit(-1);
 	    }
@@ -206,7 +206,7 @@ int main( int argc, char **argv ) {
 	}
 	max_east = 180000000;	/* Only Eurasiafrica needs 270 */
 
-	FG_LOG( FG_GENERAL, FG_INFO, "  record = " << h.id << " size = " <<
+	SG_LOG( SG_GENERAL, SG_INFO, "  record = " << h.id << " size = " <<
 		shape.contour_size( 0 ) );
 
 	if ( h.id > -1 ) {

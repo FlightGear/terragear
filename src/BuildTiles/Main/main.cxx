@@ -986,7 +986,7 @@ int main(int argc, char **argv) {
     double ydist = -1;
     long tile_id = -1;
 
-    fglog().setLogLevels( FG_ALL, FG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     //
     // Parse the command-line arguments.

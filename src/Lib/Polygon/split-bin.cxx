@@ -65,11 +65,11 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 	min.sety( -180.0 );
 	max.sety( 180.0 );
     } else {
-	FG_LOG ( FG_GENERAL, FG_ALERT, 
+	SG_LOG ( SG_GENERAL, SG_ALERT, 
 		 "Out of range latitude in clip_and_write_poly() = " << c.y() );
     }
 
-    FG_LOG( FG_GENERAL, FG_DEBUG, "  (" << min << ") (" << max << ")" );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  (" << min << ") (" << max << ")" );
 
     // set up clipping tile
     base.add_node( 0, Point3D(min.x(), min.y(), 0) );
@@ -77,7 +77,7 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
     base.add_node( 0, Point3D(max.x(), max.y(), 0) );
     base.add_node( 0, Point3D(min.x(), max.y(), 0) );
 
-    // FG_LOG( FG_GENERAL, FG_DEBUG, "base = 4 vertices" );
+    // SG_LOG( SG_GENERAL, SG_DEBUG, "base = 4 vertices" );
 
     /*
     FILE *bfp= fopen("base", "w");
@@ -158,15 +158,15 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
     // get next polygon index
     index = poly_index_next();
 
-    FG_LOG( FG_GENERAL, FG_INFO, "  min = " << min << " max = " << max );
+    SG_LOG( SG_GENERAL, SG_INFO, "  min = " << min << " max = " << max );
 
     // find buckets for min, and max points of convex hull.
     // note to self: self, you should think about checking for
     // polygons that span the date line
     SGBucket b_min( min.x(), min.y() );
     SGBucket b_max( max.x(), max.y() );
-    FG_LOG( FG_GENERAL, FG_INFO, "  Bucket min = " << b_min );
-    FG_LOG( FG_GENERAL, FG_INFO, "  Bucket max = " << b_max );
+    SG_LOG( SG_GENERAL, SG_INFO, "  Bucket min = " << b_min );
+    SG_LOG( SG_GENERAL, SG_INFO, "  Bucket max = " << b_max );
 
     if ( b_min == b_max ) {
 	// shape entirely contained in a single bucket, write and bail
@@ -178,13 +178,13 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
     int dx, dy;
 	    
     sgBucketDiff(b_min, b_max, &dx, &dy);
-    FG_LOG( FG_GENERAL, FG_INFO, 
+    SG_LOG( SG_GENERAL, SG_INFO, 
 	    "  polygon spans tile boundaries" );
-    FG_LOG( FG_GENERAL, FG_INFO, "  dx = " << dx 
+    SG_LOG( SG_GENERAL, SG_INFO, "  dx = " << dx 
 	    << "  dy = " << dy );
 
     if ( (dx > 2880) || (dy > 1440) ) {
-	FG_LOG( FG_GENERAL, FG_ALERT, 
+	SG_LOG( SG_GENERAL, SG_ALERT, 
 		"something is really wrong in split_polygon()!!!!" );
 	exit(-1);
     }
@@ -217,7 +217,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
     } else if ( clip_line >= 89.0 ) {
 	clip_line = 90.0;
     } else {
-	FG_LOG ( FG_GENERAL, FG_ALERT, 
+	SG_LOG ( SG_GENERAL, SG_ALERT, 
 		 "Out of range latitude in clip_and_write_poly() = " 
 		 << clip_line );
     }
@@ -229,7 +229,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 	// structures to reduce memory use)
 	//
 
-	FG_LOG ( FG_GENERAL, FG_INFO, 
+	SG_LOG ( SG_GENERAL, SG_INFO, 
 		 "Generating bottom half (" << min.y() << "-" <<
 		 clip_line << ")" );
 
@@ -258,7 +258,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 	// structures to reduce memory use)
 	//
 
-	FG_LOG ( FG_GENERAL, FG_INFO, 
+	SG_LOG ( SG_GENERAL, SG_INFO, 
 		 "Generating top half (" << clip_line << "-" <<
 		 max.y() << ")" );
 
