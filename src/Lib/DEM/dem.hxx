@@ -103,24 +103,24 @@ public:
     ~TGDem();
 
     // open a DEM file (use "-" if input is coming from stdin)
-    int open ( const string& file );
+    bool open ( const string& file );
 
     // close a DEM file
-    int close();
+    bool close();
 
     // parse a DEM file
-    int parse();
+    bool parse();
 
     // read and parse DEM "A" record
-    int read_a_record();
+    bool read_a_record();
 
     // read and parse DEM "B" record
-    void read_b_record();
+    bool read_b_record();
 
     // write out the area of data covered by the specified bucket.
     // Data is written out column by column starting at the lower left
     // hand corner.
-    int write_area( const string& root, SGBucket& b, bool compress );
+    bool write_area( const string& root, SGBucket& b, bool compress );
 
     // Informational methods
     inline double get_originx() const { return originx; }

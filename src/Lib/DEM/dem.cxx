@@ -80,7 +80,7 @@ TGDem::TGDem( const string &file ) {
 
 
 // open a DEM file
-int
+bool
 TGDem::open ( const string& file ) {
     // open input file (or read from stdin)
     if ( file ==  "-" ) {
@@ -88,28 +88,28 @@ TGDem::open ( const string& file ) {
 	// fd = stdin;
 	// fd = gzdopen(STDIN_FILENO, "r");
 	printf("Not yet ported ...\n");
-	return 0;
+	return false;
     } else {
 	in = new sg_gzifstream( file );
 	if ( !(*in) ) {
 	    cout << "Cannot open " << file << endl;
-	    return 0;
+	    return false;
 	}
 	cout << "Loading DEM data file: " << file << endl;
     }
 
-    return 1;
+    return true;
 }
 
 
 // close a DEM file
-int
+bool
 TGDem::close () {
     // the sg_gzifstream doesn't seem to have a close()
 
     delete in;
 
-    return 1;
+    return true;
 }
 
 
@@ -172,7 +172,7 @@ TGDem::next_exp() {
 
 
 // read and parse DEM "A" record
-int
+bool
 TGDem::read_a_record() {
     int i, inum;
     double dnum;
@@ -194,7 +194,7 @@ TGDem::read_a_record() {
     cout << "    DEM level code = " << inum << "\n";
 
     if ( inum > 3 ) {
-	return 0;
+	return false;
     }
 
     // Pattern code, 1 indicates a regular elevation pattern
@@ -325,12 +325,12 @@ TGDem::read_a_record() {
 	in->get(c);
     }
 
-    return 1;
+    return true;
 }
 
 
 // read and parse DEM "B" record
-void
+bool
 TGDem::read_b_record( ) {
     string token;
     int i;
@@ -377,18 +377,20 @@ TGDem::read_b_record( ) {
 	dem_data[cur_col][i] = (float)prof_data;
 	last = prof_data;
     }
+
+    return true;
 }
 
 
 // parse dem file
-int
+bool
 TGDem::parse( ) {
     int i;
 
     cur_col = 0;
 
     if ( !read_a_record() ) {
-	return(0);
+	return false;
     }
 
     for ( i = 0; i < dem_num_profiles; i++ ) {
@@ -403,14 +405,14 @@ TGDem::parse( ) {
 
     cout << "    Done parsing\n";
 
-    return 1;
+    return true;
 }
 
 
 // write out the area of data covered by the specified bucket.  Data
 // is written out column by column starting at the lower left hand
 // corner.
-int
+bool
 TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     // calculate some boundaries
     double min_x = ( b.get_center_lon() - 0.5 * b.get_width() ) * 3600.0;
@@ -436,19 +438,19 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     // this write_area() routine and feed it buckets that coincide
     // well with the underlying grid structure and spacing.
 
-    if ( ( min_x < originx )
-	 || ( max_x > originx + cols * col_step )
-	 || ( min_y < originy )
-	 || ( max_y > originy + rows * row_step ) ) {
+    if ( ( min_x < (originx - 0.001) )
+	 || ( max_x > (originx + cols * col_step + 0.001) )
+	 || ( min_y < (originy - 0.001) )
+	 || ( max_y > (originy + rows * row_step + 0.001) ) ) {
 	cout << "  ERROR: bucket at least partially outside DEM data range!" <<
 	    endl;
-	return 0;
+	return false;
     }
 
     // If the area is all ocean, skip it.
     if (!has_non_zero_elev(start_x, span_x, start_y, span_y)) {
         cout << "Tile is all zero elevation: skipping" << endl;
-        return 0;
+        return false;
     }
 
     // generate output file name
@@ -487,7 +489,7 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
 	system( command.c_str() );
     }
 
-    return 1;
+    return true;
 }
 
 
