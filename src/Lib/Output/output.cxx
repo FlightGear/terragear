@@ -62,6 +62,7 @@ void write_polygon( const FGPolygon& poly, const string& base ) {
 	sprintf(name, "%s%d", base.c_str(), i );
 	FILE *fp = fopen( name, "w" );
 
+	fprintf(fp, "hole = %d\n", poly.get_hole_flag(i));
 	for ( int j = 0; j < poly.contour_size( i ); ++j ) {
 	    Point3D p0 = poly.get_pt(i, j);
 	    fprintf(fp, "%.8f %.8f\n", p0.x(), p0.y());
