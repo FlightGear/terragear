@@ -62,7 +62,8 @@ struct TGRunway {
     TGPolygon aim_point;
 
     bool really_taxiway;
-    bool generated;};
+    bool generated;
+};
 
 
 typedef vector < TGRunway > runway_list;

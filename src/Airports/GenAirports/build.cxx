@@ -217,6 +217,7 @@ static TGPolygon calc_elevations( TGAptSurface &surf,
 }
 
 
+#if 0                           // DEAD CODE 10/15/2004 CLO
 // strip trailing spaces
 static void my_chomp( string& str ) {
     SG_LOG(SG_GENERAL, SG_DEBUG, "my_chomp()");
@@ -226,6 +227,7 @@ static void my_chomp( string& str ) {
 	SG_LOG(SG_GENERAL, SG_DEBUG, "'" << str.substr( str.length() - 1, 1 ) << "'");
     }
 }
+#endif
 
 
 // build a runway
@@ -387,6 +389,7 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
 	rwy.rwy_no = token[3];
         rwy.really_taxiway = (rwy.rwy_no == "xxx");
+        rwy.generated = false;
 
 	rwy.lat = atof( token[1].c_str() );
         apt_lat += rwy.lat;
@@ -569,8 +572,10 @@ void build_airport( string airport_id, float alt_m,
         int largest_idx = -1;
         double max_size = 0;
         for ( i = 0; i < (int)taxiways.size(); ++i ) {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "taxiway i = " << i );
             double size = taxiways[i].length * taxiways[i].width;
             if ( size > max_size && !taxiways[i].generated ) {
+                SG_LOG( SG_GENERAL, SG_DEBUG, "taxiway max i = " << i );
                 max_size = size;
                 largest_idx = i;
             }
@@ -583,6 +588,7 @@ void build_airport( string airport_id, float alt_m,
                           &apt_base, &apt_clearing );
             taxiways[largest_idx].generated = true;
         } else {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "done with taxiways." );
             done = true;
         }
     }
