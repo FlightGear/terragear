@@ -2,3 +2,5 @@
 Makefile
 Makefile.in
 demchop
+hgtchop
+testassem
