@@ -909,7 +909,7 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
 }
 
 
-// generate ALSF-I/II and SALS approach lighting schemes
+// generate ALSF-I/II and SALS/SALSF approach lighting schemes
 static superpoly_list gen_alsf( const FGRunway& rwy_info,
                                 float alt_m, const string &kind, bool recip )
 {
@@ -1004,7 +1004,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         ref = Point3D( lon, lat, 0.0 );
         count = 30;
     } else {
-        // SALS
+        // SALS/SALSF
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
                             -300 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
@@ -1051,7 +1051,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
     ref = ref_save;
 
-    if ( kind == "1" || kind == "O" ) {
+    if ( kind == "1" || kind == "O" || kind == "P" ) {
         // Terminating bar
 
         // offset 200' downwind
@@ -1153,7 +1153,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         }
     }
 
-    if ( kind == "1" || kind == "O" ) {
+    if ( kind == "1" || kind == "O" || kind == "P" ) {
         // Generate pre-threshold bar
 
         ref = ref_save;
@@ -1243,7 +1243,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
     ref = ref_save;
 
-    if ( kind == "O" ) {
+    if ( kind == "O" || kind == "P" ) {
         // generate SALS secondary threshold
 
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -1341,6 +1341,23 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
             s_lights.push_back( ref );
             s_normals.push_back( normal );
 
+            // offset 100' downwind
+            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                                -100 * SG_FEET_TO_METER, &lat, &lon, &r );
+            ref = Point3D( lon, lat, 0.0 );
+        }
+    } else if ( kind == "P" ) {
+        // generate 3 sequenced lights aligned with last 3 light bars
+
+        // start 1300' downwind
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                            -1300 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref = Point3D( lon, lat, 0.0 );
+
+        for ( i = 0; i < 3; ++i ) {
+            s_lights.push_back( ref );
+            s_normals.push_back( normal );
+             
             // offset 100' downwind
             geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
                                 -100 * SG_FEET_TO_METER, &lat, &lon, &r );
@@ -2248,15 +2265,15 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
         }
     }
 
-    // SSALS
+    // SALSF
     if ( rwy_info.end1_flags.substr(3,1) == "P" ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "P", false );
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "P", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
     if ( rwy_info.end2_flags.substr(3,1) == "P" ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "P", true );
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "P", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
@@ -2290,7 +2307,21 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
         }
     }
 
-    // Many aproach lighting systems define the threshold lighting
+    // SSALS
+    if ( rwy_info.end1_flags.substr(3,1) == "S" ) {
+        superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+    if ( rwy_info.end2_flags.substr(3,1) == "S" ) {
+        superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+
+     // Many aproach lighting systems define the threshold lighting
     // needed, but for those that don't (i.e. REIL, ODALS, or Edge
     // lights defined but no approach lights.)
     // Make threshold lighting
