@@ -89,7 +89,6 @@ enum AreaType {
     BareTundraCover,		// Bare Ground Tundra
     SnowCover,			// Snow or Ice
 
-
     IslandArea,			// any island area not covered otherwise
     DefaultArea,		// any land area not covered otherwise
 
