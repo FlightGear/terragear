@@ -229,6 +229,29 @@ TGHgt::write_area( const string& root, SGBucket& b ) {
 }
 
 
+// write the entire area out in a simple ascii format
+bool TGHgt::write_whole_ascii( const string& file ) {
+    cout << "writing to " << file << endl;
+    // write the file
+    gzFile fp;
+    if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+	cout << "ERROR:  cannot open " << file << " for writing!" << endl;
+	exit(-1);
+    }
+
+    gzprintf( fp, "%d\n%d\n", rows, cols );
+    for ( int i = 0; i < rows; i++ ) {
+        for ( int j = 0; j < cols; j++ ) {
+            gzprintf( fp, "%d\n", (int)data[i][j] );
+        }
+    }
+    gzclose(fp);
+
+    return true;
+}
+
+
+
 TGHgt::~TGHgt() {
     // printf("class TGHgt DEstructor called.\n");
     delete [] data;

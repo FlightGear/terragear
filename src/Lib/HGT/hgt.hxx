@@ -83,6 +83,9 @@ public:
     // hand corner.
     bool write_area( const string& root, SGBucket& b );
 
+    // write the entire area out in a simple ascii format
+    bool write_whole_ascii( const string& file );
+
     // Informational methods
     inline double get_originx() const { return originx; }
     inline double get_originy() const { return originy; }
