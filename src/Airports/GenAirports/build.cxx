@@ -546,7 +546,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     for ( i = 0; i < (int)taxiways.size(); ++i ) {
         build_runway( taxiways[i], &rwy_polys, &texparams, &accum, &apt_base );
     }
-    write_polygon( accum, "accum" );
+    // write_polygon( accum, "accum" );
 
     if ( apt_base.total_size() == 0 ) {
 	cout << "no airport points generated" << endl;
@@ -562,11 +562,11 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // FGPolygon hull = convex_hull(apt_pts);
 
     FGPolygon filled_base = strip_out_holes( apt_base );
-    write_polygon( filled_base, "filled-base" );
+    // write_polygon( filled_base, "filled-base" );
     FGPolygon divided_base = split_long_edges( filled_base, 200.0 );
-    write_polygon( divided_base, "divided-base" );
+    // write_polygon( divided_base, "divided-base" );
     FGPolygon base_poly = polygon_diff( divided_base, accum );
-    write_polygon( base_poly, "base-raw" );
+    // write_polygon( base_poly, "base-raw" );
 
     // Try to remove duplicated nodes and other degeneracies
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
@@ -821,29 +821,68 @@ void build_airport( string airport_raw, string_list& runways_raw,
     point_list geod_nodes = calc_elevations( root, nodes.get_node_list() );
     cout << "Done with calc_elevations()" << endl;
 
-#if 0 // testing
+    // #if 0 // testing
 
     // add base skirt (to hide potential cracks)
     //
     // this has to happen after we've calculated the node elevations
     // but before we convert to wgs84 coordinates
+    int uindex, lindex;
+
     for ( i = 0; i < divided_base.contours(); ++i ) {
 	strip_v.clear();
 	strip_tc.clear();
-	for ( j = 0; j < divided_base.contour_size(i); ++j ) {
+
+	// prime the pump ...
+	p = divided_base.get_pt( i, 0 );
+	uindex = nodes.find( p );
+	if ( uindex >= 0 ) {
+	    Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
+	    cout << geod_nodes[uindex] << " <-> " << lower << endl;
+	    lindex = nodes.simple_add( lower );
+	    geod_nodes.push_back( lower );
+	    strip_v.push_back( uindex );
+	    strip_v.push_back( lindex );
+	} else {
+	    cout << "Ooops missing node when building skirt ... dying!"
+		 << endl;
+	    exit(-1);
+	}
+
+	// loop through the list
+	for ( j = 1; j < divided_base.contour_size(i); ++j ) {
 	    p = divided_base.get_pt( i, j );
-	    index = nodes.find( p );
-	    if ( index >= 0 ) {
-		strip_v.push_back( index );
-		Point3D lower = geod_nodes[index] - Point3D(0, 0, 20);
-		index = nodes.unique_add_3d( lower );
-		strip_v.push_back( index );
+	    uindex = nodes.find( p );
+	    if ( uindex >= 0 ) {
+		Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
+		cout << geod_nodes[uindex] << " <-> " << lower << endl;
+		lindex = nodes.simple_add( lower );
+		geod_nodes.push_back( lower );
+		strip_v.push_back( lindex );
+		strip_v.push_back( uindex );
 	    } else {
 		cout << "Ooops missing node when building skirt ... dying!"
 		     << endl;
 		exit(-1);
 	    }
 	}
+
+	// close off the loop
+	p = divided_base.get_pt( i, 0 );
+	uindex = nodes.find( p );
+	if ( uindex >= 0 ) {
+	    Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
+	    cout << geod_nodes[uindex] << " <-> " << lower << endl;
+	    lindex = nodes.simple_add( lower );
+	    geod_nodes.push_back( lower );
+	    strip_v.push_back( lindex );
+	    strip_v.push_back( uindex );
+	} else {
+	    cout << "Ooops missing node when building skirt ... dying!"
+		 << endl;
+	    exit(-1);
+	}
+
 	strips_v.push_back( strip_v );
 	strip_materials.push_back( "Grass" );
 
@@ -860,7 +899,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	strips_tc.push_back( base_tc );
     }
 
-#endif
+    // #endif
 
     // calculate wgs84 mapping of nodes
     point_list wgs84_nodes;
