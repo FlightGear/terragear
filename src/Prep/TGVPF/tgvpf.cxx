@@ -44,10 +44,10 @@ SG_USING_STD(vector);
 
 #include <Geometry/line.hxx>
 #include <Geometry/util.hxx>
+#include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/split.hxx>
 #include <vpf/vpf.hxx>
 
 #ifdef _MSC_VER
@@ -537,7 +537,7 @@ main (int argc, const char **argv)
           if ( max_segment > 1.0 ) {
               shape = tgPolygonSplitLongEdges( shape, max_segment );
           }
-	  tgSplitPolygon(work_dir, material_type, shape, false);
+	  tgChopPolygon(work_dir, material_type, shape, false);
 	}
       }
     }
@@ -550,7 +550,10 @@ main (int argc, const char **argv)
       if (mask.total_size() >= 3) {
 	cout << "Inverse polygon with " << mask.total_size() << " points in "
 	     << mask.contours() << " contour(s)" << endl;
-	tgSplitPolygon(work_dir, material_type, mask, false);
+        if ( max_segment > 1.0 ) {
+            mask = tgPolygonSplitLongEdges( mask, max_segment );
+        }
+	tgChopPolygon(work_dir, material_type, mask, false);
       } else {
 	cout << "Inverse polygon is empty" << endl;
       }

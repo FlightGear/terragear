@@ -9,10 +9,10 @@
 #include <simgear/structure/exception.hxx>
 
 #include <Geometry/util.hxx>
+#include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/split.hxx>
 
 #include <stdlib.h>
 
@@ -65,7 +65,7 @@ add_point (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(p, node->getIntValue("width", 500), poly);
   poly = tgPolygonInt(poly, bounds_poly);
-  tgSplitPolygon(".", material, poly, false);
+  tgChopPolygon(".", material, poly, false);
 }
 
 static void
@@ -86,7 +86,7 @@ add_line (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(line, node->getIntValue("width", 10), poly);
   poly = tgPolygonInt(poly, bounds_poly);
-  tgSplitPolygon(".", material, poly, false);
+  tgChopPolygon(".", material, poly, false);
 }
 
 static void
@@ -108,7 +108,7 @@ add_polygon (SGPropertyNode_ptr node)
     poly.set_hole_flag(i, contour_node->getBoolValue("hole", false));
   }
   poly = tgPolygonInt(poly, bounds_poly);
-  tgSplitPolygon(".", material, poly, false);
+  tgChopPolygon(".", material, poly, false);
 }
 
 void

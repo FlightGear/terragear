@@ -31,10 +31,10 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 
+#include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/split.hxx>
 #include <Polygon/simple_clip.hxx>
 
 #include "gshhs_split.hxx"
@@ -86,13 +86,13 @@ void split_and_shift_chunk( const string& path, AreaType area,
     upper_shape.shift( -360, 0 );
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing lower shape" );
-    tgSplitPolygon(path, area, lower_shape, false);
+    tgChopPolygon(path, area, lower_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing center shape" );
-    tgSplitPolygon(path, area, center_shape, false);
+    tgChopPolygon(path, area, center_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing upper shape" );
-    tgSplitPolygon(path, area, upper_shape, false);
+    tgChopPolygon(path, area, upper_shape, false);
 }
 
 

@@ -44,10 +44,10 @@ SG_USING_STD(vector);
 
 #include <Geometry/rectangle.hxx>
 #include <Geometry/util.hxx>
+#include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/split.hxx>
 #include <e00/e00.hxx>
 
 #ifdef _MSC_VER
@@ -179,7 +179,7 @@ processPoints (const E00 &data, const tg::Rectangle &bounds,
     }
 
     tg::makePolygon(p, width, shape);
-    tgSplitPolygon(workDir, areaType, shape, false);
+    tgChopPolygon(workDir, areaType, shape, false);
   }
 }
 
@@ -242,7 +242,7 @@ processLines (const E00 &data, const tg::Rectangle &bounds,
     cout << "  Minimum angle: "
 	 << (shape.minangle_contour(0) * SGD_RADIANS_TO_DEGREES) << endl;
     
-    tgSplitPolygon(workDir, areaType, shape, false);
+    tgChopPolygon(workDir, areaType, shape, false);
   }
   cout << "Done lines" << endl;
 }
@@ -309,7 +309,7 @@ processPolygons (const E00 &data, const tg::Rectangle &bounds,
 					  0.0));
       }
     }
-    tgSplitPolygon(workDir, areaType, shape, false);
+    tgChopPolygon(workDir, areaType, shape, false);
   }
 }
 

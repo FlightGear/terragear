@@ -39,8 +39,8 @@
 #include <Array/array.hxx>
 #include <Geometry/trinodes.hxx>
 #include <Output/output.hxx>
+#include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
-#include <Polygon/split.hxx>
 #include <Polygon/polygon.hxx>
 
 SG_USING_STD(string);
@@ -329,7 +329,7 @@ int main( int argc, char **argv ) {
     poly_index_init( counter_file );
 
     string holepath = root + "/PhotoArea";
-    tgSplitPolygon( holepath, HoleArea, hole, false );
+    tgChopPolygon( holepath, HoleArea, hole, false );
 
     return 0;
 }

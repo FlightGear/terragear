@@ -50,9 +50,9 @@
 #include <Geometry/poly_support.hxx>
 #include <Geometry/trinodes.hxx>
 #include <Output/output.hxx>
+#include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/split.hxx>
 #include <Polygon/superpoly.hxx>
 #include <Triangulate/trieles.hxx>
 
@@ -1210,8 +1210,8 @@ void build_airport( string airport_id, float alt_m,
     string holepath = root + "/AirportArea";
     // long int poly_index = poly_index_next();
     // write_boundary( holepath, b, hull, poly_index );
-    tgSplitPolygon( holepath, HoleArea, divided_base, true );
-    tgSplitPolygon( holepath, AirportArea, apt_clearing, false );
+    tgChopPolygon( holepath, HoleArea, divided_base, true );
+    tgChopPolygon( holepath, AirportArea, apt_clearing, false );
     
 }
 

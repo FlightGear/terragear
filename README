@@ -1,75 +1,164 @@
-FG Scenery Tools README
-=======================
+TerraGear Scenery Tools README
+==============================
 
-Contained here-in are the FG scenery creation tools.  These can be
-used to convert 3 arcsec ASCII format DEM files and 30 arcsec binary
-format DEM files into Flight Gear scenery.
+TerraGear is a collection of tools for building scenery for the
+FlightGear project.  Generally, the process is done in two steps:
 
-Eventually these tools will expand to support insertion of airports,
-roads, rivers, lakes, etc.
+  1. Preprocess the original raw data.  This chops up the data into
+     the FG tiling scheme and saves it in a simple, intermediate
+     format.
+
+  2. Collect all the different pieces of intermediate data and
+     assemble them into a 3d model of the terrain.
+
+There is currently no graphical front end for these tools so you will
+need to run them from the command line.  Be prepaired, when building
+scenery on a world wide scale, be prepaired to burn through multiple
+gigabytes of disk space and days or weeks of crunching.  Building
+smaller chunks is much more doable though.
 
 
 Building the Tools
 ==================
 
-These tools are compiled and tested under Linux.  I'm all for
-portability, but I just haven't been as motivated to port these tools,
-since scenery creation is less of a general need ... especially at
-this stage.  However, if anyone wants to work on porting to other
-platforms, I will be happy to incorporate patches.
+These tools are primarily compiled and tested under Unix with the gnu
+compilers.  I believe they also build and run on windows with Cygwin.
+If anyone has patches for supporting other platforms, I will be happy
+to incorporate them.
 
 The process for building these tools is very similar to building the
 main FG source code.
 
-1.  Set the FG_ROOT, FG_ROOT_SRC, and FG_ROOT_LIB environment
-    variables.
+1.  If you are using the CVS version of the source, run the
+    "autogen.sh" script.  If you downloaded the source tarball, then
+    don't.
 
-2.  Run ``make depend''
+2.  Run the "configure" script, with optional arguments for setting
+    the install prefix, etc..
 
-3.  Run ``make clean''
+3.  Run "make"
 
-4.  Run ``make''
-
-
-3 Arcsec ASCII DEM files
-========================
-
-Data files for the USA are available in this format from:
-
-    http://edcwww.cr.usgs.gov/doc/edchome/ndcdb/ndcdb.html
-
-To generate FG scenery from one of these dem files, run:
-
-    ./process-dem.pl <error-tolerance-squared> dem-file-1 [ dem-file-2 ...]
-
-You can vary the error tolerance to control the level of detail (and
-size) of the resulting scenery.  Note, you must specify the error
-tolerance squared.  So, if you wish to allow up to a 10 meter error
-margin (very high level of detail) you would specify a value of 100.
-If you desire an error tolerance of 200 meters (medium detail level)
-you would specify a value of 40000.
-
-The process-dem.pl script will automatically dump the resulting .obj
-files in the proper directory tree.
+4.  Run "make install"
 
 
-30 Arcsec Binary DEM files
-==========================
+Preprocessing Terrain
+=====================
 
-These data files have world wide coverage and are available from:
+TerraGear supports several terrain data sources:
 
-    http://edcwww.cr.usgs.gov/landdaac/gtopo30/gtopo30.html
+1. 30-arcsec SRTM based terrain data covering the world (recommended
+   over other 30-arcsec data sources):
 
-To process these data files, you must first run:
+   ftp://edcsgs9.cr.usgs.gov/pub/data/srtm/SRTM30/
 
-    DemRaw2Ascii/raw2ascii <input_file_basename> <output_dir>
+   I don't recall the details at the moment for processing this data.
+   Probably similar to the processing of the GLOBE data.
 
-For example:
+2. 30-arcsec world wide data: GLOBE project:
 
-    DemRaw2Ascii/raw2ascii /tmp/W020N90 asciidems/ 
+   http://www.ngdc.noaa.gov/seg/topo/globe.shtml
 
-This will create ASCII DEM files for each 1 degree x 1 degree area in
-the specified output dir.
+   a) First convert the "bin" DEM format to "ascii" DEM format using
+      "Prep/DemRaw2ascii/raw2ascii"
 
-Then, you can take these ascii dem files and feed them through the
-same procedure you use with the 3 arcsec dem files.
+   b) Then process the resulting files with "Prep/DemChop/demchop"
+
+
+3. 30-arcsec world wide data: GTOPO30 data:
+
+   http://edcwww.cr.usgs.gov/landdaac/gtopo30/gtopo30.html
+
+   a) First convert the "bin" DEM format to "ascii" DEM format using
+      "Prep/DemRaw2ascii/raw2ascii"
+
+   b) Then process the resulting files with "Prep/DemChop/demchop"
+
+
+4. SRTM (1 and 3-arcsec nearly world wide coverage):
+
+   ftp://edcsgs9.cr.usgs.gov/pub/data/srtm/
+
+   a) Chop up the .zip files using "Prep/DemChop/hgtchop"
+
+
+5. 3-arcsec ASCII DEM files:
+
+   Generally, I recommend using the SRTM data over this older data
+   set, however in places like Alaska, there is no SRTM coverage so
+   this data is better than the 30 arcsec data.
+
+       http://edcwww.cr.usgs.gov/doc/edchome/ndcdb/ndcdb.html
+
+   a) Create the .arr.gz files using the "Prep/DemChop/demchop" utility.
+
+
+The result for any of these terrain sources should be a "work" tree
+with a .arr.gz file for each FG tile.
+
+6. After you create the .arr.gz files you have to create a
+   corresponding .fit.gz file for each of these.  This is a data
+   reduction step which fits a set of polygons to the raw terrain with
+   a set of constraints on the maximum error allowed relative to the
+   original data set, and a max/min number of allowed nodes in the
+   fitted set.  The provided tools use a scheme that produces an
+   adaptive fit which means fewer polygons in smooth flat areas, and
+   more polygons in complex rough areas.  The end result is a *much*
+   better fit with fewer polygons than you could achieve by just keeping
+   every "nth" point from the original array.
+
+   To walk through an entire tree of .arr.gz files and produce the
+   corresponding .fit.gz files, use the "Prep/TerraFit/terrafit.py"
+   utility.  Please ignore the old "ArrayFit" tools which use a stupid
+   algorithm and are basically useless in comparison to TerraFit.
+   
+
+You should now have a large tree of .arr.gz files with a corresponding
+.fit.gz file for each .arr.gz file.  It's worth double checking the
+contents of your directory and counting all files of each type to make
+sure you do have a one to one match and didn't miss anything.
+
+
+Generating Airports
+===================
+
+Robin Peel maintains a world wide database of airports and navaids for
+the X-Plane and FlightGear projects:
+
+    http://www.x-plane.org/users/robinp/
+
+Robin's apt.dat needs to be run through two scripts
+
+    cat apt.dat | ./xp2simpleapt.pl > basic.dat
+    cat apt.dat | ./xp2runway.pl > runways.dat
+
+Compress these and copy them to $FG_ROOT/data/Airports
+
+Now run the runways.dat through the getapt utility:
+
+    genapts --input=runways.dat --work=$FG_WORK_DIR
+
+Note: this creates a last_apt file which shows you the airport genapts
+is currently working on.
+
+    - if genapts crashes (which is possible if you try to run through the
+      entire runways.dat file) you can look at last_apt to see where to start
+      up again.
+
+    - You can start in midstream using the --start-id=KABC option to genapts.
+
+    - If you get a consistant crash on a particular airport, you probably
+      found a bug in genapts, or there is some degenerate information at that
+      airport (40 mile long runways, 2 runways spaced miles apart, etc.)
+      Often you can fix the data and proceed.  Sometimes you can "nudge"
+      things around to get past a genapts bug.  For instance, if you crahs
+      consistantly on a valid looking runway, try nudging the heading or
+      position by a least significant digit.  Sometimes we can get numerical
+      problems with the polygon cliper and this often works around it.
+
+Other considerations:
+
+    - Airport generation pre-depends on terrain data being preped and ready
+      so airport surfaces can be built properly.
+
+    - If you prep new terrain data, you should probably rerun the airport
+      generation step.

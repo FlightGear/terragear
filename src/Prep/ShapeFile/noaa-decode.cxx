@@ -29,10 +29,10 @@
 
 #include <simgear/debug/logstream.hxx>
 
+#include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/split.hxx>
 #include <shapelib/shapefil.h>
 
 #ifdef _MSC_VER
@@ -417,7 +417,7 @@ int main( int argc, char **argv ) {
 	    // holes are preserved
 
 	    area = get_area_type( force_area_type );
-	    tgSplitPolygon(work_dir, area, shape, false);
+	    tgChopPolygon(work_dir, area, shape, false);
 	} else if ( area == OceanArea ) {
 	    // interior of polygon is ocean, holes are islands
 
@@ -425,7 +425,7 @@ int main( int argc, char **argv ) {
 
 	    // Ocean data now comes from GSHHS so we want to ignore
 	    // all other ocean data
-	    // tgSplitPolygon(work_dir, area, shape, false);
+	    // tgChopPolygon(work_dir, area, shape, false);
 	} else if ( area == VoidArea ) {
 	    // interior is ????
 
@@ -437,7 +437,7 @@ int main( int argc, char **argv ) {
 		// exit(-1);
 	    }
 
-	    // tgSplitPolygon(work_dir, area, shape, false);
+	    // tgChopPolygon(work_dir, area, shape, false);
 	} else if ( area == NullArea ) {
 	    // interior is ????
 
@@ -449,9 +449,9 @@ int main( int argc, char **argv ) {
 		// exit(-1);
 	    }
 
-	    // tgSplitPolygon(work_dir, area, shape, false);
+	    // tgChopPolygon(work_dir, area, shape, false);
 	} else {
-	    tgSplitPolygon(work_dir, area, shape, false);
+	    tgChopPolygon(work_dir, area, shape, false);
 	}
     }
 

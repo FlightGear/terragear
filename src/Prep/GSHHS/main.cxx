@@ -38,7 +38,6 @@
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/split.hxx>
 
 #ifdef _MSC_VER
 #  include <Win32/mkdir.hpp>

@@ -1,8 +1,10 @@
-// split.hxx -- polygon splitting utils
+// chop.hxx -- routine to chop a polygon up along tile boundaries and
+//             write the individual pieces to the TG working polygon
+//             file format.
 //
 // Written by Curtis Olson, started February 1999.
 //
-// Copyright (C) 1999  Curtis L. Olson  - curt@flightgear.org
+// Copyright (C) 1999-2004  Curtis L. Olson  - curt@flightgear.org
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,19 +23,20 @@
 // $Id$
 
 
-#ifndef _SPLIT_HXX
-#define _SPLIT_HXX
+#ifndef _TG_CHOP_HXX
+#define _TG_CHOP_HXX
 
 
 #include "names.hxx"
 #include "polygon.hxx"
 
 
-// process shape (write polygon to all intersecting tiles)
-void tgSplitPolygon( const string& path, AreaType area,
-                     const TGPolygon& shape, bool preserve3d );
+// process polygon shape (chop up along tile boundaries and write each
+// polygon piece to a file)
+void tgChopPolygon( const string& path, AreaType area,
+                    const TGPolygon& shape, bool preserve3d );
 
 
-#endif // _SPLIT_HXX
+#endif // _TG_CHOP_HXX
 
 

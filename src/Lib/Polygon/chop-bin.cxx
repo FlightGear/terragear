@@ -1,8 +1,10 @@
-// split.cxx -- polygon splitting utils
+// chop-bin.hxx -- routine to chop a polygon up along tile boundaries and
+//                 write the individual pieces to the TG working polygon
+//                 file format.
 //
 // Written by Curtis Olson, started February 1999.
 //
-// Copyright (C) 1999  Curtis L. Olson  - curt@flightgear.org
+// Copyright (C) 1999-2004  Curtis L. Olson  - curt@flightgear.org
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +21,7 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 // $Id$
+
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -39,7 +42,7 @@
 #include "index.hxx"
 #include "names.hxx"
 #include "simple_clip.hxx"
-#include "split.hxx"
+#include "chop.hxx"
 
 
 static void clip_and_write_poly( string root, long int p_index, AreaType area, 
@@ -144,9 +147,10 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 }
 
 
-// process shape (write polygon to all intersecting tiles)
-void tgSplitPolygon( const string& path, AreaType area,
-                     const TGPolygon& shape, bool preserve3d )
+// process polygon shape (chop up along tile boundaries and write each
+// polygon piece to a file)
+void tgChopPolygon( const string& path, AreaType area,
+                    const TGPolygon& shape, bool preserve3d )
 {
     Point3D min, max, p;
     // point2d min, max;
@@ -264,7 +268,7 @@ void tgSplitPolygon( const string& path, AreaType area,
 	    bottom_clip = horizontal_clip( shape, clip_line, Below );
 	}
 
-	tgSplitPolygon( path, area, bottom_clip, preserve3d );
+	tgChopPolygon( path, area, bottom_clip, preserve3d );
     }
 
     {
@@ -293,6 +297,6 @@ void tgSplitPolygon( const string& path, AreaType area,
 	    top_clip = horizontal_clip( shape, clip_line, Above );
 	}
 
-	tgSplitPolygon( path, area, top_clip, preserve3d );
+	tgChopPolygon( path, area, top_clip, preserve3d );
     }
 }
