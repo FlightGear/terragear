@@ -307,15 +307,15 @@ void FGMatch::split_tile( FGConstruct& c ) {
     }
     if ( ! se_flag ) {
 	se_node = Point3D( max.x, min.y, 0.0 );
-	se_normal = fake_normal( sw_node );
+	se_normal = fake_normal( se_node );
     }
     if ( ! nw_flag ) {
 	nw_node = Point3D( min.x, max.y, 0.0 );
- 	nw_normal = fake_normal( sw_node );
+ 	nw_normal = fake_normal( nw_node );
     }
     if ( ! ne_flag ) {
 	ne_node = Point3D( max.x, max.y, 0.0 );
- 	ne_normal = fake_normal( sw_node );
+ 	ne_normal = fake_normal( ne_node );
    }
 
     // separate nodes and normals into components
