@@ -1,4 +1,4 @@
-noinst_PROGRAMS = arrayfit
+bin_PROGRAMS = arrayfit
 
 arrayfit_SOURCES = arrayfit.cxx
 
