@@ -57,9 +57,9 @@ static void calc_elevations( const string &root, const string_list elev_src,
     }
 
     // set all elevations to -9999
-    for ( i = 0; i < Pts.rows(); ++i ) {
-        for ( j = 0; j < Pts.cols(); ++j ) {
-            Point3Df p = Pts(i,j);
+    for ( i = 0; i < Pts.cols(); ++i ) {
+        for ( j = 0; j < Pts.rows(); ++j ) {
+            Point3Df p = Pts(j,i);
             p.z() = -9999.0;
         }
     }
@@ -68,9 +68,9 @@ static void calc_elevations( const string &root, const string_list elev_src,
 	// find first node with -9999 elevation
         Point3Df first;
         bool found_one = false;
-        for ( i = 0; i < Pts.rows(); ++i ) {
-            for ( j = 0; j < Pts.cols(); ++j ) {
-                Point3Df p = Pts(i,j);
+        for ( i = 0; i < Pts.cols(); ++i ) {
+            for ( j = 0; j < Pts.rows(); ++j ) {
+                Point3Df p = Pts(j,i);
                 if ( p.z() < -9000.0 && !found_one ) {
                     first = p;
                     found_one = true;
@@ -107,17 +107,19 @@ static void calc_elevations( const string &root, const string_list elev_src,
 	    // this array file
 	    double elev;
 	    done = true;
-            for ( i = 0; i < Pts.rows(); ++i ) {
-                for ( j = 0; j < Pts.cols(); ++j ) {
-                    Point3Df p = Pts(i,j);
+            for ( i = 0; i < Pts.cols(); ++i ) {
+                for ( j = 0; j < Pts.rows(); ++j ) {
+                    Point3Df p = Pts(j,i);
                     if ( p.z() < -9000.0 ) {
                         done = false;
                         elev = array.altitude_from_grid( p.x() * 3600.0,
                                                          p.y() * 3600.0 );
                         if ( elev > -9000 ) {
                             p.z() = elev;
-                            Pts(i,j) = p;
+                            Pts(j,i) = p;
                             // cout << "interpolating for " << p << endl;
+                            // cout << p.x() << " " << p.y() << " " << p.z()
+                            //      << endl;
                         }
                     }
                 }
@@ -134,9 +136,9 @@ static void calc_elevations( const string &root, const string_list elev_src,
     // find the average height of the queried points
     double total = 0.0;
     int count = 0;
-    for ( i = 0; i < Pts.rows(); ++i ) {
-        for ( j = 0; j < Pts.cols(); ++j ) {
-            Point3Df p = Pts(i,j);
+    for ( i = 0; i < Pts.cols(); ++i ) {
+        for ( j = 0; j < Pts.rows(); ++j ) {
+            Point3Df p = Pts(j,i);
             total += p.z();
             count++;
         }
@@ -146,17 +148,21 @@ static void calc_elevations( const string &root, const string_list elev_src,
 
     // now go through the elevations and clamp them all to within
     // +/-10m (33') of the average.
-    const double dz = 10.0;
-    for ( i = 0; i < Pts.rows(); ++i ) {
-        for ( j = 0; j < Pts.cols(); ++j ) {
-            Point3Df p = Pts(i,j);
+    const double dz = 100.0;
+    for ( i = 0; i < Pts.cols(); ++i ) {
+        for ( j = 0; j < Pts.rows(); ++j ) {
+            Point3Df p = Pts(j,i);
             if ( p.z() < average - dz ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
+                       << " to " << average - dz );
                 p.z() = average - dz;
-                Pts(i,j) = p;
+                Pts(j,i) = p;
             }
             if ( p.z() > average + dz ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
+                       << " to " << average + dz );
                 p.z() = average + dz;
-                Pts(i,j) = p;
+                Pts(j,i) = p;
             }
         }
     }
@@ -201,10 +207,10 @@ TGAptSurface::TGAptSurface( const string& path,
 
     // Build the extra res input grid
     int mult = 10;
-    Matrix_Point3Df dPts((xdivs+2) * mult + 1, (ydivs+2) * mult + 1);
-    for ( int i = 0; i < dPts.rows(); ++i ) {
-        for ( int j = 0; j < dPts.cols(); ++j ) {
-            dPts(i,j) = Point3Df( min_deg.lon() + (i-mult)*(dlon/(double)mult),
+    Matrix_Point3Df dPts( (ydivs+2) * mult + 1, (xdivs+2) * mult + 1 );
+    for ( int i = 0; i < dPts.cols(); ++i ) {
+        for ( int j = 0; j < dPts.rows(); ++j ) {
+            dPts(j,i) = Point3Df( min_deg.lon() + (i-mult)*(dlon/(double)mult),
                                   min_deg.lat() + (j-mult)*(dlat/(double)mult),
                                   -9999 );
         }
@@ -214,27 +220,51 @@ TGAptSurface::TGAptSurface( const string& path,
     calc_elevations( path, elev_src, dPts );
 
     // Build the normal res input grid from the double res version
-    Matrix_Point3Df Pts(xdivs + 1, ydivs + 1);
-    for ( int i = 0; i < xdivs + 1; ++i ) {
-        for ( int j = 0; j < ydivs + 1; ++j ) {
+    Matrix_Point3Df Pts(ydivs + 1, xdivs + 1);
+    for ( int i = 0; i < Pts.cols(); ++i ) {
+        for ( int j = 0; j < Pts.rows(); ++j ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
             for ( int ii = 0; ii < mult; ++ii ) {
                 for ( int jj = 0; jj < mult; ++jj ) {
-                    double value = dPts(mult*(i+1) - (mult/2) + ii,
-                                        mult*(j+1) - (mult/2) + jj).z();
+                    double value = dPts(mult*(j+1) - (mult/2) + jj,
+                                        mult*(i+1) - (mult/2) + ii).z();
                     SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
-                    accum += dPts(mult*(i+1) - (mult/2) + ii,
-                                  mult*(j+1) - (mult/2) + jj).z();
+                    accum += dPts(mult*(j+1) - (mult/2) + jj,
+                                  mult*(i+1) - (mult/2) + ii).z();
                 }
             }
             SG_LOG( SG_GENERAL, SG_DEBUG,
                     "  average = " << accum / (mult*mult) );
-            Pts(i,j) = Point3Df( min_deg.lon() + i * dlon,
+            Pts(j,i) = Point3Df( min_deg.lon() + i * dlon,
                                  min_deg.lat() + j * dlat,
                                  accum / (mult*mult) );
         }
     }
+
+#if 0
+    // Add some "slope" sanity to the resulting surface grid points
+    for ( i = 0; i < Pts.cols() - 1; ++i ) {
+        for ( j = 0; j < Pts.rows() - 1; ++j ) {
+            Point3Df p = Pts(j,i);
+            Point3Df p1 = Pts(j,i+1);
+            geo_inverse_wgs_84( 0.0, 
+
+            if ( p.z() < average - dz ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
+                       << " to " << average - dz );
+                p.z() = average - dz;
+                Pts(j,i) = p;
+            }
+            if ( p.z() > average + dz ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
+                       << " to " << average + dz );
+                p.z() = average + dz;
+                Pts(j,i) = p;
+            }
+        }
+    }
+#endif
 
     // Create the nurbs surface
 
@@ -242,6 +272,21 @@ TGAptSurface::TGAptSurface( const string& path,
     apt_surf = new PlNurbsSurfacef;
     apt_surf->globalInterp( Pts, 3, 3);
     SG_LOG(SG_GENERAL, SG_DEBUG, "  successful.");
+
+#if 0
+    // For debugging only: output an array of surface points suitable
+    // for plotting with gnuplot.  This is useful for comparing the
+    // approximated and smoothed surface to the original rough
+    // surface.
+    cout << "DEBUGGING TEST" << endl;
+    for ( int i = 0; i < (xdivs+2) * mult + 1; ++i ) {
+        for ( int j = 0; j < (ydivs+2) * mult + 1; ++j ) {
+            double x = min_deg.lon() + (i-mult)*(dlon/(double)mult);
+            double y = min_deg.lat() + (j-mult)*(dlat/(double)mult);
+            cout << x << " " << y << " " << query(x,y) << endl;
+        }
+    }
+#endif
 }
 
 
@@ -252,6 +297,8 @@ TGAptSurface::~TGAptSurface() {
 
 // Query the elevation of a point, return -9999 if out of range
 double TGAptSurface::query( double lon_deg, double lat_deg ) {
+    const double eps = 0.00001;
+
     // sanity check
     if ( lon_deg < min_deg.lon() || lon_deg > max_deg.lon() ||
          lat_deg < min_deg.lat() || lat_deg > max_deg.lat() )
@@ -260,12 +307,79 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
         return -9999.0;
     }
 
-    // convert lon,lat to nurbs space
-    double x = (lon_deg - min_deg.lon()) / (max_deg.lon() - min_deg.lon());
-    double y = (lat_deg - min_deg.lat()) / (max_deg.lat() - min_deg.lat());
+    double lat_range = max_deg.lat() - min_deg.lat();
+    double lon_range = max_deg.lon() - min_deg.lon();
 
-    Point3Df p = apt_surf->pointAt( x, y );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  querying for " << x << ", " << y << " = " << p.z());
+    // convert lon,lat to nurbs space
+    double u = (lat_deg - min_deg.lat()) / lat_range;
+    double v = (lon_deg - min_deg.lon()) / lon_range;
+
+    int count = 0;
+    Point3Df p;
+    while ( count < 20 ) {
+        if ( u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 ) {
+            // oops, something goofed in the solver
+        }
+
+        p = apt_surf->pointAt( u, v );
+        // cout << "  querying for " << u << ", " << v << " = " << p.z()
+        //      << endl;
+        // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
+        //      << endl;
+        double dx = lon_deg - p.x();
+        double dy = lat_deg - p.y();
+        // cout << "      dx = " << dx << " dy = " << dy << endl;
+
+        if ( (fabs(dx) < eps) && (fabs(dy) < eps) ) {
+            return p.z();
+        } else {
+            u = u + (dy/lat_range);
+            v = v + (dx/lon_range);
+            if ( u < 0.0 ) { u = 0.0; }
+            if ( u > 1.0 ) { u = 1.0; }
+            if ( v < 0.0 ) { v = 0.0; }
+            if ( v > 1.0 ) { v = 1.0; }
+        }
+
+        ++count;
+    }
+
+    // failed to converge with fast approach, try a binary paritition
+    // scheme
+    double min_u = 0.0; 
+    double max_u = 1.0;
+    double min_v = 0.0;
+    double max_v = 1.0;
+    count = 0;
+    while ( count < 30 ) {
+        u = (max_u + min_u) / 2.0;
+        v = (max_v + min_v) / 2.0;
+        p = apt_surf->pointAt( u, v );
+        // cout << "  binary querying for " << u << ", " << v << " = "
+        //      << p.z() << endl;
+        // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
+        //      << endl;
+        double dx = lon_deg - p.x();
+        double dy = lat_deg - p.y();
+        // cout << "      dx = " << dx << " dy = " << dy << endl;
+
+        if ( (fabs(dx) < eps) && (fabs(dy) < eps) ) {
+            return p.z();
+        } else {
+            if ( dy >= eps ) {
+                min_u = u;
+            } else if ( dy <= eps ) {
+                max_u = u;
+            }
+            if ( dx >= eps ) {
+                min_v = v;
+            } else if ( dx <= eps ) {
+                max_v = v;
+            }
+        }
+
+        ++count;
+    }
 
     return p.z();
 }
