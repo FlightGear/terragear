@@ -111,7 +111,7 @@ int main( int argc, char **argv ) {
             min_lon = rectangle.getMin().x();
             min_lat = rectangle.getMin().y();
             max_lon = rectangle.getMax().x();
-            max_lon = rectangle.getMax().y();
+            max_lat = rectangle.getMax().y();
 	} else {
 	    usage( argc, argv );
 	    exit(-1);
