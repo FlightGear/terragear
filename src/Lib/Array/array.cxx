@@ -64,14 +64,14 @@ SG_USING_STD(endl);
 
 TGArray::TGArray( void ) {
     // cout << "class TGArray CONstructor called." << endl;
-    in_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
+    in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 }
 
 
 TGArray::TGArray( const string &file ) {
     // cout << "class TGArray CONstructor called." << endl;
-    in_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
+    in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 
     TGArray::open(file);
@@ -134,6 +134,82 @@ TGArray::parse( SGBucket& b ) {
 	}
 
 	cout << "    Done parsing\n";
+
+        // need two passes to ensure that all voids are removed (unless entire
+	// array is a void.)
+        bool have_void = true;
+	int last_elev = -32768;
+        for ( int pass = 0; pass < 2 && have_void; ++pass ) { 
+	    // attempt to fill in any void data horizontally
+	    for ( int i = 0; i < cols; i++ ) {
+	        // fill in front ways
+	        last_elev = -32768;
+                have_void = false;
+                for ( int j = 0; j < rows; j++ ) {
+                    if ( in_data[i][j] > -9999 ) {
+		        last_elev = in_data[i][j];
+                    } else if ( last_elev > -9999 ) {
+		        in_data[i][j] = last_elev;
+                    } else {
+		        have_void = true;
+                    }
+                }
+                // fill in back ways
+                last_elev = -32768;
+                have_void = false;
+                for ( int j = rows - 1; j >= 0; j-- ) {
+                    if ( in_data[i][j] > -9999 ) {
+                        last_elev = in_data[i][j];
+                    } else if ( last_elev > -9999 ) {
+                        in_data[i][j] = last_elev;
+                    } else {
+                        have_void = true;
+                    }
+                }
+            }
+
+            // attempt to fill in any void data vertically
+            for ( int j = 0; j < rows; j++ ) {
+                // fill in front ways
+                last_elev = -32768;
+                have_void = false;
+                for ( int i = 0; i < cols; i++ ) {
+                    if ( in_data[i][j] > -9999 ) {
+                        last_elev = in_data[i][j];
+                    } else if ( last_elev > -9999 ) {
+                        in_data[i][j] = last_elev;
+                    } else {
+                        have_void = true;
+                    }
+                }
+
+                // fill in back ways
+                last_elev = -32768;
+                have_void = false;
+                for ( int i = cols - 1; i >= 0; i-- ) {
+                    if ( in_data[i][j] > -9999 ) {
+                        last_elev = in_data[i][j];
+                    } else if ( last_elev > -9999 ) {
+                        in_data[i][j] = last_elev;
+                    } else {
+                        have_void = true;
+                    }
+                }
+            }
+        }
+
+        if ( have_void ) {
+            // after all that work we still have a void, likely the
+            // entire array is void.  Fill in the void areas with zero
+            // as a panic fall back.
+            for ( int i = 0; i < cols; i++ ) {
+                for ( int j = 0; j < rows; j++ ) {
+                    if ( in_data[i][j] <= -9999 ) {
+                        in_data[i][j] = 0;
+                    }
+                }
+            }
+        }
     } else {
 	// file not open (not found?), fill with zero'd data
 
@@ -155,7 +231,7 @@ TGArray::parse( SGBucket& b ) {
 
 	for ( int i = 0; i < cols; i++ ) {
 	    for ( int j = 0; j < rows; j++ ) {
-		in_data[i][j] = 0.0;
+		in_data[i][j] = 0;
 	    }
 	}
 
@@ -382,8 +458,8 @@ double TGArray::interpolate_altitude( double lon, double lat ) const {
 
     if ( (xindex < 0) || (xindex + 1 >= cols) ||
 	 (yindex < 0) || (yindex + 1 >= rows) ) {
-	cout << "WARNING: Attempt to interpolate value outside of array!!!" 
-	     << endl;
+	// cout << "WARNING: Attempt to interpolate value outside of array!!!" 
+	//      << endl;
 	return -9999;
     }
 
