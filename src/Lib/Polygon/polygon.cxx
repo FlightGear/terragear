@@ -143,7 +143,7 @@ double FGPolygon::minangle_contour( const int contour ) {
 }
 
 
-// return true if contour B is inside countour A
+// return true if contour A is inside countour B
 bool FGPolygon::is_inside( int a, int b ) const {
     // make polygons from each specified contour
     FGPolygon A, B;
@@ -157,14 +157,24 @@ bool FGPolygon::is_inside( int a, int b ) const {
     pl = get_contour( b );
     B.add_contour( pl, 0 );
 
-    // B is "inside" A if the polygon_diff( B, A ) is not null.
-    FGPolygon result = polygon_diff( B, A );
+    // cout << "A size = " << A.total_size() << endl;
+    // A.write( "A" );
+    // cout << "B size = " << B.total_size() << endl;
+    // B.write( "B" );
+
+    // A is "inside" B if the polygon_diff( A, B ) is null.
+    FGPolygon result = polygon_diff( A, B );
+    // cout << "result size = " << result.total_size() << endl;
+
+    // char junk;
+    // cin >> junk;
+
     if ( result.contours() == 0 ) {
-	// cout << "    is_inside() result = true" << endl;
+	// cout << "  " << a << " is_inside() " << b << endl;
 	return true;
     }
 
-    // cout << "    is_inside() result = false" << endl;
+    // cout << "  " << a << " not is_inside() " << b << endl;
     return false;
 }
 

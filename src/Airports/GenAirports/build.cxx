@@ -1804,12 +1804,14 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	rwy_polys[k].set_poly( poly );
     }
 
-    cout << "add nodes/remove dups base " << endl;
+    cout << "add nodes base " << endl;
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
     // write_polygon( base_poly, "base-add" );
+    cout << "remove dups base " << endl;
     base_poly = remove_dups( base_poly );
+    cout << "remove bad contours base" << endl;
     base_poly = remove_bad_contours( base_poly );
-    // write_polygon( base_poly, "base-final" );
+    // write_polygon( base_poly, "base-fin" );
 
     // tesselate the polygons and prepair them for final output
 
@@ -1828,7 +1830,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	rwy_polys[i].set_texcoords( tc );
 	rwy_polys[i].set_tri_mode( GL_TRIANGLES );
     }
-    
+
     cout << "Tesselating base" << endl;
     FGPolygon base_tris = polygon_tesselate_alt( base_poly );
 

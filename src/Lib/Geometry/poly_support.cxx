@@ -234,7 +234,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 
 
 // basic triangulation of a polygon with out adding points or
-// splitting edges
+// splitting edges, this should triangulate around interior holes.
 void polygon_tesselate( const FGPolygon &p,
 			triele_list &elelist,
 			point_list &out_pts )
@@ -360,6 +360,9 @@ void polygon_tesselate( const FGPolygon &p,
 
     // TEMPORARY
     write_tri_data(&in);
+    /* cout << "Press return to continue:";
+    char junk;
+    cin >> junk; */
 
     // Triangulate the points.  Switches are chosen to read and write
     // a PSLG (p), number everything from zero (z), and produce an
@@ -636,6 +639,9 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 
     // TEMPORARY
     write_tri_data(&in);
+    /* cout << "Press return to continue:";
+    char junk;
+    cin >> junk; */
 
     // Triangulate the points.  Switches are chosen to read and write
     // a PSLG (p), number everything from zero (z), and produce an
@@ -762,7 +768,8 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
     contour_tesselate( node, p, hole_polys, hole_pts, elelist, out_pts );
     if ( elelist.size() <= 0 ) {
 	cout << "Error polygon triangulated to zero triangles!" << endl;
-	exit(-1);
+	return Point3D( -200, -200, 0 );
+	// exit(-1);
     }
 
     // find the largest triangle in the group
@@ -856,7 +863,7 @@ static void build_contour_tree( FGContourNode *node,
 	    if ( avail[i] ) {
 		// must still be an available contour
 		int cur_contour = node->get_contour_num();
-		if ( (cur_contour < 0 ) || p.is_inside( cur_contour, i ) ) {
+		if ( (cur_contour < 0 ) || p.is_inside( i, cur_contour ) ) {
 		    // must be inside the parent (or if the parent is
 		    // the root, add all available non-holes.
 		    cout << "  adding contour = " << i << endl;
@@ -880,10 +887,11 @@ static void build_contour_tree( FGContourNode *node,
 
     for ( i = 0; i < node->get_num_kids(); ++i ) {
 	for ( int j = 0; j < node->get_num_kids(); ++j ) {
+	    // cout << "working on kid " << i << ", " << j << endl;
 	    if ( i != j ) {
 		if ( (node->get_kid(i) != NULL)&&(node->get_kid(j) != NULL) ) {
-		    int A = node->get_kid( i ) -> get_contour_num();
-		    int B = node->get_kid( j ) -> get_contour_num();
+		    int A = node->get_kid( i )->get_contour_num();
+		    int B = node->get_kid( j )->get_contour_num();
 		    if ( p.is_inside( A, B ) ) {
 			// p.write_contour( i, "a" );
 			// p.write_contour( j, "b" );
@@ -891,8 +899,9 @@ static void build_contour_tree( FGContourNode *node,
 		        // need to remove contour j from the kid list
 		        avail[ node->get_kid( i ) -> get_contour_num() ] = 1;
 		        node->remove_kid( i );
-		        cout << "removing kid " << i 
-                             << " which is inside of kid " << j << endl;
+		        cout << "removing contour " << A 
+                             << " which is inside of contour " << B << endl;
+			continue;
 		    }
 		} else {
 		    // one of these kids is already NULL, skip
@@ -941,41 +950,43 @@ void calc_points_inside( FGPolygon& p ) {
 // fixed polygon
 FGPolygon remove_dups( const FGPolygon &poly ) {
     FGPolygon result;
+    point_list contour, new_contour;
     result.erase();
 
-    for ( int i = 0; i < poly.contours(); ++i ) {
-        Point3D last = poly.get_pt( i, poly.contour_size(i) - 1 );
-	bool all_same = true;
-	for ( int j = 0; j < poly.contour_size(i); ++j ) {
-	    // cout << "  " << i << " " << j << endl;
-	    Point3D cur = poly.get_pt( i, j );
-	    if ( cur == last ) {
-		// skip
-		// cout << "skipping a duplicate point" << endl;
-	    } else {
-		result.add_node( i, cur );
-		all_same = false;
-		last = cur;
+    FGPolygon tmp = poly;
+    for ( int i = 0; i < tmp.contours(); ++i ) {
+	contour = poly.get_contour( i );
+	// cout << "testing contour " << i << "  size = " << contour.size() 
+	//      << "  hole = " << poly.get_hole_flag( i ) << endl;
+	bool have_dups = true;
+	while ( have_dups ) {
+	    have_dups = false;
+	    new_contour.clear();
+	    Point3D last = contour[ contour.size() - 1 ];
+	    for ( int j = 0; j < (int)contour.size(); ++j ) {
+		// cout << "  " << i << " " << j << endl;
+		Point3D cur = contour[j];
+		if ( cur == last ) {
+		    have_dups = true;
+		    // cout << "skipping a duplicate point" << endl;
+		} else {
+		    new_contour.push_back( cur );
+		    last = cur;
+		}
 	    }
-        }
-
-	// make sure the last point doesn't equal the previous or the first.
-        Point3D begin = poly.get_pt( i, 0 );
-        Point3D end = poly.get_pt( i, poly.contour_size(i) - 1 );
-	if ( begin == end ) {
-	    // skip
-	    cout << "begin == end!" << endl;
-	    // exit(-1);
+	    contour = new_contour;
 	}
 
-	if ( !all_same ) {
+	// cout << "  final size = " << contour.size() << endl;
+
+	if ( contour.size() ) {
 	    int flag = poly.get_hole_flag( i );
-	    result.set_hole_flag( i, flag );
+	    result.add_contour( contour, flag );
 	} else {
 	    // too small an area ... add a token point to the contour
 	    // to keep other things happy, but this "bad" contour will
 	    // get nuked later
-	    result.add_node( i, begin );
+	    result.add_node( i, poly.get_pt( i, 0 ) );
 	}
     }
 
