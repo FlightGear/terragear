@@ -10,8 +10,8 @@
 
 #include "landcover.hxx"
 
-FG_USING_STD(ifstream);
-FG_USING_STD(string);
+SG_USING_STD(ifstream);
+SG_USING_STD(string);
 
 LandCover::LandCover( const string &filename )
 {

@@ -47,7 +47,7 @@
 #include <Clipper/clipper.hxx>
 #include <Triangulate/trieles.hxx>
 
-FG_USING_STD(string);
+SG_USING_STD(string);
 
 
 typedef vector < int_list > belongs_to_list;

@@ -56,10 +56,10 @@
 
 #include "construct.hxx"
 
-FG_USING_STD(cout);
-FG_USING_STD(endl);
-FG_USING_STD(string);
-FG_USING_STD(vector);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
+SG_USING_STD(string);
+SG_USING_STD(vector);
 
 vector<string> load_dirs;
 

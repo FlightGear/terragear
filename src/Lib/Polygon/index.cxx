@@ -29,8 +29,8 @@
 
 #include "index.hxx"
 
-FG_USING_STD(cout);
-FG_USING_STD(endl);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 
 static long int poly_index;

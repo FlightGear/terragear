@@ -35,7 +35,7 @@
 
 #include <vector>
 
-FG_USING_STD(vector);
+SG_USING_STD(vector);
 
 
 // forward declaration

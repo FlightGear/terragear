@@ -29,7 +29,7 @@
 
 #include STL_STRING
 
-FG_USING_STD(string);
+SG_USING_STD(string);
 
 
 // initialize the unique polygon index counter stored in path

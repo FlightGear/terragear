@@ -34,8 +34,8 @@
 #define MAXBUF 1024
 #define BUSY_WAIT_TIME 30
 
-FG_USING_STD(string);
-FG_USING_STD(vector);
+SG_USING_STD(string);
+SG_USING_STD(vector);
 
 string work_base = ".";
 string output_base = ".";

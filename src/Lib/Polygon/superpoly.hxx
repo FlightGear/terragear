@@ -43,8 +43,8 @@
 
 #include "polygon.hxx"
 
-FG_USING_STD(string);
-FG_USING_STD(vector);
+SG_USING_STD(string);
+SG_USING_STD(vector);
 
 
 class FGSuperPoly {

@@ -27,8 +27,8 @@
 
 #include "triangle.hxx"
 
-FG_USING_STD(cout);
-FG_USING_STD(endl);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 
 // Constructor

@@ -39,8 +39,8 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-FG_USING_STD( cout );
-FG_USING_STD( string );
+SG_USING_STD( cout );
+SG_USING_STD( string );
 
 // return the type of the shapefile record
 AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {

@@ -29,7 +29,7 @@
 
 #include <DEM/dem.hxx>
 
-FG_USING_STD(cout);
+SG_USING_STD(cout);
 
 
 // static float dem_data[DEM_SIZE_1][DEM_SIZE_1];

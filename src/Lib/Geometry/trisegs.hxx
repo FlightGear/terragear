@@ -36,7 +36,7 @@
 
 #include "trinodes.hxx"
 
-FG_USING_STD(vector);
+SG_USING_STD(vector);
 
 
 // a segment is two integer pointers into the node list

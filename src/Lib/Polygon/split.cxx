@@ -36,7 +36,7 @@
 #include "names.hxx"
 #include "split.hxx"
 
-FG_USING_STD(cout);
+SG_USING_STD(cout);
 
 
 static void clip_and_write_poly( string root, long int p_index, AreaType area, 

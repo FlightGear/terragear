@@ -36,8 +36,8 @@
 
 #include "gshhs_split.hxx"
 
-FG_USING_STD(cout);
-FG_USING_STD(string);
+SG_USING_STD(cout);
+SG_USING_STD(string);
 
 
 // process shape front end ... split shape into lon = -180 ... 180,

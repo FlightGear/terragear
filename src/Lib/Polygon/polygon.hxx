@@ -37,9 +37,9 @@
 #include <string>
 #include <vector>
 
-FG_USING_STD(ostream);
-FG_USING_STD(string);
-FG_USING_STD(vector);
+SG_USING_STD(ostream);
+SG_USING_STD(string);
+SG_USING_STD(vector);
 
 
 #define FG_MAX_VERTICES 1500000

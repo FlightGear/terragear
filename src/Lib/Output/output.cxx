@@ -45,8 +45,8 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-FG_USING_STD( cout );
-FG_USING_STD( endl );
+SG_USING_STD( cout );
+SG_USING_STD( endl );
 
 
 void write_polygon( const FGPolygon& poly, const string& base ) {

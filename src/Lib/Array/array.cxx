@@ -57,9 +57,9 @@
 
 #include "array.hxx"
 
-FG_USING_STD(string);
-FG_USING_STD(cout);
-FG_USING_STD(endl);
+SG_USING_STD(string);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 
 FGArray::FGArray( void ) {

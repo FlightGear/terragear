@@ -38,7 +38,7 @@
 
 #include <Triangulate/trieles.hxx>
 
-FG_USING_STD(vector);
+SG_USING_STD(vector);
 
 
 typedef vector < int_list > opt_list;

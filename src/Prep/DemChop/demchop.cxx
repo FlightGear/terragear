@@ -37,8 +37,8 @@
 
 #include "point2d.hxx"
 
-FG_USING_STD(cout);
-FG_USING_STD(string);
+SG_USING_STD(cout);
+SG_USING_STD(string);
 
 
 int main(int argc, char **argv) {

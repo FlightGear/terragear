@@ -44,8 +44,8 @@
 #include <Main/construct.hxx>
 #include <Triangulate/triangle.hxx>
 
-FG_USING_STD(string);
-FG_USING_STD(vector);
+SG_USING_STD(string);
+SG_USING_STD(vector);
 
 
 typedef vector < int_list > tex_list;

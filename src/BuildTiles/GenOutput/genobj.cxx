@@ -35,8 +35,8 @@
 
 #include "genobj.hxx"
 
-FG_USING_STD(cout);
-FG_USING_STD(endl);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 
 // calculate the global bounding sphere.  Center is the center of the

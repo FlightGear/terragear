@@ -28,8 +28,8 @@
 
 #include "simple_clip.hxx"
 
-FG_USING_STD(cout);
-FG_USING_STD(endl);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 #define CLIP_EPSILON 0.000000000001
 

@@ -29,7 +29,7 @@
 
 #include STL_STRING
 
-FG_USING_STD(string);
+SG_USING_STD(string);
 
 
 // Posible shape file types.  Note the order of these is important and

@@ -40,7 +40,7 @@
 #include <simgear/misc/fgstream.hxx>
 
 
-FG_USING_STD(vector);
+SG_USING_STD(vector);
 
 
 #define ARRAY_SIZE 1200

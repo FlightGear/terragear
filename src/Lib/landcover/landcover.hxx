@@ -12,8 +12,8 @@
 #include STL_STRING
 #include <fstream>
 
-FG_USING_STD(ifstream);
-FG_USING_STD(string);
+SG_USING_STD(ifstream);
+SG_USING_STD(string);
 
 
 /**

@@ -27,8 +27,8 @@
 
 #include "genfans.hxx"
 
-FG_USING_STD( cout );
-FG_USING_STD( endl );
+SG_USING_STD( cout );
+SG_USING_STD( endl );
 
 
 // make sure the list is expanded at least to hold "n" and then push

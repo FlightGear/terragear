@@ -28,10 +28,10 @@
 
 #include "names.hxx"
 
-FG_USING_STD(string);
-FG_USING_STD(map);
-FG_USING_STD(cout);
-FG_USING_STD(endl);
+SG_USING_STD(string);
+SG_USING_STD(map);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 
 typedef map<AreaType, string> area_type_map;
