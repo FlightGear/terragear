@@ -57,7 +57,7 @@
 #include <Polygon/superpoly.hxx>
 #include <Triangulate/trieles.hxx>
 
-#include "build.hxx"
+#include "apt_surface.hxx"
 #include "convex_hull.hxx"
 #include "lights.hxx"
 #include "point2d.hxx"
@@ -70,6 +70,8 @@
 #include "rwy_visual.hxx"
 #include "taxiway.hxx"
 #include "texparams.hxx"
+
+#include "build.hxx"
 
 SG_USING_STD(map);
 SG_USING_STD(less);
@@ -172,6 +174,23 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
 }
 
 
+// Determine node elevations based on provide TGAptSurface.  Offset is
+// added to the final elevation
+static point_list calc_elevations( TGAptSurface &surf,
+                                   const point_list& geod_nodes,
+                                   double offset )
+{
+    point_list result = geod_nodes;
+    for ( unsigned int i = 0; i < result.size(); ++i ) {
+        double elev = surf.query( result[i].lon(), result[i].lat() );
+        result[i].setelev( elev + offset );
+    }
+
+    return result;
+}
+
+
+#if 0
 // fix node elevations.  Offset is added to the final elevation
 static point_list calc_elevations( const string& root,
                                    const point_list& geod_nodes,
@@ -186,7 +205,8 @@ static point_list calc_elevations( const string& root,
 
     bool done = false;
     point_list result = geod_nodes;
-    int i, j;
+    int i;
+    unsigned int j;
     TGArray array;
 
     // just bail if no work to do
@@ -234,7 +254,7 @@ static point_list calc_elevations( const string& root,
 	    // this array file
 	    double elev;
 	    done = true;
-	    for ( j = 0; j < (int)result.size(); ++j ) {
+	    for ( j = 0; j < result.size(); ++j ) {
 		if ( result[j].z() < -9000 ) {
 		    done = false;
 		    elev = array.interpolate_altitude( result[j].x() * 3600.0,
@@ -254,6 +274,7 @@ static point_list calc_elevations( const string& root,
 
     return result;
 }
+#endif
 
 
 // strip trailing spaces
@@ -920,8 +941,51 @@ void build_airport( string airport_raw, float alt_m,
 	tris_tc.push_back( base_tc );
     }
 
+    // calculation min/max coordinates of airport area
+    Point3D min_deg(9999.0, 9999.0, 0), max_deg(-9999.0, -9999.0, 0);
+    for ( j = 0; j < (int)nodes.get_node_list().size(); ++j ) {
+        Point3D p = nodes.get_node_list()[j];
+        if ( p.lon() < min_deg.lon() ) {
+            min_deg.setlon( p.lon() );
+        }
+        if ( p.lon() > max_deg.lon() ) {
+            max_deg.setlon( p.lon() );
+        }
+        if ( p.lat() < min_deg.lat() ) {
+            min_deg.setlat( p.lat() );
+        }
+        if ( p.lat() > max_deg.lat() ) {
+            max_deg.setlat( p.lat() );
+        }
+    }
+
+    // extend the min/max coordinates of airport area to cover all
+    // lights as well
+    for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
+        for ( j = 0;
+              j < (int)rwy_lights[i].get_poly().get_contour(0).size();
+              ++j )
+        {
+            Point3D p = rwy_lights[i].get_poly().get_contour(0)[j];
+            if ( p.lon() < min_deg.lon() ) {
+                min_deg.setlon( p.lon() );
+            }
+            if ( p.lon() > max_deg.lon() ) {
+                max_deg.setlon( p.lon() );
+            }
+            if ( p.lat() < min_deg.lat() ) {
+                min_deg.setlat( p.lat() );
+            }
+            if ( p.lat() > max_deg.lat() ) {
+                max_deg.setlat( p.lat() );
+            }
+        }
+    }
+
+    TGAptSurface apt_surf( root, min_deg, max_deg );
+
     // calculate node elevations
-    point_list geod_nodes = calc_elevations( root, nodes.get_node_list(),
+    point_list geod_nodes = calc_elevations( apt_surf, nodes.get_node_list(),
                                              0.0 );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with calc_elevations()");
 
@@ -1039,7 +1103,7 @@ void build_airport( string airport_raw, float alt_m,
         // calculate light node elevations
 
         point_list geod_light_nodes
-            = calc_elevations( root, light_nodes.get_node_list(), 0.5 );
+            = calc_elevations( apt_surf, light_nodes.get_node_list(), 0.5 );
         TGPolygon p;
         p.add_contour( geod_light_nodes, 0 );
         TGSuperPoly s;
