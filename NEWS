@@ -1,3 +1,64 @@
+New in 0.0.4
+* December 19, 2000
+* We now have a much more robust "point in a polygon" routine
+  (i.e. finds a random point inside a polygon, but not inside a hole
+  in that polygon.)
+* Removed the mat3.h dependencies.
+* Increased maximum area types to 128 for future expandability
+* Added road and railroad area types.
+* Added a new library for reading ArcInfo e00 files (DCW, GeoGratis).
+* Added a new prep util for creating textured polygons from e00 line
+  data (i.e. for roads, railroads, streams, utility lines, etc.)
+* Added support for the USGS global land use / loand cover raster data base.
+* Better MSVC support.
+* Better Cygwin support.
+* Weight face normals by triangle area when calculating terrain node normals.
+* Screen for very small or degenerate triangles which could blow up our face
+  normal calculations.
+* Fixed a bug which could cause a real mess in the scenery when an
+  airport (or hole area) lay on top of a tile corner.
+* Clip all land use data to GSHHS land mask so that lower res data won't
+  mess up our coast lines.
+* Add in support for GSHHS lakes, islands, and ponds.
+* Updated stats for parallel scenery build server.
+* Added a new option, --cover, to fgfs-construct and
+  fgfs-tools-client.  The option takes an argument giving the location
+  of the land-cover raster file; if it is not specified, land-cover is
+  not built.
+* Increased max node count per tile to 4000.
+* Fixed a problem with dividing the tile up into land use areas
+  (original scheme left really tiny slivers on the edges.)
+* Landcover/landuse changes by david megginson to group like chunks
+  together into a single polygon.
+* Additional degeneracy and bad polygon screening.
+* Updates to ShapeDecode to handle NOAA landuse/cover shape files.
+* Tile constructor util will now accept an arbitrary list of
+  directories to search for input data (so these don't have to be hardcoded.)
+* tracked down some "point in a contour" bugs.  The terrain was
+  stressing this code more that airports (which was where the code was
+  developed.)
+* Built a generalized polygon tesselater out of Shewchuk's triangulator.
+* Added a routine to calculate the area of an arbitrary 3d triangle.
+* Bug fixes in the airport generator util.
+* Added a test program for the triangulator.
+* Added a print_tri_data() routine to dump complete triangulator data
+  structure to screen.
+* Added a zero_triangulateio() routine to zero a struct before use.
+* Fixed a bug in Shewchuk's triangulator.  This code does a lot of
+  malloc()'ing of space, and in some cases blindly expects the results
+  to be zero'd out, even though this may not be gauranteed.  We now
+  explicitely zero out these critical memory locations after it is
+  malloc()'ed.
+* Added precision runway markings, switched how textures were applied
+  (rotated them by 90 degrees.)
+* Updated runway texture layout in designator block.
+* Write out the AirportArea hole that has been segmented so it fits with the
+  airport model that goes inside the hole in the terrain.
+* Handle too-short visual runways for now by converting them to simple runways.
+* Handle concrete textures as well as turf and dirt runways.
+* Added non-precision and visual runway markings.
+* Added code to chop up extra long line segments.
+
 New in 0.0.3
 * April 6, 2000
 * Updated for latest SimGear-0.0.7
