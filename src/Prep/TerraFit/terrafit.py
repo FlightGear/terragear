@@ -36,9 +36,9 @@ def pre_terra(pgmName, data, span_x, span_y, max_z, min_z):
     
 
 ##
-def run_terra(thresh, count, factor, objName, pgmName):
+def run_terra(thresh, minnodes, count, factor, objName, pgmName):
     print
-    command = "terra -e %f -p %d -h %f -o %s obj %s"%(thresh, count, factor, objName, pgmName)
+    command = "terra -e %f -n %d -p %d -h %f -o %s obj %s"%(thresh, minnodes, count, factor, objName, pgmName)
     print command
     npts = -1
     error = -99999.9
@@ -137,10 +137,7 @@ def terra_fit(fname, thresh=1, count=1000, factor=1.0/30.0, minnodes=50):
     pre_terra(pgmName, data, span_x, span_y, max_z, min_z)
     
     objName = basename+'.obj'
-    npts = -1
-    while npts < minnodes:
-        npts = run_terra(thresh, count, factor, objName, pgmName)
-        thresh = 0.5 * thresh
+    npts = run_terra(thresh, minnodes, count, factor, objName, pgmName)
     
     gzName = basename+".fit.gz"
     post_terra(objName, gzName, step_x, step_y, min_x, min_y, min_z)
