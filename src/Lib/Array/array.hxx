@@ -84,13 +84,13 @@ public:
     ~TGArray( void );
 
     // open an Array file (use "-" if input is coming from stdin)
-    int open ( const string& file );
+    bool open ( const string& file );
 
     // close a Array file
-    int close();
+    bool close();
 
     // parse a Array file
-    int parse( SGBucket& b );
+    bool parse( SGBucket& b );
 
     // Use least squares to fit a simpler data set to dem data.
     // Return the number of fitted nodes

@@ -79,7 +79,7 @@ TGArray::TGArray( const string &file ) {
 
 
 // open an Array file
-int
+bool
 TGArray::open( const string& file ) {
     // open input file (or read from stdin)
     if ( file ==  "-" ) {
@@ -87,34 +87,34 @@ TGArray::open( const string& file ) {
 	// fd = stdin;
 	// fd = gzdopen(STDIN_FILENO, "r");
 	cout << "  Not yet ported ..." << endl;
-	return 0;
+	return false;
     } else {
 	in = new sg_gzifstream( file );
 	if ( ! in->is_open() ) {
 	    cout << "  Cannot open " << file << endl;
-	    return 0;
+	    return false;
 	}
 	cout << "  Opening array data file: " << file << endl;
     }
 
-    return 1;
+    return true;
 }
 
 
 // close an Array file
-int
+bool
 TGArray::close() {
     // the sg_gzifstream doesn't seem to have a close()
 
     delete in;
 
-    return 1;
+    return true;
 }
 
 
 // parse Array file, pass in the bucket so we can make up values when
 // the file wasn't found.
-int
+bool
 TGArray::parse( SGBucket& b ) {
     if ( in->is_open() ) {
 	// file open, parse
@@ -238,7 +238,7 @@ TGArray::parse( SGBucket& b ) {
 	cout << "    File not open, so using zero'd data" << endl;
     }
 
-    return 1;
+    return true;
 }
 
 
