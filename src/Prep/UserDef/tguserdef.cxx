@@ -5,8 +5,8 @@
 #include <simgear/compiler.h>
 #include <simgear/math/point3d.hxx>
 #include <simgear/misc/exception.hxx>
-#include <simgear/misc/props_io.hxx>
-#include <simgear/misc/props.hxx>
+#include <simgear/props/props_io.hxx>
+#include <simgear/props/props.hxx>
 
 #include <Geometry/util.hxx>
 #include <Polygon/index.hxx>
