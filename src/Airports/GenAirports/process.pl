@@ -26,7 +26,7 @@
 $workdir = "/fgfs01/curt/Work";
 $inputfile = "./default.apt";
 $binary = "./genapts";
-$startid = "";
+$startid = "BNF";
 
 # end of user configurable section
 

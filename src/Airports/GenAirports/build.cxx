@@ -107,11 +107,11 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    // cout << "basic course = " << az1 << endl;
 
 	    //
-	    // 2. Rotate this back into a coordinate system where X
-	    // runs the length of the runway and Y runs crossways.
+	    // 2. Rotate this back into a coordinate system where Y
+	    // runs the length of the runway and X runs crossways.
 	    //
 
-	    double course = az1 - angle;
+	    double course = az1 - angle + 90;
 	    // cout << "course = " << course << endl;
 	    while ( course < -360 ) { course += 360; }
 	    while ( course > 360 ) { course -= 360; }
@@ -125,21 +125,24 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    x = cos( course * DEG_TO_RAD ) * dist;
 	    y = sin( course * DEG_TO_RAD ) * dist;
 	    cout << "  x = " << x << " y = " << y << endl;
-
+	    cout << "  min = " << min << endl;
+	    cout << "  max = " << max << endl;
 	    //
 	    // 4. Map x, y point into texture coordinates
 	    //
-
+	    
 	    tx = (x - min.x()) / (max.x() - min.x());
 	    tx = ((int)(tx * 100)) / 100.0;
-	    if ( tx < 0.01 ) { tx = 0.01; }
-	    if ( tx > 0.99 ) { tx = 0.99; }
+	    cout << "  (" << tx << ")" << endl;
+	    if ( tx < 0.0 ) { tx = 0.0; }
+	    if ( tx > 1.0 ) { tx = 1.0; }
 
 	    // ty = (y - min.y()) / (max.y() - min.y());
 	    ty = (max.y() - y) / (max.y() - min.y());
 	    ty = ((int)(ty * 100)) / 100.0;
-	    if ( ty < 0.01 ) { ty = 0.01; }
-	    if ( ty > 0.99 ) { ty = 0.99; }
+	    cout << "  (" << ty << ")" << endl;
+	    if ( ty < 0.0 ) { ty = 0.0; }
+	    if ( ty > 1.0 ) { ty = 1.0; }
 
 	    t = Point3D( tx, ty, 0 );
 	    cout << "  (" << tx << ", " << ty << ")" << endl;
@@ -608,11 +611,11 @@ static void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
     cout << "clipped_a = " << clipped_a.contours() << endl;
     *accum = polygon_union( runway_a, *accum );
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( 0.0,
-			       (-rwy_info.width / 2.0) * FEET_TO_METER,
+		      Point3D( (-rwy_info.width / 2.0) * FEET_TO_METER,
+			       0.0,
 			       0 ),
-		      Point3D( (rwy_info.length / 2.0) * FEET_TO_METER,
-			       (rwy_info.width  / 2.0) * FEET_TO_METER,
+		      Point3D( (rwy_info.width  / 2.0) * FEET_TO_METER,
+			       (rwy_info.length / 2.0) * FEET_TO_METER,
 			       0.0 ),
 		      rwy_info.heading );
     texparams->push_back( tp );
@@ -626,11 +629,11 @@ static void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
     cout << "clipped_b = " << clipped_b.contours() << endl;
     *accum = polygon_union( runway_b, *accum );
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( 0.0,
-			       (-rwy_info.width / 2.0) * FEET_TO_METER,
+		      Point3D( (-rwy_info.width / 2.0) * FEET_TO_METER,
+			       0.0,
 			       0 ),
-		      Point3D( (rwy_info.length / 2.0) * FEET_TO_METER,
-			       (rwy_info.width  / 2.0) * FEET_TO_METER,
+		      Point3D( (rwy_info.width  / 2.0) * FEET_TO_METER,
+			       (rwy_info.length / 2.0) * FEET_TO_METER,
 			       0.0 ),
 		      rwy_info.heading + 180.0 );
     texparams->push_back( tp );
@@ -688,9 +691,9 @@ static void gen_runway_section( const FGRunway& rwy_info,
 
     // partial "w" percentages could introduce "T" intersections which
     // we compensate for later, but could still cause problems now
-    // with our polygon algebra code.  This attempts to compensate for
-    // that by nudging the areas a bit bigger so we don't end up with
-    // polygon slivers.
+    // with our polygon clipping code.  This attempts to compensate
+    // for that by nudging the areas a bit bigger so we don't end up
+    // with polygon slivers.
     if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
 	startl_pct -= nudge * FG_EPSILON;
 	endl_pct += nudge * FG_EPSILON;
@@ -750,10 +753,10 @@ static void gen_runway_section( const FGRunway& rwy_info,
     FGPolygon section;
     section.erase();
 
+    section.add_node( 0, p2 );
     section.add_node( 0, p0 );
     section.add_node( 0, p1 );
     section.add_node( 0, p3 );
-    section.add_node( 0, p2 );
 
     // print runway points
     cout << "pre clipped runway pts " << prefix << material << endl;
@@ -779,16 +782,16 @@ static void gen_runway_section( const FGRunway& rwy_info,
     double end_len = len - ( len * endl_pct );
 
     double wid = rwy_info.width;
-    double start_wid = wid / 2.0 - wid * startw_pct;
-    double end_wid = wid / 2.0 - wid * endw_pct;
+    double start_wid = -wid / 2.0 + wid * startw_pct;
+    double end_wid = -wid / 2.0 + wid * endw_pct;
 
     FGTexParams tp;
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( end_len * FEET_TO_METER,
-			       end_wid * FEET_TO_METER,
+		      Point3D( start_wid * FEET_TO_METER,
+			       end_len * FEET_TO_METER,
 			       0.0 ),
-		      Point3D( start_len * FEET_TO_METER,
-			       start_wid * FEET_TO_METER,
+		      Point3D( end_wid * FEET_TO_METER,
+			       start_len * FEET_TO_METER,
 			       0.0 ),
 		      heading );
     texparams->push_back( tp );
