@@ -209,9 +209,9 @@ def main():
             sys.stderr.write('%s version %s\n' % (sys.argv[0],VERSION,))
             sys.exit(0)
         if o in ('--minnodes','-m'): minnodes = string.atoi(v)
-        if o == ('--maxnodes','-x'): maxnodes = string.atoi(v)
-        if o == ('--maxerror','-e'): maxerror = string.atof(v)
-        if o == ('--factor','-f'): factor = string.atof(v)
+        if o in ('--maxnodes','-x'): maxnodes = string.atoi(v)
+        if o in ('--maxerror','-e'): maxerror = string.atof(v)
+        if o in ('--factor','-f'): factor = string.atof(v)
     if len(args) == 0 and len(opts) == 0:
         usage()
         sys.exit(1)
