@@ -271,7 +271,7 @@ int main( int argc, char **argv ) {
     int count = 4;
     GtsPoint *p = gts_point_new( gts_point_class(), 0, 0, 0 );
 
-    while ( !done ) {
+    while ( !done && pending.size() > 0 ) {
         // iterate through all the surface faces
 
         if ( verbose ) {

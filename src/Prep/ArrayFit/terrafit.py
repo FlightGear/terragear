@@ -1,0 +1,242 @@
+#!/usr/bin/env python
+"""
+ArrayFit.py -- Use Terra as a faster ArrayFit see
+http://graphics.cs.uiuc.edu/~garland/software/terra.html
+
+Norman Vine nhv@cape.com
+"""
+import os, sys
+from gzip import GzipFile
+import string
+from time import time,asctime
+    
+
+#### GLOBALS ####    
+VERSION = '0.1'
+
+## Set this to False to keep all files
+CLEAN_TEMP_FILES = True
+
+##
+def pre_terra(pgmName, data, span_x, span_y, max_z, min_z):
+    # create pgm file for terra
+    # adjusting data so min(data) is Zero
+    pgmData = []
+    pgmData.append("P2\n");
+    pgmData.append("%d %d\n"%(span_x, span_y))
+    pgmData.append("%d\n"%(max_z-min_z))
+    for i in range(span_y):
+        for j in range(span_x):
+            pgmData.append(str(data[j][i] - min_z))
+        pgmData.append("\n")
+        
+    fpgm = open(pgmName,"w")
+    fpgm.write(string.join(pgmData))
+    fpgm.close()
+    
+
+##
+def run_terra(thresh, count, factor, objName, pgmName):
+    print
+    command = "terra -e %f -p %d -h %f -o %s obj %s"%(thresh, count, factor, objName, pgmName)
+    print command
+    npts = -1
+    error = -99999.9
+    r,w,e = os.popen3(command)
+    for line in e.readlines():
+        line = line.lstrip()
+        if line.startswith("points="):
+            line = line.split()[0]
+            npts = string.atof(line[len("points="):])
+            print "npts = %d"%(npts)
+        if line.startswith("error="):
+            line = line.split()[0]
+            error = string.atof(line[len("error="):])
+            print "error = %d"%(error)
+            
+    return npts
+    
+
+##                
+def post_terra(objName, gzName, step_x, step_y, min_x, min_y, min_z):
+    # read vertices from Terra created .obj file
+    # should modify Terra to write .fit file directly someday
+    from string import atof
+    if not os.path.exists(objName):
+        raise IOError, (2, 'No such file or directory: ' + objName)
+        return
+    fin = open(objName)
+    data = fin.readlines()
+    fin.close()
+    
+    # determine number of vertives and
+    # truncate array to have only npts elements
+    for npts in range(len(data)):
+        if data[npts][0] != "v":
+            data = data[:npts]
+            break
+
+    fitData = []
+    # convert vertices from .obj file to LatLon
+    # readjusting data[Z] to original values
+    TO_DEG = 1.0/3600.0
+    fitData.append("%d\n"%(npts))
+    for line in data:
+        # strip the leading 'v' from line
+        vec = map(atof,line[1:].split())
+        x = TO_DEG*(min_x + vec[0]*step_x)
+        y = TO_DEG*(min_y + vec[1]*step_y)
+        z = vec[2] + min_z
+        fitData.append("%+03.8f %+02.8f %0.2f\n"%(x, y, z))
+
+    # write equivalant of file output by TGZ::ArrayFit
+    gzout = GzipFile(gzName, 'wb')
+    gzout.write(string.join(fitData))
+
+
+## replacment for TG::ArrayFit filter
+def terra_fit(fname, thresh=1, count=1000, factor=1.0/30.0, minnodes=50):
+    """ """
+    from string import atoi
+    print
+    print "Processing %s"%(fname)
+    print "\tmaxerror %f  maxnodes %d  minnodes %d"%(thresh, count, minnodes)
+    if not os.path.exists(fname):
+        raise IOError, (2, 'No such file or directory: ' + fname)
+        return
+
+    gzin = GzipFile(fname, 'rb')
+
+    data = gzin.readline()
+    min_x,min_y = map(atoi,data.split()[:2])
+    
+    data = gzin.readline()
+    span_x,step_x,span_y,step_y = map(atoi,data.split()[:4])
+    
+    data = gzin.read().split('\n')
+
+    print
+    print "min_x %f, min_y %f"%(min_x,min_y)
+    print "span_x %d, span_y %d"%(span_x,span_y)
+    print "step_x %d, step_y %d"%(step_x, step_y)
+    print "Num Original Data Points %d"%(span_x*span_y)
+
+    max_z = -32000
+    min_z = 32000
+    
+    for i in range(span_x):
+        data[i] = map(atoi,data[i].split())
+        max_z   = max(max_z,max(data[i]))
+        min_z   = min(min_z,min(data[i]))
+
+    # need to do this twice to get basename 'XXX.arr.gz'
+    basename,ext = os.path.splitext(fname)
+    basename,ext = os.path.splitext(basename)
+    
+    pgmName = basename+'.pgm'
+    pre_terra(pgmName, data, span_x, span_y, max_z, min_z)
+    
+    objName = basename+'.obj'
+    npts = -1
+    while npts < minnodes:
+        npts = run_terra(thresh, count, factor, objName, pgmName)
+        thresh = 0.5 * thresh
+    
+    gzName = basename+".fit.gz"
+    post_terra(objName, gzName, step_x, step_y, min_x, min_y, min_z)
+    
+    if CLEAN_TEMP_FILES:
+        os.remove(pgmName)
+        os.remove(objName)
+
+##
+def walk_tree_fit(dir, thresh=1, count=600, factor=1.0/30.0, minnodes=50):
+    for name in os.listdir(dir):
+        path = os.path.join(dir, name)
+        if os.path.isdir(path):
+            walk_tree_fit(path,thresh,count,factor,minnodes)
+        elif name.endswith('.arr.gz'):
+            terra_fit(path, thresh, count, factor,minnodes)
+
+def usage(msg=''):
+    sys.stderr.write("\n")
+    if msg: sys.stderr.write(msg + '\n\n')
+    sys.stderr.write('Usage: %s\n'%(sys.argv[0]))
+    sys.stderr.write("\t -h | --help \n")
+    sys.stderr.write("\t -m | --minnodes 50\n")
+    sys.stderr.write("\t -x | --maxnodes 600\n")
+    sys.stderr.write("\t -e | --maxerror 50\n")
+    sys.stderr.write("\t -f | --factor %f\n"%(1.0/30.0))
+    sys.stderr.write("\t -v | --version\n")
+    sys.stderr.write("\t [file] | [path to walk]\n")
+    sys.stderr.write("\n")
+    sys.stderr.write("Algorithm will produce at least 50 fitted nodes, but no\n")
+    sys.stderr.write("more than 600.  Within that range, the algorithm will stop\n")
+    sys.stderr.write("if the maximum elevation error for any remaining point\n")
+    sys.stderr.write("drops below 50 meters.\n")
+    sys.stderr.write("\n")
+    sys.stderr.write("Increasing the maxnodes value and/or decreasing maxerror\n")
+    sys.stderr.write("will produce a better surface approximation.\n")
+    sys.stderr.write("\n")
+    sys.stderr.write("The input file must be a .arr.gz file such as that produced\n")
+    sys.stderr.write("by demchop or hgtchop utils.\n")
+    sys.stderr.write("\n")
+    sys.stderr.write("**** NOTE ****:\n")
+    sys.stderr.write("If a directory is input all .arr files in directory will be\n")
+    sys.stderr.write("processed recursively.\n")
+    sys.stderr.write("\n")
+    sys.stderr.write("The output file(s) is called .fit.gz and is simply a list of\n")
+    sys.stderr.write("from the resulting fitted surface nodes.  The user of the\n")
+    sys.stderr.write(".fit file will need to retriangulate the surface.\n")
+
+        
+## main driver        
+def main():
+    import getopt
+    opts,args = getopt.getopt(sys.argv[1:],'m:x:e:f:hv',['minnodes','maxnodes','maxerror','factor','help','version'])
+    if len(args) > 1:
+        usage()
+        sys.exit(1)
+    minnodes = 50
+    maxnodes = 600
+    maxerror = 5.0
+    factor = 1.0/30.0
+    infile = None
+    quiet = 0
+    for o,v in opts:
+        if o in ('--help','-h'):
+            usage()
+            sys.exit(0)
+        if o in ('--version','-v'):
+            sys.stderr.write('%s version %s\n' % (sys.argv[0],VERSION,))
+            sys.exit(0)
+        if o in ('--minnodes','-m'): minnodes = string.atoi(v)
+        if o == ('--maxnodes','-x'): maxnodes = string.atoi(v)
+        if o == ('--maxerror','-e'): maxerror = string.atof(v)
+        if o == ('--factor','-f'): factor = string.atof(v)
+    if len(args) == 0 and len(opts) == 0:
+        usage()
+        sys.exit(1)
+    if len(args) == 0:
+        usage('No source file or path specified')
+        sys.exit(1)
+    path = args[0]
+
+    if os.path.isfile(path):
+        fit = terra_fit
+    elif os.path.isdir(path):
+        fit = walk_tree_fit
+    else:
+        usage('File or Path "%s" does not exist'%(path))
+        
+    fit(path, maxerror, maxnodes, factor, minnodes)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        pass
+    except:
+        sys.stderr.write("%s: %s\n" %
+            (os.path.basename(sys.argv[0]), sys.exc_info()[1]))
+        
