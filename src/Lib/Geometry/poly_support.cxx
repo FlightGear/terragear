@@ -994,8 +994,8 @@ FGPolygon remove_dups( const FGPolygon &poly ) {
 }
 
 
-static const double tgAirportEpsilon = FG_EPSILON / 10.0;
-// static const double tgAirportEpsilon = FG_EPSILON * 10.0;
+// static const double tgAirportEpsilon = FG_EPSILON / 10.0;
+static const double tgAirportEpsilon = FG_EPSILON;
 
 
 // Find a point in the given node list that lies between start and

@@ -192,7 +192,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 static FGPolygon add_nodes_to_poly( const FGPolygon& poly, 
 				    const FGTriNodes& tmp_nodes ) {
     int i, j;
-    FGPolygon result;
+    FGPolygon result; result.erase();
     Point3D p0, p1;
 
     // cout << "add_nodes_to_poly" << endl;
@@ -1706,6 +1706,44 @@ void build_airport( string airport_raw, string_list& runways_raw,
     FGPolygon base_poly = polygon_diff( divided_hull, accum );
     // write_polygon( base_poly, "base-raw" );
 
+    // Try to remove duplicated nodes and other degeneracies
+    for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
+	cout << "add nodes/remove dups section = " << k
+	     << " " << rwy_polys[k].get_material() << endl;
+	FGPolygon poly = rwy_polys[k].get_poly();
+	cout << "total size before = " << poly.total_size() << endl;
+	for ( i = 0; i < poly.contours(); ++i ) {
+	    for ( j = 0; j < poly.contour_size(i); ++j ) {
+		Point3D tmp = poly.get_pt(i, j);
+		printf("  %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+	    }
+	}
+
+	poly = remove_dups( poly );
+	cout << "total size after remove_dups() = "
+	     << poly.total_size() << endl;
+
+	for ( i = 0; i < poly.contours(); ++i ) {
+	    for ( j = 0; j < poly.contour_size(i); ++j ) {
+		Point3D tmp = poly.get_pt(i, j);
+		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+	    }
+	}
+
+	poly = reduce_degeneracy( poly );
+	cout << "total size after reduce_degeneracy() = "
+	     << poly.total_size() << endl;
+
+	for ( i = 0; i < poly.contours(); ++i ) {
+	    for ( j = 0; j < poly.contour_size(i); ++j ) {
+		Point3D tmp = poly.get_pt(i, j);
+		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+	    }
+	}
+
+	rwy_polys[k].set_poly( poly );
+    }
+
     // add segments to polygons to remove any possible "T"
     // intersections
     FGTriNodes tmp_nodes;
@@ -1754,39 +1792,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 #endif
 
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
-	cout << "add nodes/remove dups section = " << k
-	     << " " << rwy_polys[k].get_material() << endl;
 	FGPolygon poly = rwy_polys[k].get_poly();
-	cout << "total size before = " << poly.total_size() << endl;
-	for ( i = 0; i < poly.contours(); ++i ) {
-	    for ( j = 0; j < poly.contour_size(i); ++j ) {
-		Point3D tmp = poly.get_pt(i, j);
-		printf("  %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
-	    }
-	}
-
-	poly = remove_dups( poly );
-	cout << "total size after remove_dups() = "
-	     << poly.total_size() << endl;
-
-	for ( i = 0; i < poly.contours(); ++i ) {
-	    for ( j = 0; j < poly.contour_size(i); ++j ) {
-		Point3D tmp = poly.get_pt(i, j);
-		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
-	    }
-	}
-
-	poly = reduce_degeneracy( poly );
-	cout << "total size after reduce_degeneracy() = "
-	     << poly.total_size() << endl;
-
-	for ( i = 0; i < poly.contours(); ++i ) {
-	    for ( j = 0; j < poly.contour_size(i); ++j ) {
-		Point3D tmp = poly.get_pt(i, j);
-		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
-	    }
-	}
-
 	poly = add_nodes_to_poly( poly, tmp_nodes );
 	cout << "total size after add nodes = " << poly.total_size() << endl;
 
@@ -1795,6 +1801,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	sprintf( tmp, "r%d", k );
 	write_polygon( poly, tmp );
 #endif
+
+	rwy_polys[k].set_poly( poly );
+    }
+
+    // One more pass to try to get rid of yukky stuff
+    for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
+	FGPolygon poly = rwy_polys[k].get_poly();
 
         poly = remove_dups( poly );
 	cout << "total size after remove_dups() = " << poly.total_size() << endl;
