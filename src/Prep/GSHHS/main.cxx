@@ -23,12 +23,21 @@
 // $Id$
  
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <simgear/compiler.h>
 
 #include STL_STRING
 
 #include <simgear/debug/logstream.hxx>
-#include <zlib.h>
+
+#ifdef HAVE_ZLIB
+#  include <zlib.h>
+#else
+#  include <simgear/zlib/zlib.h>
+#endif
 
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
@@ -43,7 +52,9 @@
 #include "gshhs_split.hxx"
 
 SG_USING_STD( string );
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD( cout );
+#endif
 
 // hackity, hackity, hack ... cough cough
 #ifdef i386

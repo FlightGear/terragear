@@ -27,9 +27,11 @@
 
 #include <map>
 
-#ifdef NEEDNAMESPACESTD
-using namespace std;
-#endif
+#include <simgear/compiler.h>
+#include <simgear/constants.h>
+
+SG_USING_STD(less);
+SG_USING_STD(map);
 
 #include <simgear/constants.h>
 

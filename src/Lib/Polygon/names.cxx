@@ -30,8 +30,10 @@
 
 SG_USING_STD(string);
 SG_USING_STD(map);
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 
 
 typedef map<AreaType, string> area_type_map;

@@ -28,6 +28,7 @@
 #  include <win32/mkdir.hpp>
 #endif
 
+#include <simgear/compiler.h>
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
@@ -39,8 +40,10 @@
 
 #include "genobj.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 
 
 // calculate the global bounding sphere.  Center is the center of the
@@ -212,10 +215,11 @@ int FGGenOutput::build( FGConstruct& c ) {
 
 	    //dcl - here read the flag to check if we are building UK grid
 	    //If so - check if the bucket is within the UK lat & lon
-	    if( (c.get_useUKGrid()) && (isInUK(ourPosition)) )
+	    if( (c.get_useUKGrid()) && (isInUK(ourPosition)) ) {
 	    	tp_list = UK_calc_tex_coords( b, geod_nodes, fans[i][j], 1.0 );
-	    else
+	    } else {
 	    	tp_list = calc_tex_coords( b, geod_nodes, fans[i][j] );
+            }
 
 	    int_list ti_list;
 	    ti_list.clear();

@@ -6,12 +6,14 @@
 #include <simgear/compiler.h>
 
 #include <vector>
-#include <string>
-#include <iostream>
+#include STL_STRING
+#include STL_IOSTREAM
 
-using std::vector;
-using std::string;
-using std::istream;
+SG_USING_STD(vector);
+SG_USING_STD(string);
+#if ! defined(SG_HAVE_NATIVE_SGI_COMPILERS)
+SG_USING_STD(istream);
+#endif
 
 
 // An exception reading an E00 file.

@@ -30,7 +30,7 @@ demchop_SOURCES = \
 
 demchop_LDADD = \
 	$(top_builddir)/src/Lib/DEM/libDEM.a \
-	-lsgbucket -lsgmisc -lsgdebug -lz
+	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz
 	$(base_LIBS)
 
 INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/Lib

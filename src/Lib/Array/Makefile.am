@@ -8,6 +8,6 @@ testarray_SOURCES = testarray.cxx
 
 testarray_LDADD = \
 	$(top_builddir)/src/Lib/Array/libArray.a \
-	-lsgbucket -lsgmath -lsgmisc -lz
+	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml -lz
 
 INCLUDES += -I$(top_srcdir)/src

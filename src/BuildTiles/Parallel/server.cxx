@@ -15,8 +15,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include <iostream>
-#include <string>
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
+#include STL_STRING
 
 #include <simgear/bucket/newbucket.hxx>
 

@@ -20,6 +20,7 @@
 //
 // $Id$
 
+#include <simgear/compiler.h>
 
 #include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
@@ -27,8 +28,10 @@
 
 #include "triangle.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 
 
 // Constructor

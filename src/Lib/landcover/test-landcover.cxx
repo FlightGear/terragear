@@ -3,16 +3,21 @@
 // This program is in the Public Domain and comes with NO WARRANTY.
 // Use at your own risk.
 
+#include <simgear/compiler.h>
+
 #include <stdlib.h>
-#include <iostream>
-#include <string>
+
+#include STL_IOSTREAM
+#include STL_STRING
 
 #include "landcover.hxx"
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::string;
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
+SG_USING_STD(cerr);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
+#endif
+SG_USING_STD(string);
 
 int
 main (int ac, const char * av[])

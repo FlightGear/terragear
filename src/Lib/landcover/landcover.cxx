@@ -10,7 +10,9 @@
 
 #include "landcover.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(ifstream);
+#endif
 SG_USING_STD(string);
 
 LandCover::LandCover( const string &filename )

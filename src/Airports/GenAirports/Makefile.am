@@ -40,7 +40,8 @@ genapts_LDADD = \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lz -lgenpolyclip \
+	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgxml -lgenpolyclip \
+        -lz \
 	$(base_LIBS)
 
 INCLUDES += \

@@ -186,12 +186,13 @@ void FGMerger::merge( FGPolyList& clipped ) {
 void FGMerger::clip(FGPolyList& subject, FGPolyList& clip) {
   FGPolygon poly, result, cliped, difference;
   int max_a[FG_MAX_AREA_TYPES];
+  int area;
   int max_area = 0;
   int default_indx=(int)get_area_type("Default");
   
   difference = clip.polys[default_indx][0];
 
-  for ( int area = 0; area < FG_MAX_AREA_TYPES; ++area ) {
+  for ( area = 0; area < FG_MAX_AREA_TYPES; ++area ) {
     //cout << "  testing area = " << area << endl;
       if ((int)subject.polys[area].size() > 0) {
 	cout << "  Clipping polygon with area = " << area << endl;
@@ -206,7 +207,7 @@ void FGMerger::clip(FGPolyList& subject, FGPolyList& clip) {
   /* OK we have leftovers in difference where have we assign it. Simply add
      it to the last area type */
   int max=0;
-  for ( int area = 0; area < FG_MAX_AREA_TYPES; ++area ) {
+  for ( area = 0; area < FG_MAX_AREA_TYPES; ++area ) {
     if ( max_a[area] > max) {
       max_area=area;
     }

@@ -23,9 +23,12 @@
 #include <stdio.h>
 #include <stdlib.h>		// atoi()
 #include <string.h>		// bcopy()
+#include <strings.h>		// bcopy() on Irix
 
-#include <iostream>
-#include <string>
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
+#include STL_STRING
 #include <vector>
 
 #include <simgear/bucket/newbucket.hxx>

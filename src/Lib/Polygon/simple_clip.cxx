@@ -28,8 +28,10 @@
 
 #include "simple_clip.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 
 #define CLIP_EPSILON 0.000000000001
 

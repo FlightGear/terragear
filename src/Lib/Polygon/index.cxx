@@ -29,8 +29,10 @@
 
 #include "index.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 
 
 static long int poly_index;

@@ -27,6 +27,7 @@
 #  include <config.h>
 #endif
 
+#include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
@@ -36,7 +37,9 @@
 
 #include "clipper.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
+#endif
 
 
 #define MASK_CLIP 1

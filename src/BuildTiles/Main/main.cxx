@@ -36,8 +36,10 @@
 #  include <unistd.h>		// set mem allocation limit
 #endif
 
-#include <iostream>
-#include <string>
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
+#include STL_STRING
 #include <vector>
 
 #include <plib/sg.h>
@@ -56,8 +58,10 @@
 
 #include "construct.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 SG_USING_STD(string);
 SG_USING_STD(vector);
 

@@ -1,21 +1,23 @@
 // e00.cxx: implementation of ArcInfo (e00) reader.
 
+#include <simgear/compiler.h>
+
 #include "e00.hxx"
 
 #include <vector>
 #include <map>
-#include <string>
-#include <iostream>
+#include STL_STRING
+#include STL_IOSTREAM
 #include <cctype>
 
 #include <stdio.h>
 
-using std::vector;
-using std::map;
-using std::string;
-using std::istream;
-using std::cerr;
-using std::endl;
+SG_USING_STD(vector);
+SG_USING_STD(map);
+SG_USING_STD(string);
+SG_USING_STD(istream);
+SG_USING_STD(cerr);
+SG_USING_STD(endl);
 
 
 ////////////////////////////////////////////////////////////////////////

@@ -25,6 +25,7 @@
 #  include <config.h>
 #endif
 
+#include <simgear/compiler.h>
 #include <simgear/math/point3d.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
@@ -35,8 +36,10 @@
 
 #include "match.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 
 
 FGMatch::FGMatch( void ) {

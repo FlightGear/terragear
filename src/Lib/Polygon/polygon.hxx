@@ -33,11 +33,13 @@
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 
-#include <iostream>
-#include <string>
+#include STL_IOSTREAM
+#include STL_STRING
 #include <vector>
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(ostream);
+#endif
 SG_USING_STD(string);
 SG_USING_STD(vector);
 

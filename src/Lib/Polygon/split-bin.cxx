@@ -37,7 +37,9 @@
 #include "simple_clip.hxx"
 #include "split.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
+#endif
 
 
 static void clip_and_write_poly( string root, long int p_index, AreaType area, 

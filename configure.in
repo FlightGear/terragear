@@ -16,6 +16,15 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
+AR="ar"
+OS=`uname -s`
+if test "$OS" = "IRIX" -o "$OS" = "IRIX64"; then
+    if test "$CXX" = "CC"; then
+        AR="CC -ar"
+        AC_SUBST(AR)
+    fi
+fi
+
 dnl Specify if we want logging (testing build) or not (release build)
 # set logging default value
 # with_logging=yes
@@ -346,3 +355,10 @@ if test "x$with_efence" != "x"; then
 else
     echo "Electric fence: no"
 fi
+
+if test "$OS" = "IRIX" -o "$OS" = "IRIX64"; then
+    if test "$CXX" = "CC"; then
+        echo "\nRemember to run: sh ../FlightGear-0.x.x/irix-hack.sh!\07\n"
+    fi
+fi
+

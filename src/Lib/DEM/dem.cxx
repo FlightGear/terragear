@@ -57,8 +57,10 @@
 
 #include "dem.hxx"
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+#endif
 
 
 #define MAX_EX_NODES 10000

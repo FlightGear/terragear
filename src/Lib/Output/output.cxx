@@ -30,7 +30,12 @@
 
 #include <stdio.h>
 #include <time.h>
-#include <zlib.h>
+
+#ifdef HAVE_ZLIB
+#  include <zlib.h>
+#else
+#  include <simgear/zlib/zlib.h>
+#endif
 
 #include <list>
 #include STL_STRING
@@ -45,8 +50,10 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD( cout );
 SG_USING_STD( endl );
+#endif
 
 
 void write_polygon( const FGPolygon& poly, const string& base ) {

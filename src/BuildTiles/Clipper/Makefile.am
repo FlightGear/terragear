@@ -13,6 +13,6 @@ testclipper_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/landcover/liblandcover.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
-	-lsgbucket -lsgdebug -lsgmisc -lz -lgenpolyclip
+	-lsgbucket -lsgdebug -lsgmisc -lsgxml -lgenpolyclip -lz 
 
 INCLUDES += -I$(top_srcdir)/src/Lib -I$(top_srcdir)/src/BuildTiles
