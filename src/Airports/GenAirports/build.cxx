@@ -155,18 +155,13 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 }
 
 
-// Divide segment if there are other existing points on it, return the
-// new polygon
-void add_intermediate_nodes( int contour, const Point3D& start, 
-			     const Point3D& end, const FGTriNodes& tmp_nodes,
-			     FGPolygon *result )
+// Find a point in the given node list that lies between start and
+// end, return true if something found, false if nothing found.
+bool find_intermediate_node( const Point3D& start, const Point3D& end,
+			     const point_list& nodes, Point3D *result )
 {
-    bool found_extra = false;
-    int extra_index = 0;
-    int counter;
+    bool found_node = false;
     double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
-    const_point_list_iterator current, last;
-    point_list nodes = tmp_nodes.get_node_list();
 
     Point3D p0 = start;
     Point3D p1 = end;
@@ -199,33 +194,30 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 
 	// cout << "m = " << m << " b = " << b << endl;
 
-	current = nodes.begin();
-	last = nodes.end();
-	counter = 0;
-	for ( ; current != last; ++current ) {
-	    // cout << counter << endl;
+	for ( int i = 0; i < (int)nodes.size(); ++i ) {
+	    // cout << i << endl;
+	    Point3D current = nodes[i];
 
-	    if ( (current->x() > (p_min.x() + FG_EPSILON)) 
-		 && (current->x() < (p_max.x() - FG_EPSILON)) ) {
+	    if ( (current.x() > (p_min.x() + FG_EPSILON)) 
+		 && (current.x() < (p_max.x() - FG_EPSILON)) ) {
 
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
-		//         current->x(), current->y(), current->z() );
+		//         current.x(), current.y(), current.z() );
 
-		y_err = fabs(current->y() - (m * current->x() + b));
+		y_err = fabs(current.y() - (m * current.x() + b));
 		// cout << "y_err = " << y_err << endl;
 
 		if ( y_err < tgAirportEpsilon ) {
 		    // cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
-		    // cout << p_min << " < " << *current << " < "
+		    // cout << p_min << " < " << current << " < "
 		    //      << p_max << endl;
-		    found_extra = true;
+		    found_node = true;
 		    if ( y_err < y_err_min ) {
-			extra_index = counter;
+			*result = current;
 			y_err_min = y_err;
 		    }
 		}
 	    }
-	    ++counter;
 	}
     } else {
 	// cout << "use x = m1 * y + b1" << endl;
@@ -251,17 +243,16 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	// cout << "  should = 0 = "
 	//      << fabs(p_max.x() - (m1 * p_max.y() + b1)) << endl;
 
-	current = nodes.begin();
-	last = nodes.end();
-	counter = 0;
-	for ( ; current != last; ++current ) {
-	    if ( (current->y() > (p_min.y() + FG_EPSILON)) 
-		 && (current->y() < (p_max.y() - FG_EPSILON)) ) {
+	for ( int i = 0; i < (int)nodes.size(); ++i ) {
+	    Point3D current = nodes[i];
+
+	    if ( (current.y() > (p_min.y() + FG_EPSILON)) 
+		 && (current.y() < (p_max.y() - FG_EPSILON)) ) {
 		
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
-		//         current->x(), current->y(), current->z() );
+		//         current.x(), current.y(), current.z() );
 
-		x_err = fabs(current->x() - (m1 * current->y() + b1));
+		x_err = fabs(current.x() - (m1 * current.y() + b1));
 		// cout << "x_err = " << x_err << endl;
 
 		// if ( temp ) {
@@ -270,29 +261,117 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 
 		if ( x_err < tgAirportEpsilon ) {
 		    // cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
-		    // cout << p_min << " < " << *current << " < "
+		    // cout << p_min << " < " << current << " < "
 		    //      << p_max << endl;
-		    found_extra = true;
+		    found_node = true;
 		    if ( x_err < x_err_min ) {
-			extra_index = counter;
+			*result = current;
 			x_err_min = x_err;
 		    }
 		}
 	    }
-	    ++counter;
 	}
     }
+
+    return found_node;
+}
+
+
+// Attempt to reduce degeneracies where a subsequent point of a
+// polygon lies *on* a previous line segment.  These artifacts are
+// occasionally introduced by the gpc polygon clipper.
+static point_list reduce_contour_degeneracy( const point_list& contour ) {
+    point_list result = contour;
+
+    Point3D p0, p1, bad_node;
+    bool done = false;
+
+    while ( !done ) {
+	// traverse the contour until we find the first bad node or
+	// hit the end of the contour
+	cout << "   ... not done ... " << endl;
+	bool bad = false;
+
+	int i = 0;
+	while ( i < (int)result.size() - 1 && !bad ) {
+	    p0 = result[i];
+	    p1 = result[i+1];
+	
+	    bad = find_intermediate_node( p0, p1, result, &bad_node );
+	    ++i;
+	}
+	if ( !bad ) {
+	    // do the end/start connecting segment
+	    p0 = result[result.size() - 1];
+	    p1 = result[0];
+
+	    bad = find_intermediate_node( p0, p1, result, &bad_node );
+	}
+
+	if ( bad ) {
+	    // remove bad node from contour
+	    point_list tmp; tmp.clear();
+	    for ( int j = 0; j < (int)result.size(); ++j ) {
+		if ( result[j] == bad_node ) {
+		    // skip
+		} else {
+		    tmp.push_back( result[j] );
+		}
+	    }
+	    result = tmp;
+	} else { 
+	    done = true;
+	}
+    }
+
+    return result;
+}
+
+// Search each segment of each contour for degenerate points (i.e. out
+// of order points that lie coincident on other segments
+
+static FGPolygon reduce_degeneracy( const FGPolygon& poly ) {
+    FGPolygon result;
+
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	point_list contour = poly.get_contour(i);
+	contour = reduce_contour_degeneracy( contour );
+	result.add_contour( contour, poly.get_hole_flag(i) );
+
+	// maintain original hole flag setting
+	// result.set_hole_flag( i, poly.get_hole_flag( i ) );
+    }
+
+    return result;
+}
+
+
+// Divide segment if there are other existing points on it, return the
+// new polygon
+void add_intermediate_nodes( int contour, const Point3D& start, 
+			     const Point3D& end, const FGTriNodes& tmp_nodes,
+			     FGPolygon *result )
+{
+    point_list nodes = tmp_nodes.get_node_list();
+
+    // cout << "  add_intermediate_nodes()" << endl;
+    printf("   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
+	   start.x(), start.y(), start.z(), end.x(), end.y(), end.z() );
+
+    
+    Point3D new_pt;
+    bool found_extra = find_intermediate_node( start, end, nodes, &new_pt );
 
     if ( found_extra ) {
 	// recurse with two sub segments
 	// cout << "dividing " << p0 << " " << nodes[extra_index]
 	//      << " " << p1 << endl;
-	add_intermediate_nodes( contour, p0, nodes[extra_index], tmp_nodes, 
+	add_intermediate_nodes( contour, start, new_pt, tmp_nodes, 
 				result );
 
-	result->add_node( contour, nodes[extra_index] );
+	result->add_node( contour, new_pt );
 
-	add_intermediate_nodes( contour, nodes[extra_index], p1, tmp_nodes,
+	add_intermediate_nodes( contour, new_pt, end, tmp_nodes,
 				result );
     } else {
 	// this segment does not need to be divided
@@ -689,14 +768,19 @@ static void gen_runway_section( const FGRunway& rwy_info,
 	endl_pct = 1.0;
     }
 
+    if ( startl_pct > 0.0 ) {
+	startl_pct -= nudge * FG_EPSILON;
+    }
+    if ( endl_pct < 1.0 ) {
+	endl_pct += nudge * FG_EPSILON;
+    }
+
     // partial "w" percentages could introduce "T" intersections which
     // we compensate for later, but could still cause problems now
     // with our polygon clipping code.  This attempts to compensate
     // for that by nudging the areas a bit bigger so we don't end up
     // with polygon slivers.
     if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
-	startl_pct -= nudge * FG_EPSILON;
-	endl_pct += nudge * FG_EPSILON;
 	if ( startw_pct > 0.0 ) {
 	    startw_pct -= nudge * FG_EPSILON;
 	}
@@ -887,6 +971,7 @@ static void gen_precision_rwy( const FGRunway& rwy_info,
     runway_a.add_node( 0, runway.get_pt(0, 1) );
     runway_a.add_node( 0, runway.get_pt(0, 2) );
     runway_a.add_node( 0, runway.get_pt(0, 5) );
+
 
     // runway half "b"
     FGPolygon runway_b;
@@ -1915,8 +2000,37 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	     << " " << rwy_polys[k].get_material() << endl;
 	FGPolygon poly = rwy_polys[k].get_poly();
 	cout << "total size before = " << poly.total_size() << endl;
+	for ( int i = 0; i < poly.contours(); ++i ) {
+	    for ( int j = 0; j < poly.contour_size(i); ++j ) {
+		Point3D tmp = poly.get_pt(i, j);
+		printf("  %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+	    }
+	}
+
+	poly = remove_dups( poly );
+	cout << "total size after remove_dups() = "
+	     << poly.total_size() << endl;
+
+	for ( int i = 0; i < poly.contours(); ++i ) {
+	    for ( int j = 0; j < poly.contour_size(i); ++j ) {
+		Point3D tmp = poly.get_pt(i, j);
+		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+	    }
+	}
+
+	poly = reduce_degeneracy( poly );
+	cout << "total size after reduce_degeneracy() = "
+	     << poly.total_size() << endl;
+
+	for ( int i = 0; i < poly.contours(); ++i ) {
+	    for ( int j = 0; j < poly.contour_size(i); ++j ) {
+		Point3D tmp = poly.get_pt(i, j);
+		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+	    }
+	}
+
 	poly = add_nodes_to_poly( poly, tmp_nodes );
-	cout << "total size after = " << poly.total_size() << endl;
+	cout << "total size after add nodes = " << poly.total_size() << endl;
 
 #if 0
 	char tmp[256];

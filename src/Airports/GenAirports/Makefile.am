@@ -44,7 +44,7 @@ genapts_LDADD = \
 	$(base_LIBS)
 
 INCLUDES += \
-	-I$(top_builddir) \
-	-I$(top_builddir)/src \
-	-I$(top_builddir)/src/Lib \
-	-I$(top_builddir)/src/Construct
+	-I$(top_srcdir) \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/Lib \
+	-I$(top_srcdir)/src/Construct

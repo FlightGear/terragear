@@ -23,10 +23,10 @@
 
 # Edit the following values to set up your preferences:
 
-$workdir = "/fgfs01/curt/Work";
+$workdir = "/stage/fgfs01/curt/Work";
 $inputfile = "./default.apt";
 $binary = "./genapts";
-$startid = "BNF";
+$startid = "EGLL";
 
 # end of user configurable section
 
@@ -38,7 +38,7 @@ while ( ! $done ) {
 
     # update the nudge value
     $nudge += 5;
-    if ( $nudge > 25 ) {
+    if ( $nudge > 40 ) {
 	$nudge = 5;
     }
 
