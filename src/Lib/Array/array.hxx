@@ -46,7 +46,6 @@
 SG_USING_STD(vector);
 
 
-#define ARRAY_SIZE 1200
 #define ARRAY_SIZE_1 1201
 
 
