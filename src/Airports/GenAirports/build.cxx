@@ -185,7 +185,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes,
 	result[i].setz( -9999.0 );
     }
 
-//     cout << "result.size() = " << result.size() << endl;
+    // cout << "result.size() = " << result.size() << endl;
 
     while ( !done ) {
 	// find first node with -9999 elevation
@@ -225,7 +225,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes,
 	    for ( j = 0; j < (int)result.size(); ++j ) {
 		if ( result[j].z() < -9000 ) {
 		    done = false;
-		    SG_LOG(SG_GENERAL, SG_DEBUG, "interpolating for " << result[j]);
+		    SG_LOG(SG_GENERAL, SG_INFO, "interpolating for " << result[j]);
 		    elev = array.interpolate_altitude( result[j].x() * 3600.0,
 						   result[j].y() * 3600.0 );
 		    if ( elev > -9000 ) {
@@ -670,6 +670,13 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 	    tmp_nodes.unique_add( base_poly.get_pt(i, j) );
 	}
     }
+    // the divided base could contain points not found in base_poly,
+    // so we should add them because the skirt needs them.
+    for ( i = 0; i < divided_base.contours(); ++i ) {
+	for ( j = 0; j < divided_base.contour_size( i ); ++j ) {
+	    tmp_nodes.unique_add( divided_base.get_pt(i, j) );
+	}
+    }
 
 #if 0
     // dump info for debugging purposes
@@ -930,7 +937,9 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 	    strip_n.push_back( index );
 	    strip_n.push_back( index );
 	} else {
-	    throw sg_exception("Ooops missing node when building skirt");
+            string message = "Ooops missing node when building skirt (in init)";
+            SG_LOG( SG_GENERAL, SG_INFO, message << " " << p );
+	    throw sg_exception( message );
 	}
 
 	// loop through the list
@@ -949,8 +958,10 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 		strip_n.push_back( index );
 		strip_n.push_back( index );
 	    } else {
-                SG_LOG(SG_GENERAL, SG_ALERT,
-                       "*** Ooops missing node when building skirt");
+                string message
+                    = "Ooops missing node when building skirt (in loop)";
+                SG_LOG( SG_GENERAL, SG_INFO, message << " " << p );
+                throw sg_exception( message );
 	    }
 	}
 
@@ -969,7 +980,9 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 	    strip_n.push_back( index );
 	    strip_n.push_back( index );
 	} else {
-	    throw sg_exception("Ooops missing node when building skirt");
+            string message = "Ooops missing node when building skirt (at end)";
+            SG_LOG( SG_GENERAL, SG_INFO, message << " " << p );
+            throw sg_exception( message );
 	}
 
 	strips_v.push_back( strip_v );

@@ -190,33 +190,36 @@ int main( int argc, char **argv ) {
 		       << lat << ',' << lon << "," << alt_ft);
 		SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
 
-		if (lon >= min_lon && lon <= max_lon &&
-		    lat >= min_lat && lat <= max_lat) {
+		if ( lon >= min_lon && lon <= max_lon &&
+                     lat >= min_lat && lat <= max_lat ) {
 
-		  if ( start_id.length() && start_id == (string)id ) {
-		    ready_to_go = true;
-		  }
+                    if ( start_id.length() && start_id == (string)id ) {
+                        ready_to_go = true;
+                    }
 
-		  if ( ready_to_go ) {
-		    // check point our location
-		    char command[256];
-		    sprintf( command, "echo %s > last_apt", id );
-		    system( command );
+                    if ( ready_to_go ) {
+                        // check point our location
+                        char command[256];
+                        sprintf( command, "echo %s > last_apt", id );
+                        system( command );
 
-		    // process previous record
-		    // process_airport(last_airport, runways_list, argv[2]);
-		    try {
-		      build_airport( last_airport, alt_ft * SG_FEET_TO_METER,
-                                     runways_list, taxiways_list, work_dir );
-		    } catch (sg_exception &e) {
-		      SG_LOG(SG_GENERAL, SG_ALERT, "Failed to build airport "
-			     << id);
-		      SG_LOG(SG_GENERAL, SG_ALERT, "Exception: "
-			     << e.getMessage());
-		    }
-		  }
+                        // process previous record
+                        // process_airport(last_airport, runways_list, argv[2]);
+                        try {
+                            build_airport( last_airport,
+                                           alt_ft * SG_FEET_TO_METER,
+                                           runways_list, taxiways_list,
+                                           work_dir );
+                        } catch (sg_exception &e) {
+                            SG_LOG(SG_GENERAL, SG_ALERT,
+                                   "Failed to build airport " << id);
+                            SG_LOG(SG_GENERAL, SG_ALERT, "Exception: "
+                                   << e.getMessage());
+                            exit(-1);
+                        }
+                    }
 		} else {
-		  SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
+                    SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
 		}
 	    }
 

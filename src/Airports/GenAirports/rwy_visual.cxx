@@ -166,12 +166,15 @@ void gen_visual_rwy( const FGRunway& rwy_info,
     }
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway num = '" << snum << "'");
     int num = atoi( snum.c_str() );
+    while ( num <= 0 ) {
+        num += 36;
+    }
 
     gen_number_block( rwy_info, material, runway_b, rwy_info.heading + 180.0,
 		      num, start_pct, end_pct, rwy_polys, texparams, accum );
 
     num += 18;
-    if ( num > 36 ) {
+    while ( num > 36 ) {
 	num -= 36;
     }
 
