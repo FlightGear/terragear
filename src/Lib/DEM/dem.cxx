@@ -61,27 +61,27 @@ SG_USING_STD(cout);
 SG_USING_STD(endl);
 
 
-FGDem::FGDem() :
+TGDem::TGDem() :
     z_units(2)                  // meters
 {
-    // cout << "class FGDem CONstructor called." << endl;
+    // cout << "class TGDem CONstructor called." << endl;
     dem_data = new float[DEM_SIZE_1][DEM_SIZE_1];
     output_data = new float[DEM_SIZE_1][DEM_SIZE_1];
 }
 
 
-FGDem::FGDem( const string &file ) {
-    // cout << "class FGDem CONstructor called." << endl;
+TGDem::TGDem( const string &file ) {
+    // cout << "class TGDem CONstructor called." << endl;
     dem_data = new float[DEM_SIZE_1][DEM_SIZE_1];
     output_data = new float[DEM_SIZE_1][DEM_SIZE_1];
 
-    FGDem::open(file);
+    TGDem::open(file);
 }
 
 
 // open a DEM file
 int
-FGDem::open ( const string& file ) {
+TGDem::open ( const string& file ) {
     // open input file (or read from stdin)
     if ( file ==  "-" ) {
 	printf("Loading DEM data file: stdin\n");
@@ -104,7 +104,7 @@ FGDem::open ( const string& file ) {
 
 // close a DEM file
 int
-FGDem::close () {
+TGDem::close () {
     // the sg_gzifstream doesn't seem to have a close()
 
     delete in;
@@ -115,7 +115,7 @@ FGDem::close () {
 
 // return next token from input stream
 string
-FGDem::next_token() {
+TGDem::next_token() {
     string token;
 
     *in >> token;
@@ -128,7 +128,7 @@ FGDem::next_token() {
 
 // return next integer from input stream
 int
-FGDem::next_int() {
+TGDem::next_int() {
     int result;
     
     *in >> result;
@@ -139,7 +139,7 @@ FGDem::next_int() {
 
 // return next double from input stream
 double
-FGDem::next_double() {
+TGDem::next_double() {
     double result;
 
     *in >> result;
@@ -150,7 +150,7 @@ FGDem::next_double() {
 
 // return next exponential num from input stream
 double
-FGDem::next_exp() {
+TGDem::next_exp() {
     string token;
 
     token = next_token();
@@ -173,7 +173,7 @@ FGDem::next_exp() {
 
 // read and parse DEM "A" record
 int
-FGDem::read_a_record() {
+TGDem::read_a_record() {
     int i, inum;
     double dnum;
     string name, token;
@@ -302,7 +302,7 @@ FGDem::read_a_record() {
 
 // read and parse DEM "B" record
 void
-FGDem::read_b_record( ) {
+TGDem::read_b_record( ) {
     string token;
     int i;
 
@@ -353,7 +353,7 @@ FGDem::read_b_record( ) {
 
 // parse dem file
 int
-FGDem::parse( ) {
+TGDem::parse( ) {
     int i;
 
     cur_col = 0;
@@ -382,7 +382,7 @@ FGDem::parse( ) {
 // is written out column by column starting at the lower left hand
 // corner.
 int
-FGDem::write_area( const string& root, SGBucket& b, bool compress ) {
+TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     // calculate some boundaries
     double min_x = ( b.get_center_lon() - 0.5 * b.get_width() ) * 3600.0;
     double max_x = ( b.get_center_lon() + 0.5 * b.get_width() ) * 3600.0;
@@ -462,15 +462,15 @@ FGDem::write_area( const string& root, SGBucket& b, bool compress ) {
 }
 
 
-FGDem::~FGDem() {
-    // printf("class FGDem DEstructor called.\n");
+TGDem::~TGDem() {
+    // printf("class TGDem DEstructor called.\n");
     delete [] dem_data;
     delete [] output_data;
 }
 
 
 bool
-FGDem::has_non_zero_elev (int start_x, int span_x,
+TGDem::has_non_zero_elev (int start_x, int span_x,
                           int start_y, int span_y) const
 {
     for (int i = start_x; i < start_x + span_x; i++) {

@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     system( command.c_str() );
 #endif
 
-    FGDem dem(dem_name);
+    TGDem dem(dem_name);
     dem.parse();
     dem.close();
 

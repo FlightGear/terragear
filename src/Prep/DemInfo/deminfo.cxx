@@ -38,7 +38,7 @@ SG_USING_STD(cout);
 
 int main(int argc, char **argv) {
     // DEM data
-    FGDem dem;
+    TGDem dem;
     string filename;
 
     if ( argc != 2 ) {

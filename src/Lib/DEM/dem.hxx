@@ -42,7 +42,7 @@
 #define DEM_SIZE_1 1201
 
 
-class FGDem {
+class TGDem {
 
 private:
 
@@ -96,11 +96,11 @@ private:
 public:
 
     // Constructor
-    FGDem();
-    FGDem( const string& file );
+    TGDem();
+    TGDem( const string& file );
 
     // Destructor
-    ~FGDem();
+    ~TGDem();
 
     // open a DEM file (use "-" if input is coming from stdin)
     int open ( const string& file );
