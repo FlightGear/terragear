@@ -44,7 +44,8 @@ static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
     double length;
 
     // Generate the 4 corners of the runway
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -99,7 +100,11 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -209,7 +214,8 @@ static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 0.0, 0.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -286,7 +292,11 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -418,7 +428,11 @@ static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -516,7 +530,8 @@ static superpoly_list gen_taxiway_center_line_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 0.0, 0.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -584,7 +599,11 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -688,7 +707,11 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -829,7 +852,11 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -925,7 +952,11 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -997,7 +1028,7 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
 
 // generate Calvert-I/II approach lighting schemes
 static superpoly_list gen_calvert( const TGRunway& rwy_info,
-                                float alt_m, const string &kind, bool recip )
+                                   float alt_m, const string &kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -1009,18 +1040,13 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
     point_list s_normals; s_normals.clear();
     int i, j;
     string flag;
-    if (kind == "1")
-    {
-   	 cout << "gen Calvert lights " << rwy_info.rwy_no << endl;
-    } else if (kind == "2")
-    {
+    if ( kind == "1" ) {
+        cout << "gen Calvert lights " << rwy_info.rwy_no << endl;
+    } else if ( kind == "2" ) {
 	cout << "gen Calvert/II lights " << rwy_info.rwy_no << endl;
-    } else
-    {
+    } else {
 	cout << "gen unknown Calvert lights " << rwy_info.rwy_no << endl;
     }
-
-
 
     Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
@@ -1032,7 +1058,11 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1122,152 +1152,129 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
                             -1 * CALVERT_HORIZ_SPACING, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
 
-	if (kind == "1" )
-	{
-		if (i >= 10 && i < 20)
-		{
-		
-			
-        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                           CALVERT_VERT_SPACING/2, &lat, &lon, &r );
-        	    pair = Point3D( lon, lat, 0.0 );
-        	    w_lights.push_back( pair );
-        	    w_normals.push_back( normal1 );
+	if (kind == "1" ) {
+            if ( i >= 10 && i < 20 ) {
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                    CALVERT_VERT_SPACING/2, &lat, &lon, &r );
+                pair = Point3D( lon, lat, 0.0 );
+                w_lights.push_back( pair );
+                w_normals.push_back( normal1 );
 
-        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                           -1 * CALVERT_VERT_SPACING/2, &lat, &lon, &r );
-        	    pair = Point3D( lon, lat, 0.0 );
-        	    w_lights.push_back( pair );
-        	    w_normals.push_back( normal1 );
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                    -1 * CALVERT_VERT_SPACING/2, &lat, &lon,
+                                    &r );
+                pair = Point3D( lon, lat, 0.0 );
+                w_lights.push_back( pair );
+                w_normals.push_back( normal1 );
+            } else if (i >= 20)	{
+                w_lights.push_back( pt );
+                w_normals.push_back( normal1 );
 
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                    CALVERT_VERT_SPACING, &lat, &lon, &r );
+                pair = Point3D( lon, lat, 0.0 );
+                w_lights.push_back( pair );
+                w_normals.push_back( normal1 );
 
-		} else if (i >= 20)
-		{
-        	    w_lights.push_back( pt );
-        	    w_normals.push_back( normal1 );
-
-        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                           CALVERT_VERT_SPACING, &lat, &lon, &r );
-        	    pair = Point3D( lon, lat, 0.0 );
-        	    w_lights.push_back( pair );
-        	    w_normals.push_back( normal1 );
-
-        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                           -1 * CALVERT_VERT_SPACING, &lat, &lon, &r );
-        	    pair = Point3D( lon, lat, 0.0 );
-        	    w_lights.push_back( pair );
-        	    w_normals.push_back( normal1 );
-
-
-
-		} else
-		{
-        	    w_lights.push_back( pt );
-        	    w_normals.push_back( normal1 );
-		}
-	} else
-	{
-	    if (i < 10)
-	    {
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                    -1 * CALVERT_VERT_SPACING, &lat, &lon, &r );
+                pair = Point3D( lon, lat, 0.0 );
+                w_lights.push_back( pair );
+                w_normals.push_back( normal1 );
+            } else {
+                w_lights.push_back( pt );
+                w_normals.push_back( normal1 );
+            }
+	} else {
+	    if ( i < 10 ) {
 		// cal2 has red centre lights
         	r_lights.push_back( pt );
         	r_normals.push_back( normal1 );
-	    } else
-	    {
+	    } else {
 		// cal2 has red centre lights
         	w_lights.push_back( pt );
         	w_normals.push_back( normal1 );
-
 	    }
 	}
 
-	switch(i)
-	{
+	switch ( i ) {
 	case 4:
-		crossbar[0] = pt;
-		break;
+            crossbar[0] = pt;
+            break;
 	case 9:
-		crossbar[1] = pt;
-		break;
+            crossbar[1] = pt;
+            break;
 	case 14:
-		crossbar[2] = pt;
-		break;
+            crossbar[2] = pt;
+            break;
 	case 19:
-		crossbar[3] = pt;
-		break;
+            crossbar[3] = pt;
+            break;
 	case 24:
-		crossbar[4] = pt;
-		break;
+            crossbar[4] = pt;
+            break;
 	}
 			
 	// add 2 more rows if CAL/II (white)
 	//
 	
-	
-	
-	if (kind == "2" )
-	{
-		saved = pt;
-        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                            CALVERT2_VERT_SPACING, &lat, &lon, &r );
-        	pt = Point3D( lon, lat, 0.0 );
-        	w_lights.push_back( pt );
-        	w_normals.push_back( normal1 );
+	if ( kind == "2" ) {
+            saved = pt;
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                CALVERT2_VERT_SPACING, &lat, &lon, &r );
+            pt = Point3D( lon, lat, 0.0 );
+            w_lights.push_back( pt );
+            w_normals.push_back( normal1 );
 
-		// five rows < 300m
-		if (i < 10)
-		{
-        	     geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                            CALVERT2_VERT_SPACING, &lat, &lon, &r );
-        	     pt = Point3D( lon, lat, 0.0 );
-        	     w_lights.push_back( pt );
-        	     w_normals.push_back( normal1 );
+            // five rows < 300m
+            if ( i < 10 ) {
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                    CALVERT2_VERT_SPACING, &lat, &lon, &r );
+                pt = Point3D( lon, lat, 0.0 );
+                w_lights.push_back( pt );
+                w_normals.push_back( normal1 );
 
-		     // outer strip of lights
-		     for (j=0;j<9;j++)
-		     {
-		         geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
-                            CALVERT2_VERT_SPACING, &lat, &lon, &r );
-                         pt = Point3D( lon, lat, 0.0 );
-			 if (i == 0 || j > 3)
-			 {
-                           w_lights.push_back( pt );
-                           w_normals.push_back( normal1 );
-			 }
-		     }
-		}
+                // outer strip of lights
+                for (j=0;j<9;j++) {
+                    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                                        CALVERT2_VERT_SPACING, &lat, &lon, &r );
+                    pt = Point3D( lon, lat, 0.0 );
+                    if ( i == 0 || j > 3 ) {
+                        w_lights.push_back( pt );
+                        w_normals.push_back( normal1 );
+                    }
+                }
+            }
 
-		pt = saved;
-        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                            -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
-        	pt = Point3D( lon, lat, 0.0 );
-        	w_lights.push_back( pt );
-        	w_normals.push_back( normal1 );
+            pt = saved;
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
+            pt = Point3D( lon, lat, 0.0 );
+            w_lights.push_back( pt );
+            w_normals.push_back( normal1 );
 
-		// five rows < 300m
-		if (i < 10)
-		{
-        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                            -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
-        	    pt = Point3D( lon, lat, 0.0 );
-        	    w_lights.push_back( pt );
-        	    w_normals.push_back( normal1 );
-		     // outer strip of lights
-		     for (j=0;j<9;j++)
-		     {
-		         geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
-                            -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
-                         pt = Point3D( lon, lat, 0.0 );
-			 if (i == 0 || j > 3)
-			 {
-                           w_lights.push_back( pt );
-                           w_normals.push_back( normal1 );
-			 }
-		     }
-		}
+            // five rows < 300m
+            if ( i < 10 ) {
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                    -1 * CALVERT2_VERT_SPACING, &lat, &lon,
+                                    &r );
+                pt = Point3D( lon, lat, 0.0 );
+                w_lights.push_back( pt );
+                w_normals.push_back( normal1 );
+                // outer strip of lights
+                for ( j = 0; j < 9; j++ ) {
+                    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                                        -1 * CALVERT2_VERT_SPACING, &lat, &lon,
+                                        &r );
+                    pt = Point3D( lon, lat, 0.0 );
+                    if ( i == 0 || j > 3 ) {
+                        w_lights.push_back( pt );
+                        w_normals.push_back( normal1 );
+                    }
+                }
+            }
 
-
-		pt = saved;	
+            pt = saved;	
 
 	}
 	ref = pt;
@@ -1277,95 +1284,82 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
     ref = ref_save;
 
     int spacing;
-    int num_lights;
+    int num_lights = 0;
 
     // draw nice crossbars
-    for(i=0;i<5;i++)
-    {
-	
-	if (kind == "1")
-	{
-		spacing = CALVERT_VERT_SPACING;
-	} else
-	{
-		spacing = CALVERT2_VERT_SPACING;
+    for ( i = 0; i < 5; i++ ) {
+	if (kind == "1") {
+            spacing = CALVERT_VERT_SPACING;
+	} else {
+            spacing = CALVERT2_VERT_SPACING;
 	}
-	switch(i)
-	{
+	switch ( i ) {
 	case 0:
-		num_lights = 4;
-		break;
+            num_lights = 4;
+            break;
 	case 1:
-		num_lights = 5;
-		break;
+            num_lights = 5;
+            break;
 	case 2:
-		num_lights = 6;
-		break;
+            num_lights = 6;
+            break;
 	case 3:
-		num_lights = 7;
-		break;
+            num_lights = 7;
+            break;
 	case 4:
-		num_lights = 8;
-		break;
+            num_lights = 8;
+            break;
 	}
 
 	pt = crossbar[i];
-	for (j=0;j<num_lights;j++)
-	{	
-        	// left side lights
+	for ( j = 0 ; j < num_lights; j++ ) {	
+            // left side lights
 
-		// space out from centre lights
-		if (j==0)
-		{
-		    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
-                            CALVERT_VERT_SPACING * j, &lat, &lon, &r );
-                    pt = Point3D( lon, lat, 0.0 );
-		}
+            // space out from centre lights
+            if ( j == 0 ) {
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                                    CALVERT_VERT_SPACING * j, &lat, &lon, &r );
+                pt = Point3D( lon, lat, 0.0 );
+            }
 
-        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                            spacing, &lat, &lon, &r );
-        	pt = Point3D( lon, lat, 0.0 );
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                spacing, &lat, &lon, &r );
+            pt = Point3D( lon, lat, 0.0 );
 
-		if (kind == "1" || i >= 2)
-		{
-			w_lights.push_back( pt );
-        		w_normals.push_back( normal1 );
-		} else
-		{
-	        	r_lights.push_back( pt );
-       			r_normals.push_back( normal1 );
-		}
+            if ( kind == "1" || i >= 2 ) {
+                w_lights.push_back( pt );
+                w_normals.push_back( normal1 );
+            } else {
+                r_lights.push_back( pt );
+                r_normals.push_back( normal1 );
+            }
 	}
 
 	pt = crossbar[i];
-	for (j=0;j<num_lights;j++)
-        {
-        	// right side lights
-		// space out from centre lights
-		if (j==0)
-		{
-		    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
-                            -1 * CALVERT_VERT_SPACING * j, &lat, &lon, &r );
-                    pt = Point3D( lon, lat, 0.0 );
-		}
+	for ( j = 0; j < num_lights; j++ ) {
+            // right side lights
+            // space out from centre lights
+            if ( j == 0 ) {
+                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                                    -1 * CALVERT_VERT_SPACING * j, &lat, &lon,
+                                    &r );
+                pt = Point3D( lon, lat, 0.0 );
+            }
 
-        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
-                            -1 * spacing, &lat, &lon, &r );
-        	pt = Point3D( lon, lat, 0.0 );
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                                -1 * spacing, &lat, &lon, &r );
+            pt = Point3D( lon, lat, 0.0 );
 
-        	if (kind == "1" || i >= 2)
-        	{
-               	 	w_lights.push_back( pt );
-               	 	w_normals.push_back( normal1 );
-        	} else
-        	{
-                	r_lights.push_back( pt );
-                	r_normals.push_back( normal1 );
-        	}
+            if ( kind == "1" || i >= 2 ) {
+                w_lights.push_back( pt );
+                w_normals.push_back( normal1 );
+            } else {
+                r_lights.push_back( pt );
+                r_normals.push_back( normal1 );
+            }
         }
     }
     
-
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( g_lights, false );
@@ -1450,7 +1444,11 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1953,7 +1951,11 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -2060,7 +2062,11 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -2326,7 +2332,11 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+    TGPolygon poly_corners
+        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
+                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {

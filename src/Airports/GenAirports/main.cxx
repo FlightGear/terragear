@@ -98,6 +98,7 @@ static void help( int argc, char **argv ) {
     cout << "SRTM-North_America-3\n";
     cout << "SRTM-South_America-3\n";
     cout << "SRTM-Eurasia-3\n";
+    cout << "SRTM-Africa-3\n";
     cout << "DEM-USGS-3\n";
     cout << "SRTM-30";
     cout << "\n\n";
@@ -117,7 +118,7 @@ int main( int argc, char **argv ) {
     string_list elev_src;
     elev_src.clear();
 
-    sglog().setLogLevels( SG_GENERAL, SG_INFO );
+    sglog().setLogLevels( SG_GENERAL, SG_DEBUG );
 
     // parse arguments
     string work_dir = "";
@@ -177,6 +178,7 @@ int main( int argc, char **argv ) {
     elev_src.push_back( "SRTM-North_America-3" );
     elev_src.push_back( "SRTM-South_America-3" );
     elev_src.push_back( "SRTM-Eurasia-3" );
+    elev_src.push_back( "SRTM-Africa-3" );
     elev_src.push_back( "DEM-USGS-3" );
     elev_src.push_back( "SRTM-30" );
 

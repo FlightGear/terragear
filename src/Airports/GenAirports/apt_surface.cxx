@@ -221,10 +221,15 @@ TGAptSurface::TGAptSurface( const string& path,
             double accum = 0.0;
             for ( int ii = 0; ii < mult; ++ii ) {
                 for ( int jj = 0; jj < mult; ++jj ) {
+                    double value = dPts(mult*(i+1) - (mult/2) + ii,
+                                        mult*(j+1) - (mult/2) + jj).z();
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
                     accum += dPts(mult*(i+1) - (mult/2) + ii,
                                   mult*(j+1) - (mult/2) + jj).z();
                 }
             }
+            SG_LOG( SG_GENERAL, SG_DEBUG,
+                    "  average = " << accum / (mult*mult) );
             Pts(i,j) = Point3Df( min_deg.lon() + i * dlon,
                                  min_deg.lat() + j * dlat,
                                  accum / (mult*mult) );

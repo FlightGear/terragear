@@ -37,8 +37,13 @@
 // given a runway center point, length, width, and heading, and
 // altitude (meters) generate the lon and lat 4 corners using wgs84
 // math.
-TGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
-                          double heading_deg, double alt_m, bool add_mid )
+static TGPolygon gen_wgs84_area( Point3D origin,
+                                 double length_m,
+                                 double displ1, double displ2,
+                                 double width_m,
+                                 double heading_deg,
+                                 double alt_m,
+                                 bool add_mid )
 {
     TGPolygon result_list;
     double length_hdg = heading_deg;
@@ -49,7 +54,7 @@ TGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
     Point3D ref = origin;
     double lon, lat, r;
     geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                        length_m / 2.0, &lat, &lon, &r );
+                        length_m / 2.0 - displ2, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
 
     // move to the l,-w corner (then we add points in a clockwise direction)
@@ -77,7 +82,7 @@ TGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
     // move to the -l end/center of the runway
     ref = origin;
     geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                        -length_m / 2.0, &lat, &lon, &r );
+                        displ1 - length_m/2.0, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
 
     // move to the -l,w corner (then we add points in a clockwise direction)
@@ -117,8 +122,9 @@ TGPolygon gen_runway_area_w_scale( const TGRunway& runway,
     Point3D origin(runway.lon, runway.lat, 0);
 
     result_list = gen_wgs84_area( origin,
-                                  runway.length * length_scale * SG_FEET_TO_METER,
-                                  runway.width * width_scale * SG_FEET_TO_METER,
+                                  runway.length*length_scale * SG_FEET_TO_METER,
+                                  0.0, 0.0,
+                                  runway.width*width_scale * SG_FEET_TO_METER,
                                   runway.heading, alt_m, false );
 
     // display points
@@ -136,6 +142,7 @@ TGPolygon gen_runway_area_w_scale( const TGRunway& runway,
 TGPolygon gen_runway_area_w_extend( const TGRunway& runway,
                                     double alt_m,
 				    double length_extend,
+                                    double displ1, double displ2,
 				    double width_extend ) {
 
     TGPolygon result_list;
@@ -143,8 +150,9 @@ TGPolygon gen_runway_area_w_extend( const TGRunway& runway,
 
     result_list
         = gen_wgs84_area( origin,
-                          runway.length * SG_FEET_TO_METER + 2.0 * length_extend,
-                          runway.width * SG_FEET_TO_METER + 2.0 * width_extend,
+                          runway.length*SG_FEET_TO_METER + 2.0*length_extend,
+                          displ1, displ2,
+                          runway.width*SG_FEET_TO_METER + 2.0*width_extend,
                           runway.heading, alt_m, false );
 
     // display points
@@ -167,7 +175,8 @@ TGPolygon gen_runway_w_mid( const TGRunway& runway,
 
     result_list = gen_wgs84_area( origin,
                                   runway.length * SG_FEET_TO_METER
-                                    + 2.0 * length_extend_m,
+                                    + 2.0*length_extend_m,
+                                  0.0, 0.0,
                                   runway.width * SG_FEET_TO_METER
                                     + 2.0 * width_extend_m,
                                   runway.heading, alt_m, true );

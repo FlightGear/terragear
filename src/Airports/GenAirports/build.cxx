@@ -316,13 +316,15 @@ static void build_runway( const TGRunway& rwy_info,
 
     TGPolygon base, safe_base;
     if ( rwy_info.really_taxiway ) {
-	base = gen_runway_area_w_extend( rwy_info, 0.0, 10.0, 10.0 );
+	base = gen_runway_area_w_extend( rwy_info, 0.0, 10.0, 0.0, 0.0, 10.0 );
         // also clear a safe area around the taxiway
-        safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 40.0, 40.0 );
+        safe_base
+            = gen_runway_area_w_extend( rwy_info, 0.0, 40.0, 0.0, 0.0, 40.0 );
     } else {
-	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, 20.0 );
+	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, 0.0, 0.0, 20.0 );
         // also clear a safe area around the runway
-        safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, 50.0 );
+        safe_base
+            = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, 0.0, 0.0, 50.0 );
     }
     *apt_clearing = polygon_union(safe_base, *apt_clearing);
 
@@ -436,10 +438,10 @@ void build_airport( string airport_id, float alt_m,
     }
 
     SGBucket b( apt_lon / (double)rwy_count, apt_lat / (double)rwy_count );
-    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS,
-			 b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
-    Point3D gbs_center = sgGeodToCart( center_geod );
     SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
+    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS, 	 
+                         b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
+    Point3D gbs_center = sgGeodToCart( center_geod );
 
     // parse taxiways and generate the vertex list
     runway_list taxiways;
@@ -1140,10 +1142,17 @@ void build_airport( string airport_id, float alt_m,
 	p.setx( geod_nodes[i].x() * SGD_DEGREES_TO_RADIANS );
 	p.sety( geod_nodes[i].y() * SGD_DEGREES_TO_RADIANS );
 	p.setz( geod_nodes[i].z() );
-	wgs84_nodes.push_back( sgGeodToCart( p ) );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "geod pt = " << geod_nodes[i] );
+        Point3D cart = sgGeodToCart( p );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  cart pt = " << cart );
+        Point3D geod = sgCartToGeod( cart );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    remapped goed pt = " << geod );
+	wgs84_nodes.push_back( cart );
     }
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with wgs84 node mapping");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  center = " << gbs_center
+           << " radius = " << gbs_radius );
 
     // null structures
     group_list fans_v; fans_v.clear();

@@ -78,15 +78,16 @@ TGPolygon gen_runway_area_w_scale( const TGRunway& runway,
 // (return result points in degrees)
 TGPolygon gen_runway_area_w_extend( const TGRunway& runway, 
                                     double alt_m,
-				    double length_extend = 0.0,
-				    double width_extend = 0.0 );
+				    double length_extend,
+                                    double displ1, double displ2,
+				    double width_extend );
 
 
 // generate an area for half a runway
 TGPolygon gen_runway_w_mid( const TGRunway& runway,
                             double alt_m,
-			    double length_extend_m = 0.0,
-			    double width_extend_m = 0.0 );
+			    double length_extend_m,
+			    double width_extend_m );
 
 
 #endif // _RUNWAY_HXX

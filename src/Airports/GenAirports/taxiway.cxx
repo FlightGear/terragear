@@ -43,7 +43,7 @@ void gen_taxiway( const TGRunway& rwy_info,
 {
     int j, k;
 
-    TGPolygon runway = gen_runway_w_mid( rwy_info, alt_m );
+    TGPolygon runway = gen_runway_w_mid( rwy_info, alt_m, 0.0, 0.0 );
 
     // runway half "a"
     TGPolygon runway_a;
