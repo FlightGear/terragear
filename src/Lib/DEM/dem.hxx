@@ -96,11 +96,11 @@ private:
 public:
 
     // Constructor
-    FGDem( void );
+    FGDem();
     FGDem( const string& file );
 
     // Destructor
-    ~FGDem( void );
+    ~FGDem();
 
     // open a DEM file (use "-" if input is coming from stdin)
     int open ( const string& file );
@@ -121,28 +121,6 @@ public:
     // Data is written out column by column starting at the lower left
     // hand corner.
     int write_area( const string& root, SGBucket& b, bool compress );
-
-#if 0
-    // return the current altitude based on grid data.  We should
-    // rewrite this to interpolate exact values, but for now this is
-    // good enough
-    double interpolate_altitude( double lon, double lat );
-
-    // Use least squares to fit a simpler data set to dem data
-    void fit( double error, SGBucket& p );
-
-    // Initialize output mesh structure
-    void outputmesh_init( void );
-
-    // Get the value of a mesh node
-    double outputmesh_get_pt( int i, int j );
-
-    // Set the value of a mesh node
-    void outputmesh_set_pt( int i, int j, double value );
-
-    // Write out a node file that can be used by the "triangle" program
-    void outputmesh_output_nodes( const string& fg_root, SGBucket& p );
-#endif
 
     // Informational methods
     inline double get_originx() const { return originx; }
