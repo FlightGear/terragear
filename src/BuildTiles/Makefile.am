@@ -1,9 +1,9 @@
 SUBDIRS = \
 	Triangulate \
+        Osgb36 \
 	Clipper \
 	GenOutput \
 	Match \
-        Osgb36 \
 	Parallel \
 	Main
 

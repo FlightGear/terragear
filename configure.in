@@ -324,6 +324,7 @@ AC_OUTPUT( \
 	src/Prep/E00Lines/Makefile \
 	src/Prep/GSHHS/Makefile \
 	src/Prep/MergerClipper/Makefile \
+	src/Prep/Photo/Makefile \
 	src/Prep/ShapeFile/Makefile \
 	src/Utils/Makefile \
 )

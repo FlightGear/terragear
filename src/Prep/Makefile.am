@@ -5,4 +5,5 @@ SUBDIRS = \
 	E00Lines \
 	GSHHS \
 	MergerClipper \
+	Photo \
 	ShapeFile
