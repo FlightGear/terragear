@@ -106,6 +106,18 @@ def terra_fit(fname, thresh=1, count=1000, factor=1.0/30.0, minnodes=50):
         raise IOError, (2, 'No such file or directory: ' + fname)
         return
 
+    # need to do this twice to get basename 'XXX.arr.gz'
+    basename,ext = os.path.splitext(fname)
+    basename,ext = os.path.splitext(basename)
+    gzName = basename+".fit.gz"
+
+    try:
+        if path.getmtime(gzName) > path.getmtime(fname):
+            print "Skipping: %s is newer then %s"%(gzName,fname)
+            return
+    except:
+        pass
+
     gzin = GzipFile(fname, 'rb')
 
     data = gzin.readline()
@@ -130,17 +142,12 @@ def terra_fit(fname, thresh=1, count=1000, factor=1.0/30.0, minnodes=50):
         max_z   = max(max_z,max(data[i]))
         min_z   = min(min_z,min(data[i]))
 
-    # need to do this twice to get basename 'XXX.arr.gz'
-    basename,ext = os.path.splitext(fname)
-    basename,ext = os.path.splitext(basename)
-    
     pgmName = basename+'.pgm'
     pre_terra(pgmName, data, span_x, span_y, max_z, min_z)
     
     objName = basename+'.obj'
     npts = run_terra(thresh, minnodes, count, factor, objName, pgmName)
     
-    gzName = basename+".fit.gz"
     post_terra(objName, gzName, step_x, step_y, min_x, min_y, min_z)
     
     if CLEAN_TEMP_FILES:
