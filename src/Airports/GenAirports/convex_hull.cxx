@@ -91,7 +91,7 @@ bool test_point(Point3D Pa, Point3D Pb, Point3D Pc) {
     a1 = calc_angle(a, b, origin);
     a2 = calc_angle(origin, b, c);
 
-    // printf("a1 = %.2f  a2 = %.2f\n", a1 * RAD_TO_DEG, a2 * RAD_TO_DEG);
+    // printf("a1 = %.2f  a2 = %.2f\n", a1 * SGD_RADIANS_TO_DEGREES, a2 * SGD_RADIANS_TO_DEGREES);
 
     return ( (a1 + a2) < SG_PI );
 }

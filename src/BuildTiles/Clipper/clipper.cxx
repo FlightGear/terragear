@@ -166,7 +166,7 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
 
     out.erase();
 
-    double angle_cutoff = 10.0 * DEG_TO_RAD;
+    double angle_cutoff = 10.0 * SGD_DEGREES_TO_RADIANS;
     double area_cutoff = 0.000008;
     double min_angle;
     double area;

@@ -558,8 +558,8 @@ static void build_wgs_84_point_list( FGConstruct& c, const FGArray& array ) {
 	geod = raw_nodes[i];
 
 	// convert to radians
-	radians = Point3D( geod.x() * DEG_TO_RAD,
-			   geod.y() * DEG_TO_RAD,
+	radians = Point3D( geod.x() * SGD_DEGREES_TO_RADIANS,
+			   geod.y() * SGD_DEGREES_TO_RADIANS,
 			   geod.z() );
 
         cart = sgGeodToCart(radians);

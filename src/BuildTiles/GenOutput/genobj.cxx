@@ -47,8 +47,8 @@ void FGGenOutput::calc_gbs( FGConstruct& c ) {
     
     SGBucket b = c.get_bucket();
 
-    Point3D p( b.get_center_lon() * DEG_TO_RAD, 
-	       b.get_center_lat() * DEG_TO_RAD,
+    Point3D p( b.get_center_lon() * SGD_DEGREES_TO_RADIANS, 
+	       b.get_center_lat() * SGD_DEGREES_TO_RADIANS,
 	       0 );
 
     gbs_center = sgGeodToCart(p);
@@ -80,9 +80,9 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
 
     SGBucket b = c.get_bucket();
     double clat = b.get_center_lat();
-    double clat_rad = clat * DEG_TO_RAD;
+    double clat_rad = clat * SGD_DEGREES_TO_RADIANS;
     double cos_lat = cos( clat_rad );
-    double local_radius = cos_lat * EQUATORIAL_RADIUS_M;
+    double local_radius = cos_lat * SG_EQUATORIAL_RADIUS_M;
     double local_perimeter = 2.0 * local_radius * SG_PI;
     double degree_width = local_perimeter / 360.0;
 
@@ -93,7 +93,7 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
     // cout << "local_perimeter = " << local_perimeter << endl;
     // cout << "degree_width = " << degree_width << endl;
 
-    double perimeter = 2.0 * EQUATORIAL_RADIUS_M * SG_PI;
+    double perimeter = 2.0 * SG_EQUATORIAL_RADIUS_M * SG_PI;
     double degree_height = perimeter / 360.0;
     // cout << "degree_height = " << degree_height << endl;
 

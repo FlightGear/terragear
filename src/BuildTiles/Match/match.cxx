@@ -271,8 +271,8 @@ void FGMatch::load_neighbor_shared( FGConstruct& c ) {
 
 // fake a normal for a point which is basically straight up
 Point3D tgFakeNormal( const Point3D& p ) {
-    Point3D radians = Point3D( p.x() * DEG_TO_RAD,
-			       p.y() * DEG_TO_RAD,
+    Point3D radians = Point3D( p.x() * SGD_DEGREES_TO_RADIANS,
+			       p.y() * SGD_DEGREES_TO_RADIANS,
 			       p.z() );
     Point3D cart = sgGeodToCart(radians);
     double len = Point3D(0.0).distance3D(cart);

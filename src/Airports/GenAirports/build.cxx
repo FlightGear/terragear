@@ -119,8 +119,8 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    // 3. Convert from polar to cartesian coordinates
 	    //
 
-	    x = cos( course * DEG_TO_RAD ) * dist;
-	    y = sin( course * DEG_TO_RAD ) * dist;
+	    x = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
+	    y = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
 	    cout << "  x = " << x << " y = " << y << endl;
 	    cout << "  min = " << min << endl;
 	    cout << "  max = " << max << endl;
@@ -1607,8 +1607,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
     */
 
     SGBucket b( apt_lon, apt_lat );
-    Point3D center_geod( b.get_center_lon() * DEG_TO_RAD,
-			 b.get_center_lat() * DEG_TO_RAD, 0 );
+    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS,
+			 b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
     Point3D gbs_center = sgGeodToCart( center_geod );
     cout << b.gen_base_path() << "/" << b.gen_index_str() << endl;
 
@@ -1953,8 +1953,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // calculate wgs84 mapping of nodes
     point_list wgs84_nodes;
     for ( i = 0; i < (int)geod_nodes.size(); ++i ) {
-	p.setx( geod_nodes[i].x() * DEG_TO_RAD );
-	p.sety( geod_nodes[i].y() * DEG_TO_RAD );
+	p.setx( geod_nodes[i].x() * SGD_DEGREES_TO_RADIANS );
+	p.sety( geod_nodes[i].y() * SGD_DEGREES_TO_RADIANS );
 	p.setz( geod_nodes[i].z() );
 	wgs84_nodes.push_back( sgGeodToCart( p ) );
     }
@@ -1962,8 +1962,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
     cout << "Done with wgs84 node mapping" << endl;
 
     // calculate normal(s) for this airport
-    p.setx( base_tris.get_pt(0, 0).x() * DEG_TO_RAD );
-    p.sety( base_tris.get_pt(0, 0).y() * DEG_TO_RAD );
+    p.setx( base_tris.get_pt(0, 0).x() * SGD_DEGREES_TO_RADIANS );
+    p.sety( base_tris.get_pt(0, 0).y() * SGD_DEGREES_TO_RADIANS );
     p.setz( 0 );
     Point3D tmp = sgGeodToCart( p );
     // cout << "geod = " << p << endl;

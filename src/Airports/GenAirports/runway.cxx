@@ -98,7 +98,7 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
 
 	double lat2, lon2, az2;
 	geo_direct_wgs_84 ( 0, origin.y(), origin.x(), 
-			    rad_list.get_pt(0, i).y() * RAD_TO_DEG, 
+			    rad_list.get_pt(0, i).y() * SGD_RADIANS_TO_DEGREES, 
 			    rad_list.get_pt(0, i).x(), 
 			    &lat2, &lon2, &az2 );
 
@@ -145,7 +145,7 @@ FGPolygon gen_runway_area( const FGRunway& runway,
     // }
 
     // rotate, transform, and convert points to lon, lat in degrees
-    result_list = gen_area(origin, runway.heading * DEG_TO_RAD, tmp_list);
+    result_list = gen_area(origin, runway.heading * SGD_DEGREES_TO_RADIANS, tmp_list);
 
     // display points
     // cout << "Results in radians." << endl;
@@ -190,7 +190,7 @@ FGPolygon gen_runway_w_mid( const FGRunway& runway,
     // }
 
     // rotate, transform, and convert points to lon, lat in degrees
-    result_list = gen_area(origin, runway.heading * DEG_TO_RAD, tmp_list);
+    result_list = gen_area(origin, runway.heading * SGD_DEGREES_TO_RADIANS, tmp_list);
 
     // display points
     // cout << "Results in radians." << endl;
