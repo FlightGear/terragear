@@ -280,7 +280,7 @@ int main( int argc, char **argv ) {
         gts_surface_foreach_face( surface, (GtsFunc)pick_first_face, &first );
 
         double max_error = 0;
-        point_list_iterator mark = NULL;
+        point_list_iterator mark = pending.end();
 
         // iterate through all remaining points
         point_list_iterator current = pending.begin();
