@@ -62,6 +62,9 @@ private:
     // minimum interior angle for triangulation
     string angle;
 
+    // path to land-cover file (if any)
+    string cover;
+
     // paths
     string work_base;
     string output_base;
@@ -111,7 +114,11 @@ public:
     
     // minimum interior angle for triangulation
     inline string get_angle() const { return angle; }
-    inline void set_angle( const string s ) { angle = s; }
+    inline void set_angle( const string &s ) { angle = s; }
+
+    // land cover file
+    inline string get_cover () const { return cover; }
+    inline void set_cover (const string &s) { cover = s; }
 
     // paths
     inline string get_work_base() const { return work_base; }

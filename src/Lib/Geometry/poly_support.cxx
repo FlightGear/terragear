@@ -708,6 +708,9 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 
 
 #if 0
+// depricated code, also note the method for finding the center point
+// of a triangle is depricated and weights the 3 vertices unevenly.
+
 // Find a point inside the polygon without regard for holes
 static Point3D point_inside_hole( point_list contour ) {
 

@@ -173,7 +173,9 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
 
 // build the specified tile, return true if contruction completed
 // successfully
-bool construct_tile( const FGBucket& b, const string& result_file ) {
+bool construct_tile( const FGBucket& b,
+		     const string& result_file,
+		     const string &cover ) {
     double angle = 10.0;
     bool still_trying = true;
 
@@ -186,6 +188,9 @@ bool construct_tile( const FGBucket& b, const string& result_file ) {
 	command = command + " --work-dir=" + work_base;
 	command = command + " --output-dir=" + output_base;
 	command = command + " --tile-id=" + b.gen_index_str();
+	if ( cover.size() > 0 ) {
+	    command = command + " --cover=" + cover;
+	}
 	for (int i = 0; i < (int)load_dirs.size(); i++) {
 	  command = command + " " + load_dirs[i];
 	}
@@ -238,7 +243,8 @@ usage (const string name)
   cout << "  --work-dir=<directory>" << endl;
   cout << "  --host=<address>" << endl;
   cout << "  --port=<number>" << endl;
-  cout << "  --rude ]" << endl;
+  cout << "  --rude" << endl;
+  cout << "  --cover=<landcover-raster> ]" << endl;
   cout << "<load directory...>" << endl;
   exit(-1);
 }
@@ -248,6 +254,7 @@ int main(int argc, char *argv[]) {
     bool rude = false;
     bool result;
 
+    string cover;
     string host = "127.0.0.1";
     int port=4001;
 
@@ -268,6 +275,8 @@ int main(int argc, char *argv[]) {
 	port = atoi(arg.substr(7).c_str());
       } else if (arg == "--rude") {
 	rude = true;
+      } else if (arg.find("--cover=") == 0) {
+	cover = arg.substr(8);
       } else if (arg.find("--") == 0) {
 	usage(argv[0]);
       } else {
@@ -306,7 +315,7 @@ int main(int argc, char *argv[]) {
     check_master_switch();
 
     while ( (tile = get_next_task( host, port, last_tile )) >= 0 ) {
-	result = construct_tile( FGBucket(tile), result_file );
+	result = construct_tile( FGBucket(tile), result_file, cover );
 	if ( result ) {
 	    last_tile = tile;
 	} else {

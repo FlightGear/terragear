@@ -221,9 +221,10 @@ static void inline add_to_polys ( FGPolygon &accum, const FGPolygon &poly) {
 
 // Generate polygons from la and-cover raster.  Horizontally- or
 // vertically-adjacent polygons will be merged automatically.
-static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
+static int actual_load_landcover ( FGConstruct & c,
 				   FGClipper &clipper ) {
 
+    LandCover cover(c.get_cover());
     int count = 0;
     FGPolygon polys[FG_MAX_AREA_TYPES];
     FGPolygon poly;		// working polygon
@@ -317,11 +318,10 @@ static int load_polys( FGConstruct& c ) {
 	cout << "  loaded " << count << " total polys" << endl;
     }
 
-    // Load the land use polygons
-    string glc = c.get_work_base();
-    glc += "/LC-Global/gusgs2_0ll.img";
-    LandCover cover( glc );
-    count += actual_load_landcover ( cover, c, clipper );
+    // Load the land use polygons if the --cover option was specified
+    if ( c.get_cover().size() > 0 ) {
+	count += actual_load_landcover (c, clipper);
+    }
 
     point2d min, max;
     min.x = c.get_bucket().get_center_lon() - 0.5 * c.get_bucket().get_width();
@@ -944,6 +944,7 @@ static void usage( const string name ) {
     cout << "Usage: " << name << endl;
     cout << "[ --output-dir=<directory>" << endl;
     cout << "  --work-dir=<directory>" << endl;
+    cout << "  --cover=<path to land-cover raster>" << endl;
     cout << "  --min-angle=<angle>" << endl;
     cout << "  --tile-id=<id>" << endl;
     cout << "  --lon=<degrees>" << endl;
@@ -959,6 +960,7 @@ int main(int argc, char **argv) {
     string output_dir = ".";
     string work_dir = ".";
     string min_angle = "10";
+    string cover = "";
     double lon = -110.664244;	// P13
     double lat = 33.352890;
     double xdist = -1;		// 1/2 degree in each direction
@@ -990,6 +992,8 @@ int main(int argc, char **argv) {
 	    xdist = atof(arg.substr(8).c_str());
 	} else if (arg.find("--ydist=") == 0) {
 	    ydist = atof(arg.substr(8).c_str());
+	} else if (arg.find("--cover=") == 0) {
+	    cover = arg.substr(8);
 	} else if (arg.find("--") == 0) {
 	    usage(argv[0]);
 	} else {
@@ -1043,6 +1047,7 @@ int main(int argc, char **argv) {
     FGConstruct c;
 
     c.set_angle( min_angle );
+    c.set_cover( cover );
     c.set_work_base( work_dir );
     c.set_output_base( output_dir );
 
