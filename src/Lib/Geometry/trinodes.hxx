@@ -47,7 +47,11 @@ private:
 
     // return true of the two points are "close enough" as defined by
     // FG_PROXIMITY_EPSILON
-    bool close_enough( const Point3D& p1, const Point3D& p2 ) const;
+    bool close_enough_2d( const Point3D& p1, const Point3D& p2 ) const;
+
+    // return true of the two points are "close enough" as defined by
+    // FG_PROXIMITY_EPSILON
+    bool close_enough_3d( const Point3D& p1, const Point3D& p2 ) const;
 
     // return true of the two points are "close enough" as defined by
     // FG_COURSE_EPSILON
@@ -65,6 +69,11 @@ public:
     // Add a point to the point list if it doesn't already exist.
     // Returns the index (starting at zero) of the point in the list.
     int unique_add( const Point3D& p );
+
+    // Add a point to the point list if it doesn't already exist
+    // (checking all three dimensions.)  Returns the index (starting
+    // at zero) of the point in the list.
+    int unique_add_3d( const Point3D& p );
 
     // Add the point with no uniqueness checking
     int simple_add( const Point3D& p );
@@ -91,12 +100,27 @@ public:
 
 
 // return true of the two points are "close enough" as defined by
-// FG_PROXIMITY_EPSILON
-inline bool FGTriNodes::close_enough( const Point3D& p1, const Point3D& p2 )
+// FG_PROXIMITY_EPSILON checking just x and y dimensions
+inline bool FGTriNodes::close_enough_2d( const Point3D& p1, const Point3D& p2 )
     const
 {
     if ( ( fabs(p1.x() - p2.x()) < FG_PROXIMITY_EPSILON ) &&
 	 ( fabs(p1.y() - p2.y()) < FG_PROXIMITY_EPSILON ) ) {
+	return true;
+    } else {
+	return false;
+    }
+}
+
+
+// return true of the two points are "close enough" as defined by
+// FG_PROXIMITY_EPSILON check all three dimensions
+inline bool FGTriNodes::close_enough_3d( const Point3D& p1, const Point3D& p2 )
+    const
+{
+    if ( ( fabs(p1.x() - p2.x()) < FG_PROXIMITY_EPSILON ) &&
+	 ( fabs(p1.y() - p2.y()) < FG_PROXIMITY_EPSILON ) &&
+	 ( fabs(p1.z() - p2.z()) < FG_PROXIMITY_EPSILON ) ) {
 	return true;
     } else {
 	return false;

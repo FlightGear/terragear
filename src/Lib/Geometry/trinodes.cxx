@@ -46,7 +46,35 @@ int FGTriNodes::unique_add( const Point3D& p ) {
     current = node_list.begin();
     last = node_list.end();
     for ( ; current != last; ++current ) {
-	if ( close_enough(p, *current) ) {
+	if ( close_enough_2d(p, *current) ) {
+	    // cout << "found an existing match!" << endl;
+	    return counter;
+	}
+	
+	++counter;
+    }
+
+    // add to list
+    node_list.push_back( p );
+
+    return counter;
+}
+
+
+// Add a point to the point list if it doesn't already exist (checking
+// all three dimensions.)  Returns the index (starting at zero) of the
+// point in the list.
+int FGTriNodes::unique_add_3d( const Point3D& p ) {
+    point_list_iterator current, last;
+    int counter = 0;
+
+    // cout << p.x() << "," << p.y() << endl;
+
+    // see if point already exists
+    current = node_list.begin();
+    last = node_list.end();
+    for ( ; current != last; ++current ) {
+	if ( close_enough_3d(p, *current) ) {
 	    // cout << "found an existing match!" << endl;
 	    return counter;
 	}
@@ -109,7 +137,7 @@ int FGTriNodes::find( const Point3D& p ) const {
     current = node_list.begin();
     last = node_list.end();
     for ( ; current != last; ++current ) {
-	if ( close_enough(p, *current) ) {
+	if ( close_enough_2d(p, *current) ) {
 	    // cout << "found an existing match!" << endl;
 	    return counter;
 	}
