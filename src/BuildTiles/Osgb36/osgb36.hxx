@@ -19,50 +19,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#include <simgear/compiler.h>
-
-#include STL_IOSTREAM
-#include <math.h>
 #include <simgear/math/point3d.hxx>
-
-SG_USING_STD(cout);
-SG_USING_STD(endl);
 
 //*******************************************************************
 //
 // NOTE All functions which take or return Latitude and Longitude
-//	take and return degrees.  Conversion to and from radians
-//	is performed internaly.  XYZ coordinates and ellipsoid
+//	take and return degrees.  XYZ coordinates and ellipsoid
 //	heights are returned and required in meters.
 //
 //*******************************************************************
 
+// Convert WGS84 Lat/Lon (degrees) to OSGB36 Eastings and Northings (meters)
+Point3D WGS84ToOSGB36(Point3D p);
 
-//Convert OSGB36 Lat and Lon to OSGB36 Eastings and Northings (Grid Reference)
-Point3D ConvertLatLonToEastingsNorthings(Point3D LatLon);
-
-//Convert OSGB36 Eastings and Northings to OSGB36 Lat and Lon
-Point3D ConvertEastingsNorthingsToLatLon(Point3D GridRef);
-
-//Convert OSGB36 coordinates from polar to cartesian (x,y,z) form
-Point3D ConvertAiry1830PolarToCartesian(Point3D LatLon);
-
-//Convert WGS84 coordinates from polar to cartesian (x,y,z) form
-Point3D ConvertGRS80PolarToCartesian(Point3D LatLon);
-
-//Convert OSGB36 coordinates from cartesian (x,y,z) to polar form
-Point3D ConvertAiry1830CartesianToPolar(Point3D XYZCoord);
-
-//Convert WGS84 coordinates from cartesian (x,y,z) to polar form
-Point3D ConvertGRS80CartesianToPolar(Point3D XYZCoord);
-
-//Transform a point in WGS84 cartesian coordinates to OSGB36 cartesian coordinates
-//Uses the Helmert Transformation with coefficients from www.gps.gov.org
-//Only accurate to around 5m since OSGB36 is an inhomogenous TRF
-Point3D ConvertWGS84ToOSGB36(Point3D WGS84);
-
-//Transform a point in OSGB36 cartesian coordinates to WGS84 cartesian coordinates
-//Uses the Helmert Transformation with coefficients from www.gps.gov.org
-//Only accurate to around 5m since OSGB36 is an inhomogenous TRF
-Point3D ConvertOSGB36ToWGS84(Point3D OSGB36);
-
+// Convert OSGB36 Eastings and Northings (meters) to WGS84 Lat/Lon (degrees)
+Point3D OSGB36ToWGS84(Point3D p);

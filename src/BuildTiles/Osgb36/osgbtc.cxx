@@ -9,66 +9,19 @@
 point_list UK_calc_tex_coords( const SGBucket& b, const point_list& geod_nodes,
 			    const int_list& fan, double scale )
 {
-    // cout << "calculating texture coordinates for a specific fan of size = "
-    //      << fan.size() << endl;
-
-    // calculate perimeter based on center of this degree (not center
-    // of bucket)
-/*    double clat = (int)b.get_center_lat();
-    if ( clat > 0 ) {
-	clat = (int)clat + 0.5;
-    } else {
-	clat = (int)clat - 0.5;
-    }
-*/
-//    double clat_rad = clat * DEG_TO_RAD;
-//    double cos_lat = cos( clat_rad );
-//    double local_radius = cos_lat * EQUATORIAL_RADIUS_M;
-//    double local_perimeter = 2.0 * local_radius * FG_PI;
-//    double degree_width = local_perimeter / 360.0;
-
-    // cout << "clat = " << clat << endl;
-    // cout << "clat (radians) = " << clat_rad << endl;
-    // cout << "cos(lat) = " << cos_lat << endl;
-    // cout << "local_radius = " << local_radius << endl;
-    // cout << "local_perimeter = " << local_perimeter << endl;
-    // cout << "degree_width = " << degree_width << endl;
-
-//    double perimeter = 2.0 * EQUATORIAL_RADIUS_M * FG_PI;
-//    double degree_height = perimeter / 360.0;
-    // cout << "degree_height = " << degree_height << endl;
-
     // find min/max of fan
-    Point3D tmin, tmax, WGS84LatLon, t;
-    Point3D WGS84xyz, OSGB36xyz, OSGB36LatLon;
+    Point3D t, tmin, tmax;
     Point3D OSGridRef;
     bool first = true;
 
     int i;
 
     for ( i = 0; i < (int)fan.size(); ++i ) {
-	WGS84LatLon = geod_nodes[ fan[i] ];
-//	cout << "point WGS84LatLon = " << WGS84LatLon << endl;
-	WGS84xyz = ConvertGRS80PolarToCartesian(WGS84LatLon);
-//	cout << "WGS84XYZ = " << WGS84XYZ.x << ", " << WGS84XYZ.y << ", " << WGS84XYZ.z << '\n';
-	OSGB36xyz = ConvertWGS84ToOSGB36(WGS84xyz);
-//	cout << "OSXYZ = " << OSXYZ.x << ", " << OSXYZ.y << ", " << OSXYZ.z << '\n';
-	OSGB36LatLon = ConvertAiry1830CartesianToPolar(OSGB36xyz);
-//	cout << "OSGB36LatLon = " << OSGB36LatLon.x() << ", " << OSGB36LatLon.y() << ", " << OSGB36LatLon.z() << '\n';
-	OSGridRef = ConvertLatLonToEastingsNorthings(OSGB36LatLon);
-//	cout << "OS Eastings and Northings = " << OSGridRef << '\n';
-
-
-
+	
+	OSGridRef = WGS84ToOSGB36(geod_nodes[ fan[i] ]);
+	
 	t = UK_basic_tex_coord( OSGridRef );
 	// cout << "basic_tex_coord = " << t << endl;
-
-//	cout << "p = " << p << '\n';
-//	cout << "t = " << t << '\n';
-//	cout << "Degree width = " << degree_width << '\n';
-//	cout << "Degree height = " << degree_height << '\n';
-//	char dcl_pause;
-//	cin >> dcl_pause;
 
 	if ( first ) {
 	    tmin = tmax = t;
@@ -171,17 +124,8 @@ point_list UK_calc_tex_coords( const SGBucket& b, const point_list& geod_nodes,
     point_list tex;
     tex.clear();
     for ( i = 0; i < (int)fan.size(); ++i ) {
-	WGS84LatLon = geod_nodes[ fan[i] ];
-//        cout << "About to do second run through tex coords\n";
-//	cout << "point WGS84LatLon = " << WGS84LatLon << endl;
-	WGS84xyz = ConvertGRS80PolarToCartesian(WGS84LatLon);
-//	cout << "WGS84XYZ = " << WGS84XYZ.x << ", " << WGS84XYZ.y << ", " << WGS84XYZ.z << '\n';
-	OSGB36xyz = ConvertWGS84ToOSGB36(WGS84xyz);
-//	cout << "OSXYZ = " << OSXYZ.x << ", " << OSXYZ.y << ", " << OSXYZ.z << '\n';
-	OSGB36LatLon = ConvertAiry1830CartesianToPolar(OSGB36xyz);
-//	cout << "OSGB36LatLon = " << OSGB36LatLon.x() << ", " << OSGB36LatLon.y() << ", " << OSGB36LatLon.z() << '\n';
-	OSGridRef = ConvertLatLonToEastingsNorthings(OSGB36LatLon);
-//	cout << "OS Eastings and Northings = " << OSGridRef << '\n';
+	
+	OSGridRef = WGS84ToOSGB36(geod_nodes[ fan[i] ]);
 
 	t = UK_basic_tex_coord(OSGridRef);
 //	cout << "second t = " << t << endl;
@@ -209,7 +153,7 @@ point_list UK_calc_tex_coords( const SGBucket& b, const point_list& geod_nodes,
 	    adjusted_t.sety( 0.0 );
 	}
 	adjusted_t.setz( 0.0 );
-	cout << "adjusted_t after check for SG_EPSILON = " << adjusted_t << endl;
+	//cout << "adjusted_t after check for SG_EPSILON = " << adjusted_t << endl;
 	
 	tex.push_back( adjusted_t );
     }

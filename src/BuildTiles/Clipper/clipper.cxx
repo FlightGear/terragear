@@ -209,9 +209,6 @@ bool TGClipper::load_osgb36_polys(const string& path) {
 
     Point3D p;
     Point3D OSRef;
-    Point3D OSLatLon;
-    Point3D OSCartesian;
-    Point3D WGS84Cartesian;
     in >> skipcomment;
     while ( !in.eof() ) {
 	in >> poly_name;
@@ -237,14 +234,11 @@ bool TGClipper::load_osgb36_polys(const string& path) {
 	    in >> startx;
 	    in >> starty;
 	    OSRef = Point3D(startx, starty, -9999.0);
-
+	    
             //Convert from OSGB36 Eastings/Northings to WGS84 Lat/Lon
             //Note that startx and starty themselves must not be altered since we compare them with unaltered lastx and lasty later
-            OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
-            OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
-            WGS84Cartesian = ConvertOSGB36ToWGS84(OSCartesian);
-            p = ConvertGRS80CartesianToPolar(WGS84Cartesian);
-
+	    p = OSGB36ToWGS84(OSRef);
+	    
 	    poly.add_node( i, p );
 	    SG_LOG( SG_CLIPPER, SG_BULK, "0 = "
 		    << startx << ", " << starty );
@@ -253,12 +247,8 @@ bool TGClipper::load_osgb36_polys(const string& path) {
 		in >> x;
 		in >> y;
 		OSRef = Point3D( x, y, -9999.0 );
-
-                OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
-            	OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
-            	WGS84Cartesian = ConvertOSGB36ToWGS84(OSCartesian);
-            	p = ConvertGRS80CartesianToPolar(WGS84Cartesian);
-
+		p = OSGB36ToWGS84(OSRef);
+		
 		poly.add_node( i, p );
 		SG_LOG( SG_CLIPPER, SG_BULK, j << " = " << x << ", " << y );
 	    }
@@ -271,12 +261,8 @@ bool TGClipper::load_osgb36_polys(const string& path) {
 		// last point same as first, discard
 	    } else {
 		OSRef = Point3D( lastx, lasty, -9999.0 );
-
-                OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
-            	OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
-            	WGS84Cartesian = ConvertOSGB36ToWGS84(OSCartesian);
-            	p = ConvertGRS80CartesianToPolar(WGS84Cartesian);
-
+		p = OSGB36ToWGS84(OSRef);
+		
 		poly.add_node( i, p );
 		SG_LOG( SG_CLIPPER, SG_BULK, count - 1 << " = "
 			<< lastx << ", " << lasty );

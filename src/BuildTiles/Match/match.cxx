@@ -423,6 +423,7 @@ void TGMatch::split_tile( TGConstruct& c ) {
     if ( !se_flag ) { cout << "  se corner = " << se_node << endl; }
     if ( !ne_flag ) { cout << "  ne corner = " << ne_node << endl; }
     if ( !nw_flag ) { cout << "  nw corner = " << nw_node << endl; }
+    /*
     if ( !north_flag ) { 
 	cout << "  north nodes = " << north_nodes.size() << endl;
 	for ( i = 0; i < (int)north_nodes.size(); ++i ) {
@@ -451,6 +452,7 @@ void TGMatch::split_tile( TGConstruct& c ) {
     for ( i = 0; i < (int)body_nodes.size(); ++i ) {
 	cout << "    " << body_nodes[i] << endl;
     }
+    */
 }
 
 

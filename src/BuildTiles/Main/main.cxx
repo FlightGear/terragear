@@ -574,17 +574,17 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
     point_list raw_nodes = c.get_tri_nodes().get_node_list();
 
     for ( i = 0; i < (int)raw_nodes.size(); ++i ) {
-        cout << "  fixing = " << raw_nodes[i] << " ";
+        //cout << "  fixing = " << raw_nodes[i] << " ";
         int index = c.get_fixed_elevations().find( raw_nodes[i] );
         if ( index >= 0 ) {
             // found an elevation we want to preserve
             z = c.get_fixed_elevations().get_node(index).z();
-            cout << " forced = " << z << endl;
+            //cout << " forced = " << z << endl;
         } else {
             // interpolate point from DEM data.
             z = array.altitude_from_grid( raw_nodes[i].x() * 3600.0, 
                                           raw_nodes[i].y() * 3600.0 );
-            cout << " interpolated = " << z << endl;
+            //cout << " interpolated = " << z << endl;
         }
         raw_nodes[i].setz( z );
     }
@@ -747,14 +747,14 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
                 // a different coverage for each vertex, just pick
                 // from the middle/average
                 Point3D average = ( p1 + p2 + p3 ) / 3.0;
-                cout << "    average triangle center = " << average;
+                //cout << "    average triangle center = " << average;
                 new_area = get_area_type( c.get_cover(), 
                                           average.x() - quarter_cover_size,
                                           average.y() - quarter_cover_size,
                                           cover_size, cover_size );
             }
               
-            cout << "  new attrib = " << get_area_name( new_area ) << endl;
+            //cout << "  new attrib = " << get_area_name( new_area ) << endl;
             c.set_tri_attribute( i, new_area );
         }
     }
@@ -912,7 +912,7 @@ static point_list gen_face_normals( TGConstruct& c ) {
     triele_list tri_elements = c.get_tri_elements();
     for ( int i = 0; i < (int)tri_elements.size(); i++ ) {
 	Point3D p = calc_normal(c,  i );
-	cout << p << endl;
+	//cout << p << endl;
 	face_normals.push_back( p );
     }
 
@@ -950,7 +950,7 @@ static point_list gen_point_normals( TGConstruct& c ) {
 	}
 
 	average /= total_area;
-	cout << "average = " << average << endl;
+	//cout << "average = " << average << endl;
 
 	point_normals.push_back( average );
     }

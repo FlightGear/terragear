@@ -146,6 +146,20 @@ int main( int argc, char **argv ) {
     if ( ! infile.str().length() ) {
         usage( argv[0] );
     }
+    
+    // Strip off .arr or .arr.gz if part of the input file name
+    string s = infile.str();
+    if(s.length() >= 7) {
+    	if(s.substr(s.length() - 7) == ".arr.gz") {
+	    s = s.substr(0, s.length() - 7);
+	}
+    }
+    if(s.length() >= 4) {
+    	if(s.substr(s.length() - 4) == ".arr") {
+	    s = s.substr(0, s.length() - 4);
+	}
+    }
+    infile.set(s);
 
     SGPath outfile = infile;
     outfile.concat( ".fit.gz" );

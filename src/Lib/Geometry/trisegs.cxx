@@ -133,9 +133,9 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 		y_err = fabs(current->y() - (m * current->x() + b));
 
 		if ( y_err < FG_PROXIMITY_EPSILON ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
-		    cout << p0 << " < " << *current << " < "
-		         << p1 << endl;
+		    //cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
+		    //cout << p0 << " < " << *current << " < "
+		    //     << p1 << endl;
 		    found_extra = true;
 		    if ( y_err < y_err_min ) {
 			extra_index = counter;
@@ -182,9 +182,9 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 		// }
 
 		if ( x_err < FG_PROXIMITY_EPSILON ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
-		    cout << p0 << " < " << *current << " < "
-		         << p1 << endl;
+		    //cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
+		    //cout << p0 << " < " << *current << " < "
+		    //     << p1 << endl;
 		    found_extra = true;
 		    if ( x_err < x_err_min ) {
 			extra_index = counter;
