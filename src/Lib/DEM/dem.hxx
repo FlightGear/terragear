@@ -31,7 +31,7 @@
 
 
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 
 
 #define DEM_SIZE 1200
@@ -44,7 +44,7 @@ private:
 
     // file pointer for input
     // gzFile fd;
-    fg_gzifstream *in;
+    sg_gzifstream *in;
 
     // coordinates (in arc seconds) of south west corner
     double originx, originy;

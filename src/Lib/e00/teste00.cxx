@@ -1,13 +1,13 @@
 // teste00.cxx - test the E00 parsing routines and dump some results.
 
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 #include "e00.hxx"
 
 int main (int ac, const char ** av)
 {
   for (int i = 1; i < ac; i++) {
     cerr << "Reading " << av[i] << endl;
-    fg_gzifstream input(av[i]);
+    sg_gzifstream input(av[i]);
     E00 data;
     try {
       data.readE00(input);

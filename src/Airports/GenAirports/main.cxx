@@ -40,7 +40,7 @@
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 
 #include <Polygon/index.hxx>
 
@@ -117,7 +117,7 @@ int main( int argc, char **argv ) {
     string counter_file = work_dir + "/poly_counter";
     poly_index_init( counter_file );
 
-    fg_gzifstream in( input_file );
+    sg_gzifstream in( input_file );
     if ( !in ) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
         exit(-1);

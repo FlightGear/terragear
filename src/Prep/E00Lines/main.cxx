@@ -27,7 +27,7 @@
 #include <simgear/constants.h>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 
 #include <iostream>
 #include <string>
@@ -603,7 +603,7 @@ main (int argc, const char **argv)
     cout << "Processing " << argv[argPos] << endl;
 
 				// Grab command-line arguments.
-    fg_gzifstream input(argv[argPos]);
+    sg_gzifstream input(argv[argPos]);
     if ( !input.good() ) {
       SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << argv[argPos]);
       exit(-1);

@@ -37,7 +37,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 
 
 SG_USING_STD(vector);
@@ -53,7 +53,7 @@ private:
 
     // file pointer for input
     // gzFile fd;
-    fg_gzifstream *in;
+    sg_gzifstream *in;
 
     // coordinates (in arc seconds) of south west corner
     double originx, originy;

@@ -27,7 +27,7 @@
 
 #include <simgear/math/point3d.hxx>
 #include <simgear/math/sg_geodesy.hxx>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 
 #ifdef _MSC_VER
 #  include <Win32/mkdir.hpp>
@@ -55,7 +55,7 @@ void FGMatch::scan_share_file( const string& dir, const SGBucket& b,
 
     cout << "reading shared data from " << file << endl;
 
-    fg_gzifstream in( file );
+    sg_gzifstream in( file );
     if ( !in.is_open() ) {
         cout << "Cannot open file: " << file << endl;
 	return;

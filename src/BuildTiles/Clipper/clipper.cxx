@@ -26,7 +26,7 @@
 
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 
 #include <Polygon/names.hxx>
 
@@ -68,7 +68,7 @@ bool FGClipper::load_polys(const string& path) {
 
     SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << " ..." );
 
-    fg_gzifstream in( path );
+    sg_gzifstream in( path );
 
     if ( !in ) {
         SG_LOG( SG_CLIPPER, SG_ALERT, "Cannot open file: " << path );

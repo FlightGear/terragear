@@ -48,7 +48,7 @@
 #endif
 
 #include <simgear/constants.h>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 #include <simgear/misc/strutils.hxx>
 
 #ifdef _MSC_VER
@@ -102,7 +102,7 @@ FGDem::open ( const string& file ) {
 	printf("Not yet ported ...\n");
 	return 0;
     } else {
-	in = new fg_gzifstream( file );
+	in = new sg_gzifstream( file );
 	if ( !(*in) ) {
 	    cout << "Cannot open " << file << endl;
 	    return 0;
@@ -117,7 +117,7 @@ FGDem::open ( const string& file ) {
 // close a DEM file
 int
 FGDem::close () {
-    // the fg_gzifstream doesn't seem to have a close()
+    // the sg_gzifstream doesn't seem to have a close()
 
     delete in;
 

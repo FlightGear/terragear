@@ -765,7 +765,7 @@ static void do_custom_objects( const FGConstruct& c ) {
 	string dest_dir = output_base + "/Scenery/" + b.gen_base_path();
 	string dest_ind = dest_dir + "/" + b.gen_index_str() + ".ind";
 
-	fg_gzifstream in( index_file );
+	sg_gzifstream in( index_file );
 
 	if ( ! in.is_open() ) {
 	    cout << "No custom objects" << endl;

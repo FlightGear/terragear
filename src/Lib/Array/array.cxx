@@ -47,7 +47,7 @@
 #include STL_STRING
 
 #include <simgear/constants.h>
-#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 #include <simgear/misc/strutils.hxx>
 #include <simgear/math/leastsqs.hxx>
 
@@ -89,7 +89,7 @@ FGArray::open( const string& file ) {
 	cout << "  Not yet ported ..." << endl;
 	return 0;
     } else {
-	in = new fg_gzifstream( file );
+	in = new sg_gzifstream( file );
 	if ( ! in->is_open() ) {
 	    cout << "  Cannot open " << file << endl;
 	    return 0;
@@ -104,7 +104,7 @@ FGArray::open( const string& file ) {
 // close an Array file
 int
 FGArray::close() {
-    // the fg_gzifstream doesn't seem to have a close()
+    // the sg_gzifstream doesn't seem to have a close()
 
     delete in;
 
