@@ -33,8 +33,16 @@
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
-void tgChopPolygon( const string& path, AreaType area,
-                    const TGPolygon& shape, bool preserve3d );
+void tgChopNormalPolygon( const string& path, AreaType area,
+                          const TGPolygon& shape, bool preserve3d );
+
+
+// process polygon shape (chop up along tile boundaries and write each
+// polygon piece to a file) This has a front end to a crude clipper
+// that doesn't handle holes so beware.  This routine is appropriate
+// for breaking down really huge structures if needed.
+void tgChopBigSimplePolygon( const string& path, AreaType area,
+                             const TGPolygon& shape, bool preserve3d );
 
 
 #endif // _TG_CHOP_HXX

@@ -149,8 +149,82 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
-void tgChopPolygon( const string& path, AreaType area,
-                    const TGPolygon& shape, bool preserve3d )
+void tgChopNormalPolygon( const string& path, AreaType area,
+                       const TGPolygon& shape, bool preserve3d )
+{
+    Point3D min, max, p;
+    // point2d min, max;
+    long int index;
+    int i, j;
+
+    // bail out immediately if polygon is empty
+    if ( shape.contours() == 0 ) {
+	return;
+    }
+
+    min = Point3D(  200.0 );
+    max = Point3D( -200.0 );
+
+    // find min/max of polygon
+    for ( i = 0; i < shape.contours(); i++ ) {
+	for ( j = 0; j < shape.contour_size(i); j++ ) {
+	    p = shape.get_pt( i, j );
+
+	    if ( p.x() < min.x() ) { min.setx( p.x() ); }
+	    if ( p.y() < min.y() ) { min.sety( p.y() ); }
+	    if ( p.x() > max.x() ) { max.setx( p.x() ); }
+	    if ( p.y() > max.y() ) { max.sety( p.y() ); }
+	}
+    }
+
+    // get next polygon index
+    index = poly_index_next();
+
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  min = " << min << " max = " << max );
+
+    // find buckets for min, and max points of convex hull.
+    // note to self: self, you should think about checking for
+    // polygons that span the date line
+    SGBucket b_min( min.x(), min.y() );
+    SGBucket b_max( max.x(), max.y() );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket min = " << b_min );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket max = " << b_max );
+
+    if ( b_min == b_max ) {
+	// shape entirely contained in a single bucket, write and bail
+	clip_and_write_poly( path, index, area, b_min, shape, preserve3d );
+	return;
+    }
+
+    SGBucket b_cur;
+    int dx, dy;
+	    
+    sgBucketDiff(b_min, b_max, &dx, &dy);
+    SG_LOG( SG_GENERAL, SG_INFO, 
+	    "  polygon spans tile boundaries" );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  dx = " << dx 
+	    << "  dy = " << dy );
+
+    if ( (dx > 2880) || (dy > 1440) )
+        throw sg_exception("something is really wrong in split_polygon()!!!!");
+
+    // write each out polygon for each bucket
+    for ( j = 0; j <= dy; ++j ) {
+        for ( i = 0; i <= dx; ++i ) {
+            b_cur = sgBucketOffset(min.x(), min.y(), i, j);
+            clip_and_write_poly( path, index, area, b_cur, shape,
+                                 preserve3d );
+        }
+    }
+}
+
+
+// process polygon shape (chop up along tile boundaries and write each
+// polygon piece to a file) This has a front end to a crude clipper
+// that doesn't handle holes so beware.  This routine is appropriate
+// for breaking down really huge structures if needed.
+void tgChopBigSimplePolygon( const string& path, AreaType area,
+                             const TGPolygon& shape, bool preserve3d )
 {
     Point3D min, max, p;
     // point2d min, max;
@@ -268,7 +342,7 @@ void tgChopPolygon( const string& path, AreaType area,
 	    bottom_clip = horizontal_clip( shape, clip_line, Below );
 	}
 
-	tgChopPolygon( path, area, bottom_clip, preserve3d );
+	tgChopBigSimplePolygon( path, area, bottom_clip, preserve3d );
     }
 
     {
@@ -297,6 +371,6 @@ void tgChopPolygon( const string& path, AreaType area,
 	    top_clip = horizontal_clip( shape, clip_line, Above );
 	}
 
-	tgChopPolygon( path, area, top_clip, preserve3d );
+	tgChopBigSimplePolygon( path, area, top_clip, preserve3d );
     }
 }
