@@ -45,9 +45,9 @@ double tgAverageElevation( const string &root, const string_list elev_src,
                            const point_list points_source );
 
 // lookup node elevations for each point in the specified nurbs++
-// matrix.  Returns average of all points.
-double tgCalcElevations( const string &root, const string_list elev_src,
-                         Matrix_Point3Dd &Pts );
+// matrix.
+void tgCalcElevations( const string &root, const string_list elev_src,
+                       Matrix_Point3Dd &Pts, double average );
 
 // clamp all elevations to the specified range
 void tgClampElevations( Matrix_Point3Dd &Pts,

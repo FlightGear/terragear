@@ -40,133 +40,58 @@
 SG_USING_NAMESPACE( PLib );
 
 
-#if 0
-// fix node elevations.  Offset is added to the final elevation,
-// returns average of all points.
-static double calc_elevations( const string &root, const string_list elev_src,
-                             Matrix_Point3Dd &Pts ) {
-    bool done = false;
-    int i, j;
-    TGArray array;
+static bool limit_slope( Matrix_Point3Dd &Pts, int i1, int j1, int i2, int j2,
+                         double average_elev_m )
+{
+    bool slope_error = false;
 
-    // just bail if no work to do
-    if ( Pts.rows() == 0 || Pts.cols() == 0 ) {
-        return 0.0;
-    }
+    Point3Dd p1, p2;
+    p1 = Pts(j1,i1);
+    p2 = Pts(j2,i2);
 
-    // set all elevations to -9999
-    for ( i = 0; i < Pts.cols(); ++i ) {
-        for ( j = 0; j < Pts.rows(); ++j ) {
-            Point3Dd p = Pts(j,i);
-            p.z() = -9999.0;
+    double az1, az2, dist;
+    double slope;
+
+    geo_inverse_wgs_84( 0, p1.y(), p1.x(), p2.y(), p2.x(),
+                        &az1, &az2, &dist );
+    slope = (p2.z() - p1.z()) / dist;
+
+    if ( fabs(slope) > (slope_max + slope_eps) ) {
+        // need to throttle slope, let's move the point
+        // furthest away from average towards the center.
+
+        slope_error = true;
+
+        SG_LOG( SG_GENERAL, SG_DEBUG, " (a) detected slope of "
+                << slope << " dist = " << dist );
+
+        double e1 = fabs(average_elev_m - p1.z());
+        double e2 = fabs(average_elev_m - p2.z());
+        // cout << "  z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
+        // cout << "  e1 = " << e1 << "  e2 = " << e2 << endl;
+
+        if ( e1 > e2 ) {
+            // cout << "  p1 error larger" << endl;
+            if ( slope > 0 ) {
+                p1.z() = p2.z() - (dist * slope_max);
+            } else {
+                p1.z() = p2.z() + (dist * slope_max);
+            }
+            Pts(j1,i1) = p1;
+        } else {
+            // cout << "  p2 error larger" << endl;
+            if ( slope > 0 ) {
+                p2.z() = p1.z() + (dist * slope_max);
+            } else {
+                p2.z() = p1.z() - (dist * slope_max);
+            }
+            Pts(j2,i2) = p2;
         }
+        // cout << "   z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
     }
 
-    while ( !done ) {
-	// find first node with -9999 elevation
-        Point3Dd first;
-        bool found_one = false;
-        for ( i = 0; i < Pts.cols(); ++i ) {
-            for ( j = 0; j < Pts.rows(); ++j ) {
-                Point3Dd p = Pts(j,i);
-                if ( p.z() < -9000.0 && !found_one ) {
-                    first = p;
-                    found_one = true;
-                }
-            }
-        }
-
-	if ( found_one ) {
-	    SGBucket b( first.x(), first.y() );
-	    string base = b.gen_base_path();
-
-	    // try the various elevation sources
-            j = 0;
-            bool found_file = false;
-            while ( !found_file && j < (int)elev_src.size() ) {
-                string array_path = root + "/" + elev_src[j] + "/" + base 
-                    + "/" + b.gen_index_str();
-                if ( array.open(array_path) ) {
-                    found_file = true;
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path);
-                }                    
-                j++;
-            }
-            
-            // this will fill in a zero structure if no array data
-            // found/opened
-	    array.parse( b );
-
-            // this will do a hasty job of removing voids by inserting
-            // data from the nearest neighbor (sort of)
-            array.remove_voids();
-
-	    // update all the non-updated elevations that are inside
-	    // this array file
-	    double elev;
-	    done = true;
-            for ( i = 0; i < Pts.cols(); ++i ) {
-                for ( j = 0; j < Pts.rows(); ++j ) {
-                    Point3Dd p = Pts(j,i);
-                    if ( p.z() < -9000.0 ) {
-                        done = false;
-                        elev = array.altitude_from_grid( p.x() * 3600.0,
-                                                         p.y() * 3600.0 );
-                        if ( elev > -9000 ) {
-                            p.z() = elev;
-                            Pts(j,i) = p;
-                            // cout << "interpolating for " << p << endl;
-                            // cout << p.x() << " " << p.y() << " " << p.z()
-                            //      << endl;
-                        }
-                    }
-                }
-            }
-
-	    array.close();
-	} else {
-	    done = true;
-	}
-    }
-
-    // do some post processing for sanity's sake
-
-    // find the average height of the queried points
-    double total = 0.0;
-    int count = 0;
-    for ( i = 0; i < Pts.cols(); ++i ) {
-        for ( j = 0; j < Pts.rows(); ++j ) {
-            Point3Dd p = Pts(j,i);
-            total += p.z();
-            count++;
-        }
-    }
-    double average = total / (double) count;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height = " << average);
-
-    // now go through the elevations and clamp them all to within
-    // +/-50m (164') of the average.
-    for ( i = 0; i < Pts.cols(); ++i ) {
-        for ( j = 0; j < Pts.rows(); ++j ) {
-            Point3Dd p = Pts(j,i);
-            if ( p.z() < average - max_clamp ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average - max_clamp );
-                p.z() = average - max_clamp;
-                Pts(j,i) = p;
-            }
-            if ( p.z() > average + max_clamp ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average + max_clamp );
-                p.z() = average + max_clamp;
-                Pts(j,i) = p;
-            }
-        }
-    }
-
-    return average;
+    return slope_error;
 }
-#endif
 
 
 // Constructor, specify min and max coordinates of desired area in
@@ -226,7 +151,7 @@ TGAptSurface::TGAptSurface( const string& path,
     }
 
     // Lookup the elevations of all the grid points
-    tgCalcElevations( path, elev_src, dPts );
+    tgCalcElevations( path, elev_src, dPts, 0.0 );
 
     // Clamp the elevations against the externally provided average
     // elevation.
@@ -273,83 +198,14 @@ TGAptSurface::TGAptSurface( const string& path,
         // Add some "slope" sanity to the resulting surface grid points
         for ( int i = 0; i < Pts.cols() - 1; ++i ) {
             for ( int j = 0; j < Pts.rows() - 1; ++j ) {
-                Point3Dd p1, p2;
-                double az1, az2, dist;
-                double slope;
-
-                p1 = Pts(j,i);
-                p2 = Pts(j,i+1);
-                geo_inverse_wgs_84( 0, p1.y(), p1.x(), p2.y(), p2.x(),
-                                    &az1, &az2, &dist );
-                slope = (p2.z() - p1.z()) / dist;
-
-                if ( fabs(slope) > (slope_max + slope_eps) ) {
-                    // need to throttle slope, let's move the point
-                    // furthest away from average towards the center.
-
+                if ( limit_slope( Pts, i, j, i+1, j, average_elev_m ) ) {
                     slope_error = true;
-
-                    SG_LOG( SG_GENERAL, SG_DEBUG, " (a) detected slope of "
-                            << slope << " dist = " << dist );
-
-                    double e1 = average_elev_m - p1.z();
-                    double e2 = average_elev_m - p2.z();
-                    // cout << "  z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
-                    // cout << "  e1 = " << e1 << "  e2 = " << e2 << endl;
-
-                    if ( fabs(e1) > fabs(e2) ) {
-                        // cout << "  p1 error larger" << endl;
-                        if ( slope > 0 ) {
-                            p1.z() = p2.z() - (dist * slope_max);
-                        } else {
-                            p1.z() = p2.z() + (dist * slope_max);
-                        }
-                        Pts(j,i) = p1;
-                    } else {
-                        // cout << "  p2 error larger" << endl;
-                        if ( slope > 0 ) {
-                            p2.z() = p1.z() + (dist * slope_max);
-                        } else {
-                            p2.z() = p1.z() - (dist * slope_max);
-                        }
-                        Pts(j,i+1) = p2;
-                    }
-                    // cout << "   z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
                 }
-
-                p1 = Pts(j,i);
-                p2 = Pts(j+1,i);
-                geo_inverse_wgs_84( 0, p1.y(), p1.x(), p2.y(), p2.x(),
-                                    &az1, &az2, &dist );
-                slope = ( p2.z() - p1.z() ) / dist;
-
-                if ( fabs(slope) > (slope_max+slope_eps) ) {
-                    // need to throttle slope, let's move the point
-                    // furthest away from average towards the center.
-
+                if ( limit_slope( Pts, i, j, i, j+1, average_elev_m ) ) {
                     slope_error = true;
-
-                    SG_LOG( SG_GENERAL, SG_DEBUG, " (b) detected slope of "
-                            << slope << " dist = " << dist );
-
-                    double e1 = average_elev_m - p1.z();
-                    double e2 = average_elev_m - p2.z();
-
-                    if ( fabs(e1) > fabs(e2) ) {
-                        if ( slope > 0 ) {
-                            p1.z() = p2.z() - (dist * slope_max);
-                        } else {
-                            p1.z() = p2.z() + (dist * slope_max);
-                        }
-                        Pts(j,i) = p1;
-                    } else {
-                        if ( slope > 0 ) {
-                            p2.z() = p1.z() + (dist * slope_max);
-                        } else {
-                            p2.z() = p1.z() - (dist * slope_max);
-                        }
-                        Pts(j+1,i) = p2;
-                    }
+                }
+                if ( limit_slope( Pts, i, j, i+1, j+1, average_elev_m ) ) {
+                    slope_error = true;
                 }
             }
         }

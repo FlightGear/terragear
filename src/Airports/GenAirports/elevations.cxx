@@ -141,15 +141,15 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 // lookup node elevations for each point in the specified nurbs++
 // matrix.  Returns average of all points.
 
-double tgCalcElevations( const string &root, const string_list elev_src,
-                         Matrix_Point3Dd &Pts ) {
+void tgCalcElevations( const string &root, const string_list elev_src,
+                       Matrix_Point3Dd &Pts, const double average ) {
     bool done = false;
     int i, j;
     TGArray array;
 
     // just bail if no work to do
     if ( Pts.rows() == 0 || Pts.cols() == 0 ) {
-        return 0.0;
+        return;
     }
 
     // set all elevations to -9999
@@ -240,31 +240,9 @@ double tgCalcElevations( const string &root, const string_list elev_src,
             count++;
         }
     }
-    double average = total / (double) count;
+    double grid_average = total / (double) count;
     SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of nurbs matrix = "
-           << average);
-
-    // now go through the elevations and clamp them all to within
-    // +/-50m (164') of the average.
-    for ( i = 0; i < Pts.cols(); ++i ) {
-        for ( j = 0; j < Pts.rows(); ++j ) {
-            Point3Dd p = Pts(j,i);
-            if ( p.z() < average - max_clamp ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average - max_clamp );
-                p.z() = average - max_clamp;
-                Pts(j,i) = p;
-            }
-            if ( p.z() > average + max_clamp ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average + max_clamp );
-                p.z() = average + max_clamp;
-                Pts(j,i) = p;
-            }
-        }
-    }
-
-    return average;
+           << grid_average);
 }
 
 

@@ -36,7 +36,7 @@ const double coarse_grid = 700.0;
 const double max_clamp = 100.0;
 
 // maximum slope (rise/run) allowed on an airport surface
-const double slope_max = 0.01;
+const double slope_max = 0.009;
 const double slope_eps = 0.00001;
 
 #endif // _GEN_AIRPORT_GLOBAL_HXX
