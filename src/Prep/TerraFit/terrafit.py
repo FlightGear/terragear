@@ -45,7 +45,7 @@ def run_terra(thresh, minnodes, count, factor, objName, pgmName):
     r,w,e = os.popen3(command)
     for line in e.readlines():
         line = line.lstrip()
-        print line
+        # print line
         if line.startswith("points="):
             line = line.split()[0]
             npts = string.atof(line[len("points="):])
