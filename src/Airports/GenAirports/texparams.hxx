@@ -43,35 +43,35 @@ class FGTexParams {
 
 private:
 
-    Point3D center;
-    Point3D min;
-    Point3D max;
-    double angle;
+    Point3D ref;
+    double width;
+    double length;
+    double heading;
 
 public:
 
     // Constructor and destructor
     inline FGTexParams( void ) { }
-    inline FGTexParams( const Point3D &c, const Point3D &mn, const Point3D &mx,
-			const double a ) {
-	center = c;
-	min = mn;
-	max = mx;
-	angle = a;
+    inline FGTexParams( const Point3D &r, const double w, const double l,
+			const double h ) {
+	ref = r;
+	width = w;
+	length = l;
+	heading = h;
     }
     inline ~FGTexParams( void ) { }
 
-    inline Point3D get_center() const { return center; }
-    inline void set_center( const Point3D &p ) { center = p; }
+    inline Point3D get_ref() const { return ref; }
+    inline void set_ref( const Point3D &r ) { ref = r; }
 
-    inline Point3D get_min() const { return min; }
-    inline void set_min( const Point3D &p ) { min = p; }
+    inline double get_width() const { return width; }
+    inline void set_width( const double w ) { width = w; }
 
-    inline Point3D get_max() const { return max; }
-    inline void set_max( const Point3D &p ) { max = p; }
+    inline double get_length() const { return length; }
+    inline void set_length( const double l ) { length = l; }
 
-    inline double get_angle() const { return angle; }
-    inline void set_angle( const double a ) { angle = a; }
+    inline double get_heading() const { return heading; }
+    inline void set_heading( const double h ) { heading = h; }
 };
 
 

@@ -225,25 +225,19 @@ void gen_runway_section( const FGRunway& rwy_info,
     // lines on the texture back to the edge of the runway where they
     // belong.
     double len = rwy_info.length / 2.0 + 2;
-    double start_len = len - ( len * startl_pct );
-    double end_len = len - ( len * endl_pct );
+    double sect_len = len * ( endl_pct - startl_pct );
 
     // we add 2' to both sides of the runway (4' total) for texture
     // overlap.  This puts the lines on the texture back to the edge
     // of the runway where they belong.
     double wid = rwy_info.width + 4;
-    double start_wid = -wid / 2.0 + wid * startw_pct;
-    double end_wid = -wid / 2.0 + wid * endw_pct;
+    double sect_wid = wid * ( endw_pct - startw_pct );
 
     FGTexParams tp;
-    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( start_wid * SG_FEET_TO_METER,
-			       end_len * SG_FEET_TO_METER,
-			       0.0 ),
-		      Point3D( end_wid * SG_FEET_TO_METER,
-			       start_len * SG_FEET_TO_METER,
-			       0.0 ),
-		      heading );
+    tp = FGTexParams( p0,
+                      sect_wid * SG_FEET_TO_METER,
+                      sect_len * SG_FEET_TO_METER,
+                      heading );
     texparams->push_back( tp );
 
     // print runway points

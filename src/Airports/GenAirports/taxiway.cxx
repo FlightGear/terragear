@@ -28,6 +28,7 @@
 
 #include "poly_extra.hxx"
 #include "rwy_common.hxx"
+#include "texparams.hxx"
 #include "taxiway.hxx"
 
 
@@ -73,37 +74,33 @@ void gen_taxiway( const FGRunway& rwy_info, const string& material,
     FGSuperPoly sp;
     FGTexParams tp;
 
-    double xfactor = 1.0;
-    double yfactor = 1.0;
-    if ( fabs(rwy_info.width) > SG_EPSILON ) {
-        xfactor = 150.0 / rwy_info.width;
-        SG_LOG(SG_GENERAL, SG_DEBUG, "xfactor = " << xfactor);
-    }
-    if ( fabs(rwy_info.length) > SG_EPSILON ) {
-        yfactor = 150.0 / rwy_info.length;
-        SG_LOG(SG_GENERAL, SG_DEBUG, "yfactor = " << yfactor);
-    }
-
     SG_LOG(SG_GENERAL, SG_DEBUG, "len = " << rwy_info.length);
     SG_LOG(SG_GENERAL, SG_DEBUG, "width = " << rwy_info.width);
+
+    double twid;
+    if ( rwy_info.width <= 150 ) {
+        // narrower taxiways are more likely directional
+        twid = rwy_info.width;
+    } else {
+        // wider taxiways are more likely large / non-directional
+        // concrete areas
+        twid = 250.0;
+    }
 
     FGPolygon clipped_a = polygon_diff( runway_a, *accum );
     FGPolygon split_a = split_long_edges( clipped_a, 400.0 );
     sp.erase();
+
     sp.set_poly( split_a );
     sp.set_material( material );
     sp.set_flag( 1 );           // mark as a taxiway
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
     *accum = polygon_union( runway_a, *accum );
-    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( (-250 / 2.0) * SG_FEET_TO_METER,
-                               0.0,
-			       0 ),
-		      Point3D( (250 / 2.0) * SG_FEET_TO_METER,
-			       (250 / 2.0) * SG_FEET_TO_METER,
-			       0.0 ),
-		      rwy_info.heading );
+    tp = FGTexParams( runway_a.get_pt(0,0),
+                      twid * SG_FEET_TO_METER,
+                      250 * SG_FEET_TO_METER,
+                      rwy_info.heading );
     texparams->push_back( tp );
 
     FGPolygon clipped_b = polygon_diff( runway_b, *accum );
@@ -114,14 +111,10 @@ void gen_taxiway( const FGRunway& rwy_info, const string& material,
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
     *accum = polygon_union( runway_b, *accum );
-    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( (-250 / 2.0) * SG_FEET_TO_METER,
-			       0.0,
-			       0 ),
-		      Point3D( (250 / 2.0) * SG_FEET_TO_METER,
-			       (250 / 2.0) * SG_FEET_TO_METER,
-			       0.0 ),
-		      rwy_info.heading + 180.0 );
+    tp = FGTexParams( runway_b.get_pt(0,0),
+                      twid * SG_FEET_TO_METER,
+                      250 * SG_FEET_TO_METER,
+                      rwy_info.heading + 180.0 );
     texparams->push_back( tp );
 
 #if 0

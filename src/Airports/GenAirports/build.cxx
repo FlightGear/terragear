@@ -85,14 +85,14 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
     // double length = rwy.length * SG_FEET_TO_METER;
     // double width = rwy.width * SG_FEET_TO_METER;
 
-    Point3D center = tp.get_center();
-    Point3D min = tp.get_min();
-    Point3D max = tp.get_max();
-    double angle = tp.get_angle();
-    SG_LOG(SG_GENERAL, SG_DEBUG, "section heading = " << angle);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "center = " << center);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "min = " << min);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "max = " << max);
+    Point3D ref = tp.get_ref();
+    double width = tp.get_width();
+    double length = tp.get_length();
+    double heading = tp.get_heading();
+    SG_LOG( SG_GENERAL, SG_INFO, "section ref = " << ref );
+    SG_LOG( SG_GENERAL, SG_INFO, "  width = " << width );
+    SG_LOG( SG_GENERAL, SG_INFO, "  length = " << length );
+    SG_LOG( SG_GENERAL, SG_INFO, "  heading = " << heading );
     Point3D p, t;
     double x, y, tx, ty;
 
@@ -110,38 +110,36 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    // and ending az1, az2 and distance (s).  Lat, lon, and
 	    // azimuth are in degrees.  distance in meters
 	    double az1, az2, dist;
-	    geo_inverse_wgs_84( 0, center.y(), center.x(), p.y(), p.x(),
+	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
 				&az1, &az2, &dist );
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, "basic course = " << az1);
+	    SG_LOG(SG_GENERAL, SG_INFO, "basic course = " << az2);
 
 	    //
 	    // 2. Rotate this back into a coordinate system where Y
 	    // runs the length of the runway and X runs crossways.
 	    //
 
-	    double course = az1 - angle + 90;
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, "course = " << course);
+	    double course = az2 - heading;
 	    while ( course < -360 ) { course += 360; }
 	    while ( course > 360 ) { course -= 360; }
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, "Dist = " << dist);
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  Course = " << course * 180.0 / SGD_PI);
+	    SG_LOG( SG_GENERAL, SG_INFO,
+                    "  course = " << course << "  dist = " << dist );
 
 	    //
 	    // 3. Convert from polar to cartesian coordinates
 	    //
 
-	    x = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
-	    y = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "  x = " << x << " y = " << y);
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "  min = " << min);
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "  max = " << max);
+	    x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
+	    y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
+	    SG_LOG(SG_GENERAL, SG_INFO, "  x = " << x << " y = " << y);
+
 	    //
 	    // 4. Map x, y point into texture coordinates
 	    //
 	    
-	    tx = (x - min.x()) / (max.x() - min.x());
-	    tx = ((int)(tx * 100)) / 100.0;
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
+	    tx = x / width;
+	    // tx = ((int)(tx * 100)) / 100.0;
+	    SG_LOG(SG_GENERAL, SG_INFO, "  (" << tx << ")");
 
             if ( clip_result ) {
                 if ( tx < 0.0 ) { tx = 0.0; }
@@ -149,9 +147,9 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
             }
 
 	    // ty = (y - min.y()) / (max.y() - min.y());
-	    ty = (max.y() - y) / (max.y() - min.y());
-	    ty = ((int)(ty * 100)) / 100.0;
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
+	    ty = y / length;
+	    // ty = ((int)(ty * 100)) / 100.0;
+	    SG_LOG(SG_GENERAL, SG_INFO, "  (" << ty << ")");
 
             if ( clip_result ) {
                 if ( ty < 0.0 ) { ty = 0.0; }
@@ -279,10 +277,10 @@ void build_runway( const FGRunway& rwy_info,
         if ( !rwy_info.really_taxiway ) {
             material = "pc_";	// concrete
         } else {
-            if ( rwy_info.width > 150 ) {
-                material = "pc_tiedown";
-            } else {
+            if ( rwy_info.width <= 150 ) {
                 material = "pc_taxiway";
+            } else {
+                material = "pc_tiedown";
             }
         }
     } else if ( surface_flag == "D" ) {
@@ -713,7 +711,7 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     // tesselate the polygons and prepair them for final output
 
     for ( i = 0; i < (int)rwy_polys.size(); ++i ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i);
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating section = " << i);
 
 	FGPolygon poly = rwy_polys[i].get_poly();
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());
