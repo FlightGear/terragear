@@ -886,7 +886,10 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    strip_v.push_back( uindex );
 	    strip_v.push_back( lindex );
 
+	    // use 'the' normal.  We are pushing on two nodes so we
+	    // need to push on two normals.
 	    index = normals.unique_add( vn );
+	    strip_n.push_back( index );
 	    strip_n.push_back( index );
 	} else {
 	    cout << "Ooops missing node when building skirt ... dying!"
@@ -908,6 +911,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
 		index = normals.unique_add( vn );
 		strip_n.push_back( index );
+		strip_n.push_back( index );
 	    } else {
 		cout << "Ooops missing node when building skirt ... dying!"
 		     << endl;
@@ -927,6 +931,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    strip_v.push_back( uindex );
 
 	    index = normals.unique_add( vn );
+	    strip_n.push_back( index );
 	    strip_n.push_back( index );
 	} else {
 	    cout << "Ooops missing node when building skirt ... dying!"
@@ -977,7 +982,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
         pt_v.push_back( index );
         geod_nodes.push_back( p );
 
-	index = normals.simple_add( rwy_light_normals[i] );
+	index = normals.unique_add( rwy_light_normals[i] );
 	pt_n.push_back( index );
     }
     pts_v.push_back( pt_v );

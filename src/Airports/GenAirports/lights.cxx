@@ -52,7 +52,8 @@ Point3D gen_runway_light_vector( const FGRunway& rwy_info ) {
     // FIXME
     // need to angle up (i.e. 3 degrees)
 
-    return rwy_vec;
+    double length = rwy_vec.distance3D( Point3D(0.0) );
+    return rwy_vec / length;
 }
 
 
@@ -61,6 +62,8 @@ Point3D gen_runway_light_vector( const FGRunway& rwy_info ) {
 void gen_runway_lights( const FGRunway& rwy_info, 
 			point_list *lights, point_list *normals ) {
     int i;
+
+    Point3D normal = gen_runway_light_vector( rwy_info );
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
@@ -77,13 +80,17 @@ void gen_runway_lights( const FGRunway& rwy_info,
     Point3D pt1 = corner[0];
     Point3D pt2 = corner[1];
     lights->push_back( pt1 );
+    normals->push_back( normal );
     lights->push_back( pt2 );
+    normals->push_back( normal );
 
     for ( i = 0; i < FG_DIVS; ++i ) {
 	pt1 += inc1;
 	pt2 += inc2;
 	lights->push_back( pt1 );
+	normals->push_back( normal );
 	lights->push_back( pt2 );
+	normals->push_back( normal );
     }
 }
 
