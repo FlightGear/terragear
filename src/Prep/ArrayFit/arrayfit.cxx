@@ -182,7 +182,13 @@ int main( int argc, char **argv ) {
                 x = basex + i * dx;
                 y = basey + j * dy;
                 z = a.get_array_elev( i, j );
-                pending.push_back( Point3D(x, y, z) );
+                if ( z > -9000 ) {
+                    pending.push_back( Point3D(x, y, z) );
+                } else {
+                    // just ignore voids, better just not include
+                    // them, rather than making a stupid guess at a
+                    // value
+                }
             }
         }
     }
@@ -197,7 +203,7 @@ int main( int argc, char **argv ) {
     // Make the corner vertices (enclosing exactly the DEM coverage area)
     x = basex;
     y = basey;
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     add_point( fitted, Point3D( x, y, z) );
     errors.push_back( 13000.0 );
@@ -205,7 +211,7 @@ int main( int argc, char **argv ) {
 
     x = basex + dx * (a.get_cols() - 1);
     y = basey;
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     add_point( fitted, Point3D( x, y, z) );
     errors.push_back( 13000.0 );
@@ -213,7 +219,7 @@ int main( int argc, char **argv ) {
 
     x = basex + dx * (a.get_cols() - 1);
     y = basey + dy * (a.get_rows() - 1);
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     add_point( fitted, Point3D( x, y, z) );
     errors.push_back( 13000.0 );
@@ -221,7 +227,7 @@ int main( int argc, char **argv ) {
 
     x = basex;
     y = basey + dy * (a.get_rows() - 1);
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     add_point( fitted, Point3D( x, y, z) );
     errors.push_back( 13000.0 );
