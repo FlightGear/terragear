@@ -44,6 +44,8 @@ SG_USING_STD(cout);
 SG_USING_STD(string);
 SG_USING_STD(vector);
 
+#include <Geometry/rectangle.hxx>
+#include <Geometry/util.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
@@ -57,127 +59,39 @@ SG_USING_STD(vector);
 
 
 ////////////////////////////////////////////////////////////////////////
-// Utility stuff.
-////////////////////////////////////////////////////////////////////////
-
-
-/**
- * Inline function to clamp an angle between 0 and 360 degrees.
- */
-static inline double 
-ANGLE (double a)
-{
-  while (a < 0.0)
-    a += 360.0;
-  while (a >= 360.0)
-    a -= 360.0;
-  return a;
-}
-
-
-/**
- * Calculate the intersection of two lines.
- *
- * @param p0 First point on the first line.
- * @param p1 A second point on the first line.
- * @param p2 First point on the second line.
- * @param p3 A second point on the second line.
- * @param intersection A variable to hold the calculated intersection.
- * @return true if there was an intersection, false if the lines
- *         are parallel or coincident.
- */
-static bool
-getIntersection (const Point3D &p0, const Point3D &p1,
-		 const Point3D &p2, const Point3D &p3,
-		 Point3D &intersection)
-{
-  double u_num =
-    ((p3.x()-p2.x())*(p0.y()-p2.y()))-((p3.y()-p2.y())*(p0.x()-p2.x()));
-  double u_den =
-    ((p3.y()-p2.y())*(p1.x()-p0.x()))-((p3.x()-p2.x())*(p1.y()-p0.y()));
-
-  if (u_den == 0) {
-    if (u_num == 0)
-      SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: coincident lines");
-    else
-      SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: parallel lines");
-    return false;
-  } else {
-    double u = u_num/u_den;
-    intersection = Point3D((p0.x()+u*(p1.x()-p0.x())),
-			   (p0.y()+u*(p1.y()-p0.y())),
-			   0);
-    return true;
-  }
-}
-
-
-
-////////////////////////////////////////////////////////////////////////
 // Areas.
 ////////////////////////////////////////////////////////////////////////
 
 /**
- * A rectangle (such as a bounding box).
- */
-struct E00Rectangle
-{
-  E00Rectangle () : minX(0.0), minY(0.0), maxX(0.0), maxY(0.0) {}
-  E00Rectangle (double _minX, double _minY, double _maxX, double _maxY)
-    : minX(_minX), minY(_minY), maxX(_maxX), maxY(_maxY) {}
-  double minX;
-  double minY;
-  double maxX;
-  double maxY;
-  bool isInside (double x, double y) const
-  {
-    return (x >= minX && x <= maxX && y >= minY && y <= maxY);
-  }
-  bool isOverlapping (const E00Rectangle &rect) const
-  {
-    return (isInside(rect.minX, rect.minY) ||
-	    isInside(rect.minX, rect.maxY) ||
-	    isInside(rect.maxX, rect.minY) ||
-	    isInside(rect.maxX, rect.maxY));
-  }
-};
-
-static ostream &
-operator<< (ostream &output, const E00Rectangle &rect) {
-  output << '(' << rect.minX << ',' << rect.minY << "),("
-	 << rect.maxX << ',' << rect.maxY << ')';
-}
-
-/**
  * Make a bounding box for a single ARC.
  */
-static E00Rectangle
+static const Rectangle
 makeBounds (const E00::ARC &arc)
 {
-  E00Rectangle bounds;
+  Point3D min, max;
   for (int i = 0; i < arc.numberOfCoordinates; i++) {
     double x = arc.coordinates[i].x;
     double y = arc.coordinates[i].y;
     if (i == 0) {
-      bounds.minX = bounds.maxX = x;
-      bounds.minY = bounds.maxY = y;
+      min = max = Point3D(x, y, 0);
     } else {
-      if (x < bounds.minX) bounds.minX = x;
-      if (y < bounds.minY) bounds.minY = y;
-      if (x > bounds.maxX) bounds.maxX = x;
-      if (y > bounds.maxY) bounds.maxY = y;
+      if (x < min.x()) min.setx(x);
+      if (y < min.y()) min.sety(y);
+      if (x > max.x()) max.setx(x);
+      if (y > max.y()) max.sety(y);
     }
   }
-  return bounds;
+  return Rectangle(min, max);
 }
 
 /**
  * Make a bounding box for a polygon.
  */
-static E00Rectangle
+static const Rectangle
 makeBounds (const E00::PAL &pal)
 {
-  return E00Rectangle(pal.min.x, pal.min.y, pal.max.x, pal.max.y);
+  return Rectangle(Point3D(pal.min.x, pal.min.y, 0),
+		   Point3D(pal.max.x, pal.max.y, 0));
 }
 
 
@@ -249,7 +163,7 @@ checkAttribute (const E00 &data, int index, const Attribute &att)
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
-processPoints (const E00 &data, const E00Rectangle &bounds,
+processPoints (const E00 &data, const Rectangle &bounds,
 	       AreaType areaType, const string &workDir, int width)
 {
   double x, y, az;
@@ -259,27 +173,14 @@ processPoints (const E00 &data, const E00Rectangle &bounds,
   for (int i = 1; i <= nPoints; i++) {
     FGPolygon shape;
     const E00::LAB &lab = data.getLAB(i);
-    double lon = lab.coord.x;
-    double lat = lab.coord.y;
+    Point3D p(lab.coord.x, lab.coord.y, 0);
 
-    if (!bounds.isInside(lon, lat)) {
+    if (!bounds.isInside(p)) {
       cout << "Skipping point " << i << " (out of bounds)" << endl;
       continue;
     }
 
-    shape.erase();
-
-    geo_direct_wgs_84(0, lat, lon, 90, width/2, &y, &x, &az);
-    double dlon = x - lon;
-
-    geo_direct_wgs_84(0, lat, lon, 0, width/2, &y, &x, &az);
-    double dlat = y - lat;
-
-    shape.add_node(0, Point3D(lon - dlon, lat - dlat, 0));
-    shape.add_node(0, Point3D(lon + dlon, lat - dlat, 0));
-    shape.add_node(0, Point3D(lon + dlon, lat + dlat, 0));
-    shape.add_node(0, Point3D(lon - dlon, lat + dlat, 0));
-
+    makePolygon(p, width, shape);
     split_polygon(workDir, areaType, shape);
   }
 }
@@ -295,7 +196,7 @@ processPoints (const E00 &data, const E00Rectangle &bounds,
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
-processLines (const E00 &data, const E00Rectangle &bounds,
+processLines (const E00 &data, const Rectangle &bounds,
 	      AreaType areaType, const string &workDir, int width,
 	      const vector<Attribute> &aat_list)
 {
@@ -304,10 +205,9 @@ processLines (const E00 &data, const E00Rectangle &bounds,
   for (int i = 1; i <= nLines; i++) {
     FGPolygon shape;
     const E00::ARC &arc = data.getARC(i);
-    E00Rectangle arcBounds = makeBounds(arc);
+    Rectangle arcBounds = makeBounds(arc);
     if (!bounds.isOverlapping(arcBounds)) {
       cout << "Arc " << i << " outside of area; skipping" << endl;
-      cout << "Arc bounds: " << arcBounds << endl;
       continue;
     }
 
@@ -328,79 +228,16 @@ processLines (const E00 &data, const E00Rectangle &bounds,
       }
     }
 
-				// Put the rectangles for the segments
-				// into a list
-    vector<FGPolygon> segment_list;
-
+    Line line;
     int j;
-    for (j = 0; j < arc.numberOfCoordinates - 1; j++) {
-      double lon1 = arc.coordinates[j].x;
-      double lat1 = arc.coordinates[j].y;
-      double lon2 = arc.coordinates[j+1].x;
-      double lat2 = arc.coordinates[j+1].y;
-      double angle1, angle2, dist;
-      geo_inverse_wgs_84(0, lat1, lon1, lat2, lon2, &angle1, &angle2, &dist);
-      shape.erase();
-
-      double x, y, az;
-      
-				// Wind each rectangle counterclockwise
-
-				// Corner 1
-      geo_direct_wgs_84(0, lat1, lon1, ANGLE(angle1+90), width/2, &y, &x, &az);
-      shape.add_node(0, Point3D(x, y, 0));
-
-				// Corner 2
-      geo_direct_wgs_84(0, lat2, lon2, ANGLE(angle1+90), width/2, &y, &x, &az);
-      shape.add_node(0, Point3D(x, y, 0));
-
-				// Corner 3
-      geo_direct_wgs_84(0, lat2, lon2, ANGLE(angle1-90), width/2, &y, &x, &az);
-      shape.add_node(0, Point3D(x, y, 0));
-
-				// Corner 4
-      geo_direct_wgs_84(0, lat1, lon1, ANGLE(angle1-90), width/2, &y, &x, &az);
-      shape.add_node(0, Point3D(x, y, 0));
-
-				// Save this rectangle
-      segment_list.push_back(shape);
+    for (j = 0; j < arc.numberOfCoordinates; j++) {
+      line.addPoint(Point3D(arc.coordinates[j].x,
+			    arc.coordinates[j].y,
+			    0));
     }
 
-    // Build one big polygon out of all the rectangles by intersecting
-    // the lines running through the bottom and top sides
+    makePolygon(line, width, shape);
 
-    shape.erase();
-
-				// Connect the bottom part.
-    int nSegments = segment_list.size();
-    Point3D intersection;
-    shape.add_node(0, segment_list[0].get_pt(0, 0));
-    for (j = 0; j < nSegments - 1; j++) {
-      if (getIntersection(segment_list[j].get_pt(0, 0),
-			  segment_list[j].get_pt(0, 1),
-			  segment_list[j+1].get_pt(0, 0),
-			  segment_list[j+1].get_pt(0, 1),
-			  intersection))
-	shape.add_node(0, intersection);
-      else
-	shape.add_node(0, segment_list[j].get_pt(0, 1));
-    }
-    shape.add_node(0, segment_list[nSegments-1].get_pt(0, 1));
-
-				// Connect the top part
-    shape.add_node(0, segment_list[nSegments-1].get_pt(0, 2));
-    for (j = nSegments - 1; j > 0; j--) {
-      if (getIntersection(segment_list[j].get_pt(0, 2),
-			  segment_list[j].get_pt(0, 3),
-			  segment_list[j-1].get_pt(0, 2),
-			  segment_list[j-1].get_pt(0, 3),
-			  intersection))
-	shape.add_node(0, intersection);
-      else
-	shape.add_node(0, segment_list[j].get_pt(0, 3));
-    }
-    shape.add_node(0, segment_list[0].get_pt(0, 3));
-    
     				// Split into tiles
     cout << "Splitting polygon..." << endl;
     cout << "  Total size: " << shape.total_size() << endl;
@@ -417,7 +254,7 @@ processLines (const E00 &data, const E00Rectangle &bounds,
  * Import all polygons.
  */
 static void
-processPolygons (const E00 &data, const E00Rectangle &bounds,
+processPolygons (const E00 &data, const Rectangle &bounds,
 		 AreaType areaType, const string &workDir,
 		 const vector<Attribute> pat_list)
 {
@@ -446,10 +283,9 @@ processPolygons (const E00 &data, const E00Rectangle &bounds,
 
     int contour = 0;
     const E00::PAL &pal = data.getPAL(i);
-    E00Rectangle palBounds = makeBounds(pal);
+    Rectangle palBounds = makeBounds(pal);
     if (!bounds.isOverlapping(palBounds)) {
       cout << "Polygon " << i << " outside of area, skipping" << endl;
-      cout << "Polygon boundary is " << palBounds << endl;
       continue;
     }
     shape.erase();
@@ -545,7 +381,8 @@ main (int argc, const char **argv)
 
 
 				// Default values
-  E00Rectangle bounds(-180.0, -90.0, 180.0, 90.0);
+  Rectangle bounds(Point3D(-180.0, -90.0, 0),
+		   Point3D(180.0, 90.0, 0));
   AreaType areaType = DefaultArea;
   int pointWidth = 500;
   int lineWidth = 50;
@@ -598,22 +435,22 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--min-lon=") == 0) {
-      bounds.minX = atof(arg.substr(10).c_str());
+      bounds.getMin().setx(atof(arg.substr(10).c_str()));
       argPos++;
     }
 
     else if (arg.find("--min-lat=") == 0) {
-      bounds.minY = atof(arg.substr(10).c_str());
+      bounds.getMin().sety(atof(arg.substr(10).c_str()));
       argPos++;
     }
 
     else if (arg.find("--max-lon=") == 0) {
-      bounds.maxX = atof(arg.substr(10).c_str());
+      bounds.getMax().setx(atof(arg.substr(10).c_str()));
       argPos++;
     } 
 
     else if (arg.find("--max-lat=") == 0) {
-      bounds.maxY = atof(arg.substr(10).c_str());
+      bounds.getMax().sety(atof(arg.substr(10).c_str()));
       argPos++;
     }
 
@@ -676,7 +513,9 @@ main (int argc, const char **argv)
     usage(argv[0]);
   }
 
-  cout << "Bounds are " << bounds << endl;
+  cout << "Bounds are " << bounds.getMin().x() << ','
+       << bounds.getMin().y() << " and "
+       << bounds.getMax().x() << ',' << bounds.getMax().y() << endl;
   cout << "Area type is " << get_area_name(areaType) << endl;;
   cout << "Working directory is " << workDir << endl;
   if (usePoints)
