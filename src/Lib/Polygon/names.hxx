@@ -48,11 +48,18 @@ enum AreaType {
     ReservoirArea,
     IntReservoirArea,
     StreamArea,
+    IntStreamArea,
     CanalArea,
-    GlacierArea,
+    GlacierArea,		// Any solid ice/snow
+    PackIceArea,		// Water with ice packs
     OceanArea,
-    UrbanArea,
-    TownArea,
+    UrbanArea,			// Densely-populated city or large town
+    TownArea,			// Small town or village
+    FloodLandArea,		// Land subject to flooding
+    BogArea,			// Bog
+    MarshArea,			// Marshland or swamp
+    SandArea,			// Sand-covered area
+    LavaArea,			// Lava-covered area
 
     // USGS Land Covers
     // These are low-priority, since known polygons should always win.
@@ -82,11 +89,8 @@ enum AreaType {
     BareTundraCover,		// Bare Ground Tundra
     SnowCover,			// Snow or Ice
 
-    MarshArea,			// this is put at the end because I'd
-				// rather have the USGS land cover data than
-				// large expansive marshes
 
-    IslandArea,			// any remaining land area not covered otherwise
+    IslandArea,			// any island area not covered otherwise
     DefaultArea,		// any land area not covered otherwise
 
     VoidArea,
