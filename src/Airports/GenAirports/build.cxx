@@ -71,6 +71,9 @@
 #include "taxiway.hxx"
 #include "texparams.hxx"
 
+SG_USING_STD(map);
+SG_USING_STD(string);
+
 
 // calculate texture coordinates for runway section using the provided
 // texturing parameters.  Returns a mirror polygon to the runway,
