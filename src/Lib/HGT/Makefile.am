@@ -8,7 +8,7 @@ testhgt_SOURCES = testhgt.cxx
 
 testhgt_LDADD = \
 	$(top_builddir)/src/Lib/HGT/libHGT.a \
-	-lsgbucket -lsgmisc -lz
+	-lsgbucket -lsgmisc -lsgdebug -lz
 
 INCLUDES = -I$(top_srcdir)/src
 
