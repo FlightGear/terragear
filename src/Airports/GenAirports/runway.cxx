@@ -113,10 +113,11 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
 }
 
 
-// generate an area for a runway
-FGPolygon gen_runway_area( const FGRunway& runway,
- 			   double len_scale,
-			   double width_scale ) {
+// generate an area for a runway with expantion specified as a scale
+// factor (return result points in degrees)
+FGPolygon gen_runway_area_w_scale( const FGRunway& runway,
+				   double len_scale,
+				   double width_scale ) {
 
     FGPolygon result_list;
     FGPolygon tmp_list;
@@ -131,6 +132,51 @@ FGPolygon gen_runway_area( const FGRunway& runway,
     Point3D origin(runway.lon, runway.lat, 0);
     l = runway.length * len_scale * SG_FEET_TO_METER / 2.0;
     w = runway.width * width_scale * SG_FEET_TO_METER / 2.0;
+
+    // generate untransformed runway area vertices
+    tmp_list.add_node( 0, Point3D( l, w, 0 ) );
+    tmp_list.add_node( 0, Point3D( l, -w, 0 ) );
+    tmp_list.add_node( 0, Point3D( -l, -w, 0 ) );
+    tmp_list.add_node( 0, Point3D( -l, w, 0 ) );
+
+    // display points
+    // cout << "Untransformed, unrotated runway" << endl;
+    // for ( int i = 0; i < tmp_list.contour_size( 0 ); ++i ) {
+    //    cout << "  " << tmp_list.get_pt(0, i) << endl;
+    // }
+
+    // rotate, transform, and convert points to lon, lat in degrees
+    result_list = gen_area(origin, runway.heading * SGD_DEGREES_TO_RADIANS, tmp_list);
+
+    // display points
+    // cout << "Results in radians." << endl;
+    // for ( int i = 0; i < result_list.contour_size( 0 ); ++i ) {
+    //     cout << "  " << result_list.get_pt(0, i) << endl;
+    // }
+
+    return result_list;
+}
+
+
+// generate an area for a runway with expansion specified in meters
+// (return result points in degrees)
+FGPolygon gen_runway_area_w_expand( const FGRunway& runway,
+				    double len_expand,
+				    double wid_expand ) {
+
+    FGPolygon result_list;
+    FGPolygon tmp_list;
+
+    double l, w;
+
+    /*
+    printf("runway: lon = %.2f lat = %.2f hdg = %.2f len = %.2f width = %.2f\n",
+	   lon, lat, heading, length, width);
+    */
+
+    Point3D origin(runway.lon, runway.lat, 0);
+    l = runway.length * SG_FEET_TO_METER / 2.0 + len_expand;
+    w = runway.width * SG_FEET_TO_METER / 2.0 + wid_expand;
 
     // generate untransformed runway area vertices
     tmp_list.add_node( 0, Point3D( l, w, 0 ) );

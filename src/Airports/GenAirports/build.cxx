@@ -1707,7 +1707,12 @@ void build_runway( const FGRunway& rwy_info,
 	exit(-1);
     }
 
-    FGPolygon base = gen_runway_area( rwy_info, 1.05, 1.5 );
+    FGPolygon base;
+    if ( rwy_info.really_taxiway ) {
+	base = gen_runway_area_w_expand( rwy_info, 10, 10 );
+    } else {
+	base = gen_runway_area_w_scale( rwy_info, 1.05, 1.5 );
+    }
 
     // add base to apt_base
     *apt_base = polygon_union( base, *apt_base );
