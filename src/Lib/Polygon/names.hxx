@@ -36,55 +36,58 @@ FG_USING_STD(string);
 // defines the priority of these shapes if they should intersect.  The
 // smaller the number, the higher the priority.
 enum AreaType {
-    SomeSortOfArea    = 0,
-    HoleArea          = 1,
-    PondArea          = 2,
-    LakeArea          = 3,
-    DryLakeArea       = 4,
-    IntLakeArea       = 5,
-    ReservoirArea     = 6,
-    IntReservoirArea  = 7,
-    StreamArea        = 8,
-    CanalArea         = 9,
-    GlacierArea       = 10,
-    OceanArea         = 11,
-    UrbanArea         = 12,
+    SomeSortOfArea = 0,
+    HoleArea,			// Leave area completely empty
+    PondArea,
+    LakeArea,
+    DryLakeArea,
+    IntLakeArea,
+    ReservoirArea,
+    IntReservoirArea,
+    StreamArea,
+    CanalArea,
+    GlacierArea,
+    OceanArea,
+    UrbanArea,
 
     // USGS Land Covers
     // These are low-priority, since known polygons should always win.
 
-    BuiltUpCover      = 13,	// Urban and Built-Up Land
-    DryCropPastureCover = 14,	// Dryland Cropland and Pasture
-    IrrCropPastureCover = 15,	// Irrigated Cropland and Pasture
-    MixedCropPastureCover = 16,	// Mixed Dryland/Irrigated Cropland and Pasture
-    CropGrassCover    = 17,	// Cropland/Grassland Mosaic
-    CropWoodCover = 18,		// Cropland/Woodland Mosaic
-    GrassCover = 19,		// Grassland
-    ShrubCover = 20,		// Shrubland
-    ShrubGrassCover = 21,	// Mixed Shrubland/Grassland
-    SavannaCover = 22,		// Savanna
-    DeciduousBroadCover = 23,	// Deciduous Broadleaf Forest
-    DeciduousNeedleCover = 24,	// Deciduous Needleleaf Forest
-    EvergreenBroadCover = 25,	// Evergreen Broadleaf Forest
-    EvergreenNeedleCover = 26,	// Evergreen Needleleaf Forest
-    MixedForestCover = 27,	// Mixed Forest
-    WaterBodyCover = 28,	// Water Bodies
-    HerbWetlandCover = 29,	// Herbaceous Wetland
-    WoodedWetlandCover = 30,	// Wooded Wetland
-    BarrenCover = 31,		// Barren or Sparsely Vegetated
-    HerbTundraCover = 32,	// Herbaceous Tundra
-    WoodedTundraCover = 33,	// Wooded Tundra
-    MixedTundraCover = 34,	// Mixed Tundra
-    BareTundraCover = 35,	// Bare Ground Tundra
-    SnowCover = 36,		// Snow or Ice
+    BuiltUpCover,		// Urban and Built-Up Land
+    DryCropPastureCover,	// Dryland Cropland and Pasture
+    IrrCropPastureCover,	// Irrigated Cropland and Pasture
+    MixedCropPastureCover,	// Mixed Dryland/Irrigated Cropland and Pasture
+    CropGrassCover,		// Cropland/Grassland Mosaic
+    CropWoodCover,		// Cropland/Woodland Mosaic
+    GrassCover,			// Grassland
+    ShrubCover,			// Shrubland
+    ShrubGrassCover,		// Mixed Shrubland/Grassland
+    SavannaCover,		// Savanna
+    DeciduousBroadCover,	// Deciduous Broadleaf Forest
+    DeciduousNeedleCover,	// Deciduous Needleleaf Forest
+    EvergreenBroadCover,	// Evergreen Broadleaf Forest
+    EvergreenNeedleCover,	// Evergreen Needleleaf Forest
+    MixedForestCover,		// Mixed Forest
+    WaterBodyCover,		// Water Bodies
+    HerbWetlandCover,		// Herbaceous Wetland
+    WoodedWetlandCover,		// Wooded Wetland
+    BarrenCover,		// Barren or Sparsely Vegetated
+    HerbTundraCover,		// Herbaceous Tundra
+    WoodedTundraCover,		// Wooded Tundra
+    MixedTundraCover,		// Mixed Tundra
+    BareTundraCover,		// Bare Ground Tundra
+    SnowCover,			// Snow or Ice
 
-    MarshArea         = 37,
+    MarshArea,			// this is put at the end because I'd
+				// rather have the USGS land cover data than
+				// large expansive marshes
 
-    IslandArea        = 38,
-    DefaultArea       = 39,
-    VoidArea          = 9997,
-    NullArea          = 9998,
-    UnknownArea       = 9999
+    IslandArea,			// any remaining land area not covered otherwise
+    DefaultArea,		// any land area not covered otherwise
+
+    VoidArea,
+    NullArea,
+    UnknownArea
 };
 
 
