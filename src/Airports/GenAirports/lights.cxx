@@ -238,7 +238,8 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
     double lon, lat, r;
     if ( recip ) {
         ref = corner[0];
-        length_hdg = 360.0 - rwy_info.heading;
+        length_hdg = rwy_info.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
