@@ -146,9 +146,9 @@ TGArray::parse( SGBucket& b ) {
 	        last_elev = -32768;
                 have_void = false;
                 for ( int j = 0; j < rows; j++ ) {
-                    if ( in_data[i][j] > -9999 ) {
+                    if ( in_data[i][j] > -9000 ) {
 		        last_elev = in_data[i][j];
-                    } else if ( last_elev > -9999 ) {
+                    } else if ( last_elev > -9000 ) {
 		        in_data[i][j] = last_elev;
                     } else {
 		        have_void = true;
@@ -158,9 +158,9 @@ TGArray::parse( SGBucket& b ) {
                 last_elev = -32768;
                 have_void = false;
                 for ( int j = rows - 1; j >= 0; j-- ) {
-                    if ( in_data[i][j] > -9999 ) {
+                    if ( in_data[i][j] > -9000 ) {
                         last_elev = in_data[i][j];
-                    } else if ( last_elev > -9999 ) {
+                    } else if ( last_elev > -9000 ) {
                         in_data[i][j] = last_elev;
                     } else {
                         have_void = true;
