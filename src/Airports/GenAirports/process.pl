@@ -23,9 +23,8 @@
 
 # Edit the following values to set up your preferences:
 
-$workdir = "./work";
-# $inputfile = "./default.apt";
-$inputfile = "default.apt";
+$workdir = "/fgfs01/curt/Work";
+$inputfile = "./default.apt";
 $binary = "./genapts";
 $startid = "";
 
@@ -39,7 +38,7 @@ while ( ! $done ) {
 
     # update the nudge value
     $nudge += 5;
-    if ( $nudge > 20 ) {
+    if ( $nudge > 25 ) {
 	$nudge = 5;
     }
 
@@ -56,7 +55,7 @@ while ( ! $done ) {
 
     while ( <PIPE> ) {
 	if ( m/Id portion/ ) {
-	    print $_;
+	    # print $_;
 	}
 
 	if ( m/\[FINISHED CORRECTLY\]/ ) {

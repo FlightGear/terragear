@@ -2026,5 +2026,5 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string holepath = root + "/AirportArea";
     // long int poly_index = poly_index_next();
     // write_boundary( holepath, b, hull, poly_index );
-    split_polygon( holepath, HoleArea, hull );
+    split_polygon( holepath, HoleArea, divided_hull );
 }
