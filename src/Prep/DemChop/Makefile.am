@@ -23,7 +23,7 @@
 #---------------------------------------------------------------------------
 
 
-bin_PROGRAMS = demchop hgtchop
+bin_PROGRAMS = demchop hgtchop testassem
 
 demchop_SOURCES = \
 	demchop.cxx point2d.hxx
@@ -39,6 +39,14 @@ hgtchop_SOURCES = \
 hgtchop_LDADD = \
 	$(top_builddir)/src/Lib/HGT/libHGT.a \
 	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz
+	$(base_LIBS)
+
+testassem_SOURCES = \
+	testassem.cxx
+
+testassem_LDADD = \
+	$(top_builddir)/src/Lib/Array/libArray.a \
+	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml -lz
 	$(base_LIBS)
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/Lib
