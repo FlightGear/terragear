@@ -1,46 +1,29 @@
 Building the tools with Cygwin
 ------------------------------
 
-In order to make Terragear with Cygwin, it is necessary to remove the 'Parallel' directory from 'SUBDIRS' in the makefile in Terragear/src/construct.  The parallel building tools don't appear to have a hope of building on Windoze as is, and are not needed to run the tools on one machine only.
-
-Other than that, 
-
-./configure   make   make install  
-
-should now work fine.  If make dies with references to fg_path in array.cxx then your version of Simgear is out of date.
+As of the latest CVS, the Terragear tools should build out of the box
+with Cygwin using aclocal, automake -a, autoconf, ./configure, make,
+make install.  In the event of problems, there is a terragear mailing
+list - see www.terragear.org
 
 
-Using the tools on Windoze
+
+Using the tools on Windows
 --------------------------
 
-Firstly, its usefull to have a scroll buffer in action on your Windoze command prompt in order to view the copious output from the tools.  If you havn't got it or an alternative already, then the consize utility from  http://cygutils.netpedia.net/  is excellent.  Note that on Win9x you'll also need a 32bit command prompt to use it, also available from the same site.  None of this is necessary to run the Terragear tools, but I find that it makes all command prompt operations a lot easier.
+A scroll buffer is useful.  For NT/W2K/XP users the consize utility to
+add a scroll buffer to the Win32 command prompt is excellent, it
+should be available at: http://cygutils.netpedia.net/
 
-Instructions on using the tools are available in Alexi's README.howto, the following is intended as clarification for Windoze users.  Note that running: 
-<toolname> -help  
-should print out the usage for any of the tools.
+For 9x/Me users I would recommend using rxvt instead, since consize
+fails to work properly.
 
---------------------------
+There are some issues with directory creation when running the tools
+under Windows.  If running the tools from the standard Win32 command
+prompt a lot of the tools have problems with directory creation - with
+the tools that try to create many subdirectories this can be a major
+problem.  It is much better to run the tools from a Cygwin bash shell
+- in this case only raw2ascii has a directory creation problem - the
+output directory specified on the command line needs to be manually
+created.
 
-raw2ascii should work fine, except that you will have to create your output directory manually.  An example command line is:
-
-F:\unix\usr\local\bin>raw2ascii f:\unix\dem\w020n90\w020n90 f:\unix\dem\w020n90\output
-
-It appears that (currently, 26/10/00) the Terragear tools are unable to create directories in Windoze (I've only tested this on NT4 BTW) so if you get an error message along the lines of:
-
-"Error opening output file = f:\unix\dem\w020n90\output/w020n40.dem"
-
-then check that you've created the output directory that you've asked it to put the files in.
-
-However, it appears that the code attempts to gzip the output files, but fails on windoze, so you'll have to gzip them manually if you want.  This will save a *lot* of space.
-
---------------------------
-
-demchop seems to work in most cases, except that once again you'll have to create the output directories when it complains about being unable to open a file.  Make sure you use the dem-30 or dem-3 directories described in Alexi's readme since this is where the final construction stage will automatically look for the chopped files.  You don't need the .gz extension when using demchop, so the example command line:
-
-F:\unix\usr\local\bin>demchop f:\unix\dem\w020n90\output\w002n52.dem f:\unix\dem\w020n90\dem-30
-
-will chop either w002n52.dem or w002n52.dem.gz  In this instance you would have to manually create the directories w010n50 and w002n52 as subdirectories of dem-30 when it complains about being unable to open a file.
-
-Unfortunately some files are giving me stackdumps when running demchop on them and I havn't figured out why yet.
-
-And that's as far as I've got.
