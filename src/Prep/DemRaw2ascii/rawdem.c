@@ -64,13 +64,15 @@ int reads(int fd, char *buf, unsigned int len) {
   int res;
   unsigned int i;
   for (i=0;
-       (i < len) && ((res = read(fd, &c, 1)) != 0)
+       (i < (len-1)) && ((res = read(fd, &c, 1)) != 0)
         &&  ((c != '\n') && (c != '\r'));
        i++)
      buf[i] = c;
 
   if (buf[i] == '\r')
      buf[i] = '\n';
+
+  buf[++i] = '\0';
 
   return res;
 }
