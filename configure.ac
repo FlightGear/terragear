@@ -424,6 +424,7 @@ AC_CONFIG_FILES([ \
 	src/Prep/TGVPF/Makefile \
 	src/Prep/Terra/Makefile \
 	src/Prep/TerraFit/Makefile \
+	src/Prep/Tower/Makefile \
 	src/Prep/UserDef/Makefile \
 	src/Utils/Makefile \
 	src/Utils/cdrom/Makefile \

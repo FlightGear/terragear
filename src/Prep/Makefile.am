@@ -11,4 +11,5 @@ SUBDIRS = \
 	TGVPF \
 	Terra \
 	TerraFit \
+	Tower \
 	UserDef

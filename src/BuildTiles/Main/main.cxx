@@ -1020,9 +1020,9 @@ static void do_custom_objects( const TGConstruct& c ) {
                     cout << "running " << command << endl;
                     system( command.c_str() );
 
-                    fprintf(fp, "OBJECT %s\n", name.c_str());
+                    fprintf(fp, "OBJECT %s\n", name);
                 } else {
-                    fprintf(fp, "%s\n", line.c_str());
+                    fprintf(fp, "%s\n", line);
                 }
 	    }
 	}
