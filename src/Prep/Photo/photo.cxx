@@ -99,8 +99,8 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 		if ( result[j].z() < -9000 ) {
 		    done = false;
 		    cout << "interpolating for " << result[j] << endl;
-		    elev = array.interpolate_altitude( result[j].x() * 3600.0,
-						   result[j].y() * 3600.0 );
+		    elev = array.altitude_from_grid( result[j].x() * 3600.0,
+                                                     result[j].y() * 3600.0 );
 		    if ( elev > -9000 ) {
 			result[j].setz( elev );
 		    }

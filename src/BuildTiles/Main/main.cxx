@@ -505,8 +505,8 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
             cout << " forced = " << z << endl;
         } else {
             // interpolate point from DEM data.
-            z = array.interpolate_altitude( raw_nodes[i].x() * 3600.0, 
-                                            raw_nodes[i].y() * 3600.0 );
+            z = array.altitude_from_grid( raw_nodes[i].x() * 3600.0, 
+                                          raw_nodes[i].y() * 3600.0 );
             cout << " interpolated = " << z << endl;
         }
         raw_nodes[i].setz( z );

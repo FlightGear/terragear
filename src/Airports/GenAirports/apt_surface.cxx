@@ -106,8 +106,8 @@ static void calc_elevations( const string &root, Matrix_Point3Df &Pts ) {
                     Point3Df p = Pts(i,j);
                     if ( p.z() < -9000.0 ) {
                         done = false;
-                        elev = array.interpolate_altitude( p.x() * 3600.0,
-                                                           p.y() * 3600.0 );
+                        elev = array.altitude_from_grid( p.x() * 3600.0,
+                                                         p.y() * 3600.0 );
                         if ( elev > -9000 ) {
                             p.z() = elev;
                             Pts(i,j) = p;
