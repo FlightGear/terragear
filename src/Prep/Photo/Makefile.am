@@ -23,6 +23,8 @@
 #---------------------------------------------------------------------------
 
 
+EXTRA_DIST = chop.pl
+
 bin_PROGRAMS = photo
 
 photo_SOURCES = photo.cxx

@@ -163,16 +163,16 @@ int main( int argc, char **argv ) {
 
     double xarray[32][32];
     double yarray[32][32];
-    for ( i = 0; i <= xdiv; ++i ) {
-        double tx0 = x0 + i * dx0;
-        double ty0 = y0 + i * dy0;
-        double tx1 = x1 + i * dx1;
-        double ty1 = y1 + i * dy1;
+    for ( j = 0; j <= ydiv; ++j ) {
+        double tx0 = x0 + j * dx0;
+        double ty0 = y0 + j * dy0;
+        double tx1 = x1 + j * dx1;
+        double ty1 = y1 + j * dy1;
         double dx = (tx1 - tx0) / xdiv;
         double dy = (ty1 - ty0) / xdiv;
-        for ( j = 0; j <= ydiv; ++j ) {
-            xarray[i][j] = tx0 + j * dx;
-            yarray[i][j] = ty0 + j * dy;
+        for ( i = 0; i <= xdiv; ++i ) {
+            xarray[i][j] = tx0 + i * dx;
+            yarray[i][j] = ty0 + i * dy;
             cout << "(" << xarray[i][j] << "," << yarray[i][j] << ")" << endl;
             nodes.simple_add( Point3D(xarray[i][j], yarray[i][j], 0) );
         }
@@ -199,8 +199,8 @@ int main( int argc, char **argv ) {
     int_list strip_tc;
 
     int count = 0;
-    for ( i = 0; i < xdiv; ++i ) {
-        for ( j = 0; j < ydiv; ++j ) {
+    for ( j = 0; j < ydiv; ++j ) {
+        for ( i = 0; i < xdiv; ++i ) {
             strip_v.clear();
             strip_v.push_back( count );
             strip_v.push_back( count + 1 );
@@ -219,7 +219,7 @@ int main( int argc, char **argv ) {
             string material = image;
             material += bufx;
             material += bufy;
-            material += ".png";
+            material += ".rgb";
 
             strips_v.push_back( strip_v );
             strips_tc.push_back( strip_tc );
@@ -233,17 +233,17 @@ int main( int argc, char **argv ) {
     // wgs84 cartesian nodes
     point_list wgs84_nodes; wgs84_nodes.clear();
     for ( i = 0; i < (int)geod_nodes.size(); ++i ) {
-        Point3D p;
-	p.setx( geod_nodes[i].x() * SGD_DEGREES_TO_RADIANS );
-	p.sety( geod_nodes[i].y() * SGD_DEGREES_TO_RADIANS );
-	p.setz( geod_nodes[i].z() );
+        Point3D p = Point3D( geod_nodes[i].x() * SGD_DEGREES_TO_RADIANS,
+                             geod_nodes[i].y() * SGD_DEGREES_TO_RADIANS,
+                             geod_nodes[i].z() );
+        cout << sgGeodToCart( p ) << endl;
 	wgs84_nodes.push_back( sgGeodToCart( p ) );
     }
 
     // bounding sphere
-    Point3D center_geod = Point3D( ((x0 + x2) / 2) * SGD_DEGREES_TO_RADIANS,
-                                   ((y0 + y2) / 2) * SGD_DEGREES_TO_RADIANS,
-                                   0 );
+    SGBucket b( (x0 + x2) / 2, (y0 + y2) / 2 );
+    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS,
+			 b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
     Point3D gbs_center = sgGeodToCart( center_geod );
     cout << "gbs center = " << gbs_center << endl;
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
@@ -255,7 +255,7 @@ int main( int argc, char **argv ) {
         sgdSetVec3( vn, normals[i].x(), normals[i].y(), normals[i].z() );
         sgdNormalizeVec3( vn );
  	normals[i] = Point3D( vn[0], vn[1], vn[2] );
-        cout << normals[i] << endl;
+        // cout << normals[i] << endl;
     }
 
     // build the object
@@ -289,8 +289,6 @@ int main( int argc, char **argv ) {
     // write the object
     string objpath = root + "/PhotoObj";
     string name = image;
-    SGBucket b( center_geod.x() * SGD_RADIANS_TO_DEGREES,
-                center_geod.y() * SGD_RADIANS_TO_DEGREES);
 
     bool result = obj.write_bin( objpath, name, b );
     if ( !result ) {
@@ -301,14 +299,26 @@ int main( int argc, char **argv ) {
     // write the index entry
     write_index( objpath, b, name );
 
-    // write the 'hole' polygon
+    // create and write the 'hole' polygon
     FGPolygon hole; hole.erase();
     Point3D p;
 
-    p = Point3D( x0, y0, 0 ); hole.add_node( 0, p );
-    p = Point3D( x1, y1, 0 ); hole.add_node( 0, p );
-    p = Point3D( x2, y2, 0 ); hole.add_node( 0, p );
-    p = Point3D( x3, y3, 0 ); hole.add_node( 0, p );
+    for ( i = 0; i <= xdiv; ++i ) {
+        p = Point3D( xarray[i][0], yarray[i][0], 0 );
+        hole.add_node( 0, p );
+    }
+    for ( j = 0; j <= ydiv; ++j ) {
+        p = Point3D( xarray[xdiv][j], yarray[xdiv][j], 0 );
+        hole.add_node( 0, p );
+    }
+    for ( i = xdiv; i >= 0; --i ) {
+        p = Point3D( xarray[i][ydiv], yarray[i][ydiv], 0 );
+        hole.add_node( 0, p );
+    }
+    for ( j = ydiv; j >= 0; --j ) {
+        p = Point3D( xarray[0][j], yarray[0][j], 0 );
+        hole.add_node( 0, p );
+    }
 
     // initialize persistant polygon counter
     string counter_file = root + "/poly_counter";

@@ -1048,6 +1048,7 @@ int main(int argc, char **argv) {
 	cout << "Load directory: " << argv[i] << endl;
     }
 
+#if 0
 #if defined( __CYGWIN__ ) || defined( __CYGWIN32__ ) || defined( _MSC_VER )
     // the next bit crashes Cygwin for me - DCL
     // MSVC does not have the function or variable type defined - BRF
@@ -1067,10 +1068,8 @@ int main(int argc, char **argv) {
     cout << "result of setting mem limit = " << result << endl;
     result = setrlimit( RLIMIT_CORE, &limit );
     cout << "result of setting mem limit = " << result << endl;
-#if 0
     result = setrlimit( RLIMIT_RSS, &limit );
     cout << "result of setting mem limit = " << result << endl;
-#endif
 
     // cpu time limit since occassionally the triangulator can go into
     // an infinite loop.
@@ -1079,6 +1078,7 @@ int main(int argc, char **argv) {
     result = setrlimit( RLIMIT_CPU, &limit );
     cout << "result of setting mem limit = " << result << endl;
 #endif  // end of stuff that crashes Cygwin
+#endif
 
     // main construction data management class
     FGConstruct c;
