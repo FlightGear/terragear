@@ -44,28 +44,23 @@ SG_USING_STD(string);
 int main(int argc, char **argv) {
     sglog().setLogLevels( SG_ALL, SG_WARN );
 
-    if ( argc != 3 ) {
-	SG_LOG( SG_GENERAL, SG_ALERT, 
-		"Usage " << argv[0] << " <hgt_file> <work_dir>" );
+    if ( argc != 4 ) {
+	cout << "Usage " << argv[0] << " <resolution> <hgt_file> <work_dir>"
+             << endl;
+        cout << endl;
+ 	cout << "\tresolution must be either 1 or 3 for 1arcsec or 3arcsec"
+             << endl;       
 	exit(-1);
     }
 
-    string hgt_name = argv[1];
-    string work_dir = argv[2];
+    int resolution = atoi( argv[1] );
+    string hgt_name = argv[2];
+    string work_dir = argv[3];
 
     // determine if file is 1arcsec or 3arcsec variety
-    int resolution = 3;
-    SGPath tmp1( hgt_name );
-    SGPath tmp2( tmp1.dir() );
-    string dir = tmp2.file();
-    if ( dir == "1arcsec" ) {
-        resolution = 1;
-    } else if ( dir == "3arcsec" ) {
-        resolution = 3;
-    } else {
-        cout << "ERROR: major problem in directory hierachy or file name!"
-             << endl;
-        cout << "unable to determine resolution." << endl;
+    if ( resolution != 1 && resolution != 3 ) {
+        cout << "ERROR: resolution must be 1 or 3." << endl;
+        exit( -1 );
     }
 
 #ifdef _MSC_VER

@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
             b_cur = sgBucketOffset(min.x, min.y, i, j);
             string file = work_dir + "/";
             file += b_cur.gen_base_path() + "/";
-            file += b_cur.gen_index_str() + ".arr.gz";
+            file += b_cur.gen_index_str();
             cout << file << endl;
 
             TGArray array;
