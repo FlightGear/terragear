@@ -510,7 +510,7 @@ static void contour_tesselate( TGContourNode *node, const TGPolygon &p,
     cout << "contour = " << contour_num << " nodes = " << total_pts << endl;
 
 #if 0
-    // testing ... don't enable this otherwise
+    // testing ... don't enable this if not testing
     if ( contour_num != 0 || total_pts != 28 ) {
 	out_pts.push_back( Point3D(0, 0, 0) );
 	out_pts.push_back( Point3D(0, 1, 0) );
@@ -1216,6 +1216,47 @@ TGPolygon reduce_degeneracy( const TGPolygon& poly ) {
 
 	// maintain original hole flag setting
 	// result.set_hole_flag( i, poly.get_hole_flag( i ) );
+    }
+
+    return result;
+}
+
+
+static point_list remove_contour_cycles( const point_list& contour ) {
+    point_list result;
+    result.clear();
+
+    unsigned int i = 0;
+    while ( i < contour.size() ) {
+        result.push_back( contour[i] );
+        for ( unsigned int j = i + 1; j < contour.size(); ++j ) {
+            if ( contour[i] == contour[j] && i + 2 > j ) {
+                cout << "detected a small cycle: i = "
+                     << i << " j = " << j << endl;
+                for ( int k = i; k <= j; ++k ) {
+                    cout << "  " << contour[k] << endl;
+                }
+                // i = j;
+            }
+        }
+        ++i;
+    }
+
+    return result;
+}
+
+
+// Occasionally the outline of the clipped polygon can take a side
+// track, then double back on return to the start of the side track
+// branch and continue normally.  Attempt to detect and clear this
+// extraneous nonsense.
+TGPolygon remove_cycles( const TGPolygon& poly ) {
+    TGPolygon result;
+    // cout << "remove cycles: " << poly << endl;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	point_list contour = poly.get_contour(i);
+	contour = remove_contour_cycles( contour );
+	result.add_contour( contour, poly.get_hole_flag(i) );
     }
 
     return result;

@@ -86,6 +86,13 @@ TGPolygon remove_dups( const TGPolygon &poly );
 TGPolygon reduce_degeneracy( const TGPolygon& poly );
 
 
+// Occasionally the outline of the clipped polygon can take a side
+// track, then double back on return to the start of the side track
+// branch and continue normally.  Attempt to detect and clear this
+// extraneous nonsense.
+TGPolygon remove_cycles( const TGPolygon& poly );
+
+
 // Find a point in the given node list that lies between start and
 // end, return true if something found, false if nothing found.
 bool find_intermediate_node( const Point3D& start, const Point3D& end,
