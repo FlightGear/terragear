@@ -112,7 +112,7 @@ def terra_fit(fname, thresh=1, count=1000, factor=1.0/30.0, minnodes=50):
     gzName = basename+".fit.gz"
 
     try:
-        if path.getmtime(gzName) > path.getmtime(fname):
+        if os.path.getmtime(gzName) > os.path.getmtime(fname):
             print "Skipping: %s is newer then %s"%(gzName,fname)
             return
     except:
