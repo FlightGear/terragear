@@ -764,9 +764,7 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
 	Point3D p1 = out_pts[ t.get_n1() ];
 	Point3D p2 = out_pts[ t.get_n2() ];
 	Point3D p3 = out_pts[ t.get_n3() ];
-	double area = fabs(0.5 * ( p1.x() * p2.y() - p2.x() * p1.y() +
-				   p2.x() * p3.y() - p3.x() * p2.y() +
-				   p3.x() * p1.y() - p1.x() * p3.y() ));
+	double area = triangle_area( p1, p2, p3 );
 	if ( area > max_area ) {
 	    max_area = area;
 	    biggest = i;
@@ -991,8 +989,8 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
     Point3D p1 = end;
 
     // cout << "  add_intermediate_nodes()" << endl;
-    printf("   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
-	   p0.x(), p0.y(), p0.z(), p1.x(), p1.y(), p1.z() );
+    // printf("   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
+    //        p0.x(), p0.y(), p0.z(), p1.x(), p1.y(), p1.z() );
 
     double xdist = fabs(p0.x() - p1.x());
     double ydist = fabs(p0.y() - p1.y());

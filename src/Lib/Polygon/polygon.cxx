@@ -160,11 +160,11 @@ bool FGPolygon::is_inside( int a, int b ) const {
     // B is "inside" A if the polygon_diff( B, A ) is not null.
     FGPolygon result = polygon_diff( B, A );
     if ( result.contours() == 0 ) {
-	cout << "    is_inside() result = true" << endl;
+	// cout << "    is_inside() result = true" << endl;
 	return true;
     }
-    cout << "    is_inside() result = false" << endl;
 
+    // cout << "    is_inside() result = false" << endl;
     return false;
 }
 
