@@ -35,8 +35,6 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-#include "point2d.hxx"
-
 SG_USING_STD(cout);
 SG_USING_STD(string);
 
