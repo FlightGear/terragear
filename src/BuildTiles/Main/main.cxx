@@ -988,6 +988,10 @@ static void do_custom_objects( const TGConstruct& c ) {
     // Start with the default custom object which is the base terrain
     fprintf(fp, "OBJECT_BASE %s.btg\n", b.gen_index_str().c_str());
 
+    char line[2048];             // big enough?
+    char token[256];
+    char name[256];
+
     for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
 	string base_dir = load_dirs[i] + "/" + b.gen_base_path();
 	string index_file = base_dir + "/" + b.gen_index_str() + ".ind";
@@ -998,25 +1002,28 @@ static void do_custom_objects( const TGConstruct& c ) {
 	if ( ! in.is_open() ) {
 	    cout << "No custom objects" << endl;
 	} else {
-	    string token, name;
-
 	    while ( ! in.eof() ) {
-		in >> token;
-		in >> name;
-		in >> skipws;
+                in.getline(line, 2048);
+
+                sscanf( "%s %s", token, name );
 
 		cout << "token = " << token << " name = " << name << endl;
-#ifdef _MSC_VER
-		string command = "copy " + base_dir + "/" + name + ".gz "
-		    + dest_dir;
-#else
-		string command = "cp " + base_dir + "/" + name + ".gz "
-		    + dest_dir;
-#endif
-		cout << "running " << command << endl;
-		system( command.c_str() );
 
-		fprintf(fp, "OBJECT %s\n", name.c_str());
+                if ( strcmp( token, "OBJECT" ) == 0 ) {
+#ifdef _MSC_VER
+                    string command = "copy " + base_dir + "/" + name + ".gz "
+                        + dest_dir;
+#else
+                    string command = "cp " + base_dir + "/" + name + ".gz "
+                        + dest_dir;
+#endif
+                    cout << "running " << command << endl;
+                    system( command.c_str() );
+
+                    fprintf(fp, "OBJECT %s\n", name.c_str());
+                } else {
+                    fprintf(fp, "%s\n", line.c_str());
+                }
 	    }
 	}
     }
