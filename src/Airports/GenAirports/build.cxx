@@ -212,9 +212,9 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 		// cout << "y_err = " << y_err << endl;
 
 		if ( y_err < tgAirportEpsilon ) {
-		    // cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
-		    // cout << p_min << " < " << *current << " < "
-		    //      << p_max << endl;
+		    cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
+		    cout << p_min << " < " << *current << " < "
+		         << p_max << endl;
 		    found_extra = true;
 		    if ( y_err < y_err_min ) {
 			extra_index = counter;
@@ -266,9 +266,9 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 		// }
 
 		if ( x_err < tgAirportEpsilon ) {
-		    // cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
-		    // cout << p_min << " < " << *current << " < "
-		    //      << p_max << endl;
+		    cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
+		    cout << p_min << " < " << *current << " < "
+		         << p_max << endl;
 		    found_extra = true;
 		    if ( x_err < x_err_min ) {
 			extra_index = counter;
@@ -1142,9 +1142,12 @@ void build_airport( string airport_raw, string_list& runways_raw,
 #endif
 
     for ( int k = 0; k < (int)rwy_polys.size(); ++k ) {
-	cout << "add nodes/remove dups runway = " << k << endl;
+	cout << "add nodes/remove dups section = " << k
+	     << " " << rwy_polys[k].get_material() << endl;
 	FGPolygon poly = rwy_polys[k].get_poly();
+	cout << "total size before = " << poly.total_size() << endl;
 	poly = add_nodes_to_poly( poly, tmp_nodes );
+	cout << "total size after = " << poly.total_size() << endl;
 
 #if 0
 	char tmp[256];
@@ -1153,10 +1156,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
 #endif
 
         poly = remove_dups( poly );
+	cout << "total size after remove_dups() = " << poly.total_size() << endl;
         poly = remove_bad_contours( poly );
+	cout << "total size after remove_bad() = " << poly.total_size() << endl;
 
 	rwy_polys[k].set_poly( poly );
     }
+
     cout << "add nodes/remove dups base " << endl;
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
     // write_polygon( base_poly, "base-add" );
@@ -1170,7 +1176,9 @@ void build_airport( string airport_raw, string_list& runways_raw,
         cout << "Tesselating section = " << i << endl;
 
 	FGPolygon poly = rwy_polys[i].get_poly();
+	cout << "total size before = " << poly.total_size() << endl;
 	FGPolygon tri = polygon_tesselate_alt( poly );
+	cout << "total size after = " << tri.total_size() << endl;
 
 	// tc = rwy_calc_tex_coords( runways[i], 0.0, tri );
 	FGPolygon tc = rwy_section_tex_coords( tri, texparams[i] );
