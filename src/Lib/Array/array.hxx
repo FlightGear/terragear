@@ -77,7 +77,7 @@ private:
     point_list fitted_list;
 
     // bool
-    bool fit_on_the_fly;
+    // CLO 8/18/2003 // bool fit_on_the_fly;
 
 public:
 
@@ -97,13 +97,17 @@ public:
     // parse a Array file
     bool parse( SGBucket& b );
 
+    // do our best to remove voids by picking data from the nearest
+    // neighbor.
+    void remove_voids();
+
     // Use least squares to fit a simpler data set to dem data.
     // Return the number of fitted nodes.  This is a horrible approach
     // that doesn't really work, but it's better than nothing if
     // you've got nothing.  Using src/Prep/ArrayFit to create .fit
     // files from the .arr files is a *much* better approach, but it
     // is slower which is why it needs to be done "offline".
-    int fit( double error );
+    // CLO 8/18/2003 // int fit( double error );
 
     // add a node to the output corner node list
     void add_corner_node( int i, int j, double val );

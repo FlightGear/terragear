@@ -32,7 +32,5 @@ int main( int argc, char **argv ) {
     lat *= 3600;
     cout << "  " << a.altitude_from_grid(lon, lat) << endl;
 
-    a.fit( 100 );
-
     return 0;
 }

@@ -92,10 +92,10 @@ int main( int argc, char **argv ) {
     a.parse( b );
 
     // Old fit
-    cout << "Old fit(200) = " << a.fit(200) << endl;
-    cout << "Old fit(100) = " << a.fit(100) << endl;
-    cout << "Old fit(50) = " << a.fit(50) << endl;
-    cout << "Old fit(25) = " << a.fit(25) << endl;
+    // cout << "Old fit(200) = " << a.fit(200) << endl;
+    // cout << "Old fit(100) = " << a.fit(100) << endl;
+    // cout << "Old fit(50) = " << a.fit(50) << endl;
+    // cout << "Old fit(25) = " << a.fit(25) << endl;
 
     // Test libgts (gnu triangulation library functions)
 

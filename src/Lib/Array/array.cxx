@@ -27,23 +27,6 @@
 
 #include <simgear/compiler.h>
 
-// #include <ctype.h>    // isspace()
-// #include <stdlib.h>   // atoi()
-// #include <math.h>     // rint()
-// #include <stdio.h>
-// #include <string.h>
-// #ifdef HAVE_SYS_STAT_H
-// #  include <sys/stat.h> // stat()
-// #endif
-// #ifdef SG_HAVE_STD_INCLUDES
-// #  include <cerrno>
-// #else
-// #  include <errno.h>
-// #endif
-// #ifdef HAVE_UNISTD_H
-// # include <unistd.h>   // stat()
-// #endif
-
 #include STL_STRING
 
 #include <simgear/constants.h>
@@ -96,6 +79,10 @@ bool TGArray::open( const string& file_base ) {
     string fitted_name = file_base + ".fit.gz";
     fitted_in = new sg_gzifstream( fitted_name );
     if ( ! fitted_in->is_open() ) {
+        // not having a .fit file is unfortunate, but not fatal.  We
+        // can do a really stupid/crude fit on the fly, but it will
+        // not be nearly as nice as what the offline terrafit utility
+        // would have produced.
         cout << "  Cannot open " << fitted_name << endl;
     } else {
         cout << "  Opening fitted data file: " << fitted_name << endl;
@@ -140,84 +127,6 @@ TGArray::parse( SGBucket& b ) {
 	}
 
 	cout << "    Done parsing\n";
-
-#if 0
-        // need two passes to ensure that all voids are removed (unless entire
-	// array is a void.)
-        bool have_void = true;
-	int last_elev = -32768;
-        for ( int pass = 0; pass < 2 && have_void; ++pass ) { 
-	    // attempt to fill in any void data horizontally
-	    for ( int i = 0; i < cols; i++ ) {
-	        // fill in front ways
-	        last_elev = -32768;
-                have_void = false;
-                for ( int j = 0; j < rows; j++ ) {
-                    if ( in_data[i][j] > -9000 ) {
-		        last_elev = in_data[i][j];
-                    } else if ( last_elev > -9000 ) {
-		        in_data[i][j] = last_elev;
-                    } else {
-		        have_void = true;
-                    }
-                }
-                // fill in back ways
-                last_elev = -32768;
-                have_void = false;
-                for ( int j = rows - 1; j >= 0; j-- ) {
-                    if ( in_data[i][j] > -9000 ) {
-                        last_elev = in_data[i][j];
-                    } else if ( last_elev > -9000 ) {
-                        in_data[i][j] = last_elev;
-                    } else {
-                        have_void = true;
-                    }
-                }
-            }
-
-            // attempt to fill in any void data vertically
-            for ( int j = 0; j < rows; j++ ) {
-                // fill in front ways
-                last_elev = -32768;
-                have_void = false;
-                for ( int i = 0; i < cols; i++ ) {
-                    if ( in_data[i][j] > -9999 ) {
-                        last_elev = in_data[i][j];
-                    } else if ( last_elev > -9999 ) {
-                        in_data[i][j] = last_elev;
-                    } else {
-                        have_void = true;
-                    }
-                }
-
-                // fill in back ways
-                last_elev = -32768;
-                have_void = false;
-                for ( int i = cols - 1; i >= 0; i-- ) {
-                    if ( in_data[i][j] > -9999 ) {
-                        last_elev = in_data[i][j];
-                    } else if ( last_elev > -9999 ) {
-                        in_data[i][j] = last_elev;
-                    } else {
-                        have_void = true;
-                    }
-                }
-            }
-        }
-
-        if ( have_void ) {
-            // after all that work we still have a void, likely the
-            // entire array is void.  Fill in the void areas with zero
-            // as a panic fall back.
-            for ( int i = 0; i < cols; i++ ) {
-                for ( int j = 0; j < rows; j++ ) {
-                    if ( in_data[i][j] <= -9999 ) {
-                        in_data[i][j] = 0;
-                    }
-                }
-            }
-        }
-#endif
     } else {
 	// file not open (not found?), fill with zero'd data
 
@@ -246,14 +155,13 @@ TGArray::parse( SGBucket& b ) {
 	cout << "    File not open, so using zero'd data" << endl;
     }
 
-    // Parse/load the array data file
+    // Parse/load the fitted data file
     if ( fitted_in->is_open() ) {
-        fit_on_the_fly = false;
         int fitted_size;
         double x, y, z, error;
         *fitted_in >> fitted_size;
         for ( int i = 0; i < fitted_size; ++i ) {
-            *fitted_in >> x >> y >> z >> error;
+            *fitted_in >> x >> y >> z;
             if ( i < 4 ) {
                 // skip first 4 corner nodes
             } else {
@@ -261,14 +169,92 @@ TGArray::parse( SGBucket& b ) {
                 cout << " loading fitted = " << Point3D(x, y, z) << endl;
             }
         }
-    } else {
-        fit_on_the_fly = true;
     }
 
     return true;
 }
 
 
+
+
+// do our best to remove voids by picking data from the nearest neighbor.
+void TGArray::remove_voids( ) {
+    // need two passes to ensure that all voids are removed (unless entire
+    // array is a void.)
+    bool have_void = true;
+    int last_elev = -32768;
+    for ( int pass = 0; pass < 2 && have_void; ++pass ) { 
+        // attempt to fill in any void data horizontally
+        for ( int i = 0; i < cols; i++ ) {
+            // fill in front ways
+            last_elev = -32768;
+            have_void = false;
+            for ( int j = 0; j < rows; j++ ) {
+                if ( in_data[i][j] > -9000 ) {
+                    last_elev = in_data[i][j];
+                } else if ( last_elev > -9000 ) {
+                    in_data[i][j] = last_elev;
+                } else {
+                    have_void = true;
+                }
+            }
+            // fill in back ways
+            last_elev = -32768;
+            have_void = false;
+            for ( int j = rows - 1; j >= 0; j-- ) {
+                if ( in_data[i][j] > -9000 ) {
+                    last_elev = in_data[i][j];
+                } else if ( last_elev > -9000 ) {
+                    in_data[i][j] = last_elev;
+                } else {
+                    have_void = true;
+                }
+            }
+        }
+
+        // attempt to fill in any void data vertically
+        for ( int j = 0; j < rows; j++ ) {
+            // fill in front ways
+            last_elev = -32768;
+            have_void = false;
+            for ( int i = 0; i < cols; i++ ) {
+                if ( in_data[i][j] > -9999 ) {
+                    last_elev = in_data[i][j];
+                } else if ( last_elev > -9999 ) {
+                    in_data[i][j] = last_elev;
+                } else {
+                    have_void = true;
+                }
+            }
+
+            // fill in back ways
+            last_elev = -32768;
+            have_void = false;
+            for ( int i = cols - 1; i >= 0; i-- ) {
+                if ( in_data[i][j] > -9999 ) {
+                    last_elev = in_data[i][j];
+                } else if ( last_elev > -9999 ) {
+                    in_data[i][j] = last_elev;
+                } else {
+                    have_void = true;
+                }
+            }
+        }
+    }
+
+    if ( have_void ) {
+        // after all that work we still have a void, likely the
+        // entire array is void.  Fill in the void areas with zero
+        // as a panic fall back.
+        for ( int i = 0; i < cols; i++ ) {
+            for ( int j = 0; j < rows; j++ ) {
+                if ( in_data[i][j] <= -9999 ) {
+                    in_data[i][j] = 0;
+                }
+            }
+        }
+    }
+}
 
 
 // add a node to the output corner node list
@@ -291,6 +277,7 @@ void TGArray::add_fit_node( int i, int j, double val ) {
 }
 
 
+#if 0
 // Use least squares to fit a simpler data set to dem data.  Return
 // the number of fitted nodes.  This is a horrible approach that
 // doesn't really work, but it's better than nothing if you've got
@@ -453,6 +440,7 @@ int TGArray::fit( double error ) {
     // return fit nodes + 4 corners
     return fitted_list.size() + 4;
 }
+#endif
 
 
 // Return the elevation of the closest non-void grid point to lon, lat
