@@ -252,6 +252,143 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
 }
 
 
+// generate threshold lights for a 3 degree approach 
+static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
+                                                   const string& kind,
+                                                   float alt_m, bool recip )
+{
+    point_list g_lights; g_lights.clear();
+    point_list g_normals; g_normals.clear();
+    point_list r_lights; r_lights.clear();
+    point_list r_normals; r_normals.clear();
+    int i;
+
+    cout << "gen threshold " << rwy_info.rwy_no << endl;
+
+    Point3D normal;
+
+    // using FGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    // determine the start point.
+    Point3D ref1, ref2, ref3, ref4;
+    double length_hdg, left_hdg;
+    double lon, lat, r;
+    if ( recip ) {
+        ref1 = corner[0];
+        ref2 = corner[1];
+        ref3 = corner[3];
+        ref4 = corner[2];
+        length_hdg = rwy_info.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+    } else {
+        ref1 = corner[2];
+        ref2 = corner[3];
+        ref3 = corner[1];
+        ref4 = corner[0];
+        length_hdg = rwy_info.heading;
+    }
+    left_hdg = length_hdg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    cout << "length hdg = " << length_hdg
+         << " left heading = " << left_hdg << endl;
+
+    normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+
+    // offset 5' downwind
+    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
+                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref1 = Point3D( lon, lat, 0.0 );
+    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), length_hdg, 
+                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref2 = Point3D( lon, lat, 0.0 );
+
+    // offset 5' upwind
+    geo_direct_wgs_84 ( alt_m, ref3.lat(), ref3.lon(), length_hdg, 
+                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref3 = Point3D( lon, lat, 0.0 );
+    geo_direct_wgs_84 ( alt_m, ref4.lat(), ref4.lon(), length_hdg, 
+                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref4 = Point3D( lon, lat, 0.0 );
+
+    // five lights each
+    for ( int i = 0; i < 5; ++i ) {
+        g_lights.push_back( ref1 );
+        g_normals.push_back( normal );
+    
+        g_lights.push_back( ref2 );
+        g_normals.push_back( normal );
+
+        r_lights.push_back( ref3 );
+        r_normals.push_back( normal );
+    
+        r_lights.push_back( ref4 );
+        r_normals.push_back( normal );
+
+        // offset 10' towards center
+        geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), left_hdg, 
+                            -10 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref1 = Point3D( lon, lat, 0.0 );
+        geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), left_hdg, 
+                            10 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref2 = Point3D( lon, lat, 0.0 );
+        geo_direct_wgs_84 ( alt_m, ref3.lat(), ref3.lon(), left_hdg, 
+                            -10 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref3 = Point3D( lon, lat, 0.0 );
+        geo_direct_wgs_84 ( alt_m, ref4.lat(), ref4.lon(), left_hdg, 
+                            10 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref4 = Point3D( lon, lat, 0.0 );
+       
+    }
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( g_lights, false );
+    normals_poly.add_contour( g_normals, false );
+
+    FGSuperPoly green;
+    green.set_poly( lights_poly );
+    green.set_normals( normals_poly );
+    green.set_material( "RWY_GREEN_LIGHTS" );
+    if ( kind == "H" ) {
+        green.set_material( "RWY_GREEN_LIGHTS" );
+    } else if ( kind == "M" ) {
+        green.set_material( "RWY_GREEN_MEDIUM_LIGHTS" );
+    } else if ( kind == "L" ) {
+        green.set_material( "RWY_GREEN_LOW_LIGHTS" );
+    }
+
+    lights_poly.erase();
+    normals_poly.erase();
+    lights_poly.add_contour( r_lights, false );
+    normals_poly.add_contour( r_normals, false );
+
+    FGSuperPoly red;
+    red.set_poly( lights_poly );
+    red.set_normals( normals_poly );
+    if ( kind == "H" ) {
+        red.set_material( "RWY_RED_LIGHTS" );
+    } else if ( kind == "M" ) {
+        red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
+    } else if ( kind == "L" ) {
+        red.set_material( "RWY_RED_LOW_LIGHTS" );
+    }
+
+    superpoly_list result; result.clear();
+
+    result.push_back( green );
+    result.push_back( red );
+
+    return result;
+}
+
+
 // generate runway center line lighting, 50' spacing.
 static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
                                                      bool recip )
@@ -766,7 +903,7 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
     unsigned int i;
 
-    // Make edge lighting
+    // Make edge and threshold lighting
     string edge_type = rwy_info.surface_flags.substr(3,1);
     if ( edge_type != (string)"N" ) {
         // forward direction
@@ -778,6 +915,18 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
         // reverse direction
         s = gen_runway_edge_lights( rwy_info, edge_type, true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+
+        // forward direction
+        s = gen_runway_threshold_lights( rwy_info, edge_type, alt_m, false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+
+        // reverse direction
+        s = gen_runway_threshold_lights( rwy_info, edge_type, alt_m, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
