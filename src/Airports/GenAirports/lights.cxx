@@ -211,7 +211,7 @@ static FGSuperPoly gen_runway_edge_lights( const FGRunway& rwy_info,
 }
 
 
-// generate a simple 2 bar VASI 
+// generate a simple 2 bar VASI for a 3 degree approach
 static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
                              bool recip )
 {
@@ -346,12 +346,113 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
 }
 
 
+// generate a simple PAPI for a 3 degree approach 
+static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
+                             bool recip )
+{
+    point_list lights; lights.clear();
+    point_list normals; normals.clear();
+    int i;
+
+    cout << "gen papi " << rwy_info.rwy_no << endl;
+
+    Point3D normal;
+
+    // using FGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    // determine the start point.
+    Point3D ref;
+    double length_hdg, left_hdg;
+    double lon, lat, r;
+    if ( recip ) {
+        ref = corner[0];
+        length_hdg = rwy_info.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+    } else {
+        ref = corner[2];
+        length_hdg = rwy_info.heading;
+    }
+    left_hdg = length_hdg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    cout << "length hdg = " << length_hdg
+         << " left heading = " << left_hdg << endl;
+
+    // offset 950' upwind
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                        950 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref = Point3D( lon, lat, 0.0 );
+    // offset 50' left
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
+                        50 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref = Point3D( lon, lat, 0.0 );
+
+    // unit1
+    Point3D pt1 = ref;
+    lights.push_back( pt1 );
+    normal = gen_runway_light_vector( rwy_info, 3.5, recip );
+    normals.push_back( normal );
+    
+    // unit2
+    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                        30 * SG_FEET_TO_METER, &lat, &lon, &r );
+    pt1 = Point3D( lon, lat, 0.0 );
+    lights.push_back( pt1 );
+    normal = gen_runway_light_vector( rwy_info, 3.167, recip );
+    normals.push_back( normal );
+
+    // unit3
+    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                        30 * SG_FEET_TO_METER, &lat, &lon, &r );
+    pt1 = Point3D( lon, lat, 0.0 );
+    lights.push_back( pt1 );
+    normal = gen_runway_light_vector( rwy_info, 2.833, recip );
+    normals.push_back( normal );
+
+    // unit4
+    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                        30 * SG_FEET_TO_METER, &lat, &lon, &r );
+    pt1 = Point3D( lon, lat, 0.0 );
+    lights.push_back( pt1 );
+    normal = gen_runway_light_vector( rwy_info, 2.5, recip );
+    normals.push_back( normal );
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( lights, false );
+    normals_poly.add_contour( normals, false );
+
+    FGSuperPoly result;
+    result.set_poly( lights_poly );
+    result.set_normals( normals_poly );
+    result.set_material( "RWY_VASI_LIGHTS" );
+
+    return result;
+}
+
+
 void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 			superpoly_list &lights ) {
 
     cout << "gen runway lights " << rwy_info.rwy_no << " " << rwy_info.end1_flags << " " << rwy_info.end2_flags << endl;;
 
-    // Approach lighting
+    // PAPI lighting
+    if ( rwy_info.end1_flags.substr(2,1) == "P" ) {
+        FGSuperPoly s = gen_papi( rwy_info, alt_m, false );
+        lights.push_back( s );
+    }
+    if ( rwy_info.end2_flags.substr(2,1) == "P" ) {
+        FGSuperPoly s = gen_papi( rwy_info, alt_m, true );
+        lights.push_back( s );
+    }
+
+    // VASI lighting
     if ( rwy_info.end1_flags.substr(2,1) == "V" ) {
         FGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
         lights.push_back( s );
