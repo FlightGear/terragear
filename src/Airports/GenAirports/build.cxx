@@ -131,14 +131,14 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 
 	    tx = (x - min.x()) / (max.x() - min.x());
 	    tx = ((int)(tx * 100)) / 100.0;
-	    if ( tx < -1.0 ) { tx = -1.0; }
-	    if ( tx > 1.0 ) { tx = 1.0; }
+	    if ( tx < 0.01 ) { tx = 0.01; }
+	    if ( tx > 0.99 ) { tx = 0.99; }
 
 	    // ty = (y - min.y()) / (max.y() - min.y());
 	    ty = (max.y() - y) / (max.y() - min.y());
 	    ty = ((int)(ty * 100)) / 100.0;
-	    if ( ty < -1.0 ) { ty = -1.0; }
-	    if ( ty > 1.0 ) { ty = 1.0; }
+	    if ( ty < 0.01 ) { ty = 0.01; }
+	    if ( ty > 0.99 ) { ty = 0.99; }
 
 	    t = Point3D( tx, ty, 0 );
 	    cout << "  (" << tx << ", " << ty << ")" << endl;
@@ -1073,6 +1073,422 @@ static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
 }
 
 
+// generate a non-precision approach runway.  The routine modifies
+// rwy_polys, texparams, and accum.  For specific details and
+// dimensions of precision runway markings, please refer to FAA
+// document AC 150/5340-1H
+
+static void gen_non_precision_rwy( const FGRunway& rwy_info,
+				   const string& material,
+				   superpoly_list *rwy_polys,
+				   texparams_list *texparams,
+				   FGPolygon *accum )
+{
+
+    //
+    // Generate the basic runway outlines
+    //
+
+    FGPolygon runway = gen_runway_w_mid( rwy_info );
+
+    // runway half "a"
+    FGPolygon runway_a;
+    runway_a.erase();
+    runway_a.add_node( 0, runway.get_pt(0, 0) );
+    runway_a.add_node( 0, runway.get_pt(0, 1) );
+    runway_a.add_node( 0, runway.get_pt(0, 2) );
+    runway_a.add_node( 0, runway.get_pt(0, 5) );
+
+    // runway half "b"
+    FGPolygon runway_b;
+    runway_b.erase();
+    runway_b.add_node( 0, runway.get_pt(0, 3) );
+    runway_b.add_node( 0, runway.get_pt(0, 4) );
+    runway_b.add_node( 0, runway.get_pt(0, 5) );
+    runway_b.add_node( 0, runway.get_pt(0, 2) );
+	
+    Point3D p;
+    cout << "raw runway pts (a half)" << endl;
+    for ( int j = 0; j < runway_a.contour_size( 0 ); ++j ) {
+	p = runway_a.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+    cout << "raw runway pts (b half)" << endl;
+    for ( int j = 0; j < runway_b.contour_size( 0 ); ++j ) {
+	p = runway_b.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+
+    //
+    // Setup some variables and values to help us chop up the runway
+    // into its various sections
+    //
+
+    FGSuperPoly sp;
+    FGTexParams tp;
+
+    double length = rwy_info.length / 2.0;
+    if ( length < 1150 ) {
+	cout << "This runway is not long enough for non-precision markings!"
+	     << endl;
+	exit(-1);
+    }
+
+    double start_pct = 0;
+    double end_pct = 0;
+
+    //
+    // Threshold
+    //
+
+    end_pct = start_pct + ( 190.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_threshold",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_threshold",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Runway designation number(s)
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 100.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 0.231,
+			   rwy_info.heading,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.231, 0.5,
+			   rwy_info.heading,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.5, 0.731,
+			   rwy_info.heading,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   1.0, 0.731,
+			   rwy_info.heading,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 0.231,
+			   rwy_info.heading + 180.0,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.231, 0.5,
+			   rwy_info.heading + 180.0,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.5, 0.731,
+			   rwy_info.heading + 180.0,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   1.0, 0.731,
+			   rwy_info.heading + 180.0,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Intermediate area before aiming point ...
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 360.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 360.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Aiming point
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 500 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_aim",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_aim",
+			   rwy_polys, texparams, accum );
+
+    //
+    // The rest ...
+    //
+
+    start_pct = end_pct;
+    end_pct = 1.0;
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+}
+
+
+// generate a visual approach runway.  The routine modifies rwy_polys,
+// texparams, and accum.  For specific details and dimensions of
+// precision runway markings, please refer to FAA document AC
+// 150/5340-1H
+
+ static void gen_visual_rwy( const FGRunway& rwy_info,
+				   const string& material,
+				   superpoly_list *rwy_polys,
+				   texparams_list *texparams,
+				   FGPolygon *accum )
+{
+
+    //
+    // Generate the basic runway outlines
+    //
+
+    FGPolygon runway = gen_runway_w_mid( rwy_info );
+
+    // runway half "a"
+    FGPolygon runway_a;
+    runway_a.erase();
+    runway_a.add_node( 0, runway.get_pt(0, 0) );
+    runway_a.add_node( 0, runway.get_pt(0, 1) );
+    runway_a.add_node( 0, runway.get_pt(0, 2) );
+    runway_a.add_node( 0, runway.get_pt(0, 5) );
+
+    // runway half "b"
+    FGPolygon runway_b;
+    runway_b.erase();
+    runway_b.add_node( 0, runway.get_pt(0, 3) );
+    runway_b.add_node( 0, runway.get_pt(0, 4) );
+    runway_b.add_node( 0, runway.get_pt(0, 5) );
+    runway_b.add_node( 0, runway.get_pt(0, 2) );
+	
+    Point3D p;
+    cout << "raw runway pts (a half)" << endl;
+    for ( int j = 0; j < runway_a.contour_size( 0 ); ++j ) {
+	p = runway_a.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+    cout << "raw runway pts (b half)" << endl;
+    for ( int j = 0; j < runway_b.contour_size( 0 ); ++j ) {
+	p = runway_b.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+
+    //
+    // Setup some variables and values to help us chop up the runway
+    // into its various sections
+    //
+
+    FGSuperPoly sp;
+    FGTexParams tp;
+
+    double length = rwy_info.length / 2.0;
+    if ( length < 1150 ) {
+	cout << "This runway is not long enough for non-precision markings!"
+	     << endl;
+	exit(-1);
+    }
+
+    double start_pct = 0;
+    double end_pct = 0;
+
+
+    //
+    // Runway designation number(s)
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 100.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 0.231,
+			   rwy_info.heading,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.231, 0.5,
+			   rwy_info.heading,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.5, 0.731,
+			   rwy_info.heading,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   1.0, 0.731,
+			   rwy_info.heading,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 0.231,
+			   rwy_info.heading + 180.0,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.231, 0.5,
+			   rwy_info.heading + 180.0,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.5, 0.731,
+			   rwy_info.heading + 180.0,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   1.0, 0.731,
+			   rwy_info.heading + 180.0,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Intermediate area before aiming point ...
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 450.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 450.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Aiming point
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 500 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_aim",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_aim",
+			   rwy_polys, texparams, accum );
+
+    //
+    // The rest ...
+    //
+
+    start_pct = end_pct;
+    end_pct = 1.0;
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_rest",
+			   rwy_polys, texparams, accum );
+}
+
+
 // build 3d airport
 void build_airport( string airport_raw, string_list& runways_raw,
 		    const string& root ) {
@@ -1205,14 +1621,25 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    // precision runway markings
 	    gen_precision_rwy( runways[i], material,
 			       &rwy_polys, &texparams, &accum );
+	} else if ( type_flag == "R" ) {
+	    // non-precision runway markings
+	    gen_non_precision_rwy( runways[i], material,
+				   &rwy_polys, &texparams, &accum );
 	} else if ( type_flag == "V" ) {
 	    // visual runway markings
+	    gen_visual_rwy( runways[i], material,
+			    &rwy_polys, &texparams, &accum );
+	} else if ( type_flag == "B" ) {
+	    // bouys (sea plane base)
 	    gen_simple_rwy( runways[i], material,
 			    &rwy_polys, &texparams, &accum );
 	} else {
-	    // we don't know what this means, assume simple
-	    gen_simple_rwy( runways[i], material,
-			    &rwy_polys, &texparams, &accum );
+	    // unknown runway code ... hehe, I know, let's just die
+	    // right here so the programmer has to fix his code if a
+	    // new code ever gets introduced. :-)
+	    cout << "Unknown runway code in build.cxx:build_airport()" << endl;
+	    cout << "dying ..." << endl;
+	    exit(-1);
 	}
 
 	base = gen_runway_area( runways[i], 1.05, 1.5 );
@@ -1232,7 +1659,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // generate convex hull
     FGPolygon hull = convex_hull(apt_pts);
-    FGPolygon divided_hull = split_long_edges( hull, 500.0 );
+    FGPolygon divided_hull = split_long_edges( hull, 200.0 );
     FGPolygon base_poly = polygon_diff( divided_hull, accum );
     // write_polygon( base_poly, "base-raw" );
 
