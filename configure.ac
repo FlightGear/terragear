@@ -50,6 +50,11 @@ esac
 AC_SUBST(AR)
 AC_SUBST(ARFLAGS)
 
+dnl Add gts/glib includes, this will probably need to be made more
+dnl flexible in the future.
+CFLAGS="$CFLAGS `gts-config --cflags`"
+CXXFLAGS="$CXXFLAGS `gts-config --cflags`"
+
 dnl Specify if we want logging (testing build) or not (release build)
 # set logging default value
 # with_logging=yes
@@ -95,7 +100,7 @@ null_LIBS="$LIBS"
 
 AC_CHECK_LIB(m, cos)
 
-base_LIBS="$LIBS"
+base_LIBS="$LIBS `gts-config --libs`"
 
 AC_CHECK_LIB(socket, socket)
 AC_CHECK_LIB(X11, XCreateWindow)
