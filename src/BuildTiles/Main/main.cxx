@@ -227,17 +227,46 @@ static void inline add_to_polys ( FGPolygon &accum, const FGPolygon &poly) {
 }
 
 
+static AreaType get_area_type (const LandCover &cover,
+			       double xpos, double ypos,
+			       double dx, double dy)
+{
+    // Look up the land cover for the square
+    int cover_value = cover.getValue(xpos, ypos);
+    AreaType area = translateUSGSCover(cover_value);
+
+				// Non-default area is fine.
+    if (area != DefaultArea) {
+      return area;
+    } 
+
+				// If we're stuck with the default area,
+				// try to borrow from a neighbour.
+    else {
+      for (double x = xpos - dx; x <= xpos + dx; x += dx) {
+	for (double y = ypos - dy; y < ypos + dx; y += dy) {
+	  if (x != xpos || y != ypos) {
+	    cover_value = cover.getValue(x, y);
+	    area = translateUSGSCover(cover_value);
+	    if (area != DefaultArea)
+	      return area;
+	  }
+	}
+      }
+    }
+
+				// OK, give up and return default
+    return DefaultArea;
+}
+
 // make the area specified area, look up the land cover type, and add
 // it to polys
 static void make_area( const LandCover &cover, FGPolygon *polys,
 		       double x1, double y1, double x2, double y2,
 		       double half_dx, double half_dy )
 {
-    // Look up the land cover for the square
-    int cover_value = cover.getValue( x1 + half_dx, y1 + half_dy );
-    cout << " position: " << x1 << ',' << y1 << ','
-	 << cover.getDescUSGS(cover_value) << endl;
-    AreaType area = translateUSGSCover(cover_value);
+    AreaType area = get_area_type(cover, x1 + half_dx, y1 + half_dy,
+				  x2 - x1, y2 - y1);
     if (area != DefaultArea) {
 	// Create a square polygon and merge it into the list.
 	FGPolygon poly;
