@@ -16,6 +16,12 @@ Rectangle::Rectangle (const Rectangle &r)
 {
 }
 
+Rectangle::Rectangle (const Point3D &min, const Point3D &max)
+  : _min(min),
+    _max(max)
+{
+}
+
 Rectangle::~Rectangle ()
 {
 }
@@ -53,6 +59,15 @@ Rectangle::isInside (const Point3D &p) const
 {
   return ((p.x() >= _min.x() && p.x() <= _max.x()) &&
 	  (p.y() >= _min.y() && p.y() <= _max.y()));
+}
+
+bool
+Rectangle::isOverlapping (const Rectangle &r) const
+{
+  const Point3D &min = r.getMin();
+  const Point3D &max = r.getMax();
+  return ((max.x() >= _min.x()) && (min.x() <= _max.x()) &&
+	  (max.y() >= _min.y()) && (min.y() <= _max.y()));
 }
 
 // end of rectangle.cxx

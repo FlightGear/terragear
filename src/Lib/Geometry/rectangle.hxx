@@ -40,6 +40,11 @@ public:
   Rectangle (const Rectangle &r);
 
   /**
+   * Convenience constructor.
+   */
+  Rectangle (const Point3D &min, const Point3D &max);
+
+  /**
    * Destructor.
    */
   virtual ~Rectangle ();
@@ -57,6 +62,20 @@ public:
    * @return The bottom-right vertex.
    */
   virtual const Point3D &getMax () const { return _max; }
+
+  /**
+   * Get the minimum (top left) corner of the rectangle.
+   *
+   * @return The top-left vertex.
+   */
+  virtual Point3D &getMin () { return _min; }
+
+  /**
+   * Get the maximum (bottom right) corner of the rectangle.
+   *
+   * @return The bottom-right vertex.
+   */
+  virtual Point3D &getMax () { return _max; }
 
   /**
    * Set the minimum (top-left) corner of the rectangle.
@@ -89,6 +108,15 @@ public:
    * rectangle, false if it is outside.
    */
   virtual bool isInside (const Point3D &p) const;
+
+  /**
+   * Test whether this rectangle overlaps with another one.
+   *
+   * @param r The rectangle to test.
+   * @return true if the rectangle is touching or overlapping, false
+   * otherwise.
+   */
+  virtual bool isOverlapping (const Rectangle &r) const;
 
 private:
   Point3D _min;
