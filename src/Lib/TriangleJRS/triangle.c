@@ -3275,6 +3275,8 @@ struct memorypool *pool;
   VOID *newitem;
   VOID **newblock;
   unsigned long alignptr;
+  char *ptr;			/* Added CLO 11/20/2000 */
+  int i;			/* Added CLO 11/20/2000 */
 
   /* First check the linked list of dead items.  If the list is not   */
   /*   empty, allocate an item from the list rather than a fresh one. */
@@ -3321,6 +3323,18 @@ struct memorypool *pool;
     pool->maxitems++;
   }
   pool->items++;
+
+  /* Added CLO 11/20/2000.  Explanation: this code does a lot of
+     malloc()'ing of space, and in some cases blindly expects the
+     results to be zero'd out, even though this may not be gauranteed.
+     So I (Curt Olson, curt@flightgear.org) have added some code here
+     to explicitely zero out the space after it is malloc()'ed. */
+  ptr = (char *)newitem;
+  for ( i = 0; i < pool->itembytes; ++i ) {
+      ptr[i] = 0;
+  }
+  /* End of CLO 11/20/2000 addition */
+
   return newitem;
 }
 
@@ -9775,8 +9789,8 @@ int newmark;
   triangle encodedtri;
   point checkpoint;
   triangle ptr;                         /* Temporary variable used by sym(). */
-
   if (verbose > 1) {
+    printf("  point2triindex = %d\n", point2triindex );
     printf("  Connecting (%.12g, %.12g) to (%.12g, %.12g).\n",
            endpoint1[0], endpoint1[1], endpoint2[0], endpoint2[1]);
   }
@@ -9784,6 +9798,9 @@ int newmark;
   /* Find a triangle whose origin is the segment's first endpoint. */
   checkpoint = (point) NULL;
   encodedtri = point2tri(endpoint1);
+  if (verbose > 1) {
+      printf("encodedtri = %x\n", encodedtri );
+  }
   if (encodedtri != (triangle) NULL) {
     decode(encodedtri, searchtri1);
     org(searchtri1, checkpoint);
