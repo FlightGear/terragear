@@ -254,12 +254,14 @@ int main( int argc, char **argv ) {
 	SG_LOG( SG_GENERAL, SG_DEBUG, "-> '" << line << "'" );
         if ( line.length() ) {
             token = simgear::strutils::split( line );
-            SG_LOG( SG_GENERAL, SG_DEBUG, "token[0] " << token[0] );
+            if ( token.size() ) {
+                SG_LOG( SG_GENERAL, SG_DEBUG, "token[0] " << token[0] );
+            }
         } else {
             token.clear();
         }
 
-        if ( !line.length() ) {
+        if ( !line.length() || !token.size() ) {
             // empty line, skip
         } else if ( (token[0] == "#") || (token[0] == "//") ) {
 	    // comment, skip
