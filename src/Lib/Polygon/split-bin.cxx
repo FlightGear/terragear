@@ -68,6 +68,9 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 		 "Out of range latitude in clip_and_write_poly() = " << c.y() );
     }
 
+    min.setz( 0.0 );
+    max.setz( 0.0 );
+
     SG_LOG( SG_GENERAL, SG_DEBUG, "  (" << min << ") (" << max << ")" );
 
     // set up clipping tile

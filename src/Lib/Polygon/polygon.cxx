@@ -252,7 +252,7 @@ void make_gpc_poly( const FGPolygon& in, gpc_polygon *out ) {
     }
 
     // free alocated memory
-    delete v_list.vertex;
+    delete [] v_list.vertex;
 }
 
 
