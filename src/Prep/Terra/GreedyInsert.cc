@@ -15,7 +15,6 @@ void TrackedTriangle::update(Subdivision& s)
     gs.scanTriangle(*this);
 }
 
-
 
 
 

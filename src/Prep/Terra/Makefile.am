@@ -9,7 +9,7 @@ terra_SOURCES = \
 	Vec3.h cmdline.cc glHacks.cc glHacks.h greedy.cc gui.cc gui.h \
 	output.cc terra.cc terra.h version.h
 
-terra_LDADD = -lGL -lGLU -lglut
+terra_LDADD = $(opengl_LIBS)
 
 xterra_SOURCES = \
 	Array.h Geom.h GreedyInsert.cc GreedyInsert.h Heap.cc Heap.h \
@@ -18,4 +18,4 @@ xterra_SOURCES = \
 	Vec3.h cmdline.cc glHacks.cc glHacks.h greedy.cc gui.cc gui.h \
 	output.cc terra.h version.h xterra.cc
 
-xterra_LDADD = -lGL -lGLU -lglut
+xterra_LDADD = $(opengl_LIBS)

@@ -1,5 +1,6 @@
 #include "terra.h"
 #include <fstream>
+#include <streambuf>
 
 using std::cerr;
 using std::cout;
