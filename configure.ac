@@ -223,16 +223,7 @@ fi
 
 dnl Check for "libnurbs++" without which we cannot go on
 AC_CHECK_HEADER(nurbs++/nurbsS.h)
-if test "x$ac_cv_header_nurbspp_nurbsS_h" != "xyes"; then
-    echo
-    echo "You *must* have the nurbs++ library installed on your system to build"
-    echo "TerraGear!"
-    echo
-    echo "Please see README.nurbs++ for more details."
-    echo
-    echo "configure aborted."
-    exit
-fi
+AM_CONDITIONAL(HAVE_NURBS, test "x$ac_cv_header_nurbspp_nurbsS_h" = "xyes" )
 AC_LANG_POP
 
 dnl Check if Generic Polygon Clipping library is installed
@@ -411,3 +402,11 @@ else
     echo "Debug messages: yes"
 fi
 
+if test "x$ac_cv_header_nurbspp_nurbsS_h" != "xyes"; then
+    echo
+    echo "You *must* have the nurbs++ library installed on your system to build"
+    echo "TerraGears GenAirport utility!"
+    echo
+    echo "Please see README.nurbs++ for more details."
+    echo
+fi

@@ -1,1 +1,7 @@
-SUBDIRS = GenAirports
+if HAVE_NURBS
+GEN_AIRPORTS_DIR = GenAirports
+else
+GEN_AIRPORTS_DIR =
+fi
+
+SUBDIRS = $(GEN_AIRPORTS_DIR)
