@@ -718,6 +718,7 @@ static Point3D point_inside_hole( point_list contour ) {
 // consideration
 static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
     int contour_num;
+    int i;
 
     FGPolygon hole_polys;
     hole_polys.erase();
@@ -726,7 +727,7 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
     hole_pts.clear();
 
     // build list of hole points
-    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+    for ( i = 0; i < node->get_num_kids(); ++i ) {
         if ( node->get_kid( i ) != NULL ) {
 	    contour_num = node->get_kid(i)->get_contour_num();
 	    hole_pts.push_back( p.get_point_inside( contour_num ) );
@@ -743,22 +744,34 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
 	exit(-1);
     }
 
-    FGTriEle t = elelist[0];
+    // find the largest triangle in the group
+    double max_area = 0.0;
+    int biggest = 0;
+    for ( i = 0; i < (int)elelist.size(); ++i ) {
+	FGTriEle t = elelist[i];
+	Point3D p1 = out_pts[ t.get_n1() ];
+	Point3D p2 = out_pts[ t.get_n2() ];
+	Point3D p3 = out_pts[ t.get_n3() ];
+	double area = fabs(0.5 * ( p1.x() * p2.y() - p2.x() * p1.y() +
+				   p2.x() * p3.y() - p3.x() * p2.y() +
+				   p3.x() * p1.y() - p1.x() * p3.y() ));
+	if ( area > max_area ) {
+	    max_area = area;
+	    biggest = i;
+	}
+    }
+
+    // find center point of largest triangle
+    cout << "biggest = " << biggest + 1 << " out of " << elelist.size() << endl;
+    FGTriEle t = elelist[biggest];
     contour_num = node->get_contour_num();
     Point3D p1 = out_pts[ t.get_n1() ];
     Point3D p2 = out_pts[ t.get_n2() ];
     Point3D p3 = out_pts[ t.get_n3() ];
-    cout << "  " << p1 << endl << "  " << p2 << endl << "  " << p3 << endl;
+    cout << "hole tri = " << p1 << endl << "  " << p2 << endl << "  " << p3 << endl;
 
-#if 0
-    // old
-    Point3D m1 = ( p1 + p2 ) / 2;
-    Point3D m2 = ( p1 + p3 ) / 2;
-    Point3D center = ( m1 + m2 ) / 2;
-#else
     // new
     Point3D center = ( p1 + p2 + p3 ) / 3;
-#endif
 
     return center;
 
@@ -807,11 +820,12 @@ static void build_contour_tree( FGContourNode *node,
 
     // see if we are building on a hole or note
     bool flag;
-    if ( node->get_contour_num() > 0 ) {
+    if ( node->get_contour_num() >= 0 ) {
 	flag = p.get_hole_flag( node->get_contour_num() );
     } else {
 	flag = true;
     }
+    cout << "  hole flag = " << flag << endl;
 
     // add all remaining hole/non-hole contours as children of the
     // current node if they are inside of it.
@@ -848,7 +862,12 @@ static void build_contour_tree( FGContourNode *node,
 	for ( int j = 0; j < node->get_num_kids(); ++j ) {
 	    if ( i != j ) {
 		if ( (node->get_kid(i) != NULL)&&(node->get_kid(j) != NULL) ) {
-		    if ( p.is_inside( i, j ) ) {
+		    int A = node->get_kid( i ) -> get_contour_num();
+		    int B = node->get_kid( j ) -> get_contour_num();
+		    if ( p.is_inside( A, B ) ) {
+			// p.write_contour( i, "a" );
+			// p.write_contour( j, "b" );
+			// exit(-1);
 		        // need to remove contour j from the kid list
 		        avail[ node->get_kid( i ) -> get_contour_num() ] = 1;
 		        node->remove_kid( i );
@@ -1147,6 +1166,8 @@ FGPolygon remove_bad_contours( const FGPolygon &poly ) {
 	    // good
 	    int flag = poly.get_hole_flag( i );
 	    result.add_contour( contour, flag );
+	} else {
+	    cout << "tossing a bad contour" << endl;
 	}
     }
 

@@ -162,7 +162,10 @@ public:
     bool is_inside( int a, int b ) const;
 
     // output
-    void write( const string& file );
+    void write( const string& file ) const;
+
+    // output
+    void write_contour( const int contour, const string& file ) const;
 };
 
 

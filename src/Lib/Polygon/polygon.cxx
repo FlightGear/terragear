@@ -85,7 +85,7 @@ static double calc_angle(point2d a, point2d b, point2d c) {
 
 double FGPolygon::area_contour( const int contour ) const {
     // area = 1/2 * sum[i = 0 to k-1][x(i)*y(i+1) - x(i+1)*y(i)]
-    // where k is defined as 0
+    // where i=k is defined as i=0
 
     point_list c = poly[contour];
     int size = c.size();
@@ -180,7 +180,7 @@ void FGPolygon::shift( double lon, double lat ) {
 
 
 // output
-void FGPolygon::write( const string& file ) {
+void FGPolygon::write( const string& file ) const {
     FILE *fp = fopen( file.c_str(), "w" );
     
     for ( int i = 0; i < (int)poly.size(); ++i ) {
@@ -188,6 +188,18 @@ void FGPolygon::write( const string& file ) {
 	    fprintf(fp, "%.6f %.6f\n", poly[i][j].x(), poly[i][j].y());
 	}
 	fprintf(fp, "%.6f %.6f\n", poly[i][0].x(), poly[i][0].y());
+    }
+
+    fclose(fp);
+}
+
+
+// output
+void FGPolygon::write_contour( const int contour, const string& file ) const {
+    FILE *fp = fopen( file.c_str(), "w" );
+    
+    for ( int j = 0; j < (int)poly[contour].size(); ++j ) {
+	fprintf(fp, "%.6f %.6f\n", poly[contour][j].x(), poly[contour][j].y());
     }
 
     fclose(fp);

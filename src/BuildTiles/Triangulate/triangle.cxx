@@ -56,7 +56,6 @@ FGTriangle::build( const point_list& corner_list,
 
     // Point3D junkp;
     // int junkc = 0;
-    // char junkn[256];
     // FILE *junkfp;
 
     // traverse the dem corner and fit lists and gpc_polys building a
@@ -82,7 +81,8 @@ FGTriangle::build( const point_list& corner_list,
     for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	polylist[i].clear();
 
-	cout << "area type = " << i << endl;
+	cout << "area type = " << i << " polys = " << gpc_polys.polys[i].size() 
+	     << endl;
 	debug_counter = 0;
 	current = gpc_polys.polys[i].begin();
 	last = gpc_polys.polys[i].end();
@@ -103,8 +103,9 @@ FGTriangle::build( const point_list& corner_list,
 		     << gpc_poly.contour_size( j ) << ", hole = "
 		     << gpc_poly.get_hole_flag( j ) << endl;
 
-		// sprintf(junkn, "g.%d", junkc++);
-		// junkfp = fopen(junkn, "w");
+		char junkn[256];
+		sprintf(junkn, "c%d", j);
+		gpc_poly.write_contour( j, junkn );
 
 		for ( int k = 0; k < gpc_poly.contour_size( j ); k++ ) {
 		    Point3D p = gpc_poly.get_pt( j, k );
@@ -119,17 +120,27 @@ FGTriangle::build( const point_list& corner_list,
 		// fclose(junkfp);
 	    }
 
+	    /* if ( i == OceanArea ) {
+		cout << "temporary exit point" << endl;
+		exit(-1);
+	    } */
+
 	    // for each contour, calculate a point inside (but not
 	    // also inside any interior contours
 
 	    // new way
 
 	    // try to make sure our polygons aren't goofy
+	    /*
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = reduce_degeneracy( gpc_poly );
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = remove_bad_contours( gpc_poly );
-	    
+	    */
+
+	    cout << "after sanity checks, contours = " 
+		 << gpc_poly.contours() << endl;
+
 	    calc_points_inside( gpc_poly );
 
 #if 0
