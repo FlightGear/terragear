@@ -1060,14 +1060,17 @@ int main(int argc, char **argv) {
     struct rlimit limit;
     limit.rlim_cur = 20000000;
     limit.rlim_max = 20000000;
+
     result = setrlimit( RLIMIT_DATA, &limit );
     cout << "result of setting mem limit = " << result << endl;
     result = setrlimit( RLIMIT_STACK, &limit );
     cout << "result of setting mem limit = " << result << endl;
     result = setrlimit( RLIMIT_CORE, &limit );
     cout << "result of setting mem limit = " << result << endl;
+#if 0
     result = setrlimit( RLIMIT_RSS, &limit );
     cout << "result of setting mem limit = " << result << endl;
+#endif
 
     // cpu time limit since occassionally the triangulator can go into
     // an infinite loop.

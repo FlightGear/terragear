@@ -41,6 +41,8 @@
 
 #include <simgear/math/sg_types.hxx>
 
+#include <Polygon/polygon.hxx>
+
 
 void write_polygon( const FGPolygon& poly, const string& base );
 

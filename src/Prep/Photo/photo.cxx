@@ -35,12 +35,16 @@
 
 #include <Array/array.hxx>
 #include <Geometry/trinodes.hxx>
+#include <Output/output.hxx>
+#include <Polygon/index.hxx>
+#include <Polygon/split.hxx>
+#include <Polygon/polygon.hxx>
 
 SG_USING_STD(string);
 
 
-const int MAX_XDIV = 32;
-const int MAX_YDIV = 32;
+const int MAX_XDIV = 16;
+const int MAX_YDIV = 16;
 
 
 // fix node elevations
@@ -121,7 +125,7 @@ int main( int argc, char **argv ) {
     if ( argc != 13 ) {
         SG_LOG( SG_GENERAL, SG_ALERT,
                 "Usage " << argv[0]
-                << " root <image>.png xdiv ydiv x0 y0 x1 y1 x2 y2 x3 y3" );
+                << " root image(base) xdiv ydiv x0 y0 x1 y1 x2 y2 x3 y3" );
         exit(-1);
     }
 
@@ -132,7 +136,7 @@ int main( int argc, char **argv ) {
     int ydiv = atoi( argv[4] );
     if ( xdiv > MAX_XDIV || xdiv < 1 || ydiv > MAX_YDIV || ydiv < 1 ) {
         SG_LOG( SG_GENERAL, SG_ALERT,
-                "{x,y}div must be in the range of 1 - 32" );
+                "{x,y}div must be in the range of 1 - " << MAX_XDIV );
         exit(-1);
     }
         
@@ -210,11 +214,12 @@ int main( int argc, char **argv ) {
             strip_tc.push_back( 2 );
 
             char bufx[5], bufy[5];
-            snprintf( bufx, 5, "%02d", i );
-            snprintf( bufy, 5, "%02d", j );
-            string material = bufx;
+            snprintf( bufx, 5, "%X", i );
+            snprintf( bufy, 5, "%X", j );
+            string material = image;
+            material += bufx;
             material += bufy;
-            material += image;
+            material += ".png";
 
             strips_v.push_back( strip_v );
             strips_tc.push_back( strip_tc );
@@ -236,9 +241,11 @@ int main( int argc, char **argv ) {
     }
 
     // bounding sphere
-    Point3D center_geod = Point3D( (x0 + x2) / 2 * SGD_DEGREES_TO_RADIANS,
-                                   (y0 + y2) / 2 * SGD_DEGREES_TO_RADIANS, 0 );
+    Point3D center_geod = Point3D( ((x0 + x2) / 2) * SGD_DEGREES_TO_RADIANS,
+                                   ((y0 + y2) / 2) * SGD_DEGREES_TO_RADIANS,
+                                   0 );
     Point3D gbs_center = sgGeodToCart( center_geod );
+    cout << "gbs center = " << gbs_center << endl;
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
 
     // normals
@@ -264,6 +271,7 @@ int main( int argc, char **argv ) {
     string_list fan_materials; fan_materials.clear();
 
     obj.set_gbs_center( gbs_center );
+    cout << "gbs center = " << gbs_center << endl;
     obj.set_gbs_radius( gbs_radius );
     obj.set_wgs84_nodes( wgs84_nodes );
     obj.set_normals( normals );
@@ -281,13 +289,33 @@ int main( int argc, char **argv ) {
     // write the object
     string objpath = root + "/PhotoObj";
     string name = image;
-    SGBucket b( center_geod.x(), center_geod.y() );
+    SGBucket b( center_geod.x() * SGD_RADIANS_TO_DEGREES,
+                center_geod.y() * SGD_RADIANS_TO_DEGREES);
 
     bool result = obj.write_bin( objpath, name, b );
     if ( !result ) {
 	cout << "error writing file. :-(" << endl;
 	exit(-1);
     }
+
+    // write the index entry
+    write_index( objpath, b, name );
+
+    // write the 'hole' polygon
+    FGPolygon hole; hole.erase();
+    Point3D p;
+
+    p = Point3D( x0, y0, 0 ); hole.add_node( 0, p );
+    p = Point3D( x1, y1, 0 ); hole.add_node( 0, p );
+    p = Point3D( x2, y2, 0 ); hole.add_node( 0, p );
+    p = Point3D( x3, y3, 0 ); hole.add_node( 0, p );
+
+    // initialize persistant polygon counter
+    string counter_file = root + "/poly_counter";
+    poly_index_init( counter_file );
+
+    string holepath = root + "/PhotoArea";
+    split_polygon( holepath, HoleArea, hole );
 
     return 0;
 }
