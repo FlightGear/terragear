@@ -34,6 +34,8 @@ extern "C" {
 #include "triangle.h"
 
 
+void zero_triangulateio( struct triangulateio *in );
+void print_tri_data( struct triangulateio *out );
 void write_tri_data( struct triangulateio *out );
 
 

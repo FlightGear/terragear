@@ -26,6 +26,97 @@
 #include "tri_support.h"
 
 
+void zero_triangulateio( struct triangulateio *in ) {
+    in->pointlist = NULL;
+    in->pointattributelist = NULL;
+    in->pointmarkerlist = NULL;
+    in->numberofpoints = 0;
+    in->numberofpointattributes = 0;
+
+    in->trianglelist = NULL;
+    in->triangleattributelist = NULL;
+    in->trianglearealist = NULL; 
+    in->neighborlist = NULL;
+    in->numberoftriangles = 0;
+    in->numberofcorners = 0;
+    in->numberoftriangleattributes = 0;
+
+    in->segmentlist = NULL;
+    in->segmentmarkerlist = NULL;
+    in->numberofsegments = 0;
+
+    in->holelist = NULL;
+    in->numberofholes = 0;
+
+    in->regionlist = NULL;
+    in->numberofregions = 0;
+
+    in->edgelist = NULL;
+    in->edgemarkerlist = NULL;
+    in->normlist = NULL;
+    in->numberofedges = 0;
+}
+
+
+void print_tri_data( struct triangulateio *out ) {
+    int i, j;
+
+    printf( "NODES\n" );
+    printf( "%d 2 %d 0\n", 
+	    out->numberofpoints, out->numberofpointattributes);
+    for ( i = 0; i < out->numberofpoints; ++i ) {
+	printf( "%d %.13f %.13f %.2f\n", 
+		i, out->pointlist[2*i], out->pointlist[2*i + 1], 0.0);
+    }
+
+    printf( "TRIANGLES\n" );
+    printf( "%d %d 0\n", out->numberoftriangles, out->numberofcorners );
+    for ( i = 0; i < out->numberoftriangles; ++i ) {
+        printf( "%d ", i );
+        for ( j = 0; j < out->numberofcorners; ++j ) {
+	    printf( "%d ", out->trianglelist[i * out->numberofcorners + j] );
+        }
+        for ( j = 0; j < out->numberoftriangleattributes; ++j ) {
+	    printf( "%.13f ", 
+		    out->triangleattributelist[i 
+					      * out->numberoftriangleattributes
+					      + j]
+		    );
+        }
+	printf("\n");
+    }
+
+    printf( "SEGMENTS\n" );
+    printf( "0 2 1 0\n" );
+    printf( "%d 1\n", out->numberofsegments);
+    for ( i = 0; i < out->numberofsegments; ++i ) {
+	printf( "%d %d %d %d\n", 
+		i, out->segmentlist[2*i], out->segmentlist[2*i + 1],
+		out->segmentmarkerlist[i] );
+    }
+    printf( "HOLES\n" );
+    printf( "%d\n", out->numberofholes);
+    for (i = 0; i < out->numberofholes; ++i) {
+	printf( "%d %.13f %.13f\n", 
+		i, out->holelist[2*i], out->holelist[2*i + 1] );
+    }
+    printf( "REGIONS\n" );
+    printf( "%d\n", out->numberofregions );
+    for ( i = 0; i < out->numberofregions; ++i ) {
+	printf( "%d %.13f %.13f %.13f\n", 
+		i, out->regionlist[4*i], out->regionlist[4*i + 1],
+		out->regionlist[4*i + 2] );
+    }
+
+    printf(" EDGES\n" );
+    printf( "%d 1\n", out->numberofedges );
+    for ( i = 0; i < out->numberofedges; ++i ) {
+	printf( "%d %d %d %d\n", i, out->edgelist[2*i], out->edgelist[2*i + 1],
+		out->edgemarkerlist[i] );
+    }
+}
+
+
 void write_tri_data( struct triangulateio *out ) {
     int i, j;
     FILE *node, *ele, *fp;
@@ -34,7 +125,7 @@ void write_tri_data( struct triangulateio *out ) {
     fprintf(node, "%d 2 %d 0\n", 
 	    out->numberofpoints, out->numberofpointattributes);
     for (i = 0; i < out->numberofpoints; ++i) {
-	fprintf(node, "%d %.8f %.8f %.2f\n", 
+	fprintf(node, "%d %.13f %.13f %.2f\n", 
 		i, out->pointlist[2*i], out->pointlist[2*i + 1], 0.0);
     }
     fclose(node);
@@ -47,7 +138,7 @@ void write_tri_data( struct triangulateio *out ) {
 	    fprintf(ele, "%d ", out->trianglelist[i * out->numberofcorners + j]);
         }
         for (j = 0; j < out->numberoftriangleattributes; ++j) {
-	    fprintf(ele, "%.8f ", 
+	    fprintf(ele, "%.13f ", 
 		    out->triangleattributelist[i 
 					      * out->numberoftriangleattributes
 					      + j]
@@ -67,12 +158,12 @@ void write_tri_data( struct triangulateio *out ) {
     }
     fprintf(fp, "%d\n", out->numberofholes);
     for (i = 0; i < out->numberofholes; ++i) {
-	fprintf(fp, "%d %.8f %.8f\n", 
+	fprintf(fp, "%d %.13f %.13f\n", 
 		i, out->holelist[2*i], out->holelist[2*i + 1]);
     }
     fprintf(fp, "%d\n", out->numberofregions);
     for (i = 0; i < out->numberofregions; ++i) {
-	fprintf(fp, "%d %.8f %.8f %.8f\n", 
+	fprintf(fp, "%d %.13f %.13f %.13f\n", 
 		i, out->regionlist[4*i], out->regionlist[4*i + 1],
 		out->regionlist[4*i + 2]);
     }
