@@ -133,9 +133,9 @@ TGHgt::load( ) {
     }
 
     short int *var;
-    for ( int row = 0; row < size; ++row ) {
+    for ( int row = size - 1; row >= 0; --row ) {
         for ( int col = 0; col < size; ++col ) {
-            var = &data[row][col];
+            var = &data[col][row];
             if ( gzread ( fd, var, sizeof(short) ) != sizeof(short) ) {
                 return false;
             }

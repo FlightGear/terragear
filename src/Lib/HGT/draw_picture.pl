@@ -2,17 +2,22 @@
 
 use GD;
 
-$output = "picture.png";
+$input = shift( @ARGV );
+$output = shift( @ARGV );
+
+print " < $input > $output\n";
 
 # load data
-$width = <>; chomp($width);
-$height = <>; chomp($height);
+open( INPUT, "<$input" );
+$width = <INPUT>; chomp($width);
+$height = <INPUT>; chomp($height);
 $min = 9999;
 $max = -9999;
 
 for ( $i = 0; $i < $height; $i++ ) {
+    print "$i ";
     for ( $j = 0; $j < $width; $j++ ) {
-        $d = <>; chomp($d);
+        $d = <INPUT>; chomp($d);
         if ( $d < -9999 ) {
             $d = 0;
         }
@@ -22,9 +27,9 @@ for ( $i = 0; $i < $height; $i++ ) {
         if ( $d > $max ) {
             $max = $d;
         }
-        $data{ "$i:$j" } = $d;
     }
 }
+close(INPUT);
 print "min = $min  max = $max\n";
 
 $im = new GD::Image( $width, $height );
@@ -37,10 +42,14 @@ for ( $i = 0; $i < 255; $i++ ) {
 $red = $im->colorAllocate( 255, 10, 10 );
 
 # draw image
+open( INPUT, "<$input" );
+$width = <INPUT>; chomp($width);
+$height = <INPUT>; chomp($height);
 for ( $i = 0; $i < $height; $i++ ) {
     for ( $j = 0; $j < $width; $j++ ) {
-        if ( $data{ "$i:$j" } > 0 ) {
-            $level = 55 + int(200 * ( $data{ "$i:$j" } - $min ) / ( $max - $min ));
+        $d = <INPUT>; chomp($d);
+        if ( $d > 0 ) {
+            $level = 55 + int(200 * ( $d - $min ) / ( $max - $min ));
         } else {
             $level = 0;
         }
