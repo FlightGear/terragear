@@ -95,7 +95,7 @@ void gen_taxiway( const FGRunway& rwy_info,
 
     sp.set_poly( split_a );
     sp.set_material( material );
-    sp.set_flag( 1 );           // mark as a taxiway
+    sp.set_flag( "taxi" );           // mark as a taxiway
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
     *accum = polygon_union( runway_a, *accum );

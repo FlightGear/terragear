@@ -36,6 +36,7 @@
 #include <time.h>
 
 #include <list>
+#include <map>
 #include STL_STRING
 
 #include <plib/sg.h>			// plib include
@@ -168,8 +169,10 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 
 
 // fix node elevations.  Offset is added to the final elevation
-point_list calc_elevations( const string& root, const point_list& geod_nodes,
-			    double offset ) {
+static point_list calc_elevations( const string& root,
+                                   const point_list& geod_nodes,
+                                   double offset )
+{
     bool done = false;
     point_list result = geod_nodes;
     int i, j;
@@ -255,13 +258,13 @@ static void my_chomp( string& str ) {
 
 
 // build a runway
-void build_runway( const FGRunway& rwy_info,
-                   double alt_m,
-		   superpoly_list *rwy_polys,
-		   texparams_list *texparams,
-		   FGPolygon *accum,
-		   FGPolygon *apt_base,
-                   FGPolygon *apt_clearing )
+static void build_runway( const FGRunway& rwy_info,
+                          double alt_m,
+                          superpoly_list *rwy_polys,
+                          texparams_list *texparams,
+                          FGPolygon *accum,
+                          FGPolygon *apt_base,
+                          FGPolygon *apt_clearing )
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "surface flags = " << rwy_info.surface_flags);
     string surface_flag = rwy_info.surface_flags.substr(1, 1);
@@ -353,7 +356,8 @@ void build_runway( const FGRunway& rwy_info,
 
 
 // build 3d airport
-void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
+void build_airport( string airport_raw, float alt_m,
+                    string_list& runways_raw,
                     string_list& taxiways_raw, const string& root )
 {
     int i, j, k;
@@ -752,8 +756,8 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         FGPolygon tc;
-        if ( rwy_polys[i].get_flag() ) {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "no clip");
+        if ( rwy_polys[i].get_flag() == "taxi" ) {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "taxiway, no clip");
             tc = rwy_section_tex_coords( tri, texparams[i], false );
         } else {
             tc = rwy_section_tex_coords( tri, texparams[i], true );
@@ -906,7 +910,8 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     }
 
     // calculate node elevations
-    point_list geod_nodes = calc_elevations( root, nodes.get_node_list(), 0.0 );
+    point_list geod_nodes = calc_elevations( root, nodes.get_node_list(),
+                                             0.0 );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with calc_elevations()");
 
     // add base skirt (to hide potential cracks)
@@ -1003,6 +1008,14 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     }
 
     // add light points
+
+    superpoly_list tmp_light_list; tmp_light_list.clear();
+    typedef map < string, double, less<string> > elev_map_type;
+    typedef elev_map_type::const_iterator const_elev_map_iterator;
+    elev_map_type elevation_map;
+
+    // pass one, calculate raw elevations from DEM
+
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
         FGTriNodes light_nodes;
         light_nodes.clear();
@@ -1013,10 +1026,50 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
         }
 
         // calculate light node elevations
+
         point_list geod_light_nodes
             = calc_elevations( root, light_nodes.get_node_list(), 0.5 );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Done with (light) calc_elevations()");
+        FGPolygon p;
+        p.add_contour( geod_light_nodes, 0 );
+        FGSuperPoly s;
+        s.set_poly( p );
+        tmp_light_list.push_back( s );
 
+        string flag = rwy_lights[i].get_flag();
+        if ( flag != (string)"" ) {
+            double max = -9999;
+            const_elev_map_iterator it = elevation_map.find( flag );
+            if ( it != elevation_map.end() ) {
+                max = elevation_map[rwy_lights[i].get_flag()];
+            }
+            for ( j = 0; j < (int)geod_light_nodes.size(); ++j ) {
+                if ( max < geod_light_nodes[i].z() ) {
+                    max = geod_light_nodes[i].z();
+                }
+            }
+            elevation_map[rwy_lights[i].get_flag()] = max;
+            cout << "max = " << max << endl;
+        }
+    }
+
+    // pass two, for each light group check if we need to lift (based
+    // on flag) and do so, then output next structures.
+    for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
+        // tmp_light_list is a parallel structure to rwy_lights
+        point_list geod_light_nodes
+            = tmp_light_list[i].get_poly().get_contour(0);
+
+        string flag = rwy_lights[i].get_flag();
+        if ( flag != (string)"" ) {
+            const_elev_map_iterator it = elevation_map.find( flag );
+            if ( it != elevation_map.end() ) {
+                double force_elev = elevation_map[flag];
+                for ( j = 0; j < (int)geod_light_nodes.size(); ++j ) {
+                    geod_light_nodes[j].setz( force_elev );
+                }
+            }
+        }
+        
         // this is a little round about, but what we want to calculate the
         // light node elevations as ground + an offset so we do them
         // seperately, then we add them back into nodes to get the index

@@ -280,8 +280,6 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
 
     cout << "gen threshold " << rwy_info.rwy_no << endl;
 
-    Point3D normal;
-
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
     FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
@@ -314,7 +312,8 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
     cout << "length hdg = " << length_hdg
          << " left heading = " << left_hdg << endl;
 
-    normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
 
     // offset 5' downwind
     geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
@@ -324,27 +323,19 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
                         -5 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
 
-    // offset 5' upwind
-    geo_direct_wgs_84 ( alt_m, ref3.lat(), ref3.lon(), length_hdg, 
-                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref3 = Point3D( lon, lat, 0.0 );
-    geo_direct_wgs_84 ( alt_m, ref4.lat(), ref4.lon(), length_hdg, 
-                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref4 = Point3D( lon, lat, 0.0 );
-
-    // five lights each
+    // five lights for each side
     for ( int i = 0; i < 5; ++i ) {
         g_lights.push_back( ref1 );
-        g_normals.push_back( normal );
+        g_normals.push_back( normal1 );
     
         g_lights.push_back( ref2 );
-        g_normals.push_back( normal );
+        g_normals.push_back( normal1 );
 
-        r_lights.push_back( ref3 );
-        r_normals.push_back( normal );
+        r_lights.push_back( ref1 );
+        r_normals.push_back( normal2 );
     
-        r_lights.push_back( ref4 );
-        r_normals.push_back( normal );
+        r_lights.push_back( ref2 );
+        r_normals.push_back( normal2 );
 
         // offset 10' towards center
         geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), left_hdg, 
@@ -353,13 +344,6 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
         geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), left_hdg, 
                             10 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref2 = Point3D( lon, lat, 0.0 );
-        geo_direct_wgs_84 ( alt_m, ref3.lat(), ref3.lon(), left_hdg, 
-                            -10 * SG_FEET_TO_METER, &lat, &lon, &r );
-        ref3 = Point3D( lon, lat, 0.0 );
-        geo_direct_wgs_84 ( alt_m, ref4.lat(), ref4.lon(), left_hdg, 
-                            10 * SG_FEET_TO_METER, &lat, &lon, &r );
-        ref4 = Point3D( lon, lat, 0.0 );
-       
     }
 
     FGPolygon lights_poly; lights_poly.erase();
@@ -377,6 +361,10 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
         green.set_material( "RWY_GREEN_MEDIUM_LIGHTS" );
     } else if ( kind == "L" ) {
         green.set_material( "RWY_GREEN_LOW_LIGHTS" );
+    } else {
+        // this is a catch all in case there is an oddity in the input
+        // data
+        green.set_material( "RWY_GREEN_LIGHTS" );
     }
 
     lights_poly.erase();
@@ -393,6 +381,10 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
         red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
     } else if ( kind == "L" ) {
         red.set_material( "RWY_RED_LOW_LIGHTS" );
+    } else {
+        // this is a catch all in case there is an oddity in the input
+        // data
+        red.set_material( "RWY_RED_LIGHTS" );
     }
 
     superpoly_list result; result.clear();
@@ -609,6 +601,7 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     int i;
+    string flag;
 
     cout << "gen vasi " << rwy_info.rwy_no << endl;
 
@@ -631,9 +624,11 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
         ref = corner[0];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        flag = rwy_info.rwy_no + "-i";
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
+        flag = rwy_info.rwy_no;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -734,6 +729,8 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
     result.set_normals( normals_poly );
     result.set_material( "RWY_VASI_LIGHTS" );
 
+    result.set_flag( flag );
+
     return result;
 }
 
@@ -745,6 +742,7 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     int i;
+    string flag;
 
     cout << "gen papi " << rwy_info.rwy_no << endl;
 
@@ -767,9 +765,11 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
         ref = corner[0];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        flag = rwy_info.rwy_no + "-i";
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
+        flag = rwy_info.rwy_no;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -825,6 +825,8 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
     result.set_normals( normals_poly );
     result.set_material( "RWY_VASI_LIGHTS" );
 
+    result.set_flag( flag );
+
     return result;
 }
 
@@ -836,6 +838,7 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     int i;
+    string flag;
 
     cout << "gen reil " << rwy_info.rwy_no << endl;
 
@@ -859,10 +862,12 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
         ref2 = corner[1];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        flag = rwy_info.rwy_no + "-i";
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
         length_hdg = rwy_info.heading;
+        flag = rwy_info.rwy_no;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -905,6 +910,8 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
     result.set_normals( normals_poly );
     result.set_material( "RWY_REIL_LIGHTS" );
 
+    result.set_flag( flag );
+
     return result;
 }
 
@@ -922,10 +929,12 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     point_list r_normals; r_normals.clear();
     point_list s_normals; s_normals.clear();
     int i, j;
+    string flag;
 
     cout << "gen ALSF/SALS lights " << rwy_info.rwy_no << endl;
 
-    Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
 
     // Generate the threshold lights
 
@@ -941,37 +950,34 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 	corner.push_back( poly_corners.get_pt( 0, i ) );
     }
 
-    Point3D inc1, inc2;
-    Point3D pt1, pt2;
+    Point3D inc;
+    Point3D pt;
 
     if ( recip ) {
-        inc1 = (corner[0] - corner[1]) / divs;
-        inc2 = (corner[3] - corner[2]) / divs;
-        pt1 = corner[1];
-        pt2 = corner[2];
+        inc = (corner[0] - corner[1]) / divs;
+        pt = corner[1];
+        flag = rwy_info.rwy_no + "-i";
     } else {
-        inc1 = (corner[2] - corner[3]) / divs;
-        inc2 = (corner[1] - corner[0]) / divs;
-        pt1 = corner[3];
-        pt2 = corner[0];
+        inc = (corner[2] - corner[3]) / divs;
+        pt = corner[3];
+        flag = rwy_info.rwy_no;
     }
 
     double dist = rwy_info.length;
     double step = dist / divs;
 
-    g_lights.push_back( pt1 );
-    g_normals.push_back( normal );
-    r_lights.push_back( pt2 );
-    r_normals.push_back( normal );
+    g_lights.push_back( pt );
+    g_normals.push_back( normal1 );
+    r_lights.push_back( pt );
+    r_normals.push_back( normal2 );
     dist -= step;
 
     for ( i = 0; i < divs; ++i ) {
-	pt1 += inc1;
-	pt2 += inc2;
-        g_lights.push_back( pt1 );
-        g_normals.push_back( normal );
-        r_lights.push_back( pt2 );
-        r_normals.push_back( normal );
+	pt += inc;
+        g_lights.push_back( pt );
+        g_normals.push_back( normal1 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal2 );
         dist -= step;
     }
 
@@ -1012,37 +1018,37 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     }
 
     for ( i = 0; i < count; ++i ) {
-        pt1 = ref;
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = ref;
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
-        pt1 = ref;
+        pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
                             -100 * SG_FEET_TO_METER, &lat, &lon, &r );
@@ -1059,47 +1065,47 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
                             -200 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
-        pt1 = ref;
+        pt = ref;
  
         // left 3 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             15 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
 
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
 
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
 
-        pt1 = ref;
+        pt = ref;
 
         // right 3 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -15 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
     } else if ( kind == "2" ) {
         // Generate red side row lights
 
@@ -1109,47 +1115,47 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
                                 -100 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
 
-            pt1 = ref;
+            pt = ref;
  
             // left 3 side lights
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 36 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
 
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
 
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
 
-            pt1 = ref;
+            pt = ref;
 
             // right 3 side lights
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 -36 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
     
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
     
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
         }
     }
 
@@ -1163,38 +1169,38 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
                             -100 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
     
-        pt1 = ref;
+        pt = ref;
 
         // left 5 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             75 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
 
         for ( j = 0; j < 4; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
         }
 
-        pt1 = ref;
+        pt = ref;
 
         // rioght 5 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -75 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
 
         for ( j = 0; j < 4; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            r_lights.push_back( pt );
+            r_normals.push_back( normal1 );
         }
     } else if ( kind == "2" ) {
         // Generate -500 extra horizontal row of lights
@@ -1206,38 +1212,38 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
                             -500 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
     
-        pt1 = ref;
+        pt = ref;
 
         // left 4 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             11.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
         for ( j = 0; j < 3; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            w_lights.push_back( pt1 );
-            w_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            w_lights.push_back( pt );
+            w_normals.push_back( normal1 );
         }
 
-        pt1 = ref;
+        pt = ref;
 
         // right 4 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -11.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
         for ( j = 0; j < 3; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                                 -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            w_lights.push_back( pt1 );
-            w_normals.push_back( normal );
+            pt = Point3D( lon, lat, 0.0 );
+            w_lights.push_back( pt );
+            w_normals.push_back( normal1 );
         }
     }
 
@@ -1251,37 +1257,37 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         ref = Point3D( lon, lat, 0.0 );
         count = 30;
 
-        pt1 = ref;
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = ref;
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
 
-        pt1 = ref;
+        pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal1 );
     }
 
     // Generate -1000' extra horizontal row of lights
@@ -1293,38 +1299,38 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
                         -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
     
-    pt1 = ref;
+    pt = ref;
  
     // left 8 side lights
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                         15 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt1 = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt1 );
-    w_normals.push_back( normal );
+    pt = Point3D( lon, lat, 0.0 );
+    w_lights.push_back( pt );
+    w_normals.push_back( normal1 );
 
     for ( j = 0; j < 7; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
-    pt1 = ref;
+    pt = ref;
  
     // right 8 side lights
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                         -15 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt1 = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt1 );
-    w_normals.push_back( normal );
+    pt = Point3D( lon, lat, 0.0 );
+    w_lights.push_back( pt );
+    w_normals.push_back( normal1 );
 
     for ( j = 0; j < 7; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
     ref = ref_save;
@@ -1339,7 +1345,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
         for ( i = 0; i < 21; ++i ) {
             s_lights.push_back( ref );
-            s_normals.push_back( normal );
+            s_normals.push_back( normal1 );
 
             // offset 100' downwind
             geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -1356,7 +1362,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
         for ( i = 0; i < 3; ++i ) {
             s_lights.push_back( ref );
-            s_normals.push_back( normal );
+            s_normals.push_back( normal1 );
              
             // offset 100' downwind
             geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -1374,6 +1380,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
+    green.set_flag( flag );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -1384,6 +1391,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
     red.set_material( "RWY_RED_LIGHTS" );
+    red.set_flag( flag );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -1394,6 +1402,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     white.set_material( "RWY_WHITE_LIGHTS" );
+    white.set_flag( flag );
 
     superpoly_list result; result.clear();
 
@@ -1411,6 +1420,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         sequenced.set_poly( lights_poly );
         sequenced.set_normals( normals_poly );
         sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
+        sequenced.set_flag( flag );
 
         result.push_back( sequenced );
     }
@@ -1426,6 +1436,7 @@ static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     int i;
+    string flag;
 
     cout << "gen odals " << rwy_info.rwy_no << endl;
 
@@ -1451,10 +1462,12 @@ static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
         ref2 = corner[1];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        flag = rwy_info.rwy_no + "-i";
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
         length_hdg = rwy_info.heading;
+        flag = rwy_info.rwy_no;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -1506,6 +1519,8 @@ static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
     result.set_normals( normals_poly );
     result.set_material( "RWY_ODALS_LIGHTS" );
 
+    result.set_flag( flag );
+
     return result;
 }
 
@@ -1524,10 +1539,12 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     point_list r_normals; r_normals.clear();
     point_list s_normals; s_normals.clear();
     int i, j;
+    string flag;
 
     cout << "gen SSALx lights " << rwy_info.rwy_no << endl;
 
-    Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
 
     // Generate the threshold lights
 
@@ -1543,37 +1560,34 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
 	corner.push_back( poly_corners.get_pt( 0, i ) );
     }
 
-    Point3D inc1, inc2;
-    Point3D pt1, pt2;
+    Point3D inc;
+    Point3D pt;
 
     if ( recip ) {
-        inc1 = (corner[0] - corner[1]) / divs;
-        inc2 = (corner[3] - corner[2]) / divs;
-        pt1 = corner[1];
-        pt2 = corner[2];
+        inc = (corner[0] - corner[1]) / divs;
+        pt = corner[1];
+        flag = rwy_info.rwy_no + "-i";
     } else {
-        inc1 = (corner[2] - corner[3]) / divs;
-        inc2 = (corner[1] - corner[0]) / divs;
-        pt1 = corner[3];
-        pt2 = corner[0];
+        inc = (corner[2] - corner[3]) / divs;
+        pt = corner[3];
+        flag = rwy_info.rwy_no;
     }
 
     double dist = rwy_info.length;
     double step = dist / divs;
 
-    g_lights.push_back( pt1 );
-    g_normals.push_back( normal );
-    r_lights.push_back( pt2 );
-    r_normals.push_back( normal );
+    g_lights.push_back( pt );
+    g_normals.push_back( normal1 );
+    r_lights.push_back( pt );
+    r_normals.push_back( normal2 );
     dist -= step;
 
     for ( i = 0; i < divs; ++i ) {
-	pt1 += inc1;
-	pt2 += inc2;
-        g_lights.push_back( pt1 );
-        g_normals.push_back( normal );
-        r_lights.push_back( pt2 );
-        r_normals.push_back( normal );
+	pt += inc;
+        g_lights.push_back( pt );
+        g_normals.push_back( normal1 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal2 );
         dist -= step;
     }
 
@@ -1604,37 +1618,37 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
                             -200 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
-        pt1 = ref;
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = ref;
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
-        pt1 = ref;
+        pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
     // Generate -1000' extra horizontal row of lights
@@ -1646,38 +1660,38 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
                         -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
     
-    pt1 = ref;
+    pt = ref;
  
     // left 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                         15 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt1 = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt1 );
-    w_normals.push_back( normal );
+    pt = Point3D( lon, lat, 0.0 );
+    w_lights.push_back( pt );
+    w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
-    pt1 = ref;
+    pt = ref;
  
     // right 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                         -15 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt1 = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt1 );
-    w_normals.push_back( normal );
+    pt = Point3D( lon, lat, 0.0 );
+    w_lights.push_back( pt );
+    w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
     if ( kind == "R" ) {
@@ -1692,7 +1706,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
 
         for ( i = 0; i < 8; ++i ) {
             s_lights.push_back( ref );
-            s_normals.push_back( normal );
+            s_normals.push_back( normal1 );
 
             // offset 200' downwind
             geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -1710,7 +1724,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
 
         for ( i = 0; i < 3; ++i ) {
             s_lights.push_back( ref );
-            s_normals.push_back( normal );
+            s_normals.push_back( normal1 );
              
             // offset 200' downwind
             geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -1728,6 +1742,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
+    green.set_flag( flag );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -1738,6 +1753,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
     red.set_material( "RWY_RED_LIGHTS" );
+    red.set_flag( flag );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -1748,6 +1764,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     white.set_material( "RWY_WHITE_LIGHTS" );
+    white.set_flag( flag );
 
     superpoly_list result; result.clear();
 
@@ -1765,6 +1782,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
         sequenced.set_poly( lights_poly );
         sequenced.set_normals( normals_poly );
         sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
+        sequenced.set_flag( flag );
 
         result.push_back( sequenced );
     }
@@ -1787,10 +1805,12 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     point_list r_normals; r_normals.clear();
     point_list s_normals; s_normals.clear();
     int i, j;
+    string flag;
 
     cout << "gen SSALx lights " << rwy_info.rwy_no << endl;
 
-    Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
 
     // Generate the threshold lights
 
@@ -1806,37 +1826,34 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
 	corner.push_back( poly_corners.get_pt( 0, i ) );
     }
 
-    Point3D inc1, inc2;
-    Point3D pt1, pt2;
+    Point3D inc;
+    Point3D pt;
 
     if ( recip ) {
-        inc1 = (corner[0] - corner[1]) / divs;
-        inc2 = (corner[3] - corner[2]) / divs;
-        pt1 = corner[1];
-        pt2 = corner[2];
+        inc = (corner[0] - corner[1]) / divs;
+        pt = corner[1];
+        flag = rwy_info.rwy_no + "-i";
     } else {
-        inc1 = (corner[2] - corner[3]) / divs;
-        inc2 = (corner[1] - corner[0]) / divs;
-        pt1 = corner[3];
-        pt2 = corner[0];
+        inc = (corner[2] - corner[3]) / divs;
+        pt = corner[3];
+        flag = rwy_info.rwy_no;
     }
 
     double dist = rwy_info.length;
     double step = dist / divs;
 
-    g_lights.push_back( pt1 );
-    g_normals.push_back( normal );
-    r_lights.push_back( pt2 );
-    r_normals.push_back( normal );
+    g_lights.push_back( pt );
+    g_normals.push_back( normal1 );
+    r_lights.push_back( pt );
+    r_normals.push_back( normal2 );
     dist -= step;
 
     for ( i = 0; i < divs; ++i ) {
-	pt1 += inc1;
-	pt2 += inc2;
-        g_lights.push_back( pt1 );
-        g_normals.push_back( normal );
-        r_lights.push_back( pt2 );
-        r_normals.push_back( normal );
+	pt += inc;
+        g_lights.push_back( pt );
+        g_normals.push_back( normal1 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal2 );
         dist -= step;
     }
 
@@ -1867,37 +1884,37 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
                             -200 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
-        pt1 = ref;
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = ref;
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
 
-        pt1 = ref;
+        pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
     // Generate -1000' extra horizontal row of lights
@@ -1909,38 +1926,38 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
                         -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
     
-    pt1 = ref;
+    pt = ref;
  
     // left 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                         23 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt1 = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt1 );
-    w_normals.push_back( normal );
+    pt = Point3D( lon, lat, 0.0 );
+    w_lights.push_back( pt );
+    w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
-    pt1 = ref;
+    pt = ref;
  
     // right 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                         -23 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt1 = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt1 );
-    w_normals.push_back( normal );
+    pt = Point3D( lon, lat, 0.0 );
+    w_lights.push_back( pt );
+    w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
                             -2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt1 );
-        w_normals.push_back( normal );
+        pt = Point3D( lon, lat, 0.0 );
+        w_lights.push_back( pt );
+        w_normals.push_back( normal1 );
     }
 
     if ( kind == "R" ) {
@@ -1955,7 +1972,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
 
         for ( i = 0; i < 8; ++i ) {
             s_lights.push_back( ref );
-            s_normals.push_back( normal );
+            s_normals.push_back( normal1 );
 
             // offset 200' downwind
             geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -1973,7 +1990,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
 
         for ( i = 0; i < 3; ++i ) {
             s_lights.push_back( ref );
-            s_normals.push_back( normal );
+            s_normals.push_back( normal1 );
              
             // offset 200' downwind
             geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -1991,6 +2008,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
+    green.set_flag( flag );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -2001,6 +2019,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
     red.set_material( "RWY_RED_LIGHTS" );
+    red.set_flag( flag );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -2011,6 +2030,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     white.set_material( "RWY_WHITE_LIGHTS" );
+    white.set_flag( flag );
 
     superpoly_list result; result.clear();
 
@@ -2028,6 +2048,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
         sequenced.set_poly( lights_poly );
         sequenced.set_normals( normals_poly );
         sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
+        sequenced.set_flag( flag );
 
         result.push_back( sequenced );
     }
@@ -2321,7 +2342,7 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
         }
     }
 
-     // Many aproach lighting systems define the threshold lighting
+    // Many aproach lighting systems define the threshold lighting
     // needed, but for those that don't (i.e. REIL, ODALS, or Edge
     // lights defined but no approach lights.)
     // Make threshold lighting
