@@ -65,11 +65,10 @@ FGTriangle::build( const point_list& corner_list,
     // listing the points explicitely
 
     // first the corners since these are important
-    const_point_list_iterator f_current, f_last;
-    f_current = corner_list.begin();
-    f_last = corner_list.end();
-    for ( ; f_current != f_last; ++f_current ) {
-	index = in_nodes.unique_add( *f_current );
+    for ( i = 0; i < (int)corner_list.size(); ++i ) {
+        Point3D p = corner_list[i];
+        p.setz( -9999.0 );
+	index = in_nodes.unique_add( p );
     }
 
     // next process the polygons
@@ -195,10 +194,8 @@ FGTriangle::build( const point_list& corner_list,
     }
 
     // last, do the rest of the height nodes
-    f_current = fit_list.begin();
-    f_last = fit_list.end();
-    for ( ; f_current != f_last; ++f_current ) {
-	index = in_nodes.course_add( *f_current );
+    for ( i = 0; i < (int)fit_list.size(); ++i ) {
+	index = in_nodes.course_add( fit_list[i] );
     }
 
     for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
@@ -525,7 +522,6 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     for ( i = 0; i < out.numberofpoints; ++i ) {
 	Point3D p( out.pointlist[2*i], out.pointlist[2*i + 1], 
 		   out.pointattributelist[i] );
-	// cout << "point = " << p << endl;
 	out_nodes.simple_add( p );
     }
 
