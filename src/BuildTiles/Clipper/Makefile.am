@@ -14,6 +14,7 @@ testclipper_LDADD = \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/landcover/liblandcover.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
+	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgdebug -lsgmisc -lsgxml -lgenpolyclip -lz 
 
 INCLUDES = -I$(top_srcdir)/src/Lib -I$(top_srcdir)/src/BuildTiles
