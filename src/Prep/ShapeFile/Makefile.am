@@ -6,12 +6,14 @@ noaa_decode_SOURCES = noaa-decode.cxx
 
 shape_decode_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
+	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/shapelib/libshape.a \
 	-lsgdebug -lsgbucket -lsgmisc -lsgxml -lgenpolyclip -lz
 
 noaa_decode_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
+	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/shapelib/libshape.a \
 	-lsgdebug -lsgbucket -lsgmisc -lsgxml -lgenpolyclip -lz

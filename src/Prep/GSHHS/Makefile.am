@@ -7,6 +7,7 @@ gshhs_SOURCES = \
 
 gshhs_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
+	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgdebug -lsgbucket -lsgmisc -lsgxml -lgenpolyclip -lz 
 
@@ -15,6 +16,7 @@ debug_SOURCES = \
 
 debug_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
+	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgdebug -lsgbucket -lsgmisc -lsgxml -lgenpolyclip -lz
 

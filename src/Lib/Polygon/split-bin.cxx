@@ -40,7 +40,8 @@
 
 
 static void clip_and_write_poly( string root, long int p_index, AreaType area, 
-				 SGBucket b, const TGPolygon& shape ) {
+				 SGBucket b, const TGPolygon& shape,
+                                 bool preserve3d ) {
     Point3D c, min, max, p;
     c = Point3D( b.get_center_lon(), b.get_center_lat(), 0 );
     double span = sg_bucket_span( c.y() );
@@ -112,6 +113,11 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 	    throw sg_exception("unknown area type in clip_and_write_poly()!");
 	
 	FILE *rfp= fopen( polyfile.c_str(), "w" );
+        if ( preserve3d ) {
+            fprintf( rfp, "#3D\n" );
+        } else {
+            fprintf( rfp, "#2D\n" );
+        }
 	fprintf( rfp, "%s\n", poly_type.c_str() );
 
 	fprintf( rfp, "%d\n", result.contours() );
@@ -120,7 +126,11 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 	    fprintf( rfp, "%d\n", result.get_hole_flag(i) );
 	    for ( int j = 0; j < result.contour_size(i); ++j ) {
 		p = result.get_pt( i, j );
-		fprintf( rfp, "%.15f  %.15f\n", p.x(), p.y() );
+                if ( preserve3d ) {
+                    fprintf( rfp, "%.15f  %.15f %.15f\n", p.x(), p.y(), p.z() );
+                } else {
+                    fprintf( rfp, "%.15f  %.15f\n", p.x(), p.y() );
+                }
 	    }
 	}
 	fclose( rfp );
@@ -172,7 +182,7 @@ void tgSplitPolygon( const string& path, AreaType area,
 
     if ( b_min == b_max ) {
 	// shape entirely contained in a single bucket, write and bail
-	clip_and_write_poly( path, index, area, b_min, shape );
+	clip_and_write_poly( path, index, area, b_min, shape, preserve3d );
 	return;
     }
 
@@ -194,7 +204,8 @@ void tgSplitPolygon( const string& path, AreaType area,
 	for ( j = 0; j <= 1; ++j ) {
 	    for ( i = 0; i <= dx; ++i ) {
 	        b_cur = sgBucketOffset(min.x(), min.y(), i, j);
-	        clip_and_write_poly( path, index, area, b_cur, shape );
+	        clip_and_write_poly( path, index, area, b_cur, shape,
+                                     preserve3d );
 	    }
 	}
 	return;
