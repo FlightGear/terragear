@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 	int dx, dy, i, j;
 
 	sgBucketDiff(b_min, b_max, &dx, &dy);
-	cout << "HGT file spans tile boundaries" << endl;
+	cout << "HGT file spans tile boundaries (ok)" << endl;
 	cout << "  dx = " << dx << "  dy = " << dy << endl;
 
 	if ( (dx > 20) || (dy > 20) ) {
