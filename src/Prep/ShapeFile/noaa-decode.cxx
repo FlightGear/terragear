@@ -417,7 +417,7 @@ int main( int argc, char **argv ) {
 	    // holes are preserved
 
 	    area = get_area_type( force_area_type );
-	    split_polygon(work_dir, area, shape);
+	    tgSplitPolygon(work_dir, area, shape, false);
 	} else if ( area == OceanArea ) {
 	    // interior of polygon is ocean, holes are islands
 
@@ -425,7 +425,7 @@ int main( int argc, char **argv ) {
 
 	    // Ocean data now comes from GSHHS so we want to ignore
 	    // all other ocean data
-	    // split_polygon(work_dir, area, shape);
+	    // tgSplitPolygon(work_dir, area, shape, false);
 	} else if ( area == VoidArea ) {
 	    // interior is ????
 
@@ -437,7 +437,7 @@ int main( int argc, char **argv ) {
 		// exit(-1);
 	    }
 
-	    // split_polygon(work_dir, area, shape);
+	    // tgSplitPolygon(work_dir, area, shape, false);
 	} else if ( area == NullArea ) {
 	    // interior is ????
 
@@ -449,9 +449,9 @@ int main( int argc, char **argv ) {
 		// exit(-1);
 	    }
 
-	    // split_polygon(work_dir, area, shape);
+	    // tgSplitPolygon(work_dir, area, shape, false);
 	} else {
-	    split_polygon(work_dir, area, shape);
+	    tgSplitPolygon(work_dir, area, shape, false);
 	}
     }
 

@@ -174,8 +174,8 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
 }
 
 
-// Determine node elevations based on provide TGAptSurface.  Offset is
-// added to the final elevation
+// Determine node elevations of a point_list based on the provided
+// TGAptSurface.  Offset is added to the final elevation
 static point_list calc_elevations( TGAptSurface &surf,
                                    const point_list& geod_nodes,
                                    double offset )
@@ -190,91 +190,22 @@ static point_list calc_elevations( TGAptSurface &surf,
 }
 
 
-#if 0
-// fix node elevations.  Offset is added to the final elevation
-static point_list calc_elevations( const string& root,
-                                   const point_list& geod_nodes,
-                                   double offset )
+// Determine node elevations of each node of a TGPolygon based on the
+// provided TGAptSurface.  Offset is added to the final elevation
+static TGPolygon calc_elevations( TGAptSurface &surf,
+                                  const TGPolygon& poly,
+                                  double offset )
 {
-    string_list elev_src;
-    elev_src.clear();
-    elev_src.push_back( "SRTM-1" );
-    elev_src.push_back( "SRTM-3" );
-    elev_src.push_back( "DEM-3" );
-    elev_src.push_back( "DEM-30" );
+    TGPolygon result;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+        point_list contour = poly.get_contour( i );
+        point_list elevated = calc_elevations( surf, contour, offset );
 
-    bool done = false;
-    point_list result = geod_nodes;
-    int i;
-    unsigned int j;
-    TGArray array;
-
-    // just bail if no work to do
-    if ( ! result.size() ) {
-        return result;
-    }
-
-    // set all elevations to -9999
-    for ( i = 0; i < (int)result.size(); ++i ) {
-	result[i].setz( -9999.0 );
-    }
-
-    // cout << "result.size() = " << result.size() << endl;
-
-    while ( !done ) {
-	// find first node with -9999 elevation
-	i = 0;
-        while ( (i < (int)result.size()) && (result[i].z() > -9000) ) {
-	    ++i;
-	}
-
-	if ( i < (int)result.size() ) {
-	    // cout << "First empty elevation = " << i << endl;
-	    SGBucket b( result[i].x(), result[i].y() );
-	    string base = b.gen_base_path();
-
-	    // try the various elevation sources
-            bool found_file = false;
-            unsigned int k = 0;
-            while ( !found_file && k < elev_src.size() ) {
-                string array_path = root + "/" + elev_src[k] + "/" + base 
-                    + "/" + b.gen_index_str() + ".arr";
-                if ( array.open(array_path) ) {
-                    found_file = true;
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "array_path = " << array_path);
-                }                    
-                k++;
-            }
-            
-            // this will fill in a zero structure if no array data
-            // found/opened
-	    array.parse( b );
-
-	    // update all the non-updated elevations that are inside
-	    // this array file
-	    double elev;
-	    done = true;
-	    for ( j = 0; j < result.size(); ++j ) {
-		if ( result[j].z() < -9000 ) {
-		    done = false;
-		    elev = array.interpolate_altitude( result[j].x() * 3600.0,
-						   result[j].y() * 3600.0 );
-		    if ( elev > -9000 ) {
-			result[j].setz( elev + offset );
-		        SG_LOG( SG_GENERAL, SG_INFO,
-		                "interpolating for " << result[j] );
-		    }
-		}
-	    }
-	    array.close();
-	} else {
-	    done = true;
-	}
+        result.add_contour( elevated, poly.get_hole_flag(i) );
     }
 
     return result;
 }
-#endif
 
 
 // strip trailing spaces
@@ -986,10 +917,10 @@ void build_airport( string airport_raw, float alt_m,
     // Extend the area a bit so we don't have wierd things on the edges
     double dlon = max_deg.lon() - min_deg.lon();
     double dlat = max_deg.lat() - min_deg.lat();
-    min_deg.setlon( min_deg.lon() - 0.25 * dlon );
-    max_deg.setlon( max_deg.lon() + 0.25 * dlon );
-    min_deg.setlat( min_deg.lat() - 0.25 * dlat );
-    max_deg.setlat( max_deg.lat() + 0.25 * dlat );
+    min_deg.setlon( min_deg.lon() - 0.1 * dlon );
+    max_deg.setlon( max_deg.lon() + 0.1 * dlon );
+    min_deg.setlat( min_deg.lat() - 0.1 * dlat );
+    max_deg.setlat( max_deg.lat() + 0.1 * dlat );
 
     TGAptSurface apt_surf( root, min_deg, max_deg );
     cout << "Surface created" << endl;
@@ -997,7 +928,9 @@ void build_airport( string airport_raw, float alt_m,
     // calculate node elevations
     point_list geod_nodes = calc_elevations( apt_surf, nodes.get_node_list(),
                                              0.0 );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with calc_elevations()");
+    divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
     // add base skirt (to hide potential cracks)
     //
@@ -1137,6 +1070,8 @@ void build_airport( string airport_raw, float alt_m,
         }
     }
 
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with lighting calc_elevations()");
+
     // pass two, for each light group check if we need to lift (based
     // on flag) and do so, then output next structures.
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
@@ -1244,6 +1179,6 @@ void build_airport( string airport_raw, float alt_m,
     string holepath = root + "/AirportArea";
     // long int poly_index = poly_index_next();
     // write_boundary( holepath, b, hull, poly_index );
-    split_polygon( holepath, HoleArea, divided_base );
-    split_polygon( holepath, AirportArea, apt_clearing );
+    tgSplitPolygon( holepath, HoleArea, divided_base, true );
+    tgSplitPolygon( holepath, AirportArea, apt_clearing, false );
 }

@@ -164,7 +164,7 @@ static void
 processPoints (const E00 &data, const tg::Rectangle &bounds,
 	       AreaType areaType, const string &workDir, int width)
 {
-  double x, y, az;
+  // double x, y, az;
 
   int nPoints = data.nPoints();
   cout << "Processing " << nPoints << " points" << endl;
@@ -179,7 +179,7 @@ processPoints (const E00 &data, const tg::Rectangle &bounds,
     }
 
     tg::makePolygon(p, width, shape);
-    split_polygon(workDir, areaType, shape);
+    tgSplitPolygon(workDir, areaType, shape, false);
   }
 }
 
@@ -214,7 +214,7 @@ processLines (const E00 &data, const tg::Rectangle &bounds,
 				// present.
     if (aat_list.size() > 0) {
       bool status = false;
-      for (int j = 0; j < aat_list.size(); j++) {
+      for (unsigned int j = 0; j < aat_list.size(); j++) {
 	if (checkAttribute(data, i, aat_list[j])) {
 	  status = true;
 	  break;
@@ -242,7 +242,7 @@ processLines (const E00 &data, const tg::Rectangle &bounds,
     cout << "  Minimum angle: "
 	 << (shape.minangle_contour(0) * SGD_RADIANS_TO_DEGREES) << endl;
     
-    split_polygon(workDir, areaType, shape);
+    tgSplitPolygon(workDir, areaType, shape, false);
   }
   cout << "Done lines" << endl;
 }
@@ -266,7 +266,7 @@ processPolygons (const E00 &data, const tg::Rectangle &bounds,
 				// provided.
     if (pat_list.size() > 0) {
       bool status = false;
-      for (int j = 0; j < pat_list.size(); j++) {
+      for (unsigned int j = 0; j < pat_list.size(); j++) {
 	if (checkAttribute(data, i, pat_list[j])) {
 	  status = true;
 	  break;
@@ -309,7 +309,7 @@ processPolygons (const E00 &data, const tg::Rectangle &bounds,
 					  0.0));
       }
     }
-    split_polygon(workDir, areaType, shape);
+    tgSplitPolygon(workDir, areaType, shape, false);
   }
 }
 
@@ -530,14 +530,14 @@ main (int argc, const char **argv)
     cout << "Ignoring polygon coverage" << endl;
   if (useLines && aat_list.size() > 0) {
     cout << "Lines must match at least one of the following:" << endl;
-    for (int i = 0; i < aat_list.size(); i++) {
+    for (unsigned int i = 0; i < aat_list.size(); i++) {
       cout << aat_list[i].file << ' ' << aat_list[i].item << ' '
 	   << aat_list[i].value << endl;
     }
   }
   if (usePolygons && pat_list.size() > 0) {
     cout << "Polygons must match at least one of the following:" << endl;
-    for (int i = 0; i < pat_list.size(); i++) {
+    for (unsigned int i = 0; i < pat_list.size(); i++) {
       cout << pat_list[i].file << ' ' << pat_list[i].item << ' '
 	   << pat_list[i].value << endl;
     }

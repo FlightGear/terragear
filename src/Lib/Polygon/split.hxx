@@ -30,7 +30,8 @@
 
 
 // process shape (write polygon to all intersecting tiles)
-void split_polygon(const string& path, AreaType area, const TGPolygon& shape);
+void tgSplitPolygon( const string& path, AreaType area,
+                     const TGPolygon& shape, bool preserve3d );
 
 
 #endif // _SPLIT_HXX

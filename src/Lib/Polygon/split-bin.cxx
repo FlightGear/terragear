@@ -129,7 +129,9 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 
 
 // process shape (write polygon to all intersecting tiles)
-void split_polygon(const string& path, AreaType area, const TGPolygon& shape) {
+void tgSplitPolygon( const string& path, AreaType area,
+                     const TGPolygon& shape, bool preserve3d )
+{
     Point3D min, max, p;
     // point2d min, max;
     long int index;
@@ -245,7 +247,7 @@ void split_polygon(const string& path, AreaType area, const TGPolygon& shape) {
 	    bottom_clip = horizontal_clip( shape, clip_line, Below );
 	}
 
-	split_polygon(path, area, bottom_clip);
+	tgSplitPolygon( path, area, bottom_clip, preserve3d );
     }
 
     {
@@ -274,6 +276,6 @@ void split_polygon(const string& path, AreaType area, const TGPolygon& shape) {
 	    top_clip = horizontal_clip( shape, clip_line, Above );
 	}
 
-	split_polygon(path, area, top_clip);
+	tgSplitPolygon( path, area, top_clip, preserve3d );
     }
 }

@@ -417,7 +417,7 @@ main (int argc, const char **argv)
   cout << "Material type: " << get_area_name(material_type) << endl;
   if (width > -1)
       cout << "Point and line width: " << width << endl;
-  for (int x = 0; x < attributes.size(); x++) {
+  for (unsigned int x = 0; x < attributes.size(); x++) {
     cout << "Attribute " << attributes[x].name
 	 << (attributes[x].state ? " = " : " != ")
 	 << attributes[x].value << endl;
@@ -519,7 +519,7 @@ main (int argc, const char **argv)
 	if (shape.total_size() >= 3) {
 	  cout << "Polygon with " << shape.total_size() << " points in "
 	     << shape.contours() << " contour(s)" << endl;
-	  split_polygon(work_dir, material_type, shape);
+	  tgSplitPolygon(work_dir, material_type, shape, false);
 	}
       }
     }
@@ -532,7 +532,7 @@ main (int argc, const char **argv)
       if (mask.total_size() >= 3) {
 	cout << "Inverse polygon with " << mask.total_size() << " points in "
 	     << mask.contours() << " contour(s)" << endl;
-	split_polygon(work_dir, material_type, mask);
+	tgSplitPolygon(work_dir, material_type, mask, false);
       } else {
 	cout << "Inverse polygon is empty" << endl;
       }

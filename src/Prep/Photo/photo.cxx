@@ -326,7 +326,7 @@ int main( int argc, char **argv ) {
     poly_index_init( counter_file );
 
     string holepath = root + "/PhotoArea";
-    split_polygon( holepath, HoleArea, hole );
+    tgSplitPolygon( holepath, HoleArea, hole, false );
 
     return 0;
 }

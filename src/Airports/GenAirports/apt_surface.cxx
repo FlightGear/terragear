@@ -150,8 +150,8 @@ TGAptSurface::TGAptSurface( const string& path,
 
     cout << "Area size = " << x_m << " x " << y_m << " (m)" << endl;
 
-    int xdivs = (int)(x_m / 1100.0) + 1;
-    int ydivs = (int)(y_m / 1100.0) + 1;
+    int xdivs = (int)(x_m / 1200.0) + 1;
+    int ydivs = (int)(y_m / 1200.0) + 1;
 
     if ( xdivs < 3 ) { xdivs = 3; }
     if ( ydivs < 3 ) { ydivs = 3; }

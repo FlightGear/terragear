@@ -65,6 +65,8 @@ bool FGClipper::init() {
 
 // Load a polygon definition file.
 bool FGClipper::load_polys(const string& path) {
+    bool poly3d = false;
+    string first_line;
     string poly_name;
     AreaType poly_type = DefaultArea;
     int contours, count, i, j;
@@ -83,9 +85,20 @@ bool FGClipper::load_polys(const string& path) {
     TGPolygon poly;
 
     Point3D p;
-    in >> skipcomment;
+    // (this could break things, why is it here) in >> skipcomment;
     while ( !in.eof() ) {
-	in >> poly_name;
+        in >> first_line;
+        if ( first_line == "#2D" ) {
+            poly3d = false;
+            in >> poly_name;
+        } else if ( first_line == "#3D" ) {
+            poly3d = true;
+            in >> poly_name;
+        } else {
+            // support old format (default to 2d)
+            poly3d = false;
+            poly_name = first_line;
+        }
 	cout << "poly name = " << poly_name << endl;
 	poly_type = get_area_type( poly_name );
 	cout << "poly type (int) = " << (int)poly_type << endl;

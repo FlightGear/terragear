@@ -65,7 +65,7 @@ add_point (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(p, node->getIntValue("width", 500), poly);
   poly = polygon_int(poly, bounds_poly);
-  split_polygon(".", material, poly);
+  tgSplitPolygon(".", material, poly, false);
 }
 
 static void
@@ -86,7 +86,7 @@ add_line (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(line, node->getIntValue("width", 10), poly);
   poly = polygon_int(poly, bounds_poly);
-  split_polygon(".", material, poly);
+  tgSplitPolygon(".", material, poly, false);
 }
 
 static void
@@ -108,7 +108,7 @@ add_polygon (SGPropertyNode_ptr node)
     poly.set_hole_flag(i, contour_node->getBoolValue("hole", false));
   }
   poly = polygon_int(poly, bounds_poly);
-  split_polygon(".", material, poly);
+  tgSplitPolygon(".", material, poly, false);
 }
 
 void

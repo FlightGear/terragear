@@ -83,13 +83,13 @@ void split_and_shift_chunk( const string& path, AreaType area,
     upper_shape.shift( -360, 0 );
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing lower shape" );
-    split_polygon(path, area, lower_shape);
+    tgSplitPolygon(path, area, lower_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing center shape" );
-    split_polygon(path, area, center_shape);
+    tgSplitPolygon(path, area, center_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing upper shape" );
-    split_polygon(path, area, upper_shape);
+    tgSplitPolygon(path, area, upper_shape, false);
 }
 
 
