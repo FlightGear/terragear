@@ -6,13 +6,14 @@ You can get the library from:
 
     http://www.cs.man.ac.uk/aig/staff/alan/software/
 
-Unfortunately, because of some of the wording in the GPC licensing
-terms we are unable to include the GPC library with the Flight Gear
-distribution.
+Unfortunately, because of wording conflicts between the GPC license
+and the GPL licence used by TerraGear we are unable to include the GPC
+library with the Flight Gear distribution.
 
 This library comes as a single source file and header with no build
-directions.  So, here are some directions contributed by Riley Rainey
-<riley.rainey@websimulations.com> with additional notes by Curt Olson:
+directions or Makefile.  So, here are some directions contributed by
+Riley Rainey <riley.rainey@websimulations.com> with additional notes
+by Curt Olson:
 
 
 1. Download the GPC library source code from URL:
@@ -60,16 +61,16 @@ directions.  So, here are some directions contributed by Riley Rainey
 
 CFLAGS = -O -g
 
-libgpc.a: gpc.o
+libgenpolyclip.a: gpc.o
 	rm -f $@
 	ar cr $@ $<
 	ranlib $@
 
 clean:
-	rm -f libgpc.a *.o core *~
+	rm -f libgenpolyclip.a *.o core *~
 
-install: libgpc.a
+install: libgenpolyclip.a
 	-mkdir -p /usr/local/lib
 	-mkdir -p /usr/local/include
-	install libgpc.a /usr/local/lib/libgpc.a
+	install libgenpolyclip.a /usr/local/lib/libgenpolyclip.a
 	install gpc.h /usr/local/include/gpc.h
