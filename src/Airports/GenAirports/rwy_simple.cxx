@@ -28,6 +28,7 @@
 
 #include "poly_extra.hxx"
 #include "rwy_common.hxx"
+#include "texparams.hxx"
 #include "rwy_nonprec.hxx"
 
 
@@ -81,14 +82,10 @@ void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
     *accum = polygon_union( runway_a, *accum );
-    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( (-rwy_info.width / 2.0) * SG_FEET_TO_METER,
-			       0.0,
-			       0 ),
-		      Point3D( (rwy_info.width  / 2.0) * SG_FEET_TO_METER,
-			       (rwy_info.length / 2.0) * SG_FEET_TO_METER,
-			       0.0 ),
-		      rwy_info.heading );
+    tp = FGTexParams( runway_a.get_pt(0,0),
+		      rwy_info.width * SG_FEET_TO_METER,
+		      rwy_info.length * SG_FEET_TO_METER / 2.0,
+                      rwy_info.heading );
     texparams->push_back( tp );
 
     FGPolygon clipped_b = polygon_diff( runway_b, *accum );
@@ -99,14 +96,10 @@ void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
     *accum = polygon_union( runway_b, *accum );
-    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( (-rwy_info.width / 2.0) * SG_FEET_TO_METER,
-			       0.0,
-			       0 ),
-		      Point3D( (rwy_info.width  / 2.0) * SG_FEET_TO_METER,
-			       (rwy_info.length / 2.0) * SG_FEET_TO_METER,
-			       0.0 ),
-		      rwy_info.heading + 180.0 );
+    tp = FGTexParams( runway_b.get_pt(0,0),
+		      rwy_info.width * SG_FEET_TO_METER,
+		      rwy_info.length * SG_FEET_TO_METER / 2.0,
+                      rwy_info.heading + 180.0 );
     texparams->push_back( tp );
 
 #if 0
