@@ -99,7 +99,10 @@ readItem (istream &input, string &line, int width, int * line_pos)
 	(*line_pos)++;
 	i++;
       }
-      *line_pos = 0;
+      if (*line_pos == 80)
+	*line_pos = 0;
+      else
+	input.putback(c);
     } else {
       line += c;
     }
@@ -551,6 +554,8 @@ E00::readIFO ()
     IFO::Entry entry;
     ifo.fileName = line;
 
+//     cout << "Reading IFO file " << line << endl;
+
 				// 'XX' may be absent
     *_input >> ifo.isArcInfo;
     if (ifo.isArcInfo == "XX") {
@@ -589,6 +594,7 @@ E00::readIFO ()
 				// Read the data records
     ifo.entries.resize(0);
     for (int i = 0; i < ifo.numDataRecords; i++) {
+//       cout << " Reading entry " << i << endl;
       entry.resize(0);
       line_pos = 0;
       skipNewlines(*_input, &line_pos);
@@ -641,7 +647,7 @@ E00::readIFO ()
 	       << " assuming integer" << endl;
 	  exit(1);
 	}
-// 	cout << "  Read item '" << line << '\'' << endl;
+// 	cout << "  Read item " << j << ": '" << line << '\'' << endl;
 	entry.push_back(line);
       }
       ifo.entries.push_back(entry);
