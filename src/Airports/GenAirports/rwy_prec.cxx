@@ -94,8 +94,9 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     // belong.
     double length = rwy_info.length / 2.0 + 2.0;
     if ( length < 3075 ) {
-        SG_LOG(SG_GENERAL, SG_ALERT,
-	       "This runway is not long enough for precision markings!");
+        SG_LOG( SG_GENERAL, SG_ALERT,
+	        "Runway " << rwy_info.rwy_no << " is not long enough ("
+                << rwy_info.length << ") for precision markings!");
     }
 
     double start_pct = 0;
