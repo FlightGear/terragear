@@ -749,10 +749,16 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
     Point3D p2 = out_pts[ t.get_n2() ];
     Point3D p3 = out_pts[ t.get_n3() ];
     cout << "  " << p1 << endl << "  " << p2 << endl << "  " << p3 << endl;
+
+#if 0
+    // old
     Point3D m1 = ( p1 + p2 ) / 2;
     Point3D m2 = ( p1 + p3 ) / 2;
-
     Point3D center = ( m1 + m2 ) / 2;
+#else
+    // new
+    Point3D center = ( p1 + p2 + p3 ) / 3;
+#endif
 
     return center;
 
