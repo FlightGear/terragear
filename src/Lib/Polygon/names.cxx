@@ -79,6 +79,7 @@ inline static void init ()
   set_area("Canal", CanalArea);
   set_area("Glacier", GlacierArea);
   set_area("Urban", UrbanArea);
+  set_area("Town", TownArea);
   set_area("BuiltUpCover", BuiltUpCover);
   set_area("DryCropPastureCover", DryCropPastureCover);
   set_area("IrrCropPastureCover", IrrCropPastureCover);

@@ -38,20 +38,21 @@ SG_USING_STD(string);
 enum AreaType {
     SomeSortOfArea = 0,
     HoleArea,			// Leave area completely empty
+    FreewayArea,
+    RoadArea,
+    RailroadArea,
     PondArea,
     LakeArea,
     DryLakeArea,
     IntLakeArea,
     ReservoirArea,
     IntReservoirArea,
-    FreewayArea,
-    RoadArea,
-    RailroadArea,
     StreamArea,
     CanalArea,
     GlacierArea,
     OceanArea,
     UrbanArea,
+    TownArea,
 
     // USGS Land Covers
     // These are low-priority, since known polygons should always win.
