@@ -42,10 +42,12 @@ Point3D gen_runway_light_vector( const FGRunway& rwy_info ) {
     }
     Point3D end1 = (corner[0] + corner[1]) / 2.0;
     Point3D end2 = (corner[2] + corner[3]) / 2.0;
-    Point3D cart1 = sgGeodToCart( end1 );
-    Point3D cart2 = sgGeodToCart( end2 );
+    Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
+    Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
+    cout << "cart1 = " << cart1 << " cart2 = " << cart2 << endl;
 
     Point3D rwy_vec = cart2 - cart1;
+    cout << "rwy_vec = " << rwy_vec << endl;
 
     // FIXME
     // need to angle up (i.e. 3 degrees)
