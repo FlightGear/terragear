@@ -88,6 +88,15 @@ void makePolygon (const Line &line, int width, FGPolygon &polygon);
 
 
 /**
+ * Make a 2D bounding rectangle for a polygon.
+ *
+ * @param polygon The polygon to make the rectangle for.
+ * @return The bounding rectangle.
+ */
+Rectangle makeBounds (const FGPolygon &polygon);
+
+
+/**
  * Parse a chunk string (like "w080n40") into a rectangle.
  *
  * @param s The string.

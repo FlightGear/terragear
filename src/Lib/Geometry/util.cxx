@@ -146,6 +146,32 @@ makePolygon (const Line &line, int width, FGPolygon &polygon)
 
 
 Rectangle
+makeBounds (const FGPolygon &polygon)
+{
+    double min_x, min_y, max_x, max_y;
+    for (int i = 0; i < polygon.contours(); i++) {
+        for (int j = 0; j < polygon.contour_size(i); j++) {
+            Point3D p = polygon.get_pt(i, j);
+            if (i == 0 && j == 0) {
+                min_x = max_x = p.x();
+                min_y = max_y = p.y();
+            } else {
+                if (min_x > p.x())
+                    min_x = p.x();
+                if (max_x < p.x())
+                    max_x = p.x();
+                if (min_y > p.y())
+                    min_y = p.y();
+                if (max_y < p.y())
+                    max_y = p.y();
+            }
+        }
+    }
+    return Rectangle(Point3D(min_x, min_y, 0), Point3D(max_x, max_y, 0));
+}
+
+
+Rectangle
 parseChunk (const string &s)
 {
   Rectangle bounds;
