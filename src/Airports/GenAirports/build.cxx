@@ -1040,15 +1040,15 @@ void build_airport( string airport_raw, float alt_m,
             double max = -9999;
             const_elev_map_iterator it = elevation_map.find( flag );
             if ( it != elevation_map.end() ) {
-                max = elevation_map[rwy_lights[i].get_flag()];
+                max = elevation_map[flag];
             }
             for ( j = 0; j < (int)geod_light_nodes.size(); ++j ) {
-                if ( max < geod_light_nodes[i].z() ) {
-                    max = geod_light_nodes[i].z();
+                if ( geod_light_nodes[j].z() > max ) {
+                    max = geod_light_nodes[j].z();
                 }
             }
-            elevation_map[rwy_lights[i].get_flag()] = max;
-            cout << "max = " << max << endl;
+            elevation_map[flag] = max;
+            SG_LOG( SG_GENERAL, SG_INFO, flag << " max = " << max );
         }
     }
 
