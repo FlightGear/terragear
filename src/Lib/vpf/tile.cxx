@@ -34,7 +34,7 @@ VpfTile::~VpfTile ()
   freeTable(_fbr);
 }
 
-const char *
+string
 VpfTile::getTileSubdir () const
 {
   const VpfTable &aft = getAFT();
@@ -46,7 +46,7 @@ VpfTile::getTileSubdir () const
     else
       subdir[i] = tolower(subdir[i]);
   }
-  return subdir.c_str();
+  return subdir;
 }
 
 const VpfRectangle
