@@ -34,6 +34,7 @@
 #include <Polygon/names.hxx>
 
 #include <Osgb36/osgbtc.hxx>
+#include <Osgb36/uk.hxx>
 
 #include "genobj.hxx"
 
@@ -155,16 +156,6 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
     return tex;
 }
 #endif
-
-
-// This needs to get fixed!
-static int isInUK( Point3D p ) {
-    cout << "Exited in isInUK() because the function was not defined!!!"
-         << endl;
-    cout << "TerraGear/src/Construct/GenOutput/genobj.cxx: line # 164?"
-         << endl;
-    exit(-1);
-}
 
 
 // build the necessary output structures based on the triangulation
