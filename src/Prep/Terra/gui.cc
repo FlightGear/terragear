@@ -1,11 +1,14 @@
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 
 #include <GL/glut.h>
 #include "glHacks.h"
 
 #include "terra.h"
 #include "gui.h"
+
+using std::cout;
+using std::endl;
 
 
 int mesh_view;

@@ -1,9 +1,12 @@
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 #include <assert.h>
 
+#include "Geom.h"
 #include "Subdivision.h"
 
+using std::cerr;
+using std::endl;
 
 
 Edge *Subdivision::makeEdge(Vec2& org, Vec2& dest)

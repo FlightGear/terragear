@@ -173,7 +173,8 @@ inline ostream& operator<<(ostream& out, const Vec3& v)
 
 inline istream& operator>>(istream& in, Vec3& v)
 {
-    return in >> "[" >> v[0] >> v[1] >> v[2] >> "]";
+    char c;
+    return in >> c >> v[0] >> v[1] >> v[2] >> c;
 }
 #endif
 

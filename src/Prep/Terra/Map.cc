@@ -3,6 +3,9 @@
 #include "Geom.h"
 #include "Map.h"
 
+using std::cerr;
+using std::endl;
+
 void Map::findLimits()
 {
     min = HUGE;

@@ -2,7 +2,9 @@
 #define MAP_INCLUDED
 
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
+
+using std::istream;
 
 #include "Geom.h"
 

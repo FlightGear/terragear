@@ -1,9 +1,12 @@
 #include <math.h>
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 
 #include "Geom.h"
 #include "Mask.h"
+
+using std::cerr;
+using std::endl;
 
 
 RealMask *readMask(istream& in)

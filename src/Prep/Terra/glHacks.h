@@ -7,6 +7,9 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
+using std::ostream;
+using std::endl;
+
 
 /*************************************************************************
  *

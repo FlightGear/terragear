@@ -1,8 +1,13 @@
 #include <unistd.h>
 #include <stdlib.h>
-#include <fstream.h>
-#include <string.h>
+#include <fstream>
+#include <string>
 #include "terra.h"
+
+using std::ifstream;
+using std::cin;
+using std::cerr;
+using std::endl;
 
 GreedySubdivision *mesh;
 Map *DEM;

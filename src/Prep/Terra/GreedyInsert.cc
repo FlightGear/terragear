@@ -1,8 +1,13 @@
-#include <iostream.h>
+#include <assert.h>
+#include <iostream>
 #include "GreedyInsert.h"
 
 #include "Mask.h"
 extern ImportMask *MASK;
+
+using std::cerr;
+using std::endl;
+
 
 void TrackedTriangle::update(Subdivision& s)
 {

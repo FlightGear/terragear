@@ -1,6 +1,10 @@
 #ifndef MASK_INCLUDED // -*- C++ -*-
 #define MASK_INCLUDED
 
+#include <istream>
+
+using std::istream;
+
 class ImportMask
 {
 

@@ -1,5 +1,8 @@
 #include "terra.h"
 
+using std::cerr;
+using std::endl;
+
 void scripted_preinsertion(istream& script)
 {
     char op[4];

@@ -3,6 +3,9 @@
 
 #include <iostream>
 
+using std::ostream;
+using std::istream;
+
 class Vec2 {
 protected:
     real elt[2];
@@ -165,7 +168,8 @@ inline ostream& operator<<(ostream& out, const Vec2& v)
 
 inline istream& operator>>(istream& in, Vec2& v)
 {
-    return in >> "[" >> v[0] >> v[1] >> "]";
+    char c;
+    return in >> c >> v[0] >> v[1] >> c;
 }
 #endif
 

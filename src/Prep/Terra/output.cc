@@ -1,5 +1,13 @@
 #include "terra.h"
-#include <fstream.h>
+#include <fstream>
+
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::istream;
+using std::ostream;
+using std::ofstream;
+using std::streampos;
 
 
 void generate_output(char *filename, FileFormat format)

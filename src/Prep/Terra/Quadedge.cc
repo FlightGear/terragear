@@ -1,7 +1,10 @@
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 
 #include "Quadedge.h"
+
+using std::cerr;
+using std::endl;
 
 Edge::Edge(const Edge&)
 {

@@ -1,6 +1,9 @@
 #include <assert.h>
-#include <iostream.h>
+#include <iostream>
 #include "Heap.h"
+
+using std::cerr;
+using std::endl;
 
 
 void Heap::swap(int i,int j)
