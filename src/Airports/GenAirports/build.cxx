@@ -47,7 +47,6 @@
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/texcoord.hxx>
 
-#include <Array/array.hxx>
 #include <Geometry/poly_support.hxx>
 #include <Geometry/trinodes.hxx>
 #include <Output/output.hxx>

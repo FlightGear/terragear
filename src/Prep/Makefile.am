@@ -1,4 +1,5 @@
 SUBDIRS = \
+	ArrayFit \
 	DemChop \
 	DemInfo \
 	DemRaw2ascii \

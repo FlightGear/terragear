@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
             cout << " start = " << startx << "," << starty << endl;
             for ( int jj = 0; jj < array.get_rows(); jj++ ) {
                 for ( int ii = 0; ii < array.get_cols(); ii++ ) {
-                    data[startx+ii][starty+jj] = array.get_point(ii, jj);
+                    data[startx+ii][starty+jj] = array.get_array_elev(ii, jj);
                 }
             }
         }

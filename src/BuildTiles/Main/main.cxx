@@ -164,7 +164,8 @@ static int actual_load_polys( const string& dir,
             ext = file.substr(pos + 1);
             cout << file << "  " << f_index << "  '" << ext << "'" << endl;
             full_path = dir + "/" + file;
-            if ( (ext == "arr") || (ext == "arr.gz") ) {
+            if ( (ext == "arr") || (ext == "arr.gz") || 
+                 (ext == "fit") || (ext == "fit.gz")) {
                 // skip
             } else if (ext == "osgb36") {
                 cout << "Loading osgb36 poly definition file\n";
@@ -198,7 +199,8 @@ static int actual_load_polys( const string& dir,
             ext = file.substr(pos + 1);
             cout << file << "  " << f_index << "  '" << ext << "'" << endl;
             full_path = dir + "/" + file;
-            if ( (ext == "arr") || (ext == "arr.gz") || (ext == "ind") ) {
+            if ( (ext == "arr") || (ext == "arr.gz") ||
+                 (ext == "fit") || (ext == "fit.gz") || (ext == "ind") ) {
                 // skip
             } else if (ext == "osgb36") {
                 cout << "Loading osgb36 poly definition file\n";
@@ -419,7 +421,7 @@ static bool load_array( TGConstruct& c, TGArray& array) {
 
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
 	string array_path = load_dirs[i] + "/" + base
-	    + "/" + c.get_bucket().gen_index_str() + ".arr";
+	    + "/" + c.get_bucket().gen_index_str();
 	cout << "array_path = " << array_path << endl;
 
 	if ( array.open(array_path) ) {
@@ -443,8 +445,8 @@ static void first_triangulate( TGConstruct& c, const TGArray& array,
     // first we need to consolidate the points of the Array fit list and
     // all the polygons into a more "Triangle" friendly format
 
-    point_list corner_list = array.get_corner_node_list();
-    point_list fit_list = array.get_fit_node_list();
+    point_list corner_list = array.get_corner_list();
+    point_list fit_list = array.get_fitted_list();
     TGPolyList gpc_polys = c.get_clipped_polys();
 
     cout << "ready to build node list and polygons" << endl;

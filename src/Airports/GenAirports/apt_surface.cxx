@@ -85,7 +85,7 @@ static void calc_elevations( const string &root, Matrix_Point3Df &Pts ) {
             bool found_file = false;
             while ( !found_file && j < (int)elev_src.size() ) {
                 string array_path = root + "/" + elev_src[j] + "/" + base 
-                    + "/" + b.gen_index_str() + ".arr";
+                    + "/" + b.gen_index_str();
                 if ( array.open(array_path) ) {
                     found_file = true;
                     cout << "Using array_path = " << array_path << endl;
