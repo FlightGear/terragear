@@ -162,3 +162,36 @@ Other considerations:
 
     - If you prep new terrain data, you should probably rerun the airport
       generation step.
+
+
+Processing VMAP0 data
+=====================
+
+Most of the FlightGear terrain features come from the VMAP0 data set
+available from:
+
+    http://geoengine.nima.mil/
+
+There is a script in src/Prep/TGVPF/ called process.sh which will
+generate all the VPF data for all 4 CD's.  Look at the script and
+understand what it's doing.  I don't run it exactly as is because it
+takes too long to run everything at once and if something bombs in the
+middle, you generally have to start from the beginning just to be on
+the safe side and avoid duplications and other potential weirdness.
+
+I usually run each CD individual and copy the data to a separate area
+when done.  Then I reassemble all the VPF data in the end before
+running the final tile builder.
+
+
+Processing Radio Tower data
+===========================
+
+I found some very detailed, very complete, very current radio tower
+data from the FCC.  This even includes cell phone towers and
+individual hobbiest towers.  However it only has USA coverage:
+
+    http://wireless.fcc.gov/cgi-bin/wtb-datadump.pl
+
+I am planning on making a prep tool for this data so we can populate
+at least the USA with real radio towers at their proper elevations.
