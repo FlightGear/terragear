@@ -176,7 +176,7 @@ int
 TGDem::read_a_record() {
     int i, inum;
     double dnum;
-    string name, token;
+    string name, token, buf;
     char c;
 
     // get the name field (144 characters)
@@ -267,7 +267,11 @@ TGDem::read_a_record() {
     // Counterclockwise angle from the primary axis of ground
     // planimetric referenced to the primary axis of the DEM local
     // reference system.
-    token = next_token();
+
+    // eat and discard 24 characters (we don't use this value)
+    for ( i = 0; i < 24; i++ ) {
+	in->get(c);
+    }
 
     // Accuracy code; 0 indicates that a record of accuracy does not
     // exist and that no record type C will follow.
@@ -277,14 +281,33 @@ TGDem::read_a_record() {
 
     // I will eventually have to do something with this for data at
     // higher latitudes */
-    token = next_token();
-    cout << "    accuracy & spacial resolution string = " << token << endl;
-    i = token.length();
-    cout << "    length = " << i << "\n";
 
-    inum = atoi( token.substr( 0, i - 36 ).c_str() );
-    row_step = atof( token.substr( i - 24, 12 ).c_str() );
-    col_step = atof( token.substr( i - 36, 12 ).c_str() );
+    // get the accuracy field (6 characters)
+    name.erase();
+    for ( i = 0; i < 6; i++ ) {
+	in->get(c);
+	name += c;
+    }
+    inum = atoi( name.c_str() );
+
+    // get the spacial resolution (3*12 characters)
+    name.erase();
+    for ( i = 0; i < 12; i++ ) {
+	in->get(c);
+	name += c;
+    }
+    col_step = atof( name.c_str() );
+    name.erase();
+    for ( i = 0; i < 12; i++ ) {
+	in->get(c);
+	name += c;
+    }
+    row_step = atof( name.c_str() );
+    name.erase();
+    for ( i = 0; i < 12; i++ ) {
+	in->get(c);
+	name += c;
+    }
     cout << "    Accuracy code = " << inum << "\n";
     cout << "    column step = " << col_step << 
 	"  row step = " << row_step << "\n";
@@ -295,6 +318,12 @@ TGDem::read_a_record() {
     // number of profiles
     dem_num_profiles = cols = next_int();
     cout << "    Expecting " << dem_num_profiles << " profiles\n";
+
+    // eat characters to the end of the A record which we [hopefully]
+    // know is guaranteed to be 160 characters away.
+    for ( i = 0; i < 160; i++ ) {
+	in->get(c);
+    }
 
     return 1;
 }
