@@ -70,6 +70,20 @@ SG_USING_STD(vector);
 vector<string> load_dirs;
 
 
+static const double cover_size = 1.0 / 120.0;
+static const double half_cover_size = cover_size * 0.5;
+
+// If we don't offset land use squares by some amount, then we can get
+// land use square boundaries coinciding with tile boundaries.
+//
+// This can foul up our edge matching scheme because a subsequently
+// generated adjacent tile might be forced to have edge nodes not
+// found in the first tile and not on the shared edge.  This can lead
+// to gaps.  If we put skirts around everything that might hide the
+// problem.
+static const double quarter_cover_size = cover_size * 0.25;
+ 
+
 // Translate USGS land cover values into TerraGear area types.
 static AreaType translateUSGSCover (int usgs_value)
 {
@@ -267,32 +281,81 @@ static AreaType get_area_type (const LandCover &cover,
 }
 
 
+// Come up with a "rough" metric for the roughness of the terrain
+// coverted by a polygon
+static double measure_roughness( const TGArray &array, TGPolygon &poly ) {
+    int i;
+    unsigned int j;
+
+    // find the elevation range
+    double max_z = -9999.0;
+    double min_z = 9999.0;
+
+    for ( i = 0; i < poly.contours(); ++i ) {
+        point_list points = poly.get_contour( i );
+        for ( j = 0; j < points.size(); ++j ) {
+            double z;
+            z = array.altitude_from_grid( points[j].x() * 3600.0, 
+                                          points[j].y() * 3600.0 );
+            if ( z < -9000 ) {
+                z = array.closest_nonvoid_elev( points[j].x() * 3600.0, 
+                                                points[j].y() * 3600.0 );
+            }
+            // cout << "elevation = " << z << endl;
+            if ( z < min_z ) {
+                min_z = z;
+            }
+            if ( z > max_z ) {
+                max_z = z;
+            }
+        }
+    }
+
+    double diff = max_z - min_z;
+
+    // 50m difference in polygon elevation range yields a roughness
+    // metric of 1.0.  Less than 1.0 is relatively flat.  More than
+    // 1.0 is relatively rough.
+
+    cout << "roughness = " << diff / 50.0 << endl;
+
+    return diff / 50.0;
+}
+
+
 // make the area specified area, look up the land cover type, and add
 // it to polys
-static void make_area( const LandCover &cover, TGPolygon *polys,
+static void make_area( const LandCover &cover, const TGArray &array,
+                       TGPolygon *polys,
 		       double x1, double y1, double x2, double y2,
 		       double half_dx, double half_dy )
 {
-    AreaType area = get_area_type(cover, x1 + half_dx, y1 + half_dy,
-				  x2 - x1, y2 - y1);
+    const double fudge = 0.0001;  // (0.0001 degrees =~ 10 meters)
+
+    AreaType area = get_area_type( cover,
+                                   x1 + half_dx, y1 + half_dy,
+                                   x2 - x1, y2 - y1 );
     if (area != DefaultArea) {
 	// Create a square polygon and merge it into the list.
 	TGPolygon poly;
 	poly.erase();
-	poly.add_node(0, Point3D(x1, y1, 0.0));
-	poly.add_node(0, Point3D(x1, y2, 0.0));
-	poly.add_node(0, Point3D(x2, y2, 0.0));
-	poly.add_node(0, Point3D(x2, y1, 0.0));
-	add_to_polys(polys[area], poly);
+	poly.add_node(0, Point3D(x1 - fudge, y1 - fudge, 0.0));
+	poly.add_node(0, Point3D(x1 - fudge, y2 + fudge, 0.0));
+	poly.add_node(0, Point3D(x2 + fudge, y2 + fudge, 0.0));
+	poly.add_node(0, Point3D(x2 + fudge, y1 - fudge, 0.0));
+
+        if ( measure_roughness( array, poly ) < 1.0 ) {
+            add_to_polys(polys[area], poly);
+        }
     }
 }
 
 
 // Generate polygons from land-cover raster.  Horizontally- or
 // vertically-adjacent polygons will be merged automatically.
-static int actual_load_landcover ( TGConstruct & c,
-				   TGClipper &clipper ) {
-
+static int actual_load_landcover ( TGConstruct &c, const TGArray &array,
+				   TGClipper &clipper )
+{
     int count = 0;
 
     try {
@@ -301,52 +364,48 @@ static int actual_load_landcover ( TGConstruct & c,
         TGPolygon polys[TG_MAX_AREA_TYPES];
         TGPolygon poly;		// working polygon
 
-        double dx = 1.0 / 120.0;
-        double dy = dx;
-
-        double half_dx = dx * 0.5;
-        double half_dy = half_dx;
-
-        double quarter_dx = dx * 0.25;
-        double quarter_dy = quarter_dx;
-
-        // Get the top corner of the tile
+        // Get the lower left (SW) corner of the tile
         double base_lon = c.get_bucket().get_center_lon()
             - 0.5 * c.get_bucket().get_width()
-            - quarter_dx;
+            - quarter_cover_size;
         double base_lat = c.get_bucket().get_center_lat()
             - 0.5 * c.get_bucket().get_height()
-            - quarter_dy;
+            - quarter_cover_size;
 
-        cout << "DPM: tile at " << base_lon << ',' << base_lat << endl;
+        cout << "raster land cover: tile at "
+             << base_lon << ',' << base_lat << endl;
     
-        double max_lon = c.get_bucket().get_center_lon() +
-            (0.5 * c.get_bucket().get_width());
-        double max_lat = c.get_bucket().get_center_lat() +
-            (0.5 * c.get_bucket().get_height());
+        double max_lon = c.get_bucket().get_center_lon()
+            + 0.5 * c.get_bucket().get_width();
+        double max_lat = c.get_bucket().get_center_lat()
+            + 0.5 * c.get_bucket().get_height();
 
-        // Figure out how many units wide and high this tile is; each unit
-        // is 30 arc seconds.
-        // int x_span = int(120 * bucket_span(base_lat)); // arcsecs of longitude
-        // int y_span = int(120 * FG_BUCKET_SPAN); // arcsecs of latitude
-        
+        cout << "raster land cover: extends to "
+             << max_lon << ',' << max_lat << endl;
+
+        // cout << "raster land cover: width = " << c.get_bucket().get_width()
+        //      << " height = " << c.get_bucket().get_height() << endl;
+
+        // cout << "cover_size = " << cover_size << endl;
+
         double x1 = base_lon;
         double y1 = base_lat;
-        double x2 = x1 + dx;
-        double y2 = y1 + dy;
+        double x2 = x1 + cover_size;
+        double y2 = y1 + cover_size;
 
         while ( x1 < max_lon ) {
             while ( y1 < max_lat ) {
-                make_area( cover, polys, x1, y1, x2, y2, half_dx, half_dy );
+                make_area( cover, array, polys,
+                           x1, y1, x2, y2, half_cover_size, half_cover_size );
                 
                 y1 = y2;
-                y2 += dy;
+                y2 += cover_size;
             }
 
             x1 = x2;
-            x2 += dx;
+            x2 += cover_size;
             y1 = base_lat;
-            y2 = y1 + dy;
+            y2 = y1 + cover_size;
         }
 
         // Now that we're finished looking up land cover, we have a list
@@ -370,7 +429,7 @@ static int actual_load_landcover ( TGConstruct & c,
 
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
-static int load_polys( TGConstruct& c ) {
+static int load_polys( TGConstruct& c, const TGArray &array ) {
     TGClipper clipper;
     int i;
 
@@ -389,15 +448,10 @@ static int load_polys( TGConstruct& c ) {
 	cout << "  loaded " << count << " total polys" << endl;
     }
 
-    // now we are trying an idea of taking all unassigned land mass
-    // polygons (i.e. default cover type) and assigning them to the
-    // nearest cover type
-#if 0
     // Load the land use polygons if the --cover option was specified
     if ( c.get_cover().size() > 0 ) {
-	count += actual_load_landcover (c, clipper);
+	count += actual_load_landcover (c, array, clipper);
     }
-#endif
 
     point2d min, max;
     min.x = c.get_bucket().get_center_lon() - 0.5 * c.get_bucket().get_width();
@@ -420,7 +474,6 @@ static int load_polys( TGConstruct& c ) {
 // Load elevation data from an Array file, a regular grid of elevation
 // data) and return list of fitted nodes.
 static bool load_array( TGConstruct& c, TGArray& array) {
-    point_list result;
     string base = c.get_bucket().gen_base_path();
     int i;
 
@@ -617,20 +670,26 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
     cout << "  Total Nodes = " << geod_nodes.size() << endl;
     cout << "  Total triangles = " << tri_elements.size() << endl;
     for ( unsigned int i = 0; i < tri_elements.size(); ++i ) {
-	const double dx = 1.0 / 120.0;
-	const double dy = 1.0 / 120.0;
         TGTriEle t = tri_elements[i];
         if ( t.get_attribute() == DefaultArea ) {
             Point3D p1 = geod_nodes[t.get_n1()];
             Point3D p2 = geod_nodes[t.get_n2()];
             Point3D p3 = geod_nodes[t.get_n3()];
 
-            AreaType a1 = get_area_type( c.get_cover(), p1.x(), p1.y(),
-                                         dx, dy );
-            AreaType a2 = get_area_type( c.get_cover(), p2.x(), p2.y(),
-                                         dx, dy );
-            AreaType a3 = get_area_type( c.get_cover(), p3.x(), p3.y(),
-                                         dx, dy );
+            // offset by -quarter_cover_size because that is what we
+            // do for the coverage squares
+            AreaType a1 = get_area_type( c.get_cover(),
+                                         p1.x() - quarter_cover_size,
+                                         p1.y() - quarter_cover_size,
+                                         cover_size, cover_size );
+            AreaType a2 = get_area_type( c.get_cover(),
+                                         p2.x() - quarter_cover_size,
+                                         p2.y() - quarter_cover_size,
+                                         cover_size, cover_size );
+            AreaType a3 = get_area_type( c.get_cover(),
+                                         p3.x() - quarter_cover_size,
+                                         p3.y() - quarter_cover_size,
+                                         cover_size, cover_size );
 
             // update the original triangle element attribute
             AreaType new_area;
@@ -648,8 +707,9 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
                 Point3D average = ( p1 + p2 + p3 ) / 3.0;
                 cout << "    average triangle center = " << average;
                 new_area = get_area_type( c.get_cover(), 
-                                          average.x(), average.y(),
-                                          dx, dy );
+                                          average.x() - quarter_cover_size,
+                                          average.y() - quarter_cover_size,
+                                          cover_size, cover_size );
             }
               
             cout << "  new attrib = " << get_area_name( new_area ) << endl;
@@ -926,20 +986,16 @@ static void do_custom_objects( const TGConstruct& c ) {
 static void construct_tile( TGConstruct& c ) {
     cout << "Construct tile, bucket = " << c.get_bucket() << endl;
 
-    // fit with ever increasing error tolerance until we produce <=
-    // 80% of max nodes.  We should really have the sim end handle
-    // arbitrarily complex tiles.
+    // load grid of elevation data (Array)
+    TGArray array;
+    load_array( c, array );
 
     // load and clip 2d polygon data
-    if ( load_polys( c ) == 0 ) {
+    if ( load_polys( c, array ) == 0 ) {
 	// don't build the tile if there is no 2d data ... it *must*
 	// be ocean and the sim can build the tile on the fly.
 	return;
     }
-
-    // load grid of elevation data (Array)
-    TGArray array;
-    load_array( c, array );
 
     TGTriangle t;
 
@@ -998,10 +1054,12 @@ static void construct_tile( TGConstruct& c ) {
 	c.set_point_normals( normals );
     }
 
-    // Now for all the remaining "default" land cover polygons, assign
-    // each one it's proper type from the land use/land cover
-    // database.
-    fix_land_cover_assignments( c );
+    if ( c.get_cover().size() > 0 ) {
+        // Now for all the remaining "default" land cover polygons, assign
+        // each one it's proper type from the land use/land cover
+        // database.
+        fix_land_cover_assignments( c );
+    }
 
     // calculate wgs84 (cartesian) form of node list
     build_wgs_84_point_list( c, array );
