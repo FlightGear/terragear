@@ -143,6 +143,7 @@ TGTriangle::build( const point_list& corner_list,
 	    gpc_poly = reduce_degeneracy( gpc_poly );
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = remove_bad_contours( gpc_poly );
+	    gpc_poly = remove_cycles( gpc_poly );
 
 	    cout << "after sanity checks, contours = " 
 		 << gpc_poly.contours() << endl;
