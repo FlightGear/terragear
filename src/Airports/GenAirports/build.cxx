@@ -209,20 +209,21 @@ static point_list calc_elevations( const string& root,
 	}
 
 	if ( i < (int)result.size() ) {
+	    // cout << "First empty elevation = " << i << endl;
 	    SGBucket b( result[i].x(), result[i].y() );
 	    string base = b.gen_base_path();
 
 	    // try the various elevation sources
             bool found_file = false;
-            unsigned int j = 0;
-            while ( !found_file && j < elev_src.size() ) {
-                string array_path = root + "/" + elev_src[j] + "/" + base 
+            unsigned int k = 0;
+            while ( !found_file && k < elev_src.size() ) {
+                string array_path = root + "/" + elev_src[k] + "/" + base 
                     + "/" + b.gen_index_str() + ".arr";
                 if ( array.open(array_path) ) {
                     found_file = true;
                     SG_LOG(SG_GENERAL, SG_DEBUG, "array_path = " << array_path);
                 }                    
-                j++;
+                k++;
             }
             
             // this will fill in a zero structure if no array data
@@ -236,11 +237,12 @@ static point_list calc_elevations( const string& root,
 	    for ( j = 0; j < (int)result.size(); ++j ) {
 		if ( result[j].z() < -9000 ) {
 		    done = false;
-		    SG_LOG(SG_GENERAL, SG_INFO, "interpolating for " << result[j]);
 		    elev = array.interpolate_altitude( result[j].x() * 3600.0,
 						   result[j].y() * 3600.0 );
 		    if ( elev > -9000 ) {
 			result[j].setz( elev + offset );
+		        SG_LOG( SG_GENERAL, SG_INFO,
+		                "interpolating for " << result[j] );
 		    }
 		}
 	    }
