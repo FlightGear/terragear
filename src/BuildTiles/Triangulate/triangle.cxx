@@ -59,7 +59,7 @@ FGTriangle::build( const point_list& corner_list,
     // int junkc = 0;
     // FILE *junkfp;
 
-    // traverse the dem corner and fit lists and gpc_polys building a
+    // traverse the array corner and fit lists and gpc_polys building a
     // unified node list and converting the polygons so that they
     // reference the node list by index (starting at zero) rather than
     // listing the points explicitely

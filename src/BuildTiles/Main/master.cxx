@@ -56,14 +56,14 @@ static bool file_exists( const string& file ) {
 
 // check if the specified tile has data defined for it
 static bool has_data( const string& path, const SGBucket& b ) {
-    string dem_file = path + "DEM-3/" + b.gen_base_path()
-	+ "/" + b.gen_index_str() + ".dem";
-    if ( file_exists( dem_file ) ) {
+    string array_file = path + "DEM-3/" + b.gen_base_path()
+	+ "/" + b.gen_index_str() + ".arr";
+    if ( file_exists( array_file ) ) {
 	return true;
     }
 
-    dem_file += ".gz";
-    if ( file_exists( dem_file ) ) {
+    array_file += ".gz";
+    if ( file_exists( array_file ) ) {
 	return true;
     }
 

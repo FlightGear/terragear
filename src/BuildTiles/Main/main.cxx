@@ -164,7 +164,7 @@ static int actual_load_polys( const string& dir,
             ext = file.substr(pos + 1);
             cout << file << "  " << f_index << "  '" << ext << "'" << endl;
             full_path = dir + "/" + file;
-            if ( (ext == "dem") || (ext == "dem.gz") ) {
+            if ( (ext == "arr") || (ext == "arr.gz") ) {
                 // skip
             } else if (ext == "osgb36") {
                 cout << "Loading osgb36 poly definition file\n";
@@ -198,7 +198,7 @@ static int actual_load_polys( const string& dir,
             ext = file.substr(pos + 1);
             cout << file << "  " << f_index << "  '" << ext << "'" << endl;
             full_path = dir + "/" + file;
-            if ( (ext == "dem") || (ext == "dem.gz") || (ext == "ind") ) {
+            if ( (ext == "arr") || (ext == "arr.gz") || (ext == "ind") ) {
                 // skip
             } else if (ext == "osgb36") {
                 cout << "Loading osgb36 poly definition file\n";
@@ -409,23 +409,23 @@ static int load_polys( FGConstruct& c ) {
 }
 
 
-// Load elevation data from a DEM file, a regular grid of elevation
-// data--dem based) and return list of fitted nodes.
-static int load_dem( FGConstruct& c, TGArray& array) {
+// Load elevation data from an Array file, a regular grid of elevation
+// data) and return list of fitted nodes.
+static int load_array( FGConstruct& c, TGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
     int i;
 
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
-	string dem_path = load_dirs[i] + "/" + base
-	    + "/" + c.get_bucket().gen_index_str() + ".dem";
-	cout << "dem_path = " << dem_path << endl;
+	string array_path = load_dirs[i] + "/" + base
+	    + "/" + c.get_bucket().gen_index_str() + ".arr";
+	cout << "array_path = " << array_path << endl;
 
-	if ( array.open(dem_path) ) {
-	    cout << "Found DEM file " << dem_path << endl;
+	if ( array.open(array_path) ) {
+	    cout << "Found Array file " << array_path << endl;
 	    break;
 	} else {
-	    cout << "Failed to open DEM file " << dem_path << endl;
+	    cout << "Failed to open Array file " << array_path << endl;
 	}
     }
 
@@ -436,8 +436,8 @@ static int load_dem( FGConstruct& c, TGArray& array) {
 }
 
 
-// fit dem nodes, return number of fitted nodes
-static int fit_dem(TGArray& array, int error) {
+// fit array nodes, return number of fitted nodes
+static int fit_array(TGArray& array, int error) {
     return array.fit( error );
 }
 
@@ -445,7 +445,7 @@ static int fit_dem(TGArray& array, int error) {
 // triangulate the data for each polygon ( first time before splitting )
 static void first_triangulate( FGConstruct& c, const TGArray& array,
 			       FGTriangle& t ) {
-    // first we need to consolidate the points of the DEM fit list and
+    // first we need to consolidate the points of the Array fit list and
     // all the polygons into a more "Triangle" friendly format
 
     point_list corner_list = array.get_corner_node_list();
@@ -878,14 +878,14 @@ static void construct_tile( FGConstruct& c ) {
 	return;
     }
 
-    // load grid of elevation data (dem)
+    // load grid of elevation data (Array)
     TGArray array;
-    load_dem( c, array );
+    load_array( c, array );
 
     FGTriangle t;
 
     while ( ! acceptable ) {
-	// do a least squares fit of the (dem) data with the given
+	// do a least squares fit of the (array) data with the given
 	// error tolerance
 	array.fit( error );
 
