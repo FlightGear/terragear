@@ -21,10 +21,10 @@ smaller chunks is much more doable though.
 Building the Tools
 ==================
 
-These tools are primarily compiled and tested under Unix with the gnu
-compilers.  I believe they also build and run on windows with Cygwin.
-If anyone has patches for supporting other platforms, I will be happy
-to incorporate them.
+These tools are primarily compiled and tested under Unix with the Gnu
+C/C++ compilers.  I believe they also build and run on windows with
+Cygwin.  If anyone has patches for supporting other platforms, I will
+be happy to incorporate them.
 
 The process for building these tools is very similar to building the
 main FG source code.

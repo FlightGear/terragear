@@ -976,7 +976,7 @@ static void do_custom_objects( const TGConstruct& c ) {
 
     // Create/open the output .stg file for writing
     string output_base = c.get_output_base();
-    string dest_dir = output_base + "/Scenery/" + b.gen_base_path();
+    string dest_dir = output_base + "/" + b.gen_base_path();
     string dest_ind = dest_dir + "/" + b.gen_index_str() + ".stg";
 
     FILE *fp;

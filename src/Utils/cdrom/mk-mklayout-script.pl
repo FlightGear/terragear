@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 
-$source = "/stage/fgfs03/curt/Scenery-0.9.2";
+$source = "/stage/fgfs03/curt/Scenery-0.9.5";
 
 $layout_master = shift( @ARGV );
 $dest = shift( @ARGV );
 
 if ( $layout_master eq "" ) {
-    $layout_master = "./layout-disks-0.9.2";
+    $layout_master = "./layout-disks-0.9.5";
 }
 if ( $dest eq "" ) {
     $dest = "./Images";

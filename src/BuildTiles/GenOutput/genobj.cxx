@@ -338,7 +338,7 @@ int TGGenOutput::write_orig( TGConstruct &c ) {
     string base = c.get_output_base();
     SGBucket b = c.get_bucket();
 
-    string dir = base + "/Scenery/" + b.gen_base_path();
+    string dir = base + b.gen_base_path();
 
 #ifdef _MSC_VER
     fg_mkdir( dir.c_str() );
@@ -455,7 +455,7 @@ int TGGenOutput::write( TGConstruct &c ) {
     // Assemble all the data into the final format
 
     SGBucket b = c.get_bucket();
-    string base = c.get_output_base() + "/Scenery/";
+    string base = c.get_output_base();
     string name = b.gen_index_str();
     name += ".btg";
 

@@ -1,3 +1,25 @@
+New in 0.9.5
+* July 30, 2004
+
+* World builder:
+  - Added support for the FCC radio tower database.
+  - Add support for SRTM terrain data
+  - Split up many long edges to reduce artifacts in final scenery.
+  - Much smarter/better/faster/higher quality terrain simplification algorithm.
+  - Catch/fix/avoid a number of different degeneracies that could lead to
+    odd artificants in the final scenery.
+
+* Airport generator:
+  - Now handles displaced thresholds correctly.
+  - *Much* better airport surface fitting to underlying terrain data.  Employ
+    a scheme that takes the average of critical surface points and produces
+    a nurbs surface approximation to the original "noisy" terrain data.
+  - Fixed "grassy" area in the middle of some runways.
+  - Support for green taxiway centerline lighting.
+  - Support for windsocks, towers, and rotating beacons.
+  - Add support for Calvert-I/II approach lighting schemes.
+
+
 New in 0.0.5
 * February 25, 2003
 

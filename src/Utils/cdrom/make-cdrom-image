@@ -1,0 +1,33 @@
+#!/bin/sh
+
+VERSION=0.9.5
+SOURCE=$1
+VOLUME_ID=FG_Scenery_${SOURCE}_v${VERSION}
+PUBLISHER=curt@flightgear.org
+PREPAIRER=curt@flightgear.org
+# COPYRIGHT="Copyright (C) 2002  Curtis L. Olson"
+OUTPUT_IMG=/data1/images/${SOURCE}-${VERSION}.img
+
+# -f = follow symbolic links (the image directories are link trees)
+# -r = Rock Ridge protocol
+# -J -jcharset default = Joliet extensions
+# -l = allow full 31 character filenames
+# -D = do not use deep directory relocation
+# -L = allow IOS9660 filenames to begin with a period
+# -apple = Add Apple extensions.
+# -probe = Test each file for it's Mac creator/type
+
+OPTIONS="-f -r -J -jcharset default -l -D -L"
+
+COMMAND="mkisofs $OPTIONS -V $VOLUME_ID -P $PUBLISHER -p $PREPAIRER \
+	-apple -probe \
+        -o $OUTPUT_IMG $SOURCE"
+
+echo running:
+echo $COMMAND
+$COMMAND
+
+echo 
+echo "To examine the image before burning a cd:"
+echo
+echo "mount $OUTPUT_IMG /mnt -t iso9660 -o loop=/dev/loop3,blocksize=1024"

@@ -10,7 +10,7 @@ AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
 AC_PREREQ(2.52)
 
 dnl Initialize the automake stuff
-AM_INIT_AUTOMAKE(TerraGear, 0.0.6)
+AM_INIT_AUTOMAKE(TerraGear, 0.9.5)
 
 dnl Checks for programs.
 AC_PROG_MAKE_SET
@@ -222,7 +222,7 @@ if test "x$ac_cv_lib_glut_glutGameModeString" = "xno"; then
     exit 1
 fi
 
-# needed for plib 1.6.x or later
+# needed for plib 1.8.x or later
 AC_CHECK_LIB(plibul, ulInit,,,)
 
 opengl_LIBS="$LIBS"
@@ -322,7 +322,7 @@ AC_TRY_RUN([
 
 #define MIN_MAJOR 0
 #define MIN_MINOR 3
-#define MIN_MICRO 0
+#define MIN_MICRO 6
 
 int main() {
     int major, minor, micro;

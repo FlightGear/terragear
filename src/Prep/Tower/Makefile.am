@@ -1,1 +1,1 @@
-EXTRA_DIST = calc_tile.pl tower.pl
+EXTRA_DIST = calc-tile.pl tower.pl

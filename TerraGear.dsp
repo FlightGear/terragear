@@ -640,6 +640,40 @@ SOURCE=.\src\Lib\Geometry\util.hxx
 
 # End Source File
 # End Group
+# Begin Group "Lib_HGT"
+
+# PROP Default_Filter ""
+# Begin Source File
+
+SOURCE=.\src\Lib\HGT\hgt.cxx
+
+!IF  "$(CFG)" == "TerraGear - Win32 Release"
+
+# PROP Intermediate_Dir "Release\Lib_HGT"
+
+!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
+
+# PROP Intermediate_Dir "Debug\Lib_HGT"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\Lib\HGT\hgt.hxx
+
+!IF  "$(CFG)" == "TerraGear - Win32 Release"
+
+# PROP Intermediate_Dir "Release\Lib_HGT"
+
+!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
+
+# PROP Intermediate_Dir "Debug\Lib_HGT"
+
+!ENDIF 
+
+# End Source File
+# End Group
 # Begin Group "Lib_landcover"
 
 # PROP Default_Filter ""
@@ -777,6 +811,36 @@ SOURCE=.\src\Lib\Output\output.hxx
 # PROP Default_Filter ""
 # Begin Source File
 
+SOURCE=.\src\Lib\Polygon\chop-bin.cxx
+
+!IF  "$(CFG)" == "TerraGear - Win32 Release"
+
+# PROP Intermediate_Dir "Release\Lib_Polygon"
+
+!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
+
+# PROP Intermediate_Dir "Debug\Lib_Polygon"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\Lib\Polygon\chop.hxx
+
+!IF  "$(CFG)" == "TerraGear - Win32 Release"
+
+# PROP Intermediate_Dir "Release\Lib_Polygon"
+
+!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
+
+# PROP Intermediate_Dir "Debug\Lib_Polygon"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\Lib\Polygon\index.cxx
 
 !IF  "$(CFG)" == "TerraGear - Win32 Release"
@@ -883,36 +947,6 @@ SOURCE=.\src\Lib\Polygon\simple_clip.cxx
 # Begin Source File
 
 SOURCE=.\src\Lib\Polygon\simple_clip.hxx
-
-!IF  "$(CFG)" == "TerraGear - Win32 Release"
-
-# PROP Intermediate_Dir "Release\Lib_Polygon"
-
-!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug\Lib_Polygon"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Lib\Polygon\split-bin.cxx
-
-!IF  "$(CFG)" == "TerraGear - Win32 Release"
-
-# PROP Intermediate_Dir "Release\Lib_Polygon"
-
-!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug\Lib_Polygon"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Lib\Polygon\split.hxx
 
 !IF  "$(CFG)" == "TerraGear - Win32 Release"
 

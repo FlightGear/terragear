@@ -2,7 +2,7 @@
 
 use GD;
 
-$version = "0.9.2";
+$version = "0.9.5";
 if ( $#ARGV < 0 ) {
     push( @ARGV, "/stage/fgfs01/ftp/pub/fgfs/Scenery-" . $version );
 }
