@@ -817,16 +817,13 @@ static void gen_number_block( const FGRunway& rwy_info,
 
     cout << "Runway num = " << num << endl;
 
-    // special cases
-    if ( num == 1 ) {
-	sprintf( tex1, "01" );
-    } else if ( num == 11 ) {
+    if ( num == 11 ) {
 	sprintf( tex1, "11" );
     } else if ( num < 10 ) {
-	sprintf( tex1, "%d", num );
+	sprintf( tex1, "%dc", num );
     } else {
-	sprintf( tex1, "%d", num / 10 );
-	sprintf( tex2, "%d", num - (num / 10 * 10));
+	sprintf( tex1, "%dl", num / 10 );
+	sprintf( tex2, "%dr", num - (num / 10 * 10));
     }
 
     // printf("tex1 = '%s'  tex2 = '%s'\n", tex1, tex2);
@@ -834,56 +831,30 @@ static void gen_number_block( const FGRunway& rwy_info,
     if ( num < 10 ) {
 	gen_runway_section( rwy_info, poly,
 			    start_pct, end_pct,
-			    0.0, 0.366,
-			    heading,
-			    material, "des_fill_w",
-			    rwy_polys, texparams, accum );
-	gen_runway_section( rwy_info, poly,
-			    start_pct, end_pct,
-			    0.366, 0.634,
+			    0.0, 1.0,
 			    heading,
 			    material, tex1,
 			    rwy_polys, texparams, accum );
+    } else if ( num == 11 ) {
 	gen_runway_section( rwy_info, poly,
 			    start_pct, end_pct,
-			    1.0, 0.634,
+			    0.0, 1.0,
 			    heading,
-			    material, "des_fill_w",
+			    material, tex1,
 			    rwy_polys, texparams, accum );
     } else {
-	gen_runway_section( rwy_info, poly,
-			    start_pct, end_pct,
-			    0.0, 0.231,
-			    heading,
-			    material, "des_fill_n",
-			    rwy_polys, texparams, accum );
-	if ( num == 11 ) {
 	    gen_runway_section( rwy_info, poly,
 				start_pct, end_pct,
-				0.231, 0.731,
-				heading,
-				material, tex1,
-				rwy_polys, texparams, accum );
-	} else {
-	    gen_runway_section( rwy_info, poly,
-				start_pct, end_pct,
-				0.231, 0.5,
+				0.0, 0.5,
 				heading,
 				material, tex1,
 				rwy_polys, texparams, accum );
 	    gen_runway_section( rwy_info, poly,
 				start_pct, end_pct,
-				0.5, 0.731,
+				0.5, 1.0,
 				heading,
 				material, tex2,
 				rwy_polys, texparams, accum );
-	}
-	gen_runway_section( rwy_info, poly,
-			    start_pct, end_pct,
-			    1.0, 0.731,
-			    heading,
-			    material, "des_fill_n",
-			    rwy_polys, texparams, accum );
     }
 }
 
