@@ -185,7 +185,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes,
 	result[i].setz( -9999.0 );
     }
 
-    cout << "result.size() = " << result.size() << endl;
+//     cout << "result.size() = " << result.size() << endl;
 
     while ( !done ) {
 	// find first node with -9999 elevation
