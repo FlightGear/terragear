@@ -133,7 +133,8 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    if ( tx < -1.0 ) { tx = -1.0; }
 	    if ( tx > 1.0 ) { tx = 1.0; }
 
-	    ty = (y - min.y()) / (max.y() - min.y());
+	    // ty = (y - min.y()) / (max.y() - min.y());
+	    ty = (max.y() - y) / (max.y() - min.y());
 	    ty = ((int)(ty * 100)) / 100.0;
 	    if ( ty < -1.0 ) { ty = -1.0; }
 	    if ( ty > 1.0 ) { ty = 1.0; }
@@ -667,7 +668,8 @@ static void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
 // generate a section of runway
 static void gen_precision_section( const FGRunway& rwy_info,
 				   const FGPolygon& runway,
-				   double start_pct, double end_pct,
+				   double startl_pct, double endl_pct,
+				   double startw_pct, double endw_pct,
 				   double heading,
 				   const string& material,
 				   superpoly_list *rwy_polys,
@@ -679,22 +681,41 @@ static void gen_precision_section( const FGRunway& rwy_info,
     Point3D a2 = runway.get_pt(0, 0);
     Point3D a3 = runway.get_pt(0, 3);
 
-    double dx = a1.x() - a0.x();
-    double dy = a1.y() - a0.y();
+    double dlx = a1.x() - a0.x();
+    double dly = a1.y() - a0.y();
 
-    cout << "start % = " << start_pct << " end % = " << end_pct << endl;
+    cout << "start len % = " << startl_pct
+	 << " end len % = " << endl_pct << endl;
 
-    Point3D p0 = Point3D( a0.x() + dx * start_pct,
-			  a0.y() + dy * start_pct, 0);
+    Point3D t0 = Point3D( a0.x() + dlx * startl_pct,
+			  a0.y() + dly * startl_pct, 0);
 
-    Point3D p1 = Point3D( a0.x() + dx * end_pct,
-			  a0.y() + dy * end_pct, 0);
+    Point3D t1 = Point3D( a0.x() + dlx * endl_pct,
+			  a0.y() + dly * endl_pct, 0);
 
-    Point3D p2 = Point3D( a2.x() + dx * start_pct,
-			  a2.y() + dy * start_pct, 0);
+    Point3D t2 = Point3D( a2.x() + dlx * startl_pct,
+			  a2.y() + dly * startl_pct, 0);
 
-    Point3D p3 = Point3D( a2.x() + dx * end_pct,
-			  a2.y() + dy * end_pct, 0);
+    Point3D t3 = Point3D( a2.x() + dlx * endl_pct,
+			  a2.y() + dly * endl_pct, 0);
+
+    double dwx = t0.x() - t2.x();
+    double dwy = t0.y() - t2.y();
+
+    cout << "start wid % = " << startw_pct
+	 << " end wid % = " << endw_pct << endl;
+
+    Point3D p0 = Point3D( t2.x() + dwx * startw_pct,
+			  t2.y() + dwy * startw_pct, 0);
+
+    Point3D p1 = Point3D( t2.x() + dwx * endw_pct,
+			  t2.y() + dwy * endw_pct, 0);
+
+    Point3D p2 = Point3D( t3.x() + dwx * startw_pct,
+			  t3.y() + dwy * startw_pct, 0);
+
+    Point3D p3 = Point3D( t3.x() + dwx * endw_pct,
+			  t3.y() + dwy * endw_pct, 0);
 
     FGPolygon section;
     section.erase();
@@ -724,15 +745,20 @@ static void gen_precision_section( const FGRunway& rwy_info,
     *accum = polygon_union( section, *accum );
 
     double len = rwy_info.length / 2.0;
-    double start_len = len - ( len * start_pct );
-    double end_len = len - ( len * end_pct );
+    double start_len = len - ( len * startl_pct );
+    double end_len = len - ( len * endl_pct );
+
+    double wid = rwy_info.width;
+    double start_wid = wid / 2.0 - wid * startw_pct;
+    double end_wid = wid / 2.0 - wid * endw_pct;
+
     FGTexParams tp;
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
 		      Point3D( end_len * FEET_TO_METER,
-			       (rwy_info.width  / 2.0) * FEET_TO_METER,
-			       0 ),
+			       end_wid * FEET_TO_METER,
+			       0.0 ),
 		      Point3D( start_len * FEET_TO_METER,
-			       (-rwy_info.width / 2.0) * FEET_TO_METER,
+			       start_wid * FEET_TO_METER,
 			       0.0 ),
 		      heading );
     texparams->push_back( tp );
@@ -818,32 +844,67 @@ static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
     end_pct = start_pct + ( 190.0 / length );
     gen_precision_section( rwy_info, runway_a,
 			   start_pct, end_pct,
+			   0.0, 1.0,
 			   rwy_info.heading,
 			   "pa_threshold",
 			   rwy_polys, texparams, accum );
 
     gen_precision_section( rwy_info, runway_b,
 			   start_pct, end_pct,
+			   0.0, 1.0,
 			   rwy_info.heading + 180.0,
 			   "pa_threshold",
 			   rwy_polys, texparams, accum );
 
     //
-    // Runway designation
+    // Runway designation letter
     //
 
     start_pct = end_pct;
     end_pct = start_pct + ( 90.0 / length );
     gen_precision_section( rwy_info, runway_a,
 			   start_pct, end_pct,
+			   0.0, 1.0,
 			   rwy_info.heading,
 			   "pa_left",
 			   rwy_polys, texparams, accum );
 
     gen_precision_section( rwy_info, runway_b,
 			   start_pct, end_pct,
+			   0.0, 1.0,
 			   rwy_info.heading + 180.0,
 			   "pa_left",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Runway designation number(s)
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 90.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 0.231,
+			   rwy_info.heading,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.231, 0.5,
+			   rwy_info.heading,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.5, 0.731,
+			   rwy_info.heading,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   1.0, 0.731,
+			   rwy_info.heading,
+			   "pa_des_fill_n",
 			   rwy_polys, texparams, accum );
 
     //
@@ -854,12 +915,14 @@ static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
     end_pct = 1.0;
     gen_precision_section( rwy_info, runway_a,
 			   start_pct, end_pct,
+			   0.0, 1.0,
 			   rwy_info.heading,
 			   "Asphalt",
 			   rwy_polys, texparams, accum );
 
     gen_precision_section( rwy_info, runway_b,
 			   start_pct, end_pct,
+			   0.0, 1.0,
 			   rwy_info.heading + 180.0,
 			   "Asphalt",
 			   rwy_polys, texparams, accum );
