@@ -45,14 +45,15 @@ def run_terra(thresh, minnodes, count, factor, objName, pgmName):
     r,w,e = os.popen3(command)
     for line in e.readlines():
         line = line.lstrip()
+        print line
         if line.startswith("points="):
             line = line.split()[0]
             npts = string.atof(line[len("points="):])
-            print "npts = %d"%(npts)
+            print "    npts = %d"%(npts)
         if line.startswith("error="):
             line = line.split()[0]
             error = string.atof(line[len("error="):])
-            print "error = %d"%(error)
+            print "    error = %.2f"%(error)
             
     return npts
     
@@ -196,7 +197,7 @@ def main():
         sys.exit(1)
     minnodes = 50
     maxnodes = 600
-    maxerror = 5.0
+    maxerror = 50.0
     factor = 1.0/30.0
     infile = None
     quiet = 0
