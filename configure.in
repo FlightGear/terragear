@@ -34,15 +34,6 @@ if test "x$with_logging" = "xno" ; then
 fi
 
 
-dnl specify if we are building with "checker"
-AC_ARG_WITH(efence, [  --with-efence           Specify if we are building with "electric-fence"])
-
-if test "x$with_efence" = "xyes" ; then
-    echo "Building with efence"
-    LIBS="$LIBS -lefence"
-fi
-
-
 dnl Let the Win32 user specify if they want to build with the SGI
 dnl opengl.dll as opposed to the more standard openg32.dll
 AC_ARG_WITH(sgi-opengl, [  --with-sgi-opengl       Build against SGI's opengl.dll glu.dll and glut.dll])
@@ -353,12 +344,6 @@ if test "x$with_logging" != "x"; then
     echo "Debug messages: $with_logging"
 else
     echo "Debug messages: yes"
-fi
-
-if test "x$with_efence" != "x"; then
-    echo "Electric fence: $with_efence"
-else
-    echo "Electric fence: no"
 fi
 
 if test "$OS" = "IRIX" -o "$OS" = "IRIX64"; then
