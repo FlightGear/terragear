@@ -96,7 +96,7 @@ add_polygon (SGPropertyNode_ptr node)
   AreaType material =
     get_area_type(node->getStringValue("material", "Default"));
   vector<SGPropertyNode_ptr> contour_nodes = node->getChildren("contour");
-  for (int i = 0; i < contour_nodes.size(); i++) {
+  for (unsigned int i = 0; i < contour_nodes.size(); i++) {
     SGPropertyNode_ptr contour_node = contour_nodes[i];
     Point3D p;
     const char * s = contour_node->getStringValue("v");
