@@ -51,6 +51,7 @@
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/polar3d.hxx>
 
 #include <Geometry/poly_support.hxx>
 #include <Array/array.hxx>
