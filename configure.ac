@@ -6,8 +6,8 @@ dnl $Id$
 AC_INIT
 AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
 
-# Require at least automake 2.53
-AC_PREREQ(2.53)
+# Require at least automake 2.52
+AC_PREREQ(2.52)
 
 dnl Initialize the automake stuff
 AM_INIT_AUTOMAKE(TerraGear, 0.0.5)
