@@ -117,6 +117,10 @@ public:
 
     inline point_list get_corner_node_list() const { return corner_list; }
     inline point_list get_fit_node_list() const { return node_list; }
+
+    inline int get_point( int col, int row ) {
+        return in_data[col][row];
+    }
 };
 
 
