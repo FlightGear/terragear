@@ -54,6 +54,14 @@
 int nudge = 10;
 
 
+// Display usage
+static void usage( int argc, char **argv ) {
+    SG_LOG( SG_GENERAL, SG_ALERT, 
+	    "Usage " << argv[0] << " --input=<apt_file> "
+	    << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]" );
+}
+
+
 // reads the apt_full file and extracts and processes the individual
 // airport records
 int main( int argc, char **argv ) {
@@ -82,9 +90,7 @@ int main( int argc, char **argv ) {
  	} else if ( arg.find("--nudge=") == 0 ) {
 	    nudge = atoi( arg.substr(8).c_str() );
 	} else {
-	    SG_LOG( SG_GENERAL, SG_ALERT, 
-		    "Usage " << argv[0] << " --input=<apt_file> "
-		    << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]" );
+	    usage( argc, argv );
 	    exit(-1);
 	}
     }
@@ -96,6 +102,7 @@ int main( int argc, char **argv ) {
     if ( work_dir == "" ) {
 	SG_LOG( SG_GENERAL, SG_ALERT, 
 		"Error: no work directory specified." );
+	usage( argc, argv );
 	exit(-1);
     }
 

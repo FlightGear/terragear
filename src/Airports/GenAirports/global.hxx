@@ -1,9 +1,8 @@
-// build.hxx -- routines to build polygon model of an airport from the runway
-//              definition
+// global.hxx -- kind of dumb but oh well...
 //
-// Written by Curtis Olson, started September 1999.
+// Written by Curtis Olson, started February 2002.
 //
-// Copyright (C) 1999  Curtis L. Olson  - curt@flightgear.org
+// Copyright (C) 2002  Curtis L. Olson  - curt@flightgear.org
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,22 +22,11 @@
 //
 
 
-#ifndef _BUILD_HXX
-#define _BUILD_HXX
+#ifndef _GEN_AIRPORT_GLOBAL_HXX
+#define _GEN_AIRPORT_GLOBAL_HXX
 
 
-#include <list>
-
-#include "global.hxx"
-#include "point2d.hxx"
+extern int nudge;
 
 
-// build 3d airport
-void build_airport( string airport, string_list& runways_raw,
-                    string_list& taxiways_raw, const string& root );
-
-
-
-#endif // _BUILD_HXX
-
-
+#endif // _GEN_AIRPORT_GLOBAL_HXX

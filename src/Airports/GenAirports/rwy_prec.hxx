@@ -1,9 +1,8 @@
-// build.hxx -- routines to build polygon model of an airport from the runway
-//              definition
+// rwy_prec.hxx -- Build a precision runway
 //
-// Written by Curtis Olson, started September 1999.
+// Written by Curtis Olson, started February 2002.
 //
-// Copyright (C) 1999  Curtis L. Olson  - curt@flightgear.org
+// Copyright (C) 2002  Curtis L. Olson  - curt@flightgear.org
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,22 +22,27 @@
 //
 
 
-#ifndef _BUILD_HXX
-#define _BUILD_HXX
+#ifndef _RWY_PREC_HXX
+#define _RWY_PREC_HXX
 
 
-#include <list>
+#include <Polygon/polygon.hxx>
+#include <Polygon/superpoly.hxx>
 
-#include "global.hxx"
-#include "point2d.hxx"
-
-
-// build 3d airport
-void build_airport( string airport, string_list& runways_raw,
-                    string_list& taxiways_raw, const string& root );
+#include "runway.hxx"
+#include "texparams.hxx"
 
 
+// generate a precision approach runway.  The routine modifies
+// rwy_polys, texparams, and accum.  For specific details and
+// dimensions of precision runway markings, please refer to FAA
+// document AC 150/5340-1H
 
-#endif // _BUILD_HXX
+void gen_precision_rwy( const FGRunway& rwy_info,
+			const string& material,
+			superpoly_list *rwy_polys,
+			texparams_list *texparams,
+			FGPolygon *accum );
 
 
+#endif // _RWY_PREC_HXX

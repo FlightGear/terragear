@@ -28,9 +28,17 @@ bin_PROGRAMS = genapts
 genapts_SOURCES = \
 	build.cxx build.hxx \
 	convex_hull.cxx convex_hull.hxx \
+	global.hxx \
 	main.cxx \
 	point2d.cxx point2d.hxx \
+	poly_extra.cxx poly_extra.hxx \
 	runway.cxx runway.hxx \
+	rwy_common.cxx rwy_common.hxx \
+	rwy_nonprec.cxx rwy_nonprec.hxx \
+	rwy_prec.cxx rwy_prec.hxx \
+	rwy_simple.cxx rwy_simple.hxx \
+	rwy_visual.cxx rwy_visual.hxx \
+	taxiway.cxx taxiway.hxx \
 	texparams.hxx
 
 genapts_LDADD = \

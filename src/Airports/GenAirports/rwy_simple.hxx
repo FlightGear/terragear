@@ -1,9 +1,8 @@
-// build.hxx -- routines to build polygon model of an airport from the runway
-//              definition
+// rwy_simple.hxx -- Build a simple (non-marked) runway
 //
-// Written by Curtis Olson, started September 1999.
+// Written by Curtis Olson, started February 2002.
 //
-// Copyright (C) 1999  Curtis L. Olson  - curt@flightgear.org
+// Copyright (C) 2002  Curtis L. Olson  - curt@flightgear.org
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,22 +22,23 @@
 //
 
 
-#ifndef _BUILD_HXX
-#define _BUILD_HXX
+#ifndef _RWY_SIMPLE_HXX
+#define _RWY_SIMPLE_HXX
 
 
-#include <list>
+#include <Polygon/polygon.hxx>
+#include <Polygon/superpoly.hxx>
 
-#include "global.hxx"
-#include "point2d.hxx"
-
-
-// build 3d airport
-void build_airport( string airport, string_list& runways_raw,
-                    string_list& taxiways_raw, const string& root );
+#include "runway.hxx"
+#include "texparams.hxx"
 
 
+// generate a simple runway.  The routine modifies rwy_polys,
+// texparams, and accum
+void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
+		     superpoly_list *rwy_polys,
+		     texparams_list *texparams,
+		     FGPolygon *accum );
 
-#endif // _BUILD_HXX
 
-
+#endif // _RWY_SIMPLE_HXX
