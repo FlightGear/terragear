@@ -31,13 +31,9 @@
 
 #include STL_STRING
 
-#include <simgear/debug/logstream.hxx>
+#include <zlib.h>
 
-#ifdef HAVE_ZLIB
-#  include <zlib.h>
-#else
-#  include <simgear/zlib/zlib.h>
-#endif
+#include <simgear/debug/logstream.hxx>
 
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>

@@ -30,12 +30,7 @@
 
 #include <stdio.h>
 #include <time.h>
-
-#ifdef HAVE_ZLIB
-#  include <zlib.h>
-#else
-#  include <simgear/zlib/zlib.h>
-#endif
+#include <zlib.h>
 
 #include <list>
 #include STL_STRING
