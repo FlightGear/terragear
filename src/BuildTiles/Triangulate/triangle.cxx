@@ -103,9 +103,11 @@ FGTriangle::build( const point_list& corner_list,
 		     << gpc_poly.contour_size( j ) << ", hole = "
 		     << gpc_poly.get_hole_flag( j ) << endl;
 
+		/*
 		char junkn[256];
 		sprintf(junkn, "c%d", j);
 		gpc_poly.write_contour( j, junkn );
+		*/
 
 		for ( int k = 0; k < gpc_poly.contour_size( j ); k++ ) {
 		    Point3D p = gpc_poly.get_pt( j, k );
@@ -131,12 +133,10 @@ FGTriangle::build( const point_list& corner_list,
 	    // new way
 
 	    // try to make sure our polygons aren't goofy
-	    /*
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = reduce_degeneracy( gpc_poly );
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = remove_bad_contours( gpc_poly );
-	    */
 
 	    cout << "after sanity checks, contours = " 
 		 << gpc_poly.contours() << endl;
