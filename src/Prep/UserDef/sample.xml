@@ -91,6 +91,7 @@ villages, lakes etc. for your own scenery with tguserdef.
 
  <polygon>
   <name>Kanata (north end)</name>
+  <material>Urban</material>
   <contour>
    <hole>false</hole>
    <v>
