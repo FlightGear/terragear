@@ -175,8 +175,8 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
 // successfully
 bool construct_tile( const SGBucket& b,
 		     const string& result_file,
-		     const string &cover ) {
-    double angle = 10.0;
+		     const string &cover,
+		     float angle ) {
     bool still_trying = true;
 
     while ( still_trying ) {
@@ -216,6 +216,9 @@ bool construct_tile( const SGBucket& b,
 		    angle = 5.0;
 		    still_trying = true;
 		} else if ( angle > 4.0 ) {
+		    angle = 1.0;
+		    still_trying = true;
+		} else if ( angle > 0.0 ) {
 		    angle = 0.0;
 		    still_trying = true;
 		}
@@ -257,6 +260,7 @@ int main(int argc, char *argv[]) {
     string cover;
     string host = "127.0.0.1";
     int port=4001;
+    float angle = 10.0;
 
     //
     // Parse the command-line arguments.
@@ -277,6 +281,8 @@ int main(int argc, char *argv[]) {
 	rude = true;
       } else if (arg.find("--cover=") == 0) {
 	cover = arg.substr(8);
+      } else if (arg.find("--min-angle=") == 0) {
+	angle = atof(arg.substr(12).c_str());
       } else if (arg.find("--") == 0) {
 	usage(argv[0]);
       } else {
@@ -315,7 +321,7 @@ int main(int argc, char *argv[]) {
     check_master_switch();
 
     while ( (tile = get_next_task( host, port, last_tile )) >= 0 ) {
-	result = construct_tile( SGBucket(tile), result_file, cover );
+	result = construct_tile( SGBucket(tile), result_file, cover, angle );
 	if ( result ) {
 	    last_tile = tile;
 	} else {

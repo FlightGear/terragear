@@ -39,22 +39,25 @@ append (string &s, double f)
 }
 
 static void
-skipWhitespace (istream &input)
+skipNewlines (istream &input)
 {
   char c;
   input.get(c);
-  while (isspace(c)) {
+//   while (isspace(c)) {
+//     input.get(c);
+//   }
+  while (c == '\n' || c == '\r') {
     input.get(c);
   }
   input.putback(c);
 }
 
 static void
-readStringItem (istream &input, string &line, int width)
+readItem (istream &input, string &line, int width)
 {
   char c;
   
-  skipWhitespace(input);
+  skipNewlines(input);
   line.resize(0);
   
   for (int i = 0; i < width; i++) {
@@ -89,6 +92,43 @@ checkZeros (istream &input)
 }
 
 
+static void
+expect (istream &input, int i)
+{
+  int in;
+  input >> in;
+  if (in != i) {
+    string message = "Expected ";
+    append(message, i);
+    throw E00Exception(message.c_str());
+  }
+}
+
+static void
+expect (istream &input, double f)
+{
+  double in;
+  input >> in;
+  if (in != f) {
+    string message = "Expected ";
+    append(message, f);
+    throw E00Exception(message.c_str());
+  }
+}
+
+static void
+expect (istream &input, const char *s)
+{
+  string in;
+  input >> in;
+  if (in != s) {
+    string message = "Expected ";
+    message += s;
+    throw E00Exception(message.c_str());
+  }
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////
 // Implementation of E00
@@ -105,136 +145,6 @@ E00::~E00 ()
 }
 
 
-void
-E00::expect (int i)
-{
-  int in;
-  *_input >> in;
-  if (in != i) {
-    string message = "Expected ";
-    append(message, i);
-    throw E00Exception(message.c_str());
-  }
-}
-
-void
-E00::expect (double f)
-{
-  double in;
-  *_input >> in;
-  if (in != f) {
-    string message = "Expected ";
-    append(message, f);
-    throw E00Exception(message.c_str());
-  }
-}
-
-void
-E00::expect (const char * s)
-{
-  string in;
-  *_input >> in;
-  if (in != s) {
-    string message = "Expected ";
-    message += s;
-    throw E00Exception(message.c_str());
-  }
-}
-
-
-
-////////////////////////////////////////////////////////////////////////
-// XML output.
-////////////////////////////////////////////////////////////////////////
-
-static void
-writeVertex (ostream &output, double x, double y)
-{
-  output << "<v x=\"" << x << "\" y=\"" << y << "\"/>" << endl;
-}
-
-void
-E00::write (ostream &output) const
-{
-  int i, j, k;
-
-  output << "<?xml version=\"1.0\"?>" << endl << endl;
-  output << "<GIS>" << endl << endl;
-
-  if (arc_section.size() == 0) {
-    for (int i = 0; i < (int)lab_section.size(); i++) {
-      output << "<point>" << endl;
-      writeVertex(output, lab_section[i].coord.x, lab_section[i].coord.y);
-      output << "</point>" << endl << endl;
-    }
-  }
-
-  for ( i = 0; i < (int)arc_section.size(); i++) {
-    const e00ARC &arc = arc_section[i];
-    if (!arc.inPolygon) {
-      output << "<line>" << endl;
-      for ( j = 0; j < (int)arc.coordinates.size(); j++) {
-	writeVertex(output, arc.coordinates[j].x, arc.coordinates[j].y);
-      }
-      output << "</line>" << endl << endl;;
-    }
-  }
-
-				// NB: skip enclosing poly
-  for ( i = 1; i < (int)pal_section.size(); i++) {
-    const e00PAL &pal = pal_section[i];
-    output << "<polygon>" << endl;
-    for ( j = 0; j < pal.numArcs; j++) {
-      bool isReversed = false;
-      int arcNum = pal.arcs[j].arcNum;
-      if (arcNum < 0) {
-	arcNum = 0 - arcNum;
-	isReversed = true;
-      }
-      const e00ARC &arc = arc_section[arcNum];
-      output << "<arc coverage=\"" << arc.coverageId << "\">" << endl;
-      if (isReversed) {
-	for ( k = arc.numberOfCoordinates - 1; k >= 0; k--) {
-	  writeVertex(output, arc.coordinates[k].x, arc.coordinates[k].y);
-	}
-      } else {
-	for ( k = 0; k < arc.numberOfCoordinates; k++) {
-	  writeVertex(output, arc.coordinates[k].x, arc.coordinates[k].y);
-	}
-      }
-      output << "</arc>" << endl;
-    }
-    output << "</polygon>" << endl << endl;
-  }
-
-  output << "</GIS>" << endl;
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////
-// Public query methods.
-////////////////////////////////////////////////////////////////////////
-
-int
-E00::nPoints () const
-{
-  return lab_section.size();
-}
-
-int
-E00::nLines () const
-{
-  return lineArcs.size();
-}
-
-int
-E00::nPolygons () const
-{
-  return pal_section.size();
-}
 
 
 
@@ -255,6 +165,7 @@ E00::readE00 (istream &input)
 
     *_input >> token;
 
+    cerr << "Reading " << token << " section" << endl;
     if (token == "ARC") {
       readARC();
     } else if (token == "CNT") {
@@ -273,6 +184,14 @@ E00::readE00 (istream &input)
       readTOL();
     } else if (token == "IFO") {
       readIFO();
+    } else if (token == "TX6") {
+      readTX6();
+    } else if (token == "TX7") {
+      readTX7();
+    } else if (token == "RXP") {
+      readRXP();
+    } else if (token == "RPL") {
+      readRPL();
     } else if (token == "EOS") {
       postProcess();
       return;
@@ -283,6 +202,7 @@ E00::readE00 (istream &input)
   }
 
   throw E00Exception("File ended without EOS line");
+  _input = 0;
 }
 
 
@@ -292,8 +212,8 @@ E00::readE00 (istream &input)
 void
 E00::readHeader ()
 {
-  expect("EXP");
-  expect(0);
+  expect(*_input, "EXP");
+  expect(*_input, 0);
   *_input >> pathName;
 }
 
@@ -304,14 +224,12 @@ E00::readHeader ()
 void
 E00::readARC ()
 {
-  e00ARC arc;
-  e00Coord coord;
+  ARC arc;
+  Coord coord;
 
   checkPrecision(*_input);
-
   *_input >> arc.coverageNum;
   while (arc.coverageNum != -1) {
-    arc.inPolygon = false;
     *_input >> arc.coverageId;
     *_input >> arc.fromNode;
     *_input >> arc.toNode;
@@ -324,6 +242,7 @@ E00::readARC ()
       *_input >> coord.y;
       arc.coordinates.push_back(coord);
     }
+    arc.in_polygon = false;	// we'll check later
     arc_section.push_back(arc);
     *_input >> arc.coverageNum;
   }
@@ -338,14 +257,16 @@ E00::readARC ()
 void
 E00::readCNT ()
 {
-  e00CNT cnt;
+  int numLabels;
   int label;
 
   checkPrecision(*_input);
 
-  *_input >> cnt.numLabels;
+  *_input >> numLabels;
 
-  while (cnt.numLabels != -1) {
+  while (numLabels != -1) {
+    CNT cnt;
+    cnt.numLabels = numLabels;
     *_input >> cnt.centroid.x;
     *_input >> cnt.centroid.y;
     for (int i = 0; i < cnt.numLabels; i++) {
@@ -353,7 +274,7 @@ E00::readCNT ()
       cnt.labels.push_back(label);
     }
     cnt_section.push_back(cnt);
-    *_input >> cnt.numLabels;
+    *_input >> numLabels;
   }
 
   checkZeros(*_input);
@@ -363,7 +284,7 @@ E00::readCNT ()
 void
 E00::readLAB ()
 {
-  e00LAB lab;
+  LAB lab;
 
   checkPrecision(*_input);
   *_input >> lab.coverageId;
@@ -387,7 +308,7 @@ E00::readLAB ()
 void
 E00::readLOG ()
 {
-  e00LOG log;
+  LOG log;
   string line;
 
   checkPrecision(*_input);
@@ -409,8 +330,9 @@ E00::readLOG ()
 void
 E00::readPAL ()
 {
-  e00PAL pal;
-  e00PAL::ARC arc;
+  PAL pal;
+  PAL::ARCref arc;
+  int count = 1;
 
   checkPrecision(*_input);
   *_input >> pal.numArcs;
@@ -422,6 +344,19 @@ E00::readPAL ()
     pal.arcs.resize(0);
     for (int i = 0; i < pal.numArcs; i++) {
       *_input >> arc.arcNum;
+      if (count > 1) {
+	if (arc.arcNum > 0)
+	  _getARC(arc.arcNum).in_polygon = true;
+	else
+	  _getARC(0-arc.arcNum).in_polygon = true;
+      }
+      int num = (arc.arcNum < 0 ? 0 - arc.arcNum : arc.arcNum);
+      if (num != 0 &&
+	  getARC(num).leftPolygon != count &&
+	  getARC(num).rightPolygon != count) {
+	cerr << "Polygon " << count << " includes arc " << num
+	     << " which doesn't reference it" << endl;
+      }
       *_input >> arc.nodeNum;
       *_input >> arc.polygonNum;
       pal.arcs.push_back(arc);
@@ -429,6 +364,7 @@ E00::readPAL ()
 
     pal_section.push_back(pal);
     *_input >> pal.numArcs;
+    count++;
   }
 
   checkZeros(*_input);
@@ -438,7 +374,7 @@ E00::readPAL ()
 void
 E00::readPRJ ()
 {
-  e00PRJ prj;
+  PRJ prj;
   string line;
 
   checkPrecision(*_input);
@@ -472,7 +408,7 @@ E00::readSIN ()
 void
 E00::readTOL ()
 {
-  e00TOL tol;
+  TOL tol;
 
   checkPrecision(*_input);
   *_input >> tol.type;
@@ -488,19 +424,67 @@ E00::readTOL ()
 
 
 void
+E00::readTX6 ()
+{
+  string dummy;
+  *_input >> dummy;
+				// FIXME: will fail if "JABBERWOCKY" appears
+				// in the text annotation itself
+  while (dummy != "JABBERWOCKY")
+    *_input >> dummy;
+}
+
+
+void
+E00::readTX7 ()
+{
+  string dummy;
+  *_input >> dummy;
+				// FIXME: will fail if "JABBERWOCKY" appears
+				// in the text annotation itself
+  while (dummy != "JABBERWOCKY")
+    *_input >> dummy;
+}
+
+void
+E00::readRXP ()
+{
+  string dummy;
+  *_input >> dummy;
+				// FIXME: will fail if "JABBERWOCKY" appears
+				// in the text annotation itself
+  while (dummy != "JABBERWOCKY")
+    *_input >> dummy;
+}
+
+void
+E00::readRPL ()
+{
+  string dummy;
+  *_input >> dummy;
+				// FIXME: will fail if "JABBERWOCKY" appears
+				// in the text annotation itself
+  while (dummy != "JABBERWOCKY")
+    *_input >> dummy;
+}
+
+
+void
 E00::readIFO ()
 {
-  e00IFO ifo;
-  e00IFO::ItemDef def;
-  e00IFO::Entry entry;
-  string line;
+  string line = "";
   int intval;
   double realval;
 
   checkPrecision(*_input);
 
-  *_input >> ifo.fileName;
-  while (ifo.fileName.find("EOI") != 0) {
+  while (line == "")
+    *_input >> line;
+  while (line != string("EOI")) {
+
+    IFO ifo;
+    IFO::Entry entry;
+    ifo.fileName = line;
 
 				// 'XX' may be absent
     *_input >> ifo.isArcInfo;
@@ -517,19 +501,21 @@ E00::readIFO ()
 				// Read the item definitions
     ifo.defs.resize(0);
     for (int i = 0; i < ifo.numItems; i++) {
+      IFO::ItemDef def;
+
       *_input >> def.itemName;
       *_input >> def.itemWidth;
-      expect(-1);
+      expect(*_input, -1);
       *_input >> def.itemStartPos;
-      expect(-1);
+      expect(*_input, -1);
       def.itemStartPos -= 4;
       def.itemStartPos /= 10;
       *_input >> def.itemOutputFormat[0];
       *_input >> def.itemOutputFormat[1];
       *_input >> def.itemType;
-      expect(-1);
-      expect(-1);
-      expect(-1);
+      expect(*_input, -1);
+      expect(*_input, -1);
+      expect(*_input, -1);
       *_input >> def.seqId;
       ifo.defs.push_back(def);
       getline(*_input, line);
@@ -542,18 +528,51 @@ E00::readIFO ()
       for (int j = 0; j < ifo.numItems; j++) {
 	line.resize(0);
 	string &type = ifo.defs[j].itemType;
-	if (type == "20-1") {	// character field
-	  readStringItem(*_input, line, ifo.defs[j].itemOutputFormat[0]);
-	} else if (type == "50-1") { // integer
-	  *_input >> intval;
-	  append(line, intval);
-	} else if (type == "60-1") { // real number
-	  *_input >> realval;
-	  append(line, realval);
-	} else {		// assume integer
-	  cerr << "Unknown IFO item type '30-1': assuming integer" << endl;
-	  *_input >> intval;
-	  append(line, intval);
+
+	if (type == "10-1") {	// date
+	  readItem(*_input, line, 8);
+	}
+
+	else if (type == "20-1") {	// character field
+	  readItem(*_input, line, ifo.defs[j].itemOutputFormat[0]);
+	} 
+
+	else if (type == "30-1") { // fixed-width integer
+	  readItem(*_input, line, ifo.defs[j].itemOutputFormat[0]);
+	} 
+
+	else if (type == "40-1") { // single-precision float
+	  readItem(*_input, line, 14);
+	}
+
+	else if (type == "50-1") { // integer
+	  if (ifo.defs[j].itemWidth == 2) {
+	    readItem(*_input, line, 6);
+	  } else if (ifo.defs[j].itemWidth == 4) {
+	    readItem(*_input, line, 11);
+	  } else {
+	    cerr << "Unexpected width " << ifo.defs[j].itemWidth
+		 << " for item of type 50-1" << endl;
+	    exit(1);
+	  }
+	} 
+
+	else if (type == "60-1") { // real number
+	  if (ifo.defs[j].itemWidth == 4) {
+	    readItem(*_input, line, 14);
+	  } else if (ifo.defs[j].itemWidth == 8) {
+	    readItem(*_input, line, 24);
+	  } else {
+	    cerr << "Unexpected width " << ifo.defs[j].itemWidth
+		 << " for item of type 60-1" << endl;
+	    exit(1);
+	  }
+	} 
+
+	else {		// assume integer
+	  cerr << "Unknown IFO item type " << type
+	       << " assuming integer" << endl;
+	  exit(1);
 	}
 	entry.push_back(line);
       }
@@ -561,7 +580,9 @@ E00::readIFO ()
     }
 
     ifo_section.push_back(ifo);
-    *_input >> ifo.fileName;
+    line = "";
+    while (line == "")
+      *_input >> line;
   }
 }
 
@@ -580,31 +601,59 @@ E00::readUnknown ()
 void
 E00::postProcess ()
 {
+  // TODO
+}
 
-				// Flag the arcs so that we know what is
-				// and isn't part of a polygon.
-  for (int i = 0; i < (int)pal_section.size(); i++) {
-    e00PAL &pal = pal_section[i];
-    for (int j = 0; j < (int)pal.arcs.size(); j++) {
-      int arcNum = pal.arcs[j].arcNum;
-      if (arcNum >= (int)arc_section.size()) {
-	cerr << "Polygon includes non-existent arc " << arcNum << endl;
-      } else {
-	arc_section[arcNum].inPolygon = true;
-      }
-    }
+
+
+////////////////////////////////////////////////////////////////////////
+// Other access methods.
+////////////////////////////////////////////////////////////////////////
+
+const E00::IFO *
+E00::getIFO (const string &fileName) const
+{
+  for (int i = 0; i < ifo_section.size(); i++) {
+    if (ifo_section[i].fileName == fileName)
+      return &(ifo_section[i]);
+  }
+  return 0;
+}
+
+const string *
+E00::getIFOItem (const string &fileName, int entry,
+		 const string &itemName) const
+{
+  const IFO * ifo = getIFO(fileName);
+  if (ifo == 0)
+    return 0;
+
+  int pos = -1;
+  for (int i = 0; i < ifo->defs.size(); i++) {
+    if (ifo->defs[i].itemName == itemName)
+      pos = i;
   }
 
-				// Now, check which arcs aren't flagged
-				// and assign them to the appropriate
-				// lists.
-  for (int i = 0; i < (int)arc_section.size(); i++) {
-    e00ARC &arc = arc_section[i];
-    if (!arc.inPolygon) {
-	lineArcs.push_back(&arc);
-    }
+  if (pos == -1)
+    return 0;
+
+  return &(ifo->entries[entry-1][pos]);
+}
+
+const string *
+E00::getIFOItemType (const string &fileName, const string &itemName) const
+{
+  const IFO * ifo = getIFO(fileName);
+  if (ifo == 0)
+    return 0;
+
+  int pos = -1;
+  for (int i = 0; i < ifo->defs.size(); i++) {
+    if (ifo->defs[i].itemName == itemName)
+      return &(ifo->defs[i].itemType);
   }
 
+  return 0;
 }
 
 // end of e00.cxx
