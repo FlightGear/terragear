@@ -217,8 +217,8 @@ if test "x$ac_cv_header_plib_pu_h" != "xyes"; then
 fi
 
 dnl Check for "libnurbs++" without which we cannot go on
-AC_CHECK_HEADER(nurbs++/nurbsS.hh)
-if test "x$ac_cv_header_nurbspp_nurbsS_hh" != "xyes"; then
+AC_CHECK_HEADER(nurbs++/nurbsS.h)
+if test "x$ac_cv_header_nurbspp_nurbsS_h" != "xyes"; then
     echo
     echo "You *must* have the nurbs++ library installed on your system to build"
     echo "TerraGear!"
