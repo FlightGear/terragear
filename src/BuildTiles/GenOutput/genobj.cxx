@@ -353,6 +353,7 @@ int FGGenOutput::write( FGConstruct &c ) {
 
     // write nodes
     point_list wgs84_nodes = c.get_wgs84_nodes();
+    cout << "writing nodes = " << wgs84_nodes.size() << endl;
     fprintf(fp, "# vertex list\n");
     const_point_list_iterator w_current = wgs84_nodes.begin();
     const_point_list_iterator w_last = wgs84_nodes.end();
@@ -364,6 +365,7 @@ int FGGenOutput::write( FGConstruct &c ) {
     
     // write vertex normals
     point_list point_normals = c.get_point_normals();
+    cout << "writing normals = " << point_normals.size() << endl;
     fprintf(fp, "# vertex normal list\n");
     const_point_list_iterator n_current = point_normals.begin();
     const_point_list_iterator n_last = point_normals.end();

@@ -109,7 +109,7 @@ bool FGClipper::load_polys(const string& path) {
 	    in >> startx;
 	    in >> starty;
 	    p = Point3D(startx, starty, 0.0);
-	    cout << "poly pt = " << p << endl;
+	    // cout << "poly pt = " << p << endl;
 	    poly.add_node( i, p );
 	    FG_LOG( FG_CLIPPER, FG_BULK, "0 = " 
 		    << startx << ", " << starty );
@@ -118,7 +118,7 @@ bool FGClipper::load_polys(const string& path) {
 		in >> x;
 		in >> y;
 		p = Point3D( x, y, 0.0 );
-		cout << "poly pt = " << p << endl;
+		// cout << "poly pt = " << p << endl;
 		poly.add_node( i, p );
 	    }
 
@@ -130,7 +130,7 @@ bool FGClipper::load_polys(const string& path) {
 		// last point same as first, discard
 	    } else {
 		p = Point3D( lastx, lasty, 0.0 );
-		cout << "poly pt = " << p << endl;
+		// cout << "poly pt = " << p << endl;
 		poly.add_node( i, p );
 	    }
 
@@ -169,9 +169,10 @@ void FGClipper::add_poly (int area, const FGPolygon &poly)
 
 // remove any slivers from in polygon and move them to out polygon.
 void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
-    cout << "Begin move slivers" << endl;
     // traverse each contour of the polygon and attempt to identify
     // likely slivers
+
+    // cout << "Begin move slivers" << endl;
 
     out.erase();
 
@@ -186,28 +187,28 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
     // process contours in reverse order so deleting a contour doesn't
     // foul up our sequence
     for ( int i = in.contours() - 1; i >= 0; --i ) {
-	cout << "contour " << i << endl;
+	// cout << "contour " << i << endl;
 
 	min_angle = in.minangle_contour( i );
 	area = in.area_contour( i );
 
-	cout << "  min_angle (rad) = " 
+	/* cout << "  min_angle (rad) = " 
 	     << min_angle << endl;
 	cout << "  min_angle (deg) = " 
 	     << min_angle * 180.0 / FG_PI << endl;
-	cout << "  area = " << area << endl;
+	cout << "  area = " << area << endl; */
 
 	if ( ((min_angle < angle_cutoff) && (area < area_cutoff)) ||
 	     ( area < area_cutoff / 10.0) )
 	{
-	    cout << "      WE THINK IT'S A SLIVER!" << endl;
+	    // cout << "      WE THINK IT'S A SLIVER!" << endl;
 
 	    // check if this is a hole
 	    hole_flag = in.get_hole_flag( i );
 
 	    if ( hole_flag ) {
 		// just delete/eliminate/remove sliver holes
-		cout << "just deleting a sliver hole" << endl;
+		// cout << "just deleting a sliver hole" << endl;
 		in.delete_contour( i );
 	    } else {
 		// move sliver contour to out polygon
@@ -231,7 +232,7 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
     bool done;
 
     for ( int i = 0; i < slivers.contours(); ++i ) {
-	cout << "Merging sliver = " << i << endl;
+	// cout << "Merging sliver = " << i << endl;
 
 	// make the sliver polygon
 	contour = slivers.get_contour( i );
@@ -246,13 +247,13 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 		continue;
 	    }
 
-	    cout << "  testing area = " << area << " with " 
-		 << clipped.polys[area].size() << " polys" << endl;
+	    // cout << "  testing area = " << area << " with " 
+	    //      << clipped.polys[area].size() << " polys" << endl;
 	    for ( int j = 0; 
 		  j < (int)clipped.polys[area].size() && !done;
 		  ++j )
 	    {
-		cout << "  polygon = " << j << endl;
+		// cout << "  polygon = " << j << endl;
 
 		poly = clipped.polys[area][j];
 		original_contours = poly.contours();
@@ -260,7 +261,7 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 		result_contours = result.contours();
 
 		if ( original_contours == result_contours ) {
-		    cout << "    FOUND a poly to merge the sliver with" << endl;
+		    // cout << "    FOUND a poly to merge the sliver with" << endl;
 		    clipped.polys[area][j] = result;
 		    done = true;
 		    // poly.write("orig");
@@ -270,19 +271,19 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 		    // string input;
 		    // cin >> input;
 		} else {
-		    cout << "    poly not a match" << endl;
+		    /* cout << "    poly not a match" << endl;
 		    cout << "    original = " << original_contours
 			 << " result = " << result_contours << endl;
-		    cout << "    sliver = " << endl;
+		    cout << "    sliver = " << endl; */
 		    for ( int k = 0; k < (int)contour.size(); ++k ) {
-			cout << "      " << contour[k].x() << ", "
-			     << contour[k].y() << endl;
+			// cout << "      " << contour[k].x() << ", "
+			//      << contour[k].y() << endl;
 		    }
 		}
 	    }
 	}
 	if ( !done ) {
-	    cout << "no suitable polys found for sliver merge" << endl;
+	    // cout << "no suitable polys found for sliver merge" << endl;
 	}
     }
 }
@@ -430,9 +431,9 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	    if ( result_diff.contours() > 0 ) {
 		// move slivers from result_diff polygon to slivers polygon
 		move_slivers(result_diff, slivers);
-		cout << "  After sliver move:" << endl;
-		cout << "    result_diff = " << result_diff.contours() << endl;
-		cout << "    slivers = " << slivers.contours() << endl;
+		// cout << "  After sliver move:" << endl;
+		// cout << "    result_diff = " << result_diff.contours() << endl;
+		// cout << "    slivers = " << slivers.contours() << endl;
 
 		// merge any slivers with previously clipped
 		// neighboring polygons
@@ -465,12 +466,12 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     remains = polygon_diff( polys_in.safety_base, accum );
 
     if ( remains.contours() > 0 ) {
-	cout << "remains contours = " << remains.contours() << endl;
+	// cout << "remains contours = " << remains.contours() << endl;
 	// move slivers from remains polygon to slivers polygon
 	move_slivers(remains, slivers);
-	cout << "  After sliver move:" << endl;
-	cout << "    remains = " << remains.contours() << endl;
-	cout << "    slivers = " << slivers.contours() << endl;
+	// cout << "  After sliver move:" << endl;
+	// cout << "    remains = " << remains.contours() << endl;
+	// cout << "    slivers = " << slivers.contours() << endl;
 
 	// merge any slivers with previously clipped
 	// neighboring polygons

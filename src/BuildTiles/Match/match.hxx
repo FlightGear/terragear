@@ -106,4 +106,8 @@ public:
 };
 
 
+// fake a normal for a point which is basically straight up
+Point3D tgFakeNormal( const Point3D& p );
+
+
 #endif // _MATCH_HXX

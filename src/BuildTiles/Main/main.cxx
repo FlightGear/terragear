@@ -46,6 +46,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 
+#include <Geometry/poly_support.hxx>
 #include <Array/array.hxx>
 #include <Clipper/clipper.hxx>
 #include <GenOutput/genobj.hxx>
@@ -362,7 +363,14 @@ static void second_triangulate( FGConstruct& c, FGTriangle& t ) {
     cout << "done re building node list and polygons" << endl;
 
     cout << "ready to do second triangulation" << endl;
+
+    cout << "  (pre) nodes = " << c.get_tri_nodes().size() << endl;
+    cout << "  (pre) normals = " << c.get_point_normals().size() << endl;
+
     t.run_triangulate( c.get_angle(), 2 );
+
+    cout << "  (post) nodes = " << t.get_out_nodes().size() << endl;
+
     cout << "finished second triangulation" << endl;
 }
 
@@ -387,7 +395,8 @@ static void fix_point_heights( FGConstruct& c, const FGArray& array ) {
     for ( i = 0; i < (int)raw_nodes.size(); ++i ) {
 	z = array.interpolate_altitude( raw_nodes[i].x() * 3600.0, 
 					raw_nodes[i].y() * 3600.0 );
-	cout << "  old z = " << raw_nodes[i].z() << "  new z = " << z << endl;
+	// cout << "  old z = " << raw_nodes[i].z() << "  new z = " << z
+	//      << endl;
 	if ( raw_nodes[i].z() != z ) {
 	    cout << "    DIFFERENT" << endl;
 	}
@@ -543,6 +552,18 @@ static belongs_to_list gen_node_ele_lookup_table( FGConstruct& c ) {
 }
 
 
+// caclulate the area for the specified triangle face
+static double tri_ele_area( const FGConstruct& c, const FGTriEle tri ) {
+    point_list nodes = c.get_geod_nodes();
+
+    Point3D p1 = nodes[ tri.get_n1() ];
+    Point3D p2 = nodes[ tri.get_n2() ];
+    Point3D p3 = nodes[ tri.get_n3() ];
+
+    return triangle_area( p1, p2, p3 );
+}
+
+
 // caclulate the normal for the specified triangle face
 static Point3D calc_normal( FGConstruct& c, int i ) {
     sgVec3 v1, v2, normal;
@@ -554,11 +575,52 @@ static Point3D calc_normal( FGConstruct& c, int i ) {
     Point3D p2 = wgs84_nodes[ tri_elements[i].get_n2() ];
     Point3D p3 = wgs84_nodes[ tri_elements[i].get_n3() ];
 
-    v1[0] = p2.x() - p1.x(); v1[1] = p2.y() - p1.y(); v1[2] = p2.z() - p1.z();
-    v2[0] = p3.x() - p1.x(); v2[1] = p3.y() - p1.y(); v2[2] = p3.z() - p1.z();
+    // do some sanity checking.  With the introduction of landuse
+    // areas, we can get some long skinny triangles that blow up our
+    // "normal" calculations here.  Let's check for really small
+    // triangle areas and check if one dimension of the triangle
+    // coordinates is nearly coincident.  If so, assign the "default"
+    // normal of straight up.
 
-    sgVectorProductVec3( normal, v1, v2 );
-    sgNormalizeVec3( normal );
+    bool degenerate = false;
+    const double area_eps = 1.0e-12;
+    double area = tri_ele_area( c, tri_elements[i] );
+    // cout << "   area = " << area << endl;
+    if ( area < area_eps ) {
+	degenerate = true;
+    }
+
+    // cout << "  " << p1 << endl;
+    // cout << "  " << p2 << endl;
+    // cout << "  " << p3 << endl;
+    if ( fabs(p1.x() - p2.x()) < FG_EPSILON &&
+	 fabs(p1.x() - p3.x()) < FG_EPSILON ) {
+	degenerate = true;
+    }
+    if ( fabs(p1.y() - p2.y()) < FG_EPSILON &&
+	 fabs(p1.y() - p3.y()) < FG_EPSILON ) {
+	degenerate = true;
+    }
+    if ( fabs(p1.z() - p2.z()) < FG_EPSILON &&
+	 fabs(p1.z() - p3.z()) < FG_EPSILON ) {
+	degenerate = true;
+    }
+
+    if ( degenerate ) {
+	sgSetVec3( normal, p1.x(), p1.y(), p1.z() );
+	sgNormalizeVec3( normal );
+	cout << "Degenerate tri!" << endl;
+    } else {
+	v1[0] = p2.x() - p1.x();
+	v1[1] = p2.y() - p1.y();
+	v1[2] = p2.z() - p1.z();
+	v2[0] = p3.x() - p1.x();
+	v2[1] = p3.y() - p1.y();
+	v2[2] = p3.z() - p1.z();
+
+	sgVectorProductVec3( normal, v1, v2 );
+	sgNormalizeVec3( normal );
+    }
 
     return Point3D( normal[0], normal[1], normal[2] );
 }
@@ -574,8 +636,9 @@ static point_list gen_face_normals( FGConstruct& c ) {
 
     triele_list tri_elements = c.get_tri_elements();
     for ( int i = 0; i < (int)tri_elements.size(); i++ ) {
-	// cout << calc_normal( i ) << endl;
-	face_normals.push_back( calc_normal( c, i ) );
+	Point3D p = calc_normal(c,  i );
+	cout << p << endl;
+	face_normals.push_back( p );
     }
 
     return face_normals;
@@ -587,30 +650,32 @@ static point_list gen_point_normals( FGConstruct& c ) {
     point_list point_normals;
 
     Point3D normal;
-    cout << "caculating node normals" << endl;
+    cout << "calculating node normals" << endl;
 
     point_list wgs84_nodes = c.get_wgs84_nodes();
     belongs_to_list reverse_ele_lookup = c.get_reverse_ele_lookup();
     point_list face_normals = c.get_face_normals();
+    triele_list tri_elements = c.get_tri_elements();
 
     // for each node
     for ( int i = 0; i < (int)wgs84_nodes.size(); ++i ) {
 	int_list tri_list = reverse_ele_lookup[i];
-
-	int_list_iterator current = tri_list.begin();
-	int_list_iterator last = tri_list.end();
+	double total_area = 0.0;
 
 	Point3D average( 0.0 );
 
 	// for each triangle that shares this node
-	for ( ; current != last; ++current ) {
-	    normal = face_normals[ *current ];
+	for ( int j = 0; j < (int)tri_list.size(); ++j ) {
+	    normal = face_normals[ tri_list[j] ];
+	    double area = tri_ele_area( c, tri_elements[ tri_list[j] ] );
+	    normal *= area;	// scale normal weight relative to area
+	    total_area += area;
 	    average += normal;
 	    // cout << normal << endl;
 	}
 
-	average /= tri_list.size();
-	// cout << "average = " << average << endl;
+	average /= total_area;
+	cout << "average = " << average << endl;
 
 	point_normals.push_back( average );
     }
@@ -800,6 +865,22 @@ static void construct_tile( FGConstruct& c ) {
     c.set_tri_nodes( t.get_out_nodes() );
     c.set_tri_elements( t.get_elelist() );
     c.set_tri_segs( t.get_out_segs() );
+
+    // double check on the off chance that the triangulator was forced
+    // to introduce additional points
+    if ( c.get_tri_nodes().size() > c.get_point_normals().size() ) {
+	cout << "oops, need to add normals :-(" << endl;
+	point_list normals = c.get_point_normals();
+	int start = normals.size();
+	int end = c.get_tri_nodes().size();
+	for ( int i = start; i < end; ++i ) {
+	    cout << "adding a normal for " << c.get_tri_nodes().get_node(i)
+		 << endl;
+	    Point3D p = tgFakeNormal( c.get_tri_nodes().get_node(i) );
+	    normals.push_back( p );
+	}
+	c.set_point_normals( normals );
+    }
 
     // calculate wgs84 (cartesian) form of node list
     build_wgs_84_point_list( c, array );

@@ -53,13 +53,15 @@ void FGMatch::scan_share_file( const string& dir, const FGBucket& b,
 {
     string file = dir + "/"  + b.gen_base_path() + "/" + b.gen_index_str();
 
+    cout << "reading shared data from " << file << endl;
+
     fg_gzifstream in( file );
     if ( !in.is_open() ) {
         cout << "Cannot open file: " << file << endl;
 	return;
     }
 
-    cout << "reading shared data from " << file << endl;
+    cout << "open successful." << endl;
 
     string target;
     if ( search == SW_Corner ) {
@@ -268,7 +270,7 @@ void FGMatch::load_neighbor_shared( FGConstruct& c ) {
 
 
 // fake a normal for a point which is basically straight up
-static Point3D fake_normal( const Point3D& p ) {
+Point3D tgFakeNormal( const Point3D& p ) {
     Point3D radians = Point3D( p.x() * DEG_TO_RAD,
 			       p.y() * DEG_TO_RAD,
 			       p.z() );
@@ -276,7 +278,7 @@ static Point3D fake_normal( const Point3D& p ) {
     double len = Point3D(0.0).distance3D(cart);
     // cout << "len = " << len << endl;
     cart /= len;
-    // cout << "fake normal = " << cart << endl;
+    cout << "new fake normal = " << cart << endl;
 
     return cart;
 }
@@ -303,19 +305,19 @@ void FGMatch::split_tile( FGConstruct& c ) {
     // defaults "just in case"
     if ( ! sw_flag ) {
 	sw_node = Point3D( min.x, min.y, 0.0 );
-	sw_normal = fake_normal( sw_node );
+	sw_normal = tgFakeNormal( sw_node );
     }
     if ( ! se_flag ) {
 	se_node = Point3D( max.x, min.y, 0.0 );
-	se_normal = fake_normal( se_node );
+	se_normal = tgFakeNormal( se_node );
     }
     if ( ! nw_flag ) {
 	nw_node = Point3D( min.x, max.y, 0.0 );
- 	nw_normal = fake_normal( nw_node );
+ 	nw_normal = tgFakeNormal( nw_node );
     }
     if ( ! ne_flag ) {
 	ne_node = Point3D( max.x, max.y, 0.0 );
- 	ne_normal = fake_normal( ne_node );
+ 	ne_normal = tgFakeNormal( ne_node );
    }
 
     // separate nodes and normals into components
@@ -738,7 +740,7 @@ void FGMatch::assemble_tile( FGConstruct& c ) {
 	if ( n1 >= (int)new_normals.size() ) {
 	    cout << "Adding a segment resulted in a new node, faking a normal" 
 		 << endl;
-	    Point3D fake = fake_normal( p1 );
+	    Point3D fake = tgFakeNormal( p1 );
 	    insert_normal( new_normals, fake, n1 );
 	}
 
@@ -746,7 +748,7 @@ void FGMatch::assemble_tile( FGConstruct& c ) {
 	if ( n2 >= (int)new_normals.size() ) {
 	    cout << "Adding a segment resulted in a new node, faking a normal" 
 		 << endl;
-	    Point3D fake = fake_normal( p2 );
+	    Point3D fake = tgFakeNormal( p2 );
 	    insert_normal( new_normals, fake, n2 );
 	}
 
