@@ -9,4 +9,6 @@ SUBDIRS = \
 	Photo \
 	ShapeFile \
 	TGVPF \
+	Terra \
+	TerraFit \
 	UserDef

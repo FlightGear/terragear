@@ -390,6 +390,8 @@ AC_CONFIG_FILES([ \
 	src/Prep/Photo/Makefile \
 	src/Prep/ShapeFile/Makefile \
 	src/Prep/TGVPF/Makefile \
+	src/Prep/Terra/Makefile \
+	src/Prep/TerraFit/Makefile \
 	src/Prep/UserDef/Makefile \
 	src/Utils/Makefile \
 	src/Utils/cdrom/Makefile \
