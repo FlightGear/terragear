@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <plib/sg.h>
+
 SG_USING_STD(cout);
 SG_USING_STD(endl);
 
