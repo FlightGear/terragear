@@ -32,6 +32,7 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
+#include <simgear/timing/timestamp.hxx>
 
 #include STL_IOSTREAM
 #include STL_STRING
@@ -463,11 +464,22 @@ main (int argc, const char **argv)
     int type = feature.getTopologyType();
     cerr << "Searching through " << nTopologies << " topologies" << endl;
     int nAttributes = attributes.size();
+    SGTimeStamp start, now;
+    start.stamp();
+    long start_sec = start.get_seconds();
 
     TGPolygon mask;
     for (int i = 0; i < nTopologies; i++) {
-      if ((i % 10) == 0)
-	cerr << (double)i * 100.0 / (double)nTopologies << "% done ..." << endl;
+      if ((i % 50) == 0) {
+	now.stamp();
+        long now_sec = now.get_seconds();
+	double elapsed_min = (now_sec - start_sec) / 60.0;
+        double percent = (double)i / (double)nTopologies;
+	cerr << percent*100.0 << "% done ...";
+        cerr << " total time = " << elapsed_min / percent;
+	cerr << " (min)  finished in " << elapsed_min / percent - elapsed_min
+             << " minutes" << endl;
+      }
       if (feature.isTiled()) {
 	VpfRectangle rect = feature.getTile(i).getBoundingRectangle();
 	if (!bounds.isOverlapping(vpf2tg(rect)))
