@@ -50,7 +50,8 @@ FG_USING_STD(vector);
 // typedef gpcpoly_container::const_iterator const_gpcpoly_iterator;
 
 
-#define FG_MAX_AREA_TYPES 20
+#define FG_MAX_AREA_TYPES 40	// FIXME also defined in
+                                // MergerClipper/clipper.hxx
 #define EXTRA_SAFETY_CLIP
 // #define FG_MAX_VERTICES 100000
 
@@ -83,6 +84,9 @@ public:
 
     // Load a polygon definition file
     bool load_polys(const string& path);
+
+    // Add a polygon.
+    void add_poly(int area, const FGPolygon &poly);
 
     // remove any slivers from in polygon and move them to out
     // polygon.

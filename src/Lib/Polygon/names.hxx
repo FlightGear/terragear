@@ -39,19 +39,48 @@ enum AreaType {
     SomeSortOfArea    = 0,
     HoleArea          = 1,
     PondArea          = 2,
-    IslandArea        = 3,
-    LakeArea          = 4,
-    DryLakeArea       = 5,
-    IntLakeArea       = 6,
-    ReservoirArea     = 7,
-    IntReservoirArea  = 8,
-    StreamArea        = 9,
-    CanalArea         = 10,
-    GlacierArea       = 11,
-    OceanArea         = 12,
-    UrbanArea         = 13,
-    MarshArea         = 14,
-    DefaultArea       = 15,
+    LakeArea          = 3,
+    DryLakeArea       = 4,
+    IntLakeArea       = 5,
+    ReservoirArea     = 6,
+    IntReservoirArea  = 7,
+    StreamArea        = 8,
+    CanalArea         = 9,
+    GlacierArea       = 10,
+    OceanArea         = 11,
+    UrbanArea         = 12,
+    MarshArea         = 13,
+
+    // USGS Land Covers
+    // These are low-priority, since known polygons should always win.
+
+    BuiltUpCover      = 14,	// Urban and Built-Up Land
+    DryCropPastureCover = 15,	// Dryland Cropland and Pasture
+    IrrCropPastureCover = 16,	// Irrigated Cropland and Pasture
+    MixedCropPastureCover = 17,	// Mixed Dryland/Irrigated Cropland and Pasture
+    CropGrassCover    = 18,	// Cropland/Grassland Mosaic
+    CropWoodCover = 19,		// Cropland/Woodland Mosaic
+    GrassCover = 20,		// Grassland
+    ShrubCover = 21,		// Shrubland
+    ShrubGrassCover = 22,	// Mixed Shrubland/Grassland
+    SavannaCover = 23,		// Savanna
+    DeciduousBroadCover = 24,	// Deciduous Broadleaf Forest
+    DeciduousNeedleCover = 25,	// Deciduous Needleleaf Forest
+    EvergreenBroadCover = 26,	// Evergreen Broadleaf Forest
+    EvergreenNeedleCover = 27,	// Evergreen Needleleaf Forest
+    MixedForestCover = 28,	// Mixed Forest
+    WaterBodyCover = 29,	// Water Bodies
+    HerbWetlandCover = 30,	// Herbaceous Wetland
+    WoodedWetlandCover = 31,	// Wooded Wetland
+    BarrenCover = 32,		// Barren or Sparsely Vegetated
+    HerbTundraCover = 33,	// Herbaceous Tundra
+    WoodedTundraCover = 34,	// Wooded Tundra
+    MixedTundraCover = 35,	// Mixed Tundra
+    BareTundraCover = 36,	// Bare Ground Tundra
+    SnowCover = 37,		// Snow or Ice
+
+    IslandArea        = 38,
+    DefaultArea       = 39,
     VoidArea          = 9997,
     NullArea          = 9998,
     UnknownArea       = 9999
@@ -59,7 +88,7 @@ enum AreaType {
 
 
 // return area type from text name
-AreaType get_area_type( string area );
+AreaType get_area_type( const string &area );
 
 // return text form of area name
 string get_area_name( AreaType area );

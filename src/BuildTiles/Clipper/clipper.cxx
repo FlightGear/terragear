@@ -146,18 +146,24 @@ bool FGClipper::load_polys(const string& path) {
     // TEST - Ignore
     // } else 
 
-    if ( area < FG_MAX_AREA_TYPES ) {
-	polys_in.polys[area].push_back(poly);
-    } else {
-	FG_LOG( FG_CLIPPER, FG_ALERT, "Polygon type out of range = " 
-		<< (int)poly_type);
-	exit(-1);
-    }
+    add_poly(area, poly);
 
     // FILE *ofp= fopen("outfile", "w");
     // gpc_write_polygon(ofp, &polys.landuse);
 
     return true;
+}
+
+
+void FGClipper::add_poly (int area, const FGPolygon &poly)
+{
+    if ( area < FG_MAX_AREA_TYPES ) {
+	polys_in.polys[area].push_back(poly);
+    } else {
+	FG_LOG( FG_CLIPPER, FG_ALERT, "Polygon type out of range = " 
+		<< area);
+	exit(-1);
+    }
 }
 
 
@@ -300,11 +306,28 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     // best representation of land vs. ocean.  If we have other less
     // accurate data that spills out into the ocean, we want to just
     // clip it.
-    FGPolygon mask;
-    mask.erase();
+    FGPolygon land_mask;
+    land_mask.erase();
     for ( int i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
-	result_union = polygon_union( mask, polys_in.polys[DefaultArea][i] );
-	mask = result_union;
+	result_union =
+	  polygon_union( land_mask, polys_in.polys[DefaultArea][i] );
+	land_mask = result_union;
+    }
+
+    // set up island mask, for cutting holes in lakes
+    FGPolygon island_mask;
+    island_mask.erase();
+    for ( int i = 0; i < (int)polys_in.polys[IslandArea].size(); ++i ) {
+	island_mask =
+	  polygon_union( island_mask, polys_in.polys[IslandArea][i] );
+    }
+
+    // set up pond mask, for cutting holes in islands
+    FGPolygon pond_mask;
+    pond_mask.erase();
+    for ( int i = 0; i < (int)polys_in.polys[PondArea].size(); ++i ) {
+	pond_mask =
+	  polygon_union( pond_mask, polys_in.polys[PondArea][i] );
     }
 
     // int count = 0;
@@ -322,9 +345,17 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 
 	    if ( i > HoleArea ) {
 		// clip to land mask
-		tmp = polygon_int( current, mask );
+		tmp = polygon_int( current, land_mask );
 	    } else {
 		tmp = current;
+	    }
+
+	    if ( i == LakeArea ) {
+	        // clip against island mask
+	        tmp = polygon_diff( tmp, island_mask );
+	    } else if ( i == IslandArea ) {
+	        // clip to pond mask
+	        tmp = polygon_diff( tmp, pond_mask );
 	    }
 
 	    // clip current polygon against previous higher priority

@@ -51,6 +51,7 @@
 #include <GenOutput/genobj.hxx>
 #include <Match/match.hxx>
 #include <Triangulate/triangle.hxx>
+#include <landcover/landcover.hxx>
 
 #include "construct.hxx"
 
@@ -62,8 +63,73 @@ FG_USING_STD(vector);
 vector<string> load_dirs;
 
 
+/**
+ * Translate USGS land cover into TerraGear.
+ */
+static AreaType translateUSGSCover (int usgs_value)
+{
+  switch (usgs_value) {
+
+  case 1:			// Urban and Built-Up Land
+    return BuiltUpCover;
+  case 2:			// Dryland Cropland and Pasture
+    return DryCropPastureCover;
+  case 3:			// Irrigated Cropland and Pasture
+    return IrrCropPastureCover;
+  case 4:			// Mixed Dryland/Irrigated Cropland and Pasture
+    return MixedCropPastureCover;
+  case 5:			// Cropland/Grassland Mosaic
+    return CropGrassCover;
+  case 6:			// Cropland/Woodland Mosaic
+    return CropWoodCover;
+  case 7:			// Grassland
+    return GrassCover;
+  case 8:			// Shrubland
+    return ShrubCover;
+  case 9:			// Mixed Shrubland/Grassland
+    return ShrubGrassCover;
+  case 10:			// Savanna
+    return SavannaCover;
+  case 11:			// Deciduous Broadleaf Forest
+    return DeciduousBroadCover;
+  case 12:			// Deciduous Needleleaf Forest
+    return DeciduousNeedleCover;
+  case 13:			// Evergreen Broadleaf Forest
+    return EvergreenBroadCover;
+  case 14:			// Evergreen Needleleaf Forest
+    return EvergreenNeedleCover;
+  case 15:			// Mixed Forest
+    return MixedForestCover;
+  case 16:			// Water Bodies
+    // FIXME: use the type of an adjoining area if possible
+    // return WaterBodyCover;
+    return DefaultArea;
+  case 17:			// Herbaceous Wetland
+    return HerbWetlandCover;
+  case 18:			// Wooded Wetland
+    return WoodedWetlandCover;
+  case 19:			// Barren or Sparsely Vegetated
+    return BarrenCover;
+  case 20:			// Herbaceous Tundra
+    return HerbTundraCover;
+  case 21:			// Wooded Tundra
+    return WoodedTundraCover;
+  case 22:			// Mixed Tundra
+    return MixedTundraCover;
+  case 23:			// Bare Ground Tundra
+    return BareTundraCover;
+  case 24:			// Snow or Ice
+    return SnowCover;
+  default:			// Unknown
+    return DefaultArea;
+  }
+}
+
+
 // do actual scan of directory and loading of files
-int actual_load_polys( const string& dir, FGConstruct& c, FGClipper& clipper ) {
+static int actual_load_polys( const string& dir,
+			      FGConstruct& c,
+			      FGClipper& clipper ) {
     int counter = 0;
     string base = c.get_bucket().gen_base_path();
     string tile_str = c.get_bucket().gen_index_str();
@@ -105,9 +171,56 @@ int actual_load_polys( const string& dir, FGConstruct& c, FGClipper& clipper ) {
 }
 
 
+// generate polygons from land-cover raster.
+static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
+				   FGClipper &clipper ) {
+
+    int count = 0;
+    double lon, lat;
+    FGPolygon poly;
+
+				// Get the top corner of the tile
+    lon =
+      c.get_bucket().get_center_lon() - (0.5 * c.get_bucket().get_width());
+    lat =
+      c.get_bucket().get_center_lat() - (0.5 * c.get_bucket().get_height());
+
+    cout << "DPM: tile at " << lon << ',' << lat << endl;
+    
+				// FIXME: this may still be wrong
+    int x_span = int(120 * bucket_span(lat)); // arcsecs of longitude
+    int y_span = int(120 * FG_BUCKET_SPAN); // arcsecs of latitude
+    for (int x = 0; x < x_span; x++) {
+      for (int y = 0; y < y_span; y++) {
+	double x1 = lon + (x * (1.0/120.0));
+	double y1 = lat + (y * (1.0/120.0));
+	double x2 = x1 + (1.0/120.0);
+	double y2 = y1 + (1.0/120.0);
+	int cover_value = cover.getValue(x1 + (1.0/240.0), y1 + (1.0/240.0));
+	cout << " position: " << x1 << ',' << y1 << ','
+	     << cover.getDescUSGS(cover_value) << endl;
+	AreaType area = translateUSGSCover(cover_value);
+	if (area != DefaultArea) {
+	  poly.erase();
+	  poly.add_node(0, Point3D(x1, y1, 0.0));
+	  poly.add_node(0, Point3D(x1, y2, 0.0));
+	  poly.add_node(0, Point3D(x2, y2, 0.0));
+	  poly.add_node(0, Point3D(x2, y1, 0.0));
+	  clipper.add_poly(area, poly);
+	  count++;
+	}
+      }
+    }
+
+    return count;
+}
+
 // load all 2d polygons matching the specified base path and clip
 // against each other to resolve any overlaps
-int load_polys( FGConstruct& c ) {
+static int load_polys( FGConstruct& c ) {
+    string glc = c.get_work_base();
+    glc += "/LC-Global/gusgs2_0ll.img";
+    LandCover cover( glc );
     FGClipper clipper;
 
     string base = c.get_bucket().gen_base_path();
@@ -124,6 +237,9 @@ int load_polys( FGConstruct& c ) {
 	count += actual_load_polys( poly_path, c, clipper );
 	cout << "  loaded " << count << " total polys" << endl;
     }
+
+    // Load the land use polygons
+    count += actual_load_landcover ( cover, c, clipper );
 
     point2d min, max;
     min.x = c.get_bucket().get_center_lon() - 0.5 * c.get_bucket().get_width();
@@ -144,7 +260,7 @@ int load_polys( FGConstruct& c ) {
 
 // load regular grid of elevation data (dem based), return list of
 // fitted nodes
-int load_dem( FGConstruct& c, FGArray& array) {
+static int load_dem( FGConstruct& c, FGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
 
@@ -169,14 +285,14 @@ int load_dem( FGConstruct& c, FGArray& array) {
 
 
 // fit dem nodes, return number of fitted nodes
-int fit_dem(FGArray& array, int error) {
+static int fit_dem(FGArray& array, int error) {
     return array.fit( error );
 }
 
 
 // triangulate the data for each polygon ( first time before splitting )
-void first_triangulate( FGConstruct& c, const FGArray& array,
-			FGTriangle& t ) {
+static void first_triangulate( FGConstruct& c, const FGArray& array,
+			       FGTriangle& t ) {
     // first we need to consolidate the points of the DEM fit list and
     // all the polygons into a more "Triangle" friendly format
 
@@ -196,7 +312,7 @@ void first_triangulate( FGConstruct& c, const FGArray& array,
 
 // triangulate the data for each polygon ( second time after splitting
 // and reassembling )
-void second_triangulate( FGConstruct& c, FGTriangle& t ) {
+static void second_triangulate( FGConstruct& c, FGTriangle& t ) {
     t.rebuild( c );
     cout << "done re building node list and polygons" << endl;
 
@@ -463,14 +579,14 @@ static point_list gen_point_normals( FGConstruct& c ) {
 
 
 // generate the flight gear scenery file
-void do_output( FGConstruct& c, FGGenOutput& output ) {
+static void do_output( FGConstruct& c, FGGenOutput& output ) {
     output.build( c );
     output.write( c );
 }
 
 
 // collect custom objects and move to scenery area
-void do_custom_objects( const FGConstruct& c ) {
+static void do_custom_objects( const FGConstruct& c ) {
     FGBucket b = c.get_bucket();
 
     for (int i = 0; i < load_dirs.size(); i++) {
@@ -515,7 +631,7 @@ void do_custom_objects( const FGConstruct& c ) {
 }
 
 // master construction routine
-void construct_tile( FGConstruct& c ) {
+static void construct_tile( FGConstruct& c ) {
     cout << "Construct tile, bucket = " << c.get_bucket() << endl;
 
     // fit with ever increasing error tolerance until we produce <=
@@ -655,7 +771,7 @@ void construct_tile( FGConstruct& c ) {
 
 
 // display usage and exit
-void usage( const string name ) {
+static void usage( const string name ) {
     cout << "Usage: " << name << endl;
     cout << "[ --output-dir=<directory>" << endl;
     cout << "  --work-dir=<directory>" << endl;

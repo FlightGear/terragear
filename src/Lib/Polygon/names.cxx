@@ -21,59 +21,100 @@
 // $Id$
  
 #include <simgear/compiler.h>
+#include <map>
 
 #include STL_IOSTREAM
 #include STL_STRING
 
 #include "names.hxx"
 
+FG_USING_STD(string);
+FG_USING_STD(map);
 FG_USING_STD(cout);
 FG_USING_STD(endl);
 
 
+typedef map<AreaType, string> area_type_map;
+typedef map<string, AreaType> area_name_map;
+
+static area_type_map area_types;
+static area_name_map area_names;
+
+
+inline static void set_area (const string &name, AreaType type)
+{
+  area_types[type] = name;
+  area_names[name] = type;
+}
+
+
+static bool _initialized = false;
+
+
+inline static void init ()
+{
+  if (_initialized)
+    return;
+
+  set_area("SomeSort", SomeSortOfArea);
+  set_area("Hole", HoleArea);
+  set_area("Island", IslandArea);
+  set_area("Pond", PondArea);
+  set_area("Swamp or Marsh", MarshArea);
+  set_area("Marsh", MarshArea);
+  set_area("Lake", LakeArea);
+  set_area("Lake   Dry", DryLakeArea);
+  set_area("DryLake", DryLakeArea);
+  set_area("Lake   Intermittent", IntLakeArea);
+  set_area("IntermittentLake", IntLakeArea);
+  set_area("Reservoir", ReservoirArea);
+  set_area("Reservoir   Intermittent", IntReservoirArea);
+  set_area("IntermittentReservoir", IntReservoirArea);
+  set_area("Stream", StreamArea);
+  set_area("Canal", CanalArea);
+  set_area("Glacier", GlacierArea);
+  set_area("Urban", UrbanArea);
+  set_area("BuiltUpCover", BuiltUpCover);
+  set_area("DryCropPastureCover", DryCropPastureCover);
+  set_area("IrrCropPastureCover", IrrCropPastureCover);
+  set_area("MixedCropPastureCover", MixedCropPastureCover);
+  set_area("CropGrassCover", CropGrassCover);
+  set_area("CropWoodCover", CropWoodCover);
+  set_area("GrassCover", GrassCover);
+  set_area("ShrubCover", ShrubCover);
+  set_area("ShrubGrassCover", ShrubGrassCover);
+  set_area("SavannaCover", SavannaCover);
+  set_area("DeciduousBroadCover", DeciduousBroadCover);
+  set_area("DeciduousNeedleCover", DeciduousNeedleCover);
+  set_area("EvergreenBroadCover", EvergreenBroadCover);
+  set_area("EvergreenNeedleCover", EvergreenNeedleCover);
+  set_area("MixedForestCover", MixedForestCover);
+  set_area("WaterBodyCover", WaterBodyCover);
+  set_area("HerbWetlandCover", HerbWetlandCover);
+  set_area("WoodedWetlandCover", WoodedWetlandCover);
+  set_area("BarrenCover", BarrenCover);
+  set_area("HerbTundraCover", HerbTundraCover);
+  set_area("WoodedTundraCover", WoodedTundraCover);
+  set_area("MixedTundraCover", MixedTundraCover);
+  set_area("BareTundraCover", BareTundraCover);
+  set_area("SnowCover", SnowCover);
+  set_area("Default", DefaultArea);
+  set_area("Bay  Estuary or Ocean", OceanArea);
+  set_area("Ocean", OceanArea);
+  set_area("Void Area", VoidArea);
+  set_area("Null", NullArea);
+
+  _initialized = true;
+}
+
+
 // return area type from text name
-AreaType get_area_type( string area ) {
-    if ( area == "SomeSort" ) {
-	return SomeSortOfArea;
-    } else if ( area == "Hole" ) {
-	return HoleArea;
-    } else if ( area == "Island" ) {
-	return IslandArea;
-    } else if ( area == "Pond" ) {
-	return PondArea;
-    } else if ( (area == "Swamp or Marsh")
-		|| (area == "Marsh") ) {
-	return MarshArea;
-    } else if ( area == "Lake" ) {
-	return LakeArea;
-    } else if ( (area == "Lake   Dry")
-		|| (area == "DryLake") ) {
-	return DryLakeArea;
-    } else if ( (area == "Lake   Intermittent")
-		|| (area == "IntermittentLake") ) {
-	return IntLakeArea;
-    } else if ( area == "Reservoir" ) {
-	return ReservoirArea;
-    } else if ( (area == "Reservoir   Intermittent")
-		|| (area == "IntermittentReservoir") ) {
-	return IntReservoirArea;
-    } else if ( area == "Stream" ) {
-	return StreamArea;
-    } else if ( area == "Canal" ) {
-	return CanalArea;
-    } else if ( area == "Glacier" ) {
-	return GlacierArea;
-    } else if ( area == "Urban" ) {
-	return UrbanArea;
-    } else if ( area == "Default" ) {
-	return DefaultArea;
-    } else if ( (area == "Bay  Estuary or Ocean")
-                || (area == "Ocean") ) {
-	return OceanArea;
-    } else if ( area == "Void Area" ) {
-	return VoidArea;
-    } else if ( area == "Null" ) {
-	return NullArea;
+AreaType 
+get_area_type (const string &area) {
+    init();
+    area_name_map::const_iterator it = area_names.find(area);
+    if (it != area_names.end()) {
+        return it->second;
     } else {
 	cout << "unknown area = '" << area << "'" << endl;
 	// cout << "area = " << area << endl;
@@ -87,40 +128,10 @@ AreaType get_area_type( string area ) {
 
 // return text from of area name
 string get_area_name( AreaType area ) {
-    if ( area == DefaultArea ) {
-	return "Default";
-    } else if ( area == HoleArea ) {
-	return "Hole";
-    } else if ( area == MarshArea ) {
-	return "Marsh";
-    } else if ( area == PondArea ) {
-	return "Pond";
-    } else if ( area == IslandArea ) {
-	return "Island";
-    } else if ( area == LakeArea ) {
-	return "Lake";
-    } else if ( area == DryLakeArea ) {
-	return "DryLake";
-    } else if ( area == IntLakeArea ) {
-	return "IntermittentLake";
-    } else if ( area == ReservoirArea ) {
-	return "Reservoir";
-    } else if ( area == IntReservoirArea ) {
-	return "IntermittentReservoir";
-    } else if ( area == StreamArea ) {
-	return "Stream";
-    } else if ( area == CanalArea ) {
-	return "Canal";
-    } else if ( area == GlacierArea ) {
-	return "Glacier";
-    } else if ( area == UrbanArea ) {
-	return "Urban";
-    } else if ( area == OceanArea ) {
-	return "Ocean";
-    } else if ( area == VoidArea ) {
-	return "VoidArea";
-    } else if ( area == NullArea ) {
-	return "Null";
+    init();
+    area_type_map::const_iterator it = area_types.find(area);
+    if (it != area_types.end()) {
+        return it->second;
     } else {
 	cout << "unknown area code = " << (int)area << endl;
 	return "Unknown";

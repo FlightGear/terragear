@@ -303,6 +303,7 @@ AC_OUTPUT( \
 	src/Lib/Array/Makefile \
 	src/Lib/DEM/Makefile \
 	src/Lib/Geometry/Makefile \
+	src/Lib/landcover/Makefile \
 	src/Lib/Optimize/Makefile \
 	src/Lib/Polygon/Makefile \
 	src/Lib/poly2tri/Makefile \

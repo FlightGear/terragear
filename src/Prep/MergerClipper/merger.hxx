@@ -43,7 +43,7 @@
 FG_USING_STD(string);
 FG_USING_STD(vector);
 
-#define FG_MAX_AREA_TYPES 20
+#define FG_MAX_AREA_TYPES 40	// FIXME: also defined in clipper.hxx
 
 class FGPolyList {
 public:
