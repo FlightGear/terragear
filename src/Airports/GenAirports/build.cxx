@@ -563,10 +563,15 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 	return;
     }
 
-    // 5th pass: generate runway/taxiway lights
+    // 5th pass: generate runway lights
     superpoly_list rwy_lights; rwy_lights.clear();
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	gen_runway_lights( runways[i], alt_m, rwy_lights );
+    }
+
+    // 6th pass: generate all taxiway lights
+    for ( i = 0; i < (int)taxiways.size(); ++i ) {
+        gen_taxiway_lights( taxiways[i], alt_m, rwy_lights );
     }
 
     // generate convex hull (no longer)

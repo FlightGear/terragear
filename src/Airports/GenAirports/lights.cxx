@@ -53,7 +53,7 @@ static Point3D gen_runway_light_vector( const FGRunway& rwy_info,
     } else {
         end2 = (corner[0] + corner[1]) / 2.0;
         end1 = (corner[2] + corner[3]) / 2.0;
-   }
+    }
     Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
     Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
     cout << "cart1 = " << cart1 << " cart2 = " << cart2 << endl;
@@ -250,6 +250,89 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
 
     result.push_back( white );
     result.push_back( yellow );
+
+    return result;
+}
+
+
+// generate taxiway edge lighting
+// 100 meters spacing or the next number down that divides evenly.
+static superpoly_list gen_taxiway_edge_lights( const FGRunway& rwy_info,
+                                               const string& kind, bool recip )
+{
+    point_list b_lights; b_lights.clear();
+    point_list b_normals; b_normals.clear();
+    int i;
+
+    double len = rwy_info.length * SG_FEET_TO_METER;
+    int divs;
+    if ( len > 100.0 ) {
+        // for lengths of 300' or more, max spacing is 200'
+        divs = (int)(len / 70.0) + 1;
+    } else {
+        // for lengths <= 300', max spacing = 100'
+        divs = (int)(len / 35.0) + 1;
+    }
+
+    // using FGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    Point3D inc1, inc2;
+    Point3D pt1, pt2;
+
+    if ( recip ) {
+        inc1 = (corner[3] - corner[0]) / divs;
+        inc2 = (corner[2] - corner[1]) / divs;
+        pt1 = corner[0];
+        pt2 = corner[1];
+    } else {
+        inc1 = (corner[0] - corner[3]) / divs;
+        inc2 = (corner[1] - corner[2]) / divs;
+        pt1 = corner[3];
+        pt2 = corner[2];
+    }
+
+    double dist = rwy_info.length;
+    double step = dist / divs;
+
+    Point3D up = sgGeodToCart( corner[0] * SG_DEGREES_TO_RADIANS );
+    double length = up.distance3D( Point3D(0.0) );
+    up = up / length;
+
+    b_lights.push_back( pt1 );
+    b_normals.push_back( up );
+    b_lights.push_back( pt2 );
+    b_normals.push_back( up );
+    dist -= step;
+
+    for ( i = 0; i < divs; ++i ) {
+	pt1 += inc1;
+	pt2 += inc2;
+        b_lights.push_back( pt1 );
+        b_normals.push_back( up );
+        b_lights.push_back( pt2 );
+        b_normals.push_back( up );
+    }
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( b_lights, false );
+    normals_poly.add_contour( b_normals, false );
+
+    FGSuperPoly blue;
+    blue.set_poly( lights_poly );
+    blue.set_normals( normals_poly );
+    blue.set_material( "RWY_BLUE_TAXIWAY_LIGHTS" );
+
+    superpoly_list result; result.clear();
+
+    result.push_back( blue );
 
     return result;
 }
@@ -2046,7 +2129,14 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    // LDIN
+    ////////////////////////////////////////////////////////////
+    // NOT IMPLIMENTED:
+    //
+    // code: "F" LDIN
+    // 
+    // This configuration is airport specific and no additional placement
+    // data is provided in our database
+    ////////////////////////////////////////////////////////////
 
     // MALS
     if ( rwy_info.end1_flags.substr(3,1) == "G" ) {
@@ -2076,6 +2166,14 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
         }
     }
 
+    ////////////////////////////////////////////////////////////
+    // NOT IMPLIMENTED:
+    //
+    // code: "I" NSTD Non standard
+    // 
+    // This is also likely airport specific
+    ////////////////////////////////////////////////////////////
+
     // MALSR
     if ( rwy_info.end1_flags.substr(3,1) == "J" ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "R", false );
@@ -2089,6 +2187,28 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
             lights.push_back( s[i] );
         }
     }
+
+    ////////////////////////////////////////////////////////////
+    // NOT IMPLIMENTED:
+    //
+    // code: "K" MIL OVRN Something military
+    //
+    // No clue ...
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    // NOT IMPLIMENTED:
+    //
+    // code: "L" ODALS Omni-directional approach light system
+    //
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    // NOT IMPLIMENTED:
+    //
+    // code: "M" RAIL Runway alignment indicator lights (icw other systems)
+    //
+    ////////////////////////////////////////////////////////////
 
     // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
     // a shorter center bar)
@@ -2167,4 +2287,43 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
             lights.push_back( s[i] );
         }
     }
+}
+
+
+// top level taxiway light generator
+void gen_taxiway_lights( const FGRunway& taxiway_info, float alt_m,
+                         superpoly_list &lights ) {
+
+    cout << "gen taxiway lights " << taxiway_info.rwy_no << " "
+         << taxiway_info.end1_flags << " " << taxiway_info.end2_flags << endl;;
+
+    unsigned int i;
+
+    // Centerline lighting
+    if ( taxiway_info.surface_flags.substr(0,1) == "Y" ) {
+        // forward direction
+        superpoly_list s;
+        s = gen_runway_center_line_lights( taxiway_info, false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+
+        // reverse direction
+        s = gen_runway_center_line_lights( taxiway_info, true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+
+    // Make edge lighting
+    string edge_type = taxiway_info.surface_flags.substr(2,1);
+    if ( taxiway_info.surface_flags.substr(2,1) == "B" ) {
+        // forward direction
+        superpoly_list s;
+        s = gen_taxiway_edge_lights( taxiway_info, "B", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+
 }

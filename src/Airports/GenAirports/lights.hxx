@@ -37,5 +37,8 @@
 void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
                         superpoly_list &lights );
 
+// generate taxiway lighting
+void gen_taxiway_lights( const FGRunway& taxiway_info, float alt_m,
+                         superpoly_list &lights );
 
 #endif // _RWY_LIGHTS_HXX
