@@ -151,6 +151,12 @@ public:
     inline int get_rows() const { return rows; }
     inline double get_col_step() const { return col_step; }
     inline double get_row_step() const { return row_step; }
+
+    /**
+     * Test whether an area contains any non-zero elevations.
+     */
+    bool has_non_zero_elev (int start_x, int span_x,
+                            int start_y, int span_y) const;
 };
 
 

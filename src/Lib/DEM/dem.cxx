@@ -432,6 +432,12 @@ FGDem::write_area( const string& root, SGBucket& b, bool compress ) {
 	return 0;
     }
 
+    // If the area is all ocean, skip it.
+    if (!has_non_zero_elev(start_x, span_x, start_y, span_y)) {
+        cout << "Tile is all zero elevation: skipping" << endl;
+        return 0;
+    }
+
     // generate output file name
     string base = b.gen_base_path();
     string path = root + "/" + base;
@@ -877,4 +883,17 @@ FGDem::~FGDem( void ) {
     delete [] output_data;
 }
 
+
+bool
+FGDem::has_non_zero_elev (int start_x, int span_x,
+                          int start_y, int span_y) const
+{
+    for (int i = start_x; i < start_x + span_x; i++) {
+        for (int j = start_y; j < start_y + span_y; j++) {
+            if (dem_data[i][j] != 0)
+                return true;
+        }
+    }
+    return false;
+}
 
