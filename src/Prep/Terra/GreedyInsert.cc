@@ -25,8 +25,13 @@ GreedySubdivision::GreedySubdivision(Map *map)
     is_used.init(w, h);
     int x,y;
     for(x=0;x<w;x++)
-	for(y=0;y<h;y++)
-	    is_used(x,y) = DATA_POINT_UNUSED;
+	for(y=0;y<h;y++) {
+            if ( map->eval(x,y) > 10 ) {
+                is_used(x,y) = DATA_POINT_UNUSED;
+            } else {
+                is_used(x,y) = DATA_VALUE_UNKNOWN;
+            }
+        }
 
 
     initMesh(Vec2(0,0),
