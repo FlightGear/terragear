@@ -24,10 +24,10 @@
 
 #include <time.h>
 
+#include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
 #include <Polygon/names.hxx>
-#include "scenery_version.hxx"
 
 #ifdef _MSC_VER
 #  include <win32/mkdir.hpp>
@@ -308,8 +308,9 @@ void FGGenOutput::calc_bounding_sphere( FGConstruct& c, const FGTriEle& t,
 }
 
 
+#if 0
 // write out the fgfs scenery file
-int FGGenOutput::write( FGConstruct &c ) {
+int FGGenOutput::write_orig( FGConstruct &c ) {
     Point3D p;
     int i;
 
@@ -420,6 +421,66 @@ int FGGenOutput::write( FGConstruct &c ) {
 
     command = "gzip --force --best " + file;
     system(command.c_str());
+
+    return 1;
+}
+#endif
+
+
+// write out the fgfs scenery file
+int FGGenOutput::write( FGConstruct &c ) {
+    int i;
+
+    // Assemble all the data into the final format
+
+    SGBucket b = c.get_bucket();
+    string base = c.get_output_base() + "/Scenery/";
+    string name = b.gen_index_str();
+
+    point_list wgs84_nodes = c.get_wgs84_nodes();
+    point_list normals = c.get_point_normals();
+    cout << "dumping normals = " << normals.size() << endl;
+    /* for ( i = 0; i < (int)normals.size(); ++i ) {
+	Point3D p = normals[i];
+	printf("vn %.5f %.5f %.5f\n", p.x(), p.y(), p.z());
+    } */
+    point_list texcoords = tex_coords.get_node_list();
+
+    // allocate and initialize triangle group structures
+    group_list tris_v;   group_list tris_tc;   string_list tri_materials;
+    tris_v.clear();      tris_tc.clear();      tri_materials.clear();
+
+    group_list strips_v; group_list strips_tc; string_list strip_materials;
+    strips_v.clear();    strips_tc.clear();    strip_materials.clear();
+
+    group_list fans_v;   group_list fans_tc;   string_list fan_materials;
+    fans_v.clear();      fans_tc.clear();      fan_materials.clear();
+
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+	if ( (int)fans[i].size() > 0 ) {
+	    cout << "creating " << fans[i].size() << " fans of type "
+		 << i << endl;
+	    string attr_name = get_area_name( (AreaType)i );
+
+	    int_list vs, tcs;
+	    for ( int j = 0; j < (int)fans[i].size(); ++j ) {
+		vs.clear(); tcs.clear();
+		for ( int k = 0; k < (int)fans[i][j].size(); ++k ) {
+		    vs.push_back( fans[i][j][k] );
+		    tcs.push_back( textures[i][j][k] );
+		}
+		fans_v.push_back( vs );
+		fans_tc.push_back( tcs );
+		fan_materials.push_back( attr_name );
+	    }
+	}
+    }
+
+    sgWriteBinObj( base, name, b, gbs_center, gbs_radius, 
+		   wgs84_nodes, normals, texcoords, 
+		   tris_v, tris_tc, tri_materials,
+		   strips_v, strips_tc, strip_materials, 
+		   fans_v, fans_tc, fan_materials );
 
     return 1;
 }
