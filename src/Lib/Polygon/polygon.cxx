@@ -558,7 +558,7 @@ TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len ) {
 }
 
 
-// Traverse a polygon and toss all the internal holes
+// Traverse a polygon and return the union of all the non-hole contours
 TGPolygon tgPolygonStripHoles( const TGPolygon &poly ) {
     TGPolygon result; result.erase();
 
@@ -568,7 +568,9 @@ TGPolygon tgPolygonStripHoles( const TGPolygon &poly ) {
 	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
         point_list contour = poly.get_contour( i );
         if ( ! poly.get_hole_flag(i) ) {
-            result.add_contour( contour, poly.get_hole_flag(i) );
+            TGPolygon tmp;
+            tmp.add_contour( contour, poly.get_hole_flag(i) );
+            result = tgPolygonUnion( tmp, result );
         }
     }
 
