@@ -1405,6 +1405,7 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
 	cerr << "Converting to a simple runway ... !" << endl;	
 	gen_simple_rwy( rwy_info, "grass_rwy",
 			rwy_polys, texparams, accum );
+	return;
     }
 
     double start_pct = 0;
@@ -1482,6 +1483,7 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
 
     start_pct = end_pct;
     end_pct = start_pct + ( 500 / length );
+    if ( end_pct > 1.0 ) { end_pct = 1.0; }
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -1500,21 +1502,23 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
     // The rest ...
     //
 
-    start_pct = end_pct;
-    end_pct = 1.0;
-    gen_runway_section( rwy_info, runway_a,
-			start_pct, end_pct,
-			0.0, 1.0,
-			rwy_info.heading,
-			material, "rest",
-			rwy_polys, texparams, accum );
+    if ( end_pct < 1.0 ) {
+	start_pct = end_pct;
+	end_pct = 1.0;
+	gen_runway_section( rwy_info, runway_a,
+			    start_pct, end_pct,
+			    0.0, 1.0,
+			    rwy_info.heading,
+			    material, "rest",
+			    rwy_polys, texparams, accum );
 
-    gen_runway_section( rwy_info, runway_b,
-			start_pct, end_pct,
-			0.0, 1.0,
-			rwy_info.heading + 180.0,
-			material, "rest",
-			rwy_polys, texparams, accum );
+	gen_runway_section( rwy_info, runway_b,
+			    start_pct, end_pct,
+			    0.0, 1.0,
+			    rwy_info.heading + 180.0,
+			    material, "rest",
+			    rwy_polys, texparams, accum );
+    }
 }
 
 
