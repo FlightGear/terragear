@@ -56,6 +56,7 @@
 
 #include "build.hxx"
 #include "convex_hull.hxx"
+#include "lights.hxx"
 #include "point2d.hxx"
 #include "poly_extra.hxx"
 #include "runway.hxx"
@@ -554,8 +555,10 @@ void build_airport( string airport_raw, string_list& runways_raw,
     }
 
     // 5th pass: generate runway/taxiway lights
+    point_list rwy_lights;
+    rwy_lights.clear();
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	// gen_runway_lights( runways[i], &rwy_lights );
+	gen_runway_lights( runways[i], &rwy_lights );
     }
 
     // generate convex hull (no longer)
@@ -817,11 +820,17 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	tris_tc.push_back( base_tc );
     }
 
+    // add lights
+    FGTriNodes light_nodes;
+    light_nodes.clear();
+    for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
+	light_nodes.simple_add( rwy_lights[i] );
+    }
+
     // calculate node elevations
     point_list geod_nodes = calc_elevations( root, nodes.get_node_list() );
+    point_list geod_lights = calc_elevations( root, light_nodes.get_node_list() );
     cout << "Done with calc_elevations()" << endl;
-
-    // #if 0 // testing
 
     // add base skirt (to hide potential cracks)
     //
@@ -899,8 +908,6 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	strips_tc.push_back( base_tc );
     }
 
-    // #endif
-
     // calculate wgs84 mapping of nodes
     point_list wgs84_nodes;
     for ( i = 0; i < (int)geod_nodes.size(); ++i ) {
@@ -908,6 +915,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	p.sety( geod_nodes[i].y() * SGD_DEGREES_TO_RADIANS );
 	p.setz( geod_nodes[i].z() );
 	wgs84_nodes.push_back( sgGeodToCart( p ) );
+    }
+    point_list wgs84_lights;
+    for ( i = 0; i < (int)geod_lights.size(); ++i ) {
+	p.setx( geod_lights[i].x() * SGD_DEGREES_TO_RADIANS );
+	p.sety( geod_lights[i].y() * SGD_DEGREES_TO_RADIANS );
+	p.setz( geod_lights[i].z() );
+	wgs84_lights.push_back( sgGeodToCart( p ) );
     }
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
     cout << "Done with wgs84 node mapping" << endl;

@@ -29,6 +29,7 @@ genapts_SOURCES = \
 	build.cxx build.hxx \
 	convex_hull.cxx convex_hull.hxx \
 	global.hxx \
+	lights.hxx lights.cxx \
 	main.cxx \
 	point2d.cxx point2d.hxx \
 	poly_extra.cxx poly_extra.hxx \
