@@ -182,10 +182,12 @@ void TGArray::remove_voids( ) {
     for ( int pass = 0; pass < 2 && have_void; ++pass ) { 
         // attempt to fill in any void data horizontally
         for ( int i = 0; i < cols; i++ ) {
+            int j;
+
             // fill in front ways
             last_elev = -32768;
             have_void = false;
-            for ( int j = 0; j < rows; j++ ) {
+            for ( j = 0; j < rows; j++ ) {
                 if ( in_data[i][j] > -9000 ) {
                     last_elev = in_data[i][j];
                 } else if ( last_elev > -9000 ) {
@@ -197,7 +199,7 @@ void TGArray::remove_voids( ) {
             // fill in back ways
             last_elev = -32768;
             have_void = false;
-            for ( int j = rows - 1; j >= 0; j-- ) {
+            for ( j = rows - 1; j >= 0; j-- ) {
                 if ( in_data[i][j] > -9000 ) {
                     last_elev = in_data[i][j];
                 } else if ( last_elev > -9000 ) {
@@ -210,10 +212,12 @@ void TGArray::remove_voids( ) {
 
         // attempt to fill in any void data vertically
         for ( int j = 0; j < rows; j++ ) {
+            int i;
+
             // fill in front ways
             last_elev = -32768;
             have_void = false;
-            for ( int i = 0; i < cols; i++ ) {
+            for ( i = 0; i < cols; i++ ) {
                 if ( in_data[i][j] > -9999 ) {
                     last_elev = in_data[i][j];
                 } else if ( last_elev > -9999 ) {
@@ -226,7 +230,7 @@ void TGArray::remove_voids( ) {
             // fill in back ways
             last_elev = -32768;
             have_void = false;
-            for ( int i = cols - 1; i >= 0; i-- ) {
+            for ( i = cols - 1; i >= 0; i-- ) {
                 if ( in_data[i][j] > -9999 ) {
                     last_elev = in_data[i][j];
                 } else if ( last_elev > -9999 ) {
