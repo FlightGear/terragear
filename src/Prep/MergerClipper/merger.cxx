@@ -181,7 +181,7 @@ void FGMerger::merge( FGPolyList& clipped ) {
 void FGMerger::clip(FGPolyList& subject, FGPolyList& clip) {
   FGPolygon poly, result, cliped, difference;
   int max_a[FG_MAX_AREA_TYPES];
-  int max_area;
+  int max_area = 0;
   int default_indx=(int)get_area_type("Default");
   
   difference = clip.polys[default_indx][0];
