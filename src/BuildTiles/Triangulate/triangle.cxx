@@ -136,6 +136,12 @@ FGTriangle::build( const point_list& corner_list,
 	    // new way
 
 	    // try to make sure our polygons aren't goofy
+#if 0
+            // CLO 09/18/2001: if we snap polygons including holes
+            // will this screw up the edge matching when objects are
+            // inserted into their holes?
+	    gpc_poly = snap(gpc_poly, 0.000001);
+#endif
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = reduce_degeneracy( gpc_poly );
 	    gpc_poly = remove_dups( gpc_poly );
