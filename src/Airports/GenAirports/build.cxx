@@ -60,7 +60,8 @@
 #include "texparams.hxx"
 
 
-static const double tgAirportEpsilon = FG_EPSILON / 10.0;
+// static const double tgAirportEpsilon = FG_EPSILON / 10.0;
+static const double tgAirportEpsilon = FG_EPSILON * 10.0;
 
 
 // calculate texture coordinates for runway section using the provided
@@ -205,11 +206,11 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	    if ( (current->x() > (p_min.x() + FG_EPSILON)) 
 		 && (current->x() < (p_max.x() - FG_EPSILON)) ) {
 
-		// printf("found a potential candidate %.7f %.7f %.7f\n",
-		//        current->x(), current->y(), current->z() );
+		printf( "found a potential candidate %.7f %.7f %.7f\n",
+		        current->x(), current->y(), current->z() );
 
 		y_err = fabs(current->y() - (m * current->x() + b));
-		// cout << "y_err = " << y_err << endl;
+		cout << "y_err = " << y_err << endl;
 
 		if ( y_err < tgAirportEpsilon ) {
 		    cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
@@ -255,11 +256,11 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	    if ( (current->y() > (p_min.y() + FG_EPSILON)) 
 		 && (current->y() < (p_max.y() - FG_EPSILON)) ) {
 		
-		// printf("found a potential candidate %.7f %.7f %.7f\n",
-		//        current->x(), current->y(), current->z() );
+		printf( "found a potential candidate %.7f %.7f %.7f\n",
+		        current->x(), current->y(), current->z() );
 
 		x_err = fabs(current->x() - (m1 * current->y() + b1));
-		// cout << "x_err = " << x_err << endl;
+		cout << "x_err = " << x_err << endl;
 
 		// if ( temp ) {
 		// cout << "  (" << counter << ") x_err = " << x_err << endl;
