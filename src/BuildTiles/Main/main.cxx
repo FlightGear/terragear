@@ -219,6 +219,30 @@ static void inline add_to_polys ( FGPolygon &accum, const FGPolygon &poly) {
 }
 
 
+// make the area specified area, look up the land cover type, and add
+// it to polys
+static void make_area( const LandCover &cover, FGPolygon *polys,
+		       double x1, double y1, double x2, double y2,
+		       double half_dx, double half_dy )
+{
+    // Look up the land cover for the square
+    int cover_value = cover.getValue( x1 + half_dx, y1 + half_dy );
+    cout << " position: " << x1 << ',' << y1 << ','
+	 << cover.getDescUSGS(cover_value) << endl;
+    AreaType area = translateUSGSCover(cover_value);
+    if (area != DefaultArea) {
+	// Create a square polygon and merge it into the list.
+	FGPolygon poly;
+	poly.erase();
+	poly.add_node(0, Point3D(x1, y1, 0.0));
+	poly.add_node(0, Point3D(x1, y2, 0.0));
+	poly.add_node(0, Point3D(x2, y2, 0.0));
+	poly.add_node(0, Point3D(x2, y1, 0.0));
+	add_to_polys(polys[area], poly);
+    }
+}
+
+
 // Generate polygons from la and-cover raster.  Horizontally- or
 // vertically-adjacent polygons will be merged automatically.
 static int actual_load_landcover ( FGConstruct & c,
@@ -245,6 +269,9 @@ static int actual_load_landcover ( FGConstruct & c,
     double dx = 1.0 / 120.0;
     double dy = dx;
 
+    double half_dx = dx * 0.5;
+    double half_dy = half_dx;
+
     // Figure out how many units wide and high this tile is; each unit
     // is 30 arc seconds.
     // int x_span = int(120 * bucket_span(base_lat)); // arcsecs of longitude
@@ -255,32 +282,21 @@ static int actual_load_landcover ( FGConstruct & c,
     double x2 = x1 + dx;
     double y2 = y1 + dy;
 
-    while ( x1 < max_lon ) {
-	while ( y1 < max_lat ) {
-	    // Look up the land cover for the square
-	    int cover_value = cover.getValue(x1 + (1.0/240.0),
-					     y1 + (1.0/240.0));
-	    cout << " position: " << x1 << ',' << y1 << ','
-		 << cover.getDescUSGS(cover_value) << endl;
-	    AreaType area = translateUSGSCover(cover_value);
-	    if (area != DefaultArea) {
-		// Create a square polygon and merge it into the list.
-		poly.erase();
-		poly.add_node(0, Point3D(x1, y1, 0.0));
-		poly.add_node(0, Point3D(x1, y2, 0.0));
-		poly.add_node(0, Point3D(x2, y2, 0.0));
-		poly.add_node(0, Point3D(x2, y1, 0.0));
-		add_to_polys(polys[area], poly);
-	    }
+    while ( x1 < max_lon - (dx + half_dx) ) {
+	while ( y1 < max_lat - (dy + half_dy) ) {
+	    make_area( cover, polys, x1, y1, x2, y2, half_dx, half_dy );
 
 	    y1 = y2;
 	    y2 += dy;
 	}
+	make_area( cover, polys, x1, y1, x2, max_lat, half_dx, half_dy );
+
 	x1 = x2;
 	x2 += dx;
 	y1 = base_lat;
 	y2 = y1 + dy;
     }
+    make_area( cover, polys, x1, y1, max_lon, max_lat, half_dx, half_dy );
 
     // Now that we're finished looking up land cover, we have a list
     // of lists of polygons, one (possibly-empty) list for each area
