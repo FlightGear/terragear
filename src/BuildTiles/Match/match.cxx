@@ -224,10 +224,22 @@ void FGMatch::load_neighbor_shared( FGConstruct& c ) {
     load_shared( c, WEST );
 
     cout << "Shared data read in:" << endl;
-    if ( sw_flag ) { cout << "  sw corner = " << sw_node << endl; }
-    if ( se_flag ) { cout << "  se corner = " << se_node << endl; }
-    if ( ne_flag ) { cout << "  ne corner = " << ne_node << endl; }
-    if ( nw_flag ) { cout << "  nw corner = " << nw_node << endl; }
+    if ( sw_flag ) {
+	cout << "  sw corner = " << sw_node << endl;
+	cout << "     normal = " << sw_normal << endl;
+    }
+    if ( se_flag ) {
+	cout << "  se corner = " << se_node << endl;
+	cout << "     normal = " << se_normal << endl;
+    }
+    if ( ne_flag ) {
+	cout << "  ne corner = " << ne_node << endl;
+	cout << "     normal = " << ne_normal << endl;
+    }
+    if ( nw_flag ) {
+	cout << "  nw corner = " << nw_node << endl;
+	cout << "     normal = " << nw_normal << endl;
+    }
     if ( north_flag ) {
 	cout << "  north nodes = " << north_nodes.size() << endl;
 	for ( int i = 0; i < (int)north_nodes.size(); ++i ) {
@@ -255,6 +267,21 @@ void FGMatch::load_neighbor_shared( FGConstruct& c ) {
 }
 
 
+// fake a normal for a point which is basically straight up
+static Point3D fake_normal( const Point3D& p ) {
+    Point3D radians = Point3D( p.x() * DEG_TO_RAD,
+			       p.y() * DEG_TO_RAD,
+			       p.z() );
+    Point3D cart = sgGeodToCart(radians);
+    double len = Point3D(0.0).distance3D(cart);
+    // cout << "len = " << len << endl;
+    cart /= len;
+    // cout << "fake normal = " << cart << endl;
+
+    return cart;
+}
+
+
 // split up the tile between the shared edge points, normals, and
 // segments and the body.  This must be done after calling
 // load_neighbor_data() and will ignore any shared data from the
@@ -274,10 +301,22 @@ void FGMatch::split_tile( FGConstruct& c ) {
     max.y = b.get_center_lat() + 0.5 * b.get_height();
 
     // defaults "just in case"
-    sw_node = Point3D( min.x, min.y, 0.0 );
-    se_node = Point3D( max.x, min.y, 0.0 );
-    nw_node = Point3D( min.x, max.y, 0.0 );
-    ne_node = Point3D( max.x, max.y, 0.0 );
+    if ( ! sw_flag ) {
+	sw_node = Point3D( min.x, min.y, 0.0 );
+	sw_normal = fake_normal( sw_node );
+    }
+    if ( ! se_flag ) {
+	se_node = Point3D( max.x, min.y, 0.0 );
+	se_normal = fake_normal( sw_node );
+    }
+    if ( ! nw_flag ) {
+	nw_node = Point3D( min.x, max.y, 0.0 );
+ 	nw_normal = fake_normal( sw_node );
+    }
+    if ( ! ne_flag ) {
+	ne_node = Point3D( max.x, max.y, 0.0 );
+ 	ne_normal = fake_normal( sw_node );
+   }
 
     // separate nodes and normals into components
 
@@ -588,21 +627,6 @@ void insert_normal( point_list& normals, Point3D n, int i ) {
     }
 
     normals[i] = n;
-}
-
-
-// fake a normal for a point which is basically straight up
-static Point3D fake_normal( const Point3D& p ) {
-    Point3D radians = Point3D( p.x() * DEG_TO_RAD,
-			       p.y() * DEG_TO_RAD,
-			       p.z() );
-    Point3D cart = sgGeodToCart(radians);
-    double len = Point3D(0.0).distance3D(cart);
-    cout << "len = " << len << endl;
-    cart /= len;
-    cout << "fake normal = " << cart << endl;
-
-    return cart;
 }
 
 
