@@ -18,7 +18,7 @@ fgfs_construct_LDADD = \
 	$(top_builddir)/src/Lib/landcover/liblandcover.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgbucket -lsgio -lsgmath -lsgmisc -lsgdebug -lsgxml \
+	-lsgbucket -lsgio -lsgmath -lsgmisc -lsgdebug -lsgstructure -lsgxml \
         -lplibsg -lplibul -lgenpolyclip -lz 
 
 fgfs_master_SOURCES = master.cxx

@@ -8,7 +8,7 @@
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
-#include <simgear/misc/exception.hxx>
+#include <simgear/structure/exception.hxx>
 
 #include <Polygon/polygon.hxx>
 

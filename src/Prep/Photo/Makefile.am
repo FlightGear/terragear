@@ -36,7 +36,8 @@ photo_LDADD = \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgxml -lgenpolyclip -lz
+	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgstructure -lsgxml \
+	-lgenpolyclip -lz
 	$(base_LIBS)
 
 wgs84offset_SOURCES = wgs84offset.cxx

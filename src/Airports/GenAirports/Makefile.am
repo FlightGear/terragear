@@ -50,8 +50,9 @@ genapts_LDADD = \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgxml -lgenpolyclip \
-        -lnurbsf -lmatrixI -lmatrixN -lmatrix \
+	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgstructure -lsgxml \
+	-lgenpolyclip \
+	-lnurbsf -lmatrixI -lmatrixN -lmatrix \
 	-lz \
 	$(base_LIBS)
 

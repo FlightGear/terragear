@@ -26,7 +26,7 @@
 
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/exception.hxx>
+#include <simgear/structure/exception.hxx>
 
 #include "simple_clip.hxx"
 

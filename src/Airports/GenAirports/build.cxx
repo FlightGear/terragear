@@ -29,7 +29,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/exception.hxx>
+#include <simgear/structure/exception.hxx>
 
 #include <stdio.h>
 #include <stdlib.h>		// for atoi() atof()

@@ -27,7 +27,7 @@
 #endif
 
 #include <simgear/compiler.h>
-#include <simgear/misc/exception.hxx>
+#include <simgear/structure/exception.hxx>
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>

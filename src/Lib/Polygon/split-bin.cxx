@@ -30,7 +30,7 @@
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/exception.hxx>
+#include <simgear/structure/exception.hxx>
 
 #ifdef _MSC_VER
 #  include <win32/mkdir.hpp>

@@ -32,7 +32,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
-#include <simgear/misc/exception.hxx>
+#include <simgear/structure/exception.hxx>
 
 SG_USING_STD(less);
 SG_USING_STD(map);

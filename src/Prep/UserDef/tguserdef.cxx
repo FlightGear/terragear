@@ -4,9 +4,9 @@
 
 #include <simgear/compiler.h>
 #include <simgear/math/point3d.hxx>
-#include <simgear/misc/exception.hxx>
 #include <simgear/props/props_io.hxx>
 #include <simgear/props/props.hxx>
+#include <simgear/structure/exception.hxx>
 
 #include <Geometry/util.hxx>
 #include <Polygon/index.hxx>

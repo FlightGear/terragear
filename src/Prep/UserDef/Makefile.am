@@ -7,7 +7,8 @@ tguserdef_LDADD = \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgbucket -lsgmisc -lsgmath -lsgprops -lsgio -lsgxml -lsgdebug \
+	-lsgbucket -lsgmisc -lsgmath -lsgprops -lsgio -lsgstructure -lsgxml \
+	-lsgdebug \
 	-lgenpolyclip -lz
 
 INCLUDES = -I$(top_srcdir)/src/Lib

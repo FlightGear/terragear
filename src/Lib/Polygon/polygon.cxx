@@ -32,7 +32,7 @@ extern "C" {
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/point3d.hxx>
-#include <simgear/misc/exception.hxx>
+#include <simgear/structure/exception.hxx>
 
 SG_USING_STD(endl);
 
