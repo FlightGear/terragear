@@ -176,15 +176,15 @@ void tgSplitPolygon( const string& path, AreaType area,
     // get next polygon index
     index = poly_index_next();
 
-    SG_LOG( SG_GENERAL, SG_INFO, "  min = " << min << " max = " << max );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  min = " << min << " max = " << max );
 
     // find buckets for min, and max points of convex hull.
     // note to self: self, you should think about checking for
     // polygons that span the date line
     SGBucket b_min( min.x(), min.y() );
     SGBucket b_max( max.x(), max.y() );
-    SG_LOG( SG_GENERAL, SG_INFO, "  Bucket min = " << b_min );
-    SG_LOG( SG_GENERAL, SG_INFO, "  Bucket max = " << b_max );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket min = " << b_min );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket max = " << b_max );
 
     if ( b_min == b_max ) {
 	// shape entirely contained in a single bucket, write and bail
@@ -198,7 +198,7 @@ void tgSplitPolygon( const string& path, AreaType area,
     sgBucketDiff(b_min, b_max, &dx, &dy);
     SG_LOG( SG_GENERAL, SG_INFO, 
 	    "  polygon spans tile boundaries" );
-    SG_LOG( SG_GENERAL, SG_INFO, "  dx = " << dx 
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  dx = " << dx 
 	    << "  dy = " << dy );
 
     if ( (dx > 2880) || (dy > 1440) )
@@ -245,7 +245,7 @@ void tgSplitPolygon( const string& path, AreaType area,
 	// structures to reduce memory use)
 	//
 
-	SG_LOG ( SG_GENERAL, SG_INFO, 
+	SG_LOG ( SG_GENERAL, SG_DEBUG, 
 		 "Generating bottom half (" << min.y() << "-" <<
 		 clip_line << ")" );
 
@@ -274,7 +274,7 @@ void tgSplitPolygon( const string& path, AreaType area,
 	// structures to reduce memory use)
 	//
 
-	SG_LOG ( SG_GENERAL, SG_INFO, 
+	SG_LOG ( SG_GENERAL, SG_DEBUG, 
 		 "Generating top half (" << clip_line << "-" <<
 		 max.y() << ")" );
 

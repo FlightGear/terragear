@@ -41,8 +41,10 @@ void add_intermediate_nodes( int contour, const Point3D& start,
     point_list nodes = tmp_nodes.get_node_list();
 
     // SG_LOG(SG_GENERAL, SG_DEBUG, "  add_intermediate_nodes()");
-    printf("   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
+    char buf[200];
+    snprintf(buf, 199, "   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
 	   start.x(), start.y(), start.z(), end.x(), end.y(), end.z() );
+    SG_LOG(SG_GENERAL, SG_BULK, buf);
 
     
     Point3D new_pt;
@@ -56,7 +58,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 				result );
 
 	result->add_node( contour, new_pt );
-        cout << "    adding = " << new_pt << endl;
+        SG_LOG(SG_GENERAL, SG_BULK, "    adding = " << new_pt);
 
 	add_intermediate_nodes( contour, new_pt, end, tmp_nodes,
 				result );

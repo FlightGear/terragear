@@ -61,9 +61,47 @@ int nudge = 10;
 static void usage( int argc, char **argv ) {
     SG_LOG(SG_GENERAL, SG_ALERT, 
 	   "Usage " << argv[0] << " --input=<apt_file> "
-	   << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]"
-	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>]"
-           << "[--chunk=<chunk>]");
+	   << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ] "
+	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
+           << "[ --airport=abcd ]  [--tile=<tile>] [--chunk=<chunk>] [--verbose] [--help]");
+}
+
+// Display help and usage
+static void help( int argc, char **argv ) {
+    cout << "genapts generates airports for use in generating scenery for the FlightGear flight simulator.  ";
+    cout << "Airport, runway, and taxiway vector data and attributes are input, and generated 3D airports ";
+    cout << "are output for further processing by the TerraGear scenery creation tools.  ";
+    cout << "\n\n";
+    cout << "The standard input file is runways.dat.gz which is found in $FG_ROOT/Airports.  ";
+    cout << "This file is periodically generated for the FlightGear project by Robin Peel, who ";
+    cout << "maintains an airport database for both the X-Plane and FlightGear simulators.  ";
+    cout << "The format of this file is documented on the FlightGear web site.  ";
+    cout << "Any other input file corresponding to this format may be used as input to genapts.  ";
+    cout << "Input files may be gzipped or left as plain text as required.  ";
+    cout << "\n\n";
+    cout << "Processing all the world's airports takes a *long* time.  To cut down processing time ";
+    cout << "when only some airports are required, you may refine the input selection either by airport ";
+    cout << "or by area.  By airport, either one airport can be specified using --airport=abcd, where abcd is ";
+    cout << "a valid airport code eg. --airport-id=KORD, or a starting airport can be specified using --start-id=abcd ";
+    cout << "where once again abcd is a valid airport code.  In this case, all airports in the file subsequent to the ";
+    cout << "start-id are done.  This is convienient when re-starting after a previous error.  ";
+    cout << "\nAn input area may be specified by lat and lon extent using min and max lat and lon.  ";
+    cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string ";
+    cout << "such as eg. w080n40, e000s27.  ";
+    cout << "\nAn input file containing only a subset of the world's ";
+    cout << "airports may of course be used.";
+    cout << "\n\n";
+    cout << "It is necessary to generate the elevation data for the area of interest PRIOR TO GENERATING THE AIRPORTS.  ";
+    cout << "Failure to do this will result in airports being generated with an elevation of zero.  ";
+    cout << "The following subdirectories of the work-dir will be searched for elevation files:\n\n";
+    cout << "SRTM-United_States-1\n";
+    cout << "SRTM-North_America-3\n";
+    cout << "SRTM-South_America-3\n";
+    cout << "SRTM-Eurasia-3\n";
+    cout << "DEM-USGS-3\n";
+    cout << "SRTM-30";
+    cout << "\n\n";
+    usage( argc, argv );
 }
 
 
@@ -85,6 +123,7 @@ int main( int argc, char **argv ) {
     string work_dir = "";
     string input_file = "";
     string start_id = "";
+    string airport_id = "";
     int arg_pos;
     for (arg_pos = 1; arg_pos < argc; arg_pos++) {
         string arg = argv[arg_pos];
@@ -113,12 +152,27 @@ int main( int argc, char **argv ) {
             min_lat = rectangle.getMin().y();
             max_lon = rectangle.getMax().x();
             max_lat = rectangle.getMax().y();
+        } else if ( arg.find("--tile=") == 0 ) {
+            tg::Rectangle rectangle = tg::parseTile(arg.substr(7).c_str());
+            min_lon = rectangle.getMin().x();
+            min_lat = rectangle.getMin().y();
+            max_lon = rectangle.getMax().x();
+            max_lat = rectangle.getMax().y();
+	} else if ( arg.find("--airport=") == 0 ) {
+	    airport_id = arg.substr(10).c_str();
+	    ready_to_go = false;
+	} else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) {
+	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
+	} else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) {
+	    help( argc, argv );
+	    exit(-1);
 	} else {
 	    usage( argc, argv );
 	    exit(-1);
 	}
     }
 
+    // Please update the help near the top of this file if you update this list.
     elev_src.push_back( "SRTM-United_States-1" );
     elev_src.push_back( "SRTM-North_America-3" );
     elev_src.push_back( "SRTM-South_America-3" );
@@ -183,7 +237,7 @@ int main( int argc, char **argv ) {
     while ( ! in.eof() ) {
 	in.getline(tmp, 2048);
 	line = tmp;
-	SG_LOG( SG_GENERAL, SG_INFO, "-> " << line );
+	SG_LOG( SG_GENERAL, SG_DEBUG, "-> " << line );
 
 	if ( line.length() == 0 ) {
 	    // empty, skip
@@ -199,7 +253,7 @@ int main( int argc, char **argv ) {
             sscanf( line.c_str(), "%c %s %d",
                     &ctmp, tmpid, &elev );
             id = tmpid;
-            SG_LOG( SG_GENERAL, SG_INFO, "Airport = " << id << " "
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Next airport = " << id << " "
                     << elev );
 
             if ( !last_apt_id.empty()) {
@@ -211,7 +265,9 @@ int main( int argc, char **argv ) {
                 if ( lon >= min_lon && lon <= max_lon &&
                      lat >= min_lat && lat <= max_lat )
                 {
-                    if ( start_id.length() && start_id == last_apt_id ) {
+		    if ( airport_id.length() && airport_id == last_apt_id ) {
+			ready_to_go = true;
+		    } else if ( start_id.length() && start_id == last_apt_id ) {
                         ready_to_go = true;
                     }
 
@@ -237,9 +293,12 @@ int main( int argc, char **argv ) {
                                     << e.getMessage() );
                             exit(-1);
                         }
+			if(airport_id.length()) ready_to_go = false;
                     }
 		} else {
-                    SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
+		    if(!airport_id.length()) {
+			SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
+		    }
 		}
 	    }
             last_apt_id = id;

@@ -175,7 +175,7 @@ makeBounds (const TGPolygon &polygon)
 
 
 Rectangle
-parseChunk (const string &s)
+parseChunk (const string &s, double delta)
 {
   Rectangle bounds;
   int x_factor;
@@ -203,9 +203,15 @@ parseChunk (const string &s)
   double x = atoi(s.substr(1,3).c_str()) * x_factor;
   double y = atoi(s.substr(5).c_str()) * y_factor;
   bounds.setMin(Point3D(x, y, 0));
-  bounds.setMax(Point3D(x + 10, y + 10, 0));
+  bounds.setMax(Point3D(x + delta, y + delta, 0));
 
   return bounds;
+}
+
+Rectangle
+parseTile (const string &s)
+{
+  return( parseChunk(s, 1.0) );
 }
 
 };

@@ -104,12 +104,23 @@ Rectangle makeBounds (const TGPolygon &polygon);
 
 /**
  * Parse a chunk string (like "w080n40") into a rectangle.
+ * Defaults to 10 x 10 degrees.
  *
  * @param s The string.
  * @return A rectangle containing the bounds.
  */
-Rectangle parseChunk (const string &s);
+Rectangle parseChunk (const string &s, double delta = 10.0);
 
-};
+
+/**
+ * Parse a tile string (like "w080n41") into a 1x1 degree rectangle.
+ *
+ * @param s The string.
+ * @return A rectangle containing the bounds.
+ */
+Rectangle parseTile (const string &s);
+
+
+};  // namespace tg
 
 #endif // __UTIL_HXX

@@ -19,10 +19,14 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#include <iostream.h>
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
 #include <math.h>
 #include <simgear/math/point3d.hxx>
 
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 //*******************************************************************
 //

@@ -99,10 +99,10 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
     double maxu = tp.get_maxu();
     double minv = tp.get_minv();
     double maxv = tp.get_maxv();
-    SG_LOG( SG_GENERAL, SG_INFO, "section ref = " << ref );
-    SG_LOG( SG_GENERAL, SG_INFO, "  width = " << width );
-    SG_LOG( SG_GENERAL, SG_INFO, "  length = " << length );
-    SG_LOG( SG_GENERAL, SG_INFO, "  heading = " << heading );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "section ref = " << ref );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << width );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  length = " << length );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  heading = " << heading );
     Point3D p, t;
     double x, y, tx, ty;
 
@@ -122,7 +122,7 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
 	    double az1, az2, dist;
 	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
 				&az1, &az2, &dist );
-	    SG_LOG(SG_GENERAL, SG_INFO, "basic course = " << az2);
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course = " << az2);
 
 	    //
 	    // 2. Rotate this back into a coordinate system where Y
@@ -132,7 +132,7 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
 	    double course = az2 - heading;
 	    while ( course < -360 ) { course += 360; }
 	    while ( course > 360 ) { course -= 360; }
-	    SG_LOG( SG_GENERAL, SG_INFO,
+	    SG_LOG( SG_GENERAL, SG_DEBUG,
                     "  course = " << course << "  dist = " << dist );
 
 	    //
@@ -141,7 +141,7 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
 
 	    x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
 	    y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
-	    SG_LOG(SG_GENERAL, SG_INFO, "  x = " << x << " y = " << y);
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  x = " << x << " y = " << y);
 
 	    //
 	    // 4. Map x, y point into texture coordinates
@@ -151,7 +151,7 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
             tmp = x / width;
             tx = tmp * (maxu - minu) + minu;
 	    // tx = ((int)(tx * 100)) / 100.0;
-	    SG_LOG(SG_GENERAL, SG_INFO, "  (" << tx << ")");
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
 
             if ( clip_result) {
                 if ( tx < 0.0 ) { tx = 0.0; }
@@ -163,7 +163,7 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
             tmp = y / length;
             ty = tmp * (maxv - minv) + minv;
 	    // ty = ((int)(ty * 100)) / 100.0;
-	    SG_LOG(SG_GENERAL, SG_INFO, "  (" << ty << ")");
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
 
             if ( clip_result ) {
                 if ( ty < 0.0 ) { ty = 0.0; }
@@ -411,25 +411,25 @@ void build_airport( string airport_id, float alt_m,
         string rwy_stopway2 = rwy_str.substr(83, 4);
 	rwy.stopway2 = atoi( rwy_stopway2.c_str() );
 
-	SG_LOG( SG_GENERAL, SG_INFO, "  no    = " << rwy.rwy_no);
-	SG_LOG( SG_GENERAL, SG_INFO, "  lat   = " << rwy_lat << " " << rwy.lat);
-	SG_LOG( SG_GENERAL, SG_INFO, "  lon   = " << rwy_lon << " " << rwy.lon);
-	SG_LOG( SG_GENERAL, SG_INFO, "  hdg   = " << rwy_hdg << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy_lat << " " << rwy.lat);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy_lon << " " << rwy.lon);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy_hdg << " "
                 << rwy.heading);
-	SG_LOG( SG_GENERAL, SG_INFO, "  len   = " << rwy_len << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << rwy_len << " "
                 << rwy.length);
-	SG_LOG( SG_GENERAL, SG_INFO, "  width = " << rwy_width << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << rwy_width << " "
                 << rwy.width);
-	SG_LOG( SG_GENERAL, SG_INFO, "  sfc   = " << rwy.surface_flags);
-	SG_LOG( SG_GENERAL, SG_INFO, "  end1  = " << rwy.end1_flags);
-        SG_LOG( SG_GENERAL, SG_INFO, "  dspth1= " << rwy_disp_threshold1
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_flags);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  end1  = " << rwy.end1_flags);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy_disp_threshold1
                 << " " << rwy.disp_thresh1);
-        SG_LOG( SG_GENERAL, SG_INFO, "  stop1 = " << rwy_stopway1 << " "
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy_stopway1 << " "
                 << rwy.stopway1);
-	SG_LOG( SG_GENERAL, SG_INFO, "  end2  = " << rwy.end2_flags);
-        SG_LOG( SG_GENERAL, SG_INFO, "  dspth2= " << rwy_disp_threshold2
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  end2  = " << rwy.end2_flags);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy_disp_threshold2
                 << " " << rwy.disp_thresh2);
-        SG_LOG( SG_GENERAL, SG_INFO, "  stop2 = " << rwy_stopway2 << " "
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy_stopway2 << " "
                 << rwy.stopway2);
 
 	runways.push_back( rwy );
@@ -472,17 +472,17 @@ void build_airport( string airport_id, float alt_m,
 
 	taxi.surface_flags = taxi_str.substr(53, 5);
 
-	SG_LOG( SG_GENERAL, SG_INFO, "  lat   = " << taxi_lat << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << taxi_lat << " "
                 << taxi.lat);
-	SG_LOG( SG_GENERAL, SG_INFO, "  lon   = " << taxi_lon << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << taxi_lon << " "
                 << taxi.lon);
-	SG_LOG( SG_GENERAL, SG_INFO, "  hdg   = " << taxi_hdg << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << taxi_hdg << " "
                 << taxi.heading);
-	SG_LOG( SG_GENERAL, SG_INFO, "  len   = " << taxi_len << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << taxi_len << " "
                 << taxi.length);
-	SG_LOG( SG_GENERAL, SG_INFO, "  width = " << taxi_width << " "
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << taxi_width << " "
                 << taxi.width);
-	SG_LOG( SG_GENERAL, SG_INFO, "  sfc   = " << taxi.surface_flags);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << taxi.surface_flags);
 
 	taxiways.push_back( taxi );
     }
@@ -549,7 +549,7 @@ void build_airport( string airport_id, float alt_m,
         }
 
         if ( largest_idx >= 0 ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "generating " << largest_idx );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "generating " << largest_idx );
             build_runway( taxiways[largest_idx], alt_m,
                           &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
@@ -586,6 +586,7 @@ void build_airport( string airport_id, float alt_m,
     TGPolygon base_poly = polygon_diff( divided_base, accum );
     // write_polygon( base_poly, "base-raw" );
 
+    char buf[120];  // For debugging output
     // Try to remove duplicated nodes and other degeneracies
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
 	SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes/remove dups section = " << k
@@ -595,7 +596,8 @@ void build_airport( string airport_id, float alt_m,
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size(i); ++j ) {
 		Point3D tmp = poly.get_pt(i, j);
-		printf("  %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+		snprintf(buf, 119, "  %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+		SG_LOG(SG_GENERAL, SG_DEBUG, buf);
 	    }
 	}
 
@@ -606,7 +608,8 @@ void build_airport( string airport_id, float alt_m,
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size(i); ++j ) {
 		Point3D tmp = poly.get_pt(i, j);
-		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+		snprintf(buf, 119, "    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+		SG_LOG(SG_GENERAL, SG_DEBUG, buf);
 	    }
 	}
 
@@ -617,7 +620,8 @@ void build_airport( string airport_id, float alt_m,
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size(i); ++j ) {
 		Point3D tmp = poly.get_pt(i, j);
-		printf("    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+		snprintf(buf, 119, "    %.7f %.7f %.7f\n", tmp.x(), tmp.y(), tmp.z() );
+		SG_LOG(SG_GENERAL, SG_DEBUG, buf);
 	    }
 	}
 
@@ -649,7 +653,7 @@ void build_airport( string airport_id, float alt_m,
 	    tmp_nodes.unique_add( divided_base.get_pt(i, j) );
 	}
     }
-
+    
 #if 0
     // dump info for debugging purposes
     point_list ttt = tmp_nodes.get_node_list();
@@ -704,12 +708,12 @@ void build_airport( string airport_id, float alt_m,
 	rwy_polys[k].set_poly( poly );
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "add nodes base ");
-    cout << " before: " << base_poly << endl;
-    cout << " tmp_nodes size = " << tmp_nodes.get_node_list().size() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes base ");
+    SG_LOG(SG_GENERAL, SG_DEBUG, " before: " << base_poly);
+    SG_LOG(SG_GENERAL, SG_DEBUG, " tmp_nodes size = " << tmp_nodes.get_node_list().size());
 
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
-    cout << " after adding tmp_nodes: " << base_poly << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, " after adding tmp_nodes: " << base_poly);
 
     // write_polygon( base_poly, "base-add" );
     SG_LOG(SG_GENERAL, SG_DEBUG, "remove dups base ");
@@ -717,12 +721,12 @@ void build_airport( string airport_id, float alt_m,
     SG_LOG(SG_GENERAL, SG_DEBUG, "remove bad contours base");
     base_poly = remove_bad_contours( base_poly );
     // write_polygon( base_poly, "base-fin" );
-    cout << " after clean up: " << base_poly << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, " after clean up: " << base_poly);
 
     // tesselate the polygons and prepair them for final output
 
     for ( i = 0; i < (int)rwy_polys.size(); ++i ) {
-        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating section = " << i);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i);
 
 	TGPolygon poly = rwy_polys[i].get_poly();
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());
@@ -933,14 +937,14 @@ void build_airport( string airport_id, float alt_m,
     max_deg.setlat( max_deg.lat() + 0.1 * dlat );
 
     TGAptSurface apt_surf( root, elev_src, min_deg, max_deg );
-    cout << "Surface created" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Surface created");
 
     // calculate node elevations
     point_list geod_nodes = calc_elevations( apt_surf, nodes.get_node_list(),
                                              0.0 );
     divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
-    cout << "DIVIDED" << endl;
-    cout << divided_base << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "DIVIDED");
+    SG_LOG(SG_GENERAL, SG_DEBUG, divided_base);
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
@@ -1078,7 +1082,7 @@ void build_airport( string airport_id, float alt_m,
                 }
             }
             elevation_map[flag] = max;
-            SG_LOG( SG_GENERAL, SG_INFO, flag << " max = " << max );
+            SG_LOG( SG_GENERAL, SG_DEBUG, flag << " max = " << max );
         }
     }
 
@@ -1199,4 +1203,6 @@ void build_airport( string airport_id, float alt_m,
     // write_boundary( holepath, b, hull, poly_index );
     tgSplitPolygon( holepath, HoleArea, divided_base, true );
     tgSplitPolygon( holepath, AirportArea, apt_clearing, false );
+    
 }
+

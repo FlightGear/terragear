@@ -5,6 +5,11 @@
 #include <config.h>
 #endif
 
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
+#include STL_STRING
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>		// FD_ISSET(), etc.
@@ -17,11 +22,6 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
-
-#include <simgear/compiler.h>
-
-#include STL_IOSTREAM
-#include STL_STRING
 
 #include <simgear/bucket/newbucket.hxx>
 

@@ -26,6 +26,7 @@
 
 #include <plib/sg.h>
 #include <simgear/constants.h>
+#include <simgear/debug/logstream.hxx>
 
 #include "lights.hxx"
 
@@ -59,14 +60,14 @@ static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
     }
     Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
     Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
-    cout << "cart1 = " << cart1 << " cart2 = " << cart2 << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "cart1 = " << cart1 << " cart2 = " << cart2);
 
     Point3D up = cart1;
     length = up.distance3D( Point3D(0.0) );
     up = up / length;
 
     Point3D rwy_vec = cart2 - cart1;
-    cout << "rwy_vec = " << rwy_vec << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "rwy_vec = " << rwy_vec);
 
     // angle up specified amount
     length = rwy_vec.distance3D( Point3D(0.0) );
@@ -2567,8 +2568,8 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 			superpoly_list &lights ) {
 
-    cout << "gen runway lights " << rwy_info.rwy_no << " "
-         << rwy_info.end1_flags << " " << rwy_info.end2_flags << endl;;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no << " "
+         << rwy_info.end1_flags << " " << rwy_info.end2_flags);
 
     unsigned int i;
 
@@ -2895,8 +2896,8 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
                          superpoly_list &lights ) {
 
-    cout << "gen taxiway lights " << taxiway_info.rwy_no << " "
-         << taxiway_info.end1_flags << " " << taxiway_info.end2_flags << endl;;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen taxiway lights " << taxiway_info.rwy_no << " "
+         << taxiway_info.end1_flags << " " << taxiway_info.end2_flags);
 
     unsigned int i;
 

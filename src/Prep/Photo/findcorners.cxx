@@ -42,7 +42,7 @@ int main( int argc, char **argv ) {
     int dx = xrwy2 - xrwy1;
     int dy = yrwy2 - yrwy1;
     cout << "dx = " << dx << " dy = " << dy << endl;
-    double distp = sqrt( dx*dx + dy*dy );
+    double distp = sqrt( double(dx*dx + dy*dy) );
     cout << "runway distance (pixels) = " << distp << endl;
 
     // find pixel resolution
@@ -52,7 +52,7 @@ int main( int argc, char **argv ) {
     cout << "pixel per feet = " << feet_to_pixel << endl;
 
     // find runway angle in image space
-    double img_angle = atan2( dy, dx );
+    double img_angle = atan2( double(dy), double(dx) );
     cout << "runway angle in image space = "
          << img_angle * SGD_RADIANS_TO_DEGREES << endl;
     // angle offset

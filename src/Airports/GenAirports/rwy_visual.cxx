@@ -385,7 +385,7 @@ void gen_visual_rwy( const TGRunway& rwy_info,
     while ( end1_pct < 1.0 ) {
 	start1_pct = end1_pct;
 	end1_pct = start1_pct + rest1_inc;
-        cout << "start1 = " << start1_pct << " end1 = " << end1_pct << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "start1 = " << start1_pct << " end1 = " << end1_pct);
 
 	gen_runway_section( rwy_info, runway_a,
 			    start1_pct, end1_pct,

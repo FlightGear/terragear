@@ -19,7 +19,7 @@
 namespace tg {
 
 /**
- * A simple rectangle class for bounding rectanglees.
+ * A simple rectangle class for bounding rectangles.
  *
  * The class defines a rectangle in by the vertices of its minimum and
  * maximum corners, ignoring any z coordinates.  There are methods to

@@ -29,6 +29,7 @@
 #include <simgear/constants.h>
 #include <simgear/math/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <Polygon/polygon.hxx>
 #include <Triangulate/trieles.hxx>
@@ -140,10 +141,10 @@ Point3D calc_point_inside_old( const TGPolygon& p, const int contour,
 	}
     }
 
-    cout << "min node index = " << min_node_index << endl;
-    cout << "min index = " << min_index
-	 << " value = " << trinodes.get_node( min_index ) 
-	 << " == " << min << endl;
+    //cout << "min node index = " << min_node_index << endl;
+    //cout << "min index = " << min_index
+	 //<< " value = " << trinodes.get_node( min_index ) 
+	 //<< " == " << min << endl;
 
     // 2. take midpoint, m, of min with neighbor having lowest
     // fabs(slope)
@@ -175,7 +176,7 @@ Point3D calc_point_inside_old( const TGPolygon& p, const int contour,
 
     m.setx( (min.x() + ln.x()) / 2.0 );
     m.sety( (min.y() + ln.y()) / 2.0 );
-    cout << "low mid point = " << m << endl;
+    //cout << "low mid point = " << m << endl;
 
     // 3. intersect vertical line through m and all other segments of
     // all other contours of this polygon.  save point, p3, with
@@ -184,7 +185,7 @@ Point3D calc_point_inside_old( const TGPolygon& p, const int contour,
     p3.sety(100);
     
     for ( i = 0; i < (int)p.contours(); ++i ) {
-	cout << "contour = " << i << " size = " << p.contour_size( i ) << endl;
+	//cout << "contour = " << i << " size = " << p.contour_size( i ) << endl;
 	for ( int j = 0; j < (int)(p.contour_size( i ) - 1); ++j ) {
 	    // cout << "  p1 = " << poly[i][j] << " p2 = " 
 	    //      << poly[i][j+1] << endl;
@@ -194,7 +195,7 @@ Point3D calc_point_inside_old( const TGPolygon& p, const int contour,
 	    p2_index = trinodes.find( p2 );
 	
 	    if ( intersects(p1, p2, m.x(), &result) ) {
-		cout << "intersection = " << result << endl;
+		//cout << "intersection = " << result << endl;
 		if ( ( result.y() < p3.y() ) &&
 		     ( result.y() > m.y() ) &&
 		     !( base_leg == TGTriSeg(p1_index, p2_index, 0) ) ) {
@@ -209,7 +210,7 @@ Point3D calc_point_inside_old( const TGPolygon& p, const int contour,
 	p1_index = trinodes.find( p1 );
 	p2_index = trinodes.find( p2 );
 	if ( intersects(p1, p2, m.x(), &result) ) {
-	    cout << "intersection = " << result << endl;
+	    //cout << "intersection = " << result << endl;
 	    if ( ( result.y() < p3.y() ) &&
 		 ( result.y() > m.y() ) &&
 		 !( base_leg == TGTriSeg(p1_index, p2_index, 0) ) ) {
@@ -218,7 +219,7 @@ Point3D calc_point_inside_old( const TGPolygon& p, const int contour,
 	}
     }
     if ( p3.y() < 100 ) {
-	cout << "low intersection of other segment = " << p3 << endl;
+	//cout << "low intersection of other segment = " << p3 << endl;
 	inside_pt = Point3D( (m.x() + p3.x()) / 2.0,
 			     (m.y() + p3.y()) / 2.0,
 			     0.0 );
@@ -229,7 +230,7 @@ Point3D calc_point_inside_old( const TGPolygon& p, const int contour,
 
     // 4. take midpoint of p2 && m as an arbitrary point inside polygon
 
-    cout << "inside point = " << inside_pt << endl;
+    //cout << "inside point = " << inside_pt << endl;
 
     return inside_pt;
 }
@@ -375,7 +376,7 @@ void polygon_tesselate( const TGPolygon &p,
 
     string tri_options;
     tri_options = "pzYYenQ";	// add multiple "V" entries for verbosity
-    cout << "Triangulation with options = " << tri_options << endl;
+    //cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
 
@@ -456,8 +457,8 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
     //     inside any other contour
     calc_points_inside( p );
     for ( i = 0; i < p.contours(); ++i ) {
-	cout << "final point inside =" << p.get_point_inside( i )
-	     << endl;
+	//cout << "final point inside =" << p.get_point_inside( i )
+	//     << endl;
     }
 
     // 2.  Do a final triangulation of the entire polygon
@@ -501,13 +502,13 @@ static void contour_tesselate( TGContourNode *node, const TGPolygon &p,
 
     // list of points
     int contour_num = node->get_contour_num();
-    cout << "Tesselating contour = " << contour_num << endl;
+    //cout << "Tesselating contour = " << contour_num << endl;
     point_list contour = p.get_contour( contour_num );
 
     double max_x = contour[0].x();
 
     int total_pts = contour.size();
-    cout << "contour = " << contour_num << " nodes = " << total_pts << endl;
+    //cout << "contour = " << contour_num << " nodes = " << total_pts << endl;
 
 #if 0
     // testing ... don't enable this if not testing
@@ -654,7 +655,7 @@ static void contour_tesselate( TGContourNode *node, const TGPolygon &p,
 
     string tri_options;
     tri_options = "pzYYenQ";	// add multiple "V" entries for verbosity
-    cout << "Triangulation with options = " << tri_options << endl;
+    //cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
 
@@ -790,13 +791,13 @@ static Point3D point_inside_contour( TGContourNode *node, const TGPolygon &p ) {
     }
 
     // find center point of largest triangle
-    cout << "biggest = " << biggest + 1 << " out of " << elelist.size() << endl;
+    //cout << "biggest = " << biggest + 1 << " out of " << elelist.size() << endl;
     TGTriEle t = elelist[biggest];
     contour_num = node->get_contour_num();
     Point3D p1 = out_pts[ t.get_n1() ];
     Point3D p2 = out_pts[ t.get_n2() ];
     Point3D p3 = out_pts[ t.get_n3() ];
-    cout << "hole tri = " << p1 << endl << "  " << p2 << endl << "  " << p3 << endl;
+    //cout << "hole tri = " << p1 << endl << "  " << p2 << endl << "  " << p3 << endl;
 
     // new
     Point3D center = ( p1 + p2 + p3 ) / 3;
@@ -818,8 +819,8 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     int contour_num = node->get_contour_num();
     if ( contour_num >= 0 ) {
 	Point3D pi = point_inside_contour( node, p );
-	cout << endl << "point inside(" << contour_num << ") = " << pi
-	     << endl << endl;
+	//cout << endl << "point inside(" << contour_num << ") = " << pi
+	//     << endl << endl;
 	p.set_point_inside( contour_num, pi );
     }
 }
@@ -842,8 +843,8 @@ static void build_contour_tree( TGContourNode *node,
 				const TGPolygon &p,
 				int_list &avail )
 {
-    cout << "working on contour = " << node->get_contour_num() << endl;
-    cout << "  total contours = " << p.contours() << endl;
+    //cout << "working on contour = " << node->get_contour_num() << endl;
+    //cout << "  total contours = " << p.contours() << endl;
     TGContourNode *tmp;
     int i;
 
@@ -854,12 +855,12 @@ static void build_contour_tree( TGContourNode *node,
     } else {
 	flag = true;
     }
-    cout << "  hole flag = " << flag << endl;
+    //cout << "  hole flag = " << flag << endl;
 
     // add all remaining hole/non-hole contours as children of the
     // current node if they are inside of it.
     for ( i = 0; i < p.contours(); ++i ) {
-	cout << "  testing contour = " << i << endl;
+	//cout << "  testing contour = " << i << endl;
 	if ( p.get_hole_flag( i ) != flag ) {
 	    // only holes can be children of non-holes and visa versa
 	    if ( avail[i] ) {
@@ -868,24 +869,24 @@ static void build_contour_tree( TGContourNode *node,
 		if ( (cur_contour < 0 ) || p.is_inside( i, cur_contour ) ) {
 		    // must be inside the parent (or if the parent is
 		    // the root, add all available non-holes.
-		    cout << "  adding contour = " << i << endl;
+		    //cout << "  adding contour = " << i << endl;
 		    avail[i] = 0;
 		    tmp = new TGContourNode( i );
 		    node->add_kid( tmp );
 		} else {
-		    cout << "  not inside" << endl;
+		    //cout << "  not inside" << endl;
 		}
 	    } else {
-		cout << "  not available" << endl;
+		//cout << "  not available" << endl;
 	    }
 	} else {
-	    cout << "  wrong hole/non-hole type" << endl;
+	    //cout << "  wrong hole/non-hole type" << endl;
 	}
     }
 
     // if any of the children are inside of another child, remove the
     // inside one
-    cout << "node now has num kids = " << node->get_num_kids() << endl;
+    //cout << "node now has num kids = " << node->get_num_kids() << endl;
 
     for ( i = 0; i < node->get_num_kids(); ++i ) {
 	for ( int j = 0; j < node->get_num_kids(); ++j ) {
@@ -901,8 +902,8 @@ static void build_contour_tree( TGContourNode *node,
 		        // need to remove contour j from the kid list
 		        avail[ node->get_kid( i ) -> get_contour_num() ] = 1;
 		        node->remove_kid( i );
-		        cout << "removing contour " << A 
-                             << " which is inside of contour " << B << endl;
+		        //cout << "removing contour " << A 
+                        //     << " which is inside of contour " << B << endl;
 			continue;
 		    }
 		} else {
@@ -940,7 +941,7 @@ void calc_points_inside( TGPolygon& p ) {
 
     // recursively build the tree
     build_contour_tree( ct, p, avail );
-    print_contour_tree( ct, "" );
+    //print_contour_tree( ct, "" );
 
     // recurse the tree and build up the point inside list for each
     // contour/hole
@@ -1011,7 +1012,7 @@ snap (const Point3D &p, double grid_size)
   result.setx(snap(p.x(), grid_size));
   result.sety(snap(p.y(), grid_size));
   result.setz(snap(p.z(), grid_size));
-  cout << result << endl;
+  //cout << result << endl;
   return result;
 }
 
@@ -1167,7 +1168,7 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
     while ( !done ) {
 	// traverse the contour until we find the first bad node or
 	// hit the end of the contour
-	cout << "   ... not done ... " << endl;
+	//cout << "   ... not done ... " << endl;
 	bool bad = false;
 
 	int i = 0;
@@ -1231,10 +1232,10 @@ static point_list remove_contour_cycles( const point_list& contour ) {
         result.push_back( contour[i] );
         for ( unsigned int j = i + 1; j < contour.size(); ++j ) {
             if ( contour[i] == contour[j] && i + 2 > j ) {
-                cout << "detected a small cycle: i = "
-                     << i << " j = " << j << endl;
+                //cout << "detected a small cycle: i = "
+                //     << i << " j = " << j << endl;
                 for ( unsigned int k = i; k <= j; ++k ) {
-                    cout << "  " << contour[k] << endl;
+                    //cout << "  " << contour[k] << endl;
                 }
                 // i = j;
             }
@@ -1275,7 +1276,7 @@ TGPolygon remove_bad_contours( const TGPolygon &poly ) {
 	    int flag = poly.get_hole_flag( i );
 	    result.add_contour( contour, flag );
 	} else {
-	    cout << "tossing a bad contour" << endl;
+	    //cout << "tossing a bad contour" << endl;
 	}
     }
 

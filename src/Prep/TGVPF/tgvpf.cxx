@@ -218,17 +218,18 @@ usage ()
        << " [opts] <db> <library> <coverage> <feature>"
        << endl;
   cerr << "Options:" << endl;
-  cerr << "--chunk=<chunk> (default: none)" << endl;
+  cerr << "--tile=<tile>         (default: none)" << endl;
+  cerr << "--chunk=<chunk>       (default: none)" << endl;
   cerr << "--min-lon=<longitude> (default: -180.0)" << endl;
-  cerr << "--min-lat=<latitude> (default: -90.0)" << endl;
+  cerr << "--min-lat=<latitude>  (default: -90.0)" << endl;
   cerr << "--max-lon=<longitude> (default: 180.0)" << endl;
-  cerr << "--max-lat=<latitude> (default: 90.0)" << endl;
-  cerr << "--min-area=<area> (default: none)" << endl;
-  cerr << "--max-area=<area> (default: none)" << endl;
+  cerr << "--max-lat=<latitude>  (default: 90.0)" << endl;
+  cerr << "--min-area=<area>     (default: none)" << endl;
+  cerr << "--max-area=<area>     (default: none)" << endl;
   cerr << "--material=<material_type> (default: Default)" << endl;
-  cerr << "--width=<meters> (default: 50 line, 500 point)" << endl;
-  cerr << "--work-dir=<dir> (default: .)" << endl;
-  cerr << "--att=<item>:<value> (may be repeated)" << endl;
+  cerr << "--width=<meters>      (default: 50 line, 500 point)" << endl;
+  cerr << "--work-dir=<dir>      (default: .)" << endl;
+  cerr << "--att=<item>:<value>  (may be repeated)" << endl;
   cerr << "--att=!<item>:<value> (may be repeated)" << endl;
   exit(2);
 }
@@ -294,8 +295,13 @@ main (int argc, const char **argv)
   int argPos = 1;
   while (argPos < argc) {
     string arg = argv[argPos];
+    
+    if (arg.find("--tile=") == 0) {
+        bounds = tg::parseTile(arg.substr(7));
+        argPos++;
+    }
 
-    if (arg.find("--chunk=") == 0) {
+    else if (arg.find("--chunk=") == 0) {
         bounds = tg::parseChunk(arg.substr(8));
         argPos++;
     }

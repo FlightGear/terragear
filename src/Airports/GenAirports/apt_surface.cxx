@@ -28,6 +28,7 @@
 
 #include <simgear/constants.h>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <Array/array.hxx>
 
@@ -89,7 +90,7 @@ static void calc_elevations( const string &root, const string_list elev_src,
                     + "/" + b.gen_index_str();
                 if ( array.open(array_path) ) {
                     found_file = true;
-                    cout << "Using array_path = " << array_path << endl;
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path);
                 }                    
                 j++;
             }
@@ -141,7 +142,7 @@ static void calc_elevations( const string &root, const string_list elev_src,
         }
     }
     double average = total / (double) count;
-    cout << "Average surface height = " << average << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height = " << average);
 
     // now go through the elevations and clamp them all to within
     // +/-10m (33') of the average.
@@ -186,7 +187,7 @@ TGAptSurface::TGAptSurface( const string& path,
     double x_nm = x_rad * SG_RAD_TO_NM * xfact;
     double x_m = x_nm * SG_NM_TO_METER;
 
-    cout << "Area size = " << x_m << " x " << y_m << " (m)" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Area size = " << x_m << " x " << y_m << " (m)");
 
     int xdivs = (int)(x_m / 600.0) + 1;
     int ydivs = (int)(y_m / 600.0) + 1;
@@ -194,7 +195,7 @@ TGAptSurface::TGAptSurface( const string& path,
     if ( xdivs < 3 ) { xdivs = 3; }
     if ( ydivs < 3 ) { ydivs = 3; }
 
-    cout << "  M(" << xdivs << "," << ydivs << ")" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << xdivs << "," << ydivs << ")");
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
@@ -216,7 +217,7 @@ TGAptSurface::TGAptSurface( const string& path,
     Matrix_Point3Df Pts(xdivs + 1, ydivs + 1);
     for ( int i = 0; i < xdivs + 1; ++i ) {
         for ( int j = 0; j < ydivs + 1; ++j ) {
-            cout << i << "," << j << endl;
+            SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
             for ( int ii = 0; ii < mult; ++ii ) {
                 for ( int jj = 0; jj < mult; ++jj ) {
@@ -232,10 +233,10 @@ TGAptSurface::TGAptSurface( const string& path,
 
     // Create the nurbs surface
 
-    cout << "ready to create nurbs surface" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create nurbs surface");
     apt_surf = new PlNurbsSurfacef;
     apt_surf->globalInterp( Pts, 3, 3);
-    cout << "  successful." << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  successful.");
 }
 
 
@@ -250,7 +251,7 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
     if ( lon_deg < min_deg.lon() || lon_deg > max_deg.lon() ||
          lat_deg < min_deg.lat() || lat_deg > max_deg.lat() )
     {
-        cout << "Warning: query out of bounds for NURBS surface!" << endl;
+        SG_LOG(SG_GENERAL, SG_WARN, "Warning: query out of bounds for NURBS surface!");
         return -9999.0;
     }
 
@@ -258,9 +259,8 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
     double x = (lon_deg - min_deg.lon()) / (max_deg.lon() - min_deg.lon());
     double y = (lat_deg - min_deg.lat()) / (max_deg.lat() - min_deg.lat());
 
-    cout << "  querying for " << x << ", " << y << " = ";
     Point3Df p = apt_surf->pointAt( x, y );
-    cout << p.z() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  querying for " << x << ", " << y << " = " << p.z());
 
     return p.z();
 }
