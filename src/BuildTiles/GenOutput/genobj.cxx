@@ -197,9 +197,11 @@ int TGGenOutput::build( TGConstruct& c ) {
     // build the texture coordinate list and make a parallel structure
     // to the fan list for pointers into the texture list
     cout << "calculating texture coordinates" << endl;
+    cout << "c.get_useUKGrid() = " << c.get_useUKGrid() << endl;
     tex_coords.clear();
 
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
+        // cout << " area = " << i << endl;
 	for ( j = 0; j < (int)fans[i].size(); ++j ) {
 	    // int_list t_list = calc_tex_coords( c, geod_nodes, fans[i][j] );
 	    // cout << fans[i][j].size() << " === " 
@@ -216,12 +218,13 @@ int TGGenOutput::build( TGConstruct& c ) {
 	    if( (c.get_useUKGrid()) && (isInUK(ourPosition)) ) {
 	    	tp_list = UK_calc_tex_coords( b, geod_nodes, fans[i][j], 1.0 );
 	    } else {
-	    	tp_list = calc_tex_coords( b, geod_nodes, fans[i][j] );
+	    	tp_list = sgCalcTexCoords( b, geod_nodes, fans[i][j] );
             }
 
 	    int_list ti_list;
 	    ti_list.clear();
 	    for ( int k = 0; k < (int)tp_list.size(); ++k ) {
+                // cout << "  tc = " << tp_list[k] << endl;
 		int index = tex_coords.simple_add( tp_list[k] );
 		ti_list.push_back( index );
 	    }
