@@ -22,6 +22,7 @@
 //
 
 #include <simgear/compiler.h>
+#include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 
 #include "rwy_common.hxx"
@@ -34,6 +35,7 @@
 // document AC 150/5340-1H
 
 void gen_precision_rwy( const FGRunway& rwy_info,
+                        double alt_m,
 			const string& material,
 			superpoly_list *rwy_polys,
 			texparams_list *texparams,
@@ -46,7 +48,9 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 
     int i, j;
 
-    FGPolygon runway = gen_runway_w_mid( rwy_info );
+    FGPolygon runway = gen_runway_w_mid( rwy_info, alt_m,
+                                         2 * SG_FEET_TO_METER,
+                                         2 * SG_FEET_TO_METER );
 
     // runway half "a"
     FGPolygon runway_a;

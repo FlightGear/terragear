@@ -34,14 +34,16 @@
 
 // generate a taxiway.  The routine modifies rwy_polys, texparams, and
 // accum
-void gen_taxiway( const FGRunway& rwy_info, const string& material,
+void gen_taxiway( const FGRunway& rwy_info,
+                  double alt_m,
+                  const string& material,
 		  superpoly_list *rwy_polys,
 		  texparams_list *texparams,
 		  FGPolygon *accum )
 {
     int j, k;
 
-    FGPolygon runway = gen_runway_w_mid( rwy_info );
+    FGPolygon runway = gen_runway_w_mid( rwy_info, alt_m );
 
     // runway half "a"
     FGPolygon runway_a;

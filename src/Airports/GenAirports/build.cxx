@@ -256,6 +256,7 @@ static void my_chomp( string& str ) {
 
 // build a runway
 void build_runway( const FGRunway& rwy_info,
+                   double alt_m,
 		   superpoly_list *rwy_polys,
 		   texparams_list *texparams,
 		   FGPolygon *accum,
@@ -306,24 +307,24 @@ void build_runway( const FGRunway& rwy_info,
     SG_LOG(SG_GENERAL, SG_DEBUG, "type flag = " << type_flag);
 
     if ( rwy_info.really_taxiway ) {
-	gen_taxiway( rwy_info, material,
+	gen_taxiway( rwy_info, alt_m,material,
                      rwy_polys, texparams, accum );
     } else if ( surface_flag == "D" || surface_flag == "G" ||
 	 surface_flag == "T" )
     {
-	gen_simple_rwy( rwy_info, material,
+	gen_simple_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
     } else if ( type_flag == "P" ) {
 	// precision runway markings
-	gen_precision_rwy( rwy_info, material,
+	gen_precision_rwy( rwy_info, alt_m, material,
 			   rwy_polys, texparams, accum );
     } else if ( type_flag == "R" ) {
 	// non-precision runway markings
-	gen_non_precision_rwy( rwy_info, material,
+	gen_non_precision_rwy( rwy_info, alt_m, material,
 			       rwy_polys, texparams, accum );
     } else if ( type_flag == "V" ) {
 	// visual runway markings
-	gen_visual_rwy( rwy_info, material,
+	gen_visual_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
     } else if ( type_flag == "B" ) {
 	// bouys (sea plane base)
@@ -337,12 +338,13 @@ void build_runway( const FGRunway& rwy_info,
 
     FGPolygon base;
     if ( rwy_info.really_taxiway ) {
-	base = gen_runway_area_w_expand( rwy_info, 10, 10 );
+	base = gen_runway_area_w_extend( rwy_info, 10, 10 );
     } else {
-                                // clear a safe area around the runway
-        base = gen_runway_area_w_expand( rwy_info, 300, 120 );
-        *apt_clearing = polygon_union(base, *apt_clearing);
-	base = gen_runway_area_w_scale( rwy_info, 1.05, 1.5 );
+	base = gen_runway_area_w_extend( rwy_info, 20, 20 );
+
+        // also clear a safe area around the runway
+        FGPolygon safe_base = gen_runway_area_w_extend( rwy_info, 300, 120 );
+        *apt_clearing = polygon_union(safe_base, *apt_clearing);
     }
 
     // add base to apt_base
@@ -530,7 +532,7 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "P" ) {
-	    build_runway( runways[i], 
+	    build_runway( runways[i], elev * SG_FEET_TO_METER,
 			  &rwy_polys, &texparams, &accum, &apt_base,
                           &apt_clearing );
 	}
@@ -540,7 +542,7 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "R" || type_flag == "V" ) {
-	    build_runway( runways[i], 
+	    build_runway( runways[i], elev * SG_FEET_TO_METER,
 			  &rwy_polys, &texparams, &accum, &apt_base,
                           &apt_clearing );
 	}
@@ -550,7 +552,7 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag != "P" && type_flag != "R" && type_flag != "V" ) {
-	    build_runway( runways[i], 
+	    build_runway( runways[i], elev * SG_FEET_TO_METER,
 			  &rwy_polys, &texparams, &accum, &apt_base,
                           &apt_clearing );
 	}
@@ -576,7 +578,8 @@ void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
 
         if ( largest_idx >= 0 ) {
             SG_LOG( SG_GENERAL, SG_INFO, "generating " << largest_idx );
-            build_runway( taxiways[largest_idx], &rwy_polys, &texparams, &accum,
+            build_runway( taxiways[largest_idx], elev * SG_FEET_TO_METER,
+                          &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
             taxiways[largest_idx].generated = true;
         } else {

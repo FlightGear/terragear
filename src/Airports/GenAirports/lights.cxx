@@ -40,7 +40,7 @@ static Point3D gen_runway_light_vector( const FGRunway& rwy_info,
     double length;
 
     // Generate the 4 corners of the runway
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -85,7 +85,7 @@ static Point3D gen_runway_length_vector( const FGRunway& rwy_info, bool recip )
     double length;
 
     // Generate the 4 corners of the runway
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -120,7 +120,7 @@ static Point3D gen_runway_left_vector( const FGRunway& rwy_info, bool recip )
     double length;
 
     // Generate the 4 corners of the runway
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -166,7 +166,7 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -276,7 +276,7 @@ static superpoly_list gen_taxiway_edge_lights( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -355,7 +355,7 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -493,7 +493,7 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -584,7 +584,7 @@ static FGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -687,7 +687,7 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -823,7 +823,7 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -914,7 +914,7 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1005,7 +1005,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1499,7 +1499,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1762,7 +1762,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
+    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {

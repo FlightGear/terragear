@@ -39,6 +39,7 @@
 // document AC 150/5340-1H
 
 void gen_non_precision_rwy( const FGRunway& rwy_info,
+                            double alt_m,
 			    const string& material,
 			    superpoly_list *rwy_polys,
 			    texparams_list *texparams,

@@ -35,7 +35,9 @@
 
 // generate a simple runway.  The routine modifies rwy_polys,
 // texparams, and accum
-void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
+void gen_simple_rwy( const FGRunway& rwy_info,
+                     double alt_m,
+                     const string& material,
 		     superpoly_list *rwy_polys,
 		     texparams_list *texparams,
 		     FGPolygon *accum );
