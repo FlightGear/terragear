@@ -915,7 +915,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 		strip_n.push_back( index );
 		strip_n.push_back( index );
 	    } else {
-  	        throw sg_exception("Ooops missing node when building skirt");
+                SG_LOG(SG_GENERAL, SG_ALERT,
+                       "*** Ooops missing node when building skirt");
 	    }
 	}
 
@@ -934,7 +935,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    strip_n.push_back( index );
 	    strip_n.push_back( index );
 	} else {
-	    throw("Ooops missing node when building skirt");
+	    throw sg_exception("Ooops missing node when building skirt");
 	}
 
 	strips_v.push_back( strip_v );
