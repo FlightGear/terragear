@@ -73,6 +73,9 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 // calculate some "arbitrary" point inside each of the polygons contours
 void calc_points_inside( FGPolygon& p );
 
+// snap all points to a grid
+FGPolygon snap( const FGPolygon &poly, double grid_size );
+
 // remove duplicate nodes in a polygon should they exist.  Returns the
 // fixed polygon
 FGPolygon remove_dups( const FGPolygon &poly );
