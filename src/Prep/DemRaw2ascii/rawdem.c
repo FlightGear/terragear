@@ -60,19 +60,21 @@ double round( double a ) {
 
 
 int reads(int fd, char *buf, unsigned int len) {
-  char c;
+  unsigned int i = 0;
   int res;
-  unsigned int i;
-  for (i=0;
-       (i < (len-1)) && ((res = read(fd, &c, 1)) != 0)
-        &&  ((c != '\n') && (c != '\r'));
-       i++)
-     buf[i] = c;
+  char c;
 
-  if (buf[i] == '\r')
-     buf[i] = '\n';
+  len--;
+  while ( (i < len) && ((res = read(fd, &c, 1)) != 0)
+          &&  ((c != '\n') && (c != '\r')) )
+  {
+    buf[i++] = c;
+  }
 
-  buf[++i] = '\0';
+  if ((c == '\r') || (c == '\n'))
+    buf[i++] = '\n';
+
+  buf[i] = '\0';
 
   return res;
 }
