@@ -70,4 +70,15 @@ Rectangle::isOverlapping (const Rectangle &r) const
 	  (max.y() >= _min.y()) && (min.y() <= _max.y()));
 }
 
+const FGPolygon
+Rectangle::toPoly () const
+{
+  FGPolygon poly;
+  poly.add_node(0, _min);
+  poly.add_node(0, Point3D(_max.x(), _min.y(), 0));
+  poly.add_node(0, _max);
+  poly.add_node(0, Point3D(_min.x(), _max.y(), 0));
+  return poly;
+}
+
 // end of rectangle.cxx

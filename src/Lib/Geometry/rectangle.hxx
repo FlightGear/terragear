@@ -14,6 +14,8 @@
 #include <simgear/compiler.h>
 #include <simgear/math/point3d.hxx>
 
+#include <Polygon/polygon.hxx>
+
 
 /**
  * A simple rectangle class for bounding rectanglees.
@@ -117,6 +119,13 @@ public:
    * otherwise.
    */
   virtual bool isOverlapping (const Rectangle &r) const;
+
+  /**
+   * Create a polygon representation of this rectangle.
+   *
+   * @return A four-vertex polygon representing this rectangle.
+   */
+  virtual const FGPolygon toPoly () const;
 
 private:
   Point3D _min;
