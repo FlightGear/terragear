@@ -58,7 +58,6 @@
 #include "convex_hull.hxx"
 #include "point2d.hxx"
 #include "runway.hxx"
-#include "scenery_version.hxx"
 #include "texparams.hxx"
 
 
@@ -1980,15 +1979,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string objpath = root + "/AirportObj";
     string name = apt_code;
 
-    sgWriteAsciiObj( objpath, name, b, gbs_center, gbs_radius, 
-		   wgs84_nodes, normals,
-		   texcoords.get_node_list(), 
+    /* sgWriteAsciiObj( objpath, name, b, gbs_center, gbs_radius, 
+		   wgs84_nodes, normals, texcoords.get_node_list(),
 		   tris_v, tris_tc, tri_materials,
 		   strips_v, strips_tc, strip_materials, 
-		   fans_v, fans_tc, fan_materials );
+		   fans_v, fans_tc, fan_materials ); */
     sgWriteBinObj( objpath, name, b, gbs_center, gbs_radius, 
-		   wgs84_nodes, normals,
-		   texcoords.get_node_list(), 
+		   wgs84_nodes, normals, texcoords.get_node_list(), 
 		   tris_v, tris_tc, tri_materials,
 		   strips_v, strips_tc, strip_materials, 
 		   fans_v, fans_tc, fan_materials );
