@@ -120,10 +120,10 @@ getIntersection (const Point3D &p0, const Point3D &p1,
 /**
  * A rectangle (such as a bounding box).
  */
-struct Rectangle
+struct E00Rectangle
 {
-  Rectangle () : minX(0.0), minY(0.0), maxX(0.0), maxY(0.0) {}
-  Rectangle (double _minX, double _minY, double _maxX, double _maxY)
+  E00Rectangle () : minX(0.0), minY(0.0), maxX(0.0), maxY(0.0) {}
+  E00Rectangle (double _minX, double _minY, double _maxX, double _maxY)
     : minX(_minX), minY(_minY), maxX(_maxX), maxY(_maxY) {}
   double minX;
   double minY;
@@ -133,7 +133,7 @@ struct Rectangle
   {
     return (x >= minX && x <= maxX && y >= minY && y <= maxY);
   }
-  bool isOverlapping (const Rectangle &rect) const
+  bool isOverlapping (const E00Rectangle &rect) const
   {
     return (isInside(rect.minX, rect.minY) ||
 	    isInside(rect.minX, rect.maxY) ||
@@ -143,7 +143,7 @@ struct Rectangle
 };
 
 static ostream &
-operator<< (ostream &output, const Rectangle &rect) {
+operator<< (ostream &output, const E00Rectangle &rect) {
   output << '(' << rect.minX << ',' << rect.minY << "),("
 	 << rect.maxX << ',' << rect.maxY << ')';
 }
@@ -151,10 +151,10 @@ operator<< (ostream &output, const Rectangle &rect) {
 /**
  * Make a bounding box for a single ARC.
  */
-static Rectangle
+static E00Rectangle
 makeBounds (const E00::ARC &arc)
 {
-  Rectangle bounds;
+  E00Rectangle bounds;
   for (int i = 0; i < arc.numberOfCoordinates; i++) {
     double x = arc.coordinates[i].x;
     double y = arc.coordinates[i].y;
@@ -174,10 +174,10 @@ makeBounds (const E00::ARC &arc)
 /**
  * Make a bounding box for a polygon.
  */
-static Rectangle
+static E00Rectangle
 makeBounds (const E00::PAL &pal)
 {
-  return Rectangle(pal.min.x, pal.min.y, pal.max.x, pal.max.y);
+  return E00Rectangle(pal.min.x, pal.min.y, pal.max.x, pal.max.y);
 }
 
 
@@ -249,7 +249,7 @@ checkAttribute (const E00 &data, int index, const Attribute &att)
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
-processPoints (const E00 &data, const Rectangle &bounds,
+processPoints (const E00 &data, const E00Rectangle &bounds,
 	       AreaType areaType, const string &workDir, int width)
 {
   double x, y, az;
@@ -295,7 +295,7 @@ processPoints (const E00 &data, const Rectangle &bounds,
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
-processLines (const E00 &data, const Rectangle &bounds,
+processLines (const E00 &data, const E00Rectangle &bounds,
 	      AreaType areaType, const string &workDir, int width,
 	      const vector<Attribute> &aat_list)
 {
@@ -304,7 +304,7 @@ processLines (const E00 &data, const Rectangle &bounds,
   for (int i = 1; i <= nLines; i++) {
     FGPolygon shape;
     const E00::ARC &arc = data.getARC(i);
-    Rectangle arcBounds = makeBounds(arc);
+    E00Rectangle arcBounds = makeBounds(arc);
     if (!bounds.isOverlapping(arcBounds)) {
       cout << "Arc " << i << " outside of area; skipping" << endl;
       cout << "Arc bounds: " << arcBounds << endl;
@@ -417,7 +417,7 @@ processLines (const E00 &data, const Rectangle &bounds,
  * Import all polygons.
  */
 static void
-processPolygons (const E00 &data, const Rectangle &bounds,
+processPolygons (const E00 &data, const E00Rectangle &bounds,
 		 AreaType areaType, const string &workDir,
 		 const vector<Attribute> pat_list)
 {
@@ -446,7 +446,7 @@ processPolygons (const E00 &data, const Rectangle &bounds,
 
     int contour = 0;
     const E00::PAL &pal = data.getPAL(i);
-    Rectangle palBounds = makeBounds(pal);
+    E00Rectangle palBounds = makeBounds(pal);
     if (!bounds.isOverlapping(palBounds)) {
       cout << "Polygon " << i << " outside of area, skipping" << endl;
       cout << "Polygon boundary is " << palBounds << endl;
@@ -545,7 +545,7 @@ main (int argc, const char **argv)
 
 
 				// Default values
-  Rectangle bounds(-180.0, -90.0, 180.0, 90.0);
+  E00Rectangle bounds(-180.0, -90.0, 180.0, 90.0);
   AreaType areaType = DefaultArea;
   int pointWidth = 500;
   int lineWidth = 50;

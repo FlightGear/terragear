@@ -65,7 +65,7 @@ void check_master_switch() {
 // check if the host system is free of interactive users
 int system_free() {
 
-#ifndef BSD
+#if !defined(BSD) && !defined(__CYGWIN__)
     struct utmp *uptr;
 
     setutent();
@@ -110,7 +110,7 @@ int make_socket (char *host, unsigned short int port) {
 
     // Connect this socket to the host and the port specified on the
     // command line
-    bcopy(hp->h_addr, &(name.sin_addr.s_addr), hp->h_length);
+    bcopy(hp->h_addr, (char*)&(name.sin_addr.s_addr), hp->h_length);
     name.sin_port = htons(port);
 
     if ( connect(sock, (struct sockaddr *) &name, 
