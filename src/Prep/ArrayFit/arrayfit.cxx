@@ -146,12 +146,7 @@ int main( int argc, char **argv ) {
         usage( argv[0] );
     }
 
-    SGPath outfile = infile.base();
-    cout << outfile.str() << endl;
-    while ( outfile.extension().length() ) {
-        outfile = outfile.base();
-        cout << outfile.str() << endl;
-    }
+    SGPath outfile = infile;
     outfile.concat( ".fit.gz" );
 
     cout << "Input file = " << infile.str() << endl;
