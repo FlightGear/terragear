@@ -10,7 +10,9 @@ SG_USING_STD(endl);
 int main( int argc, char **argv ) {
 
     if ( argc != 6 ) {
-        cout << "bad usage ..." << endl;
+        cout << "Usage: " << argv[0]
+             << " lon1 lat1 alt azimuth(deg) distance(m)" << endl;
+	exit(-1);
     }
 
     double lon1 = atof( argv[1] );

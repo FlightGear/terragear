@@ -21,7 +21,7 @@ $basename = $file;
 $basename =~ s/\.png$//;
 
 # convert source image to pnm
-# `pngtopnm $basename.png > $basename.pnm`
+`pngtopnm $basename.png > $basename.pnm`;
 
 $dx = $width / $xdiv;
 $dy = $height / $ydiv;

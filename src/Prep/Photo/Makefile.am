@@ -25,7 +25,7 @@
 
 EXTRA_DIST = chop.pl trans.pl
 
-bin_PROGRAMS = photo wgs84offset
+bin_PROGRAMS = photo wgs84offset findcorners
 
 photo_SOURCES = photo.cxx
 
@@ -42,6 +42,10 @@ photo_LDADD = \
 wgs84offset_SOURCES = wgs84offset.cxx
 
 wgs84offset_LDADD = -lsgmath -lsgdebug
+
+findcorners_SOURCES = findcorners.cxx
+
+findcorners_LDADD = -lsgmath -lsgdebug
 
 INCLUDES += \
 	-I$(top_srcdir) \
