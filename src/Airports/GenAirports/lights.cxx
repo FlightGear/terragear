@@ -897,9 +897,9 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
 }
 
 
-// generate ALSF-II approach lighting scheme
+// generate ALSF-I/II and SALS/SALSF approach lighting schemes
 static superpoly_list gen_alsf( const FGRunway& rwy_info,
-                                   float alt_m, int kind, bool recip )
+                                float alt_m, const string &kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -911,7 +911,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     point_list s_normals; s_normals.clear();
     int i, j;
 
-    cout << "gen ALSF lights " << rwy_info.rwy_no << endl;
+    cout << "gen ALSF/SALS lights " << rwy_info.rwy_no << endl;
 
     Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
 
@@ -984,12 +984,24 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
     Point3D ref = ref_save;
 
-    for ( i = 0; i < 30; ++i ) {
-        // offset 100' downwind
+    int count;
+    if ( kind == "2" ) {
         geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
                             -100 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
+        cout = 30;
+    } else {
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                            -300 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref = Point3D( lon, lat, 0.0 );
+        if ( kind == "1" ) {
+            count = 28;
+        } else {
+            count = 13;
+        }
+    }
 
+    for ( i = 0; i < count; ++i ) {
         pt1 = ref;
         w_lights.push_back( pt1 );
         w_normals.push_back( normal );
@@ -1021,11 +1033,15 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         pt1 = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt1 );
         w_normals.push_back( normal );
+
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                            -100 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref = Point3D( lon, lat, 0.0 );
     }
 
     ref = ref_save;
 
-    if ( kind == 1 ) {
+    if ( kind == "1" ) {
         // Terminating bar
 
         // offset 200' downwind
@@ -1074,7 +1090,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         pt1 = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt1 );
         r_normals.push_back( normal );
-    } else if ( kind == 2 ) {
+    } else if ( kind == "2" ) {
         // Generate red side row lights
 
         for ( i = 0; i < 9; ++i ) {
@@ -1127,7 +1143,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         }
     }
 
-    if ( kind == 1 ) {
+    if ( kind == "1" ) {
         // Generate pre-threshold bar
 
         ref = ref_save;
@@ -1170,7 +1186,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
             r_lights.push_back( pt1 );
             r_normals.push_back( normal );
         }
-    } else if ( kind == 2 ) {
+    } else if ( kind == "2" ) {
         // Generate -500 extra horizontal row of lights
 
         ref = ref_save;
@@ -1938,15 +1954,23 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
     // Approach lighting
 
+    ////////////////////////////////////////////////////////////
+    // NOT IMPLIMENTED:
+    //
+    // code "A" == ALS Approach light system (assumed white lights)
+    // 
+    // Please send me documentation for this configuration
+    ////////////////////////////////////////////////////////////
+
     // ALSF-I
     if ( rwy_info.end1_flags.substr(3,1) == "B" ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, 1, false );
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "1", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
     if ( rwy_info.end2_flags.substr(3,1) == "B" ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, 1, true );
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
@@ -1954,17 +1978,29 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
     // ALSF-II
     if ( rwy_info.end1_flags.substr(3,1) == "C" ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, 2, false );
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "2", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
     if ( rwy_info.end2_flags.substr(3,1) == "C" ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, 2, true );
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
+
+    ////////////////////////////////////////////////////////////
+    // NOT IMPLIMENTED:
+    //
+    // code: "D" CAL Calvert (British)
+    //
+    // code: "E" CAL-II Calvert (British) - Cat II and II
+    // 
+    // Please send me documentation for this configuration
+    ////////////////////////////////////////////////////////////
+
+    // LDIN
 
     // MALS
     if ( rwy_info.end1_flags.substr(3,1) == "G" ) {
@@ -2008,15 +2044,34 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
         }
     }
 
-    // SSALS
-    if ( rwy_info.end1_flags.substr(3,1) == "S" ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", false );
+    // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
+    // a shorter center bar)
+
+    if ( rwy_info.end1_flags.substr(3,1) == "O" ) {
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "O", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "S" ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", true );
+    if ( rwy_info.end2_flags.substr(3,1) == "O" ) {
+        superpoly_list s = gen_alsf( rwy_info, alt_m, "O", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+
+    // SALSF (Essentially ALSF-1 without the lead in rabbit lights,
+    // and a shorter center bar, but 3 sequenced flashing lights)
+
+    // SSALS
+    if ( rwy_info.end1_flags.substr(3,1) == "P" ) {
+        superpoly_list s = gen_ssalx( rwy_info, alt_m, "P", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+    if ( rwy_info.end2_flags.substr(3,1) == "P" ) {
+        superpoly_list s = gen_ssalx( rwy_info, alt_m, "P", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
