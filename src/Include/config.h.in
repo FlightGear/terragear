@@ -1,4 +1,4 @@
-/* Include/config.h.in.  Generated automatically from configure.in by autoheader.  */
+/* src/Include/config.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define to empty if the keyword does not work.  */
 #undef const
@@ -47,9 +47,6 @@
 /* Define if you have the vprintf function.  */
 #undef HAVE_VPRINTF
 
-/* Define to package name */
-#undef PACKAGE
-
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE
 
@@ -64,9 +61,6 @@
 
 /* Define if your <sys/time.h> declares struct tm.  */
 #undef TM_IN_SYS_TIME
-
-/* Define to version number */
-#undef VERSION
 
 /* Define if compiling on a Winbloze (95, NT, etc.) platform */
 #undef WIN32
@@ -205,3 +199,10 @@
 
 /* Define if you have the socket library (-lsocket).  */
 #undef HAVE_LIBSOCKET
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
+
