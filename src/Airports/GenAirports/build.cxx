@@ -1400,9 +1400,11 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
 
     double length = rwy_info.length / 2.0;
     if ( length < 1150 ) {
-	cout << "This runway is not long enough for non-precision markings!"
+	cerr << "This runway is not long enough for visual markings!"
 	     << endl;
-	exit(-1);
+	cerr << "Converting to a simple runway ... !" << endl;	
+	gen_simple_rwy( rwy_info, "grass_rwy",
+			rwy_polys, texparams, accum );
     }
 
     double start_pct = 0;
@@ -1537,7 +1539,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     double apt_lon, apt_lat;
     int elev;
 
-    cout << airport_raw << endl;
+    cerr << airport_raw << endl;
     string apt_type = airport_raw.substr(0, 1);
     string apt_code = airport_raw.substr(2, 4); my_chomp( apt_code );
     string apt_lat_str = airport_raw.substr(7, 10);
