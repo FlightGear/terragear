@@ -296,9 +296,7 @@ int main( int argc, char **argv ) {
         exit(-1);
     }
 
-    // throw away the first 3 lines
-    in.getline(tmp, 256);
-    in.getline(tmp, 256);
+    // throw away the first line
     in.getline(tmp, 256);
 
     last_airport = "";

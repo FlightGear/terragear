@@ -36,6 +36,7 @@ extern "C" {
 #include <Triangle/triangle.h>
 }
 
+#include "poly_support.hxx"
 #include "trinodes.hxx"
 
 
@@ -225,25 +226,39 @@ Point3D calc_point_inside( const FGPolygon& p, const int contour,
 }
 
 
-// basic triangulation of a polygon with out adding points or
-// splitting edges
-static triele_list triangulate_contour( const point_list contour,
-					const point_list holes ) {
+// basic triangulation of a polygon contour out adding points or
+// splitting edges.  If contour >= 0 just tesselate the specified
+// contour.
+triele_list polygon_tesselate( const FGPolygon poly, const int contour ) {
     // triangle list
     triele_list elelist;
     struct triangulateio in, out, vorout;
-    int counter;
+    int counter, offset;
 
     // point list
-    double max_x = contour[0].x();
-    in.numberofpoints = contour.size();
+    double max_x = poly.get_contour(0)[0].x();
+    int total_pts = 0;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	if ( (contour < 0) || poly.get_hole_flag(i) || (i == contour) ) {
+	    total_pts += poly.contour_size( i );
+	}
+    }
+
+    in.numberofpoints = total_pts;
     in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
 
-    for ( int i = 0; i < in.numberofpoints; ++i ) {
-	in.pointlist[2*i] = contour[i].x();
-	in.pointlist[2*i + 1] = contour[i].y();
-	if ( contour[i].x() > max_x ) {
-	    max_x = contour[i].x();
+    counter = 0;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	if ( (contour < 0) || poly.get_hole_flag(i) || (i == contour) ) {
+	    point_list contour = poly.get_contour( i );
+	    for ( int j = 0; j < (int)contour.size(); ++j ) {
+		in.pointlist[2*counter] = contour[j].x();
+		in.pointlist[2*counter + 1] = contour[j].y();
+		if ( contour[j].x() > max_x ) {
+		    max_x = contour[j].x();
+		}
+		++counter;
+	    }
 	}
     }
 
@@ -251,8 +266,15 @@ static triele_list triangulate_contour( const point_list contour,
     in.pointattributelist = (REAL *) malloc(in.numberofpoints *
 					    in.numberofpointattributes *
 					    sizeof(REAL));
-    for ( int i = 0; i < in.numberofpoints * in.numberofpointattributes; ++i) {
-	in.pointattributelist[i] = contour[i].z();
+    counter = 0;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	if ( (contour < 0) || poly.get_hole_flag(i) || (i == contour) ) {
+	    point_list contour = poly.get_contour( i );
+	    for ( int j = 0; j < (int)contour.size(); ++j ) {
+		in.pointattributelist[counter] = contour[j].z();
+		++counter;
+	    }
+	}
     }
 
     in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
@@ -264,26 +286,42 @@ static triele_list triangulate_contour( const point_list contour,
     in.numberoftriangles = 0;
 
     // segment list
-    in.numberofsegments = contour.size();
+    in.numberofsegments = total_pts;
     in.segmentlist = (int *) malloc(in.numberofsegments * 2 * sizeof(int));
     in.segmentmarkerlist = (int *) malloc(in.numberofsegments * sizeof(int));
+
     counter = 0;
-    for ( int i = 0; i < in.numberofsegments - 1; ++i ) {
-	in.segmentlist[counter++] = i;
-	in.segmentlist[counter++] = i + 1;
-	in.segmentmarkerlist[i] = 0;
+    offset = 0;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	point_list contour = poly.get_contour( i );
+	for ( int j = 0; j < (int)contour.size() - 1; ++j ) {
+	    in.segmentlist[counter++] = i + offset;
+	    in.segmentlist[counter++] = i + offset + 1;
+	    in.segmentmarkerlist[i] = 0;
+	}
+	in.segmentlist[counter++] = (int)contour.size() + offset - 1;
+	in.segmentlist[counter++] = 0 + offset;
+	in.segmentmarkerlist[(int)contour.size() - 1] = 0;
+
+	offset += contour.size();
     }
-    in.segmentlist[counter++] = in.numberofsegments - 1;
-    in.segmentlist[counter++] = 0;
-    in.segmentmarkerlist[in.numberofsegments - 1] = 0;
 
     // hole list
-    in.numberofholes = holes.size() + 1;
+    int hole_count = 0;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	if ( poly.get_hole_flag( i ) ) {
+	    ++hole_count;
+	}
+    }
+
+    in.numberofholes = hole_count + 1;
     in.holelist = (REAL *) malloc(in.numberofholes * 2 * sizeof(REAL));
     counter = 0;
-    for ( int i = 0; i < (int)holes.size(); ++i ) {
-	in.holelist[counter++] = holes[i].x();
-	in.holelist[counter++] = holes[i].y();
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	if ( poly.get_hole_flag( i ) ) {
+	    in.holelist[counter++] = poly.get_point_inside(i).x();
+	    in.holelist[counter++] = poly.get_point_inside(i).y();
+	}
     }
     // outside of polygon
     in.holelist[counter++] = max_x + 1.0;
@@ -379,12 +417,159 @@ static triele_list triangulate_contour( const point_list contour,
 }
 
 
+// basic triangulation of a polygon with out adding points or
+// splitting edges and without regard for holes
+static triele_list contour_tesselate( const point_list contour ) {
+    // triangle list
+    triele_list elelist;
+    struct triangulateio in, out, vorout;
+    int counter;
+
+    // point list
+    double max_x = contour[0].x();
+    in.numberofpoints = contour.size();
+    in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
+
+    for ( int i = 0; i < in.numberofpoints; ++i ) {
+	in.pointlist[2*i] = contour[i].x();
+	in.pointlist[2*i + 1] = contour[i].y();
+	if ( contour[i].x() > max_x ) {
+	    max_x = contour[i].x();
+	}
+    }
+
+    in.numberofpointattributes = 1;
+    in.pointattributelist = (REAL *) malloc(in.numberofpoints *
+					    in.numberofpointattributes *
+					    sizeof(REAL));
+    for ( int i = 0; i < in.numberofpoints * in.numberofpointattributes; ++i) {
+	in.pointattributelist[i] = contour[i].z();
+    }
+
+    in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
+    for ( int i = 0; i < in.numberofpoints; ++i) {
+	in.pointmarkerlist[i] = 0;
+    }
+
+    // triangle list
+    in.numberoftriangles = 0;
+
+    // segment list
+    in.numberofsegments = contour.size();
+    in.segmentlist = (int *) malloc(in.numberofsegments * 2 * sizeof(int));
+    in.segmentmarkerlist = (int *) malloc(in.numberofsegments * sizeof(int));
+    counter = 0;
+    for ( int i = 0; i < in.numberofsegments - 1; ++i ) {
+	in.segmentlist[counter++] = i;
+	in.segmentlist[counter++] = i + 1;
+	in.segmentmarkerlist[i] = 0;
+    }
+    in.segmentlist[counter++] = in.numberofsegments - 1;
+    in.segmentlist[counter++] = 0;
+    in.segmentmarkerlist[in.numberofsegments - 1] = 0;
+
+    // hole list
+    in.numberofholes = 1;
+    in.holelist = (REAL *) malloc(in.numberofholes * 2 * sizeof(REAL));
+    // outside of polygon
+    counter = 0;
+    in.holelist[counter++] = max_x + 1.0;
+    in.holelist[counter++] = 0.0;
+
+    // region list
+    in.numberofregions = 0;
+    in.regionlist = (REAL *) NULL;
+
+    // prep the output structures
+    out.pointlist = (REAL *) NULL;        // Not needed if -N switch used.
+    // Not needed if -N switch used or number of point attributes is zero:
+    out.pointattributelist = (REAL *) NULL;
+    out.pointmarkerlist = (int *) NULL;   // Not needed if -N or -B switch used.
+    out.trianglelist = (int *) NULL;      // Not needed if -E switch used.
+    // Not needed if -E switch used or number of triangle attributes is zero:
+    out.triangleattributelist = (REAL *) NULL;
+    out.neighborlist = (int *) NULL;      // Needed only if -n switch used.
+    // Needed only if segments are output (-p or -c) and -P not used:
+    out.segmentlist = (int *) NULL;
+    // Needed only if segments are output (-p or -c) and -P and -B not used:
+    out.segmentmarkerlist = (int *) NULL;
+    out.edgelist = (int *) NULL;          // Needed only if -e switch used.
+    out.edgemarkerlist = (int *) NULL;    // Needed if -e used and -B not used.
+  
+    vorout.pointlist = (REAL *) NULL;     // Needed only if -v switch used.
+    // Needed only if -v switch used and number of attributes is not zero:
+    vorout.pointattributelist = (REAL *) NULL;
+    vorout.edgelist = (int *) NULL;       // Needed only if -v switch used.
+    vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
+    
+    // TEMPORARY
+    // write_out_data(&in);
+
+    // Triangulate the points.  Switches are chosen to read and write
+    // a PSLG (p), number everything from zero (z), and produce an
+    // edge list (e), and a triangle neighbor list (n).
+    // no new points on boundary (Y), no internal segment
+    // splitting (YY), no quality refinement (q)
+
+    string tri_options;
+    tri_options = "pzYYen";
+    cout << "Triangulation with options = " << tri_options << endl;
+
+    triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
+
+    // TEMPORARY
+    // write_out_data(&out);
+
+    // now copy the results back into the corresponding FGTriangle
+    // structures
+
+    // triangles
+    elelist.clear();
+    int n1, n2, n3;
+    double attribute;
+    for ( int i = 0; i < out.numberoftriangles; ++i ) {
+	n1 = out.trianglelist[i * 3];
+	n2 = out.trianglelist[i * 3 + 1];
+	n3 = out.trianglelist[i * 3 + 2];
+	if ( out.numberoftriangleattributes > 0 ) {
+	    attribute = out.triangleattributelist[i];
+	} else {
+	    attribute = 0.0;
+	}
+	// cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
+
+	elelist.push_back( FGTriEle( n1, n2, n3, attribute ) );
+    }
+
+    // free mem allocated to the "Triangle" structures
+    free(in.pointlist);
+    free(in.pointattributelist);
+    free(in.pointmarkerlist);
+    free(in.regionlist);
+    free(out.pointlist);
+    free(out.pointattributelist);
+    free(out.pointmarkerlist);
+    free(out.trianglelist);
+    free(out.triangleattributelist);
+    // free(out.trianglearealist);
+    free(out.neighborlist);
+    free(out.segmentlist);
+    free(out.segmentmarkerlist);
+    free(out.edgelist);
+    free(out.edgemarkerlist);
+    free(vorout.pointlist);
+    free(vorout.pointattributelist);
+    free(vorout.edgelist);
+    free(vorout.normlist);
+
+    return elelist;
+}
+
+
 // Find a point inside the polygon without regard for holes
 static Point3D point_inside_hole( point_list contour ) {
-    point_list holes;
-    holes.clear();
 
-    triele_list elelist = triangulate_contour( contour, holes );
+    triele_list elelist = contour_tesselate( contour );
     if ( elelist.size() <= 0 ) {
 	cout << "Error polygon triangulated to zero triangles!" << endl;
 	exit(-1);
@@ -404,7 +589,8 @@ static Point3D point_inside_hole( point_list contour ) {
 }
 
 
-// Find a point inside the polygon without regard for holes
+// Find a point inside a specific polygon contour taking holes into
+// consideration
 static Point3D point_inside_contour( const FGPolygon p, int contour ) {
     point_list holes;
     holes.clear();
@@ -416,8 +602,7 @@ static Point3D point_inside_contour( const FGPolygon p, int contour ) {
 	}
     }
 
-    triele_list elelist = triangulate_contour( p.get_contour( contour ),
-					       holes );
+    triele_list elelist = polygon_tesselate( p, contour );
     if ( elelist.size() <= 0 ) {
 	cout << "Error polygon triangulated to zero triangles!" << endl;
 	exit(-1);
@@ -442,8 +627,12 @@ static Point3D point_inside_contour( const FGPolygon p, int contour ) {
 // assigning attribute areas
 void calc_points_inside( FGPolygon& p ) {
     // first calculate an inside point for all holes
+    cout << "calculating points for poly with contours = " << p.contours()
+	 << endl;
+
     for ( int i = 0; i < p.contours(); ++i ) {
 	if ( p.get_hole_flag( i ) ) {
+	    cout << "  hole = " << i << endl;
 	    Point3D hole_pt = point_inside_hole( p.get_contour( i ) );
 	    p.set_point_inside( i, hole_pt );
 	}
@@ -453,6 +642,7 @@ void calc_points_inside( FGPolygon& p ) {
     // into consideration the holes
     for ( int i = 0; i < p.contours(); ++i ) {
 	if ( ! p.get_hole_flag( i ) ) {
+	    cout << "  enclosing contour = " << i << endl;
 	    Point3D inside_pt = point_inside_contour( p, i );
 	    p.set_point_inside( i, inside_pt );
 	}

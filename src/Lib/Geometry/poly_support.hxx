@@ -35,18 +35,23 @@
 #include <simgear/math/fg_types.hxx>
 
 #include <Polygon/polygon.hxx>
+#include <Triangulate/trieles.hxx>
 
 #include "trinodes.hxx"
 
 
+// basic triangulation of a polygon contour out adding points or
+// splitting edges.  If contour >= 0 just tesselate the specified
+// contour.
+triele_list polygon_tesselate( const FGPolygon poly, const int contour );
+
 // calculate some "arbitrary" point inside the specified contour for
 // assigning attribute areas.  This requires data structures outside
 // of "FGPolygon" which is why it is living over here in "Lib/Build"
-
 Point3D calc_point_inside( const FGPolygon& p, const int contour, 
 			   const FGTriNodes& trinodes );
 
-void calc_points_inside( const FGPolygon& p );
+void calc_points_inside( FGPolygon& p );
 
 
 #endif // _POLY_SUPPORT_HXX

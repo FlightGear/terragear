@@ -44,9 +44,11 @@
 #include <simgear/misc/texcoord.hxx>
 
 #include <Array/array.hxx>
+#include <Build/poly_support.hxx>
 #include <Build/trinodes.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
+#include <Triangulate/trieles.hxx>
 
 #include "convex_hull.hxx"
 #include "point2d.hxx"
@@ -960,6 +962,16 @@ void build_airport( string airport_raw, string_list& runways_raw,
     }
     base_nodes = add_nodes_to_poly( base_nodes, tmp_nodes );
    
+    // new stripper approach
+    cout << "Ready to try new striper" << endl;
+    cout << "First calculate a 'point inside' for each contour and hole" 
+	 << endl;
+    /* 1 */ calc_points_inside( base_nodes );
+    for ( int i = 0; i < base_nodes.contours(); ++i ) {
+	cout << base_nodes.get_point_inside( i ) << endl;
+    }
+    /* 2 */ triele_list base_tris = polygon_tesselate( base_nodes, -1 );
+
     // generate convex hull and strip version
     FGPolygon base_strips = polygon_to_tristrip( base_nodes );
 
