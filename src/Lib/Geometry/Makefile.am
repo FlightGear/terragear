@@ -9,7 +9,7 @@ libGeometry_a_SOURCES = \
 	trisegs.cxx trisegs.hxx \
         util.cxx util.hxx
 
-INCLUDES += \
+INCLUDES = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/Lib \
 	-I$(top_srcdir)/src/BuildTiles

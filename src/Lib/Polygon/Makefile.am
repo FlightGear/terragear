@@ -8,4 +8,4 @@ libPolygon_a_SOURCES = \
 	split-bin.cxx split.hxx \
 	superpoly.cxx superpoly.hxx
 
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/Lib
+INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/Lib

@@ -16,4 +16,4 @@ noaa_decode_LDADD = \
 	$(top_builddir)/src/Lib/shapelib/libshape.a \
 	-lsgdebug -lsgbucket -lsgmisc -lsgxml -lgenpolyclip -lz
 
-INCLUDES += -I$(top_srcdir)/src/Lib
+INCLUDES = -I$(top_srcdir)/src/Lib

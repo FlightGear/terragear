@@ -12,4 +12,4 @@ testmerger_LDADD = \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgdebug -lsgbucket -lsgmisc -lsgxml -lgenpolyclip -lz
 
-INCLUDES += -I$(top_srcdir)/src/Lib
+INCLUDES = -I$(top_srcdir)/src/Lib

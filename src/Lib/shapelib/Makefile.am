@@ -34,4 +34,4 @@ shptest_LDADD = libshape.a
 shputils_SOURCES = shputils.c
 shputils_LDADD = libshape.a
 
-INCLUDES += -I$(top_srcdir)/src
+INCLUDES = -I$(top_srcdir)/src

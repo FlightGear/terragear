@@ -15,4 +15,4 @@ testclipper_LDADD = \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgbucket -lsgdebug -lsgmisc -lsgxml -lgenpolyclip -lz 
 
-INCLUDES += -I$(top_srcdir)/src/Lib -I$(top_srcdir)/src/BuildTiles
+INCLUDES = -I$(top_srcdir)/src/Lib -I$(top_srcdir)/src/BuildTiles

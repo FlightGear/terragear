@@ -6,6 +6,6 @@ noinst_PROGRAMS = testosgb36
 
 testosgb36_SOURCES = testosgb36.cxx
 
-INCLUDES += \
+INCLUDES = \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/src/Lib

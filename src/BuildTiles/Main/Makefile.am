@@ -25,7 +25,7 @@ fgfs_master_SOURCES = master.cxx
 
 fgfs_master_LDADD = -lsgbucket -lsgmisc -lsgdebug -lsgxml
 
-INCLUDES += \
+INCLUDES = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/Lib \
 	-I$(top_srcdir)/src/BuildTiles
