@@ -31,7 +31,8 @@ genapts_SOURCES = \
 	main.cxx \
 	output.cxx output.hxx \
 	point2d.cxx point2d.hxx \
-	runway.cxx runway.hxx 
+	runway.cxx runway.hxx \
+	texparams.hxx
 
 genapts_LDADD = \
 	$(top_builddir)/src/Lib/Array/libArray.a \

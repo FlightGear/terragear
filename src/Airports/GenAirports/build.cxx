@@ -57,35 +57,44 @@
 #include "point2d.hxx"
 #include "runway.hxx"
 #include "scenery_version.hxx"
+#include "texparams.hxx"
 
 
 static const double tgAirportEpsilon = FG_EPSILON / 10.0;
 
 
-// calculate texture coordinates for a 1/2 runway.  Returns a mirror
-// polygon to the runway, except each point is the texture coordinate
-// of the corresponding point in the original polygon.
-static FGPolygon rwy_calc_tex_coords( const FGRunway& rwy,
-				      double hdg_offset,
-				      const FGPolygon& in_poly )
+// calculate texture coordinates for runway section using the provided
+// texturing parameters.  Returns a mirror polygon to the runway,
+// except each point is the texture coordinate of the corresponding
+// point in the original polygon.
+static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
+					 const FGTexParams& tp )
 {
     FGPolygon result;
     result.erase();
-    double length = rwy.length * FEET_TO_METER;
-    double width = rwy.width * FEET_TO_METER;
+    // double length = rwy.length * FEET_TO_METER;
+    // double width = rwy.width * FEET_TO_METER;
 
-    Point3D center( rwy.lon, rwy.lat, 0 );
-    cout << "runway heading = " << rwy.heading << endl;
-    double angle = rwy.heading + hdg_offset;
-    Point3D p, tp;
+    Point3D center = tp.get_center();
+    Point3D min = tp.get_min();
+    Point3D max = tp.get_max();
+    double angle = tp.get_angle();
+    cout << "section heading = " << angle << endl;
+    cout << "center = " << center << endl;
+    cout << "min = " << min << endl;
+    cout << "max = " << max << endl;
+    Point3D p, t;
     double x, y, tx, ty;
 
     for ( int i = 0; i < in_poly.contours(); ++i ) {
 	for ( int j = 0; j < in_poly.contour_size( i ); ++j ) {
 	    p = in_poly.get_pt( i, j );
+	    cout << "point = " << p << endl;
 
-	    // dist = gc_dist( center, p );
-	    // course = gc_course( center, p, dist ) + angle;
+	    //
+	    // 1. Calculate distance and bearing from the center of
+	    // the runway
+	    //
 
 	    // given alt, lat1, lon1, lat2, lon2, calculate starting
 	    // and ending az1, az2 and distance (s).  Lat, lon, and
@@ -93,8 +102,13 @@ static FGPolygon rwy_calc_tex_coords( const FGRunway& rwy,
 	    double az1, az2, dist;
 	    geo_inverse_wgs_84( 0, center.y(), center.x(), p.y(), p.x(),
 				&az1, &az2, &dist );
-
 	    // cout << "basic course = " << az1 << endl;
+
+	    //
+	    // 2. Rotate this back into a coordinate system where X
+	    // runs the length of the runway and Y runs crossways.
+	    //
+
 	    double course = az1 - angle;
 	    // cout << "course = " << course << endl;
 	    while ( course < -360 ) { course += 360; }
@@ -102,24 +116,32 @@ static FGPolygon rwy_calc_tex_coords( const FGRunway& rwy,
 	    // cout << "Dist = " << dist << endl;
 	    // cout << "  Course = " << course * 180.0 / FG_PI << endl;
 
+	    //
+	    // 3. Convert from polar to cartesian coordinates
+	    //
+
 	    x = cos( course * DEG_TO_RAD ) * dist;
 	    y = sin( course * DEG_TO_RAD ) * dist;
-	    // cout << "  x = " << x << " y = " << y << endl;
+	    cout << "  x = " << x << " y = " << y << endl;
 
-	    tx = x / (length / 2.0);
+	    //
+	    // 4. Map x, y point into texture coordinates
+	    //
+
+	    tx = (x - min.x()) / (max.x() - min.x());
 	    tx = ((int)(tx * 100)) / 100.0;
 	    if ( tx < -1.0 ) { tx = -1.0; }
 	    if ( tx > 1.0 ) { tx = 1.0; }
 
-	    ty = (y + (width / 2.0)) / width;
+	    ty = (y - min.y()) / (max.y() - min.y());
 	    ty = ((int)(ty * 100)) / 100.0;
 	    if ( ty < -1.0 ) { ty = -1.0; }
 	    if ( ty > 1.0 ) { ty = 1.0; }
 
-	    tp = Point3D( tx, ty, 0 );
-	    // cout << "  (" << tx << ", " << ty << ")" << endl;
+	    t = Point3D( tx, ty, 0 );
+	    cout << "  (" << tx << ", " << ty << ")" << endl;
 
-	    result.add_node( i, tp );
+	    result.add_node( i, t );
 	}
     }
 
@@ -536,13 +558,324 @@ static void my_chomp( string& str ) {
 }
 
 
+// generate a simple runway.  The routine modifies rwy_polys,
+// texparams, and accum
+static void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
+			    superpoly_list *rwy_polys,
+			    texparams_list *texparams,
+			    FGPolygon *accum )
+{
+    FGPolygon runway = gen_runway_w_mid( rwy_info );
+
+    // runway half "a"
+    FGPolygon runway_a;
+    runway_a.erase();
+    runway_a.add_node( 0, runway.get_pt(0, 0) );
+    runway_a.add_node( 0, runway.get_pt(0, 1) );
+    runway_a.add_node( 0, runway.get_pt(0, 2) );
+    runway_a.add_node( 0, runway.get_pt(0, 5) );
+
+    // runway half "b"
+    FGPolygon runway_b;
+    runway_b.erase();
+    runway_b.add_node( 0, runway.get_pt(0, 5) );
+    runway_b.add_node( 0, runway.get_pt(0, 2) );
+    runway_b.add_node( 0, runway.get_pt(0, 3) );
+    runway_b.add_node( 0, runway.get_pt(0, 4) );
+	
+    Point3D p;
+    cout << "raw runway pts (a half)" << endl;
+    for ( int j = 0; j < runway_a.contour_size( 0 ); ++j ) {
+	p = runway_a.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+    cout << "raw runway pts (b half)" << endl;
+    for ( int j = 0; j < runway_b.contour_size( 0 ); ++j ) {
+	p = runway_b.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+	
+    FGSuperPoly sp;
+    FGTexParams tp;
+
+    FGPolygon clipped_a = polygon_diff( runway_a, *accum );
+    FGPolygon split_a = split_long_edges( clipped_a, 400.0 );
+    sp.erase();
+    sp.set_poly( split_a );
+    sp.set_material( material );
+    rwy_polys->push_back( sp );
+    cout << "clipped_a = " << clipped_a.contours() << endl;
+    *accum = polygon_union( runway_a, *accum );
+    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
+		      Point3D( 0.0,
+			       (-rwy_info.width / 2.0) * FEET_TO_METER,
+			       0 ),
+		      Point3D( (rwy_info.length / 2.0) * FEET_TO_METER,
+			       (rwy_info.width  / 2.0) * FEET_TO_METER,
+			       0.0 ),
+		      rwy_info.heading );
+    texparams->push_back( tp );
+
+    FGPolygon clipped_b = polygon_diff( runway_b, *accum );
+    FGPolygon split_b = split_long_edges( clipped_b, 400.0 );
+    sp.erase();
+    sp.set_poly( split_b );
+    sp.set_material( material );
+    rwy_polys->push_back( sp );
+    cout << "clipped_b = " << clipped_b.contours() << endl;
+    *accum = polygon_union( runway_b, *accum );
+    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
+		      Point3D( 0.0,
+			       (-rwy_info.width / 2.0) * FEET_TO_METER,
+			       0 ),
+		      Point3D( (rwy_info.length / 2.0) * FEET_TO_METER,
+			       (rwy_info.width  / 2.0) * FEET_TO_METER,
+			       0.0 ),
+		      rwy_info.heading + 180.0 );
+    texparams->push_back( tp );
+
+#if 0
+    // after clip, but before removing T intersections
+    char tmpa[256], tmpb[256];
+    sprintf( tmpa, "a%d", i );
+    sprintf( tmpb, "b%d", i );
+    write_polygon( clipped_a, tmpa );
+    write_polygon( clipped_b, tmpb );
+#endif
+
+    // print runway points
+    cout << "clipped runway pts (a)" << endl;
+    for ( int j = 0; j < clipped_a.contours(); ++j ) {
+	for ( int k = 0; k < clipped_a.contour_size( j ); ++k ) {
+	    p = clipped_a.get_pt(j, k);
+	    cout << " point = " << p << endl;
+	}
+    }
+
+    // print runway points
+    cout << "clipped runway pts (b)" << endl;
+    for ( int j = 0; j < clipped_b.contours(); ++j ) {
+	for ( int k = 0; k < clipped_b.contour_size( j ); ++k ) {
+	    p = clipped_b.get_pt(j, k);
+	    cout << " point = " << p << endl;
+	}
+    }
+
+}
+
+
+// generate a section of runway
+static void gen_precision_section( const FGRunway& rwy_info,
+				   const FGPolygon& runway,
+				   double start_pct, double end_pct,
+				   double heading,
+				   const string& material,
+				   superpoly_list *rwy_polys,
+				   texparams_list *texparams,
+				   FGPolygon *accum  ) {
+
+    Point3D a0 = runway.get_pt(0, 1);
+    Point3D a1 = runway.get_pt(0, 2);
+    Point3D a2 = runway.get_pt(0, 0);
+    Point3D a3 = runway.get_pt(0, 3);
+
+    double dx = a1.x() - a0.x();
+    double dy = a1.y() - a0.y();
+
+    cout << "start % = " << start_pct << " end % = " << end_pct << endl;
+
+    Point3D p0 = Point3D( a0.x() + dx * start_pct,
+			  a0.y() + dy * start_pct, 0);
+
+    Point3D p1 = Point3D( a0.x() + dx * end_pct,
+			  a0.y() + dy * end_pct, 0);
+
+    Point3D p2 = Point3D( a2.x() + dx * start_pct,
+			  a2.y() + dy * start_pct, 0);
+
+    Point3D p3 = Point3D( a2.x() + dx * end_pct,
+			  a2.y() + dy * end_pct, 0);
+
+    FGPolygon section;
+    section.erase();
+
+    section.add_node( 0, p0 );
+    section.add_node( 0, p1 );
+    section.add_node( 0, p3 );
+    section.add_node( 0, p2 );
+
+    // print runway points
+    cout << "pre clipped runway pts " << material << endl;
+    for ( int j = 0; j < section.contours(); ++j ) {
+	for ( int k = 0; k < section.contour_size( j ); ++k ) {
+	    Point3D p = section.get_pt(j, k);
+	    cout << " point = " << p << endl;
+	}
+    }
+
+    FGPolygon clipped = polygon_diff( section, *accum );
+    FGPolygon split = split_long_edges( clipped, 400.0 );
+    FGSuperPoly sp;
+    sp.erase();
+    sp.set_poly( split );
+    sp.set_material( material );
+    rwy_polys->push_back( sp );
+    cout << "section = " << clipped.contours() << endl;
+    *accum = polygon_union( section, *accum );
+
+    double len = rwy_info.length / 2.0;
+    double start_len = len - ( len * start_pct );
+    double end_len = len - ( len * end_pct );
+    FGTexParams tp;
+    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
+		      Point3D( end_len * FEET_TO_METER,
+			       (rwy_info.width  / 2.0) * FEET_TO_METER,
+			       0 ),
+		      Point3D( start_len * FEET_TO_METER,
+			       (-rwy_info.width / 2.0) * FEET_TO_METER,
+			       0.0 ),
+		      heading );
+    texparams->push_back( tp );
+
+    // print runway points
+    cout << "clipped runway pts " << material << endl;
+    for ( int j = 0; j < clipped.contours(); ++j ) {
+	for ( int k = 0; k < clipped.contour_size( j ); ++k ) {
+	    Point3D p = clipped.get_pt(j, k);
+	    cout << " point = " << p << endl;
+	}
+    }
+}
+
+
+// generate a precision approach runway.  The routine modifies
+// rwy_polys, texparams, and accum.  For specific details and
+// dimensions of precision runway markings, please refer to FAA
+// document AC 150/5340-1H
+
+static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
+			       superpoly_list *rwy_polys,
+			       texparams_list *texparams,
+			       FGPolygon *accum )
+{
+
+    //
+    // Generate the basic runway outlines
+    //
+
+    FGPolygon runway = gen_runway_w_mid( rwy_info );
+
+    // runway half "a"
+    FGPolygon runway_a;
+    runway_a.erase();
+    runway_a.add_node( 0, runway.get_pt(0, 0) );
+    runway_a.add_node( 0, runway.get_pt(0, 1) );
+    runway_a.add_node( 0, runway.get_pt(0, 2) );
+    runway_a.add_node( 0, runway.get_pt(0, 5) );
+
+    // runway half "b"
+    FGPolygon runway_b;
+    runway_b.erase();
+    runway_b.add_node( 0, runway.get_pt(0, 3) );
+    runway_b.add_node( 0, runway.get_pt(0, 4) );
+    runway_b.add_node( 0, runway.get_pt(0, 5) );
+    runway_b.add_node( 0, runway.get_pt(0, 2) );
+	
+    Point3D p;
+    cout << "raw runway pts (a half)" << endl;
+    for ( int j = 0; j < runway_a.contour_size( 0 ); ++j ) {
+	p = runway_a.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+    cout << "raw runway pts (b half)" << endl;
+    for ( int j = 0; j < runway_b.contour_size( 0 ); ++j ) {
+	p = runway_b.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+
+    //
+    // Setup some variables and values to help us chop up the runway
+    // into its various sections
+    //
+
+    FGSuperPoly sp;
+    FGTexParams tp;
+
+    double length = rwy_info.length / 2.0;
+    if ( length < 3075 ) {
+	cout << "This runway is not long enough for precision markings!"
+	     << endl;
+	exit(-1);
+    }
+
+    double start_pct = 0;
+    double end_pct = 0;
+
+    //
+    // Threshold
+    //
+
+    end_pct = start_pct + ( 190.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   rwy_info.heading,
+			   "pa_threshold",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   rwy_info.heading + 180.0,
+			   "pa_threshold",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Runway designation
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 90.0 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   rwy_info.heading,
+			   "pa_left",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   rwy_info.heading + 180.0,
+			   "pa_left",
+			   rwy_polys, texparams, accum );
+
+    //
+    // The rest ...
+    //
+
+    start_pct = end_pct;
+    end_pct = 1.0;
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   rwy_info.heading,
+			   "Asphalt",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   rwy_info.heading + 180.0,
+			   "Asphalt",
+			   rwy_polys, texparams, accum );
+}
+
+
 // build 3d airport
 void build_airport( string airport_raw, string_list& runways_raw,
 		    const string& root ) {
 
     superpoly_list rwy_polys;
+    texparams_list texparams;
+
     // poly_list rwy_tris, rwy_txs;
     FGPolygon runway, runway_a, runway_b, result, clipped_a, clipped_b;
+    FGPolygon split_a, split_b;
     FGPolygon base;
     point_list apt_pts;
     Point3D p;
@@ -639,11 +972,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
     }
 
     FGSuperPoly sp;
-    string surface_flag;
-    string material;
+    FGTexParams tp;
+
     for ( int i = 0; i < (int)runways.size(); ++i ) {
-	surface_flag = runways[i].surface_flags.substr(1, 1);
+	string surface_flag = runways[i].surface_flags.substr(1, 1);
 	cout << "surface flag = " << surface_flag << endl;
+
+	string material;
 	if ( surface_flag == "A" ) {
 	    material = "Asphalt";
 	} else if ( surface_flag == "C" ) {
@@ -657,74 +992,20 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    exit(-1);
 	}
 
-	runway = gen_runway_w_mid( runways[i] );
-
-	// runway half "a"
-	runway_a.erase();
-	runway_a.add_node( 0, runway.get_pt(0, 0) );
-	runway_a.add_node( 0, runway.get_pt(0, 1) );
-	runway_a.add_node( 0, runway.get_pt(0, 2) );
-	runway_a.add_node( 0, runway.get_pt(0, 5) );
-
-	// runway half "b"
-	runway_b.erase();
-	runway_b.add_node( 0, runway.get_pt(0, 5) );
-	runway_b.add_node( 0, runway.get_pt(0, 2) );
-	runway_b.add_node( 0, runway.get_pt(0, 3) );
-	runway_b.add_node( 0, runway.get_pt(0, 4) );
-	
-	cout << "raw runway pts (a half)" << endl;
-	for ( int j = 0; j < runway_a.contour_size( 0 ); ++j ) {
-	    p = runway_a.get_pt(0, j);
-	    cout << " point = " << p << endl;
-	}
-	cout << "raw runway pts (b half)" << endl;
-	for ( int j = 0; j < runway_b.contour_size( 0 ); ++j ) {
-	    p = runway_b.get_pt(0, j);
-	    cout << " point = " << p << endl;
-	}
-	
-	clipped_a = polygon_diff( runway_a, accum );
-	sp.erase();
-	sp.set_poly( clipped_a );
-	sp.set_material( material );
-	rwy_polys.push_back( sp );
-	cout << "clipped_a = " << clipped_a.contours() << endl;
-	accum = polygon_union( runway_a, accum );
-
-	clipped_b = polygon_diff( runway_b, accum );
-	sp.erase();
-	sp.set_poly( clipped_b );
-	sp.set_material( material );
-	rwy_polys.push_back( sp );
-	cout << "clipped_b = " << clipped_b.contours() << endl;
-	accum = polygon_union( runway_b, accum );
-
-#if 0
-	// after clip, but before removing T intersections
-	char tmpa[256], tmpb[256];
-	sprintf( tmpa, "a%d", i );
-	sprintf( tmpb, "b%d", i );
-	write_polygon( clipped_a, tmpa );
-	write_polygon( clipped_b, tmpb );
-#endif
-
-	// print runway points
-	cout << "clipped runway pts (a)" << endl;
-	for ( int j = 0; j < clipped_a.contours(); ++j ) {
-	    for ( int k = 0; k < clipped_a.contour_size( j ); ++k ) {
-		p = clipped_a.get_pt(j, k);
-		cout << " point = " << p << endl;
-	    }
-	}
-
-	// print runway points
-	cout << "clipped runway pts (b)" << endl;
-	for ( int j = 0; j < clipped_b.contours(); ++j ) {
-	    for ( int k = 0; k < clipped_b.contour_size( j ); ++k ) {
-		p = clipped_b.get_pt(j, k);
-		cout << " point = " << p << endl;
-	    }
+	string type_flag = runways[i].surface_flags.substr(2, 1);
+	cout << "type flag = " << type_flag << endl;
+	if ( type_flag == "P" ) {
+	    // precision runway markings
+	    gen_precision_rwy( runways[i], material,
+			       &rwy_polys, &texparams, &accum );
+	} else if ( type_flag == "V" ) {
+	    // visual runway markings
+	    gen_simple_rwy( runways[i], material,
+			    &rwy_polys, &texparams, &accum );
+	} else {
+	    // we don't know what this means, assume simple
+	    gen_simple_rwy( runways[i], material,
+			    &rwy_polys, &texparams, &accum );
 	}
 
 	base = gen_runway_area( runways[i], 1.05, 1.5 );
@@ -822,26 +1103,20 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // tesselate the polygons and prepair them for final output
 
-    FGPolygon poly;
-    for ( int i = 0; i < (int)runways.size(); ++i ) {
-        cout << "Tesselating runway = " << i << endl;
-	FGPolygon tri_a, tri_b, tc_a, tc_b;
+    for ( int i = 0; i < (int)rwy_polys.size(); ++i ) {
+        cout << "Tesselating section = " << i << endl;
 
-	poly = rwy_polys[2 * i].get_poly();
-	tri_a = polygon_tesselate_alt( poly );
-	tc_a = rwy_calc_tex_coords( runways[i], 0.0, tri_a );
-	rwy_polys[2 * i].set_tris( tri_a );
-	rwy_polys[2 * i].set_texcoords( tc_a );
-	rwy_polys[2 * i].set_tri_mode( GL_TRIANGLES );
+	FGPolygon poly = rwy_polys[i].get_poly();
+	FGPolygon tri = polygon_tesselate_alt( poly );
 
-	poly = rwy_polys[2 * i + 1].get_poly();
-	tri_b = polygon_tesselate_alt( poly );
-	tc_b = rwy_calc_tex_coords( runways[i], 180.0, tri_b );
-	rwy_polys[2 * i + 1].set_tris( tri_b );
-	rwy_polys[2 * i + 1].set_texcoords( tc_b );
-	rwy_polys[2 * i + 1].set_tri_mode( GL_TRIANGLES );
+	// tc = rwy_calc_tex_coords( runways[i], 0.0, tri );
+	FGPolygon tc = rwy_section_tex_coords( tri, texparams[i] );
+
+	rwy_polys[i].set_tris( tri );
+	rwy_polys[i].set_texcoords( tc );
+	rwy_polys[i].set_tri_mode( GL_TRIANGLES );
     }
-
+    
     cout << "Tesselating base" << endl;
     FGPolygon base_tris = polygon_tesselate_alt( base_poly );
 
@@ -899,6 +1174,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	FGPolygon tri_txs = rwy_polys[k].get_texcoords();
 	string material = rwy_polys[k].get_material();
 	cout << "material = " << material << endl;
+	cout << "poly size = " << tri_poly.contours() << endl;
+	cout << "texs size = " << tri_txs.contours() << endl;
 	for ( int i = 0; i < tri_poly.contours(); ++i ) {
 	    tri_v.clear();
 	    tri_tc.clear();
