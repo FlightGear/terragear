@@ -1,14 +1,17 @@
-#include "terra.h"
-#include <fstream>
+#include <simgear/compiler.h>
+
+#include STL_FSTREAM
 #include <streambuf>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::istream;
-using std::ostream;
-using std::ofstream;
-using std::streampos;
+#include "terra.h"
+
+SG_USING_STD(cerr);
+SG_USING_STD(cout);
+SG_USING_STD(endl);
+SG_USING_STD(istream);
+SG_USING_STD(ostream);
+SG_USING_STD(ofstream);
+SG_USING_STD(streampos);
 
 
 void generate_output(char *filename, FileFormat format)

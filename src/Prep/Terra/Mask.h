@@ -1,7 +1,9 @@
 #ifndef MASK_INCLUDED // -*- C++ -*-
 #define MASK_INCLUDED
 
-#include <istream>
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
 
 using std::istream;
 

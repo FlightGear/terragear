@@ -101,8 +101,8 @@ static void draw_dem()
 {
     Map *bits = DEM;
 
-    glPixelZoom((float)glutGet(GLUT_WINDOW_WIDTH) / (float)DEM->width ,
-		-(float)glutGet(GLUT_WINDOW_HEIGHT) / (float)DEM->height);
+    glPixelZoom((float)glutGet((GLenum)GLUT_WINDOW_WIDTH) / (float)DEM->width ,
+		-(float)glutGet((GLenum)GLUT_WINDOW_HEIGHT) / (float)DEM->height);
     glRasterPos3f(0, 0, 0);
 
 
@@ -160,7 +160,7 @@ void mesh_mouse(int button, int state, int x, int y)
 	if( button == GLUT_LEFT_BUTTON )
 	{
 	    GLdouble u, v, z;
-	    int win_height = glutGet(GLUT_WINDOW_HEIGHT);
+	    int win_height = glutGet((GLenum)GLUT_WINDOW_HEIGHT);
 
 	    glUnproject(x, win_height-y, 0, &u, &v, &z);
 	    if( u<0 ) u = 0;
