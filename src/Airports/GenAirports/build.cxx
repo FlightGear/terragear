@@ -237,6 +237,7 @@ static void build_runway( const TGRunway& rwy_info,
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "surface flags = " << rwy_info.surface_flags);
     string surface_flag = rwy_info.surface_flags.substr(1, 1);
+    string light_flag = rwy_info.surface_flags.substr(2, 1);
     SG_LOG(SG_GENERAL, SG_DEBUG, "surface flag = " << surface_flag);
 
     string material;
@@ -244,17 +245,19 @@ static void build_runway( const TGRunway& rwy_info,
         if ( !rwy_info.really_taxiway ) {
             material = "pa_";	// asphalt
         } else {
-            material = "pa_taxiway";
+            if ( rwy_info.width <= 150 && light_flag == "B" )
+                material = "pa_taxiway";
+            else
+                material = "pa_tiedown";
         }
     } else if ( surface_flag == "C" ) {
         if ( !rwy_info.really_taxiway ) {
             material = "pc_";	// concrete
         } else {
-            if ( rwy_info.width <= 150 ) {
+            if ( rwy_info.width <= 150 && light_flag == "B" )
                 material = "pc_taxiway";
-            } else {
+            else
                 material = "pc_tiedown";
-            }
         }
     } else if ( surface_flag == "D" ) {
         material = "dirt_rwy";
