@@ -37,13 +37,14 @@ SG_USING_NAMESPACE( PLib );
 
 
 // fix node elevations.  Offset is added to the final elevation
-static void calc_elevations( const string &root, Matrix_Point3Df &Pts ) {
-    string_list elev_src;
-    elev_src.clear();
-    elev_src.push_back( "SRTM-1" );
-    elev_src.push_back( "SRTM-3" );
-    elev_src.push_back( "DEM-3" );
-    elev_src.push_back( "DEM-30" );
+static void calc_elevations( const string &root, const string_list elev_src,
+                             Matrix_Point3Df &Pts ) {
+    // string_list elev_src;
+    // elev_src.clear();
+    // elev_src.push_back( "SRTM-1" );
+    // elev_src.push_back( "SRTM-3" );
+    // elev_src.push_back( "DEM-3" );
+    // elev_src.push_back( "DEM-30" );
 
     bool done = false;
     int i, j;
@@ -164,6 +165,7 @@ static void calc_elevations( const string &root, Matrix_Point3Df &Pts ) {
 // Constructor, specify min and max coordinates of desired area in
 // lon/lat degrees
 TGAptSurface::TGAptSurface( const string& path,
+                            const string_list& elev_src,
                             Point3D _min_deg, Point3D _max_deg )
 {
     // Calculate desired size of grid
@@ -208,7 +210,7 @@ TGAptSurface::TGAptSurface( const string& path,
     }
 
     // Determine elevation of the grid points
-    calc_elevations( path, dPts );
+    calc_elevations( path, elev_src, dPts );
 
     // Build the normal res input grid from the double res version
     Matrix_Point3Df Pts(xdivs + 1, ydivs + 1);

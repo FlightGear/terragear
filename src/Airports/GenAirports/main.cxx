@@ -76,6 +76,9 @@ int main( int argc, char **argv ) {
     float max_lat = 90;
     bool ready_to_go = true;
 
+    string_list elev_src;
+    elev_src.clear();
+
     sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
     // parse arguments
@@ -89,6 +92,8 @@ int main( int argc, char **argv ) {
             work_dir = arg.substr(7);
 	} else if ( arg.find("--input=") == 0 ) {
 	    input_file = arg.substr(8);
+        } else if ( arg.find("--terrain=") == 0 ) {
+            elev_src.push_back( arg.substr(10) );
  	} else if ( arg.find("--start-id=") == 0 ) {
 	    start_id = arg.substr(11);
 	    ready_to_go = false;
@@ -114,7 +119,16 @@ int main( int argc, char **argv ) {
 	}
     }
 
+    elev_src.push_back( "SRTM-1" );
+    elev_src.push_back( "SRTM-3" );
+    elev_src.push_back( "DEM-3" );
+    elev_src.push_back( "DEM-30" );
+
     SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
+    SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
+    for ( unsigned int i = 0; i < elev_src.size(); ++i ) {
+        SG_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
+    }
     SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
     SG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
     SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min_lon << ':' << max_lon);
@@ -215,7 +229,7 @@ int main( int argc, char **argv ) {
                         try {
                             build_airport( last_apt_id, elev * SG_FEET_TO_METER,
                                            runways_list, taxiways_list,
-                                           work_dir );
+                                           work_dir, elev_src );
                         } catch (sg_exception &e) {
                             SG_LOG( SG_GENERAL, SG_ALERT,
                                     "Failed to build airport = "
@@ -286,7 +300,7 @@ int main( int argc, char **argv ) {
                     try {
                         build_airport( last_apt_id, elev * SG_FEET_TO_METER,
                                        runways_list, taxiways_list,
-                                       work_dir );
+                                       work_dir, elev_src );
                     } catch (sg_exception &e) {
                         SG_LOG( SG_GENERAL, SG_ALERT,
                                 "Failed to build airport = "

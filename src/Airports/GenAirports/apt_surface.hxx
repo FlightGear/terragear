@@ -61,7 +61,8 @@ public:
 
     // Constructor, specify min and max coordinates of desired area in
     // lon/lat degrees
-    TGAptSurface( const string &path, Point3D _min_deg, Point3D _max_deg );
+    TGAptSurface( const string &path, const string_list& elev_src,
+                  Point3D _min_deg, Point3D _max_deg );
 
     // Destructor
     ~TGAptSurface();

@@ -323,7 +323,9 @@ static void build_runway( const TGRunway& rwy_info,
 // build 3d airport
 void build_airport( string airport_id, float alt_m,
                     string_list& runways_raw,
-                    string_list& taxiways_raw, const string& root )
+                    string_list& taxiways_raw,
+                    const string& root,
+                    const string_list& elev_src )
 {
     int i, j, k;
 
@@ -911,7 +913,7 @@ void build_airport( string airport_id, float alt_m,
     min_deg.setlat( min_deg.lat() - 0.1 * dlat );
     max_deg.setlat( max_deg.lat() + 0.1 * dlat );
 
-    TGAptSurface apt_surf( root, min_deg, max_deg );
+    TGAptSurface apt_surf( root, elev_src, min_deg, max_deg );
     cout << "Surface created" << endl;
 
     // calculate node elevations
