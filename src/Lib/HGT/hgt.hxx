@@ -28,11 +28,16 @@
 #  include <config.h>
 #endif
 
+#include <simgear/compiler.h>
+
 #include <zlib.h>
+
+#include STL_STRING
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
 
+SG_USING_STD(string);
 
 #define MAX_HGT_SIZE 3601
 
@@ -58,7 +63,10 @@ private:
     short int (*output_data)[MAX_HGT_SIZE];
 
     int hgt_resolution;
-  
+
+    bool remove_tmp_file;
+    string remove_file_name;
+
 public:
 
     // Constructor, _res must be either "1" for the 1arcsec data or

@@ -53,6 +53,8 @@ TGHgt::TGHgt( int _res ) {
 
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
+
+    remove_tmp_file = false;
 }
 
 
@@ -61,6 +63,8 @@ TGHgt::TGHgt( int _res, const SGPath &file ) {
 
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
+
+    remove_tmp_file = false;
 
     TGHgt::open( file );
 }
@@ -79,7 +83,27 @@ TGHgt::open ( const SGPath &f ) {
             return false;
         }
     } else {
-	cout << "Loading HGT data file: " << file_name.str() << endl;
+        if ( file_name.extension() == "zip" ) {
+            // extract the .zip file to /tmp and point the file name
+            // to the extracted file
+            cout << "Extracting " << file_name.str() << " to /tmp" << endl;
+            string command = "unzip -d /tmp " + file_name.base();
+            system( command.c_str() );
+
+            SGPath full_name = file_name.base();
+            file_name.set( "/tmp" );
+            if ( full_name.file().empty() ) {
+                file_name.append( full_name.str() );
+            } else {
+                file_name.append( full_name.file() );
+            }
+            remove_tmp_file = true;
+            remove_file_name = file_name.str();
+
+            cout << "Proceeding with " << file_name.str() << endl;
+        }
+        
+        cout << "Loading HGT data file: " << file_name.str() << endl;
         if ( (fd = gzopen( file_name.c_str(), "rb" )) == NULL ) {
             SGPath file_name_gz = file_name;
             file_name_gz.append( ".gz" );
@@ -112,6 +136,12 @@ TGHgt::open ( const SGPath &f ) {
 bool
 TGHgt::close () {
     gzclose(fd);
+
+    if ( remove_tmp_file ) {
+        string command = "/bin/rm " + remove_file_name;
+        system( command.c_str() );
+    }
+
     return true;
 }
 
