@@ -153,24 +153,38 @@ TGAptSurface::TGAptSurface( const string& path,
     int xdivs = (int)(x_m / 400.0) + 1;
     int ydivs = (int)(y_m / 400.0) + 1;
 
-    // Build the input grid
-
     cout << "  M(" << xdivs << "," << ydivs << ")" << endl;
-    Matrix_Point3Df Pts(xdivs, ydivs);
-
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
-    for ( int i = 0; i < xdivs; ++i ) {
-        for ( int j = 0; j < ydivs; ++j ) {
-            Pts(i,j) = Point3Df( min_deg.lon() + i * dlon,
-                                 min_deg.lat() + j * dlat,
-                                 -9999 );
+    // Build the double res input grid
+
+    Matrix_Point3Df dPts(xdivs*2 + 2, ydivs*2 + 2);
+    for ( int i = 0; i <= xdivs*2; ++i ) {
+        for ( int j = 0; j <= ydivs*2; ++j ) {
+            dPts(i,j) = Point3Df( min_deg.lon() + i * (dlon*0.5),
+                                  min_deg.lat() + j * (dlat*0.5),
+                                  -9999 );
         }
     }
 
     // Determine elevation of the grid points
-    calc_elevations( path, Pts );
+    calc_elevations( path, dPts );
+
+    // Build the norma res input grid from the double res version
+    Matrix_Point3Df Pts(xdivs + 1, ydivs + 1);
+    for ( int i = 0; i <= xdivs; ++i ) {
+        for ( int j = 0; j <= ydivs; ++j ) {
+            cout << i << "," << j << endl;
+            double z1 = dPts(2*i,2*j).z();
+            double z2 = dPts(2*i+1,2*j).z();
+            double z3 = dPts(2*i,2*j+1).z();
+            double z4 = dPts(i*2+1,2*j+1).z();
+            Pts(i,j) = Point3Df( min_deg.lon() + i * dlon,
+                                 min_deg.lat() + j * dlat,
+                                 (z1+z2+z3+z4) / 4.0 );
+        }
+    }
 
     // Create the nurbs surface
 
