@@ -326,7 +326,7 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
     FGSuperPoly white;
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
-    white.set_material( "RWY_WHITE_LIGHTS" );
+    white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -336,7 +336,7 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
     FGSuperPoly red;
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
-    red.set_material( "RWY_RED_LIGHTS" );
+    red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
 
     superpoly_list result; result.clear();
 
