@@ -347,6 +347,109 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
 }
 
 
+// generate touch down zone lights
+static FGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
+                                              float alt_m, bool recip )
+{
+    point_list lights; lights.clear();
+    point_list normals; normals.clear();
+    int i;
+
+    cout << "gen touchdown zone lights " << rwy_info.rwy_no << endl;
+
+    Point3D normal;
+
+    // using FGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    // determine the start point.
+    Point3D ref;
+    double length_hdg, left_hdg;
+    double lon, lat, r;
+    if ( recip ) {
+        ref = (corner[0] + corner[1]) / 2;
+        length_hdg = rwy_info.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+    } else {
+        ref = (corner[2] + corner[3]) / 2;
+        length_hdg = rwy_info.heading;
+    }
+    left_hdg = length_hdg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    cout << "length hdg = " << length_hdg
+         << " left heading = " << left_hdg << endl;
+
+    normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+
+    for ( i = 0; i < 30; ++i ) {
+        // offset 100' upwind
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                            100 * SG_FEET_TO_METER, &lat, &lon, &r );
+        ref = Point3D( lon, lat, 0.0 );
+
+        Point3D pt1 = ref;
+
+        // left side bar
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            36 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        lights.push_back( pt1 );
+        normals.push_back( normal );
+    
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        lights.push_back( pt1 );
+        normals.push_back( normal );
+
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        lights.push_back( pt1 );
+        normals.push_back( normal );
+
+        pt1 = ref;
+
+        // right side bar
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            -36 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        lights.push_back( pt1 );
+        normals.push_back( normal );
+    
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        lights.push_back( pt1 );
+        normals.push_back( normal );
+
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+                            -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        lights.push_back( pt1 );
+        normals.push_back( normal );
+    }
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( lights, false );
+    normals_poly.add_contour( normals, false );
+
+    FGSuperPoly result;
+    result.set_poly( lights_poly );
+    result.set_normals( normals_poly );
+    result.set_material( "RWY_WHITE_LIGHTS" );
+
+    return result;
+}
+
+
 // generate a simple 2 bar VASI for a 3 degree approach
 static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
                              bool recip )
@@ -574,6 +677,87 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
 }
 
 
+// generate REIL lights
+static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
+                             bool recip )
+{
+    point_list lights; lights.clear();
+    point_list normals; normals.clear();
+    int i;
+
+    cout << "gen reil " << rwy_info.rwy_no << endl;
+
+    Point3D normal;
+
+    // using FGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    // determine the start point.
+    Point3D ref1, ref2;
+    double length_hdg, left_hdg;
+    double lon, lat, r;
+    if ( recip ) {
+        ref1 = corner[0];
+        ref2 = corner[1];
+        length_hdg = rwy_info.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+    } else {
+        ref1 = corner[2];
+        ref2 = corner[3];
+        length_hdg = rwy_info.heading;
+    }
+    left_hdg = length_hdg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    cout << "length hdg = " << length_hdg
+         << " left heading = " << left_hdg << endl;
+
+    // offset 40' downwind
+    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
+                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref1 = Point3D( lon, lat, 0.0 );
+    // offset 40' left
+    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), left_hdg, 
+                        40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref1 = Point3D( lon, lat, 0.0 );
+
+    lights.push_back( ref1 );
+    normal = gen_runway_light_vector( rwy_info, 10, recip );
+    normals.push_back( normal );
+    
+    // offset 40' downwind
+    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), length_hdg, 
+                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref2 = Point3D( lon, lat, 0.0 );
+    // offset 40' left
+    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), left_hdg, 
+                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref2 = Point3D( lon, lat, 0.0 );
+
+    lights.push_back( ref2 );
+    normal = gen_runway_light_vector( rwy_info, 10, recip );
+    normals.push_back( normal );
+
+    FGPolygon lights_poly; lights_poly.erase();
+    FGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( lights, false );
+    normals_poly.add_contour( normals, false );
+
+    FGSuperPoly result;
+    result.set_poly( lights_poly );
+    result.set_normals( normals_poly );
+    result.set_material( "RWY_REIL_LIGHTS" );
+
+    return result;
+}
+
+
+// top level runway light generator
 void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 			superpoly_list &lights ) {
 
@@ -581,26 +765,6 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
          << rwy_info.end1_flags << " " << rwy_info.end2_flags << endl;;
 
     unsigned int i;
-
-    // PAPI lighting
-    if ( rwy_info.end1_flags.substr(2,1) == "P" ) {
-        FGSuperPoly s = gen_papi( rwy_info, alt_m, false );
-        lights.push_back( s );
-    }
-    if ( rwy_info.end2_flags.substr(2,1) == "P" ) {
-        FGSuperPoly s = gen_papi( rwy_info, alt_m, true );
-        lights.push_back( s );
-    }
-
-    // VASI lighting
-    if ( rwy_info.end1_flags.substr(2,1) == "V" ) {
-        FGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
-        lights.push_back( s );
-    }
-    if ( rwy_info.end2_flags.substr(2,1) == "V" ) {
-        FGSuperPoly s = gen_vasi( rwy_info, alt_m, true );
-        lights.push_back( s );
-    }
 
     // Make edge lighting
     string edge_type = rwy_info.surface_flags.substr(3,1);
@@ -634,4 +798,45 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
             lights.push_back( s[i] );
         }
     }
+
+    // Touchdown zone lighting
+    if ( rwy_info.end1_flags.substr(0,1) == "Y" ) {
+        FGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, false );
+        lights.push_back( s );
+    }
+    if ( rwy_info.end2_flags.substr(0,1) == "Y" ) {
+        FGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, true );
+        lights.push_back( s );
+    }
+
+    // REIL lighting
+    if ( rwy_info.end1_flags.substr(1,1) == "Y" ) {
+        FGSuperPoly s = gen_reil( rwy_info, alt_m, false );
+        lights.push_back( s );
+    }
+    if ( rwy_info.end2_flags.substr(1,1) == "Y" ) {
+        FGSuperPoly s = gen_reil( rwy_info, alt_m, true );
+        lights.push_back( s );
+    }
+
+    // PAPI lighting
+    if ( rwy_info.end1_flags.substr(2,1) == "P" ) {
+        FGSuperPoly s = gen_papi( rwy_info, alt_m, false );
+        lights.push_back( s );
+    }
+    if ( rwy_info.end2_flags.substr(2,1) == "P" ) {
+        FGSuperPoly s = gen_papi( rwy_info, alt_m, true );
+        lights.push_back( s );
+    }
+
+    // VASI lighting
+    if ( rwy_info.end1_flags.substr(2,1) == "V" ) {
+        FGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
+        lights.push_back( s );
+    }
+    if ( rwy_info.end2_flags.substr(2,1) == "V" ) {
+        FGSuperPoly s = gen_vasi( rwy_info, alt_m, true );
+        lights.push_back( s );
+    }
+
 }
