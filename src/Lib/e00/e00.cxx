@@ -22,6 +22,9 @@ using std::endl;
 // Static helper functions.
 ////////////////////////////////////////////////////////////////////////
 
+/**
+ * Append an integer to a string.
+ */
 static void
 append (string &s, int i)
 {
@@ -30,6 +33,10 @@ append (string &s, int i)
   s += buf;
 }
 
+
+/**
+ * Append a double-precision real to a string.
+ */
 static void
 append (string &s, double f)
 {
@@ -38,37 +45,69 @@ append (string &s, double f)
   s += buf;
 }
 
+
+/**
+ * Skip newlines.
+ *
+ * This function is used only by readIFO.  It has to track line
+ * position because info records must be padded to 80 characters
+ * (really!) -- another reason to hate E00 format.
+ */
 static void
-skipNewlines (istream &input)
+skipNewlines (istream &input, int * line_pos)
 {
   char c;
   input.get(c);
+				// Doesn't seem to be needed.
 //   while (isspace(c)) {
 //     input.get(c);
 //   }
   while (c == '\n' || c == '\r') {
     input.get(c);
+    *line_pos = 0;
   }
   input.putback(c);
 }
 
+
+/**
+ * Read a fixed-width item from the input stream.
+ *
+ * This function is used only by readIFO, where info records follow
+ * declared widths.  It has to track line position and pad up to
+ * 80 characters where necessary (actually, 79, since the newline
+ * is excluded); this matters mainly when a string field crosses
+ * record boundaries, as is common in DCW point coverages.
+ */
 static void
-readItem (istream &input, string &line, int width)
+readItem (istream &input, string &line, int width, int * line_pos)
 {
   char c;
   
-  skipNewlines(input);
   line.resize(0);
   
   for (int i = 0; i < width; i++) {
     input.get(c);
-    if (c == '\n' || c == '\r')	// premature termination
-      return;
-    else
+    (*line_pos)++;
+    if (c == '\n' || c == '\r')	{ // premature termination
+      (*line_pos)--;
+      i--;
+      while (*line_pos < 80 && i < width) {
+	line += ' ';
+	(*line_pos)++;
+	i++;
+      }
+      *line_pos = 0;
+    } else {
       line += c;
+    }
   }
 }
 
+
+/**
+ * Check that a precision is known, or throw an exception.
+ */
 static void
 checkPrecision (istream &input)
 {
@@ -79,6 +118,10 @@ checkPrecision (istream &input)
     throw E00Exception("Unknown precision");
 }
 
+
+/**
+ * Check that six zeros appear where expected, or throw an exception.
+ */
 static void
 checkZeros (istream &input)
 {
@@ -92,6 +135,9 @@ checkZeros (istream &input)
 }
 
 
+/**
+ * Check that the expected integer appears, or throw an exception.
+ */
 static void
 expect (istream &input, int i)
 {
@@ -104,6 +150,10 @@ expect (istream &input, int i)
   }
 }
 
+
+/**
+ * Check that the expected real number appears, or throw an exception.
+ */
 static void
 expect (istream &input, double f)
 {
@@ -116,6 +166,10 @@ expect (istream &input, double f)
   }
 }
 
+
+/**
+ * Check that the expected string appears, or throw an exception.
+ */
 static void
 expect (istream &input, const char *s)
 {
@@ -136,6 +190,7 @@ expect (istream &input, const char *s)
 
 
 E00::E00 ()
+  : _input(0)
 {
 }
 
@@ -469,9 +524,15 @@ E00::readRPL ()
 }
 
 
+//
+// This method relies heavily on the readItem and skipNewlines
+// static functions defined above; it needs to be able to read
+// fixed-width fields, padding line length up to 80 where necessary.
+//
 void
 E00::readIFO ()
 {
+  int line_pos = 0;
   string line = "";
   int intval;
   double realval;
@@ -480,8 +541,10 @@ E00::readIFO ()
 
   while (line == "")
     *_input >> line;
+
   while (line != string("EOI")) {
 
+				// Start of a new IFO file.
     IFO ifo;
     IFO::Entry entry;
     ifo.fileName = line;
@@ -525,31 +588,33 @@ E00::readIFO ()
     ifo.entries.resize(0);
     for (int i = 0; i < ifo.numDataRecords; i++) {
       entry.resize(0);
+      line_pos = 0;
+      skipNewlines(*_input, &line_pos);
       for (int j = 0; j < ifo.numItems; j++) {
 	line.resize(0);
 	string &type = ifo.defs[j].itemType;
 
 	if (type == "10-1") {	// date
-	  readItem(*_input, line, 8);
+	  readItem(*_input, line, 8, &line_pos);
 	}
 
 	else if (type == "20-1") {	// character field
-	  readItem(*_input, line, ifo.defs[j].itemOutputFormat[0]);
+	  readItem(*_input, line, ifo.defs[j].itemOutputFormat[0], &line_pos);
 	} 
 
 	else if (type == "30-1") { // fixed-width integer
-	  readItem(*_input, line, ifo.defs[j].itemOutputFormat[0]);
+	  readItem(*_input, line, ifo.defs[j].itemOutputFormat[0], &line_pos);
 	} 
 
 	else if (type == "40-1") { // single-precision float
-	  readItem(*_input, line, 14);
+	  readItem(*_input, line, 14, &line_pos);
 	}
 
 	else if (type == "50-1") { // integer
 	  if (ifo.defs[j].itemWidth == 2) {
-	    readItem(*_input, line, 6);
+	    readItem(*_input, line, 6, &line_pos);
 	  } else if (ifo.defs[j].itemWidth == 4) {
-	    readItem(*_input, line, 11);
+	    readItem(*_input, line, 11, &line_pos);
 	  } else {
 	    cerr << "Unexpected width " << ifo.defs[j].itemWidth
 		 << " for item of type 50-1" << endl;
@@ -559,9 +624,9 @@ E00::readIFO ()
 
 	else if (type == "60-1") { // real number
 	  if (ifo.defs[j].itemWidth == 4) {
-	    readItem(*_input, line, 14);
+	    readItem(*_input, line, 14, &line_pos);
 	  } else if (ifo.defs[j].itemWidth == 8) {
-	    readItem(*_input, line, 24);
+	    readItem(*_input, line, 24, &line_pos);
 	  } else {
 	    cerr << "Unexpected width " << ifo.defs[j].itemWidth
 		 << " for item of type 60-1" << endl;
@@ -574,6 +639,7 @@ E00::readIFO ()
 	       << " assuming integer" << endl;
 	  exit(1);
 	}
+// 	cout << "  Read item '" << line << '\'' << endl;
 	entry.push_back(line);
       }
       ifo.entries.push_back(entry);
