@@ -466,8 +466,8 @@ main (int argc, const char **argv)
 
     TGPolygon mask;
     for (int i = 0; i < nTopologies; i++) {
-      if ((i % 1000) == 0)
-	cerr << i << "..." << endl;
+      if ((i % 10) == 0)
+	cerr << (double)i * 100.0 / (double)nTopologies << "% done ..." << endl;
       if (feature.isTiled()) {
 	VpfRectangle rect = feature.getTile(i).getBoundingRectangle();
 	if (!bounds.isOverlapping(vpf2tg(rect)))
@@ -532,8 +532,8 @@ main (int argc, const char **argv)
       } else {
 	shape = tgPolygonInt(shape, bounds_poly);
 	if (shape.total_size() >= 3) {
-	  cout << "Polygon with " << shape.total_size() << " points in "
-	     << shape.contours() << " contour(s)" << endl;
+          // cout << "Polygon with " << shape.total_size() << " points in "
+          //      << shape.contours() << " contour(s)" << endl;
           if ( max_segment > 1.0 ) {
               shape = tgPolygonSplitLongEdges( shape, max_segment );
           }
