@@ -44,6 +44,8 @@ SG_USING_STD(cout);
 SG_USING_STD(string);
 SG_USING_STD(vector);
 
+#include <Geometry/line.hxx>
+#include <Geometry/util.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
@@ -65,11 +67,13 @@ static const char * progname;
 
 
 ////////////////////////////////////////////////////////////////////////
-// Utility stuff.
+// VPF conversion code.
 ////////////////////////////////////////////////////////////////////////
 
-
-static inline ostream &
+/**
+ * Print out a VPF bounding rectangle.
+ */
+static ostream &
 operator<< (ostream &output, const VpfRectangle &rect)
 {
   output << rect.minX << ','
@@ -79,54 +83,53 @@ operator<< (ostream &output, const VpfRectangle &rect)
   return output;
 }
 
+
 /**
- * Inline function to clamp an angle between 0 and 360 degrees.
+ * Convert a VPF point to a regular TerraGear point.
  */
-static inline double 
-ANGLE (double a)
+static inline const Point3D
+vpf2tg (const VpfPoint &p)
 {
-  while (a < 0.0)
-    a += 360.0;
-  while (a >= 360.0)
-    a -= 360.0;
-  return a;
+  return Point3D(p.x, p.y, p.z);
 }
 
 
 /**
- * Calculate the intersection of two lines.
- *
- * @param p0 First point on the first line.
- * @param p1 A second point on the first line.
- * @param p2 First point on the second line.
- * @param p3 A second point on the second line.
- * @param intersection A variable to hold the calculated intersection.
- * @return true if there was an intersection, false if the lines
- *         are parallel or coincident.
+ * Convert a VPF line to a regular TerraGear line.
  */
-static bool
-getIntersection (const Point3D &p0, const Point3D &p1,
-		 const Point3D &p2, const Point3D &p3,
-		 Point3D &intersection)
+static const Line
+vpf2tg (const VpfLine &l)
 {
-  double u_num =
-    ((p3.x()-p2.x())*(p0.y()-p2.y()))-((p3.y()-p2.y())*(p0.x()-p2.x()));
-  double u_den =
-    ((p3.y()-p2.y())*(p1.x()-p0.x()))-((p3.x()-p2.x())*(p1.y()-p0.y()));
+  Line result;
+  int nPoints = l.getPointCount();
+  for (int i = 0; i < nPoints; i++)
+    result.addPoint(vpf2tg(l.getPoint(i)));
+  return result;
+}
 
-  if (u_den == 0) {
-    if (u_num == 0)
-      SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: coincident lines");
-    else
-      SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: parallel lines");
-    return false;
-  } else {
-    double u = u_num/u_den;
-    intersection = Point3D((p0.x()+u*(p1.x()-p0.x())),
-			   (p0.y()+u*(p1.y()-p0.y())),
-			   0);
-    return true;
+
+/**
+ * Convert a VPF polygon to a TerraGear polygon.
+ */
+static const FGPolygon
+vpf2tg (const VpfPolygon &polygon)
+{
+  FGPolygon shape;
+
+  shape.erase();
+  int nContours = polygon.getContourCount();
+  int contour_num = 0;
+  for (int i = 0; i < nContours; i++) {
+    const VpfContour contour = polygon.getContour(i);
+    int nPoints = contour.getPointCount();
+    for (int j = 0; j < nPoints; j++) {
+      const VpfPoint p = contour.getPoint(j);
+      shape.add_node(contour_num, Point3D(p.x, p.y, p.z));
+    }
+    shape.set_hole_flag(contour_num, (i > 0));
+    contour_num++;
   }
+  return shape;
 }
 
 
@@ -173,155 +176,6 @@ checkAttribute (const VpfFeature &feature, int index, const Attribute &att)
   }
   return (att.state ? result : !result);
 }
-
-
-/**
- * Create a polygon out of a point.
- *
- * Note that simple geometry doesn't work here, because the scale is
- * not even -- the points on the x-axis (longitude) become closer and
- * closer as the y-axis (latitude) approaches the poles, meeting in
- * a single point at y=90 and y=-90.  As a result, this function
- * uses the WGS80 functions, rather than simple Pythagorean stuff.
- */
-static const FGPolygon
-makePolygon (const VpfPoint &p, int width)
-{
-  FGPolygon result;
-
-  double x, y, az;
-  double lon = p.x;
-  double lat = p.y;
-
-  result.erase();
-      
-  geo_direct_wgs_84(0, lat, lon, 90, width/2, &y, &x, &az);
-  double dlon = x - lon;
-
-  geo_direct_wgs_84(0, lat, lon, 0, width/2, &y, &x, &az);
-  double dlat = y - lat;
-
-  result.add_node(0, Point3D(lon - dlon, lat - dlat, 0));
-  result.add_node(0, Point3D(lon + dlon, lat - dlat, 0));
-  result.add_node(0, Point3D(lon + dlon, lat + dlat, 0));
-  result.add_node(0, Point3D(lon - dlon, lat + dlat, 0));
-
-  return result;
-}
-
-
-/**
- * Create a polygon out of a line.
- *
- * Note that simple geometry doesn't work here, because the scale is
- * not even -- the points on the x-axis (longitude) become closer and
- * closer as the y-axis (latitude) approaches the poles, meeting in
- * a single point at y=90 and y=-90.  As a result, this function
- * uses the WGS80 functions, rather than simple Pythagorean stuff.
- */
-static const FGPolygon
-makePolygon (const VpfLine &line, int width)
-{
-  FGPolygon shape;
-
-  vector<FGPolygon> segment_list;
-
-  int nPoints = line.getPointCount();
-  int i;
-  for (i = 0; i < nPoints - 1; i++) {
-    const VpfPoint p1 = line.getPoint(i);
-    const VpfPoint p2 = line.getPoint(i+1);
-
-    double angle1, angle2, dist, x, y, az;
-      
-    geo_inverse_wgs_84(0, p1.y, p1.x, p2.y, p2.x, &angle1, &angle2, &dist);
-    shape.erase();
-
-				// Wind each rectangle counterclockwise
-
-				// Corner 1
-    geo_direct_wgs_84(0, p1.y, p1.x, ANGLE(angle1+90), width/2, &y, &x, &az);
-    shape.add_node(0, Point3D(x, y, 0));
-
-				// Corner 2
-    geo_direct_wgs_84(0, p2.y, p2.x, ANGLE(angle1+90), width/2, &y, &x, &az);
-    shape.add_node(0, Point3D(x, y, 0));
-
-				// Corner 3
-    geo_direct_wgs_84(0, p2.y, p2.x, ANGLE(angle1-90), width/2, &y, &x, &az);
-    shape.add_node(0, Point3D(x, y, 0));
-
-				// Corner 4
-    geo_direct_wgs_84(0, p1.y, p1.x, ANGLE(angle1-90), width/2, &y, &x, &az);
-    shape.add_node(0, Point3D(x, y, 0));
-
-				// Save this rectangle
-    segment_list.push_back(shape);
-  }
-
-  // Build one big polygon out of all the rectangles by intersecting
-  // the lines running through the bottom and top sides
-
-  shape.erase();
-
-				// Connect the bottom part.
-  int nSegments = segment_list.size();
-  Point3D intersection;
-  shape.add_node(0, segment_list[0].get_pt(0, 0));
-  for (i = 0; i < nSegments - 1; i++) {
-    if (getIntersection(segment_list[i].get_pt(0, 0),
-			segment_list[i].get_pt(0, 1),
-			segment_list[i+1].get_pt(0, 0),
-			segment_list[i+1].get_pt(0, 1),
-			intersection))
-      shape.add_node(0, intersection);
-    else
-      shape.add_node(0, segment_list[i].get_pt(0, 1));
-  }
-  shape.add_node(0, segment_list[nSegments-1].get_pt(0, 1));
-
-				// Connect the top part
-  shape.add_node(0, segment_list[nSegments-1].get_pt(0, 2));
-  for (i = nSegments - 1; i > 0; i--) {
-    if (getIntersection(segment_list[i].get_pt(0, 2),
-			segment_list[i].get_pt(0, 3),
-			segment_list[i-1].get_pt(0, 2),
-			segment_list[i-1].get_pt(0, 3),
-			intersection))
-      shape.add_node(0, intersection);
-    else
-      shape.add_node(0, segment_list[i].get_pt(0, 3));
-  }
-  shape.add_node(0, segment_list[0].get_pt(0, 3));
-
-  return shape;
-}
-
-
-/**
- * Import all polygons.
- */
-static const FGPolygon
-makePolygon (const VpfPolygon &polygon)
-{
-  FGPolygon shape;
-
-  shape.erase();
-  int nContours = polygon.getContourCount();
-  int contour_num = 0;
-  for (int i = 0; i < nContours; i++) {
-    const VpfContour contour = polygon.getContour(i);
-    int nPoints = contour.getPointCount();
-    for (int j = 0; j < nPoints; j++) {
-      const VpfPoint p = contour.getPoint(j);
-      shape.add_node(contour_num, Point3D(p.x, p.y, p.z));
-    }
-    shape.set_hole_flag(contour_num, (i > 0));
-    contour_num++;
-  }
-  return shape;
-}
-
 
 
 
@@ -657,28 +511,28 @@ main (int argc, const char **argv)
 	const VpfPoint p = feature.getPoint(i);
 	if (!inside(p, bounds))
 	  continue;
-	shape = makePolygon(p, (width == -1 ? 500 : width));
+	makePolygon(vpf2tg(p), (width == -1 ? 500 : width), shape);
 	break;
       }
       case VpfFeature::LINE: {
 	const VpfLine line = feature.getLine(i);
 	if (!overlap(line.getBoundingRectangle(), bounds))
 	  continue;
-	shape = makePolygon(line, (width == -1 ? 50 : width));
+	makePolygon(vpf2tg(line), (width == -1 ? 50 : width), shape);
 	break;
       }
       case VpfFeature::POLYGON: {
 	const VpfPolygon polygon = feature.getPolygon(i);
 	if (!overlap(polygon.getBoundingRectangle(), bounds))
 	  continue;
-	shape = makePolygon(polygon);
+	shape = vpf2tg(polygon);
 	break;
       }
       case VpfFeature::LABEL: {
 	const VpfPoint p = feature.getLabel(i).getPoint();
 	if (!inside(p, bounds))
 	  continue;
-	shape = makePolygon(p, (width == -1 ? 500 : width));
+	makePolygon(vpf2tg(p), (width == -1 ? 500 : width), shape);
 	break;
       }
       default:
