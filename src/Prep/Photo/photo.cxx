@@ -288,7 +288,7 @@ int main( int argc, char **argv ) {
 
     // write the object
     string objpath = root + "/PhotoObj";
-    string name = image;
+    string name = image + ".btg";
 
     bool result = obj.write_bin( objpath, name, b );
     if ( !result ) {

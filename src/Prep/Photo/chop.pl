@@ -35,7 +35,7 @@ for ( $j = 0; $j < $ydiv; $j++ ) {
         $outputsgi = sprintf("$basename%X%X.sgi", $i, $j);
         $outputrgb = sprintf("$basename%X%X.rgb", $i, $j);
         printf "pnmcut $x $y $dx $dy $basename.pnm | pnmscale -xysize $res $res > $outputpnm\n";
-        `pnmcut $x $y $dx $dy $basename.pnm | pnmscale -xysize $res $res > $outputpnm`;
+        `pnmcut $x $y $dx $dy $basename.pnm | pnmscale -xsize $res -ysize $res > $outputpnm`;
         `convert $outputpnm $outputsgi`;
         unlink($outputpnm);
         rename($outputsgi, $outputrgb);

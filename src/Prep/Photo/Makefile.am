@@ -23,9 +23,9 @@
 #---------------------------------------------------------------------------
 
 
-EXTRA_DIST = chop.pl
+EXTRA_DIST = chop.pl trans.pl
 
-bin_PROGRAMS = photo
+bin_PROGRAMS = photo wgs84offset
 
 photo_SOURCES = photo.cxx
 
@@ -38,6 +38,10 @@ photo_LDADD = \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lz -lgpc \
 	$(base_LIBS)
+
+wgs84offset_SOURCES = wgs84offset.cxx
+
+wgs84offset_LDADD = -lsgmath -lsgdebug
 
 INCLUDES += \
 	-I$(top_srcdir) \
