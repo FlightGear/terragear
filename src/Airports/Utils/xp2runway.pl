@@ -260,6 +260,15 @@ while ( <> ) {
                    $apt_id, $F[1], $F[2], $F[4], $F[5], $F[8],
                    $taxi_codes );
         }
+    } elsif ( $F[0] == 14 ) {
+        # control tower
+        printf("C %10.6f %11.6f %d\n", $F[1], $F[2]);
+    } elsif ( $F[0] == 18 ) {
+        # light beacon
+        printf("B %10.6f %11.6f %d\n", $F[1], $F[2], $F[3]);
+    } elsif ( $F[0] == 19 ) {
+        # windsock
+        printf("W %10.6f %11.6f %d\n", $F[1], $F[2], $F[3]);
     } else {
         # something we don't know how to handle right now
     }
