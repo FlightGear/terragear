@@ -105,10 +105,9 @@ void gshhs_split_polygon( const string& path, AreaType area, FGPolygon& shape,
 
     while ( line < max ) {
 	printf("clipping at %.10f\n", line);
-	FGPolygon above, below;
 		
-	horizontal_clip( shape, line, Above, above );
-	horizontal_clip( shape, line, Below, below );
+	FGPolygon above = horizontal_clip( shape, line, Above );
+	FGPolygon below = horizontal_clip( shape, line, Below );
 
 // #define WRITE_FILE
 #ifdef WRITE_FILE
