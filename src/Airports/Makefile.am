@@ -2,6 +2,6 @@ if HAVE_NURBS
 GEN_AIRPORTS_DIR = GenAirports
 else
 GEN_AIRPORTS_DIR =
-fi
+endif
 
 SUBDIRS = $(GEN_AIRPORTS_DIR)
