@@ -262,7 +262,7 @@ static void my_chomp( string& str ) {
 
 
 // build a runway
-static void build_runway( const FGRunway& rwy_info,
+static void build_runway( const TGRunway& rwy_info,
                           double alt_m,
                           superpoly_list *rwy_polys,
                           texparams_list *texparams,
@@ -428,7 +428,7 @@ void build_airport( string airport_raw, float alt_m,
     for ( i = 0; i < (int)runways_raw.size(); ++i ) {
 	rwy_str = runways_raw[i];
 
-	FGRunway rwy;
+	TGRunway rwy;
 
         rwy.really_taxiway = false;
 
@@ -492,7 +492,7 @@ void build_airport( string airport_raw, float alt_m,
     for ( i = 0; i < (int)taxiways_raw.size(); ++i ) {
 	rwy_str = taxiways_raw[i];
 
-	FGRunway taxi;
+	TGRunway taxi;
 
         taxi.really_taxiway = true;
         taxi.generated = false;

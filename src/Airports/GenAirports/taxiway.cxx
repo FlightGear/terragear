@@ -34,7 +34,7 @@
 
 // generate a taxiway.  The routine modifies rwy_polys, texparams, and
 // accum
-void gen_taxiway( const FGRunway& rwy_info,
+void gen_taxiway( const TGRunway& rwy_info,
                   double alt_m,
                   const string& material,
 		  superpoly_list *rwy_polys,

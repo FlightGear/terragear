@@ -35,7 +35,7 @@ SG_USING_STD(endl);
 // of the runway.  Combine this with an appropriate portion of the
 // local 'up' vector based on the provide 'angle' gives the light
 // direction vector for the runway.
-static Point3D gen_runway_light_vector( const FGRunway& rwy_info,
+static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
                                         double angle, bool recip ) {
     double length;
 
@@ -79,7 +79,7 @@ static Point3D gen_runway_light_vector( const FGRunway& rwy_info,
 
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
-static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
+static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
                                               const string& kind, bool recip )
 {
     point_list w_lights; w_lights.clear();
@@ -186,7 +186,7 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
 
 // generate taxiway edge lighting
 // 100 meters spacing or the next number down that divides evenly.
-static superpoly_list gen_taxiway_edge_lights( const FGRunway& rwy_info,
+static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
                                                const string& kind, bool recip )
 {
     point_list b_lights; b_lights.clear();
@@ -268,7 +268,7 @@ static superpoly_list gen_taxiway_edge_lights( const FGRunway& rwy_info,
 
 
 // generate threshold lights for a 3 degree approach 
-static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
+static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
                                                    const string& kind,
                                                    float alt_m, bool recip )
 {
@@ -397,7 +397,7 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
 
 
 // generate runway center line lighting, 50' spacing.
-static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
+static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
                                                      bool recip )
 {
     point_list w_lights; w_lights.clear();
@@ -497,7 +497,7 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
 
 
 // generate touch down zone lights
-static TGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
+static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
                                               float alt_m, bool recip )
 {
     point_list lights; lights.clear();
@@ -600,7 +600,7 @@ static TGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
 
 
 // generate a simple 2 bar VASI for a 3 degree approach
-static TGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
                              bool recip )
 {
     point_list lights; lights.clear();
@@ -741,7 +741,7 @@ static TGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
 
 
 // generate a simple PAPI for a 3 degree approach 
-static TGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
                              bool recip )
 {
     point_list lights; lights.clear();
@@ -837,7 +837,7 @@ static TGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
 
 
 // generate REIL lights
-static TGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
                              bool recip )
 {
     point_list lights; lights.clear();
@@ -922,7 +922,7 @@ static TGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
 
 
 // generate ALSF-I/II and SALS/SALSF approach lighting schemes
-static superpoly_list gen_alsf( const FGRunway& rwy_info,
+static superpoly_list gen_alsf( const TGRunway& rwy_info,
                                 float alt_m, const string &kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
@@ -1435,7 +1435,7 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
 
 
 // generate ODALS lights
-static TGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
                               bool recip )
 {
     point_list lights; lights.clear();
@@ -1532,7 +1532,7 @@ static TGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
 
 // generate SSALS, SSALF, and SSALR approach lighting scheme (kind =
 // S, F, or R)
-static superpoly_list gen_ssalx( const FGRunway& rwy_info,
+static superpoly_list gen_ssalx( const TGRunway& rwy_info,
                                  float alt_m, const string& kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
@@ -1798,7 +1798,7 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
 
 // generate MALS, MALSF, and MALSR approach lighting scheme (kind =
 // ' ', F, or R)
-static superpoly_list gen_malsx( const FGRunway& rwy_info,
+static superpoly_list gen_malsx( const TGRunway& rwy_info,
                                  float alt_m, const string& kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
@@ -2063,7 +2063,7 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
 
 
 // top level runway light generator
-void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
+void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 			superpoly_list &lights ) {
 
     cout << "gen runway lights " << rwy_info.rwy_no << " "
@@ -2379,7 +2379,7 @@ void gen_runway_lights( const FGRunway& rwy_info, float alt_m,
 
 
 // top level taxiway light generator
-void gen_taxiway_lights( const FGRunway& taxiway_info, float alt_m,
+void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
                          superpoly_list &lights ) {
 
     cout << "gen taxiway lights " << taxiway_info.rwy_no << " "

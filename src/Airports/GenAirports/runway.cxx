@@ -108,7 +108,7 @@ TGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
 
 // generate an area for a runway with expantion specified as a scale
 // factor (return result points in degrees)
-TGPolygon gen_runway_area_w_scale( const FGRunway& runway,
+TGPolygon gen_runway_area_w_scale( const TGRunway& runway,
                                    double alt_m,
 				   double len_scale,
 				   double width_scale ) {
@@ -133,7 +133,7 @@ TGPolygon gen_runway_area_w_scale( const FGRunway& runway,
 
 // generate an area for a runway with expansion specified in meters
 // (return result points in degrees)
-TGPolygon gen_runway_area_w_extend( const FGRunway& runway,
+TGPolygon gen_runway_area_w_extend( const TGRunway& runway,
                                     double alt_m,
 				    double len_extend,
 				    double wid_extend ) {
@@ -158,7 +158,7 @@ TGPolygon gen_runway_area_w_extend( const FGRunway& runway,
 
 
 // generate an area for a runway and include midpoints
-TGPolygon gen_runway_w_mid( const FGRunway& runway, 
+TGPolygon gen_runway_w_mid( const TGRunway& runway, 
                             double alt_m,
 			    double len_extend_m,
 			    double wid_extend_m ) {

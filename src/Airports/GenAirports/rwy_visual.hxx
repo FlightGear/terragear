@@ -38,7 +38,7 @@
 // precision runway markings, please refer to FAA document AC
 // 150/5340-1H
 
-void gen_visual_rwy( const FGRunway& rwy_info,
+void gen_visual_rwy( const TGRunway& rwy_info,
                      double alt_m,
 		     const string& material,
 		     superpoly_list *rwy_polys,

@@ -30,7 +30,7 @@
 #include "rwy_common.hxx"
 
 
-void gen_number_block( const FGRunway& rwy_info,
+void gen_number_block( const TGRunway& rwy_info,
                        const string& material,
                        TGPolygon poly, double heading, int num,
                        double start_pct, double end_pct,
@@ -92,7 +92,7 @@ void gen_number_block( const FGRunway& rwy_info,
 
 
 // generate a section of runway
-void gen_runway_section( const FGRunway& rwy_info,
+void gen_runway_section( const TGRunway& rwy_info,
 			 const TGPolygon& runway,
 			 double startl_pct, double endl_pct,
 			 double startw_pct, double endw_pct,
