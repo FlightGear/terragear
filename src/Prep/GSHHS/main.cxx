@@ -55,9 +55,9 @@ int main( int argc, char **argv ) {
 
     fglog().setLogLevels( FG_ALL, FG_DEBUG );
 
-    if ( argc < 3 ) {
+    if ( argc < 4 ) {
 	FG_LOG( FG_GENERAL, FG_ALERT, "Usage: " << argv[0] 
-		<< " <gshhs_file> <work_dir>" );
+		<< " <gshhs_file> <work_dir> <level> [ area_type ]" );
 	exit(-1);
     }
 
@@ -66,12 +66,20 @@ int main( int argc, char **argv ) {
     string command = "mkdir -p " + work_dir;
     system( command.c_str() );
 
+    // get the specified data level
+    int target_level = atoi(argv[3]);
+    if ( target_level < 1 || target_level > 4) {
+	FG_LOG( FG_GENERAL, FG_ALERT, argv[0] << 
+		": level must be 1 (land), 2 (lake), 3 (island), or 4 (pond)");
+	exit(-1);
+    }
+
     // allow us to override the area type from the command line.  All
     // polygons in the processed shape file will be assigned this area
     // type
     string force_area_type = "";
-    if ( argc == 4 ) {
-        force_area_type = argv[3];
+    if ( argc == 5 ) {
+        force_area_type = argv[4];
     }
 	
     // initialize persistant polygon counter
@@ -157,13 +165,13 @@ int main( int argc, char **argv ) {
 	}
 	max_east = 180000000;	/* Only Eurasiafrica needs 270 */
 
-	if ( h.level != 1 ) {
+	if ( h.level != target_level ) {
 	    continue;
 	}
 
-	if ( h.id != 2 ) {
-	    continue;
-	}
+	// if ( h.id != 2 ) {
+	//     continue;
+	// }
 
 	FG_LOG( FG_GENERAL, FG_INFO, "  record = " << h.id << " size = " <<
 		shape.contour_size( 0 ) );
@@ -181,7 +189,7 @@ int main( int argc, char **argv ) {
 	// cout << "waiting 2 seconds ..." << endl;
 	// sleep(2);
 
-	if ( shape.contour_size( 0 ) > 10000 ) {
+	if ( shape.contour_size( 0 ) > 16000 ) {
 	    // use my crude line clipping routine to whittle down the
 	    // huge polygons into something more managable
 
