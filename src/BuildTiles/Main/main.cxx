@@ -841,6 +841,9 @@ int main(int argc, char **argv) {
 	cout << "Load directory: " << argv[i] << endl;
     }
 
+#if defined( __CYGWIN__ ) || defined( __CYGWIN32__ )
+    // the next bit crashes Cygwin for me - DCL
+#else
     // set mem allocation limit.  Reason: occasionally the triangle()
     // routine can blow up and allocate memory forever.  We'd like
     // this process to die before things get out of hand so we can try
@@ -864,7 +867,8 @@ int main(int argc, char **argv) {
     limit.rlim_max = 120;
     result = setrlimit( RLIMIT_CPU, &limit );
     cout << "result of setting mem limit = " << result << endl;
-   
+#endif  // end of stuff that crashes Cygwin
+
     // main construction data management class
     FGConstruct c;
 

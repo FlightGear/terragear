@@ -148,7 +148,11 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 /* Open a raw DEM file. */
 void rawOpenDemFile( fgRAWDEM *raw, char *raw_dem_file ) {
     printf("Opening Raw DEM file: %s\n", raw_dem_file);
+#if ! defined( WIN32 )
     if ( (raw->fd = open(raw_dem_file ,O_RDONLY)) == -1 ) {
+#else
+    if ( (raw->fd = open(raw_dem_file ,O_RDONLY | O_BINARY)) == -1 ) {
+#endif
 	printf("Error opening Raw DEM file: %s\n", raw_dem_file);
 	exit(-1);
     }

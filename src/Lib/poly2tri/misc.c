@@ -2,10 +2,9 @@
 #include <sys/time.h>
 #include <math.h>
 
-#ifdef __STDC__
-extern double log2(double);
-#else
-extern double log2();
+#if defined( __CYGWIN__ ) || defined( __CYGWIN32__ )
+#define lrand48() rand()
+#define srand48(x) srand(x)
 #endif
 
 static int choose_idx;

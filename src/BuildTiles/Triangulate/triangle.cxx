@@ -119,11 +119,20 @@ FGTriangle::build( const point_list& corner_list,
 		// fclose(junkfp);
 	    }
 
+	    // for each contour, calculate a point inside (but not
+	    // also inside any interior contours
+
+	    // new way
+	    calc_points_inside( gpc_poly );
+
+#if 0
+	    // old way
 	    Point3D inside_pt;
 	    for ( j = 0; j < gpc_poly.contours(); ++j ) {
 		inside_pt = calc_point_inside( gpc_poly, j, in_nodes );
 		gpc_poly.set_point_inside( j, inside_pt );
 	    }
+#endif
 
 	    polylist[i].push_back( gpc_poly );
 

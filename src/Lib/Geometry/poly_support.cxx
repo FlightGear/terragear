@@ -100,8 +100,8 @@ static bool intersects( Point3D p0, Point3D p1, double x, Point3D *result ) {
 
 // calculate some "arbitrary" point inside the specified contour for
 // assigning attribute areas
-Point3D calc_point_inside( const FGPolygon& p, const int contour, 
-			   const FGTriNodes& trinodes ) {
+Point3D calc_point_inside_old( const FGPolygon& p, const int contour, 
+			       const FGTriNodes& trinodes ) {
     Point3D tmp, min, ln, p1, p2, p3, m, result, inside_pt;
     int min_node_index = 0;
     int min_index = 0;
@@ -866,8 +866,7 @@ static void build_contour_tree( FGContourNode *node,
 }
 
 
-// calculate some "arbitrary" point inside the specified contour for
-// assigning attribute areas
+// calculate some "arbitrary" point inside each of the polygons contours
 void calc_points_inside( FGPolygon& p ) {
     // first build the contour tree
 
