@@ -255,7 +255,8 @@ void build_runway( const FGRunway& rwy_info,
 		   superpoly_list *rwy_polys,
 		   texparams_list *texparams,
 		   FGPolygon *accum,
-		   FGPolygon *apt_base )
+		   FGPolygon *apt_base,
+                   FGPolygon *apt_clearing )
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "surface flags = " << rwy_info.surface_flags);
     string surface_flag = rwy_info.surface_flags.substr(1, 1);
@@ -334,6 +335,9 @@ void build_runway( const FGRunway& rwy_info,
     if ( rwy_info.really_taxiway ) {
 	base = gen_runway_area_w_expand( rwy_info, 10, 10 );
     } else {
+                                // clear a safe area around the runway
+        base = gen_runway_area_w_expand( rwy_info, 300, 120 );
+        *apt_clearing = polygon_union(base, *apt_clearing);
 	base = gen_runway_area_w_scale( rwy_info, 1.05, 1.5 );
     }
 
@@ -355,6 +359,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     FGPolygon runway, runway_a, runway_b, clipped_a, clipped_b;
     FGPolygon split_a, split_b;
     FGPolygon apt_base;
+    FGPolygon apt_clearing;
     Point3D p;
 
     FGPolygon accum;
@@ -521,7 +526,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "P" ) {
 	    build_runway( runways[i], 
-			  &rwy_polys, &texparams, &accum, &apt_base );
+			  &rwy_polys, &texparams, &accum, &apt_base,
+                          &apt_clearing );
 	}
     }
 
@@ -530,7 +536,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "R" || type_flag == "V" ) {
 	    build_runway( runways[i], 
-			  &rwy_polys, &texparams, &accum, &apt_base );
+			  &rwy_polys, &texparams, &accum, &apt_base,
+                          &apt_clearing );
 	}
     }
 
@@ -539,13 +546,15 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag != "P" && type_flag != "R" && type_flag != "V" ) {
 	    build_runway( runways[i], 
-			  &rwy_polys, &texparams, &accum, &apt_base );
+			  &rwy_polys, &texparams, &accum, &apt_base,
+                          &apt_clearing );
 	}
     }
 
     // 4th pass: generate all taxiways
     for ( i = 0; i < (int)taxiways.size(); ++i ) {
-        build_runway( taxiways[i], &rwy_polys, &texparams, &accum, &apt_base );
+        build_runway( taxiways[i], &rwy_polys, &texparams, &accum, &apt_base,
+                      &apt_clearing );
     }
     // write_polygon( accum, "accum" );
 
@@ -1046,4 +1055,5 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // long int poly_index = poly_index_next();
     // write_boundary( holepath, b, hull, poly_index );
     split_polygon( holepath, HoleArea, divided_base );
+    split_polygon( holepath, AirportArea, apt_clearing );
 }
