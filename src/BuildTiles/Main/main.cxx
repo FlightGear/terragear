@@ -243,24 +243,23 @@ static AreaType get_area_type (const LandCover &cover,
     int cover_value = cover.getValue(xpos, ypos);
     AreaType area = translateUSGSCover(cover_value);
 
-				// Non-default area is fine.
     if (area != DefaultArea) {
-      return area;
-    } 
-
-				// If we're stuck with the default area,
-				// try to borrow from a neighbour.
-    else {
-      for (double x = xpos - dx; x <= xpos + dx; x += dx) {
-	for (double y = ypos - dy; y < ypos + dx; y += dy) {
-	  if (x != xpos || y != ypos) {
-	    cover_value = cover.getValue(x, y);
-	    area = translateUSGSCover(cover_value);
-	    if (area != DefaultArea)
-	      return area;
-	  }
-	}
-      }
+        // Non-default area is fine.
+        return area;
+    } else {
+        // If we're stuck with the default area, try to borrow from a
+        // neighbour.
+        for (double x = xpos - dx; x <= xpos + dx; x += dx) {
+            for (double y = ypos - dy; y < ypos + dx; y += dy) {
+                if (x != xpos || y != ypos) {
+                    cover_value = cover.getValue(x, y);
+                    area = translateUSGSCover(cover_value);
+                    if (area != DefaultArea) {
+                        return area;
+                    }
+                }
+            }
+        }
     }
 
 				// OK, give up and return default
@@ -288,7 +287,7 @@ static void make_area( const LandCover &cover, TGPolygon *polys,
 }
 
 
-// Generate polygons from la and-cover raster.  Horizontally- or
+// Generate polygons from land-cover raster.  Horizontally- or
 // vertically-adjacent polygons will be merged automatically.
 static int actual_load_landcover ( TGConstruct & c,
 				   TGClipper &clipper ) {
@@ -389,10 +388,15 @@ static int load_polys( TGConstruct& c ) {
 	cout << "  loaded " << count << " total polys" << endl;
     }
 
+    // now we are trying an idea of taking all unassigned land mass
+    // polygons (i.e. default cover type) and assigning them to the
+    // nearest cover type
+#if 0
     // Load the land use polygons if the --cover option was specified
     if ( c.get_cover().size() > 0 ) {
 	count += actual_load_landcover (c, clipper);
     }
+#endif
 
     point2d min, max;
     min.x = c.get_bucket().get_center_lon() - 0.5 * c.get_bucket().get_width();
@@ -434,6 +438,7 @@ static bool load_array( TGConstruct& c, TGArray& array) {
 
     SGBucket b = c.get_bucket();
     array.parse( b );
+    array.remove_voids();
 
     return true;
 }
@@ -454,7 +459,7 @@ static void first_triangulate( TGConstruct& c, const TGArray& array,
     cout << "done building node list and polygons" << endl;
 
     cout << "ready to do triangulation" << endl;
-    t.run_triangulate( c.get_angle(), 1 );
+    t.run_triangulate( 0.0, 1 );
     cout << "finished triangulation" << endl;
 }
 
@@ -470,7 +475,7 @@ static void second_triangulate( TGConstruct& c, TGTriangle& t ) {
     cout << "  (pre) nodes = " << c.get_tri_nodes().size() << endl;
     cout << "  (pre) normals = " << c.get_point_normals().size() << endl;
 
-    t.run_triangulate( c.get_angle(), 2 );
+    t.run_triangulate( 0.0, 2 );
 
     cout << "  (post) nodes = " << t.get_out_nodes().size() << endl;
 
@@ -593,6 +598,39 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
     TGTriNodes tmp;
     tmp.set_node_list( raw_nodes );
     c.set_tri_nodes( tmp );
+}
+
+
+// For each triangle assigned to the "default" area type, see if we
+// can lookup a better land cover type from the 1km data structure.
+static void fix_land_cover_assignments( TGConstruct& c ) {
+    cout << "Fixing up default land cover types" << endl;
+    // the list of node locations
+    TGTriNodes trinodes = c.get_tri_nodes();
+    point_list geod_nodes = trinodes.get_node_list();
+
+    // the list of triangles (with area type attribute)
+    triele_list tri_elements = c.get_tri_elements();
+
+    // traverse the triangle element groups
+    cout << "  Total Nodes = " << geod_nodes.size() << endl;
+    cout << "  Total triangles = " << tri_elements.size() << endl;
+    for ( unsigned int i = 0; i < tri_elements.size(); ++i ) {
+        TGTriEle t = tri_elements[i];
+        if ( t.get_attribute() == DefaultArea ) {
+            Point3D average = ( geod_nodes[t.get_n1()]
+                                + geod_nodes[t.get_n2()]
+                                + geod_nodes[t.get_n3()] ) / 3.0;
+            cout << "    average triangle center = " << average;
+            AreaType a = get_area_type ( c.get_cover(),
+                                         average.x(), average.y(),
+                                         1.0 / 120.0, 1.0 / 120.0 );
+            cout << "  new attrib = " << get_area_name( a ) << endl;
+
+            // update the actual structure
+            c.set_tri_attribute( i, a );
+        }
+    }
 }
 
 
@@ -867,13 +905,6 @@ static void construct_tile( TGConstruct& c ) {
     // 80% of max nodes.  We should really have the sim end handle
     // arbitrarily complex tiles.
 
-    bool acceptable = false;
-    bool growing = false;
-    bool shrinking = false;
-
-    double error = 200.0;
-    int count = 0;
-
     // load and clip 2d polygon data
     if ( load_polys( c ) == 0 ) {
 	// don't build the tile if there is no 2d data ... it *must*
@@ -887,69 +918,10 @@ static void construct_tile( TGConstruct& c ) {
 
     TGTriangle t;
 
-    while ( ! acceptable ) {
-	// do a least squares fit of the (array) data with the given
-	// error tolerance
-	array.fit( error );
+    // triangulate the data for each polygon
+    first_triangulate( c, array, t );
 
-	// triangulate the data for each polygon
-	first_triangulate( c, array, t );
-
-	acceptable = true;
-
-	count = t.get_out_nodes_size();
-
-	if ( (count < c.get_min_nodes()) && (error >= 25.0) ) {
-	    // reduce error tolerance until number of points exceeds the
-	    // minimum threshold
-	    cout << "produced too few nodes ..." << endl;
-
-	    acceptable = false;
-	    growing = true;
-
-	    if ( shrinking ) {
-		error /= 1.25;
-		shrinking = false;
-	    } else {
-		error /= 1.5;
-	    }
-	    cout << "Setting error to " << error << " and retrying fit." 
-		 << endl;
-	}
-
-	if ( count > c.get_max_nodes() ) {
-	    if ( error <= 1000.0 ) {
-		// increase error tolerance until number of points drops below
-		// the maximum threshold
-		cout << "produced too many nodes ..." << endl;
-	    
-		acceptable = false;
-		shrinking = true;
-
-		if ( growing ) {
-		    error *= 1.25;
-		    growing = false;
-		} else {
-		    error *= 1.5;
-		}
-
-		cout << "Setting error to " << error << " and retrying fit." 
-		     << endl;
-	    } else {
-		// we tried, but can't seem to get down to a
-		// reasonable number of points even with a huge error
-		// tolerance.  This could be related to the triangle()
-		// call which might be having trouble with our input
-		// set.  Let's just die hope that our parent can try
-		// again with a smaller interior triangle angle.
-		cout << "Error:  Too many nodes." << endl;
-		exit(-1);
-	    }
-	}
-    }
-
-    cout << "finished fit with error = " << error << " node count = " 
-	 << count << endl;
+    cout << "number of fitted nodes = " << t.get_out_nodes_size() << endl;
 
     // save the results of the triangulation
     c.set_tri_nodes( t.get_out_nodes() );
@@ -1001,6 +973,11 @@ static void construct_tile( TGConstruct& c ) {
 	c.set_point_normals( normals );
     }
 
+    // Now for all the remaining "default" land cover polygons, assign
+    // each one it's proper type from the land use/land cover
+    // database.
+    fix_land_cover_assignments( c );
+
     // calculate wgs84 (cartesian) form of node list
     build_wgs_84_point_list( c, array );
 
@@ -1021,7 +998,6 @@ static void usage( const string name ) {
     cout << "[ --output-dir=<directory>" << endl;
     cout << "  --work-dir=<directory>" << endl;
     cout << "  --cover=<path to land-cover raster>" << endl;
-    cout << "  --min-angle=<angle>" << endl;
     cout << "  --tile-id=<id>" << endl;
     cout << "  --lon=<degrees>" << endl;
     cout << "  --lat=<degrees>" << endl;
@@ -1036,7 +1012,6 @@ static void usage( const string name ) {
 int main(int argc, char **argv) {
     string output_dir = ".";
     string work_dir = ".";
-    string min_angle = "10";
     string cover = "";
     double lon = -110.664244;	// P13
     double lat = 33.352890;
@@ -1061,8 +1036,6 @@ int main(int argc, char **argv) {
 	    output_dir = arg.substr(13);
 	} else if (arg.find("--work-dir=") == 0) {
 	    work_dir = arg.substr(11);
-	} else if (arg.find("--min-angle=") == 0) {
-	    min_angle = arg.substr(12);
 	} else if (arg.find("--tile-id=") == 0) {
 	    tile_id = atol(arg.substr(10).c_str());
 	} else if (arg.find("--lon=") == 0) {
@@ -1086,7 +1059,6 @@ int main(int argc, char **argv) {
 
     cout << "Output directory is " << output_dir << endl;
     cout << "Working directory is " << work_dir << endl;
-    cout << "Minimum angle is " << min_angle << endl;
     cout << "Tile id is " << tile_id << endl;
     cout << "Center longitude is " << lon << endl;
     cout << "Center latitude is " << lat << endl;
@@ -1132,7 +1104,6 @@ int main(int argc, char **argv) {
     // main construction data management class
     TGConstruct c;
 
-    c.set_angle( min_angle );
     c.set_cover( cover );
     c.set_work_base( work_dir );
     c.set_output_base( output_dir );
