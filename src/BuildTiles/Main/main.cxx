@@ -335,7 +335,7 @@ static void build_wgs_84_point_list( FGConstruct& c, const FGArray& array ) {
 			   geod.y() * DEG_TO_RAD,
 			   geod.z() );
 
-        cart = fgGeodToCart(radians);
+        cart = sgGeodToCart(radians);
 	// cout << cart << endl;
 
 	geod_nodes.push_back(geod);

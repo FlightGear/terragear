@@ -35,8 +35,8 @@
 #include <vector>
 
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/math/fg_types.hxx>
 #include <simgear/math/point3d.hxx>
+#include <simgear/math/sg_types.hxx>
 #include <simgear/misc/fgstream.hxx>
 
 

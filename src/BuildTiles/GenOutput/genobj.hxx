@@ -36,9 +36,9 @@
 #include STL_STRING
 
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/math/fg_geodesy.hxx>
-#include <simgear/math/fg_types.hxx>
 #include <simgear/math/point3d.hxx>
+#include <simgear/math/sg_geodesy.hxx>
+#include <simgear/math/sg_types.hxx>
 
 #include <Optimize/genfans.hxx>
 #include <Main/construct.hxx>

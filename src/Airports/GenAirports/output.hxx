@@ -37,7 +37,7 @@
 #include <list>
 #include STL_STRING
 
-#include <simgear/math/fg_types.hxx>
+#include <simgear/math/sg_types.hxx>
 
 #include <Polygon/polygon.hxx>
 

@@ -25,8 +25,8 @@
 #  include <config.h>
 #endif
 
-#include <simgear/math/fg_geodesy.hxx>
 #include <simgear/math/point3d.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/fgstream.hxx>
 
 #ifdef _MSC_VER
@@ -590,7 +590,7 @@ static Point3D fake_normal( const Point3D& p ) {
     Point3D radians = Point3D( p.x() * DEG_TO_RAD,
 			       p.y() * DEG_TO_RAD,
 			       p.z() );
-    Point3D cart = fgGeodToCart(radians);
+    Point3D cart = sgGeodToCart(radians);
     double len = Point3D(0.0).distance3D(cart);
     cout << "len = " << len << endl;
     cart /= len;

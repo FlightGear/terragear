@@ -51,7 +51,7 @@ void FGGenOutput::calc_gbs( FGConstruct& c ) {
 	       b.get_center_lat() * DEG_TO_RAD,
 	       0 );
 
-    gbs_center = fgGeodToCart(p);
+    gbs_center = sgGeodToCart(p);
 
     point_list wgs84_nodes = c.get_wgs84_nodes();
     const_point_list_iterator current =  wgs84_nodes.begin();
