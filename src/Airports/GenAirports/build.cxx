@@ -51,96 +51,10 @@
 #include <Triangulate/trieles.hxx>
 
 #include "convex_hull.hxx"
+#include "output.hxx"
 #include "point2d.hxx"
 #include "runway.hxx"
 #include "scenery_version.hxx"
-
-
-typedef vector < int_list > group_list;
-typedef group_list::iterator group_list_iterator;
-typedef group_list::const_iterator const_group_list_iterator;
-
-
-void write_polygon( const FGPolygon& poly, const string& base ) {
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	char name[256];
-	sprintf(name, "%s%d", base.c_str(), i );
-	FILE *fp = fopen( name, "w" );
-
-	for ( int j = 0; j < poly.contour_size( i ); ++j ) {
-	    Point3D p0 = poly.get_pt(i, j);
-	    fprintf(fp, "%.8f %.8f\n", p0.x(), p0.y());
-	}
-	Point3D p0 = poly.get_pt(i, 0);
-	fprintf(fp, "%.8f %.8f\n", p0.x(), p0.y());
-	fclose(fp);
-    }
-}
-
-
-#if 0
-// calculate distance in meters between two lat/lon points
-static double gc_dist( Point3D p1, Point3D p2 ) {
-    Point3D r1( p1.x() * DEG_TO_RAD, p1.y() * DEG_TO_RAD, 0 );
-    Point3D r2( p2.x() * DEG_TO_RAD, p2.y() * DEG_TO_RAD, 0 );
-
-    // d=2*asin(sqrt((sin((lat1-lat2)/2))^2 + 
-    //          cos(lat1)*cos(lat2)*(sin((lon1-lon2)/2))^2))
-    double tmp1 = sin( (r1.y() - r2.y()) / 2.0 );
-    double tmp2 = sin( (r1.x() - r2.x()) / 2.0 );
-
-    // d=2*asin(sqrt((tmp1)^2 + cos(lat1)*cos(lat2)*(tmp2)^2))
-    double clat1 = cos( r1.y() );
-    double clat2 = cos( r1.y() );
-
-    // d=2*asin(sqrt(tmp1*tmp1 + clat1*clat2*tmp2*tmp2))
-    double tmp3 = sqrt(tmp1*tmp1 + clat1*clat2*tmp2*tmp2);
-
-    // d=2*asin(tmp3)
-    double d_rad = 2 * asin( tmp3 );
-    // cout << "  dist (rad) = " << d_rad << endl;
-
-    double d_nm = d_rad * RAD_TO_NM;
-    // cout << "  dist (nm) = " << d_nm << endl;
-
-    double d_m = d_nm * NM_TO_METER;
-    // cout << "  dist (m) = " << d_m << endl;
-
-    return d_m;
-}
-
-
-// calculate true course between two points given the distance in meters
-static double gc_course( Point3D p1, Point3D p2, double d_m ) {
-    double lon1 = p1.x() * DEG_TO_RAD;
-    double lon2 = p2.x() * DEG_TO_RAD;
-    double lat1 = p1.y() * DEG_TO_RAD;
-    double lat2 = p2.y() * DEG_TO_RAD;
-
-    double d_rad = d_m * METER_TO_NM * NM_TO_RAD;
-
-    double tc1;
-
-    if ( cos(lat1) < FG_EPSILON) {
-	if ( lat1 > 0.0 ) {
-	    tc1 = FG_PI;        //  starting from N pole
-	} else {
-	    tc1 = 0.0;		//  starting from S pole
-	}
-    }
-	
-    // For starting points other than the poles: 
-	
-    if ( sin(lon2 - lon1) < 0.0 ) {
-	tc1 = acos( (sin(lat2)-sin(lat1)*cos(d_rad))/(sin(d_rad)*cos(lat1)));
-    } else {
-	tc1 = FG_2PI - 
-	    acos((sin(lat2)-sin(lat1)*cos(d_rad))/(sin(d_rad)*cos(lat1)));
-    }
-
-    return tc1;
-}
-#endif
 
 
 // calculate texture coordinates for a 1/2 runway.  Returns a mirror
@@ -176,7 +90,7 @@ static FGPolygon rwy_calc_tex_coords( const FGRunway& rwy,
 				&az1, &az2, &dist );
 
 	    cout << "basic course = " << az1 << endl;
-	    double course = az1 + angle;
+	    double course = az1 - angle;
 	    cout << "course = " << course << endl;
 	     while ( course < -360 ) { course += 360; }
 	     while ( course > 360 ) { course -= 360; }
@@ -208,50 +122,6 @@ static FGPolygon rwy_calc_tex_coords( const FGRunway& rwy,
 }
 
 
-#if 0
-// Find a the specified point in the polygon and set the contour/index
-// values for it.  Returns true if a match found, false otherwise
-static bool find_in_polygon( const Point3D p, const FGPolygon poly, 
-			     int *contour, int *index ) {
-    *contour = *index = -1;
-    Point3D tmp;
-
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	for ( int j = 0; j < poly.contour_size( i ); ++j ) {
-	    tmp = poly.get_pt( i, j );
-	    if ( tmp == p ) {
-		*contour = i;
-		*index = j;
-		return true;
-	    }
-	}
-    }
-
-    return false;
-}
-#endif
-
-
-#if 0
-// Add points to keep line segment lengths under 1000'
-static FGPolygon add_points( const FGPolygon& in_poly ) {
-    FGPolygon result;
-    result.erase();
-
-    for ( int i = 0; i < in_poly.contours(); ++i ) {
-	for ( int j = 0; j < in_poly.contour_size( i ) - 1; ++j ) {
-	    gc_dist( in_poly.get_pt( i, j ),
-		     in_poly.get_pt( i, j+1 ) );
-	}
-	gc_dist( in_poly.get_pt( i, in_poly.contour_size( i ) - 1 ),
-		 in_poly.get_pt( i, 0 ) );
-    }
-
-    return result;
-}
-#endif
-
-
 // Divide segment if there are other existing points on it, return the
 // new polygon
 void add_intermediate_nodes( int contour, const Point3D& start, 
@@ -269,29 +139,32 @@ void add_intermediate_nodes( int contour, const Point3D& start,
     Point3D p0 = start;
     Point3D p1 = end;
 
-    cout << "  add_intermediate_nodes()" << endl;
+    // cout << "  add_intermediate_nodes()" << endl;
 
     double xdist = fabs(p0.x() - p1.x());
     double ydist = fabs(p0.y() - p1.y());
-    cout << "xdist = " << xdist << "  ydist = " << ydist << endl;
+    // cout << "xdist = " << xdist << "  ydist = " << ydist << endl;
     x_err_min = xdist + 1.0;
     y_err_min = ydist + 1.0;
 
     if ( xdist > ydist ) {
-	cout << "use y = mx + b" << endl;
+	// cout << "use y = mx + b" << endl;
 
 	// sort these in a sensible order
-	if ( p0.x() > p1.x() ) {
-	    Point3D tmp = p0;
-	    p0 = p1;
-	    p1 = tmp;
+	Point3D p_min, p_max;
+	if ( p0.x() < p1.x() ) {
+	    p_min = p0;
+	    p_max = p1;
+	} else {
+	    p_min = p1;
+	    p_max = p0;
 	}
 
-	m = (p0.y() - p1.y()) / (p0.x() - p1.x());
-	b = p1.y() - m * p1.x();
+	m = (p_min.y() - p_max.y()) / (p_min.x() - p_max.x());
+	b = p_max.y() - m * p_max.x();
 
 	// if ( temp ) {
-	cout << "m = " << m << " b = " << b << endl;
+	//   cout << "m = " << m << " b = " << b << endl;
 	// }
 
 	current = nodes.begin();
@@ -300,17 +173,17 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	for ( ; current != last; ++current ) {
 	    cout << counter << endl;
 
-	    if ( (current->x() > (p0.x() + FG_EPSILON)) 
-		 && (current->x() < (p1.x() - FG_EPSILON)) ) {
+	    if ( (current->x() > (p_min.x() + FG_EPSILON)) 
+		 && (current->x() < (p_max.x() - FG_EPSILON)) ) {
 
-		cout << "found a potential candidate " << *current << endl;
+		// cout << "found a potential candidate " << *current << endl;
 		y_err = fabs(current->y() - (m * current->x() + b));
-		cout << "y_err = " << y_err << endl;
+		// cout << "y_err = " << y_err << endl;
 
 		if ( y_err < FG_PROXIMITY_EPSILON ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
-		    cout << p0 << " < " << *current << " < "
-		         << p1 << endl;
+		    // cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
+		    // cout << p_min << " < " << *current << " < "
+		    //      << p_max << endl;
 		    found_extra = true;
 		    if ( y_err < y_err_min ) {
 			extra_index = counter;
@@ -321,46 +194,49 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	    ++counter;
 	}
     } else {
-	cout << "use x = m1 * y + b1" << endl;
+	// cout << "use x = m1 * y + b1" << endl;
 
 	// sort these in a sensible order
-	if ( p0.y() > p1.y() ) {
-	    Point3D tmp = p0;
-	    p0 = p1;
-	    p1 = tmp;
+	Point3D p_min, p_max;
+	if ( p0.y() < p1.y() ) {
+	    p_min = p0;
+	    p_min = p1;
+	} else {
+	    p_min = p1;
+	    p_max = p0;
 	}
 
-	m1 = (p0.x() - p1.x()) / (p0.y() - p1.y());
-	b1 = p1.x() - m1 * p1.y();
+	m1 = (p_min.x() - p_max.x()) / (p_min.y() - p_max.y());
+	b1 = p_max.x() - m1 * p_max.y();
 
 	// bool temp = true;
 	// if ( temp ) {
-	cout << "  m1 = " << m1 << " b1 = " << b1 << endl;
+	//   cout << "  m1 = " << m1 << " b1 = " << b1 << endl;
 	// }
 
-	// cout << "  should = 0 = " << fabs(p0.x() - (m1 * p0.y() + b1)) << endl;;
-	// cout << "  should = 0 = " << fabs(p1.x() - (m1 * p1.y() + b1)) << endl;;
+	// cout << "  should = 0 = " << fabs(p_min.x() - (m1 * p_min.y() + b1)) << endl;;
+	// cout << "  should = 0 = " << fabs(p_max.x() - (m1 * p_max.y() + b1)) << endl;;
 
 	current = nodes.begin();
 	last = nodes.end();
 	counter = 0;
 	for ( ; current != last; ++current ) {
-	    if ( (current->y() > (p0.y() + FG_EPSILON)) 
-		 && (current->y() < (p1.y() - FG_EPSILON)) ) {
+	    if ( (current->y() > (p_min.y() + FG_EPSILON)) 
+		 && (current->y() < (p_max.y() - FG_EPSILON)) ) {
 
-		cout << "found a potential candidate " << *current << endl;
+		// cout << "found a potential candidate " << *current << endl;
 
 		x_err = fabs(current->x() - (m1 * current->y() + b1));
-		cout << "x_err = " << x_err << endl;
+		// cout << "x_err = " << x_err << endl;
 
 		// if ( temp ) {
 		//   cout << "  (" << counter << ") x_err = " << x_err << endl;
 		// }
 
 		if ( x_err < FG_PROXIMITY_EPSILON ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
-		    cout << p0 << " < " << *current << " < "
-		         << p1 << endl;
+		    // cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
+		    // cout << p_min << " < " << *current << " < "
+		    //      << p_max << endl;
 		    found_extra = true;
 		    if ( x_err < x_err_min ) {
 			extra_index = counter;
@@ -398,7 +274,7 @@ static FGPolygon add_nodes_to_poly( const FGPolygon& poly,
     FGPolygon result;
     Point3D p0, p1;
 
-    cout << "add_nodes_to_poly" << endl;
+    // cout << "add_nodes_to_poly" << endl;
 
     for ( int i = 0; i < poly.contours(); ++i ) {
 	for ( int j = 0; j < poly.contour_size(i) - 1; ++j ) {
@@ -435,63 +311,6 @@ static FGPolygon add_nodes_to_poly( const FGPolygon& poly,
 }
 
 
-#if 0
-// print polygon
-static void print_poly( const FGPolygon& poly ) {
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	cout << "contour " << i << endl;
- 	for ( int j = 0; j < poly.contour_size( i ); ++j ) {
-	    cout << "  " << poly.get_pt( i, j ) << endl;
-	}
-    }
-}
-#endif
-
-
-
-// calculate the center of a list of points, by taking the halfway
-// point between the min and max points.
-Point3D calc_center( point_list& wgs84_nodes ) {
-    Point3D p, min, max;
-
-    if ( wgs84_nodes.size() ) {
-	min = max = wgs84_nodes[0];
-    } else {
-	min = max = Point3D( 0 );
-    }
-
-    for ( int i = 0; i < (int)wgs84_nodes.size(); ++i ) {
-	p = wgs84_nodes[i];
-
-	if ( p.x() < min.x() ) { min.setx( p.x() ); }
-	if ( p.y() < min.y() ) { min.sety( p.y() ); }
-	if ( p.z() < min.z() ) { min.setz( p.z() ); }
-
-	if ( p.x() > max.x() ) { max.setx( p.x() ); }
-	if ( p.y() > max.y() ) { max.sety( p.y() ); }
-	if ( p.z() > max.z() ) { max.setz( p.z() ); }
-    }
-
-    return ( min + max ) / 2.0;
-}
-
-// calculate the global bounding sphere.  Center is the center of the
-// tile and zero elevation
-double calc_bounding_radius( Point3D center, point_list& wgs84_nodes ) {
-    double dist_squared;
-    double radius_squared = 0;
-    
-    for ( int i = 0; i < (int)wgs84_nodes.size(); ++i ) {
-        dist_squared = center.distance3Dsquared( wgs84_nodes[i] );
-	if ( dist_squared > radius_squared ) {
-            radius_squared = dist_squared;
-        }
-    }
-
-    return sqrt(radius_squared);
-}
-
-
 // fix node elevations
 point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
     bool done = false;
@@ -507,7 +326,9 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
     while ( !done ) {
 	// find first node with -9999 elevation
 	i = 0;
-	while ( result[i].z() > -9000 ) { ++i; }
+	while ( (result[i].z() > -9000) && (i < (int)result.size()) ) {
+	    ++i;
+	}
 
 	if ( i < (int)result.size() ) {
 	    FGBucket b( result[i].x(), result[i].y() );
@@ -559,194 +380,6 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 }
 
 
-// write out the structures to a file.  We assume that the groups come
-// to us sorted by material property.  If not, things don't break, but
-// the result won't be as optimal.
-void write( const string& base, const FGBucket& b, const string& name,
-	    Point3D gbs_center, double gbs_radius,
-	    const point_list& wgs84_nodes, const point_list& normals,
-	    const point_list& texcoords, 
-	    const group_list& strips_v, const group_list& strips_tc, 
-	    const string_list& strip_materials,
-	    const group_list& fans_v, const group_list& fans_tc,
-	    const string_list& fan_materials )
-{
-    Point3D p;
-
-    string dir = base + "/" + b.gen_base_path();
-    string command = "mkdir -p " + dir;
-    system(command.c_str());
-
-    // string file = dir + "/" + b.gen_index_str();
-    string file = dir + "/" + name;
-    cout << "Output file = " << file << endl;
-
-    FILE *fp;
-    if ( (fp = fopen( file.c_str(), "w" )) == NULL ) {
-	cout << "ERROR: opening " << file << " for writing!" << endl;
-	exit(-1);
-    }
-
-    cout << "strip size = " << strips_v.size() << "  strip_materials = " 
-	 << strip_materials.size() << endl;
-    cout << "points = " << wgs84_nodes.size() << endl;
-    cout << "tex coords = " << texcoords.size() << endl;
-    // write headers
-    fprintf(fp, "# FGFS Scenery\n");
-    fprintf(fp, "# Version %s\n", FG_SCENERY_FILE_FORMAT);
-
-    time_t calendar_time = time(NULL);
-    struct tm *local_tm;
-    local_tm = localtime( &calendar_time );
-    char time_str[256];
-    strftime( time_str, 256, "%a %b %d %H:%M:%S %Z %Y", local_tm);
-    fprintf(fp, "# Created %s\n", time_str );
-    fprintf(fp, "\n");
-
-    // write global bounding sphere
-    fprintf(fp, "# gbs %.5f %.5f %.5f %.2f\n",
-	    gbs_center.x(), gbs_center.y(), gbs_center.z(), gbs_radius);
-    fprintf(fp, "\n");
-
-    // dump vertex list
-    fprintf(fp, "# vertex list\n");
-    for ( int i = 0; i < (int)wgs84_nodes.size(); ++i ) {
-	p = wgs84_nodes[i] - gbs_center;
-	
-	fprintf(fp,  "v %.5f %.5f %.5f\n", p.x(), p.y(), p.z() );
-    }
-    fprintf(fp, "\n");
-
-    fprintf(fp, "# vertex normal list\n");
-    for ( int i = 0; i < (int)normals.size(); ++i ) {
-	p = normals[i];
-	fprintf(fp,  "vn %.5f %.5f %.5f\n", p.x(), p.y(), p.z() );
-    }
-    fprintf(fp, "\n");
-
-    // dump texture coordinates
-    fprintf(fp, "# texture coordinate list\n");
-    for ( int i = 0; i < (int)texcoords.size(); ++i ) {
-	p = texcoords[i];
-	fprintf(fp,  "vt %.5f %.5f\n", p.x(), p.y() );
-    }
-    fprintf(fp, "\n");
-
-    // dump triangle groups
-    fprintf(fp, "# triangle groups\n");
-
-    int start = 0;
-    int end = 1;
-    string material;
-    while ( start < (int)strip_materials.size() ) {
-	// find next group
-	material = strip_materials[start];
-	while ( (end < (int)strip_materials.size()) && 
-		(material == strip_materials[end]) )
-	{
-	    // cout << "end = " << end << endl;
-	    end++;
-	}
-	// cout << "group = " << start << " to " << end - 1 << endl;
-
-	// make a list of points for the group
-	point_list group_nodes;
-	group_nodes.clear();
-	Point3D bs_center;
-	double bs_radius;
-	for ( int i = start; i < end; ++i ) {
-	    for ( int j = 0; j < (int)strips_v[i].size(); ++j ) {
-		group_nodes.push_back( wgs84_nodes[ strips_v[i][j] ] );
-		bs_center = calc_center( group_nodes );
-		bs_radius = calc_bounding_radius( bs_center, group_nodes );
-	    }
-	}
-
-	// write group headers
-	fprintf(fp, "\n");
-	fprintf(fp, "# usemtl %s\n", material.c_str());
-	fprintf(fp, "# bs %.4f %.4f %.4f %.2f\n",
-		bs_center.x(), bs_center.y(), bs_center.z(), bs_radius);
-
-	// write groups
-	for ( int i = start; i < end; ++i ) {
-	    fprintf(fp, "ts");
-	    for ( int j = 0; j < (int)strips_v[i].size(); ++j ) {
-		fprintf(fp, " %d/%d", strips_v[i][j], strips_tc[i][j] );
-	    }
-	    fprintf(fp, "\n");
-	}
-
-	start = end;
-	end = start + 1;
-    }
-    fclose(fp);
-
-    command = "gzip --force --best " + file;
-    system(command.c_str());
-}
-
-
-// update index
-void write_index(const string& base, const FGBucket& b, const string& name) {
-    string dir = base + "/" + b.gen_base_path();
-    string command = "mkdir -p " + dir;
-    system(command.c_str());
-
-    string file = dir + "/" + b.gen_index_str() + ".ind";
-    // string file = dir + "/" + name;
-    cout << "Output file = " << file << endl;
-
-    FILE *fp;
-    if ( (fp = fopen( file.c_str(), "a" )) == NULL ) {
-	cout << "ERROR: opening " << file << " for writing!" << endl;
-	exit(-1);
-    }
-
-    fprintf( fp, "OBJECT %s\n", name.c_str() );
-    fclose( fp );
-}
-
-
-void write_boundary( const string& base, const FGBucket& b, 
-		     const FGPolygon& bounds, long int p_index )
-{
-    Point3D p;
-
-    string dir = base + "/" + b.gen_base_path();
-    string command = "mkdir -p " + dir;
-    system(command.c_str());
-
-    string file = dir + "/" + b.gen_index_str();
-
-    char poly_index[256];
-    sprintf( poly_index, "%ld", p_index );
-    file += ".";
-    file += poly_index;
-
-    cout << "Output file = " << file << endl;
-
-    FILE *fp;
-    if ( (fp = fopen( file.c_str(), "w" )) == NULL ) {
-	cout << "ERROR: opening " << file << " for writing!" << endl;
-	exit(-1);
-    }
-
-    fprintf( fp, "Hole\n" );
-
-    fprintf( fp, "%d\n", bounds.contours() );
-    for ( int i = 0; i < bounds.contours(); ++i ) {
-	fprintf( fp, "%d\n", bounds.contour_size(i) );
-	fprintf( fp, "%d\n", bounds.get_hole_flag(i) );
-	for ( int j = 0; j < bounds.contour_size(i); ++j ) {
-	    p = bounds.get_pt( i, j );
-	    fprintf( fp, "%.15f  %.15f\n", p.x(), p.y() );
-	}
-    }
-    fclose( fp );
-}
-
-
 // strip trailing spaces
 static void my_chomp( string& str ) {
     cout << "my_chomp()" << endl;
@@ -762,7 +395,7 @@ static void my_chomp( string& str ) {
 void build_airport( string airport_raw, string_list& runways_raw,
 		    const string& root ) {
 
-    poly_list rwy_nodes, rwy_strips, rwy_txs;
+    poly_list rwy_polys, rwy_tris, rwy_txs;
     FGPolygon runway, runway_a, runway_b, result, result_a, result_b;
     FGPolygon base;
     point_list apt_pts;
@@ -888,12 +521,12 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	}
 	
 	result_a = polygon_diff( runway_a, accum );
-	rwy_nodes.push_back( result_a );
+	rwy_polys.push_back( result_a );
 	cout << "result_a = " << result_a.contours() << endl;
 	accum = polygon_union( runway_a, accum );
 
 	result_b = polygon_diff( runway_b, accum );
-	rwy_nodes.push_back( result_b );
+	rwy_polys.push_back( result_b );
 	cout << "result_b = " << result_b.contours() << endl;
 	accum = polygon_union( runway_b, accum );
 
@@ -921,7 +554,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    }
 	}
 
-	base = gen_runway_area( runways[i], 1.01, 1.5 );
+	base = gen_runway_area( runways[i], 1.05, 1.5 );
 
 	// add base to apt_pts (for convex hull of airport area)
 	for ( int j = 0; j < base.contour_size( 0 ); ++j ) {
@@ -938,26 +571,28 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // generate convex hull
     FGPolygon hull = convex_hull(apt_pts);
-    FGPolygon base_nodes = polygon_diff( hull, accum );
+    FGPolygon base_poly = polygon_diff( hull, accum );
 
     // add segments to polygons to remove any possible "T"
     // intersections
     FGTriNodes tmp_nodes;
 
     // build temporary node list
-    for ( int k = 0; k < (int)rwy_nodes.size(); ++k ) {
-	for ( int i = 0; i < rwy_nodes[k].contours(); ++i ) {
-	    for ( int j = 0; j < rwy_nodes[k].contour_size( i ); ++j ) {
-		tmp_nodes.unique_add( rwy_nodes[k].get_pt(i, j) );
+    for ( int k = 0; k < (int)rwy_polys.size(); ++k ) {
+	for ( int i = 0; i < rwy_polys[k].contours(); ++i ) {
+	    for ( int j = 0; j < rwy_polys[k].contour_size( i ); ++j ) {
+		tmp_nodes.unique_add( rwy_polys[k].get_pt(i, j) );
 	    }
 	}
     }
-    for ( int i = 0; i < base_nodes.contours(); ++i ) {
-	for ( int j = 0; j < base_nodes.contour_size( i ); ++j ) {
-	    tmp_nodes.unique_add( base_nodes.get_pt(i, j) );
+    for ( int i = 0; i < base_poly.contours(); ++i ) {
+	for ( int j = 0; j < base_poly.contour_size( i ); ++j ) {
+	    tmp_nodes.unique_add( base_poly.get_pt(i, j) );
 	}
     }
 
+#if 0
+    // dump info for debugging purposes
     point_list ttt = tmp_nodes.get_node_list();
     for ( int i = 0; i < (int)ttt.size(); ++i ) {
 	char name[256];
@@ -967,44 +602,53 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	fclose(fp);
     }
 
-    for ( int i = 0; i < base_nodes.contours(); ++i ) {
+    for ( int i = 0; i < base_poly.contours(); ++i ) {
 	char name[256];
 	sprintf(name, "l%d", i );
 	FILE *fp = fopen( name, "w" );
 
-	for ( int j = 0; j < base_nodes.contour_size( i ) - 1; ++j ) {
-	    Point3D p0 = base_nodes.get_pt(i, j);
-	    Point3D p1 = base_nodes.get_pt(i, j + 1);
+	for ( int j = 0; j < base_poly.contour_size( i ) - 1; ++j ) {
+	    Point3D p0 = base_poly.get_pt(i, j);
+	    Point3D p1 = base_poly.get_pt(i, j + 1);
 	    fprintf(fp, "%.8f %.8f\n", p0.x(), p0.y());
 	    fprintf(fp, "%.8f %.8f\n", p1.x(), p1.y());
 	}
-	Point3D p0 = base_nodes.get_pt(i, base_nodes.contour_size( i ) - 1);
-	Point3D p1 = base_nodes.get_pt(i, 0);
+	Point3D p0 = base_poly.get_pt(i, base_poly.contour_size( i ) - 1);
+	Point3D p1 = base_poly.get_pt(i, 0);
 	fprintf(fp, "%.8f %.8f\n", p0.x(), p0.y());
 	fprintf(fp, "%.8f %.8f\n", p1.x(), p1.y());
 	fclose(fp);
     }
+#endif
 
-    for ( int k = 0; k < (int)rwy_nodes.size(); ++k ) {
-	rwy_nodes[k] = add_nodes_to_poly( rwy_nodes[k], tmp_nodes );
+    for ( int k = 0; k < (int)rwy_polys.size(); ++k ) {
+	rwy_polys[k] = add_nodes_to_poly( rwy_polys[k], tmp_nodes );
     }
-    base_nodes = add_nodes_to_poly( base_nodes, tmp_nodes );
-   
-    // new stripper approach
-    cout << "Ready to try new striper" << endl;
-    cout << "First calculate a 'point inside' for each contour and hole" 
-	 << endl;
-    write_polygon( base_nodes, "base" );
+    base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
 
-    /* 1 */ calc_points_inside( base_nodes );
-    for ( int i = 0; i < base_nodes.contours(); ++i ) {
-	cout << base_nodes.get_point_inside( i ) << endl;
+    // tesselate the polygons and prepair them for final output
+
+    cout << "Tesselating all polygons" << endl;
+
+    for ( int i = 0; i < (int)runways.size(); ++i ) {
+	FGPolygon tri_a, tri_b, tc_a, tc_b;
+
+	tri_a = polygon_tesselate_alt( rwy_polys[2 * i] );
+	tc_a = rwy_calc_tex_coords( runways[i], 0.0, tri_a );
+	rwy_tris.push_back( tri_a );
+	rwy_txs.push_back( tc_a );
+
+	tri_b = polygon_tesselate_alt( rwy_polys[2 * i + 1] );
+	tc_b = rwy_calc_tex_coords( runways[i], 180.0, tri_b );
+	rwy_tris.push_back( tri_b );
+	rwy_txs.push_back( tc_b );
     }
-    /* 2 */ triele_list base_tris = polygon_tesselate( base_nodes, -1 );
 
-    // generate convex hull and strip version
-    FGPolygon base_strips = polygon_to_tristrip( base_nodes );
+    write_polygon( base_poly, "base" );
+    FGPolygon base_tris = polygon_tesselate_alt( base_poly );
 
+#if 0
+    // dump more debugging output
     for ( int i = 0; i < base_strips.contours(); ++i ) {
 	char name[256];
 	sprintf(name, "s%d", i );
@@ -1022,83 +666,69 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	fprintf(fp, "%.8f %.8f\n", p1.x(), p1.y());
 	fclose(fp);
     }
-
-    // generate strips and texture coordinates
-    for ( int i = 0; i < (int)runways.size(); ++i ) {
-	FGPolygon strip_a, strip_b, tc_a, tc_b;
-
-	strip_a = polygon_to_tristrip( rwy_nodes[2 * i] );
-	tc_a = rwy_calc_tex_coords( runways[i], 0.0, strip_a );
-	rwy_strips.push_back( strip_a );
-	rwy_txs.push_back( tc_a );
-
-	strip_b = polygon_to_tristrip( rwy_nodes[2 * i + 1] );
-	tc_b = rwy_calc_tex_coords( runways[i], 180.0, strip_b );
-	rwy_strips.push_back( strip_b );
-	rwy_txs.push_back( tc_b );
-    }
+#endif
 
     //
     // We should now have the runway polygons all generated with their
-    // corresponding strips and texture coordinates, and the
+    // corresponding triangles and texture coordinates, and the
     // surrounding base area.
     //
     // Next we need to create the output lists ... vertices, normals,
     // texture coordinates, and tri-strips
     //
 
-    // traverse the strip list and create ordered node and texture
+    // traverse the tri list and create ordered node and texture
     // coordinate lists
 
     FGTriNodes nodes, texcoords;
     nodes.clear();
     texcoords.clear();
 
-    group_list strips_v; strips_v.clear();
-    group_list strips_tc; strips_tc.clear();
-    string_list strip_materials; strip_materials.clear();
+    group_list tris_v; tris_v.clear();
+    group_list tris_tc; tris_tc.clear();
+    string_list tri_materials; tri_materials.clear();
 
     Point3D tc;
     int index;
-    int_list strip_v;
-    int_list strip_tc;
+    int_list tri_v;
+    int_list tri_tc;
 
-    for ( int k = 0; k < (int)rwy_strips.size(); ++k ) {
-	cout << "strip " << k << endl;
-	FGPolygon strip_poly = rwy_strips[k];
-	for ( int i = 0; i < strip_poly.contours(); ++i ) {
-	    strip_v.clear();
-	    strip_tc.clear();
-	    for ( int j = 0; j < strip_poly.contour_size(i); ++j ) {
-		p = strip_poly.get_pt( i, j );
+    for ( int k = 0; k < (int)rwy_tris.size(); ++k ) {
+	cout << "tri " << k << endl;
+	FGPolygon tri_poly = rwy_tris[k];
+	for ( int i = 0; i < tri_poly.contours(); ++i ) {
+	    tri_v.clear();
+	    tri_tc.clear();
+	    for ( int j = 0; j < tri_poly.contour_size(i); ++j ) {
+		p = tri_poly.get_pt( i, j );
 		index = nodes.unique_add( p );
-		strip_v.push_back( index );
+		tri_v.push_back( index );
 		tc = rwy_txs[k].get_pt( i, j );
 		index = texcoords.unique_add( tc );
-		strip_tc.push_back( index );
+		tri_tc.push_back( index );
 	    }
-	    strips_v.push_back( strip_v );
-	    strips_tc.push_back( strip_tc );
-	    strip_materials.push_back( "Concrete" );
+	    tris_v.push_back( tri_v );
+	    tris_tc.push_back( tri_tc );
+	    tri_materials.push_back( "Concrete" );
 	}
     }
     
     // add base points
     point_list base_txs; 
     int_list base_tc;
-    for ( int i = 0; i < base_strips.contours(); ++i ) {
-	strip_v.clear();
-	strip_tc.clear();
-	for ( int j = 0; j < base_strips.contour_size(i); ++j ) {
-	    p = base_strips.get_pt( i, j );
+    for ( int i = 0; i < base_tris.contours(); ++i ) {
+	tri_v.clear();
+	tri_tc.clear();
+	for ( int j = 0; j < base_tris.contour_size(i); ++j ) {
+	    p = base_tris.get_pt( i, j );
 	    index = nodes.unique_add( p );
-	    strip_v.push_back( index );
+	    tri_v.push_back( index );
 	}
-	strips_v.push_back( strip_v );
-	strip_materials.push_back( "Grass" );
+	tris_v.push_back( tri_v );
+	tri_materials.push_back( "Grass" );
 
 	base_txs.clear();
-	base_txs = calc_tex_coords( b, nodes.get_node_list(), strip_v );
+	base_txs = calc_tex_coords( b, nodes.get_node_list(), tri_v );
 
 	base_tc.clear();
 	for ( int j = 0; j < (int)base_txs.size(); ++j ) {
@@ -1107,11 +737,12 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    index = texcoords.simple_add( tc );
 	    base_tc.push_back( index );
 	}
-	strips_tc.push_back( base_tc );
+	tris_tc.push_back( base_tc );
     }
 
     // calculate node elevations
     point_list geod_nodes = calc_elevations( root, nodes.get_node_list() );
+    cout << "Done with calc_elevations()" << endl;
 
     // calculate wgs84 mapping of nodes
     point_list wgs84_nodes;
@@ -1122,10 +753,11 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	wgs84_nodes.push_back( fgGeodToCart( p ) );
     }
     double gbs_radius = calc_bounding_radius( gbs_center, wgs84_nodes );
+    cout << "Done with wgs84 node mapping" << endl;
 
     // calculate normal(s) for this airport
-    p.setx( rwy_strips[0].get_pt(0, 0).x() * DEG_TO_RAD );
-    p.sety( rwy_strips[0].get_pt(0, 0).y() * DEG_TO_RAD );
+    p.setx( base_tris.get_pt(0, 0).x() * DEG_TO_RAD );
+    p.sety( base_tris.get_pt(0, 0).y() * DEG_TO_RAD );
     p.setz( 0 );
     Point3D tmp = fgGeodToCart( p );
     // cout << "geod = " << p << endl;
@@ -1139,20 +771,27 @@ void build_airport( string airport_raw, string_list& runways_raw,
     for ( int i = 0; i < (int)nodes.size(); ++i ) {
 	normals.push_back( Point3D( vn[0], vn[1], vn[2] ) );
     }
+    cout << "found normal for this airport = " << tmp << endl;
 
+    // null structures
     group_list fans_v; fans_v.clear();
     group_list fans_tc; fans_tc.clear();
-    string_list fan_materials;
-    fan_materials.clear();
+    string_list fan_materials; fan_materials.clear();
+
+    // null structures
+    group_list strips_v; strips_v.clear();
+    group_list strips_tc; strips_tc.clear();
+    string_list strip_materials; strip_materials.clear();
 
     string objpath = root + "/AirportObj";
     string name = apt_code;
 
-    write( objpath, b, name, gbs_center, gbs_radius, 
-	   wgs84_nodes, normals,
-	   texcoords.get_node_list(), 
-	   strips_v, strips_tc, strip_materials, 
-	   fans_v, fans_tc, fan_materials );
+    write_obj( objpath, b, name, gbs_center, gbs_radius, 
+	       wgs84_nodes, normals,
+	       texcoords.get_node_list(), 
+	       tris_v, tris_tc, tri_materials,
+	       strips_v, strips_tc, strip_materials, 
+	       fans_v, fans_tc, fan_materials );
 
     write_index( objpath, b, name );
 

@@ -29,6 +29,7 @@ genapts_SOURCES = \
 	build.cxx build.hxx \
 	convex_hull.cxx convex_hull.hxx \
 	main.cxx \
+	output.cxx output.hxx \
 	point2d.cxx point2d.hxx \
 	runway.cxx runway.hxx 
 

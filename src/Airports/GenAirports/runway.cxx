@@ -81,7 +81,7 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
     // cout << "Rotating points by " << angle << endl;
     for ( int i = 0; i < rad_list.contour_size( 0 ); ++i) {
 	p = rad_list.get_pt( 0, i );
-	double theta = p.y() - angle;
+	double theta = p.y() + angle;
         while ( theta < FG_2PI ) {
             theta += FG_2PI;
 	}
