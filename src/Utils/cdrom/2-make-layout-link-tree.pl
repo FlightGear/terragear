@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-$source = "/stage/fgfs03/curt/Scenery-0.9.5";
+$source = "/stage/fgfs03/curt/Scenery/Scenery-0.9.5";
 
 $layout_master = shift( @ARGV );
 $dest = shift( @ARGV );

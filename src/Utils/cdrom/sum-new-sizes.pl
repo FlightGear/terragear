@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-$tgzdir = "/stage/fgfs03/curt/Scenery-0.9.5";
+$tgzdir = "/stage/fgfs03/curt/Scenery/Scenery-0.9.5";
 
 if ( $#ARGV < 0 ) {
     die "usage: $0 <layout_dir>\n";

@@ -1,5 +1,11 @@
 #!/bin/sh
 
+if [ "x${1}" == "x" ]; then 
+    echo "cd one level above the source directory and specify it's short name"
+    echo "as arg $1"
+    exit
+fi
+
 VERSION=0.9.5
 SOURCE=$1
 VOLUME_ID=FG_Scenery_${SOURCE}_v${VERSION}
