@@ -3,7 +3,11 @@ dnl working configure script.
 dnl
 dnl $Id$
 
-AC_INIT(src/Lib/DEM/dem.cxx)
+AC_INIT
+AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
+
+# Require at least automake 2.53
+AC_PREREQ(2.53)
 
 dnl Initialize the automake stuff
 AM_INIT_AUTOMAKE(TerraGear, 0.0.5)
@@ -30,7 +34,7 @@ dnl Specify if we want logging (testing build) or not (release build)
 # with_logging=yes
 AC_ARG_WITH(logging, [  --with-logging          Include logging output (default)])
 if test "x$with_logging" = "xno" ; then
-    AC_DEFINE(FG_NDEBUG)
+    AC_DEFINE([FG_NDEBUG], 1, [Define for no logging output])
 fi
 
 
@@ -103,8 +107,8 @@ if test "x$ac_cv_header_windows_h" != "xyes" ; then
     if test "x$ac_cv_lib_MesaGL_glNewList" = "xyes" ; then
 	AC_CHECK_HEADER(GL/xmesa.h)
 	if test "x$ac_cv_header_GL_xmesa_h" = "xyes"; then
-	    AC_DEFINE( XMESA )
-            AC_DEFINE( FX )
+	    AC_DEFINE([XMESA], 1, [Define for Mesa FX mode])
+            AC_DEFINE([FX], 1, [Define for Mesa FX mode])
         fi
     fi
 
@@ -127,7 +131,7 @@ else
     dnl winbloze-isms.  We'll just do this manually for now.
 
     echo Win32 specific hacks...
-    AC_DEFINE(WIN32)
+    AC_DEFINE([WIN32], 1, [Define if building on a Win32 platform])
 
     dnl force a failed check since we will be building under windoze
     AM_CONDITIONAL(ENABLE_XMESA_FX, test "no" = "yes")
@@ -216,10 +220,9 @@ AC_CHECK_HEADERS( \
 
 # Check for system installed zlib
 AC_CHECK_HEADER(zlib.h)
-if test "x$ac_cv_header_zlib_h" = "xyes"; then
-    AC_DEFINE( HAVE_ZLIB )
-else
-    echo "no zlib found, using version provided by SimGear."
+if test "x$ac_cv_header_zlib_h" != "xyes"; then
+    echo "no zlib found, please install before continuing."
+    exit
 fi
 
 # Check for the presence of SimGear
@@ -290,7 +293,7 @@ AC_CHECK_FUNCS( ftime gettimeofday timegm memcpy bcopy mktime strstr rand \
 
 AM_CONFIG_HEADER(src/Include/config.h)
 
-AC_OUTPUT( \
+AC_CONFIG_FILES([ \
 	VERSION \
 	Makefile \
 	src/Makefile \
@@ -332,7 +335,8 @@ AC_OUTPUT( \
 	src/Utils/Makefile \
 	src/Utils/cdrom/Makefile \
 	src/Utils/download-map/Makefile \
-)
+])
+AC_OUTPUT
 
 echo ""
 echo "Configure Summary"
