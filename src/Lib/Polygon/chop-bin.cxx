@@ -150,7 +150,7 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
 void tgChopNormalPolygon( const string& path, AreaType area,
-                       const TGPolygon& shape, bool preserve3d )
+                          const TGPolygon& shape, bool preserve3d )
 {
     Point3D min, max, p;
     // point2d min, max;
@@ -208,13 +208,89 @@ void tgChopNormalPolygon( const string& path, AreaType area,
     if ( (dx > 2880) || (dy > 1440) )
         throw sg_exception("something is really wrong in split_polygon()!!!!");
 
-    // write each out polygon for each bucket
-    for ( j = 0; j <= dy; ++j ) {
-        for ( i = 0; i <= dx; ++i ) {
-            b_cur = sgBucketOffset(min.x(), min.y(), i, j);
-            clip_and_write_poly( path, index, area, b_cur, shape,
-                                 preserve3d );
+    if ( dy <= 1 ) {
+	// we are down to at most two rows, write each column and then bail
+        for ( j = 0; j <= dy; ++j ) {
+            for ( i = 0; i <= dx; ++i ) {
+                b_cur = sgBucketOffset(min.x(), min.y(), i, j);
+                clip_and_write_poly( path, index, area, b_cur, shape,
+                                     preserve3d );
+            }
         }
+	return;
+    }
+
+    // we have two or more rows left, split in half (along a
+    // horizontal dividing line) and recurse with each half
+
+    // find mid point (integer math)
+    int mid = (dy + 1) / 2 - 1;
+
+    // determine horizontal clip line
+    SGBucket b_clip = sgBucketOffset(min.x(), min.y(), 0, mid);
+    double clip_line = b_clip.get_center_lat();
+    if ( (clip_line >= -89.0) && (clip_line < 89.0) ) {
+	clip_line += SG_HALF_BUCKET_SPAN;
+    } else if ( clip_line < -89.0 ) {
+	clip_line = -89.0;
+    } else if ( clip_line >= 89.0 ) {
+	clip_line = 90.0;
+    } else {
+	SG_LOG ( SG_GENERAL, SG_ALERT, 
+		 "Out of range latitude in clip_and_write_poly() = " 
+		 << clip_line );
+    }
+
+    {
+	//
+	// Crop bottom area (hopefully by putting this in it's own
+	// scope we can shorten the life of some really large data
+	// structures to reduce memory use)
+	//
+
+	SG_LOG ( SG_GENERAL, SG_DEBUG, 
+		 "Generating bottom half (" << min.y() << "-" <<
+		 clip_line << ")" );
+
+	TGPolygon bottom, bottom_clip;
+
+        bottom.erase();
+        bottom_clip.erase();
+
+        bottom.add_node( 0, Point3D(-180.0, min.y(), 0) );
+        bottom.add_node( 0, Point3D(180.0, min.y(), 0) );
+        bottom.add_node( 0, Point3D(180.0, clip_line, 0) );
+        bottom.add_node( 0, Point3D(-180.0, clip_line, 0) );
+
+        bottom_clip = tgPolygonInt( bottom, shape );
+
+	tgChopNormalPolygon( path, area, bottom_clip, preserve3d );
+    }
+
+    {
+	//
+	// Crop top area (hopefully by putting this in it's own scope
+	// we can shorten the life of some really large data
+	// structures to reduce memory use)
+	//
+
+	SG_LOG ( SG_GENERAL, SG_DEBUG, 
+		 "Generating top half (" << clip_line << "-" <<
+		 max.y() << ")" );
+
+	TGPolygon top, top_clip;
+
+        top.erase();
+        top_clip.erase();
+
+        top.add_node( 0, Point3D(-180.0, clip_line, 0) );
+        top.add_node( 0, Point3D(180.0, clip_line, 0) );
+        top.add_node( 0, Point3D(180.0, max.y(), 0) );
+        top.add_node( 0, Point3D(-180.0, max.y(), 0) );
+
+        top_clip = tgPolygonInt( top, shape );
+
+	tgChopNormalPolygon( path, area, top_clip, preserve3d );
     }
 }
 
