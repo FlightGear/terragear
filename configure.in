@@ -326,6 +326,7 @@ AC_OUTPUT( \
 	src/Lib/poly2tri/Makefile \
 	src/Lib/shapelib/Makefile \
 	src/Lib/TriangleJRS/Makefile \
+	src/Lib/vpf/Makefile \
 	src/Prep/Makefile \
 	src/Prep/DemChop/Makefile \
 	src/Prep/DemInfo/Makefile \
@@ -335,7 +336,10 @@ AC_OUTPUT( \
 	src/Prep/MergerClipper/Makefile \
 	src/Prep/Photo/Makefile \
 	src/Prep/ShapeFile/Makefile \
+	src/Prep/TGVPF/Makefile \
 	src/Utils/Makefile \
+	src/Utils/cdrom/Makefile \
+	src/Utils/download-map/Makefile \
 )
 
 echo ""
