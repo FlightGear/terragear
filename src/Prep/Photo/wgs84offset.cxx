@@ -1,5 +1,6 @@
 // calc wgs84 offset given starting lon/lat/alt, radial and distance
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <simgear/math/sg_geodesy.hxx>
