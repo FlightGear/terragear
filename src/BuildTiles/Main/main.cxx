@@ -1005,7 +1005,7 @@ static void do_custom_objects( const TGConstruct& c ) {
 	    while ( ! in.eof() ) {
                 in.getline(line, 2048);
 
-                sscanf( "%s %s", token, name );
+                sscanf( line, "%s %s", token, name );
 
 		cout << "token = " << token << " name = " << name << endl;
 
