@@ -91,15 +91,14 @@ bool TGArray::open( const string& file_base ) {
         // open array data file
         string array_name = file_base + ".arr.gz";
 	array_in = new sg_gzifstream( array_name );
+        // open fitted data file
+        string fitted_name = file_base + ".fit.gz";
+	fitted_in = new sg_gzifstream( fitted_name );
 	if ( ! array_in->is_open() ) {
 	    cout << "  Cannot open " << array_name << endl;
 	    return false;
 	}
 	cout << "  Opening array data file: " << array_name << endl;
-
-        // open fitted data file
-        string fitted_name = file_base + ".fit.gz";
-	fitted_in = new sg_gzifstream( fitted_name );
 	if ( ! fitted_in->is_open() ) {
 	    cout << "  Cannot open " << fitted_name << endl;
 	    return false;
@@ -251,7 +250,7 @@ TGArray::parse( SGBucket& b ) {
     }
 
     // Parse/load the array data file
-    if ( fitted_in->is_open() ) {
+    if ( fitted_in && fitted_in->is_open() ) {
         fit_on_the_fly = false;
         int fitted_size;
         double x, y, z, error;
