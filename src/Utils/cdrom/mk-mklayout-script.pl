@@ -1,18 +1,32 @@
 #!/usr/bin/perl
 
-$layout = "/stage/fgfs02/curt/layout-cd";
-$source = "/stage/fgfs01/ftp/pub/fgfs/Scenery";
+$layout_master = "./layout-0.9.2";
+$source = "/stage/fgfs03/curt/Scenery-0.9.2";
+$dest = "./Images";
 
-@files = `ls $layout/Africa/* $layout/Asia-East/* $layout/Asia-West/* $layout/Australia/* $layout/Europe/* $layout/NorthAmerica-East/* $layout/NorthAmerica-West/* $layout/SouthAmerica-Antartica/* $layout/USA/*`;
+@rawfiles = `ls $source/*`;
 
-foreach $file ( @files ) {
-    chomp $file;
-    # print "$file\n";
+@layout = ();
 
+open ( LAYOUT, "<$layout_master" ) || die "cannot open $layout_master\n";
+while ( <LAYOUT> ) {
+    chomp;
+    push( @layout, $_ );
+}
+
+system( "/bin/rm -rf $dest" );
+
+foreach $file ( @layout ) {
     $base = $file;
     while ( $base =~ m/\// ) {
         $base =~ s/.*\///;
     }
+    $dir = $file;
+    $dir =~ s/\/[^\/]+$//;
 
-    print "cp $source/$base $file\n";
+    if ( ! -d "$dest/$dir" ) {
+        system( "mkdir -p $dest/$dir" );
+    }
+
+    system( "ln -sf $source/$base $dest/$file\n" );
 }
