@@ -43,4 +43,31 @@ Line::addPoint (const Point3D &point)
   _points.push_back(point);
 }
 
+const Rectangle
+Line::getBounds () const
+{
+  Point3D min;
+  Point3D max;
+
+  int nPoints = _points.size();
+  for (int i = 0; i < nPoints; i++) {
+    if (i == 0) {
+      min = max = _points[i];
+    } else {
+      if (_points[i].x() < min.x())
+	min.setx(_points[i].x());
+      if (_points[i].x() > max.x())
+	max.setx(_points[i].x());
+      if (_points[i].y() < min.y())
+	min.sety(_points[i].y());
+      if (_points[i].y() > max.y())
+	max.sety(_points[i].y());
+    }
+    return Rectangle(min, max);
+  }
+
+  Rectangle bounds;
+  return bounds;
+}
+
 // end of line.cxx

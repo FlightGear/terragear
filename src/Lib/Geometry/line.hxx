@@ -76,6 +76,13 @@ public:
    */
   virtual void addPoint (const Point3D &point);
 
+  /**
+   * Get the bounding rectangle for the line.
+   *
+   * @return The bounding rectangle.
+   */
+  virtual const Rectangle getBounds () const;
+
 private:
   vector<Point3D> _points;
 };
