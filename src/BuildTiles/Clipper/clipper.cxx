@@ -37,9 +37,7 @@
 
 #include "clipper.hxx"
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
-#endif
 
 
 #define MASK_CLIP 1

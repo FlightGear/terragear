@@ -29,9 +29,7 @@
 
 #include <DEM/dem.hxx>
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
-#endif
 
 
 // static float dem_data[DEM_SIZE_1][DEM_SIZE_1];

@@ -40,10 +40,8 @@
 
 #include "genobj.hxx"
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cout);
 SG_USING_STD(endl);
-#endif
 
 
 // calculate the global bounding sphere.  Center is the center of the

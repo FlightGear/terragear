@@ -559,7 +559,8 @@ void build_airport( string airport_raw, float alt_m,
     // 3rd pass: generate all remaining runways not covered in the first pass
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
-	if ( type_flag != "P" && type_flag != "R" && type_flag != "V" ) {
+	if ( type_flag != string("P") && type_flag != string("R")
+             && type_flag != string("V") ) {
 	    build_runway( runways[i], elev * SG_FEET_TO_METER,
 			  &rwy_polys, &texparams, &accum, &apt_base,
                           &apt_clearing );

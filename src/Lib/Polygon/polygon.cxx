@@ -34,9 +34,7 @@ extern "C" {
 #include <simgear/math/point3d.hxx>
 #include <simgear/misc/exception.hxx>
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(endl);
-#endif
 
 #include <poly2tri/interface.h>
 

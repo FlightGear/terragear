@@ -28,7 +28,7 @@ SG_USING_STD(endl);
  * Append an integer to a string.
  */
 static void
-append (string &s, int i)
+strAppend (string &s, int i)
 {
   char buf[128];
   sprintf(buf, "%d", i);
@@ -40,7 +40,7 @@ append (string &s, int i)
  * Append a double-precision real to a string.
  */
 static void
-append (string &s, double f)
+strAppend (string &s, double f)
 {
   char buf[128];
   sprintf(buf, "%f", f);
@@ -150,7 +150,7 @@ expect (istream &input, int i)
   input >> in;
   if (in != i) {
     string message = "Expected ";
-    append(message, i);
+    strAppend(message, i);
     throw E00Exception(message.c_str());
   }
 }
@@ -166,7 +166,7 @@ expect (istream &input, double f)
   input >> in;
   if (in != f) {
     string message = "Expected ";
-    append(message, f);
+    strAppend(message, f);
     throw E00Exception(message.c_str());
   }
 }
@@ -180,7 +180,7 @@ expect (istream &input, const char *s)
 {
   string in;
   input >> in;
-  if (in != s) {
+  if (in != string(s)) {
     string message = "Expected ";
     message += s;
     throw E00Exception(message.c_str());
@@ -490,7 +490,7 @@ E00::readTX6 ()
   *_input >> dummy;
 				// FIXME: will fail if "JABBERWOCKY" appears
 				// in the text annotation itself
-  while (dummy != "JABBERWOCKY")
+  while (dummy != string("JABBERWOCKY"))
     *_input >> dummy;
 }
 
@@ -502,7 +502,7 @@ E00::readTX7 ()
   *_input >> dummy;
 				// FIXME: will fail if "JABBERWOCKY" appears
 				// in the text annotation itself
-  while (dummy != "JABBERWOCKY")
+  while (dummy != string("JABBERWOCKY"))
     *_input >> dummy;
 }
 
@@ -513,7 +513,7 @@ E00::readRXP ()
   *_input >> dummy;
 				// FIXME: will fail if "JABBERWOCKY" appears
 				// in the text annotation itself
-  while (dummy != "JABBERWOCKY")
+  while (dummy != string("JABBERWOCKY"))
     *_input >> dummy;
 }
 
@@ -524,7 +524,7 @@ E00::readRPL ()
   *_input >> dummy;
 				// FIXME: will fail if "JABBERWOCKY" appears
 				// in the text annotation itself
-  while (dummy != "JABBERWOCKY")
+  while (dummy != string("JABBERWOCKY"))
     *_input >> dummy;
 }
 
@@ -548,7 +548,7 @@ E00::readIFO ()
     *_input >> line;
 
   while (line != string("EOI")) {
-
+    int i;
 				// Start of a new IFO file.
     IFO ifo;
     IFO::Entry entry;
@@ -570,7 +570,7 @@ E00::readIFO ()
 
 				// Read the item definitions
     ifo.defs.resize(0);
-    for (int i = 0; i < ifo.numItems; i++) {
+    for (i = 0; i < ifo.numItems; i++) {
       IFO::ItemDef def;
 
       *_input >> def.itemName;
@@ -593,7 +593,7 @@ E00::readIFO ()
 
 				// Read the data records
     ifo.entries.resize(0);
-    for (int i = 0; i < ifo.numDataRecords; i++) {
+    for (i = 0; i < ifo.numDataRecords; i++) {
 //       cout << " Reading entry " << i << endl;
       entry.resize(0);
       line_pos = 0;

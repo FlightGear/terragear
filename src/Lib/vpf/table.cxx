@@ -4,6 +4,8 @@
 #include <string>
 #include <fstream>
 
+#include <simgear/misc/zfstream.hxx>	// ios_binary
+
 using std::string;
 using std::ifstream;
 using std::istream;
@@ -290,11 +292,11 @@ VpfTable::read (const string &fileName)
   _path = fileName;
   ifstream input;
 
-  input.open(fileName.c_str(), std::ios::binary);
+  input.open(fileName.c_str(), ios_binary);
   if (!input) {
     input.clear();
     string fileName2 = fileName + '.';
-    input.open(fileName2.c_str(), std::ios::binary);
+    input.open(fileName2.c_str(), ios_binary);
   }
   if (!input)
     throw VpfException(string("Failed to open VPF table file ") + fileName);
@@ -363,7 +365,11 @@ VpfTable::read_row (istream &input, VpfValue * row)
   if (!input.get(c))
     return false;
   else
+#if !defined(SG_HAVE_NATIVE_SGI_COMPILERS)
     input.unget();
+#else
+    input.putback(c);
+#endif
 				// OK, continue
   int nCols = _columns.size();
   for (int i = 0; i < nCols; i++) {

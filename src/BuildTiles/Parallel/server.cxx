@@ -1,6 +1,9 @@
 // remote_server.c -- Written by Curtis Olson
 //                 -- for CSci 5502
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +29,7 @@ SG_USING_STD( cout );
 SG_USING_STD( cerr );
 SG_USING_STD( endl );
 
-#if defined (sun) || defined (__CYGWIN__)
+#if defined (sun) || defined (__CYGWIN__) || defined(sgi)
 #  define WAIT_ANY (pid_t)-1
 #endif
 

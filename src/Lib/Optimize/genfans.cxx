@@ -27,10 +27,8 @@
 
 #include "genfans.hxx"
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD( cout );
 SG_USING_STD( endl );
-#endif
 
 
 // make sure the list is expanded at least to hold "n" and then push

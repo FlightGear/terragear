@@ -84,7 +84,7 @@ add_line (SGPropertyNode_ptr node)
   }
 
   FGPolygon poly;
-  makePolygon(line, node->getIntValue("width", 10), poly);
+  tg::makePolygon(line, node->getIntValue("width", 10), poly);
   poly = polygon_int(poly, bounds_poly);
   split_polygon(".", material, poly);
 }

@@ -11,9 +11,7 @@
 
 SG_USING_STD(vector);
 SG_USING_STD(string);
-#if ! defined(SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(istream);
-#endif
 
 
 // An exception reading an E00 file.

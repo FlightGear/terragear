@@ -39,9 +39,7 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD( cout );
-#endif
 SG_USING_STD( string );
 
 // return the type of the shapefile record
@@ -214,7 +212,7 @@ int main( int argc, char **argv ) {
 
     string shapetype = SHPTypeName( nShapeType );
 
-    if ( shapetype != "Polygon" ) {
+    if ( shapetype != string("Polygon") ) {
 	SG_LOG( SG_GENERAL, SG_ALERT, "Can't handle non-polygon shape files" );
 	exit(-1);
     }

@@ -84,8 +84,16 @@ VpfCoverage::hasFeature (const string &name) const
 {
   if (_feature_names == 0)
     getFeatureNames();
-  return (find(_feature_names->begin(), _feature_names->end(), name)
-	  != _feature_names->end());
+
+  vector<const string>::iterator it;
+  for (it = _feature_names->begin(); it != _feature_names->end(); it++)
+    if (*it == name)
+       return(it != _feature_names->end());
+
+  return false;
+
+  // return (std::find(_feature_names->begin(), _feature_names->end(), name)
+  //	  != _feature_names->end());
 }
 
 const VpfFeature

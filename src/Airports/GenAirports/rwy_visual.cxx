@@ -131,7 +131,7 @@ void gen_visual_rwy( const FGRunway& rwy_info,
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwy_info.rwy_no);
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
 
-    if ( letter != "" ) {
+    if ( !letter.empty() ) {
 	start_pct = end_pct;
 	end_pct = start_pct + ( 90.0 / length );
 	gen_runway_section( rwy_info, runway_a,

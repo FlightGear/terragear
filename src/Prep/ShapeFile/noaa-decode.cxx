@@ -39,9 +39,7 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD( cout );
-#endif
 SG_USING_STD( string );
 
 // return the type of the shapefile record

@@ -48,9 +48,7 @@
 #include "gshhs_split.hxx"
 
 SG_USING_STD( string );
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD( cout );
-#endif
 
 // hackity, hackity, hack ... cough cough
 #ifdef i386

@@ -247,12 +247,12 @@ VpfFeature::getFCA () const
 bool
 VpfFeature::isProperty (const string &name) const
 {
-  return (name != "id" &&
-	  name != "tile_id" &&
-	  name != "end_id" &&
-	  name != "edg_id" &&
-	  name != "fac_id" &&
-	  name != "txt_id");
+  return (name != string("id") &&
+	  name != string("tile_id") &&
+	  name != string("end_id") &&
+	  name != string("edg_id") &&
+	  name != string("fac_id") &&
+	  name != string("txt_id"));
 }
 
 const string

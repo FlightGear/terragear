@@ -20,14 +20,35 @@ AC_PROG_RANLIB
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
-AR="ar"
-OS=`uname -s`
-if test "$OS" = "IRIX" -o "$OS" = "IRIX64"; then
+# specify the simgear location
+AC_ARG_WITH(simgear, [  --with-simgear=PREFIX   Specify the prefix path to simgear])
+
+if test "x$with_simgear" != "x" ; then
+    echo "SimGear prefix path is $with_simgear"
+    EXTRA_DIRS="${EXTRA_DIRS} $with_simgear"
+fi
+
+dnl set the $host variable based on local machine/os
+AC_CANONICAL_HOST
+
+case "${host}" in
+*-*-irix*)
     if test "$CXX" = "CC"; then
         AR="CC -ar"
-        AC_SUBST(AR)
+        ARFLAGS="-o"
+        CXXFLAGS="$CXXFLAGS -I$with_simgear/include/simgear/compatibility"
+    else
+        AR="ar"
+        ARFLAGS="cru"
     fi
-fi
+    ;;
+*)
+    AR="ar"
+    ARFLAGS="cru"
+    ;;
+esac
+AC_SUBST(AR)
+AC_SUBST(ARFLAGS)
 
 dnl Specify if we want logging (testing build) or not (release build)
 # set logging default value
@@ -285,6 +306,24 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 
+dnl check for socklen_t (in Unix98)
+AC_MSG_CHECKING(for socklen_t)
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>
+int accept (int, struct sockaddr *, socklen_t *);
+],[],[
+AC_MSG_RESULT(yes)],[
+AC_TRY_COMPILE([
+#include <sys/types.h>
+#include <sys/socket.h>
+int accept (int, struct sockaddr *, size_t *);
+],[],[
+AC_MSG_RESULT(size_t)
+AC_DEFINE([socklen_t], size_t, [Define for socklen_t])], [
+AC_MSG_RESULT(int)
+AC_DEFINE([socklen_t], int, [Define for socklen_t])])])
+
 dnl Checks for library functions.
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
@@ -348,11 +387,5 @@ if test "x$with_logging" != "x"; then
     echo "Debug messages: $with_logging"
 else
     echo "Debug messages: yes"
-fi
-
-if test "$OS" = "IRIX" -o "$OS" = "IRIX64"; then
-    if test "$CXX" = "CC"; then
-        echo "\nRemember to run: sh ../FlightGear-0.x.x/irix-hack.sh!\07\n"
-    fi
 fi
 

@@ -3,7 +3,7 @@
 
 
 #ifdef HAVE_CONFIG_H
-#  include <Include/config.h>
+#  include <config.h>
 #endif
 
 #ifdef HAVE_SYS_PARAM_H

@@ -37,10 +37,8 @@
 #include STL_STRING
 #include <vector>
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD(cerr);
 SG_USING_STD(cout);
-#endif
 SG_USING_STD(string);
 SG_USING_STD(vector);
 
@@ -485,7 +483,7 @@ main (int argc, const char **argv)
 	const tg::Line line = vpf2tg(feature.getLine(i));
 	if (!bounds.isOverlapping(line.getBounds()))
 	  continue;
-	makePolygon(line, (width == -1 ? 50 : width), shape);
+	tg::makePolygon(line, (width == -1 ? 50 : width), shape);
 	break;
       }
       case VpfFeature::POLYGON: {

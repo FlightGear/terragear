@@ -112,7 +112,7 @@ VpfPropertyDecl::getVDTName () const
 bool
 VpfPropertyDecl::hasVDT () const
 {
-  return (getVDTName() != "-");
+  return (getVDTName() != string("-"));
 }
 
 const VpfTable &

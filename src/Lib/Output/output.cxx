@@ -45,10 +45,8 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
 SG_USING_STD( cout );
 SG_USING_STD( endl );
-#endif
 
 
 void write_polygon( const FGPolygon& poly, const string& base ) {

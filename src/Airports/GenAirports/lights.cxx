@@ -324,7 +324,7 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
     ref2 = Point3D( lon, lat, 0.0 );
 
     // five lights for each side
-    for ( int i = 0; i < 5; ++i ) {
+    for ( i = 0; i < 5; ++i ) {
         g_lights.push_back( ref1 );
         g_normals.push_back( normal1 );
     
