@@ -124,7 +124,8 @@ int main( int argc, char **argv ) {
     bool verbose = false;
 
     // Parse command line arguments
-    for ( int i = 1; i < argc; ++i ) {
+    unsigned int i;
+    for ( i = 1; i < argc; ++i ) {
         string arg = argv[i];
 
         if ( arg.find("--input=") == 0 ) {
@@ -170,7 +171,7 @@ int main( int argc, char **argv ) {
     double dx = a.get_col_step();
     double dy = a.get_row_step();
 
-    for ( int i = 0; i < a.get_cols(); ++i ) {
+    for ( i = 0; i < a.get_cols(); ++i ) {
         for ( int j = 0; j < a.get_rows(); ++j ) {
             if ( (i == 0 && j == 0) ||
                  (i == a.get_cols() - 1 && j == 0 ) ||
@@ -363,7 +364,7 @@ int main( int argc, char **argv ) {
     }
 
     gzprintf( gzfp, "%d\n", fitted.size() );
-    for ( unsigned int i = 0; i < fitted.size(); ++i ) {
+    for ( i = 0; i < fitted.size(); ++i ) {
         gzprintf( gzfp, "%.15f %.15f %.2f %.1f\n",
                   fitted[i].x(), fitted[i].y(), fitted[i].z(), errors[i] );
     }
