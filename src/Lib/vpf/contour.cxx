@@ -77,6 +77,7 @@ VpfContour::getLines () const
     const VpfTable &edg = getEDG();
     int current_offset = 0;
     int current_edge = _start_edge;
+    // std::cout << "start edge: " << _start_edge << std::endl;
     int previous_edge = -1;
     do {
       int row = edg.findMatch("id", current_edge);
@@ -90,16 +91,30 @@ VpfContour::getLines () const
       previous_edge = current_edge;
       if (edg.getValue(row, "right_face")
 	  .getCrossRef().current_tile_key == _polygon_id) {
-	info.isLR = true;
-	current_edge = edg.getValue(row, "right_edge")
-	  .getCrossRef().current_tile_key;
+        info.isLR = true;
+        current_edge = edg.getValue(row, "right_edge")
+          .getCrossRef().current_tile_key;
+        if (edg.getValue(row, "left_face")
+            .getCrossRef().current_tile_key == _polygon_id)
+          std::cout << "right face also left face" << std::endl;
       } else if (edg.getValue(row, "left_face")
-		 .getCrossRef().current_tile_key == _polygon_id) {
-	info.isLR = false;
-	current_edge = edg.getValue(row, "left_edge")
-	  .getCrossRef().current_tile_key;
+          .getCrossRef().current_tile_key == _polygon_id) {
+        info.isLR = false;
+        current_edge = edg.getValue(row, "left_edge")
+          .getCrossRef().current_tile_key;
       } else {
 	throw VpfException("edge does not belong to face");
+      }
+
+      for ( vector<line_info>::reverse_iterator it = _lines->rbegin();
+            it != _lines->rend(); it++ )
+      {
+        if ( it->id == info.id )
+        {
+          std::cout << "eeek!!! infinite loop..." << std::endl;          
+          _nPoints -= info.size;
+          return *_lines;
+        }
       }
 
       _lines->push_back(info);

@@ -12,11 +12,13 @@ using std::string;
 VpfTile::VpfTile (VpfTableManager &tableManager,
 		  const string &path, int tile_id)
   : VpfComponent(tableManager, path),
-    _tile_id(tile_id),	// FIXME: kludge
-    _face_id(-1),
+    _tile_id(tile_id),
     _aft(0),
     _fbr(0)
 {
+  const VpfTable &aft = getAFT();
+  int row = aft.findMatch("id", _tile_id);
+  _face_id = aft.getValue(row, "fac_id").getInt();
 }
 
 VpfTile::VpfTile (const VpfTile &tile)
@@ -54,12 +56,6 @@ VpfTile::getBoundingRectangle () const
 {
   VpfRectangle rect;
   const VpfTable &fbr = getFBR();
-
-  if (_face_id == -1) {
-    const VpfTable &aft = getAFT();
-    int row = aft.findMatch("id", _tile_id);
-    _face_id = aft.getValue(row, "fac_id").getInt();
-  }
 
   int row = fbr.findMatch("id", _face_id);
   rect.minX = fbr.getValue(row, "xmin").getReal();
