@@ -120,7 +120,7 @@ foreach $file ( @files ) {
     # $y1 = $height - $y1;
     # $y2 = $height - $y2;
     print HTML "<AREA SHAPE=rect COORDS=$x1,$y2,$x2,$y1 ";
-    print HTML "HREF=ftp://fgfs.hfrl.umn.edu:/pub/fgfs/Scenery/$file.tar.gz ";
+    print HTML "HREF=ftp://ftp.flightgear.org/pub/fgfs/Scenery/$file.tar.gz ";
     printf(HTML "ALT=\"%s  %.2f Mb  $date\">\n", $file, $mb);
 }
 
