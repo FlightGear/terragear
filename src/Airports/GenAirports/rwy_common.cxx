@@ -233,8 +233,8 @@ void gen_runway_section( const TGRunway& rwy_info,
     double wid = rwy_info.width + 4;
     double sect_wid = wid * ( endw_pct - startw_pct );
 
-    FGTexParams tp;
-    tp = FGTexParams( p0,
+    TGTexParams tp;
+    tp = TGTexParams( p0,
                       sect_wid * SG_FEET_TO_METER,
                       sect_len * SG_FEET_TO_METER,
                       heading );

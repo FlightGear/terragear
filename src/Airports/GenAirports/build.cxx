@@ -81,7 +81,7 @@ SG_USING_STD(string);
 // except each point is the texture coordinate of the corresponding
 // point in the original polygon.
 static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
-					 const FGTexParams& tp,
+					 const TGTexParams& tp,
                                          const bool clip_result )
 {
     int i, j;
@@ -533,7 +533,7 @@ void build_airport( string airport_raw, float alt_m,
     }
 
     TGSuperPoly sp;
-    FGTexParams tp;
+    TGTexParams tp;
 
     // First pass: generate the precision runways since these have
     // precidence

@@ -86,7 +86,7 @@ void gen_visual_rwy( const TGRunway& rwy_info,
     //
 
     TGSuperPoly sp;
-    FGTexParams tp;
+    TGTexParams tp;
 
     // we add 2' to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they

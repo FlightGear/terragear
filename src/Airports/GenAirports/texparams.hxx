@@ -39,7 +39,7 @@
 SG_USING_STD(vector);
 
 
-class FGTexParams {
+class TGTexParams {
 
 private:
 
@@ -51,15 +51,15 @@ private:
 public:
 
     // Constructor and destructor
-    inline FGTexParams( void ) { }
-    inline FGTexParams( const Point3D &r, const double w, const double l,
+    inline TGTexParams( void ) { }
+    inline TGTexParams( const Point3D &r, const double w, const double l,
 			const double h ) {
 	ref = r;
 	width = w;
 	length = l;
 	heading = h;
     }
-    inline ~FGTexParams( void ) { }
+    inline ~TGTexParams( void ) { }
 
     inline Point3D get_ref() const { return ref; }
     inline void set_ref( const Point3D &r ) { ref = r; }
@@ -75,7 +75,7 @@ public:
 };
 
 
-typedef vector < FGTexParams > texparams_list;
+typedef vector < TGTexParams > texparams_list;
 typedef texparams_list::iterator texparams_list_iterator;
 typedef texparams_list::const_iterator const_texparams_list_iterator;
 

@@ -74,7 +74,7 @@ void gen_taxiway( const TGRunway& rwy_info,
     }
 	
     TGSuperPoly sp;
-    FGTexParams tp;
+    TGTexParams tp;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "len = " << rwy_info.length);
     SG_LOG(SG_GENERAL, SG_DEBUG, "width = " << rwy_info.width);
@@ -99,7 +99,7 @@ void gen_taxiway( const TGRunway& rwy_info,
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
     *accum = polygon_union( runway_a, *accum );
-    tp = FGTexParams( runway_a.get_pt(0,0),
+    tp = TGTexParams( runway_a.get_pt(0,0),
                       twid * SG_FEET_TO_METER,
                       250 * SG_FEET_TO_METER,
                       rwy_info.heading );
@@ -113,7 +113,7 @@ void gen_taxiway( const TGRunway& rwy_info,
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
     *accum = polygon_union( runway_b, *accum );
-    tp = FGTexParams( runway_b.get_pt(0,0),
+    tp = TGTexParams( runway_b.get_pt(0,0),
                       twid * SG_FEET_TO_METER,
                       250 * SG_FEET_TO_METER,
                       rwy_info.heading + 180.0 );
