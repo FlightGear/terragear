@@ -270,9 +270,6 @@ static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
 // load all 2d polygons matching the specified base path and clip
 // against each other to resolve any overlaps
 static int load_polys( FGConstruct& c ) {
-    string glc = c.get_work_base();
-    glc += "/LC-Global/gusgs2_0ll.img";
-    LandCover cover( glc );
     FGClipper clipper;
 
     string base = c.get_bucket().gen_base_path();
@@ -290,8 +287,13 @@ static int load_polys( FGConstruct& c ) {
 	cout << "  loaded " << count << " total polys" << endl;
     }
 
+#if 0
     // Load the land use polygons
+    string glc = c.get_work_base();
+    glc += "/LC-Global/gusgs2_0ll.img";
+    LandCover cover( glc );
     count += actual_load_landcover ( cover, c, clipper );
+#endif
 
     point2d min, max;
     min.x = c.get_bucket().get_center_lon() - 0.5 * c.get_bucket().get_width();

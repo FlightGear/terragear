@@ -32,7 +32,7 @@
 
 
 // Maximum nodes per tile
-#define FG_MAX_NODES 2000
+#define FG_MAX_NODES 4000
 
 
 #include <simgear/compiler.h>
