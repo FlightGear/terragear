@@ -557,7 +557,7 @@ static superpoly_list gen_taxiway_center_line_lights( const TGRunway& rwy_info,
         TGSuperPoly green;
         green.set_poly( lights_poly );
         green.set_normals( normals_poly );
-        green.set_material( "RWY_GREEN_LOW_LIGHTS" );
+        green.set_material( "RWY_GREEN_TAXIWAY_LIGHTS" );
 
         result.push_back( green );
     }
