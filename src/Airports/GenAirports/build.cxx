@@ -302,13 +302,13 @@ static void build_runway( const TGRunway& rwy_info,
 
     TGPolygon base, safe_base;
     if ( rwy_info.really_taxiway ) {
-	base = gen_runway_area_w_extend( rwy_info, 10, 10 );
+	base = gen_runway_area_w_extend( rwy_info, 0.0, 10.0, 10.0 );
         // also clear a safe area around the taxiway
-        safe_base = gen_runway_area_w_extend( rwy_info, 40, 40 );
+        safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 40.0, 40.0 );
     } else {
-	base = gen_runway_area_w_extend( rwy_info, 20, 20 );
+	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, 20.0 );
         // also clear a safe area around the runway
-        safe_base = gen_runway_area_w_extend( rwy_info, 300, 60 );
+        safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 150.0, 60.0 );
     }
     *apt_clearing = polygon_union(safe_base, *apt_clearing);
 
@@ -699,14 +699,20 @@ void build_airport( string airport_raw, float alt_m,
 	rwy_polys[k].set_poly( poly );
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes base ");
+    SG_LOG(SG_GENERAL, SG_INFO, "add nodes base ");
+    cout << " before: " << base_poly << endl;
+    cout << " tmp_nodes size = " << tmp_nodes.get_node_list().size() << endl;
+
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
+    cout << " after adding tmp_nodes: " << base_poly << endl;
+
     // write_polygon( base_poly, "base-add" );
     SG_LOG(SG_GENERAL, SG_DEBUG, "remove dups base ");
     base_poly = remove_dups( base_poly );
     SG_LOG(SG_GENERAL, SG_DEBUG, "remove bad contours base");
     base_poly = remove_bad_contours( base_poly );
     // write_polygon( base_poly, "base-fin" );
+    cout << " after clean up: " << base_poly << endl;
 
     // tesselate the polygons and prepair them for final output
 

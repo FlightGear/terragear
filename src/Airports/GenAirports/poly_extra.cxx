@@ -56,6 +56,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 				result );
 
 	result->add_node( contour, new_pt );
+        cout << "    adding = " << new_pt << endl;
 
 	add_intermediate_nodes( contour, new_pt, end, tmp_nodes,
 				result );

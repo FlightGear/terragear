@@ -40,7 +40,7 @@ static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
     double length;
 
     // Generate the 4 corners of the runway
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -95,7 +95,7 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -205,7 +205,7 @@ static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -282,7 +282,7 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -414,7 +414,7 @@ static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -510,7 +510,7 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -614,7 +614,7 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -755,7 +755,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -851,7 +851,7 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -948,7 +948,7 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1451,7 +1451,7 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1558,7 +1558,7 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1824,7 +1824,7 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
