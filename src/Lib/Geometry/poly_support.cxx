@@ -237,6 +237,12 @@ void polygon_tesselate( const FGPolygon &p,
 			point_list &out_pts )
 {
     struct triangulateio in, out, vorout;
+
+    // make sure all elements of these structs point to "NULL"
+    zero_triangulateio( &in );
+    zero_triangulateio( &out );
+    zero_triangulateio( &vorout );
+    
     int counter, start, end;
 
     // list of points
@@ -276,18 +282,15 @@ void polygon_tesselate( const FGPolygon &p,
 	}
     }
 
-    in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
-    for ( int i = 0; i < in.numberofpoints; ++i) {
-	in.pointmarkerlist[i] = 0;
-    }
-
-    // triangle list
-    in.numberoftriangles = 0;
+    // in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
+    // for ( int i = 0; i < in.numberofpoints; ++i) {
+    //    in.pointmarkerlist[i] = 0;
+    // }
+    in.pointmarkerlist = NULL;
 
     // segment list
     in.numberofsegments = in.numberofpoints;
     in.segmentlist = (int *) malloc(in.numberofsegments * 2 * sizeof(int));
-    in.segmentmarkerlist = (int *) malloc(in.numberofsegments * sizeof(int));
     counter = 0;
     start = 0;
     end = -1;
@@ -304,8 +307,9 @@ void polygon_tesselate( const FGPolygon &p,
 	in.segmentlist[counter++] = start;
     }
 
+    in.segmentmarkerlist = (int *) malloc(in.numberofsegments * sizeof(int));
     for ( int i = 0; i < in.numberofsegments; ++i ) {
-	in.segmentmarkerlist[i] = 0;
+       in.segmentmarkerlist[i] = 0;
     }
 
     // hole list
@@ -330,30 +334,26 @@ void polygon_tesselate( const FGPolygon &p,
 
     // region list
     in.numberofregions = 0;
-    in.regionlist = (REAL *) NULL;
+    in.regionlist = NULL;
 
-    // prep the output structures
-    out.pointlist = (REAL *) NULL;        // Not needed if -N switch used.
-    // Not needed if -N switch used or number of point attributes is zero:
-    out.pointattributelist = (REAL *) NULL;
-    out.pointmarkerlist = (int *) NULL;   // Not needed if -N or -B switch used.
-    out.trianglelist = (int *) NULL;      // Not needed if -E switch used.
-    // Not needed if -E switch used or number of triangle attributes is zero:
-    out.triangleattributelist = (REAL *) NULL;
-    out.neighborlist = (int *) NULL;      // Needed only if -n switch used.
-    // Needed only if segments are output (-p or -c) and -P not used:
-    out.segmentlist = (int *) NULL;
-    // Needed only if segments are output (-p or -c) and -P and -B not used:
-    out.segmentmarkerlist = (int *) NULL;
-    out.edgelist = (int *) NULL;          // Needed only if -e switch used.
-    out.edgemarkerlist = (int *) NULL;    // Needed if -e used and -B not used.
-  
-    vorout.pointlist = (REAL *) NULL;     // Needed only if -v switch used.
-    // Needed only if -v switch used and number of attributes is not zero:
-    vorout.pointattributelist = (REAL *) NULL;
-    vorout.edgelist = (int *) NULL;       // Needed only if -v switch used.
-    vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
-    
+    // no triangle list
+    in.numberoftriangles = 0;
+    in.numberofcorners = 0;
+    in.numberoftriangleattributes = 0;
+    in.trianglelist = NULL;
+    in.triangleattributelist = NULL;
+    in.trianglearealist = NULL;
+    in.neighborlist = NULL;
+
+    // no edge list
+    in.numberofedges = 0;
+    in.edgelist = NULL;
+    in.edgemarkerlist = NULL;
+    in.normlist = NULL;
+
+    // dump the results to screen
+    // print_tri_data( &in );
+
     // TEMPORARY
     write_tri_data(&in);
 
@@ -365,7 +365,7 @@ void polygon_tesselate( const FGPolygon &p,
     // Quite (Q)
 
     string tri_options;
-    tri_options = "pzYYenQ";
+    tri_options = "pzYYenQ";	// add multiple "V" entries for verbosity
     cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
@@ -480,16 +480,34 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 			       point_list &out_pts )
 {
     struct triangulateio in, out, vorout;
+
+    // make sure all elements of these structs point to "NULL"
+    zero_triangulateio( &in );
+    zero_triangulateio( &out );
+    zero_triangulateio( &vorout );
+    
     int counter, start, end;
 
     // list of points
     int contour_num = node->get_contour_num();
+    cout << "Tesselating contour = " << contour_num << endl;
     point_list contour = p.get_contour( contour_num );
 
     double max_x = contour[0].x();
 
     int total_pts = contour.size();
     cout << "contour = " << contour_num << " nodes = " << total_pts << endl;
+
+#if 0
+    // testing ... don't enable this otherwise
+    if ( contour_num != 0 || total_pts != 28 ) {
+	out_pts.push_back( Point3D(0, 0, 0) );
+	out_pts.push_back( Point3D(0, 1, 0) );
+	out_pts.push_back( Point3D(1, 1, 0) );
+	elelist.push_back( FGTriEle( 0, 1, 2, 0.0 ) );
+	return;
+    }
+#endif
 
     for ( int i = 0; i < hole_polys.contours(); ++i ) {
 	total_pts += hole_polys.contour_size( i );
@@ -538,13 +556,11 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 	}
     }
 
-    in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
-    for ( int i = 0; i < in.numberofpoints; ++i) {
-	in.pointmarkerlist[i] = 0;
-    }
-
-    // triangle list
-    in.numberoftriangles = 0;
+    // in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
+    // for ( int i = 0; i < in.numberofpoints; ++i) {
+    //     in.pointmarkerlist[i] = 0;
+    // }
+    in.pointmarkerlist = NULL;
 
     // segment list
     in.numberofsegments = in.numberofpoints;
@@ -592,30 +608,26 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     }
     // region list
     in.numberofregions = 0;
-    in.regionlist = (REAL *) NULL;
+    in.regionlist = NULL;
 
-    // prep the output structures
-    out.pointlist = (REAL *) NULL;        // Not needed if -N switch used.
-    // Not needed if -N switch used or number of point attributes is zero:
-    out.pointattributelist = (REAL *) NULL;
-    out.pointmarkerlist = (int *) NULL;   // Not needed if -N or -B switch used.
-    out.trianglelist = (int *) NULL;      // Not needed if -E switch used.
-    // Not needed if -E switch used or number of triangle attributes is zero:
-    out.triangleattributelist = (REAL *) NULL;
-    out.neighborlist = (int *) NULL;      // Needed only if -n switch used.
-    // Needed only if segments are output (-p or -c) and -P not used:
-    out.segmentlist = (int *) NULL;
-    // Needed only if segments are output (-p or -c) and -P and -B not used:
-    out.segmentmarkerlist = (int *) NULL;
-    out.edgelist = (int *) NULL;          // Needed only if -e switch used.
-    out.edgemarkerlist = (int *) NULL;    // Needed if -e used and -B not used.
-  
-    vorout.pointlist = (REAL *) NULL;     // Needed only if -v switch used.
-    // Needed only if -v switch used and number of attributes is not zero:
-    vorout.pointattributelist = (REAL *) NULL;
-    vorout.edgelist = (int *) NULL;       // Needed only if -v switch used.
-    vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
-    
+    // no triangle list
+    in.numberoftriangles = 0;
+    in.numberofcorners = 0;
+    in.numberoftriangleattributes = 0;
+    in.trianglelist = NULL;
+    in.triangleattributelist = NULL;
+    in.trianglearealist = NULL;
+    in.neighborlist = NULL;
+
+    // no edge list
+    in.numberofedges = 0;
+    in.edgelist = NULL;
+    in.edgemarkerlist = NULL;
+    in.normlist = NULL;
+
+    // dump the results to screen
+    // print_tri_data( &in );
+
     // TEMPORARY
     write_tri_data(&in);
 
@@ -627,7 +639,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     // Quite (Q)
 
     string tri_options;
-    tri_options = "pzYYenQ";
+    tri_options = "pzYYenQ";	// add multiple "V" entries for verbosity
     cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
@@ -953,7 +965,8 @@ FGPolygon remove_dups( const FGPolygon &poly ) {
 	    result.set_hole_flag( i, flag );
 	} else {
 	    // too small an area ... add a token point to the contour
-	    // to keep other things happy
+	    // to keep other things happy, but this "bad" contour will
+	    // get nuked later
 	    result.add_node( i, begin );
 	}
     }
