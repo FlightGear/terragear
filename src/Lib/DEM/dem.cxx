@@ -200,7 +200,7 @@ FGDem::read_a_record() {
     }
   
     // clean off the trailing whitespace
-    name = trim(name);
+    name = simgear::strutils::rstrip(name);
     cout << "    Quad name field: " << name << endl;
 
     // DEM level code, 3 reflects processing by DMA
@@ -291,9 +291,9 @@ FGDem::read_a_record() {
     i = token.length();
     cout << "    length = " << i << "\n";
 
-    inum = atoi( token.substr( 0, i - 36 ) );
-    row_step = atof( token.substr( i - 24, 12 ) );
-    col_step = atof( token.substr( i - 36, 12 ) );
+    inum = atoi( token.substr( 0, i - 36 ).c_str() );
+    row_step = atof( token.substr( i - 24, 12 ).c_str() );
+    col_step = atof( token.substr( i - 36, 12 ).c_str() );
     cout << "    Accuracy code = " << inum << "\n";
     cout << "    column step = " << col_step << 
 	"  row step = " << row_step << "\n";
