@@ -174,98 +174,91 @@ static int actual_load_polys( const string& dir,
 // Merge a polygon with an existing one if possible, append a new
 // one otherwise; this function is used by actual_load_landcover, below,
 // to reduce the number of separate polygons.
-static void inline add_to_polys (vector<FGPolygon> &list,
-				 const FGPolygon &poly)
-{
-  int len = list.size();
-  FGPolygon temp;
-
-				// Look for an adjacent polygon
-  if (len > 0) {
-    for (int i = 0; i < len; i++) {
-      temp = polygon_union(list[i], poly);
-      if (temp.contours() == 1) {	// no new contours: they are adjacent
-	cout << "Merging with existing land-cover polygon" << endl;
-	list[i] = temp;
-	return;
-      }
+static void inline add_to_polys ( FGPolygon &accum, const FGPolygon &poly) {
+    if ( accum.contours() > 0 ) {
+	accum = polygon_union( accum, poly );
+    } else {
+	accum = poly;
     }
-  }
-
-				// No adjacent polygons available; append
-				// this one to the list.
-  cout << "Adding new land-cover polygon" << endl;
-  list.push_back(poly);
 }
 
 
-// Generate polygons from land-cover raster.  Horizontally- or vertically-
-// adjacent polygons will be merged automatically.
+// Generate polygons from land-cover raster.  Horizontally- or
+// vertically- adjacent polygons will be merged automatically.
 static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
 				   FGClipper &clipper ) {
 
     int count = 0;
-    double lon, lat;
-    vector<FGPolygon> poly_list[FG_MAX_AREA_TYPES];
+    FGPolygon polys[FG_MAX_AREA_TYPES];
     FGPolygon poly;		// working polygon
 
-				// Get the top corner of the tile
-    lon =
-      c.get_bucket().get_center_lon() - (0.5 * c.get_bucket().get_width());
-    lat =
-      c.get_bucket().get_center_lat() - (0.5 * c.get_bucket().get_height());
+    // Get the top corner of the tile
+    double base_lon = c.get_bucket().get_center_lon() -
+	(0.5 * c.get_bucket().get_width());
+    double base_lat = c.get_bucket().get_center_lat() -
+	(0.5 * c.get_bucket().get_height());
 
-    cout << "DPM: tile at " << lon << ',' << lat << endl;
+    cout << "DPM: tile at " << base_lon << ',' << base_lat << endl;
     
+    double max_lon = c.get_bucket().get_center_lon() +
+	(0.5 * c.get_bucket().get_width());
+    double max_lat = c.get_bucket().get_center_lat() +
+	(0.5 * c.get_bucket().get_height());
 
-				// Figure out how many units wide and
-				// high this tile is; each unit is
-				// 30 arc seconds.
-    int x_span = int(120 * bucket_span(lat)); // arcsecs of longitude
-    int y_span = int(120 * FG_BUCKET_SPAN); // arcsecs of latitude
-    for (int x = 0; x < x_span; x++) {
-      for (int y = 0; y < y_span; y++) {
-				// Figure out the boundaries of the
-				// 30 arcsec square.
-	double x1 = lon + (x * (1.0/120.0));
-	double y1 = lat + (y * (1.0/120.0));
-	double x2 = x1 + (1.0/120.0);
-	double y2 = y1 + (1.0/120.0);
-				// Look up the land cover for the square
-	int cover_value = cover.getValue(x1 + (1.0/240.0), y1 + (1.0/240.0));
-	cout << " position: " << x1 << ',' << y1 << ','
-	     << cover.getDescUSGS(cover_value) << endl;
-	AreaType area = translateUSGSCover(cover_value);
-	if (area != DefaultArea) {
-				// Create a square polygon and merge
-				// it into the list.
-	  poly.erase();
-	  poly.add_node(0, Point3D(x1, y1, 0.0));
-	  poly.add_node(0, Point3D(x1, y2, 0.0));
-	  poly.add_node(0, Point3D(x2, y2, 0.0));
-	  poly.add_node(0, Point3D(x2, y1, 0.0));
-	  add_to_polys(poly_list[area], poly);
+    double dx = 1.0 / 120.0;
+    double dy = dx;
+
+    // Figure out how many units wide and high this tile is; each unit
+    // is 30 arc seconds.
+    // int x_span = int(120 * bucket_span(base_lat)); // arcsecs of longitude
+    // int y_span = int(120 * FG_BUCKET_SPAN); // arcsecs of latitude
+
+    double x1 = base_lon;
+    double y1 = base_lat;
+    double x2 = x1 + dx;
+    double y2 = y1 + dy;
+
+    while ( x1 < max_lon ) {
+	while ( y1 < max_lat ) {
+	    // Look up the land cover for the square
+	    int cover_value = cover.getValue(x1 + (1.0/240.0),
+					     y1 + (1.0/240.0));
+	    cout << " position: " << x1 << ',' << y1 << ','
+		 << cover.getDescUSGS(cover_value) << endl;
+	    AreaType area = translateUSGSCover(cover_value);
+	    if (area != DefaultArea) {
+		// Create a square polygon and merge it into the list.
+		poly.erase();
+		poly.add_node(0, Point3D(x1, y1, 0.0));
+		poly.add_node(0, Point3D(x1, y2, 0.0));
+		poly.add_node(0, Point3D(x2, y2, 0.0));
+		poly.add_node(0, Point3D(x2, y1, 0.0));
+		add_to_polys(polys[area], poly);
+	    }
+
+	    y1 = y2;
+	    y2 += dy;
 	}
-      }
+	x1 = x2;
+	x2 += dx;
+	y1 = base_lat;
+	y2 = y1 + dy;
     }
 
-				// Now that we're finished looking up
-				// land cover, we have a list of lists
-				// of polygons, one (possibly-empty)
-				// list for each area type.  Add the
-				// remaining polygons to the clipper.
-    for (int i = 0; i < FG_MAX_AREA_TYPES; i++) {
-      int len = poly_list[i].size();
-      for (int j = 0; j < len; j++) {
-	clipper.add_poly(i, poly_list[i][j]);
-	count++;
-      }
+    // Now that we're finished looking up land cover, we have a list
+    // of lists of polygons, one (possibly-empty) list for each area
+    // type.  Add the remaining polygons to the clipper.
+    for ( int i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
+	if ( polys[i].contours() ) {
+	    clipper.add_poly( i, polys[i] );
+	    count++;
+	}
     }
 
-				// Return the number of polygons
-				// actually read.
+    // Return the number of polygons actually read.
     return count;
 }
+
 
 // load all 2d polygons matching the specified base path and clip
 // against each other to resolve any overlaps
@@ -280,20 +273,18 @@ static int load_polys( FGConstruct& c ) {
     clipper.init();
 
     // load 2D polygons from all directories provided
-    for (int i = 0; i < load_dirs.size(); i++) {
+    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
 	poly_path = load_dirs[i] + '/' + base;
 	cout << "poly_path = " << poly_path << endl;
 	count += actual_load_polys( poly_path, c, clipper );
 	cout << "  loaded " << count << " total polys" << endl;
     }
 
-#if 0
     // Load the land use polygons
     string glc = c.get_work_base();
     glc += "/LC-Global/gusgs2_0ll.img";
     LandCover cover( glc );
     count += actual_load_landcover ( cover, c, clipper );
-#endif
 
     point2d min, max;
     min.x = c.get_bucket().get_center_lon() - 0.5 * c.get_bucket().get_width();
@@ -318,7 +309,7 @@ static int load_dem( FGConstruct& c, FGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
 
-    for (int i = 0; i < load_dirs.size(); i++) {
+    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
 	string dem_path = load_dirs[i] + "/" + base
 	    + "/" + c.get_bucket().gen_index_str() + ".dem";
 	cout << "dem_path = " << dem_path << endl;
@@ -643,7 +634,7 @@ static void do_output( FGConstruct& c, FGGenOutput& output ) {
 static void do_custom_objects( const FGConstruct& c ) {
     FGBucket b = c.get_bucket();
 
-    for (int i = 0; i < load_dirs.size(); i++) {
+    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
 	string base_dir = load_dirs[i] + "/" + b.gen_base_path();
 	string index_file = base_dir + "/" + b.gen_index_str() + ".ind";
 	cout << "collecting custom objects from " << index_file << endl;
