@@ -359,7 +359,7 @@ void polygon_tesselate( const FGPolygon &p,
     // print_tri_data( &in );
 
     // TEMPORARY
-    write_tri_data(&in);
+    // write_tri_data(&in);
     /* cout << "Press return to continue:";
     char junk;
     cin >> junk; */
@@ -638,7 +638,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     // print_tri_data( &in );
 
     // TEMPORARY
-    write_tri_data(&in);
+    // write_tri_data(&in);
     /* cout << "Press return to continue:";
     char junk;
     cin >> junk; */
