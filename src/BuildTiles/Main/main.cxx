@@ -262,9 +262,10 @@ static AreaType get_area_type (const LandCover &cover,
         }
     }
 
-				// OK, give up and return default
+    // OK, give up and return default
     return DefaultArea;
 }
+
 
 // make the area specified area, look up the land cover type, and add
 // it to polys
@@ -616,18 +617,20 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
     cout << "  Total Nodes = " << geod_nodes.size() << endl;
     cout << "  Total triangles = " << tri_elements.size() << endl;
     for ( unsigned int i = 0; i < tri_elements.size(); ++i ) {
+	const double dx = 1.0 / 120.0;
+	const double dy = 1.0 / 120.0;
         TGTriEle t = tri_elements[i];
         if ( t.get_attribute() == DefaultArea ) {
             Point3D p1 = geod_nodes[t.get_n1()];
             Point3D p2 = geod_nodes[t.get_n2()];
             Point3D p3 = geod_nodes[t.get_n3()];
 
-            AreaType a1 = get_area_type ( c.get_cover(), p1.x(), p1.y(),
-                                          1.0 / 120.0, 1.0 / 120.0 );
-            AreaType a2 = get_area_type ( c.get_cover(), p2.x(), p2.y(),
-                                          1.0 / 120.0, 1.0 / 120.0 );
-            AreaType a3 = get_area_type ( c.get_cover(), p3.x(), p3.y(),
-                                          1.0 / 120.0, 1.0 / 120.0 );
+            AreaType a1 = get_area_type( c.get_cover(), p1.x(), p1.y(),
+                                         dx, dy );
+            AreaType a2 = get_area_type( c.get_cover(), p2.x(), p2.y(),
+                                         dx, dy );
+            AreaType a3 = get_area_type( c.get_cover(), p3.x(), p3.y(),
+                                         dx, dy );
 
             // update the original triangle element attribute
             AreaType new_area;
@@ -644,9 +647,9 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
                 // from the middle/average
                 Point3D average = ( p1 + p2 + p3 ) / 3.0;
                 cout << "    average triangle center = " << average;
-                new_area = get_area_type ( c.get_cover(), 
-                                           average.x(), average.y(),
-                                           1.0 / 120.0, 1.0 / 120.0 );
+                new_area = get_area_type( c.get_cover(), 
+                                          average.x(), average.y(),
+                                          dx, dy );
             }
               
             cout << "  new attrib = " << get_area_name( new_area ) << endl;
