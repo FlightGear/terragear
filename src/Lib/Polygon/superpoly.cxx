@@ -26,7 +26,7 @@
 
 // Constructor
 FGSuperPoly::FGSuperPoly() :
-flag( 0 )
+flag( "" )
 {
 }
 
