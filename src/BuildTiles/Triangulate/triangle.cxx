@@ -27,6 +27,9 @@
 
 #include "triangle.hxx"
 
+FG_USING_STD(cout);
+FG_USING_STD(endl);
+
 
 // Constructor
 FGTriangle::FGTriangle( void ) {
@@ -46,6 +49,7 @@ FGTriangle::build( const point_list& corner_list,
 {
     int debug_counter = 0;
     int index;
+    int i;
 
     in_nodes.clear();
     in_segs.clear();
@@ -75,7 +79,7 @@ FGTriangle::build( const point_list& corner_list,
     // process polygons in priority order
     cout << "prepairing node list and polygons" << endl;
 
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	polylist[i].clear();
 
 	cout << "area type = " << i << endl;
@@ -163,7 +167,7 @@ FGTriangle::build( const point_list& corner_list,
 	index = in_nodes.course_add( *f_current );
     }
 
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	if ( polylist[i].size() ) {
 	    cout << get_area_name((AreaType)i) << " = " 
 		 << polylist[i].size() << endl;
@@ -179,7 +183,7 @@ FGTriangle::build( const point_list& corner_list,
     point_list node_list = in_nodes.get_node_list();
     FGPolygon poly;
 
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	cout << "area type = " << i << endl;
 	poly_list_iterator tp_current, tp_last;
 	tp_current = polylist[i].begin();
@@ -243,10 +247,12 @@ int FGTriangle::rebuild( FGConstruct& c ) {
 
 #if 0
 static void write_out_data(struct triangulateio *out) {
+    int i, j;
+
     FILE *node = fopen("tile.node", "w");
     fprintf(node, "%d 2 %d 0\n", 
 	    out->numberofpoints, out->numberofpointattributes);
-    for (int i = 0; i < out->numberofpoints; ++i) {
+    for ( i = 0; i < out->numberofpoints; ++i) {
 	fprintf(node, "%d %.6f %.6f %.2f\n", 
 		i, out->pointlist[2*i], out->pointlist[2*i + 1], 0.0);
     }
@@ -254,12 +260,12 @@ static void write_out_data(struct triangulateio *out) {
 
     FILE *ele = fopen("tile.ele", "w");
     fprintf(ele, "%d 3 0\n", out->numberoftriangles);
-    for (int i = 0; i < out->numberoftriangles; ++i) {
+    for ( i = 0; i < out->numberoftriangles; ++i) {
         fprintf(ele, "%d ", i);
-        for (int j = 0; j < out->numberofcorners; ++j) {
+        for ( j = 0; j < out->numberofcorners; ++j) {
 	    fprintf(ele, "%d ", out->trianglelist[i * out->numberofcorners + j]);
         }
-        for (int j = 0; j < out->numberoftriangleattributes; ++j) {
+        for ( j = 0; j < out->numberoftriangleattributes; ++j) {
 	    fprintf(ele, "%.6f ", 
 		    out->triangleattributelist[i 
 					      * out->numberoftriangleattributes
@@ -273,18 +279,18 @@ static void write_out_data(struct triangulateio *out) {
     FILE *fp = fopen("tile.poly", "w");
     fprintf(fp, "0 2 1 0\n");
     fprintf(fp, "%d 1\n", out->numberofsegments);
-    for (int i = 0; i < out->numberofsegments; ++i) {
+    for ( i = 0; i < out->numberofsegments; ++i) {
 	fprintf(fp, "%d %d %d %d\n", 
 		i, out->segmentlist[2*i], out->segmentlist[2*i + 1],
 		out->segmentmarkerlist[i] );
     }
     fprintf(fp, "%d\n", out->numberofholes);
-    for (int i = 0; i < out->numberofholes; ++i) {
+    for ( i = 0; i < out->numberofholes; ++i) {
 	fprintf(fp, "%d %.6f %.6f\n", 
 		i, out->holelist[2*i], out->holelist[2*i + 1]);
     }
     fprintf(fp, "%d\n", out->numberofregions);
-    for (int i = 0; i < out->numberofregions; ++i) {
+    for ( i = 0; i < out->numberofregions; ++i) {
 	fprintf(fp, "%d %.6f %.6f %.6f\n", 
 		i, out->regionlist[4*i], out->regionlist[4*i + 1],
 		out->regionlist[4*i + 2]);
@@ -306,13 +312,14 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     Point3D p;
     struct triangulateio in, out, vorout;
     int counter;
+    int i, j;
 
     // point list
     point_list node_list = in_nodes.get_node_list();
     in.numberofpoints = node_list.size();
     in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
 
-    for ( int i = 0; i < in.numberofpoints; ++i ) {
+    for ( i = 0; i < in.numberofpoints; ++i ) {
 	in.pointlist[2*i] = node_list[i].x();
 	in.pointlist[2*i + 1] = node_list[i].y();
     }
@@ -321,12 +328,12 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     in.pointattributelist = (REAL *) malloc(in.numberofpoints *
 					    in.numberofpointattributes *
 					    sizeof(REAL));
-    for ( int i = 0; i < in.numberofpoints * in.numberofpointattributes; ++i) {
+    for ( i = 0; i < in.numberofpoints * in.numberofpointattributes; ++i) {
 	in.pointattributelist[i] = node_list[i].z();
     }
 
     in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
-    for ( int i = 0; i < in.numberofpoints; ++i) {
+    for ( i = 0; i < in.numberofpoints; ++i) {
 	in.pointmarkerlist[i] = 0;
     }
 
@@ -364,7 +371,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     counter = 0;
     for ( ; h_current != h_last; ++h_current ) {
 	poly = *h_current;
-	for ( int j = 0; j < poly.contours(); ++j ) {
+	for ( j = 0; j < poly.contours(); ++j ) {
 	    p = poly.get_point_inside( j );
 	    in.holelist[counter++] = p.x();
 	    in.holelist[counter++] = p.y();
@@ -373,13 +380,13 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 
     // region list
     in.numberofregions = 0;
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	poly_list_iterator h_current, h_last;
 	h_current = polylist[i].begin();
 	h_last = polylist[i].end();
 	for ( ; h_current != h_last; ++h_current ) {
 	    poly = *h_current;
-	    for ( int j = 0; j < poly.contours(); ++j ) {
+	    for ( j = 0; j < poly.contours(); ++j ) {
 		if ( ! poly.get_hole_flag( j ) ) {
 		    ++in.numberofregions;
 		}
@@ -389,13 +396,13 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 
     in.regionlist = (REAL *) malloc(in.numberofregions * 4 * sizeof(REAL));
     counter = 0;
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	poly_list_iterator h_current, h_last;
 	h_current = polylist[(int)i].begin();
 	h_last = polylist[(int)i].end();
 	for ( ; h_current != h_last; ++h_current ) {
 	    poly = *h_current;
-	    for ( int j = 0; j < poly.contours(); ++j ) {
+	    for ( j = 0; j < poly.contours(); ++j ) {
 		if ( ! poly.get_hole_flag( j ) ) {
 		    p = poly.get_point_inside( j );
 		    cout << "Region point = " << p << endl;
@@ -472,7 +479,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 
     // nodes
     out_nodes.clear();
-    for ( int i = 0; i < out.numberofpoints; ++i ) {
+    for ( i = 0; i < out.numberofpoints; ++i ) {
 	Point3D p( out.pointlist[2*i], out.pointlist[2*i + 1], 
 		   out.pointattributelist[i] );
 	// cout << "point = " << p << endl;
@@ -481,7 +488,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
 
     // segments
     out_segs.clear();
-    for ( int i = 0; i < out.numberofsegments; ++i ) {
+    for ( i = 0; i < out.numberofsegments; ++i ) {
 	out_segs.unique_add( FGTriSeg( out.segmentlist[2*i], 
 				       out.segmentlist[2*i+1],
 				       out.segmentmarkerlist[i] ) );
@@ -491,7 +498,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     elelist.clear();
     int n1, n2, n3;
     double attribute;
-    for ( int i = 0; i < out.numberoftriangles; ++i ) {
+    for ( i = 0; i < out.numberoftriangles; ++i ) {
 	n1 = out.trianglelist[i * 3];
 	n2 = out.trianglelist[i * 3 + 1];
 	n3 = out.trianglelist[i * 3 + 2];

@@ -28,7 +28,11 @@
 
 #include "simple_clip.hxx"
 
+FG_USING_STD(cout);
+FG_USING_STD(endl);
+
 #define CLIP_EPSILON 0.000000000001
+
 
 // Given a line segment specified by two endpoints p1 and p2, return
 // the x value of a point on the line that intersects with the

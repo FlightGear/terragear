@@ -504,7 +504,7 @@ static triele_list contour_tesselate( const point_list contour ) {
     vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
     
     // TEMPORARY
-    write_tri_data(&in);
+    // write_tri_data(&in);
 
     // Triangulate the points.  Switches are chosen to read and write
     // a PSLG (p), number everything from zero (z), and produce an
@@ -513,14 +513,13 @@ static triele_list contour_tesselate( const point_list contour ) {
     // splitting (YY), no quality refinement (q)
 
     string tri_options;
-    // tri_options = "pzYYen";
-    tri_options = "zYYen";
+    tri_options = "pzYYen";
     cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
 
     // TEMPORARY
-    // write_out_data(&out);
+    write_tri_data(&out);
 
     // now copy the results back into the corresponding FGTriangle
     // structures
@@ -646,6 +645,8 @@ void calc_points_inside( FGPolygon& p ) {
 	    p.set_point_inside( i, hole_pt );
 	}
     }
+
+    exit(0);
 
     // next calculate an inside point for all non-hole contours taking
     // into consideration the holes

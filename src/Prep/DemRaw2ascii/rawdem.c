@@ -26,17 +26,37 @@
 #  include <config.h>
 #endif
 
-#include <math.h>      /* rint() */
+#include <math.h>		/* rint() */
 #include <stdio.h>
-#include <stdlib.h>    /* atoi() atof() */
-#include <string.h>    /* swab() */
+#include <stdlib.h>		/* atoi() atof() */
+#include <string.h>		/* swab() */
 
-#include <sys/types.h> /* open() */
+#include <sys/types.h>		/* open() */
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <unistd.h>    /* close() */
+#ifdef _MSC_VER
+#  include <io.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>		/* close() */
+#endif
 
 #include "rawdem.h"
+
+
+#if defined( HAVE_UNISTD_H ) && !defined( HAVE_RINT )
+double round( double a ) {
+    long i;
+ 
+    if ( a > 0.0 ) {
+	i = (long)( a + 0.5 );
+    } else {
+	i = (long)( a - 0.5 );
+    }
+    
+    return (double)i;
+}
+#endif
 
 
 /* Read the DEM header to determine various key parameters for this
@@ -88,28 +108,28 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 #ifdef HAVE_RINT
 	    raw->ulxmap = (int)rint(tmp * 3600.0); /* convert to arcsec */
 #else
-#  error Port me rint()
+	    raw->ulxmap = (int)round(tmp * 3600.0); /* convert to arcsec */
 #endif
 	} else if ( strcmp(key, "ULYMAP") == 0 ) {
 	    tmp = atof(value);
 #ifdef HAVE_RINT
 	    raw->ulymap = (int)rint(tmp * 3600.0); /* convert to arcsec */
 #else
-#  error Port me rint()
+	    raw->ulymap = (int)round(tmp * 3600.0); /* convert to arcsec */
 #endif
 	} else if ( strcmp(key, "XDIM") == 0 ) {
 	    tmp = atof(value);
 #ifdef HAVE_RINT
 	    raw->xdim = (int)rint(tmp * 3600.0);   /* convert to arcsec */
 #else
-#  error Port me rint()
+	    raw->xdim = (int)round(tmp * 3600.0);   /* convert to arcsec */
 #endif
 	} else if ( strcmp(key, "YDIM") == 0 ) {
 	    tmp = atof(value);
 #ifdef HAVE_RINT
 	    raw->ydim = (int)rint(tmp * 3600.0);   /* convert to arcsec */
 #else
-#  error Port me rint()
+	    raw->ydim = (int)round(tmp * 3600.0);   /* convert to arcsec */
 #endif
 	} else {
 	    /* ignore for now */
@@ -475,5 +495,3 @@ void rawProcessStrip( fgRAWDEM *raw, int lat_degrees, char *path ) {
 	rawDumpAsciiDEM(raw, path, (raw->rootx / 3600) + i, lat_degrees - 1);
     }
 }
-
-

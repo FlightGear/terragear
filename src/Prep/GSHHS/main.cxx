@@ -35,6 +35,10 @@
 #include <Polygon/polygon.hxx>
 #include <Polygon/split.hxx>
 
+#ifdef _MSC_VER
+#  include <Win32/mkdir.hpp>
+#endif
+
 #include "gshhs.h"
 #include "gshhs_split.hxx"
 
@@ -63,8 +67,13 @@ int main( int argc, char **argv ) {
 
     // make work directory
     string work_dir = argv[2];
+
+#ifdef _MSC_VER
+    fg_mkdir( work_dir.c_str() );
+#else
     string command = "mkdir -p " + work_dir;
     system( command.c_str() );
+#endif
 
     // get the specified data level
     int target_level = atoi(argv[3]);

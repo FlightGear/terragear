@@ -22,9 +22,13 @@
  
 #include <simgear/compiler.h>
 
+#include STL_IOSTREAM
 #include STL_STRING
 
 #include "names.hxx"
+
+FG_USING_STD(cout);
+FG_USING_STD(endl);
 
 
 // return area type from text name

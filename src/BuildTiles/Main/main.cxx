@@ -21,12 +21,20 @@
 // $Id$
 
 
-#include <sys/types.h>  // for directory reading
-#include <dirent.h>     // for directory reading
+#ifdef _MSC_VER
+#  include <io.h>
+#else
+#  include <sys/types.h>	// for directory reading
+#  include <dirent.h>		// for directory reading
+#endif
 
-#include <sys/time.h>		// set mem allocation limit
-#include <sys/resource.h>	// set mem allocation limit
-#include <unistd.h>		// set mem allocation limit
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>		// set mem allocation limit
+#endif
+#ifndef _MSC_VER
+#  include <sys/resource.h>	// set mem allocation limit
+#  include <unistd.h>		// set mem allocation limit
+#endif
 
 #include <plib/sg.h>
 
@@ -41,6 +49,9 @@
 #include <Triangulate/triangle.hxx>
 
 #include "construct.hxx"
+
+FG_USING_STD(cout);
+FG_USING_STD(endl);
 
 
 // do actual scan of directory and loading of files
@@ -236,13 +247,14 @@ static double distance2D( const Point3D p1, const Point3D p2 ) {
 
 // fix the elevations of the geodetic nodes
 static void fix_point_heights( FGConstruct& c, const FGArray& array ) {
+    int i;
     double z;
 
     cout << "fixing node heights" << endl;
 
     point_list raw_nodes = c.get_tri_nodes().get_node_list();
 
-    for ( int i = 0; i < (int)raw_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)raw_nodes.size(); ++i ) {
 	z = array.interpolate_altitude( raw_nodes[i].x() * 3600.0, 
 					raw_nodes[i].y() * 3600.0 );
 	cout << "  old z = " << raw_nodes[i].z() << "  new z = " << z << endl;
@@ -261,7 +273,7 @@ static void fix_point_heights( FGConstruct& c, const FGArray& array ) {
     int n1, n2, n3;
 
     for ( int count = 0; count < 3; ++count ) {
-	for ( int i = 0; i < (int)tris.size(); ++i ) {
+	for ( i = 0; i < (int)tris.size(); ++i ) {
 	    double e1, e2, e3, ave, min;
 
 	    t = tris[i];
@@ -314,7 +326,7 @@ static void fix_point_heights( FGConstruct& c, const FGArray& array ) {
 	}
     }
  
-    for ( int i = 0; i < (int)tris.size(); ++i ) {
+    for ( i = 0; i < (int)tris.size(); ++i ) {
 	// set all ocean nodes to 0.0
 	t = tris[i];
 	n1 = t.get_n1();

@@ -22,10 +22,19 @@
  */
 
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
-#include <unistd.h> /* tmp for read() */
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h> /* tmp for read() */
+#endif
+#ifdef HAVE_STDLIB_H
+#  include <stdlib.h>
+#endif
 
 #include "rawdem.h"
 

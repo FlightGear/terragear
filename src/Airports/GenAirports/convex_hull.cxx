@@ -101,6 +101,8 @@ bool test_point(Point3D Pa, Point3D Pb, Point3D Pc) {
 // point2d.  The algorithm description can be found at:
 // http://riot.ieor.berkeley.edu/riot/Applications/ConvexHull/CHDetails.html
 FGPolygon convex_hull( const point_list& input_list ) {
+    int i;
+
     map_iterator map_current, map_next, map_next_next, map_last;
 
     // list of translated points
@@ -120,7 +122,7 @@ FGPolygon convex_hull( const point_list& input_list ) {
     in_count = input_list.size();
     sum_x = sum_y = 0.0;
 
-    for ( int i = 0; i < in_count; ++i ) {
+    for ( i = 0; i < in_count; ++i ) {
 	sum_x += input_list[i].x();
 	sum_y += input_list[i].y();
     }
@@ -132,7 +134,7 @@ FGPolygon convex_hull( const point_list& input_list ) {
     // STEP TWO:  Translate input points so average is at origin
     trans_list.clear();
 
-    for ( int i = 0; i < in_count; ++i ) {
+    for ( i = 0; i < in_count; ++i ) {
 	p = Point3D( input_list[i].x() - average.x(),
 		     input_list[i].y() - average.y(), 0 );
 	// printf("%.6f %.6f\n", p.x, p.y);
@@ -142,7 +144,7 @@ FGPolygon convex_hull( const point_list& input_list ) {
     // STEP THREE:  convert to radians and sort by theta
     radians_map.clear();
 
-    for ( int i = 0; i < in_count; ++i ) {
+    for ( i = 0; i < in_count; ++i ) {
 	p = cart_to_polar_2d( trans_list[i] );
 	if ( p.x() > radians_map[p.y()] ) {
 	    radians_map[p.y()] = p.x();
@@ -243,5 +245,3 @@ FGPolygon convex_hull( const point_list& input_list ) {
 
     return con_hull;
 }
-
-

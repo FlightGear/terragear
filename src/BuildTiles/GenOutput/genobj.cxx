@@ -29,7 +29,14 @@
 #include <Polygon/names.hxx>
 #include "scenery_version.hxx"
 
+#ifdef _MSC_VER
+#  include <win32/mkdir.hpp>
+#endif
+
 #include "genobj.hxx"
+
+FG_USING_STD(cout);
+FG_USING_STD(endl);
 
 
 // calculate the global bounding sphere.  Center is the center of the
@@ -151,6 +158,8 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
 // build the necessary output structures based on the triangulation
 // data
 int FGGenOutput::build( FGConstruct& c ) {
+    int i, j;
+
     FGTriNodes trinodes = c.get_tri_nodes();
 
     // copy the geodetic node list into this class
@@ -162,7 +171,7 @@ int FGGenOutput::build( FGConstruct& c ) {
     // build the trifan list
     cout << "total triangles = " << tri_elements.size() << endl;
     FGGenFans f;
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	triele_list area_tris;
 	area_tris.erase( area_tris.begin(), area_tris.end() );
 
@@ -185,8 +194,8 @@ int FGGenOutput::build( FGConstruct& c ) {
     cout << "calculating texture coordinates" << endl;
     tex_coords.clear();
 
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
-	for ( int j = 0; j < (int)fans[i].size(); ++j ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+	for ( j = 0; j < (int)fans[i].size(); ++j ) {
 	    // int_list t_list = calc_tex_coords( c, geod_nodes, fans[i][j] );
 	    // cout << fans[i][j].size() << " === " 
 	    //      << t_list.size() << endl;
@@ -302,13 +311,19 @@ void FGGenOutput::calc_bounding_sphere( FGConstruct& c, const FGTriEle& t,
 // write out the fgfs scenery file
 int FGGenOutput::write( FGConstruct &c ) {
     Point3D p;
+    int i;
 
     string base = c.get_output_base();
     FGBucket b = c.get_bucket();
 
     string dir = base + "/Scenery/" + b.gen_base_path();
+
+#ifdef _MSCVER
+    fg_mkdir( dir.c_str );
+#else
     string command = "mkdir -p " + dir;
     system(command.c_str());
+#endif
 
     string file = dir + "/" + b.gen_index_str();
     cout << "Output file = " << file << endl;
@@ -361,7 +376,7 @@ int FGGenOutput::write( FGConstruct &c ) {
     // write texture coordinates
     point_list tex_coord_list = tex_coords.get_node_list();
     fprintf(fp, "# texture coordinate list\n");
-    for ( int i = 0; i < (int)tex_coord_list.size(); ++i ) {
+    for ( i = 0; i < (int)tex_coord_list.size(); ++i ) {
 	p = tex_coord_list[i];
 	fprintf(fp, "vt %.5f %.5f\n", p.x(), p.y());
     }
@@ -374,7 +389,7 @@ int FGGenOutput::write( FGConstruct &c ) {
     fprintf(fp, "\n");
 
     int total_tris = 0;
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	if ( (int)fans[i].size() > 0 ) {
 	    string attr_name = get_area_name( (AreaType)i );
 	    calc_group_bounding_sphere( c, fans[i], &center, &radius );

@@ -28,6 +28,9 @@
 
 #include "trisegs.hxx"
 
+FG_USING_STD(cout);
+FG_USING_STD(endl);
+
 
 // Constructor 
 FGTriSegments::FGTriSegments( void ) {

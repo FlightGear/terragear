@@ -36,6 +36,9 @@
 #include "gshhs_split.hxx"
 #include "simple_clip.hxx"
 
+FG_USING_STD(cout);
+FG_USING_STD(string);
+
 
 // process shape front end ... split shape into lon = -180 ... 180,
 // -360 ... -180, and 180 ... 360 ... shift the offset sections and

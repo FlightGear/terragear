@@ -423,7 +423,9 @@ static FGPolygon add_nodes_to_poly( const FGPolygon& poly,
 	add_intermediate_nodes( i, p0, p1, tmp_nodes, &result );
 
 	// end of segment is beginning of next segment
-	result.add_node( i, p1 );
+	// 5/9/2000 CLO - this results in duplicating the last point
+	// of a contour so I have removed this line.
+	// result.add_node( i, p1 );
 
 	// maintain original hole flag setting
 	result.set_hole_flag( i, poly.get_hole_flag( i ) );

@@ -32,6 +32,8 @@
 
 #include "clipper.hxx"
 
+FG_USING_STD(cout);
+
 
 #define MASK_CLIP 1
 

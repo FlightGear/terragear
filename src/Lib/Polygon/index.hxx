@@ -29,6 +29,8 @@
 
 #include STL_STRING
 
+FG_USING_STD(string);
+
 
 // initialize the unique polygon index counter stored in path
 bool poly_index_init( string path );

@@ -22,11 +22,15 @@
  
 #include <simgear/compiler.h>
 
+#include STL_IOSTREAM
 #include STL_STRING
 
 #include <stdio.h>
 
 #include "index.hxx"
+
+FG_USING_STD(cout);
+FG_USING_STD(endl);
 
 
 static long int poly_index;
@@ -48,6 +52,8 @@ bool poly_index_init( string path ) {
     fscanf( fp, "%ld", &poly_index );
 
     fclose( fp );
+
+    return true;
 }
 
 

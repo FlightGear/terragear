@@ -36,6 +36,9 @@ extern "C" {
 
 #include "polygon.hxx"
 
+FG_USING_STD(cout);
+FG_USING_STD(endl);
+
 
 // Constructor 
 FGPolygon::FGPolygon( void ) {
@@ -367,6 +370,7 @@ FGPolygon polygon_canonify( const FGPolygon& in_poly ) {
 #define FG_MAX_TRIANGLES 100000
 
 FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
+    int i, j;
 
     // canonify the polygon winding, outer contour must be
     // anti-clockwise, all inner contours must be clockwise.
@@ -376,15 +380,15 @@ FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
     int ncontours = canon_poly.contours();
     int cntr[ncontours];
     int vsize = 1;
-    for ( int i = 0; i < canon_poly.contours(); ++i ) {
+    for ( i = 0; i < canon_poly.contours(); ++i ) {
 	cntr[i] = canon_poly.contour_size( i );
 	vsize += cntr[i];
     }
     double vertices[vsize][2];
     int counter = 1;
     Point3D p;
-    for ( int i = 0; i < canon_poly.contours(); ++i ) {
-	for ( int j = 0; j < canon_poly.contour_size( i ); ++j ) {
+    for ( i = 0; i < canon_poly.contours(); ++i ) {
+	for ( j = 0; j < canon_poly.contour_size( i ); ++j ) {
 	    p = canon_poly.get_pt( i, j );
 	    vertices[counter][0] = p.x();
 	    vertices[counter][1] = p.y();

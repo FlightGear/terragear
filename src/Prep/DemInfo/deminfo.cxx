@@ -29,6 +29,8 @@
 
 #include <DEM/dem.hxx>
 
+FG_USING_STD(cout);
+
 
 // static float dem_data[DEM_SIZE_1][DEM_SIZE_1];
 // static float output_data[DEM_SIZE_1][DEM_SIZE_1];
@@ -38,8 +40,6 @@ int main(int argc, char **argv) {
     // DEM data
     FGDem dem;
     string filename;
-    double error;
-    int i, j;
 
     if ( argc != 2 ) {
 	printf("Usage: %s <file.dem>\n", argv[0]);

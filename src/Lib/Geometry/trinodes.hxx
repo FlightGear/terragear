@@ -48,7 +48,7 @@ private:
 
     // return true of the two points are "close enough" as defined by
     // FG_PROXIMITY_EPSILON
-    bool close_enough( const Point3D& p, const Point3D& p ) const;
+    bool close_enough( const Point3D& p1, const Point3D& p2 ) const;
 
     // return true of the two points are "close enough" as defined by
     // FG_COURSE_EPSILON

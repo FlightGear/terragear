@@ -1,4 +1,4 @@
-// array.cxx -- Array management class
+// match.cxx -- Handle details of matching up tile edges
 //
 // Written by Curtis Olson, started March 1998.
 //
@@ -29,8 +29,14 @@
 #include <simgear/math/point3d.hxx>
 #include <simgear/misc/fgstream.hxx>
 
+#ifdef _MSC_VER
+#  include <Win32/mkdir.hpp>
+#endif
+
 #include "match.hxx"
 
+FG_USING_STD(cout);
+FG_USING_STD(endl);
 
 
 FGMatch::FGMatch( void ) {
@@ -254,6 +260,8 @@ void FGMatch::load_neighbor_shared( FGConstruct& c ) {
 // load_neighbor_data() and will ignore any shared data from the
 // current tile that already exists from a neighbor.
 void FGMatch::split_tile( FGConstruct& c ) {
+    int i;
+
     cout << "Spliting tile" << endl;
     cout << "  extracting (shared) edge nodes and normals" << endl;
 
@@ -272,7 +280,7 @@ void FGMatch::split_tile( FGConstruct& c ) {
     point_list nodes = c.get_geod_nodes();
     point_list point_normals = c.get_point_normals();
 
-    for ( int i = 0; i < (int)nodes.size(); ++i ) {
+    for ( i = 0; i < (int)nodes.size(); ++i ) {
 	Point3D node = nodes[i];
 	Point3D normal = point_normals[i];
 
@@ -369,30 +377,30 @@ void FGMatch::split_tile( FGConstruct& c ) {
     if ( !nw_flag ) { cout << "  nw corner = " << nw_node << endl; }
     if ( !north_flag ) { 
 	cout << "  north nodes = " << north_nodes.size() << endl;
-	for ( int i = 0; i < (int)north_nodes.size(); ++i ) {
+	for ( i = 0; i < (int)north_nodes.size(); ++i ) {
 	    cout << "    " << north_nodes[i] << endl;
 	}
     }
     if ( !south_flag ) { 
 	cout << "  south nodes = " << south_nodes.size() << endl;
-	for ( int i = 0; i < (int)south_nodes.size(); ++i ) {
+	for ( i = 0; i < (int)south_nodes.size(); ++i ) {
 	    cout << "    " << south_nodes[i] << endl;
 	}
     }
     if ( !east_flag ) { 
 	cout << "  east nodes = " << east_nodes.size() << endl;
-	for ( int i = 0; i < (int)east_nodes.size(); ++i ) {
+	for ( i = 0; i < (int)east_nodes.size(); ++i ) {
 	    cout << "    " << east_nodes[i] << endl;
 	}
     }
     if ( !west_flag ) { 
 	cout << "  west nodes = " << west_nodes.size() << endl;
-	for ( int i = 0; i < (int)west_nodes.size(); ++i ) {
+	for ( i = 0; i < (int)west_nodes.size(); ++i ) {
 	    cout << "    " << west_nodes[i] << endl;
 	}
     }
     cout << "  body nodes = " << body_nodes.size() << endl;
-    for ( int i = 0; i < (int)body_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)body_nodes.size(); ++i ) {
 	cout << "    " << body_nodes[i] << endl;
     }
 }
@@ -405,8 +413,14 @@ void FGMatch::write_shared( FGConstruct& c ) {
     FGBucket b = c.get_bucket();
 
     string dir = base + "/Shared/" + b.gen_base_path();
+
+#ifdef _MSC_VER
+    fg_mkdir( dir.c_str() );
+#else
     string command = "mkdir -p " + dir;
     string file = dir + "/" + b.gen_index_str();
+#endif
+
     cout << "shared data will be written to " << file << endl;
 
     system(command.c_str());
@@ -589,6 +603,7 @@ static Point3D fake_normal( const Point3D& p ) {
 // reassemble the tile pieces (combining the shared data and our own
 // data)
 void FGMatch::assemble_tile( FGConstruct& c ) {
+    int i;
     FGTriNodes new_nodes;
     new_nodes.clear();
 
@@ -619,23 +634,23 @@ void FGMatch::assemble_tile( FGConstruct& c ) {
 
     int index;
 
-    for ( int i = 0; i < (int)north_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)north_nodes.size(); ++i ) {
 	index = new_nodes.unique_add( north_nodes[i] );
 	insert_normal( new_normals, north_normals[i], index );
     }
 
-    for ( int i = 0; i < (int)south_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)south_nodes.size(); ++i ) {
 	index = new_nodes.unique_add( south_nodes[i] );
 	insert_normal( new_normals, south_normals[i], index );
     }
 
-    for ( int i = 0; i < (int)east_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)east_nodes.size(); ++i ) {
 	index = new_nodes.unique_add( east_nodes[i] );
 	insert_normal( new_normals, east_normals[i], index );
     }
 
     // cout << "Total west nodes = " << west_nodes.size() << endl;
-    for ( int i = 0; i < (int)west_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)west_nodes.size(); ++i ) {
 	// cout << "adding west node " << west_nodes[i] << endl;
 	index = new_nodes.unique_add( west_nodes[i] );
 	insert_normal( new_normals, west_normals[i], index );
@@ -646,7 +661,7 @@ void FGMatch::assemble_tile( FGConstruct& c ) {
     cout << "  new normals = " << new_normals.size() << endl;
 
     // add the body points
-    for ( int i = 0; i < (int)body_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)body_nodes.size(); ++i ) {
 	index = new_nodes.unique_add( body_nodes[i] );
 	insert_normal( new_normals, body_normals[i], index );
     }

@@ -51,7 +51,14 @@
 #include <simgear/misc/fgstream.hxx>
 #include <simgear/misc/strutils.hxx>
 
+#ifdef _MSC_VER
+#  include <win32/mkdir.hpp>
+#endif
+
 #include "dem.hxx"
+
+FG_USING_STD(cout);
+FG_USING_STD(endl);
 
 
 #define MAX_EX_NODES 10000
@@ -415,8 +422,12 @@ FGDem::write_area( const string& root, FGBucket& b, bool compress ) {
     // generate output file name
     string base = b.gen_base_path();
     string path = root + "/" + base;
+#ifdef _MSC_VER
+    fg_mkdir( path.c_str() );
+#else
     string command = "mkdir -p " + path;
     system( command.c_str() );
+#endif
 
     string demfile = path + "/" + b.gen_index_str() + ".dem";
     cout << "demfile = " << demfile << endl;
@@ -764,27 +775,12 @@ void FGDem::outputmesh_output_nodes( const string& fg_root, FGBucket& p )
     if ( result != 0 && errno == ENOENT ) {
 	cout << "Creating directory\n";
 
-// #ifndef WIN32
-
+#ifdef _MSC_VER
+	fg_mkdir( dir.c_str() );
+#else
 	command = "mkdir -p " + dir + "\n";
 	system( command.c_str() );
-
-#if 0
-// #else // WIN32
-
-	// Cygwin crashes when trying to output to node file
-	// explicitly making directory structure seems OK on Win95
-
-	extract_path (base_path, tmp_path);
-
-	dir = fg_root + "/" + tmp_path;
-	if (my_mkdir ( dir.c_str() )) { exit (-1); }
-
-	dir = fg_root + "/" + base_path;
-	if (my_mkdir ( dir.c_str() )) { exit (-1); }
-
-// #endif // WIN32
-#endif //0
+#endif
 
     } else {
 	// assume directory exists

@@ -35,6 +35,10 @@
 #include <Polygon/split.hxx>
 #include <shapelib/shapefil.h>
 
+#ifdef _MSC_VER
+#  include <Win32/mkdir.hpp>
+#endif
+
 
 // return the type of the shapefile record
 AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
@@ -155,8 +159,13 @@ int main( int argc, char **argv ) {
 
     // make work directory
     string work_dir = argv[2];
+
+#ifdef _MSC_VER
+    fg_mkdir( work_dir.c_str() );
+#else
     string command = "mkdir -p " + work_dir;
     system( command.c_str() );
+#endif
 
     // allow us to override the area type from the command line.  All
     // polygons in the processed shape file will be assigned this area

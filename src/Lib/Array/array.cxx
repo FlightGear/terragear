@@ -51,9 +51,15 @@
 #include <simgear/misc/strutils.hxx>
 #include <simgear/math/leastsqs.hxx>
 
+#ifdef _MSC_VER
+#  include <win32/mkdir.hpp>
+#endif
+
 #include "array.hxx"
 
 FG_USING_STD(string);
+FG_USING_STD(cout);
+FG_USING_STD(endl);
 
 
 FGArray::FGArray( void ) {
@@ -492,8 +498,12 @@ void FGArray::outputmesh_output_nodes( const string& fg_root, FGBucket& p )
     if ( result != 0 && errno == ENOENT ) {
 	cout << "  Creating directory\n";
 
+#ifdef _MSC_VER
+	fg_mkdir( dir.cstr() );
+#else
 	command = "mkdir -p " + dir + "\n";
 	system( command.c_str() );
+#endif
     } else {
 	// assume directory exists
     }
