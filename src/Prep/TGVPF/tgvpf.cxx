@@ -228,6 +228,7 @@ usage ()
   cerr << "--max-area=<area>     (default: none)" << endl;
   cerr << "--material=<material_type> (default: Default)" << endl;
   cerr << "--width=<meters>      (default: 50 line, 500 point)" << endl;
+  cerr << "--max-segment=<meters>(default: none)" << endl;
   cerr << "--work-dir=<dir>      (default: .)" << endl;
   cerr << "--att=<item>:<value>  (may be repeated)" << endl;
   cerr << "--att=!<item>:<value> (may be repeated)" << endl;
@@ -284,6 +285,7 @@ main (int argc, const char **argv)
   bool invert = false;
   AreaType material_type = DefaultArea;
   int width = -1;		// use default
+  double max_segment = 0.0;     // zero = no segement splitting
   string work_dir = ".";
   double min_area = -1;
   double max_area = -1;
@@ -343,6 +345,13 @@ main (int argc, const char **argv)
 
     else if (arg.find("--width=") == 0) {
         width = atoi(arg.substr(8).c_str());
+        argPos++;
+    }
+
+    else if (arg.find("--max-segment=") == 0) {
+        max_segment = atoi(arg.substr(14).c_str());
+        cout << "Maximum segment length set to " << max_segment << " meters."
+             << endl;
         argPos++;
     }
 
@@ -525,6 +534,9 @@ main (int argc, const char **argv)
 	if (shape.total_size() >= 3) {
 	  cout << "Polygon with " << shape.total_size() << " points in "
 	     << shape.contours() << " contour(s)" << endl;
+          if ( max_segment > 1.0 ) {
+              shape = tgPolygonSplitLongEdges( shape, max_segment );
+          }
 	  tgSplitPolygon(work_dir, material_type, shape, false);
 	}
       }
