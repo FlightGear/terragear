@@ -57,6 +57,7 @@ private:
     FGPolygon texcoords;	// corresponding texture coordinates
     FGPolygon tris;		// triangulation
     GLenum tri_mode;		// GL_TRIANGLE, GL_FAN, GL_TRISTRIP, etc.
+    int flag;                   // For various potential record keeping needs
 
 public:
 
@@ -81,6 +82,9 @@ public:
 
     inline GLenum get_tri_mode() const { return tri_mode; }
     inline void set_tri_mode( const GLenum &m ) { tri_mode = m; }
+
+    inline int get_flag() const { return flag; }
+    inline void set_flag( const int f ) { flag = f; }
 
     // erase the polygon
     void erase();
