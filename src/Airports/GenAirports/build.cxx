@@ -1568,7 +1568,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     texparams_list texparams;
 
     // poly_list rwy_tris, rwy_txs;
-    FGPolygon runway, runway_a, runway_b, result, clipped_a, clipped_b;
+    FGPolygon runway, runway_a, runway_b, clipped_a, clipped_b;
     FGPolygon split_a, split_b;
     point_list apt_pts;
     Point3D p;
@@ -1996,8 +1996,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
     obj.set_fans_tc( fans_tc );
     obj.set_fan_materials( fan_materials );
 
-    /* obj.write_ascii( objpath, name, b ); */
-    obj.write_bin( objpath, name, b );
+    bool result;
+    /* result = obj.write_ascii( objpath, name, b ); */
+    result = obj.write_bin( objpath, name, b );
+    if ( !result ) {
+	cout << "error writing file. :-(" << endl;
+	exit(-1);
+    }
 
 #if 0
     // checking result of write, remove the read_bin() before this
