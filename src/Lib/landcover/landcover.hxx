@@ -7,9 +7,13 @@
 #ifndef __LANDCOVER_HXX
 #define __LANDCOVER_HXX 1
 
+#include <simgear/compiler.h>
+
+#include STL_STRING
 #include <fstream>
 
-using std::ifstream;
+FG_USING_STD(ifstream);
+FG_USING_STD(string);
 
 
 /**
@@ -56,10 +60,12 @@ using std::ifstream;
  * @author David Megginson, david@megginson.com
  * @version 0.1
  */
-class LandCover
-{
+
+class LandCover {
+
 public:
-  LandCover (const string &filename);
+
+  LandCover( const string &filename );
   virtual ~LandCover ();
 
   virtual int getValue (long x, long y) const;
@@ -68,8 +74,8 @@ public:
 
 private:
   mutable ifstream * _input;
-  static const long WIDTH = 43200;
-  static const long HEIGHT = 21600;
+  long WIDTH;
+  long HEIGHT;
 };
 
 #endif __LANDCOVER_HXX

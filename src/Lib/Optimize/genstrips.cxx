@@ -54,16 +54,17 @@ static void add_and_expand( opt_list& by_node, int n, int i ) {
 opt_list tgGenStrips( const triele_list tris ) {
 
     triele_list remaining = tris;
+    opt_list by_node;
+    int i;
 
     while ( remaining.size() ) {
 	// traverse the triangle list and for each node, build a list of
 	// triangles that attach to it.
 
 	// cout << "building by_node list" << endl;
-	opt_list by_node;
 	by_node.clear();
 
-	for ( int i = 0; i < (int)remaining.size(); ++i ) {
+	for ( i = 0; i < (int)remaining.size(); ++i ) {
 	    int n1 = remaining[i].get_n1();
 	    int n2 = remaining[i].get_n2();
 	    int n3 = remaining[i].get_n3();
@@ -79,7 +80,7 @@ opt_list tgGenStrips( const triele_list tris ) {
 
 	int min_size = 32768;
 	int min_tri = -1;
-	for ( int i = 0; i < (int)remaining.size(); ++i ) {
+	for ( i = 0; i < (int)remaining.size(); ++i ) {
 	    int n1 = remaining[i].get_n1();
 	    int n2 = remaining[i].get_n2();
 	    int n3 = remaining[i].get_n3();
@@ -95,6 +96,8 @@ opt_list tgGenStrips( const triele_list tris ) {
 	    }
 	}
     }
+
+    return by_node;
 }
 
 

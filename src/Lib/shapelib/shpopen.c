@@ -21,7 +21,130 @@
  ******************************************************************************
  *
  * $Log$
- * Revision 1.1  2000/02/09 19:51:46  curt
+ * Revision 1.2  2000/11/25 19:39:49  curt
+ * Contributed by Bruce Finney:
+ *
+ * The following files have been changed to enable the latest Terragear CVS
+ * to compile with MSVC++ 5.0
+ *
+ * .\construct\clipper\clipper.cxx
+ *         for( int i - lots of places
+ *
+ * .\construct\genoutput\genobj.cxx
+ *         fix directory logic for windows, line 320 and following
+ *
+ * .\construct\main\main.cxx
+ *         windows does not have an opendir function
+ *         added code for windows directory functions
+ *         disabled the mem allocation limit code - windows does not
+ *         have similar functions
+ *         for ( int i - several places
+ *
+ * .\construct\match\match.cxx
+ *         moved the definition of file and command outside of the ifdef line 420
+ *
+ * .\lib\e00\e00.cxx
+ *         for( int i  - several places
+ *
+ * .\lib\e00\e00.cxx
+ *         use simgear/compiler.h constructs
+ *
+ * .\lib\geometry\contour_tree.hxx
+ *         removed a cout statement
+ *
+ * .\lib\geometry\poly_support.cxx
+ *         added float.h  changed 1.0e+999 to DBL_MAX, windows doesn't go that big
+ *         lots of for ( int i changes
+ *         lines 193 and 208 no != operator defined - changed logic
+ *         line 801 flag should be int, not bool, get_hole_flag returns int
+ *
+ * .\lib\landcover\landcover.cxx
+ * .\lib\landcover\landcover.hxx
+ *         add include simgear/compiler.h
+ *         see comments
+ *
+ * .\lib\optimize\genfans.cxx
+ *         function canonify added return at end, windows complains
+ *         added using std  for cout and endl
+ *
+ * .\lib\optimize\genstrips.cxx
+ *         function tgGenStrips no return value, moved by_node into outer scope
+ *         fix for ( int i ...
+ *
+ * .\lib\poly2tri\construct.c
+ *         added include <memory.h> for windows
+ *         remove unused variables lines 435 & 437
+ *
+ * .\lib\poly2tri\misc.c
+ *         added HAVE_SYS_TIME_H logic for sys/time.h include file
+ *         added logic to uses windows functions for time and rand
+ *
+ * .\lib\poly2tri\monotone.c
+ *         added include <memory.h> for windows
+ *         lines 286-288 remove unused variables
+ *
+ * .\lib\poly2tri\tri.c
+ *         remove sys/time.h - no time functions called
+ *         added include <memory.h> for windows
+ *
+ * .\lib\polygon\polygon.cxx
+ *         function polygon_to_tristrip will not compile I don't think the
+ *         logic is complete, no returned data  added if else endif around
+ *         function and polygon_to_tristrip_old, renamed _old function.
+ *         Search of code reveals that function is not called by anyone.
+ *
+ * .\lib\polygon\superpoly.cxx
+ *         changed include <superpoly.hxx> to "superpoly.hxx"
+ *
+ * .\lib\polygon\superpoly.hxx
+ *         add include <windows.h> for windows before include <gl.h>
+ *         needed for definitions used in Microsoft version of opengl
+ *
+ * .\lib\shapelib\dbfopen.c
+ *         added include files for windows
+ *         lines 195-197 271-272 515-517 removed unused variables
+ *
+ * .\lib\shapelib\shpopen.c
+ *         added #include <stdlib.h> for malloc() and friends
+ *         added include files for windows
+ *         line 279 527 813 1127 removed unused variables
+ *         line 827 cast result to int
+ *
+ * .\lib\win32\mkdir.cpp
+ *         documented function, remove debug lines
+ *
+ * .\prep\demraw2ascii\main.c
+ *         lines 46-50 remove unused variables
+ *
+ * .\prep\demraw2ascii\rawdem.c
+ *         line 47 changed logic to compile with MSVC
+ *         line 244-256 set real constants to float, windows complains with
+ *                 double constants
+ *
+ * .\prep\genairports\build.cxx
+ *         lots of for ( int i  changes
+ *
+ * .\prep\genairports\main.cxx
+ *         fix mkdir logic for windows
+ *
+ * .\prep\genairports\output.cxx
+ *         added  using std  cout endl
+ *         lots of for ( int i  changes
+ *         fix mkdir logic for windows
+ *
+ * .\prep\genairports\runway.cxx
+ *         for ( int i  changes
+ *         lines 117-118 161-162  remove default values for function parameters
+ *
+ * .\prep\gshhs\main.cxx
+ *         added using std cout
+ *
+ * .\prep\shapefile\noaa_decode.cxx
+ * .\prep\shapefile\shape_decode.cxx
+ *         added using std  for cout
+ *         lines 45-49 moved unused variables inside #if 0 block
+ *
+ * Revision 1.1.1.1  2000/02/09 19:51:46  curt
  * Initial revision
  *
  * Revision 1.1  1999/08/24 21:13:01  curt
@@ -101,6 +224,12 @@ static char rcsid[] =
 #include <math.h>
 #include <limits.h>
 #include <assert.h>
+#include <stdlib.h>		/* malloc() && friends */
+#ifdef _MSC_VER
+#  include <stdlib.h>
+#  include <memory.h>
+#  include <string.h>
+#endif
 
 typedef unsigned char uchar;
 
@@ -276,7 +405,7 @@ SHPHandle SHPOpen( const char * pszLayer, const char * pszAccess )
     SHPHandle		psSHP;
     
     uchar		*pabyBuf;
-    int			iField, i;
+    int			i;
     double		dValue;
     
 /* -------------------------------------------------------------------- */
@@ -524,7 +653,6 @@ SHPHandle SHPCreate( const char * pszLayer, int nShapeType )
     uchar     	abyHeader[100];
     int32	i32;
     double	dValue;
-    int32	*panSHX;
 
 /* -------------------------------------------------------------------- */
 /*      Establish the byte order on this system.                        */
@@ -810,7 +938,7 @@ SHPObject *SHPCreateSimpleObject( int nSHPType, int nVertices,
 int SHPWriteObject(SHPHandle psSHP, int nShapeId, SHPObject * psObject )
 		      
 {
-    int	       	nRecordOffset, i, j, nRecordSize;
+    int	       	nRecordOffset, i, nRecordSize;
     uchar	*pabyRec;
     int32	i32;
 
@@ -824,7 +952,7 @@ int SHPWriteObject(SHPHandle psSHP, int nShapeId, SHPObject * psObject )
     psSHP->nRecords++;
     if( psSHP->nRecords > psSHP->nMaxRecords )
     {
-	psSHP->nMaxRecords = psSHP->nMaxRecords * 1.3 + 100;
+	psSHP->nMaxRecords = (int)( psSHP->nMaxRecords * 1.3 ) + 100;
 
 	psSHP->panRecOffset = (int *) 
 	  SfRealloc(psSHP->panRecOffset,sizeof(int) * psSHP->nMaxRecords );
@@ -1124,7 +1252,6 @@ int SHPWriteObject(SHPHandle psSHP, int nShapeId, SHPObject * psObject )
 SHPObject *SHPReadObject( SHPHandle psSHP, int hEntity )
 
 {
-    int	       		nRecordOffset, i, j;
     SHPObject		*psShape;
 
     static uchar	*pabyRec = NULL;

@@ -1,6 +1,8 @@
-#include <triangulate.h>
-#include <sys/time.h>
-
+#include "triangulate.h"
+/* #include <sys/time.h> */
+#ifdef _MSC_VER
+#  include <memory.h>
+#endif
 
 static int initialise(n)
      int n;

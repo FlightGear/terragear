@@ -156,6 +156,8 @@ writeVertex (ostream &output, double x, double y)
 void
 E00::write (ostream &output) const
 {
+  int i, j, k;
+
   output << "<?xml version=\"1.0\"?>" << endl << endl;
   output << "<GIS>" << endl << endl;
 
@@ -167,11 +169,11 @@ E00::write (ostream &output) const
     }
   }
 
-  for (int i = 0; i < (int)arc_section.size(); i++) {
+  for ( i = 0; i < (int)arc_section.size(); i++) {
     const e00ARC &arc = arc_section[i];
     if (!arc.inPolygon) {
       output << "<line>" << endl;
-      for (int j = 0; j < (int)arc.coordinates.size(); j++) {
+      for ( j = 0; j < (int)arc.coordinates.size(); j++) {
 	writeVertex(output, arc.coordinates[j].x, arc.coordinates[j].y);
       }
       output << "</line>" << endl << endl;;
@@ -179,10 +181,10 @@ E00::write (ostream &output) const
   }
 
 				// NB: skip enclosing poly
-  for (int i = 1; i < (int)pal_section.size(); i++) {
+  for ( i = 1; i < (int)pal_section.size(); i++) {
     const e00PAL &pal = pal_section[i];
     output << "<polygon>" << endl;
-    for (int j = 0; j < pal.numArcs; j++) {
+    for ( j = 0; j < pal.numArcs; j++) {
       bool isReversed = false;
       int arcNum = pal.arcs[j].arcNum;
       if (arcNum < 0) {
@@ -192,11 +194,11 @@ E00::write (ostream &output) const
       const e00ARC &arc = arc_section[arcNum];
       output << "<arc coverage=\"" << arc.coverageId << "\">" << endl;
       if (isReversed) {
-	for (int k = arc.numberOfCoordinates - 1; k >= 0; k--) {
+	for ( k = arc.numberOfCoordinates - 1; k >= 0; k--) {
 	  writeVertex(output, arc.coordinates[k].x, arc.coordinates[k].y);
 	}
       } else {
-	for (int k = 0; k < arc.numberOfCoordinates; k++) {
+	for ( k = 0; k < arc.numberOfCoordinates; k++) {
 	  writeVertex(output, arc.coordinates[k].x, arc.coordinates[k].y);
 	}
       }

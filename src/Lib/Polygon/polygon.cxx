@@ -397,6 +397,7 @@ FGPolygon polygon_canonify( const FGPolygon& in_poly ) {
 }
 
 
+#if 0
 // Wrapper for the fast Polygon Triangulation based on Seidel's
 // Algorithm by Atul Narkhede and Dinesh Manocha
 // http://www.cs.unc.edu/~dm/CODE/GEM/chapter.html
@@ -482,6 +483,7 @@ FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
 
     // return result;
 }
+#endif
 
 
 #if 0
@@ -549,4 +551,6 @@ operator<< (ostream &output, const FGPolygon &poly)
 	    output << poly.get_pt(i, j) << endl;
 	}
     }
+
+    return output;  // MSVC
 }

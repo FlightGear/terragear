@@ -44,7 +44,7 @@
 #include "rawdem.h"
 
 
-#if defined( HAVE_UNISTD_H ) && !defined( HAVE_RINT )
+#if !defined( HAVE_RINT )
 double round( double a ) {
     long i;
  
@@ -245,10 +245,10 @@ void rawConvertCenter2Edge( fgRAWDEM *raw ) {
 
     /* derive edge nodes */
     for ( i = 1; i < 120; i++ ) {
-	raw->edge[i][0] = (raw->center[i-1][0] + raw->center[i][0]) / 2.0;
-	raw->edge[i][120] = (raw->center[i-1][119] + raw->center[i][119]) / 2.0;
-	raw->edge[0][i] = (raw->center[0][i-1] + raw->center[0][i]) / 2.0;
-	raw->edge[120][i] = (raw->center[119][i-1] + raw->center[119][i]) / 2.0;
+	raw->edge[i][0] = (raw->center[i-1][0] + raw->center[i][0]) / 2.0f;
+	raw->edge[i][120] = (raw->center[i-1][119] + raw->center[i][119]) / 2.0f;
+	raw->edge[0][i] = (raw->center[0][i-1] + raw->center[0][i]) / 2.0f;
+	raw->edge[120][i] = (raw->center[119][i-1] + raw->center[119][i]) / 2.0f;
     }
 
     /* derive internal nodes */
@@ -257,7 +257,7 @@ void rawConvertCenter2Edge( fgRAWDEM *raw ) {
 	    raw->edge[i][j] = ( raw->center[i-1][j-1] + 
 				raw->center[i]  [j-1] +
 				raw->center[i]  [j]   +
-				raw->center[i-1][j] ) / 4;
+				raw->center[i-1][j] ) / 4.0f;
 	}
     }
 }

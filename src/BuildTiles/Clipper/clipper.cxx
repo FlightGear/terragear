@@ -162,6 +162,8 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
 
     // cout << "Begin move slivers" << endl;
 
+    int i;
+
     out.erase();
 
     double angle_cutoff = 10.0 * DEG_TO_RAD;
@@ -174,7 +176,7 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
 
     // process contours in reverse order so deleting a contour doesn't
     // foul up our sequence
-    for ( int i = in.contours() - 1; i >= 0; --i ) {
+    for ( i = in.contours() - 1; i >= 0; --i ) {
 	// cout << "contour " << i << endl;
 
 	min_angle = in.minangle_contour( i );
@@ -220,8 +222,9 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
     point_list contour;
     int original_contours, result_contours;
     bool done;
+    int area, i, j, k;
 
-    for ( int i = 0; i < slivers.contours(); ++i ) {
+    for ( i = 0; i < slivers.contours(); ++i ) {
 	// cout << "Merging sliver = " << i << endl;
 
 	// make the sliver polygon
@@ -230,7 +233,7 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 	sliver.add_contour( contour, 0 );
 	done = false;
 
-	for ( int area = 0; area < FG_MAX_AREA_TYPES && !done; ++area ) {
+	for ( area = 0; area < FG_MAX_AREA_TYPES && !done; ++area ) {
 
 	    if ( area == HoleArea ) {
 		// don't merge a non-hole sliver in with a hole
@@ -239,7 +242,7 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 
 	    // cout << "  testing area = " << area << " with " 
 	    //      << clipped.polys[area].size() << " polys" << endl;
-	    for ( int j = 0; 
+	    for ( j = 0; 
 		  j < (int)clipped.polys[area].size() && !done;
 		  ++j )
 	    {
@@ -265,7 +268,7 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 		    cout << "    original = " << original_contours
 			 << " result = " << result_contours << endl;
 		    cout << "    sliver = " << endl; */
-		    for ( int k = 0; k < (int)contour.size(); ++k ) {
+		    for ( k = 0; k < (int)contour.size(); ++k ) {
 			// cout << "      " << contour[k].x() << ", "
 			//      << contour[k].y() << endl;
 		    }
@@ -284,6 +287,8 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     FGPolygon accum, tmp;
     FGPolygon slivers, remains;
+    int i, j;
+
     // gpcpoly_iterator current, last;
 
     FG_LOG( FG_CLIPPER, FG_INFO, "Running master clipper" );
@@ -306,7 +311,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     // clip it.
     FGPolygon land_mask;
     land_mask.erase();
-    for ( int i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
+    for ( i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
 	land_mask =
 	  polygon_union( land_mask, polys_in.polys[DefaultArea][i] );
     }
@@ -314,7 +319,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     // set up island mask, for cutting holes in lakes
     FGPolygon island_mask;
     island_mask.erase();
-    for ( int i = 0; i < (int)polys_in.polys[IslandArea].size(); ++i ) {
+    for ( i = 0; i < (int)polys_in.polys[IslandArea].size(); ++i ) {
 	island_mask =
 	  polygon_union( island_mask, polys_in.polys[IslandArea][i] );
     }
@@ -324,20 +329,20 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     // set up pond mask, for cutting holes in islands
     FGPolygon pond_mask;
     pond_mask.erase();
-    for ( int i = 0; i < (int)polys_in.polys[PondArea].size(); ++i ) {
+    for ( i = 0; i < (int)polys_in.polys[PondArea].size(); ++i ) {
 	pond_mask =
 	  polygon_union( pond_mask, polys_in.polys[PondArea][i] );
     }
 #endif
 
     // process polygons in priority order
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
+    for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	cout << "num polys of type (" << i << ") = " 
 	     << polys_in.polys[i].size() << endl;
 	// current = polys_in.polys[i].begin();
 	// last = polys_in.polys[i].end();
 	// for ( ; current != last; ++current ) {
-	for( int j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
+	for( j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
 	    FGPolygon current = polys_in.polys[i][j];
 	    FG_LOG( FG_CLIPPER, FG_DEBUG, get_area_name( (AreaType)i ) 
 		    << " = " << current.contours() );
@@ -393,20 +398,20 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	    /*
 	      cout << "original contours = " << tmp.num_contours << endl;
 
-	      for ( int j = 0; j < tmp.num_contours; j++ ) {
-	      for (int k = 0;k < tmp.contour[j].num_vertices;k++ ) {
-	      cout << tmp.contour[j].vertex[k].x << ","
-	      << tmp.contour[j].vertex[k].y << endl;
-	      }
+	      for ( j = 0; j < tmp.num_contours; j++ ) {
+	        for ( k = 0;k < tmp.contour[j].num_vertices;k++ ) {
+	          cout << tmp.contour[j].vertex[k].x << ","
+	               << tmp.contour[j].vertex[k].y << endl;
+	        }
 	      }
 
 	      cout << "clipped contours = " << result_diff->num_contours << endl;
 
-	      for ( int j = 0; j < result_diff->num_contours; j++ ) {
-	      for (int k = 0;k < result_diff->contour[j].num_vertices;k++ ) {
-	      cout << result_diff->contour[j].vertex[k].x << ","
-	      << result_diff->contour[j].vertex[k].y << endl;
-	      }
+	      for ( j = 0; j < result_diff->num_contours; j++ ) {
+	        for ( k = 0; k < result_diff->contour[j].num_vertices; k++ ) {
+	          cout << result_diff->contour[j].vertex[k].x << ","
+	               << result_diff->contour[j].vertex[k].y << endl;
+	        }
 	      }
 	      */
 

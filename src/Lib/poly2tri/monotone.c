@@ -1,5 +1,8 @@
-#include <triangulate.h>
+#include "triangulate.h"
 #include <math.h>
+#ifdef _MSC_VER
+#  include <memory.h>
+#endif
 
 #define CROSS_SINE(v0, v1) ((v0).x * (v1).y - (v1).x * (v0).y)
 #define LENGTH(v0) (sqrt((v0).x * (v0).x + (v0).y * (v0).y))
@@ -283,9 +286,9 @@ static int traverse_polygon(mcur, trnum, from, dir)
      int dir;
 {
   trap_t *t = &tr[trnum];
-  int howsplit, mnew;
-  int v0, v1, v0next, v1next;
-  int retval, tmp;
+  int mnew;
+  int v0, v1;
+  int retval;
   int do_switch = FALSE;
 
   if ((trnum <= 0) || visited[trnum])

@@ -133,6 +133,42 @@ static int actual_load_polys( const string& dir,
     string base = c.get_bucket().gen_base_path();
     string tile_str = c.get_bucket().gen_index_str();
     string ext;
+    string file, f_index, full_path;
+    int pos;
+
+#ifdef _MSC_VER
+    long hfile;
+    struct _finddata_t de;
+    string path;
+
+    path = dir + "/*.*";
+
+    if ( ( hfile = _findfirst( path.c_str(), &de ) ) == -1 ) {
+	cout << "cannot open directory " << dir << "\n";
+	return 0;
+    }
+
+    // load all matching polygon files
+    do {
+	file = de.name;
+	pos = file.find(".");
+	f_index = file.substr(0, pos);
+
+	if ( tile_str == f_index ) {
+	    ext = file.substr(pos + 1);
+	    cout << file << "  " << f_index << "  '" << ext << "'" << endl;
+	    full_path = dir + "/" + file;
+	    if ( (ext == "dem") || (ext == "dem.gz") ) {
+		// skip
+	    } else {
+		cout << "ext = '" << ext << "'" << endl;
+		clipper.load_polys( full_path );
+		++counter;
+	    }
+	}
+    } while ( _findnext( hfile, &de ) == 0 );
+
+#else
 
     DIR *d;
     struct dirent *de;
@@ -143,8 +179,6 @@ static int actual_load_polys( const string& dir,
     }
 
     // load all matching polygon files
-    string file, f_index, full_path;
-    int pos;
     while ( (de = readdir(d)) != NULL ) {
 	file = de->d_name;
 	pos = file.find(".");
@@ -165,7 +199,8 @@ static int actual_load_polys( const string& dir,
     }
 
     closedir(d);
-    
+#endif
+	
     return counter;
 }
 
@@ -265,6 +300,7 @@ static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
 // clip against each other to resolve any overlaps
 static int load_polys( FGConstruct& c ) {
     FGClipper clipper;
+    int i;
 
     string base = c.get_bucket().gen_base_path();
     string poly_path;
@@ -274,7 +310,7 @@ static int load_polys( FGConstruct& c ) {
     clipper.init();
 
     // load 2D polygons from all directories provided
-    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
+    for ( i = 0; i < (int)load_dirs.size(); ++i ) {
 	poly_path = load_dirs[i] + '/' + base;
 	cout << "poly_path = " << poly_path << endl;
 	count += actual_load_polys( poly_path, c, clipper );
@@ -309,8 +345,9 @@ static int load_polys( FGConstruct& c ) {
 static int load_dem( FGConstruct& c, FGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
+    int i;
 
-    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
+    for ( i = 0; i < (int)load_dirs.size(); ++i ) {
 	string dem_path = load_dirs[i] + "/" + base
 	    + "/" + c.get_bucket().gen_index_str() + ".dem";
 	cout << "dem_path = " << dem_path << endl;
@@ -491,13 +528,14 @@ static void fix_point_heights( FGConstruct& c, const FGArray& array ) {
 static void build_wgs_84_point_list( FGConstruct& c, const FGArray& array ) {
     point_list geod_nodes;
     point_list wgs84_nodes;
+    int i;
 
     cout << "generating wgs84 list" << endl;
     Point3D geod, radians, cart;
 
     point_list raw_nodes = c.get_tri_nodes().get_node_list();
 
-    for ( int i = 0; i < (int)raw_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)raw_nodes.size(); ++i ) {
 	geod = raw_nodes[i];
 
 	// convert to radians
@@ -727,8 +765,13 @@ static void do_custom_objects( const FGConstruct& c ) {
 		in >> skipws;
 
 		cout << "token = " << token << " name = " << name << endl;
+#ifdef _MSC_VER
+		string command = "copy " + base_dir + "/" + name + ".gz "
+		    + dest_dir;
+#else
 		string command = "cp " + base_dir + "/" + name + ".gz "
 		    + dest_dir;
+#endif
 		cout << "running " << command << endl;
 		system( command.c_str() );
 
@@ -967,8 +1010,9 @@ int main(int argc, char **argv) {
 	cout << "Load directory: " << argv[i] << endl;
     }
 
-#if defined( __CYGWIN__ ) || defined( __CYGWIN32__ )
+#if defined( __CYGWIN__ ) || defined( __CYGWIN32__ ) || defined( _MSC_VER )
     // the next bit crashes Cygwin for me - DCL
+    // MSVC does not have the function or variable type defined - BRF
 #else
     // set mem allocation limit.  Reason: occasionally the triangle()
     // routine can blow up and allocate memory forever.  We'd like

@@ -460,17 +460,17 @@ void FGMatch::write_shared( FGConstruct& c ) {
     FGBucket b = c.get_bucket();
 
     string dir = base + "/Shared/" + b.gen_base_path();
+    string file = dir + "/" + b.gen_index_str();
 
 #ifdef _MSC_VER
     fg_mkdir( dir.c_str() );
 #else
     string command = "mkdir -p " + dir;
-    string file = dir + "/" + b.gen_index_str();
+    system(command.c_str());
 #endif
 
     cout << "shared data will be written to " << file << endl;
 
-    system(command.c_str());
 
 #if 0
     cout << "FLAGS" << endl;

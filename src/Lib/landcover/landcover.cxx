@@ -4,19 +4,33 @@
 // This program is in the Public Domain and comes with NO WARRANTY.
 // Use at your own risk.
 
-#include <fstream>
-#include <string>
+#include <simgear/compiler.h>
+#include STL_STRING
+
 
 #include "landcover.hxx"
 
-using std::ifstream;
-using std::string;
+FG_USING_STD(ifstream);
+FG_USING_STD(string);
 
-LandCover::LandCover (const string &filename)
+LandCover::LandCover( const string &filename )
 {
-  _input = new ifstream(filename.c_str());
-  if (!_input->good())
-    throw (string("Failed to open ") + filename);
+    // MSVC chokes when these are defined and initialized as "static
+    // const long" in the class declaration.u
+    WIDTH = 43200;
+    HEIGHT = 21600;
+
+    _input = new ifstream(filename.c_str());
+    if (!_input->good())  {
+#ifdef _MSC_VER
+	// there are no try or catch statements to support
+	// the throw-expression except in test-landcover.cxx
+	printf( "Failed to open %s\n", filename.c_str() );
+	exit( 1 );
+#else
+	throw (string("Failed to open ") + filename);
+#endif
+    }
 }
 
 LandCover::~LandCover ()

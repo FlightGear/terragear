@@ -1,5 +1,14 @@
-#include <triangulate.h>
-#include <sys/time.h>
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#include "triangulate.h"
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+#else
+#  include <time.h>
+#endif
+
 #include <math.h>
 
 #if defined( __CYGWIN__ ) || defined( __CYGWIN32__ )
@@ -15,14 +24,21 @@ static int permute[SEGSIZE];
 int generate_random_ordering(n)
      int n;
 {
-  struct timeval tval;
-  struct timezone tzone;
   register int i;
   int m, st[SEGSIZE], *p;
+#ifdef _MSC_VER
+  time_t ltime;
+
+  time( &ltime );
+  srand( ltime );
+#else
+  struct timeval tval;
+  struct timezone tzone;
   
   choose_idx = 1;
   gettimeofday(&tval, &tzone);
   srand48(tval.tv_sec);
+#endif
 
   for (i = 0; i <= n; i++)
     st[i] = i;
@@ -30,7 +46,11 @@ int generate_random_ordering(n)
   p = st;
   for (i = 1; i <= n; i++, p++)
     {
-      m = lrand48() % (n + 1 - i) + 1;
+#ifdef _MSC_VER
+	m = rand() % ( n + 1 - i ) + 1;
+#else
+	m = lrand48() % ( n + 1 - i ) + 1;
+#endif
       permute[i] = p[m];
       if (m != 1)
 	p[m] = p[1];
@@ -43,8 +63,6 @@ int generate_random_ordering(n)
 /* segments in S */
 int choose_segment()
 {
-  int i;
-
 #ifdef DEBUG
   fprintf(stderr, "choose_segment: %d\n", permute[choose_idx]);
 #endif 

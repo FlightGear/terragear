@@ -45,6 +45,13 @@
 
 #include "output.hxx"
 
+#ifdef _MSC_VER
+#  include <Win32/mkdir.hpp>
+#endif
+
+FG_USING_STD( cout );
+FG_USING_STD( endl );
+
 
 void write_polygon( const FGPolygon& poly, const string& base ) {
     for ( int i = 0; i < poly.contours(); ++i ) {
@@ -121,10 +128,15 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 		const string_list& fan_materials )
 {
     Point3D p;
+    int i, j;
 
     string dir = base + "/" + b.gen_base_path();
     string command = "mkdir -p " + dir;
+#ifdef _MSC_VER
+    fg_mkdir( dir.c_str() );
+#else
     system(command.c_str());
+#endif
 
     // string file = dir + "/" + b.gen_index_str();
     string file = dir + "/" + name;
@@ -164,7 +176,7 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 
     // dump vertex list
     fprintf(fp, "# vertex list\n");
-    for ( int i = 0; i < (int)wgs84_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)wgs84_nodes.size(); ++i ) {
 	p = wgs84_nodes[i] - gbs_center;
 	
 	fprintf(fp,  "v %.5f %.5f %.5f\n", p.x(), p.y(), p.z() );
@@ -172,7 +184,7 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
     fprintf(fp, "\n");
 
     fprintf(fp, "# vertex normal list\n");
-    for ( int i = 0; i < (int)normals.size(); ++i ) {
+    for ( i = 0; i < (int)normals.size(); ++i ) {
 	p = normals[i];
 	fprintf(fp,  "vn %.5f %.5f %.5f\n", p.x(), p.y(), p.z() );
     }
@@ -180,7 +192,7 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 
     // dump texture coordinates
     fprintf(fp, "# texture coordinate list\n");
-    for ( int i = 0; i < (int)texcoords.size(); ++i ) {
+    for ( i = 0; i < (int)texcoords.size(); ++i ) {
 	p = texcoords[i];
 	fprintf(fp,  "vt %.5f %.5f\n", p.x(), p.y() );
     }
@@ -209,8 +221,8 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 	    group_nodes.clear();
 	    Point3D bs_center;
 	    double bs_radius = 0;
-	    for ( int i = start; i < end; ++i ) {
-		for ( int j = 0; j < (int)tris_v[i].size(); ++j ) {
+	    for ( i = start; i < end; ++i ) {
+		for ( j = 0; j < (int)tris_v[i].size(); ++j ) {
 		    group_nodes.push_back( wgs84_nodes[ tris_v[i][j] ] );
 		    bs_center = calc_center( group_nodes );
 		    bs_radius = calc_bounding_radius( bs_center, group_nodes );
@@ -224,9 +236,9 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 		    bs_center.x(), bs_center.y(), bs_center.z(), bs_radius);
 
 	    // write groups
-	    for ( int i = start; i < end; ++i ) {
+	    for ( i = start; i < end; ++i ) {
 		fprintf(fp, "f");
-		for ( int j = 0; j < (int)tris_v[i].size(); ++j ) {
+		for ( j = 0; j < (int)tris_v[i].size(); ++j ) {
 		    fprintf(fp, " %d/%d", tris_v[i][j], tris_tc[i][j] );
 		}
 		fprintf(fp, "\n");
@@ -260,8 +272,8 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 	    group_nodes.clear();
 	    Point3D bs_center;
 	    double bs_radius = 0;
-	    for ( int i = start; i < end; ++i ) {
-		for ( int j = 0; j < (int)strips_v[i].size(); ++j ) {
+	    for ( i = start; i < end; ++i ) {
+		for ( j = 0; j < (int)strips_v[i].size(); ++j ) {
 		    group_nodes.push_back( wgs84_nodes[ strips_v[i][j] ] );
 		    bs_center = calc_center( group_nodes );
 		    bs_radius = calc_bounding_radius( bs_center, group_nodes );
@@ -275,9 +287,9 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 		    bs_center.x(), bs_center.y(), bs_center.z(), bs_radius);
 
 	    // write groups
-	    for ( int i = start; i < end; ++i ) {
+	    for ( i = start; i < end; ++i ) {
 		fprintf(fp, "ts");
-		for ( int j = 0; j < (int)strips_v[i].size(); ++j ) {
+		for ( j = 0; j < (int)strips_v[i].size(); ++j ) {
 		    fprintf(fp, " %d/%d", strips_v[i][j], strips_tc[i][j] );
 		}
 		fprintf(fp, "\n");
@@ -299,8 +311,12 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 // update index
 void write_index(const string& base, const FGBucket& b, const string& name) {
     string dir = base + "/" + b.gen_base_path();
+#ifdef _MSC_VER
+    fg_mkdir( dir.c_str() );
+#else
     string command = "mkdir -p " + dir;
     system(command.c_str());
+#endif
 
     string file = dir + "/" + b.gen_index_str() + ".ind";
     // string file = dir + "/" + name;
@@ -323,8 +339,12 @@ void write_boundary( const string& base, const FGBucket& b,
     Point3D p;
 
     string dir = base + "/" + b.gen_base_path();
+#ifdef _MSC_VER
+    fg_mkdir( dir.c_str() );
+#else
     string command = "mkdir -p " + dir;
     system(command.c_str());
+#endif
 
     string file = dir + "/" + b.gen_index_str();
 

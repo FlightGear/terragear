@@ -71,7 +71,7 @@ public:
     inline FGContourNode *get_kid( int n ) const { return kids[n]; }
     inline void add_kid( FGContourNode *kid ) { kids.push_back( kid ); }
     inline void remove_kid( int n ) {
-	cout << "kids[" << n << "] = " << kids[n] << endl;
+	// cout << "kids[" << n << "] = " << kids[n] << endl;
 	delete kids[n];
 	kids[n] = NULL;
     }

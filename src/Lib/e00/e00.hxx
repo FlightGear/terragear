@@ -1,12 +1,15 @@
+#include <simgear/compiler.h>
+
 #include <vector>
 #include <map>
-#include <string>
+#include STL_STRING
 #include <iostream>
 
-using std::vector;
-using std::map;
-using std::string;
-using std::istream;
+FG_USING_STD(vector);
+FG_USING_STD(map);
+FG_USING_STD(string);
+FG_USING_STD(istream);
+FG_USING_STD(ostream);
 
 struct E00Exception
 {

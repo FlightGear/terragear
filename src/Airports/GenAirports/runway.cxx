@@ -67,19 +67,20 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
     FGPolygon rad_list;
     FGPolygon result_list;
     Point3D p;
+    int i;
 
     // convert to polar coordinates
     rad_list = batch_cart_to_polar_2d(cart_list);
 
     // display points
     // cout << "converted to polar" << endl;
-    // for ( int i = 0; i < rad_list.contour_size( 0 ); ++i ) {
+    // for ( i = 0; i < rad_list.contour_size( 0 ); ++i ) {
     //     cout << "  " << rad_list.get_pt(0, i) << endl;
     // }
 
     // rotate by specified angle
     // cout << "Rotating points by " << angle << endl;
-    for ( int i = 0; i < rad_list.contour_size( 0 ); ++i) {
+    for ( i = 0; i < rad_list.contour_size( 0 ); ++i) {
 	p = rad_list.get_pt( 0, i );
 	double theta = p.y() + angle;
         while ( theta < FG_2PI ) {
@@ -92,7 +93,7 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
 
     // find actual lon,lat of coordinates
     // cout << "convert to lon, lat relative to " << origin << endl;
-    for ( int i = 0; i < (int)rad_list.contour_size( 0 ); ++i ) {
+    for ( i = 0; i < (int)rad_list.contour_size( 0 ); ++i ) {
 	// p = calc_lon_lat(origin_rad, rad_list.get_pt(0, i) );
 
 	double lat2, lon2, az2;
@@ -114,8 +115,8 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
 
 // generate an area for a runway
 FGPolygon gen_runway_area( const FGRunway& runway,
- 			   double len_scale = 1.0,
-			   double width_scale = 1.0 ) {
+ 			   double len_scale,
+			   double width_scale ) {
 
     FGPolygon result_list;
     FGPolygon tmp_list;
@@ -158,8 +159,8 @@ FGPolygon gen_runway_area( const FGRunway& runway,
 
 // generate an area for a runway and include midpoints
 FGPolygon gen_runway_w_mid( const FGRunway& runway, 
-			    double len_scale = 1.0,
-			    double width_scale = 1.0 ) {
+			    double len_scale,
+			    double width_scale ) {
     FGPolygon result_list;
     FGPolygon tmp_list;
 

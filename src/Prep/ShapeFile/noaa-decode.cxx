@@ -39,16 +39,19 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
+FG_USING_STD( cout );
+FG_USING_STD( string );
 
 // return the type of the shapefile record
 AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
+
+#if 0
     int         *panWidth, i, iRecord;
     char        szFormat[32];
     int         nWidth, nDecimals;
-    int         bMultiLine = 0;
     char        szTitle[12];
+    int         bMultiLine = 0;
 
-#if 0
     // grab the meta-information for all the fields
     // this applies to all the records in the DBF file.
     for ( i = 0; i < DBFGetFieldCount(hDBF); i++ ) {

@@ -43,11 +43,10 @@ int main(int argc, char **argv) {
     fgRAWDEM raw;
     char basename[256], output_dir[256], hdr_file[256], dem_file[256];
     int start_lat, end_lat;
-    int i, j;
-    int min, max;
-    double total;
-    unsigned char buf[2];
-    short int value;
+    int i;
+    // double total;
+    // unsigned char buf[2];
+    // short int value;
 
     if ( argc != 3 ) {
 	printf("Usage: %s <input_file_basename> <output_dir>\n", argv[0]);
@@ -81,6 +80,7 @@ int main(int argc, char **argv) {
     printf(" short int size = %d\n", sizeof(short int) );
 
     /*
+    int min, max;
     min = max = 0;
     total = 0;
     for ( j = 0; j < raw.nrows; ++j ) {

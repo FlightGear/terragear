@@ -21,7 +21,7 @@
 // $Id$
 
 
-#include <superpoly.hxx>
+#include "superpoly.hxx"
 
 
 // Constructor

@@ -22,6 +22,7 @@
 // $Id$
 
 
+#include <float.h>
 #include <stdio.h>
 
 #include <simgear/compiler.h>
@@ -50,7 +51,8 @@ static double slope( const Point3D& p0, const Point3D& p1 ) {
     if ( fabs(p0.x() - p1.x()) > FG_EPSILON ) {
 	return (p0.y() - p1.y()) / (p0.x() - p1.x());
     } else {
-	return 1.0e+999; // really big number
+	// return 1.0e+999; // really big number
+	return DBL_MAX;
     }
 }
 
@@ -110,6 +112,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
     int p1_index = 0;
     int p2_index = 0;
     int ln_index = 0;
+    int i;
 
     // 1. find a point on the specified contour, min, with smallest y
 
@@ -121,7 +124,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
     current = c.begin();
     last = c.end();
 
-    for ( int i = 0; i < p.contour_size( contour ); ++i ) {
+    for ( i = 0; i < p.contour_size( contour ); ++i ) {
 	tmp = p.get_pt( contour, i );
 	if ( tmp.y() < min.y() ) {
 	    min = tmp;
@@ -178,7 +181,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 
     p3.sety(100);
     
-    for ( int i = 0; i < (int)p.contours(); ++i ) {
+    for ( i = 0; i < (int)p.contours(); ++i ) {
 	cout << "contour = " << i << " size = " << p.contour_size( i ) << endl;
 	for ( int j = 0; j < (int)(p.contour_size( i ) - 1); ++j ) {
 	    // cout << "  p1 = " << poly[i][j] << " p2 = " 
@@ -192,7 +195,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 		cout << "intersection = " << result << endl;
 		if ( ( result.y() < p3.y() ) &&
 		     ( result.y() > m.y() ) &&
-		     ( base_leg != FGTriSeg(p1_index, p2_index, 0) ) ) {
+		     !( base_leg == FGTriSeg(p1_index, p2_index, 0) ) ) {
 		    p3 = result;
 		}
 	    }
@@ -207,7 +210,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 	    cout << "intersection = " << result << endl;
 	    if ( ( result.y() < p3.y() ) &&
 		 ( result.y() > m.y() ) &&
-		 ( base_leg != FGTriSeg(p1_index, p2_index, 0) ) ) {
+		 !( base_leg == FGTriSeg(p1_index, p2_index, 0) ) ) {
 		p3 = result;
 	    }
 	}
@@ -237,6 +240,7 @@ void polygon_tesselate( const FGPolygon &p,
 			point_list &out_pts )
 {
     struct triangulateio in, out, vorout;
+    int i;
 
     // make sure all elements of these structs point to "NULL"
     zero_triangulateio( &in );
@@ -249,7 +253,7 @@ void polygon_tesselate( const FGPolygon &p,
     double max_x = p.get_pt(0,0).x();
 
     int total_pts = 0;
-    for ( int i = 0; i < p.contours(); ++i ) {
+    for ( i = 0; i < p.contours(); ++i ) {
 	total_pts += p.contour_size( i );
     }
 
@@ -257,7 +261,7 @@ void polygon_tesselate( const FGPolygon &p,
     in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
 
     counter = 0;
-    for ( int i = 0; i < p.contours(); ++i ) {
+    for ( i = 0; i < p.contours(); ++i ) {
 	point_list contour = p.get_contour( i );
 	for ( int j = 0; j < (int)contour.size(); ++j ) {
 	    in.pointlist[2*counter] = contour[j].x();
@@ -274,7 +278,7 @@ void polygon_tesselate( const FGPolygon &p,
 					    in.numberofpointattributes *
 					    sizeof(REAL));
     counter = 0;
-    for ( int i = 0; i < p.contours(); ++i ) {
+    for ( i = 0; i < p.contours(); ++i ) {
 	point_list contour = p.get_contour( i );
 	for ( int j = 0; j < (int)contour.size(); ++j ) {
 	    in.pointattributelist[counter] = contour[j].z();
@@ -283,7 +287,7 @@ void polygon_tesselate( const FGPolygon &p,
     }
 
     // in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
-    // for ( int i = 0; i < in.numberofpoints; ++i) {
+    // for ( i = 0; i < in.numberofpoints; ++i) {
     //    in.pointmarkerlist[i] = 0;
     // }
     in.pointmarkerlist = NULL;
@@ -295,7 +299,7 @@ void polygon_tesselate( const FGPolygon &p,
     start = 0;
     end = -1;
 
-    for ( int i = 0; i < p.contours(); ++i ) {
+    for ( i = 0; i < p.contours(); ++i ) {
 	point_list contour = p.get_contour( i );
 	start = end + 1;
 	end = start + contour.size() - 1;
@@ -308,13 +312,13 @@ void polygon_tesselate( const FGPolygon &p,
     }
 
     in.segmentmarkerlist = (int *) malloc(in.numberofsegments * sizeof(int));
-    for ( int i = 0; i < in.numberofsegments; ++i ) {
+    for ( i = 0; i < in.numberofsegments; ++i ) {
        in.segmentmarkerlist[i] = 0;
     }
 
     // hole list
     in.numberofholes = 1;
-    for ( int i = 0; i < p.contours(); ++i ) {
+    for ( i = 0; i < p.contours(); ++i ) {
 	if ( p.get_hole_flag( i ) ) {
 	    ++in.numberofholes;
 	}
@@ -325,7 +329,7 @@ void polygon_tesselate( const FGPolygon &p,
     in.holelist[counter++] = max_x + 1.0;
     in.holelist[counter++] = 0.0;
 
-    for ( int i = 0; i < (int)p.contours(); ++i ) {
+    for ( i = 0; i < (int)p.contours(); ++i ) {
 	if ( p.get_hole_flag( i ) ) {
 	    in.holelist[counter++] = p.get_point_inside(i).x();
 	    in.holelist[counter++] = p.get_point_inside(i).y();
@@ -380,7 +384,7 @@ void polygon_tesselate( const FGPolygon &p,
     elelist.clear();
     int n1, n2, n3;
     double attribute;
-    for ( int i = 0; i < out.numberoftriangles; ++i ) {
+    for ( i = 0; i < out.numberoftriangles; ++i ) {
 	n1 = out.trianglelist[i * 3];
 	n2 = out.trianglelist[i * 3 + 1];
 	n3 = out.trianglelist[i * 3 + 2];
@@ -397,7 +401,7 @@ void polygon_tesselate( const FGPolygon &p,
     // output points
     out_pts.clear();
     double x, y, z;
-    for ( int i = 0; i < out.numberofpoints; ++i ) {
+    for ( i = 0; i < out.numberofpoints; ++i ) {
 	x = out.pointlist[i * 2    ];
 	y = out.pointlist[i * 2 + 1];
 	z = out.pointattributelist[i];
@@ -436,6 +440,7 @@ void polygon_tesselate( const FGPolygon &p,
 FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
     FGPolygon result;
     result.erase();
+    int i;
 
     // Bail right away if polygon is empty
     if ( p.contours() == 0 ) {
@@ -445,7 +450,7 @@ FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
     // 1.  Robustly find a point inside each contour that is not
     //     inside any other contour
     calc_points_inside( p );
-    for ( int i = 0; i < p.contours(); ++i ) {
+    for ( i = 0; i < p.contours(); ++i ) {
 	cout << "final point inside =" << p.get_point_inside( i )
 	     << endl;
     }
@@ -457,7 +462,7 @@ FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
 
     // 3.  Convert the tesselated output to a list of tringles.
     //     basically a polygon with a contour for every triangle
-    for ( int i = 0; i < (int)trieles.size(); ++i ) {
+    for ( i = 0; i < (int)trieles.size(); ++i ) {
 	FGTriEle t = trieles[i];
 	Point3D p1 = nodes[ t.get_n1() ];
 	Point3D p2 = nodes[ t.get_n2() ];
@@ -480,6 +485,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 			       point_list &out_pts )
 {
     struct triangulateio in, out, vorout;
+    int i;
 
     // make sure all elements of these structs point to "NULL"
     zero_triangulateio( &in );
@@ -509,7 +515,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     }
 #endif
 
-    for ( int i = 0; i < hole_polys.contours(); ++i ) {
+    for ( i = 0; i < hole_polys.contours(); ++i ) {
 	total_pts += hole_polys.contour_size( i );
     }
 
@@ -517,7 +523,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
 
     counter = 0;
-    for ( int i = 0; i < (int)contour.size(); ++i ) {
+    for ( i = 0; i < (int)contour.size(); ++i ) {
 	in.pointlist[2*counter] = contour[i].x();
 	in.pointlist[2*counter + 1] = contour[i].y();
 	if ( contour[i].x() > max_x ) {
@@ -526,7 +532,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 	++counter;
     }
 
-    for ( int i = 0; i < hole_polys.contours(); ++i ) {
+    for ( i = 0; i < hole_polys.contours(); ++i ) {
 	point_list hole_contour = hole_polys.get_contour( i );
 	for ( int j = 0; j < (int)hole_contour.size(); ++j ) {
 	    in.pointlist[2*counter] = hole_contour[j].x();
@@ -543,12 +549,12 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 					    in.numberofpointattributes *
 					    sizeof(REAL));
     counter = 0;
-    for ( int i = 0; i < (int)contour.size(); ++i ) {
+    for ( i = 0; i < (int)contour.size(); ++i ) {
 	in.pointattributelist[counter] = contour[i].z();
 	++counter;
     }
 
-    for ( int i = 0; i < hole_polys.contours(); ++i ) {
+    for ( i = 0; i < hole_polys.contours(); ++i ) {
 	point_list hole_contour = hole_polys.get_contour( i );
 	for ( int j = 0; j < (int)hole_contour.size(); ++j ) {
 	    in.pointattributelist[counter] = hole_contour[j].z();
@@ -557,7 +563,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     }
 
     // in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
-    // for ( int i = 0; i < in.numberofpoints; ++i) {
+    // for ( i = 0; i < in.numberofpoints; ++i) {
     //     in.pointmarkerlist[i] = 0;
     // }
     in.pointmarkerlist = NULL;
@@ -569,7 +575,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     counter = 0;
     start = 0;
     end = contour.size() - 1;
-    for ( int i = 0; i < end; ++i ) {
+    for ( i = 0; i < end; ++i ) {
 	in.segmentlist[counter++] = i;
 	in.segmentlist[counter++] = i + 1;
 	in.segmentmarkerlist[i] = 0;
@@ -578,7 +584,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     in.segmentlist[counter++] = start;
     in.segmentmarkerlist[contour.size() - 1] = 0;
 
-    for ( int i = 0; i < hole_polys.contours(); ++i ) {
+    for ( i = 0; i < hole_polys.contours(); ++i ) {
 	point_list hole_contour = hole_polys.get_contour( i );
 	start = end + 1;
 	end = start + hole_contour.size() - 1;
@@ -590,7 +596,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
 	in.segmentlist[counter++] = start;
     }
 
-    for ( int i = 0; i < in.numberofsegments; ++i ) {
+    for ( i = 0; i < in.numberofsegments; ++i ) {
 	in.segmentmarkerlist[i] = 0;
     }
 
@@ -602,7 +608,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     in.holelist[counter++] = max_x + 1.0;
     in.holelist[counter++] = 0.0;
 
-    for ( int i = 0; i < (int)hole_pts.size(); ++i ) {
+    for ( i = 0; i < (int)hole_pts.size(); ++i ) {
 	in.holelist[counter++] = hole_pts[i].x();
 	in.holelist[counter++] = hole_pts[i].y();
     }
@@ -654,7 +660,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     elelist.clear();
     int n1, n2, n3;
     double attribute;
-    for ( int i = 0; i < out.numberoftriangles; ++i ) {
+    for ( i = 0; i < out.numberoftriangles; ++i ) {
 	n1 = out.trianglelist[i * 3];
 	n2 = out.trianglelist[i * 3 + 1];
 	n3 = out.trianglelist[i * 3 + 2];
@@ -671,7 +677,7 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     // output points
     out_pts.clear();
     double x, y, z;
-    for ( int i = 0; i < out.numberofpoints; ++i ) {
+    for ( i = 0; i < out.numberofpoints; ++i ) {
 	x = out.pointlist[i * 2    ];
 	y = out.pointlist[i * 2 + 1];
 	z = out.pointattributelist[i];
@@ -827,11 +833,12 @@ static void build_contour_tree( FGContourNode *node,
     cout << "working on contour = " << node->get_contour_num() << endl;
     cout << "  total contours = " << p.contours() << endl;
     FGContourNode *tmp;
+    int i;
 
-    // see if we are building on a hole or note
+    // see if we are building on a hole or not
     bool flag;
     if ( node->get_contour_num() >= 0 ) {
-	flag = p.get_hole_flag( node->get_contour_num() );
+	flag = (bool)p.get_hole_flag( node->get_contour_num() );
     } else {
 	flag = true;
     }
@@ -839,7 +846,7 @@ static void build_contour_tree( FGContourNode *node,
 
     // add all remaining hole/non-hole contours as children of the
     // current node if they are inside of it.
-    for ( int i = 0; i < p.contours(); ++i ) {
+    for ( i = 0; i < p.contours(); ++i ) {
 	cout << "  testing contour = " << i << endl;
 	if ( p.get_hole_flag( i ) != flag ) {
 	    // only holes can be children of non-holes and visa versa
@@ -868,7 +875,7 @@ static void build_contour_tree( FGContourNode *node,
     // inside one
     cout << "node now has num kids = " << node->get_num_kids() << endl;
 
-    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+    for ( i = 0; i < node->get_num_kids(); ++i ) {
 	for ( int j = 0; j < node->get_num_kids(); ++j ) {
 	    if ( i != j ) {
 		if ( (node->get_kid(i) != NULL)&&(node->get_kid(j) != NULL) ) {
@@ -894,7 +901,7 @@ static void build_contour_tree( FGContourNode *node,
     }
 
     // for each child, extend the contour tree
-    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+    for ( i = 0; i < node->get_num_kids(); ++i ) {
 	tmp = node->get_kid( i );
 	if ( tmp != NULL ) {
 	    build_contour_tree( tmp, p, avail );

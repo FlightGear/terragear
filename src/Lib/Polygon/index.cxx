@@ -44,7 +44,7 @@ bool poly_index_init( string path ) {
     FILE *fp = fopen( poly_path.c_str(), "r" );
 
     if ( fp == NULL ) {
-	cout << "Error cannot open " << poly_path << endl;
+	cout << "Warning: cannot open " << poly_path << endl;
 	poly_index = 0;
 	return false;
     }

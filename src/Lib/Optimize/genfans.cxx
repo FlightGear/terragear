@@ -21,7 +21,14 @@
 // $Id$
 
 
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
+
 #include "genfans.hxx"
+
+FG_USING_STD( cout );
+FG_USING_STD( endl );
 
 
 // make sure the list is expanded at least to hold "n" and then push
@@ -59,6 +66,10 @@ static FGTriEle canonify( const FGTriEle& t, int center ) {
 	cout << "ERROR, index doesn't refer to this triangle!!!" << endl;
 	exit(-1);
     }
+
+    // MSVC kludge (code should never reach this point, but it makes
+    // the MSVC compiler happy)
+    return t;
 }
 
 // returns a list of triangle indices

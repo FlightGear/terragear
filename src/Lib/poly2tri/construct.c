@@ -1,6 +1,9 @@
-#include <triangulate.h>
+#include "triangulate.h"
 #include <math.h>
 
+#ifdef _MSC_VER
+#  include <memory.h>
+#endif
 
 node_t qs[QSIZE];		/* Query structure */
 trap_t tr[TRSIZE];		/* Trapezoid structure */
@@ -432,9 +435,9 @@ static int add_segment(segnum)
 {
   segment_t s;
   segment_t *so = &seg[segnum];
-  int tu, tl, sk, tfirst, tlast, tnext;
+  int tu, tl, sk, tfirst, tlast;
   int tfirstr, tlastr, tfirstl, tlastl;
-  int i1, i2, t, t1, t2, tn;
+  int i1, i2, t, tn;
   point_t tpt;
   int tritop = 0, tribot = 0, is_swapped = 0;
   int tmptriseg;

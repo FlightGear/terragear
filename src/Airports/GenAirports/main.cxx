@@ -47,6 +47,9 @@
 #include "build.hxx"
 #include "convex_hull.hxx"
 
+#ifdef _MSC_VER
+#  include <Win32/mkdir.hpp>
+#endif
 
 int nudge = 10;
 
@@ -103,8 +106,12 @@ int main( int argc, char **argv ) {
     }
 
     // make work directory
+#ifdef _MSC_VER
+    fg_mkdir( work_dir.c_str() );
+#else
     string command = "mkdir -p " + work_dir;
     system( command.c_str() );
+#endif
 
     // initialize persistant polygon counter
     string counter_file = work_dir + "/poly_counter";

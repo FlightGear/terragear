@@ -42,6 +42,8 @@
 #include "gshhs.h"
 #include "gshhs_split.hxx"
 
+FG_USING_STD( string );
+FG_USING_STD( cout );
 
 // hackity, hackity, hack ... cough cough
 #ifdef i386

@@ -318,8 +318,8 @@ int FGGenOutput::write( FGConstruct &c ) {
 
     string dir = base + "/Scenery/" + b.gen_base_path();
 
-#ifdef _MSCVER
-    fg_mkdir( dir.c_str );
+#ifdef _MSC_VER
+    fg_mkdir( dir.c_str() );
 #else
     string command = "mkdir -p " + dir;
     system(command.c_str());
