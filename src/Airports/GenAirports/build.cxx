@@ -205,28 +205,29 @@ static point_list calc_elevations( const string& root,
 	    SGBucket b( result[i].x(), result[i].y() );
 	    string base = b.gen_base_path();
 
-	    // try 3 arcsec dems first
-	    string dem_path = root + "/DEM-3/" + base 
-		+ "/" + b.gen_index_str() + ".dem";
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "dem_path = " << dem_path);
+	    // try 3 arcsec arrays first
+	    string array_path = root + "/DEM-3/" + base 
+		+ "/" + b.gen_index_str() + ".arr";
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "array_path = " << array_path);
 	
-	    if ( ! array.open(dem_path) ) {
-		SG_LOG(SG_GENERAL, SG_DEBUG, "ERROR: cannot open 3 arcsec file " << dem_path);
+	    if ( ! array.open(array_path) ) {
+		SG_LOG(SG_GENERAL, SG_DEBUG, "ERROR: cannot open 3 arcsec file "
+                       << array_path);
 		SG_LOG(SG_GENERAL, SG_DEBUG, "trying 30 arcsec file");
 		
-		// try 30 arcsec dem
-		dem_path = root + "/DEM-30/" + base 
-		    + "/" + b.gen_index_str() + ".dem";
-		SG_LOG(SG_GENERAL, SG_DEBUG, "dem_path = " << dem_path);
-		if ( ! array.open(dem_path) ) {
+		// try 30 arcsec array
+		array_path = root + "/DEM-30/" + base 
+		    + "/" + b.gen_index_str() + ".arr";
+		SG_LOG(SG_GENERAL, SG_DEBUG, "array_path = " << array_path);
+		if ( ! array.open(array_path) ) {
 		    SG_LOG(SG_GENERAL, SG_ALERT,
-			   "ERROR: cannot open 30 arcsec file " << dem_path);
+			   "ERROR: cannot open 30 arcsec file " << array_path);
 		}
 	    }
 	    array.parse( b );
 
 	    // update all the non-updated elevations that are inside
-	    // this dem file
+	    // this array file
 	    double elev;
 	    done = true;
 	    for ( j = 0; j < (int)result.size(); ++j ) {
@@ -1019,7 +1020,7 @@ void build_airport( string airport_raw, float alt_m,
     typedef elev_map_type::const_iterator const_elev_map_iterator;
     elev_map_type elevation_map;
 
-    // pass one, calculate raw elevations from DEM
+    // pass one, calculate raw elevations from Array
 
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
         TGTriNodes light_nodes;
