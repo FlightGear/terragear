@@ -462,30 +462,35 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
         dist -= step;
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( w_lights, false );
-    normals_poly.add_contour( w_normals, false );
-
-    FGSuperPoly white;
-    white.set_poly( lights_poly );
-    white.set_normals( normals_poly );
-    white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
-
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( r_lights, false );
-    normals_poly.add_contour( r_normals, false );
-
-    FGSuperPoly red;
-    red.set_poly( lights_poly );
-    red.set_normals( normals_poly );
-    red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
-
     superpoly_list result; result.clear();
 
-    result.push_back( white );
-    result.push_back( red );
+    if ( w_lights.size() > 0 ) {
+        FGPolygon lights_poly; lights_poly.erase();
+        FGPolygon normals_poly; normals_poly.erase();
+        lights_poly.add_contour( w_lights, false );
+        normals_poly.add_contour( w_normals, false );
+
+        FGSuperPoly white;
+        white.set_poly( lights_poly );
+        white.set_normals( normals_poly );
+        white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
+
+        result.push_back( white );
+    }
+
+    if ( r_lights.size() > 0 ) {
+        FGPolygon lights_poly; lights_poly.erase();
+        FGPolygon normals_poly; normals_poly.erase();
+        lights_poly.add_contour( r_lights, false );
+        normals_poly.add_contour( r_normals, false );
+
+        FGSuperPoly red;
+        red.set_poly( lights_poly );
+        red.set_normals( normals_poly );
+        red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
+
+        result.push_back( red );
+    }
 
     return result;
 }
