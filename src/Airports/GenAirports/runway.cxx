@@ -26,6 +26,7 @@
 #include <stdio.h>
 
 #include <simgear/constants.h>
+#include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
@@ -73,13 +74,13 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
     rad_list = batch_cart_to_polar_2d(cart_list);
 
     // display points
-    // cout << "converted to polar" << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "converted to polar");
     // for ( i = 0; i < rad_list.contour_size( 0 ); ++i ) {
-    //     cout << "  " << rad_list.get_pt(0, i) << endl;
+    //     SG_LOG(SG_GENERAL, SG_DEBUG, "  " << rad_list.get_pt(0, i));
     // }
 
     // rotate by specified angle
-    // cout << "Rotating points by " << angle << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "Rotating points by " << angle);
     for ( i = 0; i < rad_list.contour_size( 0 ); ++i) {
 	p = rad_list.get_pt( 0, i );
 	double theta = p.y() + angle;
@@ -88,11 +89,11 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
 	}
 	p.sety( theta );
 	rad_list.set_pt( 0, i, p );
-	// cout << "  " << p << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "  " << p);
     }
 
     // find actual lon,lat of coordinates
-    // cout << "convert to lon, lat relative to " << origin << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "convert to lon, lat relative to " << origin);
     for ( i = 0; i < (int)rad_list.contour_size( 0 ); ++i ) {
 	// p = calc_lon_lat(origin_rad, rad_list.get_pt(0, i) );
 
@@ -105,7 +106,7 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
 	// convert from radians to degress
 	p.setx( lon2 );
 	p.sety( lat2 );
-	// cout << "  " << p << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "  " << p);
 	result_list.add_node( 0, p );
     }
 
@@ -140,18 +141,18 @@ FGPolygon gen_runway_area_w_scale( const FGRunway& runway,
     tmp_list.add_node( 0, Point3D( -l, w, 0 ) );
 
     // display points
-    // cout << "Untransformed, unrotated runway" << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "Untransformed, unrotated runway");
     // for ( int i = 0; i < tmp_list.contour_size( 0 ); ++i ) {
-    //    cout << "  " << tmp_list.get_pt(0, i) << endl;
+    //    SG_LOG(SG_GENERAL, SG_DEBUG, "  " << tmp_list.get_pt(0, i));
     // }
 
     // rotate, transform, and convert points to lon, lat in degrees
     result_list = gen_area(origin, runway.heading * SGD_DEGREES_TO_RADIANS, tmp_list);
 
     // display points
-    // cout << "Results in radians." << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "Results in radians.");
     // for ( int i = 0; i < result_list.contour_size( 0 ); ++i ) {
-    //     cout << "  " << result_list.get_pt(0, i) << endl;
+    //     SG_LOG(SG_GENERAL, SG_DEBUG, "  " << result_list.get_pt(0, i));
     // }
 
     return result_list;
@@ -185,18 +186,18 @@ FGPolygon gen_runway_area_w_expand( const FGRunway& runway,
     tmp_list.add_node( 0, Point3D( -l, w, 0 ) );
 
     // display points
-    // cout << "Untransformed, unrotated runway" << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "Untransformed, unrotated runway");
     // for ( int i = 0; i < tmp_list.contour_size( 0 ); ++i ) {
-    //    cout << "  " << tmp_list.get_pt(0, i) << endl;
+    //    SG_LOG(SG_GENERAL, SG_DEBUG, "  " << tmp_list.get_pt(0, i));
     // }
 
     // rotate, transform, and convert points to lon, lat in degrees
     result_list = gen_area(origin, runway.heading * SGD_DEGREES_TO_RADIANS, tmp_list);
 
     // display points
-    // cout << "Results in radians." << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "Results in radians.");
     // for ( int i = 0; i < result_list.contour_size( 0 ); ++i ) {
-    //     cout << "  " << result_list.get_pt(0, i) << endl;
+    //     SG_LOG(SG_GENERAL, SG_DEBUG, "  " << result_list.get_pt(0, i));
     // }
 
     return result_list;
@@ -230,18 +231,18 @@ FGPolygon gen_runway_w_mid( const FGRunway& runway,
     tmp_list.add_node( 0, Point3D( 0, w, 0 ) );
 
     // display points
-    // cout << "Untransformed, unrotated runway" << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "Untransformed, unrotated runway");
     // for ( int i = 0; i < tmp_list.contour_size( 0 ); ++i ) {
-    //    cout << "  " << tmp_list.get_pt(0, i) << endl;
+    //    SG_LOG(SG_GENERAL, SG_DEBUG, "  " << tmp_list.get_pt(0, i));
     // }
 
     // rotate, transform, and convert points to lon, lat in degrees
     result_list = gen_area(origin, runway.heading * SGD_DEGREES_TO_RADIANS, tmp_list);
 
     // display points
-    // cout << "Results in radians." << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "Results in radians.");
     // for ( int i = 0; i < result_list.contour_size( 0 ); ++i ) {
-    //     cout << "  " << result_list.get_pt(0, i) << endl;
+    //     SG_LOG(SG_GENERAL, SG_DEBUG, "  " << result_list.get_pt(0, i));
     // }
 
     return result_list;

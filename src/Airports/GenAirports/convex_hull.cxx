@@ -26,16 +26,13 @@
 #include <stdio.h>
 
 #include <map>
-#include <iostream>
 
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
+#include <simgear/misc/exception.hxx>
 
 SG_USING_STD(less);
 SG_USING_STD(map);
-SG_USING_STD(cerr);
-SG_USING_STD(cout);
-SG_USING_STD(endl);
 
 #include <simgear/constants.h>
 
@@ -176,8 +173,7 @@ FGPolygon convex_hull( const point_list& input_list ) {
     // double check list size ... this should never fail because a
     // single runway will always generate four points.
     if ( radians_map.size() < 3 ) {
-	cout << "convex hull not possible with < 3 points" << endl;
-	exit(-1);
+        throw sg_exception("convex hull not possible with < 3 points");
     }
 
     // ensure that we run the while loop at least once

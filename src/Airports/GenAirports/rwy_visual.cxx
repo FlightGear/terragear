@@ -23,11 +23,7 @@
 
 
 #include <simgear/compiler.h>
-
-#include <iostream>
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
+#include <simgear/debug/logstream.hxx>
 
 #include "rwy_common.hxx"
 #include "rwy_visual.hxx"
@@ -69,15 +65,15 @@ void gen_visual_rwy( const FGRunway& rwy_info,
     runway_b.add_node( 0, runway.get_pt(0, 2) );
 	
     Point3D p;
-    cout << "raw runway pts (a half)" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway pts (a half)");
     for ( j = 0; j < runway_a.contour_size( 0 ); ++j ) {
 	p = runway_a.get_pt(0, j);
-	cout << " point = " << p << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
-    cout << "raw runway pts (b half)" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway pts (b half)");
     for ( j = 0; j < runway_b.contour_size( 0 ); ++j ) {
 	p = runway_b.get_pt(0, j);
-	cout << " point = " << p << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
 
     //
@@ -90,8 +86,8 @@ void gen_visual_rwy( const FGRunway& rwy_info,
 
     double length = rwy_info.length / 2.0;
     if ( length < 1150 ) {
-	cout << "This runway is not long enough for visual markings!"
-	     << endl;
+	SG_LOG(SG_GENERAL, SG_ALERT,
+	       "This runway is not long enough for visual markings!");
     }
 
     double start_pct = 0;
@@ -119,8 +115,8 @@ void gen_visual_rwy( const FGRunway& rwy_info,
 	}
     }
 	    
-    cout << "Runway designation = " << rwy_info.rwy_no << endl;
-    cout << "Runway designation letter = " << letter << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwy_info.rwy_no);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
 
     if ( letter != "" ) {
 	start_pct = end_pct;
@@ -155,7 +151,7 @@ void gen_visual_rwy( const FGRunway& rwy_info,
 	    snum = rwy_info.rwy_no.substr(0, i);
 	}
     }
-    cout << "Runway num = '" << snum << "'" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway num = '" << snum << "'");
     int num = atoi( snum.c_str() );
 
     gen_number_block( rwy_info, material, runway_b, rwy_info.heading + 180.0,

@@ -27,16 +27,13 @@
 #endif
 
 #include <simgear/compiler.h>
+#include <simgear/misc/exception.hxx>
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
 #include <list>
-#include <iostream>
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
 
 #include <stdio.h>
 #include <string.h>
@@ -81,7 +78,7 @@ int main( int argc, char **argv ) {
     char tmp[2048];
     bool ready_to_go = true;
 
-    sglog().setLogLevels( SG_ALL, SG_DEBUG );
+    sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
     // parse arguments
     string work_dir = "";
@@ -113,11 +110,11 @@ int main( int argc, char **argv ) {
 	}
     }
 
-    cout << "Input file = " << input_file << endl;
-    cout << "Work directory = " << work_dir << endl;
-    cout << "Nudge = " << nudge << endl;
-    cout << "Longitude = " << min_lon << ':' << max_lon << endl;
-    cout << "Latitude = " << min_lat << ':' << max_lat << endl;
+    SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
+    SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
+    SG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
+    SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min_lon << ':' << max_lon);
+    SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min_lat << ':' << max_lat);
 
     if (max_lon < min_lon || max_lat < min_lat ||
 	min_lat < -90 || max_lat > 90 ||
@@ -165,7 +162,7 @@ int main( int argc, char **argv ) {
     while ( ! in.eof() ) {
 	in.getline(tmp, 2048);
 	line = tmp;
-	cout << line << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, line);
 
 	if ( line.length() == 0 ) {
 	    // empty, skip
@@ -180,8 +177,9 @@ int main( int argc, char **argv ) {
 		float lat, lon;
 		sscanf( last_airport.c_str(), "%c %s %f %f",
 			&ctmp, id, &lat, &lon);
-		cout << "Airport lat/lon = " << lat << ',' << lon << endl;
-		cout << "Id portion = " << id << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "Airport lat/lon = "
+		       << lat << ',' << lon);
+		SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
 
 		if (lon >= min_lon && lon <= max_lon &&
 		    lat >= min_lat && lat <= max_lat) {
@@ -198,8 +196,15 @@ int main( int argc, char **argv ) {
 
 		    // process previous record
 		    // process_airport(last_airport, runways_list, argv[2]);
-		    build_airport( last_airport, runways_list, taxiways_list,
-                                   work_dir );
+		    try {
+		      build_airport( last_airport, runways_list, taxiways_list,
+				     work_dir );
+		    } catch (sg_exception &e) {
+		      SG_LOG(SG_GENERAL, SG_ALERT, "Failed to build airport "
+			     << id);
+		      SG_LOG(SG_GENERAL, SG_ALERT, "Exception: "
+			     << e.getMessage());
+		    }
 		  }
 		} else {
 		  SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
@@ -222,7 +227,7 @@ int main( int argc, char **argv ) {
 	    break;
 	} else {
 	    SG_LOG( SG_GENERAL, SG_ALERT, 
-		    "Unknown line in file" << endl << line );
+		    "Unknown line in file: " << line );
 	    exit(-1);
 	}
     }
@@ -230,7 +235,7 @@ int main( int argc, char **argv ) {
     if ( last_airport.length() ) {
 	char ctmp, id[32];
 	sscanf( last_airport.c_str(), "%c %s", &ctmp, id );
-	cout << "Id portion = " << id << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
 
 	if ( start_id.length() && start_id == id ) {
 	    ready_to_go = true;
@@ -243,9 +248,7 @@ int main( int argc, char **argv ) {
 	}
     }
 
-    cout << "[FINISHED CORRECTLY]" << endl;
+    SG_LOG(SG_GENERAL, SG_INFO, "[FINISHED CORRECTLY]");
 
     return 0;
 }
-
-

@@ -28,6 +28,8 @@
 #endif
 
 #include <simgear/compiler.h>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/misc/exception.hxx>
 
 #include <stdio.h>
 #include <stdlib.h>		// for atoi() atof()
@@ -35,11 +37,6 @@
 
 #include <list>
 #include STL_STRING
-
-#include <iostream>
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
 
 #include <plib/sg.h>			// plib include
 
@@ -92,17 +89,17 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
     Point3D min = tp.get_min();
     Point3D max = tp.get_max();
     double angle = tp.get_angle();
-    cout << "section heading = " << angle << endl;
-    cout << "center = " << center << endl;
-    cout << "min = " << min << endl;
-    cout << "max = " << max << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "section heading = " << angle);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "center = " << center);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "min = " << min);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "max = " << max);
     Point3D p, t;
     double x, y, tx, ty;
 
     for ( i = 0; i < in_poly.contours(); ++i ) {
 	for ( j = 0; j < in_poly.contour_size( i ); ++j ) {
 	    p = in_poly.get_pt( i, j );
-	    cout << "point = " << p << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "point = " << p);
 
 	    //
 	    // 1. Calculate distance and bearing from the center of
@@ -115,7 +112,7 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    double az1, az2, dist;
 	    geo_inverse_wgs_84( 0, center.y(), center.x(), p.y(), p.x(),
 				&az1, &az2, &dist );
-	    // cout << "basic course = " << az1 << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "basic course = " << az1);
 
 	    //
 	    // 2. Rotate this back into a coordinate system where Y
@@ -123,11 +120,11 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    //
 
 	    double course = az1 - angle + 90;
-	    // cout << "course = " << course << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "course = " << course);
 	    while ( course < -360 ) { course += 360; }
 	    while ( course > 360 ) { course -= 360; }
-	    // cout << "Dist = " << dist << endl;
-	    // cout << "  Course = " << course * 180.0 / SGD_PI << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "Dist = " << dist);
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  Course = " << course * 180.0 / SGD_PI);
 
 	    //
 	    // 3. Convert from polar to cartesian coordinates
@@ -135,16 +132,16 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 
 	    x = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
 	    y = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
-	    cout << "  x = " << x << " y = " << y << endl;
-	    cout << "  min = " << min << endl;
-	    cout << "  max = " << max << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  x = " << x << " y = " << y);
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  min = " << min);
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  max = " << max);
 	    //
 	    // 4. Map x, y point into texture coordinates
 	    //
 	    
 	    tx = (x - min.x()) / (max.x() - min.x());
 	    tx = ((int)(tx * 100)) / 100.0;
-	    cout << "  (" << tx << ")" << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
 
             if ( clip_result ) {
                 if ( tx < 0.0 ) { tx = 0.0; }
@@ -154,7 +151,7 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    // ty = (y - min.y()) / (max.y() - min.y());
 	    ty = (max.y() - y) / (max.y() - min.y());
 	    ty = ((int)(ty * 100)) / 100.0;
-	    cout << "  (" << ty << ")" << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
 
             if ( clip_result ) {
                 if ( ty < 0.0 ) { ty = 0.0; }
@@ -162,7 +159,7 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
             }
 
 	    t = Point3D( tx, ty, 0 );
-	    cout << "  (" << tx << ", " << ty << ")" << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ", " << ty << ")");
 
 	    result.add_node( i, t );
 	}
@@ -198,19 +195,19 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 	    // try 3 arcsec dems first
 	    string dem_path = root + "/DEM-3/" + base 
 		+ "/" + b.gen_index_str() + ".dem";
-	    cout << "dem_path = " << dem_path << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "dem_path = " << dem_path);
 	
 	    if ( ! array.open(dem_path) ) {
-		cout << "ERROR: cannot open 3 arcsec file " << dem_path << endl;
-		cout << "trying 30 arcsec file" << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "ERROR: cannot open 3 arcsec file " << dem_path);
+		SG_LOG(SG_GENERAL, SG_DEBUG, "trying 30 arcsec file");
 		
 		// try 30 arcsec dem
 		dem_path = root + "/DEM-30/" + base 
 		    + "/" + b.gen_index_str() + ".dem";
-		cout << "dem_path = " << dem_path << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "dem_path = " << dem_path);
 		if ( ! array.open(dem_path) ) {
-		    cout << "ERROR: cannot open 3 arcsec file " 
-			 << dem_path << endl;
+		    SG_LOG(SG_GENERAL, SG_ALERT,
+			   "ERROR: cannot open 30 arcsec file " << dem_path);
 		}
 	    }
 	    array.parse( b );
@@ -222,7 +219,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 	    for ( j = 0; j < (int)result.size(); ++j ) {
 		if ( result[j].z() < -9000 ) {
 		    done = false;
-		    cout << "interpolating for " << result[j] << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "interpolating for " << result[j]);
 		    elev = array.interpolate_altitude( result[j].x() * 3600.0,
 						   result[j].y() * 3600.0 );
 		    if ( elev > -9000 ) {
@@ -243,11 +240,11 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 
 // strip trailing spaces
 static void my_chomp( string& str ) {
-    cout << "my_chomp()" << endl;
-    cout << "'" << str.substr( str.length() - 1, 1 ) << "'" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "my_chomp()");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "'" << str.substr( str.length() - 1, 1 ) << "'");
     while ( str.substr( str.length() - 1, 1 ) == " " ) {
 	str = str.substr( 0, str.length() - 1 );
-	cout << "'" << str.substr( str.length() - 1, 1 ) << "'" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "'" << str.substr( str.length() - 1, 1 ) << "'");
     }
 }
 
@@ -259,9 +256,9 @@ void build_runway( const FGRunway& rwy_info,
 		   FGPolygon *accum,
 		   FGPolygon *apt_base )
 {
-    cout << "surface flags = " << rwy_info.surface_flags << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "surface flags = " << rwy_info.surface_flags);
     string surface_flag = rwy_info.surface_flags.substr(1, 1);
-    cout << "surface flag = " << surface_flag << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "surface flag = " << surface_flag);
 
     string material;
     if ( surface_flag == "A" ) {
@@ -295,13 +292,12 @@ void build_runway( const FGRunway& rwy_info,
     } else if ( surface_flag == "W" ) {
         // water ???
     } else {
-        cout << "unknown runway type!" << endl;
-        exit(-1);
+	throw sg_exception("unknown runway type!");
     }
 
 
     string type_flag = rwy_info.surface_flags.substr(2, 1);
-    cout << "type flag = " << type_flag << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "type flag = " << type_flag);
 
     if ( rwy_info.really_taxiway ) {
 	gen_taxiway( rwy_info, material,
@@ -330,9 +326,7 @@ void build_runway( const FGRunway& rwy_info,
 	// unknown runway code ... hehe, I know, let's just die
 	// right here so the programmer has to fix his code if a
 	// new code ever gets introduced. :-)
-	cout << "Unknown runway code in build.cxx:build_airport()" << endl;
-	cout << "dying ..." << endl;
-	exit(-1);
+	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
     }
 
     FGPolygon base;
@@ -369,7 +363,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     double apt_lon, apt_lat;
     int elev;
 
-    cerr << airport_raw << endl;
+    SG_LOG(SG_GENERAL, SG_INFO, airport_raw);
     string apt_type = airport_raw.substr(0, 1);
     string apt_code = airport_raw.substr(2, 4); my_chomp( apt_code );
     string apt_lat_str = airport_raw.substr(7, 10);
@@ -384,22 +378,22 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string apt_name = airport_raw.substr(40);
 
     /*
-    cout << "  type = " << apt_type << endl;
-    cout << "  code = " << apt_code << endl;
-    cout << "  lat  = " << apt_lat << endl;
-    cout << "  lon  = " << apt_lon << endl;
-    cout << "  elev = " << apt_elev << " " << elev << endl;
-    cout << "  use  = " << apt_use << endl;
-    cout << "  twr  = " << apt_twr << endl;
-    cout << "  bldg = " << apt_bldg << endl;
-    cout << "  name = " << apt_name << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  type = " << apt_type);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  code = " << apt_code);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  lat  = " << apt_lat);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  lon  = " << apt_lon);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  elev = " << apt_elev << " " << elev);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  use  = " << apt_use);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  twr  = " << apt_twr);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  bldg = " << apt_bldg);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  name = " << apt_name);
     */
 
     SGBucket b( apt_lon, apt_lat );
     Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS,
 			 b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
     Point3D gbs_center = sgGeodToCart( center_geod );
-    cout << b.gen_base_path() << "/" << b.gen_index_str() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, b.gen_base_path() << "/" << b.gen_index_str());
 
     // Ignore any seaplane bases
     if ( apt_type == "S" ) {
@@ -418,7 +412,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
         rwy.really_taxiway = false;
 
-	cout << rwy_str << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
 	rwy.rwy_no = rwy_str.substr(2, 4);
 
 	string rwy_lat = rwy_str.substr(6, 10);
@@ -454,19 +448,19 @@ void build_airport( string airport_raw, string_list& runways_raw,
         string rwy_stopway2 = rwy_str.substr(84, 6);
 	rwy.stopway2 = atoi( rwy_stopway2.c_str() );
 
-	cout << "  no    = " << rwy.rwy_no << endl;
-	cout << "  lat   = " << rwy_lat << " " << rwy.lat << endl;
-	cout << "  lon   = " << rwy_lon << " " << rwy.lon << endl;
-	cout << "  hdg   = " << rwy_hdg << " " << rwy.heading << endl;
-	cout << "  len   = " << rwy_len << " " << rwy.length << endl;
-	cout << "  width = " << rwy_width << " " << rwy.width << endl;
-	cout << "  sfc   = " << rwy.surface_flags << endl;
-	cout << "  end1  = " << rwy.end1_flags << endl;
-        cout << "  dspth1= " << rwy_disp_threshold1 << " " << rwy.disp_thresh1 << endl;
-        cout << "  stop1 = " << rwy_stopway1 << " " << rwy.stopway1 << endl;
-	cout << "  end2  = " << rwy.end2_flags << endl;
-        cout << "  dspth2= " << rwy_disp_threshold2 << " " << rwy.disp_thresh2 << endl;
-        cout << "  stop2 = " << rwy_stopway2 << " " << rwy.stopway2 << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  lat   = " << rwy_lat << " " << rwy.lat);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  lon   = " << rwy_lon << " " << rwy.lon);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy_hdg << " " << rwy.heading);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  len   = " << rwy_len << " " << rwy.length);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  width = " << rwy_width << " " << rwy.width);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_flags);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  end1  = " << rwy.end1_flags);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy_disp_threshold1 << " " << rwy.disp_thresh1);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy_stopway1 << " " << rwy.stopway1);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  end2  = " << rwy.end2_flags);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy_disp_threshold2 << " " << rwy.disp_thresh2);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy_stopway2 << " " << rwy.stopway2);
 
 	runways.push_back( rwy );
     }
@@ -482,7 +476,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
         taxi.really_taxiway = true;
 
-	cout << rwy_str << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
 	taxi.rwy_no = rwy_str.substr(2, 4);
 
 	string rwy_lat = rwy_str.substr(6, 10);
@@ -503,15 +497,15 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	taxi.surface_flags = rwy_str.substr(48, 3);
 
 	/*
-	cout << "  no    = " << rwy_no << endl;
-	cout << "  lat   = " << rwy_lat << " " << lat << endl;
-	cout << "  lon   = " << rwy_lon << " " << lon << endl;
-	cout << "  hdg   = " << rwy_hdg << " " << hdg << endl;
-	cout << "  len   = " << rwy_len << " " << len << endl;
-	cout << "  width = " << rwy_width << " " << width << endl;
-	cout << "  sfc   = " << rwy_sfc << endl;
-	cout << "  end1  = " << rwy_end1 << endl;
-	cout << "  end2  = " << rwy_end2 << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  no    = " << rwy_no);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  lat   = " << rwy_lat << " " << lat);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  lon   = " << rwy_lon << " " << lon);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy_hdg << " " << hdg);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  len   = " << rwy_len << " " << len);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  width = " << rwy_width << " " << width);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy_sfc);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  end1  = " << rwy_end1);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "  end2  = " << rwy_end2);
 	*/
 
 	taxiways.push_back( taxi );
@@ -555,7 +549,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // write_polygon( accum, "accum" );
 
     if ( apt_base.total_size() == 0 ) {
-	cout << "no airport points generated" << endl;
+        SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
 	return;
     }
 
@@ -578,10 +572,10 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // Try to remove duplicated nodes and other degeneracies
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
-	cout << "add nodes/remove dups section = " << k
-	     << " " << rwy_polys[k].get_material() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes/remove dups section = " << k
+	       << " " << rwy_polys[k].get_material());
 	FGPolygon poly = rwy_polys[k].get_poly();
-	cout << "total size before = " << poly.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size(i); ++j ) {
 		Point3D tmp = poly.get_pt(i, j);
@@ -590,8 +584,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	}
 
 	poly = remove_dups( poly );
-	cout << "total size after remove_dups() = "
-	     << poly.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = "
+	       << poly.total_size());
 
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size(i); ++j ) {
@@ -601,8 +595,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	}
 
 	poly = reduce_degeneracy( poly );
-	cout << "total size after reduce_degeneracy() = "
-	     << poly.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after reduce_degeneracy() = "
+	       << poly.total_size());
 
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size(i); ++j ) {
@@ -664,7 +658,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
 	FGPolygon poly = rwy_polys[k].get_poly();
 	poly = add_nodes_to_poly( poly, tmp_nodes );
-	cout << "total size after add nodes = " << poly.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.total_size());
 
 #if 0
 	char tmp[256];
@@ -680,35 +674,35 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	FGPolygon poly = rwy_polys[k].get_poly();
 
         poly = remove_dups( poly );
-	cout << "total size after remove_dups() = " << poly.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = " << poly.total_size());
         poly = remove_bad_contours( poly );
-	cout << "total size after remove_bad() = " << poly.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_bad() = " << poly.total_size());
 
 	rwy_polys[k].set_poly( poly );
     }
 
-    cout << "add nodes base " << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes base ");
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
     // write_polygon( base_poly, "base-add" );
-    cout << "remove dups base " << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "remove dups base ");
     base_poly = remove_dups( base_poly );
-    cout << "remove bad contours base" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "remove bad contours base");
     base_poly = remove_bad_contours( base_poly );
     // write_polygon( base_poly, "base-fin" );
 
     // tesselate the polygons and prepair them for final output
 
     for ( i = 0; i < (int)rwy_polys.size(); ++i ) {
-        cout << "Tesselating section = " << i << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i);
 
 	FGPolygon poly = rwy_polys[i].get_poly();
-	cout << "total size before = " << poly.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());
 	FGPolygon tri = polygon_tesselate_alt( poly );
-	cout << "total size after = " << tri.total_size() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         FGPolygon tc;
         if ( rwy_polys[i].get_flag() ) {
-            cout << "no clip" << endl;
+            SG_LOG(SG_GENERAL, SG_DEBUG, "no clip");
             tc = rwy_section_tex_coords( tri, texparams[i], false );
         } else {
             tc = rwy_section_tex_coords( tri, texparams[i], true );
@@ -719,7 +713,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	rwy_polys[i].set_tri_mode( GL_TRIANGLES );
     }
 
-    cout << "Tesselating base" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating base");
     FGPolygon base_tris = polygon_tesselate_alt( base_poly );
 
 #if 0
@@ -785,25 +779,25 @@ void build_airport( string airport_raw, string_list& runways_raw,
     p.sety( base_tris.get_pt(0, 0).y() * SGD_DEGREES_TO_RADIANS );
     p.setz( 0 );
     Point3D vnt = sgGeodToCart( p );
-    // cout << "geod = " << p << endl;
-    // cout << "cart = " << tmp << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "geod = " << p);
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "cart = " << tmp);
 
     sgdVec3 tmp;
     sgdSetVec3( tmp, vnt.x(), vnt.y(), vnt.z() );
     sgdNormalizeVec3( tmp );
 
     Point3D vn( tmp[0], tmp[1], tmp[2] );
-    cout << "found normal for this airport = " << tmp << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "found normal for this airport = " << tmp);
 
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
-	cout << "tri " << k << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
 	// FGPolygon tri_poly = rwy_tris[k];
 	FGPolygon tri_poly = rwy_polys[k].get_tris();
 	FGPolygon tri_txs = rwy_polys[k].get_texcoords();
 	string material = rwy_polys[k].get_material();
-	cout << "material = " << material << endl;
-	cout << "poly size = " << tri_poly.contours() << endl;
-	cout << "texs size = " << tri_txs.contours() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "poly size = " << tri_poly.contours());
+	SG_LOG(SG_GENERAL, SG_DEBUG, "texs size = " << tri_txs.contours());
 	for ( i = 0; i < tri_poly.contours(); ++i ) {
 	    tri_v.clear();
 	    tri_n.clear();
@@ -853,7 +847,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	base_tc.clear();
 	for ( j = 0; j < (int)base_txs.size(); ++j ) {
 	    tc = base_txs[j];
-	    // cout << "base_tc = " << tc << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
 	    index = texcoords.simple_add( tc );
 	    base_tc.push_back( index );
 	}
@@ -862,7 +856,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // calculate node elevations
     point_list geod_nodes = calc_elevations( root, nodes.get_node_list() );
-    cout << "Done with calc_elevations()" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with calc_elevations()");
 
     // add base skirt (to hide potential cracks)
     //
@@ -880,7 +874,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	uindex = nodes.find( p );
 	if ( uindex >= 0 ) {
 	    Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-	    cout << geod_nodes[uindex] << " <-> " << lower << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
 	    lindex = nodes.simple_add( lower );
 	    geod_nodes.push_back( lower );
 	    strip_v.push_back( uindex );
@@ -892,9 +886,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    strip_n.push_back( index );
 	    strip_n.push_back( index );
 	} else {
-	    cout << "Ooops missing node when building skirt ... dying!"
-		 << endl;
-	    exit(-1);
+	    throw sg_exception("Ooops missing node when building skirt");
 	}
 
 	// loop through the list
@@ -903,7 +895,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    uindex = nodes.find( p );
 	    if ( uindex >= 0 ) {
 		Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-		cout << geod_nodes[uindex] << " <-> " << lower << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
 		lindex = nodes.simple_add( lower );
 		geod_nodes.push_back( lower );
 		strip_v.push_back( lindex );
@@ -913,9 +905,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 		strip_n.push_back( index );
 		strip_n.push_back( index );
 	    } else {
-		cout << "Ooops missing node when building skirt ... dying!"
-		     << endl;
-		exit(-1);
+  	        throw sg_exception("Ooops missing node when building skirt");
 	    }
 	}
 
@@ -924,7 +914,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	uindex = nodes.find( p );
 	if ( uindex >= 0 ) {
 	    Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-	    cout << geod_nodes[uindex] << " <-> " << lower << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
 	    lindex = nodes.simple_add( lower );
 	    geod_nodes.push_back( lower );
 	    strip_v.push_back( lindex );
@@ -934,9 +924,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    strip_n.push_back( index );
 	    strip_n.push_back( index );
 	} else {
-	    cout << "Ooops missing node when building skirt ... dying!"
-		 << endl;
-	    exit(-1);
+	    throw("Ooops missing node when building skirt");
 	}
 
 	strips_v.push_back( strip_v );
@@ -949,7 +937,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	base_tc.clear();
 	for ( j = 0; j < (int)base_txs.size(); ++j ) {
 	    tc = base_txs[j];
-	    // cout << "base_tc = " << tc << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
 	    index = texcoords.simple_add( tc );
 	    base_tc.push_back( index );
 	}
@@ -967,7 +955,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // calculate light node elevations
     point_list geod_light_nodes
         = calc_elevations( root, light_nodes.get_node_list() );
-    cout << "Done with (light) calc_elevations()" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with (light) calc_elevations()");
 
     // this is a little round about, but what we want to calculate the
     // light node elevations as ground + an offset so we do them
@@ -998,7 +986,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	wgs84_nodes.push_back( sgGeodToCart( p ) );
     }
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
-    cout << "Done with wgs84 node mapping" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with wgs84 node mapping");
 
     // null structures
     group_list fans_v; fans_v.clear();
@@ -1036,8 +1024,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     /* result = obj.write_ascii( objpath, name, b ); */
     result = obj.write_bin( objpath, name, b );
     if ( !result ) {
-	cout << "error writing file. :-(" << endl;
-	exit(-1);
+        throw sg_exception("error writing file. :-(");
     }
 
 #if 0

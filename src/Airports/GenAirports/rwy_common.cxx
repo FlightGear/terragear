@@ -22,13 +22,8 @@
 //
 
 #include <simgear/compiler.h>
-
 #include <simgear/constants.h>
-
-#include <iostream>
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
+#include <simgear/debug/logstream.hxx>
 
 #include "global.hxx"
 #include "poly_extra.hxx"
@@ -46,7 +41,7 @@ void gen_number_block( const FGRunway& rwy_info,
     char tex1[32]; tex1[0] = '\0';
     char tex2[32]; tex2[0] = '\0';
 
-    cout << "Runway num = " << num << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway num = " << num);
 
     if ( num == 11 ) {
 	sprintf( tex1, "11" );
@@ -134,8 +129,8 @@ void gen_runway_section( const FGRunway& rwy_info,
 	}
     }
 
-    cout << "start len % = " << startl_pct
-	 << " end len % = " << endl_pct << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct
+	   << " end len % = " << endl_pct);
 
     double dlx, dly;
 
@@ -156,8 +151,8 @@ void gen_runway_section( const FGRunway& rwy_info,
     Point3D t3 = Point3D( a2.x() + dlx * endl_pct,
 			  a2.y() + dly * endl_pct, 0);
 
-    cout << "start wid % = " << startw_pct
-	 << " end wid % = " << endw_pct << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "start wid % = " << startw_pct
+	   << " end wid % = " << endw_pct);
 
     double dwx, dwy;
 
@@ -188,11 +183,11 @@ void gen_runway_section( const FGRunway& rwy_info,
     section.add_node( 0, p3 );
 
     // print runway points
-    cout << "pre clipped runway pts " << prefix << material << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << prefix << material);
     for ( j = 0; j < section.contours(); ++j ) {
 	for ( k = 0; k < section.contour_size( j ); ++k ) {
 	    Point3D p = section.get_pt(j, k);
-	    cout << " point = " << p << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
 	}
     }
 
@@ -203,7 +198,7 @@ void gen_runway_section( const FGRunway& rwy_info,
     sp.set_poly( split );
     sp.set_material( prefix + material );
     rwy_polys->push_back( sp );
-    cout << "section = " << clipped.contours() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
     *accum = polygon_union( section, *accum );
 
     double len = rwy_info.length / 2.0;
@@ -226,11 +221,11 @@ void gen_runway_section( const FGRunway& rwy_info,
     texparams->push_back( tp );
 
     // print runway points
-    cout << "clipped runway pts " << prefix + material << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts " << prefix + material);
     for ( j = 0; j < clipped.contours(); ++j ) {
 	for ( k = 0; k < clipped.contour_size( j ); ++k ) {
 	    Point3D p = clipped.get_pt(j, k);
-	    cout << " point = " << p << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
 	}
     }
 }

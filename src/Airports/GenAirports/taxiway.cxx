@@ -23,13 +23,8 @@
 
 
 #include <simgear/compiler.h>
-
-#include <iostream>
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
-
 #include <simgear/constants.h>
+#include <simgear/debug/logstream.hxx>
 
 #include "poly_extra.hxx"
 #include "rwy_common.hxx"
@@ -64,15 +59,15 @@ void gen_taxiway( const FGRunway& rwy_info, const string& material,
     runway_b.add_node( 0, runway.get_pt(0, 4) );
 	
     Point3D p;
-    cout << "raw runway pts (a half)" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway pts (a half)");
     for ( j = 0; j < runway_a.contour_size( 0 ); ++j ) {
 	p = runway_a.get_pt(0, j);
-	cout << " point = " << p << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
-    cout << "raw runway pts (b half)" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway pts (b half)");
     for ( j = 0; j < runway_b.contour_size( 0 ); ++j ) {
 	p = runway_b.get_pt(0, j);
-	cout << " point = " << p << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
 	
     FGSuperPoly sp;
@@ -82,15 +77,15 @@ void gen_taxiway( const FGRunway& rwy_info, const string& material,
     double yfactor = 1.0;
     if ( fabs(rwy_info.width) > SG_EPSILON ) {
         xfactor = 150.0 / rwy_info.width;
-        cout << "xfactor = " << xfactor << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "xfactor = " << xfactor);
     }
     if ( fabs(rwy_info.length) > SG_EPSILON ) {
         yfactor = 150.0 / rwy_info.length;
-        cout << "yfactor = " << yfactor << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "yfactor = " << yfactor);
     }
 
-    cout << "len = " << rwy_info.length << endl;
-    cout << "width = " << rwy_info.width << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "len = " << rwy_info.length);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "width = " << rwy_info.width);
 
     FGPolygon clipped_a = polygon_diff( runway_a, *accum );
     FGPolygon split_a = split_long_edges( clipped_a, 400.0 );
@@ -99,7 +94,7 @@ void gen_taxiway( const FGRunway& rwy_info, const string& material,
     sp.set_material( material );
     sp.set_flag( 1 );           // mark as a taxiway
     rwy_polys->push_back( sp );
-    cout << "clipped_a = " << clipped_a.contours() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
     *accum = polygon_union( runway_a, *accum );
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
 		      Point3D( (-250 / 2.0) * SG_FEET_TO_METER,
@@ -117,7 +112,7 @@ void gen_taxiway( const FGRunway& rwy_info, const string& material,
     sp.set_poly( split_b );
     sp.set_material( material );
     rwy_polys->push_back( sp );
-    cout << "clipped_b = " << clipped_b.contours() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
     *accum = polygon_union( runway_b, *accum );
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
 		      Point3D( (-250 / 2.0) * SG_FEET_TO_METER,
@@ -139,20 +134,20 @@ void gen_taxiway( const FGRunway& rwy_info, const string& material,
 #endif
 
     // print runway points
-    cout << "clipped runway pts (a)" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts (a)");
     for ( j = 0; j < clipped_a.contours(); ++j ) {
 	for ( k = 0; k < clipped_a.contour_size( j ); ++k ) {
 	    p = clipped_a.get_pt(j, k);
-	    cout << " point = " << p << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
 	}
     }
 
     // print runway points
-    cout << "clipped runway pts (b)" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts (b)");
     for ( j = 0; j < clipped_b.contours(); ++j ) {
 	for ( k = 0; k < clipped_b.contour_size( j ); ++k ) {
 	    p = clipped_b.get_pt(j, k);
-	    cout << " point = " << p << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
 	}
     }
 

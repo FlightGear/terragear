@@ -21,16 +21,10 @@
 // $Id$
 //
 
-
-#include <simgear/compiler.h>
-
-#include <iostream>
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
-
 #include <stdio.h>
 
+#include <simgear/compiler.h>
+#include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
 #include <Geometry/poly_support.hxx>
@@ -46,7 +40,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 {
     point_list nodes = tmp_nodes.get_node_list();
 
-    // cout << "  add_intermediate_nodes()" << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "  add_intermediate_nodes()");
     printf("   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
 	   start.x(), start.y(), start.z(), end.x(), end.y(), end.z() );
 
@@ -56,8 +50,8 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 
     if ( found_extra ) {
 	// recurse with two sub segments
-	// cout << "dividing " << p0 << " " << nodes[extra_index]
-	//      << " " << p1 << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "dividing " << p0 << " " << nodes[extra_index]
+	//      << " " << p1);
 	add_intermediate_nodes( contour, start, new_pt, tmp_nodes, 
 				result );
 
@@ -81,10 +75,10 @@ FGPolygon add_nodes_to_poly( const FGPolygon& poly,
     FGPolygon result; result.erase();
     Point3D p0, p1;
 
-    // cout << "add_nodes_to_poly" << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "add_nodes_to_poly");
 
     for ( i = 0; i < poly.contours(); ++i ) {
-	// cout << "contour = " << i << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
 	for ( j = 0; j < poly.contour_size(i) - 1; ++j ) {
 	    p0 = poly.get_pt( i, j );
 	    p1 = poly.get_pt( i, j + 1 );
@@ -126,10 +120,10 @@ FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
     Point3D p0, p1;
     int i, j, k;
 
-    cout << "split_long_edges()" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "split_long_edges()");
 
     for ( i = 0; i < poly.contours(); ++i ) {
-	// cout << "contour = " << i << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
 	for ( j = 0; j < poly.contour_size(i) - 1; ++j ) {
 	    p0 = poly.get_pt( i, j );
 	    p1 = poly.get_pt( i, j + 1 );
@@ -138,22 +132,22 @@ FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
 	    geo_inverse_wgs_84( 0.0,
 				p0.y(), p0.x(), p1.y(), p1.x(),
 				&az1, &az2, &s );
-	    cout << "distance = " << s << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
 
 	    if ( s > max_len ) {
 		int segments = (int)(s / max_len) + 1;
-		cout << "segments = " << segments << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "segments = " << segments);
 
 		double dx = (p1.x() - p0.x()) / segments;
 		double dy = (p1.y() - p0.y()) / segments;
 
 		for ( k = 0; k < segments; ++k ) {
 		    Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
-		    cout << tmp << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
 		    result.add_node( i, tmp );
 		}
 	    } else {
-		cout << p0 << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, p0);
 		result.add_node( i, p0 );
 	    }
 		
@@ -166,22 +160,22 @@ FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
 	geo_inverse_wgs_84( 0.0,
 			    p0.y(), p0.x(), p1.y(), p1.x(),
 			    &az1, &az2, &s );
-	cout << "distance = " << s << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
 
 	if ( s > max_len ) {
 	    int segments = (int)(s / max_len) + 1;
-	    cout << "segments = " << segments << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "segments = " << segments);
 	    
 	    double dx = (p1.x() - p0.x()) / segments;
 	    double dy = (p1.y() - p0.y()) / segments;
 
 	    for ( k = 0; k < segments; ++k ) {
 		Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
-		cout << tmp << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
 		result.add_node( i, tmp );
 	    }
 	} else {
-	    cout << p0 << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, p0);
 	    result.add_node( i, p0 );
 	}
 
@@ -197,10 +191,10 @@ FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
 FGPolygon strip_out_holes( const FGPolygon &poly ) {
     FGPolygon result; result.erase();
 
-    cout << "strip_out_holes()" << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "strip_out_holes()");
 
     for ( int i = 0; i < poly.contours(); ++i ) {
-	// cout << "contour = " << i << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
         point_list contour = poly.get_contour( i );
         if ( ! poly.get_hole_flag(i) ) {
             result.add_contour( contour, poly.get_hole_flag(i) );
