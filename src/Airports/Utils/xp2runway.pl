@@ -162,7 +162,7 @@ while ( <> ) {
         }
 
         my( $vasi1 );
-        if ( $xpvasi1 == 1 ) {
+        if ( $xpvasi1 == 0 || $xpvasi1 == 1 ) {
             $vasi1 = "N";
         } elsif ( $xpvasi1 == 2 ) {
             $vasi1 = "V";
@@ -173,7 +173,7 @@ while ( <> ) {
         }
 
         my( $vasi2 );
-        if ( $xpvasi2 == 1 ) {
+        if ( $xpvasi2 == 0 || $xpvasi2 == 1 ) {
             $vasi2 = "N";
         } elsif ( $xpvasi2 == 2 ) {
             $vasi2 = "V";
