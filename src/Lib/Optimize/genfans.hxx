@@ -41,25 +41,20 @@
 FG_USING_STD(vector);
 
 
-typedef vector < int_list > fan_list;
-typedef fan_list::iterator fan_list_iterator;
-typedef fan_list::const_iterator const_fan_list_iterator;
-
-typedef vector < int_list > reverse_list;
-typedef reverse_list::iterator reverse_list_iterator;
-typedef reverse_list::const_iterator const_reverse_list_iterator;
-
+typedef vector < int_list > opt_list;
+typedef opt_list::iterator opt_list_iterator;
+typedef opt_list::const_iterator const_opt_list_iterator;
 
 
 class FGGenFans {
 
 private:
 
-    fan_list fans;
+    opt_list fans;
 
     // make sure the list is expanded at least to hold "n" and then
     // push "i" onto the back of the "n" list.
-    void add_and_expand( reverse_list& by_node, int n, int i );
+    // void add_and_expand( opt_list& by_node, int n, int i );
 
 public:
 
@@ -68,8 +63,8 @@ public:
     inline ~FGGenFans() { }
 
     // recursive build fans from triangle list
-    // fan_list greedy_build( triele_list tris );
-    fan_list greedy_build( triele_list tris );
+    // opt_list greedy_build( triele_list tris );
+    opt_list greedy_build( triele_list tris );
 
     // report average fan size
     double ave_size();

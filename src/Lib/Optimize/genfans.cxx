@@ -26,7 +26,7 @@
 
 // make sure the list is expanded at least to hold "n" and then push
 // "i" onto the back of the "n" list.
-void FGGenFans::add_and_expand( reverse_list& by_node, int n, int i ) {
+static void add_and_expand( opt_list& by_node, int n, int i ) {
     int_list empty;
 
     int size = (int)by_node.size();
@@ -132,18 +132,18 @@ static bool in_fan(int index, const int_list& fan ) {
 
 
 // recursive build fans from triangle list
-fan_list FGGenFans::greedy_build( triele_list tris ) {
+opt_list FGGenFans::greedy_build( triele_list tris ) {
     cout << "starting greedy build of fans" << endl;
 
     fans.clear();
 
     while ( ! tris.empty() ) {
-	// cout << "building reverse_list" << endl;
-	reverse_list by_node;
-	by_node.clear();
-
 	// traverse the triangle list and for each node, build a list of
 	// triangles that attach to it.
+
+	// cout << "building by_node list" << endl;
+	opt_list by_node;
+	by_node.clear();
 
 	for ( int i = 0; i < (int)tris.size(); ++i ) {
 	    int n1 = tris[i].get_n1();
@@ -161,8 +161,8 @@ fan_list FGGenFans::greedy_build( triele_list tris ) {
 	// cout << "find most connected node" << endl;
 
 	int_list biggest_group;
-	reverse_list_iterator r_current = by_node.begin();
-	reverse_list_iterator r_last = by_node.end();
+	opt_list_iterator r_current = by_node.begin();
+	opt_list_iterator r_last = by_node.end();
 	int index = 0;
 	int counter = 0;
 	for ( ; r_current != r_last; ++r_current ) {
@@ -232,8 +232,8 @@ fan_list FGGenFans::greedy_build( triele_list tris ) {
 double FGGenFans::ave_size() {
     double sum = 0.0;
 
-    fan_list_iterator current = fans.begin();
-    fan_list_iterator last = fans.end();
+    opt_list_iterator current = fans.begin();
+    opt_list_iterator last = fans.end();
     for ( ; current != last; ++current ) {
 	sum += current->size();
     }
