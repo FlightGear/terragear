@@ -5,6 +5,7 @@ SUBDIRS = \
 	Geometry \
         landcover \
 	Optimize \
+	Output \
 	Polygon \
 	poly2tri \
 	shapelib \
