@@ -411,7 +411,7 @@ static int load_polys( FGConstruct& c ) {
 
 // Load elevation data from an Array file, a regular grid of elevation
 // data) and return list of fitted nodes.
-static int load_array( FGConstruct& c, TGArray& array) {
+static bool load_array( FGConstruct& c, TGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
     int i;
@@ -432,7 +432,7 @@ static int load_array( FGConstruct& c, TGArray& array) {
     SGBucket b = c.get_bucket();
     array.parse( b );
 
-    return 1;
+    return true;
 }
 
 
@@ -499,14 +499,11 @@ static void fix_point_heights( FGConstruct& c, const TGArray& array ) {
     point_list raw_nodes = c.get_tri_nodes().get_node_list();
 
     for ( i = 0; i < (int)raw_nodes.size(); ++i ) {
-	z = array.interpolate_altitude( raw_nodes[i].x() * 3600.0, 
-					raw_nodes[i].y() * 3600.0 );
-	// cout << "  old z = " << raw_nodes[i].z() << "  new z = " << z
-	//      << endl;
-	if ( raw_nodes[i].z() != z ) {
-	    cout << "    DIFFERENT" << endl;
-	}
-	raw_nodes[i].setz( z );
+        cout << "  fixing = " << raw_nodes[i] << " = ";
+        z = array.interpolate_altitude( raw_nodes[i].x() * 3600.0, 
+                                        raw_nodes[i].y() * 3600.0 );
+        raw_nodes[i].setz( z );
+        cout << raw_nodes[i].z() << endl;
     }
 
     cout << "flattening ocean connected nodes" << endl;
