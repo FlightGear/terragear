@@ -66,7 +66,8 @@
 // except each point is the texture coordinate of the corresponding
 // point in the original polygon.
 static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
-					 const FGTexParams& tp )
+					 const FGTexParams& tp,
+                                         const bool clip_result )
 {
     int i, j;
     FGPolygon result;
@@ -131,15 +132,21 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    tx = (x - min.x()) / (max.x() - min.x());
 	    tx = ((int)(tx * 100)) / 100.0;
 	    cout << "  (" << tx << ")" << endl;
-	    if ( tx < 0.0 ) { tx = 0.0; }
-	    if ( tx > 1.0 ) { tx = 1.0; }
+
+            if ( clip_result ) {
+                if ( tx < 0.0 ) { tx = 0.0; }
+                if ( tx > 1.0 ) { tx = 1.0; }
+            }
 
 	    // ty = (y - min.y()) / (max.y() - min.y());
 	    ty = (max.y() - y) / (max.y() - min.y());
 	    ty = ((int)(ty * 100)) / 100.0;
 	    cout << "  (" << ty << ")" << endl;
-	    if ( ty < 0.0 ) { ty = 0.0; }
-	    if ( ty > 1.0 ) { ty = 1.0; }
+
+            if ( clip_result ) {
+                if ( ty < 0.0 ) { ty = 0.0; }
+                if ( ty > 1.0 ) { ty = 1.0; }
+            }
 
 	    t = Point3D( tx, ty, 0 );
 	    cout << "  (" << tx << ", " << ty << ")" << endl;
@@ -307,6 +314,24 @@ static FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
 }
 
 
+// Traverse a polygon and toss all the internal holes
+static FGPolygon strip_out_holes( const FGPolygon &poly ) {
+    FGPolygon result; result.erase();
+
+    cout << "strip_out_holes()" << endl;
+
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	// cout << "contour = " << i << endl;
+        point_list contour = poly.get_contour( i );
+        if ( ! poly.get_hole_flag(i) ) {
+            result.add_contour( contour, poly.get_hole_flag(i) );
+        }
+    }
+
+    return result;
+}
+
+
 // fix node elevations
 point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
     bool done = false;
@@ -461,6 +486,129 @@ static void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
 			       0 ),
 		      Point3D( (rwy_info.width  / 2.0) * SG_FEET_TO_METER,
 			       (rwy_info.length / 2.0) * SG_FEET_TO_METER,
+			       0.0 ),
+		      rwy_info.heading + 180.0 );
+    texparams->push_back( tp );
+
+#if 0
+    // after clip, but before removing T intersections
+    char tmpa[256], tmpb[256];
+    sprintf( tmpa, "a%d", i );
+    sprintf( tmpb, "b%d", i );
+    write_polygon( clipped_a, tmpa );
+    write_polygon( clipped_b, tmpb );
+#endif
+
+    // print runway points
+    cout << "clipped runway pts (a)" << endl;
+    for ( j = 0; j < clipped_a.contours(); ++j ) {
+	for ( k = 0; k < clipped_a.contour_size( j ); ++k ) {
+	    p = clipped_a.get_pt(j, k);
+	    cout << " point = " << p << endl;
+	}
+    }
+
+    // print runway points
+    cout << "clipped runway pts (b)" << endl;
+    for ( j = 0; j < clipped_b.contours(); ++j ) {
+	for ( k = 0; k < clipped_b.contour_size( j ); ++k ) {
+	    p = clipped_b.get_pt(j, k);
+	    cout << " point = " << p << endl;
+	}
+    }
+
+}
+
+
+// generate a taxiway.  The routine modifies rwy_polys, texparams, and
+// accum
+static void gen_taxiway( const FGRunway& rwy_info, const string& material,
+                         superpoly_list *rwy_polys,
+                         texparams_list *texparams,
+                         FGPolygon *accum )
+{
+    int j, k;
+
+    FGPolygon runway = gen_runway_w_mid( rwy_info );
+
+    // runway half "a"
+    FGPolygon runway_a;
+    runway_a.erase();
+    runway_a.add_node( 0, runway.get_pt(0, 0) );
+    runway_a.add_node( 0, runway.get_pt(0, 1) );
+    runway_a.add_node( 0, runway.get_pt(0, 2) );
+    runway_a.add_node( 0, runway.get_pt(0, 5) );
+
+    // runway half "b"
+    FGPolygon runway_b;
+    runway_b.erase();
+    runway_b.add_node( 0, runway.get_pt(0, 5) );
+    runway_b.add_node( 0, runway.get_pt(0, 2) );
+    runway_b.add_node( 0, runway.get_pt(0, 3) );
+    runway_b.add_node( 0, runway.get_pt(0, 4) );
+	
+    Point3D p;
+    cout << "raw runway pts (a half)" << endl;
+    for ( j = 0; j < runway_a.contour_size( 0 ); ++j ) {
+	p = runway_a.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+    cout << "raw runway pts (b half)" << endl;
+    for ( j = 0; j < runway_b.contour_size( 0 ); ++j ) {
+	p = runway_b.get_pt(0, j);
+	cout << " point = " << p << endl;
+    }
+	
+    FGSuperPoly sp;
+    FGTexParams tp;
+
+    double xfactor = 1.0;
+    double yfactor = 1.0;
+    if ( fabs(rwy_info.width) > SG_EPSILON ) {
+        xfactor = 150.0 / rwy_info.width;
+        cout << "xfactor = " << xfactor << endl;
+    }
+    if ( fabs(rwy_info.length) > SG_EPSILON ) {
+        yfactor = 150.0 / rwy_info.length;
+        cout << "yfactor = " << yfactor << endl;
+    }
+
+    cout << "len = " << rwy_info.length << endl;
+    cout << "width = " << rwy_info.width << endl;
+
+    FGPolygon clipped_a = polygon_diff( runway_a, *accum );
+    FGPolygon split_a = split_long_edges( clipped_a, 400.0 );
+    sp.erase();
+    sp.set_poly( split_a );
+    sp.set_material( material );
+    sp.set_flag( 1 );           // mark as a taxiway
+    rwy_polys->push_back( sp );
+    cout << "clipped_a = " << clipped_a.contours() << endl;
+    *accum = polygon_union( runway_a, *accum );
+    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
+		      Point3D( (-250 / 2.0) * SG_FEET_TO_METER,
+                               0.0,
+			       0 ),
+		      Point3D( (250 / 2.0) * SG_FEET_TO_METER,
+			       (250 / 2.0) * SG_FEET_TO_METER,
+			       0.0 ),
+		      rwy_info.heading );
+    texparams->push_back( tp );
+
+    FGPolygon clipped_b = polygon_diff( runway_b, *accum );
+    FGPolygon split_b = split_long_edges( clipped_b, 400.0 );
+    sp.erase();
+    sp.set_poly( split_b );
+    sp.set_material( material );
+    rwy_polys->push_back( sp );
+    cout << "clipped_b = " << clipped_b.contours() << endl;
+    *accum = polygon_union( runway_b, *accum );
+    tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
+		      Point3D( (-250 / 2.0) * SG_FEET_TO_METER,
+			       0.0,
+			       0 ),
+		      Point3D( (250 / 2.0) * SG_FEET_TO_METER,
+			       (250 / 2.0) * SG_FEET_TO_METER,
 			       0.0 ),
 		      rwy_info.heading + 180.0 );
     texparams->push_back( tp );
@@ -1491,34 +1639,46 @@ void build_runway( const FGRunway& rwy_info,
 		   superpoly_list *rwy_polys,
 		   texparams_list *texparams,
 		   FGPolygon *accum,
-		   point_list *apt_pts ) {
-    int j;
-
+		   FGPolygon *apt_base )
+{
+    cout << "surface flags = " << rwy_info.surface_flags << endl;
     string surface_flag = rwy_info.surface_flags.substr(1, 1);
     cout << "surface flag = " << surface_flag << endl;
 
     string material;
     if ( surface_flag == "A" ) {
-	material = "pa_";	// asphalt
+        if ( !rwy_info.really_taxiway ) {
+            material = "pa_";	// asphalt
+        } else {
+            material = "pa_taxiway";
+        }
     } else if ( surface_flag == "C" ) {
-	material = "pc_";	// concrete
+        if ( !rwy_info.really_taxiway ) {
+            material = "pc_";	// concrete
+        } else {
+            material = "pc_taxiway";
+        }
     } else if ( surface_flag == "D" ) {
-	material = "dirt_rwy";
+        material = "dirt_rwy";
     } else if ( surface_flag == "G" ) {
-	material = "grass_rwy";
+        material = "grass_rwy";
     } else if ( surface_flag == "T" ) {
-	material = "grass_rwy";
+        material = "grass_rwy";
     } else if ( surface_flag == "W" ) {
-	// water ???
+        // water ???
     } else {
-	cout << "unknown runway type!" << endl;
-	exit(-1);
+        cout << "unknown runway type!" << endl;
+        exit(-1);
     }
+
 
     string type_flag = rwy_info.surface_flags.substr(2, 1);
     cout << "type flag = " << type_flag << endl;
 
-    if ( surface_flag == "D" || surface_flag == "G" ||
+    if ( rwy_info.really_taxiway ) {
+	gen_taxiway( rwy_info, material,
+                     rwy_polys, texparams, accum );
+    } else if ( surface_flag == "D" || surface_flag == "G" ||
 	 surface_flag == "T" )
     {
 	gen_simple_rwy( rwy_info, material,
@@ -1549,18 +1709,14 @@ void build_runway( const FGRunway& rwy_info,
 
     FGPolygon base = gen_runway_area( rwy_info, 1.05, 1.5 );
 
-    // add base to apt_pts (for convex hull of airport area)
-    for ( j = 0; j < base.contour_size( 0 ); ++j ) {
-	Point3D p = base.get_pt(0, j);
-	// cout << " point = " << p << endl;
-	apt_pts->push_back( p );
-    }
+    // add base to apt_base
+    *apt_base = polygon_union( base, *apt_base );
 }
 
 
 // build 3d airport
 void build_airport( string airport_raw, string_list& runways_raw,
-		    const string& root )
+                    string_list& taxiways_raw, const string& root )
 {
     int i, j, k;
 
@@ -1570,7 +1726,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // poly_list rwy_tris, rwy_txs;
     FGPolygon runway, runway_a, runway_b, clipped_a, clipped_b;
     FGPolygon split_a, split_b;
-    point_list apt_pts;
+    FGPolygon apt_base;
     Point3D p;
 
     FGPolygon accum;
@@ -1627,6 +1783,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
 	FGRunway rwy;
 
+        rwy.really_taxiway = false;
+
 	cout << rwy_str << endl;
 	rwy.rwy_no = rwy_str.substr(2, 4);
 
@@ -1645,9 +1803,71 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	string rwy_width = rwy_str.substr(43, 4);
 	rwy.width = atoi( rwy_width.c_str() );
 
-	rwy.surface_flags = rwy_str.substr(47, 4);
-	rwy.end1_flags = rwy_str.substr(52, 8);
-	rwy.end2_flags = rwy_str.substr(61, 8);
+	rwy.surface_flags = rwy_str.substr(47, 5);
+
+	rwy.end1_flags = rwy_str.substr(53, 4);
+
+        string rwy_disp_threshold1 = rwy_str.substr(58, 6);
+	rwy.disp_thresh1 = atoi( rwy_disp_threshold1.c_str() );
+
+        string rwy_stopway1 = rwy_str.substr(65, 6);
+	rwy.stopway1 = atoi( rwy_stopway1.c_str() );
+
+	rwy.end2_flags = rwy_str.substr(72, 4);
+
+        string rwy_disp_threshold2 = rwy_str.substr(77, 6);
+	rwy.disp_thresh2 = atoi( rwy_disp_threshold2.c_str() );
+
+        string rwy_stopway2 = rwy_str.substr(84, 6);
+	rwy.stopway2 = atoi( rwy_stopway2.c_str() );
+
+	cout << "  no    = " << rwy.rwy_no << endl;
+	cout << "  lat   = " << rwy_lat << " " << rwy.lat << endl;
+	cout << "  lon   = " << rwy_lon << " " << rwy.lon << endl;
+	cout << "  hdg   = " << rwy_hdg << " " << rwy.heading << endl;
+	cout << "  len   = " << rwy_len << " " << rwy.length << endl;
+	cout << "  width = " << rwy_width << " " << rwy.width << endl;
+	cout << "  sfc   = " << rwy.surface_flags << endl;
+	cout << "  end1  = " << rwy.end1_flags << endl;
+        cout << "  dspth1= " << rwy_disp_threshold1 << " " << rwy.disp_thresh1 << endl;
+        cout << "  stop1 = " << rwy_stopway1 << " " << rwy.stopway1 << endl;
+	cout << "  end2  = " << rwy.end2_flags << endl;
+        cout << "  dspth2= " << rwy_disp_threshold2 << " " << rwy.disp_thresh2 << endl;
+        cout << "  stop2 = " << rwy_stopway2 << " " << rwy.stopway2 << endl;
+
+	runways.push_back( rwy );
+    }
+
+    // parse taxiways and generate the vertex list
+    runway_list taxiways;
+    taxiways.clear();
+
+    for ( i = 0; i < (int)taxiways_raw.size(); ++i ) {
+	rwy_str = taxiways_raw[i];
+
+	FGRunway taxi;
+
+        taxi.really_taxiway = true;
+
+	cout << rwy_str << endl;
+	taxi.rwy_no = rwy_str.substr(2, 4);
+
+	string rwy_lat = rwy_str.substr(6, 10);
+	taxi.lat = atof( rwy_lat.c_str() );
+
+	string rwy_lon = rwy_str.substr(17, 11);
+	taxi.lon = atof( rwy_lon.c_str() );
+
+	string rwy_hdg = rwy_str.substr(29, 7);
+	taxi.heading = atof( rwy_hdg.c_str() );
+
+	string rwy_len = rwy_str.substr(36, 7);
+	taxi.length = atoi( rwy_len.c_str() );
+
+	string rwy_width = rwy_str.substr(43, 5);
+	taxi.width = atoi( rwy_width.c_str() );
+
+	taxi.surface_flags = rwy_str.substr(48, 3);
 
 	/*
 	cout << "  no    = " << rwy_no << endl;
@@ -1661,7 +1881,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	cout << "  end2  = " << rwy_end2 << endl;
 	*/
 
-	runways.push_back( rwy );
+	taxiways.push_back( taxi );
     }
 
     FGSuperPoly sp;
@@ -1673,7 +1893,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "P" ) {
 	    build_runway( runways[i], 
-			  &rwy_polys, &texparams, &accum, &apt_pts );
+			  &rwy_polys, &texparams, &accum, &apt_base );
 	}
     }
 
@@ -1682,28 +1902,34 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "R" || type_flag == "V" ) {
 	    build_runway( runways[i], 
-			  &rwy_polys, &texparams, &accum, &apt_pts );
+			  &rwy_polys, &texparams, &accum, &apt_base );
 	}
     }
 
-    // Last pass: generate all remaining runways not covered in the first pass
+    // 3rd pass: generate all remaining runways not covered in the first pass
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag != "P" && type_flag != "R" && type_flag != "V" ) {
 	    build_runway( runways[i], 
-			  &rwy_polys, &texparams, &accum, &apt_pts );
+			  &rwy_polys, &texparams, &accum, &apt_base );
 	}
     }
 
-    if ( apt_pts.size() == 0 ) {
+    // 4th pass: generate all taxiways
+    for ( i = 0; i < (int)taxiways.size(); ++i ) {
+        build_runway( taxiways[i], &rwy_polys, &texparams, &accum, &apt_base );
+    }
+
+    if ( apt_base.total_size() == 0 ) {
 	cout << "no airport points generated" << endl;
 	return;
     }
 
     // generate convex hull
-    FGPolygon hull = convex_hull(apt_pts);
-    FGPolygon divided_hull = split_long_edges( hull, 200.0 );
-    FGPolygon base_poly = polygon_diff( divided_hull, accum );
+    // FGPolygon hull = convex_hull(apt_pts);
+    FGPolygon filled_base = strip_out_holes( apt_base );
+    FGPolygon divided_base = split_long_edges( filled_base, 200.0 );
+    FGPolygon base_poly = polygon_diff( divided_base, accum );
     // write_polygon( base_poly, "base-raw" );
 
     // Try to remove duplicated nodes and other degeneracies
@@ -1836,8 +2062,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	FGPolygon tri = polygon_tesselate_alt( poly );
 	cout << "total size after = " << tri.total_size() << endl;
 
-	// tc = rwy_calc_tex_coords( runways[i], 0.0, tri );
-	FGPolygon tc = rwy_section_tex_coords( tri, texparams[i] );
+        FGPolygon tc;
+        if ( rwy_polys[i].get_flag() ) {
+            cout << "no clip" << endl;
+            tc = rwy_section_tex_coords( tri, texparams[i], false );
+        } else {
+            tc = rwy_section_tex_coords( tri, texparams[i], true );
+        }
 
 	rwy_polys[i].set_tris( tri );
 	rwy_polys[i].set_texcoords( tc );
@@ -1990,7 +2221,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string_list strip_materials; strip_materials.clear();
 
     string objpath = root + "/AirportObj";
-    string name = apt_code;
+    string name = apt_code + ".btg";
 
     SGBinObject obj;
 
@@ -2035,5 +2266,5 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string holepath = root + "/AirportArea";
     // long int poly_index = poly_index_next();
     // write_boundary( holepath, b, hull, poly_index );
-    split_polygon( holepath, HoleArea, divided_hull );
+    split_polygon( holepath, HoleArea, divided_base );
 }

@@ -42,7 +42,11 @@ struct FGRunway {
     double heading;
     double length;
     double width;
-    
+    double disp_thresh1;
+    double disp_thresh2;
+    double stopway1;
+    double stopway2;
+
     string surface_flags;
     string end1_flags;
     string end2_flags;
@@ -53,6 +57,8 @@ struct FGRunway {
     FGPolygon pre_td_zone;
     FGPolygon td3_zone, td2_zone, td1a_zone, td1b_zone;
     FGPolygon aim_point;
+
+    bool really_taxiway;
 };
 
 

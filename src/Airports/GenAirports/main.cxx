@@ -57,10 +57,10 @@ int nudge = 10;
 // reads the apt_full file and extracts and processes the individual
 // airport records
 int main( int argc, char **argv ) {
-    string_list runways_list;
+    string_list runways_list, taxiways_list;
     string airport, last_airport;
     string line;
-    char tmp[256];
+    char tmp[2048];
     bool ready_to_go = true;
 
     sglog().setLogLevels( SG_ALL, SG_DEBUG );
@@ -118,20 +118,20 @@ int main( int argc, char **argv ) {
     poly_index_init( counter_file );
 
     sg_gzifstream in( input_file );
-    if ( !in ) {
+    if ( !in.is_open() ) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
         exit(-1);
     }
 
     // throw away the first line
-    in.getline(tmp, 256);
+    in.getline(tmp, 2048);
 
     last_airport = "";
 
     while ( ! in.eof() ) {
-	in.getline(tmp, 256);
+	in.getline(tmp, 2048);
 	line = tmp;
-	// cout << line << endl;
+	cout << line << endl;
 
 	if ( line.length() == 0 ) {
 	    // empty, skip
@@ -158,17 +158,22 @@ int main( int argc, char **argv ) {
 
 		    // process previous record
 		    // process_airport(last_airport, runways_list, argv[2]);
-		    build_airport(last_airport, runways_list, work_dir);
+		    build_airport( last_airport, runways_list, taxiways_list,
+                                   work_dir );
 		}
 	    }
 
 	    // clear runway list for start of next airport
 	    runways_list.clear();
+	    taxiways_list.clear();
 
 	    last_airport = airport;
 	} else if ( line[0] == 'R' ) {
 	    // runway entry
 	    runways_list.push_back(line);
+	} else if ( line[0] == 'T' ) {
+	    // runway entry
+	    taxiways_list.push_back(line);
 	} else if ( line == "[End]" ) {
 	    // end of file
 	    break;
@@ -191,7 +196,7 @@ int main( int argc, char **argv ) {
 	if ( ready_to_go ) {
 	    // process previous record
 	    // process_airport(last_airport, runways_list, argv[2]);
-	    build_airport(last_airport, runways_list, work_dir);
+	    build_airport(last_airport, runways_list, taxiways_list, work_dir);
 	}
     }
 
