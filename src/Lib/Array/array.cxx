@@ -97,7 +97,6 @@ bool TGArray::open( const string& file_base ) {
     fitted_in = new sg_gzifstream( fitted_name );
     if ( ! fitted_in->is_open() ) {
         cout << "  Cannot open " << fitted_name << endl;
-        success = false;
     } else {
         cout << "  Opening fitted data file: " << fitted_name << endl;
     }
