@@ -186,7 +186,7 @@ int main( int argc, char **argv ) {
             } else {
                 x = basex + i * dx;
                 y = basey + j * dy;
-                z = a.get_point( i, j );
+                z = a.get_array_elev( i, j );
                 pending.push_back( Point3D(x, y, z) );
             }
         }
