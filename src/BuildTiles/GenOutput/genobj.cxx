@@ -31,6 +31,7 @@
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
+#include <Output/output.hxx>
 #include <Polygon/names.hxx>
 
 #include <Osgb36/osgbtc.hxx>
@@ -451,6 +452,7 @@ int FGGenOutput::write( FGConstruct &c ) {
     SGBucket b = c.get_bucket();
     string base = c.get_output_base() + "/Scenery/";
     string name = b.gen_index_str();
+    name += ".btg";
 
     point_list wgs84_nodes = c.get_wgs84_nodes();
     point_list normals = c.get_point_normals();

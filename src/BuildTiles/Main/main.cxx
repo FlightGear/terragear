@@ -256,67 +256,74 @@ static void make_area( const LandCover &cover, FGPolygon *polys,
 static int actual_load_landcover ( FGConstruct & c,
 				   FGClipper &clipper ) {
 
-    LandCover cover(c.get_cover());
     int count = 0;
-    FGPolygon polys[FG_MAX_AREA_TYPES];
-    FGPolygon poly;		// working polygon
 
-    double dx = 1.0 / 120.0;
-    double dy = dx;
+    try {
 
-    double half_dx = dx * 0.5;
-    double half_dy = half_dx;
+        LandCover cover(c.get_cover());
+        FGPolygon polys[FG_MAX_AREA_TYPES];
+        FGPolygon poly;		// working polygon
 
-    double quarter_dx = dx * 0.25;
-    double quarter_dy = quarter_dx;
+        double dx = 1.0 / 120.0;
+        double dy = dx;
 
-    // Get the top corner of the tile
-    double base_lon = c.get_bucket().get_center_lon()
-	- 0.5 * c.get_bucket().get_width()
-	- quarter_dx;
-    double base_lat = c.get_bucket().get_center_lat()
-	- 0.5 * c.get_bucket().get_height()
-	- quarter_dy;
+        double half_dx = dx * 0.5;
+        double half_dy = half_dx;
 
-    cout << "DPM: tile at " << base_lon << ',' << base_lat << endl;
+        double quarter_dx = dx * 0.25;
+        double quarter_dy = quarter_dx;
+
+        // Get the top corner of the tile
+        double base_lon = c.get_bucket().get_center_lon()
+            - 0.5 * c.get_bucket().get_width()
+            - quarter_dx;
+        double base_lat = c.get_bucket().get_center_lat()
+            - 0.5 * c.get_bucket().get_height()
+            - quarter_dy;
+
+        cout << "DPM: tile at " << base_lon << ',' << base_lat << endl;
     
-    double max_lon = c.get_bucket().get_center_lon() +
-	(0.5 * c.get_bucket().get_width());
-    double max_lat = c.get_bucket().get_center_lat() +
-	(0.5 * c.get_bucket().get_height());
+        double max_lon = c.get_bucket().get_center_lon() +
+            (0.5 * c.get_bucket().get_width());
+        double max_lat = c.get_bucket().get_center_lat() +
+            (0.5 * c.get_bucket().get_height());
 
-    // Figure out how many units wide and high this tile is; each unit
-    // is 30 arc seconds.
-    // int x_span = int(120 * bucket_span(base_lat)); // arcsecs of longitude
-    // int y_span = int(120 * FG_BUCKET_SPAN); // arcsecs of latitude
+        // Figure out how many units wide and high this tile is; each unit
+        // is 30 arc seconds.
+        // int x_span = int(120 * bucket_span(base_lat)); // arcsecs of longitude
+        // int y_span = int(120 * FG_BUCKET_SPAN); // arcsecs of latitude
+        
+        double x1 = base_lon;
+        double y1 = base_lat;
+        double x2 = x1 + dx;
+        double y2 = y1 + dy;
 
-    double x1 = base_lon;
-    double y1 = base_lat;
-    double x2 = x1 + dx;
-    double y2 = y1 + dy;
+        while ( x1 < max_lon ) {
+            while ( y1 < max_lat ) {
+                make_area( cover, polys, x1, y1, x2, y2, half_dx, half_dy );
+                
+                y1 = y2;
+                y2 += dy;
+            }
 
-    while ( x1 < max_lon ) {
-	while ( y1 < max_lat ) {
-	    make_area( cover, polys, x1, y1, x2, y2, half_dx, half_dy );
+            x1 = x2;
+            x2 += dx;
+            y1 = base_lat;
+            y2 = y1 + dy;
+        }
 
-	    y1 = y2;
-	    y2 += dy;
-	}
-
-	x1 = x2;
-	x2 += dx;
-	y1 = base_lat;
-	y2 = y1 + dy;
-    }
-
-    // Now that we're finished looking up land cover, we have a list
-    // of lists of polygons, one (possibly-empty) list for each area
-    // type.  Add the remaining polygons to the clipper.
-    for ( int i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
-	if ( polys[i].contours() ) {
-	    clipper.add_poly( i, polys[i] );
-	    count++;
-	}
+        // Now that we're finished looking up land cover, we have a list
+        // of lists of polygons, one (possibly-empty) list for each area
+        // type.  Add the remaining polygons to the clipper.
+        for ( int i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
+            if ( polys[i].contours() ) {
+                clipper.add_poly( i, polys[i] );
+                count++;
+            }
+        }
+    } catch ( string e ) {
+        cerr << "Died with exception: " << e << endl;
+        exit(-1);
     }
 
     // Return the number of polygons actually read.
@@ -764,26 +771,30 @@ static void do_output( FGConstruct& c, FGGenOutput& output ) {
 static void do_custom_objects( const FGConstruct& c ) {
     SGBucket b = c.get_bucket();
 
+    // Create/open the output .stg file for writing
+    string output_base = c.get_output_base();
+    string dest_dir = output_base + "/Scenery/" + b.gen_base_path();
+    string dest_ind = dest_dir + "/" + b.gen_index_str() + ".stg";
+
+    FILE *fp;
+    if ( (fp = fopen( dest_ind.c_str(), "w" )) == NULL ) {
+        cout << "ERROR: opening " << dest_ind << " for writing!" << endl;
+        exit(-1);
+    }
+
+    // Start with the default custom object which is the base terrain
+    fprintf(fp, "OBJECT_BASE %s.btg\n", b.gen_index_str().c_str());
+
     for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
 	string base_dir = load_dirs[i] + "/" + b.gen_base_path();
 	string index_file = base_dir + "/" + b.gen_index_str() + ".ind";
 	cout << "collecting custom objects from " << index_file << endl;
-
-	string output_base = c.get_output_base();
-	string dest_dir = output_base + "/Scenery/" + b.gen_base_path();
-	string dest_ind = dest_dir + "/" + b.gen_index_str() + ".ind";
 
 	sg_gzifstream in( index_file );
 
 	if ( ! in.is_open() ) {
 	    cout << "No custom objects" << endl;
 	} else {
-	    FILE *fp;
-	    if ( (fp = fopen( dest_ind.c_str(), "w" )) == NULL ) {
-		cout << "ERROR: opening " << dest_ind << " for writing!" << endl;
-		exit(-1);
-	    }
-	
 	    string token, name;
 
 	    while ( ! in.eof() ) {
@@ -804,10 +815,10 @@ static void do_custom_objects( const FGConstruct& c ) {
 
 		fprintf(fp, "OBJECT %s\n", name.c_str());
 	    }
-
-	    fclose(fp);
 	}
     }
+
+    fclose(fp);
 }
 
 // master construction routine
@@ -1048,7 +1059,6 @@ int main(int argc, char **argv) {
 	cout << "Load directory: " << argv[i] << endl;
     }
 
-#if 0
 #if defined( __CYGWIN__ ) || defined( __CYGWIN32__ ) || defined( _MSC_VER )
     // the next bit crashes Cygwin for me - DCL
     // MSVC does not have the function or variable type defined - BRF
@@ -1062,6 +1072,7 @@ int main(int argc, char **argv) {
     limit.rlim_cur = 20000000;
     limit.rlim_max = 20000000;
 
+#if 0
     result = setrlimit( RLIMIT_DATA, &limit );
     cout << "result of setting mem limit = " << result << endl;
     result = setrlimit( RLIMIT_STACK, &limit );
@@ -1070,6 +1081,7 @@ int main(int argc, char **argv) {
     cout << "result of setting mem limit = " << result << endl;
     result = setrlimit( RLIMIT_RSS, &limit );
     cout << "result of setting mem limit = " << result << endl;
+#endif
 
     // cpu time limit since occassionally the triangulator can go into
     // an infinite loop.
@@ -1078,7 +1090,6 @@ int main(int argc, char **argv) {
     result = setrlimit( RLIMIT_CPU, &limit );
     cout << "result of setting mem limit = " << result << endl;
 #endif  // end of stuff that crashes Cygwin
-#endif
 
     // main construction data management class
     FGConstruct c;

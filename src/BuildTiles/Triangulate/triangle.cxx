@@ -389,10 +389,19 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     }
 
     // hole list (make holes for airport ignore areas)
-    in.numberofholes = polylist[(int)HoleArea].size();
+    poly_list_iterator h_current, h_last;
+    in.numberofholes = 0;
+    h_current = polylist[(int)HoleArea].begin();
+    h_last = polylist[(int)HoleArea].end();
+    for ( ; h_current != h_last; ++h_current ) {
+	poly = *h_current;
+	for ( j = 0; j < poly.contours(); ++j ) {
+            in.numberofholes++;
+        }
+    }
+
     in.holelist = (REAL *) malloc(in.numberofholes * 2 * sizeof(REAL));
 
-    poly_list_iterator h_current, h_last;
     h_current = polylist[(int)HoleArea].begin();
     h_last = polylist[(int)HoleArea].end();
     counter = 0;

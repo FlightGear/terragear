@@ -13,6 +13,7 @@ fgfs_construct_LDADD = \
 	$(top_builddir)/src/Lib/Array/libArray.a \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/Optimize/libOptimize.a \
+	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/landcover/liblandcover.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
