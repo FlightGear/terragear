@@ -52,7 +52,7 @@ genapts_LDADD = \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgstructure -lsgxml \
 	-lgenpolyclip \
-	-lnurbsf -lmatrixI -lmatrixN -lmatrix \
+	-lnurbsd -lmatrixI -lmatrixN -lmatrix \
 	-lz \
 	$(base_LIBS)
 

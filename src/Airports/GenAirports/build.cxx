@@ -189,7 +189,7 @@ static point_list calc_elevations( TGAptSurface &surf,
 {
     point_list result = geod_nodes;
     for ( unsigned int i = 0; i < result.size(); ++i ) {
-        double elev = surf.query( result[i].lon(), result[i].lat() );
+        double elev = surf.query_solver( result[i].lon(), result[i].lat() );
         result[i].setelev( elev + offset );
     }
 
@@ -1005,10 +1005,10 @@ void build_airport( string airport_id, float alt_m,
     // Extend the area a bit so we don't have wierd things on the edges
     double dlon = max_deg.lon() - min_deg.lon();
     double dlat = max_deg.lat() - min_deg.lat();
-    min_deg.setlon( min_deg.lon() - 0.1 * dlon );
-    max_deg.setlon( max_deg.lon() + 0.1 * dlon );
-    min_deg.setlat( min_deg.lat() - 0.1 * dlat );
-    max_deg.setlat( max_deg.lat() + 0.1 * dlat );
+    min_deg.setlon( min_deg.lon() - 0.2 * dlon );
+    max_deg.setlon( max_deg.lon() + 0.2 * dlon );
+    min_deg.setlat( min_deg.lat() - 0.2 * dlat );
+    max_deg.setlat( max_deg.lat() + 0.2 * dlat );
 
     TGAptSurface apt_surf( root, elev_src, min_deg, max_deg );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Surface created");

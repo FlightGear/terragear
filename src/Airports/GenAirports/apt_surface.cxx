@@ -27,6 +27,7 @@
 #include <nurbs++/nurbsSub.h>
 
 #include <simgear/constants.h>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/debug/logstream.hxx>
 
@@ -38,33 +39,34 @@
 SG_USING_NAMESPACE( PLib );
 
 
-// fix node elevations.  Offset is added to the final elevation
-static void calc_elevations( const string &root, const string_list elev_src,
-                             Matrix_Point3Df &Pts ) {
+// fix node elevations.  Offset is added to the final elevation,
+// returns average of all points.
+static double calc_elevations( const string &root, const string_list elev_src,
+                             Matrix_Point3Dd &Pts ) {
     bool done = false;
     int i, j;
     TGArray array;
 
     // just bail if no work to do
     if ( Pts.rows() == 0 || Pts.cols() == 0 ) {
-        return;
+        return 0.0;
     }
 
     // set all elevations to -9999
     for ( i = 0; i < Pts.cols(); ++i ) {
         for ( j = 0; j < Pts.rows(); ++j ) {
-            Point3Df p = Pts(j,i);
+            Point3Dd p = Pts(j,i);
             p.z() = -9999.0;
         }
     }
 
     while ( !done ) {
 	// find first node with -9999 elevation
-        Point3Df first;
+        Point3Dd first;
         bool found_one = false;
         for ( i = 0; i < Pts.cols(); ++i ) {
             for ( j = 0; j < Pts.rows(); ++j ) {
-                Point3Df p = Pts(j,i);
+                Point3Dd p = Pts(j,i);
                 if ( p.z() < -9000.0 && !found_one ) {
                     first = p;
                     found_one = true;
@@ -103,7 +105,7 @@ static void calc_elevations( const string &root, const string_list elev_src,
 	    done = true;
             for ( i = 0; i < Pts.cols(); ++i ) {
                 for ( j = 0; j < Pts.rows(); ++j ) {
-                    Point3Df p = Pts(j,i);
+                    Point3Dd p = Pts(j,i);
                     if ( p.z() < -9000.0 ) {
                         done = false;
                         elev = array.altitude_from_grid( p.x() * 3600.0,
@@ -132,7 +134,7 @@ static void calc_elevations( const string &root, const string_list elev_src,
     int count = 0;
     for ( i = 0; i < Pts.cols(); ++i ) {
         for ( j = 0; j < Pts.rows(); ++j ) {
-            Point3Df p = Pts(j,i);
+            Point3Dd p = Pts(j,i);
             total += p.z();
             count++;
         }
@@ -142,24 +144,25 @@ static void calc_elevations( const string &root, const string_list elev_src,
 
     // now go through the elevations and clamp them all to within
     // +/-50m (164') of the average.
-    const double dz = 50.0;
     for ( i = 0; i < Pts.cols(); ++i ) {
         for ( j = 0; j < Pts.rows(); ++j ) {
-            Point3Df p = Pts(j,i);
-            if ( p.z() < average - dz ) {
+            Point3Dd p = Pts(j,i);
+            if ( p.z() < average - max_clamp ) {
                 SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average - dz );
-                p.z() = average - dz;
+                       << " to " << average - max_clamp );
+                p.z() = average - max_clamp;
                 Pts(j,i) = p;
             }
-            if ( p.z() > average + dz ) {
+            if ( p.z() > average + max_clamp ) {
                 SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average + dz );
-                p.z() = average + dz;
+                       << " to " << average + max_clamp );
+                p.z() = average + max_clamp;
                 Pts(j,i) = p;
             }
         }
     }
+
+    return average;
 }
 
 
@@ -206,70 +209,147 @@ TGAptSurface::TGAptSurface( const string& path,
     // Build the extra res input grid (shifted SW by half (dlon,dlat)
     // with an added major row column on the NE sides.)
     int mult = 10;
-    Matrix_Point3Df dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
+    Matrix_Point3Dd dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
     for ( int i = 0; i < dPts.cols(); ++i ) {
         for ( int j = 0; j < dPts.rows(); ++j ) {
-            dPts(j,i) = Point3Df( min_deg.lon() - dlon_h
-                                    + i * dlon / ( xdivs * mult),
+            dPts(j,i) = Point3Dd( min_deg.lon() - dlon_h
+                                    + i * (dlon / (double)mult),
                                   min_deg.lat() - dlat_h
-                                    + j * dlat / ( ydivs * mult),
+                                    + j * (dlat / (double)mult),
                                   -9999 );
         }
     }
 
     // Determine elevation of the grid points
-    calc_elevations( path, elev_src, dPts );
+    double average = calc_elevations( path, elev_src, dPts );
 
     // Build the normal res input grid from the double res version
-    Matrix_Point3Df Pts(ydivs + 1, xdivs + 1);
+    Matrix_Point3Dd Pts(ydivs + 1, xdivs + 1);
+    double ave_divider = (mult+1) * (mult+1);
     for ( int i = 0; i < Pts.cols(); ++i ) {
         for ( int j = 0; j < Pts.rows(); ++j ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
-            for ( int ii = 0; ii < mult; ++ii ) {
-                for ( int jj = 0; jj < mult; ++jj ) {
-                    double value = dPts(mult*j + jj,
-                                        mult*i + ii).z();
+            double lon_accum = 0.0;
+            double lat_accum = 0.0;
+            for ( int ii = 0; ii <= mult; ++ii ) {
+                for ( int jj = 0; jj <= mult; ++jj ) {
+                    double value = dPts(mult*j + jj, mult*i + ii).z();
                     SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
                     accum += value;
+                    lon_accum += dPts(mult*j + jj, mult*i + ii).x();
+                    lat_accum += dPts(mult*j + jj, mult*i + ii).y();
                 }
             }
-            double average = accum / (mult*mult);
-            SG_LOG( SG_GENERAL, SG_DEBUG, "  average = " << average );
-            Pts(j,i) = Point3Df( min_deg.lon() + i * dlon,
+            double val_ave = accum / ave_divider;
+            double lon_ave = lon_accum / ave_divider;
+            double lat_ave = lat_accum / ave_divider;
+
+            SG_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
+            Pts(j,i) = Point3Dd( min_deg.lon() + i * dlon,
                                  min_deg.lat() + j * dlat,
-                                 average );
+                                 val_ave );
+
+            SG_LOG( SG_GENERAL, SG_DEBUG, "lon_ave = " << lon_ave
+                    << "  lat_ave = " << lat_ave );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "lon = " << min_deg.lon() + i * dlon
+                    << "  lat = " << min_deg.lat() + j * dlat );
         }
     }
 
-#if 0
-    // Add some "slope" sanity to the resulting surface grid points
-    for ( i = 0; i < Pts.cols() - 1; ++i ) {
-        for ( j = 0; j < Pts.rows() - 1; ++j ) {
-            Point3Df p = Pts(j,i);
-            Point3Df p1 = Pts(j,i+1);
-            geo_inverse_wgs_84( 0.0, 
+    bool slope_error = true;
+    while ( slope_error ) {
+        // cout << "start of slope processing pass" << endl;
+        slope_error = false;
+        // Add some "slope" sanity to the resulting surface grid points
+        for ( int i = 0; i < Pts.cols() - 1; ++i ) {
+            for ( int j = 0; j < Pts.rows() - 1; ++j ) {
+                Point3Dd p1, p2;
+                double az1, az2, dist;
+                double slope;
 
-            if ( p.z() < average - dz ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average - dz );
-                p.z() = average - dz;
-                Pts(j,i) = p;
-            }
-            if ( p.z() > average + dz ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
-                       << " to " << average + dz );
-                p.z() = average + dz;
-                Pts(j,i) = p;
+                p1 = Pts(j,i);
+                p2 = Pts(j,i+1);
+                geo_inverse_wgs_84( 0, p1.y(), p1.x(), p2.y(), p2.x(),
+                                    &az1, &az2, &dist );
+                slope = (p2.z() - p1.z()) / dist;
+
+                if ( fabs(slope) > (slope_max + slope_eps) ) {
+                    // need to throttle slope, let's move the point
+                    // furthest away from average towards the center.
+
+                    slope_error = true;
+
+                    // cout << " (a) detected slope of " << slope
+                    //      << " dist = " << dist << endl;
+
+                    double e1 = average - p1.z();
+                    double e2 = average - p2.z();
+                    // cout << "  z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
+                    // cout << "  e1 = " << e1 << "  e2 = " << e2 << endl;
+
+                    if ( fabs(e1) > fabs(e2) ) {
+                        // cout << "  p1 error larger" << endl;
+                        if ( slope > 0 ) {
+                            p1.z() = p2.z() - (dist * slope_max);
+                        } else {
+                            p1.z() = p2.z() + (dist * slope_max);
+                        }
+                        Pts(j,i) = p1;
+                    } else {
+                        // cout << "  p2 error larger" << endl;
+                        if ( slope > 0 ) {
+                            p2.z() = p1.z() + (dist * slope_max);
+                        } else {
+                            p2.z() = p1.z() - (dist * slope_max);
+                        }
+                        Pts(j,i+1) = p2;
+                    }
+                    // cout << "   z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
+                }
+
+                p1 = Pts(j,i);
+                p2 = Pts(j+1,i);
+                geo_inverse_wgs_84( 0, p1.y(), p1.x(), p2.y(), p2.x(),
+                                    &az1, &az2, &dist );
+                slope = ( p2.z() - p1.z() ) / dist;
+
+                if ( fabs(slope) > (slope_max+slope_eps) ) {
+                    // need to throttle slope, let's move the point
+                    // furthest away from average towards the center.
+
+                    slope_error = true;
+
+                    // cout << " (b) detected slope of " << slope 
+                    //      << " dist = " << dist << endl;
+
+                    double e1 = average - p1.z();
+                    double e2 = average - p2.z();
+
+                    if ( fabs(e1) > fabs(e2) ) {
+                        if ( slope > 0 ) {
+                            p1.z() = p2.z() - (dist * slope_max);
+                        } else {
+                            p1.z() = p2.z() + (dist * slope_max);
+                        }
+                        Pts(j,i) = p1;
+                    } else {
+                        if ( slope > 0 ) {
+                            p2.z() = p1.z() + (dist * slope_max);
+                        } else {
+                            p2.z() = p1.z() - (dist * slope_max);
+                        }
+                        Pts(j+1,i) = p2;
+                    }
+                }
             }
         }
     }
-#endif
 
     // Create the nurbs surface
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create nurbs surface");
-    apt_surf = new PlNurbsSurfacef;
+    apt_surf = new PlNurbsSurfaced;
     apt_surf->globalInterp( Pts, 3, 3);
     SG_LOG(SG_GENERAL, SG_DEBUG, "  successful.");
 
@@ -297,7 +377,37 @@ TGAptSurface::~TGAptSurface() {
 
 // Query the elevation of a point, return -9999 if out of range
 double TGAptSurface::query( double lon_deg, double lat_deg ) {
-    const double eps = 0.00001;
+    // sanity check
+    if ( lon_deg < min_deg.lon() || lon_deg > max_deg.lon() ||
+         lat_deg < min_deg.lat() || lat_deg > max_deg.lat() )
+    {
+        SG_LOG(SG_GENERAL, SG_WARN, "Warning: query out of bounds for NURBS surface!");
+        return -9999.0;
+    }
+
+    double lat_range = max_deg.lat() - min_deg.lat();
+    double lon_range = max_deg.lon() - min_deg.lon();
+
+    // convert lon,lat to nurbs space (NOTE: that this is a dumb
+    // approximation that assumes that nurbs surface space exactly
+    // corresponds to real world x,y space which it doesn't, but maybe
+    // the error is small enough that it doesn't matter?)
+    double u = (lat_deg - min_deg.lat()) / lat_range;
+    double v = (lon_deg - min_deg.lon()) / lon_range;
+
+    Point3Dd p = apt_surf->pointAt( u, v );
+
+    // double az1, az2, dist;
+    // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
+    //                     &az1, &az2, &dist );
+    // cout << "query distance error = " << dist << endl;
+    
+    return p.z();
+}
+
+// Query the elevation of a point, return -9999 if out of range
+double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
+    const double eps = 0.0000005;
 
     // sanity check
     if ( lon_deg < min_deg.lon() || lon_deg > max_deg.lon() ||
@@ -314,9 +424,16 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
     double u = (lat_deg - min_deg.lat()) / lat_range;
     double v = (lon_deg - min_deg.lon()) / lon_range;
 
-    int count = 0;
-    Point3Df p;
-    while ( count < 20 ) {
+    // cout << "running quick solver ..." << endl;
+
+    int count;
+    double dx = 1000;
+    double dy = 1000;
+    Point3Dd p;
+
+    // cout << " solving for u,v simultaneously" << endl;
+    count = 0;
+    while ( count < 0 ) {
         if ( u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 ) {
             // oops, something goofed in the solver
         }
@@ -326,8 +443,8 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
         //      << endl;
         // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
         //      << endl;
-        double dx = lon_deg - p.x();
-        double dy = lat_deg - p.y();
+        dx = lon_deg - p.x();
+        dy = lat_deg - p.y();
         // cout << "      dx = " << dx << " dy = " << dy << endl;
 
         if ( (fabs(dx) < eps) && (fabs(dy) < eps) ) {
@@ -344,42 +461,102 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
         ++count;
     }
 
+    // cout << "quick query solver failed..." << endl;
+
     // failed to converge with fast approach, try a binary paritition
-    // scheme
+    // scheme, however we have to solve each axis independently
+    // because when we move in one axis we may change our position in
+    // the other axis.
+
     double min_u = 0.0; 
     double max_u = 1.0;
-    double min_v = 0.0;
+    double min_v = 0.0; 
     double max_v = 1.0;
-    count = 0;
-    while ( count < 50 ) {
-        u = (max_u + min_u) / 2.0;
-        v = (max_v + min_v) / 2.0;
-        p = apt_surf->pointAt( u, v );
-        // cout << "  binary querying for " << u << ", " << v << " = "
-        //      << p.z() << endl;
-        // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
-        //      << endl;
-        double dx = lon_deg - p.x();
-        double dy = lat_deg - p.y();
-        // cout << "      dx = " << dx << " dy = " << dy << endl;
 
-        if ( (fabs(dx) < eps) && (fabs(dy) < eps) ) {
-            return p.z();
-        } else {
-            if ( dy >= eps ) {
-                min_u = u;
-            } else if ( dy <= eps ) {
-                max_u = u;
+    u = (max_u + min_u) / 2.0;
+    v = (max_v + min_v) / 2.0;
+
+    dx = 1000.0;
+    dy = 1000.0;
+
+    while ( true ) {
+        // cout << "solving for u" << endl;
+        
+        min_u = 0.0; 
+        max_u = 1.0;
+        count = 0;
+        while ( true ) {
+            p = apt_surf->pointAt( u, v );
+            // cout << "  binary querying for " << u << ", " << v << " = "
+            //      << p.z() << endl;
+            // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
+            //      << endl;
+            dy = lat_deg - p.y();
+            dx = lon_deg - p.x();
+            // cout << "      dx = " << dx << " dy = " << dy << endl;
+
+            // double az1, az2, dist;
+            // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
+            //                     &az1, &az2, &dist );
+            // cout << "      query distance error = " << dist << endl;
+
+            if ( fabs(dy) < eps ) {
+                break;
+            } else {
+                if ( dy >= eps ) {
+                    min_u = u;
+                } else if ( dy <= eps ) {
+                    max_u = u;
+                }
             }
-            if ( dx >= eps ) {
-                min_v = v;
-            } else if ( dx <= eps ) {
-                max_v = v;
-            }
+
+            u = (max_u + min_u) / 2.0;
+            ++count;
         }
 
-        ++count;
+        // cout << "solving for v" << endl;
+
+        min_v = 0.0; 
+        max_v = 1.0;
+        count = 0;
+        while ( true ) {
+            p = apt_surf->pointAt( u, v );
+            // cout << "  binary querying for " << u << ", " << v << " = "
+            //      << p.z() << endl;
+            // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
+            //      << endl;
+            dx = lon_deg - p.x();
+            dy = lat_deg - p.y();
+            // cout << "      dx = " << dx << " dy = " << dy << endl;
+
+            // double az1, az2, dist;
+            // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
+            //                     &az1, &az2, &dist );
+            // cout << "      query distance error = " << dist << endl;
+            if ( fabs(dx) < eps ) {
+                break;
+            } else {
+                if ( dx >= eps ) {
+                    min_v = v;
+                } else if ( dx <= eps ) {
+                    max_v = v;
+                }
+            }
+            v = (max_v + min_v) / 2.0;
+
+            ++count;
+        }
+
+        if ( (fabs(dx) < eps) && (fabs(dy) < eps) ) {
+            // double az1, az2, dist;
+            // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
+            //                     &az1, &az2, &dist );
+            // cout << "        final query distance error = " << dist << endl;
+            return p.z();
+        }
     }
+
+    cout << "binary solver failed..." << endl;
 
     return p.z();
 }

@@ -53,7 +53,7 @@ class TGAptSurface {
 private:
 
     // The actual nurbs surface approximation for the airport
-    PlNurbsSurfacef *apt_surf;
+    PlNurbsSurfaced *apt_surf;
 
     Point3D min_deg, max_deg;
 
@@ -67,8 +67,18 @@ public:
     // Destructor
     ~TGAptSurface();
 
-    // Query the elevation of a point, return -9999 if out of range
+    // Query the elevation of a point, return -9999 if out of range.
+    // This routine makes a simplistic assumption that X,Y space is
+    // proportional to u,v space on the nurbs surface which it isn't.
     double query( double lon_deg, double lat_deg );
+
+    // Query the elevation of a point, return -9999 if out of range.
+    // This routine incorporates a complex solver that attempts to
+    // find the exact u,v coordinates correspondinging to the
+    // requested lat, lon.  But there seems to be problems with my
+    // solver routine that I haven't tracked down yet so I'm testing
+    // the _dumb version above.
+    double query_solver( double lon_deg, double lat_deg );
 };
 
 
