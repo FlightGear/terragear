@@ -40,13 +40,6 @@ SG_USING_NAMESPACE( PLib );
 // fix node elevations.  Offset is added to the final elevation
 static void calc_elevations( const string &root, const string_list elev_src,
                              Matrix_Point3Df &Pts ) {
-    // string_list elev_src;
-    // elev_src.clear();
-    // elev_src.push_back( "SRTM-1" );
-    // elev_src.push_back( "SRTM-3" );
-    // elev_src.push_back( "DEM-3" );
-    // elev_src.push_back( "DEM-30" );
-
     bool done = false;
     int i, j;
     TGArray array;
