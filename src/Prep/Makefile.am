@@ -7,4 +7,5 @@ SUBDIRS = \
 	MergerClipper \
 	Photo \
 	ShapeFile \
-	TGVPF
+	TGVPF \
+	UserDef

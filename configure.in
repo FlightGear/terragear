@@ -337,6 +337,7 @@ AC_OUTPUT( \
 	src/Prep/Photo/Makefile \
 	src/Prep/ShapeFile/Makefile \
 	src/Prep/TGVPF/Makefile \
+	src/Prep/UserDef/Makefile \
 	src/Utils/Makefile \
 	src/Utils/cdrom/Makefile \
 	src/Utils/download-map/Makefile \

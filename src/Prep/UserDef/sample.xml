@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<!--
+************************************************************************
+This is a sample file for adding user-defined land-use data.
+
+There are three types of data that you can add: points, lines, and
+polygons.  All of these get turned into polygons for scenery
+generation.  Use a file like this to add missing roads, towns,
+villages, lakes etc. for your own scenery with tguserdef.
+************************************************************************
+-->
+
+<PropertyList>
+
+ <!--
+  First we'll add some small towns missing from vmap0.
+
+  For each point, we need to specify a single geographical
+  location in degrees (lon/lat), the width of the area in meters,
+  and the area material (see $FG_ROOT/materials.xml).  The first
+  example adds a small town 1km x 1km, and the following ones add
+  small towns 500m x 500m.  The name is optional, but you'll find
+  it useful for keeping track of things.
+
+  Don't try too hard to be exact.  I find two decimal places (about
+  1km) to be as accurate as I can usually manage from sectional
+  charts; if you go to three decimal places, you'll have 100m
+  accuracy, which should almost always be good enough.
+ -->
+
+ <point>
+  <name>North Gower</name>
+  <material>Town</material>
+  <v>-75.72 45.13</v>
+  <width>1000</width>
+ </point>
+
+ <point>
+  <name>Carp</name>
+  <material>Town</material>
+  <v>-76.04 45.35</v>
+  <width>500</width>
+ </point>
+
+ <point>
+  <name>Kinburn</name>
+  <material>Town</material>
+  <v>-76.20 45.38</v>
+  <width>500</width>
+ </point>
+
+ <point>
+  <name>Galetta</name>
+  <material>Town</material>
+  <v>-76.27 45.42</v>
+  <width>500</width>
+ </point>
+
+ <!--
+  Next, we'll add a missing county road.
+
+  You need to specify the points (lon/lat) that the line will pass
+  through, the material type, and the width in meters.  By switching the
+  material, you could make (say) a river or railroad instead of a
+  road.
+
+  Again, don't try to hard to get every bend in the road; add points
+  only for major changes in direction.
+ -->
+
+ <line>
+  <name>Ottawa-Carleton Road 6</name>
+  <material>Road</material>
+  <width>10</width>
+  <v>
+   -75.72 45.13
+   -75.77 45.11
+   -75.90 45.03
+  </v>
+ </line>
+
+ <!--
+  Finally, we'll add a missing urban area.
+
+  A polygon can contain multiple contours, some of which can be holds
+  (say, to create a donut shape).  Simply specify the lon/lat points
+  around the outside of each contour, and try to capture the rough
+  shape of the area.  By switching types, you could use this to add
+  a park, forest or lake.
+ -->
+
+ <polygon>
+  <name>Kanata (north end)</name>
+  <contour>
+   <hole>false</hole>
+   <v>
+    -75.90 45.34
+    -75.91 45.34
+    -75.92 45.33
+    -75.91 45.32
+    -75.90 45.33
+    -75.91 45.33
+   </v>
+  </contour>
+ </polygon>
+
+</PropertyList>
