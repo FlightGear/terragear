@@ -32,7 +32,7 @@
 
 typedef struct {
     /* header info */
-    int big_endian;  /* true if big, false if little */
+    int big_endian;  /* true if data source is big, false if little */
     int nrows;       /* number of rows */
     int ncols;       /* number of cols */
     int ulxmap;      /* X coord of center of upper left pixel in arcsec */
