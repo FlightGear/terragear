@@ -6,4 +6,4 @@ libPolygon_a_SOURCES = \
 	polygon.cxx polygon.hxx \
 	split.cxx split.hxx
 
-INCLUDES += -I$(top_builddir) -I$(top_builddir)/Lib -I$(top_builddir)/Tools/Lib
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/Lib

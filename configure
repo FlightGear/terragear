@@ -458,7 +458,7 @@ echo > confdefs.h
 
 # A filename unique to this package, relative to the directory that
 # configure is in, which we can look for to find out if srcdir is correct.
-ac_unique_file=Lib/DEM/dem.cxx
+ac_unique_file=src/Lib/DEM/dem.cxx
 
 # Find the source files, if location was not specified.
 if test -z "$srcdir"; then
@@ -696,7 +696,7 @@ fi
 
 PACKAGE=TerraGear
 
-VERSION=0.0.0
+VERSION=0.0.1
 
 if test "`cd $srcdir && pwd`" != "`pwd`" && test -f $srcdir/config.status; then
   { echo "configure: error: source directory already configured; run "make distclean" there first" 1>&2; exit 1; }
@@ -3948,32 +3948,33 @@ ac_given_INSTALL="$INSTALL"
 trap 'rm -fr `echo "\
 	VERSION \
 	Makefile \
-	Construct/Makefile \
-	Construct/Clipper/Makefile \
-	Construct/Combine/Makefile \
-	Construct/GenOutput/Makefile \
-	Construct/Match/Makefile \
-	Construct/Triangulate/Makefile \
-	Construct/Main/Makefile \
-	Construct/Parallel/Makefile \
-	Lib/Makefile \
-	Lib/Array/Makefile \
-	Lib/Build/Makefile \
-	Lib/DEM/Makefile \
-	Lib/Polygon/Makefile \
-	Lib/poly2tri/Makefile \
-	Lib/shapelib/Makefile \
-	Lib/Triangle/Makefile \
-	Prep/Makefile \
-	Prep/DemChop/Makefile \
-	Prep/DemInfo/Makefile \
-	Prep/DemRaw2ascii/Makefile \
-	Prep/GenAirports/Makefile \
-	Prep/GSHHS/Makefile \
-	Prep/MergerClipper/Makefile \
-	Prep/ShapeFile/Makefile \
-	Utils/Makefile \
- Include/config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+	src/Makefile \
+	src/Construct/Makefile \
+	src/Construct/Clipper/Makefile \
+	src/Construct/Combine/Makefile \
+	src/Construct/GenOutput/Makefile \
+	src/Construct/Match/Makefile \
+	src/Construct/Triangulate/Makefile \
+	src/Construct/Main/Makefile \
+	src/Construct/Parallel/Makefile \
+	src/Lib/Makefile \
+	src/Lib/Array/Makefile \
+	src/Lib/Build/Makefile \
+	src/Lib/DEM/Makefile \
+	src/Lib/Polygon/Makefile \
+	src/Lib/poly2tri/Makefile \
+	src/Lib/shapelib/Makefile \
+	src/Lib/Triangle/Makefile \
+	src/Prep/Makefile \
+	src/Prep/DemChop/Makefile \
+	src/Prep/DemInfo/Makefile \
+	src/Prep/DemRaw2ascii/Makefile \
+	src/Prep/GenAirports/Makefile \
+	src/Prep/GSHHS/Makefile \
+	src/Prep/MergerClipper/Makefile \
+	src/Prep/ShapeFile/Makefile \
+	src/Utils/Makefile \
+ src/Include/config.h" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -4073,31 +4074,32 @@ cat >> $CONFIG_STATUS <<EOF
 CONFIG_FILES=\${CONFIG_FILES-"\
 	VERSION \
 	Makefile \
-	Construct/Makefile \
-	Construct/Clipper/Makefile \
-	Construct/Combine/Makefile \
-	Construct/GenOutput/Makefile \
-	Construct/Match/Makefile \
-	Construct/Triangulate/Makefile \
-	Construct/Main/Makefile \
-	Construct/Parallel/Makefile \
-	Lib/Makefile \
-	Lib/Array/Makefile \
-	Lib/Build/Makefile \
-	Lib/DEM/Makefile \
-	Lib/Polygon/Makefile \
-	Lib/poly2tri/Makefile \
-	Lib/shapelib/Makefile \
-	Lib/Triangle/Makefile \
-	Prep/Makefile \
-	Prep/DemChop/Makefile \
-	Prep/DemInfo/Makefile \
-	Prep/DemRaw2ascii/Makefile \
-	Prep/GenAirports/Makefile \
-	Prep/GSHHS/Makefile \
-	Prep/MergerClipper/Makefile \
-	Prep/ShapeFile/Makefile \
-	Utils/Makefile \
+	src/Makefile \
+	src/Construct/Makefile \
+	src/Construct/Clipper/Makefile \
+	src/Construct/Combine/Makefile \
+	src/Construct/GenOutput/Makefile \
+	src/Construct/Match/Makefile \
+	src/Construct/Triangulate/Makefile \
+	src/Construct/Main/Makefile \
+	src/Construct/Parallel/Makefile \
+	src/Lib/Makefile \
+	src/Lib/Array/Makefile \
+	src/Lib/Build/Makefile \
+	src/Lib/DEM/Makefile \
+	src/Lib/Polygon/Makefile \
+	src/Lib/poly2tri/Makefile \
+	src/Lib/shapelib/Makefile \
+	src/Lib/Triangle/Makefile \
+	src/Prep/Makefile \
+	src/Prep/DemChop/Makefile \
+	src/Prep/DemInfo/Makefile \
+	src/Prep/DemRaw2ascii/Makefile \
+	src/Prep/GenAirports/Makefile \
+	src/Prep/GSHHS/Makefile \
+	src/Prep/MergerClipper/Makefile \
+	src/Prep/ShapeFile/Makefile \
+	src/Utils/Makefile \
 "}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
@@ -4179,7 +4181,7 @@ ac_eD='%g'
 if test "${CONFIG_HEADERS+set}" != set; then
 EOF
 cat >> $CONFIG_STATUS <<EOF
-  CONFIG_HEADERS="Include/config.h"
+  CONFIG_HEADERS="src/Include/config.h"
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 fi
@@ -4270,7 +4272,7 @@ cat >> $CONFIG_STATUS <<EOF
 
 EOF
 cat >> $CONFIG_STATUS <<\EOF
-test -z "$CONFIG_HEADERS" || echo timestamp > Include/stamp-h
+test -z "$CONFIG_HEADERS" || echo timestamp > src/Include/stamp-h
 
 exit 0
 EOF

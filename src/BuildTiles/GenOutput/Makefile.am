@@ -4,5 +4,5 @@ libGenOutput_a_SOURCES = genobj.cxx genobj.hxx
 
 INCLUDES += \
 	-I$(top_builddir) \
-	-I$(top_builddir)/Lib \
-	-I$(top_builddir)/Construct
+	-I$(top_builddir)/src/Lib \
+	-I$(top_builddir)/src/Construct

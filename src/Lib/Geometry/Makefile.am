@@ -5,4 +5,4 @@ libBuild_a_SOURCES = \
 	trinodes.cxx trinodes.hxx \
 	trisegs.cxx trisegs.hxx
 
-INCLUDES += -I$(top_builddir) -I$(top_builddir)/Lib -I$(top_builddir)/Tools/Lib
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/Lib

@@ -11,15 +11,16 @@ configure:756: checking for working autoheader
 configure:769: checking for working makeinfo
 configure:784: checking whether make sets ${MAKE}
 configure:813: checking for gcc
-configure:890: checking whether the C compiler (gcc  ) works
-configure:904: gcc -o conftest    conftest.c  1>&5
-configure:924: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:890: checking whether the C compiler (gcc -Wall -O2 ) works
+configure:904: gcc -o conftest -Wall -O2   conftest.c  1>&5
+configure:901: warning: return-type defaults to `int'
+configure:924: checking whether the C compiler (gcc -Wall -O2 ) is a cross-compiler
 configure:929: checking whether we are using GNU C
 configure:953: checking whether gcc accepts -g
 configure:985: checking for c++
-configure:1016: checking whether the C++ compiler (c++  ) works
-configure:1030: c++ -o conftest    conftest.C  1>&5
-configure:1056: checking whether the C++ compiler (c++  ) is a cross-compiler
+configure:1016: checking whether the C++ compiler (c++ -Wall -O2 ) works
+configure:1030: c++ -o conftest -Wall -O2   conftest.C  1>&5
+configure:1056: checking whether the C++ compiler (c++ -Wall -O2 ) is a cross-compiler
 configure:1061: checking whether we are using GNU C++
 configure:1085: checking whether c++ accepts -g
 configure:1115: checking for ranlib

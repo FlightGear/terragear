@@ -7,11 +7,7 @@ noinst_PROGRAMS = testarray
 testarray_SOURCES = testarray.cxx
 
 testarray_LDADD = \
-	$(top_builddir)/Lib/Array/libArray.a \
+	$(top_builddir)/src/Lib/Array/libArray.a \
 	-lsgbucket -lsgmath -lsgmisc -lz
 
-INCLUDES += \
-	-I$(top_builddir) \
-	-I$(top_builddir)/Lib \
-	-I$(top_builddir)/Tools/Lib \
-	-I$(top_builddir)/Tools/Construct
+INCLUDES += -I$(top_builddir)/src

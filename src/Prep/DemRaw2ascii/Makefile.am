@@ -29,7 +29,7 @@ raw2ascii_SOURCES = main.c rawdem.c rawdem.h
 
 raw2ascii_LDADD = $(base_LIBS)
 
-INCLUDES += 
+# INCLUDES += 
 
 
 #---------------------------------------------------------------------------

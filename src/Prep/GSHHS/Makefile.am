@@ -7,16 +7,16 @@ gshhs_SOURCES = \
 	simple_clip.hxx simple_clip.cxx
 
 gshhs_LDADD = \
-	$(top_builddir)/Lib/Polygon/libPolygon.a \
-	$(top_builddir)/Lib/poly2tri/libpoly2tri.a \
+	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
+	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgdebug -lsgbucket -lsgmisc -lz -lgpc
 
 debug_SOURCES = \
 	debug.cxx
 
 debug_LDADD = \
-	$(top_builddir)/Lib/Polygon/libPolygon.a \
-	$(top_builddir)/Lib/poly2tri/libpoly2tri.a \
+	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
+	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgdebug -lsgbucket -lsgmisc -lz -lgpc
 
-INCLUDES += -I$(top_builddir) -I$(top_builddir)/Lib -I$(top_builddir)/Tools/Lib
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/Lib

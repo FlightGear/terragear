@@ -29,11 +29,11 @@ deminfo_SOURCES = \
 	deminfo.cxx
 
 deminfo_LDADD = \
-	$(top_builddir)/Lib/DEM/libDEM.a \
+	$(top_builddir)/src/Lib/DEM/libDEM.a \
 	-lsgbucket -lsgmisc -lz \
 	$(base_LIBS)
 
-INCLUDES += -I$(top_builddir) -I$(top_builddir)/Lib -I$(top_builddir)/Tools/Lib
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/Lib
 
 # We can't build this with "-O2" (optimization) since this causes a seg fault
 # I haven't found a way to strip this out of the CXXFLAGS, so I'm just

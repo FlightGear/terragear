@@ -9,6 +9,6 @@ fgfs_tools_client_SOURCES = client.cxx
 fgfs_tools_client_LDADD = -lsgbucket -lsgmisc
 
 INCLUDES += \
-	-I$(top_builddir) \
-	-I$(top_builddir)/Lib \
-	-I$(top_builddir)/Construct
+	-I$(top_builddir)/src \
+	-I$(top_builddir)/src/Lib \
+	-I$(top_builddir)/src/Construct

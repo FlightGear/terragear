@@ -1,4 +1,4 @@
-/* Include/config.h.  Generated automatically by configure.  */
+/* src/Include/config.h.  Generated automatically by configure.  */
 /* Include/config.h.in.  Generated automatically from configure.in by autoheader.  */
 
 /* Define to empty if the keyword does not work.  */
@@ -67,7 +67,7 @@
 /* #undef TM_IN_SYS_TIME */
 
 /* Define to version number */
-#define VERSION "0.0.0"
+#define VERSION "0.0.1"
 
 /* Define if compiling on a Winbloze (95, NT, etc.) platform */
 /* #undef WIN32 */

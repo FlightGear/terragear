@@ -33,15 +33,11 @@ genapts_SOURCES = \
 	runway.cxx runway.hxx 
 
 genapts_LDADD = \
-	$(top_builddir)/Lib/Array/libArray.a \
-	$(top_builddir)/Lib/Polygon/libPolygon.a \
-	$(top_builddir)/Lib/poly2tri/libpoly2tri.a \
-	$(top_builddir)/Lib/Build/libBuild.a \
+	$(top_builddir)/src/Lib/Array/libArray.a \
+	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
+	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
+	$(top_builddir)/src/Lib/Build/libBuild.a \
 	-lsgbucket -lsgdebug -lsgmath -lsgmisc -lz -lgpc \
 	$(base_LIBS)
 
-INCLUDES += \
-	-I$(top_builddir) \
-	-I$(top_builddir)/Tools \
-	-I$(top_builddir)/Lib \
-	-I$(top_builddir)/Tools/Lib
+INCLUDES += -I$(top_builddir) -I$(top_builddir)/src -I$(top_builddir)/src/Lib

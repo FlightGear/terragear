@@ -3,10 +3,10 @@ dnl working configure script.
 dnl
 dnl $Id$
 
-AC_INIT(Lib/DEM/dem.cxx)
+AC_INIT(src/Lib/DEM/dem.cxx)
 
 dnl Initialize the automake stuff
-AM_INIT_AUTOMAKE(TerraGear, 0.0.0)
+AM_INIT_AUTOMAKE(TerraGear, 0.0.1)
 
 dnl Checks for programs.
 AC_PROG_MAKE_SET
@@ -224,36 +224,37 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS( ftime gettimeofday timegm memcpy bcopy mktime strstr rand \
 	random setitimer getitimer signal GetLocalTime rint getrusage )
 
-AM_CONFIG_HEADER(Include/config.h)
+AM_CONFIG_HEADER(src/Include/config.h)
 
 AC_OUTPUT( \
 	VERSION \
 	Makefile \
-	Construct/Makefile \
-	Construct/Clipper/Makefile \
-	Construct/Combine/Makefile \
-	Construct/GenOutput/Makefile \
-	Construct/Match/Makefile \
-	Construct/Triangulate/Makefile \
-	Construct/Main/Makefile \
-	Construct/Parallel/Makefile \
-	Lib/Makefile \
-	Lib/Array/Makefile \
-	Lib/Build/Makefile \
-	Lib/DEM/Makefile \
-	Lib/Polygon/Makefile \
-	Lib/poly2tri/Makefile \
-	Lib/shapelib/Makefile \
-	Lib/Triangle/Makefile \
-	Prep/Makefile \
-	Prep/DemChop/Makefile \
-	Prep/DemInfo/Makefile \
-	Prep/DemRaw2ascii/Makefile \
-	Prep/GenAirports/Makefile \
-	Prep/GSHHS/Makefile \
-	Prep/MergerClipper/Makefile \
-	Prep/ShapeFile/Makefile \
-	Utils/Makefile \
+	src/Makefile \
+	src/Construct/Makefile \
+	src/Construct/Clipper/Makefile \
+	src/Construct/Combine/Makefile \
+	src/Construct/GenOutput/Makefile \
+	src/Construct/Match/Makefile \
+	src/Construct/Triangulate/Makefile \
+	src/Construct/Main/Makefile \
+	src/Construct/Parallel/Makefile \
+	src/Lib/Makefile \
+	src/Lib/Array/Makefile \
+	src/Lib/Build/Makefile \
+	src/Lib/DEM/Makefile \
+	src/Lib/Polygon/Makefile \
+	src/Lib/poly2tri/Makefile \
+	src/Lib/shapelib/Makefile \
+	src/Lib/Triangle/Makefile \
+	src/Prep/Makefile \
+	src/Prep/DemChop/Makefile \
+	src/Prep/DemInfo/Makefile \
+	src/Prep/DemRaw2ascii/Makefile \
+	src/Prep/GenAirports/Makefile \
+	src/Prep/GSHHS/Makefile \
+	src/Prep/MergerClipper/Makefile \
+	src/Prep/ShapeFile/Makefile \
+	src/Utils/Makefile \
 )
 
 echo ""
