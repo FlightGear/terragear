@@ -60,8 +60,8 @@
 #include "texparams.hxx"
 
 
-// static const double tgAirportEpsilon = FG_EPSILON / 10.0;
-static const double tgAirportEpsilon = FG_EPSILON * 10.0;
+static const double tgAirportEpsilon = FG_EPSILON / 10.0;
+// static const double tgAirportEpsilon = FG_EPSILON * 10.0;
 
 
 // calculate texture coordinates for runway section using the provided
@@ -681,17 +681,41 @@ static void gen_runway_section( const FGRunway& rwy_info,
     Point3D a2 = runway.get_pt(0, 0);
     Point3D a3 = runway.get_pt(0, 3);
 
-    double dlx = a1.x() - a0.x();
-    double dly = a1.y() - a0.y();
+    if ( endl_pct > 1.0 ) {
+	endl_pct = 1.0;
+    }
+
+    // partial "w" percentages could introduce "T" intersections which
+    // we compensate for later, but could still cause problems now
+    // with our polygon algebra code.  This attempts to compensate for
+    // that by nudging the areas a bit bigger so we don't end up with
+    // polygon slivers.
+    if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
+	startl_pct -= 80 * FG_EPSILON;
+	endl_pct += 80 * FG_EPSILON;
+	if ( startw_pct > 0.0 ) {
+	    startw_pct -= 80 * FG_EPSILON;
+	}
+	if ( endw_pct < 1.0 ) {
+	    endw_pct += 80 * FG_EPSILON;
+	}
+    }
 
     cout << "start len % = " << startl_pct
 	 << " end len % = " << endl_pct << endl;
 
+    double dlx, dly;
+
+    dlx = a1.x() - a0.x();
+    dly = a1.y() - a0.y();
+
     Point3D t0 = Point3D( a0.x() + dlx * startl_pct,
 			  a0.y() + dly * startl_pct, 0);
-
     Point3D t1 = Point3D( a0.x() + dlx * endl_pct,
 			  a0.y() + dly * endl_pct, 0);
+
+    dlx = a3.x() - a2.x();
+    dly = a3.y() - a2.y();
 
     Point3D t2 = Point3D( a2.x() + dlx * startl_pct,
 			  a2.y() + dly * startl_pct, 0);
@@ -699,17 +723,22 @@ static void gen_runway_section( const FGRunway& rwy_info,
     Point3D t3 = Point3D( a2.x() + dlx * endl_pct,
 			  a2.y() + dly * endl_pct, 0);
 
-    double dwx = t0.x() - t2.x();
-    double dwy = t0.y() - t2.y();
-
     cout << "start wid % = " << startw_pct
 	 << " end wid % = " << endw_pct << endl;
+
+    double dwx, dwy;
+
+    dwx = t0.x() - t2.x();
+    dwy = t0.y() - t2.y();
 
     Point3D p0 = Point3D( t2.x() + dwx * startw_pct,
 			  t2.y() + dwy * startw_pct, 0);
 
     Point3D p1 = Point3D( t2.x() + dwx * endw_pct,
 			  t2.y() + dwy * endw_pct, 0);
+
+    dwx = t1.x() - t3.x();
+    dwy = t1.y() - t3.y();
 
     Point3D p2 = Point3D( t3.x() + dwx * startw_pct,
 			  t3.y() + dwy * startw_pct, 0);
@@ -916,7 +945,6 @@ static void gen_precision_rwy( const FGRunway& rwy_info,
     if ( length < 3075 ) {
 	cout << "This runway is not long enough for precision markings!"
 	     << endl;
-	exit(-1);
     }
 
     double start_pct = 0;
@@ -1056,6 +1084,10 @@ static void gen_precision_rwy( const FGRunway& rwy_info,
     // Touch down zone x2 (first)
     //
 
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
+
     start_pct = end_pct;
     end_pct = start_pct + ( 500 / length );
     gen_runway_section( rwy_info, runway_a,
@@ -1075,6 +1107,10 @@ static void gen_precision_rwy( const FGRunway& rwy_info,
     //
     // Touch down zone x2 (second)
     //
+
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
 
     start_pct = end_pct;
     end_pct = start_pct + ( 500 / length );
@@ -1096,6 +1132,10 @@ static void gen_precision_rwy( const FGRunway& rwy_info,
     // Touch down zone x1 (first)
     //
 
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
+
     start_pct = end_pct;
     end_pct = start_pct + ( 500 / length );
     gen_runway_section( rwy_info, runway_a,
@@ -1116,6 +1156,10 @@ static void gen_precision_rwy( const FGRunway& rwy_info,
     // Touch down zone x1 (second)
     //
 
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
+
     start_pct = end_pct;
     end_pct = start_pct + ( 500 / length );
     gen_runway_section( rwy_info, runway_a,
@@ -1135,6 +1179,10 @@ static void gen_precision_rwy( const FGRunway& rwy_info,
     //
     // The rest ...
     //
+
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
 
     start_pct = end_pct;
     end_pct = 1.0;
@@ -1212,7 +1260,6 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
     if ( length < 1150 ) {
 	cout << "This runway is not long enough for non-precision markings!"
 	     << endl;
-	exit(-1);
     }
 
     double start_pct = 0;
@@ -1306,6 +1353,10 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
     // Aiming point
     //
 
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
+
     start_pct = end_pct;
     end_pct = start_pct + ( 500 / length );
     gen_runway_section( rwy_info, runway_a,
@@ -1325,6 +1376,10 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
     //
     // The rest ...
     //
+
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
 
     start_pct = end_pct;
     end_pct = 1.0;
@@ -1400,12 +1455,8 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
 
     double length = rwy_info.length / 2.0;
     if ( length < 1150 ) {
-	cerr << "This runway is not long enough for visual markings!"
+	cout << "This runway is not long enough for visual markings!"
 	     << endl;
-	cerr << "Converting to a simple runway ... !" << endl;	
-	gen_simple_rwy( rwy_info, "grass_rwy",
-			rwy_polys, texparams, accum );
-	return;
     }
 
     double start_pct = 0;
@@ -1445,6 +1496,10 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
     // Intermediate area before aiming point ...
     //
 
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
+
     start_pct = end_pct;
     end_pct = start_pct + ( 450.0 / length );
     gen_runway_section( rwy_info, runway_a,
@@ -1460,6 +1515,10 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
 			rwy_info.heading + 180.0,
 			material, "rest",
 			rwy_polys, texparams, accum );
+
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
 
     start_pct = end_pct;
     end_pct = start_pct + ( 450.0 / length );
@@ -1480,6 +1539,10 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
     //
     // Aiming point
     //
+
+    if ( end_pct >= 1.0 ) {
+	return;
+    }
 
     start_pct = end_pct;
     end_pct = start_pct + ( 500 / length );
@@ -1502,23 +1565,25 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
     // The rest ...
     //
 
-    if ( end_pct < 1.0 ) {
-	start_pct = end_pct;
-	end_pct = 1.0;
-	gen_runway_section( rwy_info, runway_a,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-			    rwy_info.heading,
-			    material, "rest",
-			    rwy_polys, texparams, accum );
-
-	gen_runway_section( rwy_info, runway_b,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-			    rwy_info.heading + 180.0,
-			    material, "rest",
-			    rwy_polys, texparams, accum );
+    if ( end_pct >= 1.0 ) {
+	return;
     }
+
+    start_pct = end_pct;
+    end_pct = 1.0;
+    gen_runway_section( rwy_info, runway_a,
+			start_pct, end_pct,
+			0.0, 1.0,
+			rwy_info.heading,
+			material, "rest",
+			rwy_polys, texparams, accum );
+
+    gen_runway_section( rwy_info, runway_b,
+			start_pct, end_pct,
+			0.0, 1.0,
+			rwy_info.heading + 180.0,
+			material, "rest",
+			rwy_polys, texparams, accum );
 }
 
 
@@ -1645,6 +1710,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    material = "grass_rwy";
 	} else if ( surface_flag == "T" ) {
 	    material = "grass_rwy";
+	} else if ( surface_flag == "W" ) {
+	    // water ???
 	} else {
 	    cout << "unknown runway type!" << endl;
 	    exit(-1);

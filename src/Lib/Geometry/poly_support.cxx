@@ -487,6 +487,8 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     double max_x = contour[0].x();
 
     int total_pts = contour.size();
+    cout << "contour = " << contour_num << " nodes = " << total_pts << endl;
+
     for ( int i = 0; i < hole_polys.contours(); ++i ) {
 	total_pts += hole_polys.contour_size( i );
     }
@@ -886,35 +888,4 @@ void calc_points_inside( FGPolygon& p ) {
     // recurse the tree and build up the point inside list for each
     // contour/hole
     calc_point_inside( ct, p );
-
-#if 0
-    // first calculate an inside point for all holes
-    cout << "calculating points for poly with contours = " << p.contours()
-	 << endl;
-
-    for ( int i = 0; i < p.contours(); ++i ) {
-	if ( p.get_hole_flag( i ) ) {
-	    cout << "contour " << i << " is a hole" << endl;
-	} else {
-	    cout << "contour " << i << " is not a hole" << endl;
-	}
-    }
-    for ( int i = 0; i < p.contours(); ++i ) {
-	if ( p.get_hole_flag( i ) ) {
-	    cout << "  hole = " << i << endl;
-	    Point3D hole_pt = point_inside_hole( p.get_contour( i ) );
-	    p.set_point_inside( i, hole_pt );
-	}
-    }
-
-    // next calculate an inside point for all non-hole contours taking
-    // into consideration the holes
-    for ( int i = 0; i < p.contours(); ++i ) {
-	if ( ! p.get_hole_flag( i ) ) {
-	    cout << "  enclosing contour = " << i << endl;
-	    Point3D inside_pt = point_inside_contour( p, i );
-	    p.set_point_inside( i, inside_pt );
-	}
-    }
-#endif
 }
