@@ -10,7 +10,7 @@ AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
 AC_PREREQ(2.52)
 
 dnl Initialize the automake stuff
-AM_INIT_AUTOMAKE(TerraGear, 0.0.5)
+AM_INIT_AUTOMAKE(TerraGear, 0.0.6)
 
 dnl Checks for programs.
 AC_PROG_MAKE_SET
@@ -352,6 +352,7 @@ AC_CONFIG_FILES([ \
 	src/Lib/DEM/Makefile \
 	src/Lib/e00/Makefile \
 	src/Lib/Geometry/Makefile \
+	src/Lib/HGT/Makefile \
 	src/Lib/landcover/Makefile \
 	src/Lib/Optimize/Makefile \
 	src/Lib/Output/Makefile \
