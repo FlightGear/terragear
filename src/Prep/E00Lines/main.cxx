@@ -4,7 +4,7 @@
 // code by Curtis Olson.
 //
 // Copyright (C) 2000  David Megginson  - david@megginson.com
-// Copyright (C) 1999  Curtis L. Olson  - curt@flightgear.org
+// Copyright (C) 1999  Curtis L. Olson  - http://www.flightgear.org/~curt
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

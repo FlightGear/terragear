@@ -6,7 +6,7 @@
 #
 #     http://www.x-plane.org/users/robinp/
 #
-# Written by Curt Olson <curt@flightgear.org> Started Aug 2003
+# Written by Curt Olson <http://www.flightgear.org/~curt> Started Aug 2003
 
 use strict;
 

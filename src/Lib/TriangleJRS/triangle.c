@@ -195,7 +195,7 @@
 /* Added CLO 11/20/2000.  Explanation: this code does a lot of
    malloc()'ing of space and in some cases blindly expects the results
    to be zero'd out, even though this isn't gauranteed by malloc().
-   So I (Curt Olson, curt@flightgear.org) have added some code here to
+   So I (Curt Olson, http://www.flightgear.org/~curt) have added some code here to
    map all the malloc(x) calls to calloc( 1, x). */
 #define MALLOC( x ) calloc( 1, x )
 /* CLO end */
@@ -3336,7 +3336,7 @@ struct memorypool *pool;
   /* Added CLO 11/20/2000.  Explanation: this code does a lot of
      malloc()'ing of space, and in some cases blindly expects the
      results to be zero'd out, even though this may not be gauranteed.
-     So I (Curt Olson, curt@flightgear.org) have added some code here
+     So I (Curt Olson, http://www.flightgear.org/~curt) have added some code here
      to explicitely zero out the space after it is malloc()'ed. */
   ptr = (char *)newitem;
   for ( i = 0; i < pool->itembytes; ++i ) {
