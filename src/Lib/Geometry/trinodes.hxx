@@ -31,8 +31,8 @@
 
 
 #include <simgear/compiler.h>
-#include <simgear/fg_types.hxx>
-#include <simgear/point3d.hxx>
+#include <simgear/math/fg_types.hxx>
+#include <simgear/math/point3d.hxx>
 
 
 

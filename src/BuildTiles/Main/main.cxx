@@ -28,10 +28,10 @@
 #include <sys/resource.h>	// set mem allocation limit
 #include <unistd.h>		// set mem allocation limit
 
-#include <simgear/newbucket.hxx>
 #include <simgear/constants.h>
-#include <simgear/mat3.h>
-#include <simgear/logstream.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/math/mat3.h>
 
 #include <Array/array.hxx>
 #include <Clipper/clipper.hxx>

@@ -24,9 +24,9 @@
  
 
 
-#include <simgear/logstream.hxx>
 #include <simgear/constants.h>
-#include <simgear/fgstream.hxx>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/misc/fgstream.hxx>
 
 #include <Polygon/names.hxx>
 

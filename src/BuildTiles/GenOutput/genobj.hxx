@@ -35,10 +35,10 @@
 
 #include STL_STRING
 
-#include <simgear/fg_types.hxx>
-#include <simgear/newbucket.hxx>
-#include <simgear/fg_geodesy.hxx>
-#include <simgear/point3d.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/math/fg_geodesy.hxx>
+#include <simgear/math/fg_types.hxx>
+#include <simgear/math/point3d.hxx>
 
 #include <Combine/genfans.hxx>
 #include <Main/construct.hxx>

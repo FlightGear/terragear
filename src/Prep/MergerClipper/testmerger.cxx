@@ -22,8 +22,8 @@
  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 --------------------------------------------------------------------------
 */
-#include <simgear/logstream.hxx>
-#include <simgear/newbucket.hxx>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/bucket/newbucket.hxx>
 #include <dirent.h>
 
 #include "merger.hxx"

@@ -32,7 +32,7 @@
 using namespace std;
 #endif
 
-#include <simgear/fg_types.hxx>
+#include <simgear/math/fg_types.hxx>
 
 #include <Polygon/polygon.hxx>
 

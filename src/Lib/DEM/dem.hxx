@@ -30,8 +30,8 @@
 #endif                                   
 
 
-#include <simgear/newbucket.hxx>
-#include <simgear/fgstream.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/misc/fgstream.hxx>
 
 
 #define DEM_SIZE 1200

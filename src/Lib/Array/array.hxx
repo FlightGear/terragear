@@ -34,11 +34,10 @@
 
 #include <vector>
 
-#include <simgear/fg_types.hxx>
-
-#include <simgear/newbucket.hxx>
-#include <simgear/point3d.hxx>
-#include <simgear/fgstream.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/math/fg_types.hxx>
+#include <simgear/math/point3d.hxx>
+#include <simgear/misc/fgstream.hxx>
 
 
 FG_USING_STD(vector);

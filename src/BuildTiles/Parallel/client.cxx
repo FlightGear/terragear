@@ -27,7 +27,7 @@
 #include <iostream>
 #include <string>
 
-#include <simgear/newbucket.hxx>
+#include <simgear/bucket/newbucket.hxx>
 
 
 #define MAXBUF 1024

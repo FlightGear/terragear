@@ -39,7 +39,7 @@
 
 #include STL_STRING
 
-#include <simgear/newbucket.hxx>
+#include <simgear/bucket/newbucket.hxx>
 
 #include <Build/trinodes.hxx>
 #include <Build/trisegs.hxx>

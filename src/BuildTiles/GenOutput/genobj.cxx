@@ -24,7 +24,7 @@
 
 #include <time.h>
 
-#include <simgear/texcoord.hxx>
+#include <simgear/misc/texcoord.hxx>
 
 #include <Polygon/names.hxx>
 #include "scenery_version.hxx"

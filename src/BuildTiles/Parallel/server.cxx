@@ -18,7 +18,7 @@
 #include <iostream>
 #include <string>
 
-#include <simgear/newbucket.hxx>
+#include <simgear/bucket/newbucket.hxx>
 
 
 #if defined (sun)

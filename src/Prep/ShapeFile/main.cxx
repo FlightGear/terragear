@@ -27,7 +27,7 @@
 
 #include STL_STRING
 
-#include <simgear/logstream.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>

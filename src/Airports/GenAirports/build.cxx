@@ -38,10 +38,10 @@
 
 #include <plib/sg.h>			// plib include
 
-#include <simgear/newbucket.hxx>
 #include <simgear/constants.h>
-#include <simgear/fg_geodesy.hxx>
-#include <simgear/texcoord.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/math/fg_geodesy.hxx>
+#include <simgear/misc/texcoord.hxx>
 
 #include <Array/array.hxx>
 #include <Build/trinodes.hxx>

@@ -47,9 +47,9 @@
 #include STL_STRING
 
 #include <simgear/constants.h>
-#include <simgear/fgstream.hxx>
-#include <simgear/strutils.hxx>
-#include <simgear/leastsqs.hxx>
+#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/strutils.hxx>
+#include <simgear/math/leastsqs.hxx>
 
 #include "array.hxx"
 

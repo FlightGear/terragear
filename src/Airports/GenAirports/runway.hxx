@@ -29,7 +29,7 @@
 #include <string>
 #include <vector>
 
-#include <simgear/point3d.hxx>
+#include <simgear/math/point3d.hxx>
 
 #include <Polygon/polygon.hxx>
 

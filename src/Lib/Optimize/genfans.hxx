@@ -34,7 +34,7 @@
 
 #include <vector>
 
-#include <simgear/fg_types.hxx>
+#include <simgear/math/fg_types.hxx>
 
 #include <Triangulate/trieles.hxx>
 

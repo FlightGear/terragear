@@ -23,7 +23,7 @@
 
 
 #include <simgear/compiler.h>
-#include <simgear/fg_types.hxx>
+#include <simgear/math/fg_types.hxx>
 
 #include <Polygon/polygon.hxx>
 
@@ -38,7 +38,7 @@ void calc_point_inside( const int contour, const FGTriNodes& trinodes );
 
 
 #include <simgear/constants.h>
-#include <simgear/point3d.hxx>
+#include <simgear/math/point3d.hxx>
 
 #include <Build/trisegs.hxx>
 

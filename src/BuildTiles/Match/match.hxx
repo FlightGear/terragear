@@ -31,8 +31,8 @@
 
 
 #include <simgear/compiler.h>
-#include <simgear/fg_types.hxx>
-#include <simgear/newbucket.hxx>
+#include <simgear/math/fg_types.hxx>
+#include <simgear/bucket/newbucket.hxx>
 
 #include <Main/construct.hxx>
 

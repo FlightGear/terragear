@@ -47,9 +47,9 @@
 # include <unistd.h>   // stat()
 #endif
 
-#include <simgear/fgstream.hxx>
-#include <simgear/strutils.hxx>
 #include <simgear/constants.h>
+#include <simgear/misc/fgstream.hxx>
+#include <simgear/misc/strutils.hxx>
 
 #include "dem.hxx"
 

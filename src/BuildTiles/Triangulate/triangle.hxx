@@ -31,7 +31,7 @@
 
 
 #include <simgear/compiler.h>
-#include <simgear/point3d.hxx>
+#include <simgear/math/point3d.hxx>
 
 #include <Array/array.hxx>
 #include <Clipper/clipper.hxx>

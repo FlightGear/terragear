@@ -26,8 +26,8 @@
 
 #include STL_STRING
 
-#include <simgear/logstream.hxx>
-#include <simgear/newbucket.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <DEM/dem.hxx>
 

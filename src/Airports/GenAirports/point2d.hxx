@@ -26,8 +26,8 @@
 #define _POINT2D_HXX
 
 
-#include <simgear/fg_types.hxx>
-#include <simgear/point3d.hxx>
+#include <simgear/math/fg_types.hxx>
+#include <simgear/math/point3d.hxx>
 
 
 // convert a point from cartesian to polar coordinates

@@ -32,7 +32,7 @@
 
 
 #include <simgear/compiler.h>
-#include <simgear/fg_types.hxx>
+#include <simgear/math/fg_types.hxx>
 
 #include <Polygon/polygon.hxx>
 

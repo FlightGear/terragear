@@ -37,10 +37,10 @@
 #include <string.h>
 #include STL_STRING
 
-#include <simgear/newbucket.hxx>
-#include <simgear/logstream.hxx>
 #include <simgear/constants.h>
-#include <simgear/fgstream.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/misc/fgstream.hxx>
 
 #include <Polygon/index.hxx>
 

@@ -1,4 +1,4 @@
-#include <simgear/newbucket.hxx>
+#include <simgear/bucket/newbucket.hxx>
 
 #include "array.hxx"
 

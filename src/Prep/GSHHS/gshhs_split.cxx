@@ -25,8 +25,8 @@
 
 #include STL_STRING
 
-#include <simgear/newbucket.hxx>
-#include <simgear/logstream.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>

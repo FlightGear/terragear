@@ -25,9 +25,9 @@
 #  include <config.h>
 #endif
 
-#include <simgear/fg_geodesy.hxx>
-#include <simgear/point3d.hxx>
-#include <simgear/fgstream.hxx>
+#include <simgear/math/fg_geodesy.hxx>
+#include <simgear/math/point3d.hxx>
+#include <simgear/misc/fgstream.hxx>
 
 #include "match.hxx"
 

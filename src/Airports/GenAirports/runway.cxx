@@ -26,8 +26,8 @@
 #include <stdio.h>
 
 #include <simgear/constants.h>
-#include <simgear/fg_types.hxx>
-#include <simgear/fg_geodesy.hxx>
+#include <simgear/math/fg_types.hxx>
+#include <simgear/math/fg_geodesy.hxx>
 
 #include "runway.hxx"
 #include "point2d.hxx"

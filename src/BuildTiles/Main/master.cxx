@@ -27,7 +27,7 @@
 
 #include <string>
 
-#include <simgear/newbucket.hxx>
+#include <simgear/bucket/newbucket.hxx>
 
 // #include <Include/fg_constants.h>
 // #include <Math/mat3.h>
