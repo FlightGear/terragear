@@ -26,8 +26,6 @@
 
 #include "lights.hxx"
 
-#define FG_DIVS 40
-
 
 // calculate the runway light direction vector.  I don't want to think
 // about matrix transformations tonight, so instead I can take the
@@ -57,25 +55,28 @@ Point3D gen_runway_light_vector( const FGRunway& rwy_info ) {
 }
 
 
-// generate runway lighting
-
-void gen_runway_lights( const FGRunway& rwy_info, 
-			point_list *lights, point_list *normals ) {
+// generate runway edge lighting
+// 60 meters spacing or the next number down that divides evenly.
+void gen_runway_edge_lights( const FGRunway& rwy_info, 
+			     point_list *lights, point_list *normals ) {
     int i;
+
+    double len = rwy_info.length * SG_FEET_TO_METER;
+    int divs = (int)(len / 60.0) + 1;
 
     Point3D normal = gen_runway_light_vector( rwy_info );
 
     // using FGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
     }
 
-    Point3D inc1 = (corner[3] - corner[0]) / FG_DIVS;
-    Point3D inc2 = (corner[2] - corner[1]) / FG_DIVS;
+    Point3D inc1 = (corner[3] - corner[0]) / divs;
+    Point3D inc2 = (corner[2] - corner[1]) / divs;
 
     Point3D pt1 = corner[0];
     Point3D pt2 = corner[1];
@@ -84,7 +85,7 @@ void gen_runway_lights( const FGRunway& rwy_info,
     lights->push_back( pt2 );
     normals->push_back( normal );
 
-    for ( i = 0; i < FG_DIVS; ++i ) {
+    for ( i = 0; i < divs; ++i ) {
 	pt1 += inc1;
 	pt2 += inc2;
 	lights->push_back( pt1 );
@@ -95,3 +96,8 @@ void gen_runway_lights( const FGRunway& rwy_info,
 }
 
 
+void gen_runway_lights( const FGRunway& rwy_info, 
+			point_list *lights, point_list *normals ) {
+    // Make edge lighting
+    gen_runway_edge_lights( rwy_info, lights, normals );
+}

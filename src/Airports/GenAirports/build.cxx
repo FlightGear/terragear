@@ -169,8 +169,9 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 }
 
 
-// fix node elevations
-point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
+// fix node elevations.  Offset is added to the final elevation
+point_list calc_elevations( const string& root, const point_list& geod_nodes,
+			    double offset ) {
     bool done = false;
     point_list result = geod_nodes;
     int i, j;
@@ -223,7 +224,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 		    elev = array.interpolate_altitude( result[j].x() * 3600.0,
 						   result[j].y() * 3600.0 );
 		    if ( elev > -9000 ) {
-			result[j].setz( elev );
+			result[j].setz( elev + offset );
 		    }
 		}
 	    }
@@ -855,7 +856,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     }
 
     // calculate node elevations
-    point_list geod_nodes = calc_elevations( root, nodes.get_node_list() );
+    point_list geod_nodes = calc_elevations( root, nodes.get_node_list(), 0.0 );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with calc_elevations()");
 
     // add base skirt (to hide potential cracks)
@@ -954,7 +955,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // calculate light node elevations
     point_list geod_light_nodes
-        = calc_elevations( root, light_nodes.get_node_list() );
+        = calc_elevations( root, light_nodes.get_node_list(), 0.5 );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with (light) calc_elevations()");
 
     // this is a little round about, but what we want to calculate the
@@ -965,7 +966,6 @@ void build_airport( string airport_raw, string_list& runways_raw,
     pt_v.clear();
     for ( i = 0; i < (int)geod_light_nodes.size(); ++i ) {
         p = geod_light_nodes[i];
-        p.setz( p.z() + 0.5 );
         index = nodes.simple_add( p );
         pt_v.push_back( index );
         geod_nodes.push_back( p );
