@@ -22,13 +22,44 @@
 //
 
 
+#include <simgear/math/sg_geodesy.hxx>
+
 #include "lights.hxx"
 
 #define FG_DIVS 40
 
+
+// calculate the runway light direction vector.  I don't want to think
+// about matrix transformations tonight, so instead I can take the
+// center of one runway end - the center of the other end to get the
+// direction of the runway.  Combine this with an appropriate portion
+// of the local 'up' vector gives the light direction vector for the
+// runway.
+Point3D gen_runway_light_vector( const FGRunway& rwy_info ) {
+    // Generate the 4 corners of the runway
+    FGPolygon poly_corners = gen_runway_area_w_expand( rwy_info, 0.0, 0.0 );
+    point_list corner;
+    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+    Point3D end1 = (corner[0] + corner[1]) / 2.0;
+    Point3D end2 = (corner[2] + corner[3]) / 2.0;
+    Point3D cart1 = sgGeodToCart( end1 );
+    Point3D cart2 = sgGeodToCart( end2 );
+
+    Point3D rwy_vec = cart2 - cart1;
+
+    // FIXME
+    // need to angle up (i.e. 3 degrees)
+
+    return rwy_vec;
+}
+
+
 // generate runway lighting
 
-void gen_runway_lights( const FGRunway& rwy_info, point_list *lights ) {
+void gen_runway_lights( const FGRunway& rwy_info, 
+			point_list *lights, point_list *normals ) {
     int i;
 
     // using FGPolygon is a bit innefficient, but that's what the

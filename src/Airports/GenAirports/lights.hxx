@@ -34,9 +34,8 @@
 
 
 // generate runway lighting
-
 void gen_runway_lights( const FGRunway& rwy_info,
-			point_list *lights );
+			point_list *lights, point_list *normals );
 
 
 #endif // _RWY_LIGHTS_HXX

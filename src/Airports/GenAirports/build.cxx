@@ -560,10 +560,10 @@ void build_airport( string airport_raw, string_list& runways_raw,
     }
 
     // 5th pass: generate runway/taxiway lights
-    point_list rwy_lights;
-    rwy_lights.clear();
+    point_list rwy_lights; rwy_lights.clear();
+    point_list rwy_light_normals; rwy_light_normals.clear();
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	gen_runway_lights( runways[i], &rwy_lights );
+	gen_runway_lights( runways[i], &rwy_lights, &rwy_light_normals );
     }
 
     // generate convex hull (no longer)
@@ -755,25 +755,45 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // traverse the tri list and create ordered node and texture
     // coordinate lists
 
-    FGTriNodes nodes, texcoords;
+    FGTriNodes nodes, normals, texcoords;
     nodes.clear();
+    normals.clear();
     texcoords.clear();
 
     group_list pts_v; pts_v.clear();
+    group_list pts_n; pts_n.clear();
     string_list pt_materials; pt_materials.clear();
 
     group_list tris_v; tris_v.clear();
+    group_list tris_n; tris_n.clear();
     group_list tris_tc; tris_tc.clear();
     string_list tri_materials; tri_materials.clear();
 
     group_list strips_v; strips_v.clear();
+    group_list strips_n; strips_n.clear();
     group_list strips_tc; strips_tc.clear();
     string_list strip_materials; strip_materials.clear();
 
     Point3D tc;
     int index;
     int_list pt_v, tri_v, strip_v;
+    int_list pt_n, tri_n, strip_n;
     int_list tri_tc, strip_tc;
+
+    // calculate "the" normal for this airport
+    p.setx( base_tris.get_pt(0, 0).x() * SGD_DEGREES_TO_RADIANS );
+    p.sety( base_tris.get_pt(0, 0).y() * SGD_DEGREES_TO_RADIANS );
+    p.setz( 0 );
+    Point3D vnt = sgGeodToCart( p );
+    // cout << "geod = " << p << endl;
+    // cout << "cart = " << tmp << endl;
+
+    sgdVec3 tmp;
+    sgdSetVec3( tmp, vnt.x(), vnt.y(), vnt.z() );
+    sgdNormalizeVec3( tmp );
+
+    Point3D vn( tmp[0], tmp[1], tmp[2] );
+    cout << "found normal for this airport = " << tmp << endl;
 
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
 	cout << "tri " << k << endl;
@@ -786,16 +806,23 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	cout << "texs size = " << tri_txs.contours() << endl;
 	for ( i = 0; i < tri_poly.contours(); ++i ) {
 	    tri_v.clear();
+	    tri_n.clear();
 	    tri_tc.clear();
 	    for ( j = 0; j < tri_poly.contour_size(i); ++j ) {
 		p = tri_poly.get_pt( i, j );
 		index = nodes.unique_add( p );
 		tri_v.push_back( index );
+
+		// use 'the' normal
+		index = normals.unique_add( vn );
+		tri_n.push_back( index );
+
 		tc = tri_txs.get_pt( i, j );
 		index = texcoords.unique_add( tc );
 		tri_tc.push_back( index );
 	    }
 	    tris_v.push_back( tri_v );
+	    tris_n.push_back( tri_n );
 	    tris_tc.push_back( tri_tc );
 	    tri_materials.push_back( material );
 	}
@@ -806,13 +833,18 @@ void build_airport( string airport_raw, string_list& runways_raw,
     int_list base_tc;
     for ( i = 0; i < base_tris.contours(); ++i ) {
 	tri_v.clear();
+	tri_n.clear();
 	tri_tc.clear();
 	for ( j = 0; j < base_tris.contour_size(i); ++j ) {
 	    p = base_tris.get_pt( i, j );
 	    index = nodes.unique_add( p );
 	    tri_v.push_back( index );
+
+	    index = normals.unique_add( vn );
+	    tri_n.push_back( index);
 	}
 	tris_v.push_back( tri_v );
+	tris_n.push_back( tri_n );
 	tri_materials.push_back( "Grass" );
 
 	base_txs.clear();
@@ -840,6 +872,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     for ( i = 0; i < divided_base.contours(); ++i ) {
 	strip_v.clear();
+	strip_n.clear();
 	strip_tc.clear();
 
 	// prime the pump ...
@@ -852,6 +885,9 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    geod_nodes.push_back( lower );
 	    strip_v.push_back( uindex );
 	    strip_v.push_back( lindex );
+
+	    index = normals.unique_add( vn );
+	    strip_n.push_back( index );
 	} else {
 	    cout << "Ooops missing node when building skirt ... dying!"
 		 << endl;
@@ -869,6 +905,9 @@ void build_airport( string airport_raw, string_list& runways_raw,
 		geod_nodes.push_back( lower );
 		strip_v.push_back( lindex );
 		strip_v.push_back( uindex );
+
+		index = normals.unique_add( vn );
+		strip_n.push_back( index );
 	    } else {
 		cout << "Ooops missing node when building skirt ... dying!"
 		     << endl;
@@ -886,6 +925,9 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    geod_nodes.push_back( lower );
 	    strip_v.push_back( lindex );
 	    strip_v.push_back( uindex );
+
+	    index = normals.unique_add( vn );
+	    strip_n.push_back( index );
 	} else {
 	    cout << "Ooops missing node when building skirt ... dying!"
 		 << endl;
@@ -893,6 +935,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	}
 
 	strips_v.push_back( strip_v );
+	strips_n.push_back( strip_n );
 	strip_materials.push_back( "Grass" );
 
 	base_txs.clear();
@@ -924,8 +967,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // this is a little round about, but what we want to calculate the
     // light node elevations as ground + an offset so we do them
     // seperately, then we add them back into nodes to get the index
-    // out, but also geod_nodes to maintain consistancy between these
-    // two lists.
+    // out, but also add them to geod_nodes to maintain consistancy
+    // between these two lists.
     pt_v.clear();
     for ( i = 0; i < (int)geod_light_nodes.size(); ++i ) {
         p = geod_light_nodes[i];
@@ -933,9 +976,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
         index = nodes.simple_add( p );
         pt_v.push_back( index );
         geod_nodes.push_back( p );
+
+	index = normals.simple_add( rwy_light_normals[i] );
+	pt_n.push_back( index );
     }
     pts_v.push_back( pt_v );
-    pt_materials.push_back( "LIGHTS" );
+    pts_n.push_back( pt_n );
+    pt_materials.push_back( "RWY_LIGHTS" );
 
     // calculate wgs84 mapping of nodes
     point_list wgs84_nodes;
@@ -948,24 +995,9 @@ void build_airport( string airport_raw, string_list& runways_raw,
     float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
     cout << "Done with wgs84 node mapping" << endl;
 
-    // calculate normal for this airport
-    p.setx( base_tris.get_pt(0, 0).x() * SGD_DEGREES_TO_RADIANS );
-    p.sety( base_tris.get_pt(0, 0).y() * SGD_DEGREES_TO_RADIANS );
-    p.setz( 0 );
-    Point3D tmp = sgGeodToCart( p );
-    // cout << "geod = " << p << endl;
-    // cout << "cart = " << tmp << endl;
-
-    sgdVec3 vn;
-    sgdSetVec3( vn, tmp.x(), tmp.y(), tmp.z() );
-    sgdNormalizeVec3( vn );
-    point_list normals;
-    normals.clear();
-    normals.push_back( Point3D( vn[0], vn[1], vn[2] ) );
-    cout << "found normal for this airport = " << tmp << endl;
-
     // null structures
     group_list fans_v; fans_v.clear();
+    group_list fans_n; fans_n.clear();
     group_list fans_tc; fans_tc.clear();
     string_list fan_materials; fan_materials.clear();
 
@@ -977,17 +1009,21 @@ void build_airport( string airport_raw, string_list& runways_raw,
     obj.set_gbs_center( gbs_center );
     obj.set_gbs_radius( gbs_radius );
     obj.set_wgs84_nodes( wgs84_nodes );
-    obj.set_normals( normals );
+    obj.set_normals( normals.get_node_list() );
     obj.set_texcoords( texcoords.get_node_list() );
     obj.set_pts_v( pts_v );
+    obj.set_pts_n( pts_n );
     obj.set_pt_materials( pt_materials );
     obj.set_tris_v( tris_v );
+    obj.set_tris_n( tris_n );
     obj.set_tris_tc( tris_tc ); 
     obj.set_tri_materials( tri_materials );
     obj.set_strips_v( strips_v );
+    obj.set_strips_n( strips_n );
     obj.set_strips_tc( strips_tc ); 
     obj.set_strip_materials( strip_materials );
     obj.set_fans_v( fans_v );
+    obj.set_fans_n( fans_n );
     obj.set_fans_tc( fans_tc );
     obj.set_fan_materials( fan_materials );
 
