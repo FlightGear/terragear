@@ -432,13 +432,13 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     system( command.c_str() );
 #endif
 
-    string demfile = path + "/" + b.gen_index_str() + ".dem";
-    cout << "demfile = " << demfile << endl;
+    string array_file = path + "/" + b.gen_index_str() + ".arr";
+    cout << "array_file = " << array_file << endl;
 
     // write the file
     FILE *fp;
-    if ( (fp = fopen(demfile.c_str(), "w")) == NULL ) {
-	cout << "cannot open " << demfile << " for writing!" << endl;
+    if ( (fp = fopen(array_file.c_str(), "w")) == NULL ) {
+	cout << "cannot open " << array_file << " for writing!" << endl;
 	exit(-1);
     }
 
@@ -454,7 +454,7 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     fclose(fp);
 
     if ( compress ) {
-	string command = "gzip --best -f " + demfile;
+	string command = "gzip --best -f " + array_file;
 	system( command.c_str() );
     }
 
