@@ -61,15 +61,20 @@ int nudge = 10;
 
 // Display usage
 static void usage( int argc, char **argv ) {
-    SG_LOG( SG_GENERAL, SG_ALERT, 
-	    "Usage " << argv[0] << " --input=<apt_file> "
-	    << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]" );
+    SG_LOG(SG_GENERAL, SG_ALERT, 
+	   "Usage " << argv[0] << " --input=<apt_file> "
+	   << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]"
+	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>]");
 }
 
 
 // reads the apt_full file and extracts and processes the individual
 // airport records
 int main( int argc, char **argv ) {
+    float min_lon = -180;
+    float max_lon = 180;
+    float min_lat = -90;
+    float max_lat = 90;
     string_list runways_list, taxiways_list;
     string airport, last_airport;
     string line;
@@ -94,6 +99,14 @@ int main( int argc, char **argv ) {
 	    ready_to_go = false;
  	} else if ( arg.find("--nudge=") == 0 ) {
 	    nudge = atoi( arg.substr(8).c_str() );
+	} else if ( arg.find("--min-lon=") == 0 ) {
+	    min_lon = atof( arg.substr(10).c_str() );
+	} else if ( arg.find("--max-lon=") == 0 ) {
+	    max_lon = atof( arg.substr(10).c_str() );
+	} else if ( arg.find("--min-lat=") == 0 ) {
+	    min_lat = atof( arg.substr(10).c_str() );
+	} else if ( arg.find("--max-lat=") == 0 ) {
+	    max_lat = atof( arg.substr(10).c_str() );
 	} else {
 	    usage( argc, argv );
 	    exit(-1);
@@ -103,6 +116,15 @@ int main( int argc, char **argv ) {
     cout << "Input file = " << input_file << endl;
     cout << "Work directory = " << work_dir << endl;
     cout << "Nudge = " << nudge << endl;
+    cout << "Longitude = " << min_lon << ':' << max_lon << endl;
+    cout << "Latitude = " << min_lat << ':' << max_lat << endl;
+
+    if (max_lon < min_lon || max_lat < min_lat ||
+	min_lat < -90 || max_lat > 90 ||
+	min_lon < -180 || max_lon > 180) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
+	exit(1);
+    }
 
     if ( work_dir == "" ) {
 	SG_LOG( SG_GENERAL, SG_ALERT, 
@@ -153,16 +175,22 @@ int main( int argc, char **argv ) {
 	    // start of airport record
 	    airport = line;
 
-	    if ( last_airport.length() ) {
+	    if ( !last_airport.empty() ) {
 		char ctmp, id[32];
-		sscanf( last_airport.c_str(), "%c %s", &ctmp, id );
+		float lat, lon;
+		sscanf( last_airport.c_str(), "%c %s %f %f",
+			&ctmp, id, &lat, &lon);
+		cout << "Airport lat/lon = " << lat << ',' << lon << endl;
 		cout << "Id portion = " << id << endl;
 
-		if ( start_id.length() && start_id == (string)id ) {
-		    ready_to_go = true;
-		}
+		if (lon >= min_lon && lon <= max_lon &&
+		    lat >= min_lat && lat <= max_lat) {
 
-		if ( ready_to_go ) {
+		  if ( start_id.length() && start_id == (string)id ) {
+		    ready_to_go = true;
+		  }
+
+		  if ( ready_to_go ) {
 		    // check point our location
 		    char command[256];
 		    sprintf( command, "echo %s > last_apt", id );
@@ -172,6 +200,9 @@ int main( int argc, char **argv ) {
 		    // process_airport(last_airport, runways_list, argv[2]);
 		    build_airport( last_airport, runways_list, taxiways_list,
                                    work_dir );
+		  }
+		} else {
+		  SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
 		}
 	    }
 
