@@ -21,15 +21,26 @@ GreedySubdivision::GreedySubdivision(Map *map)
 
     int w = H->width;
     int h = H->height;
+    real range = H->max - H->min;
 
     is_used.init(w, h);
     int x,y;
     for(x=0;x<w;x++)
 	for(y=0;y<h;y++) {
-            if ( map->eval(x,y) > 10 ) {
+            if ( range < 30000 ) {
                 is_used(x,y) = DATA_POINT_UNUSED;
             } else {
-                is_used(x,y) = DATA_VALUE_UNKNOWN;
+                // data includes SRTM void's
+                // cout << "marking " << x << "," << y << " = " 
+                //      << map->eval(x,y) << " as ";
+                if ( map->eval(x,y) > (H->min + 1) ) {
+                    is_used(x,y) = DATA_POINT_UNUSED;
+                    // cout << "UNUSED";
+                } else {
+                    is_used(x,y) = DATA_VALUE_UNKNOWN;
+                    // cout << "UNKNOWN";
+                }
+                // cout << endl;
             }
         }
 
