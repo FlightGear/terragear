@@ -29,8 +29,8 @@
 
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
-#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
 
 #include STL_IOSTREAM
@@ -69,20 +69,6 @@ static const char * progname;
 ////////////////////////////////////////////////////////////////////////
 // VPF conversion code.
 ////////////////////////////////////////////////////////////////////////
-
-/**
- * Print out a VPF bounding rectangle.
- */
-static ostream &
-operator<< (ostream &output, const VpfRectangle &rect)
-{
-  output << rect.minX << ','
-	 << rect.minY << ','
-	 << rect.maxX << ','
-	 << rect.maxY;
-  return output;
-}
-
 
 /**
  * Convert a VPF point to a regular TerraGear point.
@@ -189,6 +175,34 @@ checkAttribute (const VpfFeature &feature, int index, const Attribute &att)
 }
 
 
+/**
+ * Get the area of a polygon's bounding rectangle.
+ *
+ * Since we have to convert from geodetic, it would be pretty
+ * expensive to calculate the actual area, so we just do the bounding
+ * rectangle.
+ *
+ * @param polygon
+ * @return The area of the bounding rectangle in m^2.
+ */
+static double
+getArea (const FGPolygon &polygon)
+{
+    Rectangle bounds = makeBounds(polygon);
+    Point3D min =
+        sgGeodToCart(Point3D(bounds.getMin().x() * SGD_DEGREES_TO_RADIANS,
+                             bounds.getMin().y() * SGD_DEGREES_TO_RADIANS,
+                             0));
+    Point3D max =
+        sgGeodToCart(Point3D(bounds.getMax().x() * SGD_DEGREES_TO_RADIANS,
+                             bounds.getMax().y() * SGD_DEGREES_TO_RADIANS,
+                             0));
+    double width = fabs(max.x() - min.x());
+    double height = fabs(max.y() - min.y());
+    return (width * height);
+}
+
+
 
 ////////////////////////////////////////////////////////////////////////
 // Main program.
@@ -211,7 +225,9 @@ usage ()
   cerr << "--min-lat=<latitude> (default: -90.0)" << endl;
   cerr << "--max-lon=<longitude> (default: 180.0)" << endl;
   cerr << "--max-lat=<latitude> (default: 90.0)" << endl;
-  cerr << "--area=<area_type> (default: Default)" << endl;
+  cerr << "--min-area=<area> (default: none)" << endl;
+  cerr << "--max-area=<area> (default: none)" << endl;
+  cerr << "--material=<material_type> (default: Default)" << endl;
   cerr << "--width=<meters> (default: 50 line, 500 point)" << endl;
   cerr << "--work-dir=<dir> (default: .)" << endl;
   cerr << "--att=<item>:<value> (may be repeated)" << endl;
@@ -267,9 +283,11 @@ main (int argc, const char **argv)
 				// Default values
   Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0));
   bool invert = false;
-  AreaType area_type = DefaultArea;
+  AreaType material_type = DefaultArea;
   int width = -1;		// use default
   string work_dir = ".";
+  double min_area = -1;
+  double max_area = -1;
 
 
   //
@@ -280,67 +298,79 @@ main (int argc, const char **argv)
     string arg = argv[argPos];
 
     if (arg.find("--chunk=") == 0) {
-      bounds = parseChunk(arg.substr(8));
-      argPos++;
+        bounds = parseChunk(arg.substr(8));
+        argPos++;
     }
 
     else if (arg.find("--min-lon=") == 0) {
-      bounds.getMin().setx(strtod(arg.substr(10).c_str(), 0));
-      argPos++;
+        bounds.getMin().setx(strtod(arg.substr(10).c_str(), 0));
+        argPos++;
     }
 
     else if (arg.find("--min-lat=") == 0) {
-      bounds.getMin().sety(strtod(arg.substr(10).c_str(), 0));
-      argPos++;
+        bounds.getMin().sety(strtod(arg.substr(10).c_str(), 0));
+        argPos++;
     }
 
     else if (arg.find("--max-lon=") == 0) {
-      bounds.getMax().setx(strtod(arg.substr(10).c_str(), 0));
-      argPos++;
+        bounds.getMax().setx(strtod(arg.substr(10).c_str(), 0));
+        argPos++;
     } 
 
     else if (arg.find("--max-lat=") == 0) {
-      bounds.getMax().sety(strtod(arg.substr(10).c_str(), 0));
-      argPos++;
+        bounds.getMax().sety(strtod(arg.substr(10).c_str(), 0));
+        argPos++;
     }
 
-    else if (arg.find("--area=") == 0) {
-      area_type = get_area_type(arg.substr(7).c_str());
-      argPos++;
+    else if (arg.find("--min-area=") == 0) {
+        min_area = strtod(arg.substr(11).c_str(), 0);
+        if (max_area < min_area)
+            max_area = 999999999999.0;
+        argPos++;
+    }
+
+    else if (arg.find("--max-area=") == 0) {
+        max_area = strtod(arg.substr(11).c_str(), 0);
+        argPos++;
+    }
+
+    else if (arg.find("--material=") == 0) {
+        material_type = get_area_type(arg.substr(11).c_str());
+        argPos++;
     }
 
     else if (arg.find("--width=") == 0) {
-      width = atoi(arg.substr(8).c_str());
-      argPos++;
+        width = atoi(arg.substr(8).c_str());
+        argPos++;
     }
 
     else if (arg.find("--work-dir=") == 0) {
-      work_dir = arg.substr(11);
-      argPos++;
+        work_dir = arg.substr(11);
+        argPos++;
     }
 
     else if (arg.find("--invert") == 0) {
-      invert = true;
-      argPos++;
+        invert = true;
+        argPos++;
     }
 
     else if (arg.find("--att=") == 0) {
-      attributes.push_back(parseAttribute(arg.substr(6)));
-      argPos++;
+        attributes.push_back(parseAttribute(arg.substr(6)));
+        argPos++;
     }
 
     else if (arg == "--") {
-      argPos++;
-      break;
+        argPos++;
+        break;
     }
 
     else if (arg.find("-") == 0) {
-      cerr << "Unrecognized option: " << arg << endl;
-      usage();
+        cerr << "Unrecognized option: " << arg << endl;
+        usage();
     }
 
     else {
-      break;
+        break;
     }
   }
 
@@ -384,7 +414,11 @@ main (int argc, const char **argv)
   cout << "Coverage name: " << coverage_name << endl;
   cout << "Feature name: " << feature_name << endl;
   cout << "Working directory: " << work_dir << endl;
-  cout << "Area type: " << get_area_name(area_type) << endl;
+  if (max_area > 0) {
+      cout << "Minimum area: " << min_area << endl;
+      cout << "Maximum area: " << max_area << endl;
+  }
+  cout << "Material type: " << get_area_name(material_type) << endl;
   cout << "Point and line width (-1 for default): " << width << endl;
   for (int x = 0; x < attributes.size(); x++) {
     cout << "Attribute " << attributes[x].name
@@ -460,6 +494,12 @@ main (int argc, const char **argv)
 	if (!bounds.isOverlapping(vpf2tg(polygon.getBoundingRectangle())))
 	  continue;
 	shape = vpf2tg(polygon);
+                                // Filter by area if requested
+        if (max_area > 0) {
+            double area = getArea(shape);
+            if (area < min_area || area > max_area)
+                continue;
+        }
 	break;
       }
       case VpfFeature::LABEL: {
@@ -480,7 +520,7 @@ main (int argc, const char **argv)
 	if (shape.total_size() >= 3) {
 	  cout << "Polygon with " << shape.total_size() << " points in "
 	     << shape.contours() << " contour(s)" << endl;
-	  split_polygon(work_dir, area_type, shape);
+	  split_polygon(work_dir, material_type, shape);
 	}
       }
     }
@@ -493,7 +533,7 @@ main (int argc, const char **argv)
       if (mask.total_size() >= 3) {
 	cout << "Inverse polygon with " << mask.total_size() << " points in "
 	     << mask.contours() << " contour(s)" << endl;
-	split_polygon(work_dir, area_type, mask);
+	split_polygon(work_dir, material_type, mask);
       } else {
 	cout << "Inverse polygon is empty" << endl;
       }
