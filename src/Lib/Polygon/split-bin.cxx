@@ -40,11 +40,11 @@
 
 
 static void clip_and_write_poly( string root, long int p_index, AreaType area, 
-				 SGBucket b, const FGPolygon& shape ) {
+				 SGBucket b, const TGPolygon& shape ) {
     Point3D c, min, max, p;
     c = Point3D( b.get_center_lon(), b.get_center_lat(), 0 );
     double span = sg_bucket_span( c.y() );
-    FGPolygon base, result;
+    TGPolygon base, result;
     char tile_name[256], poly_index[256];
 
     // calculate bucket dimensions
@@ -129,7 +129,7 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 
 
 // process shape (write polygon to all intersecting tiles)
-void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
+void split_polygon(const string& path, AreaType area, const TGPolygon& shape) {
     Point3D min, max, p;
     // point2d min, max;
     long int index;
@@ -230,7 +230,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 		 "Generating bottom half (" << min.y() << "-" <<
 		 clip_line << ")" );
 
-	FGPolygon bottom, bottom_clip;
+	TGPolygon bottom, bottom_clip;
 	if ( shape.total_size() < 50000 ) {
 	    bottom.erase();
 	    bottom_clip.erase();
@@ -259,7 +259,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 		 "Generating top half (" << clip_line << "-" <<
 		 max.y() << ")" );
 
-	FGPolygon top, top_clip;
+	TGPolygon top, top_clip;
 	if ( shape.total_size() < 50000 ) {
 	    top.erase();
 	    top_clip.erase();

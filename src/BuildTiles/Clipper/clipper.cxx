@@ -80,7 +80,7 @@ bool FGClipper::load_polys(const string& path) {
 	exit(-1);
     }
 
-    FGPolygon poly;
+    TGPolygon poly;
 
     Point3D p;
     in >> skipcomment;
@@ -170,7 +170,7 @@ bool FGClipper::load_osgb36_polys(const string& path) {
     // gpc_polygon *poly = new gpc_polygon;
     // poly->num_contours = 0;
     // poly->contour = NULL;
-    FGPolygon poly;
+    TGPolygon poly;
 
     Point3D p;
     Point3D OSRef;
@@ -274,7 +274,7 @@ bool FGClipper::load_osgb36_polys(const string& path) {
 }
 
 // Add a polygon to the clipper.
-void FGClipper::add_poly( int area, const FGPolygon &poly )
+void FGClipper::add_poly( int area, const TGPolygon &poly )
 {
     if ( area < FG_MAX_AREA_TYPES ) {
 	polys_in.polys[area].push_back(poly);
@@ -287,7 +287,7 @@ void FGClipper::add_poly( int area, const FGPolygon &poly )
 
 
 // Move slivers from in polygon to out polygon.
-void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
+void FGClipper::move_slivers( TGPolygon& in, TGPolygon& out ) {
     // traverse each contour of the polygon and attempt to identify
     // likely slivers
 
@@ -348,8 +348,8 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
 // a polygon with no increased contours (i.e. the sliver is adjacent
 // and can be merged.)  If so, replace the clipped polygon with the
 // new polygon that has the sliver merged in.
-void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
-    FGPolygon poly, result, sliver;
+void FGClipper::merge_slivers( FGPolyList& clipped, TGPolygon& slivers ) {
+    TGPolygon poly, result, sliver;
     point_list contour;
     int original_contours, result_contours;
     bool done;
@@ -440,8 +440,8 @@ is_water_area (AreaType type)
 // Clip all the polygons against each other in a priority scheme based
 // on order of the polygon type in the polygon type enum.
 bool FGClipper::clip_all(const point2d& min, const point2d& max) {
-    FGPolygon accum, tmp;
-    FGPolygon slivers, remains;
+    TGPolygon accum, tmp;
+    TGPolygon slivers, remains;
     int i, j;
 
     // gpcpoly_iterator current, last;
@@ -464,7 +464,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     // best representation of land vs. ocean.  If we have other less
     // accurate data that spills out into the ocean, we want to just
     // clip it.
-    FGPolygon land_mask;
+    TGPolygon land_mask;
     land_mask.erase();
     for ( i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
 	land_mask =
@@ -472,11 +472,11 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     }
 
     // set up a mask for inland water.
-    FGPolygon inland_water_mask;
+    TGPolygon inland_water_mask;
     inland_water_mask.erase();
     for ( i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
         if (is_water_area(AreaType(i))) {
-            for (int j = 0; j < polys_in.polys[i].size(); j++) {
+            for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
                 inland_water_mask =
                     polygon_union(inland_water_mask, polys_in.polys[i][j]);
             }
@@ -484,7 +484,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     }
 
     // set up island mask, for cutting holes in lakes
-    FGPolygon island_mask;
+    TGPolygon island_mask;
     island_mask.erase();
     for ( i = 0; i < (int)polys_in.polys[IslandArea].size(); ++i ) {
 	island_mask =
@@ -499,7 +499,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	// last = polys_in.polys[i].end();
 	// for ( ; current != last; ++current ) {
 	for( j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
-	    FGPolygon current = polys_in.polys[i][j];
+	    TGPolygon current = polys_in.polys[i][j];
 	    SG_LOG( SG_CLIPPER, SG_DEBUG, get_area_name( (AreaType)i ) 
 		    << " = " << current.contours() );
 
@@ -520,7 +520,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	        tmp = polygon_diff( tmp, island_mask );
 	    }
 
-	    FGPolygon result_union, result_diff;
+	    TGPolygon result_union, result_diff;
 
 	    if ( accum.contours() == 0 ) {
 		result_diff = tmp;

@@ -52,10 +52,10 @@ class FGSuperPoly {
 private:
 
     string material;		// material/texture name
-    FGPolygon poly;		// master polygon
-    FGPolygon normals;		// corresponding normals
-    FGPolygon texcoords;	// corresponding texture coordinates
-    FGPolygon tris;		// triangulation
+    TGPolygon poly;		// master polygon
+    TGPolygon normals;		// corresponding normals
+    TGPolygon texcoords;	// corresponding texture coordinates
+    TGPolygon tris;		// triangulation
     GLenum tri_mode;		// GL_TRIANGLE, GL_FAN, GL_TRISTRIP, etc.
     string flag;         // For various potential record keeping needs
 
@@ -68,17 +68,17 @@ public:
     inline string get_material() const { return material; }
     inline void set_material( const string &m ) { material = m; }
 
-    inline FGPolygon get_poly() const { return poly; }
-    inline void set_poly( const FGPolygon &p ) { poly = p; }
+    inline TGPolygon get_poly() const { return poly; }
+    inline void set_poly( const TGPolygon &p ) { poly = p; }
 
-    inline FGPolygon get_normals() const { return normals; }
-    inline void set_normals( const FGPolygon &p ) { normals = p; }
+    inline TGPolygon get_normals() const { return normals; }
+    inline void set_normals( const TGPolygon &p ) { normals = p; }
 
-    inline FGPolygon get_texcoords() const { return texcoords; }
-    inline void set_texcoords( const FGPolygon &p ) { texcoords = p; }
+    inline TGPolygon get_texcoords() const { return texcoords; }
+    inline void set_texcoords( const TGPolygon &p ) { texcoords = p; }
 
-    inline FGPolygon get_tris() const { return tris; }
-    inline void set_tris( const FGPolygon &p ) { tris = p; }
+    inline TGPolygon get_tris() const { return tris; }
+    inline void set_tris( const TGPolygon &p ) { tris = p; }
 
     inline GLenum get_tri_mode() const { return tri_mode; }
     inline void set_tri_mode( const GLenum &m ) { tri_mode = m; }

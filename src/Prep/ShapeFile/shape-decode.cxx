@@ -151,7 +151,7 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
 
 
 int main( int argc, char **argv ) {
-    FGPolygon shape;
+    TGPolygon shape;
     int i, j;
 
     sglog().setLogLevels( SG_ALL, SG_DEBUG );

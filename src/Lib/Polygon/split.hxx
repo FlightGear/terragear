@@ -30,7 +30,7 @@
 
 
 // process shape (write polygon to all intersecting tiles)
-void split_polygon(const string& path, AreaType area, const FGPolygon& shape);
+void split_polygon(const string& path, AreaType area, const TGPolygon& shape);
 
 
 #endif // _SPLIT_HXX

@@ -80,12 +80,12 @@ SG_USING_STD(string);
 // texturing parameters.  Returns a mirror polygon to the runway,
 // except each point is the texture coordinate of the corresponding
 // point in the original polygon.
-static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
+static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
 					 const FGTexParams& tp,
                                          const bool clip_result )
 {
     int i, j;
-    FGPolygon result;
+    TGPolygon result;
     result.erase();
     // double length = rwy.length * SG_FEET_TO_METER;
     // double width = rwy.width * SG_FEET_TO_METER;
@@ -266,9 +266,9 @@ static void build_runway( const FGRunway& rwy_info,
                           double alt_m,
                           superpoly_list *rwy_polys,
                           texparams_list *texparams,
-                          FGPolygon *accum,
-                          FGPolygon *apt_base,
-                          FGPolygon *apt_clearing )
+                          TGPolygon *accum,
+                          TGPolygon *apt_base,
+                          TGPolygon *apt_clearing )
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "surface flags = " << rwy_info.surface_flags);
     string surface_flag = rwy_info.surface_flags.substr(1, 1);
@@ -343,14 +343,14 @@ static void build_runway( const FGRunway& rwy_info,
 	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
     }
 
-    FGPolygon base;
+    TGPolygon base;
     if ( rwy_info.really_taxiway ) {
 	base = gen_runway_area_w_extend( rwy_info, 10, 10 );
     } else {
 	base = gen_runway_area_w_extend( rwy_info, 20, 20 );
 
         // also clear a safe area around the runway
-        FGPolygon safe_base = gen_runway_area_w_extend( rwy_info, 300, 120 );
+        TGPolygon safe_base = gen_runway_area_w_extend( rwy_info, 300, 120 );
         *apt_clearing = polygon_union(safe_base, *apt_clearing);
     }
 
@@ -370,13 +370,13 @@ void build_airport( string airport_raw, float alt_m,
     texparams_list texparams;
 
     // poly_list rwy_tris, rwy_txs;
-    FGPolygon runway, runway_a, runway_b, clipped_a, clipped_b;
-    FGPolygon split_a, split_b;
-    FGPolygon apt_base;
-    FGPolygon apt_clearing;
+    TGPolygon runway, runway_a, runway_b, clipped_a, clipped_b;
+    TGPolygon split_a, split_b;
+    TGPolygon apt_base;
+    TGPolygon apt_clearing;
     Point3D p;
 
-    FGPolygon accum;
+    TGPolygon accum;
     accum.erase();
 
     // parse main airport information
@@ -614,20 +614,20 @@ void build_airport( string airport_raw, float alt_m,
     }
 
     // generate convex hull (no longer)
-    // FGPolygon hull = convex_hull(apt_pts);
+    // TGPolygon hull = convex_hull(apt_pts);
 
-    FGPolygon filled_base = strip_out_holes( apt_base );
+    TGPolygon filled_base = strip_out_holes( apt_base );
     // write_polygon( filled_base, "filled-base" );
-    FGPolygon divided_base = split_long_edges( filled_base, 200.0 );
+    TGPolygon divided_base = split_long_edges( filled_base, 200.0 );
     // write_polygon( divided_base, "divided-base" );
-    FGPolygon base_poly = polygon_diff( divided_base, accum );
+    TGPolygon base_poly = polygon_diff( divided_base, accum );
     // write_polygon( base_poly, "base-raw" );
 
     // Try to remove duplicated nodes and other degeneracies
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
 	SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes/remove dups section = " << k
 	       << " " << rwy_polys[k].get_material());
-	FGPolygon poly = rwy_polys[k].get_poly();
+	TGPolygon poly = rwy_polys[k].get_poly();
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size(i); ++j ) {
@@ -667,7 +667,7 @@ void build_airport( string airport_raw, float alt_m,
 
     // build temporary node list
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
-	FGPolygon poly = rwy_polys[k].get_poly();
+	TGPolygon poly = rwy_polys[k].get_poly();
 	for ( i = 0; i < poly.contours(); ++i ) {
 	    for ( j = 0; j < poly.contour_size( i ); ++j ) {
 		tmp_nodes.unique_add( poly.get_pt(i, j) );
@@ -716,7 +716,7 @@ void build_airport( string airport_raw, float alt_m,
 #endif
 
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
-	FGPolygon poly = rwy_polys[k].get_poly();
+	TGPolygon poly = rwy_polys[k].get_poly();
 	poly = add_nodes_to_poly( poly, tmp_nodes );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.total_size());
 
@@ -731,7 +731,7 @@ void build_airport( string airport_raw, float alt_m,
 
     // One more pass to try to get rid of other yukky stuff
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
-	FGPolygon poly = rwy_polys[k].get_poly();
+	TGPolygon poly = rwy_polys[k].get_poly();
 
         poly = remove_dups( poly );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = " << poly.total_size());
@@ -755,12 +755,12 @@ void build_airport( string airport_raw, float alt_m,
     for ( i = 0; i < (int)rwy_polys.size(); ++i ) {
         SG_LOG(SG_GENERAL, SG_INFO, "Tesselating section = " << i);
 
-	FGPolygon poly = rwy_polys[i].get_poly();
+	TGPolygon poly = rwy_polys[i].get_poly();
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());
-	FGPolygon tri = polygon_tesselate_alt( poly );
+	TGPolygon tri = polygon_tesselate_alt( poly );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
-        FGPolygon tc;
+        TGPolygon tc;
         if ( rwy_polys[i].get_flag() == "taxi" ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, "taxiway, no clip");
             tc = rwy_section_tex_coords( tri, texparams[i], false );
@@ -774,7 +774,7 @@ void build_airport( string airport_raw, float alt_m,
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating base");
-    FGPolygon base_tris = polygon_tesselate_alt( base_poly );
+    TGPolygon base_tris = polygon_tesselate_alt( base_poly );
 
 #if 0
     // dump more debugging output
@@ -851,9 +851,9 @@ void build_airport( string airport_raw, float alt_m,
 
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
 	SG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
-	// FGPolygon tri_poly = rwy_tris[k];
-	FGPolygon tri_poly = rwy_polys[k].get_tris();
-	FGPolygon tri_txs = rwy_polys[k].get_texcoords();
+	// TGPolygon tri_poly = rwy_tris[k];
+	TGPolygon tri_poly = rwy_polys[k].get_tris();
+	TGPolygon tri_txs = rwy_polys[k].get_texcoords();
 	string material = rwy_polys[k].get_material();
 	SG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
 	SG_LOG(SG_GENERAL, SG_DEBUG, "poly size = " << tri_poly.contours());
@@ -1034,7 +1034,7 @@ void build_airport( string airport_raw, float alt_m,
 
         point_list geod_light_nodes
             = calc_elevations( root, light_nodes.get_node_list(), 0.5 );
-        FGPolygon p;
+        TGPolygon p;
         p.add_contour( geod_light_nodes, 0 );
         FGSuperPoly s;
         s.set_poly( p );

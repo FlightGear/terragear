@@ -36,24 +36,24 @@
 // new polygon
 void add_intermediate_nodes( int contour, const Point3D& start, 
 			     const Point3D& end, const TGTriNodes& tmp_nodes,
-			     FGPolygon *result );
+			     TGPolygon *result );
 
 
 // Search each segment for additional vertex points that may have been
 // created elsewhere that lie on the segment and split it there to
 // avoid "T" intersections.
 
-FGPolygon add_nodes_to_poly( const FGPolygon& poly, 
-				    const TGTriNodes& tmp_nodes );
+TGPolygon add_nodes_to_poly( const TGPolygon& poly, 
+                             const TGTriNodes& tmp_nodes );
 
 
 // Traverse a polygon and split edges until they are less than max_len
 // (specified in meters)
-FGPolygon split_long_edges( const FGPolygon &poly, double max_len );
+TGPolygon split_long_edges( const TGPolygon &poly, double max_len );
 
 
 // Traverse a polygon and toss all the internal holes
-FGPolygon strip_out_holes( const FGPolygon &poly );
+TGPolygon strip_out_holes( const TGPolygon &poly );
 
 
 #endif // _POLY_EXTRA_HXX

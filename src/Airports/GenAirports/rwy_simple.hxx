@@ -40,7 +40,7 @@ void gen_simple_rwy( const FGRunway& rwy_info,
                      const string& material,
 		     superpoly_list *rwy_polys,
 		     texparams_list *texparams,
-		     FGPolygon *accum );
+		     TGPolygon *accum );
 
 
 #endif // _RWY_SIMPLE_HXX

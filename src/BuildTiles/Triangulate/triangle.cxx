@@ -73,7 +73,7 @@ FGTriangle::build( const point_list& corner_list,
     }
 
     // next process the polygons
-    FGPolygon gpc_poly;
+    TGPolygon gpc_poly;
     const_poly_list_iterator current, last;
 
     // process polygons in priority order
@@ -215,7 +215,7 @@ FGTriangle::build( const point_list& corner_list,
     int i1, i2;
     Point3D p1, p2;
     point_list node_list = in_nodes.get_node_list();
-    FGPolygon poly;
+    TGPolygon poly;
 
     for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	cout << "area type = " << i << endl;
@@ -342,7 +342,7 @@ static void write_out_data(struct triangulateio *out) {
 // after split/reassem where we don't want any extra nodes generated.
 
 int FGTriangle::run_triangulate( const string& angle, const int pass ) {
-    FGPolygon poly;
+    TGPolygon poly;
     Point3D p;
     struct triangulateio in, out, vorout;
     int counter;

@@ -39,14 +39,14 @@ void gen_simple_rwy( const FGRunway& rwy_info,
                      const string& material,
 		     superpoly_list *rwy_polys,
 		     texparams_list *texparams,
-		     FGPolygon *accum )
+		     TGPolygon *accum )
 {
     int j, k;
 
-    FGPolygon runway = gen_runway_w_mid( rwy_info, alt_m );
+    TGPolygon runway = gen_runway_w_mid( rwy_info, alt_m );
 
     // runway half "a"
-    FGPolygon runway_a;
+    TGPolygon runway_a;
     runway_a.erase();
     runway_a.add_node( 0, runway.get_pt(0, 0) );
     runway_a.add_node( 0, runway.get_pt(0, 1) );
@@ -54,7 +54,7 @@ void gen_simple_rwy( const FGRunway& rwy_info,
     runway_a.add_node( 0, runway.get_pt(0, 5) );
 
     // runway half "b"
-    FGPolygon runway_b;
+    TGPolygon runway_b;
     runway_b.erase();
     runway_b.add_node( 0, runway.get_pt(0, 5) );
     runway_b.add_node( 0, runway.get_pt(0, 2) );
@@ -76,8 +76,8 @@ void gen_simple_rwy( const FGRunway& rwy_info,
     FGSuperPoly sp;
     FGTexParams tp;
 
-    FGPolygon clipped_a = polygon_diff( runway_a, *accum );
-    FGPolygon split_a = split_long_edges( clipped_a, 400.0 );
+    TGPolygon clipped_a = polygon_diff( runway_a, *accum );
+    TGPolygon split_a = split_long_edges( clipped_a, 400.0 );
     sp.erase();
     sp.set_poly( split_a );
     sp.set_material( material );
@@ -90,8 +90,8 @@ void gen_simple_rwy( const FGRunway& rwy_info,
                       rwy_info.heading );
     texparams->push_back( tp );
 
-    FGPolygon clipped_b = polygon_diff( runway_b, *accum );
-    FGPolygon split_b = split_long_edges( clipped_b, 400.0 );
+    TGPolygon clipped_b = polygon_diff( runway_b, *accum );
+    TGPolygon split_b = split_long_edges( clipped_b, 400.0 );
     sp.erase();
     sp.set_poly( split_b );
     sp.set_material( material );

@@ -43,7 +43,7 @@ using namespace std;
 // calculate the convex hull of a set of points, return as a list of
 // point2d.  The algorithm description can be found at:
 // http://riot.ieor.berkeley.edu/riot/Applications/ConvexHull/CHDetails.html
-FGPolygon convex_hull( const point_list& input_list );
+TGPolygon convex_hull( const point_list& input_list );
 
 
 #endif // _CONVEX_HULL_HXX

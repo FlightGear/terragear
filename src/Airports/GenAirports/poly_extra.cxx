@@ -36,7 +36,7 @@
 // new polygon
 void add_intermediate_nodes( int contour, const Point3D& start, 
 			     const Point3D& end, const TGTriNodes& tmp_nodes,
-			     FGPolygon *result )
+			     TGPolygon *result )
 {
     point_list nodes = tmp_nodes.get_node_list();
 
@@ -69,10 +69,10 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 // created elsewhere that lie on the segment and split it there to
 // avoid "T" intersections.
 
-FGPolygon add_nodes_to_poly( const FGPolygon& poly, 
+TGPolygon add_nodes_to_poly( const TGPolygon& poly, 
                              const TGTriNodes& tmp_nodes ) {
     int i, j;
-    FGPolygon result; result.erase();
+    TGPolygon result; result.erase();
     Point3D p0, p1;
 
     // SG_LOG(SG_GENERAL, SG_DEBUG, "add_nodes_to_poly");
@@ -115,8 +115,8 @@ FGPolygon add_nodes_to_poly( const FGPolygon& poly,
 
 // Traverse a polygon and split edges until they are less than max_len
 // (specified in meters)
-FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
-    FGPolygon result;
+TGPolygon split_long_edges( const TGPolygon &poly, double max_len ) {
+    TGPolygon result;
     Point3D p0, p1;
     int i, j, k;
 
@@ -188,8 +188,8 @@ FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
 
 
 // Traverse a polygon and toss all the internal holes
-FGPolygon strip_out_holes( const FGPolygon &poly ) {
-    FGPolygon result; result.erase();
+TGPolygon strip_out_holes( const TGPolygon &poly ) {
+    TGPolygon result; result.erase();
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "strip_out_holes()");
 

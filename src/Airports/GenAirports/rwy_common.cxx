@@ -32,11 +32,11 @@
 
 void gen_number_block( const FGRunway& rwy_info,
                        const string& material,
-                       FGPolygon poly, double heading, int num,
+                       TGPolygon poly, double heading, int num,
                        double start_pct, double end_pct,
                        superpoly_list *rwy_polys,
                        texparams_list *texparams,
-                       FGPolygon *accum )
+                       TGPolygon *accum )
 {
     char tex1[32]; tex1[0] = '\0';
     char tex2[32]; tex2[0] = '\0';
@@ -93,7 +93,7 @@ void gen_number_block( const FGRunway& rwy_info,
 
 // generate a section of runway
 void gen_runway_section( const FGRunway& rwy_info,
-			 const FGPolygon& runway,
+			 const TGPolygon& runway,
 			 double startl_pct, double endl_pct,
 			 double startw_pct, double endw_pct,
 			 double heading,
@@ -101,7 +101,7 @@ void gen_runway_section( const FGRunway& rwy_info,
 			 const string& material,
 			 superpoly_list *rwy_polys,
 			 texparams_list *texparams,
-			 FGPolygon *accum  ) {
+			 TGPolygon *accum  ) {
 
     int j, k;
 
@@ -180,7 +180,7 @@ void gen_runway_section( const FGRunway& rwy_info,
     Point3D p3 = Point3D( t3.x() + dwx * endw_pct,
 			  t3.y() + dwy * endw_pct, 0);
 
-    FGPolygon section;
+    TGPolygon section;
     section.erase();
 
     section.add_node( 0, p2 );
@@ -198,11 +198,11 @@ void gen_runway_section( const FGRunway& rwy_info,
     }
 
     // Clip the new polygon against what ever has already been created.
-    FGPolygon clipped = polygon_diff( section, *accum );
+    TGPolygon clipped = polygon_diff( section, *accum );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
-    FGPolygon split = split_long_edges( clipped, 400.0 );
+    TGPolygon split = split_long_edges( clipped, 400.0 );
 
     // Create the final output and push on to the runway super_polygon
     // list

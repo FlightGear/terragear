@@ -37,10 +37,10 @@
 // given a runway center point, length, width, and heading, and
 // altitude (meters) generate the lon and lat 4 corners using wgs84
 // math.
-FGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
+TGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
                           double heading_deg, double alt_m, bool add_mid )
 {
-    FGPolygon result_list;
+    TGPolygon result_list;
     double length_hdg = heading_deg;
     double left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -108,12 +108,12 @@ FGPolygon gen_wgs84_area( Point3D origin, double length_m, double width_m,
 
 // generate an area for a runway with expantion specified as a scale
 // factor (return result points in degrees)
-FGPolygon gen_runway_area_w_scale( const FGRunway& runway,
+TGPolygon gen_runway_area_w_scale( const FGRunway& runway,
                                    double alt_m,
 				   double len_scale,
 				   double width_scale ) {
 
-    FGPolygon result_list;
+    TGPolygon result_list;
     Point3D origin(runway.lon, runway.lat, 0);
 
     result_list = gen_wgs84_area( origin,
@@ -133,12 +133,12 @@ FGPolygon gen_runway_area_w_scale( const FGRunway& runway,
 
 // generate an area for a runway with expansion specified in meters
 // (return result points in degrees)
-FGPolygon gen_runway_area_w_extend( const FGRunway& runway,
+TGPolygon gen_runway_area_w_extend( const FGRunway& runway,
                                     double alt_m,
 				    double len_extend,
 				    double wid_extend ) {
 
-    FGPolygon result_list;
+    TGPolygon result_list;
     Point3D origin(runway.lon, runway.lat, 0);
 
     result_list
@@ -158,11 +158,11 @@ FGPolygon gen_runway_area_w_extend( const FGRunway& runway,
 
 
 // generate an area for a runway and include midpoints
-FGPolygon gen_runway_w_mid( const FGRunway& runway, 
+TGPolygon gen_runway_w_mid( const FGRunway& runway, 
                             double alt_m,
 			    double len_extend_m,
 			    double wid_extend_m ) {
-    FGPolygon result_list;
+    TGPolygon result_list;
     Point3D origin(runway.lon, runway.lat, 0);
 
     result_list = gen_wgs84_area( origin,

@@ -40,7 +40,7 @@ void gen_taxiway( const FGRunway& rwy_info,
                   const string& material,
 		  superpoly_list *rwy_polys,
 		  texparams_list *texparams,
-		  FGPolygon *accum );
+		  TGPolygon *accum );
 
 
 #endif // _TAXIWAY_HXX

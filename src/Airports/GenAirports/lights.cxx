@@ -40,7 +40,7 @@ static Point3D gen_runway_light_vector( const FGRunway& rwy_info,
     double length;
 
     // Generate the 4 corners of the runway
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -93,9 +93,9 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
 
     Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -143,8 +143,8 @@ static superpoly_list gen_runway_edge_lights( const FGRunway& rwy_info,
         dist -= step;
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( w_lights, false );
     normals_poly.add_contour( w_normals, false );
 
@@ -203,9 +203,9 @@ static superpoly_list gen_taxiway_edge_lights( const FGRunway& rwy_info,
         divs = (int)(len / 35.0) + 1;
     }
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -249,8 +249,8 @@ static superpoly_list gen_taxiway_edge_lights( const FGRunway& rwy_info,
         b_normals.push_back( up );
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( b_lights, false );
     normals_poly.add_contour( b_normals, false );
 
@@ -280,9 +280,9 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
 
     cout << "gen threshold " << rwy_info.rwy_no << endl;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -346,8 +346,8 @@ static superpoly_list gen_runway_threshold_lights( const FGRunway& rwy_info,
         ref2 = Point3D( lon, lat, 0.0 );
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 
@@ -412,9 +412,9 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
 
     Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -465,8 +465,8 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
     superpoly_list result; result.clear();
 
     if ( w_lights.size() > 0 ) {
-        FGPolygon lights_poly; lights_poly.erase();
-        FGPolygon normals_poly; normals_poly.erase();
+        TGPolygon lights_poly; lights_poly.erase();
+        TGPolygon normals_poly; normals_poly.erase();
         lights_poly.add_contour( w_lights, false );
         normals_poly.add_contour( w_normals, false );
 
@@ -479,8 +479,8 @@ static superpoly_list gen_runway_center_line_lights( const FGRunway& rwy_info,
     }
 
     if ( r_lights.size() > 0 ) {
-        FGPolygon lights_poly; lights_poly.erase();
-        FGPolygon normals_poly; normals_poly.erase();
+        TGPolygon lights_poly; lights_poly.erase();
+        TGPolygon normals_poly; normals_poly.erase();
         lights_poly.add_contour( r_lights, false );
         normals_poly.add_contour( r_normals, false );
 
@@ -508,9 +508,9 @@ static FGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
 
     Point3D normal;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -585,8 +585,8 @@ static FGSuperPoly gen_touchdown_zone_lights( const FGRunway& rwy_info,
         normals.push_back( normal );
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
@@ -612,9 +612,9 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
 
     Point3D normal;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -724,8 +724,8 @@ static FGSuperPoly gen_vasi( const FGRunway& rwy_info, float alt_m,
     lights.push_back( pt1 );
     normals.push_back( normal );
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
@@ -753,9 +753,9 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
 
     Point3D normal;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -820,8 +820,8 @@ static FGSuperPoly gen_papi( const FGRunway& rwy_info, float alt_m,
     normal = gen_runway_light_vector( rwy_info, 2.5, recip );
     normals.push_back( normal );
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
@@ -849,9 +849,9 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
 
     Point3D normal;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -905,8 +905,8 @@ static FGSuperPoly gen_reil( const FGRunway& rwy_info, float alt_m,
     normal = gen_runway_light_vector( rwy_info, 10, recip );
     normals.push_back( normal );
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
@@ -946,9 +946,9 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
     double len = rwy_info.length * SG_FEET_TO_METER;
     int divs = (int)(len / 10.0) + 1;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1376,8 +1376,8 @@ static superpoly_list gen_alsf( const FGRunway& rwy_info,
         }
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 
@@ -1449,9 +1449,9 @@ static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
     // a placeholder to keep everything happy.
     Point3D normal( 0.0, 0.0, 0.0 );
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1514,8 +1514,8 @@ static FGSuperPoly gen_odals( const FGRunway& rwy_info, float alt_m,
         normals.push_back( normal );
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( lights, false );
     normals_poly.add_contour( normals, false );
 
@@ -1556,9 +1556,9 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
     double len = rwy_info.length * SG_FEET_TO_METER;
     int divs = (int)(len / 10.0) + 1;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1738,8 +1738,8 @@ static superpoly_list gen_ssalx( const FGRunway& rwy_info,
         }
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 
@@ -1822,9 +1822,9 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
     double len = rwy_info.length * SG_FEET_TO_METER;
     int divs = (int)(len / 10.0) + 1;
 
-    // using FGPolygon is a bit innefficient, but that's what the
+    // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    FGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 2.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -2004,8 +2004,8 @@ static superpoly_list gen_malsx( const FGRunway& rwy_info,
         }
     }
 
-    FGPolygon lights_poly; lights_poly.erase();
-    FGPolygon normals_poly; normals_poly.erase();
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( g_lights, false );
     normals_poly.add_contour( g_normals, false );
 

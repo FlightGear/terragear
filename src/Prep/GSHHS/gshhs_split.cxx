@@ -44,10 +44,10 @@ SG_USING_STD(string);
 // -360 ... -180, and 180 ... 360 ... shift the offset sections and
 // process each separately
 void split_and_shift_chunk( const string& path, AreaType area, 
-			    const FGPolygon& shape )
+			    const TGPolygon& shape )
 {
-    FGPolygon lower_mask, center_mask, upper_mask;
-    FGPolygon lower_shape, center_shape, upper_shape;
+    TGPolygon lower_mask, center_mask, upper_mask;
+    TGPolygon lower_shape, center_shape, upper_shape;
 
     lower_mask.erase();
     lower_mask.add_node( 0, Point3D(-360, -90, 0) );
@@ -95,7 +95,7 @@ void split_and_shift_chunk( const string& path, AreaType area,
 
 // process a large shape through my crude polygon splitter to reduce
 // the polygon sizes before handing off to gpc
-void gshhs_split_polygon( const string& path, AreaType area, FGPolygon& shape, 
+void gshhs_split_polygon( const string& path, AreaType area, TGPolygon& shape, 
 			  const double min, const double max )
 {
     double base_line = (int)(min - 1.0);
@@ -106,8 +106,8 @@ void gshhs_split_polygon( const string& path, AreaType area, FGPolygon& shape,
     while ( line < max ) {
 	printf("clipping at %.10f\n", line);
 		
-	FGPolygon above = horizontal_clip( shape, line, Above );
-	FGPolygon below = horizontal_clip( shape, line, Below );
+	TGPolygon above = horizontal_clip( shape, line, Above );
+	TGPolygon below = horizontal_clip( shape, line, Below );
 
 // #define WRITE_FILE
 #ifdef WRITE_FILE

@@ -1,4 +1,4 @@
-// poly_support.cxx -- additional supporting routines for the FGPolygon class
+// poly_support.cxx -- additional supporting routines for the TGPolygon class
 //                     specific to the object building process.
 //
 // Written by Curtis Olson, started October 1999.
@@ -106,7 +106,7 @@ static bool intersects( Point3D p0, Point3D p1, double x, Point3D *result ) {
 
 // calculate some "arbitrary" point inside the specified contour for
 // assigning attribute areas
-Point3D calc_point_inside_old( const FGPolygon& p, const int contour, 
+Point3D calc_point_inside_old( const TGPolygon& p, const int contour, 
 			       const TGTriNodes& trinodes ) {
     Point3D tmp, min, ln, p1, p2, p3, m, result, inside_pt;
     int min_node_index = 0;
@@ -237,7 +237,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 
 // basic triangulation of a polygon with out adding points or
 // splitting edges, this should triangulate around interior holes.
-void polygon_tesselate( const FGPolygon &p,
+void polygon_tesselate( const TGPolygon &p,
 			triele_list &elelist,
 			point_list &out_pts )
 {
@@ -442,8 +442,8 @@ void polygon_tesselate( const FGPolygon &p,
 // wrapper for the polygon_tesselate() function.  Note, this routine
 // will modify the points_inside list for your polygon.
 
-FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
-    FGPolygon result;
+TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
+    TGPolygon result;
     result.erase();
     int i;
 
@@ -483,8 +483,8 @@ FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
 
 // basic triangulation of a contour with out adding points or
 // splitting edges but cuts out any of the specified holes
-static void contour_tesselate( TGContourNode *node, const FGPolygon &p,
-			       const FGPolygon &hole_polys,
+static void contour_tesselate( TGContourNode *node, const TGPolygon &p,
+			       const TGPolygon &hole_polys,
 			       const point_list &hole_pts,
 			       triele_list &elelist,
 			       point_list &out_pts )
@@ -745,11 +745,11 @@ static Point3D point_inside_hole( point_list contour ) {
 
 // Find a point inside a specific polygon contour taking holes into
 // consideration
-static Point3D point_inside_contour( TGContourNode *node, const FGPolygon &p ) {
+static Point3D point_inside_contour( TGContourNode *node, const TGPolygon &p ) {
     int contour_num;
     int i;
 
-    FGPolygon hole_polys;
+    TGPolygon hole_polys;
     hole_polys.erase();
 
     point_list hole_pts;
@@ -808,7 +808,7 @@ static Point3D point_inside_contour( TGContourNode *node, const FGPolygon &p ) {
 
 // recurse the contour tree and build up the point inside list for
 // each contour/hole
-static void calc_point_inside( TGContourNode *node, FGPolygon &p ) {
+static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     for ( int i = 0; i < node->get_num_kids(); ++i ) {
 	if ( node->get_kid( i ) != NULL ) {
 	    calc_point_inside( node->get_kid( i ), p );
@@ -839,7 +839,7 @@ static void print_contour_tree( TGContourNode *node, string indent ) {
 
 // Build the contour "is inside of" tree
 static void build_contour_tree( TGContourNode *node,
-				const FGPolygon &p,
+				const TGPolygon &p,
 				int_list &avail )
 {
     cout << "working on contour = " << node->get_contour_num() << endl;
@@ -925,7 +925,7 @@ static void build_contour_tree( TGContourNode *node,
 
 
 // calculate some "arbitrary" point inside each of the polygons contours
-void calc_points_inside( FGPolygon& p ) {
+void calc_points_inside( TGPolygon& p ) {
     // first build the contour tree
 
     // make a list of all still available contours (all of the for
@@ -950,12 +950,12 @@ void calc_points_inside( FGPolygon& p ) {
 
 // remove duplicate nodes in a polygon should they exist.  Returns the
 // fixed polygon
-FGPolygon remove_dups( const FGPolygon &poly ) {
-    FGPolygon result;
+TGPolygon remove_dups( const TGPolygon &poly ) {
+    TGPolygon result;
     point_list contour, new_contour;
     result.erase();
 
-    FGPolygon tmp = poly;
+    TGPolygon tmp = poly;
     for ( int i = 0; i < tmp.contours(); ++i ) {
 	contour = poly.get_contour( i );
 	// cout << "testing contour " << i << "  size = " << contour.size() 
@@ -1016,9 +1016,9 @@ snap (const Point3D &p, double grid_size)
 }
 
 // snap all points in a polygon to the given grid size.
-FGPolygon snap (const FGPolygon &poly, double grid_size)
+TGPolygon snap (const TGPolygon &poly, double grid_size)
 {
-  FGPolygon result;
+  TGPolygon result;
   for (int contour = 0; contour < poly.contours(); contour++) {
     for (int i = 0; i < poly.contour_size(contour); i++) {
       result.add_node(contour, snap(poly.get_pt(contour, i), grid_size));
@@ -1206,8 +1206,8 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
 
 // Search each segment of each contour for degenerate points (i.e. out
 // of order points that lie coincident on other segments
-FGPolygon reduce_degeneracy( const FGPolygon& poly ) {
-    FGPolygon result;
+TGPolygon reduce_degeneracy( const TGPolygon& poly ) {
+    TGPolygon result;
 
     for ( int i = 0; i < poly.contours(); ++i ) {
 	point_list contour = poly.get_contour(i);
@@ -1223,8 +1223,8 @@ FGPolygon reduce_degeneracy( const FGPolygon& poly ) {
 
 
 // remove any degenerate contours
-FGPolygon remove_bad_contours( const FGPolygon &poly ) {
-    FGPolygon result;
+TGPolygon remove_bad_contours( const TGPolygon &poly ) {
+    TGPolygon result;
     result.erase();
 
     for ( int i = 0; i < poly.contours(); ++i ) {

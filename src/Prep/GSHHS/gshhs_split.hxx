@@ -33,12 +33,12 @@
 // -360 ... -180, and 180 ... 360 ... shift the offset sections and
 // process each separately
 void split_and_shift_chunk( const string& path, AreaType area, 
-			    const FGPolygon& shape );
+			    const TGPolygon& shape );
 
 
 // process a large shape through my crude polygon splitter to reduce
 // the polygon sizes before handing off to gpc
-void gshhs_split_polygon( const string& path, AreaType area, FGPolygon& shape,
+void gshhs_split_polygon( const string& path, AreaType area, TGPolygon& shape,
 			  const double min, const double max );
 
 

@@ -301,7 +301,7 @@ int main( int argc, char **argv ) {
     write_index( objpath, b, name );
 
     // create and write the 'hole' polygon
-    FGPolygon hole; hole.erase();
+    TGPolygon hole; hole.erase();
     Point3D p;
 
     for ( i = 0; i <= xdiv; ++i ) {

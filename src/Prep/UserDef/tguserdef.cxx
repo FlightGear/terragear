@@ -22,7 +22,7 @@ SG_USING_STD(vector);
 static string prog_name;
 static string work_dir = ".";
 static tg::Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0)); 
-static FGPolygon bounds_poly;
+static TGPolygon bounds_poly;
 
 
 /**
@@ -62,7 +62,7 @@ add_point (SGPropertyNode_ptr node)
   s = parse_point(s, dummy);
   if (s != 0)
     SG_LOG(SG_TERRAIN, SG_WARN, "More than one vertex supplied for point");
-  FGPolygon poly;
+  TGPolygon poly;
   tg::makePolygon(p, node->getIntValue("width", 500), poly);
   poly = polygon_int(poly, bounds_poly);
   split_polygon(".", material, poly);
@@ -83,7 +83,7 @@ add_line (SGPropertyNode_ptr node)
     s = parse_point(s, p);
   }
 
-  FGPolygon poly;
+  TGPolygon poly;
   tg::makePolygon(line, node->getIntValue("width", 10), poly);
   poly = polygon_int(poly, bounds_poly);
   split_polygon(".", material, poly);
@@ -92,7 +92,7 @@ add_line (SGPropertyNode_ptr node)
 static void
 add_polygon (SGPropertyNode_ptr node)
 {
-  FGPolygon poly;
+  TGPolygon poly;
   AreaType material =
     get_area_type(node->getStringValue("material", "Default"));
   vector<SGPropertyNode_ptr> contour_nodes = node->getChildren("contour");

@@ -41,12 +41,12 @@ SG_USING_STD(endl);
 #include "polygon.hxx"
 
 // Constructor 
-FGPolygon::FGPolygon( void ) {
+TGPolygon::TGPolygon( void ) {
 }
 
 
 // Destructor
-FGPolygon::~FGPolygon( void ) {
+TGPolygon::~TGPolygon( void ) {
 }
 
 
@@ -83,7 +83,7 @@ static double calc_angle(point2d a, point2d b, point2d c) {
 // negative areas indicate counter clockwise winding
 // positive areas indicate clockwise winding.
 
-double FGPolygon::area_contour( const int contour ) const {
+double TGPolygon::area_contour( const int contour ) const {
     // area = 1/2 * sum[i = 0 to k-1][x(i)*y(i+1) - x(i+1)*y(i)]
     // where i=k is defined as i=0
 
@@ -102,7 +102,7 @@ double FGPolygon::area_contour( const int contour ) const {
 
 
 // return the smallest interior angle of the contour
-double FGPolygon::minangle_contour( const int contour ) {
+double TGPolygon::minangle_contour( const int contour ) {
     point_list c = poly[contour];
     int size = c.size();
     int p1_index, p2_index, p3_index;
@@ -144,9 +144,9 @@ double FGPolygon::minangle_contour( const int contour ) {
 
 
 // return true if contour A is inside countour B
-bool FGPolygon::is_inside( int a, int b ) const {
+bool TGPolygon::is_inside( int a, int b ) const {
     // make polygons from each specified contour
-    FGPolygon A, B;
+    TGPolygon A, B;
     point_list pl;
     A.erase();
     B.erase();
@@ -163,7 +163,7 @@ bool FGPolygon::is_inside( int a, int b ) const {
     // B.write( "B" );
 
     // A is "inside" B if the polygon_diff( A, B ) is null.
-    FGPolygon result = polygon_diff( A, B );
+    TGPolygon result = polygon_diff( A, B );
     // SG_LOG(SG_GENERAL, SG_DEBUG, "result size = " << result.total_size());
 
     // char junk;
@@ -180,7 +180,7 @@ bool FGPolygon::is_inside( int a, int b ) const {
 
 
 // shift every point in the polygon by lon, lat
-void FGPolygon::shift( double lon, double lat ) {
+void TGPolygon::shift( double lon, double lat ) {
     for ( int i = 0; i < (int)poly.size(); ++i ) {
 	for ( int j = 0; j < (int)poly[i].size(); ++j ) {
 	    poly[i][j].setx( poly[i][j].x() + lon );
@@ -191,7 +191,7 @@ void FGPolygon::shift( double lon, double lat ) {
 
 
 // output
-void FGPolygon::write( const string& file ) const {
+void TGPolygon::write( const string& file ) const {
     FILE *fp = fopen( file.c_str(), "w" );
     
     for ( int i = 0; i < (int)poly.size(); ++i ) {
@@ -206,7 +206,7 @@ void FGPolygon::write( const string& file ) const {
 
 
 // output
-void FGPolygon::write_contour( const int contour, const string& file ) const {
+void TGPolygon::write_contour( const int contour, const string& file ) const {
     FILE *fp = fopen( file.c_str(), "w" );
     
     for ( int j = 0; j < (int)poly[contour].size(); ++j ) {
@@ -221,8 +221,8 @@ void FGPolygon::write_contour( const int contour, const string& file ) const {
 // wrapper functions for gpc polygon clip routines
 //
 
-// Make a gpc_poly from an FGPolygon
-void make_gpc_poly( const FGPolygon& in, gpc_polygon *out ) {
+// Make a gpc_poly from an TGPolygon
+void make_gpc_poly( const TGPolygon& in, gpc_polygon *out ) {
     gpc_vertex_list v_list;
     v_list.num_vertices = 0;
     v_list.vertex = new gpc_vertex[FG_MAX_VERTICES];
@@ -264,10 +264,10 @@ typedef enum {
 
 
 // Generic clipping routine
-FGPolygon polygon_clip( clip_op poly_op, const FGPolygon& subject, 
-			const FGPolygon& clip )
+TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, 
+			const TGPolygon& clip )
 {
-    FGPolygon result;
+    TGPolygon result;
 
     gpc_polygon *gpc_subject = new gpc_polygon;
     gpc_subject->num_contours = 0;
@@ -337,32 +337,32 @@ FGPolygon polygon_clip( clip_op poly_op, const FGPolygon& subject,
 
 
 // Difference
-FGPolygon polygon_diff(	const FGPolygon& subject, const FGPolygon& clip ) {
+TGPolygon polygon_diff(	const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_DIFF, subject, clip );
 }
 
 // Intersection
-FGPolygon polygon_int( const FGPolygon& subject, const FGPolygon& clip ) {
+TGPolygon polygon_int( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_INT, subject, clip );
 }
 
 
 // Exclusive or
-FGPolygon polygon_xor( const FGPolygon& subject, const FGPolygon& clip ) {
+TGPolygon polygon_xor( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_XOR, subject, clip );
 }
 
 
 // Union
-FGPolygon polygon_union( const FGPolygon& subject, const FGPolygon& clip ) {
+TGPolygon polygon_union( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_UNION, subject, clip );
 }
 
 
 // canonify the polygon winding, outer contour must be anti-clockwise,
 // all inner contours must be clockwise.
-FGPolygon polygon_canonify( const FGPolygon& in_poly ) {
-    FGPolygon result;
+TGPolygon polygon_canonify( const TGPolygon& in_poly ) {
+    TGPolygon result;
     result.erase();
 
     // Negative areas indicate counter clockwise winding.  Postitive
@@ -415,12 +415,12 @@ FGPolygon polygon_canonify( const FGPolygon& in_poly ) {
 // be determined easily.
 #define FG_MAX_TRIANGLES 100000
 
-FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
+TGPolygon polygon_to_tristrip( const TGPolygon& in_poly ) {
     int i, j;
 
     // canonify the polygon winding, outer contour must be
     // anti-clockwise, all inner contours must be clockwise.
-    FGPolygon canon_poly = polygon_canonify( in_poly );
+    TGPolygon canon_poly = polygon_canonify( in_poly );
 
     // create and fill in the required structures
     int ncontours = canon_poly.contours();
@@ -459,7 +459,7 @@ FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
     
     gpc_polygon_to_tristrip( tmp_poly, tmp_tristrip );
 
-    FGPolygon result;
+    TGPolygon result;
 
     for ( int i = 0; i < tmp_tristrip->num_strips; ++i ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  processing strip = "
@@ -499,7 +499,7 @@ FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
 // wrapper functions for gpc polygon to tristrip routine
 //
 
-FGPolygon polygon_to_tristrip_old( const FGPolygon& in_poly ) {
+TGPolygon polygon_to_tristrip_old( const TGPolygon& in_poly ) {
     gpc_polygon *tmp_poly = new gpc_polygon;
     tmp_poly->num_contours = 0;
     tmp_poly->contour = NULL;
@@ -512,7 +512,7 @@ FGPolygon polygon_to_tristrip_old( const FGPolygon& in_poly ) {
     
     gpc_polygon_to_tristrip( tmp_poly, tmp_tristrip );
 
-    FGPolygon result;
+    TGPolygon result;
 
     for ( int i = 0; i < tmp_tristrip->num_strips; ++i ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  processing strip = "
@@ -548,7 +548,7 @@ FGPolygon polygon_to_tristrip_old( const FGPolygon& in_poly ) {
 
 // Send a polygon to standard output.
 ostream &
-operator<< (ostream &output, const FGPolygon &poly)
+operator<< (ostream &output, const TGPolygon &poly)
 {
     int nContours = poly.contours();
     output << nContours << endl;

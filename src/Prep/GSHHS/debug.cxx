@@ -59,7 +59,7 @@ AreaType get_shapefile_type(int rec) {
 
 
 // write result to unique file name
-void write_result( const FGPolygon& result ) {
+void write_result( const TGPolygon& result ) {
     static int count = 0;
     char fname[256];
     FILE *fp;
@@ -94,10 +94,10 @@ void write_result( const FGPolygon& result ) {
 // process shape front end ... split shape into lon = -180 ... 180,
 // -360 ... -180, and 180 ... 360 ... shift the offset sections and
 // process each separately
-void gen_clipped_polygon( const FGPolygon& shape, const FGPolygon& clip ) {
-    FGPolygon lower_mask, center_mask, upper_mask;
-    FGPolygon lower_shape, center_shape, upper_shape;
-    FGPolygon result;
+void gen_clipped_polygon( const TGPolygon& shape, const TGPolygon& clip ) {
+    TGPolygon lower_mask, center_mask, upper_mask;
+    TGPolygon lower_shape, center_shape, upper_shape;
+    TGPolygon result;
 
     lower_mask.erase();
     lower_mask.add_node( 0, Point3D(-360, -90, 0) );
@@ -143,7 +143,7 @@ void gen_clipped_polygon( const FGPolygon& shape, const FGPolygon& clip ) {
 int main( int argc, char **argv ) {
     struct GSHHS h;
     struct POINT p;
-    FGPolygon shape, clip;
+    TGPolygon shape, clip;
     double w, e, s, n, area, lon, lat;
     int k, max_east = 270000000;
     char source;

@@ -50,7 +50,7 @@ typedef polytype::iterator polytype_iterator;
 typedef polytype::const_iterator const_polytype_iterator;
 
 
-class FGPolygon {
+class TGPolygon {
 
 private:
 
@@ -61,8 +61,8 @@ private:
 public:
 
     // Constructor and destructor
-    FGPolygon( void );
-    ~FGPolygon( void );
+    TGPolygon( void );
+    ~TGPolygon( void );
 
     // Add a contour
     inline void add_contour( const point_list contour, const int hole_flag ) {
@@ -178,39 +178,39 @@ public:
 };
 
 
-typedef vector < FGPolygon > poly_list;
+typedef vector < TGPolygon > poly_list;
 typedef poly_list::iterator poly_list_iterator;
 typedef poly_list::const_iterator const_poly_list_iterator;
 
 
 // canonify the polygon winding, outer contour must be anti-clockwise,
 // all inner contours must be clockwise.
-FGPolygon polygon_canonify( const FGPolygon& in_poly );
+TGPolygon polygon_canonify( const TGPolygon& in_poly );
 
 
 // Wrapper for the fast Polygon Triangulation based on Seidel's
 // Algorithm by Atul Narkhede and Dinesh Manocha
 // http://www.cs.unc.edu/~dm/CODE/GEM/chapter.html
 
-FGPolygon polygon_to_tristrip( const FGPolygon& poly );
+TGPolygon polygon_to_tristrip( const TGPolygon& poly );
 
 
 // wrapper functions for gpc polygon clip routines
 
 // Difference
-FGPolygon polygon_diff(	const FGPolygon& subject, const FGPolygon& clip );
+TGPolygon polygon_diff(	const TGPolygon& subject, const TGPolygon& clip );
 
 // Intersection
-FGPolygon polygon_int( const FGPolygon& subject, const FGPolygon& clip );
+TGPolygon polygon_int( const TGPolygon& subject, const TGPolygon& clip );
 
 // Exclusive or
-FGPolygon polygon_xor( const FGPolygon& subject, const FGPolygon& clip );
+TGPolygon polygon_xor( const TGPolygon& subject, const TGPolygon& clip );
 
 // Union
-FGPolygon polygon_union( const FGPolygon& subject, const FGPolygon& clip );
+TGPolygon polygon_union( const TGPolygon& subject, const TGPolygon& clip );
 
 // Output
-ostream &operator<< (ostream &output, const FGPolygon &poly);
+ostream &operator<< (ostream &output, const TGPolygon &poly);
 
 
 #endif // _POLYGON_HXX

@@ -48,7 +48,7 @@ SG_USING_STD(vector);
 class FGPolyList {
 public:
     poly_list polys[FG_MAX_AREA_TYPES];
-    FGPolygon safety_base;
+    TGPolygon safety_base;
 };
 
 class FGMerger {

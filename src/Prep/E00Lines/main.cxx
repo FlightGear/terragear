@@ -169,7 +169,7 @@ processPoints (const E00 &data, const tg::Rectangle &bounds,
   int nPoints = data.nPoints();
   cout << "Processing " << nPoints << " points" << endl;
   for (int i = 1; i <= nPoints; i++) {
-    FGPolygon shape;
+    TGPolygon shape;
     const E00::LAB &lab = data.getLAB(i);
     Point3D p(lab.coord.x, lab.coord.y, 0);
 
@@ -201,7 +201,7 @@ processLines (const E00 &data, const tg::Rectangle &bounds,
   int nLines = data.nLines();
   cout << "Processing " << nLines << " lines." << endl;
   for (int i = 1; i <= nLines; i++) {
-    FGPolygon shape;
+    TGPolygon shape;
     const E00::ARC &arc = data.getARC(i);
     tg::Rectangle arcBounds = makeBounds(arc);
     if (!bounds.isOverlapping(arcBounds)) {
@@ -260,7 +260,7 @@ processPolygons (const E00 &data, const tg::Rectangle &bounds,
   cout << "Processing " << nPolygons << " polygons" << endl;
 
   for (int i = 2; i <= nPolygons; i++) {
-    FGPolygon shape;
+    TGPolygon shape;
 				// Test whether the polygon matches
 				// at least one of the attributes
 				// provided.

@@ -54,7 +54,7 @@ class FGPolyList
 {
 public:
     poly_list polys[FG_MAX_AREA_TYPES];
-    FGPolygon safety_base;
+    TGPolygon safety_base;
 };
 
 
@@ -83,17 +83,17 @@ public:
     bool load_osgb36_polys(const string& path);
 
     // Add a polygon.
-    void add_poly(int area, const FGPolygon &poly);
+    void add_poly(int area, const TGPolygon &poly);
 
     // Remove any slivers from in polygon and move them to out
     // polygon.
-    void move_slivers( FGPolygon& in, FGPolygon& out );
+    void move_slivers( TGPolygon& in, TGPolygon& out );
 
     // For each sliver contour, see if a union with another polygon
     // yields a polygon with no increased contours (i.e. the sliver is
     // adjacent and can be merged.)  If so, replace the clipped
     // polygon with the new polygon that has the sliver merged in.
-    void merge_slivers( FGPolyList& clipped, FGPolygon& slivers );
+    void merge_slivers( FGPolyList& clipped, TGPolygon& slivers );
     
     // Do actual clipping work.
     bool clip_all(const point2d& min, const point2d& max);

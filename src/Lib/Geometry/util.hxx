@@ -70,7 +70,7 @@ bool getIntersection (const Point3D &p0, const Point3D &p1,
  * @param width The width in standard units (meters for FlightGear).
  * @param polygon The object that will hold the new polygon.
  */
-void makePolygon (const Point3D &p, int width, FGPolygon &polygon);
+void makePolygon (const Point3D &p, int width, TGPolygon &polygon);
 
 
 /**
@@ -86,7 +86,7 @@ void makePolygon (const Point3D &p, int width, FGPolygon &polygon);
  * @param width The width in standard units (meters for FlightGear).
  * @param polygon The object that will hold the new polygon.
  */
-void makePolygon (const Line &line, int width, FGPolygon &polygon);
+void makePolygon (const Line &line, int width, TGPolygon &polygon);
 
 
 /**
@@ -95,7 +95,7 @@ void makePolygon (const Line &line, int width, FGPolygon &polygon);
  * @param polygon The polygon to make the rectangle for.
  * @return The bounding rectangle.
  */
-Rectangle makeBounds (const FGPolygon &polygon);
+Rectangle makeBounds (const TGPolygon &polygon);
 
 
 /**

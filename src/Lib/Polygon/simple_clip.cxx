@@ -81,7 +81,7 @@ static bool intersects_y( Point3D p0, Point3D p1, double y, Point3D *result ) {
 
 // find the smallest point in contour 0 of poly such that x > min_x
 // and y = y.  Returns index of the found point, -1 if no match found.
-static int find_point( const FGPolygon& poly, double min_x, double y ) {
+static int find_point( const TGPolygon& poly, double min_x, double y ) {
     Point3D p, save;
     int index = -1;
 
@@ -173,9 +173,9 @@ inline bool is_inside( double line, Point3D p, fgSideType side ) {
 
 // Walk through the input polygon and split it into the
 // portion that is inside the clip region
-static bool simple_clip( const FGPolygon& in, const double y,
+static bool simple_clip( const TGPolygon& in, const double y,
 			 const fgSideType side,
-			 FGPolygon& result )
+			 TGPolygon& result )
 {
     Point3D p, p_last, p_int;
     int i;
@@ -253,7 +253,7 @@ static bool simple_clip( const FGPolygon& in, const double y,
 
 
 // build the list of intersections
-static bool build_intersections( const FGPolygon& arcs, double line, 
+static bool build_intersections( const TGPolygon& arcs, double line, 
 				 fgSideType side,
 				 int_list& keep_ints, 
 				 int_list& ignore_ints )
@@ -329,8 +329,8 @@ static bool build_intersections( const FGPolygon& arcs, double line,
 
 
 // test for duplicate nodes
-FGPolygon fix_dups( FGPolygon& in ) {
-    FGPolygon result;
+TGPolygon fix_dups( TGPolygon& in ) {
+    TGPolygon result;
 
     double x_last = -20000.0;
     double y_last = -20000.0;
@@ -357,11 +357,11 @@ FGPolygon fix_dups( FGPolygon& in ) {
 // with single contour polygons (no holes.)  Returns true if routine
 // thinks it was successful.
 
-static bool clip_contour( const FGPolygon& in, const double y, 
+static bool clip_contour( const TGPolygon& in, const double y, 
 			  const fgSideType side, 
-			  FGPolygon& result )
+			  TGPolygon& result )
 {
-    FGPolygon result_arcs, arcs;
+    TGPolygon result_arcs, arcs;
     int i, i1, i2, index;
 
 
@@ -423,7 +423,7 @@ static bool clip_contour( const FGPolygon& in, const double y,
     // Step 4: If we are finding the "below" clip, reverse the points
     // before extracting the cycles.  (and remove duplicates)
 
-    FGPolygon tmp;
+    TGPolygon tmp;
     tmp.erase();
 
     if ( side == Below ) {
@@ -533,10 +533,10 @@ static bool clip_contour( const FGPolygon& in, const double y,
 // results.  Doesn't work with holes.  Returns true if routine thinks
 // it was successful.
 
-FGPolygon horizontal_clip( const FGPolygon& in, const double y, 
+TGPolygon horizontal_clip( const TGPolygon& in, const double y, 
 		      const fgSideType side )
 {
-    FGPolygon result;
+    TGPolygon result;
     result.erase();
 
     // Step 1: sanity checks
@@ -546,7 +546,7 @@ FGPolygon horizontal_clip( const FGPolygon& in, const double y,
     }
 
     // clip each contour individually
-    FGPolygon tmp_poly, clip_poly;
+    TGPolygon tmp_poly, clip_poly;
     point_list contour;
 
     for ( int i = 0; i < in.contours(); ++i ) {

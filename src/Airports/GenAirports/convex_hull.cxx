@@ -103,7 +103,7 @@ bool test_point(Point3D Pa, Point3D Pb, Point3D Pc) {
 // calculate the convex hull of a set of points, return as a list of
 // point2d.  The algorithm description can be found at:
 // http://riot.ieor.berkeley.edu/riot/Applications/ConvexHull/CHDetails.html
-FGPolygon convex_hull( const point_list& input_list ) {
+TGPolygon convex_hull( const point_list& input_list ) {
     int i;
 
     map_iterator map_current, map_next, map_next_next, map_last;
@@ -115,7 +115,7 @@ FGPolygon convex_hull( const point_list& input_list ) {
     map_container radians_map;
 
     // will contain the convex hull
-    FGPolygon con_hull;
+    TGPolygon con_hull;
 
     Point3D p, Pa, Pb, Pc, result;
     double sum_x, sum_y;

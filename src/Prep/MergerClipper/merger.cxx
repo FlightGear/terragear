@@ -74,7 +74,7 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
     exit(-1);
   }
   
-  FGPolygon poly;
+  TGPolygon poly;
   
   Point3D p;
   in >> skipcomment;
@@ -155,7 +155,7 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
 
 void FGMerger::merge( FGPolyList& clipped ) {
   
-  FGPolygon poly, result, sliver;
+  TGPolygon poly, result, sliver;
   bool done;
   done=false;
   
@@ -186,7 +186,7 @@ void FGMerger::merge( FGPolyList& clipped ) {
 
 
 void FGMerger::clip(FGPolyList& subject, FGPolyList& clip) {
-  FGPolygon poly, result, cliped, difference;
+  TGPolygon poly, result, cliped, difference;
   int max_a[FG_MAX_AREA_TYPES];
   int area;
   int max_area = 0;
@@ -220,8 +220,8 @@ void FGMerger::clip(FGPolyList& subject, FGPolyList& clip) {
 }
 
 void FGMerger::write(FGPolyList& subject, string& file) {
-  FGPolygon poly;
-  char tile_name[256], poly_index[256];
+  TGPolygon poly;
+  char poly_index[256];
   
   for ( int area = 0; area < FG_MAX_AREA_TYPES; ++area ) {
     //cout << "  testing area = " << area << endl;

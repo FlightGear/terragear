@@ -44,12 +44,12 @@
 #include <Polygon/polygon.hxx>
 
 
-void write_polygon( const FGPolygon& poly, const string& base );
+void write_polygon( const TGPolygon& poly, const string& base );
 
 // update index
 void write_index(const string& base, const SGBucket& b, const string& name);
 
 void write_boundary( const string& base, const SGBucket& b, 
-		     const FGPolygon& bounds, long int p_index );
+		     const TGPolygon& bounds, long int p_index );
 
 #endif // _TG_OUTPUT_HXX

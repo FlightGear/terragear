@@ -35,15 +35,15 @@
 
 void gen_number_block( const FGRunway& rwy_info,
 			      const string& material,
-			      FGPolygon poly, double heading, int num,
+			      TGPolygon poly, double heading, int num,
 			      double start_pct, double end_pct,
 			      superpoly_list *rwy_polys,
 			      texparams_list *texparams,
-			      FGPolygon *accum );
+			      TGPolygon *accum );
 
 // generate a section of runway
 void gen_runway_section( const FGRunway& rwy_info,
-			 const FGPolygon& runway,
+			 const TGPolygon& runway,
 			 double startl_pct, double endl_pct,
 			 double startw_pct, double endw_pct,
 			 double heading,
@@ -51,7 +51,7 @@ void gen_runway_section( const FGRunway& rwy_info,
 			 const string& material,
 			 superpoly_list *rwy_polys,
 			 texparams_list *texparams,
-			 FGPolygon *accum  );
+			 TGPolygon *accum  );
 
 
 #endif // _RWY_COMMON_HXX

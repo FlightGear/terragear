@@ -126,7 +126,7 @@ public:
    *
    * @return A four-vertex polygon representing this rectangle.
    */
-  virtual const FGPolygon toPoly () const;
+  virtual const TGPolygon toPoly () const;
 
 private:
   Point3D _min;

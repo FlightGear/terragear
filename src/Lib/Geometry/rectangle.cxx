@@ -72,10 +72,10 @@ Rectangle::isOverlapping (const Rectangle &r) const
 	  (max.y() >= _min.y()) && (min.y() <= _max.y()));
 }
 
-const FGPolygon
+const TGPolygon
 Rectangle::toPoly () const
 {
-  FGPolygon poly;
+  TGPolygon poly;
   poly.add_node(0, _min);
   poly.add_node(0, Point3D(_max.x(), _min.y(), 0));
   poly.add_node(0, _max);

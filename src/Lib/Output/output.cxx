@@ -49,7 +49,7 @@ SG_USING_STD( cout );
 SG_USING_STD( endl );
 
 
-void write_polygon( const FGPolygon& poly, const string& base ) {
+void write_polygon( const TGPolygon& poly, const string& base ) {
     for ( int i = 0; i < poly.contours(); ++i ) {
 	char name[256];
 	sprintf(name, "%s%d", base.c_str(), i );
@@ -93,7 +93,7 @@ void write_index(const string& base, const SGBucket& b, const string& name) {
 
 
 void write_boundary( const string& base, const SGBucket& b, 
-		     const FGPolygon& bounds, long int p_index )
+		     const TGPolygon& bounds, long int p_index )
 {
     Point3D p;
 

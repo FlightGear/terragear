@@ -39,7 +39,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 			const string& material,
 			superpoly_list *rwy_polys,
 			texparams_list *texparams,
-			FGPolygon *accum )
+			TGPolygon *accum )
 {
 
     //
@@ -48,12 +48,12 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 
     int i, j;
 
-    FGPolygon runway = gen_runway_w_mid( rwy_info, alt_m,
+    TGPolygon runway = gen_runway_w_mid( rwy_info, alt_m,
                                          2 * SG_FEET_TO_METER,
                                          2 * SG_FEET_TO_METER );
 
     // runway half "a"
-    FGPolygon runway_a;
+    TGPolygon runway_a;
     runway_a.erase();
     runway_a.add_node( 0, runway.get_pt(0, 0) );
     runway_a.add_node( 0, runway.get_pt(0, 1) );
@@ -62,7 +62,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 
 
     // runway half "b"
-    FGPolygon runway_b;
+    TGPolygon runway_b;
     runway_b.erase();
     runway_b.add_node( 0, runway.get_pt(0, 3) );
     runway_b.add_node( 0, runway.get_pt(0, 4) );

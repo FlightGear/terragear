@@ -1,4 +1,4 @@
-// poly_support.hxx -- additional supporting routines for the FGPolygon class
+// poly_support.hxx -- additional supporting routines for the TGPolygon class
 //                     specific to the object building process.
 //
 // Written by Curtis Olson, started October 1999.
@@ -53,7 +53,7 @@ inline double triangle_area( const Point3D p1,
 
 // basic triangulation of a polygon with out adding points or
 // splitting edges
-void polygon_tesselate( const FGPolygon &p,
+void polygon_tesselate( const TGPolygon &p,
 			triele_list &elelist,
 			point_list &out_pts );
 
@@ -62,28 +62,28 @@ void polygon_tesselate( const FGPolygon &p,
 // with one contour per tesselated triangle.  This is mostly just a
 // wrapper for the polygon_tesselate() function.  Note, this routine
 // will modify the points_inside list for your polygon.
-FGPolygon polygon_tesselate_alt( FGPolygon &p );
+TGPolygon polygon_tesselate_alt( TGPolygon &p );
 
 // calculate some "arbitrary" point inside the specified contour for
 // assigning attribute areas.  This requires data structures outside
-// of "FGPolygon" which is why it is living over here in "Lib/Geometry"
-Point3D calc_point_inside_old( const FGPolygon& p, const int contour, 
+// of "TGPolygon" which is why it is living over here in "Lib/Geometry"
+Point3D calc_point_inside_old( const TGPolygon& p, const int contour, 
 			       const TGTriNodes& trinodes );
 
 // calculate some "arbitrary" point inside each of the polygons contours
-void calc_points_inside( FGPolygon& p );
+void calc_points_inside( TGPolygon& p );
 
 // snap all points to a grid
-FGPolygon snap( const FGPolygon &poly, double grid_size );
+TGPolygon snap( const TGPolygon &poly, double grid_size );
 
 // remove duplicate nodes in a polygon should they exist.  Returns the
 // fixed polygon
-FGPolygon remove_dups( const FGPolygon &poly );
+TGPolygon remove_dups( const TGPolygon &poly );
 
 
 // Search each segment of each contour for degenerate points (i.e. out
 // of order points that lie coincident on other segments
-FGPolygon reduce_degeneracy( const FGPolygon& poly );
+TGPolygon reduce_degeneracy( const TGPolygon& poly );
 
 
 // Find a point in the given node list that lies between start and
@@ -92,7 +92,7 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 			     const point_list& nodes, Point3D *result );
 
 // remove any degenerate contours
-FGPolygon remove_bad_contours( const FGPolygon &poly );
+TGPolygon remove_bad_contours( const TGPolygon &poly );
 
 
 #endif // _POLY_SUPPORT_HXX

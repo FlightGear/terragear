@@ -59,7 +59,7 @@ SG_USING_STD( cout );
 int main( int argc, char **argv ) {
     struct GSHHS h;
     struct POINT p;
-    FGPolygon shape;
+    TGPolygon shape;
     double w, e, s, n, area, lon, lat, last_lon, last_lat;
     int k, max_east = 270000000;
     char source;

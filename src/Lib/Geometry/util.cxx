@@ -51,7 +51,7 @@ getIntersection (const Point3D &p0, const Point3D &p1,
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 void
-makePolygon (const Point3D &p, int width, FGPolygon &polygon)
+makePolygon (const Point3D &p, int width, TGPolygon &polygon)
 {
   double x, y, az;
   double lon = p.x();
@@ -73,9 +73,9 @@ makePolygon (const Point3D &p, int width, FGPolygon &polygon)
 
 
 void
-makePolygon (const Line &line, int width, FGPolygon &polygon)
+makePolygon (const Line &line, int width, TGPolygon &polygon)
 {
-  vector<FGPolygon> segment_list;
+  vector<TGPolygon> segment_list;
 
   int nPoints = line.getPointCount();
   int i;
@@ -148,9 +148,9 @@ makePolygon (const Line &line, int width, FGPolygon &polygon)
 
 
 Rectangle
-makeBounds (const FGPolygon &polygon)
+makeBounds (const TGPolygon &polygon)
 {
-    double min_x, min_y, max_x, max_y;
+    double min_x = 0.0, min_y = 0.0, max_x = 0.0, max_y = 0.0;
     for (int i = 0; i < polygon.contours(); i++) {
         for (int j = 0; j < polygon.contour_size(i); j++) {
             Point3D p = polygon.get_pt(i, j);

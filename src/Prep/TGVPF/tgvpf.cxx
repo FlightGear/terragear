@@ -106,10 +106,10 @@ vpf2tg (const VpfRectangle &rect)
 /**
  * Convert a VPF polygon to a TerraGear polygon.
  */
-static const FGPolygon
+static const TGPolygon
 vpf2tg (const VpfPolygon &polygon)
 {
-  FGPolygon shape;
+  TGPolygon shape;
 
   shape.erase();
   int nContours = polygon.getContourCount();
@@ -184,7 +184,7 @@ checkAttribute (const VpfFeature &feature, int index, const Attribute &att)
  * @return The area of the bounding rectangle in m^2.
  */
 static double
-getArea (const FGPolygon &polygon)
+getArea (const TGPolygon &polygon)
 {
     tg::Rectangle bounds = tg::makeBounds(polygon);
     Point3D min =
@@ -400,7 +400,7 @@ main (int argc, const char **argv)
   //
   // Make the TerraGear polygon for the bounds.
   //
-  FGPolygon bounds_poly = bounds.toPoly();
+  TGPolygon bounds_poly = bounds.toPoly();
 
   //
   // Show settings.
@@ -449,7 +449,7 @@ main (int argc, const char **argv)
     cerr << "Searching through " << nTopologies << " topologies" << endl;
     int nAttributes = attributes.size();
 
-    FGPolygon mask;
+    TGPolygon mask;
     for (int i = 0; i < nTopologies; i++) {
       if ((i % 1000) == 0)
 	cerr << i << "..." << endl;
@@ -469,7 +469,7 @@ main (int argc, const char **argv)
       if (skip)
 	continue;
 	  
-      FGPolygon shape;
+      TGPolygon shape;
       switch (type) {
 	// FIXME: check for attributes as well
       case VpfFeature::POINT: {

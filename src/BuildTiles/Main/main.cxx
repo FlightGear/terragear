@@ -224,7 +224,7 @@ static int actual_load_polys( const string& dir,
 // Merge a polygon with an existing one if possible, append a new one
 // otherwise; this function is used by actual_load_landcover, below,
 // to reduce the number of separate polygons.
-static void inline add_to_polys ( FGPolygon &accum, const FGPolygon &poly) {
+static void inline add_to_polys ( TGPolygon &accum, const TGPolygon &poly) {
     if ( accum.contours() > 0 ) {
 	accum = polygon_union( accum, poly );
     } else {
@@ -267,7 +267,7 @@ static AreaType get_area_type (const LandCover &cover,
 
 // make the area specified area, look up the land cover type, and add
 // it to polys
-static void make_area( const LandCover &cover, FGPolygon *polys,
+static void make_area( const LandCover &cover, TGPolygon *polys,
 		       double x1, double y1, double x2, double y2,
 		       double half_dx, double half_dy )
 {
@@ -275,7 +275,7 @@ static void make_area( const LandCover &cover, FGPolygon *polys,
 				  x2 - x1, y2 - y1);
     if (area != DefaultArea) {
 	// Create a square polygon and merge it into the list.
-	FGPolygon poly;
+	TGPolygon poly;
 	poly.erase();
 	poly.add_node(0, Point3D(x1, y1, 0.0));
 	poly.add_node(0, Point3D(x1, y2, 0.0));
@@ -296,8 +296,8 @@ static int actual_load_landcover ( FGConstruct & c,
     try {
 
         LandCover cover(c.get_cover());
-        FGPolygon polys[FG_MAX_AREA_TYPES];
-        FGPolygon poly;		// working polygon
+        TGPolygon polys[FG_MAX_AREA_TYPES];
+        TGPolygon poly;		// working polygon
 
         double dx = 1.0 / 120.0;
         double dy = dx;
