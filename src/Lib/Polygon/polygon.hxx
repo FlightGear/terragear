@@ -54,10 +54,10 @@ class TGPolygon {
 
 private:
 
-    polytype poly;           // polygons
-    point_list inside_list;  // point inside list
-    int_list hole_list;      // hole flag list
-
+    polytype poly;              // polygons
+    point_list inside_list;     // point inside list
+    int_list hole_list;         // hole flag list
+    
 public:
 
     // Constructor and destructor
@@ -148,6 +148,15 @@ public:
 	}
 	return false;
     }
+
+    // Set the elevations of points in the current polgyon based on
+    // the elevations of points in source.  For points that are not
+    // found in source, propogate the value from the nearest matching
+    // point.
+    void inherit_elevations( const TGPolygon &source );
+
+    // Set the elevations of all points to the specified values
+    void set_elevations( double elev );
 
     // shift every point in the polygon by lon, lat
     void shift( double lon, double lat );

@@ -42,12 +42,90 @@ SG_USING_STD(endl);
 #include "polygon.hxx"
 
 // Constructor 
-TGPolygon::TGPolygon( void ) {
+TGPolygon::TGPolygon( void )
+{
 }
 
 
 // Destructor
 TGPolygon::~TGPolygon( void ) {
+}
+
+
+// Set the elevations of points in the current polgyon based on the
+// elevations of points in source.  For points that are not found in
+// source, propogate the value from the nearest matching point.
+void TGPolygon::inherit_elevations( const TGPolygon &source ) {
+    TGTriNodes nodes;
+    nodes.clear();
+
+    int i, j;
+
+    // build a list of points from the source and dest polygons
+
+    for ( i = 0; i < source.contours(); ++i ) {
+        for ( j = 0; j < source.contour_size(i); ++j ) {
+            Point3D p = source.get_pt( i, j );
+            nodes.unique_add( p );
+        }
+    }
+
+    // traverse the dest polygon and build a mirror image but with
+    // elevations from the source polygon
+
+    for ( i = 0; i < poly.size(); ++i ) {
+        for ( j = 0; j < poly[i].size(); ++j ) {
+            Point3D p = poly[i][j];
+            int index = nodes.find( p );
+            if ( index >= 0 ) {
+                Point3D ref = nodes.get_node( index );
+                poly[i][j].setz( ref.z() );
+            }
+        }
+    }
+
+    // now post process result to catch any nodes that weren't updated
+    // (because the clipping process may have added points which
+    // weren't in the original.)
+
+    double last = -9999.0;
+    for ( i = 0; i < poly.size(); ++i ) {
+        // go front ways
+        last = -9999.0;
+        for ( j = 0; j < poly[i].size(); ++j ) {
+            Point3D p = poly[i][j];
+            if ( p.z() > -9000 ) {
+                last = p.z();
+            } else {
+               if ( last > -9000 ) {
+                   poly[i][j].setz( last );
+               }
+            }
+        }
+
+        // go back ways
+        last = -9999.0;
+        for ( j = poly[i].size() - 1; j >= 0; --j ) {
+            Point3D p = poly[i][j];
+            if ( p.z() > -9000 ) {
+                last = p.z();
+            } else {
+               if ( last > -9000 ) {
+                   poly[i][j].setz( last );
+               }
+            }
+        }
+    }
+}
+
+
+// Set the elevations of all points to the specified values
+void TGPolygon::set_elevations( double elev ) {
+    for ( unsigned i = 0; i < poly.size(); ++i ) {
+        for ( unsigned int j = 0; j < poly[i].size(); ++j ) {
+            poly[i][j].setz( elev );
+        }
+    }
 }
 
 
@@ -255,95 +333,6 @@ void make_gpc_poly( const TGPolygon& in, gpc_polygon *out ) {
 }
 
 
-// Set the elevations of points in dest based on the elevations of
-// points in source.  For points in dest that are not in source,
-// propogate the value from the nearest matching point.
-static TGPolygon preserve_elevations( const TGPolygon &source,
-                                      const TGPolygon &dest )
-{
-    TGTriNodes nodes;
-    nodes.clear();
-
-    int i, j;
-
-    // build a list of points from the source polygon
-
-    for ( i = 0; i < source.contours(); ++i ) {
-        for ( j = 0; j < source.contour_size(i); ++j ) {
-            Point3D p = source.get_pt( i, j );
-            nodes.unique_add( p );
-        }
-    }
-
-    // traverse the dest polygon and build a mirror image but with
-    // elevations from the source polygon
-
-    TGPolygon result;
-    result.erase();
-
-    for ( i = 0; i < dest.contours(); ++i ) {
-        for ( j = 0; j < dest.contour_size(i); ++j ) {
-            Point3D p = dest.get_pt( i, j );
-            int index = nodes.find( p );
-            if ( index >= 0 ) {
-                Point3D ref = nodes.get_node( index );
-                p.setz( ref.z() );
-            } else {
-                p.setz( -9999.0 );
-            }
-            result.add_node( i, p );
-        }
-    }
-
-    // now post process result to catch any nodes that weren't updated
-    // (because the clipping process may have added points which
-    // weren't in the original.)
-
-    double last = -9999.0;
-    for ( i = 0; i < result.contours(); ++i ) {
-        // go front ways
-        last = -9999.0;
-        for ( j = 0; j < result.contour_size(i); ++j ) {
-            Point3D p = result.get_pt( i, j );
-            if ( p.z() > -9000 ) {
-                last = p.z();
-            } else {
-               if ( last > -9000 ) {
-                   p.setz( last );
-                   result.set_pt( i, j, p );
-               }
-            }
-        }
-
-        // go back ways
-        last = -9999.0;
-        for ( j = result.contour_size(i) - 1; j >= 0; --j ) {
-            Point3D p = result.get_pt( i, j );
-            if ( p.z() > -9000 ) {
-                last = p.z();
-            } else {
-               if ( last > -9000 ) {
-                   p.setz( last );
-                   result.set_pt( i, j, p );
-               }
-            }
-        }
-
-        // finally drop ten and punt on any points that are still
-        // elevation-less and set their elevations to zero.
-        for ( j = 0; j < result.contour_size(i); ++j ) {
-            Point3D p = result.get_pt( i, j );
-            if ( p.z() < -9000 ) {
-                p.setz( 0.0 );
-                result.set_pt( i, j, p );
-            }
-        }
-    }
-
-    return result;
-}
-
-
 // Set operation type
 typedef enum {
     POLY_DIFF,			// Difference
@@ -403,7 +392,7 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
 	for ( int j = 0; j < gpc_result->contour[i].num_vertices; j++ ) {
 	    Point3D p( gpc_result->contour[i].vertex[j].x,
 		       gpc_result->contour[i].vertex[j].y,
-		       0 );
+		       -9999.0 );
 	    // junkp = in_nodes.get_node( index );
 	    // fprintf(junkfp, "%.4f %.4f\n", junkp.x(), junkp.y());
 	    result.add_node(i, p);
@@ -421,8 +410,6 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
     gpc_free_polygon( gpc_subject );
     gpc_free_polygon( gpc_clip );
     gpc_free_polygon( gpc_result );
-
-    result = preserve_elevations( clip, result );
 
     return result;
 }
