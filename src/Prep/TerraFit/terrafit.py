@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-ArrayFit.py -- Use Terra as a faster ArrayFit see
+terrafit.py -- Use Terra as a faster ArrayFit see
 http://graphics.cs.uiuc.edu/~garland/software/terra.html
 
 Norman Vine nhv@cape.com
@@ -155,7 +155,7 @@ def terra_fit(fname, thresh=1, count=1000, factor=1.0/30.0, minnodes=50):
         os.remove(objName)
 
 ##
-def walk_tree_fit(dir, thresh=1, count=600, factor=1.0/30.0, minnodes=50):
+def walk_tree_fit(dir, thresh=1, count=1000, factor=1.0/30.0, minnodes=50):
     for name in os.listdir(dir):
         path = os.path.join(dir, name)
         if os.path.isdir(path):
@@ -169,16 +169,16 @@ def usage(msg=''):
     sys.stderr.write('Usage: %s\n'%(sys.argv[0]))
     sys.stderr.write("\t -h | --help \n")
     sys.stderr.write("\t -m | --minnodes 50\n")
-    sys.stderr.write("\t -x | --maxnodes 600\n")
-    sys.stderr.write("\t -e | --maxerror 50\n")
+    sys.stderr.write("\t -x | --maxnodes 1000\n")
+    sys.stderr.write("\t -e | --maxerror 40\n")
     sys.stderr.write("\t -f | --factor %f\n"%(1.0/30.0))
     sys.stderr.write("\t -v | --version\n")
     sys.stderr.write("\t [file] | [path to walk]\n")
     sys.stderr.write("\n")
     sys.stderr.write("Algorithm will produce at least 50 fitted nodes, but no\n")
-    sys.stderr.write("more than 600.  Within that range, the algorithm will stop\n")
+    sys.stderr.write("more than 1000.  Within that range, the algorithm will stop\n")
     sys.stderr.write("if the maximum elevation error for any remaining point\n")
-    sys.stderr.write("drops below 50 meters.\n")
+    sys.stderr.write("drops below 40 meters.\n")
     sys.stderr.write("\n")
     sys.stderr.write("Increasing the maxnodes value and/or decreasing maxerror\n")
     sys.stderr.write("will produce a better surface approximation.\n")
@@ -203,8 +203,8 @@ def main():
         usage()
         sys.exit(1)
     minnodes = 50
-    maxnodes = 600
-    maxerror = 50.0
+    maxnodes = 1000
+    maxerror = 40.0
     factor = 1.0/30.0
     infile = None
     quiet = 0
