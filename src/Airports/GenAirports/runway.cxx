@@ -83,8 +83,8 @@ FGPolygon gen_area(Point3D origin, double angle, const FGPolygon& cart_list) {
     for ( i = 0; i < rad_list.contour_size( 0 ); ++i) {
 	p = rad_list.get_pt( 0, i );
 	double theta = p.y() + angle;
-        while ( theta < SG_2PI ) {
-            theta += SG_2PI;
+        while ( theta < SGD_2PI ) {
+            theta += SGD_2PI;
 	}
 	p.sety( theta );
 	rad_list.set_pt( 0, i, p );
