@@ -83,10 +83,10 @@ vpf2tg (const VpfPoint &p)
 /**
  * Convert a VPF line to a regular TerraGear line.
  */
-static const Line
+static const tg::Line
 vpf2tg (const VpfLine &l)
 {
-  Line result;
+  tg::Line result;
   int nPoints = l.getPointCount();
   for (int i = 0; i < nPoints; i++)
     result.addPoint(vpf2tg(l.getPoint(i)));
@@ -97,10 +97,10 @@ vpf2tg (const VpfLine &l)
 /**
  * Convert a VPF rectangle to a TerraGear rectangle.
  */
-static inline const Rectangle
+static inline const tg::Rectangle
 vpf2tg (const VpfRectangle &rect)
 {
-  return Rectangle(Point3D(rect.minX, rect.minY, 0),
+  return tg::Rectangle(Point3D(rect.minX, rect.minY, 0),
 		   Point3D(rect.maxX, rect.maxY, 0));
 }
 
@@ -188,7 +188,7 @@ checkAttribute (const VpfFeature &feature, int index, const Attribute &att)
 static double
 getArea (const FGPolygon &polygon)
 {
-    Rectangle bounds = makeBounds(polygon);
+    tg::Rectangle bounds = tg::makeBounds(polygon);
     Point3D min =
         sgGeodToCart(Point3D(bounds.getMin().x() * SGD_DEGREES_TO_RADIANS,
                              bounds.getMin().y() * SGD_DEGREES_TO_RADIANS,
@@ -281,7 +281,7 @@ main (int argc, const char **argv)
 
 
 				// Default values
-  Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0));
+  tg::Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0));
   bool invert = false;
   AreaType material_type = DefaultArea;
   int width = -1;		// use default
@@ -298,7 +298,7 @@ main (int argc, const char **argv)
     string arg = argv[argPos];
 
     if (arg.find("--chunk=") == 0) {
-        bounds = parseChunk(arg.substr(8));
+        bounds = tg::parseChunk(arg.substr(8));
         argPos++;
     }
 
@@ -478,11 +478,11 @@ main (int argc, const char **argv)
 	const Point3D p = vpf2tg(feature.getPoint(i));
 	if (!bounds.isInside(p))
 	  continue;
-	makePolygon(p, (width == -1 ? 500 : width), shape);
+	tg::makePolygon(p, (width == -1 ? 500 : width), shape);
 	break;
       }
       case VpfFeature::LINE: {
-	const Line line = vpf2tg(feature.getLine(i));
+	const tg::Line line = vpf2tg(feature.getLine(i));
 	if (!bounds.isOverlapping(line.getBounds()))
 	  continue;
 	makePolygon(line, (width == -1 ? 50 : width), shape);
@@ -507,7 +507,7 @@ main (int argc, const char **argv)
 	const Point3D p = vpf2tg(feature.getLabel(i).getPoint());
 	if (!bounds.isInside(p))
 	  continue;
-	makePolygon(p, (width == -1 ? 500 : width), shape);
+	tg::makePolygon(p, (width == -1 ? 500 : width), shape);
 	break;
       }
       default:

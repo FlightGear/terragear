@@ -16,6 +16,7 @@
 
 #include <Polygon/polygon.hxx>
 
+namespace tg {
 
 /**
  * A simple rectangle class for bounding rectanglees.
@@ -130,6 +131,8 @@ public:
 private:
   Point3D _min;
   Point3D _max;
+};
+
 };
 
 #endif // __RECTANGLE_HXX

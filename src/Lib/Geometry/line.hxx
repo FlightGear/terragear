@@ -19,6 +19,7 @@ SG_USING_STD(vector);
 
 #include "rectangle.hxx"
 
+namespace tg {
 
 /**
  * A simple multi-segment line class.
@@ -85,6 +86,8 @@ public:
 
 private:
   vector<Point3D> _points;
+};
+
 };
 
 #endif // __LINE_HXX

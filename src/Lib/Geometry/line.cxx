@@ -7,6 +7,8 @@
 
 #include "line.hxx"
 
+namespace tg {
+
 Line::Line ()
 {
 }
@@ -72,5 +74,7 @@ Line::getBounds () const
   Rectangle bounds;
   return bounds;
 }
+
+};
 
 // end of line.cxx

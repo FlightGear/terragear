@@ -6,6 +6,8 @@
 
 #include "rectangle.hxx"
 
+namespace tg {
+
 Rectangle::Rectangle ()
 {
 }
@@ -80,5 +82,7 @@ Rectangle::toPoly () const
   poly.add_node(0, Point3D(_min.x(), _max.y(), 0));
   return poly;
 }
+
+};
 
 // end of rectangle.cxx

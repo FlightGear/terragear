@@ -65,7 +65,7 @@ SG_USING_STD(vector);
 /**
  * Make a bounding box for a single ARC.
  */
-static const Rectangle
+static const tg::Rectangle
 makeBounds (const E00::ARC &arc)
 {
   Point3D min, max;
@@ -81,17 +81,17 @@ makeBounds (const E00::ARC &arc)
       if (y > max.y()) max.sety(y);
     }
   }
-  return Rectangle(min, max);
+  return tg::Rectangle(min, max);
 }
 
 /**
  * Make a bounding box for a polygon.
  */
-static const Rectangle
+static const tg::Rectangle
 makeBounds (const E00::PAL &pal)
 {
-  return Rectangle(Point3D(pal.min.x, pal.min.y, 0),
-		   Point3D(pal.max.x, pal.max.y, 0));
+  return tg::Rectangle(Point3D(pal.min.x, pal.min.y, 0),
+                       Point3D(pal.max.x, pal.max.y, 0));
 }
 
 
@@ -163,7 +163,7 @@ checkAttribute (const E00 &data, int index, const Attribute &att)
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
-processPoints (const E00 &data, const Rectangle &bounds,
+processPoints (const E00 &data, const tg::Rectangle &bounds,
 	       AreaType areaType, const string &workDir, int width)
 {
   double x, y, az;
@@ -180,7 +180,7 @@ processPoints (const E00 &data, const Rectangle &bounds,
       continue;
     }
 
-    makePolygon(p, width, shape);
+    tg::makePolygon(p, width, shape);
     split_polygon(workDir, areaType, shape);
   }
 }
@@ -196,7 +196,7 @@ processPoints (const E00 &data, const Rectangle &bounds,
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
-processLines (const E00 &data, const Rectangle &bounds,
+processLines (const E00 &data, const tg::Rectangle &bounds,
 	      AreaType areaType, const string &workDir, int width,
 	      const vector<Attribute> &aat_list)
 {
@@ -205,7 +205,7 @@ processLines (const E00 &data, const Rectangle &bounds,
   for (int i = 1; i <= nLines; i++) {
     FGPolygon shape;
     const E00::ARC &arc = data.getARC(i);
-    Rectangle arcBounds = makeBounds(arc);
+    tg::Rectangle arcBounds = makeBounds(arc);
     if (!bounds.isOverlapping(arcBounds)) {
       cout << "Arc " << i << " outside of area; skipping" << endl;
       continue;
@@ -228,7 +228,7 @@ processLines (const E00 &data, const Rectangle &bounds,
       }
     }
 
-    Line line;
+    tg::Line line;
     int j;
     for (j = 0; j < arc.numberOfCoordinates; j++) {
       line.addPoint(Point3D(arc.coordinates[j].x,
@@ -236,7 +236,7 @@ processLines (const E00 &data, const Rectangle &bounds,
 			    0));
     }
 
-    makePolygon(line, width, shape);
+    tg::makePolygon(line, width, shape);
 
     				// Split into tiles
     cout << "Splitting polygon..." << endl;
@@ -254,7 +254,7 @@ processLines (const E00 &data, const Rectangle &bounds,
  * Import all polygons.
  */
 static void
-processPolygons (const E00 &data, const Rectangle &bounds,
+processPolygons (const E00 &data, const tg::Rectangle &bounds,
 		 AreaType areaType, const string &workDir,
 		 const vector<Attribute> pat_list)
 {
@@ -283,7 +283,7 @@ processPolygons (const E00 &data, const Rectangle &bounds,
 
     int contour = 0;
     const E00::PAL &pal = data.getPAL(i);
-    Rectangle palBounds = makeBounds(pal);
+    tg::Rectangle palBounds = makeBounds(pal);
     if (!bounds.isOverlapping(palBounds)) {
       cout << "Polygon " << i << " outside of area, skipping" << endl;
       continue;
@@ -381,7 +381,7 @@ main (int argc, const char **argv)
 
 
 				// Default values
-  Rectangle bounds(Point3D(-180.0, -90.0, 0),
+  tg::Rectangle bounds(Point3D(-180.0, -90.0, 0),
 		   Point3D(180.0, 90.0, 0));
   AreaType areaType = DefaultArea;
   int pointWidth = 500;

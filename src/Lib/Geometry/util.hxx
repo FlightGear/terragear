@@ -21,6 +21,8 @@ SG_USING_STD(string);
 
 #include "line.hxx"
 
+namespace tg {
+
 
 /**
  * Inline function to clamp an angle between 0 and 360 degrees.
@@ -104,5 +106,6 @@ Rectangle makeBounds (const FGPolygon &polygon);
  */
 Rectangle parseChunk (const string &s);
 
+};
 
 #endif // __UTIL_HXX

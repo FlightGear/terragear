@@ -12,6 +12,8 @@
 
 #include <Polygon/polygon.hxx>
 
+namespace tg {
+
 
 bool
 getIntersection (const Point3D &p0, const Point3D &p1,
@@ -204,5 +206,7 @@ parseChunk (const string &s)
 
   return bounds;
 }
+
+};
 
 // end of util.cxx

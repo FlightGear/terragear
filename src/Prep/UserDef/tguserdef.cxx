@@ -21,7 +21,7 @@ SG_USING_STD(vector);
 
 static string prog_name;
 static string work_dir = ".";
-static Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0)); 
+static tg::Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0)); 
 static FGPolygon bounds_poly;
 
 
@@ -63,7 +63,7 @@ add_point (SGPropertyNode_ptr node)
   if (s != 0)
     SG_LOG(SG_TERRAIN, SG_WARN, "More than one vertex supplied for point");
   FGPolygon poly;
-  makePolygon(p, node->getIntValue("width", 500), poly);
+  tg::makePolygon(p, node->getIntValue("width", 500), poly);
   poly = polygon_int(poly, bounds_poly);
   split_polygon(".", material, poly);
 }
@@ -76,7 +76,7 @@ add_line (SGPropertyNode_ptr node)
   const char * s = node->getStringValue("v");
 
   Point3D p;
-  Line line;
+  tg::Line line;
   s = parse_point(s, p);
   while (s != 0) {
     line.addPoint(p);
@@ -135,7 +135,7 @@ main (int ac, char ** av)
     string arg = av[argPos];
 
     if (arg.find("--chunk=") == 0) {
-      bounds = parseChunk(arg.substr(8));
+      bounds = tg::parseChunk(arg.substr(8));
       argPos++;
     }
 
