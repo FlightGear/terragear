@@ -108,7 +108,7 @@ double FGPolygon::minangle_contour( const int contour ) {
     int p1_index, p2_index, p3_index;
     point2d p1, p2, p3;
     double angle;
-    double min_angle = 2.0 * SG_PI;
+    double min_angle = 2.0 * SGD_PI;
 
     for ( int i = 0; i < size; ++i ) {
 	p1_index = i - 1;

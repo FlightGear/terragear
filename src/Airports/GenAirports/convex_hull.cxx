@@ -93,7 +93,7 @@ bool test_point(Point3D Pa, Point3D Pb, Point3D Pc) {
 
     // printf("a1 = %.2f  a2 = %.2f\n", a1 * SGD_RADIANS_TO_DEGREES, a2 * SGD_RADIANS_TO_DEGREES);
 
-    return ( (a1 + a2) < SG_PI );
+    return ( (a1 + a2) < SGD_PI );
 }
 
 

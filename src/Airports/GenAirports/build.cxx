@@ -113,7 +113,7 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    while ( course < -360 ) { course += 360; }
 	    while ( course > 360 ) { course -= 360; }
 	    // cout << "Dist = " << dist << endl;
-	    // cout << "  Course = " << course * 180.0 / SG_PI << endl;
+	    // cout << "  Course = " << course * 180.0 / SGD_PI << endl;
 
 	    //
 	    // 3. Convert from polar to cartesian coordinates

@@ -185,7 +185,7 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
 	/* cout << "  min_angle (rad) = " 
 	     << min_angle << endl;
 	cout << "  min_angle (deg) = " 
-	     << min_angle * 180.0 / SG_PI << endl;
+	     << min_angle * 180.0 / SGD_PI << endl;
 	cout << "  area = " << area << endl; */
 
 	if ( ((min_angle < angle_cutoff) && (area < area_cutoff)) ||
