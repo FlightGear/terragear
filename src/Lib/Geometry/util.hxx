@@ -109,7 +109,7 @@ Rectangle makeBounds (const TGPolygon &polygon);
  * @param s The string.
  * @return A rectangle containing the bounds.
  */
-Rectangle parseChunk (const string &s, double delta = 10.0);
+Rectangle parseChunk (const string &s, double delta);
 
 
 /**
