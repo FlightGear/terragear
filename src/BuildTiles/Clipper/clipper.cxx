@@ -33,6 +33,9 @@
 #include "clipper.hxx"
 
 
+#define MASK_CLIP 1
+
+
 // Constructor
 FGClipper::FGClipper( void ) {
 }
@@ -291,6 +294,17 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     polys_in.safety_base.add_node( 0, Point3D(max.x, max.y, 0.0) );
     polys_in.safety_base.add_node( 0, Point3D(min.x, max.y, 0.0) );
 
+    // set up land mask, we clip most things to this since it is our
+    // best representation of land vs. ocean.  If we have other less
+    // accurate data that spills out into the ocean, we want to just
+    // clip it.
+    FGPolygon mask;
+    mask.erase();
+    for ( int i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
+	result_union = polygon_union( mask, polys_in.polys[DefaultArea][i] );
+	mask = result_union;
+    }
+
     // int count = 0;
     // process polygons in priority order
     for ( int i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
@@ -304,12 +318,12 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	    FG_LOG( FG_CLIPPER, FG_DEBUG, get_area_name( (AreaType)i ) 
 		    << " = " << current.contours() );
 
-#ifdef EXTRA_SAFETY_CLIP
-	    // clip to base tile
-	    tmp = polygon_int( current, polys_in.safety_base );
-#else
-	    tmp = current;
-#endif
+	    if ( i > HoleArea ) {
+		// clip to land mask
+		tmp = polygon_int( current, mask );
+	    } else {
+		tmp = current;
+	    }
 
 	    // clip current polygon against previous higher priority
 	    // stuff

@@ -104,19 +104,37 @@ int load_polys( FGConstruct& c ) {
     count += actual_load_polys( poly_path, c, clipper );
     cout << "  loaded " << count << " total polys" << endl;
 
-    // load hydro
+    // load GSHHS land masses
+    poly_path = c.get_work_base() + "/GSHHS-LandMass/" + base;
+    cout << "poly_path = " << poly_path << endl;
+    count += actual_load_polys( poly_path, c, clipper );
+    cout << "  loaded " << count << " total polys" << endl;
+
+    // load GSHHS lakes
+    poly_path = c.get_work_base() + "/GSHHS-Lakes/" + base;
+    cout << "poly_path = " << poly_path << endl;
+    count += actual_load_polys( poly_path, c, clipper );
+    cout << "  loaded " << count << " total polys" << endl;
+
+    // load GSHHS islands
+    poly_path = c.get_work_base() + "/GSHHS-Islands/" + base;
+    cout << "poly_path = " << poly_path << endl;
+    count += actual_load_polys( poly_path, c, clipper );
+    cout << "  loaded " << count << " total polys" << endl;
+
+    // load GSHHS ponds
+    poly_path = c.get_work_base() + "/GSHHS-Ponds/" + base;
+    cout << "poly_path = " << poly_path << endl;
+    count += actual_load_polys( poly_path, c, clipper );
+    cout << "  loaded " << count << " total polys" << endl;
+
+    // load USA hydro data
     poly_path = c.get_work_base() + "/USA-Hydro/" + base;
     cout << "poly_path = " << poly_path << endl;
     count += actual_load_polys( poly_path, c, clipper );
     cout << "  loaded " << count << " total polys" << endl;
 
-    // load land masses
-    poly_path = c.get_work_base() + "/Global-LandMass/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
-
-    // load urban areas
+     // load USA urban areas
     poly_path = c.get_work_base() + "/USA-Urban/" + base;
     cout << "poly_path = " << poly_path << endl;
     count += actual_load_polys( poly_path, c, clipper );
@@ -692,7 +710,7 @@ int main(int argc, char **argv) {
     cout << "result of setting mem limit = " << result << endl;
 
     // cpu time limit since occassionally the triangulator can go into
-    // and infinite loop.
+    // an infinite loop.
     limit.rlim_cur = 120;
     limit.rlim_max = 120;
     result = setrlimit( RLIMIT_CPU, &limit );

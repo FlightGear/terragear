@@ -220,7 +220,12 @@ long int get_next_tile() {
 	seconds = tmp_time;
 	cout << "Current tile per second rate = " << counter << endl;
 	cout << "Overall tile per second rate = "
-	     <<  global_counter / ( seconds - start_seconds ) << endl;	    
+	     << (double)global_counter / (double)(seconds - start_seconds)
+	     << endl;
+	cout << "Overall tile per hour rate = "
+	     <<  (double)global_counter * 3600.0 / 
+	           (double)(seconds - start_seconds)
+	     << endl;
 	counter = 0;
     }
 

@@ -526,4 +526,3 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     return 0;
 }
 
-
