@@ -1,3 +1,3 @@
-EXTRA_DIST = README README.howto README.gpc scenery_version.hxx
+EXTRA_DIST = README README.howto README.gpc acsite.m4 scenery_version.hxx
 
 SUBDIRS = src

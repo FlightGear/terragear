@@ -229,6 +229,7 @@ AC_OUTPUT( \
 	VERSION \
 	Makefile \
 	src/Makefile \
+	src/Include/Makefile \
 	src/Construct/Makefile \
 	src/Construct/Clipper/Makefile \
 	src/Construct/Combine/Makefile \

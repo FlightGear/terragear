@@ -19,7 +19,7 @@ directions.  So, here are some directions contributed by Riley Rainey
 
 	http://www.cs.man.ac.uk/aig/staff/alan/software
 
-2. Unpack it; the current version seems to be 2.30:
+2. Unpack it; the current version seems to be 2.31:
 
 	$ zcat gpc231.tar.Z | tar xvf -
 

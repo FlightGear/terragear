@@ -1,4 +1,5 @@
 SUBDIRS = \
+	Include \
 	Lib \
 	Prep \
 	Construct \
