@@ -37,7 +37,6 @@
 
 #include <simgear/bucket/newbucket.hxx>
 
-#include <Include/scenery_version.hxx>
 #include <Polygon/polygon.hxx>
 
 #include "output.hxx"
