@@ -204,10 +204,10 @@ int main( int argc, char **argv ) {
         gts_surface_foreach_face( surface, (GtsFunc)pick_first_face, &first );
 
         double max_error = 0;
-        point_list_iterator mark = NULL;
 
         // iterate through all remaining points
         point_list_iterator current = pending.begin();
+        point_list_iterator mark = pending.begin();
         const_point_list_iterator last = pending.end();
         for ( ; current != last; ++current ) {
             // cout << *current << endl;
