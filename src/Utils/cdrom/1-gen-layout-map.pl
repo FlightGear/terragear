@@ -4,7 +4,7 @@ $tgzdir = "/stage/fgfs03/curt/Scenery/Scenery-0.9.5";
 $verbose = 0;
 
 if ( $#ARGV < 0 ) {
-    die "usage: $0 <disk_size_mb>\n";
+    die "usage: $0 <disk_size_mb>  (DVD=4500, CDROM=700)\n";
 } else {
     $disksize = shift(@ARGV);
 }

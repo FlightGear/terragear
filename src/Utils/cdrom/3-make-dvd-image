@@ -1,18 +1,21 @@
 #!/bin/sh
 
-if [ "x${1}" == "x" ]; then 
+if [ "x${2}" == "x" ]; then 
     echo "cd one level above the source directory and specify it's short name"
     echo "as arg $1"
+    echo
+    echo "usage: $0 <source_dir> <dest_dir>"
     exit
 fi
 
 VERSION=0.9.5
 SOURCE=$1
+DEST=$2
 VOLUME_ID=FG_Scenery_${SOURCE}_v${VERSION}
 PUBLISHER=curt@flightgear.org
 PREPAIRER=curt@flightgear.org
 # COPYRIGHT="Copyright (C) 2002  Curtis L. Olson"
-OUTPUT_IMG=/data1/images/${SOURCE}-${VERSION}.img
+OUTPUT_IMG=${2}/${SOURCE}-${VERSION}.img
 
 # -f = follow symbolic links (the image directories are link trees)
 # -r = Rock Ridge protocol
