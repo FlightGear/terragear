@@ -47,7 +47,7 @@ dnl Check for MS Windows environment
 AC_CHECK_HEADER(windows.h)
 
 dnl extra library and include directories
-EXTRA_DIRS="/usr/local /usr/local/plib /usr/X11R6"
+EXTRA_DIRS="/usr/local/plib /usr/X11R6"
 
 if test -d /opt/X11R6 ; then
      EXTRA_DIRS="$EXTRA_DIRS /opt/X11R6"
