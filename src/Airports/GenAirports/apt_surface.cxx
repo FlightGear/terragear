@@ -198,8 +198,8 @@ TGAptSurface::TGAptSurface( const string& path,
     SG_LOG( SG_GENERAL, SG_DEBUG,
             "Area size = " << y_m << " x " << x_m << " (m)" );
 
-    int xdivs = (int)(x_m / course_grid) + 1;
-    int ydivs = (int)(y_m / course_grid) + 1;
+    int xdivs = (int)(x_m / coarse_grid) + 1;
+    int ydivs = (int)(y_m / coarse_grid) + 1;
 
     if ( xdivs < 3 ) { xdivs = 3; }
     if ( ydivs < 3 ) { ydivs = 3; }
