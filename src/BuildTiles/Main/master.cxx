@@ -103,7 +103,7 @@ void usage( const string name ) {
 }
 
 
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
     double lon, lat;
 
     if ( argc < 3 ) {
@@ -147,6 +147,8 @@ main(int argc, char **argv) {
 
 	lat += dy;
     }
+
+    return 0;
 }
 
 

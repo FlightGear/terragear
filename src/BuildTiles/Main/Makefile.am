@@ -15,7 +15,7 @@ fgfs_construct_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/Triangle/libTriangle.a \
-	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lz -lgpc
+	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lplibsg -lz -lgpc
 
 fgfs_master_SOURCES = master.cxx
 

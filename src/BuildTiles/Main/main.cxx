@@ -397,7 +397,7 @@ static Point3D calc_normal( FGConstruct& c, int i ) {
     v1[0] = p2.x() - p1.x(); v1[1] = p2.y() - p1.y(); v1[2] = p2.z() - p1.z();
     v2[0] = p3.x() - p1.x(); v2[1] = p3.y() - p1.y(); v2[2] = p3.z() - p1.z();
 
-    sgVectorProduct( normal, v1, v2 );
+    sgVectorProductVec3( normal, v1, v2 );
     sgNormalizeVec3( normal );
 
     return Point3D( normal[0], normal[1], normal[2] );
@@ -665,7 +665,7 @@ void usage( const string name ) {
 }
 
 
-main(int argc, char **argv) {
+int main(int argc, char **argv) {
     double lon, lat;
 
     fglog().setLogLevels( FG_ALL, FG_DEBUG );
@@ -791,4 +791,5 @@ main(int argc, char **argv) {
     }
 
     cout << "[Finished successfully]" << endl;
+    return 0;
 }

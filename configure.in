@@ -211,6 +211,14 @@ AC_CHECK_HEADERS( \
 	fcntl.h getopt.h malloc.h memory.h stdlib.h sys/param.h sys/stat.h \
         sys/time.h sys/timeb.h unistd.h windows.h winbase.h values.h )
 
+# Check for system installed zlib
+AC_CHECK_HEADER(zlib.h)
+if test "x$ac_cv_header_zlib_h" = "xyes"; then
+    AC_DEFINE( HAVE_ZLIB )
+else
+    echo "no zlib found, using version provided by SimGear."
+fi
+
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_TYPE_SIZE_T

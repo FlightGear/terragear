@@ -47,6 +47,9 @@
 /* Define if you have the vprintf function.  */
 #undef HAVE_VPRINTF
 
+/* Define if you have the wait3 system call.  */
+#undef HAVE_ZLIB
+
 /* Define as the return type of signal handlers (int or void).  */
 #undef RETSIGTYPE
 
