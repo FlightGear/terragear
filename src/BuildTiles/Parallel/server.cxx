@@ -22,6 +22,9 @@
 
 #include <simgear/bucket/newbucket.hxx>
 
+SG_USING_STD( cout );
+SG_USING_STD( cerr );
+SG_USING_STD( endl );
 
 #if defined (sun)
 #  define WAIT_ANY (pid_t)-1
@@ -35,6 +38,8 @@ static double lat = 0.0;
 static double lon = 0.0;
 static double dy = 0.0;
 static int pass = 0;
+static double area_width = 10.0; // width of generated area in degrees
+static double area_height = 10.0; // height of generated area in degrees
 
 
 int make_socket (unsigned short int* port) {
@@ -154,7 +159,7 @@ long int get_next_tile() {
     // cout << "lon = " << lon << " lat = " << lat << endl;
     // cout << "start_lat = " << start_lat << endl;
 
-    if ( lon > start_lon + 10.0 ) {
+    if ( lon > start_lon + area_width ) {
 	// increment to next row
 	// skip every other row (to avoid two clients working on
 	// adjacent tiles)
@@ -165,7 +170,7 @@ long int get_next_tile() {
 	lon = start_lon + (shift_over*dx) + (dx*0.5);
     }
 
-    if ( lat > start_lat + 10.0 ) {
+    if ( lat > start_lat + area_height ) {
 	++pass;
 	if ( pass == 1 ) {
 	    shift_over = 0.0;
@@ -271,13 +276,17 @@ void log_failed_tile( const string& path, long int tile ) {
 
 // display usage and exit
 void usage( const string name ) {
-    cout << "Usage: " << name << " <work_base> <output_base> chunk1 chunk2 ..." 
+    cout << "Usage: " << name
+	 << "[--width=<width> --height=<height>] "
+	 << " <work_base> <output_base> chunk1 chunk2 ..." 
 	 << endl;
-    cout << "\twhere chunk represent the south west corner of a 10x10 degree"
+    cout << "\twhere chunk represents the south west corner of the area"
 	 << endl;
-    cout << "\tsquare and is of the form [we]xxx[ns]yy.  For example:"
+    cout << "\tto build and is of the form [we]xxx[ns]yy.  For example:"
 	 << endl;
-    cout << "\tw020n10 e150s70" << endl;
+    cout << "\tw020n10 e150s70, and the width and height are supplied"
+	 << endl;
+    cout << "\tin degrees (default: 10x10)." << endl;
     exit(-1);
 }
 
@@ -289,15 +298,38 @@ int main( int argc, char **argv ) {
     fd_set ready;
     short unsigned int port;
 
+				// Get any options first
+    int arg_offset = 0;
+    for (int i = 1; i < argc; i++) {
+      string opt = argv[i];
+      if (opt.find("--width=") == 0) {
+	area_width = atof(opt.substr(8).c_str());
+	arg_offset++;
+      } else if (opt.find("--height=") == 0) {
+	area_height = atof(opt.substr(9).c_str());
+	arg_offset++;
+      } else if (opt == "--") {
+	break;
+      } else if (opt.find("-") == 0) {
+	cerr << "Unrecognized argument: " << opt << endl;
+	usage(argv[0]);
+      }
+    }
+
     // quick argument sanity check
-    if ( argc < 4 ) {
+    if ( (argc - arg_offset) < 4 ) {
 	usage( argv[0] );
     }
 
-    string work_base = argv[1];
-    string output_base = argv[2];
+    string work_base = argv[arg_offset + 1];
+    string output_base = argv[arg_offset + 2];
 
-    arg_counter = 3;
+    cout << "Work base: " << work_base << endl;
+    cout << "Output base: " << output_base << endl;
+    cout << "Area width: " << area_width << " degrees" << endl;
+    cout << "Area height: " << area_height << " degrees" << endl;
+
+    arg_counter = arg_offset + 3;
 
     // initialize tile counter / incrementer
     init_tile_count( argv[arg_counter++] );
