@@ -68,6 +68,10 @@ int reads(int fd, char *buf, unsigned int len) {
         &&  ((c != '\n') && (c != '\r'));
        i++)
      buf[i] = c;
+
+  if (buf[i] == '\r')
+     buf[i] = '\n';
+
   return res;
 }
 
