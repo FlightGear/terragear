@@ -73,128 +73,78 @@ makePolygon (const Point3D &p, int width, TGPolygon &polygon)
 }
 
 
-// Alternate makePolygon from a line routine
 void
 makePolygon (const Line &line, int width, TGPolygon &polygon)
 {
-    point_list left_side, right_side;
-    left_side.clear();
-    right_side.clear();
- 
-    Point3D p0, p1, p2;
-    double a1, a2, dist;
-    double angle0, angle1;
-    double x, y, az1;
-    int i;
- 
-    // prime the pump
-    p0 = line.getPoint(0);
-    p1 = line.getPoint(1);
+  vector<TGPolygon> segment_list;
 
-    // calculate heading of first line
-    geo_inverse_wgs_84(0, p0.y(), p0.x(), p1.y(), p1.x(),
-                       &a1, &a2, &dist);
-    angle0 = (a1 + a2) / 2.0;
-    
-    // calculate right offset edge for line
-    geo_direct_wgs_84(0, p0.y(), p0.x(),
-                      CLAMP_ANGLE(angle0+90), width/2, &y, &x, &az1);
-    right_side.push_back( Point3D( x, y, 0 ) );
+  int nPoints = line.getPointCount();
+  int i;
+  for (i = 0; i < nPoints - 1; i++) {
+    const Point3D p1 = line.getPoint(i);
+    const Point3D p2 = line.getPoint(i+1);
 
-    // calculate left offset edge for line
-    geo_direct_wgs_84(0, p0.y(), p0.x(),
-                      CLAMP_ANGLE(angle0-90), width/2, &y, &x, &az1);
-    left_side.push_back( Point3D( x, y, 0 ) );
-
-    int nPoints = line.getPointCount();
-    for ( i = 0; i < nPoints - 2; i++ ) {
-        p0 = line.getPoint(i);
-        p1 = line.getPoint(i+1);
-        p2 = line.getPoint(i+2);
-
-        // calculate heading of line0
-        geo_inverse_wgs_84(0, p0.y(), p0.x(), p1.y(), p1.x(),
-                           &a1, &a2, &dist);
-        angle0 = (a1 + a2) / 2.0;
-
-        // calculate heading of line1
-        geo_inverse_wgs_84(0, p1.y(), p1.x(), p2.y(), p2.x(),
-                           &a1, &a2, &dist);
-        angle1 = (a1 + a2) / 2.0;
-
-        // calculate right offset edge for line0
-        geo_direct_wgs_84(0, p0.y(), p0.x(),
-                          CLAMP_ANGLE(angle0+90), width/2, &y, &x, &az1);
-        Point3D roff0( x, y, 0 );
-        geo_direct_wgs_84(0, p1.y(), p1.x(),
-                          CLAMP_ANGLE(angle0+90), width/2, &y, &x, &az1);
-        Point3D roff1( x, y, 0 );
-
-        // calculate left offset edge for line0
-        geo_direct_wgs_84(0, p0.y(), p0.x(),
-                          CLAMP_ANGLE(angle0-90), width/2, &y, &x, &az1);
-        Point3D loff0( x, y, 0 );
-        geo_direct_wgs_84(0, p1.y(), p1.x(),
-                          CLAMP_ANGLE(angle0-90), width/2, &y, &x, &az1);
-        Point3D loff1( x, y, 0 );
-
-        // calculate right offset edge for line1
-        geo_direct_wgs_84(0, p1.y(), p1.x(),
-                          CLAMP_ANGLE(angle1+90), width/2, &y, &x, &az1);
-        Point3D roff2( x, y, 0 );
-        geo_direct_wgs_84(0, p2.y(), p2.x(),
-                          CLAMP_ANGLE(angle1+90), width/2, &y, &x, &az1);
-        Point3D roff3( x, y, 0 );
-
-        // calculate left offset edge for line1
-        geo_direct_wgs_84(0, p1.y(), p1.x(),
-                          CLAMP_ANGLE(angle1-90), width/2, &y, &x, &az1);
-        Point3D loff2( x, y, 0 );
-        geo_direct_wgs_84(0, p2.y(), p2.x(),
-                          CLAMP_ANGLE(angle1-90), width/2, &y, &x, &az1);
-        Point3D loff3( x, y, 0 );
-
-        // calculate intersection of roffset line1 and right offset line2
-        Point3D rint, lint;
-        if ( !getIntersection( roff0, roff1, roff2, roff3, rint ) ) {
-            // intersection failed, use the average of roff1 and roff2
-            rint = ( roff1 + roff2 ) / 2.0;
-        }
-        right_side.push_back( rint );
-        if ( !getIntersection( loff0, loff1, loff2, loff3, lint ) ) {
-            // intersection failed, use the average of roff1 and roff2
-            lint = ( loff1 + loff2 ) / 2.0;
-        }
-        left_side.push_back( lint );
-    }
-
-                         // finish the end of the polyline
-    p0 = line.getPoint(nPoints - 2);
-    p1 = line.getPoint(nPoints - 1);
-
-    // calculate heading of last line
-    geo_inverse_wgs_84(0, p0.y(), p0.x(), p1.y(), p1.x(),
-                       &a1, &a2, &dist);
-    angle0 = (a1 + a2) / 2.0;
-    
-    // calculate right offset edge for line
-    geo_direct_wgs_84(0, p1.y(), p1.x(),
-                      CLAMP_ANGLE(angle0+90), width/2, &y, &x, &az1);
-    right_side.push_back( Point3D(x, y, 0) );
-
-    // calculate left offset edge for line
-    geo_direct_wgs_84(0, p1.y(), p1.x(),
-                      CLAMP_ANGLE(angle0-90), width/2, &y, &x, &az1);
-    left_side.push_back( Point3D(x, y, 0) );
-
-    // Finally assemble the polygon with counter clockwise winding
+    double angle1, angle2, dist, x, y, az;
+      
+    geo_inverse_wgs_84(0, p1.y(), p1.x(), p2.y(), p2.x(), &angle1, &angle2, &dist);
     polygon.erase();
-    for ( i = 0; i < (int)right_side.size(); ++i ) {
-        polygon.add_node( 0, right_side[i] );
-    }
-    for ( i = left_side.size() - 1; i >= 0; --i ) {
-        polygon.add_node( 0, left_side[i] );
-    }
+
+				// Wind each rectangle counterclockwise
+
+				// Corner 1
+    geo_direct_wgs_84(0, p1.y(), p1.x(), CLAMP_ANGLE(angle1+90), width/2, &y, &x, &az);
+    polygon.add_node(0, Point3D(x, y, 0));
+
+				// Corner 2
+    geo_direct_wgs_84(0, p2.y(), p2.x(), CLAMP_ANGLE(angle1+90), width/2, &y, &x, &az);
+    polygon.add_node(0, Point3D(x, y, 0));
+
+				// Corner 3
+    geo_direct_wgs_84(0, p2.y(), p2.x(), CLAMP_ANGLE(angle1-90), width/2, &y, &x, &az);
+    polygon.add_node(0, Point3D(x, y, 0));
+
+				// Corner 4
+    geo_direct_wgs_84(0, p1.y(), p1.x(), CLAMP_ANGLE(angle1-90), width/2, &y, &x, &az);
+    polygon.add_node(0, Point3D(x, y, 0));
+
+				// Save this rectangle
+    segment_list.push_back(polygon);
+  }
+
+  // Build one big polygon out of all the rectangles by intersecting
+  // the lines running through the bottom and top sides
+
+  polygon.erase();
+
+				// Connect the bottom part.
+  int nSegments = segment_list.size();
+  Point3D intersection;
+  polygon.add_node(0, segment_list[0].get_pt(0, 0));
+  for (i = 0; i < nSegments - 1; i++) {
+    if (getIntersection(segment_list[i].get_pt(0, 0),
+			segment_list[i].get_pt(0, 1),
+			segment_list[i+1].get_pt(0, 0),
+			segment_list[i+1].get_pt(0, 1),
+			intersection))
+      polygon.add_node(0, intersection);
+    else
+      polygon.add_node(0, segment_list[i].get_pt(0, 1));
+  }
+  polygon.add_node(0, segment_list[nSegments-1].get_pt(0, 1));
+
+				// Connect the top part
+  polygon.add_node(0, segment_list[nSegments-1].get_pt(0, 2));
+  for (i = nSegments - 1; i > 0; i--) {
+    if (getIntersection(segment_list[i].get_pt(0, 2),
+			segment_list[i].get_pt(0, 3),
+			segment_list[i-1].get_pt(0, 2),
+			segment_list[i-1].get_pt(0, 3),
+			intersection))
+      polygon.add_node(0, intersection);
+    else
+      polygon.add_node(0, segment_list[i].get_pt(0, 3));
+  }
+  polygon.add_node(0, segment_list[0].get_pt(0, 3));
 }
 
 
