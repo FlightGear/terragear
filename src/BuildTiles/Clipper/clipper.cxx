@@ -71,7 +71,7 @@ bool FGClipper::load_polys(const string& path) {
     AreaType poly_type = DefaultArea;
     int contours, count, i, j;
     int hole_flag;
-    double startx, starty, x, y, lastx, lasty;
+    double startx, starty, startz, x, y, z, lastx, lasty, lastz;
 
     SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << " ..." );
 
@@ -109,6 +109,7 @@ bool FGClipper::load_polys(const string& path) {
 
 	for ( i = 0; i < contours; ++i ) {
 	    in >> count;
+            // cout << "Contour = " << i << " size = " << count << endl;
 
 	    if ( count < 3 ) {
 		SG_LOG( SG_CLIPPER, SG_ALERT, 
@@ -120,29 +121,44 @@ bool FGClipper::load_polys(const string& path) {
 
 	    in >> startx;
 	    in >> starty;
-	    p = Point3D(startx, starty, 0.0);
-	    // cout << "poly pt = " << p << endl;
+            if ( poly3d ) {
+                in >> startz;
+            } else {
+                startz = -9999.0;
+            }
+	    p = Point3D(startx, starty, startz);
+	    // cout << "load poly's: poly pt = " << p << endl;
 	    poly.add_node( i, p );
-	    SG_LOG( SG_CLIPPER, SG_BULK, "0 = " 
-		    << startx << ", " << starty );
+	    SG_LOG( SG_CLIPPER, SG_BULK, "0 = " << p );
 
 	    for ( j = 1; j < count - 1; ++j ) {
 		in >> x;
 		in >> y;
-		p = Point3D( x, y, 0.0 );
-		// cout << "poly pt = " << p << endl;
+                if ( poly3d ) {
+                    in >> z;
+                } else {
+                    z = -9999.0;
+                }
+		p = Point3D( x, y, z );
+                // cout << "load poly's: poly pt = " << p << endl;
 		poly.add_node( i, p );
 	    }
 
 	    in >> lastx;
 	    in >> lasty;
+            if ( poly3d ) {
+                in >> lastz;
+            } else {
+                lastz = -9999.0;
+            }
 
 	    if ( (fabs(startx - lastx) < SG_EPSILON) 
-		 && (fabs(starty - lasty) < SG_EPSILON) ) {
+		 && (fabs(starty - lasty) < SG_EPSILON)
+                 && (fabs(startz - lastz) < SG_EPSILON) ) {
 		// last point same as first, discard
 	    } else {
-		p = Point3D( lastx, lasty, 0.0 );
-		// cout << "poly pt = " << p << endl;
+		p = Point3D( lastx, lasty, lastz );
+                // cout << "load poly's: poly pt = " << p << endl;
 		poly.add_node( i, p );
 	    }
 	}
@@ -214,7 +230,7 @@ bool FGClipper::load_osgb36_polys(const string& path) {
 
 	    in >> startx;
 	    in >> starty;
-	    OSRef = Point3D(startx, starty, 0.0);
+	    OSRef = Point3D(startx, starty, -9999.0);
 
             //Convert from OSGB36 Eastings/Northings to WGS84 Lat/Lon
             //Note that startx and starty themselves must not be altered since we compare them with unaltered lastx and lasty later
@@ -230,7 +246,7 @@ bool FGClipper::load_osgb36_polys(const string& path) {
 	    for ( j = 1; j < count - 1; ++j ) {
 		in >> x;
 		in >> y;
-		OSRef = Point3D( x, y, 0.0 );
+		OSRef = Point3D( x, y, -9999.0 );
 
                 OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
             	OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
@@ -248,7 +264,7 @@ bool FGClipper::load_osgb36_polys(const string& path) {
 		 && (fabs(starty - lasty) < SG_EPSILON) ) {
 		// last point same as first, discard
 	    } else {
-		OSRef = Point3D( lastx, lasty, 0.0 );
+		OSRef = Point3D( lastx, lasty, -9999.0 );
 
                 OSLatLon = ConvertEastingsNorthingsToLatLon(OSRef);
             	OSCartesian = ConvertAiry1830PolarToCartesian(OSLatLon);
@@ -468,10 +484,10 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 
     // set up clipping tile
     polys_in.safety_base.erase();
-    polys_in.safety_base.add_node( 0, Point3D(min.x, min.y, 0.0) );
-    polys_in.safety_base.add_node( 0, Point3D(max.x, min.y, 0.0) );
-    polys_in.safety_base.add_node( 0, Point3D(max.x, max.y, 0.0) );
-    polys_in.safety_base.add_node( 0, Point3D(min.x, max.y, 0.0) );
+    polys_in.safety_base.add_node( 0, Point3D(min.x, min.y, -9999.0) );
+    polys_in.safety_base.add_node( 0, Point3D(max.x, min.y, -9999.0) );
+    polys_in.safety_base.add_node( 0, Point3D(max.x, max.y, -9999.0) );
+    polys_in.safety_base.add_node( 0, Point3D(min.x, max.y, -9999.0) );
 
     // set up land mask, we clip most things to this since it is our
     // best representation of land vs. ocean.  If we have other less
@@ -491,7 +507,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
         if (is_water_area(AreaType(i))) {
             for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
                 water_mask =
-                    polygon_union(water_mask, polys_in.polys[i][j]);
+                    polygon_union( water_mask, polys_in.polys[i][j] );
             }
         }
     }
@@ -513,7 +529,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	// for ( ; current != last; ++current ) {
 	for( j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
 	    TGPolygon current = polys_in.polys[i][j];
-	    SG_LOG( SG_CLIPPER, SG_DEBUG, get_area_name( (AreaType)i ) 
+	    SG_LOG( SG_CLIPPER, SG_INFO, get_area_name( (AreaType)i ) 
 		    << " = " << current.contours() );
 
             tmp = current;
@@ -526,8 +542,8 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
             // Airport areas are limited to existing land mass and
             // never override water.
             if ( i == AirportArea ) {
-                tmp = polygon_int(tmp, land_mask);
-                tmp = polygon_diff(tmp, water_mask);
+                tmp = polygon_int( tmp, land_mask );
+                tmp = polygon_diff( tmp, water_mask );
             }
 
 	    // if a water area, cut out potential islands
@@ -617,6 +633,8 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	fclose(ofp);
     }
 #endif
+
+    SG_LOG( SG_CLIPPER, SG_INFO, "  master clipper finished." );
 
     return true;
 }
