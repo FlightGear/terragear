@@ -385,184 +385,188 @@ void gen_precision_rwy( const TGRunway& rwy_info,
     // Touch down zone x2 (first)
     //
 
-    if ( end1_pct >= 1.0 ) {
-	return;
+    if ( end1_pct < 1.0 ) {
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 400 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "tz_two_a",
+                            rwy_polys, texparams, accum );
     }
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 400 / length );
-    gen_runway_section( rwy_info, runway_a,
-			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading,
-			material, "tz_two_a",
-			rwy_polys, texparams, accum );
 
-    if ( end2_pct >= 1.0 ) {
-	return;
+    if ( end2_pct < 1.0 ) {
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 400 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "tz_two_a",
+                            rwy_polys, texparams, accum );
     }
-    start2_pct = end2_pct;
-    end2_pct = start2_pct + ( 400 / length );
-    gen_runway_section( rwy_info, runway_b,
-			start2_pct, end2_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading + 180.0,
-			material, "tz_two_a",
-			rwy_polys, texparams, accum );
 
     // add a section of center stripe
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_a,
-                        start1_pct, end1_pct,
-                        0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        rwy_info.heading,
-                        material, "rest",
-                        rwy_polys, texparams, accum );
+    if ( end1_pct < 1.0 ) {
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "rest",
+                            rwy_polys, texparams, accum );
+    }
 
-    start2_pct = end2_pct;
-    end2_pct = start2_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_b,
-                        start2_pct, end2_pct,
-                        0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        rwy_info.heading + 180.0,
-                        material, "rest",
-                        rwy_polys, texparams, accum );
-   
+    if ( end2_pct < 1.0 ) {
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "rest",
+                            rwy_polys, texparams, accum );
+    }
+
     //
     // Touch down zone x2 (second)
     //
 
-    if ( end1_pct >= 1.0 ) {
-	return;
+    if ( end1_pct < 1.0 ) {
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "tz_two_b",
+                            rwy_polys, texparams, accum );
     }
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_a,
-			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading,
-			material, "tz_two_b",
-			rwy_polys, texparams, accum );
 
-    if ( end2_pct >= 1.0 ) {
-	return;
+    if ( end2_pct < 1.0 ) {
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "tz_two_b",
+                            rwy_polys, texparams, accum );
     }
-    start2_pct = end2_pct;
-    end2_pct = start2_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_b,
-			start2_pct, end2_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading + 180.0,
-			material, "tz_two_b",
-			rwy_polys, texparams, accum );
 
     // add a section of center stripe
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_a,
-                        start1_pct, end1_pct,
-                        0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        rwy_info.heading,
-                        material, "rest",
-                        rwy_polys, texparams, accum );
+    if ( end1_pct < 1.0 ) {
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "rest",
+                            rwy_polys, texparams, accum );
+    }
 
-    start2_pct = end2_pct;
-    end2_pct = start2_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_b,
-                        start2_pct, end2_pct,
-                        0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        rwy_info.heading + 180.0,
-                        material, "rest",
-                        rwy_polys, texparams, accum );
-   
+    if ( end2_pct < 1.0 ) {
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "rest",
+                            rwy_polys, texparams, accum );
+    }
+
     //
     // Touch down zone x1 (first)
     //
 
-    if ( end1_pct >= 1.0 ) {
-	return;
+    if ( end1_pct < 1.0 ) {
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 400 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "tz_one_a",
+                            rwy_polys, texparams, accum );
     }
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 400 / length );
-    gen_runway_section( rwy_info, runway_a,
-			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading,
-			material, "tz_one_a",
-			rwy_polys, texparams, accum );
 
-    if ( end2_pct >= 1.0 ) {
-	return;
+    if ( end2_pct < 1.0 ) {
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 400 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "tz_one_a",
+                            rwy_polys, texparams, accum );
     }
-    start2_pct = end2_pct;
-    end2_pct = start2_pct + ( 400 / length );
-    gen_runway_section( rwy_info, runway_b,
-			start2_pct, end2_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading + 180.0,
-			material, "tz_one_a",
-			rwy_polys, texparams, accum );
 
     // add a section of center stripe
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_a,
-                        start1_pct, end1_pct,
-                        0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        rwy_info.heading,
-                        material, "rest",
-                        rwy_polys, texparams, accum );
+    if ( end1_pct < 1.0 ) {
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "rest",
+                            rwy_polys, texparams, accum );
+    }
 
-    start2_pct = end2_pct;
-    end2_pct = start2_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_b,
-                        start2_pct, end2_pct,
-                        0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-                        rwy_info.heading + 180.0,
-                        material, "rest",
-                        rwy_polys, texparams, accum );
-   
+    if ( end2_pct < 1.0 ) {
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "rest",
+                            rwy_polys, texparams, accum );
+    }
+
     //
     // Touch down zone x1 (second)
     //
 
-    if ( end1_pct >= 1.0 ) {
-	return;
+    if ( end1_pct < 1.0 ) {
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_a,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            material, "tz_one_b",
+                            rwy_polys, texparams, accum );
     }
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_a,
-			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading,
-			material, "tz_one_b",
-			rwy_polys, texparams, accum );
 
-    if ( end2_pct >= 1.0 ) {
-	return;
+    if ( end2_pct < 1.0 ) {
+        start2_pct = end2_pct;
+        end2_pct = start2_pct + ( 200 / length );
+        gen_runway_section( rwy_info, runway_b,
+                            start2_pct, end2_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            material, "tz_one_b",
+                            rwy_polys, texparams, accum );
     }
-    start2_pct = end2_pct;
-    end2_pct = start2_pct + ( 200 / length );
-    gen_runway_section( rwy_info, runway_b,
-			start2_pct, end2_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			rwy_info.heading + 180.0,
-			material, "tz_one_b",
-			rwy_polys, texparams, accum );
 
     //
     // The rest ...
