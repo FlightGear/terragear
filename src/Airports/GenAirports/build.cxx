@@ -190,7 +190,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes,
     while ( !done ) {
 	// find first node with -9999 elevation
 	i = 0;
-	while ( (result[i].z() > -9000) && (i < (int)result.size()) ) {
+        while ( (i < (int)result.size()) && (result[i].z() > -9000) ) {
 	    ++i;
 	}
 
