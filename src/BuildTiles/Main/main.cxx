@@ -571,13 +571,13 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
         raw_nodes[i].setz( z );
     }
 
-    cout << "flattening ocean connected nodes" << endl;
-
     triele_list tris = c.get_tri_elements();
     TGTriEle t;
     Point3D p;
     AreaType a;
     int n1, n2, n3;
+
+    cout << "flattening lake connected nodes (and smoothing streams)" << endl;
 
     for ( int count = 0; count < 3; ++count ) {
 	for ( i = 0; i < (int)tris.size(); ++i ) {
@@ -609,7 +609,8 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 		raw_nodes[n1].setz( min );
 		raw_nodes[n2].setz( min );
 		raw_nodes[n3].setz( min );
-	    } else if ( (a == StreamArea) || (a == CanalArea) ) {
+	    } else if ( (a == StreamArea) || (a == IntStreamArea)
+                        || (a == CanalArea) ) {
 		e1 = raw_nodes[n1].z();
 		e2 = raw_nodes[n2].z();
 		e3 = raw_nodes[n3].z();
@@ -629,10 +630,33 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 		if ( max1 < e1 ) { raw_nodes[n1].setz( max1 ); }
 		if ( max2 < e2 ) { raw_nodes[n2].setz( max2 ); }
 		if ( max3 < e3 ) { raw_nodes[n3].setz( max3 ); }
+	    } else if ( (a == RoadArea) || (a == FreewayArea)
+                        || (a == RailroadArea) ) {
+		e1 = raw_nodes[n1].z();
+		e2 = raw_nodes[n2].z();
+		e3 = raw_nodes[n3].z();
+
+		min = e1; p = raw_nodes[n1];
+		if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }
+		if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }
+	    
+		double d1 = distance2D( p, raw_nodes[n1] ); 
+		double d2 = distance2D( p, raw_nodes[n2] ); 
+		double d3 = distance2D( p, raw_nodes[n3] ); 
+
+		double max1 = 400.0 * d1 + min;
+		double max2 = 400.0 * d2 + min;
+		double max3 = 400.0 * d3 + min;
+
+		if ( max1 < e1 ) { raw_nodes[n1].setz( max1 ); }
+		if ( max2 < e2 ) { raw_nodes[n2].setz( max2 ); }
+		if ( max3 < e3 ) { raw_nodes[n3].setz( max3 ); }
 	    }
 	}
     }
  
+    cout << "flattening ocean connected nodes" << endl;
+
     for ( i = 0; i < (int)tris.size(); ++i ) {
 	// set all ocean nodes to 0.0
 	t = tris[i];
