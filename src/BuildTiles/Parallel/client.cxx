@@ -26,6 +26,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <simgear/bucket/newbucket.hxx>
 
@@ -33,9 +34,12 @@
 #define MAXBUF 1024
 #define BUSY_WAIT_TIME 30
 
+FG_USING_STD(string);
+FG_USING_STD(vector);
 
-string work_base = "";
-string output_base = "";
+string work_base = ".";
+string output_base = ".";
+vector<string> load_dirs;
 
 
 // check if it is ok to run
@@ -178,9 +182,14 @@ bool construct_tile( const FGBucket& b, const string& result_file ) {
 	char angle_str[256];
 	sprintf(angle_str, "%.0f", angle);
 	string command = "fgfs-construct ";
-	command += angle_str;
-	command += " " + work_base + " " + output_base + " "
-	    + b.gen_index_str() + " > " + result_file + " 2>&1";
+	command = command + " --min-angle=" + angle_str;
+	command = command + " --work-dir=" + work_base;
+	command = command + " --output-dir=" + output_base;
+	command = command + " --tile-id=" + b.gen_index_str();
+	for (int i = 0; i < load_dirs.size(); i++) {
+	  command = command + " " + load_dirs[i];
+	}
+	command = command + "> " + result_file + " 2>&1";
 	cout << command << endl;
 	
 	system( command.c_str() );
@@ -221,30 +230,63 @@ bool construct_tile( const FGBucket& b, const string& result_file ) {
 }
 
 
+void
+usage (const string name)
+{
+  cout << "Usage: " << name << endl;
+  cout << "[ --output-dir=<directory>" << endl;
+  cout << "  --work-dir=<directory>" << endl;
+  cout << "  --host=<address>" << endl;
+  cout << "  --port=<number> ]" << endl;
+  cout << "<load directory...>" << endl;
+  exit(-1);
+}
+
 main(int argc, char *argv[]) {
     long int tile, last_tile;
     bool rude = false;
     bool result;
 
-    // Check usage
-    if ( argc < 5 ) {
-	printf("Usage: %s remote_machine port work_base output_base [ -r ]\n",
-	       argv[0]);
-	exit(1);
+    string host = "127.0.0.1";
+    int port=4001;
+
+    //
+    // Parse the command-line arguments.
+    //
+    int arg_pos;
+    for (arg_pos = 1; arg_pos < argc; arg_pos++) {
+      string arg = argv[arg_pos];
+
+      if (arg.find("--output-dir=") == 0) {
+	output_base = arg.substr(13);
+      } else if (arg.find("--work-dir=") == 0) {
+	work_base = arg.substr(11);
+      } else if (arg.find("--host=") == 0) {
+	host = arg.substr(7);
+      } else if (arg.find("--port=") == 0) {
+	port = atoi(arg.substr(7).c_str());
+      } else if (arg == "--rude") {
+	rude = true;
+      } else if (arg.find("--") == 0) {
+	usage(argv[0]);
+      } else {
+	break;
+      }
     }
 
-    string host = argv[1];
-    int port = atoi( argv[2] );
-    work_base = argv[3];
-    output_base = argv[4];
-
-    if ( argc == 6 ) {
-	string option = argv[5];
-	if ( option == "-r" ) {
-	    cout << "Running in RUDE mode!" << endl;
-	    rude = true;
-	}
+    cout << "Output directory is " << output_base << endl;
+    cout << "Working directory is " << work_base << endl;
+    cout << "Server host is " << host << endl;
+    cout << "Server port is " << port << endl;
+    if (rude)
+      cout << "Running in rude mode" << endl;
+    else
+      cout << "Running in polite mode" << endl;
+    for (int i = arg_pos; i < argc; i++) {
+      load_dirs.push_back(argv[i]);
+      cout << "Load directory: " << argv[i] << endl;
     }
+
     // get hostname and pid
     char hostname[MAXBUF];
     gethostname( hostname, MAXBUF );

@@ -36,6 +36,10 @@
 #  include <unistd.h>		// set mem allocation limit
 #endif
 
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include <plib/sg.h>
 
 #include <simgear/constants.h>
@@ -52,6 +56,10 @@
 
 FG_USING_STD(cout);
 FG_USING_STD(endl);
+FG_USING_STD(string);
+FG_USING_STD(vector);
+
+vector<string> load_dirs;
 
 
 // do actual scan of directory and loading of files
@@ -81,7 +89,7 @@ int actual_load_polys( const string& dir, FGConstruct& c, FGClipper& clipper ) {
 	    ext = file.substr(pos + 1);
 	    cout << file << "  " << f_index << "  '" << ext << "'" << endl;
 	    full_path = dir + "/" + file;
-	    if ( (ext == "dem") || (ext == "dem.gz") ) {
+	    if ( (ext == "dem") || (ext == "dem.gz") || (ext == "ind") ) {
 		// skip
 	    } else {
 		cout << "ext = '" << ext << "'" << endl;
@@ -109,47 +117,13 @@ int load_polys( FGConstruct& c ) {
     // initialize clipper
     clipper.init();
 
-    // load airports
-    poly_path = c.get_work_base() + "/AirportArea/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
-
-    // load GSHHS land masses
-    poly_path = c.get_work_base() + "/GSHHS-LandMass/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
-
-    // load GSHHS lakes
-    poly_path = c.get_work_base() + "/GSHHS-Lakes/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
-
-    // load GSHHS islands
-    poly_path = c.get_work_base() + "/GSHHS-Islands/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
-
-    // load GSHHS ponds
-    poly_path = c.get_work_base() + "/GSHHS-Ponds/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
-
-    // load USA hydro data
-    poly_path = c.get_work_base() + "/USA-Hydro/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
-
-     // load USA urban areas
-    poly_path = c.get_work_base() + "/USA-Urban/" + base;
-    cout << "poly_path = " << poly_path << endl;
-    count += actual_load_polys( poly_path, c, clipper );
-    cout << "  loaded " << count << " total polys" << endl;
+    // load 2D polygons from all directories provided
+    for (int i = 0; i < load_dirs.size(); i++) {
+	poly_path = load_dirs[i] + '/' + base;
+	cout << "poly_path = " << poly_path << endl;
+	count += actual_load_polys( poly_path, c, clipper );
+	cout << "  loaded " << count << " total polys" << endl;
+    }
 
     point2d min, max;
     min.x = c.get_bucket().get_center_lon() - 0.5 * c.get_bucket().get_width();
@@ -174,21 +148,16 @@ int load_dem( FGConstruct& c, FGArray& array) {
     point_list result;
     string base = c.get_bucket().gen_base_path();
 
-    // try 3 arcsec dems first
-    string dem_path = c.get_work_base() + "/DEM-3/" + base 
-	+ "/" + c.get_bucket().gen_index_str() + ".dem";
-    cout << "dem_path = " << dem_path << endl;
-
-    if ( ! array.open(dem_path) ) {
-	cout << "ERROR: cannot open 3 arcsec file " << dem_path << endl;
-	cout << "trying 30 arcsec file" << endl;
-
-	// try 30 arcsec dem
-	dem_path = c.get_work_base() + "/DEM-30/" + base 
+    for (int i = 0; i < load_dirs.size(); i++) {
+	string dem_path = load_dirs[i] + "/" + base
 	    + "/" + c.get_bucket().gen_index_str() + ".dem";
 	cout << "dem_path = " << dem_path << endl;
-	if ( ! array.open(dem_path) ) {
-	    cout << "ERROR: cannot open 3 arcsec file " << dem_path << endl;
+
+	if ( array.open(dem_path) ) {
+	    cout << "Found DEM file " << dem_path << endl;
+	    break;
+	} else {
+	    cout << "Failed to open DEM file " << dem_path << endl;
 	}
     }
 
@@ -207,7 +176,7 @@ int fit_dem(FGArray& array, int error) {
 
 // triangulate the data for each polygon ( first time before splitting )
 void first_triangulate( FGConstruct& c, const FGArray& array,
-		     FGTriangle& t ) {
+			FGTriangle& t ) {
     // first we need to consolidate the points of the DEM fit list and
     // all the polygons into a more "Triangle" friendly format
 
@@ -504,43 +473,44 @@ void do_output( FGConstruct& c, FGGenOutput& output ) {
 void do_custom_objects( const FGConstruct& c ) {
     FGBucket b = c.get_bucket();
 
-    string work_base = c.get_work_base();
-    string src_dir = work_base + "/AirportObj/" + b.gen_base_path();
-    string index_file = src_dir + "/" + b.gen_index_str() + ".ind";
+    for (int i = 0; i < load_dirs.size(); i++) {
+	string base_dir = load_dirs[i] + "/" + b.gen_base_path();
+	string index_file = base_dir + "/" + b.gen_index_str() + ".ind";
+	cout << "collecting custom objects from " << index_file << endl;
 
-    cout << "collecting custom objects from " << index_file << endl;
+	string output_base = c.get_output_base();
+	string dest_dir = output_base + "/Scenery/" + b.gen_base_path();
+	string dest_ind = dest_dir + "/" + b.gen_index_str() + ".ind";
 
-    string output_base = c.get_output_base();
-    string dest_dir = output_base + "/Scenery/" + b.gen_base_path();
-    string dest_ind = dest_dir + "/" + b.gen_index_str() + ".ind";
+	fg_gzifstream in( index_file );
 
-    fg_gzifstream in( index_file );
-
-    if ( ! in.is_open() ) {
-	cout << "No custom objects" << endl;
-    } else {
-	FILE *fp;
-	if ( (fp = fopen( dest_ind.c_str(), "w" )) == NULL ) {
-	    cout << "ERROR: opening " << dest_ind << " for writing!" << endl;
-	    exit(-1);
-	}
+	if ( ! in.is_open() ) {
+	    cout << "No custom objects" << endl;
+	} else {
+	    FILE *fp;
+	    if ( (fp = fopen( dest_ind.c_str(), "w" )) == NULL ) {
+		cout << "ERROR: opening " << dest_ind << " for writing!" << endl;
+		exit(-1);
+	    }
 	
-	string token, name;
+	    string token, name;
 
-	while ( ! in.eof() ) {
-	    in >> token;
-	    in >> name;
-	    in >> skipws;
+	    while ( ! in.eof() ) {
+		in >> token;
+		in >> name;
+		in >> skipws;
 
-	    cout << "token = " << token << " name = " << name << endl;
-	    string command = "cp " + src_dir + "/" + name + ".gz " + dest_dir;
-	    cout << "running " << command << endl;
-	    system( command.c_str() );
+		cout << "token = " << token << " name = " << name << endl;
+		string command = "cp " + base_dir + "/" + name + ".gz "
+		    + dest_dir;
+		cout << "running " << command << endl;
+		system( command.c_str() );
 
-	    fprintf(fp, "OBJECT %s\n", name.c_str());
+		fprintf(fp, "OBJECT %s\n", name.c_str());
+	    }
+
+	    fclose(fp);
 	}
-
-	fclose(fp);
     }
 }
 
@@ -686,22 +656,73 @@ void construct_tile( FGConstruct& c ) {
 
 // display usage and exit
 void usage( const string name ) {
-    cout << "Usage: " << name
-	 << " <min_tri_angle> <work_base> <output_base> tile_id" << endl;
-    cout << "Usage: " << name
-	 << " <min_tri_angle> <work_base> <output_base> center_lon center_lat xdist ydist"
-	 << endl;
+    cout << "Usage: " << name << endl;
+    cout << "[ --output-dir=<directory>" << endl;
+    cout << "  --work-dir=<directory>" << endl;
+    cout << "  --min-angle=<angle>" << endl;
+    cout << "  --tile-id=<id>" << endl;
+    cout << "  --lon=<degrees>" << endl;
+    cout << "  --lat=<degrees>" << endl;
+    cout << "  --xdist=<degrees>" << endl;
+    cout << "  --ydist=<degrees>" << endl;
+    cout << "<load directory...>" << endl;
     exit(-1);
 }
 
 
 int main(int argc, char **argv) {
-    double lon, lat;
+    string output_dir = ".";
+    string work_dir = ".";
+    string min_angle = "10";
+    double lon = -110.664244;	// P13
+    double lat = 33.352890;
+    double xdist = -1;		// 1/2 degree in each direction
+    double ydist = -1;
+    long tile_id = -1;
 
     fglog().setLogLevels( FG_ALL, FG_DEBUG );
 
-    if ( argc < 4 ) {
-	usage( argv[0] );
+    //
+    // Parse the command-line arguments.
+    //
+    int arg_pos;
+    for (arg_pos = 1; arg_pos < argc; arg_pos++) {
+	string arg = argv[arg_pos];
+
+	if (arg.find("--output-dir=") == 0) {
+	    output_dir = arg.substr(13);
+	} else if (arg.find("--work-dir=") == 0) {
+	    work_dir = arg.substr(11);
+	} else if (arg.find("--min-angle=") == 0) {
+	    min_angle = arg.substr(12);
+	} else if (arg.find("--tile-id=") == 0) {
+	    tile_id = atol(arg.substr(10).c_str());
+	} else if (arg.find("--lon=") == 0) {
+	    lon = atof(arg.substr(6).c_str());
+	} else if (arg.find("--lat=") == 0) {
+	    lat = atof(arg.substr(6).c_str());
+	} else if (arg.find("--xdist=") == 0) {
+	    xdist = atof(arg.substr(8).c_str());
+	} else if (arg.find("--ydist=") == 0) {
+	    ydist = atof(arg.substr(8).c_str());
+	} else if (arg.find("--") == 0) {
+	    usage(argv[0]);
+	} else {
+	    break;
+	}
+    }
+
+    cout << "Output directory is " << output_dir << endl;
+    cout << "Working directory is " << work_dir << endl;
+    cout << "Minimum angle is " << min_angle << endl;
+    cout << "Tile id is " << tile_id << endl;
+    cout << "Center longitude is " << lon << endl;
+    cout << "Center latitude is " << lat << endl;
+    cout << "X distance is " << xdist << endl;
+    cout << "Y distance is " << ydist << endl;
+    for (int i = arg_pos; i < argc; i++) {
+	load_dirs.push_back(argv[i]);
+	cout << "Load directory: " << argv[i] << endl;
     }
 
     // set mem allocation limit.  Reason: occasionally the triangle()
@@ -731,93 +752,71 @@ int main(int argc, char **argv) {
     // main construction data management class
     FGConstruct c;
 
-    c.set_angle( argv[1] );
-    c.set_work_base( argv[2] );
-    c.set_output_base( argv[3] );
+    c.set_angle( min_angle );
+    c.set_work_base( work_dir );
+    c.set_output_base( output_dir );
 
     c.set_min_nodes( 50 );
     c.set_max_nodes( (int)(FG_MAX_NODES * 0.8) );
 
-    // lon = -146.248360; lat = 61.133950;     // PAVD (Valdez, AK)
-    // lon = -110.664244; lat = 33.352890;     // P13
-    // lon = -93.211389; lat = 45.145000;      // KANE
-    // lon = -92.486188; lat = 44.590190;      // KRGK
-    // lon = -89.7446823; lat= 29.314495;
-    // lon = -122.488090; lat = 42.743183;     // 64S
-    // lon = -114.861097; lat = 35.947480;     // 61B
-    // lon = -112.012175; lat = 41.195944;     // KOGD
-    // lon = -90.757128; lat = 46.790212;      // WI32
-    // lon = -122.220717; lat = 37.721291;     // KOAK
-    // lon = -111.721477; lat = 40.215641;     // KPVU
-    // lon = -122.309313; lat = 47.448982;     // KSEA
-    lon = -121.534; lat = 47.0131;          // 6WA8
-    // lon = -148.798131; lat = 63.645099;     // AK06 (Danali, AK)
-    // lon = -92.5; lat = 47.5;                // Marsh test (northern MN)
-    // lon = -111.977773; lat = 40.788388;     // KSLC
-    // lon = -121.914; lat = 42.5655;          // TEST (Oregon SW of Crater)
-    // lon = -76.201239; lat = 36.894606;      // KORF (Norfolk, Virginia)
-    // lon = -147.166; lat = 60.9925;          // Hale-bop test
-
-    if ( argc == 4 ) {
-	// construct the default tile and exit
-
-	FGBucket b( lon, lat );
-	c.set_bucket( b );
-	construct_tile( c );
-    } else if ( argc == 5 ) {
-	// construct a specific tile and exit
-
-	long index = atoi( argv[4] );
-	FGBucket b( index );
-	c.set_bucket( b );
-	construct_tile( c );
-    } else if ( argc == 8 ) {
-	// build all the tiles in an area
-
-	lon = atof( argv[4] );
-	lat = atof( argv[5] );
-	double xdist = atof( argv[6] );
-	double ydist = atof( argv[7] );
-
-	double min_x = lon - xdist;
-	double min_y = lat - ydist;
-	FGBucket b_min( min_x, min_y );
-	FGBucket b_max( lon + xdist, lat + ydist );
-
-	FGBucket b_start(550401L);
-	bool do_tile = true;
-
-	if ( b_min == b_max ) {
-	    c.set_bucket( b_min );
+    if (tile_id == -1) {
+	if (xdist == -1 || ydist == -1) {
+	    // construct the tile around the 
+	    // specified location
+	    cout << "Building single tile at " << lat << ',' << lon << endl;
+	    FGBucket b( lon, lat );
+	    c.set_bucket( b );
 	    construct_tile( c );
 	} else {
-	    FGBucket b_cur;
-	    int dx, dy, i, j;
+	    // build all the tiles in an area
+
+	    cout << "Building tile(s) at " << lat << ',' << lon
+		 << " with x distance " << xdist
+		 << " and y distance " << ydist << endl;
+	    double min_x = lon - xdist;
+	    double min_y = lat - ydist;
+	    FGBucket b_min( min_x, min_y );
+	    FGBucket b_max( lon + xdist, lat + ydist );
+
+	    FGBucket b_start(550401L);
+	    bool do_tile = true;
+
+	    if ( b_min == b_max ) {
+		c.set_bucket( b_min );
+		construct_tile( c );
+	    } else {
+		FGBucket b_cur;
+		int dx, dy, i, j;
 	    
-	    fgBucketDiff(b_min, b_max, &dx, &dy);
-	    cout << "  construction area spans tile boundaries" << endl;
-	    cout << "  dx = " << dx << "  dy = " << dy << endl;
+		fgBucketDiff(b_min, b_max, &dx, &dy);
+		cout << "  construction area spans tile boundaries" << endl;
+		cout << "  dx = " << dx << "  dy = " << dy << endl;
 
-	    for ( j = 0; j <= dy; j++ ) {
-		for ( i = 0; i <= dx; i++ ) {
-		    b_cur = fgBucketOffset(min_x, min_y, i, j);
+		for ( j = 0; j <= dy; j++ ) {
+		    for ( i = 0; i <= dx; i++ ) {
+			b_cur = fgBucketOffset(min_x, min_y, i, j);
 
-		    if ( b_cur == b_start ) {
-			do_tile = true;
-		    }
+			if ( b_cur == b_start ) {
+			    do_tile = true;
+			}
 
-		    if ( do_tile ) {
-			c.set_bucket( b_cur );
-			construct_tile( c );
-		    } else {
-			cout << "skipping " << b_cur << endl;
+			if ( do_tile ) {
+			    c.set_bucket( b_cur );
+			    construct_tile( c );
+			} else {
+			    cout << "skipping " << b_cur << endl;
+			}
 		    }
 		}
+		// string answer; cin >> answer;
 	    }
-	    // string answer; cin >> answer;
 	}
     } else {
-	usage( argv[0] );
+	// construct the specified tile
+        cout << "Building tile " << tile_id << endl;
+	FGBucket b( tile_id );
+	c.set_bucket( b );
+	construct_tile( c );
     }
 
     cout << "[Finished successfully]" << endl;

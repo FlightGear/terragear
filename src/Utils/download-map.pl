@@ -2,8 +2,12 @@
 
 use GD;
 
-$scenerydir = "/stage/fgfs01/ftp/pub/fgfs/Scenery";
-$outputdir = "$ENV{HOME}/public-html/fgfs/Downloads";
+if ( $#ARGV < 0 ) {
+    $scenerydir = "/stage/fgfs01/ftp/pub/fgfs/Scenery";
+} else {
+    $scenerydir = shift(@ARGV);
+}
+$outputdir = "mapresult/";
 
 $daysecs = 3600*24;
 
@@ -67,22 +71,22 @@ foreach $file ( @files ) {
     ($sec, $min, $hour, $mday, $mon, $year, $wday, $yday, $isdst) =
         localtime($mtime);
 
-    $date = sprintf("%2d/%02d/%02d", $mon + 1, $mday, $year);
+    $date = sprintf("%2d/%02d/%02d", $mon + 1, $mday, 1900 + $year);
 
     $age = (time() - $mtime) / $daysecs;
 
     if ( $age < 7 ) {
-	$color1 = $red1;
-	$color2 = $red2;
-    } elsif ( $age < 14 ) {
-	$color1 = $orange1;
-	$color2 = $orange2;
-    } elsif ( $age < 21 ) {
-	$color1 = $yellow1;
-	$color2 = $yellow2;
-    } else {
 	$color1 = $green1;
 	$color2 = $green2;
+    } elsif ( $age < 14 ) {
+	$color1 = $yellow1;
+	$color2 = $yellow2;
+    } elsif ( $age < 21 ) {
+	$color1 = $orange1;
+	$color2 = $orange2;
+    } else {
+	$color1 = $red1;
+	$color2 = $red2;
     }
 
     $file =~ s/.*\///g;
@@ -116,7 +120,7 @@ foreach $file ( @files ) {
     # $y1 = $height - $y1;
     # $y2 = $height - $y2;
     print HTML "<AREA SHAPE=rect COORDS=$x1,$y2,$x2,$y1 ";
-    print HTML "HREF=ftp://kenai.me.umn.edu:/pub/fgfs/Scenery/$file.tar.gz ";
+    print HTML "HREF=ftp://fgfs.hfrl.umn.edu:/pub/fgfs/Scenery/$file.tar.gz ";
     printf(HTML "ALT=\"%s  %.2f Mb  $date\">\n", $file, $mb);
 }
 
