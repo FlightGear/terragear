@@ -55,6 +55,7 @@ inline static void init ()
 
   set_area("SomeSort", SomeSortOfArea);
   set_area("Hole", HoleArea);
+  set_area("Airport", AirportArea);
   set_area("Island", IslandArea);
   set_area("Pond", PondArea);
   set_area("Swamp or Marsh", MarshArea);

@@ -53,6 +53,7 @@ enum AreaType {
     GlacierArea,		// Any solid ice/snow
     PackIceArea,		// Water with ice packs
     OceanArea,
+    AirportArea,
     UrbanArea,			// Densely-populated city or large town
     TownArea,			// Small town or village
     FloodLandArea,		// Land subject to flooding
