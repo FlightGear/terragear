@@ -104,10 +104,10 @@ TGTriangle::build( const point_list& corner_list,
 		     << gpc_poly.get_hole_flag( j ) << endl;
 
 		/*
-		char junkn[256];
+                char junkn[256];
 		sprintf(junkn, "c%d", j);
 		gpc_poly.write_contour( j, junkn );
-		*/
+                */
 
 		for ( int k = 0; k < gpc_poly.contour_size( j ); k++ ) {
 		    Point3D p = gpc_poly.get_pt( j, k );
@@ -147,6 +147,15 @@ TGTriangle::build( const point_list& corner_list,
 
 	    cout << "after sanity checks, contours = " 
 		 << gpc_poly.contours() << endl;
+            /*
+            for ( j = 0; j < gpc_poly.contours(); ++j ) {
+                cout << "  contour " << j << " size = "
+                     << gpc_poly.contour_size( j ) << endl;
+		char junkn[256];
+		sprintf(junkn, "d%d", j);
+		gpc_poly.write_contour( j, junkn );
+            }
+            */
 
 	    calc_points_inside( gpc_poly );
 
@@ -275,61 +284,6 @@ int TGTriangle::rebuild( TGConstruct& c ) {
 
     return 0;
 }
-
-
-#if 0
-static void write_out_data(struct triangulateio *out) {
-    int i, j;
-
-    FILE *node = fopen("tile.node", "w");
-    fprintf(node, "%d 2 %d 0\n", 
-	    out->numberofpoints, out->numberofpointattributes);
-    for ( i = 0; i < out->numberofpoints; ++i) {
-	fprintf(node, "%d %.6f %.6f %.2f\n", 
-		i, out->pointlist[2*i], out->pointlist[2*i + 1], 0.0);
-    }
-    fclose(node);
-
-    FILE *ele = fopen("tile.ele", "w");
-    fprintf(ele, "%d 3 0\n", out->numberoftriangles);
-    for ( i = 0; i < out->numberoftriangles; ++i) {
-        fprintf(ele, "%d ", i);
-        for ( j = 0; j < out->numberofcorners; ++j) {
-	    fprintf(ele, "%d ", out->trianglelist[i * out->numberofcorners + j]);
-        }
-        for ( j = 0; j < out->numberoftriangleattributes; ++j) {
-	    fprintf(ele, "%.6f ", 
-		    out->triangleattributelist[i 
-					      * out->numberoftriangleattributes
-					      + j]
-		    );
-        }
-	fprintf(ele, "\n");
-    }
-    fclose(ele);
-
-    FILE *fp = fopen("tile.poly", "w");
-    fprintf(fp, "0 2 1 0\n");
-    fprintf(fp, "%d 1\n", out->numberofsegments);
-    for ( i = 0; i < out->numberofsegments; ++i) {
-	fprintf(fp, "%d %d %d %d\n", 
-		i, out->segmentlist[2*i], out->segmentlist[2*i + 1],
-		out->segmentmarkerlist[i] );
-    }
-    fprintf(fp, "%d\n", out->numberofholes);
-    for ( i = 0; i < out->numberofholes; ++i) {
-	fprintf(fp, "%d %.6f %.6f\n", 
-		i, out->holelist[2*i], out->holelist[2*i + 1]);
-    }
-    fprintf(fp, "%d\n", out->numberofregions);
-    for ( i = 0; i < out->numberofregions; ++i) {
-	fprintf(fp, "%d %.6f %.6f %.6f\n", 
-		i, out->regionlist[4*i], out->regionlist[4*i + 1],
-		out->regionlist[4*i + 2]);
-    }
-    fclose(fp);
-}
-#endif
 
 
 // Front end triangulator for polygon list.  Allocates and builds up
@@ -480,7 +434,7 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
     vorout.normlist = (REAL *) NULL;      // Needed only if -v switch used.
     
     // TEMPORARY
-    write_tri_data(&in);
+    // write_tri_data(&in);
 
     // Triangulate the points.  Switches are chosen to read and write
     // a PSLG (p), preserve the convex hull (c), number everything
