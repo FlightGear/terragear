@@ -34,12 +34,21 @@ while ( <> ) {
     if ( $F[0] == 1 || $F[0] == 16 || $F[0] == 17 ) {
         # print "airport = " . $_;
 
+        my( $type );
+        if ( $F[0] == 1 ) {
+            $type = "A";
+        } elsif ( $F[0] == 16 ) {
+            $type = "S";
+        } elsif ( $F[0] == 17 ) {
+            $type = "H";
+        }
+
         if ( $last_apt ne "" ) {
             # print out airport definition line
             my( $lon ) = $rwy_lon / $count;
             my( $lat ) = $rwy_lat / $count;
-            printf( "A %-4s %10.6f %11.6f %5d %s%s%s %s\n",
-                    $last_apt, $lat, $lon, $last_elev,
+            printf( "%s %-4s %10.6f %11.6f %5d %s%s%s %s\n",
+                    $type, $last_apt, $lat, $lon, $last_elev,
                     $apt_type, $has_tower, $default_bldgs, $last_name );
         }
 
