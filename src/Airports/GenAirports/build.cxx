@@ -1635,6 +1635,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    material = "pc_";	// concrete
 	} else if ( surface_flag == "D" ) {
 	    material = "dirt_rwy";
+	} else if ( surface_flag == "G" ) {
+	    material = "grass_rwy";
 	} else if ( surface_flag == "T" ) {
 	    material = "grass_rwy";
 	} else {
@@ -1645,7 +1647,9 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	cout << "type flag = " << type_flag << endl;
 
-	if ( surface_flag == "D" || surface_flag == "T" ) {
+	if ( surface_flag == "D" || surface_flag == "G" ||
+	     surface_flag == "T" )
+	{
 	    gen_simple_rwy( runways[i], material,
 			    &rwy_polys, &texparams, &accum );
 	} else if ( type_flag == "P" ) {
