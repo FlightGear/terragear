@@ -23,13 +23,21 @@
 #---------------------------------------------------------------------------
 
 
-bin_PROGRAMS = demchop
+bin_PROGRAMS = demchop hgtchop
 
 demchop_SOURCES = \
 	demchop.cxx point2d.hxx
 
 demchop_LDADD = \
 	$(top_builddir)/src/Lib/DEM/libDEM.a \
+	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz
+	$(base_LIBS)
+
+hgtchop_SOURCES = \
+	hgtchop.cxx point2d.hxx
+
+hgtchop_LDADD = \
+	$(top_builddir)/src/Lib/HGT/libHGT.a \
 	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz
 	$(base_LIBS)
 
