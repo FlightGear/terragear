@@ -97,6 +97,10 @@ static void calc_elevations( const string &root, Matrix_Point3Df &Pts ) {
             // found/opened
 	    array.parse( b );
 
+            // this will do a hasty job of removing voids by inserting
+            // data from the nearest neighbor (sort of)
+            array.remove_voids();
+
 	    // update all the non-updated elevations that are inside
 	    // this array file
 	    double elev;
@@ -150,8 +154,8 @@ TGAptSurface::TGAptSurface( const string& path,
 
     cout << "Area size = " << x_m << " x " << y_m << " (m)" << endl;
 
-    int xdivs = (int)(x_m / 1200.0) + 1;
-    int ydivs = (int)(y_m / 1200.0) + 1;
+    int xdivs = (int)(x_m / 600.0) + 1;
+    int ydivs = (int)(y_m / 600.0) + 1;
 
     if ( xdivs < 3 ) { xdivs = 3; }
     if ( ydivs < 3 ) { ydivs = 3; }
@@ -160,13 +164,13 @@ TGAptSurface::TGAptSurface( const string& path,
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
-    // Build the double res input grid
+    // Build the extra res input grid
     int mult = 10;
-    Matrix_Point3Df dPts((xdivs+1) * mult, (ydivs + 1) * mult);
+    Matrix_Point3Df dPts((xdivs+2) * mult + 1, (ydivs+2) * mult + 1);
     for ( int i = 0; i < dPts.rows(); ++i ) {
         for ( int j = 0; j < dPts.cols(); ++j ) {
-            dPts(i,j) = Point3Df( min_deg.lon() + i * (dlon/(double)mult),
-                                  min_deg.lat() + j * (dlat/(double)mult),
+            dPts(i,j) = Point3Df( min_deg.lon() + (i-mult)*(dlon/(double)mult),
+                                  min_deg.lat() + (j-mult)*(dlat/(double)mult),
                                   -9999 );
         }
     }
@@ -176,13 +180,14 @@ TGAptSurface::TGAptSurface( const string& path,
 
     // Build the normal res input grid from the double res version
     Matrix_Point3Df Pts(xdivs + 1, ydivs + 1);
-    for ( int i = 0; i <= xdivs; ++i ) {
-        for ( int j = 0; j <= ydivs; ++j ) {
+    for ( int i = 0; i < xdivs + 1; ++i ) {
+        for ( int j = 0; j < ydivs + 1; ++j ) {
             cout << i << "," << j << endl;
             double accum = 0.0;
             for ( int ii = 0; ii < mult; ++ii ) {
                 for ( int jj = 0; jj < mult; ++jj ) {
-                    accum += dPts(mult * i + ii, mult * j + jj).z();
+                    accum += dPts(mult*(i+1) - (mult/2) + ii,
+                                  mult*(j+1) - (mult/2) + jj).z();
                 }
             }
             Pts(i,j) = Point3Df( min_deg.lon() + i * dlon,

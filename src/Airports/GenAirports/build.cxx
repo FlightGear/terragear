@@ -308,7 +308,7 @@ static void build_runway( const TGRunway& rwy_info,
     } else {
 	base = gen_runway_area_w_extend( rwy_info, 20, 20 );
         // also clear a safe area around the runway
-        safe_base = gen_runway_area_w_extend( rwy_info, 300, 120 );
+        safe_base = gen_runway_area_w_extend( rwy_info, 300, 60 );
     }
     *apt_clearing = polygon_union(safe_base, *apt_clearing);
 
@@ -860,7 +860,7 @@ void build_airport( string airport_raw, float alt_m,
 	tri_materials.push_back( "Grass" );
 
 	base_txs.clear();
-	base_txs = calc_tex_coords( b, nodes.get_node_list(), tri_v );
+	base_txs = sgCalcTexCoords( b, nodes.get_node_list(), tri_v );
 
 	base_tc.clear();
 	for ( j = 0; j < (int)base_txs.size(); ++j ) {
@@ -1014,7 +1014,7 @@ void build_airport( string airport_raw, float alt_m,
 	strip_materials.push_back( "Grass" );
 
 	base_txs.clear();
-	base_txs = calc_tex_coords( b, nodes.get_node_list(), strip_v );
+	base_txs = sgCalcTexCoords( b, nodes.get_node_list(), strip_v );
 
 	base_tc.clear();
 	for ( j = 0; j < (int)base_txs.size(); ++j ) {
@@ -1080,6 +1080,11 @@ void build_airport( string airport_raw, float alt_m,
         point_list geod_light_nodes
             = tmp_light_list[i].get_poly().get_contour(0);
 
+#if 0
+        // This code forces the elevation of all the approach lighting
+        // components for a particular runway end up to the highest
+        // max elevation for any of the points.  That can cause other
+        // problem so let's nuke code this for the moment.
         string flag = rwy_lights[i].get_flag();
         if ( flag != (string)"" ) {
             const_elev_map_iterator it = elevation_map.find( flag );
@@ -1090,6 +1095,7 @@ void build_airport( string airport_raw, float alt_m,
                 }
             }
         }
+#endif
         
         // this is a little round about, but what we want to calculate the
         // light node elevations as ground + an offset so we do them
