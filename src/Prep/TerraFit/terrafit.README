@@ -1,0 +1,26 @@
+Norman Vine: nhv@cape.com writes:
+
+Attached find a revised Python script to drive Terra as a direct
+replacement for ArrayFit
+
+To use this you will need to install Terra available @
+http://graphics.cs.uiuc.edu/~garland/software/terra.html
+
+The direct link to the source code is:
+http://graphics.cs.uiuc.edu/~garland/dist/terra-0.7.tar.gz
+
+This should run *considerably* faster.
+ < order(s) of magnitude + >
+
+This speedup is due a sosphisticated 'search space' cacheing scheme 
+in Terra so that the entire point set does not have to be searched per 
+iteration
+
+Note the resulting surface should be *very* close to what the original 
+ArrayFit routine produces in that basic algorithm used is the same
+
+terrafit.py --help for usage ( same as original program )
+
+Enjoy
+
+Norman
