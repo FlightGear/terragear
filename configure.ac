@@ -197,7 +197,7 @@ LIBS="$base_LIBS"
 AC_SUBST(base_LIBS)
 AC_SUBST(opengl_LIBS)
 
-# needed for plib 1.3.x and later 
+# needed for plib 1.6.x or later 
 AC_CHECK_LIB(plibul, ulInit,,,)
 
 AM_CONDITIONAL(HAVE_XWINDOWS, test "x$ac_cv_lib_X11_XCreateWindow" = "xyes" )
@@ -272,8 +272,8 @@ AC_TRY_RUN([
 #define XSTRINGIFY(X) #X
 
 #define MIN_MAJOR 0
-#define MIN_MINOR 0
-#define MIN_MICRO 13
+#define MIN_MINOR 3
+#define MIN_MICRO 0
 
 int main() {
     int major, minor, micro;

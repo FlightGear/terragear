@@ -23,7 +23,7 @@
 #---------------------------------------------------------------------------
 
 
-EXTRA_DIST = chop.pl trans.pl
+EXTRA_DIST = chop.pl
 
 bin_PROGRAMS = photo wgs84offset findcorners
 

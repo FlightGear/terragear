@@ -1,5 +1,44 @@
+New in 0.0.5
+* February 25, 2003
+
+* Added a tutorial for how to generate scenery.
+* Add support for UK OSBG36 coordinate systems (when calculating
+  texture coordinates)
+* Updated dem libs to support z units of feet.
+* Added tguserdef, a utility for adding user-defined points, lines,
+  and polygons to scenery.  It uses the regular XML property format,
+  which users can create easily in a text editor.  See
+  src/Prep/UserDef/sample.xml for examples.
+
+* Added support for generating accurate and correct runway and approach
+  lighting.
+* Use wgs_84 math to layout runways and airports for increased accuracy.
+  This also fixed problems with runway textures not matching up exactly.
+* Add a clearing around every runway so procedurally generated objects
+  can't obstruct an approach
+
+* modified landcover code to borrow a cover type from an adjoining
+  tile if it ends up as default -- this will help avoid resolution
+  errors near rivers, urban areas, etc.
+* Fixed a bug in triangulating that was potentially overwriting other
+  memory when creating the hole list to pass to the triangulator.  This
+  fixes a lot of glitches!
+* Don't generate a DEM tile when all elevations are zero.  This should
+  save about 70% worldwide with the GTOPO30 (less with the USGS DEM-3).
+
+* Added a utility to allow insertion of aerial photos into TerraGear scenery
+* libgpc.a renamed to libgenpolyclip.a to avoid a conflict with the
+  gnu pascal compiler.
+* Updated/modernized automake/autoconf scripts
+* new library to support NIMA's Vector Product Format
+
+* Cygwin fixes
+* Irix fixes
+
+
 New in 0.0.4
 * December 19, 2000
+
 * We now have a much more robust "point in a polygon" routine
   (i.e. finds a random point inside a polygon, but not inside a hole
   in that polygon.)
