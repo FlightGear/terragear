@@ -57,12 +57,16 @@ private:
 
     Point3D min_deg, max_deg;
 
+    // externally seeded average airport elevation
+    double average_elev_m;
+
 public:
 
     // Constructor, specify min and max coordinates of desired area in
-    // lon/lat degrees
+    // lon/lat degrees, also please specify an "average" airport
+    // elevations in meters.
     TGAptSurface( const string &path, const string_list& elev_src,
-                  Point3D _min_deg, Point3D _max_deg );
+                  Point3D _min_deg, Point3D _max_deg, double _average_elev_m );
 
     // Destructor
     ~TGAptSurface();

@@ -29,6 +29,7 @@ genapts_SOURCES = \
 	apt_surface.hxx apt_surface.cxx \
 	build.cxx build.hxx \
 	convex_hull.cxx convex_hull.hxx \
+	elevations.cxx elevations.hxx \
 	global.hxx \
 	lights.hxx lights.cxx \
 	main.cxx \

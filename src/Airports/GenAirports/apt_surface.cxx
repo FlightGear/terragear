@@ -33,12 +33,14 @@
 
 #include <Array/array.hxx>
 
+#include "elevations.hxx"
 #include "global.hxx"
 #include "apt_surface.hxx"
 
 SG_USING_NAMESPACE( PLib );
 
 
+#if 0
 // fix node elevations.  Offset is added to the final elevation,
 // returns average of all points.
 static double calc_elevations( const string &root, const string_list elev_src,
@@ -164,17 +166,20 @@ static double calc_elevations( const string &root, const string_list elev_src,
 
     return average;
 }
+#endif
 
 
 // Constructor, specify min and max coordinates of desired area in
 // lon/lat degrees
 TGAptSurface::TGAptSurface( const string& path,
                             const string_list& elev_src,
-                            Point3D _min_deg, Point3D _max_deg )
+                            Point3D _min_deg, Point3D _max_deg,
+                            double _average_elev_m )
 {
     // Calculate desired size of grid
     min_deg = _min_deg;
     max_deg = _max_deg;
+    average_elev_m = _average_elev_m;
 
     // The following size calculations are for the purpose of
     // determining grid divisions so it's not important that they be
@@ -220,8 +225,12 @@ TGAptSurface::TGAptSurface( const string& path,
         }
     }
 
-    // Determine elevation of the grid points
-    double average = calc_elevations( path, elev_src, dPts );
+    // Lookup the elevations of all the grid points
+    tgCalcElevations( path, elev_src, dPts );
+
+    // Clamp the elevations against the externally provided average
+    // elevation.
+    tgClampElevations( dPts, average_elev_m, max_clamp );
 
     // Build the normal res input grid from the double res version
     Matrix_Point3Dd Pts(ydivs + 1, xdivs + 1);
@@ -259,7 +268,7 @@ TGAptSurface::TGAptSurface( const string& path,
 
     bool slope_error = true;
     while ( slope_error ) {
-        // cout << "start of slope processing pass" << endl;
+        SG_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
         slope_error = false;
         // Add some "slope" sanity to the resulting surface grid points
         for ( int i = 0; i < Pts.cols() - 1; ++i ) {
@@ -280,11 +289,11 @@ TGAptSurface::TGAptSurface( const string& path,
 
                     slope_error = true;
 
-                    // cout << " (a) detected slope of " << slope
-                    //      << " dist = " << dist << endl;
+                    SG_LOG( SG_GENERAL, SG_DEBUG, " (a) detected slope of "
+                            << slope << " dist = " << dist );
 
-                    double e1 = average - p1.z();
-                    double e2 = average - p2.z();
+                    double e1 = average_elev_m - p1.z();
+                    double e2 = average_elev_m - p2.z();
                     // cout << "  z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
                     // cout << "  e1 = " << e1 << "  e2 = " << e2 << endl;
 
@@ -320,11 +329,11 @@ TGAptSurface::TGAptSurface( const string& path,
 
                     slope_error = true;
 
-                    // cout << " (b) detected slope of " << slope 
-                    //      << " dist = " << dist << endl;
+                    SG_LOG( SG_GENERAL, SG_DEBUG, " (b) detected slope of "
+                            << slope << " dist = " << dist );
 
-                    double e1 = average - p1.z();
-                    double e2 = average - p2.z();
+                    double e1 = average_elev_m - p1.z();
+                    double e2 = average_elev_m - p2.z();
 
                     if ( fabs(e1) > fabs(e2) ) {
                         if ( slope > 0 ) {

@@ -58,6 +58,7 @@
 
 #include "apt_surface.hxx"
 #include "convex_hull.hxx"
+#include "elevations.hxx"
 #include "lights.hxx"
 #include "point2d.hxx"
 #include "poly_extra.hxx"
@@ -961,6 +962,18 @@ void build_airport( string airport_id, float alt_m,
 	tris_tc.push_back( base_tc );
     }
 
+    // Now that we have assembled all the airport geometry nodes into
+    // a list, calculate an "average" airport elevation based on all
+    // the actual airport node points.  This is more useful than
+    // calculating an average over the entire airport surface because
+    // it avoids biases introduced from the surrounding area if the
+    // airport is located in a bowl or on a hill.
+
+    double average = tgAverageElevation( root, elev_src,
+                                         nodes.get_node_list() );
+
+    // Now build the airport nurbs surface ...
+
     // calculation min/max coordinates of airport area
     Point3D min_deg(9999.0, 9999.0, 0), max_deg(-9999.0, -9999.0, 0);
     for ( j = 0; j < (int)nodes.get_node_list().size(); ++j ) {
@@ -1005,16 +1018,17 @@ void build_airport( string airport_id, float alt_m,
     // Extend the area a bit so we don't have wierd things on the edges
     double dlon = max_deg.lon() - min_deg.lon();
     double dlat = max_deg.lat() - min_deg.lat();
-    min_deg.setlon( min_deg.lon() - 0.2 * dlon );
-    max_deg.setlon( max_deg.lon() + 0.2 * dlon );
-    min_deg.setlat( min_deg.lat() - 0.2 * dlat );
-    max_deg.setlat( max_deg.lat() + 0.2 * dlat );
+    min_deg.setlon( min_deg.lon() - 0.3 * dlon );
+    max_deg.setlon( max_deg.lon() + 0.3 * dlon );
+    min_deg.setlat( min_deg.lat() - 0.3 * dlat );
+    max_deg.setlat( max_deg.lat() + 0.3 * dlat );
 
-    TGAptSurface apt_surf( root, elev_src, min_deg, max_deg );
+    TGAptSurface apt_surf( root, elev_src, min_deg, max_deg, average );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Surface created");
 
     // calculate node elevations
-    point_list geod_nodes = calc_elevations( apt_surf, nodes.get_node_list(),
+    point_list geod_nodes = calc_elevations( apt_surf,
+                                             nodes.get_node_list(),
                                              0.0 );
     divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
     SG_LOG(SG_GENERAL, SG_DEBUG, "DIVIDED");

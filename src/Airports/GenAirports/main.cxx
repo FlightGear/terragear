@@ -118,7 +118,7 @@ int main( int argc, char **argv ) {
     string_list elev_src;
     elev_src.clear();
 
-    sglog().setLogLevels( SG_GENERAL, SG_DEBUG );
+    sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
     // parse arguments
     string work_dir = "";
