@@ -380,6 +380,7 @@ AC_CONFIG_FILES([ \
 	src/Lib/TriangleJRS/Makefile \
 	src/Lib/vpf/Makefile \
 	src/Prep/Makefile \
+	src/Prep/ArrayFit/Makefile \
 	src/Prep/DemChop/Makefile \
 	src/Prep/DemInfo/Makefile \
 	src/Prep/DemRaw2ascii/Makefile \
