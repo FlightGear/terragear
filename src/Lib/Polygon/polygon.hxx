@@ -106,6 +106,13 @@ public:
     inline int contour_size( int contour ) const { 
 	return poly[contour].size();
     }
+    inline int total_size() const {
+	int size = 0;
+	for ( int i = 0; i < contours(); ++i ) {
+	    size += poly[i].size();
+	}
+	return size;
+    }
 
     // return the ith point from the specified contour
     inline Point3D get_pt( int contour, int i ) const { 
