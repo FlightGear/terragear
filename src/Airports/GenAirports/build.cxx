@@ -40,12 +40,14 @@
 
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
+#include <simgear/io/sg_binobj.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/texcoord.hxx>
 
 #include <Array/array.hxx>
 #include <Geometry/poly_support.hxx>
 #include <Geometry/trinodes.hxx>
+#include <Output/output.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 #include <Polygon/split.hxx>
@@ -54,7 +56,6 @@
 
 #include "build.hxx"
 #include "convex_hull.hxx"
-#include "output.hxx"
 #include "point2d.hxx"
 #include "runway.hxx"
 #include "scenery_version.hxx"
@@ -1945,7 +1946,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	p.setz( geod_nodes[i].z() );
 	wgs84_nodes.push_back( sgGeodToCart( p ) );
     }
-    double gbs_radius = calc_bounding_radius( gbs_center, wgs84_nodes );
+    float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
     cout << "Done with wgs84 node mapping" << endl;
 
     // calculate normal(s) for this airport
@@ -1979,12 +1980,31 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string objpath = root + "/AirportObj";
     string name = apt_code;
 
-    write_obj( objpath, b, name, gbs_center, gbs_radius, 
-	       wgs84_nodes, normals,
-	       texcoords.get_node_list(), 
-	       tris_v, tris_tc, tri_materials,
-	       strips_v, strips_tc, strip_materials, 
-	       fans_v, fans_tc, fan_materials );
+    sgWriteAsciiObj( objpath, name, b, gbs_center, gbs_radius, 
+		   wgs84_nodes, normals,
+		   texcoords.get_node_list(), 
+		   tris_v, tris_tc, tri_materials,
+		   strips_v, strips_tc, strip_materials, 
+		   fans_v, fans_tc, fan_materials );
+    sgWriteBinObj( objpath, name, b, gbs_center, gbs_radius, 
+		   wgs84_nodes, normals,
+		   texcoords.get_node_list(), 
+		   tris_v, tris_tc, tri_materials,
+		   strips_v, strips_tc, strip_materials, 
+		   fans_v, fans_tc, fan_materials );
+
+#if 0
+    // checking result of write, remove the read_bin() before this
+    // goes into production
+    string file = objpath + "/" + b.gen_base_path() + "/" + name;
+    point_list tmp_texcoords = texcoords.get_node_list();
+    sgReadBinObj( file, gbs_center, &gbs_radius, 
+		  wgs84_nodes, normals,
+		  tmp_texcoords, 
+		  tris_v, tris_tc, tri_materials,
+		  strips_v, strips_tc, strip_materials, 
+		  fans_v, fans_tc, fan_materials );
+#endif
 
     write_index( objpath, b, name );
 

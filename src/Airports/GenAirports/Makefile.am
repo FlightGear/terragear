@@ -29,7 +29,6 @@ genapts_SOURCES = \
 	build.cxx build.hxx \
 	convex_hull.cxx convex_hull.hxx \
 	main.cxx \
-	output.cxx output.hxx \
 	point2d.cxx point2d.hxx \
 	runway.cxx runway.hxx \
 	texparams.hxx
@@ -39,8 +38,9 @@ genapts_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
+	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgbucket -lsgdebug -lsgmath -lsgmisc -lz -lgpc \
+	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lz -lgpc \
 	$(base_LIBS)
 
 INCLUDES += \
