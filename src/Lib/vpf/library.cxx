@@ -17,11 +17,11 @@ VpfLibrary::VpfLibrary (const std::string &path, const VpfDataBase &database)
     _tileref_aft(0),
     _tileref_fbr(0)
 {
-  string path = getChildFileName("tileref");
-  if (hasFile(path, "tileref.aft"))
-    _tileref_aft = getTable(getFileName(path, "tileref.aft"));
-  if (hasFile(path, "fbr"))
-    _tileref_fbr = getTable(getFileName(path, "fbr"));
+  string fullpath = getChildFileName("tileref");
+  if (hasFile(fullpath, "tileref.aft"))
+    _tileref_aft = getTable(getFileName(fullpath, "tileref.aft"));
+  if (hasFile(fullpath, "fbr"))
+    _tileref_fbr = getTable(getFileName(fullpath, "fbr"));
 }
 
 VpfLibrary::VpfLibrary (const VpfLibrary &library)
