@@ -388,6 +388,7 @@ AC_CONFIG_FILES([ \
 	src/Include/Makefile \
 	src/Airports/Makefile \
 	src/Airports/GenAirports/Makefile \
+	src/Airports/Utils/Makefile \
 	src/BuildTiles/Makefile \
 	src/BuildTiles/Clipper/Makefile \
 	src/BuildTiles/GenOutput/Makefile \
