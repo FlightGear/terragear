@@ -71,6 +71,17 @@ typedef runway_list::iterator runway_list_iterator;
 typedef runway_list::const_iterator const_runway_list_iterator;
 
 
+// given a runway center point, length, width, and heading, and
+// altitude (meters) generate the lon and lat 4 corners using wgs84
+// math.
+TGPolygon gen_wgs84_area( Point3D origin,
+                          double length_m,
+                          double displ1, double displ2,
+                          double width_m,
+                          double heading_deg,
+                          double alt_m,
+                          bool add_mid );
+
 // generate an area for a runway with expantion specified as a scale
 // factor (return result points in degrees)
 TGPolygon gen_runway_area_w_scale( const TGRunway& runway, 

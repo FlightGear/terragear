@@ -132,8 +132,8 @@ TGAptSurface::TGAptSurface( const string& path,
 #elif defined( _NURBS_LEAST_SQUARES )
     // Minimum divs appears to need to be at least 5 before the
     // leastsquares nurbs surface approximation stops crashing.
-    if ( xdivs < 5 ) { xdivs = 5; }
-    if ( ydivs < 5 ) { ydivs = 5; }
+    if ( xdivs < 6 ) { xdivs = 6; }
+    if ( ydivs < 6 ) { ydivs = 6; }
 #else
 # error "Need to define _NURBS_GLOBAL_INTER or _NURBS_LEAST_SQUARES"
 #endif
@@ -269,8 +269,11 @@ TGAptSurface::TGAptSurface( const string& path,
     // sanity check: I'm finding that leastSquares() can produce nan
     // surfaces.  We test for this and fall back to globalInterp() if
     // the least squares fails.
+    double result =  query_solver( (min_deg.lon() + max_deg.lon()) / 2.0,
+                                   (min_deg.lat() + max_deg.lat()) / 2.0 );
     Point3Dd p = apt_surf->pointAt( 0.5, 0.5 );
-    if ( p.z() <= 0.0 || p.z() >= 0.0 ) {
+
+    if ( (result > -9000.0) && (p.z() <= 0.0 || p.z() >= 0.0) ) {
         // ok, a valid number
     } else {
         // no, sorry, a nan is not <= 0.0 or >= 0.0
@@ -278,7 +281,7 @@ TGAptSurface::TGAptSurface( const string& path,
                "leastSquares() nurbs interpolation failed!!!");
         char command[256];
         sprintf( command,
-                 "least squares nurbs interpolation failed, using globalInterp() >> last_apt" );
+                 "echo least squares nurbs interpolation failed, using globalInterp() >> last_apt" );
         system( command );
 
         // we could fall back to globalInterp() rather than aborting
@@ -454,6 +457,13 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
             }
 
             u = (max_u + min_u) / 2.0;
+
+            if ( count > 100 ) {
+                // solver failed
+                cout << "binary solver failed..." << endl;
+                return -9999.0;
+            }
+
             ++count;
         }
 
@@ -487,6 +497,12 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
             }
             v = (max_v + min_v) / 2.0;
 
+            if ( count > 100 ) {
+                // solver failed
+                cout << "binary solver failed..." << endl;
+                return -9999.0;
+            }
+
             ++count;
         }
 
@@ -500,15 +516,7 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
             // cout << "        final query distance error = " << dist << endl;
             return p.z();
         }
-
-        gcount++;
-        if ( gcount % 100 == 0 ) {
-            cout << "query count = " << gcount << "  dist = " << dx << ", "
-                 << dy << endl;
-        }
     }
-
-    cout << "binary solver failed..." << endl;
 
     return p.z();
 }

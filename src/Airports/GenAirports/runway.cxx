@@ -37,13 +37,13 @@
 // given a runway center point, length, width, and heading, and
 // altitude (meters) generate the lon and lat 4 corners using wgs84
 // math.
-static TGPolygon gen_wgs84_area( Point3D origin,
-                                 double length_m,
-                                 double displ1, double displ2,
-                                 double width_m,
-                                 double heading_deg,
-                                 double alt_m,
-                                 bool add_mid )
+TGPolygon gen_wgs84_area( Point3D origin,
+                          double length_m,
+                          double displ1, double displ2,
+                          double width_m,
+                          double heading_deg,
+                          double alt_m,
+                          bool add_mid )
 {
     TGPolygon result_list;
     double length_hdg = heading_deg;

@@ -35,7 +35,7 @@
 
 // generate runway lighting
 void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
-                        superpoly_list &lights );
+                        superpoly_list &lights, TGPolygon *apt_base );
 
 // generate taxiway lighting
 void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,

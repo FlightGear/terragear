@@ -603,16 +603,45 @@ void build_airport( string airport_id, float alt_m,
         }
     }
 
-    // write_polygon( accum, "accum" );
-    if ( apt_base.total_size() == 0 ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
-	return;
+    // Now generate small surface for each beacon
+    TGPolygon obj_base, obj_safe_base;
+    double obj_hdg = runways[0].heading;
+    for ( i = 0; i < (int)beacons.size(); ++i ) {
+        obj_base = gen_wgs84_area( beacons[i], 20.0, 0.0, 0.0, 20.0,
+                                   obj_hdg, alt_m, false );
+        obj_safe_base = gen_wgs84_area( beacons[i], 40.0, 0.0, 0.0, 40.0,
+                                        obj_hdg, alt_m, false );
+        
+        apt_base = tgPolygonUnion( obj_base, apt_base );
+        apt_clearing = tgPolygonUnion( obj_safe_base, apt_clearing );
+    }
+
+    // Now generate small surface for each tower
+    for ( i = 0; i < (int)towers.size(); ++i ) {
+        obj_base = gen_wgs84_area( towers[i], 20.0, 0.0, 0.0, 20.0,
+                                   obj_hdg, alt_m, false );
+        obj_safe_base = gen_wgs84_area( towers[i], 40.0, 0.0, 0.0, 40.0,
+                                        obj_hdg, alt_m, false );
+        
+        apt_base = tgPolygonUnion( obj_base, apt_base );
+        apt_clearing = tgPolygonUnion( obj_safe_base, apt_clearing );
+    }
+
+    // Now generate small surface for each windsock
+    for ( i = 0; i < (int)windsocks.size(); ++i ) {
+        obj_base = gen_wgs84_area( windsocks[i], 20.0, 0.0, 0.0, 20.0,
+                                   obj_hdg, alt_m, false );
+        obj_safe_base = gen_wgs84_area( windsocks[i], 40.0, 0.0, 0.0, 40.0,
+                                        obj_hdg, alt_m, false );
+        
+        apt_base = tgPolygonUnion( obj_base, apt_base );
+        apt_clearing = tgPolygonUnion( obj_safe_base, apt_clearing );
     }
 
     // 5th pass: generate runway lights
     superpoly_list rwy_lights; rwy_lights.clear();
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	gen_runway_lights( runways[i], alt_m, rwy_lights );
+	gen_runway_lights( runways[i], alt_m, rwy_lights, &apt_base );
     }
 
     // 6th pass: generate all taxiway lights
@@ -620,11 +649,19 @@ void build_airport( string airport_id, float alt_m,
         gen_taxiway_lights( taxiways[i], alt_m, rwy_lights );
     }
 
+    // write_polygon( accum, "accum" );
+    // write_polygon( apt_base, "base" );
+    // write_polygon( apt_clearing, "clear" );
+    if ( apt_base.total_size() == 0 ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
+	return;
+    }
+
     // generate convex hull (no longer)
     // TGPolygon hull = convex_hull(apt_pts);
 
     TGPolygon filled_base = tgPolygonStripHoles( apt_base );
-    // write_polygon( filled_base, "filled-base" );
+    // write_polygon( filled_base, "base" );
     TGPolygon divided_base = tgPolygonSplitLongEdges( filled_base, 200.0 );
     // write_polygon( divided_base, "divided-base" );
     TGPolygon base_poly = tgPolygonDiff( divided_base, accum );

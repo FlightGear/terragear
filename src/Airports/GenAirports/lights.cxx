@@ -681,7 +681,7 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
 
 // generate a simple 2 bar VASI for a 3 degree approach
 static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
-                             bool recip )
+                             bool recip, TGPolygon *apt_base )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
@@ -768,14 +768,21 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
     lights.push_back( pt1 );
     normals.push_back( normal );
 
+    // grass base
+    Point3D base_pt = (ref + pt1) / 2.0;
+    TGPolygon obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 15.0,
+                                         length_hdg, alt_m, false );
+    *apt_base = tgPolygonUnion( obj_base, *apt_base );
+
     // upwind bar
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+                        700 * SG_FEET_TO_METER, &lat, &lon, &r );
+    ref = Point3D( lon, lat, 0.0 );
+
     normal = gen_runway_light_vector( rwy_info, 3.0, recip );
 
     // unit1
     pt1 = ref;
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), length_hdg, 
-                        700 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
@@ -808,6 +815,12 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
     lights.push_back( pt1 );
     normals.push_back( normal );
 
+    // grass base
+    base_pt = (ref + pt1) / 2.0;
+    obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 15.0,
+                               length_hdg, alt_m, false );
+    *apt_base = tgPolygonUnion( obj_base, *apt_base );
+
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
     lights_poly.add_contour( lights, false );
@@ -826,7 +839,7 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
 
 // generate a simple PAPI for a 3 degree approach 
 static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
-                             bool recip )
+                             bool recip, TGPolygon *apt_base  )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
@@ -907,6 +920,12 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
     lights.push_back( pt1 );
     normal = gen_runway_light_vector( rwy_info, 2.5, recip );
     normals.push_back( normal );
+
+    // grass base
+    Point3D base_pt = (ref + pt1) / 2.0;
+    TGPolygon obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 30.0,
+                                         length_hdg, alt_m, false );
+    *apt_base = tgPolygonUnion( obj_base, *apt_base );
 
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
@@ -2563,7 +2582,7 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 
 // top level runway light generator
 void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
-			superpoly_list &lights ) {
+			superpoly_list &lights, TGPolygon *apt_base ) {
 
     string lighting_flags = rwy_info.lighting_flags;
     SG_LOG( SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no << " "
@@ -2632,17 +2651,17 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 
     // VASI/PAPI lighting
     if ( vasi1 == 2 /* Has VASI */ ) {
-        TGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
+        TGSuperPoly s = gen_vasi( rwy_info, alt_m, false, apt_base );
         lights.push_back( s );
     } else if ( vasi1 == 3 /* Has PAPI */ ) {
-        TGSuperPoly s = gen_papi( rwy_info, alt_m, false );
+        TGSuperPoly s = gen_papi( rwy_info, alt_m, false, apt_base );
         lights.push_back( s );
     }
     if ( vasi2 == 2 /* Has VASI */ ) {
-        TGSuperPoly s = gen_vasi( rwy_info, alt_m, true );
+        TGSuperPoly s = gen_vasi( rwy_info, alt_m, true, apt_base );
         lights.push_back( s );
     } else if ( vasi2 == 3 /* Has PAPI */ ) {
-        TGSuperPoly s = gen_papi( rwy_info, alt_m, true );
+        TGSuperPoly s = gen_papi( rwy_info, alt_m, true, apt_base );
         lights.push_back( s );
     }
 
@@ -2853,26 +2872,30 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 
     // Many aproach lighting systems define the threshold lighting
     // needed, but for those that don't (i.e. REIL, ODALS, or Edge
-    // lights defined but no approach lights.)
-    // Make threshold lighting
+    // lights defined but no approach lights)
+    // make threshold lighting
+    cout << "rwylt1 = " << rwylt1 << " app1 = " << app1 << endl;
     if ( rwylt1 >= 3 /* Has REIL lighting */
          || app1 == 6 /* ODALS Omni-directional approach light system */
-         || ( rwylt1 >= 2 /* Has edge lighting */
-              && app1 == 0 /* No approach lighting */ ) )
+         || ( rwylt1 >= 2  && app1 <= 1 ) /* Has edge lighting, but no
+                                             approach lighting */ )
     {
         // forward direction
+        cout << "threshold lights for forward direction" << endl;
         superpoly_list s = gen_runway_threshold_lights( rwy_info, rwylt1,
                                                         alt_m, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
+    cout << "rwylt2 = " << rwylt2 << " app2 = " << app2 << endl;
     if ( rwylt2 >= 3 /* Has REIL lighting */
          || app2 == 6 /* ODALS Omni-directional approach light system */
-         || ( rwylt2 >= 2 /* Has edge lighting */
-              && app2 == 0 /* No approach lighting */ ) )
+         || ( rwylt2 >= 2 && app2 <= 1 ) /* Has edge lighting, but no
+                                            approach lighting */ )
     {
         // reverse direction
+        cout << "threshold lights for reverse direction" << endl;
         superpoly_list s = gen_runway_threshold_lights( rwy_info, rwylt1,
                                                         alt_m, true );
         for ( i = 0; i < s.size(); ++i ) {
