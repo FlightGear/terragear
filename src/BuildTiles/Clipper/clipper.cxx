@@ -471,14 +471,14 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	  polygon_union( land_mask, polys_in.polys[DefaultArea][i] );
     }
 
-    // set up a mask for inland water.
-    TGPolygon inland_water_mask;
-    inland_water_mask.erase();
+    // set up a mask for all water.
+    TGPolygon water_mask;
+    water_mask.erase();
     for ( i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
         if (is_water_area(AreaType(i))) {
             for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
-                inland_water_mask =
-                    polygon_union(inland_water_mask, polys_in.polys[i][j]);
+                water_mask =
+                    polygon_union(water_mask, polys_in.polys[i][j]);
             }
         }
     }
@@ -505,17 +505,20 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 
             tmp = current;
 
+            // if not a hole, clip the area to the land_mask
+            if ( i != HoleArea ) {
+                tmp = polygon_int( tmp, land_mask );
+            }
+
             // Airport areas are limited to existing land mass and
             // never override water.
             if ( i == AirportArea ) {
                 tmp = polygon_int(tmp, land_mask);
-                tmp = polygon_diff(tmp, inland_water_mask);
+                tmp = polygon_diff(tmp, water_mask);
             }
 
 	    // if a water area, cut out potential islands
-	    if ( i == LakeArea || i == IntLakeArea || i == ReservoirArea ||
-		 i == IntReservoirArea || i == StreamArea || i == CanalArea ||
-		 i == OceanArea ) {
+	    if ( is_water_area(AreaType(i)) ) {
 	        // clip against island mask
 	        tmp = polygon_diff( tmp, island_mask );
 	    }
