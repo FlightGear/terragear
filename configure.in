@@ -295,14 +295,16 @@ AC_OUTPUT( \
 	Makefile \
 	src/Makefile \
 	src/Include/Makefile \
-	src/Construct/Makefile \
-	src/Construct/Clipper/Makefile \
-	src/Construct/GenOutput/Makefile \
-	src/Construct/Match/Makefile \
-	src/Construct/Triangulate/Makefile \
-	src/Construct/Main/Makefile \
-	src/Construct/Osgb36/Makefile \
-	src/Construct/Parallel/Makefile \
+	src/Airports/Makefile \
+	src/Airports/GenAirports/Makefile \
+	src/BuildTiles/Makefile \
+	src/BuildTiles/Clipper/Makefile \
+	src/BuildTiles/GenOutput/Makefile \
+	src/BuildTiles/Match/Makefile \
+	src/BuildTiles/Triangulate/Makefile \
+	src/BuildTiles/Main/Makefile \
+	src/BuildTiles/Osgb36/Makefile \
+	src/BuildTiles/Parallel/Makefile \
 	src/Lib/Makefile \
 	src/Lib/Array/Makefile \
 	src/Lib/DEM/Makefile \
@@ -320,7 +322,6 @@ AC_OUTPUT( \
 	src/Prep/DemInfo/Makefile \
 	src/Prep/DemRaw2ascii/Makefile \
 	src/Prep/E00Lines/Makefile \
-	src/Prep/GenAirports/Makefile \
 	src/Prep/GSHHS/Makefile \
 	src/Prep/MergerClipper/Makefile \
 	src/Prep/ShapeFile/Makefile \

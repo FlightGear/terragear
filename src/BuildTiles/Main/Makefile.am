@@ -5,11 +5,11 @@ fgfs_construct_SOURCES = \
 	main.cxx
 
 fgfs_construct_LDADD = \
-	$(top_builddir)/src/Construct/Clipper/libClipper.a \
-	$(top_builddir)/src/Construct/GenOutput/libGenOutput.a \
-	$(top_builddir)/src/Construct/Match/libMatch.a \
-	$(top_builddir)/src/Construct/Osgb36/libOsgb36.a \
-	$(top_builddir)/src/Construct/Triangulate/libTriangulate.a \
+	$(top_builddir)/src/BuildTiles/Clipper/libClipper.a \
+	$(top_builddir)/src/BuildTiles/GenOutput/libGenOutput.a \
+	$(top_builddir)/src/BuildTiles/Match/libMatch.a \
+	$(top_builddir)/src/BuildTiles/Osgb36/libOsgb36.a \
+	$(top_builddir)/src/BuildTiles/Triangulate/libTriangulate.a \
 	$(top_builddir)/src/Lib/Array/libArray.a \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
 	$(top_builddir)/src/Lib/Optimize/libOptimize.a \
@@ -26,4 +26,4 @@ fgfs_master_LDADD = -lsgbucket -lsgmisc
 INCLUDES += \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/Lib \
-	-I$(top_srcdir)/src/Construct
+	-I$(top_srcdir)/src/BuildTiles

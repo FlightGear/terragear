@@ -2,5 +2,6 @@ SUBDIRS = \
 	Include \
 	Lib \
 	Prep \
-	Construct \
+	Airports \
+	BuildTiles \
 	Utils

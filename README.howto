@@ -102,7 +102,7 @@ corresponding files puting hydro data in the directory work.hydro and
 urban data in the directory work.urban.
 
 As Curtis changed the directory structure in the last CVS versions you
-have to look in Construct/Main/main.cxx first and modify the directory
+have to look in BuildTiles/Main/main.cxx first and modify the directory
 names accordingly. (FE 30 arc-sec files should be in  work_base/DEM-30/
 
 Now we finished with data preparation and we can start generating

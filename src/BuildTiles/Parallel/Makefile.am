@@ -13,4 +13,4 @@ fgfs_tools_client_LDADD = -lsgbucket -lsgmisc
 INCLUDES += \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/Lib \
-	-I$(top_srcdir)/src/Construct
+	-I$(top_srcdir)/src/BuildTiles

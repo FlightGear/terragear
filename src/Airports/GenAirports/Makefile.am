@@ -47,4 +47,4 @@ INCLUDES += \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/Lib \
-	-I$(top_srcdir)/src/Construct
+	-I$(top_srcdir)/src/BuildTiles
