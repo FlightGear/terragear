@@ -9,4 +9,5 @@ SUBDIRS = \
 	Polygon \
 	poly2tri \
 	shapelib \
-	TriangleJRS
+	TriangleJRS \
+	vpf
