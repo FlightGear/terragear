@@ -174,9 +174,6 @@ int main( int argc, char **argv ) {
         exit(-1);
     }
 
-    // throw away the first line
-    in >> skipeol;
-
     string_list runways_list, taxiways_list;
     string last_apt_id = "";
     string last_apt_info = "";
@@ -190,7 +187,7 @@ int main( int argc, char **argv ) {
 
 	if ( line.length() == 0 ) {
 	    // empty, skip
-	} else if ( line[0] == '#' ) {
+	} else if (( line[0] == '#' ) || (line[0] == '/' && line[1] == '/')) {
 	    // comment, skip
 	} else if ( line[0] == 'A' || line[0] == 'H' || line[0] == 'S' ) {
             // extract some airport runway info
