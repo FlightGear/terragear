@@ -6,4 +6,5 @@ SUBDIRS = \
 	GSHHS \
 	MergerClipper \
 	Photo \
-	ShapeFile
+	ShapeFile \
+	TGVPF
