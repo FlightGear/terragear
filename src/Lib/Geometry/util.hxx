@@ -82,6 +82,10 @@ void makePolygon (const Point3D &p, int width, TGPolygon &polygon);
  * a single point at y=90 and y=-90.  As a result, this function
  * uses the WGS80 functions, rather than simple Pythagorean stuff.
  *
+ * Update CLO 7 Mar 2003: Function rewritten to carefully preserve
+ * specifed polygon width through any kind of point to point angle
+ * change.
+ *
  * @param line The multi-segment line inside the new polygon.
  * @param width The width in standard units (meters for FlightGear).
  * @param polygon The object that will hold the new polygon.
