@@ -48,6 +48,7 @@
 #include <Geometry/trinodes.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
+#include <Polygon/split.hxx>
 #include <Triangulate/trieles.hxx>
 
 #include "convex_hull.hxx"
@@ -141,18 +142,18 @@ void add_intermediate_nodes( int contour, const Point3D& start,
     Point3D p0 = start;
     Point3D p1 = end;
 
-    cout << "  add_intermediate_nodes()" << endl;
+    // cout << "  add_intermediate_nodes()" << endl;
     printf("   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
 	   p0.x(), p0.y(), p0.z(), p1.x(), p1.y(), p1.z() );
 
     double xdist = fabs(p0.x() - p1.x());
     double ydist = fabs(p0.y() - p1.y());
-    cout << "xdist = " << xdist << "  ydist = " << ydist << endl;
+    // cout << "xdist = " << xdist << "  ydist = " << ydist << endl;
     x_err_min = xdist + 1.0;
     y_err_min = ydist + 1.0;
 
     if ( xdist > ydist ) {
-	cout << "use y = mx + b" << endl;
+	// cout << "use y = mx + b" << endl;
 
 	// sort these in a sensible order
 	Point3D p_min, p_max;
@@ -168,28 +169,28 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	b = p_max.y() - m * p_max.x();
 
 	// if ( temp ) {
-	cout << "m = " << m << " b = " << b << endl;
+	// cout << "m = " << m << " b = " << b << endl;
 	// }
 
 	current = nodes.begin();
 	last = nodes.end();
 	counter = 0;
 	for ( ; current != last; ++current ) {
-	    cout << counter << endl;
+	    // cout << counter << endl;
 
 	    if ( (current->x() > (p_min.x() + FG_EPSILON)) 
 		 && (current->x() < (p_max.x() - FG_EPSILON)) ) {
 
-		printf("found a potential candidate %.7f %.7f %.7f\n",
-		       current->x(), current->y(), current->z() );
+		// printf("found a potential candidate %.7f %.7f %.7f\n",
+		//        current->x(), current->y(), current->z() );
 
 		y_err = fabs(current->y() - (m * current->x() + b));
-		cout << "y_err = " << y_err << endl;
+		// cout << "y_err = " << y_err << endl;
 
 		if ( y_err < tgAirportEpsilon ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
-		    cout << p_min << " < " << *current << " < "
-		         << p_max << endl;
+		    // cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
+		    // cout << p_min << " < " << *current << " < "
+		    //      << p_max << endl;
 		    found_extra = true;
 		    if ( y_err < y_err_min ) {
 			extra_index = counter;
@@ -200,7 +201,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	    ++counter;
 	}
     } else {
-	cout << "use x = m1 * y + b1" << endl;
+	// cout << "use x = m1 * y + b1" << endl;
 
 	// sort these in a sensible order
 	Point3D p_min, p_max;
@@ -217,7 +218,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 
 	// bool temp = true;
 	// if ( temp ) {
-	cout << "  m1 = " << m1 << " b1 = " << b1 << endl;
+	// cout << "  m1 = " << m1 << " b1 = " << b1 << endl;
 	// }
 
 	// cout << "  should = 0 = " << fabs(p_min.x() - (m1 * p_min.y() + b1)) << endl;;
@@ -230,20 +231,20 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	    if ( (current->y() > (p_min.y() + FG_EPSILON)) 
 		 && (current->y() < (p_max.y() - FG_EPSILON)) ) {
 		
-		printf("found a potential candidate %.7f %.7f %.7f\n",
-		       current->x(), current->y(), current->z() );
+		// printf("found a potential candidate %.7f %.7f %.7f\n",
+		//        current->x(), current->y(), current->z() );
 
 		x_err = fabs(current->x() - (m1 * current->y() + b1));
-		cout << "x_err = " << x_err << endl;
+		// cout << "x_err = " << x_err << endl;
 
 		// if ( temp ) {
-		cout << "  (" << counter << ") x_err = " << x_err << endl;
+		// cout << "  (" << counter << ") x_err = " << x_err << endl;
 		// }
 
 		if ( x_err < tgAirportEpsilon ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
-		    cout << p_min << " < " << *current << " < "
-		         << p_max << endl;
+		    // cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
+		    // cout << p_min << " < " << *current << " < "
+		    //      << p_max << endl;
 		    found_extra = true;
 		    if ( x_err < x_err_min ) {
 			extra_index = counter;
@@ -257,8 +258,8 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 
     if ( found_extra ) {
 	// recurse with two sub segments
-	cout << "dividing " << p0 << " " << nodes[extra_index]
-	     << " " << p1 << endl;
+	// cout << "dividing " << p0 << " " << nodes[extra_index]
+	//      << " " << p1 << endl;
 	add_intermediate_nodes( contour, p0, nodes[extra_index], tmp_nodes, 
 				result );
 
@@ -600,12 +601,14 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	cout << "result_b = " << result_b.contours() << endl;
 	accum = polygon_union( runway_b, accum );
 
+#if 0
 	// after clip, but before removing T intersections
 	char tmpa[256], tmpb[256];
 	sprintf( tmpa, "a%d", i );
 	sprintf( tmpb, "b%d", i );
 	write_polygon( result_a, tmpa );
 	write_polygon( result_b, tmpb );
+#endif
 
 	// print runway points
 	cout << "clipped runway pts (a)" << endl;
@@ -643,7 +646,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     // generate convex hull
     FGPolygon hull = convex_hull(apt_pts);
     FGPolygon base_poly = polygon_diff( hull, accum );
-    write_polygon( base_poly, "base-raw" );
+    // write_polygon( base_poly, "base-raw" );
 
     // add segments to polygons to remove any possible "T"
     // intersections
@@ -697,19 +700,21 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	cout << "add nodes/remove dups runway = " << k << endl;
 	rwy_polys[k] = add_nodes_to_poly( rwy_polys[k], tmp_nodes );
 
+#if 0
 	char tmp[256];
 	sprintf( tmp, "r%d", k );
 	write_polygon( rwy_polys[k], tmp );
+#endif
 
         rwy_polys[k] = remove_dups( rwy_polys[k] );
         rwy_polys[k] = remove_bad_contours( rwy_polys[k] );
     }
     cout << "add nodes/remove dups base " << endl;
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
-    write_polygon( base_poly, "base-add" );
+    // write_polygon( base_poly, "base-add" );
     base_poly = remove_dups( base_poly );
     base_poly = remove_bad_contours( base_poly );
-    write_polygon( base_poly, "base-final" );
+    // write_polygon( base_poly, "base-final" );
 
     // tesselate the polygons and prepair them for final output
 
@@ -880,6 +885,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     write_index( objpath, b, name );
 
     string holepath = root + "/AirportArea";
-    long int poly_index = poly_index_next();
-    write_boundary( holepath, b, hull, poly_index );
+    // long int poly_index = poly_index_next();
+    // write_boundary( holepath, b, hull, poly_index );
+    split_polygon( holepath, HoleArea, hull );
 }

@@ -34,7 +34,7 @@ void write_tri_data( struct triangulateio *out ) {
     fprintf(node, "%d 2 %d 0\n", 
 	    out->numberofpoints, out->numberofpointattributes);
     for (i = 0; i < out->numberofpoints; ++i) {
-	fprintf(node, "%d %.6f %.6f %.2f\n", 
+	fprintf(node, "%d %.8f %.8f %.2f\n", 
 		i, out->pointlist[2*i], out->pointlist[2*i + 1], 0.0);
     }
     fclose(node);
@@ -47,7 +47,7 @@ void write_tri_data( struct triangulateio *out ) {
 	    fprintf(ele, "%d ", out->trianglelist[i * out->numberofcorners + j]);
         }
         for (j = 0; j < out->numberoftriangleattributes; ++j) {
-	    fprintf(ele, "%.6f ", 
+	    fprintf(ele, "%.8f ", 
 		    out->triangleattributelist[i 
 					      * out->numberoftriangleattributes
 					      + j]
@@ -67,12 +67,12 @@ void write_tri_data( struct triangulateio *out ) {
     }
     fprintf(fp, "%d\n", out->numberofholes);
     for (i = 0; i < out->numberofholes; ++i) {
-	fprintf(fp, "%d %.6f %.6f\n", 
+	fprintf(fp, "%d %.8f %.8f\n", 
 		i, out->holelist[2*i], out->holelist[2*i + 1]);
     }
     fprintf(fp, "%d\n", out->numberofregions);
     for (i = 0; i < out->numberofregions; ++i) {
-	fprintf(fp, "%d %.6f %.6f %.6f\n", 
+	fprintf(fp, "%d %.8f %.8f %.8f\n", 
 		i, out->regionlist[4*i], out->regionlist[4*i + 1],
 		out->regionlist[4*i + 2]);
     }

@@ -360,9 +360,10 @@ void polygon_tesselate( const FGPolygon &p,
     // edge list (e), and a triangle neighbor list (n).
     // no new points on boundary (Y), no internal segment
     // splitting (YY), no quality refinement (q)
+    // Quite (Q)
 
     string tri_options;
-    tri_options = "pzYYen";
+    tri_options = "pzYYenQ";
     cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
@@ -431,6 +432,13 @@ void polygon_tesselate( const FGPolygon &p,
 // will modify the points_inside list for your polygon.
 
 FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
+    FGPolygon result;
+    result.erase();
+
+    // Bail right away if polygon is empty
+    if ( p.contours() == 0 ) {
+	return result;
+    }
 
     // 1.  Robustly find a point inside each contour that is not
     //     inside any other contour
@@ -447,8 +455,6 @@ FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
 
     // 3.  Convert the tesselated output to a list of tringles.
     //     basically a polygon with a contour for every triangle
-    FGPolygon result;
-    result.erase();
     for ( int i = 0; i < (int)trieles.size(); ++i ) {
 	FGTriEle t = trieles[i];
 	Point3D p1 = nodes[ t.get_n1() ];
@@ -614,9 +620,10 @@ static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
     // edge list (e), and a triangle neighbor list (n).
     // no new points on boundary (Y), no internal segment
     // splitting (YY), no quality refinement (q)
+    // Quite (Q)
 
     string tri_options;
-    tri_options = "pzYYen";
+    tri_options = "pzYYenQ";
     cout << "Triangulation with options = " << tri_options << endl;
 
     triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
@@ -716,10 +723,12 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
 
     // build list of hole points
     for ( int i = 0; i < node->get_num_kids(); ++i ) {
-	contour_num = node->get_kid(i)->get_contour_num();
-	hole_pts.push_back( p.get_point_inside( contour_num ) );
-	point_list contour = p.get_contour( contour_num );
-	hole_polys.add_contour( contour, 1 );
+        if ( node->get_kid( i ) != NULL ) {
+	    contour_num = node->get_kid(i)->get_contour_num();
+	    hole_pts.push_back( p.get_point_inside( contour_num ) );
+	    point_list contour = p.get_contour( contour_num );
+	    hole_polys.add_contour( contour, 1 );
+        }
     }
 
     triele_list elelist;
@@ -828,12 +837,16 @@ static void build_contour_tree( FGContourNode *node,
     for ( int i = 0; i < node->get_num_kids(); ++i ) {
 	for ( int j = 0; j < node->get_num_kids(); ++j ) {
 	    if ( i != j ) {
-		if ( p.is_inside( i, j ) ) {
-		    // need to remove contour j from the kid list
-		    avail[ node->get_kid( i ) -> get_contour_num() ] = 1;
-		    node->remove_kid( i );
-		    cout << "removing kid " << i << " which is inside of kid "
-			 << j << endl;
+		if ( (node->get_kid(i) != NULL)&&(node->get_kid(j) != NULL) ) {
+		    if ( p.is_inside( i, j ) ) {
+		        // need to remove contour j from the kid list
+		        avail[ node->get_kid( i ) -> get_contour_num() ] = 1;
+		        node->remove_kid( i );
+		        cout << "removing kid " << i 
+                             << " which is inside of kid " << j << endl;
+		    }
+		} else {
+		    // one of these kids is already NULL, skip
 		}
 	    } else {
 		// doesn't make sense to check if a contour is inside itself
