@@ -48,7 +48,7 @@ Line::addPoint (const Point3D &point)
   _points.push_back(point);
 }
 
-const Rectangle
+Rectangle
 Line::getBounds () const
 {
   Point3D min;
@@ -68,11 +68,9 @@ Line::getBounds () const
       if (_points[i].y() > max.y())
 	max.sety(_points[i].y());
     }
-    return Rectangle(min, max);
   }
 
-  Rectangle bounds;
-  return bounds;
+  return Rectangle(min, max);
 }
 
 };
