@@ -226,7 +226,6 @@ usage (const string name)
   cout << "  --port=<number>" << endl;
   cout << "  --rude" << endl;
   cout << "  --cover=<landcover-raster>" << endl;
-  cout << "  --min-angle=<degrees> ]" << endl;
   cout << "<load directory...>" << endl;
   exit(-1);
 }
