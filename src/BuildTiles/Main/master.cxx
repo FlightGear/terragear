@@ -20,6 +20,9 @@
 //
 // $Id$
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
 
 #include <stdlib.h>    // for system()
 #include <sys/stat.h>  // for stat()
