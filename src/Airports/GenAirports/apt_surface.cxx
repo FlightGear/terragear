@@ -150,20 +150,20 @@ TGAptSurface::TGAptSurface( const string& path,
 
     cout << "Area size = " << x_m << " x " << y_m << " (m)" << endl;
 
-    int xdivs = (int)(x_m / 400.0) + 1;
-    int ydivs = (int)(y_m / 400.0) + 1;
+    int xdivs = (int)(x_m / 800.0) + 1;
+    int ydivs = (int)(y_m / 800.0) + 1;
 
     cout << "  M(" << xdivs << "," << ydivs << ")" << endl;
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
     // Build the double res input grid
-
-    Matrix_Point3Df dPts(xdivs*2 + 2, ydivs*2 + 2);
-    for ( int i = 0; i <= xdivs*2; ++i ) {
-        for ( int j = 0; j <= ydivs*2; ++j ) {
-            dPts(i,j) = Point3Df( min_deg.lon() + i * (dlon*0.5),
-                                  min_deg.lat() + j * (dlat*0.5),
+    int mult = 4;
+    Matrix_Point3Df dPts((xdivs+1) * mult, (ydivs + 1) * mult);
+    for ( int i = 0; i < dPts.rows(); ++i ) {
+        for ( int j = 0; j < dPts.cols(); ++j ) {
+            dPts(i,j) = Point3Df( min_deg.lon() + i * (dlon/(double)mult),
+                                  min_deg.lat() + j * (dlat/(double)mult),
                                   -9999 );
         }
     }
@@ -171,18 +171,20 @@ TGAptSurface::TGAptSurface( const string& path,
     // Determine elevation of the grid points
     calc_elevations( path, dPts );
 
-    // Build the norma res input grid from the double res version
+    // Build the normal res input grid from the double res version
     Matrix_Point3Df Pts(xdivs + 1, ydivs + 1);
     for ( int i = 0; i <= xdivs; ++i ) {
         for ( int j = 0; j <= ydivs; ++j ) {
             cout << i << "," << j << endl;
-            double z1 = dPts(2*i,2*j).z();
-            double z2 = dPts(2*i+1,2*j).z();
-            double z3 = dPts(2*i,2*j+1).z();
-            double z4 = dPts(i*2+1,2*j+1).z();
+            double accum = 0.0;
+            for ( int ii = 0; ii < mult; ++ii ) {
+                for ( int jj = 0; jj < mult; ++jj ) {
+                    accum += dPts(mult * i + ii, mult * j + jj).z();
+                }
+            }
             Pts(i,j) = Point3Df( min_deg.lon() + i * dlon,
                                  min_deg.lat() + j * dlat,
-                                 (z1+z2+z3+z4) / 4.0 );
+                                 accum / (mult*mult) );
         }
     }
 
