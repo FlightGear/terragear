@@ -86,7 +86,7 @@ static bool file_exists( const string& file ) {
 
 
 // check if the specified tile has data defined for it [ depricated ]
-static bool has_data( const string& path, const FGBucket& b ) {
+static bool has_data( const string& path, const SGBucket& b ) {
     string dem_file = path + ".dem" + "/" + b.gen_base_path()
 	+ "/" + b.gen_index_str() + ".dem";
     if ( file_exists( dem_file ) ) {
@@ -112,7 +112,7 @@ void init_tile_count( const string& chunk ) {
     lat = 100;
 
     // determine tile height
-    FGBucket tmp1( 0.0, 0.0 );
+    SGBucket tmp1( 0.0, 0.0 );
     dy = tmp1.get_height();
 
     string lons = chunk.substr(0, 4);
@@ -134,7 +134,7 @@ void init_tile_count( const string& chunk ) {
 
 // return the next tile
 long int get_next_tile() {
-    FGBucket b;
+    SGBucket b;
     static double shift_over = 0.0;
     static double shift_up = 0.0;
     static bool first_time = true;
@@ -158,7 +158,7 @@ long int get_next_tile() {
 	// adjacent tiles)
 	lat += 2.0 * dy;
 
-	FGBucket tmp( 0.0, lat );
+	SGBucket tmp( 0.0, lat );
 	double dx = tmp.get_width();
 	lon = start_lon + (shift_over*dx) + (dx*0.5);
     }
@@ -187,7 +187,7 @@ long int get_next_tile() {
 	lat = start_lat + (shift_up*dy) + (dy*0.5);
 
 	// reset lon
-	FGBucket tmp( 0.0, lat );
+	SGBucket tmp( 0.0, lat );
 	double dx = tmp.get_width();
 	// lon = -82 + (shift_over*dx) + (dx*0.5);
 	lon = start_lon + (shift_over*dx) + (dx*0.5);
@@ -202,10 +202,10 @@ long int get_next_tile() {
     //    start_lon = false;
     // }
 
-    b = FGBucket( lon, lat );
+    b = SGBucket( lon, lat );
 
     // increment to next tile
-    FGBucket tmp( 0.0, lat );
+    SGBucket tmp( 0.0, lat );
     double dx = tmp.get_width();
 
     // skip every other column (to avoid two clients working on
@@ -235,7 +235,7 @@ long int get_next_tile() {
 
 // log a pending tile (has been given out as a taks for some client)
 void log_pending_tile( const string& path, long int tile ) {
-    FGBucket b(tile);
+    SGBucket b(tile);
 
     string pending_file = path + "/" + b.gen_index_str() + ".pending";
 
@@ -246,7 +246,7 @@ void log_pending_tile( const string& path, long int tile ) {
 
 // a tile is finished (removed the .pending file)
 void log_finished_tile( const string& path, long int tile ) {
-    FGBucket b(tile);
+    SGBucket b(tile);
 
     string finished_file = path + "/" + b.gen_index_str() + ".pending";
     // cout << "unlinking " << finished_file << endl;
@@ -256,7 +256,7 @@ void log_finished_tile( const string& path, long int tile ) {
 
 // make note of a failed tile
 void log_failed_tile( const string& path, long int tile ) {
-    FGBucket b(tile);
+    SGBucket b(tile);
 
     string failed_file = path + "/" + b.gen_index_str() + ".failed";
 
@@ -302,7 +302,7 @@ int main( int argc, char **argv ) {
 
     // temp test
     // while ( (next_tile = get_next_tile()) != -1 ) {
-    //     cout << next_tile << " " << FGBucket(next_tile) << endl;
+    //     cout << next_tile << " " << SGBucket(next_tile) << endl;
     // }
     // cout << "done" << endl;
     // exit(0);
@@ -341,7 +341,7 @@ int main( int argc, char **argv ) {
 		}
 	    }
 
-	    cout << "Bucket = " << FGBucket(next_tile) 
+	    cout << "Bucket = " << SGBucket(next_tile) 
 		 << " (" << pass << ")" << endl;
     
 	    log_pending_tile( status_dir, next_tile );

@@ -15,7 +15,7 @@ main(int argc, char **argv) {
     lon = -146.248360; lat = 61.133950;  // PAVD (Valdez, AK)
     lon = -110.664244; lat = 33.352890;  // P13
 
-    FGBucket b( lon, lat );
+    SGBucket b( lon, lat );
     string base = b.gen_base_path();
     string path = work_dir + "/" + base;
 

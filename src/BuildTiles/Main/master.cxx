@@ -52,7 +52,7 @@ static bool file_exists( const string& file ) {
 
 
 // check if the specified tile has data defined for it
-static bool has_data( const string& path, const FGBucket& b ) {
+static bool has_data( const string& path, const SGBucket& b ) {
     string dem_file = path + "DEM-3/" + b.gen_base_path()
 	+ "/" + b.gen_index_str() + ".dem";
     if ( file_exists( dem_file ) ) {
@@ -70,7 +70,7 @@ static bool has_data( const string& path, const FGBucket& b ) {
 
 // build the tile and check for success
 bool build_tile( const string& work_base, const string& output_base, 
-		 const FGBucket& b ) {
+		 const SGBucket& b ) {
     string result_file = "result";
 
     string command = "./construct " + work_base + " " + output_base + " "
@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
     string work_base = argv[1];
     string output_base = argv[2];
 
-    FGBucket tmp1( 0.0, 0.0 );
+    SGBucket tmp1( 0.0, 0.0 );
 
     double dy = tmp1.get_height();
     lat = 68.75 + dy * 0.5;
@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
     lon = -152.9 /* + (1.0/16.0) */;
 
     while ( lat <= 90.0 ) {
-	FGBucket tmp2( 0.0, lat );
+	SGBucket tmp2( 0.0, lat );
 	double dx = tmp2.get_width();
 
 	if ( ! start_lon ) {
@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
 	    start_lon = false;
 	}
 	while ( lon <= 180.0 ) {
-	    FGBucket b( lon, lat );
+	    SGBucket b( lon, lat );
 	    cout << "Bucket = " << b << endl;
 
 	    if ( has_data( work_base, b ) ) {

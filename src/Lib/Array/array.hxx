@@ -88,7 +88,7 @@ public:
     int close();
 
     // parse a Array file
-    int parse( FGBucket& b );
+    int parse( SGBucket& b );
 
     // Use least squares to fit a simpler data set to dem data.
     // Return the number of fitted nodes

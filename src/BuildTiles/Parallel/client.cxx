@@ -173,7 +173,7 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
 
 // build the specified tile, return true if contruction completed
 // successfully
-bool construct_tile( const FGBucket& b,
+bool construct_tile( const SGBucket& b,
 		     const string& result_file,
 		     const string &cover ) {
     double angle = 10.0;
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
     check_master_switch();
 
     while ( (tile = get_next_task( host, port, last_tile )) >= 0 ) {
-	result = construct_tile( FGBucket(tile), result_file, cover );
+	result = construct_tile( SGBucket(tile), result_file, cover );
 	if ( result ) {
 	    last_tile = tile;
 	} else {

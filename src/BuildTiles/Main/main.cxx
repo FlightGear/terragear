@@ -253,11 +253,22 @@ static int actual_load_landcover ( FGConstruct & c,
     FGPolygon polys[FG_MAX_AREA_TYPES];
     FGPolygon poly;		// working polygon
 
+    double dx = 1.0 / 120.0;
+    double dy = dx;
+
+    double half_dx = dx * 0.5;
+    double half_dy = half_dx;
+
+    double quarter_dx = dx * 0.25;
+    double quarter_dy = quarter_dx;
+
     // Get the top corner of the tile
-    double base_lon = c.get_bucket().get_center_lon() -
-	(0.5 * c.get_bucket().get_width());
-    double base_lat = c.get_bucket().get_center_lat() -
-	(0.5 * c.get_bucket().get_height());
+    double base_lon = c.get_bucket().get_center_lon()
+	- 0.5 * c.get_bucket().get_width()
+	- quarter_dx;
+    double base_lat = c.get_bucket().get_center_lat()
+	- 0.5 * c.get_bucket().get_height()
+	- quarter_dy;
 
     cout << "DPM: tile at " << base_lon << ',' << base_lat << endl;
     
@@ -265,12 +276,6 @@ static int actual_load_landcover ( FGConstruct & c,
 	(0.5 * c.get_bucket().get_width());
     double max_lat = c.get_bucket().get_center_lat() +
 	(0.5 * c.get_bucket().get_height());
-
-    double dx = 1.0 / 120.0;
-    double dy = dx;
-
-    double half_dx = dx * 0.5;
-    double half_dy = half_dx;
 
     // Figure out how many units wide and high this tile is; each unit
     // is 30 arc seconds.
@@ -282,21 +287,19 @@ static int actual_load_landcover ( FGConstruct & c,
     double x2 = x1 + dx;
     double y2 = y1 + dy;
 
-    while ( x1 < max_lon - (dx + half_dx) ) {
-	while ( y1 < max_lat - (dy + half_dy) ) {
+    while ( x1 < max_lon ) {
+	while ( y1 < max_lat ) {
 	    make_area( cover, polys, x1, y1, x2, y2, half_dx, half_dy );
 
 	    y1 = y2;
 	    y2 += dy;
 	}
-	make_area( cover, polys, x1, y1, x2, max_lat, half_dx, half_dy );
 
 	x1 = x2;
 	x2 += dx;
 	y1 = base_lat;
 	y2 = y1 + dy;
     }
-    make_area( cover, polys, x1, y1, max_lon, max_lat, half_dx, half_dy );
 
     // Now that we're finished looking up land cover, we have a list
     // of lists of polygons, one (possibly-empty) list for each area
@@ -376,7 +379,7 @@ static int load_dem( FGConstruct& c, FGArray& array) {
 	}
     }
 
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
     array.parse( b );
 
     return 1;
@@ -751,7 +754,7 @@ static void do_output( FGConstruct& c, FGGenOutput& output ) {
 
 // collect custom objects and move to scenery area
 static void do_custom_objects( const FGConstruct& c ) {
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
 
     for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
 	string base_dir = load_dirs[i] + "/" + b.gen_base_path();
@@ -1075,7 +1078,7 @@ int main(int argc, char **argv) {
 	    // construct the tile around the 
 	    // specified location
 	    cout << "Building single tile at " << lat << ',' << lon << endl;
-	    FGBucket b( lon, lat );
+	    SGBucket b( lon, lat );
 	    c.set_bucket( b );
 	    construct_tile( c );
 	} else {
@@ -1086,26 +1089,26 @@ int main(int argc, char **argv) {
 		 << " and y distance " << ydist << endl;
 	    double min_x = lon - xdist;
 	    double min_y = lat - ydist;
-	    FGBucket b_min( min_x, min_y );
-	    FGBucket b_max( lon + xdist, lat + ydist );
+	    SGBucket b_min( min_x, min_y );
+	    SGBucket b_max( lon + xdist, lat + ydist );
 
-	    FGBucket b_start(550401L);
+	    SGBucket b_start(550401L);
 	    bool do_tile = true;
 
 	    if ( b_min == b_max ) {
 		c.set_bucket( b_min );
 		construct_tile( c );
 	    } else {
-		FGBucket b_cur;
+		SGBucket b_cur;
 		int dx, dy, i, j;
 	    
-		fgBucketDiff(b_min, b_max, &dx, &dy);
+		sgBucketDiff(b_min, b_max, &dx, &dy);
 		cout << "  construction area spans tile boundaries" << endl;
 		cout << "  dx = " << dx << "  dy = " << dy << endl;
 
 		for ( j = 0; j <= dy; j++ ) {
 		    for ( i = 0; i <= dx; i++ ) {
-			b_cur = fgBucketOffset(min_x, min_y, i, j);
+			b_cur = sgBucketOffset(min_x, min_y, i, j);
 
 			if ( b_cur == b_start ) {
 			    do_tile = true;
@@ -1125,7 +1128,7 @@ int main(int argc, char **argv) {
     } else {
 	// construct the specified tile
         cout << "Building tile " << tile_id << endl;
-	FGBucket b( tile_id );
+	SGBucket b( tile_id );
 	c.set_bucket( b );
 	construct_tile( c );
     }

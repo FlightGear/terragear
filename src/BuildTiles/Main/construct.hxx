@@ -74,7 +74,7 @@ private:
     int max_nodes;
 
     // this bucket
-    FGBucket bucket;
+    SGBucket bucket;
 
     // clipped polygons (gpc format)
     FGPolyList clipped_polys;
@@ -133,8 +133,8 @@ public:
     inline void set_max_nodes( const int n ) { max_nodes = n; }
 
     // this bucket
-    inline FGBucket get_bucket() const { return bucket; } 
-    inline void set_bucket( const FGBucket b ) { bucket = b; } 
+    inline SGBucket get_bucket() const { return bucket; } 
+    inline void set_bucket( const SGBucket b ) { bucket = b; } 
 
     // clipped polygons
     inline FGPolyList get_clipped_polys() const { return clipped_polys; }

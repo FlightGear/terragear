@@ -41,10 +41,10 @@ FG_USING_STD(cout);
 
 
 static void clip_and_write_poly( string root, long int p_index, AreaType area, 
-				 FGBucket b, const FGPolygon& shape ) {
+				 SGBucket b, const FGPolygon& shape ) {
     Point3D c, min, max, p;
     c = Point3D( b.get_center_lon(), b.get_center_lat(), 0 );
-    double span = bucket_span( c.y() );
+    double span = sg_bucket_span( c.y() );
     FGPolygon base, result;
     char tile_name[256], poly_index[256];
 
@@ -52,8 +52,8 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
     if ( (c.y() >= -89.0) && (c.y() < 89.0) ) {
 	min.setx( c.x() - span / 2.0 );
 	max.setx( c.x() + span / 2.0 );
-	min.sety( c.y() - FG_HALF_BUCKET_SPAN );
-	max.sety( c.y() + FG_HALF_BUCKET_SPAN );
+	min.sety( c.y() - SG_HALF_BUCKET_SPAN );
+	max.sety( c.y() + SG_HALF_BUCKET_SPAN );
     } else if ( c.y() < -89.0) {
 	min.setx( -90.0 );
 	max.setx( -89.0 );
@@ -163,8 +163,8 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
     // find buckets for min, and max points of convex hull.
     // note to self: self, you should think about checking for
     // polygons that span the date line
-    FGBucket b_min( min.x(), min.y() );
-    FGBucket b_max( max.x(), max.y() );
+    SGBucket b_min( min.x(), min.y() );
+    SGBucket b_max( max.x(), max.y() );
     FG_LOG( FG_GENERAL, FG_INFO, "  Bucket min = " << b_min );
     FG_LOG( FG_GENERAL, FG_INFO, "  Bucket max = " << b_max );
 
@@ -174,10 +174,10 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 	return;
     }
 
-    FGBucket b_cur;
+    SGBucket b_cur;
     int dx, dy;
 	    
-    fgBucketDiff(b_min, b_max, &dx, &dy);
+    sgBucketDiff(b_min, b_max, &dx, &dy);
     FG_LOG( FG_GENERAL, FG_INFO, 
 	    "  polygon spans tile boundaries" );
     FG_LOG( FG_GENERAL, FG_INFO, "  dx = " << dx 
@@ -194,7 +194,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 	// bail
 	for ( j = 0; j <= 1; ++j ) {
 	    for ( i = 0; i <= dx; ++i ) {
-	        b_cur = fgBucketOffset(min.x(), min.y(), i, j);
+	        b_cur = sgBucketOffset(min.x(), min.y(), i, j);
 	        clip_and_write_poly( path, index, area, b_cur, shape );
 	    }
 	}
@@ -208,10 +208,10 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
     int mid = (dy + 1) / 2 - 1;
 
     // determine horizontal clip line
-    FGBucket b_clip = fgBucketOffset(min.x(), min.y(), 0, mid);
+    SGBucket b_clip = sgBucketOffset(min.x(), min.y(), 0, mid);
     double clip_line = b_clip.get_center_lat();
     if ( (clip_line >= -89.0) && (clip_line < 89.0) ) {
-	clip_line += FG_HALF_BUCKET_SPAN;
+	clip_line += SG_HALF_BUCKET_SPAN;
     } else if ( clip_line < -89.0 ) {
 	clip_line = -89.0;
     } else if ( clip_line >= 89.0 ) {

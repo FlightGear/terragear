@@ -56,7 +56,7 @@ double calc_bounding_radius( Point3D center, point_list& wgs84_nodes );
 // write out the structures to a file.  We assume that the groups come
 // to us sorted by material property.  If not, things don't break, but
 // the result won't be as optimal.
-void write_obj( const string& base, const FGBucket& b, const string& name,
+void write_obj( const string& base, const SGBucket& b, const string& name,
 		Point3D gbs_center, double gbs_radius,
 		const point_list& wgs84_nodes, const point_list& normals,
 		const point_list& texcoords, 
@@ -69,9 +69,9 @@ void write_obj( const string& base, const FGBucket& b, const string& name,
 
 
 // update index
-void write_index(const string& base, const FGBucket& b, const string& name);
+void write_index(const string& base, const SGBucket& b, const string& name);
 
-void write_boundary( const string& base, const FGBucket& b, 
+void write_boundary( const string& base, const SGBucket& b, 
 		     const FGPolygon& bounds, long int p_index );
 
 #endif // _TG_OUTPUT_HXX

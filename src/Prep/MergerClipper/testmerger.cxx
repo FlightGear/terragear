@@ -50,7 +50,7 @@ int main( int argc, char **argv ) {
   // process all specified polygon files
   string cur_dir=argv[0];
   DIR *d;
-  struct dirent *de;
+  // struct dirent *de;
   if ( (d = opendir( cur_dir.c_str() )) == NULL ) {
         cout << "cannot open directory " << cur_dir << "\n";
         return 0;
@@ -81,7 +81,7 @@ int main( int argc, char **argv ) {
     
     long int index;
     sscanf( base_name.c_str(), "%ld", &index);
-    FGBucket b(index);
+    SGBucket b(index);
     cout << "bucket = " << b << endl;
     
     // calculate bucket dimensions
@@ -89,13 +89,13 @@ int main( int argc, char **argv ) {
     
     c.x = b.get_center_lon();
     c.y = b.get_center_lat();
-    double span = bucket_span(c.y);
+    double span = sg_bucket_span(c.y);
     
     if ( (c.y >= -89.0) && (c.y < 89.0) ) {
       min.x = c.x - span / 2.0;
       max.x = c.x + span / 2.0;
-      min.y = c.y - FG_HALF_BUCKET_SPAN;
-      max.y = c.y + FG_HALF_BUCKET_SPAN;
+      min.y = c.y - SG_HALF_BUCKET_SPAN;
+      max.y = c.y + SG_HALF_BUCKET_SPAN;
     } else if ( c.y < -89.0) {
       min.x = -90.0;
       max.x = -89.0;
@@ -125,7 +125,7 @@ int main( int argc, char **argv ) {
   
   clipper.merge(subject);
   const long int index=atoi(base_name.c_str());
-  FGBucket b(index);
+  SGBucket b(index);
   string root=argv[argc-1];
   string path = root + "/Scenery/" + b.gen_base_path();
   string command = "mkdir -p " + path;

@@ -115,7 +115,7 @@ public:
     // write out the area of data covered by the specified bucket.
     // Data is written out column by column starting at the lower left
     // hand corner.
-    int write_area( const string& root, FGBucket& b, bool compress );
+    int write_area( const string& root, SGBucket& b, bool compress );
 
 #if 0
     // return the current altitude based on grid data.  We should
@@ -124,7 +124,7 @@ public:
     double interpolate_altitude( double lon, double lat );
 
     // Use least squares to fit a simpler data set to dem data
-    void fit( double error, FGBucket& p );
+    void fit( double error, SGBucket& p );
 
     // Initialize output mesh structure
     void outputmesh_init( void );
@@ -136,7 +136,7 @@ public:
     void outputmesh_set_pt( int i, int j, double value );
 
     // Write out a node file that can be used by the "triangle" program
-    void outputmesh_output_nodes( const string& fg_root, FGBucket& p );
+    void outputmesh_output_nodes( const string& fg_root, SGBucket& p );
 #endif
 
     // Informational methods

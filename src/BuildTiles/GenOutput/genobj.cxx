@@ -45,7 +45,7 @@ void FGGenOutput::calc_gbs( FGConstruct& c ) {
     double dist_squared;
     double radius_squared = 0;
     
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
 
     Point3D p( b.get_center_lon() * DEG_TO_RAD, 
 	       b.get_center_lat() * DEG_TO_RAD,
@@ -78,7 +78,7 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
     // cout << "calculating texture coordinates for a specific fan of size = "
     //      << fan.size() << endl;
 
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
     double clat = b.get_center_lat();
     double clat_rad = clat * DEG_TO_RAD;
     double cos_lat = cos( clat_rad );
@@ -314,7 +314,7 @@ int FGGenOutput::write( FGConstruct &c ) {
     int i;
 
     string base = c.get_output_base();
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
 
     string dir = base + "/Scenery/" + b.gen_base_path();
 

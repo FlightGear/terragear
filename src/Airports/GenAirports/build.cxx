@@ -327,7 +327,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 	}
 
 	if ( i < (int)result.size() ) {
-	    FGBucket b( result[i].x(), result[i].y() );
+	    SGBucket b( result[i].x(), result[i].y() );
 	    string base = b.gen_base_path();
 
 	    // try 3 arcsec dems first
@@ -1606,7 +1606,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     cout << "  name = " << apt_name << endl;
     */
 
-    FGBucket b( apt_lon, apt_lat );
+    SGBucket b( apt_lon, apt_lat );
     Point3D center_geod( b.get_center_lon() * DEG_TO_RAD,
 			 b.get_center_lat() * DEG_TO_RAD, 0 );
     Point3D gbs_center = sgGeodToCart( center_geod );

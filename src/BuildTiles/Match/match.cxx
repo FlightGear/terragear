@@ -48,7 +48,7 @@ FGMatch::~FGMatch( void ) {
 
 
 // scan the specified share file for the specified information
-void FGMatch::scan_share_file( const string& dir, const FGBucket& b, 
+void FGMatch::scan_share_file( const string& dir, const SGBucket& b, 
 			       neighbor_type search, neighbor_type dest )
 {
     string file = dir + "/"  + b.gen_base_path() + "/" + b.gen_index_str();
@@ -140,62 +140,62 @@ void FGMatch::scan_share_file( const string& dir, const FGBucket& b,
 
 // try to find info for the specified shared component
 void FGMatch::load_shared( const FGConstruct& c, neighbor_type n ) {
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
 
     double clon = b.get_center_lon();
     double clat = b.get_center_lat();
 
     string base = c.get_work_base() + "/Shared/";
 
-    FGBucket cb;
+    SGBucket cb;
 
     if ( n == SW_Corner ) {
 	// cout << "searching for SW corner data" << endl;
-	cb = fgBucketOffset(clon, clat, -1, 0);
+	cb = sgBucketOffset(clon, clat, -1, 0);
 	scan_share_file( base, cb, SE_Corner, n );
-	cb = fgBucketOffset(clon, clat, -1, -1);
+	cb = sgBucketOffset(clon, clat, -1, -1);
 	scan_share_file( base, cb, NE_Corner, n );
-	cb = fgBucketOffset(clon, clat, 0, -1);
+	cb = sgBucketOffset(clon, clat, 0, -1);
 	scan_share_file( base, cb, NW_Corner, n );
     } else if ( n == SE_Corner ) {
 	// cout << "searching for SE corner data" << endl;
-	cb = fgBucketOffset(clon, clat, 0, -1);
+	cb = sgBucketOffset(clon, clat, 0, -1);
 	scan_share_file( base, cb, NE_Corner, n );
-	cb = fgBucketOffset(clon, clat, 1, -1);
+	cb = sgBucketOffset(clon, clat, 1, -1);
 	scan_share_file( base, cb, NW_Corner, n );
-	cb = fgBucketOffset(clon, clat, 1, 0);
+	cb = sgBucketOffset(clon, clat, 1, 0);
 	scan_share_file( base, cb, SW_Corner, n );
     } else if ( n == NE_Corner ) {
 	// cout << "searching for NE corner data" << endl;
-	cb = fgBucketOffset(clon, clat, 1, 0);
+	cb = sgBucketOffset(clon, clat, 1, 0);
 	scan_share_file( base, cb, NW_Corner, n );
-	cb = fgBucketOffset(clon, clat, 1, 1);
+	cb = sgBucketOffset(clon, clat, 1, 1);
 	scan_share_file( base, cb, SW_Corner, n );
-	cb = fgBucketOffset(clon, clat, 0, 1);
+	cb = sgBucketOffset(clon, clat, 0, 1);
 	scan_share_file( base, cb, SE_Corner, n );
     } else if ( n == NW_Corner ) {
 	// cout << "searching for NW corner data" << endl;
-	cb = fgBucketOffset(clon, clat, 0, 1);
+	cb = sgBucketOffset(clon, clat, 0, 1);
 	scan_share_file( base, cb, SW_Corner, n );
-	cb = fgBucketOffset(clon, clat, -1, 1);
+	cb = sgBucketOffset(clon, clat, -1, 1);
 	scan_share_file( base, cb, SE_Corner, n );
-	cb = fgBucketOffset(clon, clat, -1, 0);
+	cb = sgBucketOffset(clon, clat, -1, 0);
 	scan_share_file( base, cb, NE_Corner, n );
     } else if ( n == NORTH ) {
 	// cout << "searching for NORTH edge data" << endl;
- 	cb = fgBucketOffset(clon, clat, 0, 1);
+ 	cb = sgBucketOffset(clon, clat, 0, 1);
 	scan_share_file( base, cb, SOUTH, n );
     } else if ( n == SOUTH ) {
 	// cout << "searching for SOUTH edge data" << endl;
- 	cb = fgBucketOffset(clon, clat, 0, -1);
+ 	cb = sgBucketOffset(clon, clat, 0, -1);
 	scan_share_file( base, cb, NORTH, n );
     } else if ( n == EAST ) {
 	// cout << "searching for EAST edge data" << endl;
- 	cb = fgBucketOffset(clon, clat, 1, 0);
+ 	cb = sgBucketOffset(clon, clat, 1, 0);
 	scan_share_file( base, cb, WEST, n );
     } else if ( n == WEST ) {
 	// cout << "searching for WEST edge data" << endl;
- 	cb = fgBucketOffset(clon, clat, -1, 0);
+ 	cb = sgBucketOffset(clon, clat, -1, 0);
 	scan_share_file( base, cb, EAST, n );
     }
 }
@@ -296,7 +296,7 @@ void FGMatch::split_tile( FGConstruct& c ) {
 
     // calculate tile boundaries
     point2d min, max;
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
     min.x = b.get_center_lon() - 0.5 * b.get_width();
     min.y = b.get_center_lat() - 0.5 * b.get_height();
     max.x = b.get_center_lon() + 0.5 * b.get_width();
@@ -457,7 +457,7 @@ void FGMatch::split_tile( FGConstruct& c ) {
 // tile
 void FGMatch::write_shared( FGConstruct& c ) {
     string base = c.get_work_base();
-    FGBucket b = c.get_bucket();
+    SGBucket b = c.get_bucket();
 
     string dir = base + "/Shared/" + b.gen_base_path();
     string file = dir + "/" + b.gen_index_str();

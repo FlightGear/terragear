@@ -115,7 +115,7 @@ FGArray::close() {
 // parse Array file, pass in the bucket so we can make up values when
 // the file wasn't found.
 int
-FGArray::parse( FGBucket& b ) {
+FGArray::parse( SGBucket& b ) {
     if ( in->is_open() ) {
 	// file open, parse
 	*in >> originx >> originy;
@@ -464,7 +464,7 @@ double FGArray::interpolate_altitude( double lon, double lat ) const {
 // Check for an optional "index.node.ex" file in case there is a .poly
 // file to go along with this node file.  Include these nodes first
 // since they are referenced by position from the .poly file.
-void FGArray::outputmesh_output_nodes( const string& fg_root, FGBucket& p )
+void FGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 {
     double exnodes[MAX_EX_NODES][3];
     struct stat stat_buf;

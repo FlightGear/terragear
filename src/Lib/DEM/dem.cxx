@@ -385,7 +385,7 @@ FGDem::parse( ) {
 // is written out column by column starting at the lower left hand
 // corner.
 int
-FGDem::write_area( const string& root, FGBucket& b, bool compress ) {
+FGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     // calculate some boundaries
     double min_x = ( b.get_center_lon() - 0.5 * b.get_width() ) * 3600.0;
     double max_x = ( b.get_center_lon() + 0.5 * b.get_width() ) * 3600.0;
@@ -576,7 +576,7 @@ double FGDem::interpolate_altitude( double lon, double lat ) {
 
 
 // Use least squares to fit a simpler data set to dem data
-void FGDem::fit( double error, FGBucket& p ) {
+void FGDem::fit( double error, SGBucket& p ) {
     double x[DEM_SIZE_1], y[DEM_SIZE_1];
     double m, b, ave_error, max_error;
     double cury, lasty;
@@ -740,7 +740,7 @@ void FGDem::outputmesh_set_pt( int i, int j, double value ) {
 // Check for an optional "index.node.ex" file in case there is a .poly
 // file to go along with this node file.  Include these nodes first
 // since they are referenced by position from the .poly file.
-void FGDem::outputmesh_output_nodes( const string& fg_root, FGBucket& p )
+void FGDem::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 {
     double exnodes[MAX_EX_NODES][3];
     struct stat stat_buf;
