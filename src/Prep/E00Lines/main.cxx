@@ -206,7 +206,36 @@ static void
 processPoints (const E00 &data, const Rectangle &bounds,
 	       AreaType areaType, const string &workDir, int width)
 {
-  cerr << "Points not yet supported" << endl;
+  FGPolygon shape;
+  double x, y, az;
+
+  int nPoints = data.nPoints();
+  cout << "Processing " << nPoints << " points" << endl;
+  for (int i = 1; i <= nPoints; i++) {
+    const E00::LAB &lab = data.getLAB(i);
+    double lon = lab.coord.x;
+    double lat = lab.coord.y;
+
+    if (!bounds.isInside(lon, lat)) {
+      cout << "Skipping point " << i << " (out of bounds)" << endl;
+      continue;
+    }
+
+    shape.erase();
+
+    geo_direct_wgs_84(0, lat, lon, 90, width/2, &y, &x, &az);
+    double dlon = x - lon;
+
+    geo_direct_wgs_84(0, lat, lon, 0, width/2, &y, &x, &az);
+    double dlat = y - lat;
+
+    shape.add_node(0, Point3D(lon - dlon, lat - dlat, 0));
+    shape.add_node(0, Point3D(lon + dlon, lat - dlat, 0));
+    shape.add_node(0, Point3D(lon + dlon, lat + dlat, 0));
+    shape.add_node(0, Point3D(lon - dlon, lat + dlat, 0));
+
+    split_polygon(workDir, areaType, shape);
+  }
 }
 
 
