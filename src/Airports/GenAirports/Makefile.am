@@ -23,9 +23,10 @@
 #---------------------------------------------------------------------------
 
 
-bin_PROGRAMS = genapts
+bin_PROGRAMS = genapts testnurbs
 
 genapts_SOURCES = \
+	apt_surface.hxx apt_surface.cxx \
 	build.cxx build.hxx \
 	convex_hull.cxx convex_hull.hxx \
 	global.hxx \
@@ -50,8 +51,12 @@ genapts_LDADD = \
 	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgxml -lgenpolyclip \
-        -lz \
+        -lnurbsf -lmatrixI -lmatrixN -lmatrix \
+	-lz \
 	$(base_LIBS)
+
+testnurbs_SOURCES = testnurbs.cxx
+testnurbs_LDADD = -lnurbsf -lmatrixI -lmatrixN -lmatrix
 
 INCLUDES = \
 	-I$(top_srcdir) \
