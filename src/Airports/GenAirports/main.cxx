@@ -175,10 +175,11 @@ int main( int argc, char **argv ) {
 	    if ( !last_airport.empty() ) {
 		char ctmp, id[32];
 		float lat, lon;
-		sscanf( last_airport.c_str(), "%c %s %f %f",
-			&ctmp, id, &lat, &lon);
-		SG_LOG(SG_GENERAL, SG_DEBUG, "Airport lat/lon = "
-		       << lat << ',' << lon);
+                int alt_ft;
+		sscanf( last_airport.c_str(), "%c %s %f %f %d",
+			&ctmp, id, &lat, &lon, &alt_ft);
+		SG_LOG(SG_GENERAL, SG_DEBUG, "Airport lat/lon/alt = "
+		       << lat << ',' << lon << "," << alt_ft);
 		SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
 
 		if (lon >= min_lon && lon <= max_lon &&
@@ -197,8 +198,8 @@ int main( int argc, char **argv ) {
 		    // process previous record
 		    // process_airport(last_airport, runways_list, argv[2]);
 		    try {
-		      build_airport( last_airport, runways_list, taxiways_list,
-				     work_dir );
+		      build_airport( last_airport, alt_ft * SG_FEET_TO_METER,
+                                     runways_list, taxiways_list, work_dir );
 		    } catch (sg_exception &e) {
 		      SG_LOG(SG_GENERAL, SG_ALERT, "Failed to build airport "
 			     << id);
@@ -234,8 +235,13 @@ int main( int argc, char **argv ) {
 
     if ( last_airport.length() ) {
 	char ctmp, id[32];
-	sscanf( last_airport.c_str(), "%c %s", &ctmp, id );
-	SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
+        float lat, lon;
+        int alt_ft;
+        sscanf( last_airport.c_str(), "%c %s %f %f %d",
+                &ctmp, id, &lat, &lon, &alt_ft);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Airport lat/lon/alt = "
+               << lat << ',' << lon << "," << alt_ft);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
 
 	if ( start_id.length() && start_id == id ) {
 	    ready_to_go = true;
@@ -244,7 +250,8 @@ int main( int argc, char **argv ) {
 	if ( ready_to_go ) {
 	    // process previous record
 	    // process_airport(last_airport, runways_list, argv[2]);
-	    build_airport(last_airport, runways_list, taxiways_list, work_dir);
+	    build_airport(last_airport, alt_ft * SG_FEET_TO_METER,
+                          runways_list, taxiways_list, work_dir);
 	}
     }
 

@@ -347,7 +347,7 @@ void build_runway( const FGRunway& rwy_info,
 
 
 // build 3d airport
-void build_airport( string airport_raw, string_list& runways_raw,
+void build_airport( string airport_raw, float alt_m, string_list& runways_raw,
                     string_list& taxiways_raw, const string& root )
 {
     int i, j, k;
@@ -567,7 +567,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     point_list rwy_lights; rwy_lights.clear();
     point_list rwy_light_normals; rwy_light_normals.clear();
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	gen_runway_lights( runways[i], &rwy_lights, &rwy_light_normals );
+	gen_runway_lights( runways[i], alt_m, &rwy_lights, &rwy_light_normals );
     }
 
     // generate convex hull (no longer)
