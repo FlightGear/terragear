@@ -415,6 +415,30 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 }
 
 
+static bool
+is_water_area (AreaType type)
+{
+    switch (type) {
+    case PondArea:
+    case LakeArea:
+    case DryLakeArea:
+    case IntLakeArea:
+    case ReservoirArea:
+    case IntReservoirArea:
+    case StreamArea:
+    case IntStreamArea:
+    case CanalArea:
+    case OceanArea:
+    case BogArea:
+    case MarshArea:
+    case WaterBodyCover:
+        return true;
+    default:
+        return false;
+    }
+}
+
+
 // Clip all the polygons against each other in a priority scheme based
 // on order of the polygon type in the polygon type enum.
 bool FGClipper::clip_all(const point2d& min, const point2d& max) {
@@ -449,6 +473,18 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	  polygon_union( land_mask, polys_in.polys[DefaultArea][i] );
     }
 
+    // set up a mask for inland water.
+    FGPolygon inland_water_mask;
+    inland_water_mask.erase();
+    for ( i = 0; i < FG_MAX_AREA_TYPES; i++ ) {
+        if (is_water_area(AreaType(i))) {
+            for (int j = 0; j < polys_in.polys[i].size(); j++) {
+                inland_water_mask =
+                    polygon_union(inland_water_mask, polys_in.polys[i][j]);
+            }
+        }
+    }
+
     // set up island mask, for cutting holes in lakes
     FGPolygon island_mask;
     island_mask.erase();
@@ -456,17 +492,6 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	island_mask =
 	  polygon_union( island_mask, polys_in.polys[IslandArea][i] );
     }
-
-// no longer needed, should be handle by polygon priority scheme
-#if 0
-    // set up pond mask, for cutting holes in islands
-    FGPolygon pond_mask;
-    pond_mask.erase();
-    for ( i = 0; i < (int)polys_in.polys[PondArea].size(); ++i ) {
-	pond_mask =
-	  polygon_union( pond_mask, polys_in.polys[PondArea][i] );
-    }
-#endif
 
     // process polygons in priority order
     for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
@@ -481,24 +506,13 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 		    << " = " << current.contours() );
 
             tmp = current;
-#if 0
-            // Update: 9/18/2001 from David Megginson: In clip_all(),
-            // no longer clip polygons against landmass.  This is bad
-            // for many reasons, not limited to the fact that roads,
-            // etc. may cross small bays and inlets.  It was also
-            // (once again) overstraining gpc and creating artifacts.
-            // Besides, since vmap0 treats the Great Lakes as ocean
-            // (i.e. not part of landmass), it was essential not to
-            // clip lakes against landmass anyway (or else all of the
-            // Great Lakes would have appeared as ocean areas at sea
-            // level).
 
-	    // if not a hole, clip the area to the land_mask
-	    if ( i != HoleArea ) {
-		// clip to land mask
-		tmp = polygon_int( current, land_mask );
-	    }
-#endif
+            // Airport areas are limited to existing land mass and
+            // never override water.
+            if ( i == AirportArea ) {
+                tmp = polygon_int(tmp, land_mask);
+                tmp = polygon_diff(tmp, inland_water_mask);
+            }
 
 	    // if a water area, cut out potential islands
 	    if ( i == LakeArea || i == IntLakeArea || i == ReservoirArea ||
@@ -508,65 +522,20 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	        tmp = polygon_diff( tmp, island_mask );
 	    }
 
-// no longer needed, should be handle by polygon priority scheme
-#if 0
-	    // if an island area, cut out potential ponds
-	    } else if ( i == IslandArea ) {
-	        // clip to pond mask
-	        tmp = polygon_diff( tmp, pond_mask );
-	    }
-#endif
-
 	    FGPolygon result_union, result_diff;
 
 	    if ( accum.contours() == 0 ) {
 		result_diff = tmp;
 		result_union = tmp;
 	    } else {
-   		// cout << "DIFF: tmp.num_contours = " << tmp.num_contours
-		//      << " accum.num_contours = " << accum.num_contours
-		//      << endl;
-		// tmp output accum
-
-		// FILE *ofp= fopen("tmp-debug", "w");
-		// gpc_write_polygon(ofp, 1, &tmp);
-		// fclose(ofp);
-
-		// ofp= fopen("accum-debug", "w");
-		// gpc_write_polygon(ofp, 1, &accum);
-		// fclose(ofp);
-
 		result_diff = polygon_diff( tmp, accum);
 		result_union = polygon_union( tmp, accum);
 	    }
-
-	    /*
-	      cout << "original contours = " << tmp.num_contours << endl;
-
-	      for ( j = 0; j < tmp.num_contours; j++ ) {
-	        for ( k = 0;k < tmp.contour[j].num_vertices;k++ ) {
-	          cout << tmp.contour[j].vertex[k].x << ","
-	               << tmp.contour[j].vertex[k].y << endl;
-	        }
-	      }
-
-	      cout << "clipped contours = " << result_diff->num_contours << endl;
-
-	      for ( j = 0; j < result_diff->num_contours; j++ ) {
-	        for ( k = 0; k < result_diff->contour[j].num_vertices; k++ ) {
-	          cout << result_diff->contour[j].vertex[k].x << ","
-	               << result_diff->contour[j].vertex[k].y << endl;
-	        }
-	      }
-	      */
 
 	    // only add to output list if the clip left us with a polygon
 	    if ( result_diff.contours() > 0 ) {
 		// move slivers from result_diff polygon to slivers polygon
 		move_slivers(result_diff, slivers);
-		// cout << "  After sliver move:" << endl;
-		// cout << "    result_diff = " << result_diff.contours() << endl;
-		// cout << "    slivers = " << slivers.contours() << endl;
 
 		// merge any slivers with previously clipped
 		// neighboring polygons
