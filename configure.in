@@ -201,9 +201,8 @@ if test "x$ac_cv_header_gpc_h" != "xyes"; then
     echo
     echo "Please see README.gpc for more details."
     echo
-    echo "(pausing 5 seconds)"
-    sleep 5
-    echo
+    echo "configure aborted."
+    exit
 fi
 
 dnl Checks for header files.

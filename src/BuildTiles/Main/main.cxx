@@ -28,10 +28,11 @@
 #include <sys/resource.h>	// set mem allocation limit
 #include <unistd.h>		// set mem allocation limit
 
+#include <plib/sg.h>
+
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/math/mat3.h>
 
 #include <Array/array.hxx>
 #include <Clipper/clipper.hxx>
@@ -384,8 +385,7 @@ static belongs_to_list gen_node_ele_lookup_table( FGConstruct& c ) {
 
 // caclulate the normal for the specified triangle face
 static Point3D calc_normal( FGConstruct& c, int i ) {
-    double v1[3], v2[3], normal[3];
-    double temp;
+    sgVec3 v1, v2, normal;
 
     point_list wgs84_nodes = c.get_wgs84_nodes();
     triele_list tri_elements = c.get_tri_elements();
@@ -397,8 +397,8 @@ static Point3D calc_normal( FGConstruct& c, int i ) {
     v1[0] = p2.x() - p1.x(); v1[1] = p2.y() - p1.y(); v1[2] = p2.z() - p1.z();
     v2[0] = p3.x() - p1.x(); v2[1] = p3.y() - p1.y(); v2[2] = p3.z() - p1.z();
 
-    MAT3cross_product(normal, v1, v2);
-    MAT3_NORMALIZE_VEC(normal,temp);
+    sgVectorProduct( normal, v1, v2 );
+    sgNormalizeVec3( normal );
 
     return Point3D( normal[0], normal[1], normal[2] );
 }

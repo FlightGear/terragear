@@ -30,7 +30,6 @@
 #include <simgear/bucket/newbucket.hxx>
 
 // #include <Include/fg_constants.h>
-// #include <Math/mat3.h>
 
 // #include <Debug/logstream.hxx>
 // #include <Array/array.hxx>
