@@ -1004,25 +1004,29 @@ static void do_custom_objects( const TGConstruct& c ) {
 	} else {
 	    while ( ! in.eof() ) {
                 in.getline(line, 2048);
+                cout << "line = " << line << endl;
 
-                sscanf( line, "%s %s", token, name );
+                int result = sscanf( line, "%s %s", token, name );
+                cout << "scanf scanned " << result << " tokens" << endl;
 
-		cout << "token = " << token << " name = " << name << endl;
+                if ( result > 0 ) {
+                    cout << "token = " << token << " name = " << name << endl;
 
-                if ( strcmp( token, "OBJECT" ) == 0 ) {
+                    if ( strcmp( token, "OBJECT" ) == 0 ) {
 #ifdef _MSC_VER
-                    string command = "copy " + base_dir + "/" + name + ".gz "
-                        + dest_dir;
+                        string command = "copy " + base_dir + "/" + name + ".gz "
+                            + dest_dir;
 #else
-                    string command = "cp " + base_dir + "/" + name + ".gz "
-                        + dest_dir;
+                        string command = "cp " + base_dir + "/" + name + ".gz "
+                            + dest_dir;
 #endif
-                    cout << "running " << command << endl;
-                    system( command.c_str() );
+                        cout << "running " << command << endl;
+                        system( command.c_str() );
 
-                    fprintf(fp, "OBJECT %s\n", name);
-                } else {
-                    fprintf(fp, "%s\n", line);
+                        fprintf(fp, "OBJECT %s\n", name);
+                    } else {
+                        fprintf(fp, "%s\n", line);
+                    }
                 }
 	    }
 	}
