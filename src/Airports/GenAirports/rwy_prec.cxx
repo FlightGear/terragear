@@ -124,7 +124,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
         double tex_pct = (200.0 - part_len) / 200.0;
 
         // starting (possibly partial chunk)
-        start2_pct = -rwy_info.disp_thresh1 / length;
+        start2_pct = end2_pct;
         end2_pct = start2_pct + ( part_len / length );
         gen_runway_section( rwy_info, runway_b,
                             start2_pct, end2_pct,
@@ -174,7 +174,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
         double tex_pct = (200.0 - part_len) / 200.0;
 
         // starting (possibly partial chunk)
-        start1_pct = -rwy_info.disp_thresh2 / length;
+        start1_pct = end1_pct;
         end1_pct = start1_pct + ( part_len / length );
         gen_runway_section( rwy_info, runway_a,
                             start1_pct, end1_pct,
