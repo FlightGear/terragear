@@ -119,8 +119,8 @@ bool FGClipper::load_polys(const string& path) {
 	    in >> lastx;
 	    in >> lasty;
 
-	    if ( (fabs(startx - lastx) < FG_EPSILON) 
-		 && (fabs(starty - lasty) < FG_EPSILON) ) {
+	    if ( (fabs(startx - lastx) < SG_EPSILON) 
+		 && (fabs(starty - lasty) < SG_EPSILON) ) {
 		// last point same as first, discard
 	    } else {
 		p = Point3D( lastx, lasty, 0.0 );
@@ -185,7 +185,7 @@ void FGClipper::move_slivers( FGPolygon& in, FGPolygon& out ) {
 	/* cout << "  min_angle (rad) = " 
 	     << min_angle << endl;
 	cout << "  min_angle (deg) = " 
-	     << min_angle * 180.0 / FG_PI << endl;
+	     << min_angle * 180.0 / SG_PI << endl;
 	cout << "  area = " << area << endl; */
 
 	if ( ((min_angle < angle_cutoff) && (area < area_cutoff)) ||

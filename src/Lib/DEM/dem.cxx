@@ -532,7 +532,7 @@ double FGDem::interpolate_altitude( double lon, double lat ) {
 	
 	// printf("  zA = %.2f  zB = %.2f\n", zA, zB);
 
-	if ( dx > FG_EPSILON ) {
+	if ( dx > SG_EPSILON ) {
 	    elev = dy * (zB - zA) / dx + zA;
 	} else {
 	    elev = zA;
@@ -564,7 +564,7 @@ double FGDem::interpolate_altitude( double lon, double lat ) {
 	// printf("  zA = %.2f  zB = %.2f\n", zA, zB );
 	// printf("  xB - xA = %.2f\n", col_step * dy / row_step);
 
-	if ( dy > FG_EPSILON ) {
+	if ( dy > SG_EPSILON ) {
 	    elev = dx * (zB - zA) / dy    + zA;
 	} else {
 	    elev = zA;

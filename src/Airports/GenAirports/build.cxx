@@ -113,7 +113,7 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
 	    while ( course < -360 ) { course += 360; }
 	    while ( course > 360 ) { course -= 360; }
 	    // cout << "Dist = " << dist << endl;
-	    // cout << "  Course = " << course * 180.0 / FG_PI << endl;
+	    // cout << "  Course = " << course * 180.0 / SG_PI << endl;
 
 	    //
 	    // 3. Convert from polar to cartesian coordinates
@@ -515,10 +515,10 @@ static void gen_runway_section( const FGRunway& rwy_info,
     Point3D a3 = runway.get_pt(0, 3);
 
     if ( startl_pct > 0.0 ) {
-	startl_pct -= nudge * FG_EPSILON;
+	startl_pct -= nudge * SG_EPSILON;
     }
     if ( endl_pct < 1.0 ) {
-	endl_pct += nudge * FG_EPSILON;
+	endl_pct += nudge * SG_EPSILON;
     }
 
     if ( endl_pct > 1.0 ) {
@@ -532,10 +532,10 @@ static void gen_runway_section( const FGRunway& rwy_info,
     // with polygon slivers.
     if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
 	if ( startw_pct > 0.0 ) {
-	    startw_pct -= nudge * FG_EPSILON;
+	    startw_pct -= nudge * SG_EPSILON;
 	}
 	if ( endw_pct < 1.0 ) {
-	    endw_pct += nudge * FG_EPSILON;
+	    endw_pct += nudge * SG_EPSILON;
 	}
     }
 

@@ -48,7 +48,7 @@ extern "C" {
 // Given a line segment specified by two endpoints p1 and p2, return
 // the slope of the line.
 static double slope( const Point3D& p0, const Point3D& p1 ) {
-    if ( fabs(p0.x() - p1.x()) > FG_EPSILON ) {
+    if ( fabs(p0.x() - p1.x()) > SG_EPSILON ) {
 	return (p0.y() - p1.y()) / (p0.x() - p1.x());
     } else {
 	// return 1.0e+999; // really big number
@@ -80,7 +80,7 @@ static bool intersects( Point3D p0, Point3D p1, double x, Point3D *result ) {
 
     double y;
 
-    if ( fabs(p0.x() - p1.x()) > FG_EPSILON ) {
+    if ( fabs(p0.x() - p1.x()) > SG_EPSILON ) {
 	y = p1.y() + (x - p1.x()) * (p0.y() - p1.y()) / (p0.x() - p1.x());
     } else {
 	return false;
@@ -994,8 +994,8 @@ FGPolygon remove_dups( const FGPolygon &poly ) {
 }
 
 
-// static const double tgAirportEpsilon = FG_EPSILON / 10.0;
-static const double tgAirportEpsilon = FG_EPSILON;
+// static const double tgAirportEpsilon = SG_EPSILON / 10.0;
+static const double tgAirportEpsilon = SG_EPSILON;
 
 
 // Find a point in the given node list that lies between start and
@@ -1041,8 +1041,8 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 	    // cout << i << endl;
 	    Point3D current = nodes[i];
 
-	    if ( (current.x() > (p_min.x() + FG_EPSILON)) 
-		 && (current.x() < (p_max.x() - FG_EPSILON)) ) {
+	    if ( (current.x() > (p_min.x() + SG_EPSILON)) 
+		 && (current.x() < (p_max.x() - SG_EPSILON)) ) {
 
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
 		//         current.x(), current.y(), current.z() );
@@ -1089,8 +1089,8 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 	for ( int i = 0; i < (int)nodes.size(); ++i ) {
 	    Point3D current = nodes[i];
 
-	    if ( (current.y() > (p_min.y() + FG_EPSILON)) 
-		 && (current.y() < (p_max.y() - FG_EPSILON)) ) {
+	    if ( (current.y() > (p_min.y() + SG_EPSILON)) 
+		 && (current.y() < (p_max.y() - SG_EPSILON)) ) {
 		
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
 		//         current.x(), current.y(), current.z() );

@@ -331,46 +331,46 @@ void FGMatch::split_tile( FGConstruct& c ) {
 	Point3D node = nodes[i];
 	Point3D normal = point_normals[i];
 
-	if ( (fabs(node.y() - min.y) < FG_EPSILON) && 
-	     (fabs(node.x() - min.x) < FG_EPSILON) ) {
+	if ( (fabs(node.y() - min.y) < SG_EPSILON) && 
+	     (fabs(node.x() - min.x) < SG_EPSILON) ) {
 	    if ( ! sw_flag ) {
 		sw_node = node;
 		sw_normal = normal;
 	    }
-	} else if ( (fabs(node.y() - min.y) < FG_EPSILON) &&
-		    (fabs(node.x() - max.x) < FG_EPSILON) ) {
+	} else if ( (fabs(node.y() - min.y) < SG_EPSILON) &&
+		    (fabs(node.x() - max.x) < SG_EPSILON) ) {
 	    if ( ! se_flag ) {
 		se_node = node;
 		se_normal = normal;
 	    }
-	} else if ( (fabs(node.y() - max.y) < FG_EPSILON) &&
-		    (fabs(node.x() - max.x) < FG_EPSILON)) {
+	} else if ( (fabs(node.y() - max.y) < SG_EPSILON) &&
+		    (fabs(node.x() - max.x) < SG_EPSILON)) {
 	    if ( ! ne_flag ) {
 		ne_node = node;
 		ne_normal = normal;
 	    }
-	} else if ( (fabs(node.y() - max.y) < FG_EPSILON) &&
-		    (fabs(node.x() - min.x) < FG_EPSILON) ) {
+	} else if ( (fabs(node.y() - max.y) < SG_EPSILON) &&
+		    (fabs(node.x() - min.x) < SG_EPSILON) ) {
 	    if ( ! nw_flag ) {
 		nw_node = node;
 		nw_normal = normal;
 	    }
-	} else if ( fabs(node.x() - min.x) < FG_EPSILON ) {
+	} else if ( fabs(node.x() - min.x) < SG_EPSILON ) {
 	    if ( ! west_flag ) {
 		west_nodes.push_back( node );
 		west_normals.push_back( normal );
 	    }
-	} else if ( fabs(node.x() - max.x) < FG_EPSILON ) {
+	} else if ( fabs(node.x() - max.x) < SG_EPSILON ) {
 	    if ( ! east_flag ) {
 		east_nodes.push_back( node );
 		east_normals.push_back( normal );
 	    }
-	} else if ( fabs(node.y() - min.y) < FG_EPSILON ) {
+	} else if ( fabs(node.y() - min.y) < SG_EPSILON ) {
 	    if ( ! south_flag ) {
 		south_nodes.push_back( node );
 		south_normals.push_back( normal );
 	    }
-	} else if ( fabs(node.y() - max.y) < FG_EPSILON ) {
+	} else if ( fabs(node.y() - max.y) < SG_EPSILON ) {
 	    if ( ! north_flag ) {
 		north_nodes.push_back( node );
 		north_normals.push_back( normal );
@@ -395,20 +395,20 @@ void FGMatch::split_tile( FGConstruct& c ) {
 	p1 = nodes[ seg.get_n1() ];
 	p2 = nodes[ seg.get_n2() ];
 
-	if ( fabs(p1.y() - p2.y()) < FG_EPSILON ) {
+	if ( fabs(p1.y() - p2.y()) < SG_EPSILON ) {
 	    // check if horizontal
-	    if ( fabs(p1.y() - max.y) < FG_EPSILON ) {
+	    if ( fabs(p1.y() - max.y) < SG_EPSILON ) {
 		north_segs.push_back( seg );
-	    } else if ( fabs(p1.y() - min.y) < FG_EPSILON ) {
+	    } else if ( fabs(p1.y() - min.y) < SG_EPSILON ) {
 		south_segs.push_back( seg );
 	    } else {
 		body_segs.push_back( seg );
 	    }
-	} else if ( fabs(p1.x() - p2.x()) < FG_EPSILON ) {
+	} else if ( fabs(p1.x() - p2.x()) < SG_EPSILON ) {
 	    // check if vertical
-	    if ( fabs(p1.x() - max.x) < FG_EPSILON ) {
+	    if ( fabs(p1.x() - max.x) < SG_EPSILON ) {
 		east_segs.push_back( seg );
-	    } else if ( fabs(p1.x() - min.x) < FG_EPSILON ) {
+	    } else if ( fabs(p1.x() - min.x) < SG_EPSILON ) {
 		west_segs.push_back( seg );
 	    } else {
 		body_segs.push_back( seg );

@@ -110,8 +110,8 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
       in >> lastx;
       in >> lasty;
       
-      if ( (fabs(startx - lastx) < FG_EPSILON) 
-	   && (fabs(starty - lasty) < FG_EPSILON) ) {
+      if ( (fabs(startx - lastx) < SG_EPSILON) 
+	   && (fabs(starty - lasty) < SG_EPSILON) ) {
 	// last point same as first, discard
       } else {
 	p = Point3D( lastx, lasty, 0.0 );

@@ -650,16 +650,16 @@ static Point3D calc_normal( FGConstruct& c, int i ) {
     // cout << "  " << p1 << endl;
     // cout << "  " << p2 << endl;
     // cout << "  " << p3 << endl;
-    if ( fabs(p1.x() - p2.x()) < FG_EPSILON &&
-	 fabs(p1.x() - p3.x()) < FG_EPSILON ) {
+    if ( fabs(p1.x() - p2.x()) < SG_EPSILON &&
+	 fabs(p1.x() - p3.x()) < SG_EPSILON ) {
 	degenerate = true;
     }
-    if ( fabs(p1.y() - p2.y()) < FG_EPSILON &&
-	 fabs(p1.y() - p3.y()) < FG_EPSILON ) {
+    if ( fabs(p1.y() - p2.y()) < SG_EPSILON &&
+	 fabs(p1.y() - p3.y()) < SG_EPSILON ) {
 	degenerate = true;
     }
-    if ( fabs(p1.z() - p2.z()) < FG_EPSILON &&
-	 fabs(p1.z() - p3.z()) < FG_EPSILON ) {
+    if ( fabs(p1.z() - p2.z()) < SG_EPSILON &&
+	 fabs(p1.z() - p3.z()) < SG_EPSILON ) {
 	degenerate = true;
     }
 

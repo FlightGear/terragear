@@ -93,7 +93,7 @@ bool test_point(Point3D Pa, Point3D Pb, Point3D Pc) {
 
     // printf("a1 = %.2f  a2 = %.2f\n", a1 * RAD_TO_DEG, a2 * RAD_TO_DEG);
 
-    return ( (a1 + a2) < FG_PI );
+    return ( (a1 + a2) < SG_PI );
 }
 
 

@@ -123,8 +123,8 @@ void FGTriSegments::unique_divide_and_add( const point_list& nodes,
 	last = nodes.end();
 	counter = 0;
 	for ( ; current != last; ++current ) {
-	    if ( (current->x() > (p0.x() + FG_EPSILON)) 
-		 && (current->x() < (p1.x() - FG_EPSILON)) ) {
+	    if ( (current->x() > (p0.x() + SG_EPSILON)) 
+		 && (current->x() < (p1.x() - SG_EPSILON)) ) {
 
 		// if ( temp ) {
 		//   cout << counter << endl;
@@ -172,8 +172,8 @@ void FGTriSegments::unique_divide_and_add( const point_list& nodes,
 	last = nodes.end();
 	counter = 0;
 	for ( ; current != last; ++current ) {
-	    if ( (current->y() > (p0.y() + FG_EPSILON)) 
-		 && (current->y() < (p1.y() - FG_EPSILON)) ) {
+	    if ( (current->y() > (p0.y() + SG_EPSILON)) 
+		 && (current->y() < (p1.y() - SG_EPSILON)) ) {
 
 		x_err = fabs(current->x() - (m1 * current->y() + b1));
 

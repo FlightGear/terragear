@@ -83,7 +83,7 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
     double clat_rad = clat * DEG_TO_RAD;
     double cos_lat = cos( clat_rad );
     double local_radius = cos_lat * EQUATORIAL_RADIUS_M;
-    double local_perimeter = 2.0 * local_radius * FG_PI;
+    double local_perimeter = 2.0 * local_radius * SG_PI;
     double degree_width = local_perimeter / 360.0;
 
     // cout << "clat = " << clat << endl;
@@ -93,7 +93,7 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
     // cout << "local_perimeter = " << local_perimeter << endl;
     // cout << "degree_width = " << degree_width << endl;
 
-    double perimeter = 2.0 * EQUATORIAL_RADIUS_M * FG_PI;
+    double perimeter = 2.0 * EQUATORIAL_RADIUS_M * SG_PI;
     double degree_height = perimeter / 360.0;
     // cout << "degree_height = " << degree_height << endl;
 
@@ -138,10 +138,10 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
 	t.setx( p.x() * ( degree_width / FG_STANDARD_TEXTURE_DIMENSION ) );
 	t.sety( p.y() * ( degree_height / FG_STANDARD_TEXTURE_DIMENSION ) );
 	shifted_t = t - min;
-	if ( shifted_t.x() < FG_EPSILON ) {
+	if ( shifted_t.x() < SG_EPSILON ) {
 	    shifted_t.setx( 0.0 );
 	}
-	if ( shifted_t.y() < FG_EPSILON ) {
+	if ( shifted_t.y() < SG_EPSILON ) {
 	    shifted_t.sety( 0.0 );
 	}
 	shifted_t.setz( 0.0 );
