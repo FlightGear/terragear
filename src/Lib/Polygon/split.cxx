@@ -105,10 +105,8 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 	polyfile += poly_index;
 
 	string poly_type = get_area_name( area );
-	if ( poly_type == "Unknown" ) {
-	    cout << "unknown area type in clip_and_write_poly()!" << endl;
-	    exit(-1);
-	}
+	if ( poly_type == "Unknown" )
+	    throw sg_exception("unknown area type in clip_and_write_poly()!");
 	
 	FILE *rfp= fopen( polyfile.c_str(), "w" );
 	fprintf( rfp, "%s\n", poly_type.c_str() );
@@ -179,11 +177,8 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 	SG_LOG( SG_GENERAL, SG_INFO, "  dx = " << dx 
 		<< "  dy = " << dy );
 
-	if ( (dx > 2880) || (dy > 1440) ) {
-	    SG_LOG( SG_GENERAL, SG_ALERT, 
-		    "something is really wrong in split_polygon()!!!!" );
-	    exit(-1);
-	}
+	if ( (dx > 2880) || (dy > 1440) )
+	    throw sg_exception("something is really wrong in split_polygon()!!!!");
 
 	for ( j = 0; j <= dy; j++ ) {
 	    // for performance reasons, we'll clip out just this

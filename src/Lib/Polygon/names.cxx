@@ -21,20 +21,15 @@
 // $Id$
  
 #include <simgear/compiler.h>
-#include <map>
+#include <simgear/debug/logstream.hxx>
 
-#include STL_IOSTREAM
+#include <map>
 #include STL_STRING
 
 #include "names.hxx"
 
 SG_USING_STD(string);
 SG_USING_STD(map);
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-#endif
-
 
 typedef map<AreaType, string> area_type_map;
 typedef map<string, AreaType> area_name_map;
@@ -128,10 +123,10 @@ get_area_type (const string &area) {
     if (it != area_names.end()) {
         return it->second;
     } else {
-	cout << "unknown area = '" << area << "'" << endl;
-	// cout << "area = " << area << endl;
+	SG_LOG(SG_GENERAL, SG_WARN, "unknown area = '" << area << "'");
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "area = " << area);
 	// for ( int i = 0; i < area.length(); i++ ) {
-	//  cout << i << ") " << (int)area[i] << endl;
+	//  SG_LOG(SG_GENERAL, SG_DEBUG, i << ") " << (int)area[i]);
 	// }
 	return UnknownArea;
     }
@@ -145,7 +140,7 @@ string get_area_name( AreaType area ) {
     if (it != area_types.end()) {
         return it->second;
     } else {
-	cout << "unknown area code = " << (int)area << endl;
+	SG_LOG(SG_GENERAL, SG_WARN, "unknown area code = " << (int)area);
 	return "Unknown";
     }
 }

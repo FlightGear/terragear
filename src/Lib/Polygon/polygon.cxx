@@ -30,17 +30,17 @@ extern "C" {
 }
 
 #include <simgear/constants.h>
+#include <simgear/debug/logstream.hxx>
 #include <simgear/math/point3d.hxx>
+#include <simgear/misc/exception.hxx>
+
+#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
+SG_USING_STD(endl);
+#endif
 
 #include <poly2tri/interface.h>
 
 #include "polygon.hxx"
-
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-#endif
-
 
 // Constructor 
 FGPolygon::FGPolygon( void ) {
@@ -159,24 +159,24 @@ bool FGPolygon::is_inside( int a, int b ) const {
     pl = get_contour( b );
     B.add_contour( pl, 0 );
 
-    // cout << "A size = " << A.total_size() << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "A size = " << A.total_size());
     // A.write( "A" );
-    // cout << "B size = " << B.total_size() << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "B size = " << B.total_size());
     // B.write( "B" );
 
     // A is "inside" B if the polygon_diff( A, B ) is null.
     FGPolygon result = polygon_diff( A, B );
-    // cout << "result size = " << result.total_size() << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "result size = " << result.total_size());
 
     // char junk;
     // cin >> junk;
 
     if ( result.contours() == 0 ) {
-	// cout << "  " << a << " is_inside() " << b << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "  " << a << " is_inside() " << b);
 	return true;
     }
 
-    // cout << "  " << a << " not is_inside() " << b << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "  " << a << " not is_inside() " << b);
     return false;
 }
 
@@ -229,17 +229,17 @@ void make_gpc_poly( const FGPolygon& in, gpc_polygon *out ) {
     v_list.num_vertices = 0;
     v_list.vertex = new gpc_vertex[FG_MAX_VERTICES];
 
-    // cout << "making a gpc_poly" << endl;
-    // cout << "  input contours = " << in.contours() << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "making a gpc_poly");
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "  input contours = " << in.contours());
 
     Point3D p;
     // build the gpc_polygon structures
     for ( int i = 0; i < in.contours(); ++i ) {
-	// cout << "    contour " << i << " = " << in.contour_size( i ) << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "    contour " << i << " = " << in.contour_size( i ));
 	if ( in.contour_size( i ) > FG_MAX_VERTICES ) {
-	    cout << "Polygon too large, need to increase FG_MAX_VERTICES to at "
-		 << "least " << in.contour_size( i ) << endl;
-	    exit(-1);
+	  char message[128];
+	  sprintf(message, "Polygon too large, need to increase FG_MAX_VERTICES to a least %d", in.contour_size(i));
+	  throw sg_exception(message);;
 	}
 
 	for ( int j = 0; j < in.contour_size( i ); ++j ) {
@@ -298,16 +298,16 @@ FGPolygon polygon_clip( clip_op poly_op, const FGPolygon& subject,
     } else if ( poly_op == POLY_UNION ) {
 	op = GPC_UNION;
     } else {
-	cout << "Unknown polygon op, exiting." << endl;
-	exit(-1);
+        throw sg_exception("Unknown polygon op, exiting.");
     }
 
     gpc_polygon_clip( op, gpc_subject, gpc_clip, gpc_result );
 
     for ( int i = 0; i < gpc_result->num_contours; ++i ) {
-	// cout << "  processing contour = " << i << ", nodes = " 
-	//      << gpc_result->contour[i].num_vertices << ", hole = "
-	//      << gpc_result->hole[i] << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG,
+        //        "  processing contour = " << i << ", nodes = " 
+	//        << gpc_result->contour[i].num_vertices << ", hole = "
+	//        << gpc_result->hole[i]);
 	
 	// sprintf(junkn, "g.%d", junkc++);
 	// junkfp = fopen(junkn, "w");
@@ -319,7 +319,7 @@ FGPolygon polygon_clip( clip_op poly_op, const FGPolygon& subject,
 	    // junkp = in_nodes.get_node( index );
 	    // fprintf(junkfp, "%.4f %.4f\n", junkp.x(), junkp.y());
 	    result.add_node(i, p);
-	    // cout << "  - " << index << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  - " << index);
 	}
 	// fprintf(junkfp, "%.4f %.4f\n", 
 	//    gpc_result->contour[i].vertex[0].x, 
@@ -377,11 +377,8 @@ FGPolygon polygon_canonify( const FGPolygon& in_poly ) {
 	int hole_flag = in_poly.get_hole_flag( i );
 	if ( !hole_flag ) {
 	    non_hole_count++;
-	    if ( non_hole_count > 1 ) {
-		cout << "ERROR: polygon with more than one enclosing" << endl;
-		cout << "  contour.  I bet you don't handle that!" << endl;
-		cout << "  dying!!!" << endl;
-	    }
+	    if ( non_hole_count > 1 )
+	      throw sg_exception("ERROR: polygon with more than one enclosing contour");
 	}
 	double area = in_poly.area_contour( i );
 	if ( hole_flag && (area < 0) ) {
@@ -467,8 +464,9 @@ FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
     FGPolygon result;
 
     for ( int i = 0; i < tmp_tristrip->num_strips; ++i ) {
-	cout << "  processing strip = " << i << ", nodes = " 
-	     << tmp_tristrip->strip[i].num_vertices << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  processing strip = "
+	       << i << ", nodes = " 
+	       << tmp_tristrip->strip[i].num_vertices);
 	
 	// sprintf(junkn, "g.%d", junkc++);
 	// junkfp = fopen(junkn, "w");
@@ -480,7 +478,7 @@ FGPolygon polygon_to_tristrip( const FGPolygon& in_poly ) {
 	    // junkp = in_nodes.get_node( index );
 	    // fprintf(junkfp, "%.4f %.4f\n", junkp.x(), junkp.y());
 	    result.add_node(i, p);
-	    // cout << "  - " << index << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  - " << index);
 	}
 	// fprintf(junkfp, "%.4f %.4f\n", 
 	//    gpc_result->contour[i].vertex[0].x, 
@@ -519,8 +517,9 @@ FGPolygon polygon_to_tristrip_old( const FGPolygon& in_poly ) {
     FGPolygon result;
 
     for ( int i = 0; i < tmp_tristrip->num_strips; ++i ) {
-	cout << "  processing strip = " << i << ", nodes = " 
-	     << tmp_tristrip->strip[i].num_vertices << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  processing strip = "
+	       << i << ", nodes = " 
+	       << tmp_tristrip->strip[i].num_vertices);
 	
 	// sprintf(junkn, "g.%d", junkc++);
 	// junkfp = fopen(junkn, "w");
@@ -532,7 +531,7 @@ FGPolygon polygon_to_tristrip_old( const FGPolygon& in_poly ) {
 	    // junkp = in_nodes.get_node( index );
 	    // fprintf(junkfp, "%.4f %.4f\n", junkp.x(), junkp.y());
 	    result.add_node(i, p);
-	    // cout << "  - " << index << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  - " << index);
 	}
 	// fprintf(junkfp, "%.4f %.4f\n", 
 	//    gpc_result->contour[i].vertex[0].x, 

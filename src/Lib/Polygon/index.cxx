@@ -21,19 +21,13 @@
 // $Id$
  
 #include <simgear/compiler.h>
+#include <simgear/debug/logstream.hxx>
 
-#include STL_IOSTREAM
 #include STL_STRING
 
 #include <stdio.h>
 
 #include "index.hxx"
-
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-#endif
-
 
 static long int poly_index;
 static string poly_path;
@@ -46,7 +40,7 @@ bool poly_index_init( string path ) {
     FILE *fp = fopen( poly_path.c_str(), "r" );
 
     if ( fp == NULL ) {
-	cout << "Warning: cannot open " << poly_path << endl;
+	SG_LOG(SG_GENERAL, SG_WARN, "Warning: cannot open " << poly_path);
 	poly_index = 0;
 	return false;
     }
@@ -66,7 +60,8 @@ long int poly_index_next() {
     FILE *fp = fopen( poly_path.c_str(), "w" );
 
     if ( fp == NULL ) {
-	cout << "Error cannot open " << poly_path << " for writing" << endl;
+	SG_LOG(SG_GENERAL, SG_ALERT,
+	       "Error cannot open " << poly_path << " for writing");
     }
 
     fprintf( fp, "%ld\n", poly_index );

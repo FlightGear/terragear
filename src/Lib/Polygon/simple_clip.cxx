@@ -25,13 +25,10 @@
 
 
 #include <simgear/constants.h>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/misc/exception.hxx>
 
 #include "simple_clip.hxx"
-
-#if !defined (SG_HAVE_NATIVE_SGI_COMPILERS)
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-#endif
 
 #define CLIP_EPSILON 0.000000000001
 
@@ -94,7 +91,7 @@ static int find_point( const FGPolygon& poly, double min_x, double y ) {
 	p = poly.get_pt( 0, i );
 	if ( p.y() == y ) {
 	    // printf("(%d) p.y() = %.12f  y = %.12f\n", i, p.y(), y);
-	    // cout << "  " << p << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  " << p);
 	    if ( p.x() > min_x ) {
 		if ( p.x() < save.x() ) {
 		    save = p;
@@ -125,11 +122,11 @@ static int next_intersection( const int_list& keep_ints,
 			      const int_list& ignore_ints, 
 			      const int beginning_at )
 {
-    // cout << "[ni] start_int = " << beginning_at << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, "[ni] start_int = " << beginning_at);
     int i = beginning_at;
     if ( i < 0 ) { i = 0; }
     while ( i < (int)keep_ints.size() ) {
-	// cout << "     i = " << i << endl;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "     i = " << i);
 	if ( keep_ints[i] != -1 ) {
 	    if ( valid_intersection(keep_ints[i], ignore_ints) ) {
 		return i;
@@ -185,7 +182,7 @@ static bool simple_clip( const FGPolygon& in, const double y,
 
     result.erase();
 
-    cout << "input poly size = " << in.total_size() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "input poly size = " << in.total_size());
 
     p_last = in.get_pt( 0, in.contour_size(0)-1 );
 
@@ -195,32 +192,33 @@ static bool simple_clip( const FGPolygon& in, const double y,
 	if ( (fabs(p.x() - p_last.x()) < CLIP_EPSILON) &&
 	     (fabs(p.y() - p_last.y()) < CLIP_EPSILON) && 
 	     (i > 0) ) {
-	    // cout << "WARNING: p and p_last are identical at index = " 
-	    //      << i << endl;
+	    // SG_LOG(SG_GENERAL, SG_WARN,
+	    //        "WARNING: p and p_last are identical at index = " << i);
 	}
 
 	if ( is_on_or_inside(y, p, side) ) {
 	    if ( is_on_or_inside(y, p_last, side) ) {
-		// cout << "inside & inside " << i << " " << p << endl;
+		// SG_LOG(SG_GENERAL, SG_DEBUG, "inside & inside " << i << " " << p);
 		result.add_node( 0, p );
 	    } else {
 		if ( !intersects_y(p, p_last, y, &p_int) ) {
-		    cout << "Huh, this should have intersected!" << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "Huh, this should have intersected!");
 		    return false;
 		} else {
-		    // cout << "intersection outside to inside " << i << " " 
-		    //      << p_int << endl;
-		    // cout << "  i - 1 = " << in.get_pt( 0, i-1 ) << endl;
-		    // cout << "  i     = " << in.get_pt( 0, i ) << endl;
-		    // cout << "  i + 1 = " << in.get_pt( 0, i+1 ) << endl;
+		    // SG_LOG(SG_GENERAL, SG_DEBUG,
+		    //        "intersection outside to inside " << i << " " 
+		    //        << p_int "  i - 1 = " << in.get_pt( 0, i-1 ));
+		    // SG_LOG(SG_GENERAL, SG_DEBUG, "  i     = " << in.get_pt( 0, i ));
+		    // SG_LOG(SG_GENERAL, SG_DEBUG, "  i + 1 = " << in.get_pt( 0, i+1 ));
 		    result.add_node( 0, p_int );
 		    if ( (fabs(p.x() - p_int.x()) < CLIP_EPSILON) &&
 			 (fabs(p.y() - p_int.y()) < CLIP_EPSILON) )
 		    {
-			// cout << "WARNING: p and p_int are identical, ";
-			// cout << "omitting p" << endl;
+			// SG_LOG(SG_GENERAL, SG_DEBUG,
+		        //        "WARNING: p and p_int are identical, "
+			//        << "omitting p");
 		    } else {
-			cout << "adding intersection" << i << " " << p << endl;
+			SG_LOG(SG_GENERAL, SG_DEBUG, "adding intersection" << i << " " << p);
 			result.add_node( 0, p );
 		    }
 		}
@@ -228,16 +226,18 @@ static bool simple_clip( const FGPolygon& in, const double y,
 	} else {
 	    if ( is_inside(y, p_last, side) ) {
 		if ( !intersects_y(p, p_last, y, &p_int) ) {
-		    cout << "Huh, this should have intersected!" << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "Huh, this should have intersected!");
 		    return false;
 		} else {
-		    // cout << "intersection inside to outside " << i << " " 
-		    //      << p_int << endl;
+		    // SG_LOG(SG_GENERAL, SG_DEBUG,
+		    //        "intersection inside to outside " << i << " " 
+		    //        << p_int);
 		    if ( (fabs(p.x() - p_int.x()) < CLIP_EPSILON) &&
 			 (fabs(p.y() - p_int.y()) < CLIP_EPSILON) )
 		    {
-			cout << "WARNING: p and p_int are identical, ";
-			cout << "omitting p" << endl;
+			SG_LOG(SG_GENERAL, SG_DEBUG,
+			       "WARNING: p and p_int are identical, "
+			       << "omitting p");
 		    } else {
 			result.add_node( 0, p_int );
 		    }
@@ -267,52 +267,57 @@ static bool build_intersections( const FGPolygon& arcs, double line,
     while ( index >= 0 ) {
 	index = find_point( arcs, current_x, line );
 	if ( index >= 0 ) {
-	    cout << "intersection at " << index << " = " 
-		 << arcs.get_pt( 0, index ) << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "intersection at " << index << " = " 
+		   << arcs.get_pt( 0, index ));
 	    keep_ints.push_back( index );
 	    current_x = arcs.get_pt( 0, index ).x();
 
 	    int before = index - 1;
 	    if ( before < 0 ) { before += arcs.contour_size(0); }
 	    int after = (index + 1) % arcs.contour_size(0);
-	    cout << endl;
-	    cout << "  before = " << arcs.get_pt(0, before) << endl;
-	    cout << "  int    = " << arcs.get_pt(0, index) << endl;
-	    cout << "  after  = " << arcs.get_pt(0, after) << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  before = "
+		   << arcs.get_pt(0, before));
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  int    = "
+		   << arcs.get_pt(0, index));
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "  after  = "
+		   << arcs.get_pt(0, after));
 	    if ( side == Above ) {
 		if ( (arcs.get_pt(0, before).y() > line) &&
 		     (arcs.get_pt(0, after).y() > line) )
 		{
-		    cout << "side = above" << endl;
-		    cout << "V intersection with clip line from above" << endl;
-		    cout << "Adding intersection to ignore_ints" << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "side = above");
+		    SG_LOG(SG_GENERAL, SG_DEBUG,
+			   "V intersection with clip line from above");
+		    SG_LOG(SG_GENERAL, SG_DEBUG,
+			   "Adding intersection to ignore_ints");
 		    ignore_ints.push_back( index );
 		}
 		if ( (arcs.get_pt(0, before).y() <= line) &&
 		     (arcs.get_pt(0, after).y() <= line) )
 		{
-		    cout << "side = above" << endl;
-		    cout << "V intersection with clip line from BELOW" << endl;
-		    cout << "or an extra in-clip-line intersection." << endl;
-		    cout << "Adding intersection to ignore_ints" << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "side = above");
+		    SG_LOG(SG_GENERAL, SG_DEBUG,
+			   "V intersection with clip line from BELOW\n"
+			   << "or an extra in-clip-line intersection.\n"
+			   << "Adding intersection to ignore_ints");
 		    ignore_ints.push_back( index );
 		}
 	    } else if ( side == Below ) {
 		if ( (arcs.get_pt(0, before).y() >= line) &&
 		     (arcs.get_pt(0, after).y() >= line) )
 		{
-		    cout << "side = below" << endl;
-		    cout << "V intersection with clip line from above" << endl;
-		    cout << "Adding intersection to ignore_ints" << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "side = below");
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "V intersection with clip line from above");
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "Adding intersection to ignore_ints");
 		    ignore_ints.push_back( index );
 		}
 		if ( (arcs.get_pt(0, before).y() < line) &&
 		     (arcs.get_pt(0, after).y() < line) )
 		{
-		    cout << "side = below" << endl;
-		    cout << "V intersection with clip line from BELOW" << endl;
-		    cout << "or an extra in-clip-line intersection." << endl;
-		    cout << "Adding intersection to ignore_ints" << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "side = below");
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "V intersection with clip line from BELOW");
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "or an extra in-clip-line intersection.");
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "Adding intersection to ignore_ints");
 		    ignore_ints.push_back( index );
 		}
 	    }
@@ -362,12 +367,12 @@ static bool clip_contour( const FGPolygon& in, const double y,
 
     // Step 1: sanity checks
     if ( (int)in.contours() != 1 ) {
-	cout << "we only handle single contour polygons" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "we only handle single contour polygons");
 	return false;
     }
 
     if ( (int)in.contour_size( 0 ) < 3 ) {
-	cout << "we must have at least three vertices to work" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "we must have at least three vertices to work");
 	return false;
     }
 
@@ -377,14 +382,13 @@ static bool clip_contour( const FGPolygon& in, const double y,
 
     if ( simple_clip( in, y, side, result_arcs ) ) {
 	if ( result_arcs.contours() > 0 ) {
-	    cout << "result_arcs size = " 
-		 << result_arcs.total_size() << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "result_arcs size = " 
+		   << result_arcs.total_size());
 	} else {
-	    cout << "empty result" << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "empty result");
 	}
     } else {
-	cout << "simple_clip_above() failed!" << endl;
-	exit(-1);
+        throw sg_exception("simple_clip_above() failed!");
     }
 
 
@@ -394,14 +398,14 @@ static bool clip_contour( const FGPolygon& in, const double y,
 
     // trivial -- nothing inside of clip line
     if ( result_arcs.contours() == 0 ) {
-	cout << "trivially empty" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "trivially empty");
 	return true;
     }
 
     // trivial -- everything inside of clip line
     i1 = find_point( result_arcs, -181.0, y );
     if ( i1 < 0 ) {
-	cout << "trivially full" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "trivially full");
 	result = result_arcs;
 	return true;
     }
@@ -410,7 +414,7 @@ static bool clip_contour( const FGPolygon& in, const double y,
     // it) -- everything inside
     i2 = find_point( result_arcs, result_arcs.get_pt(0,i1).x(), y );
     if ( i2 < 0 ) {
-	cout << "trivially full (clip line nicks edge)" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "trivially full (clip line nicks edge)");
 	result = result_arcs;
 	return true;
     }
@@ -437,8 +441,8 @@ static bool clip_contour( const FGPolygon& in, const double y,
 
     int_list keep_ints, ignore_ints;
     build_intersections( arcs, y, side, keep_ints, ignore_ints );
-    cout << "total keep_ints = " << keep_ints.size() << endl;
-    cout << "total ignore_ints = " << ignore_ints.size() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "total keep_ints = " << keep_ints.size());
+    SG_LOG(SG_GENERAL, SG_DEBUG, "total ignore_ints = " << ignore_ints.size());
 
 
     // Step 6: Walk through the result_arcs and extract the cycles (or
@@ -446,8 +450,8 @@ static bool clip_contour( const FGPolygon& in, const double y,
 
     int start_int = next_intersection( keep_ints, ignore_ints, 0 );
     int next_int = next_intersection( keep_ints, ignore_ints, start_int+1 );
-    cout << "start_int = " << start_int << endl;
-    cout << "next_int = " << next_int << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "start_int = " << start_int);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "next_int = " << next_int);
 
     int count = 0;
 
@@ -458,12 +462,13 @@ static bool clip_contour( const FGPolygon& in, const double y,
 
 	index = keep_ints[next_int];
 	keep_ints[next_int] = -1;
-	cout << endl << "starting at point = " << arcs.get_pt(0,index) << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "\nstarting at point = "
+	       << arcs.get_pt(0,index));
 
 	while ( index != keep_ints[start_int] ) {
-	    cout << "index = " << index << " start_int = " << start_int 
-		 << " keep_ints[start_int] = " << keep_ints[start_int]
-		 << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "index = " << index
+		   << " start_int = " << start_int 
+		   << " keep_ints[start_int] = " << keep_ints[start_int]);
 
 	    // start with the 2nd item in the intersection list and
 	    // traverse until we find another intersection
@@ -477,34 +482,33 @@ static bool clip_contour( const FGPolygon& in, const double y,
 		index = (index + 1) % arcs.contour_size(0);
 	    }
 	    contour.push_back( arcs.get_pt(0,index) );
-	    cout << "exited at poly index = " << index << " " 
-		 << arcs.get_pt(0,index) << endl;
+	    SG_LOG(SG_GENERAL, SG_WARN, "exited at poly index = "
+		   << index << " " << arcs.get_pt(0,index));
 
 	    // find which intersection we came out on in our list
-	    cout << "finding exit intersection for " << index << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "finding exit intersection for " << index);
 	    i = 0;
 	    while ( i < (int)keep_ints.size() ) {
-		// cout << " keep_int[" << i << "] = " << keep_ints[i] << endl;
+		// SG_LOG(SG_GENERAL, SG_DEBUG, " keep_int[" << i << "] = " << keep_ints[i]);
 		if ( index == keep_ints[i] ) {
-		    cout << "  intersection index = " << i << endl;
+		    SG_LOG(SG_GENERAL, SG_DEBUG, "  intersection index = " << i);
 		    if ( index != keep_ints[start_int] ) {
-			cout << "  not start index so keep going" << endl;
+			SG_LOG(SG_GENERAL, SG_DEBUG, "  not start index so keep going");
 			keep_ints[i] = -1;
 			next_int = next_intersection( keep_ints, ignore_ints, 
 						      i+1 );
 			index = keep_ints[next_int];
 			keep_ints[next_int] = -1;
-			cout << "   next_int = " << next_int << " index = "
-			     << index << endl;
+			SG_LOG(SG_GENERAL, SG_DEBUG,
+			       "   next_int = " << next_int << " index = "
+			       << index);
 		    }
 		    break;
 		}
 		++i;
 	    }
 	    if ( i == (int)keep_ints.size() ) {
-		cout << "oops, didn't find that intersection, you are screwed"
-		     << endl;
-		exit(-1);
+	        throw sg_exception("oops, didn't find that intersection, you are screwed");
 	    }
 	}
 	keep_ints[start_int] = -1;
@@ -515,8 +519,8 @@ static bool clip_contour( const FGPolygon& in, const double y,
 	start_int = next_intersection( keep_ints, ignore_ints, -1 );
 	next_int = next_intersection( keep_ints, ignore_ints, start_int+1 );
 	
-	cout << "start_int = " << start_int << endl;
-	cout << "next_int = " << next_int << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "start_int = " << start_int);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "next_int = " << next_int);
     }
 	
     return true;
@@ -537,7 +541,7 @@ FGPolygon horizontal_clip( const FGPolygon& in, const double y,
 
     // Step 1: sanity checks
     if ( (int)in.contours() == 0 ) {
-	cout << "Error: 0 contour polygon" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "Error: 0 contour polygon");
 	return result;
     }
 
@@ -547,7 +551,7 @@ FGPolygon horizontal_clip( const FGPolygon& in, const double y,
 
     for ( int i = 0; i < in.contours(); ++i ) {
 	if ( (int)in.contour_size( i ) < 3 ) {
-	    cout << "we must have at least three vertices to work" << endl;
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "we must have at least three vertices to work");
 	    return result;
 	}
 
