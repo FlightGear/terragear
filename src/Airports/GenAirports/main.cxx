@@ -58,12 +58,14 @@ int main( int argc, char **argv ) {
     string airport, last_airport;
     string line;
     char tmp[256];
+    bool ready_to_go = true;
 
     fglog().setLogLevels( FG_ALL, FG_DEBUG );
 
     // parse arguments
     string work_dir = "";
-    string input_file;
+    string input_file = "";
+    string start_id = "";
     int arg_pos;
     for (arg_pos = 1; arg_pos < argc; arg_pos++) {
         string arg = argv[arg_pos];
@@ -71,12 +73,15 @@ int main( int argc, char **argv ) {
             work_dir = arg.substr(7);
 	} else if ( arg.find("--input=") == 0 ) {
 	    input_file = arg.substr(8);
+ 	} else if ( arg.find("--start-id=") == 0 ) {
+	    start_id = arg.substr(11);
+	    ready_to_go = false;
  	} else if ( arg.find("--nudge=") == 0 ) {
 	    nudge = atoi( arg.substr(8).c_str() );
 	} else {
 	    FG_LOG( FG_GENERAL, FG_ALERT, 
 		    "Usage " << argv[0] << " --input=<apt_file> "
-		    << "--work=<work_dir> [ --nudge=n ]" );
+		    << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ]" );
 	    exit(-1);
 	}
     }
@@ -130,9 +135,24 @@ int main( int argc, char **argv ) {
 	    airport = line;
 
 	    if ( last_airport.length() ) {
-		// process previous record
-		// process_airport(last_airport, runways_list, argv[2]);
-		build_airport(last_airport, runways_list, work_dir);
+		char ctmp, id[32];
+		sscanf( last_airport.c_str(), "%c %s", &ctmp, id );
+		cout << "Id portion = " << id << endl;
+
+		if ( start_id.length() && start_id == (string)id ) {
+		    ready_to_go = true;
+		}
+
+		if ( ready_to_go ) {
+		    // check point our location
+		    char command[256];
+		    sprintf( command, "echo %s > last_apt", id );
+		    system( command );
+
+		    // process previous record
+		    // process_airport(last_airport, runways_list, argv[2]);
+		    build_airport(last_airport, runways_list, work_dir);
+		}
 	    }
 
 	    // clear runway list for start of next airport
@@ -153,10 +173,22 @@ int main( int argc, char **argv ) {
     }
 
     if ( last_airport.length() ) {
-	// process previous record
-	// process_airport(last_airport, runways_list, argv[2]);
-	build_airport(last_airport, runways_list, work_dir);
+	char ctmp, id[32];
+	sscanf( last_airport.c_str(), "%c %s", &ctmp, id );
+	cout << "Id portion = " << id << endl;
+
+	if ( start_id.length() && start_id == id ) {
+	    ready_to_go = true;
+	}
+
+	if ( ready_to_go ) {
+	    // process previous record
+	    // process_airport(last_airport, runways_list, argv[2]);
+	    build_airport(last_airport, runways_list, work_dir);
+	}
     }
+
+    cout << "[FINISHED CORRECTLY]" << endl;
 
     return 0;
 }
