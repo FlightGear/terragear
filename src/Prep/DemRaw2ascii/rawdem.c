@@ -61,13 +61,14 @@ double round( double a ) {
 
 int reads(int fd, char *buf, unsigned int len) {
   unsigned int i = 0;
-  int res;
   char c;
 
   len--;
-  while ( (i < len) && ((res = read(fd, &c, 1)) != 0)
-          &&  ((c != '\n') && (c != '\r')) )
+  while ( (i < len) && (read(fd, &c, 1) != 0) )
   {
+    if ((c == '\n') || (c == '\r') )
+      break;
+
     buf[i++] = c;
   }
 
@@ -76,7 +77,7 @@ int reads(int fd, char *buf, unsigned int len) {
 
   buf[i] = '\0';
 
-  return res;
+  return i;
 }
 
 
@@ -97,9 +98,9 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
     raw->big_endian = 1;
 
     /* process each line */
-    while ( (reads(fileno(hdr), line, 256) != NULL) ) {
+    while ( (reads(fileno(hdr), line, 256) != 0) ) {
 
-	/* printf("%s", line); */
+	printf("%s", line);
 	len = strlen(line);
 
 	/* extract key */

@@ -53,8 +53,40 @@ AC_SUBST(ARFLAGS)
 
 dnl Add gts/glib includes, this will probably need to be made more
 dnl flexible in the future.
-CFLAGS="$CFLAGS `gts-config --cflags`"
-CXXFLAGS="$CXXFLAGS `gts-config --cflags`"
+AC_CHECK_PROG(GLIB, glib-config, yes, no)
+AC_CHECK_PROG(GTS, gts-config, yes, no)
+
+if test "$GLIB" = "no"; then
+  echo
+  echo "Unable to find glib-config."
+  echo
+  echo "This program is needed to determine the compiler flags needed for"
+  echo "the glib library. Please make sure this linrary is installed and"
+  echo "the program is in the search path."
+  echo
+  echo "Please read README.gts" for more details.
+  echo
+  exit 1
+fi
+
+if test "$GTS" = "no"; then
+  echo
+  echo "Unable to find gts-config."
+  echo
+  echo "This program is needed to determine the compiler flags needed for"
+  echo "the gts library. Please make sure this linrary is installed and"
+  echo "the program is in the search path."
+  echo
+  echo "Please read README.gts" for more details.
+  echo
+  exit 1
+
+fi
+
+SUPPORT_FLAGS="`gts-config --cflags` `glib-config --cflags`"
+CPPFLAGS="$CPPFLAGS $SUPPORT_FLAGS"
+CFLAGS="$CFLAGS $SUPPORT_FLAGS"
+CXXFLAGS="$CXXFLAGS $SUPPORT_FLAGS"
 
 dnl Specify if we want logging (testing build) or not (release build)
 # set logging default value
@@ -98,36 +130,39 @@ AC_PATH_XTRA
 dnl Checks for libraries.
 
 null_LIBS="$LIBS"
+LIBS=""
 
-AC_CHECK_LIB(m, cos)
+dnl search for network related libraries
+AC_SEARCH_LIBS(inet_addr, xnet)
+AC_SEARCH_LIBS(socket, socket)
+AC_SEARCH_LIBS(main, nsl)
 
-base_LIBS="$LIBS `gts-config --libs`"
+network_LIBS="$LIBS"
+LIBS=""
 
-AC_CHECK_LIB(socket, socket)
-AC_CHECK_LIB(X11, XCreateWindow)
-AC_CHECK_LIB(Xext, XShmCreateImage)
-AC_CHECK_LIB(Xi, XGetExtensionVersion)
-AC_CHECK_LIB(ICE, IceOpenConnection)
-AC_CHECK_LIB(SM, SmcOpenConnection)
-AC_CHECK_LIB(Xt, XtMalloc)
-AC_CHECK_LIB(Xmu, XmuLookupStandardColormap)
+dnl check for some default libraries
+AC_SEARCH_LIBS(cos, m)
+
+base_LIBS="$LIBS"
+support_LIBS="`gts-config --libs` `glib-config --libs`"
+
+AC_SEARCH_LIBS(XCreateWindow, X11)
+AC_SEARCH_LIBS(XShmCreateImage, Xext)
+AC_SEARCH_LIBS(XGetExtensionVersion, Xi)
+AC_SEARCH_LIBS(IceOpenConnection, ICE)
+AC_SEARCH_LIBS(SmcOpenConnection, SM)
+AC_SEARCH_LIBS(XtMalloc, Xt)
+AC_SEARCH_LIBS(XmuLookupStandardColormap, Xmu)
 
 dnl check for OpenGL related libraries
 
 if test "x$ac_cv_header_windows_h" != "xyes" ; then
     dnl Reasonable stuff for non-windoze variants ... :-)
 
-    AC_CHECK_LIB(GLcore, glNewList)
-    if test "x$ac_cv_lib_GLcore_glNewList" = "xno" ; then
-	dnl if no GLcore, check for GL
-	AC_CHECK_LIB(GL, glNewList)
-	if test "x$ac_cv_lib_GL_glNewList" = "xno" ; then
-	    dnl if no GL, check for MesaGL
-	    AC_CHECK_LIB(MesaGL, glNewList)
-	fi
-    else
-	dnl if GLcore found, then also check for GL
-	AC_CHECK_LIB(GL, glXCreateContext)
+    AC_SEARCH_LIBS(glNewList, [ GL GLcore MesaGL ])
+    if test "x$ac_cv_search_glNewList" = "x-lGLcore"; then
+        dnl if GLcore found, then also check for GL
+        AC_SEARCH_LIBS(glXCreateContext, GL)
     fi
 
     dnl if using mesa, check for xmesa.h
@@ -139,20 +174,9 @@ if test "x$ac_cv_header_windows_h" != "xyes" ; then
         fi
     fi
 
-    AC_CHECK_LIB(GLU, gluLookAt)
-    if test "x$ac_cv_lib_GLU_gluLookAt" = "xno" ; then
-	dnl if no GLU, check for MesaGLU
-	AC_CHECK_LIB(MesaGLU, gluLookAt)
-    fi
+    AC_SEARCH_LIBS(gluLookAt, [ GLU MesaGLU ])
+    AC_SEARCH_LIBS(glutGetModifiers, [ glut freeglut ])
 
-    dnl check for glut
-    AC_CHECK_LIB(glut, glutGetModifiers)
-
-    dnl test for glutGameModeString, but avoid adding glut a second time into
-    dnl the list of libraries
-    save_LIBS="$LIBS"
-    AC_CHECK_LIB(glut, glutGameModeString)
-    LIBS="$save_LIBS"
 else
     dnl Win32 is a little wierd because it has to try to handle the various
     dnl winbloze-isms.  We'll just do this manually for now.
@@ -198,14 +222,16 @@ if test "x$ac_cv_lib_glut_glutGameModeString" = "xno"; then
     exit 1
 fi
 
+# needed for plib 1.6.x or later
+AC_CHECK_LIB(plibul, ulInit,,,)
+
 opengl_LIBS="$LIBS"
 LIBS="$base_LIBS"
 
 AC_SUBST(base_LIBS)
 AC_SUBST(opengl_LIBS)
-
-# needed for plib 1.6.x or later 
-AC_CHECK_LIB(plibul, ulInit,,,)
+AC_SUBST(network_LIBS)
+AC_SUBST(support_LIBS)
 
 AM_CONDITIONAL(HAVE_XWINDOWS, test "x$ac_cv_lib_X11_XCreateWindow" = "xyes" )
 
@@ -227,6 +253,18 @@ dnl Check for "libnurbs++" without which we cannot go on
 AC_CHECK_HEADER(nurbs++/nurbsS.h)
 AM_CONDITIONAL(HAVE_NURBS, test "x$ac_cv_header_nurbspp_nurbsS_h" = "xyes" )
 AC_LANG_POP
+
+AC_CHECK_HEADER(gts.h)
+if test "x$ac_cv_header_gts_h" != "xyes"; then
+    echo
+    echo "You *must* have the gts library installed on your system to build"
+    echo "TerraGear!"
+    echo
+    echo "Please see README.gts for more details."
+    echo
+    echo "configure aborted."
+    exit
+fi
 
 dnl Check if Generic Polygon Clipping library is installed
 dnl (from http://www.cs.man.ac.uk/aig/staff/alan/software/)
@@ -406,8 +444,8 @@ fi
 
 if test "x$ac_cv_header_nurbspp_nurbsS_h" != "xyes"; then
     echo
-    echo "You *must* have the nurbs++ library installed on your system to build"
-    echo "TerraGears GenAirport utility!"
+    echo "You must have the nurbs++ library installed on your system to build"
+    echo "the GenAirport utility. This program will not be build now."
     echo
     echo "Please see README.nurbs++ for more details."
     echo
