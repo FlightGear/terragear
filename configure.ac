@@ -240,6 +240,7 @@ fi
 AC_MSG_CHECKING(for proper simgear version)
 
 AC_TRY_RUN([
+#include <stdio.h>
 #include <simgear/version.h>
 
 #if !defined(SIMGEAR_VERSION)
