@@ -126,6 +126,38 @@ static void calc_elevations( const string &root, Matrix_Point3Df &Pts ) {
 	    done = true;
 	}
     }
+
+    // do some post processing for sanity's sake
+
+    // find the average height of the queried points
+    double total = 0.0;
+    int count = 0;
+    for ( i = 0; i < Pts.rows(); ++i ) {
+        for ( j = 0; j < Pts.cols(); ++j ) {
+            Point3Df p = Pts(i,j);
+            total += p.z();
+            count++;
+        }
+    }
+    double average = total / (double) count;
+    cout << "Average surface height = " << average << endl;
+
+    // now go through the elevations and clamp them all to within
+    // +/-10m (33') of the average.
+    const double dz = 10.0;
+    for ( i = 0; i < Pts.rows(); ++i ) {
+        for ( j = 0; j < Pts.cols(); ++j ) {
+            Point3Df p = Pts(i,j);
+            if ( p.z() < average - dz ) {
+                p.z() = average - dz;
+                Pts(i,j) = p;
+            }
+            if ( p.z() > average + dz ) {
+                p.z() = average + dz;
+                Pts(i,j) = p;
+            }
+        }
+    }
 }
 
 
