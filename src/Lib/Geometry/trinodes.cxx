@@ -50,7 +50,7 @@ int TGTriNodes::unique_add( const Point3D& p ) {
 	    // cout << "found an existing match!" << endl;
 
             // update elevation if new point has better info
-            if ( p.z() > current->z() ) {
+            if ( current->z() < -9000 ) {
                 current->setz( p.z() );
             }
 
@@ -120,7 +120,7 @@ int TGTriNodes::course_add( const Point3D& p ) {
 	    // cout << "found an existing match!" << endl;
 
             // update elevation if new point has better info
-            if ( p.z() > current->z() ) {
+            if ( current->z() < -9000 ) {
                 current->setz( p.z() );
             }
 
