@@ -143,7 +143,7 @@ static bool in_fan(int index, const int_list& fan ) {
 
 
 // recursive build fans from triangle list
-opt_list FGGenFans::greedy_build( triele_list tris ) {
+opt_list TGGenFans::greedy_build( triele_list tris ) {
     cout << "starting greedy build of fans" << endl;
 
     fans.clear();
@@ -240,7 +240,7 @@ opt_list FGGenFans::greedy_build( triele_list tris ) {
 
 
 // report average fan size
-double FGGenFans::ave_size() {
+double TGGenFans::ave_size() {
     double sum = 0.0;
 
     opt_list_iterator current = fans.begin();

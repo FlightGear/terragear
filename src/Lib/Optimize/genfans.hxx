@@ -46,7 +46,7 @@ typedef opt_list::iterator opt_list_iterator;
 typedef opt_list::const_iterator const_opt_list_iterator;
 
 
-class FGGenFans {
+class TGGenFans {
 
 private:
 
@@ -59,8 +59,8 @@ private:
 public:
 
     // Constructor && Destructor
-    inline FGGenFans() { }
-    inline ~FGGenFans() { }
+    inline TGGenFans() { }
+    inline ~TGGenFans() { }
 
     // recursive build fans from triangle list
     // opt_list greedy_build( triele_list tris );

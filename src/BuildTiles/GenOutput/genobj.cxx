@@ -175,7 +175,7 @@ int FGGenOutput::build( FGConstruct& c ) {
 
     // build the trifan list
     cout << "total triangles = " << tri_elements.size() << endl;
-    FGGenFans f;
+    TGGenFans f;
     for ( i = 0; i < FG_MAX_AREA_TYPES; ++i ) {
 	triele_list area_tris;
 	area_tris.erase( area_tris.begin(), area_tris.end() );
