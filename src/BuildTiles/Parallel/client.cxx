@@ -200,7 +200,7 @@ bool construct_tile( const SGBucket& b,
 	for (int i = 0; i < (int)load_dirs.size(); i++) {
 	  command = command + " " + load_dirs[i];
 	}
-	command = command + "> " + result_file + " 2>&1";
+	command = command + " > " + result_file + " 2>&1";
 	cout << command << endl;
 	
 	system( command.c_str() );
@@ -253,7 +253,8 @@ usage (const string name)
   cout << "  --host=<address>" << endl;
   cout << "  --port=<number>" << endl;
   cout << "  --rude" << endl;
-  cout << "  --cover=<landcover-raster> ]" << endl;
+  cout << "  --cover=<landcover-raster>" << endl;
+  cout << "  --min-angle=<degrees> ]" << endl;
   cout << "<load directory...>" << endl;
   exit(-1);
 }
