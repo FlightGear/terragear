@@ -148,7 +148,8 @@ int main( int argc, char **argv ) {
 	} else if ( arg.find("--max-lat=") == 0 ) {
 	    max_lat = atof( arg.substr(10).c_str() );
         } else if ( arg.find("--chunk=") == 0 ) {
-            tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str());
+            tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(),
+                                                     10.0);
             min_lon = rectangle.getMin().x();
             min_lat = rectangle.getMin().y();
             max_lon = rectangle.getMax().x();

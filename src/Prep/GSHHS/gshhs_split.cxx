@@ -86,13 +86,13 @@ void split_and_shift_chunk( const string& path, AreaType area,
     upper_shape.shift( -360, 0 );
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing lower shape" );
-    tgChopPolygon(path, area, lower_shape, false);
+    tgChopBigSimplePolygon(path, area, lower_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing center shape" );
-    tgChopPolygon(path, area, center_shape, false);
+    tgChopBigSimplePolygon(path, area, center_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing upper shape" );
-    tgChopPolygon(path, area, upper_shape, false);
+    tgChopBigSimplePolygon(path, area, upper_shape, false);
 }
 
 

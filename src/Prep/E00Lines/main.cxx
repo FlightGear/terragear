@@ -179,7 +179,7 @@ processPoints (const E00 &data, const tg::Rectangle &bounds,
     }
 
     tg::makePolygon(p, width, shape);
-    tgChopPolygon(workDir, areaType, shape, false);
+    tgChopNormalPolygon(workDir, areaType, shape, false);
   }
 }
 
@@ -242,7 +242,7 @@ processLines (const E00 &data, const tg::Rectangle &bounds,
     cout << "  Minimum angle: "
 	 << (shape.minangle_contour(0) * SGD_RADIANS_TO_DEGREES) << endl;
     
-    tgChopPolygon(workDir, areaType, shape, false);
+    tgChopNormalPolygon(workDir, areaType, shape, false);
   }
   cout << "Done lines" << endl;
 }
@@ -309,7 +309,7 @@ processPolygons (const E00 &data, const tg::Rectangle &bounds,
 					  0.0));
       }
     }
-    tgChopPolygon(workDir, areaType, shape, false);
+    tgChopNormalPolygon(workDir, areaType, shape, false);
   }
 }
 

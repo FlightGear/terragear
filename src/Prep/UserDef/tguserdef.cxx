@@ -65,7 +65,7 @@ add_point (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(p, node->getIntValue("width", 500), poly);
   poly = tgPolygonInt(poly, bounds_poly);
-  tgChopPolygon(".", material, poly, false);
+  tgChopNormalPolygon(".", material, poly, false);
 }
 
 static void
@@ -86,7 +86,7 @@ add_line (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(line, node->getIntValue("width", 10), poly);
   poly = tgPolygonInt(poly, bounds_poly);
-  tgChopPolygon(".", material, poly, false);
+  tgChopNormalPolygon(".", material, poly, false);
 }
 
 static void
@@ -108,7 +108,7 @@ add_polygon (SGPropertyNode_ptr node)
     poly.set_hole_flag(i, contour_node->getBoolValue("hole", false));
   }
   poly = tgPolygonInt(poly, bounds_poly);
-  tgChopPolygon(".", material, poly, false);
+  tgChopNormalPolygon(".", material, poly, false);
 }
 
 void
@@ -135,7 +135,7 @@ main (int ac, char ** av)
     string arg = av[argPos];
 
     if (arg.find("--chunk=") == 0) {
-      bounds = tg::parseChunk(arg.substr(8));
+      bounds = tg::parseChunk(arg.substr(8), 10.0);
       argPos++;
     }
 

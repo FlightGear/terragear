@@ -417,7 +417,7 @@ int main( int argc, char **argv ) {
 	    // holes are preserved
 
 	    area = get_area_type( force_area_type );
-	    tgChopPolygon(work_dir, area, shape, false);
+	    tgChopNormalPolygon(work_dir, area, shape, false);
 	} else if ( area == OceanArea ) {
 	    // interior of polygon is ocean, holes are islands
 
@@ -451,7 +451,7 @@ int main( int argc, char **argv ) {
 
 	    // tgChopPolygon(work_dir, area, shape, false);
 	} else {
-	    tgChopPolygon(work_dir, area, shape, false);
+	    tgChopNormalPolygon(work_dir, area, shape, false);
 	}
     }
 

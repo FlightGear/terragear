@@ -219,8 +219,8 @@ usage ()
        << " [opts] <db> <library> <coverage> <feature>"
        << endl;
   cerr << "Options:" << endl;
-  cerr << "--tile=<tile>         (default: none)" << endl;
-  cerr << "--chunk=<chunk>       (default: none)" << endl;
+  cerr << "--tile=<tile>         (default: none, ex: e002n49)" << endl;
+  cerr << "--chunk=<chunk>       (default: none, ex: w090n10)" << endl;
   cerr << "--min-lon=<longitude> (default: -180.0)" << endl;
   cerr << "--min-lat=<latitude>  (default: -90.0)" << endl;
   cerr << "--max-lon=<longitude> (default: 180.0)" << endl;
@@ -305,7 +305,7 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--chunk=") == 0) {
-        bounds = tg::parseChunk(arg.substr(8));
+        bounds = tg::parseChunk(arg.substr(8), 10.0);
         argPos++;
     }
 
@@ -549,7 +549,7 @@ main (int argc, const char **argv)
           if ( max_segment > 1.0 ) {
               shape = tgPolygonSplitLongEdges( shape, max_segment );
           }
-	  tgChopPolygon(work_dir, material_type, shape, false);
+	  tgChopNormalPolygon(work_dir, material_type, shape, false);
 	}
       }
     }
@@ -565,7 +565,7 @@ main (int argc, const char **argv)
         if ( max_segment > 1.0 ) {
             mask = tgPolygonSplitLongEdges( mask, max_segment );
         }
-	tgChopPolygon(work_dir, material_type, mask, false);
+	tgChopNormalPolygon(work_dir, material_type, mask, false);
       } else {
 	cout << "Inverse polygon is empty" << endl;
       }
