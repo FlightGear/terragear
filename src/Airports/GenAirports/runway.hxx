@@ -47,9 +47,12 @@ struct TGRunway {
     double stopway1;
     double stopway2;
 
-    string surface_flags;
-    string end1_flags;
-    string end2_flags;
+    string lighting_flags;
+    int surface_code;
+    string shoulder_code;
+    int marking_code;
+    double smoothness;
+    bool   dist_remaining;
 
     TGPolygon threshold;
     TGPolygon tens, tens_margin, ones, ones_margin;

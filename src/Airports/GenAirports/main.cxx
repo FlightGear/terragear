@@ -34,6 +34,8 @@
 #endif
 
 #include <list>
+#include <vector>
+SG_USING_STD(vector);
 
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +45,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
+#include <simgear/misc/strutils.hxx>
 
 #include <Polygon/index.hxx>
 #include <Geometry/util.hxx>
@@ -53,6 +56,8 @@
 #ifdef _MSC_VER
 #  include <Win32/mkdir.hpp>
 #endif
+
+
 
 int nudge = 10;
 
@@ -232,11 +237,11 @@ int main( int argc, char **argv ) {
     }
 
     string_list runways_list;
-    string_list taxiways_list;
     string_list beacon_list;
     string_list tower_list;
     string_list windsock_list;
 
+    vector<string> token;
     string last_apt_id = "";
     string last_apt_info = "";
     string line;
@@ -245,37 +250,51 @@ int main( int argc, char **argv ) {
     while ( ! in.eof() ) {
 	in.getline(tmp, 2048);
 	line = tmp;
-	SG_LOG( SG_GENERAL, SG_DEBUG, "-> " << line );
+	SG_LOG( SG_GENERAL, SG_DEBUG, "-> '" << line << "'" );
+        if ( line.length() ) {
+            token = simgear::strutils::split( line );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "token[0] " << token[0] );
+        } else {
+            token.clear();
+        }
 
-	if ( line.length() == 0 ) {
-	    // empty, skip
-	} else if (( line[0] == '#' ) || (line[0] == '/' && line[1] == '/')) {
+        if ( !line.length() ) {
+            // empty line, skip
+        } else if ( (token[0] == "#") || (token[0] == "//") ) {
 	    // comment, skip
-	} else if ( line[0] == 'A' || line[0] == 'H' || line[0] == 'S' ) {
-            // extract some airport runway info
-            char ctmp, tmpid[32], rwy[32];
-            string id;
-            float lat, lon;
-            int elev = 0;
+        } else if ( token[0] == "I" ) {
+            // First line, indicates IBM (i.e. DOS line endings I
+            // believe.)
 
-            sscanf( line.c_str(), "%c %s %d",
-                    &ctmp, tmpid, &elev );
-            id = tmpid;
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Next airport = " << id << " "
+            // move past this line and read and discard the next line
+            // which is the version and copyright information
+            in.getline(tmp, 2048);
+            vector<string> vers_token = simgear::strutils::split( tmp );
+            SG_LOG( SG_GENERAL, SG_INFO, "Data version = " << vers_token[0] );
+	} else if ( token[0] == "1" /* Airport */
+                    || token[0] == "16" /* Seaplane Base */
+                    || token[0] == "17" /* Heliport */ )
+        {
+            // extract some airport runway info
+            string rwy;
+            float lat, lon;
+            
+            string id = token[4];
+            int elev = atoi( token[1].c_str() );
+            SG_LOG( SG_GENERAL, SG_INFO, "Next airport = " << id << " "
                     << elev );
 
             if ( !last_apt_id.empty()) {
                 if ( runways_list.size() ) {
-                    sscanf( runways_list[0].c_str(), "%c %s %s %f %f",
-                            &ctmp, tmpid, rwy, &lat, &lon );
-                }
+                    vector<string> rwy_token
+                        = simgear::strutils::split( runways_list[0] );
+                    rwy = token[3];
+                    lat = atof( token[1].c_str() );
+                    lon = atof( token[2].c_str() );
 
-                if ( lon >= min_lon && lon <= max_lon &&
-                     lat >= min_lat && lat <= max_lat )
-                {
-		    if ( airport_id.length() && airport_id == last_apt_id ) {
-			ready_to_go = true;
-		    } else if ( start_id.length() && start_id == last_apt_id ) {
+                    if ( airport_id.length() && airport_id == last_apt_id ) {
+                        ready_to_go = true;
+                    } else if ( start_id.length() && start_id == last_apt_id ) {
                         ready_to_go = true;
                     }
 
@@ -290,9 +309,11 @@ int main( int argc, char **argv ) {
                         // process previous record
                         // process_airport(last_apt_id, runways_list, argv[2]);
                         try {
-                            build_airport( last_apt_id, elev * SG_FEET_TO_METER,
-                                           runways_list, taxiways_list,
-                                           beacon_list, tower_list,
+                            build_airport( last_apt_id,
+                                           elev * SG_FEET_TO_METER,
+                                           runways_list,
+                                           beacon_list,
+                                           tower_list,
                                            windsock_list,
                                            work_dir, elev_src );
                         } catch (sg_exception &e) {
@@ -303,37 +324,44 @@ int main( int argc, char **argv ) {
                                     << e.getMessage() );
                             exit(-1);
                         }
-			if(airport_id.length()) ready_to_go = false;
+                        if ( airport_id.length() ) {
+                            ready_to_go = false;
+                        }
                     }
 		} else {
 		    if(!airport_id.length()) {
-			SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
+			SG_LOG(SG_GENERAL, SG_INFO,
+                               "ERRO: No runways, skipping = " << id);
 		    }
 		}
-	    }
+            }
+
             last_apt_id = id;
             last_apt_info = line;
             // clear runway list for start of next airport
             runways_list.clear();
-            taxiways_list.clear();
             beacon_list.clear();
             tower_list.clear();
             windsock_list.clear();
-        } else if ( line[0] == 'R' ) {
+        } else if ( token[0] == "10" ) {
             // runway entry
             runways_list.push_back(line);
-        } else if ( line[0] == 'T' ) {
-            // taxiway entry
-            taxiways_list.push_back(line);
-        } else if ( line[0] == 'B' ) {
+        } else if ( token[0] == "18" ) {
             // beacon entry
             beacon_list.push_back(line);
-        } else if ( line[0] == 'C' ) {
+        } else if ( token[0] == "14" ) {
             // control tower entry
             tower_list.push_back(line);
-        } else if ( line[0] == 'W' ) {
-            // control tower entry
+        } else if ( token[0] == "19" ) {
+            // windsock entry
             windsock_list.push_back(line);
+        } else if ( token[0] == "15" ) {
+            // ignore custom startup locations
+        } else if ( token[0] == "50" || token[0] == "51" || token[0] == "52" 
+                    || token[0] == "53" || token[0] == "54" || token[0] == "55" 
+                    || token[0] == "56" )
+        {
+            // ignore frequency entries
         } else {
             SG_LOG( SG_GENERAL, SG_ALERT, 
                     "Unknown line in file: " << line );
@@ -354,37 +382,34 @@ int main( int argc, char **argv ) {
                     &ctmp, tmpid, rwy, &lat, &lon );
         }
 
-        if ( lon >= min_lon && lon <= max_lon &&
-             lat >= min_lat && lat <= max_lat )
-        {
-            if ( start_id.length() && start_id == last_apt_id ) {
-                ready_to_go = true;
-            }
+        if ( start_id.length() && start_id == last_apt_id ) {
+            ready_to_go = true;
+        }
 
-            if ( ready_to_go ) {
-                // check point our location
-                char command[256];
-                sprintf( command,
-                         "echo before building %s >> last_apt",
-                         last_apt_id.c_str() );
-                system( command );
+        if ( ready_to_go ) {
+            // check point our location
+            char command[256];
+            sprintf( command,
+                     "echo before building %s >> last_apt",
+                     last_apt_id.c_str() );
+            system( command );
 
-                // process previous record
-                // process_airport(last_apt_id, runways_list, argv[2]);
-                try {
-                    build_airport( last_apt_id, elev * SG_FEET_TO_METER,
-                                   runways_list, taxiways_list,
-                                   beacon_list, tower_list,
-                                   windsock_list,
-                                   work_dir, elev_src );
-                } catch (sg_exception &e) {
-                    SG_LOG( SG_GENERAL, SG_ALERT,
-                            "Failed to build airport = "
-                            << last_apt_id );
-                    SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
-                            << e.getMessage() );
-                    exit(-1);
-                }
+            // process previous record
+            // process_airport(last_apt_id, runways_list, argv[2]);
+            try {
+                build_airport( last_apt_id, elev * SG_FEET_TO_METER,
+                               runways_list,
+                               beacon_list,
+                               tower_list,
+                               windsock_list,
+                               work_dir, elev_src );
+            } catch (sg_exception &e) {
+                SG_LOG( SG_GENERAL, SG_ALERT,
+                        "Failed to build airport = "
+                        << last_apt_id );
+                SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
+                        << e.getMessage() );
+                exit(-1);
             }
         } else {
             SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);

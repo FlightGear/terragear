@@ -85,7 +85,7 @@ static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
 static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
-                                              const string& kind, bool recip )
+                                              const int kind, bool recip )
 {
     point_list w_lights; w_lights.clear();
     point_list y_lights; y_lights.clear();
@@ -160,13 +160,12 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
     TGSuperPoly white;
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
-    if ( kind == "H" ) {
-        white.set_material( "RWY_WHITE_LIGHTS" );
-    } else if ( kind == "M" ) {
-        white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
-    } else if ( kind == "L" ) {
-        white.set_material( "RWY_WHITE_LOW_LIGHTS" );
-    }
+    white.set_material( "RWY_WHITE_LIGHTS" );
+    /* other intensities for when the data file supports it
+     *
+     * white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
+     * white.set_material( "RWY_WHITE_LOW_LIGHTS" );
+     */
 
     lights_poly.erase();
     normals_poly.erase();
@@ -176,13 +175,12 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
     TGSuperPoly yellow;
     yellow.set_poly( lights_poly );
     yellow.set_normals( normals_poly );
-    if ( kind == "H" ) {
-        yellow.set_material( "RWY_YELLOW_LIGHTS" );
-    } else if ( kind == "M" ) {
-        yellow.set_material( "RWY_YELLOW_MEDIUM_LIGHTS" );
-    } else if ( kind == "L" ) {
-        yellow.set_material( "RWY_YELLOW_LOW_LIGHTS" );
-    }
+    yellow.set_material( "RWY_YELLOW_LIGHTS" );
+    /* other intensities for when the data file supports it
+     *
+     * yellow.set_material( "RWY_YELLOW_MEDIUM_LIGHTS" );
+     * yellow.set_material( "RWY_YELLOW_LOW_LIGHTS" );
+     */
 
     superpoly_list result; result.clear();
 
@@ -196,7 +194,7 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
 // generate taxiway edge lighting
 // 100 meters spacing or the next number down that divides evenly.
 static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
-                                               const string& kind, bool recip )
+                                               const int kind, bool recip )
 {
     point_list b_lights; b_lights.clear();
     point_list b_normals; b_normals.clear();
@@ -279,7 +277,7 @@ static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
 
 // generate threshold lights for a 3 degree approach 
 static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
-                                                   const string& kind,
+                                                   const int kind,
                                                    float alt_m, bool recip )
 {
     point_list g_lights; g_lights.clear();
@@ -369,17 +367,11 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
     green.set_poly( lights_poly );
     green.set_normals( normals_poly );
     green.set_material( "RWY_GREEN_LIGHTS" );
-    if ( kind == "H" ) {
-        green.set_material( "RWY_GREEN_LIGHTS" );
-    } else if ( kind == "M" ) {
-        green.set_material( "RWY_GREEN_MEDIUM_LIGHTS" );
-    } else if ( kind == "L" ) {
-        green.set_material( "RWY_GREEN_LOW_LIGHTS" );
-    } else {
-        // this is a catch all in case there is an oddity in the input
-        // data
-        green.set_material( "RWY_GREEN_LIGHTS" );
-    }
+    /* other intensities for when the data file supports it
+     *
+     * green.set_material( "RWY_GREEN_MEDIUM_LIGHTS" );
+     * green.set_material( "RWY_GREEN_LOW_LIGHTS" );
+     */
 
     lights_poly.erase();
     normals_poly.erase();
@@ -389,17 +381,12 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
     TGSuperPoly red;
     red.set_poly( lights_poly );
     red.set_normals( normals_poly );
-    if ( kind == "H" ) {
-        red.set_material( "RWY_RED_LIGHTS" );
-    } else if ( kind == "M" ) {
-        red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
-    } else if ( kind == "L" ) {
-        red.set_material( "RWY_RED_LOW_LIGHTS" );
-    } else {
-        // this is a catch all in case there is an oddity in the input
-        // data
-        red.set_material( "RWY_RED_LIGHTS" );
-    }
+    red.set_material( "RWY_RED_LIGHTS" );
+    /* other intensities for when the data file supports it
+     *
+     * red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
+     * red.set_material( "RWY_RED_LOW_LIGHTS" );
+     */
 
     superpoly_list result; result.clear();
 
@@ -2578,81 +2565,84 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 			superpoly_list &lights ) {
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no << " "
-         << rwy_info.end1_flags << " " << rwy_info.end2_flags);
+    string lighting_flags = rwy_info.lighting_flags;
+    SG_LOG( SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no << " "
+            << rwy_info.lighting_flags );
+    
+    int vasi1 =  atoi( lighting_flags.substr(0,1).c_str() );
+    int rwylt1 = atoi( lighting_flags.substr(1,1).c_str() );
+    int app1 =   atoi( lighting_flags.substr(2,1).c_str() );
+    int vasi2 =  atoi( lighting_flags.substr(3,1).c_str() );
+    int rwylt2 = atoi( lighting_flags.substr(4,1).c_str() );
+    int app2 =   atoi( lighting_flags.substr(5,1).c_str() );
 
     unsigned int i;
 
     // Make edge lighting
-    string edge_type = rwy_info.surface_flags.substr(3,1);
-    if ( edge_type != (string)"N" ) {
+    if ( rwylt1 >= 2 /* Has edge lighting */ ) {
         // forward direction
-        superpoly_list s;
-        s = gen_runway_edge_lights( rwy_info, edge_type, false );
+        superpoly_list s = gen_runway_edge_lights( rwy_info, rwylt1, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
-
+    }
+    if ( rwylt2 >= 2 /* Has edge lighting */ ) {
         // reverse direction
-        s = gen_runway_edge_lights( rwy_info, edge_type, true );
+        superpoly_list s = gen_runway_edge_lights( rwy_info, rwylt2, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
     // Centerline lighting
-    if ( rwy_info.surface_flags.substr(0,1) == "Y" ) {
+    if ( rwylt1 >= 4 /* Has centerline lighting */ ) {
         // forward direction
-        superpoly_list s;
-        s = gen_runway_center_line_lights( rwy_info, false );
+        superpoly_list s = gen_runway_center_line_lights( rwy_info, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
-
+    }
+    if ( rwylt2 >= 4 /* Has centerline lighting */ ) {
         // reverse direction
-        s = gen_runway_center_line_lights( rwy_info, true );
+        superpoly_list s = gen_runway_center_line_lights( rwy_info, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
     // Touchdown zone lighting
-    if ( rwy_info.end1_flags.substr(0,1) == "Y" ) {
+    if ( rwylt1 >= 5 /* Has touchdown zone lighting */ ) {
         TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, false );
         lights.push_back( s );
     }
-    if ( rwy_info.end2_flags.substr(0,1) == "Y" ) {
+    if ( rwylt2 >= 5 /* Has touchdown zone lighting */ ) {
         TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
     // REIL lighting
-    if ( rwy_info.end1_flags.substr(1,1) == "Y" ) {
+    if ( rwylt1 >= 3 /* Has REIL lighting */ ) {
         TGSuperPoly s = gen_reil( rwy_info, alt_m, false );
         lights.push_back( s );
     }
-    if ( rwy_info.end2_flags.substr(1,1) == "Y" ) {
+    if ( rwylt2 >= 3 /* Has REIL lighting */ ) {
         TGSuperPoly s = gen_reil( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
-    // PAPI lighting
-    if ( rwy_info.end1_flags.substr(2,1) == "P" ) {
+    // VASI/PAPI lighting
+    if ( vasi1 == 2 /* Has VASI */ ) {
+        TGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
+        lights.push_back( s );
+    } else if ( vasi1 == 3 /* Has PAPI */ ) {
         TGSuperPoly s = gen_papi( rwy_info, alt_m, false );
         lights.push_back( s );
     }
-    if ( rwy_info.end2_flags.substr(2,1) == "P" ) {
-        TGSuperPoly s = gen_papi( rwy_info, alt_m, true );
-        lights.push_back( s );
-    }
-
-    // VASI lighting
-    if ( rwy_info.end1_flags.substr(2,1) == "V" ) {
-        TGSuperPoly s = gen_vasi( rwy_info, alt_m, false );
-        lights.push_back( s );
-    }
-    if ( rwy_info.end2_flags.substr(2,1) == "V" ) {
+    if ( vasi2 == 2 /* Has VASI */ ) {
         TGSuperPoly s = gen_vasi( rwy_info, alt_m, true );
+        lights.push_back( s );
+    } else if ( vasi2 == 3 /* Has PAPI */ ) {
+        TGSuperPoly s = gen_papi( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
@@ -2666,28 +2656,26 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    // ALSF-I
-    if ( rwy_info.end1_flags.substr(3,1) == "B" ) {
+    if ( app1 == 4 /* ALSF-I */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "1", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "B" ) {
+    if ( app2 == 4 /* ALSF-I */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    // ALSF-II
-    if ( rwy_info.end1_flags.substr(3,1) == "C" ) {
+    if ( app1 == 5 /* ALSF-II */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "2", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "C" ) {
+    if ( app2 == 5 /* ALSF-II */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2704,13 +2692,13 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    if ( rwy_info.end2_flags.substr(3,1) == "D" ) {
+    if ( app1 == 7 || app1 == 8 /* Calvert 1, 2, and 3 */ ) {
         superpoly_list s = gen_calvert( rwy_info, alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "E" ) {
+    if ( app2 == 7 || app2 == 8 /* Calvert 1, 2, and 3 */ ) {
         superpoly_list s = gen_calvert( rwy_info, alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2725,28 +2713,26 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // data is provided in our database
     ////////////////////////////////////////////////////////////
 
-    // MALS
-    if ( rwy_info.end1_flags.substr(3,1) == "G" ) {
+    if ( app1 == -1 /* MALS not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "x", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "G" ) {
+    if ( app2 == -1 /* MALS not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "x", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    // MALSF
-    if ( rwy_info.end1_flags.substr(3,1) == "H" ) {
+    if ( app1 == -1 /* MALSF not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "F", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "H" ) {
+    if ( app2 == -1 /* MALSF not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "F", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2761,14 +2747,13 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // This is also likely airport specific
     ////////////////////////////////////////////////////////////
 
-    // MALSR
-    if ( rwy_info.end1_flags.substr(3,1) == "J" ) {
+    if ( app1 == -1 /* MALSR not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "J" ) {
+    if ( app2 == -1 /* MALSR not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2783,12 +2768,11 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // No clue ...
     ////////////////////////////////////////////////////////////
 
-    // ODALS Omni-directional approach light system
-    if ( rwy_info.end1_flags.substr(3,1) == "L" ) {
+    if ( app1 == 6 /* ODALS Omni-directional approach light system */ ) {
         TGSuperPoly s = gen_odals( rwy_info, alt_m, false );
         lights.push_back( s );
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "L" ) {
+    if ( app2 == 6 /* ODALS Omni-directional approach light system */ ) {
         TGSuperPoly s = gen_odals( rwy_info, alt_m, true );
         lights.push_back( s );
     }
@@ -2802,69 +2786,65 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 
     // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
     // a shorter center bar)
-    if ( rwy_info.end1_flags.substr(3,1) == "O" ) {
+    if ( app1 == -1 /* SALS not supported by database */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "O", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "O" ) {
+    if ( app2 == -1 /* SALS not supported by database */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "O", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    // SALSF
-    if ( rwy_info.end1_flags.substr(3,1) == "P" ) {
+    if ( app1 == 3 /* SALSF */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "P", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "P" ) {
+    if ( app2 == 3 /* SALSF */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "P", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    // SSALF
-    if ( rwy_info.end1_flags.substr(3,1) == "Q" ) {
+    if ( app1 == -1 /* SSALF not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "F", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "Q" ) {
+    if ( app2 == -1 /* SSALF not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "F", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    // SSALR
-    if ( rwy_info.end1_flags.substr(3,1) == "R" ) {
+    if ( app1 == -1 /* SSALR not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "R" ) {
+    if ( app2 == -1 /* SSALR not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    // SSALS
-    if ( rwy_info.end1_flags.substr(3,1) == "S" ) {
+    if ( app1 == 2 /* SSALS */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(3,1) == "S" ) {
+    if ( app2 == 2 /* SSALS */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2875,25 +2855,25 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // needed, but for those that don't (i.e. REIL, ODALS, or Edge
     // lights defined but no approach lights.)
     // Make threshold lighting
-    if ( rwy_info.end1_flags.substr(1,1) == "Y" ||
-         rwy_info.end1_flags.substr(3,1) == "L" ||
-         ( rwy_info.surface_flags.substr(3,1) != (string)"N" &&
-           rwy_info.end1_flags.substr(3,1) == "N") )
+    if ( rwylt1 >= 3 /* Has REIL lighting */
+         || app1 == 6 /* ODALS Omni-directional approach light system */
+         || ( rwylt1 >= 2 /* Has edge lighting */
+              && app1 == 0 /* No approach lighting */ ) )
     {
         // forward direction
-        superpoly_list s = gen_runway_threshold_lights( rwy_info, edge_type,
+        superpoly_list s = gen_runway_threshold_lights( rwy_info, rwylt1,
                                                         alt_m, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( rwy_info.end2_flags.substr(1,1) == "Y" ||
-         rwy_info.end2_flags.substr(3,1) == "L" ||
-         ( rwy_info.surface_flags.substr(3,1) != (string)"N" &&
-           rwy_info.end2_flags.substr(3,1) == "N" ) )
+    if ( rwylt2 >= 3 /* Has REIL lighting */
+         || app2 == 6 /* ODALS Omni-directional approach light system */
+         || ( rwylt2 >= 2 /* Has edge lighting */
+              && app2 == 0 /* No approach lighting */ ) )
     {
         // reverse direction
-        superpoly_list s = gen_runway_threshold_lights( rwy_info, edge_type,
+        superpoly_list s = gen_runway_threshold_lights( rwy_info, rwylt1,
                                                         alt_m, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2904,35 +2884,43 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 
 // top level taxiway light generator
 void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
-                         superpoly_list &lights ) {
+                         superpoly_list &lights )
+{
+    SG_LOG( SG_GENERAL, SG_DEBUG, "gen taxiway lights "
+            << taxiway_info.rwy_no << " "
+            << taxiway_info.lighting_flags );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "gen taxiway lights " << taxiway_info.rwy_no << " "
-         << taxiway_info.end1_flags << " " << taxiway_info.end2_flags);
+    string lighting_flags = taxiway_info.lighting_flags;
+    int rwylt1 = atoi( lighting_flags.substr(1,1).c_str() );
+    int rwylt2 = atoi( lighting_flags.substr(4,1).c_str() );
 
     unsigned int i;
 
     // Centerline lighting
-    if ( taxiway_info.surface_flags.substr(0,1) == "Y" ) {
+    if ( rwylt1 == 6 /* taxiway lit, assume centerline too */ ) {
         // forward direction
-        superpoly_list s;
-        s = gen_taxiway_center_line_lights( taxiway_info, false );
+        superpoly_list s
+            = gen_taxiway_center_line_lights( taxiway_info, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
+    }
 
+    if ( rwylt2 == 6 /* taxiway lit, assume centerline too */ ) {
         // reverse direction
-        s = gen_taxiway_center_line_lights( taxiway_info, true );
+        superpoly_list s
+            = gen_taxiway_center_line_lights( taxiway_info, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
     // Make edge lighting
-    string edge_type = taxiway_info.surface_flags.substr(2,1);
-    if ( taxiway_info.surface_flags.substr(2,1) == "B" ) {
-        // forward direction
+    if ( rwylt1 == 6 /* taxiway blue lit */ ) {
+        // forward direction (blue lights are omni-directional so we
+        // don't need to generate the reverse direction
         superpoly_list s;
-        s = gen_taxiway_edge_lights( taxiway_info, "B", false );
+        s = gen_taxiway_edge_lights( taxiway_info, rwylt1, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }

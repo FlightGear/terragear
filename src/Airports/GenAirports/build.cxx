@@ -29,6 +29,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/misc/strutils.hxx>
 #include <simgear/structure/exception.hxx>
 
 #include <stdio.h>
@@ -236,82 +237,89 @@ static void build_runway( const TGRunway& rwy_info,
                           TGPolygon *apt_base,
                           TGPolygon *apt_clearing )
 {
-    SG_LOG(SG_GENERAL, SG_DEBUG, "surface flags = " << rwy_info.surface_flags);
-    string surface_flag = rwy_info.surface_flags.substr(1, 1);
-    string light_flag = rwy_info.surface_flags.substr(2, 1);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "surface flag = " << surface_flag);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "surface code = " << rwy_info.surface_code);
+    int surface_code = rwy_info.surface_code;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "surface code = " << surface_code);
+    string lighting_flags = rwy_info.lighting_flags;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "lighting flags = " << lighting_flags);
+
+    string vasi1 = lighting_flags.substr(0,1);
+    string rwylt1 = lighting_flags.substr(1,1);
+    string apprch1 = lighting_flags.substr(2,1);
+    string vasi2 = lighting_flags.substr(3,1);
+    string rwylt2 = lighting_flags.substr(4,1);
+    string apprch2 = lighting_flags.substr(5,1);
 
     string material;
-    if ( surface_flag == "A" ) {
+    if ( surface_code == 1 /* Asphalt */ ) {
         if ( !rwy_info.really_taxiway ) {
-            material = "pa_";	// asphalt
+            material = "pa_";
         } else {
-            if ( rwy_info.width <= 150 && light_flag == "B" )
+            if ( rwy_info.width <= 150 && rwylt1 == "6" ) {
                 material = "pa_taxiway";
-            else
+            } else {
                 material = "pa_tiedown";
+            }
         }
-    } else if ( surface_flag == "C" ) {
+    } else if ( surface_code == 2 /* Concrete */ ) {
         if ( !rwy_info.really_taxiway ) {
-            material = "pc_";	// concrete
+            material = "pc_";
         } else {
-            if ( rwy_info.width <= 150 && light_flag == "B" )
+            if ( rwy_info.width <= 150 && rwylt1 == "6" ) {
                 material = "pc_taxiway";
-            else
+            } else {
                 material = "pc_tiedown";
+            }
         }
-    } else if ( surface_flag == "D" ) {
-        material = "dirt_rwy";
-    } else if ( surface_flag == "G" ) {
+    } else if ( surface_code == 3 /* Turf/Grass */ ) {
         material = "grass_rwy";
-    } else if ( surface_flag == "L" ) {
+    } else if ( surface_code == 4 /* Dirt */
+                || surface_code == 5 /* Gravel */ ) {
+        material = "dirt_rwy";
+    } else if ( surface_code == 12 /* Dry Lakebed */ ) {
         if ( rwy_info.really_taxiway ) {
             material = "lakebed_taxiway";
         } else {
             material = "dirt_rwy";
         }
-    } else if ( surface_flag == "T" ) {
-        material = "grass_rwy";
-    } else if ( surface_flag == "W" ) {
-        // water ???
+    } else if ( surface_code == 13 /* Water runway (buoy's?) */ ) {
+        // water
     } else {
 	throw sg_exception("unknown runway type!");
     }
 
 
-    string type_flag = rwy_info.surface_flags.substr(2, 1);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "type flag = " << type_flag);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "marking code = " << rwy_info.marking_code);
 
     if ( rwy_info.really_taxiway ) {
 	gen_taxiway( rwy_info, alt_m, material,
                      rwy_polys, texparams, accum );
-    } else if ( surface_flag == "D" || surface_flag == "G" ||
-	 surface_flag == "T" )
+    } else if ( surface_code == 3 /* Turf/Grass */
+                || surface_code == 4 /* Dirt */
+                || surface_code == 5 /* Gravel */ )
     {
 	gen_simple_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
-    } else if ( type_flag == "P" ) {
+    } else if ( rwy_info.marking_code == 3 /* Precision */ ) {
 	// precision runway markings
 	gen_precision_rwy( rwy_info, alt_m, material,
 			   rwy_polys, texparams, accum );
-    } else if ( type_flag == "R" ) {
+    } else if ( rwy_info.marking_code == 2 /* Non-precision */ ) {
 	// non-precision runway markings
 	gen_non_precision_rwy( rwy_info, alt_m, material,
 			       rwy_polys, texparams, accum );
-    } else if ( type_flag == "V" ) {
+    } else if ( rwy_info.marking_code == 1 /* Visual */ ) {
 	// visual runway markings
 	gen_visual_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
-    } else if ( type_flag == "B" ) {
-	// bouys (sea plane base)
-	// do nothing for now.
-    } else if ( type_flag == "H" ) {
-	// helipad
+    } else if ( surface_code == 13 /* Water buoys */ ) {
 	// do nothing for now.
     } else {
 	// unknown runway code ... hehe, I know, let's just die
 	// right here so the programmer has to fix his code if a
 	// new code ever gets introduced. :-)
+        SG_LOG( SG_GENERAL, SG_ALERT, "Unknown runway code = " <<
+                rwy_info.marking_code );
 	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
     }
 
@@ -337,7 +345,6 @@ static void build_runway( const TGRunway& rwy_info,
 // build 3d airport
 void build_airport( string airport_id, float alt_m,
                     string_list& runways_raw,
-                    string_list& taxiways_raw,
                     string_list& beacons_raw,
                     string_list& towers_raw,
                     string_list& windsocks_raw,                    
@@ -365,133 +372,80 @@ void build_airport( string airport_id, float alt_m,
 
     SG_LOG( SG_GENERAL, SG_INFO, "Building " << airport_id );
 
-    // parse runways and generate the vertex list
-    runway_list runways;
-    runways.clear();
-    string rwy_str;
+    // parse runways/taxiways and generate the vertex list
+    runway_list runways; runways.clear();
+    runway_list taxiways; taxiways.clear();
 
     for ( i = 0; i < (int)runways_raw.size(); ++i ) {
         ++rwy_count;
 
-	rwy_str = runways_raw[i];
+	string rwy_str = runways_raw[i];
+        vector<string> token = simgear::strutils::split( rwy_str );
 
 	TGRunway rwy;
 
-        rwy.really_taxiway = false;
-
 	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
-	rwy.rwy_no = rwy_str.substr(7, 4);
+	rwy.rwy_no = token[3];
+        rwy.really_taxiway = (rwy.rwy_no == "xxx");
 
-	string rwy_lat = rwy_str.substr(11, 10);
-	rwy.lat = atof( rwy_lat.c_str() );
+	rwy.lat = atof( token[1].c_str() );
         apt_lat += rwy.lat;
 
-	string rwy_lon = rwy_str.substr(22, 11);
-	rwy.lon = atof( rwy_lon.c_str() );
+	rwy.lon = atof( token[2].c_str() );
         apt_lon += rwy.lon;
 
-	string rwy_hdg = rwy_str.substr(34, 6);
-	rwy.heading = atof( rwy_hdg.c_str() );
+	rwy.heading = atof( token[4].c_str() );
 
-	string rwy_len = rwy_str.substr(41, 5);
-	rwy.length = atoi( rwy_len.c_str() );
+	rwy.length = atoi( token[5].c_str() );
+	rwy.width = atoi( token[8].c_str() );
 
-	string rwy_width = rwy_str.substr(47, 5);
-	rwy.width = atoi( rwy_width.c_str() );
+        string rwy_displ_threshold = token[6];
+        vector<string> displ
+            = simgear::strutils::split( rwy_displ_threshold, "." );
+        rwy.disp_thresh1 = atoi( displ[0].c_str() );
+        rwy.disp_thresh2 = atoi( displ[1].c_str() );
 
-	rwy.surface_flags = rwy_str.substr(53, 5);
+        string rwy_stopway = token[7];
+        vector<string> stop
+            = simgear::strutils::split( rwy_stopway, "." );
+        rwy.stopway1 = atoi( stop[0].c_str() );
+        rwy.stopway2 = atoi( stop[1].c_str() );
 
-	rwy.end1_flags = rwy_str.substr(59, 4);
-
-        string rwy_disp_threshold1 = rwy_str.substr(64, 4);
-	rwy.disp_thresh1 = atoi( rwy_disp_threshold1.c_str() );
-
-        string rwy_stopway1 = rwy_str.substr(69, 4);
-	rwy.stopway1 = atoi( rwy_stopway1.c_str() );
-
-	rwy.end2_flags = rwy_str.substr(74, 4);
-
-        string rwy_disp_threshold2 = rwy_str.substr(79, 4);
-	rwy.disp_thresh2 = atoi( rwy_disp_threshold2.c_str() );
-
-        string rwy_stopway2 = rwy_str.substr(83, 4);
-	rwy.stopway2 = atoi( rwy_stopway2.c_str() );
+	rwy.lighting_flags = token[9];
+	rwy.surface_code = atoi( token[10].c_str() );
+	rwy.shoulder_code = token[11];
+        rwy.marking_code = atoi( token[12].c_str() );
+        rwy.smoothness = atof( token[13].c_str() );
+        rwy.dist_remaining = (atoi( token[14].c_str() ) == 1 );
 
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy_lat << " " << rwy.lat);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy_lon << " " << rwy.lon);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy_hdg << " "
-                << rwy.heading);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << rwy_len << " "
-                << rwy.length);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << rwy_width << " "
-                << rwy.width);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_flags);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  end1  = " << rwy.end1_flags);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy_disp_threshold1
-                << " " << rwy.disp_thresh1);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy_stopway1 << " "
-                << rwy.stopway1);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  end2  = " << rwy.end2_flags);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy_disp_threshold2
-                << " " << rwy.disp_thresh2);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy_stopway2 << " "
-                << rwy.stopway2);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy.lon);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy.heading);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << rwy.length);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << rwy.width);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lighting = " << rwy.lighting_flags);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_code);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  mrkgs  = " << rwy.marking_code);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy.disp_thresh1);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy.stopway1);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy.disp_thresh2);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy.stopway2);
 
-	runways.push_back( rwy );
+        if ( rwy.really_taxiway ) {
+            taxiways.push_back( rwy );
+        } else {
+            runways.push_back( rwy );
+        }
     }
+    SG_LOG(SG_GENERAL, SG_INFO, "Runway count = " << runways.size() );
+    SG_LOG(SG_GENERAL, SG_INFO, "Taxiway count = " << taxiways.size() );
 
     SGBucket b( apt_lon / (double)rwy_count, apt_lat / (double)rwy_count );
     SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
     Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS, 	 
                          b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
     Point3D gbs_center = sgGeodToCart( center_geod );
-
-    // parse taxiways and generate the vertex list
-    runway_list taxiways;
-    taxiways.clear();
-
-    for ( i = 0; i < (int)taxiways_raw.size(); ++i ) {
-	string taxi_str = taxiways_raw[i];
-
-	TGRunway taxi;
-
-        taxi.really_taxiway = true;
-        taxi.generated = false;
-
-	SG_LOG(SG_GENERAL, SG_INFO, taxi_str);
-
-	string taxi_lat = taxi_str.substr(11, 10);
-	taxi.lat = atof( taxi_lat.c_str() );
-
-	string taxi_lon = taxi_str.substr(22, 11);
-	taxi.lon = atof( taxi_lon.c_str() );
-
-	string taxi_hdg = taxi_str.substr(34, 6);
-	taxi.heading = atof( taxi_hdg.c_str() );
-
-	string taxi_len = taxi_str.substr(41, 5);
-	taxi.length = atoi( taxi_len.c_str() );
-
-	string taxi_width = taxi_str.substr(47, 5);
-	taxi.width = atoi( taxi_width.c_str() );
-
-	taxi.surface_flags = taxi_str.substr(53, 5);
-
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << taxi_lat << " "
-                << taxi.lat);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << taxi_lon << " "
-                << taxi.lon);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << taxi_hdg << " "
-                << taxi.heading);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << taxi_len << " "
-                << taxi.length);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << taxi_width << " "
-                << taxi.width);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << taxi.surface_flags);
-
-	taxiways.push_back( taxi );
-    }
 
     point_list beacons; beacons.clear();
     for ( i = 0; i < (int)beacons_raw.size(); ++i ) {
@@ -568,8 +522,7 @@ void build_airport( string airport_id, float alt_m,
     // First pass: generate the precision runways since these have
     // precidence
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	string type_flag = runways[i].surface_flags.substr(2, 1);
-	if ( type_flag == "P" ) {
+	if ( runways[i].marking_code == 3 /* Precision */ ) {
 	    build_runway( runways[i], alt_m,
 			  &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
@@ -578,10 +531,10 @@ void build_airport( string airport_id, float alt_m,
 
     // 2nd pass: generate the non-precision and visual runways
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	string type_flag = runways[i].surface_flags.substr(2, 1);
-	string surface_flag = runways[i].surface_flags.substr(1, 1);
-	if ( type_flag == "R" || type_flag == "V" ) {
-            if ( surface_flag != "W" ) {
+	if ( runways[i].marking_code == 2 /* Non-precision */
+             || runways[i].marking_code == 1 /* Visual */ )
+        {
+            if ( runways[i].surface_code != 13 /* Water */ ) {
                 // only build non-water runways
                 build_runway( runways[i], alt_m,
                               &rwy_polys, &texparams, &accum,
@@ -592,11 +545,11 @@ void build_airport( string airport_id, float alt_m,
 
     // 3rd pass: generate all remaining runways not covered in the first pass
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	string type_flag = runways[i].surface_flags.substr(2, 1);
-	string surface_flag = runways[i].surface_flags.substr(1, 1);
-	if ( type_flag != string("P") && type_flag != string("R")
-             && type_flag != string("V") ) {
-            if ( surface_flag != "W" ) {
+	if ( runways[i].marking_code != 3 /* Precision */
+             && runways[i].marking_code != 2 /* Non-precision */
+             && runways[i].marking_code != 1 /* Visual */ )
+        {
+            if ( runways[i].surface_code != 13 ) {
                 // only build non-water runways
                 build_runway( runways[i], alt_m,
                               &rwy_polys, &texparams, &accum,

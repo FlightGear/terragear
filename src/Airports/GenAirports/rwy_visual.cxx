@@ -94,7 +94,8 @@ void gen_visual_rwy( const TGRunway& rwy_info,
     double length = rwy_info.length / 2.0 + 2.0;
     if ( length < 1150 ) {
 	SG_LOG(SG_GENERAL, SG_ALERT,
-	       "This runway is not long enough for visual markings!");
+	       "This runway is not long enough for visual markings = "
+               << rwy_info.length );
     }
 
     double start1_pct = 0.0;
