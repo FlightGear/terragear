@@ -165,7 +165,7 @@ int_list FGGenOutput::calc_tex_coords( FGConstruct& c, point_list geod_nodes,
 int FGGenOutput::build( FGConstruct& c ) {
     int i, j;
 
-    FGTriNodes trinodes = c.get_tri_nodes();
+    TGTriNodes trinodes = c.get_tri_nodes();
 
     // copy the geodetic node list into this class
     geod_nodes = trinodes.get_node_list();
@@ -248,7 +248,7 @@ void FGGenOutput::calc_group_bounding_sphere( FGConstruct& c,
     point_list wgs84_nodes = c.get_wgs84_nodes();
 
     // generate a list of unique points from the triangle list
-    FGTriNodes nodes;
+    TGTriNodes nodes;
 
     const_opt_list_iterator f_current = fans.begin();
     const_opt_list_iterator f_last = fans.end();

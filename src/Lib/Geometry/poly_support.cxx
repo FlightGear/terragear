@@ -107,7 +107,7 @@ static bool intersects( Point3D p0, Point3D p1, double x, Point3D *result ) {
 // calculate some "arbitrary" point inside the specified contour for
 // assigning attribute areas
 Point3D calc_point_inside_old( const FGPolygon& p, const int contour, 
-			       const FGTriNodes& trinodes ) {
+			       const TGTriNodes& trinodes ) {
     Point3D tmp, min, ln, p1, p2, p3, m, result, inside_pt;
     int min_node_index = 0;
     int min_index = 0;
@@ -171,7 +171,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 	ln = p2;
     }
 
-    FGTriSeg base_leg( min_index, ln_index, 0 );
+    TGTriSeg base_leg( min_index, ln_index, 0 );
 
     m.setx( (min.x() + ln.x()) / 2.0 );
     m.sety( (min.y() + ln.y()) / 2.0 );
@@ -197,7 +197,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 		cout << "intersection = " << result << endl;
 		if ( ( result.y() < p3.y() ) &&
 		     ( result.y() > m.y() ) &&
-		     !( base_leg == FGTriSeg(p1_index, p2_index, 0) ) ) {
+		     !( base_leg == TGTriSeg(p1_index, p2_index, 0) ) ) {
 		    p3 = result;
 		}
 	    }
@@ -212,7 +212,7 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 	    cout << "intersection = " << result << endl;
 	    if ( ( result.y() < p3.y() ) &&
 		 ( result.y() > m.y() ) &&
-		 !( base_leg == FGTriSeg(p1_index, p2_index, 0) ) ) {
+		 !( base_leg == TGTriSeg(p1_index, p2_index, 0) ) ) {
 		p3 = result;
 	    }
 	}
@@ -483,7 +483,7 @@ FGPolygon polygon_tesselate_alt( FGPolygon &p ) {
 
 // basic triangulation of a contour with out adding points or
 // splitting edges but cuts out any of the specified holes
-static void contour_tesselate( FGContourNode *node, const FGPolygon &p,
+static void contour_tesselate( TGContourNode *node, const FGPolygon &p,
 			       const FGPolygon &hole_polys,
 			       const point_list &hole_pts,
 			       triele_list &elelist,
@@ -745,7 +745,7 @@ static Point3D point_inside_hole( point_list contour ) {
 
 // Find a point inside a specific polygon contour taking holes into
 // consideration
-static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
+static Point3D point_inside_contour( TGContourNode *node, const FGPolygon &p ) {
     int contour_num;
     int i;
 
@@ -808,7 +808,7 @@ static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
 
 // recurse the contour tree and build up the point inside list for
 // each contour/hole
-static void calc_point_inside( FGContourNode *node, FGPolygon &p ) {
+static void calc_point_inside( TGContourNode *node, FGPolygon &p ) {
     for ( int i = 0; i < node->get_num_kids(); ++i ) {
 	if ( node->get_kid( i ) != NULL ) {
 	    calc_point_inside( node->get_kid( i ), p );
@@ -825,7 +825,7 @@ static void calc_point_inside( FGContourNode *node, FGPolygon &p ) {
 }
 
 
-static void print_contour_tree( FGContourNode *node, string indent ) {
+static void print_contour_tree( TGContourNode *node, string indent ) {
     cout << indent << node->get_contour_num() << endl;
 
     indent += "  ";
@@ -838,13 +838,13 @@ static void print_contour_tree( FGContourNode *node, string indent ) {
 
 
 // Build the contour "is inside of" tree
-static void build_contour_tree( FGContourNode *node,
+static void build_contour_tree( TGContourNode *node,
 				const FGPolygon &p,
 				int_list &avail )
 {
     cout << "working on contour = " << node->get_contour_num() << endl;
     cout << "  total contours = " << p.contours() << endl;
-    FGContourNode *tmp;
+    TGContourNode *tmp;
     int i;
 
     // see if we are building on a hole or not
@@ -870,7 +870,7 @@ static void build_contour_tree( FGContourNode *node,
 		    // the root, add all available non-holes.
 		    cout << "  adding contour = " << i << endl;
 		    avail[i] = 0;
-		    tmp = new FGContourNode( i );
+		    tmp = new TGContourNode( i );
 		    node->add_kid( tmp );
 		} else {
 		    cout << "  not inside" << endl;
@@ -936,7 +936,7 @@ void calc_points_inside( FGPolygon& p ) {
     }
 
     // create and initialize the root node
-    FGContourNode *ct = new FGContourNode( -1 );
+    TGContourNode *ct = new TGContourNode( -1 );
 
     // recursively build the tree
     build_contour_tree( ct, p, avail );

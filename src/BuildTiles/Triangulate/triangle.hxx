@@ -55,12 +55,12 @@ class FGTriangle {
 private:
 
     // list of nodes
-    FGTriNodes in_nodes;
-    FGTriNodes out_nodes;
+    TGTriNodes in_nodes;
+    TGTriNodes out_nodes;
 
     // list of segments
-    FGTriSegments in_segs;
-    FGTriSegments out_segs;
+    TGTriSegments in_segs;
+    TGTriSegments out_segs;
 
     // polygon list
     poly_list polylist[FG_MAX_AREA_TYPES];
@@ -94,10 +94,10 @@ public:
     // generated.
     int run_triangulate( const string& angle, const int pass );
 
-    inline FGTriNodes get_out_nodes() const { return out_nodes; }
+    inline TGTriNodes get_out_nodes() const { return out_nodes; }
     inline size_t get_out_nodes_size() const { return out_nodes.size(); }
     inline triele_list get_elelist() const { return elelist; }
-    inline FGTriSegments get_out_segs() const { return out_segs; }
+    inline TGTriSegments get_out_segs() const { return out_segs; }
 };
 
 

@@ -39,7 +39,7 @@
 #define FG_COURSE_EPSILON 0.0003
 
 
-class FGTriNodes {
+class TGTriNodes {
 
 private:
 
@@ -60,8 +60,8 @@ private:
 public:
 
     // Constructor and destructor
-    FGTriNodes( void );
-    ~FGTriNodes( void );
+    TGTriNodes( void );
+    ~TGTriNodes( void );
 
     // delete all the data out of node_list
     inline void clear() { node_list.clear(); }
@@ -101,7 +101,7 @@ public:
 
 // return true of the two points are "close enough" as defined by
 // FG_PROXIMITY_EPSILON checking just x and y dimensions
-inline bool FGTriNodes::close_enough_2d( const Point3D& p1, const Point3D& p2 )
+inline bool TGTriNodes::close_enough_2d( const Point3D& p1, const Point3D& p2 )
     const
 {
     if ( ( fabs(p1.x() - p2.x()) < FG_PROXIMITY_EPSILON ) &&
@@ -115,7 +115,7 @@ inline bool FGTriNodes::close_enough_2d( const Point3D& p1, const Point3D& p2 )
 
 // return true of the two points are "close enough" as defined by
 // FG_PROXIMITY_EPSILON check all three dimensions
-inline bool FGTriNodes::close_enough_3d( const Point3D& p1, const Point3D& p2 )
+inline bool TGTriNodes::close_enough_3d( const Point3D& p1, const Point3D& p2 )
     const
 {
     if ( ( fabs(p1.x() - p2.x()) < FG_PROXIMITY_EPSILON ) &&
@@ -130,7 +130,7 @@ inline bool FGTriNodes::close_enough_3d( const Point3D& p1, const Point3D& p2 )
 
 // return true of the two points are "close enough" as defined by
 // FG_COURSE_EPSILON
-inline bool FGTriNodes::course_close_enough( const Point3D& p1, 
+inline bool TGTriNodes::course_close_enough( const Point3D& p1, 
 					     const Point3D& p2 )
 {
     if ( ( fabs(p1.x() - p2.x()) < FG_COURSE_EPSILON ) &&

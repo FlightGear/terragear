@@ -68,7 +68,7 @@ FGPolygon polygon_tesselate_alt( FGPolygon &p );
 // assigning attribute areas.  This requires data structures outside
 // of "FGPolygon" which is why it is living over here in "Lib/Geometry"
 Point3D calc_point_inside_old( const FGPolygon& p, const int contour, 
-			       const FGTriNodes& trinodes );
+			       const TGTriNodes& trinodes );
 
 // calculate some "arbitrary" point inside each of the polygons contours
 void calc_points_inside( FGPolygon& p );

@@ -385,7 +385,7 @@ void FGMatch::split_tile( FGConstruct& c ) {
     // separate area edge segment into components
     cout << "  extracting (shared) area edge segments" << endl;
 
-    FGTriSeg seg;
+    TGTriSeg seg;
     Point3D p1, p2;
     triseg_list seg_list = c.get_tri_segs().get_seg_list();
     triseg_list_iterator current = seg_list.begin();
@@ -637,13 +637,13 @@ void insert_normal( point_list& normals, Point3D n, int i ) {
 // data)
 void FGMatch::assemble_tile( FGConstruct& c ) {
     int i;
-    FGTriNodes new_nodes;
+    TGTriNodes new_nodes;
     new_nodes.clear();
 
     point_list new_normals;
     new_normals.clear();
 
-    FGTriSegments new_segs;
+    TGTriSegments new_segs;
     new_segs.clear();
 
     // add the corner points
@@ -705,13 +705,13 @@ void FGMatch::assemble_tile( FGConstruct& c ) {
 
     // add the edge segments
     new_segs.unique_divide_and_add( new_nodes.get_node_list(),
-				    FGTriSeg(sw_index, se_index, 1) );
+				    TGTriSeg(sw_index, se_index, 1) );
     new_segs.unique_divide_and_add( new_nodes.get_node_list(),
-				    FGTriSeg(se_index, ne_index, 1) );
+				    TGTriSeg(se_index, ne_index, 1) );
     new_segs.unique_divide_and_add( new_nodes.get_node_list(),
-				    FGTriSeg(ne_index, nw_index, 1) );
+				    TGTriSeg(ne_index, nw_index, 1) );
     new_segs.unique_divide_and_add( new_nodes.get_node_list(),
-				    FGTriSeg(nw_index, sw_index, 1) );
+				    TGTriSeg(nw_index, sw_index, 1) );
     cout << "after adding edge segments:" << endl;
     cout << "  new_nodes = " << new_nodes.size() << endl;
     cout << "  new normals = " << new_normals.size() << endl;
@@ -720,7 +720,7 @@ void FGMatch::assemble_tile( FGConstruct& c ) {
 
     point_list geod_nodes = c.get_geod_nodes();
 
-    FGTriSeg seg;
+    TGTriSeg seg;
     Point3D p1, p2;
     int n1, n2, marker;
 
@@ -755,7 +755,7 @@ void FGMatch::assemble_tile( FGConstruct& c ) {
 
 	// add the segment using the new indices
 	new_segs.unique_divide_and_add( new_nodes.get_node_list(),
-					FGTriSeg(n1, n2, marker) );
+					TGTriSeg(n1, n2, marker) );
     }
 
     c.set_tri_nodes( new_nodes );

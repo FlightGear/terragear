@@ -238,11 +238,11 @@ FGTriangle::build( const point_list& corner_list,
 		    if ( i == (int)HoleArea ) {
 			// mark as a boundary
 			in_segs.unique_divide_and_add( node_list, 
-						       FGTriSeg(i1, i2, 1) );
+						       TGTriSeg(i1, i2, 1) );
 		    } else {
 			// non boundary
 			in_segs.unique_divide_and_add( node_list, 
-						       FGTriSeg(i1, i2, 0) );
+						       TGTriSeg(i1, i2, 0) );
 		    }
 		}
 		p1 = poly.get_pt( j, 0 );
@@ -253,11 +253,11 @@ FGTriangle::build( const point_list& corner_list,
 		if ( i == (int)HoleArea ) {
 		    // mark as a boundary
 		    in_segs.unique_divide_and_add( node_list, 
-						   FGTriSeg(i1, i2, 1) );
+						   TGTriSeg(i1, i2, 1) );
 		} else {
 		    // non boundary
 		    in_segs.unique_divide_and_add( node_list, 
-						   FGTriSeg(i1, i2, 0) );
+						   TGTriSeg(i1, i2, 0) );
 		}
 	    }
 	}
@@ -532,7 +532,7 @@ int FGTriangle::run_triangulate( const string& angle, const int pass ) {
     // segments
     out_segs.clear();
     for ( i = 0; i < out.numberofsegments; ++i ) {
-	out_segs.unique_add( FGTriSeg( out.segmentlist[2*i], 
+	out_segs.unique_add( TGTriSeg( out.segmentlist[2*i], 
 				       out.segmentlist[2*i+1],
 				       out.segmentmarkerlist[i] ) );
     }

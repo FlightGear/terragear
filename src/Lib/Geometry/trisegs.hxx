@@ -40,7 +40,7 @@ SG_USING_STD(vector);
 
 
 // a segment is two integer pointers into the node list
-class FGTriSeg {
+class TGTriSeg {
     int n1, n2;			// indices into point list
     int boundary_marker;	// flag if segment is a boundary
 				// (i.e. shouldn't get split)
@@ -48,14 +48,14 @@ class FGTriSeg {
 public:
 
     // Constructor and destructor
-    inline FGTriSeg( void ) { };
-    inline FGTriSeg( int i1, int i2, int b ) { 
+    inline TGTriSeg( void ) { };
+    inline TGTriSeg( int i1, int i2, int b ) { 
 	n1 = i1;
 	n2 = i2;
 	boundary_marker = b;
     }
 
-    inline ~FGTriSeg( void ) { };
+    inline ~TGTriSeg( void ) { };
 
     inline int get_n1() const { return n1; }
     inline void set_n1( int i ) { n1 = i; }
@@ -64,23 +64,23 @@ public:
     inline int get_boundary_marker() const { return boundary_marker; }
     inline void set_boundary_marker( int b ) { boundary_marker = b; }
 
-    friend bool operator == (const FGTriSeg& a, const FGTriSeg& b);
+    friend bool operator == (const TGTriSeg& a, const TGTriSeg& b);
 
 };
 
-inline bool operator == (const FGTriSeg& a, const FGTriSeg& b)
+inline bool operator == (const TGTriSeg& a, const TGTriSeg& b)
 {
     return ((a.n1 == b.n1) && (a.n2 == b.n2)) 
 	|| ((a.n1 == b.n2) && (a.n2 == b.n1));
 }
 
 
-typedef vector < FGTriSeg > triseg_list;
+typedef vector < TGTriSeg > triseg_list;
 typedef triseg_list::iterator triseg_list_iterator;
 typedef triseg_list::const_iterator const_triseg_list_iterator;
 
 
-class FGTriSegments {
+class TGTriSegments {
 
 private:
 
@@ -89,13 +89,13 @@ private:
     // Divide segment if there are other points on it, return the
     // divided list of segments
     triseg_list divide_segment( const point_list& nodes, 
-				const FGTriSeg& s );
+				const TGTriSeg& s );
 
 public:
 
     // Constructor and destructor
-    FGTriSegments( void );
-    ~FGTriSegments( void );
+    TGTriSegments( void );
+    ~TGTriSegments( void );
 
     // delete all the data out of seg_list
     inline void clear() { seg_list.clear(); }
@@ -103,18 +103,18 @@ public:
     // Add a segment to the segment list if it doesn't already exist.
     // Returns the index (starting at zero) of the segment in the
     // list.
-    int unique_add( const FGTriSeg& s );
+    int unique_add( const TGTriSeg& s );
 
     // Add a segment to the segment list if it doesn't already exist.
     // Returns the index (starting at zero) of the segment in the list.
     void unique_divide_and_add( const point_list& node_list, 
-				const FGTriSeg& s );
+				const TGTriSeg& s );
 
     // return the master segment list
     inline triseg_list get_seg_list() const { return seg_list; }
 
     // return the ith segment
-    inline FGTriSeg get_seg( int i ) const { return seg_list[i]; }
+    inline TGTriSeg get_seg( int i ) const { return seg_list[i]; }
 };
 
 

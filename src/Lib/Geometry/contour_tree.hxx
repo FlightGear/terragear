@@ -39,9 +39,9 @@ SG_USING_STD(vector);
 
 
 // forward declaration
-class FGContourNode;
+class TGContourNode;
 
-typedef vector < FGContourNode * > contour_kids;
+typedef vector < TGContourNode * > contour_kids;
 typedef contour_kids::iterator contour_kids_iterator;
 typedef contour_kids::const_iterator const_contour_kids_iterator;
 
@@ -50,7 +50,7 @@ typedef contour_kids::const_iterator const_contour_kids_iterator;
 // contour tree shows the hierarchy of which contour is inside which
 // contour.
 
-class FGContourNode {
+class TGContourNode {
 
 private:
 
@@ -59,17 +59,17 @@ private:
 
 public:
 
-    FGContourNode();
-    FGContourNode( int n );
+    TGContourNode();
+    TGContourNode( int n );
 
-    ~FGContourNode();
+    ~TGContourNode();
 
     inline int get_contour_num() const { return contour_num; }
     inline void set_contour_num( int n ) { contour_num = n; }
 
     inline int get_num_kids() const { return kids.size(); }
-    inline FGContourNode *get_kid( int n ) const { return kids[n]; }
-    inline void add_kid( FGContourNode *kid ) { kids.push_back( kid ); }
+    inline TGContourNode *get_kid( int n ) const { return kids[n]; }
+    inline void add_kid( TGContourNode *kid ) { kids.push_back( kid ); }
     inline void remove_kid( int n ) {
 	// cout << "kids[" << n << "] = " << kids[n] << endl;
 	delete kids[n];

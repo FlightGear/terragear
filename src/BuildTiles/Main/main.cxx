@@ -587,7 +587,7 @@ static void fix_point_heights( FGConstruct& c, const TGArray& array ) {
 
     }
 
-    FGTriNodes tmp;
+    TGTriNodes tmp;
     tmp.set_node_list( raw_nodes );
     c.set_tri_nodes( tmp );
 }

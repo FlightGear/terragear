@@ -663,7 +663,7 @@ void build_airport( string airport_raw, float alt_m,
 
     // add segments to polygons to remove any possible "T"
     // intersections
-    FGTriNodes tmp_nodes;
+    TGTriNodes tmp_nodes;
 
     // build temporary node list
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
@@ -809,7 +809,7 @@ void build_airport( string airport_raw, float alt_m,
     // traverse the tri list and create ordered node and texture
     // coordinate lists
 
-    FGTriNodes nodes, normals, texcoords;
+    TGTriNodes nodes, normals, texcoords;
     nodes.clear();
     normals.clear();
     texcoords.clear();
@@ -1022,7 +1022,7 @@ void build_airport( string airport_raw, float alt_m,
     // pass one, calculate raw elevations from DEM
 
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
-        FGTriNodes light_nodes;
+        TGTriNodes light_nodes;
         light_nodes.clear();
         point_list lights_v = rwy_lights[i].get_poly().get_contour(0);
         for ( j = 0; j < (int)lights_v.size(); ++j ) {

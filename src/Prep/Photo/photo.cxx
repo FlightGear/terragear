@@ -155,7 +155,7 @@ int main( int argc, char **argv ) {
 
     // generate vertices
 
-    FGTriNodes nodes; nodes.clear();
+    TGTriNodes nodes; nodes.clear();
 
     double dx0 = (x3 - x0) / ydiv;
     double dy0 = (y3 - y0) / ydiv;
@@ -186,7 +186,7 @@ int main( int argc, char **argv ) {
     point_list geod_nodes = calc_elevations( root, nodes.get_node_list() );
 
     // texture coordinates
-    FGTriNodes texcoords; texcoords.clear();
+    TGTriNodes texcoords; texcoords.clear();
     texcoords.simple_add( Point3D( 0.0, 0.0, 0.0 ) );
     texcoords.simple_add( Point3D( 1.0, 0.0, 0.0 ) );
     texcoords.simple_add( Point3D( 1.0, 1.0, 0.0 ) );

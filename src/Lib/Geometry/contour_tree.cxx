@@ -26,18 +26,18 @@
 
 
 // Constructor
-FGContourNode::FGContourNode() {
+TGContourNode::TGContourNode() {
     kids.clear();
 }
 
 
 // Constructor
-FGContourNode::FGContourNode( int n ) {
+TGContourNode::TGContourNode( int n ) {
     contour_num = n;
     kids.clear();
 }
 
 
 // Destructor
-FGContourNode::~FGContourNode() {
+TGContourNode::~TGContourNode() {
 }

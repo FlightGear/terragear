@@ -33,18 +33,18 @@ SG_USING_STD(endl);
 
 
 // Constructor 
-FGTriSegments::FGTriSegments( void ) {
+TGTriSegments::TGTriSegments( void ) {
 }
 
 
 // Destructor
-FGTriSegments::~FGTriSegments( void ) {
+TGTriSegments::~TGTriSegments( void ) {
 }
 
 
 // Add a segment to the segment list if it doesn't already exist.
 // Returns the index (starting at zero) of the segment in the list.
-int FGTriSegments::unique_add( const FGTriSeg& s )
+int TGTriSegments::unique_add( const TGTriSeg& s )
 {
     triseg_list_iterator current, last;
     int counter = 0;
@@ -79,8 +79,8 @@ int FGTriSegments::unique_add( const FGTriSeg& s )
 
 // Divide segment if there are other points on it, return the divided
 // list of segments
-void FGTriSegments::unique_divide_and_add( const point_list& nodes, 
-					   const FGTriSeg& s )
+void TGTriSegments::unique_divide_and_add( const point_list& nodes, 
+					   const TGTriSeg& s )
 {
     Point3D p0 = nodes[ s.get_n1() ];
     Point3D p1 = nodes[ s.get_n2() ];
@@ -92,7 +92,7 @@ void FGTriSegments::unique_divide_and_add( const point_list& nodes,
     const_point_list_iterator current, last;
 
     // bool temp = false;
-    // if ( s == FGTriSeg( 170, 206 ) ) {
+    // if ( s == TGTriSeg( 170, 206 ) ) {
     //   cout << "this is it!" << endl;
     //   temp = true;
     // }
@@ -200,9 +200,9 @@ void FGTriSegments::unique_divide_and_add( const point_list& nodes,
 	// recurse with two sub segments
 	cout << "dividing " << s.get_n1() << " " << extra_index 
 	     << " " << s.get_n2() << endl;
-	unique_divide_and_add( nodes, FGTriSeg( s.get_n1(), extra_index, 
+	unique_divide_and_add( nodes, TGTriSeg( s.get_n1(), extra_index, 
 						s.get_boundary_marker() ) );
-	unique_divide_and_add( nodes, FGTriSeg( extra_index, s.get_n2(), 
+	unique_divide_and_add( nodes, TGTriSeg( extra_index, s.get_n2(), 
 						s.get_boundary_marker() ) );
     } else {
 	// this segment does not need to be divided, lets add it

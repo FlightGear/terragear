@@ -63,7 +63,7 @@ private:
     triele_list tri_elements;
 
     // texture coordinates
-    FGTriNodes tex_coords;
+    TGTriNodes tex_coords;
 
     // fan list
     opt_list fans[FG_MAX_AREA_TYPES];

@@ -84,7 +84,7 @@ private:
     FGPolyList clipped_polys;
 
     // raw node list (after triangulation)
-    FGTriNodes tri_nodes;
+    TGTriNodes tri_nodes;
 
     // node list in geodetic coords (with fixed elevation)
     point_list geod_nodes;
@@ -96,7 +96,7 @@ private:
     triele_list tri_elements;
 
     // edge segments (after triangulation)
-    FGTriSegments tri_segs;
+    TGTriSegments tri_segs;
 
     // for each node, a list of triangle indices that contain this node
     belongs_to_list reverse_ele_lookup;
@@ -149,16 +149,16 @@ public:
     inline void set_clipped_polys( FGPolyList p ) { clipped_polys = p; }
 
     // node list (after triangulation)
-    inline FGTriNodes get_tri_nodes() const { return tri_nodes; }
-    inline void set_tri_nodes( FGTriNodes n ) { tri_nodes = n; }
+    inline TGTriNodes get_tri_nodes() const { return tri_nodes; }
+    inline void set_tri_nodes( TGTriNodes n ) { tri_nodes = n; }
 
     // triangle elements (after triangulation)
     inline triele_list get_tri_elements() const { return tri_elements; }
     inline void set_tri_elements( triele_list e ) { tri_elements = e; }
 
     // edge segments (after triangulation)
-    inline FGTriSegments get_tri_segs() const { return tri_segs; }
-    inline void set_tri_segs( FGTriSegments s ) { tri_segs = s; }
+    inline TGTriSegments get_tri_segs() const { return tri_segs; }
+    inline void set_tri_segs( TGTriSegments s ) { tri_segs = s; }
 
     // node list in geodetic coords (with fixed elevation)
     inline point_list get_geod_nodes() const { return geod_nodes; }

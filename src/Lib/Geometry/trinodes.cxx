@@ -25,18 +25,18 @@
 
 
 // Constructor 
-FGTriNodes::FGTriNodes( void ) {
+TGTriNodes::TGTriNodes( void ) {
 }
 
 
 // Destructor
-FGTriNodes::~FGTriNodes( void ) {
+TGTriNodes::~TGTriNodes( void ) {
 }
 
 
 // Add a point to the point list if it doesn't already exist.  Returns
 // the index (starting at zero) of the point in the list.
-int FGTriNodes::unique_add( const Point3D& p ) {
+int TGTriNodes::unique_add( const Point3D& p ) {
     point_list_iterator current, last;
     int counter = 0;
 
@@ -64,7 +64,7 @@ int FGTriNodes::unique_add( const Point3D& p ) {
 // Add a point to the point list if it doesn't already exist (checking
 // all three dimensions.)  Returns the index (starting at zero) of the
 // point in the list.
-int FGTriNodes::unique_add_3d( const Point3D& p ) {
+int TGTriNodes::unique_add_3d( const Point3D& p ) {
     point_list_iterator current, last;
     int counter = 0;
 
@@ -90,7 +90,7 @@ int FGTriNodes::unique_add_3d( const Point3D& p ) {
 
 
 // Add the point with no uniqueness checking
-int FGTriNodes::simple_add( const Point3D& p ) {
+int TGTriNodes::simple_add( const Point3D& p ) {
     node_list.push_back( p );
 
     return node_list.size() - 1;
@@ -100,7 +100,7 @@ int FGTriNodes::simple_add( const Point3D& p ) {
 // Add a point to the point list if it doesn't already exist.  Returns
 // the index (starting at zero) of the point in the list.  Use a
 // course proximity check
-int FGTriNodes::course_add( const Point3D& p ) {
+int TGTriNodes::course_add( const Point3D& p ) {
     point_list_iterator current, last;
     int counter = 0;
 
@@ -127,7 +127,7 @@ int FGTriNodes::course_add( const Point3D& p ) {
 
 // Find the index of the specified point (compair to the same
 // tolerance as unique_add().  Returns -1 if not found.
-int FGTriNodes::find( const Point3D& p ) const {
+int TGTriNodes::find( const Point3D& p ) const {
     const_point_list_iterator current, last;
     int counter = 0;
 

@@ -35,7 +35,7 @@
 // Divide segment if there are other existing points on it, return the
 // new polygon
 void add_intermediate_nodes( int contour, const Point3D& start, 
-			     const Point3D& end, const FGTriNodes& tmp_nodes,
+			     const Point3D& end, const TGTriNodes& tmp_nodes,
 			     FGPolygon *result )
 {
     point_list nodes = tmp_nodes.get_node_list();
@@ -70,7 +70,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 // avoid "T" intersections.
 
 FGPolygon add_nodes_to_poly( const FGPolygon& poly, 
-				    const FGTriNodes& tmp_nodes ) {
+                             const TGTriNodes& tmp_nodes ) {
     int i, j;
     FGPolygon result; result.erase();
     Point3D p0, p1;
