@@ -22,10 +22,10 @@ int main( int argc, char **argv ) {
     string base = b.gen_base_path();
     string path = work_dir + "/" + base;
 
-    string arrayfile = path + "/" + b.gen_index_str() + ".dem";
-    cout << "arrayfile = " << arrayfile << endl;
+    string arraybase = path + "/" + b.gen_index_str();
+    cout << "arraybase = " << arraybase << endl;
     
-    TGArray a(arrayfile);
+    TGArray a(arraybase);
     a.parse( b );
 
     lon *= 3600;

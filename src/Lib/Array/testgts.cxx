@@ -7,7 +7,7 @@
 // Essentially start with two triangles forming the bounding surface.
 // Then add the point that has the greatest error.  Retriangulate.
 // Recalcuate errors for each remaining point, add the one with the
-// greatest error.
+// greatest error.  Lather, rinse, repeat.
 //
 //  Outputs to a file that can be visualized with gtsview (available
 //  from http://gts.sf.net)
@@ -120,7 +120,7 @@ int main( int argc, char **argv ) {
             } else {
                 x = basex + i * dx;
                 y = basey + j * dy;
-                z = a.get_point( i, j );
+                z = a.get_array_elev( i, j );
                 pending.push_back( Point3D(x, y, z) );
             }
         }

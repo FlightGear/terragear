@@ -53,9 +53,11 @@ class TGArray {
 
 private:
 
-    // file pointer for input
-    // gzFile fd;
-    sg_gzifstream *in;
+    // array file pointer
+    sg_gzifstream *array_in;
+
+    // fitted file pointer
+    sg_gzifstream *fitted_in;
 
     // coordinates (in arc seconds) of south west corner
     double originx, originy;
@@ -72,7 +74,10 @@ private:
 
     // output nodes
     point_list corner_list;
-    point_list node_list;
+    point_list fitted_list;
+
+    // bool
+    bool fit_on_the_fly;
 
 public:
 
@@ -84,7 +89,7 @@ public:
     ~TGArray( void );
 
     // open an Array file (use "-" if input is coming from stdin)
-    bool open ( const string& file );
+    bool open ( const string& file_based );
 
     // close a Array file
     bool close();
@@ -93,7 +98,11 @@ public:
     bool parse( SGBucket& b );
 
     // Use least squares to fit a simpler data set to dem data.
-    // Return the number of fitted nodes
+    // Return the number of fitted nodes.  This is a horrible approach
+    // that doesn't really work, but it's better than nothing if
+    // you've got nothing.  Using src/Prep/ArrayFit to create .fit
+    // files from the .arr files is a *much* better approach, but it
+    // is slower which is why it needs to be done "offline".
     int fit( double error );
 
     // add a node to the output corner node list
@@ -115,11 +124,14 @@ public:
     inline double get_col_step() const { return col_step; }
     inline double get_row_step() const { return row_step; }
 
-    inline point_list get_corner_node_list() const { return corner_list; }
-    inline point_list get_fit_node_list() const { return node_list; }
+    inline point_list get_corner_list() const { return corner_list; }
+    inline point_list get_fitted_list() const { return fitted_list; }
 
-    inline int get_point( int col, int row ) {
+    inline int get_array_elev( int col, int row ) {
         return in_data[col][row];
+    }
+    inline Point3D get_fitted_pt( int i ) {
+        return fitted_list[i];
     }
 };
 

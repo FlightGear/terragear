@@ -78,23 +78,33 @@ TGArray::TGArray( const string &file ) {
 }
 
 
-// open an Array file
-bool
-TGArray::open( const string& file ) {
+// open an Array file (and fitted file if it exists)
+bool TGArray::open( const string& file_base ) {
     // open input file (or read from stdin)
-    if ( file ==  "-" ) {
+    if ( file_base ==  "-" ) {
 	cout << "  Opening array data pipe from stdin" << endl;
 	// fd = stdin;
 	// fd = gzdopen(STDIN_FILENO, "r");
 	cout << "  Not yet ported ..." << endl;
 	return false;
     } else {
-	in = new sg_gzifstream( file );
-	if ( ! in->is_open() ) {
-	    cout << "  Cannot open " << file << endl;
+        // open array data file
+        string array_name = file_base + ".arr.gz";
+	array_in = new sg_gzifstream( array_name );
+	if ( ! array_in->is_open() ) {
+	    cout << "  Cannot open " << array_name << endl;
 	    return false;
 	}
-	cout << "  Opening array data file: " << file << endl;
+	cout << "  Opening array data file: " << array_name << endl;
+
+        // open fitted data file
+        string fitted_name = file_base + ".fit.gz";
+	fitted_in = new sg_gzifstream( fitted_name );
+	if ( ! fitted_in->is_open() ) {
+	    cout << "  Cannot open " << fitted_name << endl;
+	    return false;
+	}
+	cout << "  Opening fitted data file: " << fitted_name << endl;
     }
 
     return true;
@@ -106,7 +116,8 @@ bool
 TGArray::close() {
     // the sg_gzifstream doesn't seem to have a close()
 
-    delete in;
+    delete array_in;
+    delete fitted_in;
 
     return true;
 }
@@ -116,11 +127,12 @@ TGArray::close() {
 // the file wasn't found.
 bool
 TGArray::parse( SGBucket& b ) {
-    if ( in->is_open() ) {
+    // Parse/load the array data file
+    if ( array_in->is_open() ) {
 	// file open, parse
-	*in >> originx >> originy;
-	*in >> cols >> col_step;
-	*in >> rows >> row_step;
+	*array_in >> originx >> originy;
+	*array_in >> cols >> col_step;
+	*array_in >> rows >> row_step;
 
 	cout << "    origin  = " << originx << "  " << originy << endl;
 	cout << "    cols = " << cols << "  rows = " << rows << endl;
@@ -129,7 +141,7 @@ TGArray::parse( SGBucket& b ) {
 
 	for ( int i = 0; i < cols; i++ ) {
 	    for ( int j = 0; j < rows; j++ ) {
-		*in >> in_data[i][j];
+		*array_in >> in_data[i][j];
 	    }
 	}
 
@@ -238,6 +250,25 @@ TGArray::parse( SGBucket& b ) {
 	cout << "    File not open, so using zero'd data" << endl;
     }
 
+    // Parse/load the array data file
+    if ( fitted_in->is_open() ) {
+        fit_on_the_fly = false;
+        int fitted_size;
+        double x, y, z, error;
+        *fitted_in >> fitted_size;
+        for ( int i = 0; i < fitted_size; ++i ) {
+            *fitted_in >> x >> y >> z >> error;
+            if ( i < 4 ) {
+                // skip first 4 corner nodes
+            } else {
+                fitted_list.push_back( Point3D(x, y, z) );
+                cout << " loading fitted = " << Point3D(x, y, z) << endl;
+            }
+        }
+    } else {
+        fit_on_the_fly = true;
+    }
+
     return true;
 }
 
@@ -258,13 +289,20 @@ void TGArray::add_fit_node( int i, int j, double val ) {
     double x = (originx + i * col_step) / 3600.0;
     double y = (originy + j * row_step) / 3600.0;
     // cout << Point3D(x, y, val) << endl;
-    node_list.push_back( Point3D(x, y, val) );
+    fitted_list.push_back( Point3D(x, y, val) );
 }
 
 
 // Use least squares to fit a simpler data set to dem data.  Return
-// the number of fitted nodes
+// the number of fitted nodes.  This is a horrible approach that
+// doesn't really work, but it's better than nothing if you've got
+// nothing.  Using src/Prep/ArrayFit to create .fit files from the
+// .arr files is a *much* better approach, but it is slower which is
+// why it needs to be done "offline".
 int TGArray::fit( double error ) {
+    if ( ! fit_on_the_fly ) {
+        return fitted_list.size();
+    }
     double x[ARRAY_SIZE_1], y[ARRAY_SIZE_1];
     double m, b, max_error, error_sq;
     double x1, y1;
@@ -279,7 +317,7 @@ int TGArray::fit( double error ) {
 
     cout << "  Initializing fitted node list" << endl;
     corner_list.clear();
-    node_list.clear();
+    fitted_list.clear();
 
     // determine dimensions
     colmin = 0;
@@ -415,7 +453,7 @@ int TGArray::fit( double error ) {
     // outputmesh_output_nodes(fg_root, p);
 
     // return fit nodes + 4 corners
-    return node_list.size() + 4;
+    return fitted_list.size() + 4;
 }
 
 
