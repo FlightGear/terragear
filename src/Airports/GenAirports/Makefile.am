@@ -36,8 +36,8 @@ genapts_LDADD = \
 	$(top_builddir)/src/Lib/Array/libArray.a \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
-	$(top_builddir)/src/Lib/Build/libBuild.a \
-	$(top_builddir)/src/Lib/Triangle/libTriangle.a \
+	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
+	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgdebug -lsgmath -lsgmisc -lz -lgpc \
 	$(base_LIBS)
 

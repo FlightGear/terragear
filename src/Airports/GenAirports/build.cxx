@@ -44,8 +44,8 @@
 #include <simgear/misc/texcoord.hxx>
 
 #include <Array/array.hxx>
-#include <Build/poly_support.hxx>
-#include <Build/trinodes.hxx>
+#include <Geometry/poly_support.hxx>
+#include <Geometry/trinodes.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 #include <Triangulate/trieles.hxx>

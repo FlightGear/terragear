@@ -41,8 +41,8 @@
 
 #include <simgear/bucket/newbucket.hxx>
 
-#include <Build/trinodes.hxx>
-#include <Build/trisegs.hxx>
+#include <Geometry/trinodes.hxx>
+#include <Geometry/trisegs.hxx>
 
 #include <Clipper/clipper.hxx>
 #include <Triangulate/trieles.hxx>

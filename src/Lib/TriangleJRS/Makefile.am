@@ -11,9 +11,9 @@
 
 CPPFLAGS += -DTRILIBRARY
 
-noinst_LIBRARIES = libTriangle.a
+noinst_LIBRARIES = libTriangleJRS.a
 
-libTriangle_a_SOURCES = \
+libTriangleJRS_a_SOURCES = \
 	triangle.c triangle.h \
 	tri_support.c tri_support.h
 

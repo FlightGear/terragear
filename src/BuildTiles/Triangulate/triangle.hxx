@@ -37,14 +37,14 @@
 #include <Clipper/clipper.hxx>
 #include <Main/construct.hxx>
 
-#include <Build/trinodes.hxx>
-#include <Build/trisegs.hxx>
+#include <Geometry/trinodes.hxx>
+#include <Geometry/trisegs.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 
 #define REAL double
 extern "C" {
-#include <Triangle/triangle.h>
+#include <TriangleJRS/triangle.h>
 }
 
 #include "trieles.hxx"

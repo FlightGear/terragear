@@ -1,9 +1,9 @@
 SUBDIRS = \
 	Array \
-	Build \
 	DEM \
+	Geometry \
 	Optimize \
 	Polygon \
 	poly2tri \
 	shapelib \
-	Triangle
+	TriangleJRS

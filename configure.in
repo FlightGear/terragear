@@ -247,13 +247,13 @@ AC_OUTPUT( \
 	src/Construct/Parallel/Makefile \
 	src/Lib/Makefile \
 	src/Lib/Array/Makefile \
-	src/Lib/Build/Makefile \
 	src/Lib/DEM/Makefile \
+	src/Lib/Geometry/Makefile \
 	src/Lib/Optimize/Makefile \
 	src/Lib/Polygon/Makefile \
 	src/Lib/poly2tri/Makefile \
 	src/Lib/shapelib/Makefile \
-	src/Lib/Triangle/Makefile \
+	src/Lib/TriangleJRS/Makefile \
 	src/Prep/Makefile \
 	src/Prep/DemChop/Makefile \
 	src/Prep/DemInfo/Makefile \

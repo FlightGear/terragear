@@ -27,18 +27,18 @@
 #include <simgear/math/fg_types.hxx>
 #include <simgear/math/point3d.hxx>
 
-#include <Build/trisegs.hxx>
 #include <Polygon/polygon.hxx>
 #include <Triangulate/trieles.hxx>
 
 #define REAL double
 extern "C" {
-#include <Triangle/triangle.h>
+#include <TriangleJRS/triangle.h>
 }
-#include <Triangle/tri_support.h>
+#include <TriangleJRS/tri_support.h>
 
 #include "poly_support.hxx"
 #include "trinodes.hxx"
+#include "trisegs.hxx"
 
 
 // Given a line segment specified by two endpoints p1 and p2, return

@@ -1,6 +1,6 @@
-noinst_LIBRARIES = libBuild.a
+noinst_LIBRARIES = libGeometry.a
 
-libBuild_a_SOURCES = \
+libGeometry_a_SOURCES = \
 	poly_support.cxx poly_support.hxx \
 	trinodes.cxx trinodes.hxx \
 	trisegs.cxx trisegs.hxx

@@ -21,9 +21,9 @@
 // $Id$
 
 
-#include <Build/poly_support.hxx>
+#include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
-#include <Triangle/tri_support.h>
+#include <TriangleJRS/tri_support.h>
 
 #include "triangle.hxx"
 
