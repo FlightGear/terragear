@@ -1,0 +1,36 @@
+You *must* have the libnurbs++ package installed on your system to
+build portions of TerraGear".
+
+You can get the latest version of libnurbs++ from:
+
+    http://libnurbs.sourceforge.net/
+
+More information:
+
+  Non-Uniform Rational B-Splines (NURBS) curves and surface are
+  parametric functions which can represent any type of curves or
+  surfaces. This C++ library hides the basic mathematics of
+  NURBS. This allows the user to focus on the more challenging parts
+  of their projects. The library also offers a lot of features to help
+  generate NURBS from data points.
+
+  The NURBS++ package includes a matrix library, an image manipulation
+  library, a numerical library and a NURBS library. They can all be
+  used on their own but they are all developped to support my NURBS
+  needs.
+
+  NURBS++ is being revived under sourceforge as the nurbs++ project
+  (it is under the libnurbs directory for obvious reasons). Please use
+  the sourceforge tools to send bug reports, feature requests, etc.
+
+  This library is now used in the Mind's Eyes project and also in the
+  Innovation3D project. Both projects aim at creating a free 3D
+  modeller for UNIX machines. If you know other projects which use the
+  library please let me know. It helps justify the effort I put into
+  it.
+
+  The library is under the GNU Library Public Licence term. This means
+  it's free. You can copy it, modify it and even enjoy it. You do have
+  to add my name as the author of the work, after all this is still
+  copyrighted material. If the above license is bad for you, talk to
+  me. I'm sure we can work something out.

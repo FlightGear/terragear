@@ -208,9 +208,22 @@ AC_CHECK_HEADER(plib/pu.h)
 if test "x$ac_cv_header_plib_pu_h" != "xyes"; then
     echo
     echo "You *must* have the plib library installed on your system to build"
-    echo "the FGFS simulator!"
+    echo "TerraGear!"
     echo
     echo "Please see README.plib for more details."
+    echo
+    echo "configure aborted."
+    exit
+fi
+
+dnl Check for "libnurbs++" without which we cannot go on
+AC_CHECK_HEADER(nurbs++/nurbsS.hh)
+if test "x$ac_cv_header_nurbspp_nurbsS_hh" != "xyes"; then
+    echo
+    echo "You *must* have the nurbs++ library installed on your system to build"
+    echo "TerraGear!"
+    echo
+    echo "Please see README.nurbs++ for more details."
     echo
     echo "configure aborted."
     exit
@@ -250,7 +263,7 @@ AC_CHECK_HEADER(simgear/version.h)
 if test "x$ac_cv_header_simgear_version_h" != "xyes"; then
     echo
     echo "You *must* have the SimGear support library installed on your system"
-    echo "to build the FGFS simulator!"
+    echo "to build TerraGear!"
     echo
     echo "Please see README.SimGear for more details."
     echo
