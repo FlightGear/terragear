@@ -212,7 +212,7 @@ int FGGenOutput::build( FGConstruct& c ) {
 
 // caclulate the bounding sphere for a list of triangle faces
 void FGGenOutput::calc_group_bounding_sphere( FGConstruct& c, 
-					      const fan_list& fans, 
+					      const opt_list& fans, 
 					      Point3D *center, double *radius )
 {
     cout << "calculate group bounding sphere for " << fans.size() << " fans." 
@@ -223,8 +223,8 @@ void FGGenOutput::calc_group_bounding_sphere( FGConstruct& c,
     // generate a list of unique points from the triangle list
     FGTriNodes nodes;
 
-    const_fan_list_iterator f_current = fans.begin();
-    const_fan_list_iterator f_last = fans.end();
+    const_opt_list_iterator f_current = fans.begin();
+    const_opt_list_iterator f_last = fans.end();
     for ( ; f_current != f_last; ++f_current ) {
 	const_int_list_iterator i_current = f_current->begin();
 	const_int_list_iterator i_last = f_current->end();

@@ -66,7 +66,7 @@ private:
     FGTriNodes tex_coords;
 
     // fan list
-    fan_list fans[FG_MAX_AREA_TYPES];
+    opt_list fans[FG_MAX_AREA_TYPES];
 
     // textures pointer list
     tex_list textures[FG_MAX_AREA_TYPES];
@@ -80,7 +80,7 @@ private:
     void calc_gbs( FGConstruct& c );
 
     // caclulate the bounding sphere for a list of triangle faces
-    void calc_group_bounding_sphere( FGConstruct& c, const fan_list& fans, 
+    void calc_group_bounding_sphere( FGConstruct& c, const opt_list& fans, 
 				     Point3D *center, double *radius );
 
     // caclulate the bounding sphere for the specified triangle face
