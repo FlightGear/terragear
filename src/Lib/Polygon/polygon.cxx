@@ -73,8 +73,8 @@ void TGPolygon::inherit_elevations( const TGPolygon &source ) {
     // traverse the dest polygon and build a mirror image but with
     // elevations from the source polygon
 
-    for ( i = 0; i < poly.size(); ++i ) {
-        for ( j = 0; j < poly[i].size(); ++j ) {
+    for ( i = 0; i < (int)poly.size(); ++i ) {
+        for ( j = 0; j < (int)poly[i].size(); ++j ) {
             Point3D p = poly[i][j];
             int index = nodes.find( p );
             if ( index >= 0 ) {
@@ -89,10 +89,10 @@ void TGPolygon::inherit_elevations( const TGPolygon &source ) {
     // weren't in the original.)
 
     double last = -9999.0;
-    for ( i = 0; i < poly.size(); ++i ) {
+    for ( i = 0; i < (int)poly.size(); ++i ) {
         // go front ways
         last = -9999.0;
-        for ( j = 0; j < poly[i].size(); ++j ) {
+        for ( j = 0; j < (int)poly[i].size(); ++j ) {
             Point3D p = poly[i][j];
             if ( p.z() > -9000 ) {
                 last = p.z();

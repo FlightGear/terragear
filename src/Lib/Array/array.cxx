@@ -163,7 +163,7 @@ TGArray::parse( SGBucket& b ) {
         for ( int i = 0; i < fitted_size; ++i ) {
             *fitted_in >> x >> y >> z;
             fitted_list.push_back( Point3D(x, y, z) );
-            cout << " loading fitted = " << Point3D(x, y, z) << endl;
+            // cout << " loading fitted = " << Point3D(x, y, z) << endl;
         }
     }
 

@@ -1233,7 +1233,7 @@ static point_list remove_contour_cycles( const point_list& contour ) {
             if ( contour[i] == contour[j] && i + 2 > j ) {
                 cout << "detected a small cycle: i = "
                      << i << " j = " << j << endl;
-                for ( int k = i; k <= j; ++k ) {
+                for ( unsigned int k = i; k <= j; ++k ) {
                     cout << "  " << contour[k] << endl;
                 }
                 // i = j;
