@@ -46,6 +46,8 @@
 Point3D calc_point_inside( const FGPolygon& p, const int contour, 
 			   const FGTriNodes& trinodes );
 
+void calc_points_inside( const FGPolygon& p );
+
 
 #endif // _POLY_SUPPORT_HXX
 

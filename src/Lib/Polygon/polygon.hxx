@@ -103,7 +103,7 @@ public:
 	return poly[contour].size();
     }
 
-    // return the ith polygon point index from the specified contour
+    // return the ith point from the specified contour
     inline Point3D get_pt( int contour, int i ) const { 
 	return poly[contour][i];
     }

@@ -33,6 +33,10 @@ AreaType get_area_type( string area ) {
 	return SomeSortOfArea;
     } else if ( area == "Hole" ) {
 	return HoleArea;
+    } else if ( area == "Island" ) {
+	return IslandArea;
+    } else if ( area == "Pond" ) {
+	return PondArea;
     } else if ( (area == "Swamp or Marsh")
 		|| (area == "Marsh") ) {
 	return MarshArea;
@@ -85,6 +89,10 @@ string get_area_name( AreaType area ) {
 	return "Hole";
     } else if ( area == MarshArea ) {
 	return "Marsh";
+    } else if ( area == PondArea ) {
+	return "Pond";
+    } else if ( area == IslandArea ) {
+	return "Island";
     } else if ( area == LakeArea ) {
 	return "Lake";
     } else if ( area == DryLakeArea ) {

@@ -38,18 +38,20 @@ FG_USING_STD(string);
 enum AreaType {
     SomeSortOfArea    = 0,
     HoleArea          = 1,
-    LakeArea          = 2,
-    DryLakeArea       = 3,
-    IntLakeArea       = 4,
-    ReservoirArea     = 5,
-    IntReservoirArea  = 6,
-    StreamArea        = 7,
-    CanalArea         = 8,
-    GlacierArea       = 9,
-    OceanArea         = 10,
-    UrbanArea         = 11,
-    MarshArea         = 12,
-    DefaultArea       = 13,
+    PondArea          = 2,
+    IslandArea        = 3,
+    LakeArea          = 4,
+    DryLakeArea       = 5,
+    IntLakeArea       = 6,
+    ReservoirArea     = 7,
+    IntReservoirArea  = 8,
+    StreamArea        = 9,
+    CanalArea         = 10,
+    GlacierArea       = 11,
+    OceanArea         = 12,
+    UrbanArea         = 13,
+    MarshArea         = 14,
+    DefaultArea       = 15,
     VoidArea          = 9997,
     NullArea          = 9998,
     UnknownArea       = 9999
@@ -64,5 +66,4 @@ string get_area_name( AreaType area );
 
 
 #endif // _NAMES_HXX
-
 
