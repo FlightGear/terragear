@@ -1,3 +1,5 @@
+EXTRA_DIST fgfs-launch-clients fgfs-launch-server genworklist.sh
+
 bin_PROGRAMS = fgfs-tools-server fgfs-tools-client
 
 fgfs_tools_server_SOURCES = server.cxx
