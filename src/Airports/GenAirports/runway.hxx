@@ -46,6 +46,13 @@ struct FGRunway {
     string surface_flags;
     string end1_flags;
     string end2_flags;
+
+    FGPolygon threshold;
+    FGPolygon tens, tens_margin, ones, ones_margin;
+    FGPolygon letter, letter_margin_left, letter_margin_right;
+    FGPolygon pre_td_zone;
+    FGPolygon td3_zone, td2_zone, td1a_zone, td1b_zone;
+    FGPolygon aim_point;
 };
 
 

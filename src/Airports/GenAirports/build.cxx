@@ -49,6 +49,7 @@
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 #include <Polygon/split.hxx>
+#include <Polygon/superpoly.hxx>
 #include <Triangulate/trieles.hxx>
 
 #include "convex_hull.hxx"
@@ -466,8 +467,9 @@ static void my_chomp( string& str ) {
 void build_airport( string airport_raw, string_list& runways_raw,
 		    const string& root ) {
 
-    poly_list rwy_polys, rwy_tris, rwy_txs;
-    FGPolygon runway, runway_a, runway_b, result, result_a, result_b;
+    superpoly_list rwy_polys;
+    // poly_list rwy_tris, rwy_txs;
+    FGPolygon runway, runway_a, runway_b, result, clipped_a, clipped_b;
     FGPolygon base;
     point_list apt_pts;
     Point3D p;
@@ -563,8 +565,22 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	runways.push_back( rwy );
     }
 
+    FGSuperPoly sp;
+    string surface_flag;
+    string material;
     for ( int i = 0; i < (int)runways.size(); ++i ) {
 	runway = gen_runway_w_mid( runways[i] );
+	surface_flag = runways[i].surface_flags.substr(0, 1);
+	cout << "surface flag = " << surface_flag << endl;
+	if ( surface_flag == "A" ) {
+	    material = "Asphalt";
+	} else if ( surface_flag == "C" ) {
+	    material = "Concrete";
+	} else if ( surface_flag == "D" ) {
+	    material = "DryLake";
+	} else if ( surface_flag == "T" ) {
+	    material = "Grass";
+	}
 
 	// runway half "a"
 	runway_a.erase();
@@ -591,14 +607,20 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    cout << " point = " << p << endl;
 	}
 	
-	result_a = polygon_diff( runway_a, accum );
-	rwy_polys.push_back( result_a );
-	cout << "result_a = " << result_a.contours() << endl;
+	clipped_a = polygon_diff( runway_a, accum );
+	sp.erase();
+	sp.set_poly( clipped_a );
+	sp.set_material( material );
+	rwy_polys.push_back( sp );
+	cout << "clipped_a = " << clipped_a.contours() << endl;
 	accum = polygon_union( runway_a, accum );
 
-	result_b = polygon_diff( runway_b, accum );
-	rwy_polys.push_back( result_b );
-	cout << "result_b = " << result_b.contours() << endl;
+	clipped_b = polygon_diff( runway_b, accum );
+	sp.erase();
+	sp.set_poly( clipped_b );
+	sp.set_material( material );
+	rwy_polys.push_back( sp );
+	cout << "clipped_b = " << clipped_b.contours() << endl;
 	accum = polygon_union( runway_b, accum );
 
 #if 0
@@ -606,24 +628,24 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	char tmpa[256], tmpb[256];
 	sprintf( tmpa, "a%d", i );
 	sprintf( tmpb, "b%d", i );
-	write_polygon( result_a, tmpa );
-	write_polygon( result_b, tmpb );
+	write_polygon( clipped_a, tmpa );
+	write_polygon( clipped_b, tmpb );
 #endif
 
 	// print runway points
 	cout << "clipped runway pts (a)" << endl;
-	for ( int j = 0; j < result_a.contours(); ++j ) {
-	    for ( int k = 0; k < result_a.contour_size( j ); ++k ) {
-		p = result_a.get_pt(j, k);
+	for ( int j = 0; j < clipped_a.contours(); ++j ) {
+	    for ( int k = 0; k < clipped_a.contour_size( j ); ++k ) {
+		p = clipped_a.get_pt(j, k);
 		cout << " point = " << p << endl;
 	    }
 	}
 
 	// print runway points
 	cout << "clipped runway pts (b)" << endl;
-	for ( int j = 0; j < result_b.contours(); ++j ) {
-	    for ( int k = 0; k < result_b.contour_size( j ); ++k ) {
-		p = result_b.get_pt(j, k);
+	for ( int j = 0; j < clipped_b.contours(); ++j ) {
+	    for ( int k = 0; k < clipped_b.contour_size( j ); ++k ) {
+		p = clipped_b.get_pt(j, k);
 		cout << " point = " << p << endl;
 	    }
 	}
@@ -654,9 +676,10 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // build temporary node list
     for ( int k = 0; k < (int)rwy_polys.size(); ++k ) {
-	for ( int i = 0; i < rwy_polys[k].contours(); ++i ) {
-	    for ( int j = 0; j < rwy_polys[k].contour_size( i ); ++j ) {
-		tmp_nodes.unique_add( rwy_polys[k].get_pt(i, j) );
+	FGPolygon poly = rwy_polys[k].get_poly();
+	for ( int i = 0; i < poly.contours(); ++i ) {
+	    for ( int j = 0; j < poly.contour_size( i ); ++j ) {
+		tmp_nodes.unique_add( poly.get_pt(i, j) );
 	    }
 	}
     }
@@ -698,16 +721,19 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     for ( int k = 0; k < (int)rwy_polys.size(); ++k ) {
 	cout << "add nodes/remove dups runway = " << k << endl;
-	rwy_polys[k] = add_nodes_to_poly( rwy_polys[k], tmp_nodes );
+	FGPolygon poly = rwy_polys[k].get_poly();
+	poly = add_nodes_to_poly( poly, tmp_nodes );
 
 #if 0
 	char tmp[256];
 	sprintf( tmp, "r%d", k );
-	write_polygon( rwy_polys[k], tmp );
+	write_polygon( poly, tmp );
 #endif
 
-        rwy_polys[k] = remove_dups( rwy_polys[k] );
-        rwy_polys[k] = remove_bad_contours( rwy_polys[k] );
+        poly = remove_dups( poly );
+        poly = remove_bad_contours( poly );
+
+	rwy_polys[k].set_poly( poly );
     }
     cout << "add nodes/remove dups base " << endl;
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
@@ -718,19 +744,24 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // tesselate the polygons and prepair them for final output
 
+    FGPolygon poly;
     for ( int i = 0; i < (int)runways.size(); ++i ) {
         cout << "Tesselating runway = " << i << endl;
 	FGPolygon tri_a, tri_b, tc_a, tc_b;
 
-	tri_a = polygon_tesselate_alt( rwy_polys[2 * i] );
+	poly = rwy_polys[2 * i].get_poly();
+	tri_a = polygon_tesselate_alt( poly );
 	tc_a = rwy_calc_tex_coords( runways[i], 0.0, tri_a );
-	rwy_tris.push_back( tri_a );
-	rwy_txs.push_back( tc_a );
+	rwy_polys[2 * i].set_tris( tri_a );
+	rwy_polys[2 * i].set_texcoords( tc_a );
+	rwy_polys[2 * i].set_tri_mode( GL_TRIANGLES );
 
-	tri_b = polygon_tesselate_alt( rwy_polys[2 * i + 1] );
+	poly = rwy_polys[2 * i + 1].get_poly();
+	tri_b = polygon_tesselate_alt( poly );
 	tc_b = rwy_calc_tex_coords( runways[i], 180.0, tri_b );
-	rwy_tris.push_back( tri_b );
-	rwy_txs.push_back( tc_b );
+	rwy_polys[2 * i + 1].set_tris( tri_b );
+	rwy_polys[2 * i + 1].set_texcoords( tc_b );
+	rwy_polys[2 * i + 1].set_tri_mode( GL_TRIANGLES );
     }
 
     cout << "Tesselating base" << endl;
@@ -782,9 +813,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
     int_list tri_v;
     int_list tri_tc;
 
-    for ( int k = 0; k < (int)rwy_tris.size(); ++k ) {
+    // for ( int k = 0; k < (int)rwy_tris.size(); ++k ) {
+    for ( int k = 0; k < (int)rwy_polys.size(); ++k ) {
 	cout << "tri " << k << endl;
-	FGPolygon tri_poly = rwy_tris[k];
+	// FGPolygon tri_poly = rwy_tris[k];
+	FGPolygon tri_poly = rwy_polys[k].get_tris();
+	FGPolygon tri_txs = rwy_polys[k].get_texcoords();
+	string material = rwy_polys[k].get_material();
 	for ( int i = 0; i < tri_poly.contours(); ++i ) {
 	    tri_v.clear();
 	    tri_tc.clear();
@@ -792,13 +827,13 @@ void build_airport( string airport_raw, string_list& runways_raw,
 		p = tri_poly.get_pt( i, j );
 		index = nodes.unique_add( p );
 		tri_v.push_back( index );
-		tc = rwy_txs[k].get_pt( i, j );
+		tc = tri_txs.get_pt( i, j );
 		index = texcoords.unique_add( tc );
 		tri_tc.push_back( index );
 	    }
 	    tris_v.push_back( tri_v );
 	    tris_tc.push_back( tri_tc );
-	    tri_materials.push_back( "Concrete" );
+	    tri_materials.push_back( material );
 	}
     }
     
