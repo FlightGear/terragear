@@ -21,6 +21,10 @@
 // $Id$
 
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #ifdef _MSC_VER
 #  include <io.h>
 #else

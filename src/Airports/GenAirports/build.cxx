@@ -72,6 +72,7 @@
 #include "texparams.hxx"
 
 SG_USING_STD(map);
+SG_USING_STD(less);
 SG_USING_STD(string);
 
 

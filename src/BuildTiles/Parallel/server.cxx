@@ -32,6 +32,9 @@ SG_USING_STD( endl );
 
 #define MAXBUF 1024
 
+#if defined (__APPLE__)
+typedef int socklen_t;
+#endif
 
 static double start_lon, start_lat;
 static double lat = 0.0;

@@ -335,7 +335,6 @@ AC_CONFIG_FILES([ \
 	src/Utils/Makefile \
 	src/Utils/cdrom/Makefile \
 	src/Utils/download-map/Makefile \
-	src/Utils/TerraSync/Makefile \
 ])
 AC_OUTPUT
 
