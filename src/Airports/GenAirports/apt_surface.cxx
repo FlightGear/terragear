@@ -46,8 +46,8 @@ static bool limit_slope( Matrix_Point3Dd &Pts, int i1, int j1, int i2, int j2,
     bool slope_error = false;
 
     Point3Dd p1, p2;
-    p1 = Pts(j1,i1);
-    p2 = Pts(j2,i2);
+    p1 = Pts(i1,j1);
+    p2 = Pts(i2,j2);
 
     double az1, az2, dist;
     double slope;
@@ -77,7 +77,7 @@ static bool limit_slope( Matrix_Point3Dd &Pts, int i1, int j1, int i2, int j2,
             } else {
                 p1.z() = p2.z() + (dist * slope_max);
             }
-            Pts(j1,i1) = p1;
+            Pts(i1,j1) = p1;
         } else {
             // cout << "  p2 error larger" << endl;
             if ( slope > 0 ) {
@@ -85,7 +85,7 @@ static bool limit_slope( Matrix_Point3Dd &Pts, int i1, int j1, int i2, int j2,
             } else {
                 p2.z() = p1.z() - (dist * slope_max);
             }
-            Pts(j2,i2) = p2;
+            Pts(i2,j2) = p2;
         }
         // cout << "   z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
     }
@@ -126,10 +126,18 @@ TGAptSurface::TGAptSurface( const string& path,
     int xdivs = (int)(x_m / coarse_grid) + 1;
     int ydivs = (int)(y_m / coarse_grid) + 1;
 
+#if defined( _NURBS_GLOBAL_INTERP )
     if ( xdivs < 3 ) { xdivs = 3; }
     if ( ydivs < 3 ) { ydivs = 3; }
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
+#elif defined( _NURBS_LEAST_SQUARES )
+    // Minimum divs appears to need to be at least 5 before the
+    // leastsquares nurbs surface approximation stops crashing.
+    if ( xdivs < 5 ) { xdivs = 5; }
+    if ( ydivs < 5 ) { ydivs = 5; }
+#else
+# error "Need to define _NURBS_GLOBAL_INTER or _NURBS_LEAST_SQUARES"
+#endif
+    SG_LOG(SG_GENERAL, SG_INFO, "  M(" << ydivs << "," << xdivs << ")");
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
@@ -140,39 +148,56 @@ TGAptSurface::TGAptSurface( const string& path,
     // with an added major row column on the NE sides.)
     int mult = 10;
     Matrix_Point3Dd dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
-    for ( int i = 0; i < dPts.cols(); ++i ) {
-        for ( int j = 0; j < dPts.rows(); ++j ) {
-            dPts(j,i) = Point3Dd( min_deg.lon() - dlon_h
-                                    + i * (dlon / (double)mult),
+    for ( int j = 0; j < dPts.cols(); ++j ) {
+        for ( int i = 0; i < dPts.rows(); ++i ) {
+            dPts(i,j) = Point3Dd( min_deg.lon() - dlon_h
+                                    + j * (dlon / (double)mult),
                                   min_deg.lat() - dlat_h
-                                    + j * (dlat / (double)mult),
+                                    + i * (dlat / (double)mult),
                                   -9999 );
         }
     }
 
     // Lookup the elevations of all the grid points
     tgCalcElevations( path, elev_src, dPts, 0.0 );
+#ifdef DEBUG
+    for ( int j = 0; j < dPts.cols(); ++j ) {
+        for ( int i = 0; i < dPts.rows(); ++i ) {
+            printf("%.5f %.5f %.1f\n", dPts(i,j).x(), dPts(i,j).y(),
+                   dPts(i,j).z() );
+        }
+    }
+#endif
 
     // Clamp the elevations against the externally provided average
     // elevation.
     tgClampElevations( dPts, average_elev_m, max_clamp );
 
+#ifdef DEBUG
+    for ( int j = 0; j < dPts.cols(); ++j ) {
+        for ( int i = 0; i < dPts.rows(); ++i ) {
+            printf("%.5f %.5f %.1f\n", dPts(i,j).x(), dPts(i,j).y(),
+                   dPts(i,j).z() );
+        }
+    }
+#endif
+
     // Build the normal res input grid from the double res version
     Matrix_Point3Dd Pts(ydivs + 1, xdivs + 1);
     double ave_divider = (mult+1) * (mult+1);
-    for ( int i = 0; i < Pts.cols(); ++i ) {
-        for ( int j = 0; j < Pts.rows(); ++j ) {
+    for ( int j = 0; j < Pts.cols(); ++j ) {
+        for ( int i = 0; i < Pts.rows(); ++i ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
             double lon_accum = 0.0;
             double lat_accum = 0.0;
-            for ( int ii = 0; ii <= mult; ++ii ) {
-                for ( int jj = 0; jj <= mult; ++jj ) {
-                    double value = dPts(mult*j + jj, mult*i + ii).z();
+            for ( int jj = 0; jj <= mult; ++jj ) {
+                for ( int ii = 0; ii <= mult; ++ii ) {
+                    double value = dPts(mult*i + ii, mult*j + jj).z();
                     SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
                     accum += value;
-                    lon_accum += dPts(mult*j + jj, mult*i + ii).x();
-                    lat_accum += dPts(mult*j + jj, mult*i + ii).y();
+                    lon_accum += dPts(mult*i + ii, mult*j + jj).x();
+                    lat_accum += dPts(mult*i + ii, mult*j + jj).y();
                 }
             }
             double val_ave = accum / ave_divider;
@@ -180,24 +205,32 @@ TGAptSurface::TGAptSurface( const string& path,
             double lat_ave = lat_accum / ave_divider;
 
             SG_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
-            Pts(j,i) = Point3Dd( min_deg.lon() + i * dlon,
-                                 min_deg.lat() + j * dlat,
+            Pts(i,j) = Point3Dd( min_deg.lon() + j * dlon,
+                                 min_deg.lat() + i * dlat,
                                  val_ave );
-
             SG_LOG( SG_GENERAL, SG_DEBUG, "lon_ave = " << lon_ave
                     << "  lat_ave = " << lat_ave );
-            SG_LOG( SG_GENERAL, SG_DEBUG, "lon = " << min_deg.lon() + i * dlon
-                    << "  lat = " << min_deg.lat() + j * dlat );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "lon = " << min_deg.lon() + j * dlon
+                    << "  lat = " << min_deg.lat() + i * dlat );
         }
     }
+
+#ifdef DEBUG
+    for ( int j = 0; j < Pts.cols(); ++j ) {
+        for ( int i = 0; i < Pts.rows(); ++i ) {
+            printf("%.5f %.5f %.1f\n", Pts(i,j).x(), Pts(i,j).y(),
+                   Pts(i,j).z() );
+        }
+    }
+#endif
 
     bool slope_error = true;
     while ( slope_error ) {
         SG_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
         slope_error = false;
         // Add some "slope" sanity to the resulting surface grid points
-        for ( int i = 0; i < Pts.cols() - 1; ++i ) {
-            for ( int j = 0; j < Pts.rows() - 1; ++j ) {
+        for ( int j = 0; j < Pts.cols() - 1; ++j ) {
+            for ( int i = 0; i < Pts.rows() - 1; ++i ) {
                 if ( limit_slope( Pts, i, j, i+1, j, average_elev_m ) ) {
                     slope_error = true;
                 }
@@ -211,27 +244,67 @@ TGAptSurface::TGAptSurface( const string& path,
         }
     }
 
+#ifdef DEBUG
+    for ( int j = 0; j < Pts.cols(); ++j ) {
+        for ( int i = 0; i < Pts.rows(); ++i ) {
+            printf("%.5f %.5f %.1f\n", Pts(i,j).x(), Pts(i,j).y(),
+                   Pts(i,j).z() );
+        }
+    }
+#endif
+
     // Create the nurbs surface
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create nurbs surface");
     apt_surf = new PlNurbsSurfaced;
+#if defined( _NURBS_GLOBAL_INTERP )
     apt_surf->globalInterp( Pts, 3, 3);
+#elif defined( _NURBS_LEAST_SQUARES )
+    cout << "Col = " << Pts.cols() << " Rows = " << Pts.rows() << endl;
+    int nU = Pts.rows() / 2; if ( nU < 4 ) { nU = 4; }
+    int nV = Pts.cols() / 2; if ( nV < 4 ) { nV = 4; }
+    cout << "nU = " << nU << " nV = " << nV << endl;
+    apt_surf->leastSquares( Pts, 3, 3, nU, nV );
+
+    // sanity check: I'm finding that leastSquares() can produce nan
+    // surfaces.  We test for this and fall back to globalInterp() if
+    // the least squares fails.
+    Point3Dd p = apt_surf->pointAt( 0.5, 0.5 );
+    if ( p.z() <= 0.0 || p.z() >= 0.0 ) {
+        // ok, a valid number
+    } else {
+        // no, sorry, a nan is not <= 0.0 or >= 0.0
+        SG_LOG(SG_GENERAL, SG_WARN,
+               "leastSquares() failed, aborting().");
+        exit(-1);
+
+        // we could fall back to globalInterp() rather than aborting
+        // if we wanted to ...
+        apt_surf->globalInterp( Pts, 3, 3);
+    }
+#else
+# error "Need to define _NURBS_GLOBAL_INTER or _NURBS_LEAST_SQUARES"
+#endif
     SG_LOG(SG_GENERAL, SG_DEBUG, "  successful.");
 
-#if 0
+#ifdef DEBUG
     // For debugging only: output an array of surface points suitable
     // for plotting with gnuplot.  This is useful for comparing the
     // approximated and smoothed surface to the original rough
     // surface.
     cout << "DEBUGGING TEST" << endl;
-    for ( int i = 0; i < (xdivs+2) * mult + 1; ++i ) {
-        for ( int j = 0; j < (ydivs+2) * mult + 1; ++j ) {
-            double x = min_deg.lon() + (i-mult)*(dlon/(double)mult);
-            double y = min_deg.lat() + (j-mult)*(dlat/(double)mult);
-            cout << x << " " << y << " " << query(x,y) << endl;
+    const int divs = 100;
+    double dx = x_deg / divs;
+    double dy = y_deg / divs;
+    for ( int j = 0; j < divs; ++j ) {
+        for ( int i = 0; i < divs; ++i ) {
+            double lon = min_deg.lon() + j * dx;
+            double lat = min_deg.lat() + i * dy;
+            printf("%.5f %.5f %.1f\n", lon, lat, query_solver(lon, lat) );
         }
     }
 #endif
+
 }
 
 
@@ -270,10 +343,9 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
     return p.z();
 }
 
+
 // Query the elevation of a point, return -9999 if out of range
 double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
-    const double eps = 0.0000005;
-
     // sanity check
     if ( lon_deg < min_deg.lon() || lon_deg > max_deg.lon() ||
          lat_deg < min_deg.lat() || lat_deg > max_deg.lat() )
@@ -298,9 +370,10 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
 
     // cout << " solving for u,v simultaneously" << endl;
     count = 0;
-    while ( count < 0 ) {
+    while ( count < 0 /* disable fast solver for now */ ) {
         if ( u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 ) {
-            // oops, something goofed in the solver
+            cout << "oops, something goofed in the solver" << endl;
+            exit(-1);
         }
 
         p = apt_surf->pointAt( u, v );
@@ -312,7 +385,7 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
         dy = lat_deg - p.y();
         // cout << "      dx = " << dx << " dy = " << dy << endl;
 
-        if ( (fabs(dx) < eps) && (fabs(dy) < eps) ) {
+        if ( (fabs(dx) < nurbs_eps) && (fabs(dy) < nurbs_eps) ) {
             return p.z();
         } else {
             u = u + (dy/lat_range);
@@ -328,7 +401,7 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
 
     // cout << "quick query solver failed..." << endl;
 
-    // failed to converge with fast approach, try a binary paritition
+    // failed to converge with fast approach, try a binary partition
     // scheme, however we have to solve each axis independently
     // because when we move in one axis we may change our position in
     // the other axis.
@@ -344,6 +417,8 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
     dx = 1000.0;
     dy = 1000.0;
 
+    int gcount = 0;
+
     while ( true ) {
         // cout << "solving for u" << endl;
         
@@ -356,21 +431,21 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
             //      << p.z() << endl;
             // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
             //      << endl;
-            dy = lat_deg - p.y();
             dx = lon_deg - p.x();
-            // cout << "      dx = " << dx << " dy = " << dy << endl;
+            dy = lat_deg - p.y();
+            // cout << "      dx = " << dx << " dy = " << dy << " z = " << p.z() << endl;
 
             // double az1, az2, dist;
             // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
             //                     &az1, &az2, &dist );
             // cout << "      query distance error = " << dist << endl;
 
-            if ( fabs(dy) < eps ) {
+            if ( fabs(dy) < nurbs_eps ) {
                 break;
             } else {
-                if ( dy >= eps ) {
+                if ( dy >= nurbs_eps ) {
                     min_u = u;
-                } else if ( dy <= eps ) {
+                } else if ( dy <= nurbs_eps ) {
                     max_u = u;
                 }
             }
@@ -392,18 +467,18 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
             //      << endl;
             dx = lon_deg - p.x();
             dy = lat_deg - p.y();
-            // cout << "      dx = " << dx << " dy = " << dy << endl;
+            // cout << "      dx = " << dx << " dy = " << dy << " z = " << p.z() << endl;
 
             // double az1, az2, dist;
             // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
             //                     &az1, &az2, &dist );
             // cout << "      query distance error = " << dist << endl;
-            if ( fabs(dx) < eps ) {
+            if ( fabs(dx) < nurbs_eps ) {
                 break;
             } else {
-                if ( dx >= eps ) {
+                if ( dx >= nurbs_eps ) {
                     min_v = v;
-                } else if ( dx <= eps ) {
+                } else if ( dx <= nurbs_eps ) {
                     max_v = v;
                 }
             }
@@ -412,12 +487,21 @@ double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
             ++count;
         }
 
-        if ( (fabs(dx) < eps) && (fabs(dy) < eps) ) {
+        // cout << "query count = " << gcount << "  dist = " << dx << ", "
+        //      << dy << endl;
+
+        if ( (fabs(dx) < nurbs_eps) && (fabs(dy) < nurbs_eps) ) {
             // double az1, az2, dist;
             // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
             //                     &az1, &az2, &dist );
             // cout << "        final query distance error = " << dist << endl;
             return p.z();
+        }
+
+        gcount++;
+        if ( gcount % 100 == 0 ) {
+            cout << "query count = " << gcount << "  dist = " << dx << ", "
+                 << dy << endl;
         }
     }
 

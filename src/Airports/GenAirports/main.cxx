@@ -271,10 +271,7 @@ int main( int argc, char **argv ) {
             in.getline(tmp, 2048);
             vector<string> vers_token = simgear::strutils::split( tmp );
             SG_LOG( SG_GENERAL, SG_INFO, "Data version = " << vers_token[0] );
-	} else if ( token[0] == "1" /* Airport */
-                    || token[0] == "16" /* Seaplane Base */
-                    || token[0] == "17" /* Heliport */ )
-        {
+	} else if ( token[0] == "1" /* Airport */ ) {
             // extract some airport runway info
             string rwy;
             float lat, lon;
@@ -357,6 +354,10 @@ int main( int argc, char **argv ) {
             windsock_list.push_back(line);
         } else if ( token[0] == "15" ) {
             // ignore custom startup locations
+        } else if ( token[0] == "16" ) {
+            // ignore seaplane bases for now
+        } else if ( token[0] == "17" ) {
+            // ignore heliports for now
         } else if ( token[0] == "50" || token[0] == "51" || token[0] == "52" 
                     || token[0] == "53" || token[0] == "54" || token[0] == "55" 
                     || token[0] == "56" )

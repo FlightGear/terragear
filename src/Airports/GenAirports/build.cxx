@@ -287,6 +287,7 @@ static void build_runway( const TGRunway& rwy_info,
     } else if ( surface_code == 13 /* Water runway (buoy's?) */ ) {
         // water
     } else {
+        SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface_code);
 	throw sg_exception("unknown runway type!");
     }
 
@@ -311,6 +312,10 @@ static void build_runway( const TGRunway& rwy_info,
 	gen_non_precision_rwy( rwy_info, alt_m, material,
 			       rwy_polys, texparams, accum );
     } else if ( rwy_info.marking_code == 1 /* Visual */ ) {
+	// visual runway markings
+	gen_visual_rwy( rwy_info, alt_m, material,
+			rwy_polys, texparams, accum );
+    } else if ( rwy_info.marking_code == 0 /* No known markings, lets assume Visual */ ) {
 	// visual runway markings
 	gen_visual_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
@@ -552,8 +557,13 @@ void build_airport( string airport_id, float alt_m,
              && runways[i].marking_code != 2 /* Non-precision */
              && runways[i].marking_code != 1 /* Visual */ )
         {
-            if ( runways[i].surface_code != 13 ) {
-                // only build non-water runways
+            if ( runways[i].surface_code != 6 /* Asphalt Helipad */ &&
+                 runways[i].surface_code != 7 /* Concrete Helipad */ &&
+                 runways[i].surface_code != 8 /* Turf Helipad */ &&
+                 runways[i].surface_code != 9 /* Dirt Helipad */ &&
+                 runways[i].surface_code != 13 /* Water/buoy runway */ )
+            {
+                // only build non-water and non-heliport runways
                 build_runway( runways[i], alt_m,
                               &rwy_polys, &texparams, &accum,
                               &apt_base, &apt_clearing );
