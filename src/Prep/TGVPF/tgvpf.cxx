@@ -57,6 +57,14 @@ SG_USING_STD(vector);
 
 
 ////////////////////////////////////////////////////////////////////////
+// Program-wide variables.
+////////////////////////////////////////////////////////////////////////
+
+static const char * progname;
+
+
+
+////////////////////////////////////////////////////////////////////////
 // Utility stuff.
 ////////////////////////////////////////////////////////////////////////
 
@@ -326,18 +334,20 @@ makePolygon (const VpfPolygon &polygon)
  * Print the command-line usage and exit.
  */
 static void
-usage (const char * prog)
+usage ()
 {
-  cerr << "Usage: " << prog << " [opts] <db> <library> <coverage> <feature>"
+  cerr << "Usage: "
+       << progname
+       << " [opts] <db> <library> <coverage> <feature>"
        << endl;
   cerr << "Options:" << endl;
+  cerr << "--chunk=<chunk> (default: none)" << endl;
   cerr << "--min-lon=<longitude> (default: -180.0)" << endl;
   cerr << "--min-lat=<latitude> (default: -90.0)" << endl;
   cerr << "--max-lon=<longitude> (default: 180.0)" << endl;
   cerr << "--max-lat=<latitude> (default: 90.0)" << endl;
   cerr << "--area=<area_type> (default: Default)" << endl;
-  cerr << "--point-width=<meters> (default: 500)" << endl;
-  cerr << "--line-width=<meters> (default: 50)" << endl;
+  cerr << "--width=<meters> (default: 50 line, 500 point)" << endl;
   cerr << "--work-dir=<dir> (default: .)" << endl;
   cerr << "--att=<item>:<value> (may be repeated)" << endl;
   cerr << "--att=!<item>:<value> (may be repeated)" << endl;
@@ -346,10 +356,53 @@ usage (const char * prog)
 
 
 /**
+ * Parse a 10x10 degree chunk name.
+ */
+static VpfRectangle
+parseChunk (string chunk)
+{
+  VpfRectangle bounds;
+  int x_factor;
+  int y_factor;
+
+  if (chunk.size() != 7) {
+    cerr << "Bad length for chunk specifier " << chunk << endl;
+    usage();
+  }
+
+  if (chunk[0] == 'w')
+    x_factor = -1;
+  else if (chunk[0] == 'e')
+    x_factor = 1;
+  else {
+    cerr << "Chunk specifier must begin with 'e' or 'w'" << endl;
+    usage();
+  }
+
+  if (chunk[4] == 's')
+    y_factor = -1;
+  else if (chunk[4] == 'n')
+    y_factor = 1;
+  else {
+    cerr << "Second part of chunk specifier must begin with 's' or 'n'"
+	 << endl;
+    usage();
+  }
+
+  bounds.minX = atoi(chunk.substr(1,3).c_str()) * x_factor;
+  bounds.minY = atoi(chunk.substr(5).c_str()) * y_factor;
+  bounds.maxX = bounds.minX + 10;
+  bounds.maxY = bounds.minY + 10;
+
+  return bounds;
+}
+
+
+/**
  * Parse an attribute value specification from the command line.
  */
 static const Attribute
-parseAttribute (const char * prog, string arg)
+parseAttribute (string arg)
 {
   Attribute att;
 
@@ -363,7 +416,7 @@ parseAttribute (const char * prog, string arg)
   int pos = arg.find(':');
   if (pos == -1) {
     cerr << "Bad attribute specification: " << arg << endl;
-    usage(prog);
+    usage();
   }
 
   att.name = arg.substr(0, pos);
@@ -379,6 +432,10 @@ parseAttribute (const char * prog, string arg)
 int
 main (int argc, const char **argv)
 {
+				// Store the program name for future
+				// reference.
+  progname = argv[0];
+
   vector<Attribute> attributes;
   VpfRectangle bounds;
 
@@ -404,7 +461,12 @@ main (int argc, const char **argv)
   while (argPos < argc) {
     string arg = argv[argPos];
 
-    if (arg.find("--min-lon=") == 0) {
+    if (arg.find("--chunk=") == 0) {
+      bounds = parseChunk(arg.substr(8));
+      argPos++;
+    }
+
+    else if (arg.find("--min-lon=") == 0) {
       bounds.minX = strtod(arg.substr(10).c_str(), 0);
       argPos++;
     }
@@ -445,7 +507,7 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--att=") == 0) {
-      attributes.push_back(parseAttribute(argv[0], arg.substr(6)));
+      attributes.push_back(parseAttribute(arg.substr(6)));
       argPos++;
     }
 
@@ -456,12 +518,39 @@ main (int argc, const char **argv)
 
     else if (arg.find("-") == 0) {
       cerr << "Unrecognized option: " << arg << endl;
-      usage(argv[0]);
+      usage();
     }
 
     else {
       break;
     }
+  }
+
+  //
+  // Sanity check on bounds.
+  //
+  if (bounds.minX < -180) {
+    cerr << "Minimum longitude out of range (-180:180): "
+	 << bounds.minX << endl;
+    usage();
+  } else if (bounds.maxX > 180) {
+    cerr << "Maximum longitude out of range (-180:180): "
+	 << bounds.maxX << endl;
+    usage();
+  } else if (bounds.minY < -90) {
+    cerr << "Minimum latitude out of range (-90:90): "
+	 << bounds.minY << endl;
+    usage();
+  } else if (bounds.maxY > 90) {
+    cerr << "Maximum latitude out of range (-90:90): "
+	 << bounds.maxY << endl;
+    usage();
+  } else if (bounds.minX >= bounds.maxX) {
+    cerr << "Minimum longitude less than maximum longitude" << endl;
+    usage();
+  } else if (bounds.minY >= bounds.maxY) {
+    cerr << "Minimum latitude less than maximum latitude" << endl;
+    usage();
   }
 
 
@@ -470,7 +559,7 @@ main (int argc, const char **argv)
   //
 
   if (argPos != (argc - 4))
-    usage(argv[0]);
+    usage();
 
   const char * database_name = argv[argPos++];
   const char * library_name = argv[argPos++];

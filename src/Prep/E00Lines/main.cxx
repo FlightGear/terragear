@@ -60,6 +60,10 @@ SG_USING_STD(vector);
 // Utility stuff.
 ////////////////////////////////////////////////////////////////////////
 
+
+/**
+ * Inline function to clamp an angle between 0 and 360 degrees.
+ */
 static inline double 
 ANGLE (double a)
 {
@@ -71,7 +75,41 @@ ANGLE (double a)
 }
 
 
+/**
+ * Calculate the intersection of two lines.
+ *
+ * @param p0 First point on the first line.
+ * @param p1 A second point on the first line.
+ * @param p2 First point on the second line.
+ * @param p3 A second point on the second line.
+ * @param intersection A variable to hold the calculated intersection.
+ * @return true if there was an intersection, false if the lines
+ *         are parallel or coincident.
+ */
+static bool
+getIntersection (const Point3D &p0, const Point3D &p1,
+		 const Point3D &p2, const Point3D &p3,
+		 Point3D &intersection)
+{
+  double u_num =
+    ((p3.x()-p2.x())*(p0.y()-p2.y()))-((p3.y()-p2.y())*(p0.x()-p2.x()));
+  double u_den =
+    ((p3.y()-p2.y())*(p1.x()-p0.x()))-((p3.x()-p2.x())*(p1.y()-p0.y()));
 
+  if (u_den == 0) {
+    if (u_num == 0)
+      SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: coincident lines");
+    else
+      SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: parallel lines");
+    return false;
+  } else {
+    double u = u_num/u_den;
+    intersection = Point3D((p0.x()+u*(p1.x()-p0.x())),
+			   (p0.y()+u*(p1.y()-p0.y())),
+			   0);
+    return true;
+  }
+}
 
 
 
@@ -203,17 +241,23 @@ checkAttribute (const E00 &data, int index, const Attribute &att)
 
 /**
  * Create polygons out of points.
+ *
+ * Note that simple geometry doesn't work here, because the scale is
+ * not even -- the points on the x-axis (longitude) become closer and
+ * closer as the y-axis (latitude) approaches the poles, meeting in
+ * a single point at y=90 and y=-90.  As a result, this function
+ * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
 processPoints (const E00 &data, const Rectangle &bounds,
 	       AreaType areaType, const string &workDir, int width)
 {
-  FGPolygon shape;
   double x, y, az;
 
   int nPoints = data.nPoints();
   cout << "Processing " << nPoints << " points" << endl;
   for (int i = 1; i <= nPoints; i++) {
+    FGPolygon shape;
     const E00::LAB &lab = data.getLAB(i);
     double lon = lab.coord.x;
     double lat = lab.coord.y;
@@ -243,17 +287,22 @@ processPoints (const E00 &data, const Rectangle &bounds,
 
 /**
  * Create polygons out of all loose line segments.
+ *
+ * Note that simple geometry doesn't work here, because the scale is
+ * not even -- the points on the x-axis (longitude) become closer and
+ * closer as the y-axis (latitude) approaches the poles, meeting in
+ * a single point at y=90 and y=-90.  As a result, this function
+ * uses the WGS80 functions, rather than simple Pythagorean stuff.
  */
 static void
 processLines (const E00 &data, const Rectangle &bounds,
 	      AreaType areaType, const string &workDir, int width,
 	      const vector<Attribute> &aat_list)
 {
-  FGPolygon shape;
-
   int nLines = data.nLines();
   cout << "Processing " << nLines << " lines." << endl;
   for (int i = 1; i <= nLines; i++) {
+    FGPolygon shape;
     const E00::ARC &arc = data.getARC(i);
     Rectangle arcBounds = makeBounds(arc);
     if (!bounds.isOverlapping(arcBounds)) {
@@ -279,51 +328,88 @@ processLines (const E00 &data, const Rectangle &bounds,
       }
     }
 
-				// Make the line into a polygon.
-    cout << "Line has " << arc.numberOfCoordinates << " coordinates" << endl;
-    for (int j = 0; j < arc.numberOfCoordinates - 1; j++) {
+				// Put the rectangles for the segments
+				// into a list
+    vector<FGPolygon> segment_list;
+
+    int j;
+    for (j = 0; j < arc.numberOfCoordinates - 1; j++) {
       double lon1 = arc.coordinates[j].x;
       double lat1 = arc.coordinates[j].y;
       double lon2 = arc.coordinates[j+1].x;
       double lat2 = arc.coordinates[j+1].y;
       double angle1, angle2, dist;
       geo_inverse_wgs_84(0, lat1, lon1, lat2, lon2, &angle1, &angle2, &dist);
-      cout << "angle1 = " << angle1 << endl;
-      cout << "angle2 = " << angle2 << endl;
-      cout << "dist = " << dist << endl;
       shape.erase();
 
       double x, y, az;
+      
+				// Wind each rectangle counterclockwise
 
 				// Corner 1
       geo_direct_wgs_84(0, lat1, lon1, ANGLE(angle1+90), width/2, &y, &x, &az);
-      cout << x << '\t' << y << endl;
       shape.add_node(0, Point3D(x, y, 0));
 
 				// Corner 2
-      geo_direct_wgs_84(0, lat1, lon1, ANGLE(angle1-90), width/2, &y, &x, &az);
-      cout << x << '\t' << y << endl;
+      geo_direct_wgs_84(0, lat2, lon2, ANGLE(angle1+90), width/2, &y, &x, &az);
       shape.add_node(0, Point3D(x, y, 0));
 
 				// Corner 3
-      geo_direct_wgs_84(0, lat2, lon2, ANGLE(angle2+90), width/2, &y, &x, &az);
-      cout << x << '\t' << y << endl;
+      geo_direct_wgs_84(0, lat2, lon2, ANGLE(angle1-90), width/2, &y, &x, &az);
       shape.add_node(0, Point3D(x, y, 0));
 
 				// Corner 4
-      geo_direct_wgs_84(0, lat2, lon2, ANGLE(angle2-90), width/2, &y, &x, &az);
-      cout << x << '\t' << y << endl;
+      geo_direct_wgs_84(0, lat1, lon1, ANGLE(angle1-90), width/2, &y, &x, &az);
       shape.add_node(0, Point3D(x, y, 0));
 
-				// Corner 1, again
-      geo_direct_wgs_84(0, lat1, lon1, ANGLE(angle1+90), width/2, &y, &x, &az);
-      cout << x << '\t' << y << endl;
-      shape.add_node(0, Point3D(x, y, 0));
-
-				// Split into tiles
-      split_polygon(workDir, areaType, shape);
+				// Save this rectangle
+      segment_list.push_back(shape);
     }
+
+    // Build one big polygon out of all the rectangles by intersecting
+    // the lines running through the bottom and top sides
+
+    shape.erase();
+
+				// Connect the bottom part.
+    int nSegments = segment_list.size();
+    Point3D intersection;
+    shape.add_node(0, segment_list[0].get_pt(0, 0));
+    for (j = 0; j < nSegments - 1; j++) {
+      if (getIntersection(segment_list[j].get_pt(0, 0),
+			  segment_list[j].get_pt(0, 1),
+			  segment_list[j+1].get_pt(0, 0),
+			  segment_list[j+1].get_pt(0, 1),
+			  intersection))
+	shape.add_node(0, intersection);
+      else
+	shape.add_node(0, segment_list[j].get_pt(0, 1));
+    }
+    shape.add_node(0, segment_list[nSegments-1].get_pt(0, 1));
+
+				// Connect the top part
+    shape.add_node(0, segment_list[nSegments-1].get_pt(0, 2));
+    for (j = nSegments - 1; j > 0; j--) {
+      if (getIntersection(segment_list[j].get_pt(0, 2),
+			  segment_list[j].get_pt(0, 3),
+			  segment_list[j-1].get_pt(0, 2),
+			  segment_list[j-1].get_pt(0, 3),
+			  intersection))
+	shape.add_node(0, intersection);
+      else
+	shape.add_node(0, segment_list[j].get_pt(0, 3));
+    }
+    shape.add_node(0, segment_list[0].get_pt(0, 3));
+    
+    				// Split into tiles
+    cout << "Splitting polygon..." << endl;
+    cout << "  Total size: " << shape.total_size() << endl;
+    cout << "  Minimum angle: "
+	 << (shape.minangle_contour(0) * SGD_RADIANS_TO_DEGREES) << endl;
+    
+    split_polygon(workDir, areaType, shape);
   }
+  cout << "Done lines" << endl;
 }
 
 
@@ -335,13 +421,11 @@ processPolygons (const E00 &data, const Rectangle &bounds,
 		 AreaType areaType, const string &workDir,
 		 const vector<Attribute> pat_list)
 {
-  FGPolygon shape;
-
   int nPolygons = data.nPolygons();
   cout << "Processing " << nPolygons << " polygons" << endl;
 
   for (int i = 2; i <= nPolygons; i++) {
-
+    FGPolygon shape;
 				// Test whether the polygon matches
 				// at least one of the attributes
 				// provided.
@@ -490,9 +574,9 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--lines=") == 0) {
-      if (arg.substr(9) == "yes")
+      if (arg.substr(8) == "yes")
 	useLines = true;
-      else if (arg.substr(9) == "no")
+      else if (arg.substr(8) == "no")
 	useLines = false;
       else {
 	cerr << "--lines option needs 'yes' or 'no'" << endl;
@@ -502,9 +586,9 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--polygons=") == 0) {
-      if (arg.substr(9) == "yes")
+      if (arg.substr(11) == "yes")
 	usePolygons = true;
-      else if (arg.substr(9) == "no")
+      else if (arg.substr(11) == "no")
 	usePolygons = false;
       else {
 	cerr << "--polygons option needs 'yes' or 'no'" << endl;
@@ -676,4 +760,4 @@ main (int argc, const char **argv)
   return 0;
 }
 
-
+// end of main.cxx
