@@ -73,12 +73,13 @@ private:
     int prof_col, prof_row;
     int prof_num_cols, prof_num_rows;
     double prof_x1, prof_y1;
-    int prof_data;
+    float prof_data;
 
     // temporary values for the class to use
     char option_name[32];
     int do_data;
     int cur_col, cur_row;
+    int z_units;                // 1 = feet, 2 = meters
 
     // return next token from input stream
     string next_token();

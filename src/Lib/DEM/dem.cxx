@@ -77,7 +77,9 @@ SG_USING_STD(endl);
 #endif //0
 
 
-FGDem::FGDem( void ) {
+FGDem::FGDem( void ) :
+    z_units(2)                  // meters
+{
     // cout << "class FGDem CONstructor called." << endl;
     dem_data = new float[DEM_SIZE_1][DEM_SIZE_1];
     output_data = new float[DEM_SIZE_1][DEM_SIZE_1];
@@ -240,8 +242,8 @@ FGDem::read_a_record() {
 
     // Units code; 2 represents meters as the unit of measure for
     // elevation coordinates throughout the file.
-    inum = next_int();
-    if ( inum != 2 ) {
+    z_units = inum = next_int();
+    if ( z_units != 1 && z_units != 2 ) {
 	cout << "    Unknown (Z) units code = " << inum << "!\n";
 	exit(-1);
     }
@@ -271,6 +273,11 @@ FGDem::read_a_record() {
     // Minimum/maximum elevations in meters
     dem_z1 = next_exp();
     dem_z2 = next_exp();
+    if ( z_units == 1 ) {
+        // convert to meters
+        dem_z1 *= SG_FEET_TO_METER;
+        dem_z2 *= SG_FEET_TO_METER;
+     }
     cout << "    Elevation range " << dem_z1 << " to " << dem_z2 << "\n";
 
     // Counterclockwise angle from the primary axis of ground
@@ -314,7 +321,6 @@ void
 FGDem::read_b_record( ) {
     string token;
     int i;
-    int last;
 
     // row / column id of this profile
     prof_row = next_int();
@@ -341,9 +347,14 @@ FGDem::read_b_record( ) {
     token = next_token();
 
     // One (usually) dimensional array (1,prof_num_rows) of elevations
-    last = 0;
+    float last = 0.0;
     for ( i = 0; i < prof_num_rows; i++ ) {
-	prof_data = next_int();
+	prof_data = (float)next_int();
+
+        if ( z_units == 1 ) {
+            // convert to meters
+            prof_data *= SG_FEET_TO_METER;
+        }
 
 	// a bit of sanity checking that is unfortunately necessary
 	if ( prof_data > 10000 ) { // meters

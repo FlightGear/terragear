@@ -184,6 +184,7 @@ AC_CHECK_LIB(plibul, ulInit,,,)
 
 AM_CONDITIONAL(HAVE_XWINDOWS, test "x$ac_cv_lib_X11_XCreateWindow" = "xyes" )
 
+AC_LANG_PUSH(C++)
 dnl Check for "plib" without which we cannot go on
 AC_CHECK_HEADER(plib/pu.h)
 if test "x$ac_cv_header_plib_pu_h" != "xyes"; then
@@ -196,6 +197,7 @@ if test "x$ac_cv_header_plib_pu_h" != "xyes"; then
     echo "configure aborted."
     exit
 fi
+AC_LANG_POP
 
 dnl Check if Generic Polygon Clipping library is installed
 dnl (from http://www.cs.man.ac.uk/aig/staff/alan/software/)
