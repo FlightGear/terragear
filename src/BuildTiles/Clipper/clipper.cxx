@@ -240,6 +240,12 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 	done = false;
 
 	for ( int area = 0; area < FG_MAX_AREA_TYPES && !done; ++area ) {
+
+	    if ( area == HoleArea ) {
+		// don't merge a non-hole sliver in with a hole
+		continue;
+	    }
+
 	    cout << "  testing area = " << area << " with " 
 		 << clipped.polys[area].size() << " polys" << endl;
 	    for ( int j = 0; 
@@ -284,8 +290,8 @@ void FGClipper::merge_slivers( FGPolyList& clipped, FGPolygon& slivers ) {
 
 // Do actually clipping work
 bool FGClipper::clip_all(const point2d& min, const point2d& max) {
-    FGPolygon accum, result_union, tmp;
-    FGPolygon result_diff, slivers, remains;
+    FGPolygon accum, tmp;
+    FGPolygon slivers, remains;
     // gpcpoly_iterator current, last;
 
     FG_LOG( FG_CLIPPER, FG_INFO, "Running master clipper" );
@@ -309,9 +315,8 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
     FGPolygon land_mask;
     land_mask.erase();
     for ( int i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
-	result_union =
+	land_mask =
 	  polygon_union( land_mask, polys_in.polys[DefaultArea][i] );
-	land_mask = result_union;
     }
 
     // set up island mask, for cutting holes in lakes
@@ -322,6 +327,8 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	  polygon_union( island_mask, polys_in.polys[IslandArea][i] );
     }
 
+// no longer needed, should be handle by polygon priority scheme
+#if 0
     // set up pond mask, for cutting holes in islands
     FGPolygon pond_mask;
     pond_mask.erase();
@@ -329,6 +336,7 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	pond_mask =
 	  polygon_union( pond_mask, polys_in.polys[PondArea][i] );
     }
+#endif
 
     // int count = 0;
     // process polygons in priority order
@@ -343,20 +351,30 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	    FG_LOG( FG_CLIPPER, FG_DEBUG, get_area_name( (AreaType)i ) 
 		    << " = " << current.contours() );
 
-	    if ( i > HoleArea ) {
+	    // if not a hole, clip the area to the land_mask
+	    if ( i != HoleArea ) {
 		// clip to land mask
 		tmp = polygon_int( current, land_mask );
 	    } else {
 		tmp = current;
 	    }
 
-	    if ( i == LakeArea ) {
+	    // if a water area, cut out potential islands
+	    if ( i == LakeArea || i == IntLakeArea || i == ReservoirArea ||
+		 i == IntReservoirArea || i == StreamArea || i == CanalArea ||
+		 i == OceanArea ) {
 	        // clip against island mask
 	        tmp = polygon_diff( tmp, island_mask );
+	    }
+
+// no longer needed, should be handle by polygon priority scheme
+#if 0
+	    // if an island area, cut out potential ponds
 	    } else if ( i == IslandArea ) {
 	        // clip to pond mask
 	        tmp = polygon_diff( tmp, pond_mask );
 	    }
+#endif
 
 	    // clip current polygon against previous higher priority
 	    // stuff
@@ -364,6 +382,8 @@ bool FGClipper::clip_all(const point2d& min, const point2d& max) {
 	    // result_diff = new gpc_polygon;
 	    // result_diff->num_contours = 0;
 	    // result_diff->contour = NULL;
+
+	    FGPolygon result_union, result_diff;
 
 	    if ( accum.contours() == 0 ) {
 		result_diff = tmp;
