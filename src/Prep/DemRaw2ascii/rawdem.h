@@ -32,6 +32,7 @@
 
 typedef struct {
     /* header info */
+    int big_endian;  /* true if big, false if little */
     int nrows;       /* number of rows */
     int ncols;       /* number of cols */
     int ulxmap;      /* X coord of center of upper left pixel in arcsec */
@@ -42,7 +43,7 @@ typedef struct {
     int ydim;        /* Y dimension of a pixel */
     int tmp_min;     /* current 1x1 degree tile minimum */
     int tmp_max;     /* current 1x1 degree tile maximum */
-
+    
     /* file ptr */
     int fd;          /* Raw DEM file descriptor */
 

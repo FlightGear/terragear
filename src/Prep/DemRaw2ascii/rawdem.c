@@ -72,6 +72,9 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 	exit(-1);
     }
 
+    /* default to big endian if nothing else */
+    raw->big_endian = 1;
+
     /* process each line */
     while ( (fgets(line, 256, hdr) != NULL) ) {
 	/* printf("%s", line); */
@@ -99,7 +102,13 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 	value[i-offset] = '\0';
 	/* printf("key='%s'  value='%s'\n", key, value); */
 
-	if ( strcmp(key, "NROWS") == 0 ) {
+	if ( strcmp(key, "BYTEORDER") == 0 ) {
+	    if ( strcmp( value, "M" ) == 0 ) {
+		raw->big_endian = 1;
+	    } else {
+		raw->big_endian = 0;
+	    }
+	} else if ( strcmp(key, "NROWS") == 0 ) {
 	    raw->nrows = atoi(value);
 	} else if ( strcmp(key, "NCOLS") == 0 ) {
 	    raw->ncols = atoi(value);
@@ -208,11 +217,18 @@ void rawReadNextRow( fgRAWDEM *raw, int index ) {
 
     for ( i = 0; i < raw->ncols; i++ ) {
 	/* printf("hi = %d  lo = %d\n", buf[2*i], buf[2*i + 1]); */
-#if defined( BIG_ENDIAN )
-	value = ( (buf[2*i]) << 8 ) | buf[2*i + 1];
-#else
-	value = ( (buf[2*i + 1]) << 8 ) | buf[2*i];
-#endif
+
+	/* the endianness of the data is determined by the creator of
+	   the data file, we see it as a byte stream.  The actual
+	   endianess is in the header file someplace but I don't yet
+	   know how to read it out.  So for the time being we assume
+	   that the data is always big endian */
+
+	if ( raw->big_endian ) {
+	    value = ( (buf[2*i]) << 8 ) | buf[2*i + 1];
+	} else {
+	    value = ( (buf[2*i + 1]) << 8 ) | buf[2*i];
+	}
 	raw->strip[index][i] = value;
 
 	if ( value < raw->min ) { raw->min = value; }
