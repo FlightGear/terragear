@@ -59,7 +59,7 @@ void FGMatch::scan_share_file( const string& dir, const FGBucket& b,
 	return;
     }
 
-    // cout << "reading shared data from " << file << endl;
+    cout << "reading shared data from " << file << endl;
 
     string target;
     if ( search == SW_Corner ) {
@@ -228,7 +228,7 @@ void FGMatch::load_neighbor_shared( FGConstruct& c ) {
     if ( se_flag ) { cout << "  se corner = " << se_node << endl; }
     if ( ne_flag ) { cout << "  ne corner = " << ne_node << endl; }
     if ( nw_flag ) { cout << "  nw corner = " << nw_node << endl; }
-    if ( north_flag ) { 
+    if ( north_flag ) {
 	cout << "  north nodes = " << north_nodes.size() << endl;
 	for ( int i = 0; i < (int)north_nodes.size(); ++i ) {
 	    cout << "    " << north_nodes[i] << endl;
@@ -272,6 +272,12 @@ void FGMatch::split_tile( FGConstruct& c ) {
     min.y = b.get_center_lat() - 0.5 * b.get_height();
     max.x = b.get_center_lon() + 0.5 * b.get_width();
     max.y = b.get_center_lat() + 0.5 * b.get_height();
+
+    // defaults "just in case"
+    sw_node = Point3D( min.x, min.y, 0.0 );
+    se_node = Point3D( max.x, min.y, 0.0 );
+    nw_node = Point3D( min.x, max.y, 0.0 );
+    ne_node = Point3D( max.x, max.y, 0.0 );
 
     // separate nodes and normals into components
 

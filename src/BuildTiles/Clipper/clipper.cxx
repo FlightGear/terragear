@@ -109,6 +109,7 @@ bool FGClipper::load_polys(const string& path) {
 	    in >> startx;
 	    in >> starty;
 	    p = Point3D(startx, starty, 0.0);
+	    cout << "poly pt = " << p << endl;
 	    poly.add_node( i, p );
 	    FG_LOG( FG_CLIPPER, FG_BULK, "0 = " 
 		    << startx << ", " << starty );
@@ -117,8 +118,8 @@ bool FGClipper::load_polys(const string& path) {
 		in >> x;
 		in >> y;
 		p = Point3D( x, y, 0.0 );
+		cout << "poly pt = " << p << endl;
 		poly.add_node( i, p );
-		FG_LOG( FG_CLIPPER, FG_BULK, j << " = " << x << ", " << y );
 	    }
 
 	    in >> lastx;
@@ -129,9 +130,8 @@ bool FGClipper::load_polys(const string& path) {
 		// last point same as first, discard
 	    } else {
 		p = Point3D( lastx, lasty, 0.0 );
+		cout << "poly pt = " << p << endl;
 		poly.add_node( i, p );
-		FG_LOG( FG_CLIPPER, FG_BULK, count - 1 << " = " 
-			<< lastx << ", " << lasty );
 	    }
 
 	    // gpc_add_contour( poly, &v_list, hole_flag );
