@@ -240,9 +240,9 @@ bool TGHgt::write_whole_ascii( const string& file ) {
     }
 
     gzprintf( fp, "%d\n%d\n", rows, cols );
-    for ( int i = 0; i < rows; i++ ) {
-        for ( int j = 0; j < cols; j++ ) {
-            gzprintf( fp, "%d\n", (int)data[i][j] );
+    for ( int row = rows - 1; row >= 0; row-- ) {
+        for ( int col = 0; col < cols; col++ ) {
+            gzprintf( fp, "%d\n", (int)data[col][row] );
         }
     }
     gzclose(fp);
@@ -263,9 +263,9 @@ bool
 TGHgt::has_non_zero_elev (int start_x, int span_x,
                           int start_y, int span_y) const
 {
-    for ( int i = start_x; i < start_x + span_x; i++ ) {
-        for ( int j = start_y; j < start_y + span_y; j++ ) {
-            if ( data[i][j] != 0 )
+    for ( int row = start_y; row < start_y + span_y; row++ ) {
+        for ( int col = start_x; col < start_x + span_x; col++ ) {
+            if ( data[col][row] != 0 )
                 return true;
         }
     }
