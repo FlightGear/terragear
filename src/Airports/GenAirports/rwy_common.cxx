@@ -64,6 +64,7 @@ void gen_number_block( const TGRunway& rwy_info,
 	gen_runway_section( rwy_info, poly,
 			    start_pct, end_pct,
 			    0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
 			    heading,
 			    material, tex1,
 			    rwy_polys, texparams, accum );
@@ -71,22 +72,25 @@ void gen_number_block( const TGRunway& rwy_info,
 	gen_runway_section( rwy_info, poly,
 			    start_pct, end_pct,
 			    0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
 			    heading,
 			    material, tex1,
 			    rwy_polys, texparams, accum );
     } else {
-	    gen_runway_section( rwy_info, poly,
-				start_pct, end_pct,
-				0.0, 0.5,
-				heading,
-				material, tex1,
-				rwy_polys, texparams, accum );
-	    gen_runway_section( rwy_info, poly,
-				start_pct, end_pct,
-				0.5, 1.0,
-				heading,
-				material, tex2,
-				rwy_polys, texparams, accum );
+        gen_runway_section( rwy_info, poly,
+                            start_pct, end_pct,
+                            0.0, 0.5,
+                            0.0, 1.0, 0.0, 1.0,
+                            heading,
+                            material, tex1,
+                            rwy_polys, texparams, accum );
+        gen_runway_section( rwy_info, poly,
+                            start_pct, end_pct,
+                            0.5, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            heading,
+                            material, tex2,
+                            rwy_polys, texparams, accum );
     }
 }
 
@@ -96,6 +100,7 @@ void gen_runway_section( const TGRunway& rwy_info,
 			 const TGPolygon& runway,
 			 double startl_pct, double endl_pct,
 			 double startw_pct, double endw_pct,
+                         double minu, double maxu, double minv, double maxv,
 			 double heading,
 			 const string& prefix,
 			 const string& material,
@@ -238,6 +243,10 @@ void gen_runway_section( const TGRunway& rwy_info,
                       sect_wid * SG_FEET_TO_METER,
                       sect_len * SG_FEET_TO_METER,
                       heading );
+    tp.set_minu( minu );
+    tp.set_maxu( maxu );
+    tp.set_minv( minv );
+    tp.set_maxv( maxv );
     texparams->push_back( tp );
 
     // print runway points

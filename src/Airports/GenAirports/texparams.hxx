@@ -48,6 +48,11 @@ private:
     double length;
     double heading;
 
+    double minu;
+    double maxu;
+    double minv;
+    double maxv;
+
 public:
 
     // Constructor and destructor
@@ -58,6 +63,9 @@ public:
 	width = w;
 	length = l;
 	heading = h;
+
+        minu = minv = 0.0;
+        maxu = maxv = 1.0;
     }
     inline ~TGTexParams( void ) { }
 
@@ -72,6 +80,18 @@ public:
 
     inline double get_heading() const { return heading; }
     inline void set_heading( const double h ) { heading = h; }
+
+    inline double get_minu() const { return minu; }
+    inline void set_minu( const double x ) { minu = x; }
+
+    inline double get_maxu() const { return maxu; }
+    inline void set_maxu( const double x ) { maxu = x; }
+
+    inline double get_minv() const { return minv; }
+    inline void set_minv( const double x ) { minv = x; }
+
+    inline double get_maxv() const { return maxv; }
+    inline void set_maxv( const double x ) { maxv = x; }
 };
 
 

@@ -261,58 +261,51 @@ int main( int argc, char **argv ) {
         }
     }
 
-    if ( last_apt_id.length() ) {
-        // extract some airport runway info
+    cout << "last_apt_id.length() = " << last_apt_id.length() << endl;
+
+    if ( !last_apt_id.empty()) {
         char ctmp, tmpid[32], rwy[32];
         string id;
         float lat, lon;
         int elev = 0;
 
-        sscanf( line.c_str(), "%c %s %d",
-                &ctmp, tmpid, &elev );
-        id = tmpid;
-        SG_LOG( SG_GENERAL, SG_INFO, "Airport = " << id << " "
-                << elev );
+        if ( runways_list.size() ) {
+            sscanf( runways_list[0].c_str(), "%c %s %s %f %f",
+                    &ctmp, tmpid, rwy, &lat, &lon );
+        }
 
-        if ( !last_apt_id.empty()) {
-            if ( runways_list.size() ) {
-                sscanf( runways_list[0].c_str(), "%c %s %s %s %f %f",
-                        &ctmp, tmpid, rwy, &lat, &lon );
+        if ( lon >= min_lon && lon <= max_lon &&
+             lat >= min_lat && lat <= max_lat )
+        {
+            if ( start_id.length() && start_id == last_apt_id ) {
+                ready_to_go = true;
             }
 
-            if ( lon >= min_lon && lon <= max_lon &&
-                 lat >= min_lat && lat <= max_lat )
-            {
-                if ( start_id.length() && start_id == last_apt_id ) {
-                    ready_to_go = true;
-                }
+            if ( ready_to_go ) {
+                // check point our location
+                char command[256];
+                sprintf( command,
+                         "echo before building %s >> last_apt",
+                         last_apt_id.c_str() );
+                system( command );
 
-                if ( ready_to_go ) {
-                    // check point our location
-                    char command[256];
-                    sprintf( command,
-                             "echo before building %s >> last_apt",
-                             last_apt_id.c_str() );
-                    system( command );
-
-                    // process previous record
-                    // process_airport(last_apt_id, runways_list, argv[2]);
-                    try {
-                        build_airport( last_apt_id, elev * SG_FEET_TO_METER,
-                                       runways_list, taxiways_list,
-                                       work_dir, elev_src );
-                    } catch (sg_exception &e) {
-                        SG_LOG( SG_GENERAL, SG_ALERT,
-                                "Failed to build airport = "
-                                << last_apt_id );
-                        SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
-                                << e.getMessage() );
-                        exit(-1);
-                    }
+                // process previous record
+                // process_airport(last_apt_id, runways_list, argv[2]);
+                try {
+                    build_airport( last_apt_id, elev * SG_FEET_TO_METER,
+                                   runways_list, taxiways_list,
+                                   work_dir, elev_src );
+                } catch (sg_exception &e) {
+                    SG_LOG( SG_GENERAL, SG_ALERT,
+                            "Failed to build airport = "
+                            << last_apt_id );
+                    SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
+                            << e.getMessage() );
+                    exit(-1);
                 }
-            } else {
-                SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
             }
+        } else {
+            SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
         }
     }
 

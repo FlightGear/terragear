@@ -95,6 +95,10 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
     double width = tp.get_width();
     double length = tp.get_length();
     double heading = tp.get_heading();
+    double minu = tp.get_minu();
+    double maxu = tp.get_maxu();
+    double minv = tp.get_minv();
+    double maxv = tp.get_maxv();
     SG_LOG( SG_GENERAL, SG_INFO, "section ref = " << ref );
     SG_LOG( SG_GENERAL, SG_INFO, "  width = " << width );
     SG_LOG( SG_GENERAL, SG_INFO, "  length = " << length );
@@ -142,18 +146,22 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly,
 	    //
 	    // 4. Map x, y point into texture coordinates
 	    //
-	    
-	    tx = x / width;
+	    double tmp;
+
+            tmp = x / width;
+            tx = tmp * (maxu - minu) + minu;
 	    // tx = ((int)(tx * 100)) / 100.0;
 	    SG_LOG(SG_GENERAL, SG_INFO, "  (" << tx << ")");
 
-            if ( clip_result ) {
+            if ( clip_result) {
                 if ( tx < 0.0 ) { tx = 0.0; }
                 if ( tx > 1.0 ) { tx = 1.0; }
             }
 
 	    // ty = (y - min.y()) / (max.y() - min.y());
 	    ty = y / length;
+            tmp = y / length;
+            ty = tmp * (maxv - minv) + minv;
 	    // ty = ((int)(ty * 100)) / 100.0;
 	    SG_LOG(SG_GENERAL, SG_INFO, "  (" << ty << ")");
 
@@ -493,22 +501,30 @@ void build_airport( string airport_id, float alt_m,
     // 2nd pass: generate the non-precision and visual runways
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
+	string surface_flag = runways[i].surface_flags.substr(1, 1);
 	if ( type_flag == "R" || type_flag == "V" ) {
-	    build_runway( runways[i], alt_m,
-			  &rwy_polys, &texparams, &accum,
-                          &apt_base, &apt_clearing );
-	}
+            if ( surface_flag != "W" ) {
+                // only build non-water runways
+                build_runway( runways[i], alt_m,
+                              &rwy_polys, &texparams, &accum,
+                              &apt_base, &apt_clearing );
+            }
+        }
     }
 
     // 3rd pass: generate all remaining runways not covered in the first pass
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
+	string surface_flag = runways[i].surface_flags.substr(1, 1);
 	if ( type_flag != string("P") && type_flag != string("R")
              && type_flag != string("V") ) {
-	    build_runway( runways[i], alt_m,
-			  &rwy_polys, &texparams, &accum,
-                          &apt_base, &apt_clearing );
-	}
+            if ( surface_flag != "W" ) {
+                // only build non-water runways
+                build_runway( runways[i], alt_m,
+                              &rwy_polys, &texparams, &accum,
+                              &apt_base, &apt_clearing );
+            }
+        }
     }
 
     // 4th pass: generate all taxiways
