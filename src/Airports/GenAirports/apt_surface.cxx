@@ -275,8 +275,11 @@ TGAptSurface::TGAptSurface( const string& path,
     } else {
         // no, sorry, a nan is not <= 0.0 or >= 0.0
         SG_LOG(SG_GENERAL, SG_WARN,
-               "leastSquares() failed, aborting().");
-        exit(-1);
+               "leastSquares() nurbs interpolation failed!!!");
+        char command[256];
+        sprintf( command,
+                 "least squares nurbs interpolation failed, using globalInterp() >> last_apt" );
+        system( command );
 
         // we could fall back to globalInterp() rather than aborting
         // if we wanted to ...

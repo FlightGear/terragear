@@ -244,6 +244,7 @@ int main( int argc, char **argv ) {
     vector<string> token;
     string last_apt_id = "";
     string last_apt_info = "";
+    string last_apt_type = "";
     string line;
     char tmp[2048];
 
@@ -271,7 +272,10 @@ int main( int argc, char **argv ) {
             in.getline(tmp, 2048);
             vector<string> vers_token = simgear::strutils::split( tmp );
             SG_LOG( SG_GENERAL, SG_INFO, "Data version = " << vers_token[0] );
-	} else if ( token[0] == "1" /* Airport */ ) {
+	} else if ( token[0] == "1" /* Airport */ ||
+                    token[0] == "16" /* Seaplane base */ ||
+                    token[0] == "17" /* Heliport */ ) {
+
             // extract some airport runway info
             string rwy;
             float lat, lon;
@@ -306,13 +310,19 @@ int main( int argc, char **argv ) {
                         // process previous record
                         // process_airport(last_apt_id, runways_list, argv[2]);
                         try {
-                            build_airport( last_apt_id,
-                                           elev * SG_FEET_TO_METER,
-                                           runways_list,
-                                           beacon_list,
-                                           tower_list,
-                                           windsock_list,
-                                           work_dir, elev_src );
+                            if ( last_apt_type == "16" /* Seaplane base */ ||
+                                 last_apt_type == "17" /* Heliport */ ) {
+                                // skip building heliports and
+                                // seaplane bases
+                            } else {
+                                build_airport( last_apt_id,
+                                               elev * SG_FEET_TO_METER,
+                                               runways_list,
+                                               beacon_list,
+                                               tower_list,
+                                               windsock_list,
+                                               work_dir, elev_src );
+                            }
                         } catch (sg_exception &e) {
                             SG_LOG( SG_GENERAL, SG_ALERT,
                                     "Failed to build airport = "
@@ -335,6 +345,8 @@ int main( int argc, char **argv ) {
 
             last_apt_id = id;
             last_apt_info = line;
+            last_apt_type = token[0];
+
             // clear runway list for start of next airport
             runways_list.clear();
             beacon_list.clear();
@@ -354,15 +366,13 @@ int main( int argc, char **argv ) {
             windsock_list.push_back(line);
         } else if ( token[0] == "15" ) {
             // ignore custom startup locations
-        } else if ( token[0] == "16" ) {
-            // ignore seaplane bases for now
-        } else if ( token[0] == "17" ) {
-            // ignore heliports for now
         } else if ( token[0] == "50" || token[0] == "51" || token[0] == "52" 
                     || token[0] == "53" || token[0] == "54" || token[0] == "55" 
                     || token[0] == "56" )
         {
             // ignore frequency entries
+        } else if ( token[0] == "99" ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "End of file reached" );
         } else {
             SG_LOG( SG_GENERAL, SG_ALERT, 
                     "Unknown line in file: " << line );
@@ -398,12 +408,18 @@ int main( int argc, char **argv ) {
             // process previous record
             // process_airport(last_apt_id, runways_list, argv[2]);
             try {
-                build_airport( last_apt_id, elev * SG_FEET_TO_METER,
-                               runways_list,
-                               beacon_list,
-                               tower_list,
-                               windsock_list,
-                               work_dir, elev_src );
+                if ( last_apt_type == "16" /* Seaplane base */ ||
+                     last_apt_type == "17" /* Heliport */ ) {
+                    // skip building heliports and
+                    // seaplane bases
+                } else {
+                    build_airport( last_apt_id, elev * SG_FEET_TO_METER,
+                                   runways_list,
+                                   beacon_list,
+                                   tower_list,
+                                   windsock_list,
+                                   work_dir, elev_src );
+                }
             } catch (sg_exception &e) {
                 SG_LOG( SG_GENERAL, SG_ALERT,
                         "Failed to build airport = "
