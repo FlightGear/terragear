@@ -193,5 +193,16 @@ individual hobbiest towers.  However it only has USA coverage:
 
     http://wireless.fcc.gov/cgi-bin/wtb-datadump.pl
 
-I am planning on making a prep tool for this data so we can populate
-at least the USA with real radio towers at their proper elevations.
+When you unzip this file, the good stuff is in DE.dat, I believe there
+is file format information at the above url.
+
+Run:
+
+    .../Prep/Tower/tower.pl --input=$RAW_DIR/DE.dat --outdir=$WORK_DIR/TowerObj
+
+This creates a tree of .ind files in $WORK_DIR/TowerObj/
+
+If you add this directory to the list of directories searched by the
+build tile program, these entries should get added to the final
+scenery.  This of course requires the corresponding tower models to be
+available in the base package.
