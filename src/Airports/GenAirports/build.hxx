@@ -32,6 +32,9 @@
 #include "point2d.hxx"
 
 
+extern int nudge;
+
+
 // build 3d airport
 void build_airport( string airport, string_list& runways_raw,
 		    const string& root );

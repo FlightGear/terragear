@@ -52,6 +52,7 @@
 #include <Polygon/superpoly.hxx>
 #include <Triangulate/trieles.hxx>
 
+#include "build.hxx"
 #include "convex_hull.hxx"
 #include "output.hxx"
 #include "point2d.hxx"
@@ -691,13 +692,13 @@ static void gen_runway_section( const FGRunway& rwy_info,
     // that by nudging the areas a bit bigger so we don't end up with
     // polygon slivers.
     if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
-	startl_pct -= 80 * FG_EPSILON;
-	endl_pct += 80 * FG_EPSILON;
+	startl_pct -= nudge * FG_EPSILON;
+	endl_pct += nudge * FG_EPSILON;
 	if ( startw_pct > 0.0 ) {
-	    startw_pct -= 80 * FG_EPSILON;
+	    startw_pct -= nudge * FG_EPSILON;
 	}
 	if ( endw_pct < 1.0 ) {
-	    endw_pct += 80 * FG_EPSILON;
+	    endw_pct += nudge * FG_EPSILON;
 	}
     }
 
