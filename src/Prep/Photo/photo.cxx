@@ -76,7 +76,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 
 	    // try 3 arcsec dems first
 	    string dem_path = root + "/DEM-3/" + base 
-		+ "/" + b.gen_index_str() + ".dem";
+		+ "/" + b.gen_index_str();
 	    cout << "dem_path = " << dem_path << endl;
 	
 	    if ( ! array.open(dem_path) ) {
@@ -85,7 +85,7 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes ) {
 		
 		// try 30 arcsec dem
 		dem_path = root + "/DEM-30/" + base 
-		    + "/" + b.gen_index_str() + ".dem";
+		    + "/" + b.gen_index_str();
 		cout << "dem_path = " << dem_path << endl;
 		if ( ! array.open(dem_path) ) {
 		    cout << "ERROR: cannot open 3 arcsec file " 
