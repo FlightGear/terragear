@@ -65,6 +65,7 @@ public:
     // Add a contour
     inline void add_contour( const point_list contour, const int hole_flag ) {
 	poly.push_back( contour );
+	inside_list.push_back( Point3D( 0.0 ) );
 	hole_list.push_back( hole_flag );
     }
 
@@ -77,6 +78,9 @@ public:
     inline void delete_contour( const int i ) {
 	polytype_iterator start_poly = poly.begin();
 	poly.erase( start_poly + i );
+
+	point_list_iterator start_inside = inside_list.begin();
+	inside_list.erase( start_inside + i );
 
 	int_list_iterator start_hole = hole_list.begin();
 	hole_list.erase( start_hole + i );
