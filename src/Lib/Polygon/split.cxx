@@ -181,7 +181,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 
 	if ( (dx > 2880) || (dy > 1440) ) {
 	    FG_LOG( FG_GENERAL, FG_ALERT, 
-		    "somethings really wrong!!!!" );
+		    "something is really wrong in split_polygon()!!!!" );
 	    exit(-1);
 	}
 
@@ -238,6 +238,7 @@ void split_polygon(const string& path, AreaType area, const FGPolygon& shape) {
 		b_cur = fgBucketOffset(min.x(), min.y(), i, j);
 		clip_and_write_poly( path, index, area, b_cur, clip_row );
 	    }
+	    cout << "  (done)" << endl;
 	}
 	// string answer; cin >> answer;
     }

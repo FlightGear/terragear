@@ -32,9 +32,9 @@
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 #include <Polygon/split.hxx>
+#include <Polygon/simple_clip.hxx>
 
 #include "gshhs_split.hxx"
-#include "simple_clip.hxx"
 
 FG_USING_STD(cout);
 FG_USING_STD(string);

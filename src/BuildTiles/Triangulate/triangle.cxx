@@ -123,6 +123,13 @@ FGTriangle::build( const point_list& corner_list,
 	    // also inside any interior contours
 
 	    // new way
+
+	    // try to make sure our polygons aren't goofy
+	    gpc_poly = remove_dups( gpc_poly );
+	    gpc_poly = reduce_degeneracy( gpc_poly );
+	    gpc_poly = remove_dups( gpc_poly );
+	    gpc_poly = remove_bad_contours( gpc_poly );
+	    
 	    calc_points_inside( gpc_poly );
 
 #if 0

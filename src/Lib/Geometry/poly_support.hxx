@@ -62,6 +62,24 @@ Point3D calc_point_inside_old( const FGPolygon& p, const int contour,
 // calculate some "arbitrary" point inside each of the polygons contours
 void calc_points_inside( FGPolygon& p );
 
+// remove duplicate nodes in a polygon should they exist.  Returns the
+// fixed polygon
+FGPolygon remove_dups( const FGPolygon &poly );
+
+
+// Search each segment of each contour for degenerate points (i.e. out
+// of order points that lie coincident on other segments
+FGPolygon reduce_degeneracy( const FGPolygon& poly );
+
+
+// Find a point in the given node list that lies between start and
+// end, return true if something found, false if nothing found.
+bool find_intermediate_node( const Point3D& start, const Point3D& end,
+			     const point_list& nodes, Point3D *result );
+
+// remove any degenerate contours
+FGPolygon remove_bad_contours( const FGPolygon &poly );
+
 
 #endif // _POLY_SUPPORT_HXX
 

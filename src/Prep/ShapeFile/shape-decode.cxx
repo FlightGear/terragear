@@ -91,6 +91,7 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
 	}
         printf( szFormat, szTitle );
     }
+    printf( "\n" );
 
     for( iRecord = 0; iRecord < DBFGetRecordCount(hDBF); iRecord++ ) {
         for( i = 0; i < DBFGetFieldCount(hDBF); i++ ) {
@@ -120,9 +121,13 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
                 }
 	}
     }
+    printf( "\n" );
+
 #endif
  
     string area = DBFReadStringAttribute( hDBF, rec, 4 );
+    string test = DBFReadStringAttribute( hDBF, rec, 3 );
+    cout << "next record = " << test << endl;
 
     // strip leading spaces
     while ( area[0] == ' ' ) {
@@ -293,10 +298,6 @@ int main( int argc, char **argv ) {
 
 	    area = get_area_type( force_area_type );
 	    split_polygon(work_dir, area, shape);
-	} else if ( area == MarshArea ) {
-	    // interior of polygon is marsh, holes are preserved
-
-	    split_polygon(work_dir, area, shape);
 	} else if ( area == OceanArea ) {
 	    // interior of polygon is ocean, holes are islands
 
@@ -305,38 +306,6 @@ int main( int argc, char **argv ) {
 	    // Ocean data now comes from GSHHS so we want to ignore
 	    // all other ocean data
 	    // split_polygon(work_dir, area, shape);
-	} else if ( area == LakeArea ) {
-	    // interior of polygon is lake, holes are islands
-
-	    split_polygon(work_dir, area, shape);
-	} else if ( area == DryLakeArea ) {
-	    // interior of polygon is dry lake, holes are islands
-
-	    split_polygon(work_dir, area, shape);
-	} else if ( area == IntLakeArea ) {
-	    // interior of polygon is intermittent lake, holes are islands
-
-	    split_polygon(work_dir, area, shape);
-	} else if ( area == ReservoirArea ) {
-	    // interior of polygon is reservoir, holes are islands
-
-	    split_polygon(work_dir, area, shape);
-	} else if ( area == IntReservoirArea ) {
-	    // interior of polygon is intermittent reservoir, holes are islands
-
-	    split_polygon(work_dir, area, shape);
-	} else if ( area == StreamArea ) {
-	    // interior of polygon is stream, holes are islands
-
-	    split_polygon(work_dir, area, shape);
-	} else if ( area == CanalArea ) {
-	    // interior of polygon is canal, holes are islands
-
-	    split_polygon(work_dir, area, shape);
-	} else if ( area == GlacierArea ) {
-	    // interior of polygon is glacier, holes are dry land
-
-	    split_polygon(work_dir, area, shape);
 	} else if ( area == VoidArea ) {
 	    // interior is ????
 
@@ -362,8 +331,7 @@ int main( int argc, char **argv ) {
 
 	    // split_polygon(work_dir, area, shape);
 	} else {
-	    FG_LOG(  FG_GENERAL, FG_ALERT, "Uknown area!" );
-	    exit(-1);
+	    split_polygon(work_dir, area, shape);
 	}
     }
 

@@ -171,13 +171,43 @@ static int actual_load_polys( const string& dir,
 }
 
 
-// generate polygons from land-cover raster.
+// Merge a polygon with an existing one if possible, append a new
+// one otherwise; this function is used by actual_load_landcover, below,
+// to reduce the number of separate polygons.
+static void inline add_to_polys (vector<FGPolygon> &list,
+				 const FGPolygon &poly)
+{
+  int len = list.size();
+  FGPolygon temp;
+
+				// Look for an adjacent polygon
+  if (len > 0) {
+    for (int i = 0; i < len; i++) {
+      temp = polygon_union(list[i], poly);
+      if (temp.contours() == 1) {	// no new contours: they are adjacent
+	cout << "Merging with existing land-cover polygon" << endl;
+	list[i] = temp;
+	return;
+      }
+    }
+  }
+
+				// No adjacent polygons available; append
+				// this one to the list.
+  cout << "Adding new land-cover polygon" << endl;
+  list.push_back(poly);
+}
+
+
+// Generate polygons from land-cover raster.  Horizontally- or vertically-
+// adjacent polygons will be merged automatically.
 static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
 				   FGClipper &clipper ) {
 
     int count = 0;
     double lon, lat;
-    FGPolygon poly;
+    vector<FGPolygon> poly_list[FG_MAX_AREA_TYPES];
+    FGPolygon poly;		// working polygon
 
 				// Get the top corner of the tile
     lon =
@@ -187,31 +217,53 @@ static int actual_load_landcover ( LandCover &cover, FGConstruct & c,
 
     cout << "DPM: tile at " << lon << ',' << lat << endl;
     
-				// FIXME: this may still be wrong
+
+				// Figure out how many units wide and
+				// high this tile is; each unit is
+				// 30 arc seconds.
     int x_span = int(120 * bucket_span(lat)); // arcsecs of longitude
     int y_span = int(120 * FG_BUCKET_SPAN); // arcsecs of latitude
     for (int x = 0; x < x_span; x++) {
       for (int y = 0; y < y_span; y++) {
+				// Figure out the boundaries of the
+				// 30 arcsec square.
 	double x1 = lon + (x * (1.0/120.0));
 	double y1 = lat + (y * (1.0/120.0));
 	double x2 = x1 + (1.0/120.0);
 	double y2 = y1 + (1.0/120.0);
+				// Look up the land cover for the square
 	int cover_value = cover.getValue(x1 + (1.0/240.0), y1 + (1.0/240.0));
 	cout << " position: " << x1 << ',' << y1 << ','
 	     << cover.getDescUSGS(cover_value) << endl;
 	AreaType area = translateUSGSCover(cover_value);
 	if (area != DefaultArea) {
+				// Create a square polygon and merge
+				// it into the list.
 	  poly.erase();
 	  poly.add_node(0, Point3D(x1, y1, 0.0));
 	  poly.add_node(0, Point3D(x1, y2, 0.0));
 	  poly.add_node(0, Point3D(x2, y2, 0.0));
 	  poly.add_node(0, Point3D(x2, y1, 0.0));
-	  clipper.add_poly(area, poly);
-	  count++;
+	  add_to_polys(poly_list[area], poly);
 	}
       }
     }
 
+				// Now that we're finished looking up
+				// land cover, we have a list of lists
+				// of polygons, one (possibly-empty)
+				// list for each area type.  Add the
+				// remaining polygons to the clipper.
+    for (int i = 0; i < FG_MAX_AREA_TYPES; i++) {
+      int len = poly_list[i].size();
+      for (int j = 0; j < len; j++) {
+	clipper.add_poly(i, poly_list[i][j]);
+	count++;
+      }
+    }
+
+				// Return the number of polygons
+				// actually read.
     return count;
 }
 
