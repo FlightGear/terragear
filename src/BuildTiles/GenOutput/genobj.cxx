@@ -476,11 +476,24 @@ int FGGenOutput::write( FGConstruct &c ) {
 	}
     }
 
-    sgWriteBinObj( base, name, b, gbs_center, gbs_radius, 
-		   wgs84_nodes, normals, texcoords, 
-		   tris_v, tris_tc, tri_materials,
-		   strips_v, strips_tc, strip_materials, 
-		   fans_v, fans_tc, fan_materials );
+    SGBinObject obj;
+
+    obj.set_gbs_center( gbs_center );
+    obj.set_gbs_radius( gbs_radius );
+    obj.set_wgs84_nodes( wgs84_nodes );
+    obj.set_normals( normals );
+    obj.set_texcoords( texcoords );
+    obj.set_tris_v( tris_v );
+    obj.set_tris_tc( tris_tc ); 
+    obj.set_tri_materials( tri_materials );
+    obj.set_strips_v( strips_v );
+    obj.set_strips_tc( strips_tc ); 
+    obj.set_strip_materials( strip_materials );
+    obj.set_fans_v( fans_v );
+    obj.set_fans_tc( fans_tc );
+    obj.set_fan_materials( fan_materials );
+
+    obj.write_bin( base, name, b );
 
     return 1;
 }

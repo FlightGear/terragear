@@ -1560,8 +1560,8 @@ void build_runway( const FGRunway& rwy_info,
 
 // build 3d airport
 void build_airport( string airport_raw, string_list& runways_raw,
-		    const string& root ) {
-
+		    const string& root )
+{
     int i, j, k;
 
     superpoly_list rwy_polys;
@@ -1979,16 +1979,25 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string objpath = root + "/AirportObj";
     string name = apt_code;
 
-    /* sgWriteAsciiObj( objpath, name, b, gbs_center, gbs_radius, 
-		   wgs84_nodes, normals, texcoords.get_node_list(),
-		   tris_v, tris_tc, tri_materials,
-		   strips_v, strips_tc, strip_materials, 
-		   fans_v, fans_tc, fan_materials ); */
-    sgWriteBinObj( objpath, name, b, gbs_center, gbs_radius, 
-		   wgs84_nodes, normals, texcoords.get_node_list(), 
-		   tris_v, tris_tc, tri_materials,
-		   strips_v, strips_tc, strip_materials, 
-		   fans_v, fans_tc, fan_materials );
+    SGBinObject obj;
+
+    obj.set_gbs_center( gbs_center );
+    obj.set_gbs_radius( gbs_radius );
+    obj.set_wgs84_nodes( wgs84_nodes );
+    obj.set_normals( normals );
+    obj.set_texcoords( texcoords.get_node_list() );
+    obj.set_tris_v( tris_v );
+    obj.set_tris_tc( tris_tc ); 
+    obj.set_tri_materials( tri_materials );
+    obj.set_strips_v( strips_v );
+    obj.set_strips_tc( strips_tc ); 
+    obj.set_strip_materials( strip_materials );
+    obj.set_fans_v( fans_v );
+    obj.set_fans_tc( fans_tc );
+    obj.set_fan_materials( fan_materials );
+
+    /* obj.write_ascii( objpath, name, b ); */
+    obj.write_bin( objpath, name, b );
 
 #if 0
     // checking result of write, remove the read_bin() before this
