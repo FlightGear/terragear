@@ -2,7 +2,7 @@
 
 #include "array.hxx"
 
-main(int argc, char **argv) {
+int main( int argc, char **argv ) {
     double lon, lat;
 
     if ( argc != 2 ) {
@@ -30,4 +30,6 @@ main(int argc, char **argv) {
     cout << "  " << a.interpolate_altitude(lon, lat) << endl;
 
     a.fit( 100 );
+
+    return 0;
 }

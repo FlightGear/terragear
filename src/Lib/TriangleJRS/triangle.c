@@ -192,6 +192,14 @@
 /*   recommend double precision unless you want to generate a mesh for which */
 /*   you do not have enough memory.                                          */
 
+/* Added CLO 11/20/2000.  Explanation: this code does a lot of
+   malloc()'ing of space and in some cases blindly expects the results
+   to be zero'd out, even though this isn't gauranteed by malloc().
+   So I (Curt Olson, curt@flightgear.org) have added some code here to
+   map all the malloc(x) calls to calloc( 1, x). */
+#define MALLOC( x ) calloc( 1, x )
+/* CLO end */
+
 /* #define SINGLE */
 
 #ifdef SINGLE
@@ -3205,7 +3213,7 @@ int alignment;
   /* Allocate a block of items.  Space for `itemsperblock' items and one    */
   /*   pointer (to point to the next block) are allocated, as well as space */
   /*   to ensure alignment of the items.                                    */
-  pool->firstblock = (VOID **) malloc(pool->itemsperblock * pool->itembytes
+  pool->firstblock = (VOID **) MALLOC(pool->itemsperblock * pool->itembytes
                                       + sizeof(VOID *) + pool->alignbytes);
   if (pool->firstblock == (VOID **) NULL) {
     printf("Error:  Out of memory.\n");
@@ -3290,7 +3298,7 @@ struct memorypool *pool;
       /* Check if another block must be allocated. */
       if (*(pool->nowblock) == (VOID *) NULL) {
         /* Allocate a new block of items, pointed to by the previous block. */
-        newblock = (VOID **) malloc(pool->itemsperblock * pool->itembytes
+        newblock = (VOID **) MALLOC(pool->itemsperblock * pool->itembytes
                                     + sizeof(VOID *) + pool->alignbytes);
         if (newblock == (VOID **) NULL) {
           printf("Error:  Out of memory.\n");
@@ -3459,7 +3467,7 @@ int shellewords;
   shwords = shellewords;           /* Initialize `shwords' once and for all. */
 
   /* Set up `dummytri', the `triangle' that occupies "outer space". */
-  dummytribase = (triangle *) malloc(triwords * sizeof(triangle)
+  dummytribase = (triangle *) MALLOC(triwords * sizeof(triangle)
                                      + triangles.alignbytes);
   if (dummytribase == (triangle *) NULL) {
     printf("Error:  Out of memory.\n");
@@ -3486,7 +3494,7 @@ int shellewords;
     /* Set up `dummysh', the omnipresent "shell edge" pointed to by any      */
     /*   triangle side or shell edge end that isn't attached to a real shell */
     /*   edge.                                                               */
-    dummyshbase = (shelle *) malloc(shwords * sizeof(shelle)
+    dummyshbase = (shelle *) MALLOC(shwords * sizeof(shelle)
                                     + shelles.alignbytes);
     if (dummyshbase == (shelle *) NULL) {
       printf("Error:  Out of memory.\n");
@@ -7712,7 +7720,7 @@ long divconqdelaunay()
   int i, j;
 
   /* Allocate an array of pointers to points for sorting. */
-  sortarray = (point *) malloc(inpoints * sizeof(point));
+  sortarray = (point *) MALLOC(inpoints * sizeof(point));
   if (sortarray == (point *) NULL) {
     printf("Error:  Out of memory.\n");
     exit(1);
@@ -7804,9 +7812,9 @@ void boundingbox()
     width = 1.0;
   }
   /* Create the vertices of the bounding box. */
-  infpoint1 = (point) malloc(points.itembytes);
-  infpoint2 = (point) malloc(points.itembytes);
-  infpoint3 = (point) malloc(points.itembytes);
+  infpoint1 = (point) MALLOC(points.itembytes);
+  infpoint2 = (point) MALLOC(points.itembytes);
+  infpoint3 = (point) MALLOC(points.itembytes);
   if ((infpoint1 == (point) NULL) || (infpoint2 == (point) NULL)
       || (infpoint3 == (point) NULL)) {
     printf("Error:  Out of memory.\n");
@@ -8121,12 +8129,12 @@ struct event **freeevents;
   int i;
 
   maxevents = (3 * inpoints) / 2;
-  *eventheap = (struct event **) malloc(maxevents * sizeof(struct event *));
+  *eventheap = (struct event **) MALLOC(maxevents * sizeof(struct event *));
   if (*eventheap == (struct event **) NULL) {
     printf("Error:  Out of memory.\n");
     exit(1);
   }
-  *events = (struct event *) malloc(maxevents * sizeof(struct event));
+  *events = (struct event *) MALLOC(maxevents * sizeof(struct event));
   if (*events == (struct event *) NULL) {
     printf("Error:  Out of memory.\n");
     exit(1);
@@ -8880,7 +8888,7 @@ FILE *polyfile;
   /* Allocate a temporary array that maps each point to some adjacent  */
   /*   triangle.  I took care to allocate all the permanent memory for */
   /*   triangles and shell edges first.                                */
-  vertexarray = (triangle *) malloc(points.items * sizeof(triangle));
+  vertexarray = (triangle *) MALLOC(points.items * sizeof(triangle));
   if (vertexarray == (triangle *) NULL) {
     printf("Error:  Out of memory.\n");
     exit(1);
@@ -10477,7 +10485,7 @@ int regions;
 
   if (regions > 0) {
     /* Allocate storage for the triangles in which region points fall. */
-    regiontris = (struct triedge *) malloc(regions * sizeof(struct triedge));
+    regiontris = (struct triedge *) MALLOC(regions * sizeof(struct triedge));
     if (regiontris == (struct triedge *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -11567,7 +11575,7 @@ int *regions;
   stringptr = readline(inputline, polyfile, polyfilename);
   *holes = (int) strtol (stringptr, &stringptr, 0);
   if (*holes > 0) {
-    holelist = (REAL *) malloc(2 * *holes * sizeof(REAL));
+    holelist = (REAL *) MALLOC(2 * *holes * sizeof(REAL));
     *hlist = holelist;
     if (holelist == (REAL *) NULL) {
       printf("Error:  Out of memory.\n");
@@ -11602,7 +11610,7 @@ int *regions;
     stringptr = readline(inputline, polyfile, polyfilename);
     *regions = (int) strtol (stringptr, &stringptr, 0);
     if (*regions > 0) {
-      regionlist = (REAL *) malloc(4 * *regions * sizeof(REAL));
+      regionlist = (REAL *) MALLOC(4 * *regions * sizeof(REAL));
       *rlist = regionlist;
       if (regionlist == (REAL *) NULL) {
         printf("Error:  Out of memory.\n");
@@ -11729,7 +11737,7 @@ char **argv;
   }
   /* Allocate memory for output points if necessary. */
   if (*pointlist == (REAL *) NULL) {
-    *pointlist = (REAL *) malloc(points.items * 2 * sizeof(REAL));
+    *pointlist = (REAL *) MALLOC(points.items * 2 * sizeof(REAL));
     if (*pointlist == (REAL *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -11737,7 +11745,7 @@ char **argv;
   }
   /* Allocate memory for output point attributes if necessary. */
   if ((nextras > 0) && (*pointattriblist == (REAL *) NULL)) {
-    *pointattriblist = (REAL *) malloc(points.items * nextras * sizeof(REAL));
+    *pointattriblist = (REAL *) MALLOC(points.items * nextras * sizeof(REAL));
     if (*pointattriblist == (REAL *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -11745,7 +11753,7 @@ char **argv;
   }
   /* Allocate memory for output point markers if necessary. */
   if (!nobound && (*pointmarkerlist == (int *) NULL)) {
-    *pointmarkerlist = (int *) malloc(points.items * sizeof(int));
+    *pointmarkerlist = (int *) MALLOC(points.items * sizeof(int));
     if (*pointmarkerlist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -11880,7 +11888,7 @@ char **argv;
   }
   /* Allocate memory for output triangles if necessary. */
   if (*trianglelist == (int *) NULL) {
-    *trianglelist = (int *) malloc(triangles.items *
+    *trianglelist = (int *) MALLOC(triangles.items *
                                ((order + 1) * (order + 2) / 2) * sizeof(int));
     if (*trianglelist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
@@ -11889,7 +11897,7 @@ char **argv;
   }
   /* Allocate memory for output triangle attributes if necessary. */
   if ((eextras > 0) && (*triangleattriblist == (REAL *) NULL)) {
-    *triangleattriblist = (REAL *) malloc(triangles.items * eextras *
+    *triangleattriblist = (REAL *) MALLOC(triangles.items * eextras *
                                           sizeof(REAL));
     if (*triangleattriblist == (REAL *) NULL) {
       printf("Error:  Out of memory.\n");
@@ -12015,7 +12023,7 @@ char **argv;
   }
   /* Allocate memory for output segments if necessary. */
   if (*segmentlist == (int *) NULL) {
-    *segmentlist = (int *) malloc(shelles.items * 2 * sizeof(int));
+    *segmentlist = (int *) MALLOC(shelles.items * 2 * sizeof(int));
     if (*segmentlist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -12023,7 +12031,7 @@ char **argv;
   }
   /* Allocate memory for output segment markers if necessary. */
   if (!nobound && (*segmentmarkerlist == (int *) NULL)) {
-    *segmentmarkerlist = (int *) malloc(shelles.items * sizeof(int));
+    *segmentmarkerlist = (int *) MALLOC(shelles.items * sizeof(int));
     if (*segmentmarkerlist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -12146,7 +12154,7 @@ char **argv;
   }
   /* Allocate memory for edges if necessary. */
   if (*edgelist == (int *) NULL) {
-    *edgelist = (int *) malloc(edges * 2 * sizeof(int));
+    *edgelist = (int *) MALLOC(edges * 2 * sizeof(int));
     if (*edgelist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -12154,7 +12162,7 @@ char **argv;
   }
   /* Allocate memory for edge markers if necessary. */
   if (!nobound && (*edgemarkerlist == (int *) NULL)) {
-    *edgemarkerlist = (int *) malloc(edges * sizeof(int));
+    *edgemarkerlist = (int *) MALLOC(edges * sizeof(int));
     if (*edgemarkerlist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -12305,7 +12313,7 @@ char **argv;
   }
   /* Allocate memory for Voronoi vertices if necessary. */
   if (*vpointlist == (REAL *) NULL) {
-    *vpointlist = (REAL *) malloc(triangles.items * 2 * sizeof(REAL));
+    *vpointlist = (REAL *) MALLOC(triangles.items * 2 * sizeof(REAL));
     if (*vpointlist == (REAL *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -12313,7 +12321,7 @@ char **argv;
   }
   /* Allocate memory for Voronoi vertex attributes if necessary. */
   if (*vpointattriblist == (REAL *) NULL) {
-    *vpointattriblist = (REAL *) malloc(triangles.items * nextras *
+    *vpointattriblist = (REAL *) MALLOC(triangles.items * nextras *
                                         sizeof(REAL));
     if (*vpointattriblist == (REAL *) NULL) {
       printf("Error:  Out of memory.\n");
@@ -12384,7 +12392,7 @@ char **argv;
   }
   /* Allocate memory for output Voronoi edges if necessary. */
   if (*vedgelist == (int *) NULL) {
-    *vedgelist = (int *) malloc(edges * 2 * sizeof(int));
+    *vedgelist = (int *) MALLOC(edges * 2 * sizeof(int));
     if (*vedgelist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -12393,7 +12401,7 @@ char **argv;
   *vedgemarkerlist = (int *) NULL;
   /* Allocate memory for output Voronoi norms if necessary. */
   if (*vnormlist == (REAL *) NULL) {
-    *vnormlist = (REAL *) malloc(edges * 2 * sizeof(REAL));
+    *vnormlist = (REAL *) MALLOC(edges * 2 * sizeof(REAL));
     if (*vnormlist == (REAL *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
@@ -12503,7 +12511,7 @@ char **argv;
   }
   /* Allocate memory for neighbors if necessary. */
   if (*neighborlist == (int *) NULL) {
-    *neighborlist = (int *) malloc(triangles.items * 3 * sizeof(int));
+    *neighborlist = (int *) MALLOC(triangles.items * 3 * sizeof(int));
     if (*neighborlist == (int *) NULL) {
       printf("Error:  Out of memory.\n");
       exit(1);
