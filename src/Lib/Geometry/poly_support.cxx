@@ -36,6 +36,7 @@ extern "C" {
 }
 #include <TriangleJRS/tri_support.h>
 
+#include "contour_tree.hxx"
 #include "poly_support.hxx"
 #include "trinodes.hxx"
 #include "trisegs.hxx"
@@ -592,15 +593,14 @@ static Point3D point_inside_hole( point_list contour ) {
 
 // Find a point inside a specific polygon contour taking holes into
 // consideration
-static Point3D point_inside_contour( const FGPolygon p, int contour ) {
+static Point3D point_inside_contour( FGContourNode *node, const FGPolygon &p ) {
     point_list holes;
     holes.clear();
 
-    // build list of holes
-    for ( int i = 0; i < p.contours(); ++i ) {
-	if ( p.get_hole_flag( i ) ) {
-	    holes.push_back( p.get_point_inside( i ) );
-	}
+    // build list of hole points
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+	int contour_num = node->get_kid(i)->get_contour_num();
+	holes.push_back( p.get_point_inside( contour_num ) );
     }
 
     triele_list elelist = polygon_tesselate( p, contour );
@@ -624,9 +624,128 @@ static Point3D point_inside_contour( const FGPolygon p, int contour ) {
 }
 
 
+// recurse the contour tree and build up the point inside list for
+// each contour/hole
+static void calc_point_inside( FGContourNode *node, FGPolygon &p ) {
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+	if ( node->get_kid( i ) != NULL ) {
+	    calc_point_inside( node->get_kid( i ), p );
+	}
+    }
+
+    Point3D pi = point_inside_contour( node, p );
+}
+
+
+static void print_contour_tree( FGContourNode *node, string indent ) {
+    cout << indent << node->get_contour_num() << endl;
+
+    indent += "  ";
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+	if ( node->get_kid( i ) != NULL ) {
+	    print_contour_tree( node->get_kid( i ), indent );
+	}
+    }
+}
+
+
+// Build the contour "is inside of" tree
+static void build_contour_tree( FGContourNode *node,
+				const FGPolygon &p,
+				int_list &avail )
+{
+    cout << "working on contour = " << node->get_contour_num() << endl;
+    cout << "  total contours = " << p.contours() << endl;
+    FGContourNode *tmp;
+
+    // see if we are building on a hole or note
+    bool flag;
+    if ( node->get_contour_num() > 0 ) {
+	flag = p.get_hole_flag( node->get_contour_num() );
+    } else {
+	flag = true;
+    }
+
+    // add all remaining hole/non-hole contours as children of the
+    // current node if they are inside of it.
+    for ( int i = 0; i < p.contours(); ++i ) {
+	cout << "  testing contour = " << i << endl;
+	if ( p.get_hole_flag( i ) != flag ) {
+	    // only holes can be children of non-holes and visa versa
+	    if ( avail[i] ) {
+		// must still be an available contour
+		int cur_contour = node->get_contour_num();
+		if ( (cur_contour < 0 ) || p.is_inside( cur_contour, i ) ) {
+		    // must be inside the parent (or if the parent is
+		    // the root, add all available non-holes.
+		    cout << "  adding contour = " << i << endl;
+		    avail[i] = 0;
+		    tmp = new FGContourNode( i );
+		    node->add_kid( tmp );
+		} else {
+		    cout << "  not inside" << endl;
+		}
+	    } else {
+		cout << "  not available" << endl;
+	    }
+	} else {
+	    cout << "  wrong hole/non-hole type" << endl;
+	}
+    }
+
+    // if any of the children are inside of another child, remove the
+    // inside one
+    cout << "node now has num kids = " << node->get_num_kids() << endl;
+
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+	for ( int j = 0; j < node->get_num_kids(); ++j ) {
+	    if ( i != j ) {
+		if ( p.is_inside( i, j ) ) {
+		    // need to remove contour j from the kid list
+		    avail[ node->get_kid( i ) -> get_contour_num() ] = 1;
+		    node->remove_kid( i );
+		    cout << "removing kid " << i << " which is inside of kid "
+			 << j << endl;
+		}
+	    } else {
+		// doesn't make sense to check if a contour is inside itself
+	    }
+	}
+    }
+
+    // for each child, extend the contour tree
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+	tmp = node->get_kid( i );
+	if ( tmp != NULL ) {
+	    build_contour_tree( tmp, p, avail );
+	}
+    }
+}
+
+
 // calculate some "arbitrary" point inside the specified contour for
 // assigning attribute areas
 void calc_points_inside( FGPolygon& p ) {
+    // first build the contour tree
+
+    // make a list of all still available contours (all of the for
+    // starters)
+    int_list avail;
+    for ( int i = 0; i < p.contours(); ++i ) {
+	avail.push_back( 1 );
+    }
+
+    // create and initialize the root node
+    FGContourNode *ct = new FGContourNode( -1 );
+
+    // recursively build the tree
+    build_contour_tree( ct, p, avail );
+    print_contour_tree( ct, "" );
+
+    // recurse the tree and build up the point inside list for each
+    // contour/hole
+    calc_point_inside( ct, p );
+
     // first calculate an inside point for all holes
     cout << "calculating points for poly with contours = " << p.contours()
 	 << endl;

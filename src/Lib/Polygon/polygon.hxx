@@ -141,11 +141,14 @@ public:
     // i.e. non-self intersecting.)
     //
     // negative areas indicate counter clockwise winding
-    // postitive areas indicate clockwise winding.
+    // positive areas indicate clockwise winding.
     double area_contour( const int contour ) const;
 
-    // return the smallest interior angle of the polygon
+    // return the smallest interior angle of the contour
     double minangle_contour( const int contour );
+
+    // return true if contour B is inside countour A
+    bool is_inside( int a, int b ) const;
 
     // output
     void write( const string& file );

@@ -81,7 +81,7 @@ static double calc_angle(point2d a, point2d b, point2d c) {
 // i.e. non-self intersecting.)
 //
 // negative areas indicate counter clockwise winding
-// postitive areas indicate clockwise winding.
+// positive areas indicate clockwise winding.
 
 double FGPolygon::area_contour( const int contour ) const {
     // area = 1/2 * sum[i = 0 to k-1][x(i)*y(i+1) - x(i+1)*y(i)]
@@ -101,7 +101,7 @@ double FGPolygon::area_contour( const int contour ) const {
 }
 
 
-// return the smallest interior angle of the polygon
+// return the smallest interior angle of the contour
 double FGPolygon::minangle_contour( const int contour ) {
     point_list c = poly[contour];
     int size = c.size();
@@ -140,6 +140,31 @@ double FGPolygon::minangle_contour( const int contour ) {
     }
 
     return min_angle;
+}
+
+
+// return true if contour B is inside countour A
+bool FGPolygon::is_inside( int a, int b ) const {
+    // make polygons from each specified contour
+    FGPolygon A, B;
+    point_list pl;
+    A.erase();
+    B.erase();
+
+    pl = get_contour( a );
+    A.add_contour( pl, 0 );
+
+    pl = get_contour( b );
+    B.add_contour( pl, 0 );
+
+    // B is "inside" A if the polygon_diff( B, A ) is not null.
+    FGPolygon result = polygon_diff( B, A );
+    cout << "    is_inside() result = " << result.contours() << endl;
+    if ( result.contours() == 0 ) {
+	return true;
+    }
+
+    return false;
 }
 
 
