@@ -119,10 +119,12 @@ int main( int argc, char **argv ) {
 	}
     }
 
-    elev_src.push_back( "SRTM-1" );
-    elev_src.push_back( "SRTM-3" );
-    elev_src.push_back( "DEM-3" );
-    elev_src.push_back( "DEM-30" );
+    elev_src.push_back( "SRTM-United_States-1" );
+    elev_src.push_back( "SRTM-North_America-3" );
+    elev_src.push_back( "SRTM-South_America-3" );
+    elev_src.push_back( "SRTM-Eurasia-3" );
+    elev_src.push_back( "DEM-USGS-3" );
+    elev_src.push_back( "SRTM-30" );
 
     SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
     SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");

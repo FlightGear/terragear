@@ -24,6 +24,9 @@
 
 #include <simgear/math/sg_geodesy.hxx>
 
+#include <plib/sg.h>
+#include <simgear/constants.h>
+
 #include "lights.hxx"
 
 SG_USING_STD(cout);
@@ -990,6 +993,434 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
     return result;
 }
 
+
+// generate Calvert-I/II approach lighting schemes
+static superpoly_list gen_calvert( const TGRunway& rwy_info,
+                                float alt_m, const string &kind, bool recip )
+{
+    point_list g_lights; g_lights.clear();
+    point_list w_lights; w_lights.clear();
+    point_list r_lights; r_lights.clear();
+    point_list s_lights; s_lights.clear();
+    point_list g_normals; g_normals.clear();
+    point_list w_normals; w_normals.clear();
+    point_list r_normals; r_normals.clear();
+    point_list s_normals; s_normals.clear();
+    int i, j;
+    string flag;
+    if (kind == "1")
+    {
+   	 cout << "gen Calvert lights " << rwy_info.rwy_no << endl;
+    } else if (kind == "2")
+    {
+	cout << "gen Calvert/II lights " << rwy_info.rwy_no << endl;
+    } else
+    {
+	cout << "gen unknown Calvert lights " << rwy_info.rwy_no << endl;
+    }
+
+
+
+    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
+
+    // Generate the threshold lights
+
+    double len = rwy_info.length * SG_FEET_TO_METER;
+    int divs = (int)(len / 10.0) + 1;
+
+    // using TGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    Point3D inc;
+    Point3D pt;
+
+    if ( recip ) {
+        inc = (corner[0] - corner[1]) / divs;
+        pt = corner[1];
+        flag = rwy_info.rwy_no + "-i";
+    } else {
+        inc = (corner[2] - corner[3]) / divs;
+        pt = corner[3];
+        flag = rwy_info.rwy_no;
+    }
+
+    double dist = rwy_info.length;
+    double step = dist / divs;
+
+    g_lights.push_back( pt );
+    g_normals.push_back( normal1 );
+    r_lights.push_back( pt );
+    r_normals.push_back( normal2 );
+    dist -= step;
+
+    for ( i = 0; i < divs; ++i ) {
+	pt += inc;
+        g_lights.push_back( pt );
+        g_normals.push_back( normal1 );
+        r_lights.push_back( pt );
+        r_normals.push_back( normal2 );
+        dist -= step;
+    }
+
+    // Generate long center bar of lights
+
+    // determine the start point.
+    Point3D ref_save;
+    double length_hdg, left_hdg;
+    double lon, lat, r;
+    if ( recip ) {
+        ref_save = (corner[0] + corner[1]) / 2;
+        length_hdg = rwy_info.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+    } else {
+        ref_save = (corner[2] + corner[3]) / 2;
+        length_hdg = rwy_info.heading;
+    }
+    left_hdg = length_hdg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    cout << "length hdg = " << length_hdg
+         << " left heading = " << left_hdg << endl;
+
+    Point3D ref = ref_save;
+    //
+    // Centre row of lights 1xlights out to 300m
+    // 2 x lights from 300m to 600m
+    // 3 x lights from 600m to 900m
+    // light spacing is 30m
+    // 
+    // calvert2 has reds instead of whites out to 300m
+#define CALVERT_HORIZ_SPACING	30
+#define CALVERT_VERT_SPACING	10
+#define CALVERT2_VERT_SPACING	2
+
+    int count;
+    //if ( kind == "1" || kind == "2" ) {
+    //    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+    //                        -100 * SG_FEET_TO_METER, &lat, &lon, &r );
+    //    ref = Point3D( lon, lat, 0.0 );
+    //    count = 10;
+    //}
+    count=30;
+
+    Point3D saved;
+    Point3D crossbar[5];
+    Point3D pair;
+    // first set of single lights
+    for ( i = 0; i < count; ++i ) {
+        pt = ref;
+
+        // centre lights
+        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), length_hdg, 
+                            -1 * CALVERT_HORIZ_SPACING, &lat, &lon, &r );
+        pt = Point3D( lon, lat, 0.0 );
+
+	if (kind == "1" )
+	{
+		if (i >= 10 && i < 20)
+		{
+		
+			
+        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                           CALVERT_VERT_SPACING/2, &lat, &lon, &r );
+        	    pair = Point3D( lon, lat, 0.0 );
+        	    w_lights.push_back( pair );
+        	    w_normals.push_back( normal1 );
+
+        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                           -1 * CALVERT_VERT_SPACING/2, &lat, &lon, &r );
+        	    pair = Point3D( lon, lat, 0.0 );
+        	    w_lights.push_back( pair );
+        	    w_normals.push_back( normal1 );
+
+
+		} else if (i >= 20)
+		{
+        	    w_lights.push_back( pt );
+        	    w_normals.push_back( normal1 );
+
+        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                           CALVERT_VERT_SPACING, &lat, &lon, &r );
+        	    pair = Point3D( lon, lat, 0.0 );
+        	    w_lights.push_back( pair );
+        	    w_normals.push_back( normal1 );
+
+        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                           -1 * CALVERT_VERT_SPACING, &lat, &lon, &r );
+        	    pair = Point3D( lon, lat, 0.0 );
+        	    w_lights.push_back( pair );
+        	    w_normals.push_back( normal1 );
+
+
+
+		} else
+		{
+        	    w_lights.push_back( pt );
+        	    w_normals.push_back( normal1 );
+		}
+	} else
+	{
+	    if (i < 10)
+	    {
+		// cal2 has red centre lights
+        	r_lights.push_back( pt );
+        	r_normals.push_back( normal1 );
+	    } else
+	    {
+		// cal2 has red centre lights
+        	w_lights.push_back( pt );
+        	w_normals.push_back( normal1 );
+
+	    }
+	}
+
+	switch(i)
+	{
+	case 4:
+		crossbar[0] = pt;
+		break;
+	case 9:
+		crossbar[1] = pt;
+		break;
+	case 14:
+		crossbar[2] = pt;
+		break;
+	case 19:
+		crossbar[3] = pt;
+		break;
+	case 24:
+		crossbar[4] = pt;
+		break;
+	}
+			
+	// add 2 more rows if CAL/II (white)
+	//
+	
+	
+	
+	if (kind == "2" )
+	{
+		saved = pt;
+        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                            CALVERT2_VERT_SPACING, &lat, &lon, &r );
+        	pt = Point3D( lon, lat, 0.0 );
+        	w_lights.push_back( pt );
+        	w_normals.push_back( normal1 );
+
+		// five rows < 300m
+		if (i < 10)
+		{
+        	     geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                            CALVERT2_VERT_SPACING, &lat, &lon, &r );
+        	     pt = Point3D( lon, lat, 0.0 );
+        	     w_lights.push_back( pt );
+        	     w_normals.push_back( normal1 );
+
+		     // outer strip of lights
+		     for (j=0;j<9;j++)
+		     {
+		         geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                            CALVERT2_VERT_SPACING, &lat, &lon, &r );
+                         pt = Point3D( lon, lat, 0.0 );
+			 if (i == 0 || j > 3)
+			 {
+                           w_lights.push_back( pt );
+                           w_normals.push_back( normal1 );
+			 }
+		     }
+		}
+
+		pt = saved;
+        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                            -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
+        	pt = Point3D( lon, lat, 0.0 );
+        	w_lights.push_back( pt );
+        	w_normals.push_back( normal1 );
+
+		// five rows < 300m
+		if (i < 10)
+		{
+        	    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                            -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
+        	    pt = Point3D( lon, lat, 0.0 );
+        	    w_lights.push_back( pt );
+        	    w_normals.push_back( normal1 );
+		     // outer strip of lights
+		     for (j=0;j<9;j++)
+		     {
+		         geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                            -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
+                         pt = Point3D( lon, lat, 0.0 );
+			 if (i == 0 || j > 3)
+			 {
+                           w_lights.push_back( pt );
+                           w_normals.push_back( normal1 );
+			 }
+		     }
+		}
+
+
+		pt = saved;	
+
+	}
+	ref = pt;
+    
+    }
+
+    ref = ref_save;
+
+    int spacing;
+    int num_lights;
+
+    // draw nice crossbars
+    for(i=0;i<5;i++)
+    {
+	
+	if (kind == "1")
+	{
+		spacing = CALVERT_VERT_SPACING;
+	} else
+	{
+		spacing = CALVERT2_VERT_SPACING;
+	}
+	switch(i)
+	{
+	case 0:
+		num_lights = 4;
+		break;
+	case 1:
+		num_lights = 5;
+		break;
+	case 2:
+		num_lights = 6;
+		break;
+	case 3:
+		num_lights = 7;
+		break;
+	case 4:
+		num_lights = 8;
+		break;
+	}
+
+	pt = crossbar[i];
+	for (j=0;j<num_lights;j++)
+	{	
+        	// left side lights
+
+		// space out from centre lights
+		if (j==0)
+		{
+		    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                            CALVERT_VERT_SPACING * j, &lat, &lon, &r );
+                    pt = Point3D( lon, lat, 0.0 );
+		}
+
+        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                            spacing, &lat, &lon, &r );
+        	pt = Point3D( lon, lat, 0.0 );
+
+		if (kind == "1" || i >= 2)
+		{
+			w_lights.push_back( pt );
+        		w_normals.push_back( normal1 );
+		} else
+		{
+	        	r_lights.push_back( pt );
+       			r_normals.push_back( normal1 );
+		}
+	}
+
+	pt = crossbar[i];
+	for (j=0;j<num_lights;j++)
+        {
+        	// right side lights
+		// space out from centre lights
+		if (j==0)
+		{
+		    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                            -1 * CALVERT_VERT_SPACING * j, &lat, &lon, &r );
+                    pt = Point3D( lon, lat, 0.0 );
+		}
+
+        	geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                            -1 * spacing, &lat, &lon, &r );
+        	pt = Point3D( lon, lat, 0.0 );
+
+        	if (kind == "1" || i >= 2)
+        	{
+               	 	w_lights.push_back( pt );
+               	 	w_normals.push_back( normal1 );
+        	} else
+        	{
+                	r_lights.push_back( pt );
+                	r_normals.push_back( normal1 );
+        	}
+        }
+    }
+    
+
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( g_lights, false );
+    normals_poly.add_contour( g_normals, false );
+
+    TGSuperPoly green;
+    green.set_poly( lights_poly );
+    green.set_normals( normals_poly );
+    green.set_material( "RWY_GREEN_LIGHTS" );
+    green.set_flag( flag );
+
+    lights_poly.erase();
+    normals_poly.erase();
+    lights_poly.add_contour( r_lights, false );
+    normals_poly.add_contour( r_normals, false );
+
+    TGSuperPoly red;
+    red.set_poly( lights_poly );
+    red.set_normals( normals_poly );
+    red.set_material( "RWY_RED_LIGHTS" );
+    red.set_flag( flag );
+
+    lights_poly.erase();
+    normals_poly.erase();
+    lights_poly.add_contour( w_lights, false );
+    normals_poly.add_contour( w_normals, false );
+
+    TGSuperPoly white;
+    white.set_poly( lights_poly );
+    white.set_normals( normals_poly );
+    white.set_material( "RWY_WHITE_LIGHTS" );
+    white.set_flag( flag );
+
+    superpoly_list result; result.clear();
+
+    result.push_back( green );
+    result.push_back( red );
+    result.push_back( white );
+
+    if ( s_lights.size() ) {
+        lights_poly.erase();
+        normals_poly.erase();
+        lights_poly.add_contour( s_lights, false );
+        normals_poly.add_contour( s_normals, false );
+
+        TGSuperPoly sequenced;
+        sequenced.set_poly( lights_poly );
+        sequenced.set_normals( normals_poly );
+        sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
+        sequenced.set_flag( flag );
+
+        result.push_back( sequenced );
+    }
+ 
+    return result;
+}
 
 // generate ALSF-I/II and SALS/SALSF approach lighting schemes
 static superpoly_list gen_alsf( const TGRunway& rwy_info,
@@ -2262,6 +2693,18 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
+    if ( rwy_info.end2_flags.substr(3,1) == "D" ) {
+        superpoly_list s = gen_calvert( rwy_info, alt_m, "1", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+    if ( rwy_info.end2_flags.substr(3,1) == "E" ) {
+        superpoly_list s = gen_calvert( rwy_info, alt_m, "2", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
     ////////////////////////////////////////////////////////////
     // NOT IMPLIMENTED:
     //
