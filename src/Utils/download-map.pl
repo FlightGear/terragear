@@ -30,6 +30,9 @@ $yellow2 = $im->colorAllocate(255,255,0);
 $green1 = $im->colorAllocate(30,100,30);
 $green2 = $im->colorAllocate(0,255,0);
 
+$blue1 = $im->colorAllocate(30,30,100);
+$blue2 = $im->colorAllocate(0,0,255);
+
 $xstep = $width / 36.0;
 $ystep = $height / 18.0;
 
@@ -81,12 +84,9 @@ foreach $file ( @files ) {
     } elsif ( $age < 14 ) {
 	$color1 = $yellow1;
 	$color2 = $yellow2;
-    } elsif ( $age < 21 ) {
+    } else {
 	$color1 = $orange1;
 	$color2 = $orange2;
-    } else {
-	$color1 = $red1;
-	$color2 = $red2;
     }
 
     $file =~ s/.*\///g;
