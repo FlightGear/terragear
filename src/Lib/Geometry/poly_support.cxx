@@ -1231,13 +1231,13 @@ static point_list remove_contour_cycles( const point_list& contour ) {
     while ( i < contour.size() ) {
         result.push_back( contour[i] );
         for ( unsigned int j = i + 1; j < contour.size(); ++j ) {
-            if ( contour[i] == contour[j] && i + 2 > j ) {
-                //cout << "detected a small cycle: i = "
-                //     << i << " j = " << j << endl;
+            if ( contour[i] == contour[j] && i + 4 > j ) {
+                cout << "detected a small cycle: i = "
+                     << i << " j = " << j << endl;
                 for ( unsigned int k = i; k <= j; ++k ) {
-                    //cout << "  " << contour[k] << endl;
+                    cout << "  " << contour[k] << endl;
                 }
-                // i = j;
+                i = j;
             }
         }
         ++i;
