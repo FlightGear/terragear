@@ -33,6 +33,7 @@ AC_CANONICAL_HOST
 
 case "${host}" in
 *-*-irix*)
+    AC_DEFINE([_SOCKLEN_T], 1, [Prevent a nasty bug in IRIX 6.5.17])
     if test "$CXX" = "CC"; then
         AR="CC -ar"
         ARFLAGS="-o"
