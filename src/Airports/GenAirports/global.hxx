@@ -28,5 +28,6 @@
 
 extern int nudge;
 
+const double course_grid = 600.0;
 
 #endif // _GEN_AIRPORT_GLOBAL_HXX

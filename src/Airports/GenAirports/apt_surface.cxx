@@ -32,6 +32,7 @@
 
 #include <Array/array.hxx>
 
+#include "global.hxx"
 #include "apt_surface.hxx"
 
 SG_USING_NAMESPACE( PLib );
@@ -140,8 +141,8 @@ static void calc_elevations( const string &root, const string_list elev_src,
     SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height = " << average);
 
     // now go through the elevations and clamp them all to within
-    // +/-10m (33') of the average.
-    const double dz = 100.0;
+    // +/-50m (164') of the average.
+    const double dz = 50.0;
     for ( i = 0; i < Pts.cols(); ++i ) {
         for ( j = 0; j < Pts.rows(); ++j ) {
             Point3Df p = Pts(j,i);
@@ -186,25 +187,32 @@ TGAptSurface::TGAptSurface( const string& path,
     double x_nm = x_rad * SG_RAD_TO_NM * xfact;
     double x_m = x_nm * SG_NM_TO_METER;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Area size = " << x_m << " x " << y_m << " (m)");
+    SG_LOG( SG_GENERAL, SG_DEBUG,
+            "Area size = " << y_m << " x " << x_m << " (m)" );
 
-    int xdivs = (int)(x_m / 600.0) + 1;
-    int ydivs = (int)(y_m / 600.0) + 1;
+    int xdivs = (int)(x_m / course_grid) + 1;
+    int ydivs = (int)(y_m / course_grid) + 1;
 
     if ( xdivs < 3 ) { xdivs = 3; }
     if ( ydivs < 3 ) { ydivs = 3; }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << xdivs << "," << ydivs << ")");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
-    // Build the extra res input grid
+    double dlon_h = dlon * 0.5;
+    double dlat_h = dlat * 0.5;
+
+    // Build the extra res input grid (shifted SW by half (dlon,dlat)
+    // with an added major row column on the NE sides.)
     int mult = 10;
-    Matrix_Point3Df dPts( (ydivs+2) * mult + 1, (xdivs+2) * mult + 1 );
+    Matrix_Point3Df dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
     for ( int i = 0; i < dPts.cols(); ++i ) {
         for ( int j = 0; j < dPts.rows(); ++j ) {
-            dPts(j,i) = Point3Df( min_deg.lon() + (i-mult)*(dlon/(double)mult),
-                                  min_deg.lat() + (j-mult)*(dlat/(double)mult),
+            dPts(j,i) = Point3Df( min_deg.lon() - dlon_h
+                                    + i * dlon / ( xdivs * mult),
+                                  min_deg.lat() - dlat_h
+                                    + j * dlat / ( ydivs * mult),
                                   -9999 );
         }
     }
@@ -220,18 +228,17 @@ TGAptSurface::TGAptSurface( const string& path,
             double accum = 0.0;
             for ( int ii = 0; ii < mult; ++ii ) {
                 for ( int jj = 0; jj < mult; ++jj ) {
-                    double value = dPts(mult*(j+1) - (mult/2) + jj,
-                                        mult*(i+1) - (mult/2) + ii).z();
+                    double value = dPts(mult*j + jj,
+                                        mult*i + ii).z();
                     SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
-                    accum += dPts(mult*(j+1) - (mult/2) + jj,
-                                  mult*(i+1) - (mult/2) + ii).z();
+                    accum += value;
                 }
             }
-            SG_LOG( SG_GENERAL, SG_DEBUG,
-                    "  average = " << accum / (mult*mult) );
+            double average = accum / (mult*mult);
+            SG_LOG( SG_GENERAL, SG_DEBUG, "  average = " << average );
             Pts(j,i) = Point3Df( min_deg.lon() + i * dlon,
                                  min_deg.lat() + j * dlat,
-                                 accum / (mult*mult) );
+                                 average );
         }
     }
 
@@ -344,7 +351,7 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
     double min_v = 0.0;
     double max_v = 1.0;
     count = 0;
-    while ( count < 30 ) {
+    while ( count < 50 ) {
         u = (max_u + min_u) / 2.0;
         v = (max_v + min_v) / 2.0;
         p = apt_surf->pointAt( u, v );
