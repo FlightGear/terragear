@@ -109,6 +109,17 @@ vpf2tg (const VpfLine &l)
 
 
 /**
+ * Convert a VPF rectangle to a TerraGear rectangle.
+ */
+static inline const Rectangle
+vpf2tg (const VpfRectangle &rect)
+{
+  return Rectangle(Point3D(rect.minX, rect.minY, 0),
+		   Point3D(rect.maxX, rect.maxY, 0));
+}
+
+
+/**
  * Convert a VPF polygon to a TerraGear polygon.
  */
 static const FGPolygon
@@ -210,49 +221,6 @@ usage ()
 
 
 /**
- * Parse a 10x10 degree chunk name.
- */
-static VpfRectangle
-parseChunk (string chunk)
-{
-  VpfRectangle bounds;
-  int x_factor;
-  int y_factor;
-
-  if (chunk.size() != 7) {
-    cerr << "Bad length for chunk specifier " << chunk << endl;
-    usage();
-  }
-
-  if (chunk[0] == 'w')
-    x_factor = -1;
-  else if (chunk[0] == 'e')
-    x_factor = 1;
-  else {
-    cerr << "Chunk specifier must begin with 'e' or 'w'" << endl;
-    usage();
-  }
-
-  if (chunk[4] == 's')
-    y_factor = -1;
-  else if (chunk[4] == 'n')
-    y_factor = 1;
-  else {
-    cerr << "Second part of chunk specifier must begin with 's' or 'n'"
-	 << endl;
-    usage();
-  }
-
-  bounds.minX = atoi(chunk.substr(1,3).c_str()) * x_factor;
-  bounds.minY = atoi(chunk.substr(5).c_str()) * y_factor;
-  bounds.maxX = bounds.minX + 10;
-  bounds.maxY = bounds.minY + 10;
-
-  return bounds;
-}
-
-
-/**
  * Parse an attribute value specification from the command line.
  */
 static const Attribute
@@ -291,18 +259,14 @@ main (int argc, const char **argv)
   progname = argv[0];
 
   vector<Attribute> attributes;
-  VpfRectangle bounds;
 
 				// Enable logging.
   sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
 
 				// Default values
+  Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0));
   bool invert = false;
-  bounds.minX = -180;
-  bounds.minY = -90;
-  bounds.maxX = 180;
-  bounds.maxY = 90;
   AreaType area_type = DefaultArea;
   int width = -1;		// use default
   string work_dir = ".";
@@ -321,22 +285,22 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--min-lon=") == 0) {
-      bounds.minX = strtod(arg.substr(10).c_str(), 0);
+      bounds.getMin().setx(strtod(arg.substr(10).c_str(), 0));
       argPos++;
     }
 
     else if (arg.find("--min-lat=") == 0) {
-      bounds.minY = strtod(arg.substr(10).c_str(), 0);
+      bounds.getMin().sety(strtod(arg.substr(10).c_str(), 0));
       argPos++;
     }
 
     else if (arg.find("--max-lon=") == 0) {
-      bounds.maxX = strtod(arg.substr(10).c_str(), 0);
+      bounds.getMax().setx(strtod(arg.substr(10).c_str(), 0));
       argPos++;
     } 
 
     else if (arg.find("--max-lat=") == 0) {
-      bounds.maxY = strtod(arg.substr(10).c_str(), 0);
+      bounds.getMax().sety(strtod(arg.substr(10).c_str(), 0));
       argPos++;
     }
 
@@ -383,29 +347,7 @@ main (int argc, const char **argv)
   //
   // Sanity check on bounds.
   //
-  if (bounds.minX < -180) {
-    cerr << "Minimum longitude out of range (-180:180): "
-	 << bounds.minX << endl;
-    usage();
-  } else if (bounds.maxX > 180) {
-    cerr << "Maximum longitude out of range (-180:180): "
-	 << bounds.maxX << endl;
-    usage();
-  } else if (bounds.minY < -90) {
-    cerr << "Minimum latitude out of range (-90:90): "
-	 << bounds.minY << endl;
-    usage();
-  } else if (bounds.maxY > 90) {
-    cerr << "Maximum latitude out of range (-90:90): "
-	 << bounds.maxY << endl;
-    usage();
-  } else if (bounds.minX >= bounds.maxX) {
-    cerr << "Minimum longitude less than maximum longitude" << endl;
-    usage();
-  } else if (bounds.minY >= bounds.maxY) {
-    cerr << "Minimum latitude less than maximum latitude" << endl;
-    usage();
-  }
+  bounds.sanify();
 
 
   //
@@ -432,12 +374,7 @@ main (int argc, const char **argv)
   //
   // Make the TerraGear polygon for the bounds.
   //
-  FGPolygon bounds_poly;
-  bounds_poly.add_node(0, Point3D(bounds.minX, bounds.minY, 0));
-  bounds_poly.add_node(0, Point3D(bounds.maxX, bounds.minY, 0));
-  bounds_poly.add_node(0, Point3D(bounds.maxX, bounds.maxY, 0));
-  bounds_poly.add_node(0, Point3D(bounds.minX, bounds.maxY, 0));
-
+  FGPolygon bounds_poly = bounds.toPoly();
 
   //
   // Show settings.
@@ -449,7 +386,6 @@ main (int argc, const char **argv)
   cout << "Working directory: " << work_dir << endl;
   cout << "Area type: " << get_area_name(area_type) << endl;
   cout << "Point and line width (-1 for default): " << width << endl;
-  cout << "Bounding rectangle: " << bounds << endl;
   for (int x = 0; x < attributes.size(); x++) {
     cout << "Attribute " << attributes[x].name
 	 << (attributes[x].state ? " = " : " != ")
@@ -472,10 +408,8 @@ main (int argc, const char **argv)
       .getFeature(feature_name);
 
     const VpfRectangle rect = lib.getBoundingRectangle();
-    if (!overlap(rect, bounds)) {
+    if (!bounds.isOverlapping(vpf2tg(rect))) {
       cerr << "Library coverage does not overlap with area" << endl;
-      cerr << "Library: " << rect << endl;
-      cerr << "Requested: " << bounds << endl;
       return 1;
     }
 
@@ -490,7 +424,7 @@ main (int argc, const char **argv)
 	cerr << i << "..." << endl;
       if (feature.isTiled()) {
 	VpfRectangle rect = feature.getTile(i).getBoundingRectangle();
-	if (!overlap(rect, bounds))
+	if (!bounds.isOverlapping(vpf2tg(rect)))
 	  continue;
       }
 
@@ -508,31 +442,31 @@ main (int argc, const char **argv)
       switch (type) {
 	// FIXME: check for attributes as well
       case VpfFeature::POINT: {
-	const VpfPoint p = feature.getPoint(i);
-	if (!inside(p, bounds))
+	const Point3D p = vpf2tg(feature.getPoint(i));
+	if (!bounds.isInside(p))
 	  continue;
-	makePolygon(vpf2tg(p), (width == -1 ? 500 : width), shape);
+	makePolygon(p, (width == -1 ? 500 : width), shape);
 	break;
       }
       case VpfFeature::LINE: {
-	const VpfLine line = feature.getLine(i);
-	if (!overlap(line.getBoundingRectangle(), bounds))
+	const Line line = vpf2tg(feature.getLine(i));
+	if (!bounds.isOverlapping(line.getBounds()))
 	  continue;
-	makePolygon(vpf2tg(line), (width == -1 ? 50 : width), shape);
+	makePolygon(line, (width == -1 ? 50 : width), shape);
 	break;
       }
       case VpfFeature::POLYGON: {
 	const VpfPolygon polygon = feature.getPolygon(i);
-	if (!overlap(polygon.getBoundingRectangle(), bounds))
+	if (!bounds.isOverlapping(vpf2tg(polygon.getBoundingRectangle())))
 	  continue;
 	shape = vpf2tg(polygon);
 	break;
       }
       case VpfFeature::LABEL: {
-	const VpfPoint p = feature.getLabel(i).getPoint();
-	if (!inside(p, bounds))
+	const Point3D p = vpf2tg(feature.getLabel(i).getPoint());
+	if (!bounds.isInside(p))
 	  continue;
-	makePolygon(vpf2tg(p), (width == -1 ? 500 : width), shape);
+	makePolygon(p, (width == -1 ? 500 : width), shape);
 	break;
       }
       default:
