@@ -24,3 +24,8 @@ showme_SOURCES = showme.c
 showme_LDADD = -lX11
 
 endif
+
+noinst_PROGRAMS = test_triangle
+test_triangle_SOURCES = test_triangle.c
+test_triangle_LDADD = libTriangleJRS.a
+
