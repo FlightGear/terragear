@@ -1,0 +1,89 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:561: checking for a BSD compatible install
+configure:614: checking whether build environment is sane
+configure:671: checking whether make sets ${MAKE}
+configure:717: checking for working aclocal
+configure:730: checking for working autoconf
+configure:743: checking for working automake
+configure:756: checking for working autoheader
+configure:769: checking for working makeinfo
+configure:784: checking whether make sets ${MAKE}
+configure:813: checking for gcc
+configure:890: checking whether the C compiler (gcc  ) works
+configure:904: gcc -o conftest    conftest.c  1>&5
+configure:924: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:929: checking whether we are using GNU C
+configure:953: checking whether gcc accepts -g
+configure:985: checking for c++
+configure:1016: checking whether the C++ compiler (c++  ) works
+configure:1030: c++ -o conftest    conftest.C  1>&5
+configure:1056: checking whether the C++ compiler (c++  ) is a cross-compiler
+configure:1061: checking whether we are using GNU C++
+configure:1085: checking whether c++ accepts -g
+configure:1115: checking for ranlib
+configure:1152: checking for a BSD compatible install
+configure:1202: checking whether ln -s works
+configure:1261: checking how to run the C preprocessor
+configure:1323: checking for windows.h
+configure:1452: checking for X
+configure:1766: checking for dnet_ntoa in -ldnet
+configure:1807: checking for dnet_ntoa in -ldnet_stub
+configure:1855: checking for gethostbyname
+configure:1953: checking for connect
+configure:2045: checking for remove
+configure:2137: checking for shmat
+configure:2238: checking for IceConnectionNumber in -lICE
+configure:2286: checking for cos in -lm
+configure:2336: checking for socket in -lsocket
+configure:2383: checking for XCreateWindow in -lX11
+configure:2430: checking for XShmCreateImage in -lXext
+configure:2477: checking for XGetExtensionVersion in -lXi
+configure:2524: checking for IceOpenConnection in -lICE
+configure:2571: checking for SmcOpenConnection in -lSM
+configure:2618: checking for XtMalloc in -lXt
+configure:2665: checking for XmuLookupStandardColormap in -lXmu
+configure:2716: checking for glNewList in -lGLcore
+configure:2764: checking for glNewList in -lGL
+configure:2956: checking for gluLookAt in -lGLU
+configure:3004: checking for gluLookAt in -lMesaGLU
+configure:3053: checking for glutGetModifiers in -lglut
+configure:3102: checking for glutGameModeString in -lglut
+configure:3221: checking for plib/pu.h
+configure:3267: checking for gpc.h
+configure:3317: checking for ANSI C header files
+configure:3426: checking for fcntl.h
+configure:3426: checking for getopt.h
+configure:3426: checking for malloc.h
+configure:3426: checking for memory.h
+configure:3426: checking for stdlib.h
+configure:3426: checking for sys/param.h
+configure:3426: checking for sys/stat.h
+configure:3426: checking for sys/time.h
+configure:3426: checking for sys/timeb.h
+configure:3426: checking for unistd.h
+configure:3426: checking for windows.h
+configure:3426: checking for winbase.h
+configure:3426: checking for values.h
+configure:3464: checking for working const
+configure:3539: checking for size_t
+configure:3572: checking whether time.h and sys/time.h may both be included
+configure:3607: checking whether struct tm is in sys/time.h or time.h
+configure:3642: checking return type of signal handlers
+configure:3683: checking for vprintf
+configure:3791: checking for ftime
+configure:3791: checking for gettimeofday
+configure:3791: checking for timegm
+configure:3791: checking for memcpy
+configure:3791: checking for bcopy
+configure:3791: checking for mktime
+configure:3791: checking for strstr
+configure:3791: checking for rand
+configure:3791: checking for random
+configure:3791: checking for setitimer
+configure:3791: checking for getitimer
+configure:3791: checking for signal
+configure:3791: checking for GetLocalTime
+configure:3791: checking for rint
+configure:3791: checking for getrusage

@@ -1,0 +1,122 @@
+Original version by Alexei Novikov <anovikov@heron.itep.ru> Sep. 3, 1999
+Updates by Curtis Olson <curt@flightgear.org>
+
+
+Overview
+========
+The scenery creation process has 3 basic steps.  1.  Fetch the raw
+data.  2.  Preprocess this data into an intermediate form.  3.
+Assemble the intermediate data into the final scenery tiles.
+
+There are a couple basic types of data used to create scenery.  1. DEM
+data which is typically a set of elevation points on a regular grid.
+2. Polygonal data such as landmass outlines, lakes, urban areas,
+glaciers, etc.  3.  Other more specialized data such as airport
+runways and taxiways, lighthouse locations, etc.
+
+
+Preparation and Preprocessing
+============================
+1) DEM data.
+
+As the first step you have to download DEM for the area you need. (You
+can get them from USGS site). If this is a 30 arc sec DEM (which is most
+probable) you need to transfer this file into ASCII format using
+raw2ascii 
+
+Usage: ./raw2ascii <input_file_basename> <output_dir>
+
+Here output dir is quite arbitrary as we will remove all the files from
+it later.
+Then you have to chop files that we got into the tiles used for the
+scenery generation. You should use demchop for this. As we already have
+a number of files I'm using the following Perl script
+
+#--------------------------------------------------------------------------
+#!/usr/bin/perl
+my @files=glob("./*.dem");
+my $size=@files;
+for (my $i=0;$i<$size;$i++) {
+        system("demchop $files[$i] /home/anovikov/w020n90/Work/DEM-30");
+}
+#--------------------------------------------------------------------------
+
+Here you can change /home/anovikov/w020n90 to whatever you like but keep
+in mind that we will use that directory for our scenery generation.
+
+The 3 arcsec DEMs (which are available for the USA) should go in
+.../Work/DEM-3/
+
+That's all with the DEM files. If yu want to have a blibloagraphy on
+them see f.e. http://www.geo.ed.ac.uk/geoinfo/dem.send
+
+2) Airport Data
+
+Next thing is to generate airports data. You need to have default.apt
+from the fgfs-base package and genapts compiled. Usage is genapts
+/path/to/appt_file /work/dir (in our example 
+genapts .../RawData/AirNa/default.apt.gz .../Work/Airports/
+
+3) Landmass Data
+
+You can just download it from Curtis FTP site
+ftp://kenai.me.umn.edu/pub/fgfs/RawData/Global-Landmass/
+or generate it by yourself. If you  download data from Curtis site then
+you should extract it in the .../Work/Global-Landmass
+
+If you are generating it by yourself you have to ask Curtis how he is
+doing that.
+
+4) Landuse Data. (Curtis, you asked me for this).
+
+If you have a CD-ROM with DCW then you are lucky, if not you need to go
+to ESRI WWW site (http://www.esri.com/data/online/index.html), "Select
+by Geographic Area" - "Esri Thematic Data" (Go!) then
+Select a Theme - Natural Landscape Zones, Select a Region - Continent
+you need and download data. Please read the license agreement first. 
+
+Then comes the tricky part. (You will need to modify the code)
+I included one file you have to change as an attachment . You have to
+put it in  /FlightGear/Tools/Lib/Polygon/ rebuild the libPolygon and
+then change the shape-decode. Go to /FlightGear/Tools/Prep/ShapeFile/
+open main.cxx and either comment out line # 357 or add || area ==
+DefaultArea at line #279.
+Then you have to rebuild the shape-decode. Now we are ready to generate
+the landuse data.
+./shapedecode /name/of_the_file_from_esri /work_dir/work.states
+
+(in my case it is ./shapedecode /users/anovikov/fgfs_data/aalandsc
+/home/anovikov/w020n90/work.states).
+
+5) Hydro and Urban data.
+
+Origianlly I was using the same ESRI web server but this is kind of very
+tricky part that I will not tell you. (I was writing about the way to do
+it in the mailing list) 
+
+I think that one can get data from Coastline Extractor using "Rivers
+from WDBII" but I'm not 100% sure.
+
+If you have acess to DCW then you just run shapedecode on the
+corresponding files puting hydro data in the directory work.hydro and
+urban data in the directory work.urban.
+
+As Curtis changed the directory structure in the last CVS versions you
+have to look in Construct/Main/main.cxx first and modify the directory
+names accordingly. (FE 30 arc-sec files should be in  work_base/DEM-30/
+
+Now we finished with data preparation and we can start generating
+scenery but first we need to change the resolution of the data from the
+default values ( if we are working with 30 arc sec DEMs). You have to
+find line  
+double error = 200.0 in Construct/Main/main.cxx and change initial error
+to smth like 10. Then you need to rebuild everything in that directory.
+
+I generally hate using fgfs-launch-clients and fgfs-launch-server so I'm
+doing everyting (almost) by hand. So I start from Construct/Parallel
+launch fgfs-tools-server on the computer with data on local disk and
+then slogin to other computers ( with data mounted over nfs) and run 
+fgfs-tools-client in rude mode.  After a while scenery is ready. 
+
+	That's all folks,
+		Alexei.
