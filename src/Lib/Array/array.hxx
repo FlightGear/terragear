@@ -29,6 +29,9 @@
 # error This library requires C++
 #endif                                   
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
 
 #include <simgear/compiler.h>
 

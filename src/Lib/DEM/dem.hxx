@@ -30,6 +30,10 @@
 #endif                                   
 
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sgstream.hxx>
 

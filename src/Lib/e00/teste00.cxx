@@ -1,5 +1,9 @@
 // teste00.cxx - test the E00 parsing routines and dump some results.
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <simgear/misc/sgstream.hxx>
 #include "e00.hxx"
 

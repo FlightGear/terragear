@@ -22,6 +22,11 @@
  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 --------------------------------------------------------------------------
 */
+
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
