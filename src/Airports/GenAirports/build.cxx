@@ -193,9 +193,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	m = (p_min.y() - p_max.y()) / (p_min.x() - p_max.x());
 	b = p_max.y() - m * p_max.x();
 
-	// if ( temp ) {
 	// cout << "m = " << m << " b = " << b << endl;
-	// }
 
 	current = nodes.begin();
 	last = nodes.end();
@@ -206,16 +204,16 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	    if ( (current->x() > (p_min.x() + FG_EPSILON)) 
 		 && (current->x() < (p_max.x() - FG_EPSILON)) ) {
 
-		printf( "found a potential candidate %.7f %.7f %.7f\n",
-		        current->x(), current->y(), current->z() );
+		// printf( "found a potential candidate %.7f %.7f %.7f\n",
+		//         current->x(), current->y(), current->z() );
 
 		y_err = fabs(current->y() - (m * current->x() + b));
-		cout << "y_err = " << y_err << endl;
+		// cout << "y_err = " << y_err << endl;
 
 		if ( y_err < tgAirportEpsilon ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
-		    cout << p_min << " < " << *current << " < "
-		         << p_max << endl;
+		    // cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
+		    // cout << p_min << " < " << *current << " < "
+		    //      << p_max << endl;
 		    found_extra = true;
 		    if ( y_err < y_err_min ) {
 			extra_index = counter;
@@ -232,7 +230,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	Point3D p_min, p_max;
 	if ( p0.y() < p1.y() ) {
 	    p_min = p0;
-	    p_min = p1;
+	    p_max = p1;
 	} else {
 	    p_min = p1;
 	    p_max = p0;
@@ -241,13 +239,13 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	m1 = (p_min.x() - p_max.x()) / (p_min.y() - p_max.y());
 	b1 = p_max.x() - m1 * p_max.y();
 
-	// bool temp = true;
-	// if ( temp ) {
 	// cout << "  m1 = " << m1 << " b1 = " << b1 << endl;
-	// }
+	// printf( "  m = %.8f  b = %.8f\n", 1/m1, -b1/m1);
 
-	// cout << "  should = 0 = " << fabs(p_min.x() - (m1 * p_min.y() + b1)) << endl;;
-	// cout << "  should = 0 = " << fabs(p_max.x() - (m1 * p_max.y() + b1)) << endl;;
+	// cout << "  should = 0 = "
+	//      << fabs(p_min.x() - (m1 * p_min.y() + b1)) << endl;
+	// cout << "  should = 0 = "
+	//      << fabs(p_max.x() - (m1 * p_max.y() + b1)) << endl;
 
 	current = nodes.begin();
 	last = nodes.end();
@@ -256,20 +254,20 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 	    if ( (current->y() > (p_min.y() + FG_EPSILON)) 
 		 && (current->y() < (p_max.y() - FG_EPSILON)) ) {
 		
-		printf( "found a potential candidate %.7f %.7f %.7f\n",
-		        current->x(), current->y(), current->z() );
+		// printf( "found a potential candidate %.7f %.7f %.7f\n",
+		//         current->x(), current->y(), current->z() );
 
 		x_err = fabs(current->x() - (m1 * current->y() + b1));
-		cout << "x_err = " << x_err << endl;
+		// cout << "x_err = " << x_err << endl;
 
 		// if ( temp ) {
 		// cout << "  (" << counter << ") x_err = " << x_err << endl;
 		// }
 
 		if ( x_err < tgAirportEpsilon ) {
-		    cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
-		    cout << p_min << " < " << *current << " < "
-		         << p_max << endl;
+		    // cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
+		    // cout << p_min << " < " << *current << " < "
+		    //      << p_max << endl;
 		    found_extra = true;
 		    if ( x_err < x_err_min ) {
 			extra_index = counter;
@@ -908,6 +906,151 @@ static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
 			   "pa_des_fill_n",
 			   rwy_polys, texparams, accum );
 
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 0.231,
+			   rwy_info.heading + 180.0,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.231, 0.5,
+			   rwy_info.heading + 180.0,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.5, 0.731,
+			   rwy_info.heading + 180.0,
+			   "pa_three",
+			   rwy_polys, texparams, accum );
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   1.0, 0.731,
+			   rwy_info.heading + 180.0,
+			   "pa_des_fill_n",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Touch down zone x3
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 650 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_tz_three",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_tz_three",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Aiming point
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 500 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_aim",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_aim",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Touch down zone x2 (first)
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 500 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_tz_two_a",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_tz_two_a",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Touch down zone x2 (second)
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 500 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_tz_two_b",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_tz_two_b",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Touch down zone x1 (first)
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 500 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_tz_one_a",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_tz_one_a",
+			   rwy_polys, texparams, accum );
+
+    //
+    // Touch down zone x1 (second)
+    //
+
+    start_pct = end_pct;
+    end_pct = start_pct + ( 500 / length );
+    gen_precision_section( rwy_info, runway_a,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading,
+			   "pa_tz_one_b",
+			   rwy_polys, texparams, accum );
+
+    gen_precision_section( rwy_info, runway_b,
+			   start_pct, end_pct,
+			   0.0, 1.0,
+			   rwy_info.heading + 180.0,
+			   "pa_tz_one_b",
+			   rwy_polys, texparams, accum );
+
     //
     // The rest ...
     //
@@ -918,14 +1061,14 @@ static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
 			   start_pct, end_pct,
 			   0.0, 1.0,
 			   rwy_info.heading,
-			   "Asphalt",
+			   "pa_rest",
 			   rwy_polys, texparams, accum );
 
     gen_precision_section( rwy_info, runway_b,
 			   start_pct, end_pct,
 			   0.0, 1.0,
 			   rwy_info.heading + 180.0,
-			   "Asphalt",
+			   "pa_rest",
 			   rwy_polys, texparams, accum );
 }
 
@@ -1115,13 +1258,11 @@ void build_airport( string airport_raw, string_list& runways_raw,
 #if 0
     // dump info for debugging purposes
     point_list ttt = tmp_nodes.get_node_list();
+    FILE *fp = fopen( "tmp_nodes", "w" );
     for ( int i = 0; i < (int)ttt.size(); ++i ) {
-	char name[256];
-	sprintf(name, "p%d", i );
-	FILE *fp = fopen( name, "w" );
 	fprintf(fp, "%.8f %.8f\n", ttt[i].x(), ttt[i].y());
-	fclose(fp);
     }
+    fclose(fp);
 
     for ( int i = 0; i < base_poly.contours(); ++i ) {
 	char name[256];
