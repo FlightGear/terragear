@@ -365,6 +365,79 @@ static FGPolygon remove_dups( const FGPolygon &poly ) {
 }
 
 
+// Traverse a polygon and split edges until they are less than max_len
+// (specified in meters)
+static FGPolygon split_long_edges( const FGPolygon &poly, double max_len ) {
+    FGPolygon result;
+    Point3D p0, p1;
+
+    cout << "split_long_edges()" << endl;
+
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	// cout << "contour = " << i << endl;
+	for ( int j = 0; j < poly.contour_size(i) - 1; ++j ) {
+	    p0 = poly.get_pt( i, j );
+	    p1 = poly.get_pt( i, j + 1 );
+
+	    double az1, az2, s;
+	    geo_inverse_wgs_84( 0.0,
+				p0.y(), p0.x(), p1.y(), p1.x(),
+				&az1, &az2, &s );
+	    cout << "distance = " << s << endl;
+
+	    if ( s > max_len ) {
+		int segments = (int)(s / max_len) + 1;
+		cout << "segments = " << segments << endl;
+
+		double dx = (p1.x() - p0.x()) / segments;
+		double dy = (p1.y() - p0.y()) / segments;
+
+		for ( int k = 0; k < segments; ++k ) {
+		    Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
+		    cout << tmp << endl;
+		    result.add_node( i, tmp );
+		}
+	    } else {
+		cout << p0 << endl;
+		result.add_node( i, p0 );
+	    }
+		
+	    // end of segment is beginning of next segment
+	}
+	p0 = poly.get_pt( i, poly.contour_size(i) - 1 );
+	p1 = poly.get_pt( i, 0 );
+
+	double az1, az2, s;
+	geo_inverse_wgs_84( 0.0,
+			    p0.y(), p0.x(), p1.y(), p1.x(),
+			    &az1, &az2, &s );
+	cout << "distance = " << s << endl;
+
+	if ( s > max_len ) {
+	    int segments = (int)(s / max_len) + 1;
+	    cout << "segments = " << segments << endl;
+	    
+	    double dx = (p1.x() - p0.x()) / segments;
+	    double dy = (p1.y() - p0.y()) / segments;
+
+	    for ( int k = 0; k < segments; ++k ) {
+		Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
+		cout << tmp << endl;
+		result.add_node( i, tmp );
+	    }
+	} else {
+	    cout << p0 << endl;
+	    result.add_node( i, p0 );
+	}
+
+	// maintain original hole flag setting
+	result.set_hole_flag( i, poly.get_hole_flag( i ) );
+    }
+
+    return result;
+}
+
+
 // remove any degenerate contours
 static FGPolygon remove_bad_contours( const FGPolygon &poly ) {
     FGPolygon result;
@@ -569,8 +642,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
     string surface_flag;
     string material;
     for ( int i = 0; i < (int)runways.size(); ++i ) {
-	runway = gen_runway_w_mid( runways[i] );
-	surface_flag = runways[i].surface_flags.substr(0, 1);
+	surface_flag = runways[i].surface_flags.substr(1, 1);
 	cout << "surface flag = " << surface_flag << endl;
 	if ( surface_flag == "A" ) {
 	    material = "Asphalt";
@@ -580,7 +652,12 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	    material = "DryLake";
 	} else if ( surface_flag == "T" ) {
 	    material = "Grass";
+	} else {
+	    cout << "unknown runway type!" << endl;
+	    exit(-1);
 	}
+
+	runway = gen_runway_w_mid( runways[i] );
 
 	// runway half "a"
 	runway_a.erase();
@@ -667,7 +744,8 @@ void build_airport( string airport_raw, string_list& runways_raw,
 
     // generate convex hull
     FGPolygon hull = convex_hull(apt_pts);
-    FGPolygon base_poly = polygon_diff( hull, accum );
+    FGPolygon divided_hull = split_long_edges( hull, 500.0 );
+    FGPolygon base_poly = polygon_diff( divided_hull, accum );
     // write_polygon( base_poly, "base-raw" );
 
     // add segments to polygons to remove any possible "T"
@@ -820,6 +898,7 @@ void build_airport( string airport_raw, string_list& runways_raw,
 	FGPolygon tri_poly = rwy_polys[k].get_tris();
 	FGPolygon tri_txs = rwy_polys[k].get_texcoords();
 	string material = rwy_polys[k].get_material();
+	cout << "material = " << material << endl;
 	for ( int i = 0; i < tri_poly.contours(); ++i ) {
 	    tri_v.clear();
 	    tri_tc.clear();
