@@ -131,25 +131,25 @@ int main( int argc, char **argv ) {
     // Make the corner vertices (enclosing exactly the DEM coverage area)
     x = basex;
     y = basey;
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     GtsVertex *v1 = gts_vertex_new( gts_vertex_class(), x, y, z );
 
     x = basex + dx * (a.get_cols() - 1);
     y = basey;
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     GtsVertex *v2 = gts_vertex_new( gts_vertex_class(), x, y, z );
 
     x = basex + dx * (a.get_cols() - 1);
     y = basey + dy * (a.get_rows() - 1);
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     GtsVertex *v3 = gts_vertex_new( gts_vertex_class(), x, y, z );
 
     x = basex;
     y = basey + dy * (a.get_rows() - 1);
-    z = a.interpolate_altitude( x, y );
+    z = a.altitude_from_grid( x, y );
     cout << "adding = " << Point3D( x, y, z) << endl;
     GtsVertex *v4 = gts_vertex_new( gts_vertex_class(), x, y, z );
 

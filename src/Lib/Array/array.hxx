@@ -111,10 +111,13 @@ public:
     // add a node to the output fitted node list
     void add_fit_node( int i, int j, double val );
 
+    // Return the elevation of the closest non-void grid point to lon, lat
+    double closest_nonvoid_elev( double lon, double lat ) const;
+
     // return the current altitude based on grid data.  We should
     // rewrite this to interpolate exact values, but for now this is
     // good enough
-    double interpolate_altitude( double lon, double lat ) const;
+    double altitude_from_grid( double lon, double lat ) const;
 
     // Informational methods
     inline double get_originx() const { return originx; }

@@ -80,33 +80,29 @@ TGArray::TGArray( const string &file ) {
 
 // open an Array file (and fitted file if it exists)
 bool TGArray::open( const string& file_base ) {
-    // open input file (or read from stdin)
-    if ( file_base ==  "-" ) {
-	cout << "  Opening array data pipe from stdin" << endl;
-	// fd = stdin;
-	// fd = gzdopen(STDIN_FILENO, "r");
-	cout << "  Not yet ported ..." << endl;
-	return false;
+    bool success = true;
+
+    // open array data file
+    string array_name = file_base + ".arr.gz";
+    array_in = new sg_gzifstream( array_name );
+    if ( ! array_in->is_open() ) {
+        cout << "  Cannot open " << array_name << endl;
+        success = false;
     } else {
-        // open array data file
-        string array_name = file_base + ".arr.gz";
-	array_in = new sg_gzifstream( array_name );
-        // open fitted data file
-        string fitted_name = file_base + ".fit.gz";
-	fitted_in = new sg_gzifstream( fitted_name );
-	if ( ! array_in->is_open() ) {
-	    cout << "  Cannot open " << array_name << endl;
-	    return false;
-	}
-	cout << "  Opening array data file: " << array_name << endl;
-	if ( ! fitted_in->is_open() ) {
-	    cout << "  Cannot open " << fitted_name << endl;
-	    return false;
-	}
-	cout << "  Opening fitted data file: " << fitted_name << endl;
+        cout << "  Opening array data file: " << array_name << endl;
     }
 
-    return true;
+    // open fitted data file
+    string fitted_name = file_base + ".fit.gz";
+    fitted_in = new sg_gzifstream( fitted_name );
+    if ( ! fitted_in->is_open() ) {
+        cout << "  Cannot open " << fitted_name << endl;
+        success = false;
+    } else {
+        cout << "  Opening fitted data file: " << fitted_name << endl;
+    }
+
+    return success;
 }
 
 
@@ -146,6 +142,7 @@ TGArray::parse( SGBucket& b ) {
 
 	cout << "    Done parsing\n";
 
+#if 0
         // need two passes to ensure that all voids are removed (unless entire
 	// array is a void.)
         bool have_void = true;
@@ -221,6 +218,7 @@ TGArray::parse( SGBucket& b ) {
                 }
             }
         }
+#endif
     } else {
 	// file not open (not found?), fill with zero'd data
 
@@ -250,7 +248,7 @@ TGArray::parse( SGBucket& b ) {
     }
 
     // Parse/load the array data file
-    if ( fitted_in && fitted_in->is_open() ) {
+    if ( fitted_in->is_open() ) {
         fit_on_the_fly = false;
         int fitted_size;
         double x, y, z, error;
@@ -270,6 +268,8 @@ TGArray::parse( SGBucket& b ) {
 
     return true;
 }
+
+
 
 
 // add a node to the output corner node list
@@ -456,9 +456,37 @@ int TGArray::fit( double error ) {
 }
 
 
+// Return the elevation of the closest non-void grid point to lon, lat
+double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
+    double mindist = 99999999999.9;
+    double minelev = -9999.0;
+    Point3D p0( lon, lat, 0.0 );
+
+    for ( int row = 0; row < rows; row++ ) {
+        for ( int col = 0; col < cols; col++ ) {
+            Point3D p1(originx + col * col_step, originy + row * row_step, 0.0);
+            double dist = p0.distance3D( p1 );
+            double elev = in_data[col][row];
+            if ( dist < mindist && elev > -9000 ) {
+                mindist = dist;
+                minelev = elev;
+                cout << "dist = " << mindist;
+                cout << "  elev = " << elev << endl;
+            }
+        }
+    }
+
+    if ( minelev > -9999.0 ) {
+        return minelev;
+    } else {
+        return 0.0;
+    }
+}
+
+
 // return the current altitude based on grid data.  We should rewrite
 // this to interpolate exact values, but for now this is good enough
-double TGArray::interpolate_altitude( double lon, double lat ) const {
+double TGArray::altitude_from_grid( double lon, double lat ) const {
     // we expect incoming (lon,lat) to be in arcsec for now
 
     double xlocal, ylocal, dx, dy, zA, zB, elev;
@@ -524,6 +552,11 @@ double TGArray::interpolate_altitude( double lon, double lat ) const {
 	// printf("  (x2,y2,z2) = (%d,%d,%d)\n", x2, y2, z2);
 	// printf("  (x3,y3,z3) = (%d,%d,%d)\n", x3, y3, z3);
 
+        if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
+            // don't interpolate off a void
+            return closest_nonvoid_elev( lon, lat );
+        }
+
 	zA = dx * (z2 - z1) + z1;
 	zB = dx * (z3 - z1) + z1;
 	
@@ -555,6 +588,11 @@ double TGArray::interpolate_altitude( double lon, double lat ) const {
 	// printf("  (x2,y2,z2) = (%d,%d,%d)\n", x2, y2, z2);
 	// printf("  (x3,y3,z3) = (%d,%d,%d)\n", x3, y3, z3);
  
+        if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
+            // don't interpolate off a void
+            return closest_nonvoid_elev( lon, lat );
+        }
+
 	zA = dy * (z2 - z1) + z1;
 	zB = dy * (z3 - z1) + z1;
 	
@@ -568,7 +606,7 @@ double TGArray::interpolate_altitude( double lon, double lat ) const {
 	}
     }
 
-    return(elev);
+    return elev;
 }
 
 

@@ -30,7 +30,7 @@ int main( int argc, char **argv ) {
 
     lon *= 3600;
     lat *= 3600;
-    cout << "  " << a.interpolate_altitude(lon, lat) << endl;
+    cout << "  " << a.altitude_from_grid(lon, lat) << endl;
 
     a.fit( 100 );
 
