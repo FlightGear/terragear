@@ -618,17 +618,39 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
     for ( unsigned int i = 0; i < tri_elements.size(); ++i ) {
         TGTriEle t = tri_elements[i];
         if ( t.get_attribute() == DefaultArea ) {
-            Point3D average = ( geod_nodes[t.get_n1()]
-                                + geod_nodes[t.get_n2()]
-                                + geod_nodes[t.get_n3()] ) / 3.0;
-            cout << "    average triangle center = " << average;
-            AreaType a = get_area_type ( c.get_cover(),
-                                         average.x(), average.y(),
-                                         1.0 / 120.0, 1.0 / 120.0 );
-            cout << "  new attrib = " << get_area_name( a ) << endl;
+            Point3D p1 = geod_nodes[t.get_n1()];
+            Point3D p2 = geod_nodes[t.get_n2()];
+            Point3D p3 = geod_nodes[t.get_n3()];
 
-            // update the actual structure
-            c.set_tri_attribute( i, a );
+            AreaType a1 = get_area_type ( c.get_cover(), p1.x(), p1.y(),
+                                          1.0 / 120.0, 1.0 / 120.0 );
+            AreaType a2 = get_area_type ( c.get_cover(), p2.x(), p2.y(),
+                                          1.0 / 120.0, 1.0 / 120.0 );
+            AreaType a3 = get_area_type ( c.get_cover(), p3.x(), p3.y(),
+                                          1.0 / 120.0, 1.0 / 120.0 );
+
+            // update the original triangle element attribute
+            AreaType new_area;
+
+            // majority rules
+            if ( a1 == a2 ) {
+                new_area = a1;
+            } else if ( a1 == a3 ) {
+                new_area = a1;
+            } else if ( a2 == a3 ) {
+                new_area = a2;
+            } else {
+                // a different coverage for each vertex, just pick
+                // from the middle/average
+                Point3D average = ( p1 + p2 + p3 ) / 3.0;
+                cout << "    average triangle center = " << average;
+                new_area = get_area_type ( c.get_cover(), 
+                                           average.x(), average.y(),
+                                           1.0 / 120.0, 1.0 / 120.0 );
+            }
+              
+            cout << "  new attrib = " << get_area_name( new_area ) << endl;
+            c.set_tri_attribute( i, new_area );
         }
     }
 }
