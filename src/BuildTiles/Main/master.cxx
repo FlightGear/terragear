@@ -38,6 +38,9 @@
 // #include <Match/match.hxx>
 // #include <Triangulate/triangle.hxx>
 
+SG_USING_STD(cout);
+SG_USING_STD(endl);
+
 
 // return true if file exists
 static bool file_exists( const string& file ) {

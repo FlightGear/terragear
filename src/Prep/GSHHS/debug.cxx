@@ -51,6 +51,9 @@
 #  define FLIP
 #endif
 
+SG_USING_STD(cout);
+SG_USING_STD(cin);
+
 // return the type of the shapefile record
 AreaType get_shapefile_type(int rec) {
     string area;

@@ -226,6 +226,6 @@ private:
 
 };
 
-#endif __E00_HXX
+#endif // __E00_HXX
 
 // end of e00.hxx

@@ -41,6 +41,7 @@
 #include <Polygon/polygon.hxx>
 
 SG_USING_STD(string);
+SG_USING_STD(cout);
 
 
 const int MAX_XDIV = 16;

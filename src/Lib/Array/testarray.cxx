@@ -2,6 +2,9 @@
 
 #include "array.hxx"
 
+SG_USING_STD(cout);
+SG_USING_STD(endl);
+
 int main( int argc, char **argv ) {
     double lon, lat;
 

@@ -33,6 +33,9 @@
 
 #include <simgear/bucket/newbucket.hxx>
 
+SG_USING_STD(cout);
+SG_USING_STD(endl);
+
 
 #define MAXBUF 1024
 #define BUSY_WAIT_TIME 30

@@ -80,6 +80,6 @@ private:
   long HEIGHT;
 };
 
-#endif __LANDCOVER_HXX
+#endif // __LANDCOVER_HXX
 
 // end of landcover.hxx

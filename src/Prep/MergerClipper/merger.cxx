@@ -39,6 +39,8 @@
 
 #include "merger.hxx"
 
+SG_USING_STD(cout);
+
 // Constructor
 FGMerger::FGMerger( void ) {
 }

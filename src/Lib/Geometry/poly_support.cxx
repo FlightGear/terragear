@@ -44,6 +44,8 @@ extern "C" {
 #include "trinodes.hxx"
 #include "trisegs.hxx"
 
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 // Given a line segment specified by two endpoints p1 and p2, return
 // the slope of the line.
