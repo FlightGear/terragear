@@ -43,6 +43,7 @@
 
 #include <Geometry/trinodes.hxx>
 #include <Geometry/trisegs.hxx>
+#include <Polygon/names.hxx>
 
 #include <Clipper/clipper.hxx>
 #include <Triangulate/trieles.hxx>
@@ -58,9 +59,6 @@ typedef belongs_to_list::const_iterator belongs_to_list_tripoly_iterator;
 class TGConstruct {
 
 private:
-
-    // minimum interior angle for triangulation
-    string angle;
 
     // path to land-cover file (if any)
     string cover;
@@ -120,10 +118,6 @@ public:
     // Destructor
     ~TGConstruct();
     
-    // minimum interior angle for triangulation
-    inline string get_angle() const { return angle; }
-    inline void set_angle( const string &s ) { angle = s; }
-
     // land cover file
     inline string get_cover () const { return cover; }
     inline void set_cover (const string &s) { cover = s; }
@@ -164,6 +158,9 @@ public:
     // triangle elements (after triangulation)
     inline triele_list get_tri_elements() const { return tri_elements; }
     inline void set_tri_elements( triele_list e ) { tri_elements = e; }
+    inline void set_tri_attribute( int num, AreaType a ) {
+        tri_elements[num].set_attribute( a );
+    }
 
     // edge segments (after triangulation)
     inline TGTriSegments get_tri_segs() const { return tri_segs; }
