@@ -181,65 +181,37 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
 // successfully
 bool construct_tile( const SGBucket& b,
 		     const string& result_file,
-		     const string &cover,
-		     float angle ) {
-    bool still_trying = true;
+		     const string &cover ) {
 
-    while ( still_trying ) {
-	still_trying = false; 
-	char angle_str[256];
-	sprintf(angle_str, "%.0f", angle);
-	string command = "fgfs-construct ";
-	command = command + " --min-angle=" + angle_str;
-	command = command + " --work-dir=" + work_base;
-	command = command + " --output-dir=" + output_base;
-	command = command + " --tile-id=" + b.gen_index_str();
-	if ( cover.size() > 0 ) {
-	    command = command + " --cover=" + cover;
-	}
-	for (int i = 0; i < (int)load_dirs.size(); i++) {
-	  command = command + " " + load_dirs[i];
-	}
-	command = command + " > " + result_file + " 2>&1";
-	cout << command << endl;
-	
-	system( command.c_str() );
-	
-	FILE *fp = fopen( result_file.c_str(), "r" );
-	char line[256];
-	while ( fgets( line, 256, fp ) != NULL ) {
-	    string line_str = line;
-	    line_str = line_str.substr(0, line_str.length() - 1);
-	    // cout << line_str << endl;
-	    if ( line_str == "[Finished successfully]" ) {
-		fclose(fp);
-		return true;
-	    } else if 
-		( (line_str.substr(0, 31) == "Error:  Ran out of precision at")
-		  || (line_str.substr(0, 22) == "Error:  Out of memory.")
-		  || (line_str.substr(0, 23) == "Error:  Too many nodes.") ) {
-		if ( angle > 9.0 ) {
-		    angle = 5.0;
-		    still_trying = true;
-		} else if ( angle > 4.0 ) {
-		    angle = 1.0;
-		    still_trying = true;
-		} else if ( angle > 0.0 ) {
-		    angle = 0.0;
-		    still_trying = true;
-		}
-	    }
-
-	}
-	fclose(fp);
-
-	if ( !still_trying && ( angle > 0.0 ) ) {
-	    // build died for some reason ... lets try one last time
-	    // with an interior angle restriction of 0
-	    angle = 0.0;
-	    still_trying = true;
-	}
+    string command = "fgfs-construct ";
+    command = command + " --work-dir=" + work_base;
+    command = command + " --output-dir=" + output_base;
+    command = command + " --tile-id=" + b.gen_index_str();
+    if ( cover.size() > 0 ) {
+        command = command + " --cover=" + cover;
     }
+    for (int i = 0; i < (int)load_dirs.size(); i++) {
+        command = command + " " + load_dirs[i];
+    }
+    command = command + " > " + result_file + " 2>&1";
+    cout << command << endl;
+	
+    system( command.c_str() );
+	
+    FILE *fp = fopen( result_file.c_str(), "r" );
+    char line[256];
+    while ( fgets( line, 256, fp ) != NULL ) {
+        string line_str = line;
+        line_str = line_str.substr(0, line_str.length() - 1);
+        // cout << line_str << endl;
+        if ( line_str == "[Finished successfully]" ) {
+            fclose(fp);
+            return true;
+        }
+
+    }
+    fclose(fp);
+
     return false;
 }
 
@@ -267,7 +239,6 @@ int main(int argc, char *argv[]) {
     string cover;
     string host = "127.0.0.1";
     int port=4001;
-    float angle = 10.0;
 
     //
     // Parse the command-line arguments.
@@ -288,8 +259,6 @@ int main(int argc, char *argv[]) {
 	rude = true;
       } else if (arg.find("--cover=") == 0) {
 	cover = arg.substr(8);
-      } else if (arg.find("--min-angle=") == 0) {
-	angle = atof(arg.substr(12).c_str());
       } else if (arg.find("--") == 0) {
 	usage(argv[0]);
       } else {
@@ -328,7 +297,7 @@ int main(int argc, char *argv[]) {
     check_master_switch();
 
     while ( (tile = get_next_task( host, port, last_tile )) >= 0 ) {
-	result = construct_tile( SGBucket(tile), result_file, cover, angle );
+	result = construct_tile( SGBucket(tile), result_file, cover );
 	if ( result ) {
 	    last_tile = tile;
 	} else {
