@@ -315,7 +315,7 @@ int main( int argc, char **argv ) {
 
     string shapetype = SHPTypeName( nShapeType );
 
-    if ( shapetype != "Polygon" ) {
+    if ( shapetype != string("Polygon") ) {
 	SG_LOG( SG_GENERAL, SG_ALERT, "Can't handle non-polygon shape files" );
 	exit(-1);
     }
