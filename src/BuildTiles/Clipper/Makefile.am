@@ -13,4 +13,4 @@ testclipper_LDADD = \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgdebug -lsgmisc -lz -lgpc
 
-INCLUDES += -I$(top_builddir)/src/Lib
+INCLUDES += -I$(top_srcdir)/src/Lib

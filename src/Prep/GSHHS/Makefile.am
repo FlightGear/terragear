@@ -19,4 +19,4 @@ debug_LDADD = \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	-lsgdebug -lsgbucket -lsgmisc -lz -lgpc
 
-INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/Lib
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/Lib

@@ -33,7 +33,7 @@ demchop_LDADD = \
 	-lsgbucket -lsgmisc -lsgdebug -lz
 	$(base_LIBS)
 
-INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/Lib
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/Lib
 
 # We can't build this with "-O2" (optimization) since this causes a seg fault
 # I haven't found a way to strip this out of the CXXFLAGS, so I'm just

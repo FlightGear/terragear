@@ -16,4 +16,4 @@ libpoly2tri_a_SOURCES = \
 	tri.c \
 	triangulate.h
 
-# INCLUDES += -I$(top_builddir) -I$(top_builddir)/Lib
+# INCLUDES += -I$(top_srcdir) -I$(top_srcdir)/Lib

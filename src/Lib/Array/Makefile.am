@@ -10,4 +10,4 @@ testarray_LDADD = \
 	$(top_builddir)/src/Lib/Array/libArray.a \
 	-lsgbucket -lsgmath -lsgmisc -lz
 
-INCLUDES += -I$(top_builddir)/src
+INCLUDES += -I$(top_srcdir)/src

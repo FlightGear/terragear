@@ -8,4 +8,4 @@ shape_decode_LDADD = \
 	$(top_builddir)/src/Lib/shapelib/libshape.a \
 	-lsgdebug -lsgbucket -lsgmisc -lz -lgpc
 
-INCLUDES += -I$(top_builddir)/src/Lib
+INCLUDES += -I$(top_srcdir)/src/Lib
