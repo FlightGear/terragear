@@ -773,6 +773,89 @@ static void gen_precision_section( const FGRunway& rwy_info,
 }
 
 
+static void gen_number_block( const FGRunway& rwy_info, const string& material,
+			      FGPolygon poly, double heading, int num,
+			      double start_pct, double end_pct,
+			      superpoly_list *rwy_polys,
+			      texparams_list *texparams,
+			      FGPolygon *accum )
+{
+    char tex1[32]; tex1[0] = '\0';
+    char tex2[32]; tex2[0] = '\0';
+
+    cout << "Runway num = " << num << endl;
+
+    // special cases
+    if ( num == 1 ) {
+	sprintf( tex1, "pa_01" );
+    } else if ( num == 11 ) {
+	sprintf( tex1, "pa_11" );
+    } else if ( num < 10 ) {
+	sprintf( tex1, "pa_%d", num );
+    } else {
+	sprintf( tex1, "pa_%d", num / 10 );
+	sprintf( tex2, "pa_%d", num - (num / 10 * 10));
+    }
+
+    // printf("tex1 = '%s'  tex2 = '%s'\n", tex1, tex2);
+
+    if ( num < 10 ) {
+	gen_precision_section( rwy_info, poly,
+			       start_pct, end_pct,
+			       0.0, 0.366,
+			       heading,
+			       "pa_des_fill_w",
+			       rwy_polys, texparams, accum );
+	gen_precision_section( rwy_info, poly,
+			       start_pct, end_pct,
+			       0.366, 0.634,
+			       heading,
+			       tex1,
+			       rwy_polys, texparams, accum );
+	gen_precision_section( rwy_info, poly,
+			       start_pct, end_pct,
+			       1.0, 0.634,
+			       heading,
+			       "pa_des_fill_w",
+			       rwy_polys, texparams, accum );
+    } else {
+	gen_precision_section( rwy_info, poly,
+			       start_pct, end_pct,
+			       0.0, 0.231,
+			       heading,
+			       "pa_des_fill_n",
+			       rwy_polys, texparams, accum );
+	if ( num == 11 ) {
+	    gen_precision_section( rwy_info, poly,
+				   start_pct, end_pct,
+				   0.231, 0.731,
+				   heading,
+				   tex1,
+				   rwy_polys, texparams, accum );
+	} else {
+	    gen_precision_section( rwy_info, poly,
+				   start_pct, end_pct,
+				   0.231, 0.5,
+				   heading,
+				   tex1,
+				   rwy_polys, texparams, accum );
+	    gen_precision_section( rwy_info, poly,
+				   start_pct, end_pct,
+				   0.5, 0.731,
+				   heading,
+				   tex2,
+				   rwy_polys, texparams, accum );
+	}
+	gen_precision_section( rwy_info, poly,
+			       start_pct, end_pct,
+			       1.0, 0.731,
+			       heading,
+			       "pa_des_fill_n",
+			       rwy_polys, texparams, accum );
+    }
+}
+
+
 // generate a precision approach runway.  The routine modifies
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
@@ -859,21 +942,43 @@ static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
     // Runway designation letter
     //
 
-    start_pct = end_pct;
-    end_pct = start_pct + ( 90.0 / length );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.0, 1.0,
-			   rwy_info.heading,
-			   "pa_left",
-			   rwy_polys, texparams, accum );
+    int len = rwy_info.rwy_no.length();
+    string letter = "";
+    string rev_letter = "";
+    for ( int i = 0; i < len; ++i ) {
+	string tmp = rwy_info.rwy_no.substr(i, 1);
+	if ( tmp == "L" ) {
+	    letter = "pa_L";
+	    rev_letter = "pa_R";
+	} else if ( tmp == "R" ) {
+	    letter = "pa_R";
+	    rev_letter = "pa_L";
+	} else if ( tmp == "C" ) {
+	    letter == "pa_C";
+	    rev_letter = "pa_C";
+	}
+    }
+	    
+    cout << "Runway designation = " << rwy_info.rwy_no << endl;
+    cout << "Runway designation letter = " << letter << endl;
 
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.0, 1.0,
-			   rwy_info.heading + 180.0,
-			   "pa_left",
-			   rwy_polys, texparams, accum );
+    if ( letter != "" ) {
+	start_pct = end_pct;
+	end_pct = start_pct + ( 90.0 / length );
+	gen_precision_section( rwy_info, runway_a,
+			       start_pct, end_pct,
+			       0.0, 1.0,
+			       rwy_info.heading,
+			       rev_letter,
+			       rwy_polys, texparams, accum );
+
+	gen_precision_section( rwy_info, runway_b,
+			       start_pct, end_pct,
+			       0.0, 1.0,
+			       rwy_info.heading + 180.0,
+			       letter,
+			       rwy_polys, texparams, accum );
+    }
 
     //
     // Runway designation number(s)
@@ -881,55 +986,28 @@ static void gen_precision_rwy( const FGRunway& rwy_info, const string& material,
 
     start_pct = end_pct;
     end_pct = start_pct + ( 90.0 / length );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.0, 0.231,
-			   rwy_info.heading,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.231, 0.5,
-			   rwy_info.heading,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.5, 0.731,
-			   rwy_info.heading,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   1.0, 0.731,
-			   rwy_info.heading,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
 
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.0, 0.231,
-			   rwy_info.heading + 180.0,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.231, 0.5,
-			   rwy_info.heading + 180.0,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.5, 0.731,
-			   rwy_info.heading + 180.0,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   1.0, 0.731,
-			   rwy_info.heading + 180.0,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
+    len = rwy_info.rwy_no.length();
+    string snum = rwy_info.rwy_no;
+    for ( int i = 0; i < len; ++i ) {
+	string tmp = rwy_info.rwy_no.substr(i, 1);
+	if ( tmp == "L" || tmp == "R" || tmp == "C" || tmp == " " ) {
+	    snum = rwy_info.rwy_no.substr(0, i);
+	}
+    }
+    cout << "Runway num = '" << snum << "'" << endl;
+    int num = atoi( snum.c_str() );
+
+    gen_number_block( rwy_info, material, runway_b, rwy_info.heading + 180.0,
+		      num, start_pct, end_pct, rwy_polys, texparams, accum );
+
+    num += 18;
+    if ( num > 36 ) {
+	num -= 36;
+    }
+
+    gen_number_block( rwy_info, material, runway_a, rwy_info.heading,
+		      num, start_pct, end_pct, rwy_polys, texparams, accum );
 
     //
     // Touch down zone x3
@@ -1162,55 +1240,28 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
 
     start_pct = end_pct;
     end_pct = start_pct + ( 100.0 / length );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.0, 0.231,
-			   rwy_info.heading,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.231, 0.5,
-			   rwy_info.heading,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.5, 0.731,
-			   rwy_info.heading,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   1.0, 0.731,
-			   rwy_info.heading,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
 
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.0, 0.231,
-			   rwy_info.heading + 180.0,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.231, 0.5,
-			   rwy_info.heading + 180.0,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.5, 0.731,
-			   rwy_info.heading + 180.0,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   1.0, 0.731,
-			   rwy_info.heading + 180.0,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
+    int len = rwy_info.rwy_no.length();
+    string snum = rwy_info.rwy_no;
+    for ( int i = 0; i < len; ++i ) {
+	string tmp = rwy_info.rwy_no.substr(i, 1);
+	if ( tmp == "L" || tmp == "R" || tmp == "C" || tmp == " " ) {
+	    snum = rwy_info.rwy_no.substr(0, i);
+	}
+    }
+    cout << "Runway num = '" << snum << "'" << endl;
+    int num = atoi( snum.c_str() );
+
+    gen_number_block( rwy_info, material, runway_b, rwy_info.heading + 180.0,
+		      num, start_pct, end_pct, rwy_polys, texparams, accum );
+
+    num += 18;
+    if ( num > 36 ) {
+	num -= 36;
+    }
+
+    gen_number_block( rwy_info, material, runway_a, rwy_info.heading,
+		      num, start_pct, end_pct, rwy_polys, texparams, accum );
 
     //
     // Intermediate area before aiming point ...
@@ -1361,55 +1412,28 @@ static void gen_non_precision_rwy( const FGRunway& rwy_info,
 
     start_pct = end_pct;
     end_pct = start_pct + ( 100.0 / length );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.0, 0.231,
-			   rwy_info.heading,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.231, 0.5,
-			   rwy_info.heading,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   0.5, 0.731,
-			   rwy_info.heading,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_a,
-			   start_pct, end_pct,
-			   1.0, 0.731,
-			   rwy_info.heading,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
 
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.0, 0.231,
-			   rwy_info.heading + 180.0,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.231, 0.5,
-			   rwy_info.heading + 180.0,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   0.5, 0.731,
-			   rwy_info.heading + 180.0,
-			   "pa_three",
-			   rwy_polys, texparams, accum );
-    gen_precision_section( rwy_info, runway_b,
-			   start_pct, end_pct,
-			   1.0, 0.731,
-			   rwy_info.heading + 180.0,
-			   "pa_des_fill_n",
-			   rwy_polys, texparams, accum );
+    int len = rwy_info.rwy_no.length();
+    string snum = rwy_info.rwy_no;
+    for ( int i = 0; i < len; ++i ) {
+	string tmp = rwy_info.rwy_no.substr(i, 1);
+	if ( tmp == "L" || tmp == "R" || tmp == "C" || tmp == " " ) {
+	    snum = rwy_info.rwy_no.substr(0, i);
+	}
+    }
+    cout << "Runway num = '" << snum << "'" << endl;
+    int num = atoi( snum.c_str() );
+
+    gen_number_block( rwy_info, material, runway_b, rwy_info.heading + 180.0,
+		      num, start_pct, end_pct, rwy_polys, texparams, accum );
+
+    num += 18;
+    if ( num > 36 ) {
+	num -= 36;
+    }
+
+    gen_number_block( rwy_info, material, runway_a, rwy_info.heading,
+		      num, start_pct, end_pct, rwy_polys, texparams, accum );
 
     //
     // Intermediate area before aiming point ...
