@@ -100,7 +100,7 @@ for i in $CLIENTS_RUDE; do
     # KILL_COMMAND="killall $CLIENT"
     # ssh -n $i "$KILL_COMMAND"
 
-    RMT_COMMAND="source ~/.profile; nice $CLIENT $SERVER_HOST $SERVER_PORT $WORK_BASE $OUTPUT_DIR -r"
+    RMT_COMMAND="source ~/.profile; nice $CLIENT --host=$SERVER_HOST --port=$SERVER_PORT --work-dir=$WORK_BASE --output-dir=$OUTPUT_DIR --rude AirportArea AirportObj GSHHS-Ponds GSHHS-Islands GSHHS-Lakes GSHHS-LandMass USA-Hydro USA-Urban DEM-3 DEM-30"
     echo "client command:"
     echo ""
     echo "$RMT_COMMAND"

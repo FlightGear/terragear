@@ -186,7 +186,7 @@ bool construct_tile( const FGBucket& b, const string& result_file ) {
 	command = command + " --work-dir=" + work_base;
 	command = command + " --output-dir=" + output_base;
 	command = command + " --tile-id=" + b.gen_index_str();
-	for (int i = 0; i < load_dirs.size(); i++) {
+	for (int i = 0; i < (int)load_dirs.size(); i++) {
 	  command = command + " " + load_dirs[i];
 	}
 	command = command + "> " + result_file + " 2>&1";
@@ -237,12 +237,13 @@ usage (const string name)
   cout << "[ --output-dir=<directory>" << endl;
   cout << "  --work-dir=<directory>" << endl;
   cout << "  --host=<address>" << endl;
-  cout << "  --port=<number> ]" << endl;
+  cout << "  --port=<number>" << endl;
+  cout << "  --rude ]" << endl;
   cout << "<load directory...>" << endl;
   exit(-1);
 }
 
-main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {
     long int tile, last_tile;
     bool rude = false;
     bool result;
@@ -283,8 +284,11 @@ main(int argc, char *argv[]) {
     else
       cout << "Running in polite mode" << endl;
     for (int i = arg_pos; i < argc; i++) {
-      load_dirs.push_back(argv[i]);
-      cout << "Load directory: " << argv[i] << endl;
+      string dir;
+      dir = work_base + "/";
+      dir += argv[i];
+      load_dirs.push_back( dir );
+      cout << "Load directory: " << dir << endl;
     }
 
     // get hostname and pid
@@ -322,4 +326,6 @@ main(int argc, char *argv[]) {
 	    sleep( BUSY_WAIT_TIME );
 	}
     }
+
+    return 0;
 }
