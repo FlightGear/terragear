@@ -177,10 +177,17 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes,
     int i, j;
     FGArray array;
 
+    // just bail if no work to do
+    if ( ! result.size() ) {
+        return result;
+    }
+
     // set all elevations to -9999
     for ( i = 0; i < (int)result.size(); ++i ) {
 	result[i].setz( -9999.0 );
     }
+
+    cout << "result.size() = " << result.size() << endl;
 
     while ( !done ) {
 	// find first node with -9999 elevation
@@ -233,7 +240,6 @@ point_list calc_elevations( const string& root, const point_list& geod_nodes,
 	    done = true;
 	}
     }
-
 
     return result;
 }

@@ -85,7 +85,10 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     FGSuperPoly sp;
     FGTexParams tp;
 
-    double length = rwy_info.length / 2.0;
+    // we add 2' to the length for texture overlap.  This puts the
+    // lines on the texture back to the edge of the runway where they
+    // belong.
+    double length = rwy_info.length / 2.0 + 2.0;
     if ( length < 3075 ) {
         SG_LOG(SG_GENERAL, SG_ALERT,
 	       "This runway is not long enough for precision markings!");
@@ -98,7 +101,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     // Threshold
     //
 
-    end_pct = start_pct + ( 190.0 / length );
+    end_pct = start_pct + ( 192.0 / length );
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -189,7 +192,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     //
 
     start_pct = end_pct;
-    end_pct = start_pct + ( 650 / length );
+    end_pct = start_pct + ( 380 / length );
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -204,12 +207,29 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 			material, "tz_three",
 			rwy_polys, texparams, accum );
 
+    // add a section of center stripe
+    start_pct = end_pct;
+    end_pct = start_pct + ( 200 / length );
+    gen_runway_section( rwy_info, runway_a,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+
+    gen_runway_section( rwy_info, runway_b,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading + 180.0,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+   
     //
     // Aiming point
     //
 
     start_pct = end_pct;
-    end_pct = start_pct + ( 500 / length );
+    end_pct = start_pct + ( 400 / length );
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -233,7 +253,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     }
 
     start_pct = end_pct;
-    end_pct = start_pct + ( 500 / length );
+    end_pct = start_pct + ( 400 / length );
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -248,6 +268,23 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 			material, "tz_two_a",
 			rwy_polys, texparams, accum );
 
+    // add a section of center stripe
+    start_pct = end_pct;
+    end_pct = start_pct + ( 200 / length );
+    gen_runway_section( rwy_info, runway_a,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+
+    gen_runway_section( rwy_info, runway_b,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading + 180.0,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+   
     //
     // Touch down zone x2 (second)
     //
@@ -257,7 +294,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     }
 
     start_pct = end_pct;
-    end_pct = start_pct + ( 500 / length );
+    end_pct = start_pct + ( 200 / length );
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -272,6 +309,23 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 			material, "tz_two_b",
 			rwy_polys, texparams, accum );
 
+    // add a section of center stripe
+    start_pct = end_pct;
+    end_pct = start_pct + ( 200 / length );
+    gen_runway_section( rwy_info, runway_a,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+
+    gen_runway_section( rwy_info, runway_b,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading + 180.0,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+   
     //
     // Touch down zone x1 (first)
     //
@@ -281,7 +335,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     }
 
     start_pct = end_pct;
-    end_pct = start_pct + ( 500 / length );
+    end_pct = start_pct + ( 400 / length );
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -296,6 +350,23 @@ void gen_precision_rwy( const FGRunway& rwy_info,
 			material, "tz_one_a",
 			rwy_polys, texparams, accum );
 
+    // add a section of center stripe
+    start_pct = end_pct;
+    end_pct = start_pct + ( 200 / length );
+    gen_runway_section( rwy_info, runway_a,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+
+    gen_runway_section( rwy_info, runway_b,
+                        start_pct, end_pct,
+                        0.0, 1.0,
+                        rwy_info.heading + 180.0,
+                        material, "rest",
+                        rwy_polys, texparams, accum );
+   
     //
     // Touch down zone x1 (second)
     //
@@ -305,7 +376,7 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     }
 
     start_pct = end_pct;
-    end_pct = start_pct + ( 500 / length );
+    end_pct = start_pct + ( 200 / length );
     gen_runway_section( rwy_info, runway_a,
 			start_pct, end_pct,
 			0.0, 1.0,
@@ -324,9 +395,16 @@ void gen_precision_rwy( const FGRunway& rwy_info,
     // The rest ...
     //
 
+    // fit the 'rest' texture in as many times as will go evenly into
+    // the remaining distance so we don't end up with a super short
+    // section at the end.
+    double ideal_rest_inc = ( 200.0 / length );
+    int divs = (int)((1.0 - end_pct) / ideal_rest_inc) + 1;
+    double rest_inc = (1.0 - end_pct) / divs;
+
     while ( end_pct < 1.0 ) {
 	start_pct = end_pct;
-	end_pct = start_pct + ( 400.0 / length );
+	end_pct = start_pct + rest_inc;
 
 	gen_runway_section( rwy_info, runway_a,
 			    start_pct, end_pct,

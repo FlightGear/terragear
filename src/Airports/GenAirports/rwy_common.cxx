@@ -31,17 +31,23 @@
 
 
 void gen_number_block( const FGRunway& rwy_info,
-			      const string& material,
-			      FGPolygon poly, double heading, int num,
-			      double start_pct, double end_pct,
-			      superpoly_list *rwy_polys,
-			      texparams_list *texparams,
-			      FGPolygon *accum )
+                       const string& material,
+                       FGPolygon poly, double heading, int num,
+                       double start_pct, double end_pct,
+                       superpoly_list *rwy_polys,
+                       texparams_list *texparams,
+                       FGPolygon *accum )
 {
     char tex1[32]; tex1[0] = '\0';
     char tex2[32]; tex2[0] = '\0';
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway num = " << num);
+
+    if ( num == 0 ) {
+        SG_LOG( SG_GENERAL, SG_ALERT,
+                "Ack! Someone passed in a runway number of '0'" );
+        exit(-1);
+    }
 
     if ( num == 11 ) {
 	sprintf( tex1, "11" );
@@ -191,8 +197,15 @@ void gen_runway_section( const FGRunway& rwy_info,
 	}
     }
 
+    // Clip the new polygon against what ever has already been created.
     FGPolygon clipped = polygon_diff( section, *accum );
+
+    // Split long edges to create an object that can better flow with
+    // the surface terrain
     FGPolygon split = split_long_edges( clipped, 400.0 );
+
+    // Create the final output and push on to the runway super_polygon
+    // list
     FGSuperPoly sp;
     sp.erase();
     sp.set_poly( split );
@@ -201,11 +214,24 @@ void gen_runway_section( const FGRunway& rwy_info,
     SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
     *accum = polygon_union( section, *accum );
 
-    double len = rwy_info.length / 2.0;
+    // Store away what we need to know for texture coordinate
+    // calculation.  (CLO 10/20/02: why can't we calculate texture
+    // coordinates here?  Oh, becuase later we need to massage the
+    // polygons to avoid "T" intersections and clean up other
+    // potential artifacts and we may add or remove points and need to
+    // do new texture coordinate calcs later.
+
+    // we add 2' to the length for texture overlap.  This puts the
+    // lines on the texture back to the edge of the runway where they
+    // belong.
+    double len = rwy_info.length / 2.0 + 2;
     double start_len = len - ( len * startl_pct );
     double end_len = len - ( len * endl_pct );
 
-    double wid = rwy_info.width;
+    // we add 2' to both sides of the runway (4' total) for texture
+    // overlap.  This puts the lines on the texture back to the edge
+    // of the runway where they belong.
+    double wid = rwy_info.width + 4;
     double start_wid = -wid / 2.0 + wid * startw_pct;
     double end_wid = -wid / 2.0 + wid * endw_pct;
 
