@@ -88,17 +88,20 @@ while( <IN> ) {
 
     if ( $height < 50.0 ) {
         # short tower
-        $model = "radio_short.xml";
+        $model = "Models/Structures/radio-short.xml";
         $base_elev = $top_msl - 50.0;
         $shortcount++;
+
+        # but let's skip because too many of these just get too crazy
+        next;
     } elsif ( $height < 100.0 ) {
         # medium tower
-        $model = "radio_medium.xml";
+        $model = "Models/Structures/radio-medium.xml";
         $base_elev = $top_msl - 100.0;
         $mediumcount++;
     } else {
         # tall tower
-        $model = "radio_tall.xml";
+        $model = "Models/Structures/radio-tall.xml";
         $base_elev = $top_msl - 610.0;
         $tallcount++;
     }
