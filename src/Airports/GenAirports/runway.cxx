@@ -129,8 +129,8 @@ FGPolygon gen_runway_area( const FGRunway& runway,
     */
 
     Point3D origin(runway.lon, runway.lat, 0);
-    l = runway.length * len_scale * FEET_TO_METER / 2.0;
-    w = runway.width * width_scale * FEET_TO_METER / 2.0;
+    l = runway.length * len_scale * SG_FEET_TO_METER / 2.0;
+    w = runway.width * width_scale * SG_FEET_TO_METER / 2.0;
 
     // generate untransformed runway area vertices
     tmp_list.add_node( 0, Point3D( l, w, 0 ) );
@@ -172,8 +172,8 @@ FGPolygon gen_runway_w_mid( const FGRunway& runway,
     */
 
     Point3D origin(runway.lon, runway.lat, 0);
-    l = runway.length * len_scale * FEET_TO_METER / 2.0;
-    w = runway.width * width_scale * FEET_TO_METER / 2.0;
+    l = runway.length * len_scale * SG_FEET_TO_METER / 2.0;
+    w = runway.width * width_scale * SG_FEET_TO_METER / 2.0;
 
     // generate untransformed runway area vertices
     tmp_list.add_node( 0, Point3D( l, w, 0 ) );

@@ -71,8 +71,8 @@ static FGPolygon rwy_section_tex_coords( const FGPolygon& in_poly,
     int i, j;
     FGPolygon result;
     result.erase();
-    // double length = rwy.length * FEET_TO_METER;
-    // double width = rwy.width * FEET_TO_METER;
+    // double length = rwy.length * SG_FEET_TO_METER;
+    // double width = rwy.width * SG_FEET_TO_METER;
 
     Point3D center = tp.get_center();
     Point3D min = tp.get_min();
@@ -438,11 +438,11 @@ static void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
     cout << "clipped_a = " << clipped_a.contours() << endl;
     *accum = polygon_union( runway_a, *accum );
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( (-rwy_info.width / 2.0) * FEET_TO_METER,
+		      Point3D( (-rwy_info.width / 2.0) * SG_FEET_TO_METER,
 			       0.0,
 			       0 ),
-		      Point3D( (rwy_info.width  / 2.0) * FEET_TO_METER,
-			       (rwy_info.length / 2.0) * FEET_TO_METER,
+		      Point3D( (rwy_info.width  / 2.0) * SG_FEET_TO_METER,
+			       (rwy_info.length / 2.0) * SG_FEET_TO_METER,
 			       0.0 ),
 		      rwy_info.heading );
     texparams->push_back( tp );
@@ -456,11 +456,11 @@ static void gen_simple_rwy( const FGRunway& rwy_info, const string& material,
     cout << "clipped_b = " << clipped_b.contours() << endl;
     *accum = polygon_union( runway_b, *accum );
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( (-rwy_info.width / 2.0) * FEET_TO_METER,
+		      Point3D( (-rwy_info.width / 2.0) * SG_FEET_TO_METER,
 			       0.0,
 			       0 ),
-		      Point3D( (rwy_info.width  / 2.0) * FEET_TO_METER,
-			       (rwy_info.length / 2.0) * FEET_TO_METER,
+		      Point3D( (rwy_info.width  / 2.0) * SG_FEET_TO_METER,
+			       (rwy_info.length / 2.0) * SG_FEET_TO_METER,
 			       0.0 ),
 		      rwy_info.heading + 180.0 );
     texparams->push_back( tp );
@@ -621,11 +621,11 @@ static void gen_runway_section( const FGRunway& rwy_info,
 
     FGTexParams tp;
     tp = FGTexParams( Point3D( rwy_info.lon, rwy_info.lat, 0 ),
-		      Point3D( start_wid * FEET_TO_METER,
-			       end_len * FEET_TO_METER,
+		      Point3D( start_wid * SG_FEET_TO_METER,
+			       end_len * SG_FEET_TO_METER,
 			       0.0 ),
-		      Point3D( end_wid * FEET_TO_METER,
-			       start_len * FEET_TO_METER,
+		      Point3D( end_wid * SG_FEET_TO_METER,
+			       start_len * SG_FEET_TO_METER,
 			       0.0 ),
 		      heading );
     texparams->push_back( tp );
