@@ -13,6 +13,9 @@ Line::Line ()
 
 Line::Line (const Line &l)
 {
+    int nPoints = l.getPointCount();
+    for (int i = 0; i < nPoints; i++)
+        addPoint(l.getPoint(i));
 }
 
 Line::~Line ()
