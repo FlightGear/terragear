@@ -496,6 +496,76 @@ static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
 }
 
 
+// generate runway center line lighting, 50' spacing.
+static superpoly_list gen_taxiway_center_line_lights( const TGRunway& rwy_info,
+                                                      bool recip )
+{
+    point_list g_lights; g_lights.clear();
+    point_list g_normals; g_normals.clear();
+    int i;
+
+    double len = rwy_info.length;
+    // this should be ??' technically but I'm trying 50' to space things out
+    int divs = (int)(len / 70) + 1;
+
+    Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+
+    // using TGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    TGPolygon poly_corners = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 2.0 );
+
+    point_list corner;
+    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+	corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+
+    Point3D inc;
+    Point3D pt1, pt2;
+
+    if ( recip ) {
+        pt1 = (corner[0] + corner[1] ) / 2.0;
+        pt2 = (corner[2] + corner[3] ) / 2.0;
+    } else {
+        pt1 = (corner[2] + corner[3] ) / 2.0;
+        pt2 = (corner[0] + corner[1] ) / 2.0;
+    }
+    inc = (pt2 - pt1) / divs;
+
+    double dist = len;
+    double step = len / divs;
+    pt1 += inc;                 // move 25' in
+    dist -= step;
+
+    while ( dist > 0.0 ) {
+        g_lights.push_back( pt1 );
+        g_normals.push_back( normal );
+
+  	pt1 += inc;
+  	pt1 += inc;
+        dist -= step;
+        dist -= step;
+    }
+
+    superpoly_list result; result.clear();
+
+    if ( g_lights.size() > 0 ) {
+        TGPolygon lights_poly; lights_poly.erase();
+        TGPolygon normals_poly; normals_poly.erase();
+        lights_poly.add_contour( g_lights, false );
+        normals_poly.add_contour( g_normals, false );
+
+        TGSuperPoly green;
+        green.set_poly( lights_poly );
+        green.set_normals( normals_poly );
+        green.set_material( "RWY_GREEN_LOW_LIGHTS" );
+
+        result.push_back( green );
+    }
+
+    return result;
+}
+
+
 // generate touch down zone lights
 static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
                                               float alt_m, bool recip )
@@ -2391,13 +2461,13 @@ void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
     if ( taxiway_info.surface_flags.substr(0,1) == "Y" ) {
         // forward direction
         superpoly_list s;
-        s = gen_runway_center_line_lights( taxiway_info, false );
+        s = gen_taxiway_center_line_lights( taxiway_info, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
 
         // reverse direction
-        s = gen_runway_center_line_lights( taxiway_info, true );
+        s = gen_taxiway_center_line_lights( taxiway_info, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }

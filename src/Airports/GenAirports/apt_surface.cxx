@@ -115,7 +115,7 @@ static void calc_elevations( const string &root, Matrix_Point3Df &Pts ) {
                         if ( elev > -9000 ) {
                             p.z() = elev;
                             Pts(i,j) = p;
-                            cout << "interpolating for " << p << endl;
+                            // cout << "interpolating for " << p << endl;
                         }
                     }
                 }

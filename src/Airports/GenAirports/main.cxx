@@ -74,10 +74,6 @@ int main( int argc, char **argv ) {
     float max_lon = 180;
     float min_lat = -90;
     float max_lat = 90;
-    string_list runways_list, taxiways_list;
-    string airport, last_airport;
-    string line;
-    char tmp[2048];
     bool ready_to_go = true;
 
     sglog().setLogLevels( SG_GENERAL, SG_INFO );
@@ -163,58 +159,69 @@ int main( int argc, char **argv ) {
     }
 
     // throw away the first line
-    in.getline(tmp, 2048);
+    in >> skipeol;
 
-    last_airport = "";
+    string_list runways_list, taxiways_list;
+    string last_apt_id = "";
+    string last_apt_info = "";
+    string line;
+    char tmp[2048];
 
     while ( ! in.eof() ) {
 	in.getline(tmp, 2048);
 	line = tmp;
-	SG_LOG(SG_GENERAL, SG_DEBUG, line);
+	SG_LOG( SG_GENERAL, SG_INFO, "-> " << line );
 
 	if ( line.length() == 0 ) {
 	    // empty, skip
 	} else if ( line[0] == '#' ) {
 	    // comment, skip
-	} else if ( (line[0] == 'A') || (line[0] == 'H') || (line[0] == 'S') ) {
-	    // start of airport record
-	    airport = line;
+	} else if ( line[0] == 'A' || line[0] == 'H' || line[0] == 'S' ) {
+            // extract some airport runway info
+            char ctmp, tmpid[32], rwy[32];
+            string id;
+            float lat, lon;
+            int elev = 0;
 
-	    if ( !last_airport.empty() ) {
-		char ctmp, id[32];
-		float lat, lon;
-                int alt_ft;
-		sscanf( last_airport.c_str(), "%c %s %f %f %d",
-			&ctmp, id, &lat, &lon, &alt_ft);
-		SG_LOG(SG_GENERAL, SG_DEBUG, "Airport lat/lon/alt = "
-		       << lat << ',' << lon << "," << alt_ft);
-		SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
+            sscanf( line.c_str(), "%c %s %d",
+                    &ctmp, tmpid, &elev );
+            id = tmpid;
+            SG_LOG( SG_GENERAL, SG_INFO, "Airport = " << id << " "
+                    << elev );
 
-		if ( lon >= min_lon && lon <= max_lon &&
-                     lat >= min_lat && lat <= max_lat ) {
+            if ( !last_apt_id.empty()) {
+                if ( runways_list.size() ) {
+                    sscanf( runways_list[0].c_str(), "%c %s %s %f %f",
+                            &ctmp, tmpid, rwy, &lat, &lon );
+                }
 
-                    if ( start_id.length() && start_id == (string)id ) {
+                if ( lon >= min_lon && lon <= max_lon &&
+                     lat >= min_lat && lat <= max_lat )
+                {
+                    if ( start_id.length() && start_id == last_apt_id ) {
                         ready_to_go = true;
                     }
 
                     if ( ready_to_go ) {
                         // check point our location
                         char command[256];
-                        sprintf( command, "echo %s > last_apt", id );
+                        sprintf( command,
+                                 "echo before building %s >> last_apt",
+                                 last_apt_id.c_str() );
                         system( command );
 
                         // process previous record
-                        // process_airport(last_airport, runways_list, argv[2]);
+                        // process_airport(last_apt_id, runways_list, argv[2]);
                         try {
-                            build_airport( last_airport,
-                                           alt_ft * SG_FEET_TO_METER,
+                            build_airport( last_apt_id, elev * SG_FEET_TO_METER,
                                            runways_list, taxiways_list,
                                            work_dir );
                         } catch (sg_exception &e) {
-                            SG_LOG(SG_GENERAL, SG_ALERT,
-                                   "Failed to build airport " << id);
-                            SG_LOG(SG_GENERAL, SG_ALERT, "Exception: "
-                                   << e.getMessage());
+                            SG_LOG( SG_GENERAL, SG_ALERT,
+                                    "Failed to build airport = "
+                                    << last_apt_id );
+                            SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
+                                    << e.getMessage() );
                             exit(-1);
                         }
                     }
@@ -222,48 +229,77 @@ int main( int argc, char **argv ) {
                     SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
 		}
 	    }
-
-	    // clear runway list for start of next airport
-	    runways_list.clear();
-	    taxiways_list.clear();
-
-	    last_airport = airport;
-	} else if ( line[0] == 'R' ) {
-	    // runway entry
-	    runways_list.push_back(line);
-	} else if ( line[0] == 'T' ) {
-	    // runway entry
-	    taxiways_list.push_back(line);
-	} else if ( line == "[End]" ) {
-	    // end of file
-	    break;
-	} else {
-	    SG_LOG( SG_GENERAL, SG_ALERT, 
-		    "Unknown line in file: " << line );
-	    exit(-1);
-	}
+            last_apt_id = id;
+            last_apt_info = line;
+            // clear runway list for start of next airport
+            runways_list.clear();
+            taxiways_list.clear();
+        } else if ( line[0] == 'R' ) {
+            // runway entry
+            runways_list.push_back(line);
+        } else if ( line[0] == 'T' ) {
+            // runway entry
+            taxiways_list.push_back(line);
+        } else {
+            SG_LOG( SG_GENERAL, SG_ALERT, 
+                    "Unknown line in file: " << line );
+            exit(-1);
+        }
     }
 
-    if ( last_airport.length() ) {
-	char ctmp, id[32];
+    if ( last_apt_id.length() ) {
+        // extract some airport runway info
+        char ctmp, tmpid[32], rwy[32];
+        string id;
         float lat, lon;
-        int alt_ft;
-        sscanf( last_airport.c_str(), "%c %s %f %f %d",
-                &ctmp, id, &lat, &lon, &alt_ft);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Airport lat/lon/alt = "
-               << lat << ',' << lon << "," << alt_ft);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Id portion = " << id);
+        int elev = 0;
 
-	if ( start_id.length() && start_id == id ) {
-	    ready_to_go = true;
-	}
+        sscanf( line.c_str(), "%c %s %d",
+                &ctmp, tmpid, &elev );
+        id = tmpid;
+        SG_LOG( SG_GENERAL, SG_INFO, "Airport = " << id << " "
+                << elev );
 
-	if ( ready_to_go ) {
-	    // process previous record
-	    // process_airport(last_airport, runways_list, argv[2]);
-	    build_airport(last_airport, alt_ft * SG_FEET_TO_METER,
-                          runways_list, taxiways_list, work_dir);
-	}
+        if ( !last_apt_id.empty()) {
+            if ( runways_list.size() ) {
+                sscanf( runways_list[0].c_str(), "%c %s %s %s %f %f",
+                        &ctmp, tmpid, rwy, &lat, &lon );
+            }
+
+            if ( lon >= min_lon && lon <= max_lon &&
+                 lat >= min_lat && lat <= max_lat )
+            {
+                if ( start_id.length() && start_id == last_apt_id ) {
+                    ready_to_go = true;
+                }
+
+                if ( ready_to_go ) {
+                    // check point our location
+                    char command[256];
+                    sprintf( command,
+                             "echo before building %s >> last_apt",
+                             last_apt_id.c_str() );
+                    system( command );
+
+                    // process previous record
+                    // process_airport(last_apt_id, runways_list, argv[2]);
+                    try {
+                        build_airport( last_apt_id, elev * SG_FEET_TO_METER,
+                                       runways_list, taxiways_list,
+                                       work_dir );
+                    } catch (sg_exception &e) {
+                        SG_LOG( SG_GENERAL, SG_ALERT,
+                                "Failed to build airport = "
+                                << last_apt_id );
+                        SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
+                                << e.getMessage() );
+                        exit(-1);
+                    }
+                }
+            } else {
+                SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
+            }
+        }
     }
 
     SG_LOG(SG_GENERAL, SG_INFO, "[FINISHED CORRECTLY]");

@@ -34,7 +34,7 @@
 
 
 // build 3d airport
-void build_airport( string airport, float alt_m, string_list& runways_raw,
+void build_airport( string airport_id, float alt_m, string_list& runways_raw,
                     string_list& taxiways_raw, const string& root );
 
 

@@ -271,7 +271,7 @@ static void build_runway( const TGRunway& rwy_info,
     SG_LOG(SG_GENERAL, SG_DEBUG, "type flag = " << type_flag);
 
     if ( rwy_info.really_taxiway ) {
-	gen_taxiway( rwy_info, alt_m,material,
+	gen_taxiway( rwy_info, alt_m, material,
                      rwy_polys, texparams, accum );
     } else if ( surface_flag == "D" || surface_flag == "G" ||
 	 surface_flag == "T" )
@@ -292,6 +292,9 @@ static void build_runway( const TGRunway& rwy_info,
 			rwy_polys, texparams, accum );
     } else if ( type_flag == "B" ) {
 	// bouys (sea plane base)
+	// do nothing for now.
+    } else if ( type_flag == "H" ) {
+	// helipad
 	// do nothing for now.
     } else {
 	// unknown runway code ... hehe, I know, let's just die
@@ -318,7 +321,7 @@ static void build_runway( const TGRunway& rwy_info,
 
 
 // build 3d airport
-void build_airport( string airport_raw, float alt_m,
+void build_airport( string airport_id, float alt_m,
                     string_list& runways_raw,
                     string_list& taxiways_raw, const string& root )
 {
@@ -338,45 +341,10 @@ void build_airport( string airport_raw, float alt_m,
     accum.erase();
 
     // parse main airport information
-    double apt_lon, apt_lat;
-    int elev;
+    double apt_lon = 0.0, apt_lat = 0.0;
+    int rwy_count = 0;
 
-    SG_LOG(SG_GENERAL, SG_INFO, airport_raw);
-    string apt_type = airport_raw.substr(0, 1);
-    string apt_code = airport_raw.substr(2, 4); my_chomp( apt_code );
-    string apt_lat_str = airport_raw.substr(7, 10);
-    apt_lat = atof( apt_lat_str.c_str() );
-    string apt_lon_str = airport_raw.substr(18, 11);
-    apt_lon = atof( apt_lon_str.c_str() );
-    string apt_elev = airport_raw.substr(30, 5);
-    elev = atoi( apt_elev.c_str() );
-    string apt_use = airport_raw.substr(36, 1);
-    string apt_twr = airport_raw.substr(37, 1);
-    string apt_bldg = airport_raw.substr(38, 1);
-    string apt_name = airport_raw.substr(40);
-
-    /*
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  type = " << apt_type);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  code = " << apt_code);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  lat  = " << apt_lat);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  lon  = " << apt_lon);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  elev = " << apt_elev << " " << elev);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  use  = " << apt_use);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  twr  = " << apt_twr);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  bldg = " << apt_bldg);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  name = " << apt_name);
-    */
-
-    SGBucket b( apt_lon, apt_lat );
-    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS,
-			 b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
-    Point3D gbs_center = sgGeodToCart( center_geod );
-    SG_LOG(SG_GENERAL, SG_DEBUG, b.gen_base_path() << "/" << b.gen_index_str());
-
-    // Ignore any seaplane bases
-    if ( apt_type == "S" ) {
-	return;
-    }
+    SG_LOG( SG_GENERAL, SG_INFO, "Building " << airport_id );
 
     // parse runways and generate the vertex list
     runway_list runways;
@@ -384,6 +352,8 @@ void build_airport( string airport_raw, float alt_m,
     string rwy_str;
 
     for ( i = 0; i < (int)runways_raw.size(); ++i ) {
+        ++rwy_count;
+
 	rwy_str = runways_raw[i];
 
 	TGRunway rwy;
@@ -391,101 +361,115 @@ void build_airport( string airport_raw, float alt_m,
         rwy.really_taxiway = false;
 
 	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
-	rwy.rwy_no = rwy_str.substr(2, 4);
+	rwy.rwy_no = rwy_str.substr(7, 4);
 
-	string rwy_lat = rwy_str.substr(6, 10);
+	string rwy_lat = rwy_str.substr(11, 10);
 	rwy.lat = atof( rwy_lat.c_str() );
+        apt_lat += rwy.lat;
 
-	string rwy_lon = rwy_str.substr(17, 11);
+	string rwy_lon = rwy_str.substr(22, 11);
 	rwy.lon = atof( rwy_lon.c_str() );
+        apt_lon += rwy.lon;
 
-	string rwy_hdg = rwy_str.substr(29, 7);
+	string rwy_hdg = rwy_str.substr(34, 6);
 	rwy.heading = atof( rwy_hdg.c_str() );
 
-	string rwy_len = rwy_str.substr(36, 7);
+	string rwy_len = rwy_str.substr(41, 5);
 	rwy.length = atoi( rwy_len.c_str() );
 
-	string rwy_width = rwy_str.substr(43, 4);
+	string rwy_width = rwy_str.substr(47, 5);
 	rwy.width = atoi( rwy_width.c_str() );
 
-	rwy.surface_flags = rwy_str.substr(47, 5);
+	rwy.surface_flags = rwy_str.substr(53, 5);
 
-	rwy.end1_flags = rwy_str.substr(53, 4);
+	rwy.end1_flags = rwy_str.substr(59, 4);
 
-        string rwy_disp_threshold1 = rwy_str.substr(58, 6);
+        string rwy_disp_threshold1 = rwy_str.substr(64, 4);
 	rwy.disp_thresh1 = atoi( rwy_disp_threshold1.c_str() );
 
-        string rwy_stopway1 = rwy_str.substr(65, 6);
+        string rwy_stopway1 = rwy_str.substr(69, 4);
 	rwy.stopway1 = atoi( rwy_stopway1.c_str() );
 
-	rwy.end2_flags = rwy_str.substr(72, 4);
+	rwy.end2_flags = rwy_str.substr(74, 4);
 
-        string rwy_disp_threshold2 = rwy_str.substr(77, 6);
+        string rwy_disp_threshold2 = rwy_str.substr(79, 4);
 	rwy.disp_thresh2 = atoi( rwy_disp_threshold2.c_str() );
 
-        string rwy_stopway2 = rwy_str.substr(84, 6);
+        string rwy_stopway2 = rwy_str.substr(83, 4);
 	rwy.stopway2 = atoi( rwy_stopway2.c_str() );
 
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  lat   = " << rwy_lat << " " << rwy.lat);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  lon   = " << rwy_lon << " " << rwy.lon);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy_hdg << " " << rwy.heading);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  len   = " << rwy_len << " " << rwy.length);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  width = " << rwy_width << " " << rwy.width);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_flags);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  end1  = " << rwy.end1_flags);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy_disp_threshold1 << " " << rwy.disp_thresh1);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy_stopway1 << " " << rwy.stopway1);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  end2  = " << rwy.end2_flags);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy_disp_threshold2 << " " << rwy.disp_thresh2);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy_stopway2 << " " << rwy.stopway2);
+	SG_LOG( SG_GENERAL, SG_INFO, "  no    = " << rwy.rwy_no);
+	SG_LOG( SG_GENERAL, SG_INFO, "  lat   = " << rwy_lat << " " << rwy.lat);
+	SG_LOG( SG_GENERAL, SG_INFO, "  lon   = " << rwy_lon << " " << rwy.lon);
+	SG_LOG( SG_GENERAL, SG_INFO, "  hdg   = " << rwy_hdg << " "
+                << rwy.heading);
+	SG_LOG( SG_GENERAL, SG_INFO, "  len   = " << rwy_len << " "
+                << rwy.length);
+	SG_LOG( SG_GENERAL, SG_INFO, "  width = " << rwy_width << " "
+                << rwy.width);
+	SG_LOG( SG_GENERAL, SG_INFO, "  sfc   = " << rwy.surface_flags);
+	SG_LOG( SG_GENERAL, SG_INFO, "  end1  = " << rwy.end1_flags);
+        SG_LOG( SG_GENERAL, SG_INFO, "  dspth1= " << rwy_disp_threshold1
+                << " " << rwy.disp_thresh1);
+        SG_LOG( SG_GENERAL, SG_INFO, "  stop1 = " << rwy_stopway1 << " "
+                << rwy.stopway1);
+	SG_LOG( SG_GENERAL, SG_INFO, "  end2  = " << rwy.end2_flags);
+        SG_LOG( SG_GENERAL, SG_INFO, "  dspth2= " << rwy_disp_threshold2
+                << " " << rwy.disp_thresh2);
+        SG_LOG( SG_GENERAL, SG_INFO, "  stop2 = " << rwy_stopway2 << " "
+                << rwy.stopway2);
 
 	runways.push_back( rwy );
     }
+
+    SGBucket b( apt_lon / (double)rwy_count, apt_lat / (double)rwy_count );
+    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS,
+			 b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
+    Point3D gbs_center = sgGeodToCart( center_geod );
+    SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
 
     // parse taxiways and generate the vertex list
     runway_list taxiways;
     taxiways.clear();
 
     for ( i = 0; i < (int)taxiways_raw.size(); ++i ) {
-	rwy_str = taxiways_raw[i];
+	string taxi_str = taxiways_raw[i];
 
 	TGRunway taxi;
 
         taxi.really_taxiway = true;
         taxi.generated = false;
 
-	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
-	taxi.rwy_no = rwy_str.substr(2, 4);
+	SG_LOG(SG_GENERAL, SG_INFO, taxi_str);
 
-	string rwy_lat = rwy_str.substr(6, 10);
-	taxi.lat = atof( rwy_lat.c_str() );
+	string taxi_lat = taxi_str.substr(11, 10);
+	taxi.lat = atof( taxi_lat.c_str() );
 
-	string rwy_lon = rwy_str.substr(17, 11);
-	taxi.lon = atof( rwy_lon.c_str() );
+	string taxi_lon = taxi_str.substr(22, 11);
+	taxi.lon = atof( taxi_lon.c_str() );
 
-	string rwy_hdg = rwy_str.substr(29, 7);
-	taxi.heading = atof( rwy_hdg.c_str() );
+	string taxi_hdg = taxi_str.substr(34, 6);
+	taxi.heading = atof( taxi_hdg.c_str() );
 
-	string rwy_len = rwy_str.substr(36, 7);
-	taxi.length = atoi( rwy_len.c_str() );
+	string taxi_len = taxi_str.substr(41, 5);
+	taxi.length = atoi( taxi_len.c_str() );
 
-	string rwy_width = rwy_str.substr(43, 5);
-	taxi.width = atoi( rwy_width.c_str() );
+	string taxi_width = taxi_str.substr(47, 5);
+	taxi.width = atoi( taxi_width.c_str() );
 
-	taxi.surface_flags = rwy_str.substr(48, 3);
+	taxi.surface_flags = taxi_str.substr(53, 5);
 
-	/*
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  no    = " << rwy_no);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  lat   = " << rwy_lat << " " << lat);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  lon   = " << rwy_lon << " " << lon);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy_hdg << " " << hdg);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  len   = " << rwy_len << " " << len);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  width = " << rwy_width << " " << width);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy_sfc);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  end1  = " << rwy_end1);
-	SG_LOG(SG_GENERAL, SG_DEBUG, "  end2  = " << rwy_end2);
-	*/
+	SG_LOG( SG_GENERAL, SG_INFO, "  lat   = " << taxi_lat << " "
+                << taxi.lat);
+	SG_LOG( SG_GENERAL, SG_INFO, "  lon   = " << taxi_lon << " "
+                << taxi.lon);
+	SG_LOG( SG_GENERAL, SG_INFO, "  hdg   = " << taxi_hdg << " "
+                << taxi.heading);
+	SG_LOG( SG_GENERAL, SG_INFO, "  len   = " << taxi_len << " "
+                << taxi.length);
+	SG_LOG( SG_GENERAL, SG_INFO, "  width = " << taxi_width << " "
+                << taxi.width);
+	SG_LOG( SG_GENERAL, SG_INFO, "  sfc   = " << taxi.surface_flags);
 
 	taxiways.push_back( taxi );
     }
@@ -498,7 +482,7 @@ void build_airport( string airport_raw, float alt_m,
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "P" ) {
-	    build_runway( runways[i], elev * SG_FEET_TO_METER,
+	    build_runway( runways[i], alt_m,
 			  &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
 	}
@@ -508,7 +492,7 @@ void build_airport( string airport_raw, float alt_m,
     for ( i = 0; i < (int)runways.size(); ++i ) {
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag == "R" || type_flag == "V" ) {
-	    build_runway( runways[i], elev * SG_FEET_TO_METER,
+	    build_runway( runways[i], alt_m,
 			  &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
 	}
@@ -519,7 +503,7 @@ void build_airport( string airport_raw, float alt_m,
 	string type_flag = runways[i].surface_flags.substr(2, 1);
 	if ( type_flag != string("P") && type_flag != string("R")
              && type_flag != string("V") ) {
-	    build_runway( runways[i], elev * SG_FEET_TO_METER,
+	    build_runway( runways[i], alt_m,
 			  &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
 	}
@@ -545,7 +529,7 @@ void build_airport( string airport_raw, float alt_m,
 
         if ( largest_idx >= 0 ) {
             SG_LOG( SG_GENERAL, SG_INFO, "generating " << largest_idx );
-            build_runway( taxiways[largest_idx], elev * SG_FEET_TO_METER,
+            build_runway( taxiways[largest_idx], alt_m,
                           &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
             taxiways[largest_idx].generated = true;
@@ -1143,7 +1127,7 @@ void build_airport( string airport_raw, float alt_m,
     string_list fan_materials; fan_materials.clear();
 
     string objpath = root + "/AirportObj";
-    string name = apt_code + ".btg";
+    string name = airport_id + ".btg";
 
     SGBinObject obj;
 
