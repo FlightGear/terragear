@@ -545,6 +545,23 @@ static double distance2D( const Point3D p1, const Point3D p2 ) {
 }
 
 
+// calculate spherical distance between two points (lon, lat specified
+// in degrees, result returned in meters)
+static double distanceSphere( const Point3D p1, const Point3D p2 ) {
+    Point3D r1( p1.x() * SG_DEGREES_TO_RADIANS,
+                p1.y() * SG_DEGREES_TO_RADIANS,
+                p1.z() );
+    Point3D r2( p2.x() * SG_DEGREES_TO_RADIANS,
+                p2.y() * SG_DEGREES_TO_RADIANS,
+                p2.z() );
+
+    double course, dist_m;
+    calc_gc_course_dist( r1, r2, &course, &dist_m );
+
+    return dist_m;
+}
+
+
 // fix the elevations of the geodetic nodes
 static void fix_point_heights( TGConstruct& c, const TGArray& array )
 {
@@ -619,13 +636,13 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 		if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }
 		if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }
 	    
-		double d1 = distance2D( p, raw_nodes[n1] ); 
-		double d2 = distance2D( p, raw_nodes[n2] ); 
-		double d3 = distance2D( p, raw_nodes[n3] ); 
+		double d1 = distanceSphere( p, raw_nodes[n1] ); 
+		double d2 = distanceSphere( p, raw_nodes[n2] ); 
+		double d3 = distanceSphere( p, raw_nodes[n3] ); 
 
-		double max1 = 1000.0 * d1 + min;
-		double max2 = 1000.0 * d2 + min;
-		double max3 = 1000.0 * d3 + min;
+		double max1 = d1 * 0.20 + min;
+		double max2 = d2 * 0.20 + min;
+		double max3 = d3 * 0.20 + min;
 
 		if ( max1 < e1 ) { raw_nodes[n1].setz( max1 ); }
 		if ( max2 < e2 ) { raw_nodes[n2].setz( max2 ); }
@@ -640,13 +657,13 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 		if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }
 		if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }
 	    
-		double d1 = distance2D( p, raw_nodes[n1] ); 
-		double d2 = distance2D( p, raw_nodes[n2] ); 
-		double d3 = distance2D( p, raw_nodes[n3] ); 
+		double d1 = distanceSphere( p, raw_nodes[n1] ); 
+		double d2 = distanceSphere( p, raw_nodes[n2] ); 
+		double d3 = distanceSphere( p, raw_nodes[n3] ); 
 
-		double max1 = 400.0 * d1 + min;
-		double max2 = 400.0 * d2 + min;
-		double max3 = 400.0 * d3 + min;
+		double max1 = d1 * 0.30 + min;
+		double max2 = d2 * 0.30 + min;
+		double max3 = d3 * 0.30 + min;
 
 		if ( max1 < e1 ) { raw_nodes[n1].setz( max1 ); }
 		if ( max2 < e2 ) { raw_nodes[n2].setz( max2 ); }
