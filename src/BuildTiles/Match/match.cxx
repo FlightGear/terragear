@@ -473,7 +473,6 @@ void TGMatch::write_shared( TGConstruct& c ) {
     cout << "shared data will be written to " << file << endl;
 
 
-#if 0
     cout << "FLAGS" << endl;
     cout << "=====" << endl;
     cout << "sw_flag = " << sw_flag << endl;
@@ -484,7 +483,6 @@ void TGMatch::write_shared( TGConstruct& c ) {
     cout << "south_flag = " << south_flag << endl;
     cout << "east_flag = " << east_flag << endl;
     cout << "west_flag = " << west_flag << endl;
-#endif
 
     FILE *fp;
     if ( (fp = fopen( file.c_str(), "w" )) == NULL ) {
@@ -667,7 +665,9 @@ void TGMatch::assemble_tile( TGConstruct& c ) {
 
     int index;
 
+    // cout << "Total north nodes = " << north_nodes.size() << endl;
     for ( i = 0; i < (int)north_nodes.size(); ++i ) {
+	// cout << "adding north node " << north_nodes[i] << endl;
 	index = new_nodes.unique_add( north_nodes[i] );
 	insert_normal( new_normals, north_normals[i], index );
     }
