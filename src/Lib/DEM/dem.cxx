@@ -338,7 +338,7 @@ FGDem::read_b_record( ) {
     token = next_token();
     token = next_token();
 
-    // One (usually) dimensional array (prof_num_cols,1) of elevations
+    // One (usually) dimensional array (1,prof_num_rows) of elevations
     last = 0;
     for ( i = 0; i < prof_num_rows; i++ ) {
 	prof_data = next_int();
