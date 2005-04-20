@@ -5,6 +5,16 @@ You can get the latest version of libnurbs++ from:
 
     http://libnurbs.sourceforge.net/
 
+IMPORTANT!  If you are using gcc-3.4.x (or newer) you will need to apply
+a patch to your nurbs++ tree to successfully compile.  Look for the file
+called PATCH-nurbs++-gcc-3.4.x in the current directory.  Now cd to the
+top level of your fresh nurbs++-3.0.11 source tree and run:
+
+    patch -p0 < /path/to/patch/file
+
+Good luck!
+
+
 More information:
 
   Non-Uniform Rational B-Splines (NURBS) curves and surface are
