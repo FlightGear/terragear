@@ -1,5 +1,7 @@
 EXTRA_DIST = \
-	README README.howto README.gpc \
+	PATCH-nurbs++-3.0.11-with-gcc-3.4.x \
+	README README README.cygwin README.gpc README.gts README.howto \
+	README.nurbs++ README.plib README.SimGear \
 	TerraGear.dsp TerraGear.dsw
 	acinclude.m4 \
         autogen.sh
