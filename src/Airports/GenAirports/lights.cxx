@@ -679,7 +679,7 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
 }
 
 
-// generate a simple 2 bar VASI for a 3 degree approach
+// generate a simple 2 bar VASI
 static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
                              bool recip, TGPolygon *apt_base )
 {
@@ -687,6 +687,7 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
     point_list normals; normals.clear();
     int i;
     string flag;
+    double gs_angle = 3.0;
 
     cout << "gen vasi " << rwy_info.rwy_no << endl;
 
@@ -714,13 +715,20 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
         flag = rwy_info.rwy_no + "-i";
+        gs_angle = rwy_info.gs_angle1;
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
         flag = rwy_info.rwy_no;
+        gs_angle = rwy_info.gs_angle2;
     }
+
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
+
+    if ( gs_angle < 0.5 ) {
+        gs_angle = 3.0;
+    }
 
     // offset 600' upwind
     geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -732,7 +740,7 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
     ref = Point3D( lon, lat, 0.0 );
 
     // downwind bar
-    normal = gen_runway_light_vector( rwy_info, 2.5, recip );
+    normal = gen_runway_light_vector( rwy_info, gs_angle - 0.5, recip );
 
     // unit1
     Point3D pt1 = ref;
@@ -779,7 +787,7 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
                         700 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
 
-    normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    normal = gen_runway_light_vector( rwy_info, gs_angle, recip );
 
     // unit1
     pt1 = ref;
@@ -837,7 +845,7 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
 }
 
 
-// generate a simple PAPI for a 3 degree approach 
+// generate a simple PAPI
 static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
                              bool recip, TGPolygon *apt_base  )
 {
@@ -845,6 +853,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
     point_list normals; normals.clear();
     int i;
     string flag;
+    double gs_angle = 3.0;
 
     cout << "gen papi " << rwy_info.rwy_no << endl;
 
@@ -872,15 +881,22 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
         flag = rwy_info.rwy_no + "-i";
+        gs_angle = rwy_info.gs_angle1;
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
         flag = rwy_info.rwy_no;
+        gs_angle = rwy_info.gs_angle2;
     }
+
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
     cout << "length hdg = " << length_hdg
          << " left heading = " << left_hdg << endl;
+
+    if ( gs_angle < 0.5 ) {
+        gs_angle = 3.0;
+    }
 
     // offset 950' upwind
     geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
@@ -894,7 +910,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
     // unit1
     Point3D pt1 = ref;
     lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, 3.5, recip );
+    normal = gen_runway_light_vector( rwy_info, gs_angle + 0.5, recip );
     normals.push_back( normal );
     
     // unit2
@@ -902,7 +918,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, 3.167, recip );
+    normal = gen_runway_light_vector( rwy_info, gs_angle + 0.167, recip );
     normals.push_back( normal );
 
     // unit3
@@ -910,7 +926,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, 2.833, recip );
+    normal = gen_runway_light_vector( rwy_info, gs_angle - 0.167, recip );
     normals.push_back( normal );
 
     // unit4
@@ -918,7 +934,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, 2.5, recip );
+    normal = gen_runway_light_vector( rwy_info, gs_angle - 0.5, recip );
     normals.push_back( normal );
 
     // grass base

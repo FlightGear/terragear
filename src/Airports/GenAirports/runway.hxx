@@ -54,6 +54,9 @@ struct TGRunway {
     double smoothness;
     bool   dist_remaining;
 
+    double gs_angle1;
+    double gs_angle2;
+
     TGPolygon threshold;
     TGPolygon tens, tens_margin, ones, ones_margin;
     TGPolygon letter, letter_margin_left, letter_margin_right;

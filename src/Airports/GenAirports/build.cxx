@@ -426,6 +426,11 @@ void build_airport( string airport_id, float alt_m,
         rwy.smoothness = atof( token[13].c_str() );
         rwy.dist_remaining = (atoi( token[14].c_str() ) == 1 );
 
+        string vasi_angles = token[15];
+        vector<string> vasis = simgear::strutils::split( vasi_angles, "." );
+        rwy.gs_angle1 = atoi( vasis[0].c_str() );
+        rwy.gs_angle2 = atoi( vasis[1].c_str() );
+
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy.lon);
