@@ -191,7 +191,7 @@ static point_list calc_elevations( TGAptSurface &surf,
 {
     point_list result = geod_nodes;
     for ( unsigned int i = 0; i < result.size(); ++i ) {
-        double elev = surf.query_solver( result[i].lon(), result[i].lat() );
+        double elev = surf.query( result[i].lon(), result[i].lat() );
         result[i].setelev( elev + offset );
     }
 

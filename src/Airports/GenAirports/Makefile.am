@@ -23,7 +23,7 @@
 #---------------------------------------------------------------------------
 
 
-bin_PROGRAMS = genapts testnurbs
+bin_PROGRAMS = genapts
 
 genapts_SOURCES = \
 	apt_surface.hxx apt_surface.cxx \
@@ -53,12 +53,9 @@ genapts_LDADD = \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgdebug -lsgio -lsgmath -lsgmisc -lsgstructure -lsgxml \
 	-lgenpolyclip \
-	-lnurbsd -lmatrixI -lmatrixN -lmatrix \
+	-lnewmat \
 	-lz \
 	$(base_LIBS)
-
-testnurbs_SOURCES = testnurbs.cxx
-testnurbs_LDADD = -lnurbsf -lmatrixI -lmatrixN -lmatrix
 
 INCLUDES = \
 	-I$(top_srcdir) \

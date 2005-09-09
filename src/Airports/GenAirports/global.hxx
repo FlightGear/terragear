@@ -42,8 +42,4 @@ const double slope_eps = 0.00001;
 // nurbs query/search epsilon
 const double nurbs_eps = 0.0000001;
 
-// Define only one of the following
-// #define _NURBS_GLOBAL_APPROX 1
-#define _NURBS_LEAST_SQUARES 1
-
 #endif // _GEN_AIRPORT_GLOBAL_HXX

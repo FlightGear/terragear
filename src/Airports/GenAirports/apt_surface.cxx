@@ -22,9 +22,14 @@
 // $Id$
 //
 
+#include <simgear/compiler.h>
 
-#include <nurbs++/nurbsS.h>
-#include <nurbs++/nurbsSub.h>
+// libnewmat includes and defines
+#define WANT_STREAM		// include.h will get stream fns
+#define WANT_MATH		// include.h will get math fns
+				// newmatap.h will get include.h
+#include <newmat/newmatap.h>	// need matrix applications
+#include <newmat/newmatio.h>	// need matrix output routines
 
 #include <simgear/constants.h>
 #include <simgear/math/sg_geodesy.hxx>
@@ -37,17 +42,15 @@
 #include "global.hxx"
 #include "apt_surface.hxx"
 
-SG_USING_NAMESPACE( PLib );
 
-
-static bool limit_slope( Matrix_Point3Dd &Pts, int i1, int j1, int i2, int j2,
+static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
                          double average_elev_m )
 {
     bool slope_error = false;
 
-    Point3Dd p1, p2;
-    p1 = Pts(i1,j1);
-    p2 = Pts(i2,j2);
+    Point3D p1, p2;
+    p1 = Pts->element(i1,j1);
+    p2 = Pts->element(i2,j2);
 
     double az1, az2, dist;
     double slope;
@@ -73,19 +76,19 @@ static bool limit_slope( Matrix_Point3Dd &Pts, int i1, int j1, int i2, int j2,
         if ( e1 > e2 ) {
             // cout << "  p1 error larger" << endl;
             if ( slope > 0 ) {
-                p1.z() = p2.z() - (dist * slope_max);
+	      p1.setz( p2.z() - (dist * slope_max) );
             } else {
-                p1.z() = p2.z() + (dist * slope_max);
+	      p1.setz( p2.z() + (dist * slope_max) );
             }
-            Pts(i1,j1) = p1;
+            Pts->set(i1, j1, p1);
         } else {
             // cout << "  p2 error larger" << endl;
             if ( slope > 0 ) {
-                p2.z() = p1.z() + (dist * slope_max);
+	      p2.setz( p1.z() + (dist * slope_max) );
             } else {
-                p2.z() = p1.z() - (dist * slope_max);
+	      p2.setz( p1.z() - (dist * slope_max) );
             }
-            Pts(i2,j2) = p2;
+            Pts->set(i2, j2, p2);
         }
         // cout << "   z1 = " << p1.z() << "  z2 = " << p2.z() << endl;
     }
@@ -126,18 +129,12 @@ TGAptSurface::TGAptSurface( const string& path,
     int xdivs = (int)(x_m / coarse_grid) + 1;
     int ydivs = (int)(y_m / coarse_grid) + 1;
 
-#if defined( _NURBS_GLOBAL_INTERP )
-    if ( xdivs < 3 ) { xdivs = 3; }
-    if ( ydivs < 3 ) { ydivs = 3; }
-#elif defined( _NURBS_LEAST_SQUARES )
-    // Minimum divs appears to need to be at least 5 before the
-    // leastsquares nurbs surface approximation stops crashing.
+    // set an arbitrary minumum number of divisions to keep things
+    // interesting
     if ( xdivs < 6 ) { xdivs = 6; }
     if ( ydivs < 6 ) { ydivs = 6; }
-#else
-# error "Need to define _NURBS_GLOBAL_INTER or _NURBS_LEAST_SQUARES"
-#endif
     SG_LOG(SG_GENERAL, SG_INFO, "  M(" << ydivs << "," << xdivs << ")");
+
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
 
@@ -147,14 +144,15 @@ TGAptSurface::TGAptSurface( const string& path,
     // Build the extra res input grid (shifted SW by half (dlon,dlat)
     // with an added major row column on the NE sides.)
     int mult = 10;
-    Matrix_Point3Dd dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
+    SimpleMatrix dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
     for ( int j = 0; j < dPts.cols(); ++j ) {
         for ( int i = 0; i < dPts.rows(); ++i ) {
-            dPts(i,j) = Point3Dd( min_deg.lon() - dlon_h
-                                    + j * (dlon / (double)mult),
-                                  min_deg.lat() - dlat_h
-                                    + i * (dlat / (double)mult),
-                                  -9999 );
+	  dPts.set(i, j, Point3D( min_deg.lon() - dlon_h
+				    + j * (dlon / (double)mult),
+				   min_deg.lat() - dlat_h
+				    + i * (dlat / (double)mult),
+				   -9999 )
+		   );
         }
     }
 
@@ -183,21 +181,21 @@ TGAptSurface::TGAptSurface( const string& path,
 #endif
 
     // Build the normal res input grid from the double res version
-    Matrix_Point3Dd Pts(ydivs + 1, xdivs + 1);
+    Pts = new SimpleMatrix(ydivs + 1, xdivs + 1);
     double ave_divider = (mult+1) * (mult+1);
-    for ( int j = 0; j < Pts.cols(); ++j ) {
-        for ( int i = 0; i < Pts.rows(); ++i ) {
+    for ( int j = 0; j < Pts->cols(); ++j ) {
+        for ( int i = 0; i < Pts->rows(); ++i ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
             double lon_accum = 0.0;
             double lat_accum = 0.0;
             for ( int jj = 0; jj <= mult; ++jj ) {
                 for ( int ii = 0; ii <= mult; ++ii ) {
-                    double value = dPts(mult*i + ii, mult*j + jj).z();
+                    double value = dPts.element(mult*i + ii, mult*j + jj).z();
                     SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
                     accum += value;
-                    lon_accum += dPts(mult*i + ii, mult*j + jj).x();
-                    lat_accum += dPts(mult*i + ii, mult*j + jj).y();
+                    lon_accum += dPts.element(mult*i + ii, mult*j + jj).x();
+                    lat_accum += dPts.element(mult*i + ii, mult*j + jj).y();
                 }
             }
             double val_ave = accum / ave_divider;
@@ -205,9 +203,10 @@ TGAptSurface::TGAptSurface( const string& path,
             double lat_ave = lat_accum / ave_divider;
 
             SG_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
-            Pts(i,j) = Point3Dd( min_deg.lon() + j * dlon,
-                                 min_deg.lat() + i * dlat,
-                                 val_ave );
+            Pts->set(i, j, Point3D( min_deg.lon() + j * dlon,
+				   min_deg.lat() + i * dlat,
+				   val_ave )
+		    );
             SG_LOG( SG_GENERAL, SG_DEBUG, "lon_ave = " << lon_ave
                     << "  lat_ave = " << lat_ave );
             SG_LOG( SG_GENERAL, SG_DEBUG, "lon = " << min_deg.lon() + j * dlon
@@ -216,8 +215,8 @@ TGAptSurface::TGAptSurface( const string& path,
     }
 
 #ifdef DEBUG
-    for ( int j = 0; j < Pts.cols(); ++j ) {
-        for ( int i = 0; i < Pts.rows(); ++i ) {
+    for ( int j = 0; j < Pts->cols(); ++j ) {
+        for ( int i = 0; i < Pts->rows(); ++i ) {
             printf("%.5f %.5f %.1f\n", Pts(i,j).x(), Pts(i,j).y(),
                    Pts(i,j).z() );
         }
@@ -229,8 +228,8 @@ TGAptSurface::TGAptSurface( const string& path,
         SG_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
         slope_error = false;
         // Add some "slope" sanity to the resulting surface grid points
-        for ( int j = 0; j < Pts.cols() - 1; ++j ) {
-            for ( int i = 0; i < Pts.rows() - 1; ++i ) {
+        for ( int j = 0; j < Pts->cols() - 1; ++j ) {
+            for ( int i = 0; i < Pts->rows() - 1; ++i ) {
                 if ( limit_slope( Pts, i, j, i+1, j, average_elev_m ) ) {
                     slope_error = true;
                 }
@@ -245,52 +244,36 @@ TGAptSurface::TGAptSurface( const string& path,
     }
 
 #ifdef DEBUG
-    for ( int j = 0; j < Pts.cols(); ++j ) {
-        for ( int i = 0; i < Pts.rows(); ++i ) {
+    for ( int j = 0; j < Pts->cols(); ++j ) {
+        for ( int i = 0; i < Pts->rows(); ++i ) {
             printf("%.5f %.5f %.1f\n", Pts(i,j).x(), Pts(i,j).y(),
                    Pts(i,j).z() );
         }
     }
 #endif
 
-    // Create the nurbs surface
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create nurbs surface");
-    apt_surf = new PlNurbsSurfaced;
-#if defined( _NURBS_GLOBAL_INTERP )
-    apt_surf->globalInterp( Pts, 3, 3);
-#elif defined( _NURBS_LEAST_SQUARES )
-    cout << "Col = " << Pts.cols() << " Rows = " << Pts.rows() << endl;
-    int nU = Pts.rows() / 2; if ( nU < 4 ) { nU = 4; }
-    int nV = Pts.cols() / 2; if ( nV < 4 ) { nV = 4; }
-    cout << "nU = " << nU << " nV = " << nV << endl;
-    apt_surf->leastSquares( Pts, 3, 3, nU, nV );
+    // Create the fitted surface
+    SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
+    fit();
 
     // sanity check: I'm finding that leastSquares() can produce nan
     // surfaces.  We test for this and fall back to globalInterp() if
     // the least squares fails.
-    double result =  query_solver( (min_deg.lon() + max_deg.lon()) / 2.0,
-                                   (min_deg.lat() + max_deg.lat()) / 2.0 );
-    Point3Dd p = apt_surf->pointAt( 0.5, 0.5 );
-
-    if ( (result > -9000.0) && (p.z() <= 0.0 || p.z() >= 0.0) ) {
+    double result =  query( (min_deg.lon() + max_deg.lon()) / 2.0,
+			    (min_deg.lat() + max_deg.lat()) / 2.0 );
+    if ( result > -9000.0 ) {
         // ok, a valid number
     } else {
-        // no, sorry, a nan is not <= 0.0 or >= 0.0
         SG_LOG(SG_GENERAL, SG_WARN,
-               "leastSquares() nurbs interpolation failed!!!");
+               "leastSquares() fit seemed to fail!!!");
         char command[256];
         sprintf( command,
                  "echo least squares nurbs interpolation failed, using globalInterp() >> last_apt" );
         system( command );
 
-        // we could fall back to globalInterp() rather than aborting
-        // if we wanted to ...
-        apt_surf->globalInterp( Pts, 3, 3);
+	// abort and force developer to debug for now
+	exit(-1);
     }
-#else
-# error "Need to define _NURBS_GLOBAL_INTER or _NURBS_LEAST_SQUARES"
-#endif
     SG_LOG(SG_GENERAL, SG_DEBUG, "  successful.");
 
 #ifdef DEBUG
@@ -315,7 +298,110 @@ TGAptSurface::TGAptSurface( const string& path,
 
 
 TGAptSurface::~TGAptSurface() {
-    delete apt_surf;
+    delete Pts;
+}
+
+
+static ColumnVector qr_method( Real* y,
+			       Real* t1, Real* t2, Real* t3, Real* t4,
+			       Real* t5, Real* t6, Real* t7, Real* t8,
+			       int nobs, int npred )
+{
+  cout << "QR triangularisation" << endl;;
+
+  // QR triangularisation method
+ 
+  // load data - 1s into col 1 of matrix
+  int npred1 = npred+1;
+  Matrix X(nobs,npred1); ColumnVector Y(nobs);
+  X.column(1) = 1.0;
+  X.column(2) << t1;
+  X.column(3) << t2;
+  X.column(4) << t3;
+  X.column(5) << t4;
+  X.column(6) << t5;
+  X.column(7) << t6;
+  X.column(8) << t7;
+  X.column(9) << t8;
+  Y << y;
+
+  // do Householder triangularisation
+  // no need to deal with constant term separately
+  Matrix X1 = X;                 // Want copy of matrix
+  ColumnVector Y1 = Y;
+  UpperTriangularMatrix U; ColumnVector M;
+  QRZ(X1, U); QRZ(X1, Y1, M);    // Y1 now contains resids
+  ColumnVector A = U.i() * M;
+  ColumnVector Fitted = X * A;
+  Real ResVar = sum_square(Y1) / (nobs-npred1);
+
+  // get variances of estimates
+  U = U.i(); DiagonalMatrix D; D << U * U.t();
+
+  // Get diagonals of Hat matrix
+  DiagonalMatrix Hat;  Hat << X1 * X1.t();
+
+  // print out answers
+  cout << "\nEstimates and their standard errors\n\n";
+  ColumnVector SE(npred1);
+  for (int i=1; i<=npred1; i++) SE(i) = sqrt(D(i)*ResVar);
+  cout << setw(11) << setprecision(5) << (A | SE) << endl;
+  cout << "\nObservations, fitted value, residual value, hat value\n";
+  cout << setw(9) << setprecision(3) << 
+    (X.columns(2,3) | Y | Fitted | Y1 | Hat.as_column());
+  cout << "\n\n";
+
+  return A;
+}
+
+
+// Use a linear least squares method to fit a 3d polynomial to the
+// sampled surface data
+void TGAptSurface::fit() {
+
+  // the fit function is: f(x,y) = a*x + b*x^2 + c*y + d*y^2 + e*x*y +
+  // f*x*y^2 + g*x^2*y + h*x^2*y^2
+  int nobs = Pts->cols() * Pts->rows();	// number of observations
+  int npred = 8;		        // number of predictor values
+
+  Real z[nobs];
+  Real t1[nobs];
+  Real t2[nobs];
+  Real t3[nobs];
+  Real t4[nobs];
+  Real t5[nobs];
+  Real t6[nobs];
+  Real t7[nobs];
+  Real t8[nobs];
+
+  // generate the required fit data
+  for ( int j = 0; j < Pts->cols(); j++ ) {
+    for ( int i = 0; i <= Pts->rows(); i++ ) {
+      Point3D p = Pts->element( i, j );
+      int index = ( j * Pts->rows() ) + i;
+      Real xi = p.x();
+      Real yi = p.y();
+      z[index] = p.z();
+      t1[index] = xi;
+      t2[index] = xi*xi;
+      t3[index] = yi;
+      t4[index] = yi*yi;
+      t5[index] = xi*yi;
+      t6[index] = xi*yi*yi;
+      t7[index] = xi*xi*yi;
+      t8[index] = xi*xi*yi*yi;
+    }
+  }
+
+  // we want to find the values of a,b,c to give the best
+  // fit
+
+  Try {
+    surface_coefficients
+      = qr_method(z, t1, t2, t3, t4, t5, t6, t7, t8, nobs, npred);
+  }
+  CatchAll { cout << BaseException::what(); }
+
 }
 
 
@@ -325,198 +411,21 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
     if ( lon_deg < min_deg.lon() || lon_deg > max_deg.lon() ||
          lat_deg < min_deg.lat() || lat_deg > max_deg.lat() )
     {
-        SG_LOG(SG_GENERAL, SG_WARN, "Warning: query out of bounds for NURBS surface!");
+        SG_LOG(SG_GENERAL, SG_WARN,
+	       "Warning: query out of bounds for fitted surface!");
         return -9999.0;
     }
 
-    double lat_range = max_deg.lat() - min_deg.lat();
-    double lon_range = max_deg.lon() - min_deg.lon();
+    // compute the function with solved coefficients
 
-    // convert lon,lat to nurbs space (NOTE: that this is a dumb
-    // approximation that assumes that nurbs surface space exactly
-    // corresponds to real world x,y space which it doesn't, but maybe
-    // the error is small enough that it doesn't matter?)
-    double u = (lat_deg - min_deg.lat()) / lat_range;
-    double v = (lon_deg - min_deg.lon()) / lon_range;
+    // the fit function is: f(x,y) = a*x + b*x^2 + c*y + d*y^2 + e*x*y +
+    //                               f*x*y^2 + g*x^2*y + h*x^2*y^2
 
-    Point3Dd p = apt_surf->pointAt( u, v );
+    double x = lon_deg;
+    double y = lat_deg;
+    ColumnVector A = surface_coefficients;
+    double result = A(0)*x + A(1)*x*x + A(2)*y + A(3)*y*y + A(4)*x*y
+      + A(5)*x*y*y + A(6)*x*x*y + A(7)*x*x*y*y;
 
-    // double az1, az2, dist;
-    // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
-    //                     &az1, &az2, &dist );
-    // cout << "query distance error = " << dist << endl;
-    
-    return p.z();
-}
-
-
-// Query the elevation of a point, return -9999 if out of range
-double TGAptSurface::query_solver( double lon_deg, double lat_deg ) {
-    // sanity check
-    if ( lon_deg < min_deg.lon() || lon_deg > max_deg.lon() ||
-         lat_deg < min_deg.lat() || lat_deg > max_deg.lat() )
-    {
-        SG_LOG(SG_GENERAL, SG_WARN, "Warning: query out of bounds for NURBS surface!");
-        return -9999.0;
-    }
-
-    double lat_range = max_deg.lat() - min_deg.lat();
-    double lon_range = max_deg.lon() - min_deg.lon();
-
-    // convert lon,lat to nurbs space
-    double u = (lat_deg - min_deg.lat()) / lat_range;
-    double v = (lon_deg - min_deg.lon()) / lon_range;
-
-    // cout << "running quick solver ..." << endl;
-
-    int count;
-    double dx = 1000;
-    double dy = 1000;
-    Point3Dd p;
-
-    // cout << " solving for u,v simultaneously" << endl;
-    count = 0;
-    while ( count < 0 /* disable fast solver for now */ ) {
-        if ( u < 0.0 || u > 1.0 || v < 0.0 || v > 1.0 ) {
-            cout << "oops, something goofed in the solver" << endl;
-            exit(-1);
-        }
-
-        p = apt_surf->pointAt( u, v );
-        // cout << "  querying for " << u << ", " << v << " = " << p.z()
-        //      << endl;
-        // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
-        //      << endl;
-        dx = lon_deg - p.x();
-        dy = lat_deg - p.y();
-        // cout << "      dx = " << dx << " dy = " << dy << endl;
-
-        if ( (fabs(dx) < nurbs_eps) && (fabs(dy) < nurbs_eps) ) {
-            return p.z();
-        } else {
-            u = u + (dy/lat_range);
-            v = v + (dx/lon_range);
-            if ( u < 0.0 ) { u = 0.0; }
-            if ( u > 1.0 ) { u = 1.0; }
-            if ( v < 0.0 ) { v = 0.0; }
-            if ( v > 1.0 ) { v = 1.0; }
-        }
-
-        ++count;
-    }
-
-    // cout << "quick query solver failed..." << endl;
-
-    // failed to converge with fast approach, try a binary partition
-    // scheme, however we have to solve each axis independently
-    // because when we move in one axis we may change our position in
-    // the other axis.
-
-    double min_u = 0.0; 
-    double max_u = 1.0;
-    double min_v = 0.0; 
-    double max_v = 1.0;
-
-    u = (max_u + min_u) / 2.0;
-    v = (max_v + min_v) / 2.0;
-
-    dx = 1000.0;
-    dy = 1000.0;
-
-    int gcount = 0;
-
-    while ( true ) {
-        // cout << "solving for u" << endl;
-        
-        min_u = 0.0; 
-        max_u = 1.0;
-        count = 0;
-        while ( true ) {
-            p = apt_surf->pointAt( u, v );
-            // cout << "  binary querying for " << u << ", " << v << " = "
-            //      << p.z() << endl;
-            // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
-            //      << endl;
-            dx = lon_deg - p.x();
-            dy = lat_deg - p.y();
-            // cout << "      dx = " << dx << " dy = " << dy << " z = " << p.z() << endl;
-
-            // double az1, az2, dist;
-            // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
-            //                     &az1, &az2, &dist );
-            // cout << "      query distance error = " << dist << endl;
-
-            if ( fabs(dy) < nurbs_eps ) {
-                break;
-            } else {
-                if ( dy >= nurbs_eps ) {
-                    min_u = u;
-                } else if ( dy <= nurbs_eps ) {
-                    max_u = u;
-                }
-            }
-
-            u = (max_u + min_u) / 2.0;
-
-            if ( count > 100 ) {
-                // solver failed
-                cout << "binary solver failed..." << endl;
-                return -9999.0;
-            }
-
-            ++count;
-        }
-
-        // cout << "solving for v" << endl;
-
-        min_v = 0.0; 
-        max_v = 1.0;
-        count = 0;
-        while ( true ) {
-            p = apt_surf->pointAt( u, v );
-            // cout << "  binary querying for " << u << ", " << v << " = "
-            //      << p.z() << endl;
-            // cout << "    found " << p.x() << ", " << p.y() << " = " << p.z()
-            //      << endl;
-            dx = lon_deg - p.x();
-            dy = lat_deg - p.y();
-            // cout << "      dx = " << dx << " dy = " << dy << " z = " << p.z() << endl;
-
-            // double az1, az2, dist;
-            // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
-            //                     &az1, &az2, &dist );
-            // cout << "      query distance error = " << dist << endl;
-            if ( fabs(dx) < nurbs_eps ) {
-                break;
-            } else {
-                if ( dx >= nurbs_eps ) {
-                    min_v = v;
-                } else if ( dx <= nurbs_eps ) {
-                    max_v = v;
-                }
-            }
-            v = (max_v + min_v) / 2.0;
-
-            if ( count > 100 ) {
-                // solver failed
-                cout << "binary solver failed..." << endl;
-                return -9999.0;
-            }
-
-            ++count;
-        }
-
-        // cout << "query count = " << gcount << "  dist = " << dx << ", "
-        //      << dy << endl;
-
-        if ( (fabs(dx) < nurbs_eps) && (fabs(dy) < nurbs_eps) ) {
-            // double az1, az2, dist;
-            // geo_inverse_wgs_84( 0, lat_deg, lon_deg, p.y(), p.x(),
-            //                     &az1, &az2, &dist );
-            // cout << "        final query distance error = " << dist << endl;
-            return p.z();
-        }
-    }
-
-    return p.z();
+    return result;
 }

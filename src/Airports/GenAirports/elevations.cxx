@@ -23,8 +23,12 @@
 //
 
 
-#include <nurbs++/nurbsS.h>
-#include <nurbs++/nurbsSub.h>
+// libnewmat includes and defines
+#define WANT_STREAM		// include.h will get stream fns
+#define WANT_MATH		// include.h will get math fns
+				// newmatap.h will get include.h
+#include <newmat/newmatap.h>	// need matrix applications
+#include <newmat/newmatio.h>	// need matrix output routines
 
 #include <simgear/constants.h>
 #include <simgear/math/sg_geodesy.hxx>
@@ -35,8 +39,6 @@
 
 #include "global.hxx"
 #include "apt_surface.hxx"
-
-SG_USING_NAMESPACE( PLib );
 
 
 // lookup node elevations for each point in the point_list.  Returns
@@ -64,7 +66,7 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 
     while ( !done ) {
 	// find first node with -9999 elevation
-        Point3D first;
+        Point3D first(0.0);
         bool found_one = false;
         for ( i = 0; i < points.size(); ++i ) {
             if ( points[i].z() < -9000.0 && !found_one ) {
@@ -142,7 +144,8 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 // matrix.  Returns average of all points.
 
 void tgCalcElevations( const string &root, const string_list elev_src,
-                       Matrix_Point3Dd &Pts, const double average ) {
+                       SimpleMatrix &Pts, const double average )
+{
     bool done = false;
     int i, j;
     TGArray array;
@@ -154,19 +157,20 @@ void tgCalcElevations( const string &root, const string_list elev_src,
 
     // set all elevations to -9999
     for ( j = 0; j < Pts.cols(); ++j ) {
-        for ( i = 0; i < Pts.rows(); ++i ) {
-            Point3Dd p = Pts(i,j);
-            p.z() = -9999.0;
-        }
+      for ( i = 0; i < Pts.rows(); ++i ) {
+	Point3D p = Pts.element(i, j);
+	p.setz( -9999.0 );
+	Pts.set(i, j, p);
+      }
     }
 
     while ( !done ) {
 	// find first node with -9999 elevation
-        Point3Dd first;
+        Point3D first(0.0);
         bool found_one = false;
         for ( j = 0; j < Pts.cols(); ++j ) {
             for ( i = 0; i < Pts.rows(); ++i ) {
-                Point3Dd p = Pts(i,j);
+                Point3D p = Pts.element(i,j);
                 if ( p.z() < -9000.0 && !found_one ) {
                     first = p;
                     found_one = true;
@@ -206,17 +210,17 @@ void tgCalcElevations( const string &root, const string_list elev_src,
 	    done = true;
             for ( j = 0; j < Pts.cols(); ++j ) {
                 for ( i = 0; i < Pts.rows(); ++i ) {
-                    Point3Dd p = Pts(i,j);
+                    Point3D p = Pts.element(i,j);
                     if ( p.z() < -9000.0 ) {
                         done = false;
                         elev = array.altitude_from_grid( p.x() * 3600.0,
                                                          p.y() * 3600.0 );
                         if ( elev > -9000 ) {
-                            p.z() = elev;
-                            Pts(i,j) = p;
-                            // cout << "interpolating for " << p << endl;
-                            // cout << p.x() << " " << p.y() << " " << p.z()
-                            //      << endl;
+			  p.setz( elev );
+			  Pts.set(i, j, p);
+			  // cout << "interpolating for " << p << endl;
+			  // cout << p.x() << " " << p.y() << " " << p.z()
+			  //      << endl;
                         }
                     }
                 }
@@ -235,7 +239,7 @@ void tgCalcElevations( const string &root, const string_list elev_src,
     int count = 0;
     for ( j = 0; j < Pts.cols(); ++j ) {
         for ( i = 0; i < Pts.rows(); ++i ) {
-            Point3Dd p = Pts(i,j);
+            Point3D p = Pts.element(i,j);
             total += p.z();
             count++;
         }
@@ -248,7 +252,7 @@ void tgCalcElevations( const string &root, const string_list elev_src,
 
 // clamp all elevations to the specified range
 
-void tgClampElevations( Matrix_Point3Dd &Pts,
+void tgClampElevations( SimpleMatrix &Pts,
                         double center_m, double max_clamp_m )
 {
     int i, j;
@@ -257,18 +261,18 @@ void tgClampElevations( Matrix_Point3Dd &Pts,
     // +/-max_m of the center_m elevation.
     for ( j = 0; j < Pts.cols(); ++j ) {
         for ( i = 0; i < Pts.rows(); ++i ) {
-            Point3Dd p = Pts(i,j);
+            Point3D p = Pts.element(i,j);
             if ( p.z() < center_m - max_clamp_m ) {
                 SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
                        << " to " << center_m - max_clamp_m );
-                p.z() = center_m - max_clamp_m;
-                Pts(i,j) = p;
+                p.setz( center_m - max_clamp_m );
+                Pts.set(i, j, p);
             }
             if ( p.z() > center_m + max_clamp_m ) {
                 SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
                        << " to " << center_m + max_clamp_m );
-                p.z() = center_m + max_clamp_m;
-                Pts(i,j) = p;
+                p.setz( center_m + max_clamp_m );
+                Pts.set(i, j, p);
             }
         }
     }

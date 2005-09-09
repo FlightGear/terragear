@@ -247,9 +247,9 @@ if test "x$ac_cv_header_plib_pu_h" != "xyes"; then
     exit
 fi
 
-dnl Check for "libnurbs++" without which we cannot go on
-AC_CHECK_HEADER(nurbs++/nurbsS.h)
-AM_CONDITIONAL(HAVE_NURBS, test "x$ac_cv_header_nurbspp_nurbsS_h" = "xyes" )
+dnl Check for "libnewmat" without which we cannot build airport surfaces
+AC_CHECK_HEADER(newmat/newmat.h)
+AM_CONDITIONAL(HAVE_NEWMAT, test "x$ac_cv_header_newmat_newmat_h" = "xyes" )
 AC_LANG_POP
 
 AC_CHECK_HEADER(gts.h)
@@ -442,11 +442,11 @@ else
     echo "Debug messages: yes"
 fi
 
-if test "x$ac_cv_header_nurbspp_nurbsS_h" != "xyes"; then
+if test "x$ac_cv_header_newmat_newmat_h" != "xyes"; then
     echo
-    echo "You must have the nurbs++ library installed on your system to build"
-    echo "the GenAirport utility. This program will not be build now."
+    echo "You must have the newmat library installed on your system to build"
+    echo "the GenAirport utility. This program will not be built."
     echo
-    echo "Please see README.nurbs++ for more details."
+    echo "Please see README.newmat for more details."
     echo
 fi

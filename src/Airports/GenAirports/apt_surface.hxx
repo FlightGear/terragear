@@ -29,9 +29,51 @@
 
 #include <string>
 
-#include <nurbs++/nurbsS.h>
+// libnewmat includes and defines
+#define WANT_STREAM		// include.h will get stream fns
+#define WANT_MATH		// include.h will get math fns
+				// newmatap.h will get include.h
+#include <newmat/newmatap.h>	// need matrix applications
+#include <newmat/newmatio.h>	// need matrix output routines
 
 #include <simgear/math/point3d.hxx>
+
+
+/***
+ * A dirt simple matrix class for our convenience based on top of Point3D
+ */
+
+#define SIMPLE_MATRIX_MAX_SIZE 200
+
+class SimpleMatrix {
+
+private:
+
+  int _rows;
+  int _cols;
+  point_list m;
+
+public:
+
+  inline SimpleMatrix( int columns, int rows ) {
+    _cols = columns;
+    _rows = rows;
+    m.resize( _cols * _rows );
+  }
+
+  inline Point3D element( int col, int row ) {
+    int index = ( col * _rows ) + row;
+    return m[index];
+  }
+
+  inline void set( int col, int row, Point3D p ) {
+    int index = ( col * _rows ) + row;
+    m[index] = p;
+  }
+
+  inline int cols() const { return _cols; }
+  inline int rows() const { return _rows; }
+};
 
 
 /***
@@ -39,13 +81,12 @@
  * must specify a min and max lon/lat containing the entire airport
  * area.  The class will divide up that area into a reasonably sized
  * regular grid.  It will then look up the elevation of each point on
- * the grid from the DEM/Array data.  Finally it will build a nurbs
- * surface from this grid.  Each vertex of the actual airport model is
- * drapped over this nurbs surface rather than over the underlying
- * terrain data.  This provides a) smoothing of noisy terrain data, b)
- * natural rises and dips in the airport surface, c) chance to impress
- * colleages by using something or other nurbs surfaces -- or whatever
- * they are called. :-)
+ * the grid from the DEM/Array data.  Finally it will fit do a linear
+ * least squares polygonal surface approximation from this grid.  Each
+ * vertex of the actual airport model is drapped over this fitted
+ * surface rather than over the underlying terrain data.  This
+ * provides a) smoothing of noisy terrain data and b) natural rises
+ * and dips in the airport surface.
  */
 
 class TGAptSurface {
@@ -53,7 +94,8 @@ class TGAptSurface {
 private:
 
     // The actual nurbs surface approximation for the airport
-    PlNurbsSurfaced *apt_surf;
+    SimpleMatrix *Pts;
+    ColumnVector surface_coefficients;
 
     Point3D min_deg, max_deg;
 
@@ -71,18 +113,15 @@ public:
     // Destructor
     ~TGAptSurface();
 
+    // Use a linear least squares method to fit a 3d polynomial to the
+    // sampled surface data
+    void fit();
+
     // Query the elevation of a point, return -9999 if out of range.
     // This routine makes a simplistic assumption that X,Y space is
     // proportional to u,v space on the nurbs surface which it isn't.
     double query( double lon_deg, double lat_deg );
 
-    // Query the elevation of a point, return -9999 if out of range.
-    // This routine incorporates a complex solver that attempts to
-    // find the exact u,v coordinates correspondinging to the
-    // requested lat, lon.  But there seems to be problems with my
-    // solver routine that I haven't tracked down yet so I'm testing
-    // the _dumb version above.
-    double query_solver( double lon_deg, double lat_deg );
 };
 
 

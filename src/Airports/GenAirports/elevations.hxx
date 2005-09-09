@@ -23,8 +23,12 @@
 //
 
 
-#include <nurbs++/nurbsS.h>
-#include <nurbs++/nurbsSub.h>
+// libnewmat includes and defines
+#define WANT_STREAM		// include.h will get stream fns
+#define WANT_MATH		// include.h will get math fns
+				// newmatap.h will get include.h
+#include <newmat/newmatap.h>	// need matrix applications
+#include <newmat/newmatio.h>	// need matrix output routines
 
 #include <simgear/constants.h>
 #include <simgear/math/sg_geodesy.hxx>
@@ -36,8 +40,6 @@
 #include "global.hxx"
 #include "apt_surface.hxx"
 
-SG_USING_NAMESPACE( PLib );
-
 
 // lookup node elevations for each point in the point_list.  Returns
 // average of all points.  Doesn't modify the original list.
@@ -47,8 +49,8 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 // lookup node elevations for each point in the specified nurbs++
 // matrix.
 void tgCalcElevations( const string &root, const string_list elev_src,
-                       Matrix_Point3Dd &Pts, double average );
+                       SimpleMatrix &Pts, double average );
 
 // clamp all elevations to the specified range
-void tgClampElevations( Matrix_Point3Dd &Pts,
-                        double center_m, double max_clamp_m );
+void tgClampElevations( SimpleMatrix &Pts,
+			double center_m, double max_clamp_m );
