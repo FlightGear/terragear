@@ -205,7 +205,7 @@ TGAptSurface::TGAptSurface( const string& path,
             SG_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
             Pts->set(i, j, Point3D( min_deg.lon() + i * dlon,
 				    min_deg.lat() + j * dlat,
-				   val_ave )
+				    val_ave )
 		    );
             SG_LOG( SG_GENERAL, SG_DEBUG, "lon_ave = " << lon_ave
                     << "  lat_ave = " << lat_ave );
@@ -254,29 +254,16 @@ TGAptSurface::TGAptSurface( const string& path,
     }
 #endif
 
+    // compute an central offset point.
+    double clon = (min_deg.lon() + max_deg.lon()) / 2.0;
+    double clat = (min_deg.lat() + max_deg.lat()) / 2.0;
+    offset = Point3D( clon, clat, average_elev_m );
+    cout << "Central offset point = " << offset << endl;
+
     // Create the fitted surface
     SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
     fit();
-
-    // sanity check: I'm finding that leastSquares() can produce nan
-    // surfaces.  We test for this and fall back to globalInterp() if
-    // the least squares fails.
-    double result =  query( (min_deg.lon() + max_deg.lon()) / 2.0,
-			    (min_deg.lat() + max_deg.lat()) / 2.0 );
-    if ( result > -9000.0 ) {
-        // ok, a valid number
-    } else {
-        SG_LOG(SG_GENERAL, SG_WARN,
-               "leastSquares() fit seemed to fail!!!");
-        char command[256];
-        sprintf( command,
-                 "echo least squares nurbs interpolation failed, using globalInterp() >> last_apt" );
-        system( command );
-
-	// abort and force developer to debug for now
-	exit(-1);
-    }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  successful.");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  fit process successful.");
 
 #ifdef DEBUG
     // For debugging only: output an array of surface points suitable
@@ -307,8 +294,8 @@ TGAptSurface::~TGAptSurface() {
 static ColumnVector qr_method( Real* y,
 			       Real* t1, Real* t2, Real* t3, Real* t4,
 			       Real* t5, Real* t6, Real* t7, Real* t8,
-			       /* Real* t9, Real* t10, Real* t11, Real* t12,
-				  Real* t13, Real* t14, Real* t15, */
+			       Real* t9, Real* t10, Real* t11, Real* t12,
+			       Real* t13, Real* t14, Real* t15,
 			       int nobs, int npred )
 {
   cout << "QR triangularisation" << endl;;
@@ -329,13 +316,13 @@ static ColumnVector qr_method( Real* y,
   X.column(7) << t6;
   X.column(8) << t7;
   X.column(9) << t8;
-  /* X.column(10) << t9;
+  X.column(10) << t9;
   X.column(11) << t10;
   X.column(12) << t11;
   X.column(13) << t12;
   X.column(14) << t13;
   X.column(15) << t14;
-  X.column(16) << t15; */
+  X.column(16) << t15;
   Y << y;
 
   // do Householder triangularisation
@@ -382,9 +369,9 @@ void TGAptSurface::fit() {
   //            A13*y*y*y + A14*x*y*y*y + A15*x*x*y*y*y
 
   int nobs = Pts->cols() * Pts->rows();	// number of observations
-  int npred = 8;		        // number of predictor values A[n]
+  int npred = 15;		        // number of predictor values A[n]
 
-  Real z[nobs];
+  Real tz[nobs];
   Real t1[nobs];
   Real t2[nobs];
   Real t3[nobs];
@@ -393,23 +380,24 @@ void TGAptSurface::fit() {
   Real t6[nobs];
   Real t7[nobs];
   Real t8[nobs];
-  /* Real t9[nobs];
+  Real t9[nobs];
   Real t10[nobs];
   Real t11[nobs];
   Real t12[nobs];
   Real t13[nobs];
   Real t14[nobs];
-  Real t15[nobs]; */
+  Real t15[nobs];
 
   // generate the required fit data
   for ( int j = 0; j < Pts->rows(); j++ ) {
     for ( int i = 0; i < Pts->cols(); i++ ) {
       Point3D p = Pts->element( i, j );
       int index = ( j * Pts->cols() ) + i;
-      Real x = p.x();
-      Real y = p.y();
-      cout << "pt = " << x << "," << y << "," << p.z() << endl;
-      z[index] = p.z();
+      Real x = p.x() - offset.x();
+      Real y = p.y() - offset.y();
+      Real z = p.z() - offset.z();
+      cout << "pt = " << x << "," << y << "," << z << endl;
+      tz[index] = z;
       t1[index] = x;
       t2[index] = x*y;
       t3[index] = y;
@@ -418,13 +406,13 @@ void TGAptSurface::fit() {
       t6[index] = x*x*y*y;
       t7[index] = y*y;
       t8[index] = x*y*y;
-      /* t9[index] = x*x*x;
+      t9[index] = x*x*x;
       t10[index] = x*x*x*y;
       t11[index] = x*x*x*y*y;
       t12[index] = x*x*x*y*y*y;
       t13[index] = y*y*y;
       t14[index] = x*y*y*y;
-      t15[index] = x*x*y*y*y; */
+      t15[index] = x*x*y*y*y;
     }
   }
 
@@ -433,9 +421,9 @@ void TGAptSurface::fit() {
 
   Try {
     surface_coefficients
-      = qr_method( z,
+      = qr_method( tz,
 		   t1, t2, t3, t4, t5, t6, t7, t8,
-		   /* t9, t10, t11, t12, t13, t14, t15, */
+		   t9, t10, t11, t12, t13, t14, t15,
 		   nobs, npred
 		  );
     cout << "surface_coefficients size = " << surface_coefficients.nrows() << endl;
@@ -464,14 +452,15 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
     //          A9*x*x*x + A10*x*x*x*y + A11*x*x*x*y*y + A12*x*x*x*y*y*y +
     //            A13*y*y*y + A14*x*y*y*y + A15*x*x*y*y*y
 
-    double x = lon_deg;
-    double y = lat_deg;
+    double x = lon_deg - offset.x();
+    double y = lat_deg - offset.y();
     ColumnVector A = surface_coefficients;
 
     double result = A(1) + A(2)*x + A(3)*x*y + A(4)*y + A(5)*x*x + A(6)*x*x*y
-      + A(7)*x*x*y*y + A(8)*y*y + A(9)*x*y*y /* + A(10)*x*x*x + A(11)*x*x*x*y
+      + A(7)*x*x*y*y + A(8)*y*y + A(9)*x*y*y + A(10)*x*x*x + A(11)*x*x*x*y
       + A(12)*x*x*x*y*y + A(13)*x*x*x*y*y*y + A(14)*y*y*y + A(15)*x*y*y*y
-      + A(16)*x*x*y*y*y */;
+      + A(16)*x*x*y*y*y;
+    result += offset.z();
 
     printf("result = %.2f\n", result);
 

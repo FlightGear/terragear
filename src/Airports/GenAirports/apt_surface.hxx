@@ -115,8 +115,12 @@ private:
 
     Point3D min_deg, max_deg;
 
+    // A central point in the airport area
+    Point3D offset;
+
     // externally seeded average airport elevation
     double average_elev_m;
+
 
 public:
 
