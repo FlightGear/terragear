@@ -1029,10 +1029,10 @@ void build_airport( string airport_id, float alt_m,
     // Extend the area a bit so we don't have wierd things on the edges
     double dlon = max_deg.lon() - min_deg.lon();
     double dlat = max_deg.lat() - min_deg.lat();
-    min_deg.setlon( min_deg.lon() - 0.3 * dlon );
-    max_deg.setlon( max_deg.lon() + 0.3 * dlon );
-    min_deg.setlat( min_deg.lat() - 0.3 * dlat );
-    max_deg.setlat( max_deg.lat() + 0.3 * dlat );
+    min_deg.setlon( min_deg.lon() - 0.01 * dlon );
+    max_deg.setlon( max_deg.lon() + 0.01 * dlon );
+    min_deg.setlat( min_deg.lat() - 0.01 * dlat );
+    max_deg.setlat( max_deg.lat() + 0.01 * dlat );
 
     TGAptSurface apt_surf( root, elev_src, min_deg, max_deg, average );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Surface created");

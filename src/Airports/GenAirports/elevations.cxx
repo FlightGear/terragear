@@ -156,8 +156,8 @@ void tgCalcElevations( const string &root, const string_list elev_src,
     }
 
     // set all elevations to -9999
-    for ( j = 0; j < Pts.cols(); ++j ) {
-      for ( i = 0; i < Pts.rows(); ++i ) {
+    for ( j = 0; j < Pts.rows(); ++j ) {
+      for ( i = 0; i < Pts.cols(); ++i ) {
 	Point3D p = Pts.element(i, j);
 	p.setz( -9999.0 );
 	Pts.set(i, j, p);
@@ -168,8 +168,8 @@ void tgCalcElevations( const string &root, const string_list elev_src,
 	// find first node with -9999 elevation
         Point3D first(0.0);
         bool found_one = false;
-        for ( j = 0; j < Pts.cols(); ++j ) {
-            for ( i = 0; i < Pts.rows(); ++i ) {
+        for ( j = 0; j < Pts.rows(); ++j ) {
+            for ( i = 0; i < Pts.cols(); ++i ) {
                 Point3D p = Pts.element(i,j);
                 if ( p.z() < -9000.0 && !found_one ) {
                     first = p;
@@ -208,8 +208,8 @@ void tgCalcElevations( const string &root, const string_list elev_src,
 	    // this array file
 	    double elev;
 	    done = true;
-            for ( j = 0; j < Pts.cols(); ++j ) {
-                for ( i = 0; i < Pts.rows(); ++i ) {
+            for ( j = 0; j < Pts.rows(); ++j ) {
+                for ( i = 0; i < Pts.cols(); ++i ) {
                     Point3D p = Pts.element(i,j);
                     if ( p.z() < -9000.0 ) {
                         done = false;
@@ -237,8 +237,8 @@ void tgCalcElevations( const string &root, const string_list elev_src,
     // find the average height of the queried points
     double total = 0.0;
     int count = 0;
-    for ( j = 0; j < Pts.cols(); ++j ) {
-        for ( i = 0; i < Pts.rows(); ++i ) {
+    for ( j = 0; j < Pts.rows(); ++j ) {
+        for ( i = 0; i < Pts.cols(); ++i ) {
             Point3D p = Pts.element(i,j);
             total += p.z();
             count++;
@@ -259,8 +259,8 @@ void tgClampElevations( SimpleMatrix &Pts,
 
     // go through the elevations and clamp all elevations to within
     // +/-max_m of the center_m elevation.
-    for ( j = 0; j < Pts.cols(); ++j ) {
-        for ( i = 0; i < Pts.rows(); ++i ) {
+    for ( j = 0; j < Pts.rows(); ++j ) {
+        for ( i = 0; i < Pts.cols(); ++i ) {
             Point3D p = Pts.element(i,j);
             if ( p.z() < center_m - max_clamp_m ) {
                 SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()

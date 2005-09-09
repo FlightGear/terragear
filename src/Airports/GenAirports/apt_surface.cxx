@@ -145,12 +145,12 @@ TGAptSurface::TGAptSurface( const string& path,
     // with an added major row column on the NE sides.)
     int mult = 10;
     SimpleMatrix dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
-    for ( int j = 0; j < dPts.cols(); ++j ) {
-        for ( int i = 0; i < dPts.rows(); ++i ) {
+    for ( int j = 0; j < dPts.rows(); ++j ) {
+      for ( int i = 0; i < dPts.cols(); ++i ) {
 	  dPts.set(i, j, Point3D( min_deg.lon() - dlon_h
-				    + j * (dlon / (double)mult),
+				    + i * (dlon / (double)mult),
 				   min_deg.lat() - dlat_h
-				    + i * (dlat / (double)mult),
+				    + j * (dlat / (double)mult),
 				   -9999 )
 		   );
         }
@@ -159,8 +159,8 @@ TGAptSurface::TGAptSurface( const string& path,
     // Lookup the elevations of all the grid points
     tgCalcElevations( path, elev_src, dPts, 0.0 );
 #ifdef DEBUG
-    for ( int j = 0; j < dPts.cols(); ++j ) {
-        for ( int i = 0; i < dPts.rows(); ++i ) {
+    for ( int j = 0; j < dPts.rows(); ++j ) {
+        for ( int i = 0; i < dPts.cols(); ++i ) {
             printf("%.5f %.5f %.1f\n", dPts(i,j).x(), dPts(i,j).y(),
                    dPts(i,j).z() );
         }
@@ -172,8 +172,8 @@ TGAptSurface::TGAptSurface( const string& path,
     tgClampElevations( dPts, average_elev_m, max_clamp );
 
 #ifdef DEBUG
-    for ( int j = 0; j < dPts.cols(); ++j ) {
-        for ( int i = 0; i < dPts.rows(); ++i ) {
+    for ( int j = 0; j < dPts.rows(); ++j ) {
+        for ( int i = 0; i < dPts.cols(); ++i ) {
             printf("%.5f %.5f %.1f\n", dPts(i,j).x(), dPts(i,j).y(),
                    dPts(i,j).z() );
         }
@@ -183,8 +183,8 @@ TGAptSurface::TGAptSurface( const string& path,
     // Build the normal res input grid from the double res version
     Pts = new SimpleMatrix(ydivs + 1, xdivs + 1);
     double ave_divider = (mult+1) * (mult+1);
-    for ( int j = 0; j < Pts->cols(); ++j ) {
-        for ( int i = 0; i < Pts->rows(); ++i ) {
+    for ( int j = 0; j < Pts->rows(); ++j ) {
+        for ( int i = 0; i < Pts->cols(); ++i ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
             double lon_accum = 0.0;
@@ -203,8 +203,8 @@ TGAptSurface::TGAptSurface( const string& path,
             double lat_ave = lat_accum / ave_divider;
 
             SG_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
-            Pts->set(i, j, Point3D( min_deg.lon() + j * dlon,
-				   min_deg.lat() + i * dlat,
+            Pts->set(i, j, Point3D( min_deg.lon() + i * dlon,
+				    min_deg.lat() + j * dlat,
 				   val_ave )
 		    );
             SG_LOG( SG_GENERAL, SG_DEBUG, "lon_ave = " << lon_ave
@@ -215,10 +215,12 @@ TGAptSurface::TGAptSurface( const string& path,
     }
 
 #ifdef DEBUG
-    for ( int j = 0; j < Pts->cols(); ++j ) {
-        for ( int i = 0; i < Pts->rows(); ++i ) {
-            printf("%.5f %.5f %.1f\n", Pts(i,j).x(), Pts(i,j).y(),
-                   Pts(i,j).z() );
+    for ( int j = 0; j < Pts->rows(); ++j ) {
+        for ( int i = 0; i < Pts->cols(); ++i ) {
+            printf("%.5f %.5f %.1f\n",
+		   Pts->element(i,j).x(),
+		   Pts->element(i,j).y(),
+                   Pts->element(i,j).z() );
         }
     }
 #endif
@@ -228,8 +230,8 @@ TGAptSurface::TGAptSurface( const string& path,
         SG_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
         slope_error = false;
         // Add some "slope" sanity to the resulting surface grid points
-        for ( int j = 0; j < Pts->cols() - 1; ++j ) {
-            for ( int i = 0; i < Pts->rows() - 1; ++i ) {
+        for ( int j = 0; j < Pts->rows() - 1; ++j ) {
+            for ( int i = 0; i < Pts->cols() - 1; ++i ) {
                 if ( limit_slope( Pts, i, j, i+1, j, average_elev_m ) ) {
                     slope_error = true;
                 }
@@ -244,8 +246,8 @@ TGAptSurface::TGAptSurface( const string& path,
     }
 
 #ifdef DEBUG
-    for ( int j = 0; j < Pts->cols(); ++j ) {
-        for ( int i = 0; i < Pts->rows(); ++i ) {
+    for ( int j = 0; j < Pts->rows(); ++j ) {
+        for ( int i = 0; i < Pts->cols(); ++i ) {
             printf("%.5f %.5f %.1f\n", Pts(i,j).x(), Pts(i,j).y(),
                    Pts(i,j).z() );
         }
@@ -305,6 +307,8 @@ TGAptSurface::~TGAptSurface() {
 static ColumnVector qr_method( Real* y,
 			       Real* t1, Real* t2, Real* t3, Real* t4,
 			       Real* t5, Real* t6, Real* t7, Real* t8,
+			       /* Real* t9, Real* t10, Real* t11, Real* t12,
+				  Real* t13, Real* t14, Real* t15, */
 			       int nobs, int npred )
 {
   cout << "QR triangularisation" << endl;;
@@ -313,6 +317,8 @@ static ColumnVector qr_method( Real* y,
  
   // load data - 1s into col 1 of matrix
   int npred1 = npred+1;
+  cout << "nobs = " << nobs << " npred1 = " << npred1 << endl;
+
   Matrix X(nobs,npred1); ColumnVector Y(nobs);
   X.column(1) = 1.0;
   X.column(2) << t1;
@@ -323,6 +329,13 @@ static ColumnVector qr_method( Real* y,
   X.column(7) << t6;
   X.column(8) << t7;
   X.column(9) << t8;
+  /* X.column(10) << t9;
+  X.column(11) << t10;
+  X.column(12) << t11;
+  X.column(13) << t12;
+  X.column(14) << t13;
+  X.column(15) << t14;
+  X.column(16) << t15; */
   Y << y;
 
   // do Householder triangularisation
@@ -341,6 +354,9 @@ static ColumnVector qr_method( Real* y,
   // Get diagonals of Hat matrix
   DiagonalMatrix Hat;  Hat << X1 * X1.t();
 
+  cout << "A vector = " << A << endl;
+  cout << "A rows = " << A.nrows() << endl;
+
   // print out answers
   cout << "\nEstimates and their standard errors\n\n";
   ColumnVector SE(npred1);
@@ -348,7 +364,7 @@ static ColumnVector qr_method( Real* y,
   cout << setw(11) << setprecision(5) << (A | SE) << endl;
   cout << "\nObservations, fitted value, residual value, hat value\n";
   cout << setw(9) << setprecision(3) << 
-    (X.columns(2,3) | Y | Fitted | Y1 | Hat.as_column());
+    (X.columns(2,4) | Y | Fitted | Y1 | Hat.as_column());
   cout << "\n\n";
 
   return A;
@@ -359,10 +375,14 @@ static ColumnVector qr_method( Real* y,
 // sampled surface data
 void TGAptSurface::fit() {
 
-  // the fit function is: f(x,y) = a*x + b*x^2 + c*y + d*y^2 + e*x*y +
-  // f*x*y^2 + g*x^2*y + h*x^2*y^2
+  // the fit function is:
+  // f(x,y) = A1*x + A2*x*y + A3*y +
+  //          A4*x*x + A5+x*x*y + A6*x*x*y*y + A7*y*y + A8*x*y*y +
+  //          A9*x*x*x + A10*x*x*x*y + A11*x*x*x*y*y + A12*x*x*x*y*y*y +
+  //            A13*y*y*y + A14*x*y*y*y + A15*x*x*y*y*y
+
   int nobs = Pts->cols() * Pts->rows();	// number of observations
-  int npred = 8;		        // number of predictor values
+  int npred = 8;		        // number of predictor values A[n]
 
   Real z[nobs];
   Real t1[nobs];
@@ -373,23 +393,38 @@ void TGAptSurface::fit() {
   Real t6[nobs];
   Real t7[nobs];
   Real t8[nobs];
+  /* Real t9[nobs];
+  Real t10[nobs];
+  Real t11[nobs];
+  Real t12[nobs];
+  Real t13[nobs];
+  Real t14[nobs];
+  Real t15[nobs]; */
 
   // generate the required fit data
-  for ( int j = 0; j < Pts->cols(); j++ ) {
-    for ( int i = 0; i <= Pts->rows(); i++ ) {
+  for ( int j = 0; j < Pts->rows(); j++ ) {
+    for ( int i = 0; i < Pts->cols(); i++ ) {
       Point3D p = Pts->element( i, j );
-      int index = ( j * Pts->rows() ) + i;
-      Real xi = p.x();
-      Real yi = p.y();
+      int index = ( j * Pts->cols() ) + i;
+      Real x = p.x();
+      Real y = p.y();
+      cout << "pt = " << x << "," << y << "," << p.z() << endl;
       z[index] = p.z();
-      t1[index] = xi;
-      t2[index] = xi*xi;
-      t3[index] = yi;
-      t4[index] = yi*yi;
-      t5[index] = xi*yi;
-      t6[index] = xi*yi*yi;
-      t7[index] = xi*xi*yi;
-      t8[index] = xi*xi*yi*yi;
+      t1[index] = x;
+      t2[index] = x*y;
+      t3[index] = y;
+      t4[index] = x*x;
+      t5[index] = x*x*y;
+      t6[index] = x*x*y*y;
+      t7[index] = y*y;
+      t8[index] = x*y*y;
+      /* t9[index] = x*x*x;
+      t10[index] = x*x*x*y;
+      t11[index] = x*x*x*y*y;
+      t12[index] = x*x*x*y*y*y;
+      t13[index] = y*y*y;
+      t14[index] = x*y*y*y;
+      t15[index] = x*x*y*y*y; */
     }
   }
 
@@ -398,7 +433,12 @@ void TGAptSurface::fit() {
 
   Try {
     surface_coefficients
-      = qr_method(z, t1, t2, t3, t4, t5, t6, t7, t8, nobs, npred);
+      = qr_method( z,
+		   t1, t2, t3, t4, t5, t6, t7, t8,
+		   /* t9, t10, t11, t12, t13, t14, t15, */
+		   nobs, npred
+		  );
+    cout << "surface_coefficients size = " << surface_coefficients.nrows() << endl;
   }
   CatchAll { cout << BaseException::what(); }
 
@@ -418,14 +458,22 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
 
     // compute the function with solved coefficients
 
-    // the fit function is: f(x,y) = a*x + b*x^2 + c*y + d*y^2 + e*x*y +
-    //                               f*x*y^2 + g*x^2*y + h*x^2*y^2
+    // the fit function is:
+    // f(x,y) = A1*x + A2*x*y + A3*y +
+    //          A4*x*x + A5+x*x*y + A6*x*x*y*y + A7*y*y + A8*x*y*y +
+    //          A9*x*x*x + A10*x*x*x*y + A11*x*x*x*y*y + A12*x*x*x*y*y*y +
+    //            A13*y*y*y + A14*x*y*y*y + A15*x*x*y*y*y
 
     double x = lon_deg;
     double y = lat_deg;
     ColumnVector A = surface_coefficients;
-    double result = A(0)*x + A(1)*x*x + A(2)*y + A(3)*y*y + A(4)*x*y
-      + A(5)*x*y*y + A(6)*x*x*y + A(7)*x*x*y*y;
+
+    double result = A(1) + A(2)*x + A(3)*x*y + A(4)*y + A(5)*x*x + A(6)*x*x*y
+      + A(7)*x*x*y*y + A(8)*y*y + A(9)*x*y*y /* + A(10)*x*x*x + A(11)*x*x*x*y
+      + A(12)*x*x*x*y*y + A(13)*x*x*x*y*y*y + A(14)*y*y*y + A(15)*x*y*y*y
+      + A(16)*x*x*y*y*y */;
+
+    printf("result = %.2f\n", result);
 
     return result;
 }

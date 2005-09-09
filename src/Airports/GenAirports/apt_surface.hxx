@@ -43,8 +43,6 @@
  * A dirt simple matrix class for our convenience based on top of Point3D
  */
 
-#define SIMPLE_MATRIX_MAX_SIZE 200
-
 class SimpleMatrix {
 
 private:
@@ -62,12 +60,30 @@ public:
   }
 
   inline Point3D element( int col, int row ) {
-    int index = ( col * _rows ) + row;
+    int index = ( row * _cols ) + col;
+    if ( col < 0 || col >= _cols ) {
+      cout << "column out of bounds on read (" << col << " >= " << _cols << ")"
+	   << endl;
+      int *p = 0; *p = 1; // force crash
+    } else if ( row < 0 || row >= _rows ) {
+      cout << "row out of bounds on read (" << row << " >= " << _rows << ")"
+	   << endl;
+      int *p = 0; *p = 1; // force crash
+    }
     return m[index];
   }
 
   inline void set( int col, int row, Point3D p ) {
-    int index = ( col * _rows ) + row;
+    int index = ( row * _cols ) + col;
+    if ( col < 0 || col >= _cols ) {
+      cout << "column out of bounds on set (" << col << " >= " << _cols << ")"
+	   << endl;
+      int *p = 0; *p = 1; // force crash
+    } else if ( row < 0 || row >= _rows ) {
+      cout << "row out of bounds on set (" << row << " >= " << _rows << ")"
+	   << endl;
+      int *p = 0; *p = 1; // force crash
+    }
     m[index] = p;
   }
 
