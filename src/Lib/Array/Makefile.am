@@ -2,7 +2,8 @@ noinst_LIBRARIES = libArray.a
 
 libArray_a_SOURCES = array.cxx array.hxx
 
-noinst_PROGRAMS = testarray testgts
+# noinst_PROGRAMS = testarray testgts
+noinst_PROGRAMS = testarray
 
 testarray_SOURCES = testarray.cxx
 
@@ -11,11 +12,11 @@ testarray_LDADD = \
 	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml \
 	$(support_LIBS) -lz 
 
-testgts_SOURCES = testgts.cxx
+# testgts_SOURCES = testgts.cxx
 
-testgts_LDADD = \
-	$(top_builddir)/src/Lib/Array/libArray.a \
-	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml \
-	$(support_LIBS) -lz
+# testgts_LDADD = \
+# 	$(top_builddir)/src/Lib/Array/libArray.a \
+#	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml \
+#	$(support_LIBS) -lz
 
 INCLUDES = -I$(top_srcdir)/src
