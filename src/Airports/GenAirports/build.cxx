@@ -983,7 +983,7 @@ void build_airport( string airport_id, float alt_m,
     double average = tgAverageElevation( root, elev_src,
                                          nodes.get_node_list() );
 
-    // Now build the airport nurbs surface ...
+    // Now build the fitted airport surface ...
 
     // calculation min/max coordinates of airport area
     Point3D min_deg(9999.0, 9999.0, 0), max_deg(-9999.0, -9999.0, 0);
@@ -1070,8 +1070,8 @@ void build_airport( string airport_id, float alt_m,
 	    SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
 	    lindex = nodes.simple_add( lower );
 	    geod_nodes.push_back( lower );
-	    strip_v.push_back( uindex );
 	    strip_v.push_back( lindex );
+	    strip_v.push_back( uindex );
 
 	    // use 'the' normal.  We are pushing on two nodes so we
 	    // need to push on two normals.
