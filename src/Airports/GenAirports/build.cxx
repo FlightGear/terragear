@@ -428,8 +428,8 @@ void build_airport( string airport_id, float alt_m,
 
         string vasi_angles = token[15];
         vector<string> vasis = simgear::strutils::split( vasi_angles, "." );
-        rwy.gs_angle1 = atoi( vasis[0].c_str() );
-        rwy.gs_angle2 = atoi( vasis[1].c_str() );
+        rwy.gs_angle1 = atof( vasis[0].c_str() ) * 0.01;
+        rwy.gs_angle2 = atof( vasis[1].c_str() ) * 0.01;
 
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
