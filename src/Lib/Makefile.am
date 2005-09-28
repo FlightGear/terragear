@@ -1,3 +1,5 @@
+DIST_SUBDIRS = Win32
+
 SUBDIRS = \
 	Array \
 	DEM \
