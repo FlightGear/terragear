@@ -273,8 +273,10 @@ void TGPolygon::shift( double lon, double lat ) {
 // output
 void TGPolygon::write( const string& file ) const {
     FILE *fp = fopen( file.c_str(), "w" );
-    
+
+    fprintf(fp, "%d\n", poly.size());
     for ( int i = 0; i < (int)poly.size(); ++i ) {
+        fprintf(fp, "%d\n", poly[i].size());
 	for ( int j = 0; j < (int)poly[i].size(); ++j ) {
 	    fprintf(fp, "%.6f %.6f\n", poly[i][j].x(), poly[i][j].y());
 	}
