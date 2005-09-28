@@ -498,14 +498,18 @@ TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len ) {
 	for ( j = 0; j < poly.contour_size(i) - 1; ++j ) {
 	    p0 = poly.get_pt( i, j );
 	    p1 = poly.get_pt( i, j + 1 );
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, " " << p0 << "  -  " << p1);
 
-	    double az1, az2, s;
-	    geo_inverse_wgs_84( 0.0,
-				p0.y(), p0.x(), p1.y(), p1.x(),
-				&az1, &az2, &s );
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
+	    if ( fabs(p0.y()) < (90.0 - SG_EPSILON) 
+		 || fabs(p1.y()) < (90.0 - SG_EPSILON) )
+	    {
+	      double az1, az2, s;
+	      geo_inverse_wgs_84( 0.0,
+				  p0.y(), p0.x(), p1.y(), p1.x(),
+				  &az1, &az2, &s );
+	      SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
 
-	    if ( s > max_len ) {
+	      if ( s > max_len ) {
 		int segments = (int)(s / max_len) + 1;
 		SG_LOG(SG_GENERAL, SG_DEBUG, "segments = " << segments);
 
@@ -517,9 +521,13 @@ TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len ) {
 		    SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
 		    result.add_node( i, tmp );
 		}
-	    } else {
+	      } else {
 		SG_LOG(SG_GENERAL, SG_DEBUG, p0);
 		result.add_node( i, p0 );
+	      }
+	    } else {
+	      SG_LOG(SG_GENERAL, SG_DEBUG, p0);
+	      result.add_node( i, p0 );
 	    }
 		
 	    // end of segment is beginning of next segment

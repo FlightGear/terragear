@@ -229,7 +229,9 @@ void tgChopNormalPolygon( const string& path, AreaType area,
     // determine horizontal clip line
     SGBucket b_clip = sgBucketOffset(min.x(), min.y(), 0, mid);
     double clip_line = b_clip.get_center_lat();
-    if ( (clip_line >= -89.0) && (clip_line < 89.0) ) {
+    if ( (clip_line >= -90.0 + SG_HALF_BUCKET_SPAN)
+	 && (clip_line < 90.0 - SG_HALF_BUCKET_SPAN) )
+    {
 	clip_line += SG_HALF_BUCKET_SPAN;
     } else if ( clip_line < -89.0 ) {
 	clip_line = -89.0;

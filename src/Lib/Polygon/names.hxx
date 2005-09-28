@@ -38,6 +38,7 @@ SG_USING_STD(string);
 enum AreaType {
     SomeSortOfArea = 0,
     HoleArea,			// Leave area completely empty
+    AirportArea,
     FreewayArea,
     RoadArea,
     RailroadArea,
@@ -53,7 +54,6 @@ enum AreaType {
     GlacierArea,		// Any solid ice/snow
     PackIceArea,		// Water with ice packs
     OceanArea,
-    AirportArea,
     UrbanArea,			// Densely-populated city or large town
     TownArea,			// Small town or village
     FloodLandArea,		// Land subject to flooding
