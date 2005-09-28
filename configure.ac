@@ -51,40 +51,38 @@ AC_SUBST(ARFLAGS)
 
 dnl Add gts/glib includes, this will probably need to be made more
 dnl flexible in the future.
-AC_CHECK_PROG(GLIB, glib-config, yes, no)
-AC_CHECK_PROG(GTS, gts-config, yes, no)
+# AC_CHECK_PROG(GLIB, glib-config, yes, no)
+# AC_CHECK_PROG(GTS, gts-config, yes, no)
+# 
+# if test "$GLIB" = "no"; then
+#   echo
+#   echo "Unable to find glib-config."
+#   echo
+#   echo "This program is needed to determine the compiler flags needed for"
+#   echo "the glib library. Please make sure this linrary is installed and"
+#   echo "the program is in the search path."
+#   echo
+#   echo "Please read README.gts" for more details.
+#   echo
+#   exit 1
+# fi
+# 
+# if test "$GTS" = "no"; then
+#   echo
+#   echo "Unable to find gts-config."
+#   echo
+#   echo "This program is needed to determine the compiler flags needed for"
+#   echo "the gts library. Please make sure this linrary is installed and"
+#   echo "the program is in the search path."
+#   echo
+#   echo "Please read README.gts" for more details.
+#   echo
+#   exit 1
+# 
+# fi
 
-if test "$GLIB" = "no"; then
-  echo
-  echo "Unable to find glib-config."
-  echo
-  echo "This program is needed to determine the compiler flags needed for"
-  echo "the glib library. Please make sure this linrary is installed and"
-  echo "the program is in the search path."
-  echo
-  echo "Please read README.gts" for more details.
-  echo
-  exit 1
-fi
-
-if test "$GTS" = "no"; then
-  echo
-  echo "Unable to find gts-config."
-  echo
-  echo "This program is needed to determine the compiler flags needed for"
-  echo "the gts library. Please make sure this linrary is installed and"
-  echo "the program is in the search path."
-  echo
-  echo "Please read README.gts" for more details.
-  echo
-  exit 1
-
-fi
-
-SUPPORT_FLAGS="`gts-config --cflags` `glib-config --cflags`"
-CPPFLAGS="$CPPFLAGS $SUPPORT_FLAGS"
-#CFLAGS="$CFLAGS $SUPPORT_FLAGS"
-#CXXFLAGS="$CXXFLAGS $SUPPORT_FLAGS"
+# SUPPORT_FLAGS="`gts-config --cflags` `glib-config --cflags`"
+# CPPFLAGS="$CPPFLAGS $SUPPORT_FLAGS"
 
 dnl Specify if we want logging (testing build) or not (release build)
 # set logging default value
@@ -142,7 +140,7 @@ dnl check for some default libraries
 AC_SEARCH_LIBS(cos, m)
 
 base_LIBS="$LIBS"
-support_LIBS="`gts-config --libs` `glib-config --libs`"
+# support_LIBS="`gts-config --libs` `glib-config --libs`"
 
 AC_SEARCH_LIBS(XCreateWindow, X11)
 AC_SEARCH_LIBS(XShmCreateImage, Xext)
@@ -252,17 +250,17 @@ AC_CHECK_HEADER(newmat/newmat.h)
 AM_CONDITIONAL(HAVE_NEWMAT, test "x$ac_cv_header_newmat_newmat_h" = "xyes" )
 AC_LANG_POP
 
-AC_CHECK_HEADER(gts.h)
-if test "x$ac_cv_header_gts_h" != "xyes"; then
-    echo
-    echo "You *must* have the gts library installed on your system to build"
-    echo "TerraGear!"
-    echo
-    echo "Please see README.gts for more details."
-    echo
-    echo "configure aborted."
-    exit
-fi
+# AC_CHECK_HEADER(gts.h)
+# if test "x$ac_cv_header_gts_h" != "xyes"; then
+#     echo
+#     echo "You *must* have the gts library installed on your system to build"
+#     echo "TerraGear!"
+#     echo
+#     echo "Please see README.gts for more details."
+#     echo
+#     echo "configure aborted."
+#     exit
+# fi
 
 dnl Check if Generic Polygon Clipping library is installed
 dnl (from http://www.cs.man.ac.uk/aig/staff/alan/software/)
