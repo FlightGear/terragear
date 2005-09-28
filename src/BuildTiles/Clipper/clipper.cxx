@@ -533,10 +533,18 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
 
             // Airport areas are limited to existing land mass and
             // never override water.
-            if ( i == AirportArea ) {
-                tmp = tgPolygonInt( tmp, land_mask );
-                tmp = tgPolygonDiff( tmp, water_mask );
-            }
+	    //
+	    // 9/26/2005 - CLO: We are going to add the ability to
+	    // manually define airport areas when the default area
+	    // isn't sufficient.  It is clear that it is impossible to
+	    // auto-generate correct airport areas in all cases.  For
+	    // now we default to topologically continuous scenery and
+	    // wait for people to submit manual fixes.
+	    //
+            // if ( i == AirportArea ) {
+            //     tmp = tgPolygonInt( tmp, land_mask );
+            //     tmp = tgPolygonDiff( tmp, water_mask );
+            // }
 
 	    // if a water area, cut out potential islands
 	    if ( is_water_area(AreaType(i)) ) {
