@@ -1218,8 +1218,8 @@ int main(int argc, char **argv) {
     // again with a smaller interior angle limit.
     int result;
     struct rlimit limit;
-    limit.rlim_cur = 20000000;
-    limit.rlim_max = 20000000;
+    limit.rlim_cur = 40000000;
+    limit.rlim_max = 40000000;
 
 #if 0
     result = setrlimit( RLIMIT_DATA, &limit );
@@ -1234,8 +1234,8 @@ int main(int argc, char **argv) {
 
     // cpu time limit since occassionally the triangulator can go into
     // an infinite loop.
-    limit.rlim_cur = 120;
-    limit.rlim_max = 120;
+    limit.rlim_cur = 300;	// seconds
+    limit.rlim_max = 300;	// seconds
     result = setrlimit( RLIMIT_CPU, &limit );
     cout << "result of setting mem limit = " << result << endl;
 #endif  // end of stuff that crashes Cygwin

@@ -1,5 +1,7 @@
 Sample command line to build a specific tile-id:
 
+./fgfs-construct  --work-dir=/stage/fgfs05/curt/Work --output-dir=/stage/fgfs05/curt/Scenery-1.0 --tile-id=942691 /stage/fgfs05/curt/Work/AirportArea /stage/fgfs05/curt/Work/AirportObj /stage/fgfs05/curt/Work/VPF-Canals /stage/fgfs05/curt/Work/VPF-Cities /stage/fgfs05/curt/Work/VPF-FloodLand /stage/fgfs05/curt/Work/VPF-Lakes /stage/fgfs05/curt/Work/VPF-LandCover /stage/fgfs05/curt/Work/VPF-LandMass /stage/fgfs05/curt/Work/VPF-Railroads /stage/fgfs05/curt/Work/VPF-Rivers /stage/fgfs05/curt/Work/VPF-Roads /stage/fgfs05/curt/Work/VPF-Towns /stage/fgfs05/curt/Work/TowerObj /stage/fgfs05/curt/Work/SRTM-United_States-1 /stage/fgfs05/curt/Work/SRTM-North_America-3 /stage/fgfs05/curt/Work/SRTM-South_America-3 /stage/fgfs05/curt/Work/SRTM-Eurasia-3 /stage/fgfs05/curt/Work/SRTM-Africa-3 /stage/fgfs05/curt/Work/DEM-USGS-3 /stage/fgfs05/curt/Work/SRTM-30 2>&1 | less
+
 ./fgfs-construct --work-dir=/stage/fgfs04/curt/Work --output-dir=/stage/fgfs04/curt/FlightGear --tile-id=942050 --cover=/stage/fgfs04/curt/Work/LC-Global/gusgs2_0ll.img.old /stage/fgfs04/curt/Work/AirportArea /stage/fgfs04/curt/Work/AirportObj /stage/fgfs04/curt/Work/GSHHS-Ponds /stage/fgfs04/curt/Work/GSHHS-Islands /stage/fgfs04/curt/Work/GSHHS-Lakes /stage/fgfs04/curt/Work/GSHHS-LandMass /stage/fgfs04/curt/Work/USA-Hydro /stage/fgfs04/curt/Work/USA-Urban /stage/fgfs04/curt/Work/SRTM-1 2>&1 | less
 
 Sample command line to build tiles intersecting an area specified by a
