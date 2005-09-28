@@ -34,7 +34,7 @@ else
     WORK_BASE="${BASE_DIR}/Work"
     CLIENT_LIST_RUDE="${WORK_BASE}/clients.rude"
     CLIENT_LIST_NICE="${WORK_BASE}/clients.nice"
-    OUTPUT_DIR="${BASE_DIR}/Scenery-0.9.7"
+    OUTPUT_DIR="${BASE_DIR}/Scenery-1.0"
     LOG_DIR="${WORK_BASE}/Status"
     SERVER_LOG_FILE=${LOG_DIR}/server.log
     echo "Base directory is $BASE_DIR"
@@ -100,8 +100,12 @@ for i in $CLIENTS_RUDE; do
     # KILL_COMMAND="killall $CLIENT"
     # ssh -n $i "$KILL_COMMAND"
 
-    # RMT_COMMAND="source ~/.profile; nice $CLIENT --host=$SERVER_HOST --port=$SERVER_PORT --work-dir=$WORK_BASE --output-dir=$OUTPUT_DIR --rude --cover=$WORK_BASE/LC-Global/gusgs2_0ll.img AirportArea AirportObj GSHHS-Ponds GSHHS-Islands GSHHS-Lakes GSHHS-LandMass USA-Hydro USA-Urban SRTM-United_States-1 SRTM-North_America-3 SRTM-South_America-3 SRTM-Eurasia-3 DEM-USGS-3 SRTM-30"
-    RMT_COMMAND="source ~/.profile; nice $CLIENT --host=$SERVER_HOST --port=$SERVER_PORT --work-dir=$WORK_BASE --output-dir=$OUTPUT_DIR --rude AirportArea AirportObj GSHHS-LandMass VPF-Canals VPF-Cities VPF-FloodLand VPF-Lakes VPF-LandCover VPF-Railroads VPF-Rivers VPF-Roads VPF-Towns TowerObj SRTM-United_States-1 SRTM-North_America-3 SRTM-South_America-3 SRTM-Eurasia-3 SRTM-Africa-3 DEM-USGS-3 SRTM-30"
+    # 9/26/05 (CLO) - removed GSHHS-LandMass from input data.  We give up a
+    # more detailed data source, but eliminate data conflicts that cause
+    # occasional problems # and strange artifacts.
+    RMT_COMMAND="source ~/.bash_profile; nice $CLIENT --host=$SERVER_HOST --port=$SERVER_PORT --work-dir=$WORK_BASE --output-dir=$OUTPUT_DIR --rude AirportArea AirportObj VPF-Canals VPF-Cities VPF-FloodLand VPF-Lakes VPF-LandCover VPF-LandMass VPF-Railroads VPF-Rivers VPF-Roads VPF-Towns TowerObj SRTM-United_States-1 SRTM-North_America-3 SRTM-South_America-3 SRTM-Eurasia-3 SRTM-Africa-3 DEM-USGS-3 SRTM-30"
+    # (N-1) RMT_COMMAND="source ~/.profile; nice $CLIENT --host=$SERVER_HOST --port=$SERVER_PORT --work-dir=$WORK_BASE --output-dir=$OUTPUT_DIR --rude AirportArea AirportObj GSHHS-LandMass VPF-Canals VPF-Cities VPF-FloodLand VPF-Lakes VPF-LandCover VPF-Railroads VPF-Rivers VPF-Roads VPF-Towns TowerObj SRTM-United_States-1 SRTM-North_America-3 SRTM-South_America-3 SRTM-Eurasia-3 SRTM-Africa-3 DEM-USGS-3 SRTM-30"
+    # (N-2) RMT_COMMAND="source ~/.profile; nice $CLIENT --host=$SERVER_HOST --port=$SERVER_PORT --work-dir=$WORK_BASE --output-dir=$OUTPUT_DIR --rude --cover=$WORK_BASE/LC-Global/gusgs2_0ll.img AirportArea AirportObj GSHHS-Ponds GSHHS-Islands GSHHS-Lakes GSHHS-LandMass USA-Hydro USA-Urban SRTM-United_States-1 SRTM-North_America-3 SRTM-South_America-3 SRTM-Eurasia-3 DEM-USGS-3 SRTM-30"
     echo "client command:"
     echo ""
     echo "$RMT_COMMAND"
