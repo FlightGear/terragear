@@ -233,6 +233,7 @@ usage ()
   cerr << "--work-dir=<dir>      (default: .)" << endl;
   cerr << "--att=<item>:<value>  (may be repeated)" << endl;
   cerr << "--att=!<item>:<value> (may be repeated)" << endl;
+  cerr << "--start-index=<num>      (default: 0)" << endl;
   exit(2);
 }
 
@@ -290,6 +291,7 @@ main (int argc, const char **argv)
   string work_dir = ".";
   double min_area = -1;
   double max_area = -1;
+  int start_index = 0;
 
 
   //
@@ -371,6 +373,11 @@ main (int argc, const char **argv)
         argPos++;
     }
 
+    else if (arg.find("--start-index=") == 0) {
+        start_index = atoi(arg.substr(14).c_str());
+        argPos++;
+    }
+
     else if (arg == "--") {
         argPos++;
         break;
@@ -438,6 +445,9 @@ main (int argc, const char **argv)
 	 << (attributes[x].state ? " = " : " != ")
 	 << attributes[x].value << endl;
   }
+  if ( start_index > 0 ) {
+    cout << "Starting at index = " << start_index << endl;
+  }
 
 
   //
@@ -469,12 +479,13 @@ main (int argc, const char **argv)
     long start_sec = start.get_seconds();
 
     TGPolygon mask;
-    for (int i = 0; i < nTopologies; i++) {
-      if ((i % 50) == 0) {
+    for (int i = start_index; i < nTopologies; i++) {
+      if ((i % 10) == 0) {
 	now.stamp();
         long now_sec = now.get_seconds();
 	double elapsed_min = (now_sec - start_sec) / 60.0;
         double percent = (double)i / (double)nTopologies;
+	cerr << i << "# ";
 	cerr << percent*100.0 << "% done ...";
         cerr << " total time = " << elapsed_min / percent;
 	cerr << " (min)  finished in " << elapsed_min / percent - elapsed_min
