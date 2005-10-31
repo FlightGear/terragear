@@ -108,6 +108,8 @@ TGAptSurface::TGAptSurface( const string& path,
     min_deg = _min_deg;
     max_deg = _max_deg;
     average_elev_m = _average_elev_m;
+    // cout << "min = " << min_deg << " max = " << max_deg
+    //      << " ave = " << average_elev_m << endl;
 
     // The following size calculations are for the purpose of
     // determining grid divisions so it's not important that they be
@@ -131,8 +133,8 @@ TGAptSurface::TGAptSurface( const string& path,
 
     // set an arbitrary minumum number of divisions to keep things
     // interesting
-    if ( xdivs < 6 ) { xdivs = 6; }
-    if ( ydivs < 6 ) { ydivs = 6; }
+    if ( xdivs < 8 ) { xdivs = 8; }
+    if ( ydivs < 8 ) { ydivs = 8; }
     SG_LOG(SG_GENERAL, SG_INFO, "  M(" << ydivs << "," << xdivs << ")");
 
     double dlon = x_deg / xdivs;
@@ -144,7 +146,7 @@ TGAptSurface::TGAptSurface( const string& path,
     // Build the extra res input grid (shifted SW by half (dlon,dlat)
     // with an added major row column on the NE sides.)
     int mult = 10;
-    SimpleMatrix dPts( (ydivs + 1) * mult + 1, (xdivs + 1) * mult + 1 );
+    SimpleMatrix dPts( (xdivs + 1) * mult + 1, (ydivs + 1) * mult + 1 );
     for ( int j = 0; j < dPts.rows(); ++j ) {
       for ( int i = 0; i < dPts.cols(); ++i ) {
 	  dPts.set(i, j, Point3D( min_deg.lon() - dlon_h
@@ -161,8 +163,9 @@ TGAptSurface::TGAptSurface( const string& path,
 #ifdef DEBUG
     for ( int j = 0; j < dPts.rows(); ++j ) {
         for ( int i = 0; i < dPts.cols(); ++i ) {
-            printf("%.5f %.5f %.1f\n", dPts(i,j).x(), dPts(i,j).y(),
-                   dPts(i,j).z() );
+            printf("hr %.5f %.5f %.1f\n",
+		   dPts.element(i,j).x(), dPts.element(i,j).y(),
+                   dPts.element(i,j).z() );
         }
     }
 #endif
@@ -174,14 +177,15 @@ TGAptSurface::TGAptSurface( const string& path,
 #ifdef DEBUG
     for ( int j = 0; j < dPts.rows(); ++j ) {
         for ( int i = 0; i < dPts.cols(); ++i ) {
-            printf("%.5f %.5f %.1f\n", dPts(i,j).x(), dPts(i,j).y(),
-                   dPts(i,j).z() );
+            printf("chr %.5f %.5f %.1f\n",
+		   dPts.element(i,j).x(), dPts.element(i,j).y(),
+                   dPts.element(i,j).z() );
         }
     }
 #endif
 
     // Build the normal res input grid from the double res version
-    Pts = new SimpleMatrix(ydivs + 1, xdivs + 1);
+    Pts = new SimpleMatrix(xdivs + 1, ydivs + 1 );
     double ave_divider = (mult+1) * (mult+1);
     for ( int j = 0; j < Pts->rows(); ++j ) {
         for ( int i = 0; i < Pts->cols(); ++i ) {
@@ -217,7 +221,7 @@ TGAptSurface::TGAptSurface( const string& path,
 #ifdef DEBUG
     for ( int j = 0; j < Pts->rows(); ++j ) {
         for ( int i = 0; i < Pts->cols(); ++i ) {
-            printf("%.5f %.5f %.1f\n",
+            printf("nr %.5f %.5f %.1f\n",
 		   Pts->element(i,j).x(),
 		   Pts->element(i,j).y(),
                    Pts->element(i,j).z() );
@@ -248,8 +252,9 @@ TGAptSurface::TGAptSurface( const string& path,
 #ifdef DEBUG
     for ( int j = 0; j < Pts->rows(); ++j ) {
         for ( int i = 0; i < Pts->cols(); ++i ) {
-            printf("%.5f %.5f %.1f\n", Pts(i,j).x(), Pts(i,j).y(),
-                   Pts(i,j).z() );
+            printf("%.5f %.5f %.1f\n",
+		   Pts->element(i,j).x(), Pts->element(i,j).y(),
+                   Pts->element(i,j).z() );
         }
     }
 #endif
@@ -278,7 +283,7 @@ TGAptSurface::TGAptSurface( const string& path,
         for ( int i = 0; i < divs; ++i ) {
             double lon = min_deg.lon() + j * dx;
             double lat = min_deg.lat() + i * dy;
-            printf("%.5f %.5f %.1f\n", lon, lat, query_solver(lon, lat) );
+            printf("%.5f %.5f %.1f\n", lon, lat, query(lon, lat) );
         }
     }
 #endif
@@ -462,7 +467,7 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
       + A(16)*x*x*y*y*y;
     result += offset.z();
 
-    printf("result = %.2f\n", result);
+    printf("result = %.6f %.6f %.2f\n", lon_deg, lat_deg, result);
 
     return result;
 }
