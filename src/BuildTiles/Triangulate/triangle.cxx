@@ -107,7 +107,7 @@ TGTriangle::build( const point_list& corner_list,
                 char junkn[256];
 		sprintf(junkn, "c%d", j);
 		gpc_poly.write_contour( j, junkn );
-                */
+		*/
 
 		for ( int k = 0; k < gpc_poly.contour_size( j ); k++ ) {
 		    Point3D p = gpc_poly.get_pt( j, k );
@@ -141,13 +141,15 @@ TGTriangle::build( const point_list& corner_list,
 #endif
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = reduce_degeneracy( gpc_poly );
+	    gpc_poly = reduce_degeneracy( gpc_poly ); // can happen multiple time
 	    gpc_poly = remove_dups( gpc_poly );
 	    gpc_poly = remove_bad_contours( gpc_poly );
 	    gpc_poly = remove_cycles( gpc_poly );
 
 	    cout << "after sanity checks, contours = " 
 		 << gpc_poly.contours() << endl;
-            /*
+
+	    /*
             for ( j = 0; j < gpc_poly.contours(); ++j ) {
                 cout << "  contour " << j << " size = "
                      << gpc_poly.contour_size( j ) << endl;
@@ -155,9 +157,11 @@ TGTriangle::build( const point_list& corner_list,
 		sprintf(junkn, "d%d", j);
 		gpc_poly.write_contour( j, junkn );
             }
-            */
+	    */
 
+	    cout << "before calc_points_inside()" << endl;
 	    calc_points_inside( gpc_poly );
+	    cout << "after calc_points_inside()" << endl;
 
 #if 0
 	    // old way
