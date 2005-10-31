@@ -8,6 +8,12 @@
 # An example DEFS line is:
 #
 #   CPPFLAGS = -DTRILIBRARY -DREDUCED -DCDT_ONLY
+#
+# WARNING: I have had some problems compiling with -O2 (gcc) leading to
+# segfaults.  This problem seems to go away when I compile without -O2.
+# This usually indicates some sort of bug in the source code (*very* rarely
+# is it a compiler optimization bug) however this is not my code ...
+#
 
 AM_CFLAGS = -DTRILIBRARY
 
