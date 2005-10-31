@@ -29,7 +29,7 @@
 extern int nudge;
 
 // Final grid size for airport surface (in meters)
-const double coarse_grid = 500.0;
+const double coarse_grid = 300.0;
 
 // compared to the average surface elevation, clamp all values within
 // this many meters of the average
