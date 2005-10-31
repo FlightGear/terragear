@@ -973,6 +973,16 @@ void build_airport( string airport_id, float alt_m,
 	tris_tc.push_back( base_tc );
     }
 
+    // on rare occasion, one or more of the divided base points can be
+    // missed.  Make sure they are all in the node list so we can
+    // build a proper skirt.
+
+    for ( i = 0; i < divided_base.contours(); ++i ) {
+	for ( j = 0; j < divided_base.contour_size( i ); ++j ) {
+	    nodes.unique_add( divided_base.get_pt(i, j) );
+	}
+    }
+
     // Now that we have assembled all the airport geometry nodes into
     // a list, calculate an "average" airport elevation based on all
     // the actual airport node points.  This is more useful than
@@ -982,6 +992,7 @@ void build_airport( string airport_id, float alt_m,
 
     double average = tgAverageElevation( root, elev_src,
                                          nodes.get_node_list() );
+    // cout << "average airport elevation = " << average << endl;
 
     // Now build the fitted airport surface ...
 
@@ -1033,11 +1044,13 @@ void build_airport( string airport_id, float alt_m,
     max_deg.setlon( max_deg.lon() + 0.01 * dlon );
     min_deg.setlat( min_deg.lat() - 0.01 * dlat );
     max_deg.setlat( max_deg.lat() + 0.01 * dlat );
+    cout << "min = " << min_deg << " max = " << max_deg << endl;
 
     TGAptSurface apt_surf( root, elev_src, min_deg, max_deg, average );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Surface created");
+    SG_LOG(SG_GENERAL, SG_INFO, "Airport surface created");
 
     // calculate node elevations
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing airport node elevations");
     point_list geod_nodes = calc_elevations( apt_surf,
                                              nodes.get_node_list(),
                                              0.0 );
@@ -1047,8 +1060,11 @@ void build_airport( string airport_id, float alt_m,
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing beacon node elevations");
     point_list beacon_nodes = calc_elevations( apt_surf, beacons, 0.0 );
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing tower node elevations");
     point_list tower_nodes = calc_elevations( apt_surf, towers, 0.0 );
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing windsock node elevations");
     point_list windsock_nodes = calc_elevations( apt_surf, windsocks, 0.0 );
 
     // add base skirt (to hide potential cracks)
@@ -1151,6 +1167,9 @@ void build_airport( string airport_id, float alt_m,
     typedef elev_map_type::const_iterator const_elev_map_iterator;
     elev_map_type elevation_map;
 
+    SG_LOG(SG_GENERAL, SG_INFO,
+	   "Computing runway/approach lighting elevations");
+
     // pass one, calculate raw elevations from Array
 
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) {
@@ -1189,7 +1208,7 @@ void build_airport( string airport_id, float alt_m,
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with lighting calc_elevations()");
+    SG_LOG(SG_GENERAL, SG_INFO, "Done with lighting calc_elevations()");
 
     // pass two, for each light group check if we need to lift (based
     // on flag) and do so, then output next structures.
