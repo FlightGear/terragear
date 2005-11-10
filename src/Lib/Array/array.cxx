@@ -45,14 +45,20 @@ SG_USING_STD(cout);
 SG_USING_STD(endl);
 
 
-TGArray::TGArray( void ) {
+TGArray::TGArray( void ):
+  array_in(NULL),
+  fitted_in(NULL)
+{
     // cout << "class TGArray CONstructor called." << endl;
     in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 }
 
 
-TGArray::TGArray( const string &file ) {
+TGArray::TGArray( const string &file ):
+  array_in(NULL),
+  fitted_in(NULL)
+{
     // cout << "class TGArray CONstructor called." << endl;
     in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
@@ -171,6 +177,41 @@ TGArray::parse( SGBucket& b ) {
 }
 
 
+// write an Array file
+bool TGArray::write( const string root_dir, SGBucket& b ) {
+    // generate output file name
+    string base = b.gen_base_path();
+    string path = root_dir + "/" + base;
+#ifdef _MSC_VER
+    fg_mkdir( path.c_str() );
+#else
+    string command = "mkdir -p " + path;
+    system( command.c_str() );
+#endif
+
+    string array_file = path + "/" + b.gen_index_str() + ".arr.new.gz";
+    cout << "array_file = " << array_file << endl;
+
+    // write the file
+    gzFile fp;
+    if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
+	cout << "ERROR:  cannot open " << array_file << " for writing!" << endl;
+	return false;
+    }
+
+    cout << "origin = " << originx << ", " << originy << endl;
+    gzprintf( fp, "%d %d\n", (int)originx, (int)originy );
+    gzprintf( fp, "%d %d %d %d\n", cols, (int)col_step, rows, (int)row_step );
+    for ( int i = 0; i < cols; ++i ) {
+	for ( int j = 0; j < rows; ++j ) {
+	    gzprintf( fp, "%d ", (int)in_data[i][j] );
+	}
+	gzprintf( fp, "\n" );
+    }
+    gzclose(fp);
+
+    return true;
+}
 
 
 // do our best to remove voids by picking data from the nearest neighbor.

@@ -86,13 +86,25 @@ public:
     ~TGArray( void );
 
     // open an Array file (use "-" if input is coming from stdin)
-    bool open ( const string& file_based );
+    bool open ( const string& file_base );
+
+    // return if array was successfully opened or not
+    inline bool is_open() { 
+      if ( array_in != NULL ) {
+	return array_in->is_open();
+      } else {
+	return false;
+      }
+    }
 
     // close a Array file
     bool close();
 
     // parse a Array file
     bool parse( SGBucket& b );
+
+    // write an Array file
+    bool write( const string root_dir, SGBucket& b );
 
     // do our best to remove voids by picking data from the nearest
     // neighbor.
@@ -125,6 +137,9 @@ public:
 
     inline int get_array_elev( int col, int row ) {
         return in_data[col][row];
+    }
+    inline void set_array_elev( int col, int row, int val ) {
+        in_data[col][row] = val;
     }
     inline Point3D get_fitted_pt( int i ) {
         return fitted_list[i];
