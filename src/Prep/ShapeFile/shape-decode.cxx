@@ -55,7 +55,8 @@ map<string,string> area_code_map;
 int use_area_code_map=0;
 int continue_on_errors=0;
 int area_column=4,code_column=3;
-int width_column=-1;
+double max_segment = 0.0;  // zero = no splitting
+int width_column = -1;
 
 void load_noaa_area_codes() {
     area_code_map["Urban (1990 Enhanced)"]="Urban";
@@ -291,6 +292,9 @@ void processPolygon(SHPObject* psShape,
 	}
     }
 
+    if ( max_segment > 1.0 ) {
+        shape = tgPolygonSplitLongEdges( shape, max_segment );
+    }
     tgChopNormalPolygon(work_dir, area, shape, preserve3D);
 }
 
@@ -329,6 +333,10 @@ void processLine(SHPObject* psShape,
 	}
 	partEnd=psShape->panPartStart[iPart];
 	tg::makePolygon(line,linewidth,shape);
+
+        if ( max_segment > 1.0 ) {
+            shape = tgPolygonSplitLongEdges( shape, max_segment );
+        }
 	tgChopNormalPolygon(work_dir, area, shape, false);
     }
 }
@@ -351,6 +359,10 @@ void processPoints(SHPObject* psShape,
 	tg::makePolygon(Point3D(psShape->padfX[j],psShape->padfY[j],0),
 			pointwidth,
 			shape);
+
+        if ( max_segment > 1.0 ) {
+            shape = tgPolygonSplitLongEdges( shape, max_segment );
+        }
 	tgChopNormalPolygon(work_dir, area, shape, false);
     }
 }
@@ -359,15 +371,44 @@ void usage(char* progname) {
     SG_LOG( SG_GENERAL, SG_ALERT, "Usage: " << progname 
 	    << " [--line-width width] [--point-width width]"
 	       " [--area-column col] [--code-col col]"
-           " [--line-width-column col ] "
-	       " [--continue-on-errors]"
+               " [--line-width-column col ] "
+	       " [--continue-on-errors] [--max-segment max_segment_length]"
+	       " [--start-record num]"
 	       " <shape_file> <work_dir> [ area_string ]" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "Options:" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--line-width width" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Width in meters for the lines" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--point-width width" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Size in meters of the squares generated from points" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--max-segment max_segment_length" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Maximum segment length in meters" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--area-column col" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Get areatype for objects from column number col" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        in associated dbf-file (only if <area_string> is not given)" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--code-column col" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Get codetype for objects from column number col" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        in associated dbf-file" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        (currently code is only used in debug printouts)" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--continue-on-errors" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Continue even if the file seems fishy" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--start-record" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Start processing at the specified record number (first record num=0)" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "<shape_file>" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Name of the shape-file to process, without .shp extension" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "<work_dir>" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Directory to put the polygon files in" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "<area_string>" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        (Optional) Area type for all objects in file" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Overrides --area-column option if present" );
     exit(-1);
 }
 
 int main( int argc, char **argv ) {
     int i, j;
-    int pointwidth=500, linewidth=50, force_linewidth=-1;
+    int pointwidth = 500, linewidth = 50, force_linewidth = -1;
+    int start_record = 0;
     char* progname=argv[0];
     SGPath programPath(progname);
     string force_area_type = "";
@@ -394,6 +435,12 @@ int main( int argc, char **argv ) {
 	    pointwidth=atoi(argv[2]);
 	    argv+=2;
 	    argc-=2;
+	} else if (!strcmp(argv[1],"--max-segment")) {
+	    if (argc<3)
+		usage(progname);
+	    max_segment=atoi(argv[2]);
+	    argv+=2;
+	    argc-=2;
 	} else if (!strcmp(argv[1],"--area-column")) {
 	    if (argc<3)
 		usage(progname);
@@ -406,14 +453,22 @@ int main( int argc, char **argv ) {
 	    code_column=atoi(argv[2]);
 	    argv+=2;
 	    argc-=2;
+	} else if (!strcmp(argv[1],"--continue-on-errors")) {
+            argv++;
+            argc--;
+	    continue_on_errors=1;
 	} else if (!strcmp(argv[1],"--line-width-column")) {
 	    if (argc<3)
 		usage(progname);
 	    width_column=atoi(argv[2]);
 	    argv+=2;
 	    argc-=2;
-    } else if (!strcmp(argv[1],"--continue-on-errors")) {
-	    continue_on_errors=1;
+	} else if (!strcmp(argv[1],"--start-record")) {
+	    if (argc<3)
+		usage(progname);
+	    start_record=atoi(argv[2]);
+	    argv+=2;
+	    argc-=2;
 	} else if (!strcmp(argv[1],"--help")) {
 	    usage(progname);
 	} else
@@ -485,7 +540,7 @@ int main( int argc, char **argv ) {
 	exit(-1);
     }
 
-    for ( i = 0; i < nEntities; i++ ) {
+    for ( i = start_record; i < nEntities; i++ ) {
 	// fetch i-th record (shape)
         SHPObject *psShape;
 
@@ -496,7 +551,7 @@ int main( int argc, char **argv ) {
 	    continue;
 	}
 	
-	SG_LOG( SG_GENERAL, SG_DEBUG, "Processing record = " << i 
+	SG_LOG( SG_GENERAL, SG_INFO, "Processing record = " << i 
 		<< "  rings = " << psShape->nParts
 		<< "  total vertices = " << psShape->nVertices );
 
@@ -539,9 +594,9 @@ int main( int argc, char **argv ) {
     } else
       linewidth = force_linewidth;
 
-	SG_LOG( SG_GENERAL, SG_INFO, "  record type = " 
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  record type = " 
 		<< SHPTypeName(psShape->nSHPType) );
-	SG_LOG( SG_GENERAL, SG_INFO, "  bounds = (" 
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  bounds = (" 
 		<< psShape->dfXMin << "," << psShape->dfYMin << ")  "
 		<< psShape->dfZMin << "," <<  psShape->dfMMin
 		<< " to (" << psShape->dfXMax << "," << psShape->dfYMax << ")  "
