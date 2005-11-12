@@ -1,12 +1,14 @@
 // main.cxx -- process shapefiles and extract polygon outlines,
 //             lines and points, clipping against and sorting
-//             them into the revelant tiles.
+//             them into the relevant tiles.
 //
 // Written by Curtis Olson, started February 1999.
 // Modified by Ralf Gerlich, August 2005.
+// Modified by Thomas Foerster, November 2005.
 //
 // Copyright (C) 1999  Curtis L. Olson  - http://www.flightgear.org/~curt
 // Copyright (C) 2005  Ralf Gerlich     - http://home.easylink.de/rgerlich
+// Copyright (C) 2005  Thomas Foerster  
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -53,6 +55,7 @@ map<string,string> area_code_map;
 int use_area_code_map=0;
 int continue_on_errors=0;
 int area_column=4,code_column=3;
+int width_column=-1;
 
 void load_noaa_area_codes() {
     area_code_map["Urban (1990 Enhanced)"]="Urban";
@@ -224,6 +227,13 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
     return get_area_type( area );
 }
 
+// get attribute value of 'width' from shapefile
+int get_shapefile_width(DBFHandle& hDBF, int rec) {
+    string wstring = DBFReadStringAttribute( hDBF, rec, width_column );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "wstring = " << wstring );
+    return atoi(wstring.c_str());
+}
+
 void processPolygon(SHPObject* psShape,
 		    const string& work_dir,
 		    AreaType area,
@@ -349,6 +359,7 @@ void usage(char* progname) {
     SG_LOG( SG_GENERAL, SG_ALERT, "Usage: " << progname 
 	    << " [--line-width width] [--point-width width]"
 	       " [--area-column col] [--code-col col]"
+           " [--line-width-column col ] "
 	       " [--continue-on-errors]"
 	       " <shape_file> <work_dir> [ area_string ]" );
     exit(-1);
@@ -356,7 +367,7 @@ void usage(char* progname) {
 
 int main( int argc, char **argv ) {
     int i, j;
-    int pointwidth=500,linewidth=50;
+    int pointwidth=500, linewidth=50, force_linewidth=-1;
     char* progname=argv[0];
     SGPath programPath(progname);
     string force_area_type = "";
@@ -374,7 +385,7 @@ int main( int argc, char **argv ) {
 	if (!strcmp(argv[1],"--line-width")) {
 	    if (argc<3)
 		usage(progname);
-	    linewidth=atoi(argv[2]);
+	    force_linewidth=atoi(argv[2]);
 	    argv+=2;
 	    argc-=2;
 	} else if (!strcmp(argv[1],"--point-width")) {
@@ -395,7 +406,13 @@ int main( int argc, char **argv ) {
 	    code_column=atoi(argv[2]);
 	    argv+=2;
 	    argc-=2;
-	} else if (!strcmp(argv[1],"--continue-on-errors")) {
+	} else if (!strcmp(argv[1],"--line-width-column")) {
+	    if (argc<3)
+		usage(progname);
+	    width_column=atoi(argv[2]);
+	    argv+=2;
+	    argc-=2;
+    } else if (!strcmp(argv[1],"--continue-on-errors")) {
 	    continue_on_errors=1;
 	} else if (!strcmp(argv[1],"--help")) {
 	    usage(progname);
@@ -515,6 +532,12 @@ int main( int argc, char **argv ) {
 	} else {
 	    area = get_area_type( force_area_type );
 	}
+      
+    if ( force_linewidth == -1) {
+      if (width_column != -1) // line width from shape file
+        linewidth = get_shapefile_width(hDBF, i);
+    } else
+      linewidth = force_linewidth;
 
 	SG_LOG( SG_GENERAL, SG_INFO, "  record type = " 
 		<< SHPTypeName(psShape->nSHPType) );
