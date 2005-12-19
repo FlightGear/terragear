@@ -325,7 +325,7 @@ void processLine(SHPObject* psShape,
 	for (j=psShape->panPartStart[iPart];j<partEnd;j++) {
 #if 0
 	    SG_LOG( SG_GENERAL, SG_DEBUG,
-	    	       "   Point ("
+	    	       "   Point " << j << " ("
 		    << psShape->padfX[j] << ", "
 		    << psShape->padfY[j] << ")");
 #endif
@@ -413,7 +413,7 @@ int main( int argc, char **argv ) {
     SGPath programPath(progname);
     string force_area_type = "";
 
-    sglog().setLogLevels( SG_ALL, SG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_INFO );
 
     if (programPath.file()=="noaa-decode") {
 	SG_LOG( SG_GENERAL, SG_INFO, "Entering noaa-decode mode" );
