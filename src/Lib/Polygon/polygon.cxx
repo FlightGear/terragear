@@ -496,11 +496,12 @@ TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len ) {
     SG_LOG(SG_GENERAL, SG_DEBUG, "split_long_edges()");
 
     for ( i = 0; i < poly.contours(); ++i ) {
-	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
+	SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
 	for ( j = 0; j < poly.contour_size(i) - 1; ++j ) {
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "point = " << j);
 	    p0 = poly.get_pt( i, j );
 	    p1 = poly.get_pt( i, j + 1 );
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, " " << p0 << "  -  " << p1);
+	    SG_LOG(SG_GENERAL, SG_DEBUG, " " << p0 << "  -  " << p1);
 
 	    if ( fabs(p0.y()) < (90.0 - SG_EPSILON) 
 		 || fabs(p1.y()) < (90.0 - SG_EPSILON) )
