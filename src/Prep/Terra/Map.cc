@@ -8,8 +8,8 @@ using std::endl;
 
 void Map::findLimits()
 {
-    min = HUGE;
-    max = -HUGE;
+    min = HUGE_VAL;
+    max = -HUGE_VAL;
 
     for(int i=0;i<width;i++)
 	for(int j=0;j<height;j++)

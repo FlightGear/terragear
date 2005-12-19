@@ -22,6 +22,9 @@
 // $Id$
 //
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
 
 // libnewmat includes and defines
 #define WANT_STREAM		// include.h will get stream fns

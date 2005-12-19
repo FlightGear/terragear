@@ -33,7 +33,7 @@ public:
     int x, y;
     real import;
 
-    Candidate() { import = -HUGE; }
+    Candidate() { import = -HUGE_VAL; }
 
     void consider(int sx, int sy, real i)
     {

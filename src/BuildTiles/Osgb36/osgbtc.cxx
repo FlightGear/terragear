@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include "osgb36.hxx"
 #include "uk.hxx"
 
