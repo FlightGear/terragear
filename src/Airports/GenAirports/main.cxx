@@ -99,11 +99,12 @@ static void help( int argc, char **argv ) {
     cout << "It is necessary to generate the elevation data for the area of interest PRIOR TO GENERATING THE AIRPORTS.  ";
     cout << "Failure to do this will result in airports being generated with an elevation of zero.  ";
     cout << "The following subdirectories of the work-dir will be searched for elevation files:\n\n";
-    cout << "SRTM-United_States-1\n";
-    cout << "SRTM-North_America-3\n";
-    cout << "SRTM-South_America-3\n";
-    cout << "SRTM-Eurasia-3\n";
-    cout << "SRTM-Africa-3\n";
+    cout << "SRTM2-Africa-3\n";
+    cout << "SRTM2-Australia-3\n";
+    cout << "SRTM2-Eurasia-3\n";
+    cout << "SRTM2-Islands-3\n";
+    cout << "SRTM2-North_America-3\n";
+    cout << "SRTM2-South_America-3\n";
     cout << "DEM-USGS-3\n";
     cout << "SRTM-30";
     cout << "\n\n";
@@ -180,11 +181,12 @@ int main( int argc, char **argv ) {
     }
 
     // Please update the help near the top of this file if you update this list.
-    elev_src.push_back( "SRTM-United_States-1" );
-    elev_src.push_back( "SRTM-North_America-3" );
-    elev_src.push_back( "SRTM-South_America-3" );
-    elev_src.push_back( "SRTM-Eurasia-3" );
-    elev_src.push_back( "SRTM-Africa-3" );
+    elev_src.push_back( "SRTM2-Africa-3" );
+    elev_src.push_back( "SRTM2-Australia-3" );
+    elev_src.push_back( "SRTM2-Eurasia-3" );
+    elev_src.push_back( "SRTM2-Islands-3" );
+    elev_src.push_back( "SRTM2-North_America-3" );
+    elev_src.push_back( "SRTM2-South_America-3" );
     elev_src.push_back( "DEM-USGS-3" );
     elev_src.push_back( "SRTM-30" );
 
