@@ -15,18 +15,24 @@
 namespace tg {
 
 
+/*
+ * Computer the intersection point of two lines.  Reference:
+ * http://astronomy.swin.edu.au/~pbourke/geometry/lineline2d/
+ */
 bool
 getIntersection (const Point3D &p0, const Point3D &p1,
 		 const Point3D &p2, const Point3D &p3,
 		 Point3D &intersection)
 {
+  const double my_eps = 0.00000000000001;
+
   double u_num =
     ((p3.x()-p2.x())*(p0.y()-p2.y()))-((p3.y()-p2.y())*(p0.x()-p2.x()));
   double u_den =
     ((p3.y()-p2.y())*(p1.x()-p0.x()))-((p3.x()-p2.x())*(p1.y()-p0.y()));
 
-  if (u_den == 0) {
-    if (u_num == 0) {
+  if ( fabs(u_den) < my_eps ) {
+    if ( fabs(u_num) < my_eps ) {
       SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: coincident lines");
     } else {
       SG_LOG(SG_GENERAL, SG_ALERT, "Intersection: parallel lines");
@@ -34,6 +40,7 @@ getIntersection (const Point3D &p0, const Point3D &p1,
     return false;
   } else {
     double u = u_num/u_den;
+    // cout << "u = " << u << " u_num = " << u_num << " u_den = " << u_den << endl;
     intersection = Point3D((p0.x()+u*(p1.x()-p0.x())),
 			   (p0.y()+u*(p1.y()-p0.y())),
 			   0);
@@ -92,20 +99,57 @@ makePolygon (const Line &line, int width, TGPolygon &polygon)
 				// Wind each rectangle counterclockwise
 
 				// Corner 1
+    // cout << "point = " << i << endl;
     geo_direct_wgs_84(0, p1.y(), p1.x(), CLAMP_ANGLE(angle1+90), width/2, &y, &x, &az);
+    // Sometimes creating the new point can wrap the date line, even if the
+    // original line does not.  This can cause problems later, so lets just
+    // clip the result to date line and hope that the typical error is very
+    // small.  FIXME: we should handle this more robustly in case larger
+    // structures cross the date line, but that implies a much broader swath
+    // of changes.
+    if ( x - p1.x() > 180.0 ) x = -180.0;
+    else if ( x - p1.x() < -180.0 ) x = 180.0;
     polygon.add_node(0, Point3D(x, y, 0));
+    // cout << "corner 1 = " << Point3D(x, y, 0) << endl;
 
 				// Corner 2
     geo_direct_wgs_84(0, p2.y(), p2.x(), CLAMP_ANGLE(angle1+90), width/2, &y, &x, &az);
+    // Sometimes creating the new point can wrap the date line, even if the
+    // original line does not.  This can cause problems later, so lets just
+    // clip the result to date line and hope that the typical error is very
+    // small.  FIXME: we should handle this more robustly in case larger
+    // structures cross the date line, but that implies a much broader swath
+    // of changes.
+    if ( x - p2.x() > 180.0 ) x = -180.0;
+    else if ( x - p2.x() < -180.0 ) x = 180.0;
     polygon.add_node(0, Point3D(x, y, 0));
+    // cout << "corner 2 = " << Point3D(x, y, 0) << endl;
 
 				// Corner 3
     geo_direct_wgs_84(0, p2.y(), p2.x(), CLAMP_ANGLE(angle1-90), width/2, &y, &x, &az);
+    // Sometimes creating the new point can wrap the date line, even if the
+    // original line does not.  This can cause problems later, so lets just
+    // clip the result to date line and hope that the typical error is very
+    // small.  FIXME: we should handle this more robustly in case larger
+    // structures cross the date line, but that implies a much broader swath
+    // of changes.
+    if ( x - p2.x() > 180.0 ) x = -180.0;
+    else if ( x - p2.x() < -180.0 ) x = 180.0;
     polygon.add_node(0, Point3D(x, y, 0));
+    // cout << "corner 3 = " << Point3D(x, y, 0) << endl;
 
 				// Corner 4
     geo_direct_wgs_84(0, p1.y(), p1.x(), CLAMP_ANGLE(angle1-90), width/2, &y, &x, &az);
+    // Sometimes creating the new point can wrap the date line, even if the
+    // original line does not.  This can cause problems later, so lets just
+    // clip the result to date line and hope that the typical error is very
+    // small.  FIXME: we should handle this more robustly in case larger
+    // structures cross the date line, but that implies a much broader swath
+    // of changes.
+    if ( x - p1.x() > 180.0 ) x = -180.0;
+    else if ( x - p1.x() < -180.0 ) x = 180.0;
     polygon.add_node(0, Point3D(x, y, 0));
+    // cout << "corner 4 = " << Point3D(x, y, 0) << endl;
 
 				// Save this rectangle
     segment_list.push_back(polygon);
@@ -120,31 +164,42 @@ makePolygon (const Line &line, int width, TGPolygon &polygon)
   int nSegments = segment_list.size();
   Point3D intersection;
   polygon.add_node(0, segment_list[0].get_pt(0, 0));
+  // cout << "bnode = " << segment_list[0].get_pt(0, 0) << endl;
   for (i = 0; i < nSegments - 1; i++) {
+    // cout << "point = " << i << endl;
     if (getIntersection(segment_list[i].get_pt(0, 0),
 			segment_list[i].get_pt(0, 1),
 			segment_list[i+1].get_pt(0, 0),
 			segment_list[i+1].get_pt(0, 1),
-			intersection))
+			intersection)) {
       polygon.add_node(0, intersection);
-    else
+      // cout << "bnode (int) = " << intersection << endl;
+    } else {
       polygon.add_node(0, segment_list[i].get_pt(0, 1));
+      // cout << "bnode = " << segment_list[i].get_pt(0, 1) << endl;
+    }
   }
   polygon.add_node(0, segment_list[nSegments-1].get_pt(0, 1));
+  // cout << "bnode = " << segment_list[nSegments-1].get_pt(0, 1) << endl;
 
 				// Connect the top part
   polygon.add_node(0, segment_list[nSegments-1].get_pt(0, 2));
+  // cout << "tnode = " << segment_list[nSegments-1].get_pt(0, 2) << endl;
   for (i = nSegments - 1; i > 0; i--) {
     if (getIntersection(segment_list[i].get_pt(0, 2),
 			segment_list[i].get_pt(0, 3),
 			segment_list[i-1].get_pt(0, 2),
 			segment_list[i-1].get_pt(0, 3),
-			intersection))
+			intersection)) {
       polygon.add_node(0, intersection);
-    else
+      // cout << "tnode (int) = " << intersection << endl;
+    } else {
       polygon.add_node(0, segment_list[i].get_pt(0, 3));
+      // cout << "tnode = " << segment_list[i].get_pt(0, 3) << endl;
+    }
   }
   polygon.add_node(0, segment_list[0].get_pt(0, 3));
+  // cout << "tnode = " << segment_list[0].get_pt(0, 3) << endl;
 }
 
 
