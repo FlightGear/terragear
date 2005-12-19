@@ -1,0 +1,148 @@
+Things I want to do -- CLO
+
+Scenery Creation Bugs
+=====================
+
+- Columbia river has a section colored with default material
+  (-119.436, 45.920) tile #991738.
+
+- I see lakes that aren't properly flattened
+
+- Add vertex points to tile edges so we reduce the chance of having
+  big "W" folds at tile borders.
+
+? Lake Washington (around seattle came out all forest.) Tile #942691.
+  Upon some investigation (April 22, 2005) it appears that this is an
+  unfortunate side effect of trying to mix GSHSS and VMAP data.  Lake
+  Washington is considered a "lake" by GSHHS so it's not part of the
+  top level land mass polygons.  However, VMAP connects this to the
+  ocean, so it doesn't have it in it's lake data.  We might have to
+  consider using just VMAP0 data because GSHHS has problems with the
+  great lakes and other places ... it's great for shorelines though
+  and *much* better than VMAP which is really disappointing ...
+
+x Fixed a bug in tgChopNormalPolygon that could leave big chunks out
+  of the final output.
+
+x Some areas not getting colored right now that we went to this 400m segment
+  length (pick biggest triangle for point inside, but not in a hole?)
+  For instance, LFPG should be surrounded by farmland, but comes out
+  only with default.
+
+  This appears to be a problem with TGVPF which calls the "wrong"
+  polygon chop routine.  The one it called leveraged a simplisted
+  polygon splitter which couldn't handle multi-contour polygons or
+  polygons with holes.  This led to some incorrect output which is
+  hopefully now fixed.  So I guess it was not so much a problem with
+  tgvpf, but an underlying library function it called.
+
+x a big hole in the Florida scenery around 26deg 27' 958"N, 80deg 04'
+  855"W.  1X4 has bogus taxiway data which appears to be causing this
+  problem.
+
+x (05/13/2004) 2990811 in e002n49 fails to build.  Remove cycles was
+  no-oped because a key line was commented out ... not sure why but
+  the code was commented out when it was put in ... that probably
+  means it was pasted from elsewhere, but I didn't want to dig that
+  much to figure out where it might have come from.
+
+x Put original 3 arcsec dem data as a higher priority than the 30 arcsec
+  global data.
+
+
+Airport Generator
+=================
+
+- LPMA, LICJ has a problem with skirt nodes.
+
+- Figure out where the massive memory leak is (probably nurbs++).
+
+- Generate a surface square for towers, beacons, and wind socks to sit on.
+
+- Create heliports with an actual "H" texture.
+
+- come up with a way to mix in dem terrain elevation changes while
+  preserving the published altitude at the end of each runway
+
+x Add support for the X-Plane 8.x format
+
+x (11/08/2004) P13 and KBUR have shelves.
+
+x KMIC missing grass runway (database problem) :-(
+
+x KBTM (figure out flaw)
+
+x limit the amount of rate of elevation change (slope) like we do
+  for rivers
+
+x (4/26/2004) Figure out airport elevation bug!!!!  (Maybe fixed, need to
+  monitor closely during next rebuild.)  Check KSAN, EGNM, KBUR?, KANE, ... 
+  We now only average airport points for the airport average height, not the
+  whole area ... that broke down when the airport was on a hill or in a bowl,
+  or there was a significant elevation change within the area near by.
+
+x (04/06/2004) KABQ has way too much elevation change, need to make better
+  limiters (maybe based on slope rather than overall elevation change?)
+
+x KPOC (grass in middle of runway)
+
+x KOXR (grass in middle of runway)
+
+x KTVL (grass area in middle of runway)
+
+x KMRY (grass in middle of runway)
+
+x EPWA (sunken runway)
+
+x (04/06/2004) Fix approach lighting relative to displaced thresholds.
+
+x (10/31/2002) fix problems with skirt being wrong node count
+
+x threshold lighting, group by rwy end, not by viewing direction.
+
+x don't let approach lighting go lower than the altitude of the end of
+  the runway
+
+x finish lighting schemes.
+
+
+Tile Generation
+===============
+
+- Put skirts around every hole
+
+- Also do this in the on-the-fly flightgear ocean tile generator.
+
+
+Model Output
+============
+
+- Strippify rather than fan-ify
+
+
+Roads/Streams
+=============
+
+- Cut holes for these, don't let the triangulator split up the edges.
+
+- Make corners into nicer radius?
+
+- Lay a texture down appropriately so that it actually looks like a
+  road (stream?)
+
+- Create a logical road network near airports so we can create moving
+  traffic?
+
+
+Mesh Simplification
+===================
+
+x Find a more intelligent way to simplify the regular DEM mesh into a
+  TIN - terra!
+
+
+Work Data
+==========
+
+x Regenerate DEM30 data (new code doesn't generate areas that are all
+  0 elevation saving a ton of space.)
