@@ -53,16 +53,16 @@ x Put original 3 arcsec dem data as a higher priority than the 30 arcsec
 Airport Generator
 =================
 
-- LPMA, LICJ has a problem with skirt nodes.
+- Create heliports with an actual "H" texture (as provided by Melchior.)
 
 - Figure out where the massive memory leak is (probably nurbs++).
 
-- Generate a surface square for towers, beacons, and wind socks to sit on.
-
-- Create heliports with an actual "H" texture.
-
 - come up with a way to mix in dem terrain elevation changes while
   preserving the published altitude at the end of each runway
+
+x Generate a surface square for towers, beacons, and wind socks to sit on.
+
+x LPMA, LICJ has a problem with skirt nodes.
 
 x Add support for the X-Plane 8.x format
 
