@@ -140,7 +140,7 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 }
 
 
-// lookup node elevations for each point in the specified nurbs++
+// lookup node elevations for each point in the specified simple
 // matrix.  Returns average of all points.
 
 void tgCalcElevations( const string &root, const string_list elev_src,
@@ -245,7 +245,7 @@ void tgCalcElevations( const string &root, const string_list elev_src,
         }
     }
     double grid_average = total / (double) count;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of nurbs matrix = "
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of matrix = "
            << grid_average);
 }
 
