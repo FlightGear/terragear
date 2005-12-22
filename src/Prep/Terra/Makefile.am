@@ -8,7 +8,7 @@ terra_SOURCES = \
 	Array.h Geom.h GreedyInsert.cc GreedyInsert.h Heap.cc Heap.h \
 	Map.cc Map.h Mask.cc \
 	Mask.h Quadedge.cc Quadedge.h Subdivision.cc Subdivision.h Vec2.h \
-	Vec3.h cmdline.cc glHacks.cc glHacks.h greedy.cc gui.cc gui.h \
+	Vec3.h cmdline.cc greedy.cc \
 	output.cc terra.cc terra.h version.h
 
 terra_LDADD = $(opengl_LIBS)
