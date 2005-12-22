@@ -218,6 +218,7 @@ if test "x$ac_cv_lib_glut_glutGameModeString" = "xno"; then
     exit 1
 fi
 
+AC_LANG_PUSH(C++)
 # needed for plib 1.8.x or later
 AC_CHECK_LIB(plibul, ulInit,,,)
 
@@ -231,10 +232,9 @@ AC_SUBST(support_LIBS)
 
 AM_CONDITIONAL(HAVE_XWINDOWS, test "x$ac_cv_lib_X11_XCreateWindow" = "xyes" )
 
-AC_LANG_PUSH(C++)
 dnl Check for "plib" without which we cannot go on
-AC_CHECK_HEADER(plib/pu.h)
-if test "x$ac_cv_header_plib_pu_h" != "xyes"; then
+AC_CHECK_HEADER(plib/sg.h)
+if test "x$ac_cv_header_plib_sg_h" != "xyes"; then
     echo
     echo "You *must* have the plib library installed on your system to build"
     echo "TerraGear!"
