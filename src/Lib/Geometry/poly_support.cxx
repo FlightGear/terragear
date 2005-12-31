@@ -1196,8 +1196,8 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
 	    p0 = result[result.size() - 1];
 	    p1 = result[0];
 
-	    // bad = find_intermediate_node( p0, p1, result, &bad_node );
-	    if ( bad ) { cout << "bad in 0 to n segment" << endl; }
+	    bad = find_intermediate_node( p0, p1, result, &bad_node );
+	    // if ( bad ) { cout << "bad in 0 to n segment" << endl; }
 	}
 
 	// CLO: look for later nodes that match earlier segment end points
