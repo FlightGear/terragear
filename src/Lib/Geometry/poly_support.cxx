@@ -1182,12 +1182,13 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
 	int i = 0;
 	int j = 0;
 
-	// look for stray intermediate nodes
+	// look for first stray intermediate nodes
 	while ( i < (int)result.size() - 1 && !bad ) {
 	    p0 = result[i];
 	    p1 = result[i+1];
 	
 	    bad = find_intermediate_node( p0, p1, result, &bad_node );
+	    // if ( bad ) { cout << "bad in n-1 nodes" << endl; }
 	    ++i;
 	}
 	if ( !bad ) {
@@ -1195,7 +1196,8 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
 	    p0 = result[result.size() - 1];
 	    p1 = result[0];
 
-	    bad = find_intermediate_node( p0, p1, result, &bad_node );
+	    // bad = find_intermediate_node( p0, p1, result, &bad_node );
+	    if ( bad ) { cout << "bad in 0 to n segment" << endl; }
 	}
 
 	// CLO: look for later nodes that match earlier segment end points
@@ -1217,6 +1219,10 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
 		    if ( result[i] == result[j] ) {
 		        bad = true;
 			bad_node = result[j];
+			// cout << "size = " << result.size() << " i = "
+			//      << i << " j = " << j << " result[i] = "
+			//      << result[i] << " result[j] = " << result[j]
+			//      << endl;
 		    }
 		    j++;
 		}
@@ -1225,12 +1231,16 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
 	}
 
 	if ( bad ) {
+	    // remove bad node from contour.  But only remove one node.  If
+	    // the 'badness' is caused by coincident adjacent nodes, we don't
+	    // want to remove both of them, just one (either will do.)
   	    cout << "found a bad node = " << bad_node << endl;
-	    // remove bad node from contour
 	    point_list tmp; tmp.clear();
+	    bool found_one = false;
 	    for ( int j = 0; j < (int)result.size(); ++j ) {
-		if ( result[j] == bad_node ) {
+		if ( result[j] == bad_node && !found_one) {
 		    // skip
+		    found_one = true;
 		} else {
 		    tmp.push_back( result[j] );
 		}
