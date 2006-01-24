@@ -18,11 +18,11 @@ ${SHAPEDECODE} --line-width 50 ${SHAPEBASE}/canals_stream ${WORKBASE}/Shape-Cana
 # Inland still water: lakes, intermittent lakes, and flood land
 ${SHAPEDECODE} ${SHAPEBASE}/lakes_lake ${WORKBASE}/Shape-Lakes Lake
 ${SHAPEDECODE} ${SHAPEBASE}/lakes_intermittentlake ${WORKBASE}/Shape-Lakes IntermittentLake
-${SHAPEDECODE} ${SHAPEBASE}/lakes_floodland ${WORKBASE}/Shape-Floodland FloodLand
+${SHAPEDECODE} ${SHAPEBASE}/floodland_floodland ${WORKBASE}/Shape-Floodland FloodLand
 
 # Population areas: cities and towns
 ${SHAPEDECODE} ${SHAPEBASE}/cities_urban ${WORKBASE}/Shape-Cities Urban
-${SHAPEDECODE} --point-width 400 ${SHAPEBASE}/cities_town ${WORKBASE}/Shape-Towns Town
+${SHAPEDECODE} --point-width 400 ${SHAPEBASE}/towns_town ${WORKBASE}/Shape-Towns Town
 
 # Forest: deciduous broad, evergreen broad, mixed
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_deciduousbroadcover ${WORKBASE}/Shape-LandCover DeciduousBroadCover
@@ -58,6 +58,6 @@ ${SHAPEDECODE} --line-width 20m ${SHAPEBASE}/roads_road ${WORKBASE}/Shape-Roads 
 ${SHAPEDECODE} --line-width 50m ${SHAPEBASE}/roads_freeway ${WORKBASE}/Shape-Roads Freeway
 
 # Railroads: single and multiple tracks
-${SHAPEDECODE} --line-width 10m ${SHAPEBASE}/railroads_railroad10 ${WORKBASE}/Shape-Roads Railroad
-${SHAPEDECODE} --line-width 20m ${SHAPEBASE}/railroads_railroad20 ${WORKBASE}/Shape-Roads Railroad
+${SHAPEDECODE} --line-width 10m ${SHAPEBASE}/railroads_railroad10 ${WORKBASE}/Shape-Railroads Railroad
+${SHAPEDECODE} --line-width 20m ${SHAPEBASE}/railroads_railroad20 ${WORKBASE}/Shape-Railroads Railroad
 
