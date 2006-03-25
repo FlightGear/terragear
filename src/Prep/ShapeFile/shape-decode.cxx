@@ -548,6 +548,7 @@ int main( int argc, char **argv ) {
 
 	if (psShape->nSHPType==0) {
 	    SG_LOG( SG_GENERAL, SG_DEBUG, "Skipping NULL record " << i);
+            SHPDestroyObject( psShape );
 	    continue;
 	}
 	
@@ -559,9 +560,10 @@ int main( int argc, char **argv ) {
 	    SG_LOG( SG_GENERAL, SG_ALERT,
 	    	    "Record with negative part count, "
 		    "file may be corrupted!");
-	    if (continue_on_errors)
+            if (continue_on_errors) {
+                SHPDestroyObject( psShape );
 		continue;
-	    else
+            } else
 		exit(-1);
 	}
 	
@@ -573,9 +575,10 @@ int main( int argc, char **argv ) {
 	    SG_LOG( SG_GENERAL, SG_ALERT,
 	    	    "Non-point record with zero part count, "
 		    "file may be corrupted!");
-	    if (continue_on_errors)
+            if (continue_on_errors) {
+                SHPDestroyObject( psShape );
 		continue;
-	    else
+            } else
 		exit(-1);
 	}
 	
@@ -621,6 +624,7 @@ int main( int argc, char **argv ) {
 
 	    // Ocean data now comes from GSHHS so we want to ignore
 	    // all other ocean data
+            SHPDestroyObject( psShape );
 	    continue;
 	} else if ( area == VoidArea ) {
 	    // interior is ????
@@ -632,7 +636,7 @@ int main( int argc, char **argv ) {
 		SG_LOG(  SG_GENERAL, SG_ALERT, "  Void area with holes!" );
 		// exit(-1);
 	    }
-	    
+	    SHPDestroyObject( psShape );
 	    continue;
 	} else if ( area == NullArea ) {
 	    // interior is ????
@@ -644,7 +648,7 @@ int main( int argc, char **argv ) {
 		SG_LOG(  SG_GENERAL, SG_ALERT, "  Null area with holes!" );
 		// exit(-1);
 	    }
-
+            SHPDestroyObject( psShape );
 	    continue;
 	}
 
