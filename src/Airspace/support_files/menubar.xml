@@ -1,0 +1,487 @@
+<PropertyList>
+
+ <menu>
+  <label>File</label>
+
+  <item>
+   <label>Save</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>save_flight</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Load</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>load_flight</dialog-name>
+   </binding>
+  </item>
+
+<!--
+  <item>
+   <label>Load Aircraft</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>aircraft</dialog-name>
+   </binding>
+  </item>
+-->
+
+  <item>
+   <label>Reset</label>
+   <binding>
+    <command>old-reinit-dialog</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>High-Res Snapshot</label>
+   <binding>
+    <command>hires-screen-capture</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>Snapshot</label>
+   <binding>
+    <command>screen-capture</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>Print Screen</label>
+   <binding>
+    <command>old-print-dialog</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>Sound Configuration</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>sound-dialog</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Browse Internal Properties</label>
+   <binding>
+    <command>old-properties-dialog</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>Logging</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>logging</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Quit</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>exit</dialog-name>
+   </binding>
+  </item>
+
+ </menu>
+
+ <menu>
+  <label>View</label>
+
+  <item>
+   <label>Airspace System</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>airspace</dialog-name>
+   </binding>
+  </item>
+
+
+  <item>
+   <label>Toggle 2D Panel</label>
+   <binding>
+    <command>property-toggle</command>
+    <property>/sim/panel/visibility</property>
+   </binding>
+  </item>
+
+  <item>
+   <label>Rendering options</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>rendering</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Adjust View Distance</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>pilot_offset</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Adjust HUD Transparency</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>hud</dialog-name>
+   </binding>
+  </item>
+  
+  <item>
+   <label>Instant Replay</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>replay</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Adjust LOD Ranges</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>static-lod</dialog-name>
+   </binding>
+  </item>
+
+ </menu>
+
+ <menu>
+  <label>Location</label>
+
+  <item>
+   <label>Position Aircraft (on ground)</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>location-on-ground</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Position Aircraft (in air)</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>location-in-air</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Select Airport from List</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>airports</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Random Attitude</label>
+   <binding>
+    <command>property-assign</command>
+    <property>/sim/presets/trim</property>
+    <value>false</value>
+   </binding>
+   <binding>
+    <command>property-randomize</command>
+    <property>/orientation/pitch-deg</property>
+    <min>0</min>
+    <max>360</max>
+   </binding>
+   <binding>
+    <command>property-randomize</command>
+    <property>/orientation/roll-deg</property>
+    <min>0</min>
+    <max>360</max>
+   </binding>
+   <binding>
+    <command>property-randomize</command>
+    <property>/orientation/heading-deg</property>
+    <min>0</min>
+    <max>360</max>
+   </binding>
+  </item>
+
+  <item>
+   <label>Tower position</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>location-of-tower</dialog-name>
+   </binding>
+  </item>
+
+ </menu>
+
+ <menu>
+  <label>Autopilot</label>
+  <name>autopilot</name>
+
+  <item>
+   <label>Autopilot Settings</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>autopilot</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Add Waypoint</label>
+   <binding>
+    <command>old-ap-add-waypoint-dialog</command>
+   </binding>
+  </item>
+  
+  <item>
+   <label>Pop Waypoint</label>
+   <binding>
+    <command>old-ap-pop-waypoint-dialog</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>Clear Route</label>
+   <binding>
+    <command>old-ap-clear-route-dialog</command>
+   </binding>
+  </item>
+
+<!--
+  <item>
+   <label>Adjust Autopilot</label>
+   <binding>
+    <command>old-ap-adjust-dialog</command>
+   </binding>
+  </item>
+-->
+
+  <item>
+   <label>Set Lat/Lon Format</label>
+   <binding>
+    <command>old-lat-lon-format-dialog</command>
+   </binding>
+  </item>
+  
+ </menu>
+
+ <menu>
+  <label>Weather</label>
+
+  <item>
+   <label>Weather Scenario</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>weather_scenario</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Weather Conditions</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>weather</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Clouds</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>clouds</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Time of Day</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>timeofday</dialog-name>
+   </binding>
+  </item>
+
+ </menu>
+
+ <menu>
+  <label>Equipment</label>
+
+  <item>
+   <label>Fuel and Payload</label>
+   <name>fuel-and-payload</name>
+   <binding>
+    <command>nasal</command>
+    <script>gui.showWeightDialog()</script>
+   </binding>
+  </item>
+
+  <item>
+   <label>Radio Settings</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>radios</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>GPS Settings</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>gps</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Instrument Settings</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>instruments</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>System Failures</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>system-failures</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Instrument Failures</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>instrument-failures</dialog-name>
+   </binding>
+  </item>
+
+ </menu>
+
+ <menu>
+  <label>ATC/AI</label>
+
+  <item>
+   <label>Frequencies</label>
+   <binding>
+    <command>ATC-freq-search</command>
+   </binding>
+  </item>
+ 
+  <item>
+   <label>Options</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>atc-ai</dialog-name>
+   </binding>
+  </item>
+  
+ </menu>
+
+ <menu>
+  <label>Debug</label>
+
+  <item>
+   <label>Reload GUI</label>
+   <binding>
+    <command>reinit</command>
+    <subsystem>gui</subsystem>
+   </binding>
+  </item>
+
+  <item>
+   <label>Reload Input</label>
+   <binding>
+    <command>reinit</command>
+    <subsystem>input</subsystem>
+   </binding>
+  </item>
+
+  <item>
+   <label>Reload Panel</label>
+   <binding>
+    <command>panel-load</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>Reload Autopilot</label>
+   <binding>
+    <command>reinit</command>
+    <subsystem>xml-autopilot</subsystem>
+   </binding>
+  </item>
+
+  <item>
+   <label>Nasal Console</label>
+   <binding>
+    <command>dialog-show</command>
+    <dialog-name>nasal-console</dialog-name>
+   </binding>
+  </item>
+
+  <item>
+   <label>Development Keys</label>
+   <binding>
+    <command>nasal</command>
+    <script>gui.showHelpDialog("/sim/help/debug")</script>
+   </binding>
+  </item>
+
+ </menu>
+ 
+ <menu>
+  <label>Help</label>
+
+  <item>
+   <label>Help</label>
+   <binding>
+    <command>old-help-dialog</command>
+   </binding>
+  </item>
+
+  <item>
+   <label>Basic Keys</label>
+   <binding>
+    <command>nasal</command>
+    <script>gui.showHelpDialog("/sim/help/basic")</script>
+   </binding>
+  </item>
+
+  <item>
+   <label>Common Aircraft Keys</label>
+   <binding>
+    <command>nasal</command>
+    <script>gui.showHelpDialog("/sim/help/common")</script>
+   </binding>
+  </item>
+
+  <item>
+   <label>Aircraft Help</label>
+   <binding>
+    <command>nasal</command>
+    <script>gui.showHelpDialog("/sim/help")</script>
+   </binding>
+  </item>
+
+  <item>
+   <label>Start Tutorial</label>
+   <name>tutorial-start</name>
+   <binding>
+    <command>nasal</command>
+    <script>gui.showSelTutDialog()</script>
+   </binding>
+  </item>
+
+  <item>
+   <label>End Tutorial</label>
+   <name>tutorial-stop</name>
+   <enabled>false</enabled>
+   <binding>
+    <command>nasal</command>
+    <script>tutorial.stopTutorial()</script>
+   </binding>
+  </item>
+ </menu>
+
+</PropertyList>

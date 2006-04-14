@@ -1,0 +1,197 @@
+<?xml version="1.0"?>
+
+<!-- Toggle visbility options for airspace -->
+
+<PropertyList>
+ <name>airspace</name>
+ <modal>false</modal>
+ <layout>vbox</layout>
+
+ <text>
+  <label>Airspace Options</label>
+ </text>
+
+ <hrule><dummy/></hrule>
+
+ <group>
+
+  <layout>hbox</layout>
+
+  <empty>
+    <pref-width>10</pref-width>
+  </empty>
+
+  <group>
+   <layout>vbox</layout>
+
+
+   <group>
+     <layout>vbox</layout>
+   <checkbox>
+    <halign>left</halign>
+    <label>VFR 3 Degree Glideslope</label>
+    <property>/sim/airspace_vfr_glideslope/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>ILS Glideslope</label>
+    <property>/sim/airspace_ils_glideslope/enabled</property>
+   </checkbox>
+
+ <hrule><dummy/></hrule>
+   <checkbox>
+    <halign>left</halign>
+    <label>Enable Signs</label>
+    <property>/sim/airspace_signs/enabled</property>
+   </checkbox>
+
+ <hrule><dummy/></hrule>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Airports</label>
+    <property>/sim/airspace_signs_airport/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Navaids</label>
+    <property>/sim/airspace_signs_navaid/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Special use airspace</label>
+    <property>/sim/airspace_signs_suas/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Terminal waypoints</label>
+    <property>/sim/airspace_signs_term_wp/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Waypoints</label>
+    <property>/sim/airspace_signs_wp/enabled</property>
+   </checkbox>
+
+ <hrule><dummy/></hrule>
+
+
+   <checkbox>
+    <halign>left</halign>
+    <label>Enable Airspace</label>
+    <property>/sim/airspace/enabled</property>
+   </checkbox>
+ <hrule><dummy/></hrule>
+
+
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class A</label>
+    <property>/sim/airspace_a/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class B</label>
+    <property>/sim/airspace_b/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class C</label>
+    <property>/sim/airspace_c/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class D</label>
+    <property>/sim/airspace_d/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class E</label>
+    <property>/sim/airspace_e/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class Alert</label>
+    <property>/sim/airspace_alert/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class Danger</label>
+    <property>/sim/airspace_danger/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class MOA</label>
+    <property>/sim/airspace_moa/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class Prohibited</label>
+    <property>/sim/airspace_prohibited/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class Restricted</label>
+    <property>/sim/airspace_restricted/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class Temporary Flight Restriction</label>
+    <property>/sim/airspace_temporary/enabled</property>
+   </checkbox>
+   <checkbox>
+    <halign>left</halign>
+    <label>...Class Warning</label>
+    <property>/sim/airspace_warning/enabled</property>
+   </checkbox>
+  </group>
+  </group>
+  <empty><stretch>true</stretch></empty>
+ </group>
+
+ 
+
+ <group>
+  <layout>hbox</layout>
+  <default-padding>6</default-padding>
+  <empty><stretch>true</stretch></empty>
+
+  <button>
+   <legend>OK</legend>
+   <default>true</default>
+   <equal>true</equal>
+   <binding>
+    <command>dialog-apply</command>
+   </binding>
+   <binding>
+    <command>dialog-close</command>
+   </binding>
+  </button>
+
+  <button>
+   <legend>Apply</legend>
+   <equal>true</equal>
+   <binding>
+    <command>dialog-apply</command>
+   </binding>
+  </button>
+
+  <button>
+   <legend>Reset</legend>
+   <equal>true</equal>
+   <binding>
+    <command>dialog-update</command>
+   </binding>
+  </button>
+
+  <button>
+   <legend>Cancel</legend>
+   <equal>true</equal>
+   <key>Esc</key>
+   <binding>
+    <command>dialog-close</command>
+   </binding>
+  </button>
+
+  <empty><stretch>true</stretch></empty>
+ </group>
+</PropertyList>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<PropertyList>
+  <path>glide-slope-1nm-by-3d.ac</path>
+  <animation>
+    <type>select</type>
+    <object-name>glideslope</object-name>
+    <condition>
+      <property>/sim/airspace_vfr_glideslope/enabled</property>
+    </condition>
+  </animation>
+</PropertyList>

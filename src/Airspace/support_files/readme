@@ -1,0 +1,34 @@
+This folder includes a sample  .fgfsrc file which is normally 
+in the home directory on linux systems as a hidden file.  
+
+airspace.xml is a menu to control toggling on and off various 
+airspace features such as signage, which types of airspace to 
+display etc.
+
+menubar.xml is the tweaked version of the flighgear menubar to
+add in the airspace.xml menu system.
+
+glide-slope-1nm-by-3d.ac and glide-slope.xml are for displaying 
+3 degree glideslopes for runways with known altitudes for the
+runway ends.
+
+Where to put em...
+
+.fgfsrc into your home directory, typically
+
+/home/user/.fgfsrc
+
+menubar.xml into
+/usr/local/share/FlightGear/data/gui/menubar.xml
+airspace.xml into
+/usr/local/share/FlightGear/data/gui/airspace.xml
+
+and the glide slope files into
+/usr/local/share/FlightGear/data/Models/Airport/glide-slope-1nm-by-3d.ac
+/usr/local/share/FlightGear/data/Models/Airport/glide-slope.xml
+
+Where to put the DAFIF files:  unpack the dafif file so the
+folders for ARPT etc are in
+/usr/local/share/DAFIFT/DAFIFT/
+i.e put the DAFIFT.zip file in:
+/usr/local/share/DAFIFT

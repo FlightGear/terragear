@@ -1,0 +1,17 @@
+ 
+0.2 is an extensive rewrite featuring 
+
+(1) Texturing on airspace with useful information such as call signs and frequencies for controlling agencies for special use airspace.
+(2) Terminal waypoints associated with airports are displayable as well as glide slopes (black for three degree vfr, red for ILS glideslopes with 
+the glideslope angle as specified in the database.  The outer upper boundary onthe glide slope is one degree above the glideslope.
+(3) circles, arcs, and lines have been dissected into lists of lines and distributed accross the various tiles.  By dividing the graphics files 
+among the tiles large arcs for Class B airspace for example become visable as soon as the tile comes into view.  T he first version would not display until
+the center of the circle come into view....
+(4) Added signage for (a) airports, (b) navaids, (c) waypoints (d) terminal waypoints (e) special use airspace.  The signage system(s) take advantage of the
+billboard feature in flightgear so the signs always turn to face the view.
+(5) added a menu system to toggle everything on or off to suit the situational requirements.  Turning everything on for display in the Los Angelus area is 
+an excercise in visually getting buried.  
+
+The program can output Class A and E airspace boundaries but they seem to be more of a nuisance visually.  The default setup in the code is to omit A and E
+airspace.
+
