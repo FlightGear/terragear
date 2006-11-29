@@ -60,6 +60,7 @@ inline static void init ()
   set_area("Pond", PondArea);
   set_area("Swamp or Marsh", MarshArea);
   set_area("Marsh", MarshArea);
+  set_area("Littoral", LittoralArea);
   set_area("Bog", BogArea);
   set_area("Sand", SandArea);
   set_area("Lava", LavaArea);
@@ -80,6 +81,7 @@ inline static void init ()
   set_area("Canal", CanalArea);
   set_area("Glacier", GlacierArea);
   set_area("PackIce", PackIceArea);
+  set_area("PolarIce", PolarIceArea);
   set_area("Urban", UrbanArea);
   set_area("Town", TownArea);
   set_area("BuiltUpCover", BuiltUpCover);

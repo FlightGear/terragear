@@ -13,7 +13,7 @@ ${SHAPEDECODE} ${SHAPEBASE}/landmass_default ${WORKBASE}/Shape-LandMass Default
 # Inland moving water: rivers/streams, intermittent streams, and canals
 ${SHAPEDECODE} --line-width 40 ${SHAPEBASE}/rivers_stream ${WORKBASE}/Shape-Rivers Stream
 ${SHAPEDECODE} --line-width 30 ${SHAPEBASE}/rivers_intermittentstream ${WORKBASE}/Shape-Rivers IntermittentStream
-${SHAPEDECODE} --line-width 50 ${SHAPEBASE}/canals_stream ${WORKBASE}/Shape-Canals Stream
+${SHAPEDECODE} --line-width 50 ${SHAPEBASE}/canals_stream ${WORKBASE}/Shape-Canals Canal
 
 # Inland still water: lakes, intermittent lakes, and flood land
 ${SHAPEDECODE} ${SHAPEBASE}/lakes_lake ${WORKBASE}/Shape-Lakes Lake
@@ -31,7 +31,7 @@ ${SHAPEDECODE} ${SHAPEBASE}/landcover_mixedforestcover ${WORKBASE}/Shape-LandCov
 
 # Ground cover: sand, tidal, lava, barren, grass, shrub, herb-tundra
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_sand ${WORKBASE}/Shape-LandCover Sand
-${SHAPEDECODE} ${SHAPEBASE}/landcover_marsh ${WORKBASE}/Shape-LandCover Marsh
+${SHAPEDECODE} ${SHAPEBASE}/landcover_marsh ${WORKBASE}/Shape-LandCover Littoral
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_lava ${WORKBASE}/Shape-LandCover Lava
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_barrencover ${WORKBASE}/Shape-LandCover BarrenCover
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_grasscover ${WORKBASE}/Shape-LandCover GrassCover
@@ -41,8 +41,7 @@ ${SHAPEDECODE} ${SHAPEBASE}/landcover_herbtundracover ${WORKBASE}/Shape-LandCove
 # Ice cover: glaciers, pack ice, and sea ice
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_glacier ${WORKBASE}/Shape-LandCover Glacier
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_packice ${WORKBASE}/Shape-LandCover PackIce
-# FiXME: Two glacier themes; have same name in database
-# ${SHAPEDECODE} ${SHAPEBASE}/landcover_glacier ${WORKBASE}/Shape-LandCover Glacier
+${SHAPEDECODE} ${SHAPEBASE}/landcover_glacier ${WORKBASE}/Shape-LandCover PolarIce
 
 # Marshes: marsh and bog
 ${SHAPEDECODE} ${SHAPEBASE}/landcover_marsh ${WORKBASE}/Shape-LandCover Marsh

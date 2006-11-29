@@ -39,7 +39,7 @@ for REGION in $REGIONS; do
     # Inland moving water: rivers/streams, intermittent streams, and canals
     ${TGVPF} --work-dir=${WORKBASE}/VPF-Rivers --material=Stream --width=40 --att=hyc:8 --max-segment=400 $V0PATH $REGION hydro watrcrsl
     ${TGVPF} --work-dir=${WORKBASE}/VPF-Rivers --material=IntermittentStream --width=30 --att=hyc:6 --max-segment=400 $V0PATH $REGION hydro watrcrsl
-    ${TGVPF} --work-dir=${WORKBASE}/VPF-Canals --material=Stream --width=50 --att=exs:1 --att=loc:8 --max-segment=400 $V0PATH $REGION hydro aquecanl
+    ${TGVPF} --work-dir=${WORKBASE}/VPF-Canals --material=Canal --width=50 --att=exs:1 --att=loc:8 --max-segment=400 $V0PATH $REGION hydro aquecanl
 
     # Inland still water: lakes, intermittent lakes, and flood land
     ${TGVPF} --work-dir=${WORKBASE}/VPF-Lakes --material=Lake --att=f_code:BH000 --att=hyc:8 --max-segment=400 $V0PATH $REGION hydro inwatera
@@ -57,7 +57,7 @@ for REGION in $REGIONS; do
 
     # Ground cover: sand, tidal, lava, barren, grass, shrub, herb-tundra
     ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=Sand --att=smc:88 --att=swc:0 --max-segment=400 $V0PATH $REGION phys grounda
-    ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=Marsh --att=smc:88 --att=swc:3 --max-segment=400 $V0PATH $REGION phys grounda
+    ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=Littoral --att=smc:88 --att=swc:3 --max-segment=400 $V0PATH $REGION phys grounda
     ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=Lava --att=smc:52 --max-segment=400 $V0PATH $REGION phys grounda
     ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=BarrenCover --att=smc:119 --max-segment=400 $V0PATH $REGION phys grounda
     ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=GrassCover --att=f_code:EB010 --max-segment=400 $V0PATH $REGION veg grassa
@@ -67,7 +67,7 @@ for REGION in $REGIONS; do
     # Ice cover: glaciers, pack ice, and sea ice
     ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=Glacier --max-segment=400 $V0PATH $REGION phys landicea
     ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=PackIce --att=f_code:BJ070 --max-segment=400 $V0PATH $REGION phys seaicea
-    ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=Glacier --att=f_code:BJ080 --max-segment=400 $V0PATH $REGION phys seaicea
+    ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=PolarIce --att=f_code:BJ080 --max-segment=400 $V0PATH $REGION phys seaicea
 
     # Marshes: marsh and bog
     ${TGVPF} --work-dir=${WORKBASE}/VPF-LandCover --material=Marsh --att=f_code:BH095 --max-segment=400 $V0PATH $REGION veg swampa

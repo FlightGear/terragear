@@ -51,8 +51,9 @@ enum AreaType {
     StreamArea,
     IntStreamArea,
     CanalArea,
-    GlacierArea,		// Any solid ice/snow
+    GlacierArea,		// Solid ice/snow
     PackIceArea,		// Water with ice packs
+    PolarIceArea,
     OceanArea,
     UrbanArea,			// Densely-populated city or large town
     TownArea,			// Small town or village
@@ -60,6 +61,7 @@ enum AreaType {
     BogArea,			// Bog
     MarshArea,			// Marshland or swamp
     SandArea,			// Sand-covered area
+    LittoralArea,		// Tidal, Sand-covered area
     LavaArea,			// Lava-covered area
 
     // USGS Land Covers

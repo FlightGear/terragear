@@ -450,6 +450,7 @@ is_water_area (AreaType type)
     case OceanArea:
     case BogArea:
     case MarshArea:
+    case LittoralArea:
     case WaterBodyCover:
         return true;
     default:
@@ -516,9 +517,6 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
 	cout << "num polys of type (" << i << ") = " 
 	     << polys_in.polys[i].size() << endl;
-	// current = polys_in.polys[i].begin();
-	// last = polys_in.polys[i].end();
-	// for ( ; current != last; ++current ) {
 	for( j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
 	    TGPolygon current = polys_in.polys[i][j];
 	    SG_LOG( SG_CLIPPER, SG_INFO, get_area_name( (AreaType)i ) 
@@ -577,13 +575,14 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
 		// move_slivers) to the clipped polys list
 		if ( result_diff.contours() > 0  ) {
 		    polys_clipped.polys[i].push_back(result_diff);
-		}
 
-		// char filename[256];
-		// sprintf(filename, "next-result-%02d", count++);
-		// FILE *tmpfp= fopen(filename, "w");
-		// gpc_write_polygon(tmpfp, 1, result_diff);
-		// fclose(tmpfp);
+                    // static int count = 0;
+                    // cout << "Writing clipped polygon to next-result" << count
+                    //      << endl;
+                    // char filename[256];
+                    // sprintf(filename, "next-result-%02d-%02d", i, count++);
+                    // result_diff.write(filename);
+		}
 	    }
 	    accum = result_union;
 	}
