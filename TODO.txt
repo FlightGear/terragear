@@ -144,5 +144,8 @@ x Find a more intelligent way to simplify the regular DEM mesh into a
 Work Data
 ==========
 
+- Regenerate Shape-Roads and Shape-Railroads to get the sorted into the right
+  directories.
+
 x Regenerate DEM30 data (new code doesn't generate areas that are all
   0 elevation saving a ton of space.)
