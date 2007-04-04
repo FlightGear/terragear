@@ -51,7 +51,7 @@ public:
    *
    * @param coverage The coverage to copy.
    */
-  VpfCoverage::VpfCoverage (const VpfCoverage &coverage);
+  VpfCoverage (const VpfCoverage &coverage);
 
 
   /**
