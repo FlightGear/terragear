@@ -33,6 +33,7 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <Array/array.hxx>
+#include <Polygon/point2d.hxx>
 
 #ifdef _MSC_VER
 #  include <Win32/mkdir.hpp>

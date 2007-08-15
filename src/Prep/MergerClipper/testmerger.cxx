@@ -29,6 +29,8 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <dirent.h>
 
+#include <Polygon/point2d.hxx>
+
 #include "merger.hxx"
 
 SG_USING_STD(cout);
