@@ -41,6 +41,7 @@ SG_USING_STD(endl);
 #include <poly2tri/interface.h>
 
 #include "polygon.hxx"
+#include "point2d.hxx"
 
 // Constructor 
 TGPolygon::TGPolygon( void )
