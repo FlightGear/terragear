@@ -34,10 +34,10 @@
 
 
 #include <simgear/compiler.h>
-#include <simgear/math/sg_types.hxx>
 
 #include <Geometry/trinodes.hxx>
 #include <Polygon/polygon.hxx>
+#include <Polygon/point2d.hxx>
 
 #include STL_STRING
 #include <vector>
