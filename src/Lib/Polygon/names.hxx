@@ -39,6 +39,8 @@ enum AreaType {
     SomeSortOfArea = 0,
     HoleArea,			// Leave area completely empty
     AirportArea,
+    YellowLineArea,
+    WhiteLineArea,
     FreewayArea,
     RoadArea,
     RailroadArea,
