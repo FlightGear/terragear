@@ -3,6 +3,9 @@
  * and y, theta, or lat
  */
 
+#ifndef TG_POINT2D_HXX
+#define TG_POINT2D_HXX
+
 class point2d {
 public:
     union {
@@ -17,3 +20,4 @@ public:
     };
 };
 
+#endif // TG_POINT2D_HXX
