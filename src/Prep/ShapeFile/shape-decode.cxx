@@ -33,6 +33,7 @@
 #include <map>
 
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sg_path.hxx>
 
 #include <Geometry/line.hxx>
@@ -52,11 +53,12 @@ SG_USING_STD( string );
 SG_USING_STD( map );
 
 map<string,string> area_code_map;
-int use_area_code_map=0;
-int continue_on_errors=0;
-int area_column=4,code_column=3;
+bool use_area_code_map = false;
+int area_column = 4, code_column = 3;
 double max_segment = 0.0;  // zero = no splitting
 int width_column = -1;
+bool ivmap = false;
+double line_width_pad = 0.0;
 
 void load_noaa_area_codes() {
     area_code_map["Urban (1990 Enhanced)"]="Urban";
@@ -112,7 +114,7 @@ void load_noaa_area_codes() {
     area_code_map["Glaciers"]="Glacier";
     
     area_code_map["No Data"]="Null";
-    use_area_code_map=1;
+    use_area_code_map = true;
 }
 
 // return the type of the shapefile record
@@ -220,19 +222,52 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
     SG_LOG( SG_GENERAL, SG_INFO, "   raw area = " << area );
     SG_LOG( SG_GENERAL, SG_INFO, "       code = " << code );
 
-    if (use_area_code_map) {
-	area=area_code_map[area];
+    if ( use_area_code_map ) {
+	area = area_code_map[area];
 	SG_LOG( SG_GENERAL, SG_INFO, "cooked area = " << area );
+    }
+
+    if ( ivmap ) {
+        if ( area == "40" ) {
+            area = "WhiteLine";
+        } else if ( area == "156" ) {
+            area = "YellowLine";
+        } else {
+            SG_LOG( SG_GENERAL, SG_ALERT,
+                    "Unknown ivmap area type = " << area );
+        }
     }
 
     return get_area_type( area );
 }
 
 // get attribute value of 'width' from shapefile
-int get_shapefile_width(DBFHandle& hDBF, int rec) {
+float get_shapefile_width(DBFHandle& hDBF, int rec) {
     string wstring = DBFReadStringAttribute( hDBF, rec, width_column );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "wstring = " << wstring );
-    return atoi(wstring.c_str());
+    SG_LOG( SG_GENERAL, SG_DEBUG, "width string = " << wstring );
+    double width = atof(wstring.c_str());
+    return width + line_width_pad;
+}
+
+// return an arbitrary shape file attribute as a string
+string get_attribute(DBFHandle& hDBF, int rec, int column) {
+ 
+    string attrib = DBFReadStringAttribute( hDBF, rec, column );
+
+    // strip leading spaces
+    while ( attrib[0] == ' ' ) {
+	attrib = attrib.substr(1, attrib.length() - 1);
+    }
+    // strip trailing spaces
+    while ( attrib[attrib.length() - 1] == ' ' ) {
+	attrib = attrib.substr(0, attrib.length() - 1);
+    }
+    // strip other junk encountered
+    while ( (int)attrib[attrib.length() - 1] == 9 ) {
+	attrib = attrib.substr(0, attrib.length() - 1);
+    }
+
+    return attrib;
 }
 
 void processPolygon(SHPObject* psShape,
@@ -298,23 +333,172 @@ void processPolygon(SHPObject* psShape,
     tgChopNormalPolygon(work_dir, area, shape, preserve3D);
 }
 
+
+// Calculate theta of angle (a, b, c)
+double calc_angle(Point3D a, Point3D b, Point3D c) {
+    Point3D u, v;
+    double udist, vdist, uv_dot, tmp;
+
+    // u . v = ||u|| * ||v|| * cos(theta)
+
+    u.setx( b.x() - a.x() );
+    u.sety( b.y() - a.y() );
+    udist = sqrt( u.x() * u.x() + u.y() * u.y() );
+    // printf("udist = %.6f\n", udist);
+
+    v.setx( b.x() - c.x() );
+    v.sety( b.y() - c.y() );
+    vdist = sqrt( v.x() * v.x() + v.y() * v.y() );
+    // printf("vdist = %.6f\n", vdist);
+
+    uv_dot = u.x() * v.x() + u.y() * v.y();
+    // printf("uv_dot = %.6f\n", uv_dot);
+
+    tmp = uv_dot / (udist * vdist);
+    // printf("tmp = %.6f\n", tmp);
+
+    return acos(tmp);
+}
+
+
+// given an input line, try to identify locations in the line where
+// the data doubles back on itself and remove those (IVLab data glitch
+// work around)
+tg::Line fixDegenerateLine1( tg::Line line ) {
+    tg::Line result;
+
+    int size = line.getPointCount();
+    if ( size < 3 ) {
+        return line;
+    }
+
+    // prime the pump, and copy over the starting point
+    Point3D a = line.getPoint(0);
+    Point3D b = line.getPoint(1);
+    result.addPoint( a );
+
+    for ( int i = 1; i < size - 1; i++ ) {
+        Point3D c = line.getPoint(i+1);
+        double angle = calc_angle( a, b, c );
+        if ( angle < 0 ) {
+            cout << "OOPS, negative angle!!!!  PLEASE CHECK ME!!!" << endl;
+        }
+        if ( angle > SGD_PI_2 ) {
+            // good angle, march forward (small angles indicate the
+            // line is doubling back on itself)
+            result.addPoint(b);
+            a = b;
+            b = c;
+        } else {
+            // degenerate angle, skip point c and try next point
+            printf("IVLab data glitch at = %.8f %.8f\n", b.lon(), b.lat());
+        }
+    }
+
+    // copy the final point.
+    result.addPoint( line.getPoint(size-1) );
+
+    return result;
+}
+
+
+// given an input line, try to identify locations in the line where
+// the points are packed really tightly and remove those (IVLab data glitch
+// work around)
+tg::Line fixDegenerateLine2( tg::Line line ) {
+    const double min_segment_length_m = 10.0;
+    tg::Line result;
+
+    int size = line.getPointCount();
+    if ( size <= 2 ) {
+        return line;
+    }
+
+    // prime the pump, and copy over the starting point
+    Point3D a = line.getPoint(0);
+    result.addPoint( a );
+
+    for ( int i = 1; i < size - 1; i++ ) {
+        Point3D b = line.getPoint(i);
+        double az1, az2, dist;
+        geo_inverse_wgs_84( 0.0, a.y(), a.x(), b.y(), b.x(),
+                            &az1, &az2, &dist );
+        if ( dist > min_segment_length_m ) {
+            // distance ok, march forward (small distances could
+            // indicate clusters of points that might cause problems.
+            result.addPoint(b);
+            a = b;
+        } else {
+            // distance too small, skip point b and try next point
+            printf("IVLab data glitch at = %.8f %.8f\n", b.lon(), b.lat());
+        }
+    }
+
+    // add the last point (we always want the first and last points of
+    // the line to minimize visual glitches
+    result.addPoint( line.getPoint(size-1) );
+
+    return result;
+}
+
+
+// given an input line, avoid a situation where there is a completely
+// loop, i.e. after a long route, the road loops around and connects
+// up with itself.  Back off from the end of the line until there is a
+// small gap of more than 1 meter.
+tg::Line fixDegenerateLine3( tg::Line line ) {
+    tg::Line result;
+
+    int size = line.getPointCount();
+    if ( size <= 2 ) {
+        return line;
+    }
+
+    // prime the pump
+    Point3D a = line.getPoint(0);
+    int end = size - 1;
+
+    for ( int i = size - 1; i > 1; i-- ) {
+        end = i;
+        Point3D b = line.getPoint(end);
+        double az1, az2, dist;
+        geo_inverse_wgs_84( 0.0, a.y(), a.x(), b.y(), b.x(),
+                            &az1, &az2, &dist );
+        if ( dist > 2.0 ) {
+            // distance ok, go ahead and exit
+            break;
+        } else {
+            // distance too small, march backwards one step and try
+            // the previous point
+            printf("IVLab data loop at = %.8f %.8f\n", b.lon(), b.lat());
+        }
+    }
+
+    for ( int i = 0; i <= end; i++ ) {
+        result.addPoint( line.getPoint(i) );
+    }
+
+    return result;
+}
+
+
 void processLine(SHPObject* psShape,
 		 const string& work_dir,
 		 AreaType area,
-		 int linewidth) {
+		 float linewidth) {
     int iPart,j=0,partEnd=psShape->nVertices;
-
+    double minx = 200, miny = 200, maxx = -200, maxy = -200;
     for (iPart=psShape->nParts-1;iPart>=0;iPart--) {
 	tg::Line line;
 	TGPolygon shape;
-#if 0
+        // #if 0
 	SG_LOG( SG_GENERAL, SG_DEBUG,
-		   "Part " << iPart
+		   "In processLine() Part " << iPart
 		<< " type = " << SHPPartTypeName(psShape->panPartType[iPart])
 		<< " start = " << psShape->panPartStart[iPart]
 		<< " end = " << partEnd
 		<< " # of points = " << partEnd-psShape->panPartStart[iPart]);
-#endif
+        // #endif
 
 	if (partEnd-psShape->panPartStart[iPart]<=1) {
 	    SG_LOG( SG_GENERAL, SG_WARN,
@@ -323,20 +507,37 @@ void processLine(SHPObject* psShape,
 	}
 	shape.erase();
 	for (j=psShape->panPartStart[iPart];j<partEnd;j++) {
-#if 0
+            //#if 0
 	    SG_LOG( SG_GENERAL, SG_DEBUG,
 	    	       "   Point " << j << " ("
 		    << psShape->padfX[j] << ", "
 		    << psShape->padfY[j] << ")");
-#endif
+            if ( psShape->padfX[j] < minx ) { minx = psShape->padfX[j]; }
+            if ( psShape->padfX[j] > maxx ) { maxx = psShape->padfX[j]; }
+            if ( psShape->padfY[j] < miny ) { miny = psShape->padfY[j]; }
+            if ( psShape->padfY[j] > maxy ) { maxy = psShape->padfY[j]; }
+            //#endif
 	    line.addPoint(Point3D(psShape->padfX[j],psShape->padfY[j],0));
 	}
+        SG_LOG( SG_GENERAL, SG_DEBUG, "(" << minx << "," << miny << ") (" << maxx << "," << maxy << ")" );
+
+        if ( ivmap ) {
+            cout << "original line size = " << line.getPointCount() << endl;
+            line = fixDegenerateLine1( line );
+            cout << "angle line size = " << line.getPointCount() << endl;
+            line = fixDegenerateLine2( line );
+            cout << "dist line size = " << line.getPointCount() << endl;
+            line = fixDegenerateLine3( line );
+            cout << "cycle line size = " << line.getPointCount() << endl;
+        }
+
 	partEnd=psShape->panPartStart[iPart];
 	tg::makePolygon(line,linewidth,shape);
 
         if ( max_segment > 1.0 ) {
             shape = tgPolygonSplitLongEdges( shape, max_segment );
         }
+        cout << "hole flag = " << shape.get_hole_flag(0) << endl;
 	tgChopNormalPolygon(work_dir, area, shape, false);
     }
 }
@@ -406,14 +607,16 @@ void usage(char* progname) {
 }
 
 int main( int argc, char **argv ) {
-    int i, j;
-    int pointwidth = 500, linewidth = 50, force_linewidth = -1;
+    int i;
+    int pointwidth = 500;
+    float force_linewidth = -1, linewidth = 50.0;
     int start_record = 0;
     char* progname=argv[0];
     SGPath programPath(progname);
     string force_area_type = "";
+    bool continue_on_errors = false;
 
-    sglog().setLogLevels( SG_ALL, SG_INFO );
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
     if (programPath.file()=="noaa-decode") {
 	SG_LOG( SG_GENERAL, SG_INFO, "Entering noaa-decode mode" );
@@ -426,7 +629,7 @@ int main( int argc, char **argv ) {
 	if (!strcmp(argv[1],"--line-width")) {
 	    if (argc<3)
 		usage(progname);
-	    force_linewidth=atoi(argv[2]);
+	    force_linewidth=atof(argv[2]);
 	    argv+=2;
 	    argc-=2;
 	} else if (!strcmp(argv[1],"--point-width")) {
@@ -456,7 +659,7 @@ int main( int argc, char **argv ) {
 	} else if (!strcmp(argv[1],"--continue-on-errors")) {
             argv++;
             argc--;
-	    continue_on_errors=1;
+	    continue_on_errors=true;
 	} else if (!strcmp(argv[1],"--line-width-column")) {
 	    if (argc<3)
 		usage(progname);
@@ -469,6 +672,20 @@ int main( int argc, char **argv ) {
 	    start_record=atoi(argv[2]);
 	    argv+=2;
 	    argc-=2;
+        } else if (!strcmp(argv[1],"--ivlanemarkings")) {
+            argv++;
+            argc--;
+            ivmap = true;
+            width_column = 6;
+        } else if (!strcmp(argv[1],"--ivlane")) {
+            argv++;
+            argc--;
+            ivmap = true;
+            width_column = 3;
+        } else if (!strcmp(argv[1],"--pad-width")) {
+            line_width_pad = atof(argv[2]);
+            argv+=2;
+            argc-=2;
 	} else if (!strcmp(argv[1],"--help")) {
 	    usage(progname);
 	} else
@@ -533,7 +750,8 @@ int main( int argc, char **argv ) {
          nShapeType != SHPT_ARCM &&
          nShapeType != SHPT_POLYGON &&
          nShapeType != SHPT_POLYGONM &&
-         nShapeType != SHPT_POLYGONZ) {
+         nShapeType != SHPT_POLYGONZ)
+    {
 	SG_LOG( SG_GENERAL, SG_ALERT,
 		"Can only handle 2D-Points, 2D-Multipoints, "
 		"2D-Arcs and Polygons (2D and 3D)" );
@@ -591,11 +809,18 @@ int main( int argc, char **argv ) {
 	    area = get_area_type( force_area_type );
 	}
       
-    if ( force_linewidth == -1) {
-      if (width_column != -1) // line width from shape file
-        linewidth = get_shapefile_width(hDBF, i);
-    } else
-      linewidth = force_linewidth;
+        if ( force_linewidth < 0 ) {
+            if (width_column != -1) // line width from shape file
+                linewidth = get_shapefile_width(hDBF, i);
+        } else
+            linewidth = force_linewidth;
+
+        if ( ivmap ) {
+            // get skip type
+            string skip = get_attribute(hDBF, i, 7);
+
+            // FIXME: implement skip logic
+        }
 
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  record type = " 
 		<< SHPTypeName(psShape->nSHPType) );

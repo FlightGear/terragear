@@ -39,6 +39,8 @@
 #  include <win32/mkdir.hpp>
 #endif
 
+#include <Output/output.hxx>
+
 #include "index.hxx"
 #include "names.hxx"
 #include "simple_clip.hxx"
@@ -94,7 +96,25 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
     fclose(bfp);
     */
 
+    cout << "shape contours = " << shape.contours() << "  ";
+    for ( int ii = 0; ii < shape.contours(); ii++ ) {
+        cout << "hole = " << shape.get_hole_flag(ii) << " ";
+    }
+    cout << endl;
+
     result = tgPolygonInt( base, shape );
+
+    // write_polygon(shape, "shape");
+    // write_polygon(result, "result");
+
+    cout << "result contours = " << result.contours() << "  ";
+    for ( int ii = 0; ii < result.contours(); ii++ ) {
+        cout << "hole = " << result.get_hole_flag(ii) << " ";
+        //if ( result.get_hole_flag(ii) ) {
+        //    exit(0);
+        //}
+    }
+    cout << endl;
     if ( preserve3d ) {
         result.inherit_elevations( shape );
     }

@@ -7,6 +7,7 @@ noaa_decode_SOURCES = shape-decode.cxx
 LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
+	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/shapelib/libshape.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \

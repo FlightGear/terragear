@@ -5,6 +5,7 @@ tguserdef_SOURCES = tguserdef.cxx
 tguserdef_LDADD = \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
 	$(top_builddir)/src/Lib/Geometry/libGeometry.a \
+	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgmisc -lsgmath -lsgprops -lsgio -lsgstructure -lsgxml \
