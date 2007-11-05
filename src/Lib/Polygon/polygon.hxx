@@ -37,6 +37,8 @@
 #include STL_STRING
 #include <vector>
 
+#include "point2d.hxx"
+
 SG_USING_STD(ostream);
 SG_USING_STD(string);
 SG_USING_STD(vector);
@@ -190,6 +192,10 @@ public:
 typedef vector < TGPolygon > poly_list;
 typedef poly_list::iterator poly_list_iterator;
 typedef poly_list::const_iterator const_poly_list_iterator;
+
+
+// Calculate theta of angle (a, b, c)
+double tgPolygonCalcAngle(point2d a, point2d b, point2d c);
 
 
 // canonify the polygon winding, outer contour must be anti-clockwise,

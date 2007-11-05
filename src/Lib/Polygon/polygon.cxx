@@ -132,7 +132,7 @@ void TGPolygon::set_elevations( double elev ) {
 
 
 // Calculate theta of angle (a, b, c)
-static double calc_angle(point2d a, point2d b, point2d c) {
+double tgPolygonCalcAngle(point2d a, point2d b, point2d c) {
     point2d u, v;
     double udist, vdist, uv_dot, tmp;
 
@@ -213,7 +213,7 @@ double TGPolygon::minangle_contour( const int contour ) {
 	p3.x = c[p3_index].x();
 	p3.y = c[p3_index].y();
 
-	angle = calc_angle( p1, p2, p3 );
+	angle = tgPolygonCalcAngle( p1, p2, p3 );
 
 	if ( angle < min_angle ) {
 	    min_angle = angle;
