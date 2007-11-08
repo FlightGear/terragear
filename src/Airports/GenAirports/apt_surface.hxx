@@ -19,7 +19,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: apt_surface.hxx,v 1.9 2005-09-09 20:47:04 curt Exp $
 //
 
 

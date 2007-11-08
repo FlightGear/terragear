@@ -24,7 +24,7 @@ class VpfValue;
  * "edg".</p>
  *
  * @author David Megginson, david@megginson.com
- * @version $Revision$
+ * @version $Revision: 1.1 $
  */
 class VpfLine : public VpfComponent
 {

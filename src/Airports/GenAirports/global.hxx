@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: global.hxx,v 1.9 2005-10-31 18:43:27 curt Exp $
 //
 
 

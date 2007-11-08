@@ -20,7 +20,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: clipper.hxx,v 1.11 2007-08-15 14:36:52 curt Exp $
  
 
 

@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: array.hxx,v 1.18 2005-11-10 16:26:59 curt Exp $
 
 
 #ifndef _ARRAY_HXX

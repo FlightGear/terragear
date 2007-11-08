@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: names.cxx,v 1.15 2007-10-31 15:05:13 curt Exp $
  
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>

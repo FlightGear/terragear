@@ -19,7 +19,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: poly_support.hxx,v 1.14 2004-11-19 22:25:50 curt Exp $
 
 
 #ifndef _POLY_SUPPORT_HXX

@@ -21,7 +21,7 @@ class VpfTable;
  * the TXT table to be read until you actually need it.</p>
  *
  * @author David Megginson, david@megginson.com
- * @version $Revision$
+ * @version $Revision: 1.1 $
  */
 class VpfLabel : public VpfComponent
 {

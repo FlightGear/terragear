@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: array.cxx,v 1.24 2005-11-10 16:26:59 curt Exp $
 
 
 #ifdef HAVE_CONFIG_H

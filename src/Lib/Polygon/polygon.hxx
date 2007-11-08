@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: polygon.hxx,v 1.17 2007-11-05 14:02:21 curt Exp $
 
 
 #ifndef _POLYGON_HXX

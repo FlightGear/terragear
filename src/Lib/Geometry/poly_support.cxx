@@ -19,7 +19,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: poly_support.cxx,v 1.39 2005-12-31 19:29:26 curt Exp $
 
 
 #include <float.h>

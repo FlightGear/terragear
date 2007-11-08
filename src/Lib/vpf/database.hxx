@@ -30,7 +30,7 @@ class VpfLibrary;
  * objects, which, in turn, create coverage objects, and so on.</p>
  *
  * @author David Megginson, david@megginson.com
- * @version $Revision$
+ * @version $Revision: 1.2 $
  * @see VpfDataBase
  * @see VpfCoverage
  */

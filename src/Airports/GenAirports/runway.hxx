@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: runway.hxx,v 1.16 2005-04-20 18:20:15 curt Exp $
 //
 
 

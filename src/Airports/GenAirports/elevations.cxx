@@ -19,7 +19,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: elevations.cxx,v 1.8 2005-12-19 16:51:25 curt Exp $
 //
 
 #ifdef HAVE_CONFIG_H

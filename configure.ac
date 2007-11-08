@@ -5,7 +5,7 @@ AC_INIT
 AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
 
 # Require at least automake 2.52
-AC_PREREQ(2.52)
+AC_PREREQ(2.59)
 
 dnl Initialize the automake stuff
 AM_INIT_AUTOMAKE(TerraGear, 0.9.8)
@@ -305,7 +305,7 @@ fi
 
 AC_MSG_CHECKING(for proper simgear version)
 
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <simgear/version.h>
 
@@ -338,12 +338,9 @@ int main() {
     return 0;
 }
 
-],
-  AC_MSG_RESULT(yes),
-  [AC_MSG_RESULT(wrong version);
-   AC_MSG_ERROR([Install latest simgear first...])],
-  AC_MSG_RESULT(yes)
-)
+]])],[AC_MSG_RESULT(yes)],[AC_MSG_RESULT(wrong version);
+   AC_MSG_ERROR([Install latest simgear first...])],[AC_MSG_RESULT(yes)
+])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -353,19 +350,19 @@ AC_STRUCT_TM
 
 dnl check for socklen_t (in Unix98)
 AC_MSG_CHECKING(for socklen_t)
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/socket.h>
 int accept (int, struct sockaddr *, socklen_t *);
-],[],[
+]], [[]])],[
 AC_MSG_RESULT(yes)],[
-AC_TRY_COMPILE([
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <sys/types.h>
 #include <sys/socket.h>
 int accept (int, struct sockaddr *, size_t *);
-],[],[
+]], [[]])],[
 AC_MSG_RESULT(size_t)
-AC_DEFINE([socklen_t], size_t, [Define for socklen_t])], [
+AC_DEFINE([socklen_t], size_t, [Define for socklen_t])],[
 AC_MSG_RESULT(int)
 AC_DEFINE([socklen_t], int, [Define for socklen_t])])])
 

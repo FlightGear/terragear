@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: main.cxx,v 1.58 2005-09-28 16:40:32 curt Exp $
 
 
 #ifdef HAVE_CONFIG_H

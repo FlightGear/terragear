@@ -19,7 +19,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: genobj.hxx,v 1.9 2004-11-19 22:25:49 curt Exp $
 
 
 #ifndef _GENOBJ_HXX

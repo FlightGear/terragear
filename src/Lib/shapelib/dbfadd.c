@@ -3,8 +3,8 @@
  *
  * This code is in the public domain.
  *
- * $Log$
- * Revision 1.1  2000/02/09 19:51:46  curt
+ * $Log: dbfadd.c,v $
+ * Revision 1.1  2000-02-09 19:51:46  curt
  * Initial revision
  *
  * Revision 1.1  1999/08/24 21:13:00  curt
@@ -22,7 +22,7 @@
  */
 
 static char rcsid[] = 
-  "$Id$";
+  "$Id: dbfadd.c,v 1.1 2000-02-09 19:51:46 curt Exp $";
 
 #include "shapefil.h"
 #include <math.h>

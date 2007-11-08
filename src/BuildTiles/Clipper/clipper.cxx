@@ -20,7 +20,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: clipper.cxx,v 1.33 2006-11-29 22:19:33 curt Exp $
  
 
 #ifdef HAVE_CONFIG_H

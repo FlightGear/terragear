@@ -19,7 +19,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: testassem.cxx,v 1.6 2007-08-15 14:35:36 curt Exp $
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>

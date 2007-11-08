@@ -24,7 +24,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: shape-decode.cxx,v 1.17 2007-11-05 21:58:59 curt Exp $
  
 
 #include <simgear/compiler.h>

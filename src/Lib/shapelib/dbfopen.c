@@ -20,8 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************
  *
- * $Log$
- * Revision 1.2  2000/11/25 19:39:49  curt
+ * $Log: dbfopen.c,v $
+ * Revision 1.2  2000-11-25 19:39:49  curt
  * Contributed by Bruce Finney:
  *
  * The following files have been changed to enable the latest Terragear CVS
@@ -196,7 +196,7 @@
  */
 
 static char rcsid[] = 
-  "$Id$";
+  "$Id: dbfopen.c,v 1.2 2000-11-25 19:39:49 curt Exp $";
 
 #include "shapefil.h"
 

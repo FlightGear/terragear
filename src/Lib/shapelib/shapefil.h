@@ -6,8 +6,8 @@
  *
  * This code is in the public domain.
  *
- * $Log$
- * Revision 1.1  2000/02/09 19:51:46  curt
+ * $Log: shapefil.h,v $
+ * Revision 1.1  2000-02-09 19:51:46  curt
  * Initial revision
  *
  * Revision 1.1  1999/08/24 21:13:01  curt

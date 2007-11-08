@@ -31,7 +31,7 @@ class VpfColumnDecl;
  * a {@link VpfValue} object.</p>
  *
  * @author David Megginson, david@megginson.com
- * @version $Revision$
+ * @version $Revision: 1.1 $
  */
 class VpfTable {
 
@@ -278,7 +278,7 @@ private:
  * class, so there are no public constructors or destructors.</p>
  *
  * @author David Megginson, david@megginson.com
- * @version $Revision$
+ * @version $Revision: 1.1 $
  */
 class VpfColumnDecl {
 

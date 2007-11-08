@@ -20,7 +20,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id$
+# $Id: fgfs-launch-clients,v 1.17 2006-01-24 19:39:48 curt Exp $
 
 CLIENT=fgfs-tools-client
 HOSTNAME=`uname -n`

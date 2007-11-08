@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: triangle.cxx,v 1.25 2005-10-31 18:45:19 curt Exp $
 
 #include <simgear/compiler.h>
 

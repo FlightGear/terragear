@@ -19,7 +19,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 #
-# $Id$
+# $Id: Makefile.am,v 1.9 2005-11-08 16:27:36 curt Exp $
 #---------------------------------------------------------------------------
 
 

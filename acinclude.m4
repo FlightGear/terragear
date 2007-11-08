@@ -1,7 +1,7 @@
 dnl
 dnl originally from ncftp 2.3.0
 dnl added wi_EXTRA_PDIR and wi_ANSI_C
-dnl $Id$
+dnl $Id: acinclude.m4,v 1.3 2005-09-09 14:49:19 curt Exp $
 dnl
 AC_DEFUN([wi_EXTRA_IDIR], [
 incdir="$1"

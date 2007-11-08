@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: main.cxx,v 1.37 2005-12-19 15:53:21 curt Exp $
 //
 
 

@@ -21,7 +21,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id$
+// $Id: simple_clip.cxx,v 1.7 2004-11-19 22:25:50 curt Exp $
 
 
 #include <simgear/constants.h>

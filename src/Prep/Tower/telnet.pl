@@ -5,7 +5,7 @@
 #
 # This file is in the Public Domain and comes with no warranty.
 #
-# $Id$
+# $Id: telnet.pl,v 1.1 2004-11-11 15:08:03 curt Exp $
 # ----------------------------------------------------------------------------
 
 

@@ -24,7 +24,7 @@ class VpfTable;
  * tile bounds before getting the topology's own bounding rectangle.</p>
  *
  * @author David Megginson, david@megginson.com
- * @version $Revision$
+ * @version $Revision: 1.2 $
  */
 class VpfTile : public VpfComponent
 {

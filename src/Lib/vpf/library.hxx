@@ -27,7 +27,7 @@ class VpfCoverage;
  * created directly (except by copying an existing one).</p>
  *
  * @author David Megginson, david@megginson.com
- * @version $Revision$
+ * @version $Revision: 1.1 $
  * @see VpfDataBase
  * @see VpfCoverage
  */
