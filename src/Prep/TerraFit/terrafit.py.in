@@ -38,7 +38,7 @@ def pre_terra(pgmName, data, span_x, span_y, max_z, min_z):
 ##
 def run_terra(thresh, minnodes, count, factor, objName, pgmName):
     print
-    command = "../Terra/terra -e %f -n %d -p %d -h %f -o %s obj %s"%(thresh, minnodes, count, factor, objName, pgmName)
+    command = "__bindir__/terra -e %f -n %d -p %d -h %f -o %s obj %s"%(thresh, minnodes, count, factor, objName, pgmName)
     print command
     npts = -1
     error = -99999.9
