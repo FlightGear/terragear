@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id: trinodes.hxx,v 1.7 2004-11-19 22:25:50 curt Exp $
+// $Id: trinodes.hxx,v 1.7 2004/11/19 22:25:50 curt Exp $
 
 
 #ifndef _TRINODES_HXX
@@ -88,7 +88,8 @@ public:
     int find( const Point3D& p ) const;
 
      // return the master node list
-    inline point_list get_node_list() const { return node_list; }
+    inline point_list& get_node_list() { return node_list; }
+    inline const point_list& get_node_list() const { return node_list; }
     inline void set_node_list( point_list pl ) { node_list = pl; }
 
     // return the ith point

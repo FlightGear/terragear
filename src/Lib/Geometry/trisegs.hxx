@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id: trisegs.hxx,v 1.4 2004-11-19 22:25:50 curt Exp $
+// $Id: trisegs.hxx,v 1.4 2004/11/19 22:25:50 curt Exp $
 
 
 #ifndef _TRISEGS_HXX
@@ -111,10 +111,12 @@ public:
 				const TGTriSeg& s );
 
     // return the master segment list
-    inline triseg_list get_seg_list() const { return seg_list; }
+    inline triseg_list& get_seg_list() { return seg_list; }
+    inline const triseg_list& get_seg_list() const { return seg_list; }
 
     // return the ith segment
-    inline TGTriSeg get_seg( int i ) const { return seg_list[i]; }
+    inline TGTriSeg& get_seg( int i ) { return seg_list[i]; }
+    inline const TGTriSeg& get_seg( int i ) const { return seg_list[i]; }
 };
 
 
