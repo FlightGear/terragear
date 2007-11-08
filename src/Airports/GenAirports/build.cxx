@@ -426,10 +426,14 @@ void build_airport( string airport_id, float alt_m,
         rwy.smoothness = atof( token[13].c_str() );
         rwy.dist_remaining = (atoi( token[14].c_str() ) == 1 );
 
-        string vasi_angles = token[15];
-        vector<string> vasis = simgear::strutils::split( vasi_angles, "." );
-        rwy.gs_angle1 = atof( vasis[0].c_str() ) * 0.01;
-        rwy.gs_angle2 = atof( vasis[1].c_str() ) * 0.01;
+	if (token.size()>15) {
+		string vasi_angles = token[15];
+		vector<string> vasis = simgear::strutils::split( vasi_angles, "." );
+		rwy.gs_angle1 = atof( vasis[0].c_str() ) * 0.01;
+		rwy.gs_angle2 = atof( vasis[1].c_str() ) * 0.01;
+	} else {
+		rwy.gs_angle1 = rwy.gs_angle2 = 3.0;
+	}
 
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
@@ -463,18 +467,14 @@ void build_airport( string airport_id, float alt_m,
     point_list beacons; beacons.clear();
     for ( i = 0; i < (int)beacons_raw.size(); ++i ) {
 	string beacon_str = beacons_raw[i];
+        vector<string> token = simgear::strutils::split( beacon_str );
 
 	Point3D beacon;
 
 	SG_LOG(SG_GENERAL, SG_INFO, beacon_str);
 
-	string beacon_lat = beacon_str.substr(2, 10);
-	beacon.setlat( atof( beacon_lat.c_str() ) );
-
-	string beacon_lon = beacon_str.substr(13, 11);
-	beacon.setlon( atof( beacon_lon.c_str() ) );
-
-	string beacon_type = beacon_str.substr(25, 1);
+	beacon.setlat( atof( token[1].c_str() ) );
+	beacon.setlon( atof( token[2].c_str() ) );
 
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  beacon   = " << beacon );
 
@@ -484,18 +484,19 @@ void build_airport( string airport_id, float alt_m,
     point_list towers; towers.clear();
     for ( i = 0; i < (int)towers_raw.size(); ++i ) {
 	string tower_str = towers_raw[i];
+        vector<string> token = simgear::strutils::split( tower_str );
 
 	Point3D tower;
 
 	SG_LOG(SG_GENERAL, SG_INFO, tower_str);
 
-	string tower_lat = tower_str.substr(2, 10);
-	tower.setlat( atof( tower_lat.c_str() ) );
+	tower.setlat( atof( token[1].c_str() ) );
+	tower.setlon( atof( token[2].c_str() ) );
 
-	string tower_lon = tower_str.substr(13, 11);
-	tower.setlon( atof( tower_lon.c_str() ) );
-
-	string tower_type = tower_str.substr(25, 1);
+	if (!atoi(token[4].c_str())) {
+		// Ralf Gerlich: Skip towers that shall not be drawn
+		continue;
+	}
 
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  tower   = " << tower );
 
@@ -506,18 +507,16 @@ void build_airport( string airport_id, float alt_m,
     int_list windsock_types; windsock_types.clear();
     for ( i = 0; i < (int)windsocks_raw.size(); ++i ) {
 	string windsock_str = windsocks_raw[i];
+        vector<string> token = simgear::strutils::split( windsock_str );
 
 	Point3D windsock;
 
 	SG_LOG(SG_GENERAL, SG_INFO, windsock_str);
 
-	string windsock_lat = windsock_str.substr(2, 10);
-	windsock.setlat( atof( windsock_lat.c_str() ) );
+	windsock.setlat( atof( token[1].c_str() ) );
+	windsock.setlon( atof( token[2].c_str() ) );
 
-	string windsock_lon = windsock_str.substr(13, 11);
-	windsock.setlon( atof( windsock_lon.c_str() ) );
-
-	string windsock_type = windsock_str.substr(25, 1);
+	string windsock_type = token[3];
 
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  windsock   = " << windsock );
 
@@ -578,6 +577,7 @@ void build_airport( string airport_id, float alt_m,
 
     // 4th pass: generate all taxiways
 
+#if 0
     // we want to generate in order of largest size first so this will
     // look a little weird, but that's all I'm doing, otherwise a
     // simple list traversal would work fine.
@@ -607,6 +607,16 @@ void build_airport( string airport_id, float alt_m,
             done = true;
         }
     }
+#else
+    /* Ralf Gerlich: Generate Taxiways in specified order from bottom to top */
+    for ( size_t i=0; i<taxiways.size(); ++i ) {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "generating " << i );
+            build_runway( taxiways[i], alt_m,
+                          &rwy_polys, &texparams, &accum,
+                          &apt_base, &apt_clearing );
+            taxiways[i].generated = true;
+    }
+#endif
 
     // Now generate small surface for each beacon
     TGPolygon obj_base, obj_safe_base;

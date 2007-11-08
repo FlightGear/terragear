@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id: main.cxx,v 1.37 2005-12-19 15:53:21 curt Exp $
+// $Id: main.cxx,v 1.37 2005/12/19 15:53:21 curt Exp $
 //
 
 
@@ -61,6 +61,7 @@ SG_USING_STD(vector);
 
 int nudge = 10;
 
+static int is_in_range( string_list & runway_list, float min_lat, float max_lat, float min_lon, float max_lon );
 
 // Display usage
 static void usage( int argc, char **argv ) {
@@ -319,13 +320,15 @@ int main( int argc, char **argv ) {
                                 // skip building heliports and
                                 // seaplane bases
                             } else {
-                                build_airport( last_apt_id,
-                                               elev * SG_FEET_TO_METER,
-                                               runways_list,
-                                               beacon_list,
-                                               tower_list,
-                                               windsock_list,
-                                               work_dir, elev_src );
+                                if( is_in_range( runways_list, min_lat, max_lat, min_lon, max_lon ) ) {
+                                    build_airport( last_apt_id,
+                                                   elev * SG_FEET_TO_METER,
+                                                   runways_list,
+                                                   beacon_list,
+                                                   tower_list,
+                                                   windsock_list,
+                                                   work_dir, elev_src );
+                                }
                             }
                         } catch (sg_exception &e) {
                             SG_LOG( SG_GENERAL, SG_ALERT,
@@ -417,12 +420,14 @@ int main( int argc, char **argv ) {
                     // skip building heliports and
                     // seaplane bases
                 } else {
-                    build_airport( last_apt_id, elev * SG_FEET_TO_METER,
-                                   runways_list,
-                                   beacon_list,
-                                   tower_list,
-                                   windsock_list,
-                                   work_dir, elev_src );
+                    if( is_in_range( runways_list, min_lat, max_lat, min_lon, max_lon ) ) {
+                        build_airport( last_apt_id, elev * SG_FEET_TO_METER,
+                                       runways_list,
+                                       beacon_list,
+                                       tower_list,
+                                       windsock_list,
+                                       work_dir, elev_src );
+                    }
                 }
             } catch (sg_exception &e) {
                 SG_LOG( SG_GENERAL, SG_ALERT,
@@ -438,6 +443,35 @@ int main( int argc, char **argv ) {
     }
 
     SG_LOG(SG_GENERAL, SG_INFO, "[FINISHED CORRECTLY]");
+
+    return 0;
+}
+
+static int is_in_range( string_list & runways_raw, float min_lat, float max_lat, float min_lon, float max_lon )
+{
+    int i;
+    int rwy_count = 0;
+    double apt_lon = 0.0, apt_lat = 0.0;
+
+    for ( i = 0; i < (int)runways_raw.size(); ++i ) {
+        ++rwy_count;
+
+	string rwy_str = runways_raw[i];
+        vector<string> token = simgear::strutils::split( rwy_str );
+
+        apt_lat += atof( token[1].c_str() );
+        apt_lon += atof( token[2].c_str() );
+    }
+
+    if( rwy_count > 0 ) {
+      apt_lat /= rwy_count;
+      apt_lon /= rwy_count;
+    }
+
+    if( apt_lat >= min_lat && apt_lat <= max_lat &&
+        apt_lon >= min_lon && apt_lon <= max_lon ) {
+        return 1;
+    }
 
     return 0;
 }
