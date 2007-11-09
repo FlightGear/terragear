@@ -97,6 +97,53 @@ dnl Let the Win32 user specify if they want to build with the SGI
 dnl opengl.dll as opposed to the more standard openg32.dll
 AC_ARG_WITH(sgi-opengl, [  --with-sgi-opengl       Build against SGI's opengl.dll glu.dll and glut.dll])
 
+# specify gdal support
+AC_DEFINE([HAVE_OGR],[],[Use OGR])
+
+AC_ARG_WITH(gdal,
+[  --with-gdal[=path/gdal-config] enable GDAL/OGR support (gdal-config with path, \
+e.g. '--with-gdal=/usr/local/bin/gdal-config')])
+
+AC_MSG_CHECKING(whether to use GDAL)
+
+if test "`basename xx/$with_gdal`" = "gdal-config" ; then
+  GDAL_CONFIG="$with_gdal"
+  AC_MSG_RESULT(yes)
+fi
+
+if test "$with_gdal" = "no" ; then
+  AC_MSG_RESULT(no)
+else
+  AC_MSG_RESULT(yes)
+  AC_PATH_PROG(GDAL_CONFIG, gdal-config, no)
+
+  if test "$GDAL_CONFIG" = "no" ; then
+    AC_MSG_ERROR([*** couldn't find gdal-config])
+  fi
+
+  GDAL_LIBS=
+  GDAL_CFLAGS=
+  USE_GDAL=
+  USE_OGR=
+
+  if test "$GDAL_CONFIG" != "" ; then
+    GDAL_LIBS=`"$GDAL_CONFIG" --libs`
+    GDAL_DEP_LIBS=`"$GDAL_CONFIG" --dep-libs`
+    GDAL_CFLAGS=`"$GDAL_CONFIG" --cflags`
+    USE_GDAL=1
+    if test `"$GDAL_CONFIG" --ogr-enabled` = "yes" ; then
+      AC_DEFINE(HAVE_OGR)
+      USE_OGR=1
+    fi
+  fi
+
+  GDAL_LIBS="$GDAL_LIBS $GDAL_DEP_LIBS"
+
+  AC_SUBST(GDAL_LIBS)
+  AC_SUBST(GDAL_CFLAGS)
+  AC_SUBST(USE_GDAL)
+  AC_SUBST(USE_OGR)
+fi
 
 dnl Check for MS Windows environment
 AC_CHECK_HEADER(windows.h)
