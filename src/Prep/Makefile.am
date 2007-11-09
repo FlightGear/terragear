@@ -12,7 +12,10 @@ SUBDIRS = \
 	Terra \
 	TerraFit \
 	Tower \
-	UserDef \
-	$(OGR_DECODE)
+	UserDef
+
+if WANT_OGRDECODE
+        SUBDIRS+=OGRDecode
+endif
 
 EXTRA_SUBDIRS=OGRDecode

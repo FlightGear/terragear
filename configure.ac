@@ -101,53 +101,58 @@ AC_ARG_WITH(sgi-opengl, [  --with-sgi-opengl       Build against SGI's opengl.dl
 AC_DEFINE([HAVE_OGR],[],[Use OGR])
 
 AC_ARG_WITH(gdal,
-[  --with-gdal[=path/gdal-config] enable GDAL/OGR support (gdal-config with path, \
-e.g. '--with-gdal=/usr/local/bin/gdal-config')])
+            AC_HELP_STRING([--with-gdal[=path/gdal-config]],
+                           [enable GDAL/OGR support (gdal-config with path,
+                            e.g. '--with-gdal=/usr/local/bin/gdal-config',
+                            default: enabled if gdal-config is in PATH)]))
 
-AC_MSG_CHECKING(whether to use GDAL)
+AC_ARG_ENABLE(ogrdecode,
+              AC_HELP_STRING([--disable-ogrdecode],
+                             [enable ogrdecode tool (default depending on OGR availability)]))
 
-if test "`basename xx/$with_gdal`" = "gdal-config" ; then
-  GDAL_CONFIG="$with_gdal"
-  AC_MSG_RESULT(yes)
-fi
-
-if test "$with_gdal" = "no" ; then
-  AC_MSG_RESULT(no)
-else
-  AC_MSG_RESULT(yes)
-  AC_PATH_PROG(GDAL_CONFIG, gdal-config, no)
-
-  if test "$GDAL_CONFIG" = "no" ; then
-    AC_MSG_ERROR([*** couldn't find gdal-config])
+if test "$with_gdal" != "no" ; then
+  if test "`basename xx/$with_gdal`" = "gdal-config" ; then
+    # gdal-config was specified
+    GDAL_CONFIG="$with_gdal"
+    with_gdal="yes"
+  else
+    # gdal-config was not specified, but GDAL/OGR wasn't disabled
+    AC_PATH_PROG(GDAL_CONFIG, gdal-config, no)
+    if test "$GDAL_CONFIG" = "no" ; then
+      with_gdal="no"
+    fi
   fi
 
   GDAL_LIBS=
   GDAL_CFLAGS=
   USE_GDAL=
   USE_OGR=
-
-  if test "$GDAL_CONFIG" != "" ; then
+  
+  AC_MSG_CHECKING([for GDAL...])
+  if test -x "$GDAL_CONFIG"; then
+    AC_MSG_RESULT(yes)
     GDAL_LIBS=`"$GDAL_CONFIG" --libs`
     GDAL_DEP_LIBS=`"$GDAL_CONFIG" --dep-libs`
     GDAL_CFLAGS=`"$GDAL_CONFIG" --cflags`
-    USE_GDAL=1
+    have_gdal=yes
+    AC_MSG_CHECKING([for OGR...])
     if test `"$GDAL_CONFIG" --ogr-enabled` = "yes" ; then
-      AC_DEFINE(HAVE_OGR)
-      USE_OGR=1
+      AC_MSG_RESULT(yes)
+      have_ogr=yes
+    else
+      AC_MSG_RESULT(no)
     fi
+  else
+    AC_MSG_RESULT(no)
   fi
 
   GDAL_LIBS="$GDAL_LIBS $GDAL_DEP_LIBS"
-  if test "$USE_OGR" = "1"; then
-        OGR_DECODE=OGRDecode
-  fi
 
   AC_SUBST(GDAL_LIBS)
   AC_SUBST(GDAL_CFLAGS)
-  AC_SUBST(USE_GDAL)
-  AC_SUBST(USE_OGR)
-  AC_SUBST(OGR_DECODE)
 fi
+
+AM_CONDITIONAL(WANT_OGRDECODE, test x$have_ogr = xyes -a x$enable_ogrdecode != xno)
 
 dnl Check for MS Windows environment
 AC_CHECK_HEADER(windows.h)
@@ -497,3 +502,5 @@ if test "x$ac_cv_header_newmat_newmat_h" != "xyes"; then
     echo "Please see README.newmat for more details."
     echo
 fi
+
+dnl :mode=text:indentSize=2:
