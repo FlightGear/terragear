@@ -152,6 +152,13 @@ if test "$with_gdal" != "no" ; then
   AC_SUBST(GDAL_CFLAGS)
 fi
 
+if test x$have_ogr != xyes -a x$enable_ogrdecode = xyes; then
+  AC_MSG_ERROR([ogrdecode was forcefully enabled but OGR was not found.
+                Please make sure that you have GDAL installed with OGR enabled
+                and gdal-config in your PATH resp. the path to gdal-config provided
+                using --with-gdal.])
+fi
+
 AM_CONDITIONAL(WANT_OGRDECODE, test x$have_ogr = xyes -a x$enable_ogrdecode != xno)
 
 dnl Check for MS Windows environment
