@@ -91,6 +91,10 @@ AC_ARG_ENABLE(ogrdecode,
               AC_HELP_STRING([--disable-ogrdecode],
                              [enable ogrdecode tool (default depending on OGR availability)]))
 
+AC_ARG_ENABLE(gdalchop,
+              AC_HELP_STRING([--enable-gdalchop],
+                             [enable gdalchop tool (default depending on GDAL availability)]))
+
 AC_ARG_ENABLE(poly2ogr,
               AC_HELP_STRING([--disable-poly2ogr],
                              [enable poly2ogr tool (default depending on OGR availability)]))
@@ -144,6 +148,13 @@ if test x$have_ogr != xyes -a x$enable_ogrdecode = xyes; then
                 using --with-gdal.])
 fi
 
+if test x$have_gdal != xyes -a x$enable_gdalchop = xyes; then
+  AC_MSG_ERROR([gdalchop was forcefully enabled but GDAL was not found.
+                Please make sure that you have GDAL installed
+                and gdal-config in your PATH resp. the path to gdal-config provided
+                using --with-gdal.])
+fi
+
 if test x$have_ogr != xyes -a x$enable_poly2ogr = xyes; then
   AC_MSG_ERROR([poly2ogr was forcefully enabled but OGR was not found.
                 Please make sure that you have GDAL installed with OGR enabled
@@ -152,6 +163,7 @@ if test x$have_ogr != xyes -a x$enable_poly2ogr = xyes; then
 fi
 
 AM_CONDITIONAL(WANT_OGRDECODE, test x$have_ogr = xyes -a x$enable_ogrdecode != xno)
+AM_CONDITIONAL(WANT_GDALCHOP, test x$have_gdal = xyes -a x$enable_gdalchop != xno)
 AM_CONDITIONAL(WANT_POLY2OGR, test x$have_ogr = xyes -a x$enable_poly2ogr != xno)
 
 dnl Check for MS Windows environment
@@ -456,6 +468,7 @@ AC_CONFIG_FILES([ \
 	src/Prep/DemInfo/Makefile \
 	src/Prep/DemRaw2ascii/Makefile \
 	src/Prep/E00Lines/Makefile \
+	src/Prep/GDALChop/Makefile \
 	src/Prep/GSHHS/Makefile \
 	src/Prep/MergerClipper/Makefile \
 	src/Prep/Photo/Makefile \

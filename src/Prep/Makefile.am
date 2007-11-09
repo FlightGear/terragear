@@ -16,4 +16,7 @@ if WANT_OGRDECODE
         SUBDIRS+=OGRDecode
 endif
 
-EXTRA_SUBDIRS=OGRDecode
+if WANT_GDALCHOP
+        SUBDIRS+=GDALChop
+endif
+

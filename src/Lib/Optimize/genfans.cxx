@@ -22,6 +22,7 @@
 
 
 #include <simgear/compiler.h>
+#include <stdlib.h>
 
 #include <iostream>
 #include <stdlib.h>

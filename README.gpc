@@ -55,11 +55,13 @@ by Curt Olson:
 
 -------------------------- snip ------------------------------
 
-# Unix/Linux makefile for GPC 2.31
+# Unix/Linux makefile for GPC 2.32
 #
 # Riley Rainey  (riley.rainey@websimulations.com)
+# Ralf Gerlich (ralf.gerlich (at) custom-scenery (dot) org)
 
 CFLAGS = -O -g
+PREFIX=/usr/local
 
 libgenpolyclip.a: gpc.o
 	rm -f $@
@@ -70,7 +72,7 @@ clean:
 	rm -f libgenpolyclip.a *.o core *~
 
 install: libgenpolyclip.a
-	-mkdir -p /usr/local/lib
-	-mkdir -p /usr/local/include
-	install libgenpolyclip.a /usr/local/lib/libgenpolyclip.a
-	install gpc.h /usr/local/include/gpc.h
+	-mkdir -p $(PREFIX)/lib
+	-mkdir -p $(PREFIX)/include
+	install libgenpolyclip.a $(PREFIX)/lib/libgenpolyclip.a
+	install gpc.h $(PREFIX)/include/gpc.h

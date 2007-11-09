@@ -24,6 +24,7 @@
 
 
 bin_PROGRAMS = demchop hgtchop fillvoids testassem
+
 if HAVE_LIBTIFF
 bin_PROGRAMS+=srtmchop
 endif
