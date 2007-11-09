@@ -46,7 +46,6 @@ SG_USING_STD(vector);
 #include <Geometry/util.hxx>
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 #include <e00/e00.hxx>
 
@@ -162,7 +161,7 @@ checkAttribute (const E00 &data, int index, const Attribute &att)
  */
 static void
 processPoints (const E00 &data, const tg::Rectangle &bounds,
-	       AreaType areaType, const string &workDir, int width)
+	       const string& poly_type, const string &workDir, int width)
 {
   // double x, y, az;
 
@@ -179,7 +178,7 @@ processPoints (const E00 &data, const tg::Rectangle &bounds,
     }
 
     tg::makePolygon(p, width, shape);
-    tgChopNormalPolygon(workDir, areaType, shape, false);
+    tgChopNormalPolygon(workDir, poly_type, shape, false);
   }
 }
 
@@ -195,7 +194,7 @@ processPoints (const E00 &data, const tg::Rectangle &bounds,
  */
 static void
 processLines (const E00 &data, const tg::Rectangle &bounds,
-	      AreaType areaType, const string &workDir, int width,
+	      const string& poly_type, const string &workDir, int width,
 	      const vector<Attribute> &aat_list)
 {
   int nLines = data.nLines();
@@ -242,7 +241,7 @@ processLines (const E00 &data, const tg::Rectangle &bounds,
     cout << "  Minimum angle: "
 	 << (shape.minangle_contour(0) * SGD_RADIANS_TO_DEGREES) << endl;
     
-    tgChopNormalPolygon(workDir, areaType, shape, false);
+    tgChopNormalPolygon(workDir, poly_type, shape, false);
   }
   cout << "Done lines" << endl;
 }
@@ -253,7 +252,7 @@ processLines (const E00 &data, const tg::Rectangle &bounds,
  */
 static void
 processPolygons (const E00 &data, const tg::Rectangle &bounds,
-		 AreaType areaType, const string &workDir,
+		 const string& poly_type, const string &workDir,
 		 const vector<Attribute> pat_list)
 {
   int nPolygons = data.nPolygons();
@@ -309,7 +308,7 @@ processPolygons (const E00 &data, const tg::Rectangle &bounds,
 					  0.0));
       }
     }
-    tgChopNormalPolygon(workDir, areaType, shape, false);
+    tgChopNormalPolygon(workDir, poly_type, shape, false);
   }
 }
 
@@ -381,7 +380,7 @@ main (int argc, const char **argv)
 				// Default values
   tg::Rectangle bounds(Point3D(-180.0, -90.0, 0),
 		   Point3D(180.0, 90.0, 0));
-  AreaType areaType = DefaultArea;
+  string poly_type = "Default";
   int pointWidth = 500;
   int lineWidth = 50;
   string workDir = ".";
@@ -453,7 +452,7 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--area=") == 0) {
-      areaType = get_area_type(arg.substr(7).c_str());
+      poly_type = arg.substr(7);
       argPos++;
     }
 
@@ -514,7 +513,7 @@ main (int argc, const char **argv)
   cout << "Bounds are " << bounds.getMin().x() << ','
        << bounds.getMin().y() << " and "
        << bounds.getMax().x() << ',' << bounds.getMax().y() << endl;
-  cout << "Area type is " << get_area_name(areaType) << endl;;
+  cout << "Area type is " << poly_type << endl;;
   cout << "Working directory is " << workDir << endl;
   if (usePoints)
     cout << "Using points with width " << pointWidth << " meters" << endl;
@@ -581,13 +580,13 @@ main (int argc, const char **argv)
     poly_index_init( counter_file );
     
     if (usePoints)
-      processPoints(data, bounds, areaType, workDir, pointWidth);
+      processPoints(data, bounds, poly_type, workDir, pointWidth);
 
     if (useLines)
-      processLines(data, bounds, areaType, workDir, lineWidth, aat_list);
+      processLines(data, bounds, poly_type, workDir, lineWidth, aat_list);
 
     if (usePolygons)
-      processPolygons(data, bounds, areaType, workDir, pat_list);
+      processPolygons(data, bounds, poly_type, workDir, pat_list);
     
     cout << "Done processing " << argv[argPos] << endl;
     argPos++;

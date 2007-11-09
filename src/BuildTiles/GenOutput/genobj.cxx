@@ -33,7 +33,7 @@
 #include <simgear/misc/texcoord.hxx>
 
 #include <Output/output.hxx>
-#include <Polygon/names.hxx>
+#include <Clipper/priorities.hxx>
 
 #include <Osgb36/osgbtc.hxx>
 #include <Osgb36/uk.hxx>

@@ -3,7 +3,7 @@ noinst_LIBRARIES = libPolygon.a
 libPolygon_a_SOURCES = \
 	chop-bin.cxx chop.hxx \
 	index.cxx index.hxx \
-	names.cxx names.hxx \
+	names.hxx \
 	polygon.cxx polygon.hxx \
 	simple_clip.cxx simple_clip.hxx \
 	superpoly.cxx superpoly.hxx

@@ -33,7 +33,6 @@
 
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 #include <Polygon/simple_clip.hxx>
 
@@ -46,7 +45,7 @@ SG_USING_STD(string);
 // process shape front end ... split shape into lon = -180 ... 180,
 // -360 ... -180, and 180 ... 360 ... shift the offset sections and
 // process each separately
-void split_and_shift_chunk( const string& path, AreaType area, 
+void split_and_shift_chunk( const string& path, const string& poly_type, 
 			    const TGPolygon& shape )
 {
     TGPolygon lower_mask, center_mask, upper_mask;
@@ -86,19 +85,19 @@ void split_and_shift_chunk( const string& path, AreaType area,
     upper_shape.shift( -360, 0 );
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing lower shape" );
-    tgChopBigSimplePolygon(path, area, lower_shape, false);
+    tgChopBigSimplePolygon(path, poly_type, lower_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing center shape" );
-    tgChopBigSimplePolygon(path, area, center_shape, false);
+    tgChopBigSimplePolygon(path, poly_type, center_shape, false);
 
     SG_LOG ( SG_GENERAL, SG_INFO, "Processing upper shape" );
-    tgChopBigSimplePolygon(path, area, upper_shape, false);
+    tgChopBigSimplePolygon(path, poly_type, upper_shape, false);
 }
 
 
 // process a large shape through my crude polygon splitter to reduce
 // the polygon sizes before handing off to gpc
-void gshhs_split_polygon( const string& path, AreaType area, TGPolygon& shape, 
+void gshhs_split_polygon( const string& path, const string& poly_type, TGPolygon& shape, 
 			  const double min, const double max )
 {
     double base_line = (int)(min - 1.0);
@@ -142,7 +141,7 @@ void gshhs_split_polygon( const string& path, AreaType area, TGPolygon& shape,
 	// cout << "exiting early" << endl;
 	// exit(0);
 
-	split_and_shift_chunk(path, area, below);
+	split_and_shift_chunk(path, poly_type, below);
 
 	shape = above;
 

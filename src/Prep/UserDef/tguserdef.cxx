@@ -11,7 +11,6 @@
 #include <Geometry/util.hxx>
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 
 #include <stdlib.h>
@@ -50,8 +49,7 @@ parse_point (const char * s, Point3D &p)
 static void
 add_point (SGPropertyNode_ptr node)
 {
-  AreaType material =
-    get_area_type(node->getStringValue("material", "Default"));
+  const string& poly_type=node->getStringValue("material", "Default");
   Point3D p, dummy;
   const char * s = node->getStringValue("v");
   s = parse_point(s, p);
@@ -65,14 +63,13 @@ add_point (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(p, node->getIntValue("width", 500), poly);
   poly = tgPolygonInt(poly, bounds_poly);
-  tgChopNormalPolygon(".", material, poly, false);
+  tgChopNormalPolygon(".", poly_type, poly, false);
 }
 
 static void
 add_line (SGPropertyNode_ptr node)
 {
-  AreaType material =
-    get_area_type(node->getStringValue("material", "Default"));
+  const string& poly_type=node->getStringValue("material", "Default");
   const char * s = node->getStringValue("v");
 
   Point3D p;
@@ -86,15 +83,14 @@ add_line (SGPropertyNode_ptr node)
   TGPolygon poly;
   tg::makePolygon(line, node->getIntValue("width", 10), poly);
   poly = tgPolygonInt(poly, bounds_poly);
-  tgChopNormalPolygon(".", material, poly, false);
+  tgChopNormalPolygon(".", poly_type, poly, false);
 }
 
 static void
 add_polygon (SGPropertyNode_ptr node)
 {
   TGPolygon poly;
-  AreaType material =
-    get_area_type(node->getStringValue("material", "Default"));
+  const string& poly_type=node->getStringValue("material", "Default");
   vector<SGPropertyNode_ptr> contour_nodes = node->getChildren("contour");
   for (unsigned int i = 0; i < contour_nodes.size(); i++) {
     SGPropertyNode_ptr contour_node = contour_nodes[i];
@@ -108,7 +104,7 @@ add_polygon (SGPropertyNode_ptr node)
     poly.set_hole_flag(i, contour_node->getBoolValue("hole", false));
   }
   poly = tgPolygonInt(poly, bounds_poly);
-  tgChopNormalPolygon(".", material, poly, false);
+  tgChopNormalPolygon(".", poly_type, poly, false);
 }
 
 void

@@ -32,7 +32,7 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#include <Polygon/names.hxx>
+#include <Clipper/priorities.hxx>
 #include <Osgb36/osgb36.hxx>
 
 #include "clipper.hxx"

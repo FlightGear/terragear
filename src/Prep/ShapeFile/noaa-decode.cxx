@@ -31,7 +31,6 @@
 
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 #include <shapelib/shapefil.h>
 
@@ -43,7 +42,7 @@ SG_USING_STD( cout );
 SG_USING_STD( string );
 
 // return the type of the shapefile record
-AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
+std::string get_shapefile_type(DBFHandle& hDBF, int rec) {
 
 #if 0
     int         *panWidth, i, iRecord;
@@ -249,7 +248,7 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
 	area = "Null";
     }
 
-    return get_area_type( area );
+    return area;
 }
 
 
@@ -335,13 +334,12 @@ int main( int argc, char **argv ) {
 		<< "  rings = " << psShape->nParts
 		<< "  total vertices = " << psShape->nVertices );
 
-	AreaType area = DefaultArea;
+	string area = "Default";
 	if ( force_area_type.length() == 0 ) {
 	    area = get_shapefile_type(hDBF, i);
-	    SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " 
-		    << get_area_name(area) << " (" << (int)area << ")" );
+	    SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " << area);
 	} else {
-	    area = get_area_type( force_area_type );
+	    area = force_area_type;
 	}
 
 	SG_LOG( SG_GENERAL, SG_INFO, "  record type = " 
@@ -416,9 +414,9 @@ int main( int argc, char **argv ) {
 	    // interior of polygon is assigned to force_area_type,
 	    // holes are preserved
 
-	    area = get_area_type( force_area_type );
+	    area = force_area_type;
 	    tgChopNormalPolygon(work_dir, area, shape, false);
-	} else if ( area == OceanArea ) {
+	} else if ( is_ocean_area(area) ) {
 	    // interior of polygon is ocean, holes are islands
 
 	    SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
@@ -426,7 +424,7 @@ int main( int argc, char **argv ) {
 	    // Ocean data now comes from GSHHS so we want to ignore
 	    // all other ocean data
 	    // tgChopPolygon(work_dir, area, shape, false);
-	} else if ( area == VoidArea ) {
+	} else if ( is_void_area(area) ) {
 	    // interior is ????
 
 	    // skip for now
@@ -438,7 +436,7 @@ int main( int argc, char **argv ) {
 	    }
 
 	    // tgChopPolygon(work_dir, area, shape, false);
-	} else if ( area == NullArea ) {
+	} else if ( is_null_area(area) ) {
 	    // interior is ????
 
 	    // skip for now

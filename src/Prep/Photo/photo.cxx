@@ -329,7 +329,7 @@ int main( int argc, char **argv ) {
     poly_index_init( counter_file );
 
     string holepath = root + "/PhotoArea";
-    tgChopNormalPolygon( holepath, HoleArea, hole, false );
+    tgChopNormalPolygon( holepath, "Hole", hole, false );
 
     return 0;
 }

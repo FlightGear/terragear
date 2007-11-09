@@ -43,7 +43,7 @@
 
 #include <Geometry/trinodes.hxx>
 #include <Geometry/trisegs.hxx>
-#include <Polygon/names.hxx>
+#include <Clipper/priorities.hxx>
 
 #include <Clipper/clipper.hxx>
 #include <Triangulate/trieles.hxx>

@@ -40,8 +40,8 @@
 #include <Geometry/util.hxx>
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
+#include <Polygon/names.hxx>
 #include <shapelib/shapefil.h>
 
 #ifdef _MSC_VER
@@ -118,7 +118,7 @@ void load_noaa_area_codes() {
 }
 
 // return the type of the shapefile record
-AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
+string get_shapefile_type(DBFHandle& hDBF, int rec) {
 #if 0
     int         *panWidth, i, iRecord;
     char        szFormat[32];
@@ -238,7 +238,7 @@ AreaType get_shapefile_type(DBFHandle& hDBF, int rec) {
         }
     }
 
-    return get_area_type( area );
+    return area;
 }
 
 // get attribute value of 'width' from shapefile
@@ -272,7 +272,7 @@ string get_attribute(DBFHandle& hDBF, int rec, int column) {
 
 void processPolygon(SHPObject* psShape,
 		    const string& work_dir,
-		    AreaType area,
+		    const string& poly_type,
 		    bool preserve3D) {
     int iPart,j;
     TGPolygon shape;
@@ -330,7 +330,7 @@ void processPolygon(SHPObject* psShape,
     if ( max_segment > 1.0 ) {
         shape = tgPolygonSplitLongEdges( shape, max_segment );
     }
-    tgChopNormalPolygon(work_dir, area, shape, preserve3D);
+    tgChopNormalPolygon(work_dir, poly_type, shape, preserve3D);
 }
 
 
@@ -484,7 +484,7 @@ tg::Line fixDegenerateLine3( tg::Line line ) {
 
 void processLine(SHPObject* psShape,
 		 const string& work_dir,
-		 AreaType area,
+		 const string& poly_type,
 		 float linewidth) {
     int iPart,j=0,partEnd=psShape->nVertices;
     double minx = 200, miny = 200, maxx = -200, maxy = -200;
@@ -538,13 +538,13 @@ void processLine(SHPObject* psShape,
             shape = tgPolygonSplitLongEdges( shape, max_segment );
         }
         cout << "hole flag = " << shape.get_hole_flag(0) << endl;
-	tgChopNormalPolygon(work_dir, area, shape, false);
+	tgChopNormalPolygon(work_dir, poly_type, shape, false);
     }
 }
 
 void processPoints(SHPObject* psShape,
 		   const string& work_dir,
-		   AreaType area,
+		   const string& poly_type,
 		   int pointwidth) {
     TGPolygon shape;
     int j;
@@ -564,7 +564,7 @@ void processPoints(SHPObject* psShape,
         if ( max_segment > 1.0 ) {
             shape = tgPolygonSplitLongEdges( shape, max_segment );
         }
-	tgChopNormalPolygon(work_dir, area, shape, false);
+	tgChopNormalPolygon(work_dir, poly_type, shape, false);
     }
 }
 
@@ -815,13 +815,12 @@ int main( int argc, char **argv ) {
 		exit(-1);
 	}
 	
-	AreaType area = DefaultArea;
+	string area = "Default";
 	if ( force_area_type.length() == 0 ) {
 	    area = get_shapefile_type(hDBF, i);
-	    SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " 
-		    << get_area_name(area) << " (" << (int)area << ")" );
+	    SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " << area);
 	} else {
-	    area = get_area_type( force_area_type );
+	    area = force_area_type;
 	}
       
         if ( force_linewidth < 0 ) {
@@ -857,7 +856,7 @@ int main( int argc, char **argv ) {
                 psShape->dfZMax, psShape->dfMMax );
 #endif
 
-	if ( area == OceanArea ) {
+	if ( is_ocean_area(area) ) {
 	    // interior of polygon is ocean, holes are islands
 
 	    SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
@@ -866,7 +865,7 @@ int main( int argc, char **argv ) {
 	    // all other ocean data
             SHPDestroyObject( psShape );
 	    continue;
-	} else if ( area == VoidArea ) {
+	} else if ( is_void_area(area) ) {
 	    // interior is ????
 
 	    // skip for now
@@ -878,7 +877,7 @@ int main( int argc, char **argv ) {
 	    }
 	    SHPDestroyObject( psShape );
 	    continue;
-	} else if ( area == NullArea ) {
+	} else if ( is_null_area(area) ) {
 	    // interior is ????
 
 	    // skip for now
@@ -896,7 +895,7 @@ int main( int argc, char **argv ) {
 	    // interior of polygon is assigned to force_area_type,
 	    // holes are preserved
 
-	    area = get_area_type( force_area_type );
+	    area = force_area_type;
 	}
 	
 	switch (psShape->nSHPType) {

@@ -42,12 +42,12 @@
 #include <Output/output.hxx>
 
 #include "index.hxx"
-#include "names.hxx"
 #include "simple_clip.hxx"
 #include "chop.hxx"
 
 
-static void clip_and_write_poly( string root, long int p_index, AreaType area, 
+static void clip_and_write_poly( string root, long int p_index,
+				 const string &poly_type, 
 				 SGBucket b, const TGPolygon& shape,
                                  bool preserve3d ) {
     Point3D c, min, max, p;
@@ -137,9 +137,6 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
 	polyfile += ".";
 	polyfile += poly_index;
 
-	string poly_type = get_area_name( area );
-	if ( poly_type == "Unknown" )
-	    throw sg_exception("unknown area type in clip_and_write_poly()!");
 	
 	FILE *rfp= fopen( polyfile.c_str(), "w" );
         if ( preserve3d ) {
@@ -166,10 +163,9 @@ static void clip_and_write_poly( string root, long int p_index, AreaType area,
     }
 }
 
-
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
-void tgChopNormalPolygon( const string& path, AreaType area,
+void tgChopNormalPolygon( const string& path, const string& poly_type,
                           const TGPolygon& shape, bool preserve3d )
 {
     Point3D min, max, p;
@@ -212,7 +208,7 @@ void tgChopNormalPolygon( const string& path, AreaType area,
 
     if ( b_min == b_max ) {
 	// shape entirely contained in a single bucket, write and bail
-	clip_and_write_poly( path, index, area, b_min, shape, preserve3d );
+	clip_and_write_poly( path, index, poly_type, b_min, shape, preserve3d );
 	return;
     }
 
@@ -233,7 +229,7 @@ void tgChopNormalPolygon( const string& path, AreaType area,
         for ( j = 0; j <= dy; ++j ) {
             for ( i = 0; i <= dx; ++i ) {
                 b_cur = sgBucketOffset(min.x(), min.y(), i, j);
-                clip_and_write_poly( path, index, area, b_cur, shape,
+                clip_and_write_poly( path, index, poly_type, b_cur, shape,
                                      preserve3d );
             }
         }
@@ -286,7 +282,7 @@ void tgChopNormalPolygon( const string& path, AreaType area,
 
         bottom_clip = tgPolygonInt( bottom, shape );
 
-	tgChopNormalPolygon( path, area, bottom_clip, preserve3d );
+	tgChopNormalPolygon( path, poly_type, bottom_clip, preserve3d );
     }
 
     {
@@ -312,16 +308,15 @@ void tgChopNormalPolygon( const string& path, AreaType area,
 
         top_clip = tgPolygonInt( top, shape );
 
-	tgChopNormalPolygon( path, area, top_clip, preserve3d );
+	tgChopNormalPolygon( path, poly_type, top_clip, preserve3d );
     }
 }
-
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file) This has a front end to a crude clipper
 // that doesn't handle holes so beware.  This routine is appropriate
 // for breaking down really huge structures if needed.
-void tgChopBigSimplePolygon( const string& path, AreaType area,
+void tgChopBigSimplePolygon( const string& path, const string& poly_type,
                              const TGPolygon& shape, bool preserve3d )
 {
     Point3D min, max, p;
@@ -364,7 +359,7 @@ void tgChopBigSimplePolygon( const string& path, AreaType area,
 
     if ( b_min == b_max ) {
 	// shape entirely contained in a single bucket, write and bail
-	clip_and_write_poly( path, index, area, b_min, shape, preserve3d );
+	clip_and_write_poly( path, index, poly_type, b_min, shape, preserve3d );
 	return;
     }
 
@@ -386,7 +381,7 @@ void tgChopBigSimplePolygon( const string& path, AreaType area,
 	for ( j = 0; j <= 1; ++j ) {
 	    for ( i = 0; i <= dx; ++i ) {
 	        b_cur = sgBucketOffset(min.x(), min.y(), i, j);
-	        clip_and_write_poly( path, index, area, b_cur, shape,
+	        clip_and_write_poly( path, index, poly_type, b_cur, shape,
                                      preserve3d );
 	    }
 	}
@@ -440,7 +435,7 @@ void tgChopBigSimplePolygon( const string& path, AreaType area,
 	    bottom_clip = horizontal_clip( shape, clip_line, Below );
 	}
 
-	tgChopBigSimplePolygon( path, area, bottom_clip, preserve3d );
+	tgChopBigSimplePolygon( path, poly_type, bottom_clip, preserve3d );
     }
 
     {
@@ -469,6 +464,6 @@ void tgChopBigSimplePolygon( const string& path, AreaType area,
 	    top_clip = horizontal_clip( shape, clip_line, Above );
 	}
 
-	tgChopBigSimplePolygon( path, area, top_clip, preserve3d );
+	tgChopBigSimplePolygon( path, poly_type, top_clip, preserve3d );
     }
 }

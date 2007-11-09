@@ -36,7 +36,6 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 
 #ifdef _MSC_VER
@@ -209,18 +208,16 @@ int main( int argc, char **argv ) {
 	    // huge polygons into something more managable
 
 	    if ( force_area_type.length() > 0 ) {
-		AreaType area = get_area_type( force_area_type );
-		gshhs_split_polygon(path, area, shape, s, n);
+		gshhs_split_polygon(path, force_area_type, shape, s, n);
 	    } else {
-		gshhs_split_polygon(path, DefaultArea, shape, s, n);
+		gshhs_split_polygon(path, "Default", shape, s, n);
 	    }
 	} else {
 	    // small enough to feed to gpc directly
 	    if ( force_area_type.length() > 0 ) {
-		AreaType area = get_area_type( force_area_type );
-		split_and_shift_chunk(path, area, shape);
+		split_and_shift_chunk(path, force_area_type, shape);
 	    } else {
-		split_and_shift_chunk(path, DefaultArea, shape);
+		split_and_shift_chunk(path, "Default", shape);
 	    }
 	}
 

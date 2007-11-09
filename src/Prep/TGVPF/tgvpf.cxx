@@ -47,7 +47,6 @@ SG_USING_STD(vector);
 #include <Geometry/util.hxx>
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 #include <vpf/vpf.hxx>
 
@@ -285,7 +284,7 @@ main (int argc, const char **argv)
 				// Default values
   tg::Rectangle bounds(Point3D(-180, -90, 0), Point3D(180, 90, 0));
   bool invert = false;
-  AreaType material_type = DefaultArea;
+  string material_type = "Default";
   int width = -1;		// use default
   double max_segment = 0.0;     // zero = no segement splitting
   string work_dir = ".";
@@ -342,7 +341,7 @@ main (int argc, const char **argv)
     }
 
     else if (arg.find("--material=") == 0) {
-        material_type = get_area_type(arg.substr(11).c_str());
+        material_type = arg.substr(11);
         argPos++;
     }
 
@@ -437,7 +436,7 @@ main (int argc, const char **argv)
       cout << "Minimum area: " << min_area << endl;
   if (max_area > -1)
       cout << "Maximum area: " << max_area << endl;
-  cout << "Material type: " << get_area_name(material_type) << endl;
+  cout << "Material type: " << material_type << endl;
   if (width > -1)
       cout << "Point and line width: " << width << endl;
   for (unsigned int x = 0; x < attributes.size(); x++) {

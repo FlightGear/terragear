@@ -36,7 +36,6 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 
 #include "gshhs.h"
@@ -49,14 +48,6 @@
 
 SG_USING_STD(cout);
 SG_USING_STD(cin);
-
-// return the type of the shapefile record
-AreaType get_shapefile_type(int rec) {
-    string area;
-
-    return get_area_type( area );
-}
-
 
 // write result to unique file name
 void write_result( const TGPolygon& result ) {

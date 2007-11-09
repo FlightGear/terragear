@@ -38,7 +38,7 @@
 
 #include <Geometry/trinodes.hxx>
 #include <Geometry/trisegs.hxx>
-#include <Polygon/names.hxx>
+#include <Clipper/priorities.hxx>
 #include <Polygon/polygon.hxx>
 
 #define REAL double

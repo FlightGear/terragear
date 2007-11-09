@@ -1366,8 +1366,8 @@ void build_airport( string airport_id, float alt_m,
     string holepath = root + "/AirportArea";
     // long int poly_index = poly_index_next();
     // write_boundary( holepath, b, hull, poly_index );
-    tgChopNormalPolygon( holepath, HoleArea, divided_base, true );
-    tgChopNormalPolygon( holepath, AirportArea, apt_clearing, false );
+    tgChopNormalPolygon( holepath, "Hole", divided_base, true );
+    tgChopNormalPolygon( holepath, "Airport", apt_clearing, false );
     
 }
 

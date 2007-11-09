@@ -1,6 +1,6 @@
 noinst_LIBRARIES = libClipper.a
 
-libClipper_a_SOURCES = clipper.cxx clipper.hxx
+libClipper_a_SOURCES = clipper.cxx clipper.hxx priorities.cxx priorities.hxx
 
 noinst_PROGRAMS = testclipper
 
