@@ -138,11 +138,15 @@ else
   fi
 
   GDAL_LIBS="$GDAL_LIBS $GDAL_DEP_LIBS"
+  if test "$USE_OGR" = "1"; then
+        OGR_DECODE=OGRDecode
+  fi
 
   AC_SUBST(GDAL_LIBS)
   AC_SUBST(GDAL_CFLAGS)
   AC_SUBST(USE_GDAL)
   AC_SUBST(USE_OGR)
+  AC_SUBST(OGR_DECODE)
 fi
 
 dnl Check for MS Windows environment
@@ -460,6 +464,7 @@ AC_CONFIG_FILES([ \
 	src/Prep/GSHHS/Makefile \
 	src/Prep/MergerClipper/Makefile \
 	src/Prep/Photo/Makefile \
+	src/Prep/OGRDecode/Makefile \
 	src/Prep/ShapeFile/Makefile \
 	src/Prep/TGVPF/Makefile \
 	src/Prep/Terra/Makefile \

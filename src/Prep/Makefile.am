@@ -12,4 +12,7 @@ SUBDIRS = \
 	Terra \
 	TerraFit \
 	Tower \
-	UserDef
+	UserDef \
+	$(OGR_DECODE)
+
+EXTRA_SUBDIRS=OGRDecode
