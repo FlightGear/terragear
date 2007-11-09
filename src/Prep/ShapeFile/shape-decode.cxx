@@ -593,8 +593,10 @@ void usage(char* progname) {
     SG_LOG( SG_GENERAL, SG_ALERT, "--continue-on-errors" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        Continue even if the file seems fishy" );
     SG_LOG( SG_GENERAL, SG_ALERT, "" );
-    SG_LOG( SG_GENERAL, SG_ALERT, "--start-record" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--start-record record-number" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        Start processing at the specified record number (first record num=0)" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--end-record record-number" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        End processing at (immediately after) the specified record number (first record num=0)" );
     SG_LOG( SG_GENERAL, SG_ALERT, "" );
     SG_LOG( SG_GENERAL, SG_ALERT, "<shape_file>" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        Name of the shape-file to process, without .shp extension" );
@@ -610,7 +612,7 @@ int main( int argc, char **argv ) {
     int i;
     int pointwidth = 500;
     float force_linewidth = -1, linewidth = 50.0;
-    int start_record = 0;
+    int start_record = 0, end_record = -1;
     char* progname=argv[0];
     SGPath programPath(progname);
     string force_area_type = "";
@@ -670,6 +672,12 @@ int main( int argc, char **argv ) {
 	    if (argc<3)
 		usage(progname);
 	    start_record=atoi(argv[2]);
+	    argv+=2;
+	    argc-=2;
+	} else if (!strcmp(argv[1],"--end-record")) {
+	    if (argc<3)
+		usage(progname);
+	    end_record=atoi(argv[2]);
 	    argv+=2;
 	    argc-=2;
         } else if (!strcmp(argv[1],"--ivlanemarkings")) {
@@ -758,7 +766,14 @@ int main( int argc, char **argv ) {
 	exit(-1);
     }
 
-    for ( i = start_record; i < nEntities; i++ ) {
+    if (end_record<0 || end_record>=nEntities)
+            end_record=nEntities-1;
+    if (start_record<0)
+            start_record=0;
+    if (start_record>nEntities)
+            start_record=nEntities;
+    
+    for ( i = start_record; i <= end_record; i++ ) {
 	// fetch i-th record (shape)
         SHPObject *psShape;
 
