@@ -1,4 +1,4 @@
-DIST_SUBDIRS = Win32
+EXTRA_SUBDIRS = Win32
 
 SUBDIRS = \
 	Array \

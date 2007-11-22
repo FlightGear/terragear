@@ -8,7 +8,7 @@ AC_CONFIG_SRCDIR([src/Lib/DEM/dem.cxx])
 AC_PREREQ(2.59)
 
 dnl Initialize the automake stuff
-AM_INIT_AUTOMAKE(TerraGear, 0.9.8)
+AM_INIT_AUTOMAKE(TerraGear, 0.9.8-wcsp)
 
 dnl Checks for programs.
 AC_PROG_MAKE_SET

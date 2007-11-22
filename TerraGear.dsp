@@ -97,6 +97,36 @@ SOURCE=.\src\BuildTiles\Clipper\clipper.hxx
 !ENDIF 
 
 # End Source File
+# Begin Source File
+
+SOURCE=.\src\BuildTiles\Clipper\priorities.cxx
+
+!IF  "$(CFG)" == "TerraGear - Win32 Release"
+
+# PROP Intermediate_Dir "Release\Lib_Clipper"
+
+!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
+
+# PROP Intermediate_Dir "Debug\Lib_Clipper"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\BuildTiles\Clipper\priorities.hxx
+
+!IF  "$(CFG)" == "TerraGear - Win32 Release"
+
+# PROP Intermediate_Dir "Release\Lib_Clipper"
+
+!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
+
+# PROP Intermediate_Dir "Debug\Lib_Clipper"
+
+!ENDIF 
+
+# End Source File
 # End Group
 # Begin Group "Lib_GenOutput"
 
@@ -857,21 +887,6 @@ SOURCE=.\src\Lib\Polygon\index.cxx
 # Begin Source File
 
 SOURCE=.\src\Lib\Polygon\index.hxx
-
-!IF  "$(CFG)" == "TerraGear - Win32 Release"
-
-# PROP Intermediate_Dir "Release\Lib_Polygon"
-
-!ELSEIF  "$(CFG)" == "TerraGear - Win32 Debug"
-
-# PROP Intermediate_Dir "Debug\Lib_Polygon"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=.\src\Lib\Polygon\names.cxx
 
 !IF  "$(CFG)" == "TerraGear - Win32 Release"
 
