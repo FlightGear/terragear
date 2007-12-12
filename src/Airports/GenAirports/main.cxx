@@ -380,6 +380,8 @@ int main( int argc, char **argv ) {
             // ignore frequency entries
         } else if ( token[0] == "99" ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "End of file reached" );
+	} else if ( token[0] == "00" ) {
+		// ??
         } else {
             SG_LOG( SG_GENERAL, SG_ALERT, 
                     "Unknown line in file: " << line );
