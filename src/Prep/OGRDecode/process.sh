@@ -3,12 +3,12 @@
 # Put your datasource here
 DATASOURCE="PG:dbname=$PGDATABASE host=$PGHOST user=$PGUSER"
 
-WORKBASE=$HOME/workdir
+WORKBASE=$HOME/workdirs/world_scenery
 
-OGRDECODE="$HOME/install_headless/shape-decode --continue-on-errors --max-segment 400 $*"
+OGRDECODE="$HOME/install_headless/bin/ogr-decode --continue-on-errors --max-segment 400 $*"
 
 # World land mass
-${OGRDECODE} --area-type Default "${DATASOURCE}" ${WORKBASE}/Shape-LandMass v0_landmass
+${OGRDECODE} --area-type Default ${WORKBASE}/Shape-LandMass "${DATASOURCE}" v0_landmass
 
 # Inland moving water: rivers/streams, intermittent streams, and canals
 ${OGRDECODE} --area-type Stream --line-width 40 ${WORKBASE}/Shape-Rivers "${DATASOURCE}" v0_stream
