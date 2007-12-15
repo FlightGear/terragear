@@ -4,6 +4,8 @@
 #include "Geom.h"
 #include "Array.h"
 
+namespace Terra {
+
 #define NOT_IN_HEAP -47
 
 //
@@ -54,6 +56,6 @@ public:
     heap_node *kill(int i);
 };
 
-
+}; // namespace Terra
 
 #endif

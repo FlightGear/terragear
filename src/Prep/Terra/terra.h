@@ -5,6 +5,7 @@
 #include "Map.h"
 #include "Mask.h"
 
+namespace Terra {
 
 extern GreedySubdivision *mesh;
 extern Map *DEM;
@@ -34,5 +35,6 @@ extern void output_dem(ostream&);
 
 extern void process_cmdline(int argc, char **argv);
 
+}; // namespace Terra
 
 #endif

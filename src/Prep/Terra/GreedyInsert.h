@@ -5,6 +5,8 @@
 #include "Subdivision.h"
 #include "Map.h"
 
+namespace Terra {
+
 class TrackedTriangle : public Triangle
 {
     //
@@ -88,5 +90,7 @@ public:
 #define DATA_POINT_USED    1
 #define DATA_POINT_IGNORED 2
 #define DATA_VALUE_UNKNOWN 3
+
+}; // namespace Terra
 
 #endif

@@ -3,6 +3,8 @@
 #include "Geom.h"
 #include "Map.h"
 
+namespace Terra {
+
 using std::cerr;
 using std::endl;
 
@@ -78,3 +80,5 @@ Map *readPGM(istream& in)
 
     return map;
 }
+
+}; // namespace Terra

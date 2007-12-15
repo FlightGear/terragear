@@ -13,6 +13,7 @@ SG_USING_STD(ostream);
 SG_USING_STD(ofstream);
 SG_USING_STD(streampos);
 
+namespace Terra {
 
 void generate_output(char *filename, FileFormat format)
 {
@@ -202,3 +203,5 @@ void output_dem(ostream& out)
     out << endl;
     cerr << ">> Done." << endl;
 }
+
+}; // namespace Terra

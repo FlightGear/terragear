@@ -3,10 +3,13 @@
 #include "GreedyInsert.h"
 
 #include "Mask.h"
-extern ImportMask *MASK;
 
 using std::cerr;
 using std::endl;
+
+namespace Terra {
+
+extern ImportMask *MASK;
 
 
 void TrackedTriangle::update(Subdivision& s)
@@ -288,3 +291,5 @@ real GreedySubdivision::eval(int x,int y)
 
     return z_plane(x,y);
 }
+
+}; // namespace Terra

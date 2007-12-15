@@ -7,6 +7,8 @@
 
 using std::istream;
 
+namespace Terra {
+
 class ImportMask
 {
 
@@ -49,5 +51,7 @@ inline real& RealMask::ref(int i, int j)
 }
 
 extern RealMask *readMask(istream&);
+
+}; // namespace Terra
 
 #endif

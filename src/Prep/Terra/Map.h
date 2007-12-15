@@ -8,6 +8,8 @@ using std::istream;
 
 #include "Geom.h"
 
+namespace Terra {
+
 class Map
 {
 public:
@@ -102,8 +104,6 @@ void DirectMap<T>::textRead(istream& in)
 	}
 }
 
-
-
-
+}; // namespace Terra
 
 #endif

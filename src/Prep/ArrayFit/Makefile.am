@@ -12,3 +12,4 @@ demo_SOURCES = demo.cxx
 demo_LDADD = $(support_LIBS) -lz
 
 INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/Lib
+

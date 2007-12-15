@@ -8,11 +8,11 @@
 main(int argc, char **argv)
 {
     glutInit(&argc, argv);
-    process_cmdline(argc, argv);
+    Terra::process_cmdline(argc, argv);
 
 
-    gui_init();
+    Terra::gui_init();
 
 
-    gui_interact();
+    Terra::gui_interact();
 }

@@ -3,6 +3,8 @@
 using std::cerr;
 using std::endl;
 
+namespace Terra {
+
 void scripted_preinsertion(istream& script)
 {
     char op[4];
@@ -109,3 +111,5 @@ void display_greedy_insertion(void (*callback)())
 
     announce_goal();
 }
+
+}; // namespace Terra

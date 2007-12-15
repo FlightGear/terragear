@@ -1,6 +1,8 @@
 #ifndef VEC3_INCLUDED // -*- C++ -*-
 #define VEC3_INCLUDED
 
+namespace Terra {
+
 class Vec3 {
 protected:
     real elt[3];
@@ -174,5 +176,6 @@ inline istream& operator>>(istream& in, Vec3& v)
     return in >> c >> v[0] >> v[1] >> v[2] >> c;
 }
 
+}; // namespace Terra
 
 #endif

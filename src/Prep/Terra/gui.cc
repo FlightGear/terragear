@@ -10,6 +10,7 @@
 using std::cout;
 using std::endl;
 
+namespace Terra {
 
 int mesh_view;
 int surf_view;
@@ -461,3 +462,5 @@ void xglutKeepAspect(float width, float height)
     }
 #endif
 }
+
+}; // namespace Terra

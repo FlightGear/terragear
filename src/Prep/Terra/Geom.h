@@ -11,6 +11,8 @@
 #include <assert.h>
 #endif
 
+namespace Terra {
+
 typedef double real;
 #define EPS 1e-6
 #define EPS2 (EPS*EPS)
@@ -20,9 +22,13 @@ typedef int boolean;
 enum Axis {X, Y, Z, W};
 enum Side {Left=-1, On=0, Right=1};
 
+}; // namespace Terra
+
 #include <math.h>
 #include "Vec2.h"
 #include "Vec3.h"
+
+namespace Terra {
 
 #ifndef NULL
 #define NULL 0
@@ -174,5 +180,6 @@ inline ostream& operator<<(ostream &out, const Line& l)
     return out << "Line(a=" << l.a << " b=" << l.b << " c=" << l.c << ")";
 }
 
+}; // namespace Terra
 
 #endif

@@ -5,6 +5,7 @@
 using std::cerr;
 using std::endl;
 
+namespace Terra {
 
 void Heap::swap(int i,int j)
 {
@@ -121,3 +122,6 @@ heap_node *Heap::kill(int i)
 
     return &ref(size);
 }
+
+}; // namespace Terra
+

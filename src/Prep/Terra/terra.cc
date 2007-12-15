@@ -2,9 +2,9 @@
 
 main(int argc, char **argv)
 {
-    process_cmdline(argc, argv);
+    Terra::process_cmdline(argc, argv);
 
-    greedy_insertion();
+    Terra::greedy_insertion();
 
-    generate_output();
+    Terra::generate_output();
 }

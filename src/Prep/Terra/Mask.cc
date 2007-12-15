@@ -8,6 +8,7 @@
 using std::cerr;
 using std::endl;
 
+namespace Terra {
 
 RealMask *readMask(istream& in)
 {
@@ -61,3 +62,5 @@ RealMask *readMask(istream& in)
 
     return mask;
 }
+
+}; // namespace Terra

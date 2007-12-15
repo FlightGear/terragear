@@ -9,6 +9,8 @@ using std::cin;
 using std::cerr;
 using std::endl;
 
+namespace Terra {
+
 GreedySubdivision *mesh;
 Map *DEM;
 
@@ -187,3 +189,6 @@ void process_cmdline(int argc, char **argv)
 	in.close();
     }
 }
+
+}; // namespace Terra
+

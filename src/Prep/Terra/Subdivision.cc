@@ -8,6 +8,7 @@
 using std::cerr;
 using std::endl;
 
+namespace Terra {
 
 Edge *Subdivision::makeEdge(Vec2& org, Vec2& dest)
 {
@@ -430,3 +431,5 @@ void Triangle::update(Subdivision&)
 
 
 }
+
+}; // namespace Terra

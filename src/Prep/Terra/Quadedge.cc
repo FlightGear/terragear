@@ -6,6 +6,8 @@
 using std::cerr;
 using std::endl;
 
+namespace Terra {
+
 Edge::Edge(const Edge&)
 {
     cerr << "Edge: Edge assignments are forbidden." << endl;
@@ -83,3 +85,6 @@ void splice(Edge *a, Edge *b)
     alpha->next = t3;
     beta->next = t4;
 }
+
+}; // namespace Terra
+

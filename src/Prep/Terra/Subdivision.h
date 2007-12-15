@@ -3,6 +3,8 @@
 
 #include "Quadedge.h"
 
+namespace Terra {
+
 class Subdivision;
 
 class Triangle : public Labelled {
@@ -89,5 +91,6 @@ inline ostream& operator<<(ostream& out, Triangle& t)
 	       << t.point3() << ")";
 }
 
+}; // namespace Terra
 
 #endif

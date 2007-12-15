@@ -6,6 +6,8 @@
 using std::ostream;
 using std::istream;
 
+namespace Terra {
+
 class Vec2 {
 protected:
     real elt[2];
@@ -169,5 +171,6 @@ inline istream& operator>>(istream& in, Vec2& v)
     return in >> c >> v[0] >> v[1] >> c;
 }
 
+}; // namespace Terra
 
 #endif

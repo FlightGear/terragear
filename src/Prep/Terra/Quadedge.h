@@ -3,6 +3,8 @@
 
 #include "Geom.h"
 
+namespace Terra {
+
 class Triangle;
 
 class Edge : public Labelled {
@@ -76,5 +78,7 @@ inline ostream& operator<<(ostream& out, const Edge *e)
 {
     return out << "{ " << e->Org() << " ---> " << e->Dest() << " }";
 }
+
+}; // namespace Terra
 
 #endif

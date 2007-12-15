@@ -11,6 +11,7 @@
 #define MIN(a,b) (((a)>(b))?(b):(a))
 #endif
 
+namespace Terra {
 
 template<class T>
 class array {
@@ -120,5 +121,7 @@ inline T& array2<T>::ref(int i, int j)
 #endif
     return data[j*w + i];
 }
+
+}; // namespace Terra
 
 #endif
