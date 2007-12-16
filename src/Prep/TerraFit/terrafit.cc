@@ -29,6 +29,8 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <errno.h>
+#include <getopt.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <zlib.h>
@@ -198,8 +200,8 @@ void walk_path(const std::string& path) {
         }
 }
 
-void usage(char* progname, char* msg) {
-        if (msg!=NULL)
+void usage(char* progname, const std::string& msg) {
+        if (msg.size()!=0)
                 SG_LOG(SG_GENERAL,SG_ALERT, msg);
         SG_LOG(SG_GENERAL,SG_INFO, "Usage: " << progname << " [options] <file | path to walk>");
         SG_LOG(SG_GENERAL,SG_INFO, "\t -h | --help ");
@@ -228,8 +230,49 @@ void usage(char* progname, char* msg) {
         SG_LOG(SG_GENERAL,SG_INFO, ".fit.gz file will need to retriangulate the surface.");
 }
 
+struct option options[]={
+        {"help",no_argument,NULL,'h'},
+        {"minnodes",required_argument,NULL,'m'},
+        {"maxnodes",required_argument,NULL,'x'},
+        {"maxerror",required_argument,NULL,'e'},
+        {"version",no_argument,NULL,'v'},
+        {NULL,0,NULL,0}
+};
+
 int main(int argc, char** argv) {
         sglog().setLogLevels( SG_ALL, SG_DEBUG );
-        walk_path(argv[1]); // FIXME: parse options
+        int option;
+        
+        while ((option=getopt_long(argc,argv,"",options,NULL))!=-1) {
+                switch (option) {
+                case 'h':
+                        usage(argv[0],"");
+                        break;
+                case 'm':
+                        min_points=atoi(optarg);
+                        break;
+                case 'x':
+                        point_limit=atoi(optarg);
+                        break;
+                case 'e':
+                        error_threshold=atof(optarg);
+                        break;
+                case 'v':
+                        SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " Version 1.0");
+                        exit(0);
+                        break;
+                case '?':
+                        usage(argv[0],std::string("Unknown option:")+(char)optopt);
+                        exit(1);
+                }
+        }
+        if (optind<argc) {
+                while (optind<argc) {
+                        walk_path(argv[optind++]);
+                }
+        } else {
+                usage(argv[0],"Insufficient arguments");
+                exit(1);
+        }
 }
 
