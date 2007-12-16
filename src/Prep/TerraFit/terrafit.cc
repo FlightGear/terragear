@@ -46,11 +46,28 @@
 #include <Prep/Terra/Map.h>
 #include <Prep/Terra/Mask.h>
 
+/*
+ * Benchmark: Processing 800 individual buckets:
+ * terrafit.cc: 52s 48s 48s
+ * terrafit.py: 217s 219s 223s
+ *
+ * terrafit.cc takes on 20% of the time that terrafit.py took!
+ */
 class ArrayMap: public Terra::Map {
 public:
         ArrayMap(TGArray& array): array(array) {
                 width=array.get_cols();
                 height=array.get_rows();
+                min=max=eval(0,0);
+                for (int i=0;i<width;i++) {
+                        for (int j=0;j<width;j++) {
+                                Terra::real v=eval(i,j);
+                                if (v<min)
+                                        min=v;
+                                if (v>max)
+                                        max=v;
+                        }
+                }
                 depth=32;
         }
         
@@ -72,6 +89,7 @@ namespace Terra {
 /* GreedyInsertion requires us to declare a mask, even if we
  * don't need one...
  */
+static Terra::ImportMask default_mask;
 Terra::ImportMask *MASK=&default_mask;
 }; // namespace Terra
 
@@ -107,13 +125,21 @@ void greedy_insertion(Terra::GreedySubdivision* mesh)
     announce_goal(mesh);
 }
 
+bool endswith(const std::string& s1, const std::string& suffix) {
+        size_t s1len=s1.size();
+        size_t sufflen=suffix.size();
+        if (s1len<sufflen)
+                return false;
+        return s1.compare(s1len-sufflen,sufflen,suffix)==0;
+}
+
 void fit_file(const std::string& path) {
         SG_LOG(SG_GENERAL, SG_INFO,"Working on file '" << path << "'");
         
         std::string infile,outfile;
-        if (path.compare(path.size()-7,7,".arr.gz")==0) {
+        if (endswith(path,".arr.gz")) {
                 infile=path.substr(0,path.size()-7);
-        } else if (path.compare(path.size()-4,4,".arr")==0) {
+        } else if (endswith(path,".arr")) {
                 infile=path.substr(0,path.size()-4);
         } else {
                 /* actually should not happen */
@@ -176,7 +202,7 @@ void walk_path(const std::string& path) {
                 return;
         }
         
-        if (path.compare(path.size()-7,7,".arr.gz")==0 || path.compare(path.size()-4,4,".arr")==0) {
+        if (endswith(path,".arr.gz") || endswith(path,".arr")) {
                 fit_file(path);
         } else if (S_ISDIR(statbuf.st_mode)) {
                 DIR* dir=opendir(path.c_str());
@@ -266,6 +292,7 @@ int main(int argc, char** argv) {
                         exit(1);
                 }
         }
+        std::cout << min_points << " " << point_limit << " " << error_threshold << "\n";
         if (optind<argc) {
                 while (optind<argc) {
                         walk_path(argv[optind++]);
