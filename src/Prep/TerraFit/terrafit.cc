@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
         sglog().setLogLevels( SG_ALL, SG_DEBUG );
         int option;
         
-        while ((option=getopt_long(argc,argv,"",options,NULL))!=-1) {
+        while ((option=getopt_long(argc,argv,"hm:x:e:v",options,NULL))!=-1) {
                 switch (option) {
                 case 'h':
                         usage(argv[0],"");
