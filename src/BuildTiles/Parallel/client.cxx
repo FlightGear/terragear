@@ -46,6 +46,7 @@ SG_USING_STD(vector);
 string work_base = ".";
 string output_base = ".";
 vector<string> load_dirs;
+bool do_overwrite = true;
 
 
 // check if it is ok to run
@@ -176,6 +177,30 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
     return -1;
 }
 
+static bool file_exists( const string& file ) {
+    struct stat buf;
+
+    if ( stat( file.c_str(), &buf ) == 0 ) {
+	return true;
+    } else {
+	return false;
+    }
+}
+
+// check if the tile really has to be generated
+static bool must_generate( const SGBucket& b ) {
+    if (do_overwrite)
+            return true;
+    
+    string btg_file = output_base + "/" + b.gen_base_path()
+	+ "/" + b.gen_index_str() + ".btg.gz";
+    if ( file_exists( btg_file ) ) {
+	return false;
+    }
+
+    return true;
+}
+
 
 // build the specified tile, return true if contruction completed
 // successfully
@@ -225,6 +250,7 @@ usage (const string name)
   cout << "  --host=<address>" << endl;
   cout << "  --port=<number>" << endl;
   cout << "  --rude" << endl;
+  cout << "  --no-overwrite" << endl;
   cout << "  --cover=<landcover-raster>" << endl;
   cout << "<load directory...>" << endl;
   exit(-1);
@@ -256,6 +282,8 @@ int main(int argc, char *argv[]) {
 	port = atoi(arg.substr(7).c_str());
       } else if (arg == "--rude") {
 	rude = true;
+      } else if (arg == "--no-overwrite") {
+	do_overwrite = true;
       } else if (arg.find("--cover=") == 0) {
 	cover = arg.substr(8);
       } else if (arg.find("--") == 0) {
@@ -296,7 +324,8 @@ int main(int argc, char *argv[]) {
     check_master_switch();
 
     while ( (tile = get_next_task( host, port, last_tile )) >= 0 ) {
-	result = construct_tile( SGBucket(tile), result_file, cover );
+        SGBucket bucket(tile);
+        result=!must_generate(bucket) || construct_tile( bucket, result_file, cover );
 	if ( result ) {
 	    last_tile = tile;
 	} else {
