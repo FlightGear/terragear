@@ -3,7 +3,7 @@
 # Put your datasource here
 DATASOURCE="PG:dbname=$PGDATABASE host=$PGHOST user=$PGUSER"
 
-WORKBASE=$HOME/workdirs/world_scenery
+WORKBASE=$HOME/workdir
 
 OGRDECODE="$HOME/install_headless/bin/ogr-decode --continue-on-errors --max-segment 400 $*"
 
@@ -22,20 +22,20 @@ ${OGRDECODE} --area-type FloodLand ${WORKBASE}/Shape-Floodland "${DATASOURCE}" v
 
 # Population areas: cities and towns
 ${OGRDECODE} --area-type Urban ${WORKBASE}/Shape-Cities "${DATASOURCE}" v0_urban
-${OGRDECODE} --area-type Town ${WORKBASE}/Shape-Towns --point-width 400 "${DATASOURCE}" v0_town
+${OGRDECODE} --area-type Town --point-width 400 ${WORKBASE}/Shape-Towns "${DATASOURCE}" v0_town
 
 # Forest: deciduous broad, evergreen broad, mixed
 ${OGRDECODE} --area-type DeciduousBroadCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_deciduousbroadcover
 ${OGRDECODE} --area-type EvergreenBroadCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_evergreenbroadcover
 ${OGRDECODE} --area-type MixedForestCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_mixedforestcover
 
-# Ground cover: sand, tidal, lava, barren, grass, shrub, herb-tundra
+# Ground cover: sand, tidal, lava, barren, grass, scrub, herb-tundra
 ${OGRDECODE} --area-type Sand ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_sand
 ${OGRDECODE} --area-type Littoral ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_marsh
 ${OGRDECODE} --area-type Lava ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_lava
 ${OGRDECODE} --area-type BarrenCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_barrencover
 ${OGRDECODE} --area-type GrassCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_grasscover
-${OGRDECODE} --area-type ShrubCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_shrubcover
+${OGRDECODE} --area-type ScrubCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_scrubcover
 ${OGRDECODE} --area-type HerbTundraCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" v0_herbtundracover
 
 # Ice cover: glaciers, pack ice, and sea ice
