@@ -292,7 +292,9 @@ int main(int argc, char** argv) {
                         exit(1);
                 }
         }
-        std::cout << min_points << " " << point_limit << " " << error_threshold << "\n";
+        SG_LOG(SG_GENERAL, SG_INFO, "Min points = " << min_points);
+        SG_LOG(SG_GENERAL, SG_INFO, "Max points = " << point_limit);
+        SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);
         if (optind<argc) {
                 while (optind<argc) {
                         walk_path(argv[optind++]);
