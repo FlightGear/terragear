@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
       } else if (arg == "--rude") {
 	rude = true;
       } else if (arg == "--no-overwrite") {
-	do_overwrite = true;
+	do_overwrite = false; 
       } else if (arg.find("--cover=") == 0) {
 	cover = arg.substr(8);
       } else if (arg.find("--") == 0) {
@@ -325,7 +325,12 @@ int main(int argc, char *argv[]) {
 
     while ( (tile = get_next_task( host, port, last_tile )) >= 0 ) {
         SGBucket bucket(tile);
-        result=!must_generate(bucket) || construct_tile( bucket, result_file, cover );
+	if (!must_generate(bucket)) {
+	    cout << "No need to build tile " << tile << "\n";
+	    result=true;
+	} else {
+	    result=construct_tile( bucket, result_file, cover );
+	}
 	if ( result ) {
 	    last_tile = tile;
 	} else {
