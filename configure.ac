@@ -110,6 +110,10 @@ AC_ARG_ENABLE(ogrdecode,
               AC_HELP_STRING([--disable-ogrdecode],
                              [enable ogrdecode tool (default depending on OGR availability)]))
 
+AC_ARG_ENABLE(poly2ogr,
+              AC_HELP_STRING([--disable-poly2ogr],
+                             [enable poly2ogr tool (default depending on OGR availability)]))
+
 if test "$with_gdal" != "no" ; then
   if test "`basename xx/$with_gdal`" = "gdal-config" ; then
     # gdal-config was specified
@@ -159,7 +163,15 @@ if test x$have_ogr != xyes -a x$enable_ogrdecode = xyes; then
                 using --with-gdal.])
 fi
 
+if test x$have_ogr != xyes -a x$enable_poly2ogr = xyes; then
+  AC_MSG_ERROR([poly2ogr was forcefully enabled but OGR was not found.
+                Please make sure that you have GDAL installed with OGR enabled
+                and gdal-config in your PATH resp. the path to gdal-config provided
+                using --with-gdal.])
+fi
+
 AM_CONDITIONAL(WANT_OGRDECODE, test x$have_ogr = xyes -a x$enable_ogrdecode != xno)
+AM_CONDITIONAL(WANT_POLY2OGR, test x$have_ogr = xyes -a x$enable_poly2ogr != xno)
 
 dnl Check for MS Windows environment
 AC_CHECK_HEADER(windows.h)
@@ -486,6 +498,7 @@ AC_CONFIG_FILES([ \
 	src/Utils/Makefile \
 	src/Utils/cdrom/Makefile \
 	src/Utils/download-map/Makefile \
+	src/Utils/poly2ogr/Makefile \
 ])
 AC_OUTPUT
 
