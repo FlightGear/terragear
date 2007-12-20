@@ -180,8 +180,6 @@ void fit_file(const std::string& path) {
                 return;
         }
         
-        gzprintf(fp,"%d\n",mesh->pointCount());
-        
         for (int x=0;x<DEM->width;x++) {
                 for (int y=0;y<DEM->height;y++) {
                         if (mesh->is_used(x,y) != DATA_POINT_USED)
