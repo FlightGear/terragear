@@ -127,7 +127,7 @@ bool TGClipper::load_polys(const string& path) {
             } else {
                 startz = -9999.0;
             }
-	    p = Point3D(startx, starty, startz);
+	    p = Point3D(startx+0.2*SG_EPSILON, starty+0.2*SG_EPSILON, startz);
 	    poly.add_node( i, p );
             if ( poly3d ) {
                 fixed_elevations.unique_add( p );
@@ -141,7 +141,7 @@ bool TGClipper::load_polys(const string& path) {
                 } else {
                     z = -9999.0;
                 }
-		p = Point3D( x, y, z );
+		p = Point3D( x+0.2*SG_EPSILON, y+0.2*SG_EPSILON, z );
 		poly.add_node( i, p );
                 if ( poly3d ) {
                     fixed_elevations.unique_add( p );
@@ -161,7 +161,7 @@ bool TGClipper::load_polys(const string& path) {
                  && (fabs(startz - lastz) < SG_EPSILON) ) {
 		// last point same as first, discard
 	    } else {
-		p = Point3D( lastx, lasty, lastz );
+		p = Point3D( lastx+0.2*SG_EPSILON, lasty+0.2*SG_EPSILON, lastz );
 		poly.add_node( i, p );
                 if ( poly3d ) {
                     fixed_elevations.unique_add( p );
