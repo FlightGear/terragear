@@ -222,15 +222,16 @@ int main( int argc, char **argv ) {
     }
 
     // make work directory
+    string airportareadir=work_dir+"/AirportArea";
 #ifdef _MSC_VER
-    fg_mkdir( work_dir.c_str() );
+    fg_mkdir( airportareadir.c_str() );
 #else
-    string command = "mkdir -p " + work_dir;
+    string command = "mkdir -p " + airportareadir;
     system( command.c_str() );
 #endif
 
     // initialize persistant polygon counter
-    string counter_file = work_dir + "/poly_counter";
+    string counter_file = airportareadir+"/poly_counter";
     poly_index_init( counter_file );
 
     sg_gzifstream in( input_file );

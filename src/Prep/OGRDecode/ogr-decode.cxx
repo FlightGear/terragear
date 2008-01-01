@@ -495,7 +495,7 @@ int main( int argc, char **argv ) {
 #endif
 
     // initialize persistant polygon counter
-    string counter_file = work_dir + "/../poly_counter";
+    string counter_file = work_dir + "/poly_counter";
     poly_index_init( counter_file );
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
