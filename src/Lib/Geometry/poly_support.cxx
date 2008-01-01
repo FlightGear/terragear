@@ -30,9 +30,12 @@
 #include <simgear/math/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/structure/exception.hxx>
 
 #include <Polygon/polygon.hxx>
 #include <Triangulate/trieles.hxx>
+
+#include <algorithm>
 
 #define REAL double
 extern "C" {
@@ -47,6 +50,7 @@ extern "C" {
 
 SG_USING_STD(cout);
 SG_USING_STD(endl);
+SG_USING_STD(sort);
 
 // Given a line segment specified by two endpoints p1 and p2, return
 // the slope of the line.
@@ -811,6 +815,46 @@ static Point3D point_inside_contour( TGContourNode *node, const TGPolygon &p ) {
 
 }
 
+static void intersect_yline_with_contour( double yline, TGContourNode *node, TGPolygon &p, vector < double > &xcuts ) {
+        int contour_num = node->get_contour_num();
+        const point_list& pts=p.get_contour(contour_num);
+        
+        point_list::size_type count = pts.size();
+        
+        cout << "intersect_yline_with_contour() yline=" << yline << endl;
+        
+        for ( int i = 0; i < count; ++i ) {
+                const Point3D &p0 = pts[ i ];
+                const Point3D &p1 = pts[ ( i + 1 ) % count ];
+                
+                double ymin=p0.y(),ymax=p0.y();
+                
+                if (p1.y()<ymin)
+                        ymin=p1.y();
+                if (ymax<p1.y())
+                        ymax=p1.y();
+                
+                cout << "intersect_yline_with_contour() p0=(" << p0.x() << ", " << p0.y() << ") p1=(" << p1.x() << ", " << p1.y() << ") ymin=" << ymin << " ymax=" << ymax << " yline=" << yline << endl;
+                
+                if (yline<ymin || ymax<yline) {
+                        cout << "intersect_yline_with_contour() does not intersect" << endl;
+                        continue;
+                }
+                
+                if (ymax-ymin<SG_EPSILON) {
+                        cout << "intersect_yline_with_contour() line is nearly y-parallel" << endl;
+                        // The line is nearly y-parallel, so add both ends
+                        xcuts.push_back(p0.x());
+                        xcuts.push_back(p1.x());
+                }
+                
+                double t=(yline-p0.y())/(p1.y()-p0.y());
+                double x=p0.x()+t*(p1.x()-p0.x());
+                
+                cout << "intersect_yline_with_contour() intersection at x=" << x << endl;
+                xcuts.push_back(x);
+        }
+}
 
 // recurse the contour tree and build up the point inside list for
 // each contour/hole
@@ -824,15 +868,65 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
 	    calc_point_inside( node->get_kid( i ), p );
 	}
     }
-
-    if ( contour_num >= 0 ) {
-	Point3D pi = point_inside_contour( node, p );
-	// cout << endl << "point inside(" << contour_num << ") = " << pi
-	//      << endl << endl;
-	p.set_point_inside( contour_num, pi );
+    
+    if ( contour_num <= 0 )
+            return;
+    
+    /*
+     * Find a line intersecting the contour and intersect it with the segments
+     * of our children. Sort the intersection points along the line. They then
+     * partition the line in IN/OUT parts. Find the longest segment and take
+     * its midpoint as point inside the contour.
+     */
+    const point_list& pts=p.get_contour(contour_num);
+    double ymin,ymax;
+    
+    ymin=ymax=pts[0].y();
+    
+    for (int i = 0; i < pts.size() ; ++i ) {
+            if (pts[i].y()<ymin)
+                    ymin=pts[i].y();
+            if (ymax<pts[i].y())
+                    ymax=pts[i].y();
     }
+    
+    cout << "calc_point_inside() contour_num=" << contour_num << " " << pts.size() << " points ymin=" << ymin << " ymax=" << ymax << endl;
+    
+    double yline=(ymin+ymax)/2.0;
+    vector < double > xcuts;
+    
+    intersect_yline_with_contour( yline, node, p, xcuts );
+    
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+            if ( node->get_kid( i ) != NULL ) {
+                    intersect_yline_with_contour( yline, node->get_kid( i ), p, xcuts );
+            }
+    }
+    
+    cout << "calc_point_inside() " << xcuts.size() << " intersections" << endl;
+    
+    sort( xcuts.begin(), xcuts.end() );
+    
+    if ( xcuts.size() < 2 || (xcuts.size() % 2) != 0 ) {
+            throw sg_exception("Geometric inconsistency in calc_point_inside()");
+    }
+    
+    double maxlen=0.0;
+    int longest=0;
+    for ( int i = 0; i < xcuts.size(); i+=2 ) {
+            double x0 = xcuts[ i ];
+            double x1 = xcuts[ i + 1 ];
+            
+            if (x1-x0 > maxlen) {
+                    maxlen=x1-x0;
+                    longest=i;
+            }
+    }
+    
+    double x = (xcuts[ longest ] + xcuts[ longest + 1 ])/2.0;
+    
+    p.set_point_inside( contour_num, Point3D(x, yline, -9999.0) );
 }
-
 
 static void print_contour_tree( TGContourNode *node, string indent ) {
     cout << indent << node->get_contour_num() << endl;
