@@ -159,7 +159,7 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
     FD_SET(sock, &ready);
 
     // block until input from sock
-    select(32, &ready, 0, 0, NULL);
+    select(sock+1, &ready, 0, 0, NULL);
     cout << " received reply" << endl;
 
     if ( FD_ISSET(sock, &ready) ) {

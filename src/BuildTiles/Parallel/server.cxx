@@ -364,7 +364,7 @@ int main( int argc, char **argv ) {
 	FD_SET(sock, &ready);
 	
 	// block until we get some input on sock
-	select(32, &ready, 0, 0, NULL);
+	select(sock+1, &ready, 0, 0, NULL);
 
 	if ( FD_ISSET(sock, &ready) ) {
 	    // printf("%d %d Incomming message --> ", getpid(), pid);
@@ -409,6 +409,7 @@ int main( int argc, char **argv ) {
 		}
 	    } else {
 		// This is the child
+		close(sock);
 
 		// cout << "new process started to handle new connection for "
 		//      << next_tile << endl;
