@@ -286,6 +286,10 @@ bool construct_tile( const SGBucket& b,
     system( command.c_str() );
 	
     FILE *fp = fopen( result_file.c_str(), "r" );
+    if ( fp == NULL) {
+	cout << "Missing results file " << result_file << endl;
+	return false;
+    }
     char line[256];
     while ( fgets( line, 256, fp ) != NULL ) {
         string line_str = line;
