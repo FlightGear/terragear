@@ -239,10 +239,12 @@ static bool must_generate( const SGBucket& b ) {
                     }
                     if ( have_btg && src_stat.st_mtime>btg_stat.st_mtime ) {
                             cout << " File " << file << " is newer than btg-file => rebuild\n";
+			    closedir(loaddir);
                             return true;
                     }
                     if ( have_stg && src_stat.st_mtime>stg_stat.st_mtime ) {
                             cout << " File " << file << " is newer than stg-file => rebuild\n";
+			    closedir(loaddir);
                             return true;
                     }
                     /* Ignore elevation data, as it is not used if we have no
@@ -253,6 +255,7 @@ static bool must_generate( const SGBucket& b ) {
                             continue;
                     if ( !(have_stg && have_btg) ) {
                             cout << " There is source-data (" << file << ") for tile " << b.gen_index_str() << " but .btg or .stg is missing => build\n";
+			    closedir(loaddir);
                             return true;
                     }
             }
