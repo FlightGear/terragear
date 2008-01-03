@@ -159,7 +159,7 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
     FD_SET(sock, &ready);
 
     // block until input from sock
-    select(32, &ready, 0, 0, NULL);
+    select(sock+1, &ready, 0, 0, NULL);
     cout << " received reply" << endl;
 
     if ( FD_ISSET(sock, &ready) ) {
@@ -239,10 +239,12 @@ static bool must_generate( const SGBucket& b ) {
                     }
                     if ( have_btg && src_stat.st_mtime>btg_stat.st_mtime ) {
                             cout << " File " << file << " is newer than btg-file => rebuild\n";
+			    closedir(loaddir);
                             return true;
                     }
                     if ( have_stg && src_stat.st_mtime>stg_stat.st_mtime ) {
                             cout << " File " << file << " is newer than stg-file => rebuild\n";
+			    closedir(loaddir);
                             return true;
                     }
                     /* Ignore elevation data, as it is not used if we have no
@@ -253,6 +255,7 @@ static bool must_generate( const SGBucket& b ) {
                             continue;
                     if ( !(have_stg && have_btg) ) {
                             cout << " There is source-data (" << file << ") for tile " << b.gen_index_str() << " but .btg or .stg is missing => build\n";
+			    closedir(loaddir);
                             return true;
                     }
             }
@@ -286,6 +289,10 @@ bool construct_tile( const SGBucket& b,
     system( command.c_str() );
 	
     FILE *fp = fopen( result_file.c_str(), "r" );
+    if ( fp == NULL) {
+	cout << "Missing results file " << result_file << endl;
+	return false;
+    }
     char line[256];
     while ( fgets( line, 256, fp ) != NULL ) {
         string line_str = line;
