@@ -325,8 +325,8 @@ void make_gpc_poly( const TGPolygon& in, gpc_polygon *out ) {
 
 	for ( int j = 0; j < in.contour_size( i ); ++j ) {
 	    p = in.get_pt( i, j );
-	    v_list.vertex[j].x = p.x()+2*SG_EPSILON;
-	    v_list.vertex[j].y = p.y()+2*SG_EPSILON;
+	    v_list.vertex[j].x = p.x();
+	    v_list.vertex[j].y = p.y();
 	}
 	v_list.num_vertices = in.contour_size( i );
 	gpc_add_contour( out, &v_list, in.get_hole_flag( i ) );
