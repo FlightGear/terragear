@@ -56,13 +56,10 @@ bool do_overwrite = true;
 void check_master_switch() {
     string file = work_base + "/Status/MASTER_ON";
 
-    FILE *fp = fopen( file.c_str(), "r" );
-    if ( fp == NULL ) {
+    if ( access( file.c_str(), F_OK ) != 0 ) {
 	cout << "MASTER_ON file, " << file << " not found ... exiting." << endl;
 	exit(0);
     }
-
-    fclose( fp );
 }
 
 
