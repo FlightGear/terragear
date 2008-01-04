@@ -58,7 +58,8 @@ public:
         ArrayMap(TGArray& array): array(array) {
                 width=array.get_cols();
                 height=array.get_rows();
-                min=max=eval(0,0);
+                min=30000;
+                max=-30000;
                 for (int i=0;i<width;i++) {
                         for (int j=0;j<width;j++) {
                                 Terra::real v=eval(i,j);
@@ -188,7 +189,7 @@ void fit_file(const std::string& path) {
                                 continue;
                         double vx,vy,vz;
                         vx=(inarray.get_originx()+x*inarray.get_col_step())/3600.0;
-                        vx=(inarray.get_originy()+y*inarray.get_row_step())/3600.0;
+                        vy=(inarray.get_originy()+y*inarray.get_row_step())/3600.0;
                         vz=DEM->eval(x,y);
                         gzprintf(fp,"%+03.8f %+02.8f %0.2f\n",vx,vy,vz);
                 }
