@@ -83,6 +83,8 @@ static const double half_cover_size = cover_size * 0.5;
 // to gaps.  If we put skirts around everything that might hide the
 // problem.
 static const double quarter_cover_size = cover_size * 0.25;
+
+double nudge=0.0;
  
 
 // Translate USGS land cover values into TerraGear area types.
@@ -437,6 +439,8 @@ static int load_polys( TGConstruct& c, const TGArray &array ) {
     string base = c.get_bucket().gen_base_path();
     string poly_path;
     int count = 0;
+    
+    clipper.nudge = nudge;
 
     // initialize clipper
     clipper.init();
@@ -1139,6 +1143,7 @@ static void usage( const string name ) {
     cout << "  --lat=<degrees>" << endl;
     cout << "  --xdist=<degrees>" << endl;
     cout << "  --ydist=<degrees>" << endl;
+    cout << "  --nudge=<float>" << endl;
     cout << "  --useUKgrid" << endl;
     cout << " ] <load directory...>" << endl;
     exit(-1);
@@ -1182,6 +1187,8 @@ int main(int argc, char **argv) {
 	    xdist = atof(arg.substr(8).c_str());
 	} else if (arg.find("--ydist=") == 0) {
 	    ydist = atof(arg.substr(8).c_str());
+	} else if (arg.find("--nudge=") == 0) {
+	    nudge = atof(arg.substr(8).c_str())*SG_EPSILON;
 	} else if (arg.find("--cover=") == 0) {
 	    cover = arg.substr(8);
 	} else if (arg.find("--useUKgrid") == 0) {

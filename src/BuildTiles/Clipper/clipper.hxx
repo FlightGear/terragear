@@ -105,6 +105,8 @@ public:
 
     // Return the fixed elevation points list
     inline TGTriNodes get_fixed_elevations() const { return fixed_elevations; }
+    
+    double nudge;
 };
 
 

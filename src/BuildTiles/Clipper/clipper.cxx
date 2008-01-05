@@ -45,6 +45,7 @@ SG_USING_STD(cout);
 
 // Constructor.
 TGClipper::TGClipper() {
+        nudge=0.0;
 }
 
 
@@ -127,7 +128,7 @@ bool TGClipper::load_polys(const string& path) {
             } else {
                 startz = -9999.0;
             }
-	    p = Point3D(startx, starty, startz);
+	    p = Point3D(startx+nudge, starty+nudge, startz);
 	    poly.add_node( i, p );
             if ( poly3d ) {
                 fixed_elevations.unique_add( p );
@@ -141,7 +142,7 @@ bool TGClipper::load_polys(const string& path) {
                 } else {
                     z = -9999.0;
                 }
-		p = Point3D( x, y, z );
+		p = Point3D( x+nudge, y+nudge, z );
 		poly.add_node( i, p );
                 if ( poly3d ) {
                     fixed_elevations.unique_add( p );
@@ -161,7 +162,7 @@ bool TGClipper::load_polys(const string& path) {
                  && (fabs(startz - lastz) < SG_EPSILON) ) {
 		// last point same as first, discard
 	    } else {
-		p = Point3D( lastx, lasty, lastz );
+		p = Point3D( lastx+nudge, lasty+nudge, lastz );
 		poly.add_node( i, p );
                 if ( poly3d ) {
                     fixed_elevations.unique_add( p );
