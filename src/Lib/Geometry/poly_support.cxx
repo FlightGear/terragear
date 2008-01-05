@@ -845,10 +845,15 @@ static void intersect_yline_with_contour( double yline, TGContourNode *node, TGP
                 }
                 
                 if (ymax-ymin<SG_EPSILON) {
-                        // cout << "intersect_yline_with_contour() line is nearly y-parallel" << endl;
-                        /* The line is nearly y-parallel, so add both ends */
-                        xcuts.push_back(p0.x());
-                        xcuts.push_back(p1.x());
+                        // cout << "intersect_yline_with_contour() edge is nearly y-parallel" << endl;
+                        
+                        if (yline-ymin<SG_EPSILON) {
+                                /* The edge coincides with the yline so add both ends */
+                                xcuts.push_back(p0.x());
+                                xcuts.push_back(p1.x());
+                        }
+                        // else the edge does not intersect
+                        continue;
                 }
                 
                 if (yline-ymin<SG_EPSILON) {
