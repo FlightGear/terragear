@@ -153,51 +153,51 @@ void TGMatch::load_shared( const TGConstruct& c, neighbor_type n ) {
     if ( n == SW_Corner ) {
 	// cout << "searching for SW corner data" << endl;
 	cb = sgBucketOffset(clon, clat, -1, 0);
-	scan_share_file( base, cb, SE_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, SE_Corner, n );
 	cb = sgBucketOffset(clon, clat, -1, -1);
-	scan_share_file( base, cb, NE_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, NE_Corner, n );
 	cb = sgBucketOffset(clon, clat, 0, -1);
-	scan_share_file( base, cb, NW_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, NW_Corner, n );
     } else if ( n == SE_Corner ) {
 	// cout << "searching for SE corner data" << endl;
 	cb = sgBucketOffset(clon, clat, 0, -1);
-	scan_share_file( base, cb, NE_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, NE_Corner, n );
 	cb = sgBucketOffset(clon, clat, 1, -1);
-	scan_share_file( base, cb, NW_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, NW_Corner, n );
 	cb = sgBucketOffset(clon, clat, 1, 0);
-	scan_share_file( base, cb, SW_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, SW_Corner, n );
     } else if ( n == NE_Corner ) {
 	// cout << "searching for NE corner data" << endl;
 	cb = sgBucketOffset(clon, clat, 1, 0);
-	scan_share_file( base, cb, NW_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, NW_Corner, n );
 	cb = sgBucketOffset(clon, clat, 1, 1);
-	scan_share_file( base, cb, SW_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, SW_Corner, n );
 	cb = sgBucketOffset(clon, clat, 0, 1);
-	scan_share_file( base, cb, SE_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, SE_Corner, n );
     } else if ( n == NW_Corner ) {
 	// cout << "searching for NW corner data" << endl;
 	cb = sgBucketOffset(clon, clat, 0, 1);
-	scan_share_file( base, cb, SW_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, SW_Corner, n );
 	cb = sgBucketOffset(clon, clat, -1, 1);
-	scan_share_file( base, cb, SE_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, SE_Corner, n );
 	cb = sgBucketOffset(clon, clat, -1, 0);
-	scan_share_file( base, cb, NE_Corner, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, NE_Corner, n );
     } else if ( n == NORTH ) {
 	// cout << "searching for NORTH edge data" << endl;
  	cb = sgBucketOffset(clon, clat, 0, 1);
-	scan_share_file( base, cb, SOUTH, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, SOUTH, n );
     } else if ( n == SOUTH ) {
 	// cout << "searching for SOUTH edge data" << endl;
  	cb = sgBucketOffset(clon, clat, 0, -1);
-	scan_share_file( base, cb, NORTH, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, NORTH, n );
     } else if ( n == EAST ) {
 	// cout << "searching for EAST edge data" << endl;
  	cb = sgBucketOffset(clon, clat, 1, 0);
-	scan_share_file( base, cb, WEST, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, WEST, n );
     } else if ( n == WEST ) {
 	// cout << "searching for WEST edge data" << endl;
  	cb = sgBucketOffset(clon, clat, -1, 0);
-	scan_share_file( base, cb, EAST, n );
+	if ( ! (cb==b) ) scan_share_file( base, cb, EAST, n );
     }
 }
 
