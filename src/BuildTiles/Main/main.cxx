@@ -1210,6 +1210,7 @@ int main(int argc, char **argv) {
         cout << "X distance is " << xdist << endl;
         cout << "Y distance is " << ydist << endl;
     }
+    cout << "Nudge is " << nudge << endl;
     for (int i = arg_pos; i < argc; i++) {
 	load_dirs.push_back(argv[i]);
 	cout << "Load directory: " << argv[i] << endl;
