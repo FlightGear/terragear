@@ -71,7 +71,7 @@ int main( int argc, char **argv ) {
 
 	c.x = b.get_center_lon();
 	c.y = b.get_center_lat();
-	double span = sg_bucket_span(c.y);
+	double span = b.get_width();
 
 	if ( (c.y >= -89.0) && (c.y < 89.0) ) {
 	    min.x = c.x - span / 2.0;

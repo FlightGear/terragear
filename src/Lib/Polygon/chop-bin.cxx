@@ -52,7 +52,7 @@ static void clip_and_write_poly( string root, long int p_index,
                                  bool preserve3d ) {
     Point3D c, min, max, p;
     c = Point3D( b.get_center_lon(), b.get_center_lat(), 0 );
-    double span = sg_bucket_span( c.y() );
+    double span = b.get_width();
     TGPolygon base, result;
     char tile_name[256], poly_index[256];
 
