@@ -296,13 +296,23 @@ bool construct_tile( const SGBucket& b,
         line_str = line_str.substr(0, line_str.length() - 1);
         // cout << line_str << endl;
         if ( line_str == "[Finished successfully]" ) {
+            cout << "Tile " << b.gen_index_str() << " finished successfully" << endl;
             fclose(fp);
             return true;
         }
 
     }
     fclose(fp);
-
+    
+    // Save the log file of the failed tile
+    cout << "Tile " << b.gen_index_str() << " failed" << endl;
+    string savelog=work_base+"/Status/failed-"+b.gen_index_str()+".log";
+    
+    command="mv "+result_file+" " +savelog;
+    cout << command << endl;
+    
+    system(command.c_str());
+    
     return false;
 }
 
