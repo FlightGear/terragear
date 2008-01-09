@@ -356,6 +356,24 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
     return result;
 }
 
+/*
+ * Helper class for sorting points along a given axis.
+ */
+class Point3DOrdering {
+public:
+        Point3DOrdering(int axis):axis(axis) {}
+        bool operator()(const Point3D& a, const Point3D& b) {
+                return a[axis]<b[axis];
+        }
+        
+protected:
+        int axis;
+};
+
+/*
+ * Find all intersections of the given contour with the x-parallel line at
+ * y=yline. Assume that no points are on the line (callers take care of this!).
+ */
 static void intersect_yline_with_contour( double yline, TGContourNode *node, TGPolygon &p, vector < double > &xcuts ) {
         int contour_num = node->get_contour_num();
         const point_list& pts=p.get_contour(contour_num);
@@ -383,26 +401,17 @@ static void intersect_yline_with_contour( double yline, TGContourNode *node, TGP
                 }
                 
                 if (ymax-ymin<SG_EPSILON) {
-                        // cout << "intersect_yline_with_contour() edge is nearly y-parallel" << endl;
+                        // cout << "intersect_yline_with_contour() edge is nearly x-parallel" << endl;
                         
                         if (yline-ymin<SG_EPSILON) {
-                                /* The edge coincides with the yline so add both ends */
-                                xcuts.push_back(p0.x());
-                                xcuts.push_back(p1.x());
+                                throw sg_exception("Edges must not coincide with x-parallel intersection line");
                         }
                         // else the edge does not intersect
                         continue;
                 }
                 
                 if (yline-ymin<SG_EPSILON) {
-                        // cout << "intersect_yline_with_contour() line touches topmost node" << endl;
-                        /*
-                         * The line touches the topmost node.
-                         * To avoid adding that node twice (thereby possibly
-                         * creating an odd number of intersections), only add it
-                         * when it is the lower of the two ends.
-                         */
-                         continue;
+                        throw sg_exception("Points may not lie on x-parallel intersection line");
                 }
                 
                 double t=(yline-p0.y())/(p1.y()-p0.y());
@@ -411,6 +420,16 @@ static void intersect_yline_with_contour( double yline, TGContourNode *node, TGP
                 // cout << "intersect_yline_with_contour() intersection at x=" << x << endl;
                 xcuts.push_back(x);
         }
+}
+
+/*
+ * Collect the points of the given contour.
+ */
+static void collect_contour_points( TGContourNode* node, TGPolygon &p, point_list& pts ) {
+        int contour_num = node->get_contour_num();
+        const point_list& contourpts=p.get_contour(contour_num);
+        
+        pts.insert(pts.end(),contourpts.begin(),contourpts.end());
 }
 
 // recurse the contour tree and build up the point inside list for
@@ -435,21 +454,52 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
      * partition the line in IN/OUT parts. Find the longest segment and take
      * its midpoint as point inside the contour.
      */
-    const point_list& pts=p.get_contour(contour_num);
-    double ymin,ymax;
     
-    ymin=ymax=pts[0].y();
+    /*
+     * Try to find a line on which none of the contour points lie. For that,
+     * sort all contour points (also those of our direct children) by
+     * y-coordinate, find the two with the largest distance and take their
+     * center y-coordinate.
+     */
+    point_list allpoints;
     
-    for (int i = 0; i < pts.size() ; ++i ) {
-            if (pts[i].y()<ymin)
-                    ymin=pts[i].y();
-            if (ymax<pts[i].y())
-                    ymax=pts[i].y();
+    collect_contour_points( node, p, allpoints );
+    
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+            if ( node->get_kid( i ) != NULL ) {
+                    collect_contour_points( node->get_kid( i ), p, allpoints );
+            }
+    }
+    
+    if ( allpoints.size() < 2 ) {
+            throw sg_exception("Polygon must have at least 2 contour points");
+    }
+    
+    sort(allpoints.begin(), allpoints.end(), Point3DOrdering(PY));
+    
+    point_list::iterator point_it;
+    
+    point_it=allpoints.begin();
+    Point3D lastpt=*point_it;
+    
+    double maxdiff=0.0;
+    double yline; // the y-location of the intersection line
+    
+    while ((++point_it) != allpoints.end()) {
+            double diff=point_it->y()-lastpt.y();
+            if (diff>maxdiff) {
+                    maxdiff=diff;
+                    yline=(point_it->y()+lastpt.y())/2.0;
+            }
+            lastpt=*point_it;
+    }
+    
+    if (maxdiff<SG_EPSILON) {
+            throw sg_exception("Polygon is empty");
     }
     
     // cout << "calc_point_inside() contour_num=" << contour_num << " " << pts.size() << " points ymin=" << ymin << " ymax=" << ymax << endl;
     
-    double yline=(ymin+ymax)/2.0;
     vector < double > xcuts;
     
     intersect_yline_with_contour( yline, node, p, xcuts );
@@ -463,8 +513,8 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     sort( xcuts.begin(), xcuts.end() );
     
     // cout << "calc_point_inside() " << xcuts.size() << " intersections ";
-    copy(xcuts.begin(), xcuts.end(), ostream_iterator<double>(cout, " "));
-    cout << endl;
+    // copy(xcuts.begin(), xcuts.end(), ostream_iterator<double>(cout, " "));
+    // cout << endl;
     
     if ( xcuts.size() < 2 || (xcuts.size() % 2) != 0 ) {
             throw sg_exception("Geometric inconsistency in calc_point_inside()");
