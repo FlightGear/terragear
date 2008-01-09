@@ -64,12 +64,6 @@ void polygon_tesselate( const TGPolygon &p,
 // will modify the points_inside list for your polygon.
 TGPolygon polygon_tesselate_alt( TGPolygon &p );
 
-// calculate some "arbitrary" point inside the specified contour for
-// assigning attribute areas.  This requires data structures outside
-// of "TGPolygon" which is why it is living over here in "Lib/Geometry"
-Point3D calc_point_inside_old( const TGPolygon& p, const int contour, 
-			       const TGTriNodes& trinodes );
-
 // calculate some "arbitrary" point inside each of the polygons contours
 void calc_points_inside( TGPolygon& p );
 
