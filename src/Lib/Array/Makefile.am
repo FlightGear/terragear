@@ -12,11 +12,4 @@ testarray_LDADD = \
 	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml \
 	$(support_LIBS) -lz 
 
-# testgts_SOURCES = testgts.cxx
-
-# testgts_LDADD = \
-# 	$(top_builddir)/src/Lib/Array/libArray.a \
-#	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml \
-#	$(support_LIBS) -lz
-
 INCLUDES = -I$(top_srcdir)/src

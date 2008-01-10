@@ -1,5 +1,3 @@
-DISTDIRS = ArrayFit
-
 SUBDIRS = \
 	DemChop \
 	DemInfo \
