@@ -166,6 +166,7 @@ void fit_file(const std::string& path) {
         SGBucket bucket(0,0); // dummy bucket
         TGArray inarray(infile);
         inarray.parse(bucket);
+        inarray.close();
         
         ArrayMap *DEM=new ArrayMap(inarray);
         
