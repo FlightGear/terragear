@@ -796,6 +796,8 @@ void build_airport( string airport_id, float alt_m,
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {
 	TGPolygon poly = rwy_polys[k].get_poly();
 
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size of section " << k << " before =" << poly.total_size());
+
         poly = remove_dups( poly );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = " << poly.total_size());
         poly = remove_bad_contours( poly );
@@ -822,7 +824,7 @@ void build_airport( string airport_id, float alt_m,
     // tesselate the polygons and prepair them for final output
 
     for ( i = 0; i < (int)rwy_polys.size(); ++i ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i << " flag = " << rwy_polys[i].get_flag());
 
 	TGPolygon poly = rwy_polys[i].get_poly();
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());

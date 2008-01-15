@@ -395,23 +395,9 @@ static void intersect_yline_with_contour( double yline, TGContourNode *node, TGP
                 
                 // cout << "intersect_yline_with_contour() p0=(" << p0.x() << ", " << p0.y() << ") p1=(" << p1.x() << ", " << p1.y() << ") ymin=" << ymin << " ymax=" << ymax << " yline=" << yline << endl;
                 
-                if ((yline+SG_EPSILON)<ymin || ymax<(yline-SG_EPSILON)) {
+                if (yline<ymin || ymax<yline) {
                         // cout << "intersect_yline_with_contour() does not intersect" << endl;
                         continue;
-                }
-                
-                if (ymax-ymin<SG_EPSILON) {
-                        // cout << "intersect_yline_with_contour() edge is nearly x-parallel" << endl;
-                        
-                        if (yline-ymin<SG_EPSILON) {
-                                throw sg_exception("Edges must not coincide with x-parallel intersection line");
-                        }
-                        // else the edge does not intersect
-                        continue;
-                }
-                
-                if (yline-ymin<SG_EPSILON) {
-                        throw sg_exception("Points may not lie on x-parallel intersection line");
                 }
                 
                 double t=(yline-p0.y())/(p1.y()-p0.y());
@@ -476,12 +462,14 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     }
     
     sort(allpoints.begin(), allpoints.end(), Point3DOrdering(PY));
-    
+
+    // TODO: check bounding box size for whether polygon is empty
+
     point_list::iterator point_it;
     
     point_it=allpoints.begin();
     Point3D lastpt=*point_it;
-    
+
     double maxdiff=0.0;
     double yline; // the y-location of the intersection line
     
@@ -494,11 +482,11 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
             lastpt=*point_it;
     }
     
-    if (maxdiff<SG_EPSILON) {
-            throw sg_exception("Polygon is empty");
-    }
-    
-    // cout << "calc_point_inside() contour_num=" << contour_num << " " << pts.size() << " points ymin=" << ymin << " ymax=" << ymax << endl;
+    cout << "calc_point_inside() " << allpoints.size() << " points ";
+    copy(allpoints.begin(), allpoints.end(), ostream_iterator<Point3D>(cout, " "));
+    cout << endl;
+
+    cout << "calc_point_inside() maxdiff=" << maxdiff << " yline=" << yline << endl;
     
     vector < double > xcuts;
     
@@ -512,9 +500,9 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     
     sort( xcuts.begin(), xcuts.end() );
     
-    // cout << "calc_point_inside() " << xcuts.size() << " intersections ";
-    // copy(xcuts.begin(), xcuts.end(), ostream_iterator<double>(cout, " "));
-    // cout << endl;
+    cout << "calc_point_inside() " << xcuts.size() << " intersections ";
+    copy(xcuts.begin(), xcuts.end(), ostream_iterator<double>(cout, " "));
+    cout << endl;
     
     if ( xcuts.size() < 2 || (xcuts.size() % 2) != 0 ) {
             throw sg_exception("Geometric inconsistency in calc_point_inside()");
@@ -1026,13 +1014,26 @@ TGPolygon remove_bad_contours( const TGPolygon &poly ) {
 
     for ( int i = 0; i < poly.contours(); ++i ) {
 	point_list contour = poly.get_contour( i );
-	if ( contour.size() >= 3 ) {
-	    // good
-	    int flag = poly.get_hole_flag( i );
-	    result.add_contour( contour, flag );
-	} else {
+	if ( contour.size() < 3) {
 	    //cout << "tossing a bad contour" << endl;
+	    continue;
 	}
+	double xmin,xmax,ymin,ymax;
+	xmin=xmax=contour[0].x();
+	ymin=ymax=contour[0].y();
+	for ( int j = 1; j < contour.size(); ++j ) {
+	    xmin = SGMisc<double>::min(xmin,contour[j].x());
+	    ymin = SGMisc<double>::min(ymin,contour[j].y());
+	    xmax = SGMisc<double>::max(xmax,contour[j].x());
+	    ymax = SGMisc<double>::max(ymax,contour[j].y());
+	}
+	if ( xmax-xmin < SG_EPSILON || ymax-ymin < SG_EPSILON ) {
+	    //cout << "tossing a bad contour (too small)" << endl;
+	    continue;
+	}
+	/* keeping the contour */
+	int flag = poly.get_hole_flag( i );
+	result.add_contour( contour, flag );
     }
 
     return result;
