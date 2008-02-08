@@ -386,21 +386,15 @@ static void intersect_yline_with_contour( double yline, TGContourNode *node, TGP
                 const Point3D &p0 = pts[ i ];
                 const Point3D &p1 = pts[ ( i + 1 ) % count ];
                 
-                double ymin=p0.y(),ymax=p0.y();
+                // cout << "intersect_yline_with_contour() i=" << i << " p0=(" << p0.x() << ", " << p0.y() << ") p1=(" << p1.x() << ", " << p1.y() << ")  yline=" << yline << endl;
                 
-                if (p1.y()<ymin)
-                        ymin=p1.y();
-                if (ymax<p1.y())
-                        ymax=p1.y();
+                double t=(yline-p0.y())/(p1.y()-p0.y());
                 
-                // cout << "intersect_yline_with_contour() p0=(" << p0.x() << ", " << p0.y() << ") p1=(" << p1.x() << ", " << p1.y() << ") ymin=" << ymin << " ymax=" << ymax << " yline=" << yline << endl;
-                
-                if (yline<ymin || ymax<yline) {
-                        // cout << "intersect_yline_with_contour() does not intersect" << endl;
+                if (t<0.0 || 1.0<t) {
+                        // cout << "intersect_yline_with_contour() does not intersect t=" << t << endl;
                         continue;
                 }
                 
-                double t=(yline-p0.y())/(p1.y()-p0.y());
                 double x=p0.x()+t*(p1.x()-p0.x());
                 
                 // cout << "intersect_yline_with_contour() intersection at x=" << x << endl;
@@ -418,12 +412,39 @@ static void collect_contour_points( TGContourNode* node, TGPolygon &p, point_lis
         pts.insert(pts.end(),contourpts.begin(),contourpts.end());
 }
 
+static void write_tree_element( TGContourNode *node, TGPolygon& p, int hole=0) {
+    int contour_num = node->get_contour_num();
+    char buf[256];
+    sprintf(buf, "failed/element%ld.poly",contour_num);
+    FILE *treefp = fopen(buf,"w");
+    
+    fprintf(treefp,"#2D\n");
+    fprintf(treefp,"Airport\n");
+    
+    fprintf(treefp,"1\n");
+    
+    fprintf(treefp,"%ld\n",p.contour_size(contour_num));
+    fprintf(treefp,"%d\n",hole);
+    
+    for (int i=0;i<p.contour_size(contour_num);i++) {
+            Point3D pt=p.get_pt(contour_num,i);
+            fprintf(treefp,"%.15f %.15f\n",pt.x(),pt.y());
+    }
+    
+    fclose(treefp);
+    
+    for ( int i = 0; i < node->get_num_kids(); ++i ) {
+            if ( node->get_kid( i ) != NULL ) {
+                    write_tree_element( node->get_kid( i ), p, 1-hole);
+            }
+    }
+}
+
 // recurse the contour tree and build up the point inside list for
 // each contour/hole
 static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     int contour_num = node->get_contour_num();
-    // cout << "starting calc_point_inside() with contour = " << contour_num
-    //      << endl;
+    // cout << "starting calc_point_inside() with contour = " << contour_num << endl;
 
     for ( int i = 0; i < node->get_num_kids(); ++i ) {
 	if ( node->get_kid( i ) != NULL ) {
@@ -463,8 +484,6 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     
     sort(allpoints.begin(), allpoints.end(), Point3DOrdering(PY));
 
-    // TODO: check bounding box size for whether polygon is empty
-
     point_list::iterator point_it;
     
     point_it=allpoints.begin();
@@ -482,11 +501,15 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
             lastpt=*point_it;
     }
     
-    cout << "calc_point_inside() " << allpoints.size() << " points ";
-    copy(allpoints.begin(), allpoints.end(), ostream_iterator<Point3D>(cout, " "));
-    cout << endl;
+    // cout << "calc_point_inside() " << allpoints.size() << " points ";
+    // copy(allpoints.begin(), allpoints.end(), ostream_iterator<Point3D>(cout, " "));
+    // cout << endl;
 
-    cout << "calc_point_inside() maxdiff=" << maxdiff << " yline=" << yline << endl;
+    // cout << "calc_point_inside() maxdiff=" << maxdiff << " yline=" << yline << endl;
+    
+    if (maxdiff < SG_EPSILON) {
+            throw sg_exception("Polygon is too small in y-direction");
+    }
     
     vector < double > xcuts;
     
@@ -500,9 +523,9 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     
     sort( xcuts.begin(), xcuts.end() );
     
-    cout << "calc_point_inside() " << xcuts.size() << " intersections ";
-    copy(xcuts.begin(), xcuts.end(), ostream_iterator<double>(cout, " "));
-    cout << endl;
+    // cout << "calc_point_inside() " << xcuts.size() << " intersections ";
+    // copy(xcuts.begin(), xcuts.end(), ostream_iterator<double>(cout, " "));
+    // cout << endl;
     
     if ( xcuts.size() < 2 || (xcuts.size() % 2) != 0 ) {
             throw sg_exception("Geometric inconsistency in calc_point_inside()");
@@ -1017,20 +1040,24 @@ TGPolygon remove_bad_contours( const TGPolygon &poly ) {
 	if ( contour.size() < 3) {
 	    //cout << "tossing a bad contour" << endl;
 	    continue;
-	}
-	double xmin,xmax,ymin,ymax;
-	xmin=xmax=contour[0].x();
-	ymin=ymax=contour[0].y();
-	for ( int j = 1; j < contour.size(); ++j ) {
-	    xmin = SGMisc<double>::min(xmin,contour[j].x());
-	    ymin = SGMisc<double>::min(ymin,contour[j].y());
-	    xmax = SGMisc<double>::max(xmax,contour[j].x());
-	    ymax = SGMisc<double>::max(ymax,contour[j].y());
-	}
-	if ( xmax-xmin < SG_EPSILON || ymax-ymin < SG_EPSILON ) {
-	    //cout << "tossing a bad contour (too small)" << endl;
-	    continue;
-	}
+        }
+        
+        point_list allpoints = contour;
+        
+        sort(allpoints.begin(), allpoints.end(), Point3DOrdering(PY));
+        
+        point_list::iterator point_it;
+        
+        point_it=allpoints.begin();
+        Point3D lastpt=*point_it;
+        
+        double area=poly.area_contour(i);
+        
+        if (-SG_EPSILON<area && area<SG_EPSILON) {
+            // cout << "tossing a bad contour " << i << " (too small)" << endl;
+            continue;
+        }
+        
 	/* keeping the contour */
 	int flag = poly.get_hole_flag( i );
 	result.add_contour( contour, flag );
