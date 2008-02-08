@@ -267,7 +267,7 @@ TGAptSurface::TGAptSurface( const string& path,
     double clon = (min_deg.lon() + max_deg.lon()) / 2.0;
     double clat = (min_deg.lat() + max_deg.lat()) / 2.0;
     offset = Point3D( clon, clat, average_elev_m );
-    cout << "Central offset point = " << offset << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Central offset point = " << offset);
 
     // Create the fitted surface
     SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
@@ -405,7 +405,7 @@ void TGAptSurface::fit() {
       Real x = p.x() - offset.x();
       Real y = p.y() - offset.y();
       Real z = p.z() - offset.z();
-      cout << "pt = " << x << "," << y << "," << z << endl;
+      //cout << "pt = " << x << "," << y << "," << z << endl;
       tz[index] = z;
       t1[index] = x;
       t2[index] = x*y;
