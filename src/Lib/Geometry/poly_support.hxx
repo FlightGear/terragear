@@ -95,6 +95,9 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 // remove any degenerate contours
 TGPolygon remove_bad_contours( const TGPolygon &poly );
 
+// remove any too small contours
+TGPolygon remove_tiny_contours( const TGPolygon &poly );
+
 
 #endif // _POLY_SUPPORT_HXX
 

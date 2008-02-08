@@ -414,24 +414,27 @@ static void collect_contour_points( TGContourNode* node, TGPolygon &p, point_lis
 
 static void write_tree_element( TGContourNode *node, TGPolygon& p, int hole=0) {
     int contour_num = node->get_contour_num();
-    char buf[256];
-    sprintf(buf, "failed/element%ld.poly",contour_num);
-    FILE *treefp = fopen(buf,"w");
     
-    fprintf(treefp,"#2D\n");
-    fprintf(treefp,"Airport\n");
-    
-    fprintf(treefp,"1\n");
-    
-    fprintf(treefp,"%ld\n",p.contour_size(contour_num));
-    fprintf(treefp,"%d\n",hole);
-    
-    for (int i=0;i<p.contour_size(contour_num);i++) {
-            Point3D pt=p.get_pt(contour_num,i);
-            fprintf(treefp,"%.15f %.15f\n",pt.x(),pt.y());
+    if (contour_num != -1) {
+            char buf[256];
+            sprintf(buf, "failed/element%ld.poly",contour_num);
+            FILE *treefp = fopen(buf,"w");
+            
+            fprintf(treefp,"#2D\n");
+            fprintf(treefp,"Airport\n");
+            
+            fprintf(treefp,"1\n");
+            
+            fprintf(treefp,"%ld\n",p.contour_size(contour_num));
+            fprintf(treefp,"%d\n",hole);
+            
+            for (int i=0;i<p.contour_size(contour_num);i++) {
+                    Point3D pt=p.get_pt(contour_num,i);
+                    fprintf(treefp,"%.15f %.15f\n",pt.x(),pt.y());
+            }
+            
+            fclose(treefp);
     }
-    
-    fclose(treefp);
     
     for ( int i = 0; i < node->get_num_kids(); ++i ) {
             if ( node->get_kid( i ) != NULL ) {
@@ -506,10 +509,6 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     // cout << endl;
 
     // cout << "calc_point_inside() maxdiff=" << maxdiff << " yline=" << yline << endl;
-    
-    if (maxdiff < SG_EPSILON) {
-            throw sg_exception("Polygon is too small in y-direction");
-    }
     
     vector < double > xcuts;
     
@@ -1042,18 +1041,25 @@ TGPolygon remove_bad_contours( const TGPolygon &poly ) {
 	    continue;
         }
         
-        point_list allpoints = contour;
-        
-        sort(allpoints.begin(), allpoints.end(), Point3DOrdering(PY));
-        
-        point_list::iterator point_it;
-        
-        point_it=allpoints.begin();
-        Point3D lastpt=*point_it;
+	/* keeping the contour */
+	int flag = poly.get_hole_flag( i );
+	result.add_contour( contour, flag );
+    }
+
+    return result;
+}
+
+// remove any too small contours
+TGPolygon remove_tiny_contours( const TGPolygon &poly ) {
+    TGPolygon result;
+    result.erase();
+
+    for ( int i = 0; i < poly.contours(); ++i ) {
+	point_list contour = poly.get_contour( i );
         
         double area=poly.area_contour(i);
         
-        if (-SG_EPSILON<area && area<SG_EPSILON) {
+        if (-SG_EPSILON*SG_EPSILON<area && area<SG_EPSILON*SG_EPSILON) {
             // cout << "tossing a bad contour " << i << " (too small)" << endl;
             continue;
         }

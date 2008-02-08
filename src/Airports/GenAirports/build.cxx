@@ -802,6 +802,8 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = " << poly.total_size());
         poly = remove_bad_contours( poly );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_bad() = " << poly.total_size());
+        poly = remove_tiny_contours( poly );
+	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_tiny_contours() = " << poly.total_size());
 
 	rwy_polys[k].set_poly( poly );
     }
@@ -818,6 +820,8 @@ void build_airport( string airport_id, float alt_m,
     base_poly = remove_dups( base_poly );
     SG_LOG(SG_GENERAL, SG_DEBUG, "remove bad contours base");
     base_poly = remove_bad_contours( base_poly );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "remove small contours base");
+    base_poly = remove_tiny_contours( base_poly );
     // write_polygon( base_poly, "base-fin" );
     SG_LOG(SG_GENERAL, SG_DEBUG, " after clean up: " << base_poly);
 
