@@ -46,6 +46,7 @@ bool do_split=false;
 
 OGRDataSource *datasource;
 OGRLayer *defaultLayer;
+OGRLayer *pointsLayer=NULL;
 LayerMap layerMap;
 
 bool endswith(const std::string& s, const std::string& suffix) {
@@ -65,6 +66,34 @@ OGRLayer* create_layer(const std::string& material) {
         layer=datasource->CreateLayer(material.c_str(),&srs,wkbPolygon25D,NULL);
         if (!layer) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Creation of layer '" << material << "' failed");
+                return NULL;
+        }
+        
+        OGRFieldDefn materialField("Material", OFTString);
+        materialField.SetWidth(128);
+        
+        OGRFieldDefn fileField("File",OFTString);
+        fileField.SetWidth(256);
+        
+        if( layer->CreateField( &materialField ) != OGRERR_NONE ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Creation of field 'Material' failed");
+        }
+        
+        if( layer->CreateField( &fileField ) != OGRERR_NONE ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Creation of field 'Material' failed");
+        }
+        
+        return layer;
+}
+
+OGRLayer* create_pointsLayer() {
+        OGRLayer* layer;
+        
+        OGRSpatialReference srs;
+        srs.SetWellKnownGeogCS("WGS84");
+        layer=datasource->CreateLayer("points",&srs,wkbPoint,NULL);
+        if (!layer) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Creation of layer 'points' failed");
                 return NULL;
         }
         
@@ -191,6 +220,41 @@ void process_polygon_file(const std::string& path) {
         }
 }
 
+void process_points_file(const std::string& path) {
+        SG_LOG(SG_GENERAL, SG_INFO, "Loading points file " << path);
+        
+        sg_gzifstream in( path );
+        
+        if (pointsLayer==NULL)
+        {
+                pointsLayer=create_pointsLayer();
+        }
+        
+        while (!in.eof()) {
+                std::string material;
+                double x,y;
+                in >> x >> y >> material;
+                
+                if (in.eof())
+                        break;
+                
+                OGRPoint* point=new OGRPoint(x,y);
+                
+                OGRFeature* feature;
+                feature = new OGRFeature( pointsLayer->GetLayerDefn() );
+                feature->SetField("Material", material.c_str());
+                feature->SetField("File", path.c_str());
+                feature->SetGeometry(point);
+                
+                if( pointsLayer->CreateFeature( feature ) != OGRERR_NONE )
+                {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+                }
+                
+                OGRFeature::DestroyFeature(feature);
+        }
+}
+
 void process_file(const std::string& path) {
         struct stat sbuf;
         
@@ -220,6 +284,9 @@ void process_file(const std::string& path) {
                 }
                 
                 closedir(dir);
+        } else if (endswith(path,".pts")) {
+                // This is a points file
+                process_points_file(path);
         } else if (!endswith(path,".gz") &&
                         !endswith(path,".arr") &&
                         !endswith(path,".fit") &&
