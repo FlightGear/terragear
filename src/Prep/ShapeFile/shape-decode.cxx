@@ -30,6 +30,7 @@
 #include <simgear/compiler.h>
 
 #include STL_STRING
+#include STL_IOSTREAM
 #include <map>
 
 #include <simgear/debug/logstream.hxx>
@@ -49,6 +50,7 @@
 #endif
 
 SG_USING_STD( cout );
+SG_USING_STD( endl );
 SG_USING_STD( string );
 SG_USING_STD( map );
 

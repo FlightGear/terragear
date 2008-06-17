@@ -29,6 +29,7 @@
 
 #include <simgear/compiler.h>
 
+#include STL_IOSTREAM
 #include STL_STRING
 
 #include <zlib.h>
@@ -47,6 +48,7 @@
 
 SG_USING_STD( string );
 SG_USING_STD( cout );
+SG_USING_STD( endl );
 
 // hackity, hackity, hack ... cough cough
 #ifdef i386

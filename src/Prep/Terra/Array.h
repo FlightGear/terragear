@@ -1,6 +1,8 @@
 #ifndef ARRAY_INCLUDED // -*- C++ -*-
 #define ARRAY_INCLUDED
 
+#include <string.h>
+
 //
 // Array classes
 //

@@ -28,6 +28,7 @@
 #include <simgear/compiler.h>
 
 #include <stdlib.h>   // atof()
+#include STL_IOSTREAM
 
 #ifdef SG_HAVE_STD_INCLUDES
 #  include <cerrno>

@@ -27,6 +27,7 @@
 
 #include <simgear/compiler.h>
 
+#include STL_IOSTREAM
 #include STL_STRING
 
 #include <simgear/constants.h>

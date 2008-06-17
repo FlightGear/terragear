@@ -34,9 +34,11 @@
 #  include <config.h>
 #endif
 
+#include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sgstream.hxx>
 
+#include STL_STRING
 
 #define DEM_SIZE 1200
 #define DEM_SIZE_1 1201
@@ -82,7 +84,7 @@ private:
     int z_units;                // 1 = feet, 2 = meters
 
     // return next token from input stream
-    string next_token();
+    std::string next_token();
 
     // return next integer from input stream
     int next_int();
@@ -97,13 +99,13 @@ public:
 
     // Constructor
     TGDem();
-    TGDem( const string& file );
+    TGDem( const std::string& file );
 
     // Destructor
     ~TGDem();
 
     // open a DEM file (use "-" if input is coming from stdin)
-    bool open ( const string& file );
+    bool open ( const std::string& file );
 
     // close a DEM file
     bool close();
@@ -120,7 +122,7 @@ public:
     // write out the area of data covered by the specified bucket.
     // Data is written out column by column starting at the lower left
     // hand corner.
-    bool write_area( const string& root, SGBucket& b, bool compress );
+    bool write_area( const std::string& root, SGBucket& b, bool compress );
 
     // Informational methods
     inline double get_originx() const { return originx; }

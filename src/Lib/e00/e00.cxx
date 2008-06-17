@@ -11,6 +11,7 @@
 #include <cctype>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 SG_USING_STD(vector);
 SG_USING_STD(map);

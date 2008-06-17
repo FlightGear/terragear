@@ -1,5 +1,9 @@
 // calc wgs84 offset given starting lon/lat/alt, radial and distance
 
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
+
 #include <stdio.h>
 #include <stdlib.h>
 

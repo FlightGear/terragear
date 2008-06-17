@@ -20,9 +20,11 @@
 //
 // $Id: trisegs.cxx,v 1.10 2004-11-19 22:25:50 curt Exp $
 
-
+#include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/math/point3d.hxx>
+
+#include STL_IOSTREAM
 
 #include "trinodes.hxx"
 

@@ -1,5 +1,7 @@
+#include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 
+#include STL_IOSTREAM
 #include "array.hxx"
 
 SG_USING_STD(cout);

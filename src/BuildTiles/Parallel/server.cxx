@@ -28,6 +28,7 @@
 SG_USING_STD( cout );
 SG_USING_STD( cerr );
 SG_USING_STD( endl );
+SG_USING_STD( string );
 
 #if defined (__sun) || defined (__CYGWIN__) || defined(sgi)
 #  define WAIT_ANY (pid_t)-1

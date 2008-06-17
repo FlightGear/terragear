@@ -1,14 +1,18 @@
 // vpf-topology.cxx - program to dump a topology to output.
 // This file is released into the Public Domain, and comes with NO WARRANTY!
 
-#include <iostream>
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::ostream;
+#include <simgear/compiler.h>
 
-#include <string>
-using std::string;
+#include STL_IOSTREAM
+#include STL_STRING
+
+#include <stdlib.h>
+
+SG_USING_STD(cout);
+SG_USING_STD(cerr);
+SG_USING_STD(endl);
+SG_USING_STD(ostream);
+SG_USING_STD(string);
 
 #include "vpf.hxx"
 

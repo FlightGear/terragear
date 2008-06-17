@@ -13,10 +13,14 @@
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 
+#include STL_IOSTREAM
+
 #include <stdlib.h>
 
 #include <vector>
 SG_USING_STD(vector);
+SG_USING_STD(cerr);
+SG_USING_STD(endl);
 
 static string prog_name;
 static string work_dir = ".";

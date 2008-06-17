@@ -27,6 +27,7 @@
 #include <simgear/compiler.h>
 
 #include STL_STRING
+#include STL_IOSTREAM
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
@@ -39,6 +40,7 @@
 #include "gshhs_split.hxx"
 
 SG_USING_STD(cout);
+SG_USING_STD(endl);
 SG_USING_STD(string);
 
 

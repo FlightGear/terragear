@@ -33,6 +33,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include STL_IOSTREAM
+
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h> // stat()
 #endif

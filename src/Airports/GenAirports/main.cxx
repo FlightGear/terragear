@@ -40,6 +40,10 @@ SG_USING_STD(vector);
 #include <stdio.h>
 #include <string.h>
 #include STL_STRING
+#include STL_IOSTREAM
+
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>

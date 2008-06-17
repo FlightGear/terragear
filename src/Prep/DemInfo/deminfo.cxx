@@ -21,15 +21,19 @@
 // $Id: deminfo.cxx,v 1.7 2004-11-19 22:25:51 curt Exp $
 //
 
+#include <simgear/compiler.h>
+
+#include STL_IOSTREAM
+#include STL_STRING
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <string>
 
 #include <DEM/dem.hxx>
 
 SG_USING_STD(cout);
+SG_USING_STD(string);
 
 
 // static float dem_data[DEM_SIZE_1][DEM_SIZE_1];

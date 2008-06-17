@@ -30,6 +30,7 @@
 #include <stdlib.h>
 
 #include STL_STRING
+#include STL_IOSTREAM
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
@@ -45,6 +46,7 @@
 
 SG_USING_STD(string);
 SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 
 const int MAX_XDIV = 16;

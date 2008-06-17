@@ -24,11 +24,14 @@
 #  include <config.h>
 #endif
 
+#include <simgear/compiler.h>
+
 #include <stdlib.h>    // for system()
 #include <sys/stat.h>  // for stat()
 #include <unistd.h>    // for stat()
 
-#include <string>
+#include STL_STRING
+#include STL_IOSTREAM
 
 #include <simgear/bucket/newbucket.hxx>
 
@@ -41,6 +44,7 @@
 // #include <Match/match.hxx>
 // #include <Triangulate/triangle.hxx>
 
+SG_USING_STD(string);
 SG_USING_STD(cout);
 SG_USING_STD(endl);
 

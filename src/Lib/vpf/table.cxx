@@ -1,14 +1,18 @@
 // table.cxx - implementation of VpfTable
 // This file is released into the Public Domain, and comes with NO WARRANTY!
 
-#include <string>
-#include <fstream>
+#include <simgear/compiler.h>
+
+#include STL_STRING
+#include STL_FSTREAM
 
 #include <simgear/misc/zfstream.hxx>	// ios_binary
 
-using std::string;
-using std::ifstream;
-using std::istream;
+#include <stdlib.h>
+
+SG_USING_STD(string);
+SG_USING_STD(ifstream);
+SG_USING_STD(istream);
 
 #include "vpfbase.hxx"
 #include "table.hxx"

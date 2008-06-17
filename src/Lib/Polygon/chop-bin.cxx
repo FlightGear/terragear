@@ -30,6 +30,10 @@
 #include <simgear/compiler.h>
 
 #include STL_STRING
+#include STL_IOSTREAM
+
+SG_USING_STD(cout);
+SG_USING_STD(endl);
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>

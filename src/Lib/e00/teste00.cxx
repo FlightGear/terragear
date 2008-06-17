@@ -4,6 +4,8 @@
 #  include <config.h>
 #endif
 
+#include <stdlib.h>
+
 #include <simgear/misc/sgstream.hxx>
 #include "e00.hxx"
 
