@@ -640,20 +640,6 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     
     if ( contour_num < 0 )
             return;
-    
-    /*
-     * Find a line intersecting the contour and intersect it with the segments
-     * of our children. Sort the intersection points along the line. They then
-     * partition the line in IN/OUT parts. Find the longest segment and take
-     * its midpoint as point inside the contour.
-     */
-    
-    /*
-     * Try to find a line on which none of the contour points lie. For that,
-     * sort all contour points (also those of our direct children) by
-     * y-coordinate, find the two with the largest distance and take their
-     * center y-coordinate.
-     */
     point_list allpoints;
     
     collect_contour_points( node, p, allpoints );
@@ -669,25 +655,22 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     }
     
     sort(allpoints.begin(), allpoints.end(), Point3DOrdering(PY));
-
+    
+    // cout << "calc_point_inside() " << allpoints.size() << " points ";
+    // copy(allpoints.begin(), allpoints.end(), ostream_iterator<Point3D>(cout, " "));
+    // cout << endl;
+    
     point_list::iterator point_it;
     
     point_it=allpoints.begin();
     
-    double yline; // the y-location of the intersection line
-    
-    while ((++point_it) != allpoints.end()) {
+    for (++point_it;point_it!=allpoints.end();++point_it) {
             double diff=point_it->y()-(point_it-1)->y();
+            // cout << "calc_point_inside() diff=" << diff << endl;
             if (diff<=8.0*SG_EPSILON) {
                     continue;
             }
-            yline=point_it->y()-diff/2.0;
-            
-            // cout << "calc_point_inside() " << allpoints.size() << " points ";
-            // copy(allpoints.begin(), allpoints.end(), ostream_iterator<Point3D>(cout, " "));
-            // cout << endl;
-        
-            // cout << "calc_point_inside() maxdiff=" << maxdiff << " yline=" << yline << endl;
+            double yline=point_it->y()-diff/2.0; // the y-location of the intersection line
             
             vector < double > xcuts;
             
