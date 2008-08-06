@@ -681,7 +681,7 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
             if (diff<=8.0*SG_EPSILON) {
                     continue;
             }
-            yline=point_it->y()+diff/2.0;
+            yline=point_it->y()-diff/2.0;
             
             // cout << "calc_point_inside() " << allpoints.size() << " points ";
             // copy(allpoints.begin(), allpoints.end(), ostream_iterator<Point3D>(cout, " "));
