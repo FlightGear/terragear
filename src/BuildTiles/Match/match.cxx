@@ -36,8 +36,8 @@
 
 #include "match.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 
 TGMatch::TGMatch( void ) {

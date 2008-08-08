@@ -33,15 +33,15 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 #include <vector>
 
-SG_USING_STD(cerr);
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-SG_USING_STD(string);
-SG_USING_STD(vector);
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::string;
+using std::vector;
 
 #include <Geometry/rectangle.hxx>
 #include <Geometry/util.hxx>

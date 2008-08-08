@@ -2,15 +2,15 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
+#include <iostream>
 
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <simgear/math/sg_geodesy.hxx>
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 int main( int argc, char **argv ) {
 

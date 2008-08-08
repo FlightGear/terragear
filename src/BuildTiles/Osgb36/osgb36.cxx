@@ -21,12 +21,12 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
+#include <iostream>
 #include <math.h>
 
 #include "osgb36.hxx"
 
-SG_USING_STD(cout);
+using std::cout;
 
 double DEG_TO_RAD = 2.0 * 3.14159265358979323846264338327950288419716939967511 / 360.0;
 double RAD_TO_DEG = 360.0 / (2.0 * 3.14159265358979323846264338327950288419716939967511);

@@ -35,13 +35,10 @@
 
 #include <vector>
 
-SG_USING_STD(vector);
-
-
 // forward declaration
 class TGContourNode;
 
-typedef vector < TGContourNode * > contour_kids;
+typedef std::vector < TGContourNode * > contour_kids;
 typedef contour_kids::iterator contour_kids_iterator;
 typedef contour_kids::const_iterator const_contour_kids_iterator;
 

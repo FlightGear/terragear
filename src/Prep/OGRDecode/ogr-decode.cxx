@@ -26,7 +26,7 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
+#include <string>
 #include <map>
 
 #include <simgear/debug/logstream.hxx>
@@ -45,9 +45,9 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-SG_USING_STD( cout );
-SG_USING_STD( string );
-SG_USING_STD( map );
+using std:: cout ;
+using std:: string ;
+using std:: map ;
 
 int line_width=50;
 string line_width_col;

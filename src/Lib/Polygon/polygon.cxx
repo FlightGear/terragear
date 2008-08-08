@@ -35,7 +35,7 @@ extern "C" {
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/structure/exception.hxx>
 
-SG_USING_STD(endl);
+using std::endl;
 
 #include <Geometry/trinodes.hxx>
 #include <poly2tri/interface.h>

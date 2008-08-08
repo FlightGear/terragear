@@ -7,8 +7,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,10 +25,10 @@
 
 #include <simgear/bucket/newbucket.hxx>
 
-SG_USING_STD( cout );
-SG_USING_STD( cerr );
-SG_USING_STD( endl );
-SG_USING_STD( string );
+using std:: cout ;
+using std:: cerr ;
+using std:: endl ;
+using std:: string ;
 
 #if defined (__sun) || defined (__CYGWIN__) || defined(sgi)
 #  define WAIT_ANY (pid_t)-1

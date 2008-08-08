@@ -1,11 +1,11 @@
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 
-#include STL_IOSTREAM
+#include <iostream>
 #include "array.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 int main( int argc, char **argv ) {
     double lon, lat;

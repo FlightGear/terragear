@@ -8,8 +8,8 @@
 
 #include <plib/sg.h>
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 #include <simgear/math/sg_geodesy.hxx>
 

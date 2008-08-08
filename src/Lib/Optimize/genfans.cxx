@@ -23,12 +23,12 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
+#include <iostream>
 
 #include "genfans.hxx"
 
-SG_USING_STD( cout );
-SG_USING_STD( endl );
+using std:: cout ;
+using std:: endl ;
 
 
 // make sure the list is expanded at least to hold "n" and then push

@@ -27,10 +27,7 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-
-SG_USING_STD(string);
-
+#include <string>
 
 // Posible shape file types.  Note the order of these is important and
 // defines the priority of these shapes if they should intersect.  The
@@ -102,10 +99,10 @@ enum AreaType {
 
 
 // return area type from text name
-AreaType get_area_type( const string &area );
+AreaType get_area_type( const std::string &area );
 
 // return text form of area name
-string get_area_name( AreaType area );
+std::string get_area_name( AreaType area );
 
 #endif // _PRIORITIES_HXX
 

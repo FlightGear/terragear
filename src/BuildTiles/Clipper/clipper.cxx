@@ -37,10 +37,10 @@
 
 #include "clipper.hxx"
 
-#include STL_IOSTREAM
+#include <iostream>
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 
 #define MASK_CLIP 1

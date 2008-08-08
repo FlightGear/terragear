@@ -29,8 +29,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-#include STL_IOSTREAM
+#include <string>
+#include <iostream>
 #include <map>
 
 #include <simgear/debug/logstream.hxx>
@@ -49,10 +49,10 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-SG_USING_STD( cout );
-SG_USING_STD( endl );
-SG_USING_STD( string );
-SG_USING_STD( map );
+using std:: cout ;
+using std:: endl ;
+using std:: string ;
+using std:: map ;
 
 map<string,string> area_code_map;
 bool use_area_code_map = false;

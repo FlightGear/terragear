@@ -35,15 +35,15 @@
 
 #include <list>
 #include <vector>
-SG_USING_STD(vector);
+using std::vector;
 
 #include <stdio.h>
 #include <string.h>
-#include STL_STRING
-#include STL_IOSTREAM
+#include <string>
+#include <iostream>
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>

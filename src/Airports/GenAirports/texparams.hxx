@@ -36,9 +36,6 @@
 
 #include <vector>
 
-SG_USING_STD(vector);
-
-
 class TGTexParams {
 
 private:
@@ -95,7 +92,7 @@ public:
 };
 
 
-typedef vector < TGTexParams > texparams_list;
+typedef std::vector < TGTexParams > texparams_list;
 typedef texparams_list::iterator texparams_list_iterator;
 typedef texparams_list::const_iterator const_texparams_list_iterator;
 

@@ -27,8 +27,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
@@ -41,9 +41,9 @@
 
 #include "point2d.hxx"
 
-SG_USING_STD(endl);
-SG_USING_STD(cout);
-SG_USING_STD(string);
+using std::endl;
+using std::cout;
+using std::string;
 
 
 int main(int argc, char **argv) {

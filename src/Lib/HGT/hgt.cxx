@@ -28,7 +28,7 @@
 #include <simgear/compiler.h>
 
 #include <stdlib.h>   // atof()
-#include STL_IOSTREAM
+#include <iostream>
 
 #ifdef SG_HAVE_STD_INCLUDES
 #  include <cerrno>
@@ -45,8 +45,8 @@
 
 #include "hgt.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 
 TGHgt::TGHgt( int _res ) {

@@ -39,12 +39,7 @@
 #include <Polygon/polygon.hxx>
 #include <Polygon/point2d.hxx>
 
-#include STL_STRING
-#include <vector>
-
-SG_USING_STD(string);
-SG_USING_STD(vector);
-
+#include <string>
 
 #define TG_MAX_AREA_TYPES 128	// FIXME also defined in
                                 // MergerClipper/clipper.hxx
@@ -79,10 +74,10 @@ public:
     bool init();
 
     // Load a polygon definition file
-    bool load_polys(const string& path);
+    bool load_polys(const std::string& path);
 
     // Load an Osgb36 polygon definition file
-    bool load_osgb36_polys(const string& path);
+    bool load_osgb36_polys(const std::string& path);
 
     // Add a polygon.
     void add_poly(int area, const TGPolygon &poly);

@@ -33,8 +33,6 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/point3d.hxx>
 #include <simgear/math/sg_geodesy.hxx>
@@ -44,11 +42,7 @@
 #include <Main/construct.hxx>
 #include <Triangulate/triangle.hxx>
 
-SG_USING_STD(string);
-SG_USING_STD(vector);
-
-
-typedef vector < int_list > tex_list;
+typedef std::vector < int_list > tex_list;
 typedef tex_list::iterator tex_list_iterator;
 typedef tex_list::const_iterator const_tex_list_iterator;
 

@@ -24,12 +24,12 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <map>
-#include STL_STRING
+#include <string>
 
 #include "priorities.hxx"
 
-SG_USING_STD(string);
-SG_USING_STD(map);
+using std::string;
+using std::map;
 
 typedef map<AreaType, string> area_type_map;
 typedef map<string, AreaType> area_name_map;

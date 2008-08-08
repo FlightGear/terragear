@@ -50,11 +50,11 @@ extern "C" {
 #include "trinodes.hxx"
 #include "trisegs.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-SG_USING_STD(sort);
-SG_USING_STD(copy);
-SG_USING_STD(ostream_iterator);
+using std::cout;
+using std::endl;
+using std::sort;
+using std::copy;
+using std::ostream_iterator;
 
 // Given a line segment specified by two endpoints p1 and p2, return
 // the slope of the line.

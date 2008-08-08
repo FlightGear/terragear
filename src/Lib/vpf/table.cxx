@@ -3,16 +3,16 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-#include STL_FSTREAM
+#include <string>
+#include <fstream>
 
 #include <simgear/misc/zfstream.hxx>	// ios_binary
 
 #include <stdlib.h>
 
-SG_USING_STD(string);
-SG_USING_STD(ifstream);
-SG_USING_STD(istream);
+using std::string;
+using std::ifstream;
+using std::istream;
 
 #include "vpfbase.hxx"
 #include "table.hxx"

@@ -29,22 +29,22 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 #include <vector>
 
 #include <simgear/bucket/newbucket.hxx>
 
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
+using std::cout;
+using std::cerr;
+using std::endl;
 
 
 #define MAXBUF 1024
 #define BUSY_WAIT_TIME 30
 
-SG_USING_STD(string);
-SG_USING_STD(vector);
+using std::string;
+using std::vector;
 
 string work_base = ".";
 string output_base = ".";

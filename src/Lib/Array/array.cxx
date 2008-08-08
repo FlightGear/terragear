@@ -27,8 +27,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 
 #include <simgear/constants.h>
 #include <simgear/misc/sgstream.hxx>
@@ -41,9 +41,9 @@
 
 #include "array.hxx"
 
-SG_USING_STD(string);
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::string;
+using std::cout;
+using std::endl;
 
 
 TGArray::TGArray( void ):

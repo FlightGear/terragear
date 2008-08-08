@@ -23,15 +23,16 @@
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 
-#include STL_STRING
+#include <string>
 
 #include <stdio.h>
 
 #include "index.hxx"
 
+using std::string;
+
 static long int poly_index;
 static string poly_path;
-
 
 // initialize the unique polygon index counter stored in path
 bool poly_index_init( string path ) {

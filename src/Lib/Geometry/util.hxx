@@ -15,7 +15,6 @@
 #include <simgear/math/point3d.hxx>
 
 #include <string>
-SG_USING_STD(string);
 
 #include <Polygon/polygon.hxx>
 
@@ -109,7 +108,7 @@ Rectangle makeBounds (const TGPolygon &polygon);
  * @param s The string.
  * @return A rectangle containing the bounds.
  */
-Rectangle parseChunk (const string &s, double delta);
+Rectangle parseChunk (const std::string &s, double delta);
 
 
 /**
@@ -118,7 +117,7 @@ Rectangle parseChunk (const string &s, double delta);
  * @param s The string.
  * @return A rectangle containing the bounds.
  */
-Rectangle parseTile (const string &s);
+Rectangle parseTile (const std::string &s);
 
 
 };  // namespace tg

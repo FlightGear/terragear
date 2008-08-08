@@ -29,8 +29,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 
 #include <zlib.h>
 
@@ -46,9 +46,9 @@
 #include "gshhs.h"
 #include "gshhs_split.hxx"
 
-SG_USING_STD( string );
-SG_USING_STD( cout );
-SG_USING_STD( endl );
+using std:: string ;
+using std:: cout ;
+using std:: endl ;
 
 // hackity, hackity, hack ... cough cough
 #ifdef i386

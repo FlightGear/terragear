@@ -39,7 +39,7 @@
 
 #include "merger.hxx"
 
-SG_USING_STD(cout);
+using std::cout;
 
 // Constructor
 FGMerger::FGMerger( void ) {

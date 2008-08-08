@@ -38,7 +38,7 @@
 
 #include <list>
 #include <map>
-#include STL_STRING
+#include <string>
 
 #include <plib/sg.h>			// plib include
 
@@ -74,9 +74,9 @@
 
 #include "build.hxx"
 
-SG_USING_STD(map);
-SG_USING_STD(less);
-SG_USING_STD(string);
+using std::map;
+using std::less;
+using std::string;
 
 
 // calculate texture coordinates for runway section using the provided

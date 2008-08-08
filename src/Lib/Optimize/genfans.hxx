@@ -38,10 +38,7 @@
 
 #include <Triangulate/trieles.hxx>
 
-SG_USING_STD(vector);
-
-
-typedef vector < int_list > opt_list;
+typedef std::vector < int_list > opt_list;
 typedef opt_list::iterator opt_list_iterator;
 typedef opt_list::const_iterator const_opt_list_iterator;
 

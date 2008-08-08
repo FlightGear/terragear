@@ -34,9 +34,6 @@
 
 #include <vector>
 
-SG_USING_STD(vector);
-
-
 // a segment is two integer pointers into the node list
 class TGTriEle {
     int n1, n2, n3;
@@ -65,7 +62,7 @@ public:
 };
 
 
-typedef vector < TGTriEle > triele_list;
+typedef std::vector < TGTriEle > triele_list;
 typedef triele_list::iterator triele_list_iterator;
 typedef triele_list::const_iterator const_triele_list_iterator;
 

@@ -33,8 +33,8 @@
 
 #include "merger.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 int main( int argc, char **argv ) {
   point2d global_min, global_max;

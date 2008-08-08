@@ -27,13 +27,10 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-
-SG_USING_STD(string);
-
+#include <string>
 
 // initialize the unique polygon index counter stored in path
-bool poly_index_init( string path );
+bool poly_index_init( std::string path );
 
 // increment the persistant counter and return the next poly_index
 long int poly_index_next();

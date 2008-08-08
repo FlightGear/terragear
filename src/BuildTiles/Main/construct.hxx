@@ -37,7 +37,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
+#include <string>
+#include <vector>
 
 #include <simgear/bucket/newbucket.hxx>
 
@@ -48,10 +49,7 @@
 #include <Clipper/clipper.hxx>
 #include <Triangulate/trieles.hxx>
 
-SG_USING_STD(string);
-
-
-typedef vector < int_list > belongs_to_list;
+typedef std::vector < int_list > belongs_to_list;
 typedef belongs_to_list::iterator belongs_to_list_iterator;
 typedef belongs_to_list::const_iterator belongs_to_list_tripoly_iterator;
 
@@ -61,11 +59,11 @@ class TGConstruct {
 private:
 
     // path to land-cover file (if any)
-    string cover;
+    std::string cover;
 
     // paths
-    string work_base;
-    string output_base;
+    std::string work_base;
+    std::string output_base;
 
     // flag indicating whether to align texture coords within the UK
     // with the UK grid
@@ -119,14 +117,14 @@ public:
     ~TGConstruct();
     
     // land cover file
-    inline string get_cover () const { return cover; }
-    inline void set_cover (const string &s) { cover = s; }
+    inline std::string get_cover () const { return cover; }
+    inline void set_cover (const std::string &s) { cover = s; }
 
     // paths
-    inline string get_work_base() const { return work_base; }
-    inline void set_work_base( const string s ) { work_base = s; }
-    inline string get_output_base() const { return output_base; }
-    inline void set_output_base( const string s ) { output_base = s; }
+    inline std::string get_work_base() const { return work_base; }
+    inline void set_work_base( const std::string s ) { work_base = s; }
+    inline std::string get_output_base() const { return output_base; }
+    inline void set_output_base( const std::string s ) { output_base = s; }
 
     // UK grid flag
     inline bool get_useUKGrid() const { return useUKGrid; }

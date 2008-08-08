@@ -29,8 +29,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-#include STL_IOSTREAM
+#include <string>
+#include <iostream>
 
 #include <zlib.h>
 
@@ -47,9 +47,9 @@
 #  define FLIP
 #endif
 
-SG_USING_STD(cout);
-SG_USING_STD(cin);
-SG_USING_STD(endl);
+using std::cout;
+using std::cin;
+using std::endl;
 
 // write result to unique file name
 void write_result( const TGPolygon& result ) {

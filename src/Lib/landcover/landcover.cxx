@@ -5,13 +5,13 @@
 // Use at your own risk.
 
 #include <simgear/compiler.h>
-#include STL_STRING
+#include <string>
 
 
 #include "landcover.hxx"
 
-SG_USING_STD(ifstream);
-SG_USING_STD(string);
+using std::ifstream;
+using std::string;
 
 LandCover::LandCover( const string &filename )
 {

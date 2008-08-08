@@ -3,16 +3,16 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 
 #include <stdlib.h>
 
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
-SG_USING_STD(ostream);
-SG_USING_STD(string);
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::ostream;
+using std::string;
 
 #include "vpf.hxx"
 

@@ -37,11 +37,7 @@
 #include <Polygon/polygon.hxx>
 #include <Polygon/names.hxx>
 
-#include STL_STRING
-#include <vector>
-
-SG_USING_STD(string);
-SG_USING_STD(vector);
+#include <string>
 
 #define FG_MAX_AREA_TYPES 128	// FIXME: also defined in clipper.hxx
 
@@ -70,14 +66,14 @@ public:
   // Initialize Clipper (allocate and/or connect structures)
   bool init();  
   
-  bool load_polys(const string& path, FGPolyList& clipped);
+  bool load_polys(const std::string& path, FGPolyList& clipped);
   // Merge all polygons of the given area
   void merge(FGPolyList& clipped);
 
   // Clip all merged polygons with the land mass one
   void clip(FGPolyList& subject, FGPolyList& clip);
   
-  void write(FGPolyList& subject, string& file);
+  void write(FGPolyList& subject, std::string& file);
 
   inline FGPolyList get_polys_clipped() const { return polys_subject; }
   

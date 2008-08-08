@@ -7,15 +7,15 @@
 
 #include <stdlib.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 
 #include "landcover.hxx"
 
-SG_USING_STD(cerr);
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-SG_USING_STD(string);
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::string;
 
 int
 main (int ac, const char * av[])

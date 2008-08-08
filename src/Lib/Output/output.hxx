@@ -37,7 +37,7 @@
 #include <time.h>
 
 #include <list>
-#include STL_STRING
+#include <string>
 
 #include <simgear/math/sg_types.hxx>
 

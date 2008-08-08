@@ -42,8 +42,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 #include <vector>
 
 #include <plib/sg.h>
@@ -63,11 +63,11 @@
 
 #include "construct.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(cerr);
-SG_USING_STD(endl);
-SG_USING_STD(string);
-SG_USING_STD(vector);
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::string;
+using std::vector;
 
 vector<string> load_dirs;
 

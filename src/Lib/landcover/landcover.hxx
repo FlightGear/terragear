@@ -9,12 +9,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-#include STL_FSTREAM
-
-SG_USING_STD(ifstream);
-SG_USING_STD(string);
-
+#include <string>
+#include <fstream>
 
 /**
  * Query class for the USGS worldwide 30 arcsec land-cover image.
@@ -65,7 +61,7 @@ class LandCover {
 
 public:
 
-  LandCover( const string &filename );
+  LandCover( const std::string &filename );
   virtual ~LandCover ();
 
   virtual int getValue (long x, long y) const;
@@ -73,7 +69,7 @@ public:
   virtual const char *getDescUSGS (int value) const;
 
 private:
-  mutable ifstream * _input;
+  mutable std::ifstream * _input;
   long WIDTH;
   long HEIGHT;
 };

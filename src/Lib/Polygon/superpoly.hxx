@@ -43,21 +43,17 @@
 
 #include "polygon.hxx"
 
-SG_USING_STD(string);
-SG_USING_STD(vector);
-
-
 class TGSuperPoly {
 
 private:
 
-    string material;		// material/texture name
+    std::string material;	// material/texture name
     TGPolygon poly;		// master polygon
     TGPolygon normals;		// corresponding normals
     TGPolygon texcoords;	// corresponding texture coordinates
     TGPolygon tris;		// triangulation
     GLenum tri_mode;		// GL_TRIANGLE, GL_FAN, GL_TRISTRIP, etc.
-    string flag;         // For various potential record keeping needs
+    std::string flag;           // For various potential record keeping needs
 
 public:
 
@@ -65,8 +61,8 @@ public:
     TGSuperPoly( void );
     ~TGSuperPoly( void );
 
-    inline string get_material() const { return material; }
-    inline void set_material( const string &m ) { material = m; }
+    inline std::string get_material() const { return material; }
+    inline void set_material( const std::string &m ) { material = m; }
 
     inline TGPolygon get_poly() const { return poly; }
     inline void set_poly( const TGPolygon &p ) { poly = p; }
@@ -83,8 +79,8 @@ public:
     inline GLenum get_tri_mode() const { return tri_mode; }
     inline void set_tri_mode( const GLenum &m ) { tri_mode = m; }
 
-    inline string get_flag() const { return flag; }
-    inline void set_flag( const string f ) { flag = f; }
+    inline std::string get_flag() const { return flag; }
+    inline void set_flag( const std::string f ) { flag = f; }
 
     // erase the polygon
     void erase();
@@ -92,7 +88,7 @@ public:
 };
 
 
-typedef vector < TGSuperPoly > superpoly_list;
+typedef std::vector < TGSuperPoly > superpoly_list;
 typedef superpoly_list::iterator superpoly_list_iterator;
 typedef superpoly_list::const_iterator const_superpoly_list_iterator;
 

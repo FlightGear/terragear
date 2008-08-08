@@ -35,16 +35,10 @@
 
 #include <simgear/compiler.h>
 
-#include <vector>
-
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/misc/sgstream.hxx>
-
-
-SG_USING_STD(vector);
-
 
 #define ARRAY_SIZE_1 1201
 

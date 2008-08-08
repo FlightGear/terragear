@@ -29,11 +29,11 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-#include STL_IOSTREAM
+#include <string>
+#include <iostream>
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>

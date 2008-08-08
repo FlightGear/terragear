@@ -1,11 +1,11 @@
 #include <simgear/compiler.h>
 #include <simgear/math/point3d.hxx>
 
-#include STL_IOSTREAM
+#include <iostream>
 
 #include "osgb36.hxx"
 
-SG_USING_STD(cout);
+using std::cout;
 
 static void Usage() {
     cout << "Usage is testosgb36 <lon> <lat>\n";

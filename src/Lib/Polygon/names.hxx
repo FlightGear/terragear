@@ -27,21 +27,19 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
+#include <string>
 
-SG_USING_STD(string);
-
-inline static bool is_ocean_area( const string &area )
+inline static bool is_ocean_area( const std::string &area )
 {
 	return area=="Ocean" || area=="Bay  Estuary or Ocean";
 }
 
-inline static bool is_void_area( const string &area )
+inline static bool is_void_area( const std::string &area )
 {
 	return area=="Void Area";
 }
 
-inline static bool is_null_area( const string& area )
+inline static bool is_null_area( const std::string& area )
 {
 	return area=="Null";
 }

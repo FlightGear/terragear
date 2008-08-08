@@ -29,8 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include STL_STRING
-#include STL_IOSTREAM
+#include <string>
+#include <iostream>
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
@@ -44,9 +44,9 @@
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 
-SG_USING_STD(string);
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::string;
+using std::cout;
+using std::endl;
 
 
 const int MAX_XDIV = 16;

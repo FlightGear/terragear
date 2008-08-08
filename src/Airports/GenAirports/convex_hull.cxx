@@ -34,8 +34,8 @@
 #include <simgear/constants.h>
 #include <simgear/structure/exception.hxx>
 
-SG_USING_STD(less);
-SG_USING_STD(map);
+using std::less;
+using std::map;
 
 #include <simgear/constants.h>
 

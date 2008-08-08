@@ -36,9 +36,6 @@
 
 #include "trinodes.hxx"
 
-SG_USING_STD(vector);
-
-
 // a segment is two integer pointers into the node list
 class TGTriSeg {
     int n1, n2;			// indices into point list
@@ -75,7 +72,7 @@ inline bool operator == (const TGTriSeg& a, const TGTriSeg& b)
 }
 
 
-typedef vector < TGTriSeg > triseg_list;
+typedef std::vector < TGTriSeg > triseg_list;
 typedef triseg_list::iterator triseg_list_iterator;
 typedef triseg_list::const_iterator const_triseg_list_iterator;
 

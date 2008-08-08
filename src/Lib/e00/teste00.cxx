@@ -9,9 +9,9 @@
 #include <simgear/misc/sgstream.hxx>
 #include "e00.hxx"
 
-SG_USING_STD(cerr);
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cerr;
+using std::cout;
+using std::endl;
 
 int main (int ac, const char ** av)
 {

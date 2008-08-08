@@ -24,14 +24,14 @@
 #include <simgear/constants.h>
 #include <simgear/math/point3d.hxx>
 
-#include STL_IOSTREAM
+#include <iostream>
 
 #include "trinodes.hxx"
 
 #include "trisegs.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 
 // Constructor 

@@ -33,7 +33,7 @@
 #include <zlib.h>
 
 #include <list>
-#include STL_STRING
+#include <string>
 
 #include <simgear/bucket/newbucket.hxx>
 
@@ -45,8 +45,8 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-SG_USING_STD( cout );
-SG_USING_STD( endl );
+using std:: cout ;
+using std:: endl ;
 
 
 void write_polygon( const TGPolygon& poly, const string& base ) {

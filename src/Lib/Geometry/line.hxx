@@ -15,7 +15,6 @@
 #include <simgear/math/point3d.hxx>
 
 #include <vector>
-SG_USING_STD(vector);
 
 #include "rectangle.hxx"
 
@@ -85,7 +84,7 @@ public:
   virtual Rectangle getBounds () const;
 
 private:
-  vector<Point3D> _points;
+  std::vector<Point3D> _points;
 };
 
 };

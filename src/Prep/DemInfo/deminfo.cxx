@@ -23,8 +23,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,8 +32,8 @@
 
 #include <DEM/dem.hxx>
 
-SG_USING_STD(cout);
-SG_USING_STD(string);
+using std::cout;
+using std::string;
 
 
 // static float dem_data[DEM_SIZE_1][DEM_SIZE_1];

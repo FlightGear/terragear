@@ -32,12 +32,10 @@
 
 #include <zlib.h>
 
-#include STL_STRING
+#include <string>
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
-
-SG_USING_STD(string);
 
 #define MAX_HGT_SIZE 3601
 
@@ -65,7 +63,7 @@ private:
     int hgt_resolution;
 
     bool remove_tmp_file;
-    string remove_file_name;
+    std::string remove_file_name;
 
 public:
 
@@ -89,10 +87,10 @@ public:
     // write out the area of data covered by the specified bucket.
     // Data is written out column by column starting at the lower left
     // hand corner.
-    bool write_area( const string& root, SGBucket& b );
+    bool write_area( const std::string& root, SGBucket& b );
 
     // write the entire area out in a simple ascii format
-    bool write_whole_ascii( const string& file );
+    bool write_whole_ascii( const std::string& file );
 
     // Informational methods
     inline double get_originx() const { return originx; }

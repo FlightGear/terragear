@@ -26,8 +26,8 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
-#include STL_IOSTREAM
+#include <string>
+#include <iostream>
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
@@ -35,9 +35,9 @@
 
 #include <Array/array.hxx>
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
-SG_USING_STD(string);
+using std::cout;
+using std::endl;
+using std::string;
 
 
 int main(int argc, char **argv) {

@@ -25,7 +25,7 @@
 
 #include <simgear/compiler.h>
 
-#include STL_STRING
+#include <string>
 
 #include <simgear/debug/logstream.hxx>
 
@@ -38,8 +38,8 @@
 #  include <Win32/mkdir.hpp>
 #endif
 
-SG_USING_STD( cout );
-SG_USING_STD( string );
+using std:: cout ;
+using std:: string ;
 
 // return the type of the shapefile record
 std::string get_shapefile_type(DBFHandle& hDBF, int rec) {

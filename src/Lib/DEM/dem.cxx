@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include STL_IOSTREAM
+#include <iostream>
 
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h> // stat()
@@ -59,8 +59,8 @@
 
 #include "dem.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 
 TGDem::TGDem() :

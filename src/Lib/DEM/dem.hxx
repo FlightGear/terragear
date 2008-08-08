@@ -38,7 +38,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#include STL_STRING
+#include <string>
 
 #define DEM_SIZE 1200
 #define DEM_SIZE_1 1201

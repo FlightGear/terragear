@@ -33,8 +33,8 @@
 
 #include "lights.hxx"
 
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::cout;
+using std::endl;
 
 
 // calculate the runway light direction vector.  We take the center of

@@ -30,8 +30,8 @@
 #include <sys/stat.h>  // for stat()
 #include <unistd.h>    // for stat()
 
-#include STL_STRING
-#include STL_IOSTREAM
+#include <string>
+#include <iostream>
 
 #include <simgear/bucket/newbucket.hxx>
 
@@ -44,9 +44,9 @@
 // #include <Match/match.hxx>
 // #include <Triangulate/triangle.hxx>
 
-SG_USING_STD(string);
-SG_USING_STD(cout);
-SG_USING_STD(endl);
+using std::string;
+using std::cout;
+using std::endl;
 
 
 // return true if file exists

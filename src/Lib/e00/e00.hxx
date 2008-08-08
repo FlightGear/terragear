@@ -6,23 +6,18 @@
 #include <simgear/compiler.h>
 
 #include <vector>
-#include STL_STRING
-#include STL_IOSTREAM
-
-SG_USING_STD(vector);
-SG_USING_STD(string);
-SG_USING_STD(istream);
-
+#include <string>
+#include <iostream>
 
 // An exception reading an E00 file.
 
 class E00Exception
 {
 public:
-  E00Exception (const string &message) : _message(message) {}
-  virtual const string &getMessage () const { return _message; }
+  E00Exception (const std::string &message) : _message(message) {}
+  virtual const std::string &getMessage () const { return _message; }
 private:
-  string _message;
+  std::string _message;
 };
 
 
@@ -61,7 +56,7 @@ public:
     int leftPolygon;
     int rightPolygon;
     int numberOfCoordinates;
-    vector<Coord> coordinates;
+    std::vector<Coord> coordinates;
     bool in_polygon;
   };
 
@@ -73,7 +68,7 @@ public:
     virtual ~CNT () {}
     int numLabels;
     Coord centroid;
-    vector<int> labels;
+    std::vector<int> labels;
   };
 
 
@@ -95,7 +90,7 @@ public:
   struct LOG
   {
     virtual ~LOG () {}
-    vector<string> lines;
+    std::vector<std::string> lines;
   };
 
 
@@ -113,7 +108,7 @@ public:
     int numArcs;
     Coord min;
     Coord max;
-    vector<ARCref> arcs;
+    std::vector<ARCref> arcs;
   };
 
 
@@ -122,7 +117,7 @@ public:
   struct PRJ
   {
     virtual ~PRJ () {}
-    vector<string> lines;
+    std::vector<std::string> lines;
   };
 
 
@@ -144,33 +139,33 @@ public:
     virtual ~IFO () {}
     struct ItemDef 
     {
-      string itemName;
+      std::string itemName;
       int itemWidth;		// followed by -1
       int itemStartPos;		// followed by 4-1
       int itemOutputFormat[2];
-      string itemType;
+      std::string itemType;
       // -1
       // -1-1
-      string seqId;
+      std::string seqId;
     };
-    typedef vector<string> Entry;
-    string fileName;
-    string isArcInfo;
+    typedef std::vector<std::string> Entry;
+    std::string fileName;
+    std::string isArcInfo;
     int numItems;
     int altNumItems;
     int dataRecordLength;
     int numDataRecords;
-    vector<ItemDef> defs;
-    vector<Entry> entries;
+    std::vector<ItemDef> defs;
+    std::vector<Entry> entries;
   };
 
 
   E00 ();
   virtual ~E00 ();
 
-  virtual void readE00 (istream &input);
+  virtual void readE00 (std::istream &input);
 
-  virtual string getPathName () const { return pathName; }
+  virtual std::string getPathName () const { return pathName; }
 
   virtual int nPoints () const { return lab_section.size(); }
   virtual int nLines () const { return arc_section.size(); }
@@ -181,28 +176,28 @@ public:
   virtual const LAB &getLAB (int i) const { return lab_section[i-1]; }
   virtual const PAL &getPAL (int i) const { return pal_section[i-1]; }
   virtual const IFO &getIFO (int i) const { return ifo_section[i-1]; }
-  virtual const IFO * getIFO (const string &name) const;
-  virtual const string * getIFOItem (const string &fileName, int entry,
-				     const string &itemName) const;
-  virtual const string * getIFOItemType (const string &fileName,
-					 const string &itemName) const;
+  virtual const IFO * getIFO (const std::string &name) const;
+  virtual const std::string * getIFOItem (const std::string &fileName, int entry,
+				          const std::string &itemName) const;
+  virtual const std::string * getIFOItemType (const std::string &fileName,
+					      const std::string &itemName) const;
     
 
 private:
 
   virtual ARC &_getARC (int i) { return arc_section[i-1]; }
 
-  string pathName;
-  vector<ARC> arc_section;
-  vector<CNT> cnt_section;
-  vector<LAB> lab_section;
-  vector<LOG> log_section;
-  vector<PAL> pal_section;
-  vector<PRJ> prj_section;
-  vector<TOL> tol_section;
-  vector<IFO> ifo_section;
+  std::string pathName;
+  std::vector<ARC> arc_section;
+  std::vector<CNT> cnt_section;
+  std::vector<LAB> lab_section;
+  std::vector<LOG> log_section;
+  std::vector<PAL> pal_section;
+  std::vector<PRJ> prj_section;
+  std::vector<TOL> tol_section;
+  std::vector<IFO> ifo_section;
 
-  mutable istream * _input;
+  mutable std::istream * _input;
 
   void postProcess ();
 

@@ -33,21 +33,16 @@
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 
-#include STL_IOSTREAM
-#include STL_STRING
+#include <iostream>
+#include <string>
 #include <vector>
 
 #include "point2d.hxx"
 
-SG_USING_STD(ostream);
-SG_USING_STD(string);
-SG_USING_STD(vector);
-
-
 #define FG_MAX_VERTICES 1500000
 
 
-typedef vector < point_list > polytype;
+typedef std::vector < point_list > polytype;
 typedef polytype::iterator polytype_iterator;
 typedef polytype::const_iterator const_polytype_iterator;
 
@@ -182,14 +177,14 @@ public:
     bool is_inside( int a, int b ) const;
 
     // output
-    void write( const string& file ) const;
+    void write( const std::string& file ) const;
 
     // output
-    void write_contour( const int contour, const string& file ) const;
+    void write_contour( const int contour, const std::string& file ) const;
 };
 
 
-typedef vector < TGPolygon > poly_list;
+typedef std::vector < TGPolygon > poly_list;
 typedef poly_list::iterator poly_list_iterator;
 typedef poly_list::const_iterator const_poly_list_iterator;
 
@@ -234,7 +229,7 @@ TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip );
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
 
 // Output
-ostream &operator<< (ostream &output, const TGPolygon &poly);
+std::ostream &operator<< (std::ostream &output, const TGPolygon &poly);
 
 
 #endif // _POLYGON_HXX
