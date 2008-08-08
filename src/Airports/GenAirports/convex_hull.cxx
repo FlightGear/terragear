@@ -34,13 +34,13 @@
 #include <simgear/constants.h>
 #include <simgear/structure/exception.hxx>
 
-using std::less;
-using std::map;
-
 #include <simgear/constants.h>
 
 #include "convex_hull.hxx"
 #include "point2d.hxx"
+
+using std::less;
+using std::map;
 
 
 // stl map typedefs

@@ -17,11 +17,11 @@
 
 #include <iostream>
 
+#include "vpf.hxx"
+
 using std::cout;
 using std::cerr;
 using std::endl;
-
-#include "vpf.hxx"
 
 
 /**

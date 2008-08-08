@@ -26,13 +26,13 @@
 #include <iostream>
 #include <string>
 
+#include "vpf.hxx"
+
 using std::string;
 
 using std::cout;
 using std::cerr;
 using std::endl;
-
-#include "vpf.hxx"
 
 /**
  * Get a printable name for a value type.

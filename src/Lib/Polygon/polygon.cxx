@@ -35,13 +35,13 @@ extern "C" {
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/structure/exception.hxx>
 
-using std::endl;
-
 #include <Geometry/trinodes.hxx>
 #include <poly2tri/interface.h>
 
 #include "polygon.hxx"
 #include "point2d.hxx"
+
+using std::endl;
 
 // Constructor 
 TGPolygon::TGPolygon( void )

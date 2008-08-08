@@ -38,12 +38,6 @@
 #include <string>
 #include <vector>
 
-using std::cerr;
-using std::cout;
-using std::endl;
-using std::string;
-using std::vector;
-
 #include <Geometry/line.hxx>
 #include <Geometry/util.hxx>
 #include <Polygon/chop.hxx>
@@ -54,6 +48,12 @@ using std::vector;
 #ifdef _MSC_VER
 #  include <Win32/mkdir.hpp>
 #endif
+
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::string;
+using std::vector;
 
 
 

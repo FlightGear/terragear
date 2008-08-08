@@ -35,15 +35,11 @@
 
 #include <list>
 #include <vector>
-using std::vector;
 
 #include <stdio.h>
 #include <string.h>
 #include <string>
 #include <iostream>
-
-using std::cout;
-using std::endl;
 
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
@@ -61,6 +57,9 @@ using std::endl;
 #  include <Win32/mkdir.hpp>
 #endif
 
+using std::vector;
+using std::cout;
+using std::endl;
 
 
 int nudge = 10;

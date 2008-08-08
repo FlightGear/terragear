@@ -8,13 +8,13 @@
 
 #include <stdlib.h>
 
+#include "vpf.hxx"
+
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::ostream;
 using std::string;
-
-#include "vpf.hxx"
 
 
 ostream &

@@ -10,12 +10,12 @@
 
 #include <stdlib.h>
 
+#include "vpfbase.hxx"
+#include "table.hxx"
+
 using std::string;
 using std::ifstream;
 using std::istream;
-
-#include "vpfbase.hxx"
-#include "table.hxx"
 
 
 

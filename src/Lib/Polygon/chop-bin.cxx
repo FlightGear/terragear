@@ -32,9 +32,6 @@
 #include <string>
 #include <iostream>
 
-using std::cout;
-using std::endl;
-
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/structure/exception.hxx>
@@ -49,6 +46,8 @@ using std::endl;
 #include "simple_clip.hxx"
 #include "chop.hxx"
 
+using std::cout;
+using std::endl;
 
 static void clip_and_write_poly( string root, long int p_index,
 				 const string &poly_type, 

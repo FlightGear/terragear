@@ -90,13 +90,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-using std::string;
-
 /******************* simgear ********************************/
 #include <simgear/constants.h>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sg_path.hxx>
 /************************************************************/
+
+using std::string;
 
 
 // Configure the following for your particular directory structure ...

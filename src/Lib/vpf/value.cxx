@@ -4,11 +4,11 @@
 #include <iostream>
 #include <string>
 
-using std::ostream;
-using std::string;
-
 #include "vpfbase.hxx"
 #include "value.hxx"
+
+using std::ostream;
+using std::string;
 
 VpfValue::VpfValue ()
   : _raw_type('X'),

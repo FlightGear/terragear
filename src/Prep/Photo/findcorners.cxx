@@ -8,10 +8,10 @@
 
 #include <plib/sg.h>
 
+#include <simgear/math/sg_geodesy.hxx>
+
 using std::cout;
 using std::endl;
-
-#include <simgear/math/sg_geodesy.hxx>
 
 int main( int argc, char **argv ) {
 
