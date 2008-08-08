@@ -7,10 +7,6 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-using std::ostream;
-using std::endl;
-
-
 /*************************************************************************
  *
  * Yes, here it is.  A bunch of nice overloaded routines to make it
@@ -164,19 +160,19 @@ inline void glToPPM(FILE *out)
 }
 #endif
 
-inline ostream& operator<<(ostream& out,const gfxPixel& p)
+inline std::ostream& operator<<(std::ostream& out, const gfxPixel& p)
 {
     return out << p.channel.r << p.channel.g << p.channel.b;
 }
 
-inline void glToPPM(ostream& out)
+inline void glToPPM(std::ostream& out)
 {
     int x,y,w,h;
     
     glGetViewport(&x, &y, &w, &h);
     gfxPixel *data = glSnapshot(x,y,w,h);
 
-    out << "P6 " << w <<" "<< h << " 255" << endl;
+    out << "P6 " << w <<" "<< h << " 255" << std::endl;
     int i,j;
     for(j=h-1;j>=0;j--)
 	for(i=0;i<w;i++)

@@ -9,9 +9,6 @@
 
 #include <string>
 
-using std::string;
-
-
 class VpfTable;
 
 
@@ -52,7 +49,7 @@ public:
    *
    * @return The subdirectory for a tile.
    */
-  virtual string getTileSubdir () const;
+  virtual std::string getTileSubdir () const;
 
 
   /**

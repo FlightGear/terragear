@@ -5,8 +5,6 @@
 
 #include <iostream>
 
-using std::istream;
-
 namespace Terra {
 
 class ImportMask
@@ -50,7 +48,7 @@ inline real& RealMask::ref(int i, int j)
 	return data[j*width + i];
 }
 
-extern RealMask *readMask(istream&);
+extern RealMask *readMask(std::istream&);
 
 }; // namespace Terra
 

@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <iostream>
 
-using std::istream;
-
 #include "Geom.h"
 
 namespace Terra {
@@ -25,13 +23,13 @@ public:
     real eval(real i, real j) { return eval((int)i,(int)j); }
     virtual real eval(int i, int j) = 0;
 
-    virtual void rawRead(istream&) = 0;
-    virtual void textRead(istream&) = 0;
+    virtual void rawRead(std::istream&) = 0;
+    virtual void textRead(std::istream&) = 0;
     virtual void *getBlock() { return NULL; }
     virtual void findLimits();
 };
 
-extern Map *readPGM(istream&);
+extern Map *readPGM(std::istream&);
 
 
 
@@ -57,8 +55,8 @@ public:
     real eval(int i, int j) { return (real)ref(i,j); }
     void *getBlock() { return data; }
 
-    void rawRead(istream&);
-    void textRead(istream&);
+    void rawRead(std::istream&);
+    void textRead(std::istream&);
 };
 
 typedef DirectMap<unsigned char>  ByteMap;
@@ -79,7 +77,7 @@ DirectMap<T>::DirectMap(int w, int h)
 }
 
 template<class T>
-void DirectMap<T>::rawRead(istream& in)
+void DirectMap<T>::rawRead(std::istream& in)
 {
     char *loc = (char *)data;
     int target = width*height*sizeof(T);
@@ -93,7 +91,7 @@ void DirectMap<T>::rawRead(istream& in)
 }
 
 template<class T>
-void DirectMap<T>::textRead(istream& in)
+void DirectMap<T>::textRead(std::istream& in)
 {
     for(int j=0;j<height;j++)
 	for(int i=0;i<width;i++)

@@ -28,10 +28,6 @@
 
 #include <list>
 
-#ifdef NEEDNAMESPACESTD
-using namespace std;
-#endif
-
 #include <simgear/math/sg_types.hxx>
 
 #include <Polygon/polygon.hxx>

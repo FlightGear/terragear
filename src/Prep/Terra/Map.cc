@@ -5,6 +5,7 @@
 
 namespace Terra {
 
+using std::istream;
 using std::cerr;
 using std::endl;
 

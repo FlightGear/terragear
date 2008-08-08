@@ -11,6 +11,8 @@
 #include <assert.h>
 #endif
 
+#include <iostream>
+
 namespace Terra {
 
 typedef double real;
@@ -172,10 +174,10 @@ public:
 	p[Y] = (c*l.a - a*l.c)/den;
     }
 
-    friend ostream& operator<<(ostream&, const Line&);
+    friend std::ostream& operator<<(std::ostream&, const Line&);
 };
 
-inline ostream& operator<<(ostream &out, const Line& l)
+inline std::ostream& operator<<(std::ostream &out, const Line& l)
 {
     return out << "Line(a=" << l.a << " b=" << l.b << " c=" << l.c << ")";
 }

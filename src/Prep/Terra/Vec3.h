@@ -1,6 +1,8 @@
 #ifndef VEC3_INCLUDED // -*- C++ -*-
 #define VEC3_INCLUDED
 
+#include <iostream>
+
 namespace Terra {
 
 class Vec3 {
@@ -41,8 +43,8 @@ public:
 
 
     // Input/Output methods
-    friend ostream& operator<<(ostream&, const Vec3&);
-    friend istream& operator>>(istream&, Vec3&);
+    friend std::ostream& operator<<(std::ostream&, const Vec3&);
+    friend std::istream& operator>>(std::istream&, Vec3&);
 
     // Additional vector methods
     inline real length();
@@ -165,12 +167,12 @@ inline real Vec3::unitize()
     return l;
 }
 
-inline ostream& operator<<(ostream& out, const Vec3& v)
+inline std::ostream& operator<<(std::ostream& out, const Vec3& v)
 {
     return out << "[" << v[0] << " " << v[1] << " " << v[2] << "]";
 }
 
-inline istream& operator>>(istream& in, Vec3& v)
+inline std::istream& operator>>(std::istream& in, Vec3& v)
 {
     char c;
     return in >> c >> v[0] >> v[1] >> v[2] >> c;

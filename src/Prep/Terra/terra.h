@@ -5,6 +5,8 @@
 #include "Map.h"
 #include "Mask.h"
 
+#include <iostream>
+
 namespace Terra {
 
 extern GreedySubdivision *mesh;
@@ -23,15 +25,15 @@ extern char *script_filename;
 extern int goal_not_met();
 extern void greedy_insertion();
 extern void display_greedy_insertion(void (*callback)());
-extern void scripted_preinsertion(istream&);
+extern void scripted_preinsertion(std::istream&);
 extern void subsample_insertion(int target_width);
 
 extern void generate_output(char *filename=NULL,
 			    FileFormat format=NULLfile);
-extern void output_tin(ostream&);
-extern void output_eps(ostream&);
-extern void output_obj(ostream&);
-extern void output_dem(ostream&);
+extern void output_tin(std::ostream&);
+extern void output_eps(std::ostream&);
+extern void output_obj(std::ostream&);
+extern void output_dem(std::ostream&);
 
 extern void process_cmdline(int argc, char **argv);
 

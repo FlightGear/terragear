@@ -3,6 +3,8 @@
 
 #include "Geom.h"
 
+#include <iostream>
+
 namespace Terra {
 
 class Triangle;
@@ -74,7 +76,7 @@ inline boolean leftOf(const Vec2& x, const Edge *e)
 }
 
 
-inline ostream& operator<<(ostream& out, const Edge *e)
+inline std::ostream& operator<<(std::ostream& out, const Edge *e)
 {
     return out << "{ " << e->Org() << " ---> " << e->Dest() << " }";
 }

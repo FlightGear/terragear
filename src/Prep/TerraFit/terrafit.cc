@@ -46,6 +46,8 @@
 #include <Prep/Terra/Map.h>
 #include <Prep/Terra/Mask.h>
 
+using std::istream;
+
 /*
  * Benchmark: Processing 800 individual buckets:
  * terrafit.cc: 52s 48s 48s

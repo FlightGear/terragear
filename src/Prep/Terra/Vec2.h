@@ -3,9 +3,6 @@
 
 #include <iostream>
 
-using std::ostream;
-using std::istream;
-
 namespace Terra {
 
 class Vec2 {
@@ -44,8 +41,8 @@ public:
     inline real operator*(const Vec2& v) const;
 
     // Input/Output methods
-    friend ostream& operator<<(ostream&, const Vec2&);
-    friend istream& operator>>(istream&, Vec2&);
+    friend std::ostream& operator<<(std::ostream&, const Vec2&);
+    friend std::istream& operator>>(std::istream&, Vec2&);
 
     // Additional vector methods
     inline real length();
@@ -160,12 +157,12 @@ inline real Vec2::unitize()
     return l;
 }
 
-inline ostream& operator<<(ostream& out, const Vec2& v)
+inline std::ostream& operator<<(std::ostream& out, const Vec2& v)
 {
     return out << "[" << v[0] << " " << v[1] << "]";
 }
 
-inline istream& operator>>(istream& in, Vec2& v)
+inline std::istream& operator>>(std::istream& in, Vec2& v)
 {
     char c;
     return in >> c >> v[0] >> v[1] >> c;

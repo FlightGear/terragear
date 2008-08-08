@@ -3,6 +3,8 @@
 
 #include "Quadedge.h"
 
+#include <iostream>
+
 namespace Terra {
 
 class Subdivision;
@@ -85,7 +87,7 @@ public:
 };
 
 
-inline ostream& operator<<(ostream& out, Triangle& t)
+inline std::ostream& operator<<(std::ostream& out, Triangle& t)
 {
     return out << "Triangle("<< t.point1() << " " << t.point2() << " "
 	       << t.point3() << ")";

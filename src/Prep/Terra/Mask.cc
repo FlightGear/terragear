@@ -5,6 +5,7 @@
 #include "Geom.h"
 #include "Mask.h"
 
+using std::istream;
 using std::cerr;
 using std::endl;
 

@@ -27,9 +27,9 @@ char *output_filename = NULL;
 char *mask_filename   = NULL;
 char *script_filename = NULL;
 
-static char *options = "e:n:p:h:o:m:s:";
+static const char *options = "e:n:p:h:o:m:s:";
 
-static char *usage_string =
+static const char *usage_string =
 "-e <thresh>      Sets the tolerable error threshold\n"
 "-n <count>       Sets the *minimum* number of points regardless of <thresh>\n"
 "-p <count>       Sets the maximum number of allowable points\n"
@@ -41,7 +41,7 @@ static char *usage_string =
 "-s <file>        Execute preinsertion script from <file>\n"
 "\n";
 
-static void usage_error(char *msg = NULL)
+static void usage_error(const char *msg = NULL)
 {
     if( msg )
 	cerr << msg << endl;

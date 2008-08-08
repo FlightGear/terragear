@@ -1,5 +1,8 @@
 #include "terra.h"
 
+#include <iostream>
+
+using std::istream;
 using std::cerr;
 using std::endl;
 
