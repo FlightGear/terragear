@@ -358,20 +358,6 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
 }
 
 /*
- * Helper class for sorting points along a given axis.
- */
-class Point3DOrdering {
-public:
-        Point3DOrdering(int axis):axis(axis) {}
-        bool operator()(const Point3D& a, const Point3D& b) {
-                return a[axis]<b[axis];
-        }
-        
-protected:
-        int axis;
-};
-
-/*
  * Find all intersections of the given contour with the x-parallel line at
  * y=yline. Assume that no points are on the line (callers take care of this!).
  */
