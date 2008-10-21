@@ -229,9 +229,11 @@ void tgChopNormalPolygon( const string& path, const string& poly_type,
 
     if ( dy <= 1 ) {
 	// we are down to at most two rows, write each column and then bail
+        double min_center_lat=b_min.get_center_lat();
+        double min_center_lon=b_min.get_center_lon();
         for ( j = 0; j <= dy; ++j ) {
             for ( i = 0; i <= dx; ++i ) {
-                b_cur = sgBucketOffset(min.x(), min.y(), i, j);
+                b_cur = sgBucketOffset(min_center_lon, min_center_lat, i, j);
                 clip_and_write_poly( path, index, poly_type, b_cur, shape,
                                      preserve3d );
             }
@@ -381,9 +383,11 @@ void tgChopBigSimplePolygon( const string& path, const string& poly_type,
     if ( dy <= 1 ) {
 	// we are down to at most two rows, write each column and then
 	// bail
+        double min_center_lat = b_min.get_center_lat();
+        double min_center_lon = b_min.get_center_lon();
 	for ( j = 0; j <= 1; ++j ) {
 	    for ( i = 0; i <= dx; ++i ) {
-	        b_cur = sgBucketOffset(min.x(), min.y(), i, j);
+	        b_cur = sgBucketOffset(min_center_lon, min_center_lat, i, j);
 	        clip_and_write_poly( path, index, poly_type, b_cur, shape,
                                      preserve3d );
 	    }
