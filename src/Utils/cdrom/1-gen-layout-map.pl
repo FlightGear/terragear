@@ -1,11 +1,18 @@
 #!/usr/bin/perl
 
-$tgzdir = "/stage/fgfs03/curt/Scenery/Scenery-0.9.5";
+$tgzdir = "/stage/fgfs07/ftp/pub/fgfs/Scenery-1.0.0/";
 $verbose = 0;
 
-if ( $#ARGV < 0 ) {
-    die "usage: $0 <disk_size_mb>  (DVD=4500, CDROM=700)\n";
+if ( $#ARGV != 1 ) {
+    print "usage: $0 <reserve> <disk_size_mb>\n";
+    print "  - where <reserve> is some amount to reserve on the first disk\n";
+    print "    for things like the win32 setup program or aircraft or src.\n";
+    print "    At the moment 700 (Mb) works well.\n";
+    print "  - and <disk_size_mb> is the size in MB of each individual disk.\n";
+    print "    DVD=4500 (Mb), CDROM=700 (Mb)\n";
+    exit;
 } else {
+    $reserve = shift(@ARGV);
     $disksize = shift(@ARGV);
 }
 
@@ -25,13 +32,13 @@ if ( $#ARGV < 0 ) {
 
 for $lon (@lons) {
     for $lat (@lats) {
-        push( @files, "$lon$lat.tar.gz" );
+        push( @files, "$lon$lat.tgz" );
     }
 }
 
 
 $disk = 1;
-$total_disk = 0;
+$total_disk = $reserve;
 $total_collection = 0;
 
 foreach $file ( @files ) {

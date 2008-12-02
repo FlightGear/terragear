@@ -8,7 +8,7 @@ if ( $#ARGV < 0 ) {
     $cdromdir = shift(@ARGV);
 }
 
-@files = `ls $cdromdir/*.tar.gz`;
+@files = `ls $cdromdir/*.tgz`;
 $total = 0;
 
 foreach $file ( @files ) {
