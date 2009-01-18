@@ -9,7 +9,7 @@
 #include <vector>
 
 class VpfTable;
-class VpfPoint;
+struct VpfPoint;
 
 class VpfContour : public VpfComponent
 {

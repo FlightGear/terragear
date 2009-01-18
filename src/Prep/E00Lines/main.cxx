@@ -32,6 +32,7 @@
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #include <iostream>
 #include <string>
@@ -43,10 +44,6 @@
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 #include <e00/e00.hxx>
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
 
 using std::cerr;
 using std::cout;
@@ -545,12 +542,9 @@ main (int argc, const char **argv)
 
 				// Make sure the destination
 				// directory exists.
-#ifdef _MSC_VER
-  fg_mkdir(workDir.c_str());
-#else
-  string command = "mkdir -p " + workDir;
-  system(command.c_str());
-#endif
+  SGPath sgp( workDir );
+  sgp.append( "dummy" );
+  sgp.create_dir( 0755 );
 
 				// Process all of the e00 files
 				// on the command line.

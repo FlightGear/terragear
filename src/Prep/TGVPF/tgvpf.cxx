@@ -33,6 +33,7 @@
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
 #include <simgear/timing/timestamp.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #include <iostream>
 #include <string>
@@ -44,10 +45,6 @@
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 #include <vpf/vpf.hxx>
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
 
 using std::cerr;
 using std::cout;
@@ -413,12 +410,9 @@ main (int argc, const char **argv)
 
 				// Make sure the destination
 				// directory exists.
-#ifdef _MSC_VER
-  fg_mkdir(work_dir.c_str());
-#else
-  string command = "mkdir -p " + work_dir;
-  system(command.c_str());
-#endif
+  SGPath sgp( work_dir );
+  sgp.append( "dummy" );
+  sgp.create_dir( 0755 );
 
   //
   // Make the TerraGear polygon for the bounds.

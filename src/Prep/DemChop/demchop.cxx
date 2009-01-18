@@ -32,12 +32,9 @@
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #include <DEM/dem.hxx>
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
 
 #include "point2d.hxx"
 
@@ -58,12 +55,9 @@ int main(int argc, char **argv) {
     string dem_name = argv[1];
     string work_dir = argv[2];
 
-#ifdef _MSC_VER
-    fg_mkdir( work_dir.c_str() );
-#else
-    string command = "mkdir -p " + work_dir;
-    system( command.c_str() );
-#endif
+    SGPath sgp( work_dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     TGDem dem(dem_name);
     dem.parse();

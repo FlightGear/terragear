@@ -118,9 +118,6 @@
 				RelativePath="..\..\..\src\Prep\Terra\cmdline.cc">
 			</File>
 			<File
-				RelativePath=".\dummy.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\src\Prep\Terra\greedy.cc">
 			</File>
 			<File

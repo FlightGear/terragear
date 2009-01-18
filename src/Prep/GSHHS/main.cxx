@@ -35,13 +35,10 @@
 #include <zlib.h>
 
 #include <simgear/debug/logstream.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
 
 #include "gshhs.h"
 #include "gshhs_split.hxx"
@@ -58,7 +55,7 @@ using std:: endl ;
 
 int main( int argc, char **argv ) {
     struct GSHHS h;
-    struct POINT p;
+    struct GSHHS_POINT p;
     TGPolygon shape;
     double w, e, s, n, area, lon, lat, last_lon, last_lat;
     int k, max_east = 270000000;
@@ -75,12 +72,9 @@ int main( int argc, char **argv ) {
     // make work directory
     string work_dir = argv[2];
 
-#ifdef _MSC_VER
-    fg_mkdir( work_dir.c_str() );
-#else
-    string command = "mkdir -p " + work_dir;
-    system( command.c_str() );
-#endif
+    SGPath sgp( work_dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     // get the specified data level
     int target_level = atoi(argv[3]);
@@ -146,8 +140,8 @@ int main( int argc, char **argv ) {
 	last_lon = last_lat = -2000.0;
 
 	for ( k = 0; k < h.n; k++ ) {
-	    if ( gzread(fp, (void *)&p, (unsigned)sizeof(struct POINT)) !=
-		 (unsigned)sizeof(struct POINT) )
+	    if ( gzread(fp, (void *)&p, (unsigned)sizeof(struct GSHHS_POINT)) !=
+		 (unsigned)sizeof(struct GSHHS_POINT) )
 	    {
 		SG_LOG( SG_GENERAL, SG_ALERT, "Error reading file for polygon "
 			<< h.id << " point " << k );

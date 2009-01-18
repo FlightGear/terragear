@@ -7,6 +7,10 @@
 
 #include <iostream>
 
+#ifdef _MSC_VER
+#define rint(x) floor((x) + 0.5)
+#endif
+
 namespace Terra {
 
 extern GreedySubdivision *mesh;

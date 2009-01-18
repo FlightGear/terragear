@@ -36,14 +36,11 @@
 #include <string>
 
 #include <simgear/bucket/newbucket.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #include <Polygon/polygon.hxx>
 
 #include "output.hxx"
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
 
 using std:: cout ;
 using std:: endl ;
@@ -71,12 +68,9 @@ void write_polygon( const TGPolygon& poly, const string& base ) {
 void write_index( const string& base, const SGBucket& b, const string& name )
 {
     string dir = base + "/" + b.gen_base_path();
-#ifdef _MSC_VER
-    fg_mkdir( dir.c_str() );
-#else
-    string command = "mkdir -p " + dir;
-    system(command.c_str());
-#endif
+    SGPath sgp( dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     string file = dir + "/" + b.gen_index_str() + ".ind";
     // string file = dir + "/" + name;
@@ -100,12 +94,9 @@ void write_index_shared( const string &base, const SGBucket &b,
                          const double &heading )
 {
     string dir = base + "/" + b.gen_base_path();
-#ifdef _MSC_VER
-    fg_mkdir( dir.c_str() );
-#else
-    string command = "mkdir -p " + dir;
-    system(command.c_str());
-#endif
+    SGPath sgp( dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     string file = dir + "/" + b.gen_index_str() + ".ind";
     // string file = dir + "/" + name;
@@ -129,12 +120,9 @@ void write_boundary( const string& base, const SGBucket& b,
     Point3D p;
 
     string dir = base + "/" + b.gen_base_path();
-#ifdef _MSC_VER
-    fg_mkdir( dir.c_str() );
-#else
-    string command = "mkdir -p " + dir;
-    system(command.c_str());
-#endif
+    SGPath sgp( dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     string file = dir + "/" + b.gen_index_str();
 

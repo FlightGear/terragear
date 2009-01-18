@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib"
+				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;NOMINMAX"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"

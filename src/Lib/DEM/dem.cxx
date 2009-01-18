@@ -51,11 +51,8 @@
 
 #include <simgear/constants.h>
 #include <simgear/misc/sgstream.hxx>
+#include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/strutils.hxx>
-
-#ifdef _MSC_VER
-#  include <win32/mkdir.hpp>
-#endif
 
 #include "dem.hxx"
 
@@ -458,12 +455,9 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     // generate output file name
     string base = b.gen_base_path();
     string path = root + "/" + base;
-#ifdef _MSC_VER
-    fg_mkdir( path.c_str() );
-#else
-    string command = "mkdir -p " + path;
-    system( command.c_str() );
-#endif
+    SGPath sgp( path );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     string array_file = path + "/" + b.gen_index_str() + ".arr";
     cout << "array_file = " << array_file << endl;

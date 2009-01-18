@@ -35,10 +35,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/structure/exception.hxx>
-
-#ifdef _MSC_VER
-#  include <win32/mkdir.hpp>
-#endif
+#include <simgear/misc/sg_path.hxx>
 
 #include <Output/output.hxx>
 
@@ -126,12 +123,9 @@ static void clip_and_write_poly( string root, long int p_index,
 	long int t_index = b.gen_index();
 	string path = root + "/" + b.gen_base_path();
 
-#ifdef _MSC_VER
-	fg_mkdir( path.c_str() );
-#else
-	string command = "mkdir -p " + path;
-	system( command.c_str() );
-#endif
+        SGPath sgp( path );
+        sgp.append( "dummy" );
+        sgp.create_dir( 0755 );
 
 	sprintf( tile_name, "%ld", t_index );
 	string polyfile = path + "/" + tile_name;

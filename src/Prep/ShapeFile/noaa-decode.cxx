@@ -28,18 +28,17 @@
 #include <string>
 
 #include <simgear/debug/logstream.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
+#include <Polygon/names.hxx>
 #include <shapelib/shapefil.h>
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
 
 using std:: cout ;
 using std:: string ;
+using std:: endl ;
 
 // return the type of the shapefile record
 std::string get_shapefile_type(DBFHandle& hDBF, int rec) {
@@ -269,12 +268,9 @@ int main( int argc, char **argv ) {
     // make work directory
     string work_dir = argv[2];
 
-#ifdef _MSC_VER
-    fg_mkdir( work_dir.c_str() );
-#else
-    string command = "mkdir -p " + work_dir;
-    system( command.c_str() );
-#endif
+    SGPath sgp( work_dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     // allow us to override the area type from the command line.  All
     // polygons in the processed shape file will be assigned this area

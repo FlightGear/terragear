@@ -240,7 +240,7 @@ Edge *Subdivision::locate(const Vec2& x, Edge *start)
                 if (t==0 && !leftOf(eo->Dest(), e))
 		    // x on e but subdiv. is to right
                     e = e->Sym();
-                else if (random()&1) {  // x is on or above ed and
+                else if (rand()&1) {  // x is on or above ed and
                     t = to;             // on or below eo; step randomly
                     e = eo;
                 }

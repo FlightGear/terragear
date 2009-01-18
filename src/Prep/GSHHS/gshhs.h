@@ -30,7 +30,7 @@ struct GSHHS {	/* Global Self-consistant Hierarchical High-resolution Shorelines
 	short int source;		/* 0 = CIA WDBII, 1 = WVS */
 };
 
-struct	POINT {
+struct	GSHHS_POINT {
 	int	x;
 	int	y;
 };

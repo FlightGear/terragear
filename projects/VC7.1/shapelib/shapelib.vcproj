@@ -19,7 +19,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib"
+				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;NOMINMAX"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
@@ -108,9 +108,6 @@
 				RelativePath="..\..\..\src\Lib\shapelib\dbfcreate.c">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\shapelib\dbfdump.c">
-			</File>
-			<File
 				RelativePath="..\..\..\src\Lib\shapelib\dbfopen.c">
 			</File>
 			<File
@@ -124,9 +121,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\src\Lib\shapelib\shpopen.c">
-			</File>
-			<File
-				RelativePath="..\..\..\src\Lib\shapelib\shptest.c">
 			</File>
 			<File
 				RelativePath="..\..\..\src\Lib\shapelib\shputils.c">
