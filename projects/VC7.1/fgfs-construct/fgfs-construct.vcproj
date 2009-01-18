@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="fgfs_construct"
+	Name="fgfs-construct"
 	ProjectGUID="{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}"
 	Keyword="Win32Proj">
 	<Platforms>
@@ -34,7 +34,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ul_d.lib sg_d.lib zlibd.lib"
-				OutputFile="$(OutDir)/fgfs_construct.exe"
+				OutputFile="$(OutDir)/fgfs-construct.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
 				GenerateDebugInformation="TRUE"
@@ -83,7 +83,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ul.lib sg.lib zlib.lib"
-				OutputFile="$(OutDir)/fgfs_construct.exe"
+				OutputFile="$(OutDir)/fgfs-construct.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
 				GenerateDebugInformation="TRUE"

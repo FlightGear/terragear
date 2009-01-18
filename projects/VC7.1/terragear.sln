@@ -180,7 +180,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Match", "Match\Match.vcproj
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs_construct", "fgfs_construct\fgfs_construct.vcproj", "{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-construct", "fgfs-construct\fgfs-construct.vcproj", "{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DC950200-4824-4EEC-8F81-1FEAC31C8206} = {DC950200-4824-4EEC-8F81-1FEAC31C8206}
 		{19722E03-D871-4719-A075-D763EE7E272D} = {19722E03-D871-4719-A075-D763EE7E272D}
