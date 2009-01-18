@@ -10,22 +10,30 @@
 #  include <sys/param.h>	// BSD macro definitions
 #endif
 
-#include <sys/time.h>		// FD_ISSET(), etc.
+#ifdef _MSC_VER
+#  include <io.h>
+#  include <winsock2.h>
+#  include <process.h>
+#  define sleep(a) Sleep(a)
+#  define pid_t int
+#else
+#  include <sys/time.h>		// FD_ISSET(), etc.
+#  include <sys/socket.h>
+#  include <netdb.h>
+#  include <netinet/in.h>
+#  include <unistd.h>
+#  include <utmp.h>
+#  include <strings.h>		// bcopy() on Irix
+#endif
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <unistd.h>
+#include <sys/stat.h>
 #include <fcntl.h>
-#include <dirent.h>
 #include <errno.h>
 
-#include <utmp.h>
 
 #include <stdio.h>
 #include <stdlib.h>		// atoi()
 #include <string.h>		// bcopy(), sterror()
-#include <strings.h>		// bcopy() on Irix
 
 #include <simgear/compiler.h>
 
@@ -34,6 +42,8 @@
 #include <vector>
 
 #include <simgear/bucket/newbucket.hxx>
+
+#include <plib/ul.h>
 
 using std::cout;
 using std::cerr;
@@ -56,7 +66,7 @@ bool do_overwrite = true;
 void check_master_switch() {
     string file = work_base + "/Status/MASTER_ON";
 
-    if ( access( file.c_str(), F_OK ) != 0 ) {
+    if ( access( file.c_str(), 0 ) != 0 ) {
 	cout << "MASTER_ON file, " << file << " not found ... exiting." << endl;
 	exit(0);
     }
@@ -66,7 +76,7 @@ void check_master_switch() {
 // check if the host system is free of interactive users
 int system_free() {
 
-#if !defined(BSD) && !defined(__CYGWIN__)
+#if !defined(BSD) && !defined(__CYGWIN__) && !defined(_MSC_VER)
     struct utmp *uptr;
 
     setutent();
@@ -83,8 +93,10 @@ int system_free() {
     }
 
     endutent();
-#else
+#elif !defined(_MSC_VER)
 #  warning Port me
+#else
+#  pragma message( "Port me" )
 #endif
 
     return 1;
@@ -215,17 +227,17 @@ static bool must_generate( const SGBucket& b ) {
     size_t prefix_len=prefix.size();
     for (int i = 0; i < (int)load_dirs.size(); i++) {
             string path=load_dirs[i]+"/"+b.gen_base_path();
-            DIR *loaddir=opendir(path.c_str());
+            ulDir *loaddir=ulOpenDir(path.c_str());
             if (!loaddir) {
                     if (errno!=ENOENT)
                             cout << " Could not open load directory " << path << ":" << strerror(errno) << "\n";
                     continue;
             }
             
-            struct dirent* de;
+            struct ulDirEnt* de;
             struct stat src_stat;
             
-            while ((de=readdir(loaddir))) {
+            while ((de=ulReadDir(loaddir))) {
                     if (strncmp(de->d_name,prefix.c_str(),prefix_len))
                             continue;
                     string file=path+"/"+de->d_name;
@@ -236,12 +248,12 @@ static bool must_generate( const SGBucket& b ) {
                     }
                     if ( have_btg && src_stat.st_mtime>btg_stat.st_mtime ) {
                             cout << " File " << file << " is newer than btg-file => rebuild\n";
-			    closedir(loaddir);
+			    ulCloseDir(loaddir);
                             return true;
                     }
                     if ( have_stg && src_stat.st_mtime>stg_stat.st_mtime ) {
                             cout << " File " << file << " is newer than stg-file => rebuild\n";
-			    closedir(loaddir);
+			    ulCloseDir(loaddir);
                             return true;
                     }
                     /* Ignore elevation data, as it is not used if we have no
@@ -252,12 +264,12 @@ static bool must_generate( const SGBucket& b ) {
                             continue;
                     if ( !(have_stg && have_btg) ) {
                             cout << " There is source-data (" << file << ") for tile " << b.gen_index_str() << " but .btg or .stg is missing => build\n";
-			    closedir(loaddir);
+			    ulCloseDir(loaddir);
                             return true;
                     }
             }
             
-            closedir(loaddir);
+            ulCloseDir(loaddir);
     }
     
     return false;
@@ -395,8 +407,8 @@ int main(int argc, char *argv[]) {
     pid_t pid = getpid();
 
     char tmp[MAXBUF];
-    sprintf(tmp, "/tmp/result.%s.%d", hostname, pid);
-    string result_file = tmp;
+    sprintf(tmp, "result.%s.%d.", hostname, pid);
+    string result_file = tempnam( 0, tmp );
 
     last_tile = 0;
 
