@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="vpf"
-	ProjectGUID="{0CEE29DA-8A0D-4786-8A0F-5A346AB92C0D}"
+	Name="genapts"
+	ProjectGUID="{B7FA9359-D05E-42DA-8E57-5A932D8EC603}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -14,13 +14,13 @@
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;NOMINMAX"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;NOMINMAX"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -32,8 +32,15 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/vpf.lib"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="ul_d.lib sg_d.lib zlibd.lib"
+				OutputFile="$(OutDir)/genapts.exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/genapts.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -48,6 +55,8 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -57,12 +66,12 @@
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;NOMINMAX"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NOMINMAX"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
@@ -72,8 +81,16 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/vpf.lib"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="ul.lib sg.lib zlib.lib"
+				OutputFile="$(OutDir)/genapts.exe"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -88,6 +105,8 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -102,49 +121,49 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\component.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\apt_surface.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\contour.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\build.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\coverage.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\convex_hull.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\database.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\elevations.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\feature.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\lights.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\label.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\main.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\library.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\point2d.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\line.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\poly_extra.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\polygon.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\runway.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\property.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_common.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\table.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_nonprec.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\tablemgr.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_prec.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\tile.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_simple.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\value.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_visual.cxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\vpfbase.cxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\taxiway.cxx">
 			</File>
 		</Filter>
 		<Filter
@@ -152,52 +171,52 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\component.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\apt_surface.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\contour.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\build.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\coverage.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\convex_hull.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\database.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\elevations.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\feature.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\global.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\label.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\lights.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\library.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\point2d.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\line.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\poly_extra.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\polygon.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\runway.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\property.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_common.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\table.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_nonprec.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\tablemgr.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_prec.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\tile.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_simple.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\value.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\rwy_visual.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\vpf.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\taxiway.hxx">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Lib\vpf\vpfbase.hxx">
+				RelativePath="..\..\..\src\Airports\GenAirports\texparams.hxx">
 			</File>
 		</Filter>
 		<Filter

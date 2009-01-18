@@ -82,8 +82,10 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="ul.lib sg.lib zlib.lib"
 				OutputFile="$(OutDir)/DemChop.exe"
 				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"
 				OptimizeReferences="2"

@@ -28,6 +28,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/structure/exception.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
@@ -52,10 +53,6 @@
 
 #include "build.hxx"
 #include "convex_hull.hxx"
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
 
 using std::vector;
 using std::cout;
@@ -226,12 +223,9 @@ int main( int argc, char **argv ) {
 
     // make work directory
     string airportareadir=work_dir+"/AirportArea";
-#ifdef _MSC_VER
-    fg_mkdir( airportareadir.c_str() );
-#else
-    string command = "mkdir -p " + airportareadir;
-    system( command.c_str() );
-#endif
+    SGPath sgp( airportareadir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     // initialize persistant polygon counter
     string counter_file = airportareadir+"/poly_counter";

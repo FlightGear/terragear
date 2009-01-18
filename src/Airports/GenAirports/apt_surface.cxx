@@ -380,22 +380,22 @@ void TGAptSurface::fit() {
   int nobs = Pts->cols() * Pts->rows();	// number of observations
   int npred = 15;		        // number of predictor values A[n]
 
-  Real tz[nobs];
-  Real t1[nobs];
-  Real t2[nobs];
-  Real t3[nobs];
-  Real t4[nobs];
-  Real t5[nobs];
-  Real t6[nobs];
-  Real t7[nobs];
-  Real t8[nobs];
-  Real t9[nobs];
-  Real t10[nobs];
-  Real t11[nobs];
-  Real t12[nobs];
-  Real t13[nobs];
-  Real t14[nobs];
-  Real t15[nobs];
+  vector<Real> tz(nobs);
+  vector<Real> t1(nobs);
+  vector<Real> t2(nobs);
+  vector<Real> t3(nobs);
+  vector<Real> t4(nobs);
+  vector<Real> t5(nobs);
+  vector<Real> t6(nobs);
+  vector<Real> t7(nobs);
+  vector<Real> t8(nobs);
+  vector<Real> t9(nobs);
+  vector<Real> t10(nobs);
+  vector<Real> t11(nobs);
+  vector<Real> t12(nobs);
+  vector<Real> t13(nobs);
+  vector<Real> t14(nobs);
+  vector<Real> t15(nobs);
 
   // generate the required fit data
   for ( int j = 0; j < Pts->rows(); j++ ) {
@@ -430,9 +430,9 @@ void TGAptSurface::fit() {
 
   Try {
     surface_coefficients
-      = qr_method( tz,
-		   t1, t2, t3, t4, t5, t6, t7, t8,
-		   t9, t10, t11, t12, t13, t14, t15,
+      = qr_method( &tz[0],
+		   &t1[0], &t2[0], &t3[0], &t4[0], &t5[0], &t6[0], &t7[0], &t8[0],
+		   &t9[0], &t10[0], &t11[0], &t12[0], &t13[0], &t14[0], &t15[0],
 		   nobs, npred
 		  );
     cout << "surface_coefficients size = " << surface_coefficients.nrows() << endl;

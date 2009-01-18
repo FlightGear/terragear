@@ -60,7 +60,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB"
-				RuntimeLibrary="4"
+				RuntimeLibrary="2"
+				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
@@ -98,73 +99,73 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\..\..\..\newmat11\bandmat.cpp">
+				RelativePath="..\..\..\..\newmat\bandmat.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\cholesky.cpp">
+				RelativePath="..\..\..\..\newmat\cholesky.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\evalue.cpp">
+				RelativePath="..\..\..\..\newmat\evalue.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\fft.cpp">
+				RelativePath="..\..\..\..\newmat\fft.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\hholder.cpp">
+				RelativePath="..\..\..\..\newmat\hholder.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\jacobi.cpp">
+				RelativePath="..\..\..\..\newmat\jacobi.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\myexcept.cpp">
+				RelativePath="..\..\..\..\newmat\myexcept.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newfft.cpp">
+				RelativePath="..\..\..\..\newmat\newfft.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat1.cpp">
+				RelativePath="..\..\..\..\newmat\newmat1.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat2.cpp">
+				RelativePath="..\..\..\..\newmat\newmat2.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat3.cpp">
+				RelativePath="..\..\..\..\newmat\newmat3.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat4.cpp">
+				RelativePath="..\..\..\..\newmat\newmat4.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat5.cpp">
+				RelativePath="..\..\..\..\newmat\newmat5.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat6.cpp">
+				RelativePath="..\..\..\..\newmat\newmat6.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat7.cpp">
+				RelativePath="..\..\..\..\newmat\newmat7.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat8.cpp">
+				RelativePath="..\..\..\..\newmat\newmat8.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat9.cpp">
+				RelativePath="..\..\..\..\newmat\newmat9.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmatex.cpp">
+				RelativePath="..\..\..\..\newmat\newmatex.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmatrm.cpp">
+				RelativePath="..\..\..\..\newmat\newmatrm.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\nm_misc.cpp">
+				RelativePath="..\..\..\..\newmat\nm_misc.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\sort.cpp">
+				RelativePath="..\..\..\..\newmat\sort.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\submat.cpp">
+				RelativePath="..\..\..\..\newmat\submat.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\svd.cpp">
+				RelativePath="..\..\..\..\newmat\svd.cpp">
 			</File>
 		</Filter>
 		<Filter
@@ -172,19 +173,19 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath="..\..\..\..\newmat11\myexcept.h">
+				RelativePath="..\..\..\..\newmat\myexcept.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmat.h">
+				RelativePath="..\..\..\..\newmat\newmat.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmatap.h">
+				RelativePath="..\..\..\..\newmat\newmatap.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmatio.h">
+				RelativePath="..\..\..\..\newmat\newmatio.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\newmat11\newmatrm.h">
+				RelativePath="..\..\..\..\newmat\newmatrm.h">
 			</File>
 		</Filter>
 		<Filter
