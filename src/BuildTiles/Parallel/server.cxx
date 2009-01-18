@@ -12,18 +12,24 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>		// FD_ISSET(), etc.
+#ifdef _MSC_VER
+#  include <winsock2.h>
+   typedef int socklen_t;
+#else
+#  include <sys/time.h>		// FD_ISSET(), etc.
+#  include <unistd.h>
+#  include <sys/socket.h>		// bind
+#  include <netinet/in.h>
+#  include <sys/wait.h>
+#endif
 #include <sys/stat.h>		// for stat()
 #include <time.h>               // for time();
-#include <unistd.h>
 
-#include <sys/socket.h>		// bind
-#include <netinet/in.h>
 
 #include <sys/types.h>
-#include <sys/wait.h>
 
 #include <simgear/bucket/newbucket.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 using std:: cout ;
 using std:: cerr ;
@@ -47,6 +53,16 @@ static double dy = 0.0;
 static int pass = 0;
 static double area_width = 10.0; // width of generated area in degrees
 static double area_height = 10.0; // height of generated area in degrees
+
+#ifdef _MSC_VER
+
+#define numWorkerThreads 10
+
+HANDLE	gWorkerThreads[numWorkerThreads];
+HANDLE	gIoPort;
+DWORD WINAPI ThreadProc(void *);
+
+#endif
 
 
 int make_socket (unsigned short int* port) {
@@ -297,6 +313,73 @@ void usage( const string name ) {
     exit(-1);
 }
 
+void alloc_new_tile( int msgsock, long int next_tile, const string &status_dir ) {
+    // cout << "new process started to handle new connection for "
+    //      << next_tile << endl;
+
+    // Read client's message (which is the status of the
+    // last scenery creation task.)
+    char buf[MAXBUF];
+    int length;
+    if ( (length = recv(msgsock, buf, MAXBUF, 0)) < 0) {
+        perror("Cannot read command");
+        exit(-1);
+    }
+    buf[length] = '\0';
+    long int returned_tile = atoi(buf);
+    cout << "client returned = " << returned_tile << endl;
+
+    // record status
+    if ( returned_tile < 0 ) {
+	// failure
+	log_failed_tile( status_dir, -returned_tile );
+	log_finished_tile( status_dir, -returned_tile );
+    } else {
+	// success
+	log_finished_tile( status_dir, returned_tile );
+    }
+
+    // reply to the client
+    char message[MAXBUF];
+    sprintf(message, "%ld", next_tile);
+    length = strlen(message);
+    if ( send(msgsock, message, length, 0) < 0 ) {
+	perror("Cannot write to stream socket");
+    }
+    closesocket(msgsock);
+    // cout << "process for " << next_tile << " ended" << endl;
+}
+
+#ifdef _MSC_VER
+
+struct Parameters {
+    int msgsock;
+    long next_tile;
+    string status_dir;
+};
+
+DWORD WINAPI
+ThreadProc(void* p)
+{
+    unsigned long pN1, pN2; 
+    OVERLAPPED*	pOverLapped;
+
+    while( GetQueuedCompletionStatus(gIoPort, &pN1, &pN2, &pOverLapped, INFINITE)) {
+	if (pOverLapped == (OVERLAPPED*)0xFFFFFFFF)
+		break;
+
+	Parameters *p = (Parameters*)pN1;
+
+	if ( p ) {
+	    alloc_new_tile( p->msgsock, p->next_tile, p->status_dir );
+	    delete p;
+	}
+    }
+    return 1;
+}
+
+#endif
+
 
 int main( int argc, char **argv ) {
     int arg_counter;
@@ -305,6 +388,14 @@ int main( int argc, char **argv ) {
     fd_set ready;
     short unsigned int port;
 
+#ifdef _MSC_VER
+    gIoPort = CreateIoCompletionPort((HANDLE)INVALID_HANDLE_VALUE, NULL, 0, 0);
+
+    for (int n = 0; n < numWorkerThreads; ++n) {
+	DWORD id;
+	gWorkerThreads[n] = CreateThread(NULL, 0, ThreadProc, gIoPort, 0, &id);
+    }
+#endif
 				// Get any options first
     int arg_offset = 0;
     for (int i = 1; i < argc; i++) {
@@ -350,8 +441,9 @@ int main( int argc, char **argv ) {
 
     // create the status directory
     string status_dir = work_base + "/Status";
-    string command = "mkdir -p " + status_dir;
-    system( command.c_str() );
+    SGPath sgp( status_dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     // setup socket to listen on
     sock = make_socket( &port );
@@ -391,6 +483,7 @@ int main( int argc, char **argv ) {
 	    msgsock = accept(sock, 0, 0);
 	    // cout << "msgsock = " << msgsock << endl;
 
+#ifndef _MSC_VER
 	    // spawn a child
 	    pid = fork();
 
@@ -412,42 +505,19 @@ int main( int argc, char **argv ) {
 		// This is the child
 		close(sock);
 
-		// cout << "new process started to handle new connection for "
-		//      << next_tile << endl;
-
-                // Read client's message (which is the status of the
-                // last scenery creation task.)
-		char buf[MAXBUF];
-                if ( (length = read(msgsock, buf, MAXBUF)) < 0) {
-                    perror("Cannot read command");
-                    exit(-1);
-                }
-		buf[length] = '\0';
-		long int returned_tile = atoi(buf);
-		cout << "client returned = " << returned_tile << endl;
-
-		// record status
-		if ( returned_tile < 0 ) {
-		    // failure
-		    log_failed_tile( status_dir, -returned_tile );
-		    log_finished_tile( status_dir, -returned_tile );
-		} else {
-		    // success
-		    log_finished_tile( status_dir, returned_tile );
-		}
-
-		// reply to the client
-		char message[MAXBUF];
-		sprintf(message, "%ld", next_tile);
-		length = strlen(message);
-		if ( write(msgsock, message, length) < 0 ) {
-		    perror("Cannot write to stream socket");
-		}
-		close(msgsock);
-		// cout << "process for " << next_tile << " ended" << endl;
+		alloc_new_tile( msgsock, next_tile, status_dir );
 
 		exit(0);
 	    }
+#else
+
+	    Parameters *p = new Parameters;
+	    p->msgsock = msgsock;
+	    p->next_tile = next_tile;
+	    p->status_dir = status_dir;
+	    PostQueuedCompletionStatus(gIoPort, (DWORD)p, 0, NULL);
+
+#endif
 	}
     }
 }

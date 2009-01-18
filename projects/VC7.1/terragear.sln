@@ -197,6 +197,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-construct", "fgfs-cons
 		{78922FED-3B8B-4276-ADFF-9A19330F7CFE} = {78922FED-3B8B-4276-ADFF-9A19330F7CFE}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-launch-server", "fgfs-launch-server\fgfs-launch-server.vcproj", "{5086D5EB-5EC0-437F-8181-264315F21A17}"
+	ProjectSection(ProjectDependencies) = postProject
+		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -343,6 +348,10 @@ Global
 		{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}.Debug.Build.0 = Debug|Win32
 		{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}.Release.ActiveCfg = Release|Win32
 		{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}.Release.Build.0 = Release|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Debug.ActiveCfg = Debug|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Debug.Build.0 = Debug|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.ActiveCfg = Release|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
