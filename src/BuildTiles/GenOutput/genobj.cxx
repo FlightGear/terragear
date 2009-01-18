@@ -24,10 +24,6 @@
 
 #include <time.h>
 
-#ifdef _MSC_VER
-#  include <win32/mkdir.hpp>
-#endif
-
 #include <simgear/compiler.h>
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
