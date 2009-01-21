@@ -8,7 +8,7 @@ fgfs_tools_server_LDADD = -lsgbucket -lsgmisc -lsgdebug -lsgxml $(network_LIBS)
 
 fgfs_tools_client_SOURCES = client.cxx
 
-fgfs_tools_client_LDADD = -lsgbucket -lsgmisc -lsgdebug -lsgxml $(network_LIBS)
+fgfs_tools_client_LDADD = -lsgbucket -lsgmisc -lsgdebug -lsgxml $(network_LIBS) -lplibul
 
 INCLUDES = \
 	-I$(top_srcdir)/src \

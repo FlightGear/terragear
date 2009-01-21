@@ -135,7 +135,7 @@ void gen_clipped_polygon( const TGPolygon& shape, const TGPolygon& clip ) {
 
 int main( int argc, char **argv ) {
     struct GSHHS h;
-    struct POINT p;
+    struct GSHHS_POINT p;
     TGPolygon shape, clip;
     double w, e, s, n, area, lon, lat;
     int k, max_east = 270000000;
@@ -187,8 +187,8 @@ int main( int argc, char **argv ) {
 
 	cout << "Loading shape" << endl;
 	for ( k = 0; k < h.n; k++ ) {
-	    if ( gzread(fp, (void *)&p, (unsigned)sizeof(struct POINT)) !=
-		 (unsigned)sizeof(struct POINT) )
+	    if ( gzread(fp, (void *)&p, (unsigned)sizeof(struct GSHHS_POINT)) !=
+		 (unsigned)sizeof(struct GSHHS_POINT) )
 	    {
 		SG_LOG( SG_GENERAL, SG_ALERT, "Error reading file for polygon "
 			<< h.id << " point " << k );

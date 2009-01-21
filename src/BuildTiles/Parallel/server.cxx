@@ -346,7 +346,11 @@ void alloc_new_tile( int msgsock, long int next_tile, const string &status_dir )
     if ( send(msgsock, message, length, 0) < 0 ) {
 	perror("Cannot write to stream socket");
     }
+#ifdef _MSC_VER
     closesocket(msgsock);
+#else
+    close(msgsock);
+#endif
     // cout << "process for " << next_tile << " ended" << endl;
 }
 
