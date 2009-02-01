@@ -16,4 +16,3 @@ configure
 depcomp
 install-sh
 missing
-bin
