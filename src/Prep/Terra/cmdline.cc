@@ -1,7 +1,7 @@
 #ifndef _MSC_VER
 #include <unistd.h>
 #else
-#include "XGetopt.h"
+#include "getopt.h"
 #endif
 #include <stdlib.h>
 #include <fstream>

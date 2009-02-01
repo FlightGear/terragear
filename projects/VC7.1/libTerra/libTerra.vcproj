@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="Terra"
-	ProjectGUID="{2B547224-A995-4FE9-B38F-14A20C8562A8}"
+	Name="libTerra"
+	ProjectGUID="{F74722A5-4015-453B-BF4F-161A4766DDA1}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -14,13 +14,13 @@
 			Name="Debug|Win32"
 			OutputDirectory="Debug"
 			IntermediateDirectory="Debug"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;NOMINMAX"
+				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;NOMINMAX"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -32,13 +32,8 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/Terra.exe"
-				LinkIncremental="2"
-				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/Terra.pdb"
-				SubSystem="1"
-				TargetMachine="1"/>
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/libTerra.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -53,8 +48,6 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -64,12 +57,12 @@
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
-			ConfigurationType="1"
+			ConfigurationType="4"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NOMINMAX"
+				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;NOMINMAX"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
@@ -79,15 +72,8 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/Terra.exe"
-				LinkIncremental="1"
-				AdditionalLibraryDirectories=""
-				GenerateDebugInformation="TRUE"
-				SubSystem="1"
-				OptimizeReferences="2"
-				EnableCOMDATFolding="2"
-				TargetMachine="1"/>
+				Name="VCLibrarianTool"
+				OutputFile="$(OutDir)/libTerra.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -102,8 +88,6 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
-			<Tool
-				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -118,16 +102,25 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\..\..\src\Prep\Terra\cmdline.cc">
+				RelativePath="..\..\..\src\Prep\Terra\getopt.c">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Prep\Terra\greedy.cc">
+				RelativePath="..\..\..\src\Prep\Terra\GreedyInsert.cc">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Prep\Terra\output.cc">
+				RelativePath="..\..\..\src\Prep\Terra\Heap.cc">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Prep\Terra\terra.cc">
+				RelativePath="..\..\..\src\Prep\Terra\Map.cc">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Mask.cc">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Quadedge.cc">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Subdivision.cc">
 			</File>
 		</Filter>
 		<Filter
@@ -135,10 +128,37 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
 			<File
-				RelativePath="..\..\..\src\Prep\Terra\terra.h">
+				RelativePath="..\..\..\src\Prep\Terra\Array.h">
 			</File>
 			<File
-				RelativePath="..\..\..\src\Prep\Terra\version.h">
+				RelativePath="..\..\..\src\Prep\Terra\Geom.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\getopt.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\GreedyInsert.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Heap.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Map.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Mask.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Quadedge.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Subdivision.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Vec2.h">
+			</File>
+			<File
+				RelativePath="..\..\..\src\Prep\Terra\Vec3.h">
 			</File>
 		</Filter>
 		<Filter

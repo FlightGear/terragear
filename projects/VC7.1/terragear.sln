@@ -142,6 +142,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tgvpf", "tgvpf\tgvpf.vcproj
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Terra", "Terra\Terra.vcproj", "{2B547224-A995-4FE9-B38F-14A20C8562A8}"
 	ProjectSection(ProjectDependencies) = postProject
+		{F74722A5-4015-453B-BF4F-161A4766DDA1} = {F74722A5-4015-453B-BF4F-161A4766DDA1}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tguserdef", "tguserdef\tguserdef.vcproj", "{1D187A71-BB8A-4127-AC7E-9211A208B6B0}"
@@ -204,6 +205,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-launch-server", "fgfs-
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-launch-clients", "fgfs-launch-clients\fgfs-launch-clients.vcproj", "{4CCE2136-24FC-4F7A-A609-8018F00F9042}"
 	ProjectSection(ProjectDependencies) = postProject
+		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libTerra", "libTerra\libTerra.vcproj", "{F74722A5-4015-453B-BF4F-161A4766DDA1}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "terrafit", "terrafit\terrafit.vcproj", "{F6CEF65C-4643-41AC-8A7D-078BACA6EF67}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F74722A5-4015-453B-BF4F-161A4766DDA1} = {F74722A5-4015-453B-BF4F-161A4766DDA1}
+		{2871F3BA-ADCC-4440-8078-FC76C5983FCE} = {2871F3BA-ADCC-4440-8078-FC76C5983FCE}
 		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
 	EndProjectSection
 EndProject
@@ -361,6 +373,14 @@ Global
 		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Debug.Build.0 = Debug|Win32
 		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Release.ActiveCfg = Release|Win32
 		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Release.Build.0 = Release|Win32
+		{F74722A5-4015-453B-BF4F-161A4766DDA1}.Debug.ActiveCfg = Debug|Win32
+		{F74722A5-4015-453B-BF4F-161A4766DDA1}.Debug.Build.0 = Debug|Win32
+		{F74722A5-4015-453B-BF4F-161A4766DDA1}.Release.ActiveCfg = Release|Win32
+		{F74722A5-4015-453B-BF4F-161A4766DDA1}.Release.Build.0 = Release|Win32
+		{F6CEF65C-4643-41AC-8A7D-078BACA6EF67}.Debug.ActiveCfg = Debug|Win32
+		{F6CEF65C-4643-41AC-8A7D-078BACA6EF67}.Debug.Build.0 = Debug|Win32
+		{F6CEF65C-4643-41AC-8A7D-078BACA6EF67}.Release.ActiveCfg = Release|Win32
+		{F6CEF65C-4643-41AC-8A7D-078BACA6EF67}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

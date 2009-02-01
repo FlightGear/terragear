@@ -27,18 +27,24 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <dirent.h>
 #include <errno.h>
-#include <getopt.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#ifndef _MSC_VER
+#  include <unistd.h>
+#  include <getopt.h>
+#else
+#  define S_ISDIR(a)	((a)&_S_IFDIR)
+#  include <Prep/Terra/getopt.h>
+#endif
 #include <zlib.h>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/structure/exception.hxx>
+
+#include <plib/ul.h>
 
 #include <Array/array.hxx>
 
@@ -211,15 +217,15 @@ void walk_path(const std::string& path) {
         if (endswith(path,".arr.gz") || endswith(path,".arr")) {
                 fit_file(path);
         } else if (S_ISDIR(statbuf.st_mode)) {
-                DIR* dir=opendir(path.c_str());
+                ulDir* dir=ulOpenDir(path.c_str());
                 if (!dir) {
                         SG_LOG(SG_GENERAL, SG_ALERT ,"ERROR: Unable to open directory '" << path << "':" << strerror(errno));
                         return;
                 }
                 
-                struct dirent* dirent;
+                struct ulDirEnt* dirent;
                 
-                while ((dirent=readdir(dir))) {
+                while ((dirent=ulReadDir(dir))) {
                         if (!strcmp(dirent->d_name,".") || !strcmp(dirent->d_name,"..")) {
                                 continue; // skip . and ..
                         }
@@ -228,7 +234,7 @@ void walk_path(const std::string& path) {
                         walk_path(subpath.str());
                 }
                 
-                closedir(dir);
+                ulCloseDir(dir);
         }
 }
 
