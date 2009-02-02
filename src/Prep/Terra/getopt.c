@@ -30,7 +30,9 @@
    long-named option.  Because this is not POSIX.2 compliant, it is
    being phased out.  */
 #undef GETOPT_COMPAT
+#ifndef __STDC__
 #define __STDC__ 1
+#endif
 
 /* This version of `getopt' appears to the caller like standard Unix `getopt'
    but it behaves differently for the user, since it allows the user

@@ -16,7 +16,7 @@ libTerra_a_SOURCES = \
         Vec2.h Vec3.h
 
 terra_SOURCES = \
-	cmdline.cc greedy.cc output.cc terra.cc terra.h version.h
+	cmdline.cc getopt.c getopt.h greedy.cc output.cc terra.cc terra.h version.h
 
 terra_LDADD = libTerra.a
 

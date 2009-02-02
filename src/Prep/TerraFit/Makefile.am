@@ -4,7 +4,7 @@ bin_PROGRAMS = terrafit
 terrafit_SOURCES = terrafit.cc
 terrafit_LDADD = $(top_builddir)/src/Prep/Terra/libTerra.a \
                  $(top_builddir)/src/Lib/Array/libArray.a \
-                 -lsgbucket -lsgstructure -lsgmisc -lsgdebug -lz
+                 -lsgbucket -lsgstructure -lsgmisc -lsgdebug -lz -lplibul
 
 EXTRA_DIST = terrafit.README terrafit.py.in
 
