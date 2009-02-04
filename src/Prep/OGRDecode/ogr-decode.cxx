@@ -41,10 +41,6 @@
 
 #include <ogrsf_frmts.h>
 
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
-
 using std:: cout ;
 using std:: string ;
 using std:: map ;
@@ -487,12 +483,9 @@ int main( int argc, char **argv ) {
     work_dir=argv[1];
     datasource=argv[2];
 
-#ifdef _MSC_VER
-    fg_mkdir( work_dir.c_str() );
-#else
-    string command = "mkdir -p " + work_dir;
-    system( command.c_str() );
-#endif
+    SGPath sgp( work_dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
     // initialize persistant polygon counter
     string counter_file = work_dir + "/poly_counter";
