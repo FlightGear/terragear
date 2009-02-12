@@ -198,16 +198,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-construct", "fgfs-cons
 		{78922FED-3B8B-4276-ADFF-9A19330F7CFE} = {78922FED-3B8B-4276-ADFF-9A19330F7CFE}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-launch-server", "fgfs-launch-server\fgfs-launch-server.vcproj", "{5086D5EB-5EC0-437F-8181-264315F21A17}"
-	ProjectSection(ProjectDependencies) = postProject
-		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-launch-clients", "fgfs-launch-clients\fgfs-launch-clients.vcproj", "{4CCE2136-24FC-4F7A-A609-8018F00F9042}"
-	ProjectSection(ProjectDependencies) = postProject
-		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libTerra", "libTerra\libTerra.vcproj", "{F74722A5-4015-453B-BF4F-161A4766DDA1}"
 	ProjectSection(ProjectDependencies) = postProject
 	EndProjectSection
@@ -224,6 +214,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ogr-decode", "ogr-decode\og
 		{9AABEE2B-19BC-4479-ADBE-58CA0A8BBC93} = {9AABEE2B-19BC-4479-ADBE-58CA0A8BBC93}
 		{610D5DAE-45EC-446E-86F2-73FDD24449C9} = {610D5DAE-45EC-446E-86F2-73FDD24449C9}
 		{B1FB93BB-ED1D-40A1-9B35-FCC232F473FD} = {B1FB93BB-ED1D-40A1-9B35-FCC232F473FD}
+		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-tools-clients", "fgfs-tools-clients\fgfs-tools-clients.vcproj", "{4CCE2136-24FC-4F7A-A609-8018F00F9042}"
+	ProjectSection(ProjectDependencies) = postProject
+		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-tools-server", "fgfs-tools-server\fgfs-tools-server.vcproj", "{5086D5EB-5EC0-437F-8181-264315F21A17}"
+	ProjectSection(ProjectDependencies) = postProject
 		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
 	EndProjectSection
 EndProject
@@ -373,14 +373,6 @@ Global
 		{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}.Debug.Build.0 = Debug|Win32
 		{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}.Release.ActiveCfg = Release|Win32
 		{8AB3DC28-1CAC-4DC0-B8CD-EB066E3711F9}.Release.Build.0 = Release|Win32
-		{5086D5EB-5EC0-437F-8181-264315F21A17}.Debug.ActiveCfg = Debug|Win32
-		{5086D5EB-5EC0-437F-8181-264315F21A17}.Debug.Build.0 = Debug|Win32
-		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.ActiveCfg = Release|Win32
-		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.Build.0 = Release|Win32
-		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Debug.ActiveCfg = Debug|Win32
-		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Debug.Build.0 = Debug|Win32
-		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Release.ActiveCfg = Release|Win32
-		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Release.Build.0 = Release|Win32
 		{F74722A5-4015-453B-BF4F-161A4766DDA1}.Debug.ActiveCfg = Debug|Win32
 		{F74722A5-4015-453B-BF4F-161A4766DDA1}.Debug.Build.0 = Debug|Win32
 		{F74722A5-4015-453B-BF4F-161A4766DDA1}.Release.ActiveCfg = Release|Win32
@@ -393,6 +385,14 @@ Global
 		{376BFCF2-D8AF-48C1-ACFD-07E124DC6BB0}.Debug.Build.0 = Debug|Win32
 		{376BFCF2-D8AF-48C1-ACFD-07E124DC6BB0}.Release.ActiveCfg = Release|Win32
 		{376BFCF2-D8AF-48C1-ACFD-07E124DC6BB0}.Release.Build.0 = Release|Win32
+		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Debug.ActiveCfg = Debug|Win32
+		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Debug.Build.0 = Debug|Win32
+		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Release.ActiveCfg = Release|Win32
+		{4CCE2136-24FC-4F7A-A609-8018F00F9042}.Release.Build.0 = Release|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Debug.ActiveCfg = Debug|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Debug.Build.0 = Debug|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.ActiveCfg = Release|Win32
+		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

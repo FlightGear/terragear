@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="fgfs-launch-server"
-	ProjectGUID="{5086D5EB-5EC0-437F-8181-264315F21A17}"
+	Name="fgfs-tools-clients"
+	ProjectGUID="{4CCE2136-24FC-4F7A-A609-8018F00F9042}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -34,11 +34,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ul_d.lib sg_d.lib zlibd.lib ws2_32.lib"
-				OutputFile="$(OutDir)/fgfs-launch-server.exe"
+				OutputFile="$(OutDir)/fgfs-tools-clients.exe"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/fgfs-launch-server.pdb"
+				ProgramDatabaseFile="$(OutDir)/fgfs-tools-clients.pdb"
 				SubSystem="1"
 				TargetMachine="1"/>
 			<Tool
@@ -83,7 +83,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="ul.lib sg.lib zlib.lib ws2_32.lib"
-				OutputFile="$(OutDir)/fgfs-launch-server.exe"
+				OutputFile="$(OutDir)/fgfs-tools-clients.exe"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
 				GenerateDebugInformation="TRUE"
@@ -121,7 +121,7 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\..\..\src\BuildTiles\Parallel\server.cxx">
+				RelativePath="..\..\..\src\BuildTiles\Parallel\client.cxx">
 			</File>
 		</Filter>
 		<Filter
