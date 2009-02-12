@@ -227,6 +227,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fgfs-tools-server", "fgfs-t
 		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "poly2ogr", "poly2ogr\poly2ogr.vcproj", "{74F5BBD4-D669-4348-8B46-11700135CCF1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F74722A5-4015-453B-BF4F-161A4766DDA1} = {F74722A5-4015-453B-BF4F-161A4766DDA1}
+		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -393,6 +399,10 @@ Global
 		{5086D5EB-5EC0-437F-8181-264315F21A17}.Debug.Build.0 = Debug|Win32
 		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.ActiveCfg = Release|Win32
 		{5086D5EB-5EC0-437F-8181-264315F21A17}.Release.Build.0 = Release|Win32
+		{74F5BBD4-D669-4348-8B46-11700135CCF1}.Debug.ActiveCfg = Debug|Win32
+		{74F5BBD4-D669-4348-8B46-11700135CCF1}.Debug.Build.0 = Debug|Win32
+		{74F5BBD4-D669-4348-8B46-11700135CCF1}.Release.ActiveCfg = Release|Win32
+		{74F5BBD4-D669-4348-8B46-11700135CCF1}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

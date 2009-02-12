@@ -27,9 +27,13 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <getopt.h>
-#include <dirent.h>
-#include <unistd.h>
+#ifdef _MSC_VER
+#  define S_ISDIR(a)	((a)&_S_IFDIR)
+#  include <Prep/Terra/getopt.h>
+#else
+#  include <getopt.h>
+#  include <unistd.h>
+#endif
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
@@ -264,17 +268,17 @@ void process_file(const std::string& path) {
         }
         
         if (S_ISDIR(sbuf.st_mode)) {
-                DIR* dir;
+                ulDir* dir;
                 
-                dir=opendir(path.c_str());
+                dir=ulOpenDir(path.c_str());
                 if (!dir) {
                         SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open directory '" << path << "'");
                         return;
                 }
                 
-                struct dirent *de;
+                struct ulDirEnt *de;
                 
-                while ((de=readdir(dir))) {
+                while ((de=ulReadDir(dir))) {
                         if (!strcmp(de->d_name,".") || !strcmp(de->d_name,"..")) {
                                 continue;
                         }
@@ -283,7 +287,7 @@ void process_file(const std::string& path) {
                         process_file(subpath);
                 }
                 
-                closedir(dir);
+                ulCloseDir(dir);
         } else if (endswith(path,".pts")) {
                 // This is a points file
                 process_points_file(path);
