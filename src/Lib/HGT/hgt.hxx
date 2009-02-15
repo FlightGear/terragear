@@ -63,7 +63,7 @@ private:
     int hgt_resolution;
 
     bool remove_tmp_file;
-    std::string remove_file_name;
+    SGPath remove_file_name;
 
 public:
 

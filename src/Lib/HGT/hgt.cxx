@@ -36,6 +36,10 @@
 #  include <errno.h>
 #endif
 
+#ifdef _MSC_VER
+#  include <direct.h>
+#endif
+
 #include <simgear/constants.h>
 #include <simgear/io/lowlevel.hxx>
 
@@ -83,9 +87,12 @@ TGHgt::open ( const SGPath &f ) {
         if ( file_name.extension() == "zip" ) {
             // extract the .zip file to /tmp and point the file name
             // to the extracted file
-            cout << "Extracting " << file_name.str() << " to /tmp" << endl;
-            string command = "unzip -d /tmp " + file_name.base();
-            system( command.c_str() );
+	    SGPath tmp_dir = tempnam( 0, "hgt" );
+	    tmp_dir.append( "dummy" );
+	    tmp_dir.create_dir( 0700 );
+	    cout << "Extracting " << file_name.str() << " to " << tmp_dir.dir() << endl;
+	    string command = "unzip -d \"" + tmp_dir.dir() + "\" " + file_name.base();
+	    system( command.c_str() );
 
             SGPath full_name = file_name.base();
             file_name.set( "/tmp" );
@@ -135,8 +142,8 @@ TGHgt::close () {
     gzclose(fd);
 
     if ( remove_tmp_file ) {
-        string command = "/bin/rm " + remove_file_name;
-        system( command.c_str() );
+        unlink( remove_file_name.c_str() );
+        rmdir( remove_file_name.dir().c_str() );
     }
 
     return true;
