@@ -94,26 +94,37 @@ TGHgt::open ( const SGPath &f ) {
 	    string command = "unzip -d \"" + tmp_dir.dir() + "\" " + file_name.base();
 	    system( command.c_str() );
 
-            SGPath full_name = file_name.base();
-            file_name.set( "/tmp" );
-            if ( full_name.file().empty() ) {
-                file_name.append( full_name.str() );
-            } else {
-                file_name.append( full_name.file() );
-            }
+	    file_name = tmp_dir.dir();
+	    ulDir *dir = ulOpenDir( tmp_dir.dir().c_str() );
+	    if ( dir ) {
+		ulDirEnt *de;
+		while ( ( de = ulReadDir( dir ) ) != 0 ) {
+		    if ( !strcmp(de->d_name,".") || !strcmp(de->d_name,"..") || de->d_isdir ) {
+			continue;
+		    }
+		    SGPath file( de->d_name );
+		    string ext = file.extension();
+		    if ( ext == "HGT" || ext == "hgt" ) {
+			file_name.append( de->d_name );
+			break;
+		    }
+		}
+		ulCloseDir( dir );
+	    }
+
             remove_tmp_file = true;
             remove_file_name = file_name.str();
 
             cout << "Proceeding with " << file_name.str() << endl;
         }
-        
+
         cout << "Loading HGT data file: " << file_name.str() << endl;
         if ( (fd = gzopen( file_name.c_str(), "rb" )) == NULL ) {
             SGPath file_name_gz = file_name;
             file_name_gz.append( ".gz" );
             if ( (fd = gzopen( file_name_gz.c_str(), "rb" )) == NULL ) {
                 cout << "ERROR: opening " << file_name.str() << " or "
-                     << file_name_gz.str() << "for reading!" << endl;
+                     << file_name_gz.str() << " for reading!" << endl;
                 return false;
             }
         }
@@ -188,4 +199,20 @@ TGHgt::~TGHgt() {
     // printf("class TGSrtmBase DEstructor called.\n");
     delete [] data;
     delete [] output_data;
+    if ( remove_tmp_file ) {
+	ulDir *dir = ulOpenDir( remove_file_name.dir().c_str() );
+	if ( dir ) {
+	    ulDirEnt *de;
+	    while ( ( de = ulReadDir( dir ) ) != 0 ) {
+                if ( !strcmp(de->d_name,".") || !strcmp(de->d_name,"..") || de->d_isdir ) {
+                    continue;
+                }
+		SGPath file( remove_file_name.dir() );
+		file.append( de->d_name );
+		unlink( file.c_str() );
+	    }
+	    ulCloseDir( dir );
+	}
+        rmdir( remove_file_name.dir().c_str() );
+    }
 }
