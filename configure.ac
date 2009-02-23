@@ -257,6 +257,9 @@ if test "x$ac_cv_lib_glut_glutGameModeString" = "xno"; then
     exit 1
 fi
 
+AC_CHECK_LIB(tiff, TIFFOpen,,,)
+AM_CONDITIONAL(HAVE_LIBTIFF, test x$ac_cv_lib_tiff_TIFFOpen = xyes)
+
 AC_LANG_PUSH(C++)
 # needed for plib 1.8.x or later
 AC_CHECK_LIB(plibul, ulInit,,,)

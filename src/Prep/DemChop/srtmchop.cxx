@@ -168,7 +168,7 @@ bool TGSrtmTiff::open( const SGPath &f ) {
     if ( ext == "zip" ) {
         // extract the .zip file to /tmp and point the file name
         // to the extracted file
-	SGPath tmp_dir = tempnam( 0, "hgt" );
+	SGPath tmp_dir = string( tempnam( 0, "hgt" ) );
 	tmp_dir.append( "dummy" );
 	tmp_dir.create_dir( 0700 );
         cout << "Extracting " << file_name.str() << " to " << tmp_dir.dir() << endl;
