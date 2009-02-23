@@ -1,6 +1,6 @@
 noinst_LIBRARIES = libHGT.a
 
-libHGT_a_SOURCES = hgt.cxx hgt.hxx
+libHGT_a_SOURCES = hgt.cxx hgt.hxx srtmbase.cxx srtmbase.hxx
 
 noinst_PROGRAMS = testhgt
 

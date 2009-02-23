@@ -30,6 +30,8 @@
 
 #include <simgear/compiler.h>
 
+#include "srtmbase.hxx"
+
 #include <zlib.h>
 
 #include <string>
@@ -40,30 +42,18 @@
 #define MAX_HGT_SIZE 3601
 
 
-class TGHgt {
+class TGHgt : public TGSrtmBase {
 
 private:
 
     // file pointer for input
     gzFile fd;
 
-    // coordinates (in arc seconds) of south west corner
-    double originx, originy;
-    
-    // number of columns and rows
-    int cols, rows;
-    
-    // Distance between column and row data points (in arc seconds)
-    double col_step, row_step;
+    int hgt_resolution;
     
     // pointers to the actual grid data allocated here
     short int (*data)[MAX_HGT_SIZE];
     short int (*output_data)[MAX_HGT_SIZE];
-
-    int hgt_resolution;
-
-    bool remove_tmp_file;
-    SGPath remove_file_name;
 
 public:
 
@@ -84,27 +74,7 @@ public:
     // load an hgt file
     bool load();
 
-    // write out the area of data covered by the specified bucket.
-    // Data is written out column by column starting at the lower left
-    // hand corner.
-    bool write_area( const std::string& root, SGBucket& b );
-
-    // write the entire area out in a simple ascii format
-    bool write_whole_ascii( const std::string& file );
-
-    // Informational methods
-    inline double get_originx() const { return originx; }
-    inline double get_originy() const { return originy; }
-    inline int get_cols() const { return cols; }
-    inline int get_rows() const { return rows; }
-    inline double get_col_step() const { return col_step; }
-    inline double get_row_step() const { return row_step; }
-
-    /**
-     * Test whether an area contains any non-zero elevations.
-     */
-    bool has_non_zero_elev (int start_x, int span_x,
-                            int start_y, int span_y) const;
+    virtual short height( int x, int y ) const { return data[x][y]; }
 };
 
 

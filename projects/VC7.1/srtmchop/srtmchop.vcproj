@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="HGT"
-	ProjectGUID="{322E9356-2E79-49A6-A7B6-643B35DEB67D}"
+	Name="srtmchop"
+	ProjectGUID="{7490AAD8-D2A4-4F0D-8150-68DCE07F3116}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -12,15 +12,15 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
+			OutputDirectory="..\bin\Debug"
 			IntermediateDirectory="Debug"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
-				PreprocessorDefinitions="WIN32;_DEBUG;_LIB;NOMINMAX"
+				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232;..\..\..\src"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;NOMINMAX"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -32,8 +32,15 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/HGT.lib"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="ul_d.lib sg_d.lib zlibd.lib libtiffd.lib"
+				OutputFile="$(OutDir)/srtmchop.exe"
+				LinkIncremental="2"
+				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)/srtmchop.pdb"
+				SubSystem="1"
+				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -49,20 +56,22 @@
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
 			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
+			OutputDirectory="..\bin\Release"
 			IntermediateDirectory="Release"
-			ConfigurationType="4"
+			ConfigurationType="1"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232"
-				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;NOMINMAX"
+				AdditionalIncludeDirectories="..\..\..\..\SimGear.cs;..\..\..\..;..\..\..\..\3rdParty\include;..\..\..\..\install\msvc71\OpenSceneGraph\include;..\..\..\src\Lib;..\..\..\src\BuildTiles;..\..\..\..\gpc232;..\..\..\src"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;NOMINMAX"
 				RuntimeLibrary="2"
 				RuntimeTypeInfo="TRUE"
 				UsePrecompiledHeader="0"
@@ -72,8 +81,16 @@
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
-				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/HGT.lib"/>
+				Name="VCLinkerTool"
+				AdditionalDependencies="ul.lib sg.lib zlib.lib libtiff.lib"
+				OutputFile="$(OutDir)/srtmchop.exe"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories="..\..\..\..\plib;..\..\..\..\3rdParty\lib"
+				GenerateDebugInformation="TRUE"
+				SubSystem="1"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
 			<Tool
@@ -88,6 +105,8 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
 			<Tool
 				Name="VCManagedWrapperGeneratorTool"/>
 			<Tool
@@ -102,22 +121,13 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath="..\..\..\src\Lib\Hgt\hgt.cxx">
-			</File>
-			<File
-				RelativePath="..\..\..\src\Lib\Hgt\srtmbase.cxx">
+				RelativePath="..\..\..\src\Prep\DemChop\srtmchop.cxx">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
-			<File
-				RelativePath="..\..\..\src\Lib\Hgt\hgt.hxx">
-			</File>
-			<File
-				RelativePath="..\..\..\src\Lib\Hgt\srtmbase.hxx">
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
