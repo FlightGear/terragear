@@ -200,8 +200,14 @@ string get_shapefile_type(DBFHandle& hDBF, int rec) {
 
 #endif
  
-    string area = DBFReadStringAttribute( hDBF, rec, area_column );
-    string code = DBFReadStringAttribute( hDBF, rec, code_column );
+    const char *v = DBFReadStringAttribute( hDBF, rec, area_column );
+    if ( v == 0 )
+	return "";
+    string area = v;
+    string code;
+    v = DBFReadStringAttribute( hDBF, rec, code_column );
+    if ( v != 0 )
+	code = v;
     cout << "next record = " << code << endl;
 
     // strip leading spaces
@@ -814,6 +820,11 @@ int main( int argc, char **argv ) {
 	if ( force_area_type.length() == 0 ) {
 	    area = get_shapefile_type(hDBF, i);
 	    SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " << area);
+	    if ( area.empty() )
+	    {
+		area = "Default";
+		SG_LOG( SG_GENERAL, SG_ALERT, "No area type specified" );
+	    }
 	} else {
 	    area = force_area_type;
 	}
