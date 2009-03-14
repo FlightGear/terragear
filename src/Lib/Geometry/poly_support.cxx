@@ -673,7 +673,7 @@ TGPolygon remove_dups( const TGPolygon &poly ) {
 	// cout << "testing contour " << i << "  size = " << contour.size() 
 	//      << "  hole = " << poly.get_hole_flag( i ) << endl;
 	bool have_dups = true;
-	while ( have_dups ) {
+	while ( have_dups && contour.size() ) {
 	    have_dups = false;
 	    new_contour.clear();
 	    Point3D last = contour[ contour.size() - 1 ];
