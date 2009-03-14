@@ -274,7 +274,7 @@ int main( int argc, char ** argv )
                 if (factor == 0)
                 {
                   if (infactor ==0)
-                  { puts("ERROR: Input unit must be defined before output unit"); exit(); }
+                  { puts("ERROR: Input unit must be defined before output unit"); exit(0); }
                   factor=infactor/outfactor;
                 }
                 printf("Output file coordinate values will be factored by %lg\n",factor);
