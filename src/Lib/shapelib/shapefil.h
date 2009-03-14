@@ -1,17 +1,95 @@
 #ifndef _SHAPEFILE_H_INCLUDED
 #define _SHAPEFILE_H_INCLUDED
 
-/*
- * Copyright (c) 1995 Frank Warmerdam
+/******************************************************************************
+ * $Id: shapefil.h,v 1.26 2002/09/29 00:00:08 warmerda Exp $
  *
- * This code is in the public domain.
+ * Project:  Shapelib
+ * Purpose:  Primary include file for Shapelib.
+ * Author:   Frank Warmerdam, warmerdam@pobox.com
+ *
+ ******************************************************************************
+ * Copyright (c) 1999, Frank Warmerdam
+ *
+ * This software is available under the following "MIT Style" license,
+ * or at the option of the licensee under the LGPL (see LICENSE.LGPL).  This
+ * option is discussed in more detail in shapelib.html.
+ *
+ * --
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ ******************************************************************************
  *
  * $Log: shapefil.h,v $
- * Revision 1.1  2000-02-09 19:51:46  curt
- * Initial revision
+ * Revision 1.26  2002/09/29 00:00:08  warmerda
+ * added FTLogical and logical attribute read/write calls
  *
- * Revision 1.1  1999/08/24 21:13:01  curt
- * Initial revision.
+ * Revision 1.25  2002/05/07 13:46:30  warmerda
+ * added DBFWriteAttributeDirectly().
+ *
+ * Revision 1.24  2002/04/10 16:59:54  warmerda
+ * added SHPRewindObject
+ *
+ * Revision 1.23  2002/01/15 14:36:07  warmerda
+ * updated email address
+ *
+ * Revision 1.22  2002/01/15 14:32:00  warmerda
+ * try to improve SHPAPI_CALL docs
+ *
+ * Revision 1.21  2001/11/01 16:29:55  warmerda
+ * move pabyRec into SHPInfo for thread safety
+ *
+ * Revision 1.20  2001/07/20 13:06:02  warmerda
+ * fixed SHPAPI attribute for SHPTreeFindLikelyShapes
+ *
+ * Revision 1.19  2001/05/31 19:20:13  warmerda
+ * added DBFGetFieldIndex()
+ *
+ * Revision 1.18  2001/05/31 18:15:40  warmerda
+ * Added support for NULL fields in DBF files
+ *
+ * Revision 1.17  2001/05/23 13:36:52  warmerda
+ * added use of SHPAPI_CALL
+ *
+ * Revision 1.16  2000/09/25 14:15:59  warmerda
+ * added DBFGetNativeFieldType()
+ *
+ * Revision 1.15  2000/02/16 16:03:51  warmerda
+ * added null shape support
+ *
+ * Revision 1.14  1999/11/05 14:12:05  warmerda
+ * updated license terms
+ *
+ * Revision 1.13  1999/06/02 18:24:21  warmerda
+ * added trimming code
+ *
+ * Revision 1.12  1999/06/02 17:56:12  warmerda
+ * added quad'' subnode support for trees
+ *
+ * Revision 1.11  1999/05/18 19:11:11  warmerda
+ * Added example searching capability
+ *
+ * Revision 1.10  1999/05/18 17:49:38  warmerda
+ * added initial quadtree support
+ *
+ * Revision 1.9  1999/05/11 03:19:28  warmerda
+ * added new Tuple api, and improved extension handling - add from candrsn
  *
  * Revision 1.8  1999/03/23 17:22:27  warmerda
  * Added extern "C" protection for C++ users of shapefil.h.
@@ -45,7 +123,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    
+
 /************************************************************************/
 /*                        Configuration options.                        */
 /************************************************************************/
@@ -63,6 +141,48 @@ extern "C" {
 /* -------------------------------------------------------------------- */
 #define DISABLE_MULTIPATCH_MEASURE
 
+/* -------------------------------------------------------------------- */
+/*      SHPAPI_CALL                                                     */
+/*                                                                      */
+/*      The following two macros are present to allow forcing           */
+/*      various calling conventions on the Shapelib API.                */
+/*                                                                      */
+/*      To force __stdcall conventions (needed to call Shapelib         */
+/*      from Visual Basic and/or Dephi I believe) the makefile could    */
+/*      be modified to define:                                          */
+/*                                                                      */
+/*        /DSHPAPI_CALL=__stdcall                                       */
+/*                                                                      */
+/*      If it is desired to force export of the Shapelib API without    */
+/*      using the shapelib.def file, use the following definition.      */
+/*                                                                      */
+/*        /DSHAPELIB_DLLEXPORT                                          */
+/*                                                                      */
+/*      To get both at once it will be necessary to hack this           */
+/*      include file to define:                                         */
+/*                                                                      */
+/*        #define SHPAPI_CALL __declspec(dllexport) __stdcall           */
+/*        #define SHPAPI_CALL1 __declspec(dllexport) * __stdcall        */
+/*                                                                      */
+/*      The complexity of the situtation is partly caused by the        */
+/*      peculiar requirement of Visual C++ that __stdcall appear        */
+/*      after any "*"'s in the return value of a function while the     */
+/*      __declspec(dllexport) must appear before them.                  */
+/* -------------------------------------------------------------------- */
+
+#ifdef SHAPELIB_DLLEXPORT
+#  define SHPAPI_CALL __declspec(dllexport)
+#  define SHPAPI_CALL1(x)  __declspec(dllexport) x
+#endif
+
+#ifndef SHPAPI_CALL
+#  define SHPAPI_CALL
+#endif
+
+#ifndef SHPAPI_CALL1
+#  define SHPAPI_CALL1(x)      x SHPAPI_CALL
+#endif
+    
 /************************************************************************/
 /*                             SHP Support.                             */
 /************************************************************************/
@@ -84,6 +204,9 @@ typedef	struct
     double	adBoundsMax[4];
 
     int		bUpdated;
+
+    unsigned char *pabyRec;
+    int         nBufSize;
 } SHPInfo;
 
 typedef SHPInfo * SHPHandle;
@@ -91,6 +214,7 @@ typedef SHPInfo * SHPHandle;
 /* -------------------------------------------------------------------- */
 /*      Shape types (nSHPType)                                          */
 /* -------------------------------------------------------------------- */
+#define SHPT_NULL	0
 #define SHPT_POINT	1
 #define SHPT_ARC	3
 #define SHPT_POLYGON	5
@@ -152,27 +276,105 @@ typedef struct
 /* -------------------------------------------------------------------- */
 /*      SHP API Prototypes                                              */
 /* -------------------------------------------------------------------- */
-SHPHandle SHPOpen( const char * pszShapeFile, const char * pszAccess );
-SHPHandle SHPCreate( const char * pszShapeFile, int nShapeType );
-void	SHPGetInfo( SHPHandle hSHP, int * pnEntities, int * pnShapeType,
-                    double * padfMinBound, double * padfMaxBound );
+SHPHandle SHPAPI_CALL
+      SHPOpen( const char * pszShapeFile, const char * pszAccess );
+SHPHandle SHPAPI_CALL
+      SHPCreate( const char * pszShapeFile, int nShapeType );
+void SHPAPI_CALL
+      SHPGetInfo( SHPHandle hSHP, int * pnEntities, int * pnShapeType,
+                  double * padfMinBound, double * padfMaxBound );
 
-SHPObject *SHPReadObject( SHPHandle hSHP, int iShape );
-int	SHPWriteObject( SHPHandle hSHP, int iShape, SHPObject * psObject );
+SHPObject SHPAPI_CALL1(*)
+      SHPReadObject( SHPHandle hSHP, int iShape );
+int SHPAPI_CALL
+      SHPWriteObject( SHPHandle hSHP, int iShape, SHPObject * psObject );
 
-void	SHPDestroyObject( SHPObject * psObject );
-void	SHPComputeExtents( SHPObject * psObject );
-SHPObject *SHPCreateObject( int nSHPType, int nShapeId,
-                            int nParts, int * panPartStart, int * panPartType,
-                            int nVertices, double * padfX, double * padfY,
-                            double * padfZ, double * padfM );
-SHPObject *SHPCreateSimpleObject( int nSHPType, int nVertices,
-                              double * padfX, double * padfY, double * padfZ );
+void SHPAPI_CALL
+      SHPDestroyObject( SHPObject * psObject );
+void SHPAPI_CALL
+      SHPComputeExtents( SHPObject * psObject );
+SHPObject SHPAPI_CALL1(*)
+      SHPCreateObject( int nSHPType, int nShapeId,
+                       int nParts, int * panPartStart, int * panPartType,
+                       int nVertices, double * padfX, double * padfY,
+                       double * padfZ, double * padfM );
+SHPObject SHPAPI_CALL1(*)
+      SHPCreateSimpleObject( int nSHPType, int nVertices,
+                             double * padfX, double * padfY, double * padfZ );
 
-void	SHPClose( SHPHandle hSHP );
+int SHPAPI_CALL
+      SHPRewindObject( SHPHandle hSHP, SHPObject * psObject );
 
-const char *SHPTypeName( int nSHPType );
-const char *SHPPartTypeName( int nPartType );
+void SHPAPI_CALL
+      SHPClose( SHPHandle hSHP );
+
+const char SHPAPI_CALL1(*)
+      SHPTypeName( int nSHPType );
+const char SHPAPI_CALL1(*)
+      SHPPartTypeName( int nPartType );
+
+/* -------------------------------------------------------------------- */
+/*      Shape quadtree indexing API.                                    */
+/* -------------------------------------------------------------------- */
+
+/* this can be two or four for binary or quad tree */
+#define MAX_SUBNODE	4
+
+typedef struct shape_tree_node
+{
+    /* region covered by this node */
+    double	adfBoundsMin[4];
+    double	adfBoundsMax[4];
+
+    /* list of shapes stored at this node.  The papsShapeObj pointers
+       or the whole list can be NULL */
+    int		nShapeCount;
+    int		*panShapeIds;
+    SHPObject   **papsShapeObj;
+
+    int		nSubNodes;
+    struct shape_tree_node *apsSubNode[MAX_SUBNODE];
+    
+} SHPTreeNode;
+
+typedef struct
+{
+    SHPHandle   hSHP;
+    
+    int		nMaxDepth;
+    int		nDimension;
+    
+    SHPTreeNode	*psRoot;
+} SHPTree;
+
+SHPTree SHPAPI_CALL1(*)
+      SHPCreateTree( SHPHandle hSHP, int nDimension, int nMaxDepth,
+                     double *padfBoundsMin, double *padfBoundsMax );
+void    SHPAPI_CALL
+      SHPDestroyTree( SHPTree * hTree );
+
+int	SHPAPI_CALL
+      SHPWriteTree( SHPTree *hTree, const char * pszFilename );
+SHPTree SHPAPI_CALL
+      SHPReadTree( const char * pszFilename );
+
+int	SHPAPI_CALL
+      SHPTreeAddObject( SHPTree * hTree, SHPObject * psObject );
+int	SHPAPI_CALL
+      SHPTreeAddShapeId( SHPTree * hTree, SHPObject * psObject );
+int	SHPAPI_CALL
+      SHPTreeRemoveShapeId( SHPTree * hTree, int nShapeId );
+
+void 	SHPAPI_CALL
+      SHPTreeTrimExtraNodes( SHPTree * hTree );
+
+int    SHPAPI_CALL1(*)
+      SHPTreeFindLikelyShapes( SHPTree * hTree,
+                               double * padfBoundsMin,
+                               double * padfBoundsMax,
+                               int * );
+int     SHPAPI_CALL
+      SHPCheckBoundsOverlap( double *, double *, double *, double *, int );
 
 /************************************************************************/
 /*                             DBF Support.                             */
@@ -207,33 +409,73 @@ typedef enum {
   FTString,
   FTInteger,
   FTDouble,
+  FTLogical,
   FTInvalid
 } DBFFieldType;
 
-DBFHandle DBFOpen( const char * pszDBFFile, const char * pszAccess );
-DBFHandle DBFCreate( const char * pszDBFFile );
+#define XBASE_FLDHDR_SZ       32
 
-int	DBFGetFieldCount( DBFHandle psDBF );
-int	DBFGetRecordCount( DBFHandle psDBF );
-int	DBFAddField( DBFHandle hDBF, const char * pszFieldName,
-		     DBFFieldType eType, int nWidth, int nDecimals );
+DBFHandle SHPAPI_CALL
+      DBFOpen( const char * pszDBFFile, const char * pszAccess );
+DBFHandle SHPAPI_CALL
+      DBFCreate( const char * pszDBFFile );
 
-DBFFieldType DBFGetFieldInfo( DBFHandle psDBF, int iField, 
-			      char * pszFieldName, 
-			      int * pnWidth, int * pnDecimals );
+int	SHPAPI_CALL
+      DBFGetFieldCount( DBFHandle psDBF );
+int	SHPAPI_CALL
+      DBFGetRecordCount( DBFHandle psDBF );
+int	SHPAPI_CALL
+      DBFAddField( DBFHandle hDBF, const char * pszFieldName,
+                   DBFFieldType eType, int nWidth, int nDecimals );
 
-int 	DBFReadIntegerAttribute( DBFHandle hDBF, int iShape, int iField );
-double 	DBFReadDoubleAttribute( DBFHandle hDBF, int iShape, int iField );
-const char *DBFReadStringAttribute( DBFHandle hDBF, int iShape, int iField );
+DBFFieldType SHPAPI_CALL
+      DBFGetFieldInfo( DBFHandle psDBF, int iField, 
+                       char * pszFieldName, int * pnWidth, int * pnDecimals );
 
-int DBFWriteIntegerAttribute( DBFHandle hDBF, int iShape, int iField, 
-			      int nFieldValue );
-int DBFWriteDoubleAttribute( DBFHandle hDBF, int iShape, int iField,
-			     double dFieldValue );
-int DBFWriteStringAttribute( DBFHandle hDBF, int iShape, int iField,
-			     const char * pszFieldValue );
+int SHPAPI_CALL
+      DBFGetFieldIndex(DBFHandle psDBF, const char *pszFieldName);
 
-void	DBFClose( DBFHandle hDBF );
+int 	SHPAPI_CALL
+      DBFReadIntegerAttribute( DBFHandle hDBF, int iShape, int iField );
+double 	SHPAPI_CALL
+      DBFReadDoubleAttribute( DBFHandle hDBF, int iShape, int iField );
+const char SHPAPI_CALL1(*)
+      DBFReadStringAttribute( DBFHandle hDBF, int iShape, int iField );
+const char SHPAPI_CALL1(*)
+      DBFReadLogicalAttribute( DBFHandle hDBF, int iShape, int iField );
+int     SHPAPI_CALL
+      DBFIsAttributeNULL( DBFHandle hDBF, int iShape, int iField );
+
+int SHPAPI_CALL
+      DBFWriteIntegerAttribute( DBFHandle hDBF, int iShape, int iField, 
+                                int nFieldValue );
+int SHPAPI_CALL
+      DBFWriteDoubleAttribute( DBFHandle hDBF, int iShape, int iField,
+                               double dFieldValue );
+int SHPAPI_CALL
+      DBFWriteStringAttribute( DBFHandle hDBF, int iShape, int iField,
+                               const char * pszFieldValue );
+int SHPAPI_CALL
+     DBFWriteNULLAttribute( DBFHandle hDBF, int iShape, int iField );
+
+int SHPAPI_CALL
+     DBFWriteLogicalAttribute( DBFHandle hDBF, int iShape, int iField,
+			       const char lFieldValue);
+int SHPAPI_CALL
+     DBFWriteAttributeDirectly(DBFHandle psDBF, int hEntity, int iField,
+                               void * pValue );
+const char SHPAPI_CALL1(*)
+      DBFReadTuple(DBFHandle psDBF, int hEntity );
+int SHPAPI_CALL
+      DBFWriteTuple(DBFHandle psDBF, int hEntity, void * pRawTuple );
+
+DBFHandle SHPAPI_CALL
+      DBFCloneEmpty(DBFHandle psDBF, const char * pszFilename );
+ 
+void	SHPAPI_CALL
+      DBFClose( DBFHandle hDBF );
+char    SHPAPI_CALL
+      DBFGetNativeFieldType( DBFHandle hDBF, int iField );
 
 #ifdef __cplusplus
 }

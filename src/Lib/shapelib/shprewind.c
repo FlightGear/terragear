@@ -1,12 +1,13 @@
 /******************************************************************************
- * $Id: shpcreate.c,v 1.5 2002/01/15 14:36:07 warmerda Exp $
+ * $Id: shprewind.c,v 1.2 2002/04/10 17:23:11 warmerda Exp $
  *
  * Project:  Shapelib
- * Purpose:  Sample application for creating a new shapefile.
- * Author:   Frank Warmerdam, warmerdm@pobox.com
+ * Purpose:  Utility to validate and reset the winding order of rings in
+ *           polygon geometries to match the ordering required by spec.
+ * Author:   Frank Warmerdam, warmerdam@pobox.com
  *
  ******************************************************************************
- * Copyright (c) 1999, Frank Warmerdam
+ * Copyright (c) 2002, Frank Warmerdam
  *
  * This software is available under the following "MIT Style" license,
  * or at the option of the licensee under the LGPL (see LICENSE.LGPL).  This
@@ -33,70 +34,76 @@
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************
  *
- * $Log: shpcreate.c,v $
- * Revision 1.5  2002/01/15 14:36:07  warmerda
- * updated email address
+ * $Log: shprewind.c,v $
+ * Revision 1.2  2002/04/10 17:23:11  warmerda
+ * copy from source to destination now
  *
- * Revision 1.4  2000/07/07 13:39:45  warmerda
- * removed unused variables, and added system include files
- *
- * Revision 1.3  1999/11/05 14:12:04  warmerda
- * updated license terms
- *
- * Revision 1.2  1995/08/04 03:16:43  warmerda
- * Added header.
+ * Revision 1.1  2002/04/10 16:56:36  warmerda
+ * New
  *
  */
-
-static char rcsid[] = 
-  "$Id: shpcreate.c,v 1.5 2002/01/15 14:36:07 warmerda Exp $";
 
 #include "shapefil.h"
 
 int main( int argc, char ** argv )
 
 {
-    SHPHandle	hSHP;
-    int		nShapeType;
+    SHPHandle	hSHP, hSHPOut;
+    int		nShapeType, nEntities, i, nInvalidCount=0;
+    double 	adfMinBound[4], adfMaxBound[4];
 
 /* -------------------------------------------------------------------- */
 /*      Display a usage message.                                        */
 /* -------------------------------------------------------------------- */
     if( argc != 3 )
     {
-	printf( "shpcreate shp_file [point/arc/polygon/multipoint]\n" );
+	printf( "shprewind in_shp_file out_shp_file\n" );
 	exit( 1 );
     }
 
 /* -------------------------------------------------------------------- */
-/*	Figure out the shape type.					*/
+/*      Open the passed shapefile.                                      */
 /* -------------------------------------------------------------------- */
-    if( strcmp(argv[2],"POINT") == 0 || strcmp(argv[2],"point") == 0 )
-        nShapeType = SHPT_POINT;
-    else if( strcmp(argv[2],"ARC") == 0 || strcmp(argv[2],"arc") == 0 )
-        nShapeType = SHPT_ARC;
-    else if( strcmp(argv[2],"POLYGON") == 0 || strcmp(argv[2],"polygon") == 0 )
-        nShapeType = SHPT_POLYGON;
-    else if( strcmp(argv[2],"MULTIPOINT")==0 ||strcmp(argv[2],"multipoint")==0)
-        nShapeType = SHPT_MULTIPOINT;
-    else
-    {
-	printf( "Shape Type `%s' not recognised.\n", argv[2] );
-	exit( 2 );
-    }
-
-/* -------------------------------------------------------------------- */
-/*	Create the requested layer.					*/
-/* -------------------------------------------------------------------- */
-    hSHP = SHPCreate( argv[1], nShapeType );
+    hSHP = SHPOpen( argv[1], "rb" );
 
     if( hSHP == NULL )
     {
-	printf( "Unable to create:%s\n", argv[1] );
-	exit( 3 );
+	printf( "Unable to open:%s\n", argv[1] );
+	exit( 1 );
+    }
+
+    SHPGetInfo( hSHP, &nEntities, &nShapeType, adfMinBound, adfMaxBound );
+    
+/* -------------------------------------------------------------------- */
+/*      Create output shapefile.                                        */
+/* -------------------------------------------------------------------- */
+    hSHPOut = SHPCreate( argv[2], nShapeType );
+
+    if( hSHPOut == NULL )
+    {
+	printf( "Unable to create:%s\n", argv[2] );
+	exit( 1 );
+    }
+
+/* -------------------------------------------------------------------- */
+/*	Skim over the list of shapes, printing all the vertices.	*/
+/* -------------------------------------------------------------------- */
+    for( i = 0; i < nEntities; i++ )
+    {
+	int		j;
+        SHPObject	*psShape;
+
+	psShape = SHPReadObject( hSHP, i );
+        if( SHPRewindObject( hSHP, psShape ) )
+            nInvalidCount++;
+        SHPWriteObject( hSHPOut, -1, psShape );
+        SHPDestroyObject( psShape );
     }
 
     SHPClose( hSHP );
+    SHPClose( hSHPOut );
 
-    return 0;
+    printf( "%d objects rewound.\n", nInvalidCount );
+
+    exit( 0 );
 }

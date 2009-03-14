@@ -1,14 +1,53 @@
-/*
- * Copyright (c) 1995 Frank Warmerdam
+/******************************************************************************
+ * $Id: dbfdump.c,v 1.9 2002/01/15 14:36:07 warmerda Exp $
  *
- * This code is in the public domain.
+ * Project:  Shapelib
+ * Purpose:  Sample application for dumping .dbf files to the terminal.
+ * Author:   Frank Warmerdam, warmerdam@pobox.com
+ *
+ ******************************************************************************
+ * Copyright (c) 1999, Frank Warmerdam
+ *
+ * This software is available under the following "MIT Style" license,
+ * or at the option of the licensee under the LGPL (see LICENSE.LGPL).  This
+ * option is discussed in more detail in shapelib.html.
+ *
+ * --
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ ******************************************************************************
  *
  * $Log: dbfdump.c,v $
- * Revision 1.1  2000-02-09 19:51:46  curt
- * Initial revision
+ * Revision 1.9  2002/01/15 14:36:07  warmerda
+ * updated email address
  *
- * Revision 1.1  1999/08/24 21:13:00  curt
- * Initial revision.
+ * Revision 1.8  2001/05/31 18:15:40  warmerda
+ * Added support for NULL fields in DBF files
+ *
+ * Revision 1.7  2000/09/20 13:13:55  warmerda
+ * added break after default:
+ *
+ * Revision 1.6  2000/07/07 13:39:45  warmerda
+ * removed unused variables, and added system include files
+ *
+ * Revision 1.5  1999/11/05 14:12:04  warmerda
+ * updated license terms
  *
  * Revision 1.4  1998/12/31 15:30:13  warmerda
  * Added -m, -r, and -h commandline options.
@@ -22,8 +61,10 @@
  */
 
 static char rcsid[] = 
-  "$Id: dbfdump.c,v 1.1 2000-02-09 19:51:46 curt Exp $";
+  "$Id: dbfdump.c,v 1.9 2002/01/15 14:36:07 warmerda Exp $";
 
+#include <stdlib.h>
+#include <string.h>
 #include "shapefil.h"
 
 int main( int argc, char ** argv )
@@ -31,7 +72,7 @@ int main( int argc, char ** argv )
 {
     DBFHandle	hDBF;
     int		*panWidth, i, iRecord;
-    char	szFormat[32], szField[1024], *pszFilename = NULL;
+    char	szFormat[32], *pszFilename = NULL;
     int		nWidth, nDecimals;
     int		bHeader = 0;
     int		bRaw = 0;
@@ -159,25 +200,40 @@ int main( int argc, char ** argv )
 /* -------------------------------------------------------------------- */
             if( !bRaw )
             {
-                switch( eType )
+                if( DBFIsAttributeNULL( hDBF, iRecord, i ) )
                 {
-                  case FTString:
-                    sprintf( szFormat, "%%-%ds", nWidth );
-                    printf( szFormat, 
-                            DBFReadStringAttribute( hDBF, iRecord, i ) );
-                    break;
-                    
-                  case FTInteger:
-                    sprintf( szFormat, "%%%dd", nWidth );
-                    printf( szFormat, 
-                            DBFReadIntegerAttribute( hDBF, iRecord, i ) );
-                    break;
+                    if( eType == FTString )
+                        sprintf( szFormat, "%%-%ds", nWidth );
+                    else
+                        sprintf( szFormat, "%%%ds", nWidth );
 
-                  case FTDouble:
-                    sprintf( szFormat, "%%%d.%dlf", nWidth, nDecimals );
-                    printf( szFormat, 
-                            DBFReadDoubleAttribute( hDBF, iRecord, i ) );
-                    break;
+                    printf( szFormat, "(NULL)" );
+                }
+                else
+                {
+                    switch( eType )
+                    {
+                      case FTString:
+                        sprintf( szFormat, "%%-%ds", nWidth );
+                        printf( szFormat, 
+                                DBFReadStringAttribute( hDBF, iRecord, i ) );
+                        break;
+                        
+                      case FTInteger:
+                        sprintf( szFormat, "%%%dd", nWidth );
+                        printf( szFormat, 
+                                DBFReadIntegerAttribute( hDBF, iRecord, i ) );
+                        break;
+                        
+                      case FTDouble:
+                        sprintf( szFormat, "%%%d.%dlf", nWidth, nDecimals );
+                        printf( szFormat, 
+                                DBFReadDoubleAttribute( hDBF, iRecord, i ) );
+                        break;
+                        
+                      default:
+                        break;
+                    }
                 }
             }
 

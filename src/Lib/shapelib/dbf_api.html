@@ -80,6 +80,22 @@ int DBFGetRecordCount( DBFHandle hDBF );
 
 <!-------------------------------------------------------------------------->
 
+<h2>DBFGetFieldIndex()</h2>
+
+<pre>
+int DBFGetFieldIndex( DBFHandle hDBF, const char *pszFieldName );
+
+  hDBF:		The access handle for the file to be queried, as returned by
+		DBFOpen(), or DBFCreate().
+
+  pszFieldName: Name of the field to search for.
+</pre>
+
+  Returns the index of the field matching this name, or -1 on failure.  The
+  comparison is case insensitive.  However, lengths must match exactly.<p>
+
+<!-------------------------------------------------------------------------->
+
 <h2>DBFGetFieldInfo()</h2>
 
 <pre>
@@ -119,6 +135,7 @@ DBFFieldType DBFGetFieldInfo( DBFHandle hDBF, int iField, char * pszFieldName,
       FTString,			/* fixed length string field 		*/
       FTInteger,		/* numeric field with no decimals 	*/
       FTDouble,			/* numeric field with decimals 		*/
+      FTLogical,		/* logical field.                       */
       FTInvalid                 /* not a recognised field type 		*/
     } DBFFieldType;
 </pre>
@@ -145,7 +162,8 @@ int DBFAddField( DBFHandle hDBF, const char * pszFieldName,
 
   nWidth:	The width of the field to be created.  For FTString fields this
                 establishes the maximum length of string that can be stored.
-                For FTInteger this establishes the largest number that can
+                For FTInteger this establishes the number of digits of the
+                largest number that can
                 be represented.  For FTDouble fields this in combination
                 with the nDecimals value establish the size, and precision
                 of the created field.
@@ -232,6 +250,28 @@ const char *DBFReadStringAttribute( DBFHandle hDBF, int iShape, int iField );
 
 <!-------------------------------------------------------------------------->
 
+<h2>DBFIsAttributeNULL()</h2>
+
+<pre>
+int DBFIsAttributeNULL( DBFHandle hDBF, int iShape, int iField );
+  
+  hDBF:		The access handle for the file to be queried, as returned by
+		DBFOpen(), or DBFCreate().
+
+  iShape:	The record number (shape number) from which the field value
+                should be read.
+
+  iField:	The field within the selected record that should be read.
+</pre>
+
+  This function will return TRUE if the indicated field is NULL valued
+  otherwise FALSE.  Note that NULL fields are represented in the .dbf file
+  as having all spaces in the field.  Reading NULL fields will result in
+  a value of 0.0 or an empty string with the other DBFRead*Attribute() 
+  functions.<p>
+
+<!-------------------------------------------------------------------------->
+
 <h2>DBFWriteIntegerAttribute</h2>
 
 <pre>
@@ -251,8 +291,8 @@ int DBFWriteIntegerAttribute( DBFHandle hDBF, int iShape, int iField,
 
 The DBFWriteIntegerAttribute() function is used to write a value to a numeric
 field (FTInteger, or FTDouble).  If the write succeeds the value TRUE will
-be returned, otherwise FALSE will be returned.  The value may be truncated 
-without warning if written to a field to narrow to represent the value.<p>
+be returned, otherwise FALSE will be returned.  If the value is too large to 
+fit in the field, it will be truncated and FALSE returned.<p>
 
 <!-------------------------------------------------------------------------->
 
@@ -275,8 +315,8 @@ int DBFWriteDoubleAttribute( DBFHandle hDBF, int iShape, int iField,
 
 The DBFWriteDoubleAttribute() function is used to write a value to a numeric
 field (FTInteger, or FTDouble).  If the write succeeds the value TRUE will
-be returned, otherwise FALSE will be returned.  The value may be truncated 
-without warning if written to a field to narrow to represent the value.<p>
+be returned, otherwise FALSE will be returned.  If the value is too large to 
+fit in the field, it will be truncated and FALSE returned.<p>
 
 <!-------------------------------------------------------------------------->
 
@@ -299,8 +339,29 @@ int DBFWriteStringAttribute( DBFHandle hDBF, int iShape, int iField,
 
 The DBFWriteStringAttribute() function is used to write a value to a string
 field (FString).  If the write succeeds the value TRUE willbe returned, 
-otherwise FALSE will be returned.  The value may be truncated 
-without warning if written to a field to narrow to hold the string.<p>
+otherwise FALSE will be returned.  If the value is too large to 
+fit in the field, it will be truncated and FALSE returned.<p>
+
+<!-------------------------------------------------------------------------->
+
+<h2>DBFWriteNULLAttribute()</h2>
+
+<pre>
+int DBFWriteNULLAttribute( DBFHandle hDBF, int iShape, int iField );
+
+  hDBF:		The access handle for the file to be written, as returned by
+		DBFOpen(), or DBFCreate().
+
+  iShape:	The record number (shape number) to which the field value
+                should be written.
+
+  iField:	The field within the selected record that should be written.
+</pre>
+
+The DBFWriteNULLAttribute() function is used to clear the indicated field
+to a NULL value.  In the .dbf file this is represented by setting the entire
+field to spaces.  If the write succeeds the value TRUE willbe returned, 
+otherwise FALSE will be returned.<p>
 
 <!-------------------------------------------------------------------------->
 
@@ -317,6 +378,31 @@ void DBFClose( DBFHandle hDBF );
   disk, and recovering any resources associated with having the file open.
   The file handle (hDBF) should not be used again with the DBF API after
   calling DBFClose().<p>
+
+<!-------------------------------------------------------------------------->
+
+<h2>DBFGetNativeFieldType()</h2>
+
+<pre>
+char DBFGetNativeFieldType( DBFHandle hDBF, int iField );
+
+  hDBF:		The access handle for the file.
+  iField:       The field index to query.
+  
+</pre>
+
+  This function returns the DBF type code of the indicated field. It will
+  be one of:<p>
+
+<ul>
+<li> 'C' (String)
+<li> 'D' (Date)
+<li> 'F' (Float)
+<li> 'N' (Numeric, with or without decimal)
+<li> 'L' (Logical)
+<li> 'M' (Memo: 10 digits .DBT block ptr)
+<li> ' ' (field out of range)
+</ul>
 
 </body>
 </html>

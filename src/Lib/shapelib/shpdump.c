@@ -1,14 +1,51 @@
-/*
- * Copyright (c) 1995 Frank Warmerdam
+/******************************************************************************
+ * $Id: shpdump.c,v 1.10 2002/04/10 16:59:29 warmerda Exp $
  *
- * This code is in the public domain.
+ * Project:  Shapelib
+ * Purpose:  Sample application for dumping contents of a shapefile to 
+ *           the terminal in human readable form.
+ * Author:   Frank Warmerdam, warmerdam@pobox.com
+ *
+ ******************************************************************************
+ * Copyright (c) 1999, Frank Warmerdam
+ *
+ * This software is available under the following "MIT Style" license,
+ * or at the option of the licensee under the LGPL (see LICENSE.LGPL).  This
+ * option is discussed in more detail in shapelib.html.
+ *
+ * --
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ ******************************************************************************
  *
  * $Log: shpdump.c,v $
- * Revision 1.1  2000-02-09 19:51:46  curt
- * Initial revision
+ * Revision 1.10  2002/04/10 16:59:29  warmerda
+ * added -validate switch
  *
- * Revision 1.1  1999/08/24 21:13:01  curt
- * Initial revision.
+ * Revision 1.9  2002/01/15 14:36:07  warmerda
+ * updated email address
+ *
+ * Revision 1.8  2000/07/07 13:39:45  warmerda
+ * removed unused variables, and added system include files
+ *
+ * Revision 1.7  1999/11/05 14:12:04  warmerda
+ * updated license terms
  *
  * Revision 1.6  1998/12/03 15:48:48  warmerda
  * Added report of shapefile type, and total number of shapes.
@@ -28,7 +65,7 @@
  */
 
 static char rcsid[] = 
-  "$Id: shpdump.c,v 1.1 2000-02-09 19:51:46 curt Exp $";
+  "$Id: shpdump.c,v 1.10 2002/04/10 16:59:29 warmerda Exp $";
 
 #include "shapefil.h"
 
@@ -36,16 +73,23 @@ int main( int argc, char ** argv )
 
 {
     SHPHandle	hSHP;
-    int		nShapeType, nEntities, i, iPart;
+    int		nShapeType, nEntities, i, iPart, bValidate = 0,nInvalidCount=0;
     const char 	*pszPlus;
     double 	adfMinBound[4], adfMaxBound[4];
+
+    if( argc > 1 && strcmp(argv[1],"-validate") == 0 )
+    {
+        bValidate = 1;
+        argv++;
+        argc--;
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Display a usage message.                                        */
 /* -------------------------------------------------------------------- */
     if( argc != 2 )
     {
-	printf( "shpdump shp_file\n" );
+	printf( "shpdump [-validate] shp_file\n" );
 	exit( 1 );
     }
 
@@ -68,8 +112,8 @@ int main( int argc, char ** argv )
     printf( "Shapefile Type: %s   # of Shapes: %d\n\n",
             SHPTypeName( nShapeType ), nEntities );
     
-    printf( "File Bounds: (%12.3f,%12.3f,%lg,%lg)\n"
-            "         to  (%12.3f,%12.3f,%lg,%lg)\n",
+    printf( "File Bounds: (%12.3f,%12.3f,%g,%g)\n"
+            "         to  (%12.3f,%12.3f,%g,%g)\n",
             adfMinBound[0], 
             adfMinBound[1], 
             adfMinBound[2], 
@@ -90,8 +134,8 @@ int main( int argc, char ** argv )
 	psShape = SHPReadObject( hSHP, i );
 
 	printf( "\nShape:%d (%s)  nVertices=%d, nParts=%d\n"
-                "  Bounds:(%12.3f,%12.3f, %lg, %lg)\n"
-                "      to (%12.3f,%12.3f, %lg, %lg)\n",
+                "  Bounds:(%12.3f,%12.3f, %g, %g)\n"
+                "      to (%12.3f,%12.3f, %g, %g)\n",
 	        i, SHPTypeName(psShape->nSHPType),
                 psShape->nVertices, psShape->nParts,
                 psShape->dfXMin, psShape->dfYMin,
@@ -116,7 +160,7 @@ int main( int argc, char ** argv )
 	    else
 	        pszPlus = " ";
 
-	    printf("   %s (%12.3f,%12.3f, %lg, %lg) %s \n",
+	    printf("   %s (%12.3f,%12.3f, %g, %g) %s \n",
                    pszPlus,
                    psShape->padfX[j],
                    psShape->padfY[j],
@@ -124,11 +168,28 @@ int main( int argc, char ** argv )
                    psShape->padfM[j],
                    pszPartType );
 	}
+
+        if( bValidate )
+        {
+            int nAltered = SHPRewindObject( hSHP, psShape );
+
+            if( nAltered > 0 )
+            {
+                printf( "  %d rings wound in the wrong direction.\n",
+                        nAltered );
+                nInvalidCount++;
+            }
+        }
         
         SHPDestroyObject( psShape );
     }
 
     SHPClose( hSHP );
+
+    if( bValidate )
+    {
+        printf( "%d object has invalid ring orderings.\n", nInvalidCount );
+    }
 
 #ifdef USE_DBMALLOC
     malloc_dump(2);
