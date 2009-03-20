@@ -26,6 +26,22 @@ if test "x$with_simgear" != "x" ; then
     EXTRA_DIRS="${EXTRA_DIRS} $with_simgear"
 fi
 
+# specify the plib location
+AC_ARG_WITH(plib, [  --with-plib=PREFIX      Specify the prefix path to plib])
+
+if test "x$with_plib" != "x" ; then
+    echo "plib prefix is $with_plib"
+    EXTRA_DIRS="${EXTRA_DIRS} $with_plib"
+fi
+
+# specify the osg location
+AC_ARG_WITH(osg, [  --with-osg=PREFIX       Specify the prefix path to osg])
+
+if test "x$with_osg" != "x" ; then
+    echo "osg prefix is $with_osg"
+    EXTRA_DIRS="${EXTRA_DIRS} $with_osg"
+fi
+
 dnl set the $host variable based on local machine/os
 AC_CANONICAL_HOST
 
@@ -142,7 +158,8 @@ dnl Check for MS Windows environment
 AC_CHECK_HEADER(windows.h)
 
 dnl extra library and include directories
-EXTRA_DIRS="/usr/local/plib /usr/X11R6"
+# EXTRA_DIRS="/usr/local/plib /usr/X11R6"
+EXTRA_DIRS="$EXTRA_DIRS /usr/X11R6"
 
 if test -d /opt/X11R6 ; then
      EXTRA_DIRS="$EXTRA_DIRS /opt/X11R6"
