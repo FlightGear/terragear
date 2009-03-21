@@ -160,55 +160,16 @@ static int actual_load_polys( const string& dir,
     string file, f_index, full_path;
     int pos;
 
-#ifdef _MSC_VER
-    long hfile;
-    struct _finddata_t de;
-    string path;
+    ulDir *d;
+    struct ulDirEnt *de;
 
-    path = dir + "/*.*";
-
-    if ( ( hfile = _findfirst( path.c_str(), &de ) ) == -1 ) {
-	cout << "cannot open directory " << dir << "\n";
-	return 0;
-    }
-
-    // load all matching polygon files
-    do {
-        file = de.name;
-        pos = file.find(".");
-        f_index = file.substr(0, pos);
-
-        if ( tile_str == f_index ) {
-            ext = file.substr(pos + 1);
-            cout << file << "  " << f_index << "  '" << ext << "'" << endl;
-            full_path = dir + "/" + file;
-            if ( (ext == "arr") || (ext == "arr.gz") || 
-                 (ext == "fit") || (ext == "fit.gz")) {
-                // skip
-            } else if (ext == "osgb36") {
-                cout << "Loading osgb36 poly definition file\n";
-                clipper.load_osgb36_polys( full_path );
-                ++counter;
-            } else {
-                cout << "ext = '" << ext << "'" << endl;
-                clipper.load_polys( full_path );
-                ++counter;
-            }
-        }
-    } while ( _findnext( hfile, &de ) == 0 );
-
-#else
-
-    DIR *d;
-    struct dirent *de;
-
-    if ( (d = opendir( dir.c_str() )) == NULL ) {
+    if ( (d = ulOpenDir( dir.c_str() )) == NULL ) {
         cout << "cannot open directory " << dir << "\n";
 	return 0;
     }
 
     // load all matching polygon files
-    while ( (de = readdir(d)) != NULL ) {
+    while ( (de = ulReadDir(d)) != NULL ) {
         file = de->d_name;
         pos = file.find(".");
         f_index = file.substr(0, pos);
@@ -232,8 +193,7 @@ static int actual_load_polys( const string& dir,
         }
     }
 
-    closedir(d);
-#endif
+    ulCloseDir(d);
 	
     return counter;
 }
@@ -448,7 +408,7 @@ static int load_polys( TGConstruct& c, const TGArray &array ) {
 
     // load 2D polygons from all directories provided
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
-	poly_path = load_dirs[i] + '/' + base;
+	poly_path = c.get_work_base() + "/" + load_dirs[i] + '/' + base;
 	cout << "poly_path = " << poly_path << endl;
 	count += actual_load_polys( poly_path, c, clipper );
 	cout << "  loaded " << count << " total polys" << endl;
@@ -484,7 +444,7 @@ static bool load_array( TGConstruct& c, TGArray& array) {
     int i;
 
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
-	string array_path = load_dirs[i] + "/" + base
+	string array_path = c.get_work_base() + "/" + load_dirs[i] + "/" + base
 	    + "/" + c.get_bucket().gen_index_str();
 	cout << "array_path = " << array_path << endl;
 
