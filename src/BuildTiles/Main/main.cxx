@@ -25,13 +25,6 @@
 #  include <config.h>
 #endif
 
-#ifdef _MSC_VER
-#  include <io.h>
-#else
-#  include <sys/types.h>	// for directory reading
-#  include <dirent.h>		// for directory reading
-#endif
-
 #ifdef HAVE_SYS_TIME_H
 #  include <sys/time.h>		// set mem allocation limit
 #endif
