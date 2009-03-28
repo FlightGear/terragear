@@ -30,6 +30,8 @@
 #define MAX_COLS 7200
 #define MAX_COLS_X_2 14400
 
+#define BAD_LATLON  12345.0
+
 typedef struct {
     /* header info */
     int big_endian;  /* true if data source is big, false if little */
@@ -47,7 +49,9 @@ typedef struct {
     /* file ptr */
     int fd;          /* Raw DEM file descriptor */
 
-    /* storage area for a 1 degree high strip of data.  Note, for
+    double min_lat, max_lat, min_lon, max_lon; /* some limits, if any */
+
+   /* storage area for a 1 degree high strip of data.  Note, for
      * convenience this is in y,x order */
     short strip[120][MAX_ROWS];
 

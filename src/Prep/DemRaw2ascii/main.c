@@ -1,6 +1,8 @@
 /* main.cxx -- main loop
  *
  * Written by Curtis Olson, started February 1998.
+ * Modified by Geoff McLane, March, 2009
+ * to add min, max, lon, lat, to limit the output of ASCII DEM files.
  *
  * Copyright (C) 1998, 1999  Curtis L. Olson  - http://www.flightgear.org/~curt
  *
@@ -36,29 +38,149 @@
 #  include <stdlib.h>
 #endif
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include "rawdem.h"
 
+#ifdef _MSC_VER
+#define M_ISDIR _S_IFDIR
+#else
+#define M_ISDIR __S_IFDIR
+#endif
+
+static void give_help( char * name )
+{
+   printf("Usage: %s [OPTIONS] <input_file_basename> <output_dir>\n", name);
+   printf("Options:\n");
+   printf(" --min-lat=<degs> - set minimum latitude for output.\n");
+   printf(" --max-lat=<degs> - set maximum latitude for output.\n");
+   printf(" --min-lon=<degs> - set minimum longitude for output.\n");
+   printf(" --max-lon=<degs> - set maximum longitude for output.\n");
+}
+
+static int is_file_or_directory( char * cur_item )
+{
+   struct stat buf;
+   if( stat( cur_item, &buf ) == 0 ) {
+      if ( buf.st_mode & M_ISDIR )
+         return 1; // is directory
+      else
+         return 2; // is file
+   }
+   return 0;
+}
 
 int main(int argc, char **argv) {
-    fgRAWDEM raw;
-    char basename[256], output_dir[256], hdr_file[256], dem_file[256];
+    static fgRAWDEM raw;
+    static char basename[256], output_dir[256], hdr_file[256], dem_file[256];
     int start_lat, end_lat;
     int i;
-    // double total;
-    // unsigned char buf[2];
-    // short int value;
+    int last_arg = 1;
+    double min_lat, max_lat, min_lon, max_lon;
 
-    if ( argc != 3 ) {
-	printf("Usage: %s <input_file_basename> <output_dir>\n", argv[0]);
-	exit(-1);
+#if defined( _MSC_VER ) && _MSC_VER >= 1400 // set 2-ditit exponent - defaults to 3 - Only available for VS2005
+    _set_output_format( _TWO_DIGIT_EXPONENT );
+#endif // _MSC_VER
+
+    min_lat = max_lat = min_lon = max_lon = BAD_LATLON;
+    for( i = 1; i < argc; i++ )
+    {
+       char * arg = argv[i];
+       if (*arg == '-') {
+          // option
+          if((strcmp(arg,"-h") == 0)||
+             (strcmp(arg,"--help") == 0)) {
+                give_help( argv[0] );
+                exit(0);
+          } else if( strncmp(arg,"--min-lon=", 10) == 0 ) {
+             min_lon = atof( &arg[10] );
+          } else if( strncmp(arg,"--max-lon=", 10) == 0 ) {
+             max_lon = atof( &arg[10] );
+          } else if( strncmp(arg,"--min-lat=", 10) == 0 ) {
+             min_lat = atof( &arg[10] );
+          } else if( strncmp(arg,"--max-lat=", 10) == 0 ) {
+             max_lat = atof( &arg[10] );
+          } else {
+             printf( "ERROR: Unknown argument [%s]. Use -h for help.\n", arg );
+             exit(1);
+          }
+          last_arg = i + 1;
+       } else
+          break;
     }
 
+    if ( (argc - last_arg) != 2 ) {
+       give_help( argv[0] );
+       exit(1);
+    }
+    if(( min_lat != BAD_LATLON )&&
+       (( min_lat < -90.0 )||( min_lat > 90.0 ))) {
+          printf( "ERROR: Bad min-lat [%f]!\n", min_lat );
+          exit(1);
+    }
+    if(( max_lat != BAD_LATLON )&&
+       (( max_lat < -90.0 )||( max_lat > 90.0 ))) {
+          printf( "ERROR: Bad max-lat [%f]!\n", max_lat );
+          exit(1);
+    }
+    if(( min_lon != BAD_LATLON )&&
+       (( min_lon < -180.0 )||( min_lon > 180.0 ))) {
+          printf( "ERROR: Bad min-lon [%f]!\n", min_lon );
+          exit(1);
+    }
+    if(( max_lon != BAD_LATLON )&&
+       (( max_lon < -180.0 )||( max_lon > 180.0 ))) {
+          printf( "ERROR: Bad max-lon [%f]!\n", max_lon );
+          exit(1);
+    }
+    if(( min_lat != BAD_LATLON )&&
+       ( max_lat != BAD_LATLON )&&
+       ( min_lat > max_lat ))
+    {
+       printf( "ERROR: Bad min-lat [%f] NOT less than max-lat [%f]!\n", min_lat, max_lat );
+       exit(1);
+    }
+    if(( min_lon != BAD_LATLON )&&
+       ( max_lon != BAD_LATLON )&&
+       ( min_lon > max_lon ))
+    {
+       printf( "ERROR: Bad min-lon [%f] NOT less than max-lon [%f]!\n", min_lon, max_lon );
+       exit(1);
+    }
+
+    if(( min_lat != BAD_LATLON )||
+       ( max_lat != BAD_LATLON )||
+       ( min_lon != BAD_LATLON )||
+       ( max_lon != BAD_LATLON ))
+    {
+      printf( "Limited to " );
+      if( min_lat != BAD_LATLON )
+         printf( "min lat [%f] ", min_lat );
+      if( max_lat != BAD_LATLON )
+         printf( "max lat [%f] ", max_lat );
+      if( min_lon != BAD_LATLON )
+         printf( "min lon [%f] ", min_lon );
+      if( max_lon != BAD_LATLON )
+         printf( "max lon [%f] ", max_lon );
+      printf( "\n" );
+    }
+
+    /* set any mins and max */
+    raw.min_lat = min_lat;
+    raw.min_lon = min_lon;
+    raw.max_lat = max_lat;
+    raw.max_lon = max_lon;
+
     /* get basename */
-    strcpy(basename, argv[1]);
+    strcpy(basename, argv[last_arg]);
 
     /* get output dir */
-    strcpy(output_dir, argv[2]);
-
+    strcpy(output_dir, argv[last_arg+1]);
+    if ( is_file_or_directory( output_dir ) != 1 ) {
+       printf( "ERROR: Ouput directory [%s], does not exist!\n", output_dir );
+       exit(1);
+    }
+    
     /* generate header file name */
     strcpy(hdr_file, basename);
     strcat(hdr_file, ".HDR");

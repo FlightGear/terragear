@@ -85,7 +85,7 @@ int reads(int fd, char *buf, unsigned int len) {
  * DEM file */
 void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
     FILE *hdr;
-    char line[256], key[256], value[256];
+    static char line[256], key[256], value[256];
     int i, len, offset;
     double tmp;
 
@@ -100,7 +100,13 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
     /* process each line */
     while ( (reads(fileno(hdr), line, 256) != 0) ) {
 
-	printf("%s", line);
+   len = strlen(line);
+   while(len && ((line[len - 1] == '\n')||(line[len - 1] == '\r'))) {
+      len--;
+      line[len] = 0; // kill EOL characters
+   }
+   printf("%s ", line);
+ 
 	len = strlen(line);
 
 	/* extract key */
@@ -128,13 +134,17 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 	if ( strcmp(key, "BYTEORDER") == 0 ) {
 	    if ( strcmp( value, "M" ) == 0 ) {
 		raw->big_endian = 1;
-	    } else {
+      printf( "- set big_endian\n" );
+      } else {
+      printf( "- unset big_endian (not 'M'!)\n" );
 		raw->big_endian = 0;
 	    }
 	} else if ( strcmp(key, "NROWS") == 0 ) {
 	    raw->nrows = atoi(value);
+       printf( "- set rows to %d\n", raw->nrows );
 	} else if ( strcmp(key, "NCOLS") == 0 ) {
 	    raw->ncols = atoi(value);
+       printf( "- set cols to %d\n", raw->ncols );
 	} else if ( strcmp(key, "ULXMAP") == 0 ) {
 	    tmp = atof(value);
 #ifdef HAVE_RINT
@@ -142,6 +152,8 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 #else
 	    raw->ulxmap = (int)round(tmp * 3600.0); /* convert to arcsec */
 #endif
+       printf( "- set ulxmap to %d arcsecs (%d degrees)\n", raw->ulxmap,
+          raw->ulxmap / 3600);
 	} else if ( strcmp(key, "ULYMAP") == 0 ) {
 	    tmp = atof(value);
 #ifdef HAVE_RINT
@@ -149,6 +161,8 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 #else
 	    raw->ulymap = (int)round(tmp * 3600.0); /* convert to arcsec */
 #endif
+       printf( "- set ulymap to %d arcsecs (%d degrees)\n", raw->ulymap,
+          raw->ulymap / 3600);
 	} else if ( strcmp(key, "XDIM") == 0 ) {
 	    tmp = atof(value);
 #ifdef HAVE_RINT
@@ -156,6 +170,8 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 #else
 	    raw->xdim = (int)round(tmp * 3600.0);   /* convert to arcsec */
 #endif
+       printf( "- set xdim to %d arcsecs (%f degrees)\n", raw->xdim,
+          (double)raw->xdim / 3600.0);
 	} else if ( strcmp(key, "YDIM") == 0 ) {
 	    tmp = atof(value);
 #ifdef HAVE_RINT
@@ -163,8 +179,11 @@ void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
 #else
 	    raw->ydim = (int)round(tmp * 3600.0);   /* convert to arcsec */
 #endif
+       printf( "- set ydim to %d arcsecs (%f degrees)\n", raw->ydim,
+          (double)raw->ydim / 3600.0);
 	} else {
 	    /* ignore for now */
+      printf( "- ignore for now\n" );
 	}
     }
 
@@ -258,7 +277,7 @@ void rawReadNextRow( fgRAWDEM *raw, int index ) {
 	if ( value > raw->max ) { raw->max = value; }
     }
 
-    printf( " so far, min = %d  max = %d\n", raw->min, raw->max );
+    /* printf( " so far, min = %d  max = %d\n", raw->min, raw->max ); */
 }
 
 
@@ -330,6 +349,15 @@ void rawDumpAsciiDEM( fgRAWDEM *raw, char *path, int ilon, int ilat ) {
     }
 
     sprintf(outfile, "%s/%c%03d%c%02d.dem", path, lon_sign, lon, lat_sign, lat);
+
+   if((( raw->min_lat != BAD_LATLON)&&( (double)ilat < raw->min_lat ))||
+      (( raw->max_lat != BAD_LATLON)&&( (double)ilat > raw->max_lat ))||
+      (( raw->min_lon != BAD_LATLON)&&( (double)ilon < raw->min_lon ))||
+      (( raw->max_lon != BAD_LATLON)&&( (double)ilon > raw->max_lon )))
+   {
+       printf("outfile = %s not written. Outside range\n", outfile);
+       return;
+   }
 
     printf("outfile = %s\n", outfile);
 
@@ -468,7 +496,7 @@ void rawProcessStrip( fgRAWDEM *raw, int lat_degrees, char *path ) {
     /* convert to arcsec */
     lat = lat_degrees * 3600;
 
-    printf("Max Latitude = %d arcsec\n", lat);
+    printf("Max Latitude = %d arcsec (%f degs)\n", lat, lat_degrees);
 
     /* validity check ... */
     if ( (lat > raw->rooty) || 
