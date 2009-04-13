@@ -470,8 +470,8 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     }
 
     fprintf( fp, "%d %d\n", (int)min_x, (int)min_y );
-    fprintf( fp, "%d %d %d %d\n", span_x + 1, (int)col_step, 
-	     span_y + 1, (int)row_step );
+    fprintf( fp, "%d %f %d %f\n", span_x + 1, col_step, 
+	     span_y + 1, row_step );
     for ( int i = start_x; i <= start_x + span_x; ++i ) {
 	for ( int j = start_y; j <= start_y + span_y; ++j ) {
 	    fprintf( fp, "%d ", (int)dem_data[i][j] );
