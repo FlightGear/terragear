@@ -239,6 +239,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "srtmchop", "srtmchop\srtmch
 		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "testarray", "testarray\testarray.vcproj", "{22926274-8818-42A8-9469-28E84978D53B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2871F3BA-ADCC-4440-8078-FC76C5983FCE} = {2871F3BA-ADCC-4440-8078-FC76C5983FCE}
+		{22540CD3-D3CA-4C86-A773-80AEEE3ACDED} = {22540CD3-D3CA-4C86-A773-80AEEE3ACDED}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -413,6 +419,10 @@ Global
 		{7490AAD8-D2A4-4F0D-8150-68DCE07F3116}.Debug.Build.0 = Debug|Win32
 		{7490AAD8-D2A4-4F0D-8150-68DCE07F3116}.Release.ActiveCfg = Release|Win32
 		{7490AAD8-D2A4-4F0D-8150-68DCE07F3116}.Release.Build.0 = Release|Win32
+		{22926274-8818-42A8-9469-28E84978D53B}.Debug.ActiveCfg = Debug|Win32
+		{22926274-8818-42A8-9469-28E84978D53B}.Debug.Build.0 = Debug|Win32
+		{22926274-8818-42A8-9469-28E84978D53B}.Release.ActiveCfg = Release|Win32
+		{22926274-8818-42A8-9469-28E84978D53B}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection
