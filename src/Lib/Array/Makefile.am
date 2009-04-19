@@ -3,7 +3,7 @@ noinst_LIBRARIES = libArray.a
 libArray_a_SOURCES = array.cxx array.hxx
 
 # noinst_PROGRAMS = testarray testgts
-noinst_PROGRAMS = testarray
+bin_PROGRAMS = testarray
 
 testarray_SOURCES = testarray.cxx
 
