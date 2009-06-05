@@ -195,6 +195,7 @@ LIBS=""
 
 dnl check for some default libraries
 AC_SEARCH_LIBS(cos, m)
+AC_SEARCH_LIBS(clock_gettime, rt)
 
 base_LIBS="$LIBS"
 

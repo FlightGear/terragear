@@ -42,11 +42,11 @@ photo_LDADD = \
 
 wgs84offset_SOURCES = wgs84offset.cxx
 
-wgs84offset_LDADD = -lsgmath -lsgdebug
+wgs84offset_LDADD = -lsgmath -lsgdebug -lsgstructure
 
 findcorners_SOURCES = findcorners.cxx
 
-findcorners_LDADD = -lsgmath -lsgdebug
+findcorners_LDADD = -lsgmath -lsgdebug -lsgstructure
 
 INCLUDES = \
 	-I$(top_srcdir) \

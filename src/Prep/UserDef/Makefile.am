@@ -10,6 +10,7 @@ tguserdef_LDADD = \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
 	-lsgbucket -lsgmisc -lsgmath -lsgprops -lsgio -lsgstructure -lsgxml \
 	-lsgdebug \
+	-lOpenThreads \
 	-lgenpolyclip -lz
 
 INCLUDES = -I$(top_srcdir)/src/Lib
