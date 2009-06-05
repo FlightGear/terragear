@@ -486,6 +486,13 @@ void TGMatch::write_shared( TGConstruct& c ) {
 	exit(-1);
     }
 
+    /*
+     * We only write data out for those sides for which the adjacent
+     * tiles still have to be built.
+     *
+     * If we have already read data for a given corner or side, this
+     * means that the adjacent tile already has been built.
+     */
     if ( ! sw_flag ) {
 	fprintf( fp, "sw_node %.6f %.6f %.6f\n", 
 		 sw_node.x(), sw_node.y(), sw_node.z() );

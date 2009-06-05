@@ -69,6 +69,10 @@ private:
     // with the UK grid
     bool useUKGrid;
 
+    // flag indicating whether this is a rebuild and Shared edge
+    // data should only be used for fitting, but not rewritten
+    bool writeSharedEdges;
+
     // detail level constraints
     int min_nodes;
     int max_nodes;
@@ -129,6 +133,10 @@ public:
     // UK grid flag
     inline bool get_useUKGrid() const { return useUKGrid; }
     inline void set_useUKGrid( const bool b ) { useUKGrid = b; }
+    
+    // shared edge write flag
+    inline bool get_write_shared_edges() const { return writeSharedEdges; }
+    inline void set_write_shared_edges( const bool b ) { writeSharedEdges = b; }
 
     // detail level constraints
     inline int get_min_nodes() const { return min_nodes; }

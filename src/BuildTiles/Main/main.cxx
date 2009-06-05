@@ -951,7 +951,7 @@ static void do_custom_objects( const TGConstruct& c ) {
     char name[256];
 
     for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
-	string base_dir = load_dirs[i] + "/" + b.gen_base_path();
+	string base_dir = c.get_work_base() + "/" + load_dirs[i] + "/" + b.gen_base_path();
 	string index_file = base_dir + "/" + b.gen_index_str() + ".ind";
 	cout << "collecting custom objects from " << index_file << endl;
 
@@ -1038,7 +1038,9 @@ static void construct_tile( TGConstruct& c ) {
     TGMatch m;
     m.load_neighbor_shared( c );
     m.split_tile( c );
-    m.write_shared( c );
+    if ( c.get_write_shared_edges() ) {
+            m.write_shared( c );
+    }
     m.assemble_tile( c );
 
     // now we must retriangulate the pasted together tile points
@@ -1099,6 +1101,7 @@ static void usage( const string name ) {
     cout << "  --ydist=<degrees>" << endl;
     cout << "  --nudge=<float>" << endl;
     cout << "  --useUKgrid" << endl;
+    cout << "  --no-write-shared-edges" << endl;
     cout << " ] <load directory...>" << endl;
     exit(-1);
 }
@@ -1117,6 +1120,10 @@ int main(int argc, char **argv) {
     // flag indicating whether UK grid should be used for in-UK
     // texture coordinate generation
     bool useUKgrid = false;
+    
+    // flag indicating whether this is a rebuild and Shared edge
+    // data should only be used for fitting, but not rewritten
+    bool writeSharedEdges = true;
     
     sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
@@ -1146,7 +1153,9 @@ int main(int argc, char **argv) {
 	} else if (arg.find("--cover=") == 0) {
 	    cover = arg.substr(8);
 	} else if (arg.find("--useUKgrid") == 0) {
-		useUKgrid = true;
+            useUKgrid = true;
+	} else if (arg.find("--no-write-shared-edges") == 0) {
+	    writeSharedEdges = false;
 	} else if (arg.find("--") == 0) {
 	    usage(argv[0]);
 	} else {
@@ -1209,6 +1218,7 @@ int main(int argc, char **argv) {
     c.set_work_base( work_dir );
     c.set_output_base( output_dir );
     c.set_useUKGrid( useUKgrid );
+    c.set_write_shared_edges( writeSharedEdges );
 
     c.set_min_nodes( 50 );
     c.set_max_nodes( (int)(TG_MAX_NODES * 0.8) );

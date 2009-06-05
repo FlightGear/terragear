@@ -52,6 +52,8 @@ private:
     point_list body_normals;
 
     // flags
+    // a flag is set if and only if we have read data for the given
+    // corner or side
     bool sw_flag, se_flag, ne_flag, nw_flag;
     bool north_flag, south_flag, east_flag, west_flag;
 
