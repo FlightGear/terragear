@@ -266,6 +266,48 @@ void TGMatch::load_neighbor_shared( TGConstruct& c ) {
     }
 }
 
+// try to load any missing shared data from our own shared data file
+void TGMatch::load_missing_shared( TGConstruct& c ) {
+    SGBucket b = c.get_bucket();
+
+    double clon = b.get_center_lon();
+    double clat = b.get_center_lat();
+
+    string base = c.get_work_base() + "/Shared/";
+    
+    if ( !nw_flag ) {
+	scan_share_file( base, b, NW_Corner, NW_Corner );
+    }
+    
+    if ( !ne_flag ) {
+	scan_share_file( base, b, NE_Corner, NE_Corner );
+    }
+    
+    if ( !se_flag ) {
+	scan_share_file( base, b, SE_Corner, SE_Corner );
+    }
+    
+    if ( !sw_flag ) {
+	scan_share_file( base, b, SW_Corner, SW_Corner );
+    }
+    
+    if ( !north_flag ) {
+	scan_share_file( base, b, NORTH, NORTH );
+    }
+    
+    if ( !east_flag ) {
+	scan_share_file( base, b, EAST, EAST );
+    }
+    
+    if ( !south_flag ) {
+	scan_share_file( base, b, SOUTH, SOUTH );
+    }
+    
+    if ( !west_flag ) {
+	scan_share_file( base, b, WEST, WEST );
+    }
+}
+
 
 // fake a normal for a point which is basically straight up
 Point3D tgFakeNormal( const Point3D& p ) {

@@ -84,6 +84,9 @@ public:
     // shared data for a component exists set that components flag to
     // true
     void load_neighbor_shared( TGConstruct& c );
+    
+    // try to load any missing shared data from our own shared data file
+    void load_missing_shared( TGConstruct& c );
 
     // scan the specified share file for the specified information
     void scan_share_file( const string& dir, const SGBucket& b,

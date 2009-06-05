@@ -72,6 +72,10 @@ private:
     // flag indicating whether this is a rebuild and Shared edge
     // data should only be used for fitting, but not rewritten
     bool writeSharedEdges;
+    
+    // flag indicating whether the shared edge data of the
+    // tile to be built should be used in addition to neighbour data
+    bool useOwnSharedEdges;
 
     // detail level constraints
     int min_nodes;
@@ -137,6 +141,10 @@ public:
     // shared edge write flag
     inline bool get_write_shared_edges() const { return writeSharedEdges; }
     inline void set_write_shared_edges( const bool b ) { writeSharedEdges = b; }
+    
+    // own shared edge use flag
+    inline bool get_use_own_shared_edges() const { return useOwnSharedEdges; }
+    inline void set_use_own_shared_edges( const bool b ) { useOwnSharedEdges = b; }
 
     // detail level constraints
     inline int get_min_nodes() const { return min_nodes; }

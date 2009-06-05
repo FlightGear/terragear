@@ -1037,6 +1037,9 @@ static void construct_tile( TGConstruct& c ) {
     // generated
     TGMatch m;
     m.load_neighbor_shared( c );
+    if ( c.get_use_own_shared_edges() ) {
+            m.load_missing_shared( c );
+    }
     m.split_tile( c );
     if ( c.get_write_shared_edges() ) {
             m.write_shared( c );
@@ -1102,6 +1105,7 @@ static void usage( const string name ) {
     cout << "  --nudge=<float>" << endl;
     cout << "  --useUKgrid" << endl;
     cout << "  --no-write-shared-edges" << endl;
+    cout << "  --use-own-shared-edges" << endl;
     cout << " ] <load directory...>" << endl;
     exit(-1);
 }
@@ -1124,6 +1128,10 @@ int main(int argc, char **argv) {
     // flag indicating whether this is a rebuild and Shared edge
     // data should only be used for fitting, but not rewritten
     bool writeSharedEdges = true;
+    
+    // flag indicating whether the shared edge data of the
+    // tile to be built should be used in addition to neighbour data
+    bool useOwnSharedEdges = false;
     
     sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
@@ -1156,6 +1164,8 @@ int main(int argc, char **argv) {
             useUKgrid = true;
 	} else if (arg.find("--no-write-shared-edges") == 0) {
 	    writeSharedEdges = false;
+	} else if (arg.find("--use-own-shared-edges") == 0) {
+	    useOwnSharedEdges = true;
 	} else if (arg.find("--") == 0) {
 	    usage(argv[0]);
 	} else {
@@ -1219,6 +1229,7 @@ int main(int argc, char **argv) {
     c.set_output_base( output_dir );
     c.set_useUKGrid( useUKgrid );
     c.set_write_shared_edges( writeSharedEdges );
+    c.set_use_own_shared_edges( useOwnSharedEdges );
 
     c.set_min_nodes( 50 );
     c.set_max_nodes( (int)(TG_MAX_NODES * 0.8) );
