@@ -395,8 +395,7 @@ int main(int argc, char *argv[]) {
       cout << "Will not overwrite up-to-date existing buckets" << endl;
     for (int i = arg_pos; i < argc; i++) {
       string dir;
-      dir = work_base + "/";
-      dir += argv[i];
+      dir = argv[i];
       load_dirs.push_back( dir );
       cout << "Load directory: " << dir << endl;
     }
