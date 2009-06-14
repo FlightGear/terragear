@@ -609,7 +609,7 @@ void build_airport( string airport_id, float alt_m,
     }
 #else
     /* Ralf Gerlich: Generate Taxiways in specified order from bottom to top */
-    for ( size_t i=0; i<taxiways.size(); ++i ) {
+    for ( i=0; i<taxiways.size(); ++i ) {
             SG_LOG( SG_GENERAL, SG_DEBUG, "generating " << i );
             build_runway( taxiways[i], alt_m,
                           &rwy_polys, &texparams, &accum,
