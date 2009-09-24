@@ -98,7 +98,7 @@ void gen_simple_rwy( const TGRunway& rwy_info,
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
     *accum = tgPolygonUnion( runway_b, *accum );
-    tp = TGTexParams( runway_b.get_pt(0,0),
+    tp = TGTexParams( runway_b.get_pt(0,2),
 		      rwy_info.width * SG_FEET_TO_METER,
 		      rwy_info.length * SG_FEET_TO_METER / 2.0,
                       rwy_info.heading + 180.0 );
