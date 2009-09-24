@@ -24,7 +24,7 @@ getIntersection (const Point3D &p0, const Point3D &p1,
 		 const Point3D &p2, const Point3D &p3,
 		 Point3D &intersection)
 {
-    const double my_eps = 0.00000000000001;
+    const double my_eps = 1E-12;
     
     double u_num =
         ((p3.x()-p2.x())*(p0.y()-p2.y()))-((p3.y()-p2.y())*(p0.x()-p2.x()));
