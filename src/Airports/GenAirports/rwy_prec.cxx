@@ -249,7 +249,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
 	    letter = "R";
 	    rev_letter = "L";
 	} else if ( tmp == "C" ) {
-	    letter == "C";
+	    letter = "C";
 	    rev_letter = "C";
 	}
     }
