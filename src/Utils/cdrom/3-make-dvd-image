@@ -8,7 +8,7 @@ if [ "x${2}" == "x" ]; then
     exit
 fi
 
-VERSION=0.9.5
+VERSION=1.0.0
 SOURCE=$1
 DEST=$2
 VOLUME_ID=FG_Scenery_${SOURCE}_v${VERSION}

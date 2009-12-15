@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 
-$source = "/stage/fgfs03/curt/Scenery/Scenery-0.9.5";
+$source = "/stage/fgfs07/ftp/pub/fgfs/Scenery-1.0.0";
 
 $layout_master = shift( @ARGV );
 $dest = shift( @ARGV );
 
 if ( $layout_master eq "" ) {
-    $layout_master = "./layout-disks-0.9.5";
+    $layout_master = "./layout-dvd-1.0.0";
 }
 if ( $dest eq "" ) {
     $dest = "./Images";
@@ -43,5 +43,6 @@ foreach $file ( @layout ) {
         system( "mkdir -p $dest/$dir" );
     }
 
-    system( "ln -sf $source/$base $dest/$file\n" );
+    printf( "ln -sf $source/$base $dest/$file\n" );
+    system( "ln -sf $source/$base $dest/$file" );
 }
