@@ -32,6 +32,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/math/point3d.hxx>
 
 #include <iostream>
 #include <string>

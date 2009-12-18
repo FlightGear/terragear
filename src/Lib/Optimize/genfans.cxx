@@ -24,6 +24,7 @@
 #include <simgear/compiler.h>
 
 #include <iostream>
+#include <stdlib.h>
 
 #include "genfans.hxx"
 
