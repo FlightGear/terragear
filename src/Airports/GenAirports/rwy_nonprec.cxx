@@ -406,4 +406,8 @@ void gen_non_precision_rwy( const TGRunway& rwy_info,
 			    material, "rest",
 			    rwy_polys, texparams, accum );
     }
+    
+    gen_runway_stopway( rwy_info, runway_a, runway_b,
+    	    		material,
+    	    		rwy_polys, texparams, accum );
 }

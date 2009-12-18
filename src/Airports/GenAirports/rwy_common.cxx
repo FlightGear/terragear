@@ -94,19 +94,57 @@ void gen_number_block( const TGRunway& rwy_info,
     }
 }
 
-
+// generate the runway stopway
+void gen_runway_stopway( const TGRunway& rwy_info,
+                         const TGPolygon& runway_a,
+                         const TGPolygon& runway_b,
+                         const string& prefix,
+                         superpoly_list *rwy_polys,
+                         texparams_list *texparams,
+                         TGPolygon* accum ) {
+    const float length = rwy_info.length / 2.0 + 2.0;
+    if (rwy_info.stopway1 > 0.0) {
+        /* Generate approach end stopway */
+        gen_runway_section( rwy_info,
+                            runway_a,
+                            - rwy_info.stopway1 / length, 0,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading,
+                            prefix,
+                            "tiedown",
+                            rwy_polys,
+                            texparams,
+                            accum);
+    }
+    if (rwy_info.stopway2 > 0.0) {
+        /* Generate reciprocal end stopway */
+        gen_runway_section( rwy_info,
+                            runway_b,
+                            - rwy_info.stopway2 / length, 0,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            rwy_info.heading + 180.0,
+                            prefix,
+                            "tiedown",
+                            rwy_polys,
+                            texparams,
+                            accum);
+    }
+}
+                        			 
 // generate a section of runway
 void gen_runway_section( const TGRunway& rwy_info,
-			 const TGPolygon& runway,
-			 double startl_pct, double endl_pct,
-			 double startw_pct, double endw_pct,
+                         const TGPolygon& runway,
+                         double startl_pct, double endl_pct,
+                         double startw_pct, double endw_pct,
                          double minu, double maxu, double minv, double maxv,
-			 double heading,
-			 const string& prefix,
-			 const string& material,
-			 superpoly_list *rwy_polys,
-			 texparams_list *texparams,
-			 TGPolygon *accum  ) {
+                         double heading,
+                         const string& prefix,
+                         const string& material,
+                         superpoly_list *rwy_polys,
+                         texparams_list *texparams,
+                         TGPolygon *accum  ) {
 
     int j, k;
 
@@ -201,7 +239,7 @@ void gen_runway_section( const TGRunway& rwy_info,
 	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
 	}
     }
-
+    
     // Clip the new polygon against what ever has already been created.
     TGPolygon clipped = tgPolygonDiff( section, *accum );
 

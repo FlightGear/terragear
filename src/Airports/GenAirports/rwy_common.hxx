@@ -41,6 +41,15 @@ void gen_number_block( const TGRunway& rwy_info,
                        texparams_list *texparams,
                        TGPolygon *accum );
 
+// generate the runway stopway
+void gen_runway_stopway( const TGRunway& rwy_info,
+                         const TGPolygon& runway_a,
+                         const TGPolygon& runway_b,
+                         const string& prefix,
+                         superpoly_list *rwy_polys,
+                         texparams_list *texparams,
+                         TGPolygon* accum );
+
 // generate a section of runway
 void gen_runway_section( const TGRunway& rwy_info,
 			 const TGPolygon& runway,

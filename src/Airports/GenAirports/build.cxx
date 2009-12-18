@@ -337,10 +337,10 @@ static void build_runway( const TGRunway& rwy_info,
         safe_base
             = gen_runway_area_w_extend( rwy_info, 0.0, 40.0, 0.0, 0.0, 40.0 );
     } else {
-	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, 0.0, 0.0, 20.0 );
+	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1, -rwy_info.stopway2, 20.0 );
         // also clear a safe area around the runway
         safe_base
-            = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, 0.0, 0.0, 50.0 );
+            = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway2, -rwy_info.stopway2, 50.0 );
     }
     *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
 

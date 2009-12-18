@@ -130,5 +130,8 @@ void gen_simple_rwy( const TGRunway& rwy_info,
 	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
 	}
     }
-
+    
+    gen_runway_stopway( rwy_info, runway_a, runway_b,
+    	    		material,
+    	    		rwy_polys, texparams, accum );
 }
