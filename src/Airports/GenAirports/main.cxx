@@ -69,11 +69,23 @@ static void usage( int argc, char **argv ) {
 	   "Usage " << argv[0] << " --input=<apt_file> "
 	   << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ] "
 	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
+	   << "[--clear-dem-path] [--dem-path=<path>] "
            << "[ --airport=abcd ]  [--tile=<tile>] [--chunk=<chunk>] [--verbose] [--help]");
 }
 
+void setup_default_elevation_sources(string_list& elev_src) {
+    elev_src.push_back( "SRTM2-Africa-3" );
+    elev_src.push_back( "SRTM2-Australia-3" );
+    elev_src.push_back( "SRTM2-Eurasia-3" );
+    elev_src.push_back( "SRTM2-Islands-3" );
+    elev_src.push_back( "SRTM2-North_America-3" );
+    elev_src.push_back( "SRTM2-South_America-3" );
+    elev_src.push_back( "DEM-USGS-3" );
+    elev_src.push_back( "SRTM-30" );
+}
+
 // Display help and usage
-static void help( int argc, char **argv ) {
+static void help( int argc, char **argv, const string_list& elev_src ) {
     cout << "genapts generates airports for use in generating scenery for the FlightGear flight simulator.  ";
     cout << "Airport, runway, and taxiway vector data and attributes are input, and generated 3D airports ";
     cout << "are output for further processing by the TerraGear scenery creation tools.  ";
@@ -100,15 +112,12 @@ static void help( int argc, char **argv ) {
     cout << "It is necessary to generate the elevation data for the area of interest PRIOR TO GENERATING THE AIRPORTS.  ";
     cout << "Failure to do this will result in airports being generated with an elevation of zero.  ";
     cout << "The following subdirectories of the work-dir will be searched for elevation files:\n\n";
-    cout << "SRTM2-Africa-3\n";
-    cout << "SRTM2-Australia-3\n";
-    cout << "SRTM2-Eurasia-3\n";
-    cout << "SRTM2-Islands-3\n";
-    cout << "SRTM2-North_America-3\n";
-    cout << "SRTM2-South_America-3\n";
-    cout << "DEM-USGS-3\n";
-    cout << "SRTM-30";
-    cout << "\n\n";
+    
+    string_list::const_iterator elev_src_it;
+    for (elev_src_it = elev_src.begin(); elev_src_it != elev_src.end(); elev_src_it++) {
+    	    cout << *elev_src_it << "\n";
+    }
+    cout << "\n";
     usage( argc, argv );
 }
 
@@ -124,6 +133,7 @@ int main( int argc, char **argv ) {
 
     string_list elev_src;
     elev_src.clear();
+    setup_default_elevation_sources(elev_src);
 
     sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
@@ -170,26 +180,20 @@ int main( int argc, char **argv ) {
 	} else if ( arg.find("--airport=") == 0 ) {
 	    airport_id = arg.substr(10).c_str();
 	    ready_to_go = false;
+	} else if ( arg == "--clear-dem-path" ) {
+	    elev_src.clear();
+	} else if ( arg.find("--dem-path=") == 0 ) {
+	    elev_src.push_back( arg.substr(11) );
 	} else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) {
 	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
 	} else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) {
-	    help( argc, argv );
+	    help( argc, argv, elev_src );
 	    exit(-1);
 	} else {
 	    usage( argc, argv );
 	    exit(-1);
 	}
     }
-
-    // Please update the help near the top of this file if you update this list.
-    elev_src.push_back( "SRTM2-Africa-3" );
-    elev_src.push_back( "SRTM2-Australia-3" );
-    elev_src.push_back( "SRTM2-Eurasia-3" );
-    elev_src.push_back( "SRTM2-Islands-3" );
-    elev_src.push_back( "SRTM2-North_America-3" );
-    elev_src.push_back( "SRTM2-South_America-3" );
-    elev_src.push_back( "DEM-USGS-3" );
-    elev_src.push_back( "SRTM-30" );
 
     SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
     SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
