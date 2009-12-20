@@ -59,9 +59,9 @@ int load_usgs_map( const std::string& filename ) {
 AreaType translateUSGSCover (int usgs_value)
 {
     if ( 0<usgs_value && usgs_value<usgs_map.size() ) {
-        return usgs_map[usgs_value];
+        return usgs_map[usgs_value-1];
     } else {
-        return usgs_map[0];
+        return get_default_area_type();
     }
 }
 

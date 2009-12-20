@@ -1,0 +1,68 @@
+Default				# Default area which can be overridden by
+				# raster landcover data (e.g. USGS)
+Ocean				# collect slivers as ocean
+
+# Area types in order of descending priority
+SomeSort		other
+Hole			hole	# Leave area completely empty
+Airport			other
+Freeway			road
+Road			road
+Railroad		road
+Pond			lake
+Lake			lake
+DryLake			lake
+IntLake			lake
+Reservoir		lake
+IntReservoir		lake
+Stream			stream
+IntStream		stream
+Canal			stream
+Glacier			other	# Solid ice/snow
+PackIce			other	# Water with ice packs
+PolarIce		other
+Ocean			ocean
+Urban			other	# Densely-populated city or large town
+Town			other	# Small town or village
+FloodLand		other	# Land subject to flooding
+Bog			other	# Bog
+Marsh			other	# Marshland or swamp
+Sand			other	# Sand-covered area
+Littoral		other	# Tidal, Sand-covered area
+Lava			other	# Lava-covered area
+
+# USGS Land Covers
+# These are low-priority, since known polygons should always win.
+
+BuiltUpCover		other	# Urban and Built-Up Land
+DryCropPastureCover	other	# Dryland Cropland and Pasture
+IrrCropPastureCover	other	# Irrigated Cropland and Pasture
+MixedCropPastureCover	other	# Mixed Dryland/Irrigated Cropland and Pasture
+CropGrassCover		other	# Cropland/Grassland Mosaic
+CropWoodCover		other	# Cropland/Woodland Mosaic
+GrassCover		other	# Grassland
+ShrubCover		other	# Shrubland
+ShrubGrassCover		other	# Mixed Shrubland/Grassland
+SavannaCover		other	# Savanna
+DeciduousBroadCover	other	# Deciduous Broadleaf Forest
+DeciduousNeedleCover	other	# Deciduous Needleleaf Forest
+EvergreenBroadCover	other	# Evergreen Broadleaf Forest
+EvergreenNeedleCover	other	# Evergreen Needleleaf Forest
+MixedForestCover	other	# Mixed Forest
+WaterBodyCover		lake	# Water Bodies
+HerbWetlandCover	other	# Herbaceous Wetland
+WoodedWetlandCover	other	# Wooded Wetland
+BarrenCover		other	# Barren or Sparsely Vegetated
+HerbTundraCover		other	# Herbaceous Tundra
+WoodedTundraCover	other	# Wooded Tundra
+MixedTundraCover	other	# Mixed Tundra
+BareTundraCover		other	# Bare Ground Tundra
+SnowCover		other	# Snow or Ice
+
+Island			island	# any island area not covered otherwise
+Default			landmass # any land area not covered otherwise
+
+Void			other
+Null			other
+Unknown			other
+

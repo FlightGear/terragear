@@ -154,7 +154,7 @@ static AreaType get_area_type (const LandCover &cover,
     int cover_value = cover.getValue(xpos, ypos);
     AreaType area = translateUSGSCover(cover_value);
 
-    if (area != DefaultArea) {
+    if ( area != get_default_area_type() ) {
         // Non-default area is fine.
         return area;
     } else {
@@ -165,7 +165,7 @@ static AreaType get_area_type (const LandCover &cover,
                 if (x != xpos || y != ypos) {
                     cover_value = cover.getValue(x, y);
                     area = translateUSGSCover(cover_value);
-                    if (area != DefaultArea) {
+                    if (area != get_default_area_type() ) {
                         return area;
                     }
                 }
@@ -174,7 +174,7 @@ static AreaType get_area_type (const LandCover &cover,
     }
 
     // OK, give up and return default
-    return DefaultArea;
+    return get_default_area_type();
 }
 
 
@@ -232,7 +232,7 @@ static void make_area( const LandCover &cover, const TGArray &array,
     AreaType area = get_area_type( cover,
                                    x1 + half_dx, y1 + half_dy,
                                    x2 - x1, y2 - y1 );
-    if (area != DefaultArea) {
+    if ( area != get_default_area_type() ) {
 	// Create a square polygon and merge it into the list.
 	TGPolygon poly;
 	poly.erase();
@@ -512,7 +512,7 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 	    // It might be better to eventually iterate, and allow
 	    // some flexibility in elevations to handle rivers and
 	    // things like that.
-	    if ( (a == LakeArea) || (a == ReservoirArea) ) {
+	    if ( is_lake_area( a ) ) {
 		e1 = raw_nodes[n1].z();
 		e2 = raw_nodes[n2].z();
 		e3 = raw_nodes[n3].z();
@@ -525,8 +525,7 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 		raw_nodes[n1].setz( min );
 		raw_nodes[n2].setz( min );
 		raw_nodes[n3].setz( min );
-	    } else if ( (a == StreamArea) || (a == IntStreamArea)
-                        || (a == CanalArea) ) {
+	    } else if ( is_stream_area( a ) ) {
 		e1 = raw_nodes[n1].z();
 		e2 = raw_nodes[n2].z();
 		e3 = raw_nodes[n3].z();
@@ -546,8 +545,7 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 		if ( max1 < e1 ) { raw_nodes[n1].setz( max1 ); }
 		if ( max2 < e2 ) { raw_nodes[n2].setz( max2 ); }
 		if ( max3 < e3 ) { raw_nodes[n3].setz( max3 ); }
-	    } else if ( (a == RoadArea) || (a == FreewayArea)
-                        || (a == RailroadArea) ) {
+	    } else if ( is_road_area( a ) ) {
 		e1 = raw_nodes[n1].z();
 		e2 = raw_nodes[n2].z();
 		e3 = raw_nodes[n3].z();
@@ -581,7 +579,7 @@ static void fix_point_heights( TGConstruct& c, const TGArray& array )
 	n3 = t.get_n3();
 	a = (AreaType)((int)(t.get_attribute()));
 
-	if ( a == OceanArea ) {
+	if ( is_ocean_area( a ) ) {
 	    raw_nodes[n1].setz( 0.0 );
 	    raw_nodes[n2].setz( 0.0 );
 	    raw_nodes[n3].setz( 0.0 );
@@ -611,7 +609,7 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
     cout << "  Total triangles = " << tri_elements.size() << endl;
     for ( unsigned int i = 0; i < tri_elements.size(); ++i ) {
         TGTriEle t = tri_elements[i];
-        if ( t.get_attribute() == DefaultArea ) {
+        if ( t.get_attribute() == get_default_area_type() ) {
             Point3D p1 = geod_nodes[t.get_n1()];
             Point3D p2 = geod_nodes[t.get_n2()];
             Point3D p3 = geod_nodes[t.get_n3()];
@@ -1043,6 +1041,7 @@ static void usage( const string name ) {
     cout << "  --xdist=<degrees>" << endl;
     cout << "  --ydist=<degrees>" << endl;
     cout << "  --nudge=<float>" << endl;
+    cout << "  --priorities=<filename>" << endl;
     cout << "  --usgs-map=<filename>" << endl;
     cout << "  --useUKgrid" << endl;
     cout << "  --no-write-shared-edges" << endl;
@@ -1056,6 +1055,7 @@ int main(int argc, char **argv) {
     string output_dir = ".";
     string work_dir = ".";
     string cover = "";
+    string priorities_file = DEFAULT_PRIORITIES_FILE;
     string usgs_map_file = DEFAULT_USGS_MAPFILE;
     double lon = -110.664244;	// P13
     double lat = 33.352890;
@@ -1102,6 +1102,8 @@ int main(int argc, char **argv) {
 	    nudge = atof(arg.substr(8).c_str())*SG_EPSILON;
 	} else if (arg.find("--cover=") == 0) {
 	    cover = arg.substr(8);
+	} else if (arg.find("--priorities=") == 0) {
+	    priorities_file = arg.substr(13);
 	} else if (arg.find("--usgs-map=") == 0) {
 	    usgs_map_file = arg.substr(11);
 	} else if (arg.find("--useUKgrid") == 0) {
@@ -1131,6 +1133,11 @@ int main(int argc, char **argv) {
     for (int i = arg_pos; i < argc; i++) {
 	load_dirs.push_back(argv[i]);
 	cout << "Load directory: " << argv[i] << endl;
+    }
+    cout << "Priorities file is " << priorities_file << endl;
+    if ( ! load_area_types( priorities_file ) ) {
+    	    SG_LOG(SG_GENERAL, SG_ALERT, "Failed to load priorities file " << priorities_file);
+    	    exit(-1);
     }
     cout << "USGS Map file is " << usgs_map_file << endl;
     if ( ! load_usgs_map( usgs_map_file ) ) {

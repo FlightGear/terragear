@@ -26,9 +26,11 @@ fgfs_construct_LDADD = \
 fgfs_master_SOURCES = master.cxx
 
 fgfs_master_LDADD = -lsgbucket -lsgmisc -lsgdebug -lsgxml
-AM_CPPFLAGS = -DDEFAULT_USGS_MAPFILE="\"$(pkgdatadir)/usgsmap.txt\""
+AM_CPPFLAGS = -DDEFAULT_USGS_MAPFILE="\"$(pkgdatadir)/usgsmap.txt\"" \
+	 -DDEFAULT_PRIORITIES_FILE="\"$(pkgdatadir)/default_priorities.txt\""
 
 INCLUDES = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/Lib \
 	-I$(top_srcdir)/src/BuildTiles
+

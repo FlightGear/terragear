@@ -1,7 +1,7 @@
 noinst_LIBRARIES = libClipper.a
 
 libClipper_a_SOURCES = clipper.cxx clipper.hxx priorities.cxx priorities.hxx
-
+dist_pkgdata_DATA = default_priorities.txt
 noinst_PROGRAMS = testclipper
 
 testclipper_SOURCES = testclipper.cxx
@@ -19,3 +19,4 @@ testclipper_LDADD = \
 	-lgenpolyclip -lz 
 
 INCLUDES = -I$(top_srcdir)/src/Lib -I$(top_srcdir)/src/BuildTiles
+

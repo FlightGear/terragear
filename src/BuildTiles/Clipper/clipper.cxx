@@ -73,7 +73,7 @@ bool TGClipper::load_polys(const string& path) {
     bool poly3d = false;
     string first_line;
     string poly_name;
-    AreaType poly_type = DefaultArea;
+    AreaType poly_type;
     int contours, count, i, j;
     int hole_flag;
     double startx, starty, startz, x, y, z, lastx, lasty, lastz;
@@ -172,16 +172,16 @@ bool TGClipper::load_polys(const string& path) {
                 }
 	    }
 	}
-
+	
+        int area = (int)poly_type;
+        
+        add_poly(area, poly);
+        
+        // FILE *ofp= fopen("outfile", "w");
+        // gpc_write_polygon(ofp, &polys.landuse);
+        
 	in >> skipcomment;
     }
-
-    int area = (int)poly_type;
-
-    add_poly(area, poly);
-
-    // FILE *ofp= fopen("outfile", "w");
-    // gpc_write_polygon(ofp, &polys.landuse);
 
     return true;
 }
@@ -192,7 +192,7 @@ bool TGClipper::load_polys(const string& path) {
 bool TGClipper::load_osgb36_polys(const string& path) {
 //   cout << "Loading osgb36 poly\n";
     string poly_name;
-    AreaType poly_type = DefaultArea;
+    AreaType poly_type;
     int contours, count, i, j;
     int hole_flag;
     double startx, starty, x, y, lastx, lasty;
@@ -275,25 +275,15 @@ bool TGClipper::load_osgb36_polys(const string& path) {
 	    // gpc_add_contour( poly, &v_list, hole_flag );
 	}
 
+        int area = (int)poly_type;
+        
+        add_poly( area, poly);
+    
+        // FILE *ofp= fopen("outfile", "w");
+        // gpc_write_polygon(ofp, &polys.landuse);
+
 	in >> skipcomment;
     }
-
-    int area = (int)poly_type;
-
-    // if ( area == OceanArea ) {
-    // TEST - Ignore
-    // } else
-
-    if ( area < TG_MAX_AREA_TYPES ) {
-	polys_in.polys[area].push_back(poly);
-    } else {
-	SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = "
-		<< (int)poly_type);
-	exit(-1);
-    }
-
-    // FILE *ofp= fopen("outfile", "w");
-    // gpc_write_polygon(ofp, &polys.landuse);
 
     return true;
 }
@@ -391,7 +381,7 @@ void TGClipper::merge_slivers( TGPolyList& clipped, TGPolygon& slivers ) {
 
 	for ( area = 0; area < TG_MAX_AREA_TYPES && !done; ++area ) {
 
-	    if ( area == HoleArea ) {
+	    if ( is_hole_area( area ) ) {
 		// don't merge a non-hole sliver in with a hole
 		continue;
 	    }
@@ -438,31 +428,6 @@ void TGClipper::merge_slivers( TGPolyList& clipped, TGPolygon& slivers ) {
 }
 
 
-static bool
-is_water_area (AreaType type)
-{
-    switch (type) {
-    case PondArea:
-    case LakeArea:
-    case DryLakeArea:
-    case IntLakeArea:
-    case ReservoirArea:
-    case IntReservoirArea:
-    case StreamArea:
-    case IntStreamArea:
-    case CanalArea:
-    case OceanArea:
-    case BogArea:
-    case MarshArea:
-    case LittoralArea:
-    case WaterBodyCover:
-        return true;
-    default:
-        return false;
-    }
-}
-
-
 // Clip all the polygons against each other in a priority scheme based
 // on order of the polygon type in the polygon type enum.
 bool TGClipper::clip_all(const point2d& min, const point2d& max) {
@@ -490,31 +455,28 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
     // best representation of land vs. ocean.  If we have other less
     // accurate data that spills out into the ocean, we want to just
     // clip it.
-    TGPolygon land_mask;
+    // also set up a mask for all water and islands
+    TGPolygon land_mask, water_mask, island_mask;
     land_mask.erase();
-    for ( i = 0; i < (int)polys_in.polys[DefaultArea].size(); ++i ) {
-	land_mask =
-	  tgPolygonUnion( land_mask, polys_in.polys[DefaultArea][i] );
-    }
-
-    // set up a mask for all water.
-    TGPolygon water_mask;
     water_mask.erase();
+    island_mask.erase();
     for ( i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
-        if (is_water_area(AreaType(i))) {
+        if ( is_landmass_area( i ) ) {
+            for ( unsigned j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
+                land_mask =
+                  tgPolygonUnion( land_mask, polys_in.polys[i][j] );
+            }
+        } else if ( is_water_area( i ) ) {
             for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
                 water_mask =
                     tgPolygonUnion( water_mask, polys_in.polys[i][j] );
             }
+        } else if ( is_water_area( i ) ) {
+            for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
+                island_mask =
+                    tgPolygonUnion( island_mask, polys_in.polys[i][j] );
+            }
         }
-    }
-
-    // set up island mask, for cutting holes in lakes
-    TGPolygon island_mask;
-    island_mask.erase();
-    for ( i = 0; i < (int)polys_in.polys[IslandArea].size(); ++i ) {
-	island_mask =
-	  tgPolygonUnion( island_mask, polys_in.polys[IslandArea][i] );
     }
 
     // process polygons in priority order
@@ -529,7 +491,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
             tmp = current;
 
             // if not a hole, clip the area to the land_mask
-            if ( i != HoleArea ) {
+            if ( ! is_hole_area( i ) ) {
                 tmp = tgPolygonInt( tmp, land_mask );
             }
 
@@ -549,7 +511,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
             // }
 
 	    // if a water area, cut out potential islands
-	    if ( is_water_area(AreaType(i)) ) {
+	    if ( is_water_area( i ) ) {
 	        // clip against island mask
 	        tmp = tgPolygonDiff( tmp, island_mask );
 	    }
@@ -615,7 +577,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
 	}
 
 	if ( remains.contours() > 0 ) {
-	    polys_clipped.polys[(int)OceanArea].push_back(remains);
+	    polys_clipped.polys[(int)get_sliver_target_area_type()].push_back(remains);
 	}
     }
 

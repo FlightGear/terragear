@@ -17,133 +17,165 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- 
+
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/misc/sgstream.hxx>
 
+#include <fstream>
+#include <vector>
 #include <map>
 #include <string>
 
+#include <stdlib.h>
+
 #include "priorities.hxx"
 
+using std::fstream;
 using std::string;
 using std::map;
+using std::vector;
 
-typedef map<AreaType, string> area_type_map;
+typedef enum {
+    Hole,
+    Landmass,
+    Island,
+    Ocean,
+    Lake,
+    Stream,
+    Road,
+    Other
+} AreaKind;
+
+typedef struct {
+    string name;
+    AreaKind kind;
+} area_type_descriptor;
+
+typedef vector<area_type_descriptor> area_type_list;
 typedef map<string, AreaType> area_name_map;
 
-static area_type_map area_types;
+static area_type_list area_types;
 static area_name_map area_names;
+static AreaType default_area_type;
+static AreaType sliver_target_area_type;
 
-
-inline static void set_area (const string &name, AreaType type)
-{
-  area_types[type] = name;
-  area_names[name] = type;
+int load_area_types( const std::string& filename ) {
+    fstream in ( filename.c_str() );
+    
+    if ( ! in ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open file " << filename);
+        return 0;
+    }
+    
+    in >> skipcomment;
+    string sliver_area_name, default_area_name;
+    
+    in >> default_area_name;
+    in >> skipcomment;
+    in >> sliver_area_name;
+    in >> skipcomment;
+    while ( !in.eof() ) {
+        area_type_descriptor descriptor;
+        string type;
+        descriptor.kind = Other;
+        in >> descriptor.name;
+        in >> type;
+        if ( type=="hole" ) {
+            descriptor.kind = Hole;
+        } else if ( type=="landmass" ) {
+            descriptor.kind = Landmass;
+        } else if ( type=="island" ) {
+            descriptor.kind = Island;
+        } else if ( type=="ocean" ) {
+            descriptor.kind = Ocean;
+        } else if ( type=="lake" ) {
+            descriptor.kind = Lake;
+        } else if ( type=="stream" ) {
+            descriptor.kind = Stream;
+        } else if ( type=="road" ) {
+            descriptor.kind = Road;
+        } else if ( type=="other" ) {
+            descriptor.kind = Other;
+        }
+        AreaType index = (AreaType)area_types.size();
+        area_types.push_back(descriptor);
+        area_names[descriptor.name]=index;
+        SG_LOG(SG_GENERAL, SG_INFO, "  " << descriptor.name << " " << descriptor.kind);
+        in >> skipcomment;
+    }
+    
+    in.close();
+    
+    sliver_target_area_type = get_area_type( sliver_area_name );
+    default_area_type = get_area_type( default_area_name );
+    
+    return 1;
 }
-
-
-static bool _initialized = false;
-
-
-inline static void init ()
-{
-  if (_initialized)
-    return;
-
-  set_area("SomeSort", SomeSortOfArea);
-  set_area("Hole", HoleArea);
-  set_area("Airport", AirportArea);
-  set_area("Island", IslandArea);
-  set_area("Pond", PondArea);
-  set_area("Swamp or Marsh", MarshArea);
-  set_area("Marsh", MarshArea);
-  set_area("Littoral", LittoralArea);
-  set_area("Bog", BogArea);
-  set_area("Sand", SandArea);
-  set_area("Lava", LavaArea);
-  set_area("FloodLand", FloodLandArea);
-  set_area("Lake", LakeArea);
-  set_area("Lake   Dry", DryLakeArea);
-  set_area("DryLake", DryLakeArea);
-  set_area("Lake   Intermittent", IntLakeArea);
-  set_area("IntermittentLake", IntLakeArea);
-  set_area("Reservoir", ReservoirArea);
-  set_area("Reservoir   Intermittent", IntReservoirArea);
-  set_area("IntermittentReservoir", IntReservoirArea);
-  set_area("Freeway", FreewayArea);
-  set_area("Road", RoadArea);
-  set_area("Railroad", RailroadArea);
-  set_area("Stream", StreamArea);
-  set_area("IntermittentStream", IntStreamArea);
-  set_area("Canal", CanalArea);
-  set_area("Glacier", GlacierArea);
-  set_area("PackIce", PackIceArea);
-  set_area("PolarIce", PolarIceArea);
-  set_area("Urban", UrbanArea);
-  set_area("Town", TownArea);
-  set_area("BuiltUpCover", BuiltUpCover);
-  set_area("DryCropPastureCover", DryCropPastureCover);
-  set_area("IrrCropPastureCover", IrrCropPastureCover);
-  set_area("MixedCropPastureCover", MixedCropPastureCover);
-  set_area("CropGrassCover", CropGrassCover);
-  set_area("CropWoodCover", CropWoodCover);
-  set_area("GrassCover", GrassCover);
-  set_area("ShrubCover", ShrubCover);
-  set_area("ShrubGrassCover", ShrubGrassCover);
-  set_area("SavannaCover", SavannaCover);
-  set_area("DeciduousBroadCover", DeciduousBroadCover);
-  set_area("DeciduousNeedleCover", DeciduousNeedleCover);
-  set_area("EvergreenBroadCover", EvergreenBroadCover);
-  set_area("EvergreenNeedleCover", EvergreenNeedleCover);
-  set_area("MixedForestCover", MixedForestCover);
-  set_area("WaterBodyCover", WaterBodyCover);
-  set_area("HerbWetlandCover", HerbWetlandCover);
-  set_area("WoodedWetlandCover", WoodedWetlandCover);
-  set_area("BarrenCover", BarrenCover);
-  set_area("HerbTundraCover", HerbTundraCover);
-  set_area("WoodedTundraCover", WoodedTundraCover);
-  set_area("MixedTundraCover", MixedTundraCover);
-  set_area("BareTundraCover", BareTundraCover);
-  set_area("SnowCover", SnowCover);
-  set_area("Default", DefaultArea);
-  set_area("Bay  Estuary or Ocean", OceanArea);
-  set_area("Ocean", OceanArea);
-  set_area("Void Area", VoidArea);
-  set_area("Null", NullArea);
-
-  _initialized = true;
-}
-
-
 // return area type from text name
 AreaType 
 get_area_type (const string &area) {
-    init();
     area_name_map::const_iterator it = area_names.find(area);
     if (it != area_names.end()) {
         return it->second;
     } else {
-	SG_LOG(SG_GENERAL, SG_WARN, "unknown area = '" << area << "'");
-	// SG_LOG(SG_GENERAL, SG_DEBUG, "area = " << area);
-	// for ( int i = 0; i < area.length(); i++ ) {
-	//  SG_LOG(SG_GENERAL, SG_DEBUG, i << ") " << (int)area[i]);
-	// }
-	return UnknownArea;
+	SG_LOG(SG_GENERAL, SG_ALERT, "unknown area = '" << area << "'");
+	exit(-1);
     }
 }
 
+
+static area_type_descriptor& get_area_descriptor( AreaType area ) {
+    if ( 0<=area || area < area_types.size() ) {
+        return area_types[area];
+    } else {
+	SG_LOG(SG_GENERAL, SG_ALERT, "unknown area code = " << (int)area);
+	exit(-1);
+    }
+}
 
 // return text from of area name
 string get_area_name( AreaType area ) {
-    init();
-    area_type_map::const_iterator it = area_types.find(area);
-    if (it != area_types.end()) {
-        return it->second;
-    } else {
-	SG_LOG(SG_GENERAL, SG_WARN, "unknown area code = " << (int)area);
-	return "Unknown";
-    }
+    return get_area_descriptor( area ).name;
 }
 
+bool is_hole_area( AreaType area ) {
+    return get_area_descriptor( area ).kind==Hole;
+}
 
+bool is_water_area( AreaType area ) {
+    const AreaKind kind = get_area_descriptor( area ).kind;
+    return (kind==Ocean || kind==Lake || kind==Stream);
+}
+
+bool is_landmass_area( AreaType area ) {
+    return get_area_descriptor( area ).kind==Landmass;
+}
+
+bool is_lake_area( AreaType area ) {
+    const AreaKind kind = get_area_descriptor( area ).kind;
+    return (kind==Lake);
+}
+
+bool is_stream_area( AreaType area ) {
+    const AreaKind kind = get_area_descriptor( area ).kind;
+    return (kind==Stream);
+}
+
+bool is_road_area( AreaType area ) {
+    const AreaKind kind = get_area_descriptor( area ).kind;
+    return (kind==Road);
+}
+
+bool is_ocean_area( AreaType area ) {
+    const AreaKind kind = get_area_descriptor( area ).kind;
+    return (kind==Ocean);
+}
+
+AreaType get_sliver_target_area_type() {
+    return sliver_target_area_type;
+}
+
+AreaType get_default_area_type() {
+    return default_area_type;
+}

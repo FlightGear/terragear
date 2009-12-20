@@ -1,5 +1,3 @@
-# Default setting
-Default
 # 1: Urban and Built-Up Land
 BuiltUpCover
 # 2: Dryland Cropland and Pasture
