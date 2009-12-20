@@ -2,7 +2,9 @@ bin_PROGRAMS = fgfs-construct fgfs-master
 
 fgfs_construct_SOURCES = \
 	construct.cxx construct.hxx \
-	main.cxx
+	usgs.cxx main.cxx
+
+dist_pkgdata_DATA = usgsmap.txt
 
 fgfs_construct_LDADD = \
 	$(top_builddir)/src/BuildTiles/Clipper/libClipper.a \
@@ -24,6 +26,7 @@ fgfs_construct_LDADD = \
 fgfs_master_SOURCES = master.cxx
 
 fgfs_master_LDADD = -lsgbucket -lsgmisc -lsgdebug -lsgxml
+AM_CPPFLAGS = -DDEFAULT_USGS_MAPFILE="\"$(pkgdatadir)/usgsmap.txt\""
 
 INCLUDES = \
 	-I$(top_srcdir)/src \

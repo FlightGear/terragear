@@ -55,6 +55,7 @@
 #include <landcover/landcover.hxx>
 
 #include "construct.hxx"
+#include "usgs.hxx"
 
 using std::cout;
 using std::cerr;
@@ -79,67 +80,6 @@ static const double half_cover_size = cover_size * 0.5;
 static const double quarter_cover_size = cover_size * 0.25;
 
 double nudge=0.0;
- 
-
-// Translate USGS land cover values into TerraGear area types.
-static AreaType translateUSGSCover (int usgs_value)
-{
-  switch (usgs_value) {
-
-  case 1:			// Urban and Built-Up Land
-    return BuiltUpCover;
-  case 2:			// Dryland Cropland and Pasture
-    return DryCropPastureCover;
-  case 3:			// Irrigated Cropland and Pasture
-    return IrrCropPastureCover;
-  case 4:			// Mixed Dryland/Irrigated Cropland and Pasture
-    return MixedCropPastureCover;
-  case 5:			// Cropland/Grassland Mosaic
-    return CropGrassCover;
-  case 6:			// Cropland/Woodland Mosaic
-    return CropWoodCover;
-  case 7:			// Grassland
-    return GrassCover;
-  case 8:			// Shrubland
-    return ShrubCover;
-  case 9:			// Mixed Shrubland/Grassland
-    return ShrubGrassCover;
-  case 10:			// Savanna
-    return SavannaCover;
-  case 11:			// Deciduous Broadleaf Forest
-    return DeciduousBroadCover;
-  case 12:			// Deciduous Needleleaf Forest
-    return DeciduousNeedleCover;
-  case 13:			// Evergreen Broadleaf Forest
-    return EvergreenBroadCover;
-  case 14:			// Evergreen Needleleaf Forest
-    return EvergreenNeedleCover;
-  case 15:			// Mixed Forest
-    return MixedForestCover;
-  case 16:			// Water Bodies
-    // FIXME: use the type of an adjoining area if possible
-    // return WaterBodyCover;
-    return DefaultArea;
-  case 17:			// Herbaceous Wetland
-    return HerbWetlandCover;
-  case 18:			// Wooded Wetland
-    return WoodedWetlandCover;
-  case 19:			// Barren or Sparsely Vegetated
-    return BarrenCover;
-  case 20:			// Herbaceous Tundra
-    return HerbTundraCover;
-  case 21:			// Wooded Tundra
-    return WoodedTundraCover;
-  case 22:			// Mixed Tundra
-    return MixedTundraCover;
-  case 23:			// Bare Ground Tundra
-    return BareTundraCover;
-  case 24:			// Snow or Ice
-    return SnowCover;
-  default:			// Unknown
-    return DefaultArea;
-  }
-}
 
 
 // Scan a directory and load polygon files.
@@ -1103,6 +1043,7 @@ static void usage( const string name ) {
     cout << "  --xdist=<degrees>" << endl;
     cout << "  --ydist=<degrees>" << endl;
     cout << "  --nudge=<float>" << endl;
+    cout << "  --usgs-map=<filename>" << endl;
     cout << "  --useUKgrid" << endl;
     cout << "  --no-write-shared-edges" << endl;
     cout << "  --use-own-shared-edges" << endl;
@@ -1115,6 +1056,7 @@ int main(int argc, char **argv) {
     string output_dir = ".";
     string work_dir = ".";
     string cover = "";
+    string usgs_map_file = DEFAULT_USGS_MAPFILE;
     double lon = -110.664244;	// P13
     double lat = 33.352890;
     double xdist = -1;		// 1/2 degree in each direction
@@ -1160,6 +1102,8 @@ int main(int argc, char **argv) {
 	    nudge = atof(arg.substr(8).c_str())*SG_EPSILON;
 	} else if (arg.find("--cover=") == 0) {
 	    cover = arg.substr(8);
+	} else if (arg.find("--usgs-map=") == 0) {
+	    usgs_map_file = arg.substr(11);
 	} else if (arg.find("--useUKgrid") == 0) {
             useUKgrid = true;
 	} else if (arg.find("--no-write-shared-edges") == 0) {
@@ -1187,6 +1131,11 @@ int main(int argc, char **argv) {
     for (int i = arg_pos; i < argc; i++) {
 	load_dirs.push_back(argv[i]);
 	cout << "Load directory: " << argv[i] << endl;
+    }
+    cout << "USGS Map file is " << usgs_map_file << endl;
+    if ( ! load_usgs_map( usgs_map_file ) ) {
+    	    SG_LOG(SG_GENERAL, SG_ALERT, "Failed to load USGS map file " << usgs_map_file);
+	    exit(-1);
     }
 
 #if defined( __CYGWIN__ ) || defined( __CYGWIN32__ ) || defined( _MSC_VER )

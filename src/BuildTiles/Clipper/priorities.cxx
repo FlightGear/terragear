@@ -1,8 +1,8 @@
 // priorities.cxx -- manage area type priorities
 //
-// Written by Curtis Olson, started February 1999.
+// Written by Ralf Gerlich
 //
-// Copyright (C) 1999  Curtis L. Olson  - http://www.flightgear.org/~curt
+// Copyright (C) 2008  Ralf Gerlich  - ralf.gerlich <at> custom-scenery <dot> org
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,8 +17,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//
-// $Id: names.cxx,v 1.13 2004-11-19 22:25:50 curt Exp $
  
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
