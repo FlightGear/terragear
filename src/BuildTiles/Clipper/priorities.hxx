@@ -33,6 +33,7 @@ typedef unsigned int AreaType;
 int load_area_types( const std::string& filename );
 bool is_hole_area(AreaType areaType);
 bool is_landmass_area(AreaType areaType);
+bool is_island_area(AreaType areaType);
 bool is_water_area(AreaType areaType);
 bool is_lake_area(AreaType areaType);
 bool is_stream_area(AreaType areaType);

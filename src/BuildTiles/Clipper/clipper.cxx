@@ -471,7 +471,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
                 water_mask =
                     tgPolygonUnion( water_mask, polys_in.polys[i][j] );
             }
-        } else if ( is_water_area( i ) ) {
+        } else if ( is_island_area( i ) ) {
             for (unsigned int j = 0; j < polys_in.polys[i].size(); j++) {
                 island_mask =
                     tgPolygonUnion( island_mask, polys_in.polys[i][j] );

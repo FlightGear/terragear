@@ -149,7 +149,13 @@ bool is_water_area( AreaType area ) {
 }
 
 bool is_landmass_area( AreaType area ) {
-    return get_area_descriptor( area ).kind==Landmass;
+    const AreaKind kind = get_area_descriptor( area ).kind;
+    return (kind==Landmass);
+}
+
+bool is_island_area( AreaType area ) {
+    const AreaKind kind = get_area_descriptor( area ).kind;
+    return (kind==Island);
 }
 
 bool is_lake_area( AreaType area ) {
