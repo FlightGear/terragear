@@ -102,6 +102,16 @@ public:
     inline TGTriNodes get_fixed_elevations() const { return fixed_elevations; }
     
     double nudge;
+    
+    bool ignore_landmass() const {
+        return m_ignore_landmass;
+    }
+    
+    void ignore_landmass(bool b) {
+        m_ignore_landmass = b;
+    }
+protected:
+    bool m_ignore_landmass;
 };
 
 

@@ -76,6 +76,9 @@ private:
     // flag indicating whether the shared edge data of the
     // tile to be built should be used in addition to neighbour data
     bool useOwnSharedEdges;
+    
+    // flag indicating whether to ignore the landmass
+    bool ignoreLandmass;
 
     // detail level constraints
     int min_nodes;
@@ -145,6 +148,10 @@ public:
     // own shared edge use flag
     inline bool get_use_own_shared_edges() const { return useOwnSharedEdges; }
     inline void set_use_own_shared_edges( const bool b ) { useOwnSharedEdges = b; }
+    
+    // ignore landmass flag
+    inline bool get_ignore_landmass() const { return ignoreLandmass; }
+    inline void set_ignore_landmass( const bool b) { ignoreLandmass = b; }
 
     // detail level constraints
     inline int get_min_nodes() const { return min_nodes; }

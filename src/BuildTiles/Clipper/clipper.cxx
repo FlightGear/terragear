@@ -47,8 +47,10 @@ using std::endl;
 
 
 // Constructor.
-TGClipper::TGClipper() {
-        nudge=0.0;
+TGClipper::TGClipper():
+        nudge(0.0),
+        m_ignore_landmass(false)
+{
 }
 
 
@@ -461,7 +463,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
     water_mask.erase();
     island_mask.erase();
     for ( i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
-        if ( is_landmass_area( i ) ) {
+        if ( is_landmass_area( i ) && !m_ignore_landmass ) {
             for ( unsigned j = 0; j < (int)polys_in.polys[i].size(); ++j ) {
                 land_mask =
                   tgPolygonUnion( land_mask, polys_in.polys[i][j] );
@@ -491,7 +493,7 @@ bool TGClipper::clip_all(const point2d& min, const point2d& max) {
             tmp = current;
 
             // if not a hole, clip the area to the land_mask
-            if ( ! is_hole_area( i ) ) {
+            if ( !m_ignore_landmass && !is_hole_area( i ) ) {
                 tmp = tgPolygonInt( tmp, land_mask );
             }
 

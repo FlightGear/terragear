@@ -29,7 +29,11 @@
 
 
 // Constructor
-TGConstruct::TGConstruct() { }
+TGConstruct::TGConstruct():
+        useUKGrid(false),
+        writeSharedEdges(true),
+        useOwnSharedEdges(false)
+{ }
 
 
 // Destructor
