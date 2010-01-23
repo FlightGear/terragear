@@ -36,6 +36,8 @@
 #endif
 
 #include <simgear/debug/logstream.hxx>
+#include <simgear/io/sg_binobj.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
 
 #include <Polygon/polygon.hxx>
@@ -139,6 +141,165 @@ OGRLayer* get_layer_for_material(const std::string& material) {
         return layer;
 }
 
+OGRLinearRing* make_ring_from_fan(const int_list& fan, const std::vector<Point3D>& nodes) {
+        OGRLinearRing* ring = new OGRLinearRing();
+        int_list::const_iterator vertex = fan.begin();
+        if (fan[1]==fan[fan.size()-1]) {
+                /* The fan is closed, so the first vertex is in the interior */
+                vertex++;
+        }
+        for (;vertex!=fan.end();++vertex) {
+                OGRPoint *point=new OGRPoint();
+                const Point3D& node = nodes[*vertex];
+                point->setX(node.x());
+                point->setY(node.y());
+                point->setZ(node.z());
+                
+                ring->addPoint(point);
+        }
+        
+        ring->closeRings();
+        
+        return ring;
+}
+
+OGRLinearRing* make_ring_from_strip(const int_list& strip, const std::vector<Point3D>& nodes) {
+        OGRLinearRing* ring = new OGRLinearRing();
+        const size_t vertex_count = strip.size();
+        int i;
+        for (i=0;i<vertex_count;i+=2) {
+                OGRPoint *point=new OGRPoint();
+                const Point3D& node = nodes[strip[i]];
+                point->setX(node.x());
+                point->setY(node.y());
+                point->setZ(node.z());
+                
+                ring->addPoint(point);
+        }
+        for (i--;i>0;i-=2) {
+                OGRPoint *point=new OGRPoint();
+                const Point3D& node = nodes[strip[i]];
+                point->setX(node.x());
+                point->setY(node.y());
+                point->setZ(node.z());
+                
+                ring->addPoint(point);
+        }
+        std::cout << "\n";
+        
+        ring->closeRings();
+        
+        return ring;
+}
+
+void make_feature_from_polygon(OGRPolygon* polygon, const std::string& material, const std::string& path) {
+        OGRLayer* layer=get_layer_for_material(material);
+        OGRFeature* feature;
+        feature = new OGRFeature( layer->GetLayerDefn() );
+        feature->SetField("Material", material.c_str());
+        feature->SetField("File", path.c_str());
+        feature->SetGeometry(polygon);
+        
+        if( layer->CreateFeature( feature ) != OGRERR_NONE )
+        {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+        }
+        
+        OGRFeature::DestroyFeature(feature);
+}
+
+void make_feature_from_ring(OGRLinearRing* ring, const std::string& material, const std::string& path) {
+        OGRPolygon* polygon = new OGRPolygon();
+        polygon->addRingDirectly(ring);
+        
+        make_feature_from_polygon(polygon, material, path);
+}        
+
+void convert_triangles(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<Point3D>& wgs84_nodes) {
+        const size_t groups_count = verts.size();
+        
+        for (int i=0;i<groups_count;i++) {
+                const string& material = materials[i];
+                const int_list& tri_verts = verts[i];
+                const size_t vertices = tri_verts.size();
+                for (int j=0;j<vertices;j+=3) {
+                        OGRLinearRing* ring = new OGRLinearRing();
+                        for (int k=0;k<3;k++) {
+                                OGRPoint *point=new OGRPoint();
+                                const Point3D& node = wgs84_nodes[tri_verts[j+k]];
+                                point->setX(node.x());
+                                point->setY(node.y());
+                                point->setZ(node.z());
+                                
+                                ring->addPoint(point);
+                        }
+                        ring->closeRings();
+                        make_feature_from_ring(ring, material, path);
+                }
+        }
+}
+
+void convert_triangle_fans(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<Point3D>& wgs84_nodes) {
+        const size_t groups_count = verts.size();
+        
+        for (int i=0;i<groups_count;i++) {
+                const string& material = materials[i];
+                OGRLinearRing* ring = make_ring_from_fan(verts[i], wgs84_nodes);
+                make_feature_from_ring(ring, material, path);
+        }
+}
+
+void convert_triangle_strips(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<Point3D>& wgs84_nodes) {
+        const size_t groups_count = verts.size();
+        
+        for (int i=0;i<groups_count;i++) {
+                const string& material = materials[i];
+                OGRLinearRing* ring = make_ring_from_strip(verts[i], wgs84_nodes);
+                make_feature_from_ring(ring, material, path);
+        }
+}
+
+void process_scenery_file(const std::string& path) {
+        SGBinObject binObject;
+        if (!binObject.read_bin(path)) {
+                return;
+        }
+        
+        Point3D gbs_center = binObject.get_gbs_center();
+        const std::vector<SGVec3d>& wgs84_nodes = binObject.get_wgs84_nodes();
+        std::vector<Point3D> geod_nodes;
+        const size_t node_count = wgs84_nodes.size();
+        for (int i=0;i<node_count;i++) {
+                SGVec3d wgs84 = wgs84_nodes[i];
+                Point3D raw = Point3D( gbs_center.x() + wgs84.x(),
+                                       gbs_center.y() + wgs84.y(),
+                                       gbs_center.z() + wgs84.z() );
+                Point3D radians = sgCartToGeod(raw);
+                Point3D geod = Point3D( radians.x() / SGD_DEGREES_TO_RADIANS,
+                                        radians.y() / SGD_DEGREES_TO_RADIANS,
+                                        radians.z() );
+                geod_nodes.push_back(geod);
+        }
+        
+        /* Convert individual triangles */
+        convert_triangles(path,
+                binObject.get_tris_v(),
+                binObject.get_tri_materials(),
+                geod_nodes);
+        
+        /* Convert triangle fans */
+        convert_triangle_fans(path,
+                binObject.get_fans_v(),
+                binObject.get_fan_materials(),
+                geod_nodes);
+        
+        /* Convert triangle strips */
+        convert_triangle_strips(path,
+                binObject.get_strips_v(),
+                binObject.get_strip_materials(),
+                geod_nodes);
+}
+
 void process_polygon_file(const std::string& path) {
         SG_LOG(SG_GENERAL, SG_INFO, "Loading polygon file " << path);
         
@@ -207,20 +368,7 @@ void process_polygon_file(const std::string& path) {
                                 polygon->addRingDirectly(ring);
                 }
                 
-                OGRLayer* layer=get_layer_for_material(material);
-                OGRFeature* feature;
-                
-                feature = new OGRFeature( layer->GetLayerDefn() );
-                feature->SetField("Material", material.c_str());
-                feature->SetField("File", path.c_str());
-                feature->SetGeometry(polygon);
-                
-                if( layer->CreateFeature( feature ) != OGRERR_NONE )
-                {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-                }
-                
-                OGRFeature::DestroyFeature(feature);
+                make_feature_from_polygon(polygon, material, path);
         }
 }
 
@@ -291,10 +439,12 @@ void process_file(const std::string& path) {
         } else if (endswith(path,".pts")) {
                 // This is a points file
                 process_points_file(path);
+        } else if (endswith(path,".btg.gz") || endswith(path,".btg")) {
+                // This is a scenery file
+                process_scenery_file(path);
         } else if (!endswith(path,".gz") &&
                         !endswith(path,".arr") &&
                         !endswith(path,".fit") &&
-                        !endswith(path,".btg") &&
                         !endswith(path,".stg") &&
                         !endswith(path,".ind")) {
                 // should be a polygon file
