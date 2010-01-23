@@ -369,11 +369,11 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
     
     in.holelist = (REAL *) malloc(in.numberofholes * 2 * sizeof(REAL));
     
+    counter = 0;
     for ( i = 0; i < TG_MAX_AREA_TYPES; i++) {
         if ( is_hole_area( i ) ) {
             h_current = polylist[i].begin();
             h_last = polylist[i].end();
-            counter = 0;
             for ( ; h_current != h_last; ++h_current ) {
                 poly = *h_current;
                 for ( j = 0; j < poly.contours(); ++j ) {
@@ -388,14 +388,16 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
     // region list
     in.numberofregions = 0;
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
-        poly_list_iterator h_current, h_last;
-        h_current = polylist[i].begin();
-        h_last = polylist[i].end();
-        for ( ; h_current != h_last; ++h_current ) {
-            poly = *h_current;
-            for ( j = 0; j < poly.contours(); ++j ) {
-                if ( ! poly.get_hole_flag( j ) ) {
-                    ++in.numberofregions;
+        if ( ! is_hole_area( i ) ) {
+            poly_list_iterator h_current, h_last;
+            h_current = polylist[i].begin();
+            h_last = polylist[i].end();
+            for ( ; h_current != h_last; ++h_current ) {
+                poly = *h_current;
+                for ( j = 0; j < poly.contours(); ++j ) {
+                    if ( ! poly.get_hole_flag( j ) ) {
+                        ++in.numberofregions;
+                    }
                 }
             }
         }
@@ -404,20 +406,22 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
     in.regionlist = (REAL *) malloc(in.numberofregions * 4 * sizeof(REAL));
     counter = 0;
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
-        poly_list_iterator h_current, h_last;
-        h_current = polylist[(int)i].begin();
-        h_last = polylist[(int)i].end();
-        for ( ; h_current != h_last; ++h_current ) {
-            poly = *h_current;
-            for ( j = 0; j < poly.contours(); ++j ) {
-                if ( ! poly.get_hole_flag( j ) ) {
-                    p = poly.get_point_inside( j );
-                    cout << "Region point = " << p << endl;
-                    in.regionlist[counter++] = p.x();  // x coord
-                    in.regionlist[counter++] = p.y();  // y coord
-                    in.regionlist[counter++] = i;      // region attribute
-                    in.regionlist[counter++] = -1.0;   // area constraint
-                    // (unused)
+        if ( ! is_hole_area( i ) ) {
+            poly_list_iterator h_current, h_last;
+            h_current = polylist[(int)i].begin();
+            h_last = polylist[(int)i].end();
+            for ( ; h_current != h_last; ++h_current ) {
+                poly = *h_current;
+                for ( j = 0; j < poly.contours(); ++j ) {
+                    if ( ! poly.get_hole_flag( j ) ) {
+                        p = poly.get_point_inside( j );
+                        cout << "Region point = " << p << endl;
+                        in.regionlist[counter++] = p.x();  // x coord
+                        in.regionlist[counter++] = p.y();  // y coord
+                        in.regionlist[counter++] = i;      // region attribute
+                        in.regionlist[counter++] = -1.0;   // area constraint
+                        // (unused)
+                    }
                 }
             }
         }
