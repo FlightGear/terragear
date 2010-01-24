@@ -1,6 +1,7 @@
 #include "terra.h"
 
 #include <iostream>
+#include <cstdio> // for EOF
 
 using std::istream;
 using std::cerr;
