@@ -230,6 +230,8 @@ int main( int argc, char **argv ) {
     SGPath sgp( airportareadir );
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
+    
+    string lastaptfile = work_dir+"/last_apt";
 
     // initialize persistant polygon counter
     string counter_file = airportareadir+"/poly_counter";
@@ -310,8 +312,9 @@ int main( int argc, char **argv ) {
                         // check point our location
                         char command[256];
                         sprintf( command,
-                                 "echo before building %s >> last_apt",
-                                 last_apt_id.c_str() );
+                                 "echo before building %s >> %s",
+                                 last_apt_id.c_str(),
+                                 lastaptfile.c_str() );
                         system( command );
 
                         // process previous record
@@ -412,8 +415,9 @@ int main( int argc, char **argv ) {
             // check point our location
             char command[256];
             sprintf( command,
-                     "echo before building %s >> last_apt",
-                     last_apt_id.c_str() );
+                     "echo before building %s >> %s",
+                     last_apt_id.c_str(),
+                     lastaptfile.c_str() );
             system( command );
 
             // process previous record
