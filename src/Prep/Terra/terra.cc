@@ -1,6 +1,6 @@
 #include "terra.h"
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     Terra::process_cmdline(argc, argv);
 
