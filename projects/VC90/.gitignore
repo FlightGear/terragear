@@ -1,4 +1,5 @@
 terragear.ncb
 terragear.suo
 *.user
-bin
+x64
+Win32
