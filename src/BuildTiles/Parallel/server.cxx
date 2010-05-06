@@ -365,7 +365,8 @@ struct Parameters {
 DWORD WINAPI
 ThreadProc(void* p)
 {
-    unsigned long pN1, pN2; 
+    DWORD pN1;
+    ULONG_PTR pN2; 
     OVERLAPPED*	pOverLapped;
 
     while( GetQueuedCompletionStatus(gIoPort, &pN1, &pN2, &pOverLapped, INFINITE)) {
