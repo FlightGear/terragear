@@ -28,14 +28,14 @@
 
 #include "usgs.hxx"
 
-using std::fstream;
+using std::ifstream;
 using std::string;
 using std::vector;
 
 static vector<AreaType> usgs_map;
 
 int load_usgs_map( const std::string& filename ) {
-    fstream in ( filename.c_str() );
+    ifstream in ( filename.c_str() );
     
     if ( ! in ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open file " << filename);

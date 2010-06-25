@@ -31,7 +31,7 @@
 
 #include "priorities.hxx"
 
-using std::fstream;
+using std::ifstream;
 using std::string;
 using std::map;
 using std::vector;
@@ -61,7 +61,7 @@ static AreaType default_area_type;
 static AreaType sliver_target_area_type;
 
 int load_area_types( const std::string& filename ) {
-    fstream in ( filename.c_str() );
+    ifstream in ( filename.c_str() );
     
     if ( ! in ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open file " << filename);
