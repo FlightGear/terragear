@@ -60,6 +60,7 @@ using std::endl;
 
 
 int nudge = 10;
+double slope_max = 0.2;
 
 static int is_in_range( string_list & runway_list, float min_lat, float max_lat, float min_lon, float max_lon );
 
@@ -69,7 +70,7 @@ static void usage( int argc, char **argv ) {
 	   "Usage " << argv[0] << " --input=<apt_file> "
 	   << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ] "
 	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
-	   << "[--clear-dem-path] [--dem-path=<path>] "
+	   << "[--clear-dem-path] [--dem-path=<path>] [--max-slope=<decimal>] "
            << "[ --airport=abcd ]  [--tile=<tile>] [--chunk=<chunk>] [--verbose] [--help]");
 }
 
@@ -186,6 +187,8 @@ int main( int argc, char **argv ) {
 	    elev_src.push_back( arg.substr(11) );
 	} else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) {
 	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
+	} else if ( (arg.find("--max-slope=") == 0) ) {
+	    slope_max = atof( arg.substr(12).c_str() );
 	} else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) {
 	    help( argc, argv, elev_src );
 	    exit(-1);
