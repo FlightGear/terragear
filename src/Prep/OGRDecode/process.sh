@@ -9,6 +9,7 @@ OGRDECODE="$HOME/install_headless/bin/ogr-decode --continue-on-errors --max-segm
 
 # World land mass
 ${OGRDECODE} --area-type Default ${WORKBASE}/Shape-LandMass "${DATASOURCE}" v0_landmass
+${OGRDECODE} --area-type Default ${WORKBASE}/Shape-LandMass "${DATASOURCE}" v0_polarice # polar ice is not covered by v0_landmass
 
 # Inland moving water: rivers/streams, intermittent streams, and canals
 ${OGRDECODE} --area-type Stream --line-width 40 ${WORKBASE}/Shape-Rivers "${DATASOURCE}" v0_stream
