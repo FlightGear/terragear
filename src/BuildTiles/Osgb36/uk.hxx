@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 
 //Returns true if a point is within the mainland UK, excluding
 //Northern Ireland.  Requires lat and lon to be passed in degrees.

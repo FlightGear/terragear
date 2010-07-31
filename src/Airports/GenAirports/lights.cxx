@@ -35,6 +35,7 @@
 
 using std::cout;
 using std::endl;
+using std::string;
 
 
 // calculate the runway light direction vector.  We take the center of

@@ -26,7 +26,7 @@
 #define _POLY_EXTRA_HXX
 
 
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 
 #include <Geometry/trinodes.hxx>
 #include <Polygon/polygon.hxx>

@@ -28,6 +28,8 @@
 #include "rwy_common.hxx"
 #include "rwy_nonprec.hxx"
 
+using std::string;
+
 
 // generate a precision approach runway.  The routine modifies
 // rwy_polys, texparams, and accum.  For specific details and

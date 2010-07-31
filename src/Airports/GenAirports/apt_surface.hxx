@@ -36,7 +36,7 @@
 #include <newmat/newmatap.h>	// need matrix applications
 #include <newmat/newmatio.h>	// need matrix output routines
 
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 
 
 /***

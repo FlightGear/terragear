@@ -45,6 +45,8 @@
 
 #include <ogrsf_frmts.h>
 
+using std::string;
+
 typedef std::map<std::string,OGRLayer*> LayerMap;
 
 const char* format_name="ESRI Shapefile";
@@ -265,7 +267,7 @@ void process_scenery_file(const std::string& path) {
                 return;
         }
         
-        Point3D gbs_center = binObject.get_gbs_center();
+        SGVec3d gbs_center = binObject.get_gbs_center();
         const std::vector<SGVec3d>& wgs84_nodes = binObject.get_wgs84_nodes();
         std::vector<Point3D> geod_nodes;
         const size_t node_count = wgs84_nodes.size();

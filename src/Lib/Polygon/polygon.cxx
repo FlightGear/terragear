@@ -31,7 +31,7 @@ extern "C" {
 
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/structure/exception.hxx>
 

@@ -26,6 +26,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/io/sg_binobj.hxx>
+#include <simgear/math/SGGeometry.hxx>
 #include <simgear/misc/texcoord.hxx>
 
 #include <Output/output.hxx>
@@ -38,33 +39,20 @@
 
 using std::cout;
 using std::endl;
+using std::string;
 
 
 // calculate the global bounding sphere.  Center is the center of the
 // tile and zero elevation
 void TGGenOutput::calc_gbs( TGConstruct& c ) {
-    double dist_squared;
-    double radius_squared = 0;
-    
-    SGBucket b = c.get_bucket();
-
-    Point3D p( b.get_center_lon() * SGD_DEGREES_TO_RADIANS, 
-	       b.get_center_lat() * SGD_DEGREES_TO_RADIANS,
-	       0 );
-
-    gbs_center = sgGeodToCart(p);
-
     point_list wgs84_nodes = c.get_wgs84_nodes();
-    const_point_list_iterator current =  wgs84_nodes.begin();
-    const_point_list_iterator last = wgs84_nodes.end();
-    for ( ; current != last; ++current ) {
-        dist_squared = gbs_center.distance3Dsquared(*current);
-	if ( dist_squared > radius_squared ) {
-            radius_squared = dist_squared;
-        }
+    SGSphered d;
+    for ( int i = 0; i < wgs84_nodes.size(); ++i ) {
+        d.expandBy(wgs84_nodes[ i ].toSGVec3d());
     }
-
-    gbs_radius = sqrt(radius_squared);
+    
+    gbs_center = d.getCenter();
+    gbs_radius = d.getRadius();
 }
 
 
@@ -203,27 +191,38 @@ int TGGenOutput::build( TGConstruct& c ) {
 	    // cout << fans[i][j].size() << " === " 
 	    //      << t_list.size() << endl;
 	    SGBucket b = c.get_bucket();
-	    point_list tp_list;
 	    Point3D ourPosition;
 
 	    ourPosition.setlon(b.get_chunk_lon());
 	    ourPosition.setlat(b.get_chunk_lat());
 
+	    int_list ti_list;
+	    ti_list.clear();
 	    //dcl - here read the flag to check if we are building UK grid
 	    //If so - check if the bucket is within the UK lat & lon
 	    if( (c.get_useUKGrid()) && (isInUK(ourPosition)) ) {
+	        point_list tp_list;
 	    	tp_list = UK_calc_tex_coords( b, geod_nodes, fans[i][j], 1.0 );
+                for ( int k = 0; k < (int)tp_list.size(); ++k ) {
+                    // cout << "  tc = " << tp_list[k] << endl;
+                    int index = tex_coords.simple_add( tp_list[k] );
+                    ti_list.push_back( index );
+                }
 	    } else {
-	    	tp_list = sgCalcTexCoords( b, geod_nodes, fans[i][j] );
+                std::vector < SGGeod > convGeodNodes;
+                for ( j = 0; j < geod_nodes.size(); j++ ) {
+                    Point3D node = geod_nodes[j];
+                    convGeodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
+                }
+                std::vector< SGVec2f > tp_list = sgCalcTexCoords( b, convGeodNodes, fans[i][j] );
+                for ( j = 0; j < (int)tp_list.size(); ++j ) {
+                    SGVec2f tc = tp_list[j];
+                    // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
+                    int index = tex_coords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
+                    ti_list.push_back( index );
+                }
             }
 
-	    int_list ti_list;
-	    ti_list.clear();
-	    for ( int k = 0; k < (int)tp_list.size(); ++k ) {
-                // cout << "  tc = " << tp_list[k] << endl;
-		int index = tex_coords.simple_add( tp_list[k] );
-		ti_list.push_back( index );
-	    }
 	    textures[i].push_back( ti_list );
 	}
     }
@@ -455,14 +454,26 @@ int TGGenOutput::write( TGConstruct &c ) {
     string name = b.gen_index_str();
     name += ".btg";
 
-    point_list wgs84_nodes = c.get_wgs84_nodes();
-    point_list normals = c.get_point_normals();
+    std::vector< SGVec3d > wgs84_nodes;
+    for ( i = 0; i < c.get_wgs84_nodes().size(); i++ ) {
+        Point3D node = c.get_wgs84_nodes()[i];
+        wgs84_nodes.push_back( node.toSGVec3d() );
+    }
+    std::vector< SGVec3f > normals;
+    for ( i = 0; i < c.get_point_normals().size(); i++ ) {
+        Point3D node = c.get_point_normals()[i];
+        normals.push_back( node.toSGVec3f() );
+    }
     cout << "dumping normals = " << normals.size() << endl;
     /* for ( i = 0; i < (int)normals.size(); ++i ) {
 	Point3D p = normals[i];
 	printf("vn %.5f %.5f %.5f\n", p.x(), p.y(), p.z());
     } */
-    point_list texcoords = tex_coords.get_node_list();
+    std::vector< SGVec2f > texcoords;
+    for ( i = 0; i < tex_coords.get_node_list().size(); i++ ) {
+        Point3D node = tex_coords.get_node_list()[i];
+        texcoords.push_back( node.toSGVec2f() );
+    }
 
     // allocate and initialize triangle group structures
     group_list tris_v;   group_list tris_tc;   string_list tri_materials;

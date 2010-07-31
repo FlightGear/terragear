@@ -35,7 +35,9 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/sg_binobj.hxx>
-#include <simgear/math/sg_geodesy.hxx>
+#include <simgear/math/SGGeodesy.hxx>
+#include <simgear/math/SGGeometry.hxx>
+#include <simgear/math/SGMath.hxx>
 
 #include <Array/array.hxx>
 #include <Geometry/trinodes.hxx>
@@ -237,31 +239,37 @@ int main( int argc, char **argv ) {
     }
 
     // wgs84 cartesian nodes
-    point_list wgs84_nodes; wgs84_nodes.clear();
+    std::vector< SGVec3d > wgs84_nodes; wgs84_nodes.clear();
     for ( i = 0; i < (int)geod_nodes.size(); ++i ) {
-        Point3D p = Point3D( geod_nodes[i].x() * SGD_DEGREES_TO_RADIANS,
-                             geod_nodes[i].y() * SGD_DEGREES_TO_RADIANS,
-                             geod_nodes[i].z() );
-        cout << sgGeodToCart( p ) << endl;
-	wgs84_nodes.push_back( sgGeodToCart( p ) );
+        SGGeod geod;
+        geod = SGGeod::fromDegM( geod_nodes[i].x(), geod_nodes[i].y(), geod_nodes[i].z() );
+        SGVec3d cart = SGVec3d::fromGeod(geod);
+        cout << cart << endl;
+	wgs84_nodes.push_back( cart );
     }
 
     // bounding sphere
     SGBucket b( (x0 + x2) / 2, (y0 + y2) / 2 );
-    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS,
-			 b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
-    Point3D gbs_center = sgGeodToCart( center_geod );
+    SGSphered d;
+    for ( i = 0; i < wgs84_nodes.size(); ++i ) {
+        d.expandBy(wgs84_nodes[ i ]);
+    }
+    
+    SGVec3d gbs_center = d.getCenter();
+    double gbs_radius = d.getRadius();
     cout << "gbs center = " << gbs_center << endl;
-    float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
 
     // normals
-    point_list normals = wgs84_nodes;
-    sgdVec3 vn;
-    for ( i = 0; i < (int)normals.size(); ++i ) {
-        sgdSetVec3( vn, normals[i].x(), normals[i].y(), normals[i].z() );
-        sgdNormalizeVec3( vn );
- 	normals[i] = Point3D( vn[0], vn[1], vn[2] );
-        // cout << normals[i] << endl;
+    std::vector< SGVec3f > normals;
+    for ( i = 0; i < (int)wgs84_nodes.size(); ++i ) {
+        normals.push_back(toVec3f(normalize( wgs84_nodes[i] )));
+    }
+    
+    const point_list &tc_nodes = texcoords.get_node_list();
+    std::vector< SGVec2f > texcoords_vec;
+    for ( i = 0; i < (int)tc_nodes.size(); ++i )
+    {
+        texcoords_vec.push_back( SGVec2f( tc_nodes[i].x(), tc_nodes[i].y() ) );
     }
 
     // build the object
@@ -281,7 +289,7 @@ int main( int argc, char **argv ) {
     obj.set_gbs_radius( gbs_radius );
     obj.set_wgs84_nodes( wgs84_nodes );
     obj.set_normals( normals );
-    obj.set_texcoords( texcoords.get_node_list() );
+    obj.set_texcoords( texcoords_vec );
     obj.set_tris_v( tris_v );
     obj.set_tris_tc( tris_tc ); 
     obj.set_tri_materials( tri_materials );

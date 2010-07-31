@@ -1,5 +1,5 @@
 #include <simgear/compiler.h>
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 
 #include <iostream>
 

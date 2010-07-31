@@ -34,7 +34,7 @@
 #include <simgear/compiler.h>
 
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/math/sg_types.hxx>
 
@@ -66,7 +66,7 @@ private:
     tex_list textures[TG_MAX_AREA_TYPES];
 
     // global bounding sphere
-    Point3D gbs_center;
+    SGVec3d gbs_center;
     double gbs_radius;
 
     // calculate the global bounding sphere.  Center is the average of

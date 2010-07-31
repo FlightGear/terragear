@@ -31,6 +31,8 @@
 #include "texparams.hxx"
 #include "taxiway.hxx"
 
+using std::string;
+
 
 // generate a taxiway.  The routine modifies rwy_polys, texparams, and
 // accum

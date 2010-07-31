@@ -31,6 +31,8 @@
 #include "texparams.hxx"
 #include "rwy_nonprec.hxx"
 
+using std::string;
+
 
 // generate a simple runway.  The routine modifies rwy_polys,
 // texparams, and accum

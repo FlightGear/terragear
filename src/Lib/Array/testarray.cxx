@@ -13,6 +13,7 @@
 
 using std::cout;
 using std::endl;
+using std::string;
 
 #ifdef _MSC_VER
 #define M_ISDIR _S_IFDIR

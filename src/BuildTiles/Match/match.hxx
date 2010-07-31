@@ -89,7 +89,7 @@ public:
     void load_missing_shared( TGConstruct& c );
 
     // scan the specified share file for the specified information
-    void scan_share_file( const string& dir, const SGBucket& b,
+    void scan_share_file( const std::string& dir, const SGBucket& b,
 			  neighbor_type search, neighbor_type dest );
 
     // try to find info for the specified shared component

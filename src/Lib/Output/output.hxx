@@ -44,18 +44,18 @@
 #include <Polygon/polygon.hxx>
 
 
-void write_polygon( const TGPolygon& poly, const string& base );
+void write_polygon( const TGPolygon& poly, const std::string& base );
 
 // update index file (list of objects to be included in final scenery build)
-void write_index( const string& base, const SGBucket& b, const string& name );
+void write_index( const std::string& base, const SGBucket& b, const std::string& name );
 
 // update index file (list of shared objects to be included in final
 // scenery build)
-void write_index_shared( const string &base, const SGBucket &b,
-                         const Point3D &p, const string& name,
+void write_index_shared( const std::string &base, const SGBucket &b,
+                         const Point3D &p, const std::string& name,
                          const double &heading );
 
-void write_boundary( const string& base, const SGBucket& b, 
+void write_boundary( const std::string& base, const SGBucket& b, 
 		     const TGPolygon& bounds, long int p_index );
 
 #endif // _TG_OUTPUT_HXX

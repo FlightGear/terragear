@@ -29,6 +29,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/SGGeometry.hxx>
 #include <simgear/misc/strutils.hxx>
 #include <simgear/structure/exception.hxx>
 
@@ -460,9 +461,6 @@ void build_airport( string airport_id, float alt_m,
 
     SGBucket b( apt_lon / (double)rwy_count, apt_lat / (double)rwy_count );
     SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
-    Point3D center_geod( b.get_center_lon() * SGD_DEGREES_TO_RADIANS, 	 
-                         b.get_center_lat() * SGD_DEGREES_TO_RADIANS, 0 );
-    Point3D gbs_center = sgGeodToCart( center_geod );
 
     point_list beacons; beacons.clear();
     for ( i = 0; i < (int)beacons_raw.size(); ++i ) {
@@ -903,7 +901,6 @@ void build_airport( string airport_id, float alt_m,
     group_list strips_tc; strips_tc.clear();
     string_list strip_materials; strip_materials.clear();
 
-    Point3D tc;
     int index;
     int_list pt_v, tri_v, strip_v;
     int_list pt_n, tri_n, strip_n;
@@ -946,7 +943,7 @@ void build_airport( string airport_id, float alt_m,
 		index = normals.unique_add( vn );
 		tri_n.push_back( index );
 
-		tc = tri_txs.get_pt( i, j );
+		Point3D tc = tri_txs.get_pt( i, j );
 		index = texcoords.unique_add( tc );
 		tri_tc.push_back( index );
 	    }
@@ -958,7 +955,7 @@ void build_airport( string airport_id, float alt_m,
     }
 
     // add base points
-    point_list base_txs; 
+    std::vector< SGVec2f > base_txs; 
     int_list base_tc;
     for ( i = 0; i < base_tris.contours(); ++i ) {
 	tri_v.clear();
@@ -976,14 +973,19 @@ void build_airport( string airport_id, float alt_m,
 	tris_n.push_back( tri_n );
 	tri_materials.push_back( "Grass" );
 
+	std::vector < SGGeod > geodNodes;
+	for ( j = 0; j < nodes.get_node_list().size(); j++ ) {
+	    Point3D node = nodes.get_node_list()[j];
+	    geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
+	}
 	base_txs.clear();
-	base_txs = sgCalcTexCoords( b, nodes.get_node_list(), tri_v );
+	base_txs = sgCalcTexCoords( b, geodNodes, tri_v );
 
 	base_tc.clear();
 	for ( j = 0; j < (int)base_txs.size(); ++j ) {
-	    tc = base_txs[j];
+	    SGVec2f tc = base_txs[j];
 	    // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
-	    index = texcoords.simple_add( tc );
+	    index = texcoords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
 	    base_tc.push_back( index );
 	}
 	tris_tc.push_back( base_tc );
@@ -1163,14 +1165,19 @@ void build_airport( string airport_id, float alt_m,
 	strips_n.push_back( strip_n );
 	strip_materials.push_back( "Grass" );
 
+	std::vector < SGGeod > geodNodes;
+	for ( j = 0; j < nodes.get_node_list().size(); j++ ) {
+	    Point3D node = nodes.get_node_list()[j];
+	    geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
+	}
 	base_txs.clear();
-	base_txs = sgCalcTexCoords( b, nodes.get_node_list(), strip_v );
+	base_txs = sgCalcTexCoords( b, geodNodes, strip_v );
 
 	base_tc.clear();
 	for ( j = 0; j < (int)base_txs.size(); ++j ) {
-	    tc = base_txs[j];
+	    SGVec2f tc = base_txs[j];
 	    // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
-	    index = texcoords.simple_add( tc );
+	    index = texcoords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
 	    base_tc.push_back( index );
 	}
 	strips_tc.push_back( base_tc );
@@ -1273,17 +1280,22 @@ void build_airport( string airport_id, float alt_m,
     }
 
     // calculate wgs84 mapping of nodes
-    point_list wgs84_nodes;
+    std::vector< SGVec3d > wgs84_nodes;
     for ( i = 0; i < (int)geod_nodes.size(); ++i ) {
-	p.setx( geod_nodes[i].x() * SGD_DEGREES_TO_RADIANS );
-	p.sety( geod_nodes[i].y() * SGD_DEGREES_TO_RADIANS );
-	p.setz( geod_nodes[i].z() );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "geod pt = " << geod_nodes[i] );
-        Point3D cart = sgGeodToCart( p );
+        SGGeod geod = SGGeod::fromDegM( geod_nodes[i].x(), geod_nodes[i].y(), geod_nodes[i].z() );
+	SG_LOG(SG_GENERAL, SG_DEBUG, "geod pt = " << geod_nodes[i] );
+        SGVec3d cart = SGVec3d::fromGeod(geod);
         SG_LOG(SG_GENERAL, SG_DEBUG, "  cart pt = " << cart );
 	wgs84_nodes.push_back( cart );
     }
-    float gbs_radius = sgCalcBoundingRadius( gbs_center, wgs84_nodes );
+    SGSphered d;
+    for ( i = 0; i < wgs84_nodes.size(); ++i ) {
+        d.expandBy(wgs84_nodes[ i ]);
+    }
+    
+    SGVec3d gbs_center = d.getCenter();
+    double gbs_radius = d.getRadius();
+    cout << "gbs center = " << gbs_center << endl;
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with wgs84 node mapping");
     SG_LOG(SG_GENERAL, SG_DEBUG, "  center = " << gbs_center
            << " radius = " << gbs_radius );
@@ -1296,14 +1308,26 @@ void build_airport( string airport_id, float alt_m,
 
     string objpath = root + "/AirportObj";
     string name = airport_id + ".btg";
+    
+    std::vector< SGVec3f > normals_3f;
+    for ( i=0; i < normals.get_node_list().size(); i++ ) {
+        Point3D node = normals.get_node_list()[i];
+        normals_3f.push_back( node.toSGVec3f() );
+    }
+
+    std::vector< SGVec2f > texcoords_2f;
+    for ( i=0; i < texcoords.get_node_list().size(); i++ ) {
+        Point3D node = texcoords.get_node_list()[i];
+        texcoords_2f.push_back( node.toSGVec2f() );
+    }
 
     SGBinObject obj;
 
     obj.set_gbs_center( gbs_center );
     obj.set_gbs_radius( gbs_radius );
     obj.set_wgs84_nodes( wgs84_nodes );
-    obj.set_normals( normals.get_node_list() );
-    obj.set_texcoords( texcoords.get_node_list() );
+    obj.set_normals( normals_3f );
+    obj.set_texcoords( texcoords_2f );
     obj.set_pts_v( pts_v );
     obj.set_pts_n( pts_n );
     obj.set_pt_materials( pt_materials );

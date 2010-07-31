@@ -29,13 +29,13 @@
 #include <string>
 #include <vector>
 
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 
 #include <Polygon/polygon.hxx>
 
 
 struct TGRunway {
-    string rwy_no;
+    std::string rwy_no;
 
     double lon;
     double lat;
@@ -47,9 +47,9 @@ struct TGRunway {
     double stopway1;
     double stopway2;
 
-    string lighting_flags;
+    std::string lighting_flags;
     int surface_code;
-    string shoulder_code;
+    std::string shoulder_code;
     int marking_code;
     double smoothness;
     bool   dist_remaining;
@@ -69,7 +69,7 @@ struct TGRunway {
 };
 
 
-typedef vector < TGRunway > runway_list;
+typedef std::vector < TGRunway > runway_list;
 typedef runway_list::iterator runway_list_iterator;
 typedef runway_list::const_iterator const_runway_list_iterator;
 

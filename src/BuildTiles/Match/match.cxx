@@ -26,7 +26,7 @@
 #endif
 
 #include <simgear/compiler.h>
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
 #include <simgear/misc/sg_path.hxx>

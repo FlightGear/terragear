@@ -3,7 +3,7 @@
 #endif
 
 #include <simgear/compiler.h>
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 #include <simgear/props/props_io.hxx>
 #include <simgear/props/props.hxx>
 #include <simgear/structure/exception.hxx>

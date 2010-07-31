@@ -36,7 +36,7 @@
 #include <simgear/compiler.h>
 
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/misc/sgstream.hxx>
 
@@ -74,13 +74,13 @@ public:
 
     // Constructor
     TGArray( void );
-    TGArray( const string& file );
+    TGArray( const std::string& file );
 
     // Destructor
     ~TGArray( void );
 
     // open an Array file (use "-" if input is coming from stdin)
-    bool open ( const string& file_base );
+    bool open ( const std::string& file_base );
 
     // return if array was successfully opened or not
     inline bool is_open() { 
@@ -98,7 +98,7 @@ public:
     bool parse( SGBucket& b );
 
     // write an Array file
-    bool write( const string root_dir, SGBucket& b );
+    bool write( const std::string root_dir, SGBucket& b );
 
     // do our best to remove voids by picking data from the nearest
     // neighbor.

@@ -34,7 +34,7 @@
 
 
 void gen_number_block( const TGRunway& rwy_info,
-                       const string& material,
+                       const std::string& material,
                        TGPolygon poly, double heading, int num,
                        double start_pct, double end_pct,
                        superpoly_list *rwy_polys,
@@ -45,7 +45,7 @@ void gen_number_block( const TGRunway& rwy_info,
 void gen_runway_stopway( const TGRunway& rwy_info,
                          const TGPolygon& runway_a,
                          const TGPolygon& runway_b,
-                         const string& prefix,
+                         const std::string& prefix,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
                          TGPolygon* accum );
@@ -57,8 +57,8 @@ void gen_runway_section( const TGRunway& rwy_info,
 			 double startw_pct, double endw_pct,
                          double minu, double maxu, double minv, double maxv,
 			 double heading,
-			 const string& prefix,
-			 const string& material,
+			 const std::string& prefix,
+			 const std::string& material,
 			 superpoly_list *rwy_polys,
 			 texparams_list *texparams,
 			 TGPolygon *accum  );

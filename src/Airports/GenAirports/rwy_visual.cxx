@@ -29,6 +29,8 @@
 #include "rwy_common.hxx"
 #include "rwy_visual.hxx"
 
+using std::string;
+
 
 // generate a visual approach runway.  The routine modifies rwy_polys,
 // texparams, and accum.  For specific details and dimensions of

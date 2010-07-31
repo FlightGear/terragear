@@ -12,4 +12,4 @@ testarray_LDADD = \
 	-lsgbucket -lsgmath -lsgmisc -lsgdebug -lsgxml \
 	$(support_LIBS) -lz 
 
-INCLUDES = -I$(top_srcdir)/src
+INCLUDES = -I$(top_srcdir)/src/Lib

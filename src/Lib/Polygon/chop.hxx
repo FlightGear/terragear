@@ -27,12 +27,14 @@
 #define _TG_CHOP_HXX
 
 
+#include <string>
+
 #include "polygon.hxx"
 
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
-void tgChopNormalPolygon( const string& path, const string& poly_type,
+void tgChopNormalPolygon( const std::string& path, const std::string& poly_type,
                           const TGPolygon& shape, bool preserve3d );
 
 
@@ -40,7 +42,7 @@ void tgChopNormalPolygon( const string& path, const string& poly_type,
 // polygon piece to a file) This has a front end to a crude clipper
 // that doesn't handle holes so beware.  This routine is appropriate
 // for breaking down really huge structures if needed.
-void tgChopBigSimplePolygon( const string& path, const string& poly_type,
+void tgChopBigSimplePolygon( const std::string& path, const std::string& poly_type,
                              const TGPolygon& shape, bool preserve3d );
 
 #endif // _TG_CHOP_HXX

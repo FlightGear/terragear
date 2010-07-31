@@ -44,7 +44,6 @@
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/math/polar3d.hxx>
 
 #include <Geometry/poly_support.hxx>
 #include <Array/array.hxx>
@@ -444,6 +443,14 @@ static double distance2D( const Point3D p1, const Point3D p2 ) {
     return sqrt( dx*dx + dy*dy );
 }
 
+inline void calc_gc_course_dist( const Point3D& start, const Point3D& dest, 
+                                 double *course, double *dist )
+{
+  SGGeoc gs = start.toSGGeoc();
+  SGGeoc gd = dest.toSGGeoc();
+  *course = SGGeoc::courseRad(gs, gd);
+  *dist = SGGeoc::distanceM(gs, gd);
+}
 
 // calculate spherical distance between two points (lon, lat specified
 // in degrees, result returned in meters)

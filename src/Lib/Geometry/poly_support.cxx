@@ -27,7 +27,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
-#include <simgear/math/point3d.hxx>
+#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/structure/exception.hxx>
@@ -49,11 +49,12 @@ extern "C" {
 #include "trinodes.hxx"
 #include "trisegs.hxx"
 
+using std::copy;
 using std::cout;
 using std::endl;
-using std::sort;
-using std::copy;
 using std::ostream_iterator;
+using std::sort;
+using std::vector;
 
 // Given a line segment specified by two endpoints p1 and p2, return
 // the slope of the line.
@@ -429,6 +430,13 @@ static void write_tree_element( TGContourNode *node, TGPolygon& p, int hole=0) {
     }
 }
 
+class Point3DYOrdering {
+public:
+    bool operator()(const Point3D& a, const Point3D& b) const {
+        return a.y()<b.y();
+    }
+};
+
 // recurse the contour tree and build up the point inside list for
 // each contour/hole
 static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
@@ -471,7 +479,7 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
             throw sg_exception("Polygon must have at least 2 contour points");
     }
     
-    sort(allpoints.begin(), allpoints.end(), Point3DOrdering(PY));
+    sort(allpoints.begin(), allpoints.end(), Point3DYOrdering());
 
     point_list::iterator point_it;
     

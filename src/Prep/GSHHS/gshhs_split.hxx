@@ -24,6 +24,7 @@
 #ifndef _GSHHS_SPLIT_HXX
 #define _GSHHS_SPLIT_HXX
 
+#include <string>
 
 #include <Polygon/polygon.hxx>
 
@@ -31,13 +32,13 @@
 // process shape front end ... split shape into lon = -180 ... 180,
 // -360 ... -180, and 180 ... 360 ... shift the offset sections and
 // process each separately
-void split_and_shift_chunk( const string& path, const string& poly_type, 
+void split_and_shift_chunk( const std::string& path, const std::string& poly_type, 
 			    const TGPolygon& shape );
 
 
 // process a large shape through my crude polygon splitter to reduce
 // the polygon sizes before handing off to gpc
-void gshhs_split_polygon( const string& path, const string& poly_type, TGPolygon& shape,
+void gshhs_split_polygon( const std::string& path, const std::string& poly_type, TGPolygon& shape,
 			  const double min, const double max );
 
 

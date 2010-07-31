@@ -37,7 +37,7 @@
 // accum
 void gen_taxiway( const TGRunway& rwy_info,
                   double alt_m,
-                  const string& material,
+                  const std::string& material,
 		  superpoly_list *rwy_polys,
 		  texparams_list *texparams,
 		  TGPolygon *accum );

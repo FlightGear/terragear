@@ -29,6 +29,8 @@
 #include "poly_extra.hxx"
 #include "rwy_common.hxx"
 
+using std::string;
+
 
 void gen_number_block( const TGRunway& rwy_info,
                        const string& material,
