@@ -82,6 +82,8 @@ void setup_default_elevation_sources(string_list& elev_src) {
     elev_src.push_back( "SRTM2-North_America-3" );
     elev_src.push_back( "SRTM2-South_America-3" );
     elev_src.push_back( "DEM-USGS-3" );
+    elev_src.push_back( "SRTM-1" );
+    elev_src.push_back( "SRTM-3" );
     elev_src.push_back( "SRTM-30" );
 }
 
