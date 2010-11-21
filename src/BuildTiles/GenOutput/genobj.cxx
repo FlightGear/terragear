@@ -147,7 +147,7 @@ int_list TGGenOutput::calc_tex_coords( TGConstruct& c, point_list geod_nodes,
 // build the necessary output structures based on the triangulation
 // data
 int TGGenOutput::build( TGConstruct& c ) {
-    int i, j;
+    int i, j, k;
 
     TGTriNodes trinodes = c.get_tri_nodes();
 
@@ -183,7 +183,11 @@ int TGGenOutput::build( TGConstruct& c ) {
     cout << "calculating texture coordinates" << endl;
     cout << "c.get_useUKGrid() = " << c.get_useUKGrid() << endl;
     tex_coords.clear();
-
+    std::vector < SGGeod > convGeodNodes;
+    for ( k = 0; k < geod_nodes.size(); k++ ) {
+        Point3D node = geod_nodes[k];
+        convGeodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
+    }
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
         // cout << " area = " << i << endl;
 	for ( j = 0; j < (int)fans[i].size(); ++j ) {
@@ -203,20 +207,15 @@ int TGGenOutput::build( TGConstruct& c ) {
 	    if( (c.get_useUKGrid()) && (isInUK(ourPosition)) ) {
 	        point_list tp_list;
 	    	tp_list = UK_calc_tex_coords( b, geod_nodes, fans[i][j], 1.0 );
-                for ( int k = 0; k < (int)tp_list.size(); ++k ) {
+                for ( k = 0; k < (int)tp_list.size(); ++k ) {
                     // cout << "  tc = " << tp_list[k] << endl;
                     int index = tex_coords.simple_add( tp_list[k] );
                     ti_list.push_back( index );
                 }
 	    } else {
-                std::vector < SGGeod > convGeodNodes;
-                for ( j = 0; j < geod_nodes.size(); j++ ) {
-                    Point3D node = geod_nodes[j];
-                    convGeodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
-                }
                 std::vector< SGVec2f > tp_list = sgCalcTexCoords( b, convGeodNodes, fans[i][j] );
-                for ( j = 0; j < (int)tp_list.size(); ++j ) {
-                    SGVec2f tc = tp_list[j];
+                for ( k = 0; k < (int)tp_list.size(); ++k ) {
+                    SGVec2f tc = tp_list[k];
                     // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
                     int index = tex_coords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
                     ti_list.push_back( index );
@@ -235,7 +234,7 @@ int TGGenOutput::build( TGConstruct& c ) {
 }
 
 
-// caclulate the bounding sphere for a list of triangle faces
+// calculate the bounding sphere for a list of triangle faces
 void TGGenOutput::calc_group_bounding_sphere( TGConstruct& c, 
 					      const opt_list& fans, 
 					      Point3D *center, double *radius )
@@ -287,7 +286,7 @@ void TGGenOutput::calc_group_bounding_sphere( TGConstruct& c,
 }
 
 
-// caclulate the bounding sphere for the specified triangle face
+// calculate the bounding sphere for the specified triangle face
 void TGGenOutput::calc_bounding_sphere( TGConstruct& c, const TGTriEle& t, 
 					Point3D *center, double *radius )
 {

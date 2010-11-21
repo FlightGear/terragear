@@ -412,15 +412,15 @@ void TGClipper::merge_slivers( TGPolyList& clipped, TGPolygon& slivers ) {
 		    // cout << "press return: ";
 		    // string input;
 		    // cin >> input;
-		} else {
-		    /* cout << "    poly not a match" << endl;
-		    cout << "    original = " << original_contours
-			 << " result = " << result_contours << endl;
-		    cout << "    sliver = " << endl; */
-		    for ( k = 0; k < (int)contour.size(); ++k ) {
-			// cout << "      " << contour[k].x() << ", "
-			//      << contour[k].y() << endl;
-		    }
+		//} else {
+		//    cout << "    poly not a match" << endl;
+		//    cout << "    original = " << original_contours
+		//	 << " result = " << result_contours << endl;
+		//    cout << "    sliver = " << endl;
+		//    for ( k = 0; k < (int)contour.size(); ++k ) {
+		//	 cout << "      " << contour[k].x() << ", "
+		//	      << contour[k].y() << endl;
+		//    }
 		}
 	    }
 	}
