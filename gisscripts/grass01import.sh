@@ -32,6 +32,7 @@ DEBUG=false
 PGHOST=geoscope.optiputer.net
 PGUSER=webuser
 PGDATABASE=landcover
+PSQL="psql -tA -h ${PGHOST} -U ${PGUSER} -d ${PGDATABASE} -c"
 #
 # Note: CORINE Shapefiles are EPSG:3035, Landcover-DB is EPSG:4326, but
 # _both_ projections (reference systems) are using square meters as unit for
@@ -52,6 +53,8 @@ case ${MODE} in
 	    # Landcover-DB
 	    DSN="PG:host=${PGHOST} user=${PGUSER} dbname=${PGDATABASE}"
 	    PREFIX=clc_
+	    # Unsafe because "_" matches any single character in LIKE.
+#	    SELECTION=`${PSQL} "SELECT f_table_name FROM geometry_columns WHERE f_table_name LIKE '${PREFIX}%' AND type LIKE 'POLYGON' ORDER BY f_table_name"`
 	    SELECTION=`psql -tA -c "\dt" | awk -F\| '{print $2}' | grep \^${PREFIX}`
 	    SNAP=0.00001
 	    SPAT="spatial=2.8,49.8,8.2,54.2"  # spatial=-123,37,-121,38  # spatial=3,50,8,54
