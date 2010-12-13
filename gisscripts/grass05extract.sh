@@ -31,8 +31,9 @@ cd ${RUNDIR}
 #
 
 MAPPINGFILE=${BASEDIR}/CORINEtoCStest.txt
-CLEANMAP=clc00_nl_clobber
-EXTRACTPREFIX=clc00_nl_
+#EXTRACTPREFIX=clc00_nl_
+EXTRACTPREFIX=clc00_
+CLEANMAP=${EXTRACTPREFIX}clobber
 
 case ${MODE} in
 	shp)
@@ -49,8 +50,7 @@ SELECTION=`v.category input=${CLEANMAP} type=centroid option=print | sort -n | u
 for CATEGORY in ${SELECTION}; do
     LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${EXTRACTPREFIX}/g"`
     v.extract list=${CATEGORY} input=${CLEANMAP} output=${EXTRACTPREFIX}${CATEGORY} type=area
-    v.dissolve input=${EXTRACTPREFIX}${CATEGORY} output=${EXTRACTPREFIX}${CATEGORY}_dissolved
-    v.out.ogr input=${EXTRACTPREFIX}${CATEGORY}_dissolved dsn=${DUMPDIR}/${LAYER}.shp
+    v.out.ogr input=${EXTRACTPREFIX}${CATEGORY} dsn=${DUMPDIR}/${LAYER}.shp
 done
 
 # EOF

@@ -44,7 +44,8 @@ case ${MODE} in
 	shp)
 	    # Local, pre-intersected Shapefiles
 	    DSN=${HOME}/live/corine
-	    PREFIX=nl_
+#	    PREFIX=nl_
+	    PREFIX=clc00_
 	    SELECTION=${DSN}/${PREFIX}c[0-9][0-9][0-9].shp
 	    SNAP=1
 	    SPAT=""

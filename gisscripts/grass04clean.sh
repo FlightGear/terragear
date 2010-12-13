@@ -26,7 +26,8 @@ COMMAND=`basename ${0} | cut -f 1 -d \_`
 MODE=`basename ${0} | cut -f 2 -d \_`
 RUN=`basename ${0} | cut -f 3 -d \_`
 
-PATCHMAP=clc00_nl
+#PATCHMAP=clc00_nl
+PATCHMAP=clc00
 
 case ${MODE} in
 	shp)
@@ -42,13 +43,14 @@ MIN_AREA=10
 case ${RUN} in
 	first)
 	    v.clean input=${PATCHMAP} output=${PATCHMAP}_clean tool=snap,bpol,rmdupl,rmline,break,rmdupl,rmdangle,rmarea thresh=${SNAP},0,0,0,0,0,0,${MIN_AREA} type=boundary --verbose
+	    v.dissolve input=${PATCHMAP}_clean output=${PATCHMAP}_dissolved
 	;;
 	second)
-	    v.clean input=${PATCHMAP}_clean output=${PATCHMAP}_clobber tool=break,rmdupl,rmdangle type=boundary --verbose
+	    v.clean input=${PATCHMAP}_dissolved output=${PATCHMAP}_clobber tool=break,rmdupl,rmdangle type=boundary --verbose
 	;;
 	loop)
-	    g.remove vect=${PATCHMAP}_clean
-	    g.rename vect=${PATCHMAP}_clobber,${PATCHMAP}_clean
+	    g.remove vect=${PATCHMAP}_dissolved
+	    g.rename vect=${PATCHMAP}_clobber,${PATCHMAP}_dissolved
 	    ${COMMAND}_${MODE}_second
 	;;
 esac
