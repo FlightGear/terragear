@@ -28,8 +28,8 @@ SHAPE=`basename ${1} | cut -f 1 -d \. | uniq`
 CUTLAYER=temphole
 DIFFLAYER=tempdiff
 LAYERPREFIX=cs_
-LOGSCRIPT=${HOME}/cs_intersects.log
-WITHINSCRIPT=${HOME}/cs_withins.log
+LOGSCRIPT=${HOME}/cs_intersects.sql
+WITHINSCRIPT=${HOME}/cs_withins.sql
 WITHOUTSCRIPT=${HOME}/cs_withouts.log
 DUMPDIR=${HOME}/shp
 rm -f ${LOGSCRIPT} ${WITHINSCRIPT} ${WITHOUTSCRIPT}
