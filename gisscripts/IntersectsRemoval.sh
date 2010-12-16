@@ -40,11 +40,17 @@ MODE="testing"  # production, testing
 InitCutoutTable () {
     ${PSQL} "DROP TABLE ${CUTLAYER}"
     ${PSQL} "DELETE FROM geometry_columns WHERE f_table_name LIKE '${CUTLAYER}'"
+#    ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
+#                 wkb_geometry geometry, \
+#                 CONSTRAINT enforce_dims_wkb_geometry CHECK (ndims(wkb_geometry) = 2), \
+#                 CONSTRAINT enforce_geotype_wkb_geometry CHECK ((geometrytype(wkb_geometry) = 'POLYGON'::text) \
+#                     OR  (geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text)), \
+#                 CONSTRAINT enforce_srid_wkb_geometry CHECK (srid(wkb_geometry) = 4326) \
+#                 )"
     ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
                  wkb_geometry geometry, \
                  CONSTRAINT enforce_dims_wkb_geometry CHECK (ndims(wkb_geometry) = 2), \
-                 CONSTRAINT enforce_geotype_wkb_geometry CHECK ((geometrytype(wkb_geometry) = 'POLYGON'::text) \
-                     OR  (geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text)), \
+                 CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text), \
                  CONSTRAINT enforce_srid_wkb_geometry CHECK (srid(wkb_geometry) = 4326) \
                  )"
     ${PSQL} "INSERT INTO geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type) \
