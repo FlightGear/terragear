@@ -34,7 +34,7 @@ case ${MODE} in
 	    SNAP=1
 	;;
 	ldb)
-	    SNAP=0.00001
+	    SNAP=0.0003  # SNAP=0.00001
 	;;
 esac
 #
