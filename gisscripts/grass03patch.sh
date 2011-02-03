@@ -23,7 +23,8 @@
 # $MODE-values for the "case" clause, like 'grass03patch.sh_shp'
 MODE=`basename ${0} | cut -f 2 -d \_`
 #
-PATCHMAP=clc00_nl
+#PATCHMAP=clc00_nl
+PATCHMAP=clc00
 
 case ${MODE} in
 	shp)

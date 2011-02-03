@@ -44,7 +44,8 @@ case ${MODE} in
 	shp)
 	    # Local, pre-intersected Shapefiles
 	    DSN=${HOME}/live/corine
-	    PREFIX=nl_
+#	    PREFIX=nl_
+	    PREFIX=clc00_
 	    SELECTION=${DSN}/${PREFIX}c[0-9][0-9][0-9].shp
 	    SNAP=1
 	    SPAT=""
@@ -52,12 +53,15 @@ case ${MODE} in
 	ldb)
 	    # Landcover-DB
 	    DSN="PG:host=${PGHOST} user=${PGUSER} dbname=${PGDATABASE}"
-	    PREFIX=clc_
-	    # Unsafe because "_" matches any single character in LIKE.
-#	    SELECTION=`${PSQL} "SELECT f_table_name FROM geometry_columns WHERE f_table_name LIKE '${PREFIX}%' AND type LIKE 'POLYGON' ORDER BY f_table_name"`
-	    SELECTION=`psql -tA -c "\dt" | awk -F\| '{print $2}' | grep \^${PREFIX}`
-	    SNAP=0.00001
-	    SPAT="spatial=2.8,49.8,8.2,54.2"  # spatial=-123,37,-121,38  # spatial=3,50,8,54
+#	    PREFIX=clc_
+	    PREFIX=cs_
+	    # Maybe unsafe because "_" matches any single character in LIKE;
+	    # escape understores.
+	    SELECTION=`${PSQL} "SELECT f_table_name FROM geometry_columns WHERE f_table_name LIKE '$(echo ${PREFIX} | sed -e 's/_/\\_/g')%' AND type LIKE 'POLYGON' ORDER BY f_table_name"`
+#	    SELECTION=`psql -tA -c "\dt" | awk -F\| '{print $2}' | grep \^${PREFIX}`
+	    SNAP=0.0003  # Fits nicely with VMap0, consider SNAP=0.00001 for accurate data
+#	    SPAT="spatial=2.8,49.8,8.2,54.2"  # spatial=-123,37,-121,38  # spatial=3,50,8,54
+	    SPAT=""
 	;;
 esac
 #
