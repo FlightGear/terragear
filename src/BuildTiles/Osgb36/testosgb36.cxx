@@ -2,6 +2,7 @@
 #include <Geometry/point3d.hxx>
 
 #include <iostream>
+#include <stdlib.h>
 
 #include "osgb36.hxx"
 

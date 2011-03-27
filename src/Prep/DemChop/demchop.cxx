@@ -30,6 +30,8 @@
 #include <iostream>
 #include <string>
 
+#include <stdlib.h>
+
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>

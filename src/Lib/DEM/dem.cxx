@@ -58,6 +58,7 @@
 
 using std::cout;
 using std::endl;
+using std::string;
 
 
 TGDem::TGDem() :

@@ -12,6 +12,8 @@
 
 #include <Polygon/polygon.hxx>
 
+#include <stdlib.h>
+
 using std::vector;
 
 namespace tg {

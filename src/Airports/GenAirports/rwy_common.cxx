@@ -29,6 +29,8 @@
 #include "poly_extra.hxx"
 #include "rwy_common.hxx"
 
+#include <stdlib.h>
+
 using std::string;
 
 
