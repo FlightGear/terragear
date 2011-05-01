@@ -45,6 +45,9 @@
 #include <Polygon/names.hxx>
 #include <shapelib/shapefil.h>
 
+#include <stdlib.h>
+#include <string.h>
+
 using std:: cout ;
 using std:: endl ;
 using std:: string ;

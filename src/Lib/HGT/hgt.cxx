@@ -43,10 +43,13 @@
 #include <simgear/constants.h>
 #include <simgear/io/lowlevel.hxx>
 
+#include <plib/ul.h>
+
 #include "hgt.hxx"
 
 using std::cout;
 using std::endl;
+using std::string;
 
 
 TGHgt::TGHgt( int _res ) {

@@ -46,6 +46,8 @@
 #include <Polygon/polygon.hxx>
 #include <vpf/vpf.hxx>
 
+#include <stdlib.h>
+
 using std::cerr;
 using std::cout;
 using std::endl;

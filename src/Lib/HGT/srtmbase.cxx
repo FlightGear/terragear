@@ -28,12 +28,14 @@
 #include <simgear/compiler.h>
 
 #include <iostream>
+#include <stdlib.h>
 #include <zlib.h>
 
 #include "srtmbase.hxx"
 
 using std::cout;
 using std::endl;
+using std::string;
 
 
 // write out the area of data covered by the specified bucket.  Data

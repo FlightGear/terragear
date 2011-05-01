@@ -40,6 +40,8 @@
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
 
+#include <plib/ul.h>
+
 #include <Polygon/polygon.hxx>
 #include <Polygon/point2d.hxx>
 

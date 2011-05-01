@@ -29,6 +29,8 @@
 #include "rwy_common.hxx"
 #include "rwy_visual.hxx"
 
+#include <stdlib.h>
+
 using std::string;
 
 

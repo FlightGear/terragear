@@ -37,6 +37,8 @@
 #include <HGT/hgt.hxx>
 #include <Polygon/point2d.hxx>
 
+#include <stdlib.h>
+
 using std::cout;
 using std::endl;
 using std::string;

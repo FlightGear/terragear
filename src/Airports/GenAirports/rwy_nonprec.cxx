@@ -28,6 +28,8 @@
 #include "rwy_common.hxx"
 #include "rwy_nonprec.hxx"
 
+#include <stdlib.h>
+
 using std::string;
 
 

@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <iostream>
+#include <string.h>
+#include <stdlib.h>
 #include "array.hxx"
 
 using std::cout;

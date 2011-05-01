@@ -44,6 +44,7 @@
 
 using std:: cout ;
 using std:: endl ;
+using std::string;
 
 
 void write_polygon( const TGPolygon& poly, const string& base ) {

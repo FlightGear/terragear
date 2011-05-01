@@ -35,6 +35,8 @@
 
 #include <Array/array.hxx>
 
+#include <stdlib.h>
+
 using std::cout;
 using std::endl;
 using std::string;

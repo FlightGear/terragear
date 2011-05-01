@@ -45,6 +45,8 @@
 #include <Polygon/polygon.hxx>
 #include <e00/e00.hxx>
 
+#include <stdlib.h>
+
 using std::cerr;
 using std::cout;
 using std::endl;
