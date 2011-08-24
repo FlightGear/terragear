@@ -48,7 +48,10 @@ TGArray::TGArray( void ):
   fitted_in(NULL)
 {
     // cout << "class TGArray CONstructor called." << endl;
-    in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
+    //in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
+    in_data = new int*[ARRAY_SIZE_1];
+    for (int i = 0; i < ARRAY_SIZE_1; i++)
+        in_data[i] = new int[ARRAY_SIZE_1]; 
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 }
 
@@ -58,7 +61,9 @@ TGArray::TGArray( const string &file ):
   fitted_in(NULL)
 {
     // cout << "class TGArray CONstructor called." << endl;
-    in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
+    in_data = new int* [ARRAY_SIZE_1];
+    for (int i = 0; i < ARRAY_SIZE_1; i++)
+        in_data[i] = new int[ARRAY_SIZE_1];
     // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 
     TGArray::open(file);
@@ -101,6 +106,8 @@ bool
 TGArray::close() {
     // the sg_gzifstream doesn't seem to have a close()
 
+    array_in->close();
+    fitted_in->close();
     delete array_in;
     delete fitted_in;
 
@@ -754,6 +761,8 @@ void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 
 TGArray::~TGArray( void ) {
     // printf("class TGArray DEstructor called.\n");
+    for (int i = 0; i < ARRAY_SIZE_1; i++)
+        delete [] in_data[i];
     delete [] in_data;
     // delete [] out_data;
 }

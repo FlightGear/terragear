@@ -63,9 +63,9 @@ Edge::~Edge()
 	e2->qnext = NULL;
 	e3->qnext = NULL;
 
-	delete e1;
-	delete e2;
-	delete e3;
+	//delete e1;
+	//delete e2;
+	//delete e3;
     }
 }
 

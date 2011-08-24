@@ -4,6 +4,7 @@
 #include "Quadedge.h"
 
 #include <iostream>
+#include <vector>
 
 namespace Terra {
 
@@ -38,15 +39,26 @@ public:
 typedef void (*edge_callback)(Edge *, void *);
 typedef void (*face_callback)(Triangle&, void *);
 
+typedef std::vector<Triangle*> TriangleVec;
+typedef std::vector<Triangle*>::iterator TriangleVecIterator;
+
+typedef std::vector<Edge*> EdgeVec;
+typedef std::vector<Edge*>::iterator EdgeVecIterator;
+
 
 class Subdivision {
 private:
     Edge *startingEdge;
     Triangle *first_face;
 
+    EdgeVec     edges;
+
 protected:
+
+    TriangleVec triangles;
     void initMesh(const Vec2&, const Vec2&, const Vec2&, const Vec2&);
-    Subdivision() { }
+    Subdivision();
+    ~Subdivision();
 
     Edge *makeEdge();
     Edge *makeEdge(Vec2& org, Vec2& dest);

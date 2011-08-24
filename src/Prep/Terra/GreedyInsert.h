@@ -68,6 +68,7 @@ protected:
 
 public:
     GreedySubdivision(Map *map);
+    ~GreedySubdivision();
 
     array2<char> is_used;
 
