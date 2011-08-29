@@ -5,9 +5,7 @@ dist_pkgdata_DATA = default_priorities.txt
 noinst_PROGRAMS = testclipper
 
 testclipper_SOURCES = testclipper.cxx
-
-testclipper_LDADD = \
-	$(top_builddir)/src/BuildTiles/Clipper/libClipper.a \
+testclipper_LDADD = libClipper.a \
 	$(top_builddir)/src/BuildTiles/Osgb36/libOsgb36.a \
 	$(top_builddir)/src/BuildTiles/Triangulate/libTriangulate.a \
 	$(top_builddir)/src/Lib/Polygon/libPolygon.a \
