@@ -1,5 +1,6 @@
 /* a test of the Shewchuk triangulator (lib form) */
 
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 

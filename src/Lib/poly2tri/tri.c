@@ -1,4 +1,5 @@
 #include "triangulate.h"
+#include <string.h>
 /* #include <sys/time.h> */
 #ifdef _MSC_VER
 #  include <memory.h>

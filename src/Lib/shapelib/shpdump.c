@@ -67,6 +67,7 @@
 static char rcsid[] = 
   "$Id: shpdump.c,v 1.10 2002/04/10 16:59:29 warmerda Exp $";
 
+#include <stdlib.h>
 #include "shapefil.h"
 
 int main( int argc, char ** argv )

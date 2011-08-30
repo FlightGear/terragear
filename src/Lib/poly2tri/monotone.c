@@ -1,5 +1,6 @@
 #include "triangulate.h"
 #include <math.h>
+#include <string.h>
 #ifdef _MSC_VER
 #  include <memory.h>
 #endif
