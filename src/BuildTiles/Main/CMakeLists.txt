@@ -9,14 +9,14 @@ set_target_properties(fgfs-construct PROPERTIES
         "DEFAULT_USGS_MAPFILE=\"${PKGDATADIR}/usgsmap.txt\";DEFAULT_PRIORITIES_FILE=\"${PKGDATADIR}/default_priorities.txt\"" )
             
 target_link_libraries(fgfs-construct
-    Clipper Osgb36 Triangulate GenOutput 
+    Clipper GenOutput Osgb36 Triangulate  
     Match
     Polygon Geometry
     Array Optimize Output landcover poly2tri
     TriangleJRS
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-	genpolyclip)
+	${GPC_LIBRARY})
 
 
 add_executable(fgfs-master 

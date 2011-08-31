@@ -5,5 +5,5 @@ target_link_libraries(tgvpf
     Polygon Geometry Output poly2tri TriangleJRS vpf
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-	genpolyclip)
+	${GPC_LIBRARY})
 	

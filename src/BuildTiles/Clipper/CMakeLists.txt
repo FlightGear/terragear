@@ -10,4 +10,4 @@ target_link_libraries(testclipper
     Clipper Osgb36 Triangulate Polygon Geometry
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-	genpolyclip)
+	${GPC_LIBRARY})

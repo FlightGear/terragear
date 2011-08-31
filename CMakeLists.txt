@@ -28,6 +28,7 @@ find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 find_package(SimGear 2.5.0 REQUIRED)
+find_package(GPC REQUIRED)
 find_package(TIFF) # needed for SRTM
 find_package(NewMat11)
 
@@ -72,8 +73,6 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/Include)
 
 add_definitions(-DHAVE_CONFIG_H)
-
-#check_function_exists(mkfifo HAVE_MKFIFO)
 
 # configure a header file to pass some of the CMake settings
 # to the source code
