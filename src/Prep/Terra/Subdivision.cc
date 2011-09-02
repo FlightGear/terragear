@@ -10,16 +10,45 @@ using std::endl;
 
 namespace Terra {
 
+Subdivision::Subdivision() 
+{ 
+    startingEdge = 0;
+    first_face    = 0;
+}
+
+Subdivision::~Subdivision() 
+{
+    //delete [] startingEdge;
+    //delete [] first_face;
+    for (TriangleVecIterator tri= triangles.begin(); tri != triangles.end(); tri++) {
+        delete (*tri);
+    }
+    for (EdgeVecIterator e = edges.begin(); e != edges.end(); e++) {
+        delete (*e);
+    }
+}
+
 Edge *Subdivision::makeEdge(Vec2& org, Vec2& dest)
 {
     Edge *e = new Edge();
+    edges.push_back(e);
+    edges.push_back(e->Rot());
+    edges.push_back(e->Rot()->Rot());
+    edges.push_back(e->Rot()->Rot()->Rot());
     e->EndPoints(org, dest);
+
     return e;
 }
 
 Edge *Subdivision::makeEdge()
 {
-    return new Edge();
+    Edge *e = new Edge();
+    edges.push_back(e);
+    edges.push_back(e->Rot());
+    edges.push_back(e->Rot()->Rot());
+    edges.push_back(e->Rot()->Rot()->Rot());
+
+    return e;
 }
 
 void Subdivision::initMesh(const Vec2& A,const Vec2& B,
@@ -67,7 +96,8 @@ void Subdivision::deleteEdge(Edge *e)
     splice(e, e->Oprev());
     splice(e->Sym(), e->Sym()->Oprev());
 
-    delete e;
+    // Note that the Subdivision destructor takes care of the physical deletion now. 
+    //delete e;
 }
 
 Edge *Subdivision::connect(Edge *a, Edge *b)
@@ -370,7 +400,7 @@ void Subdivision::optimize(Vec2& x, Edge *s)
     } while( spoke != start_spoke );
 }
 
-Edge *Subdivision::insert(Vec2& x, Triangle *tri)
+Edge *Subdivision::insert(Vec2& x, Triangle *tri) 
 {
     Edge *e = tri?locate(x, tri->getAnchor()):locate(x);
 
@@ -386,7 +416,9 @@ Edge *Subdivision::insert(Vec2& x, Triangle *tri)
 
 Triangle *Subdivision::allocFace(Edge *e)
 {
-    return new Triangle(e);
+    Triangle *t = new Triangle(e);
+    triangles.push_back(t);
+    return t;
 }
 
 Triangle& Subdivision::makeFace(Edge *e)

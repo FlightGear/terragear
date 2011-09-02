@@ -63,7 +63,7 @@ private:
     double col_step, row_step;
     
     // pointers to the actual grid data allocated here
-    int (*in_data)[ARRAY_SIZE_1];
+    int **in_data;
     // float (*out_data)[ARRAY_SIZE_1];
 
     // output nodes

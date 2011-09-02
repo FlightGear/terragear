@@ -65,6 +65,12 @@ GreedySubdivision::GreedySubdivision(Map *map)
     count = 4;
 }
 
+GreedySubdivision::~GreedySubdivision()
+{
+    delete heap;
+    is_used.free();
+}
+
 
 
 
@@ -72,6 +78,7 @@ GreedySubdivision::GreedySubdivision(Map *map)
 Triangle *GreedySubdivision::allocFace(Edge *e)
 {
     Triangle *t = new TrackedTriangle(e);
+    triangles.push_back(t);
 
     heap->insert(t, -1.0);
 
@@ -248,7 +255,6 @@ int GreedySubdivision::greedyInsert()
     T.getCandidate(&sx, &sy);
 
     select(sx, sy, &T);
-
     return True;
 }
 

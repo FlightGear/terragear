@@ -203,6 +203,8 @@ void fit_file(const std::string& path) {
                         gzprintf(fp,"%+03.8f %+02.8f %0.2f\n",vx,vy,vz);
                 }
         }
+        delete mesh;
+        delete DEM;
         
         gzclose(fp);
 }
