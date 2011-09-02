@@ -3,7 +3,6 @@ Default				# Default area which can be overridden by
 Ocean				# collect slivers as ocean
 
 # Area types in order of descending priority
-SomeSort		other
 Hole			hole	# Leave area completely empty
 Airport			other
 Freeway			road
@@ -12,51 +11,74 @@ Railroad		road
 Pond			lake
 Lake			lake
 DryLake			lake
-IntLake			lake
 Reservoir		lake
-IntReservoir		lake
+IntermittentLake	lake
 Stream			stream
-IntStream		stream
+IntermittentStream	stream
+Watercourse		stream
 Canal			stream
 Glacier			other	# Solid ice/snow
 PackIce			other	# Water with ice packs
 PolarIce		other
 Ocean			ocean
 Urban			other	# Densely-populated city or large town
+SubUrban		other	# Densely-populated city or large town
 Town			other	# Small town or village
+Fishing			other
+Construction		other
+Industrial		other
+Port			other
+Dump			other	# Dump Site
 FloodLand		other	# Land subject to flooding
+Lagoon			other	# Lagoon
 Bog			other	# Bog
 Marsh			other	# Marshland or swamp
+SaltMarsh		other
 Sand			other	# Sand-covered area
+Saline			other	# Saline
 Littoral		other	# Tidal, Sand-covered area
+Estuary			other
+Rock			other	# Rock
 Lava			other	# Lava-covered area
+OpenMining		other	# OpenMining
 
 # USGS Land Covers
 # These are low-priority, since known polygons should always win.
 
 BuiltUpCover		other	# Urban and Built-Up Land
-DryCropPastureCover	other	# Dryland Cropland and Pasture
-IrrCropPastureCover	other	# Irrigated Cropland and Pasture
-MixedCropPastureCover	other	# Mixed Dryland/Irrigated Cropland and Pasture
-CropGrassCover		other	# Cropland/Grassland Mosaic
-CropWoodCover		other	# Cropland/Woodland Mosaic
+Transport		other	# Transport
+Cemetery		other	# Cemetery
+DryCrop			other	# Dryland Cropland and Pasture
+IrrCrop			other	# Irrigated Cropland and Pasture
+Rice			other
+MixedCrop		other	# Mixed Dryland/Irrigated Cropland and Pasture
+Vineyard		other
+Bamboo			other
+Mangrove		other
+ComplexCrop		other	# Complex Cropland
+NaturalCrop		other
+CropGrass		other	# Cropland/Grassland Mosaic
+CropWood		other	# Cropland/Woodland Mosaic
+AgroForest		other
+Olives			other
+GolfCourse		other	# GolfCourse
+GreenSpace		other
 GrassCover		other	# Grassland
-ShrubCover		other	# Shrubland
+GrassLand		other
+ScrubCover		other	# Scrub
+Scrub			other
 ShrubGrassCover		other	# Mixed Shrubland/Grassland
 SavannaCover		other	# Savanna
-DeciduousBroadCover	other	# Deciduous Broadleaf Forest
-DeciduousNeedleCover	other	# Deciduous Needleleaf Forest
-EvergreenBroadCover	other	# Evergreen Broadleaf Forest
-EvergreenNeedleCover	other	# Evergreen Needleleaf Forest
-MixedForestCover	other	# Mixed Forest
-WaterBodyCover		lake	# Water Bodies
-HerbWetlandCover	other	# Herbaceous Wetland
-WoodedWetlandCover	other	# Wooded Wetland
+Orchard			other	# Orchard
+DeciduousForest		other	# Deciduous Forest
+EvergreenForest		other	# Evergreen Forest
+MixedForest		other	# Mixed Forest
+RainForest		other	# Rain Forest
 BarrenCover		other	# Barren or Sparsely Vegetated
-HerbTundraCover		other	# Herbaceous Tundra
-WoodedTundraCover	other	# Wooded Tundra
-MixedTundraCover	other	# Mixed Tundra
-BareTundraCover		other	# Bare Ground Tundra
+HerbTundra		other	# Herbaceous Tundra
+Sclerophyllous		other
+Heath			other
+Burnt			other
 SnowCover		other	# Snow or Ice
 
 Island			island	# any island area not covered otherwise
@@ -65,4 +87,3 @@ Default			landmass # any land area not covered otherwise
 Void			other
 Null			other
 Unknown			other
-
