@@ -8,6 +8,7 @@ Airport			other
 Freeway			road
 Road			road
 Railroad		road
+Asphalt			road
 Pond			lake
 Lake			lake
 DryLake			lake
