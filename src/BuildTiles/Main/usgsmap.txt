@@ -1,49 +1,49 @@
 # 1: Urban and Built-Up Land
 BuiltUpCover
 # 2: Dryland Cropland and Pasture
-DryCropPastureCover
+DryCrop
 # 3: Irrigated Cropland and Pasture
-IrrCropPastureCover
+IrrCrop
 # 4: Mixed Dryland/Irrigated Cropland and Pasture
-MixedCropPastureCover
+MixedCrop
 # 5: Cropland/Grassland Mosaic
-CropGrassCover
+CropGrass
 # 6: Cropland/Woodland Mosaic
-CropWoodCover
+CropWood
 # 7: Grassland
 GrassCover
 # 8: Shrubland
-ShrubCover
+ScrubCover
 # 9: Mixed Shrubland/Grassland
 ShrubGrassCover
 # 10: Savanna
 SavannaCover
 # 11: Deciduous Broadleaf Forest
-DeciduousBroadCover
+DeciduousForest
 # 12: Deciduous Needleleaf Forest
-DeciduousNeedleCover
+DeciduousForest
 # 13: Evergreen Broadleaf Forest
-EvergreenBroadCover
+EvergreenForest
 # 14: Evergreen Needleleaf Forest
-EvergreenNeedleCover
+EvergreenForest
 # 15: Mixed Forest
-MixedForestCover
+MixedForest
 # 16: Water Bodies
 Default
 # 17: Herbaceous Wetland
-HerbWetlandCover
+Marsh
 # 18: Wooded Wetland
-WoodedWetlandCover
+Marsh
 # 19: Barren or Sparsely Vegetated
 BarrenCover
 # 20: Herbaceous Tundra
-HerbTundraCover
+HerbTundra
 # 21: Wooded Tundra
-WoodedTundraCover
+EvergreenForest
 # 22: Mixed Tundra
-MixedTundraCover
+GrassCover
 # 23: Bare Ground Tundra
-BareTundraCover
+GrassCover
 # 24: Snow or Ice
 SnowCover
 
