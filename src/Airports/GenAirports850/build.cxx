@@ -408,24 +408,27 @@ void build_airport( string airport_id, float alt_m,
 	//calculate runway heading
 	double rwcourse(SGGeodesy::courseDeg(pos_1, pos_2));
 
+	//calculate runway length
 	double rwlength((SGGeodesy::distanceM(pos_1, pos_2)) * SG_METER_TO_FEET);
 
-
+	double rwcenter_lat = (lat_1 + lat_2) / 2;
+	double rwcenter_lon = (lon_1 + lon_2) / 2;
 	SG_LOG( SG_GENERAL, SG_INFO, "pos1 is " << lat_1 << lon_1 );
 	SG_LOG( SG_GENERAL, SG_INFO, "pos2 is " << lat_2 << lon_2 );
 	SG_LOG( SG_GENERAL, SG_INFO, "course is " << rwcourse );
 	SG_LOG( SG_GENERAL, SG_INFO, "distance is " << rwlength );
-
-	rwy.lat = atof( token[9].c_str() );
+	SG_LOG( SG_GENERAL, SG_INFO, "lat center is " << rwcenter_lat );
+	SG_LOG( SG_GENERAL, SG_INFO, "lon center is " << rwcenter_lon );
+	rwy.lat = rwcenter_lat;
         apt_lat += rwy.lat;
 
-	rwy.lon = atof( token[10].c_str() );
+	rwy.lon = rwcenter_lon;
         apt_lon += rwy.lon;
 
 	rwy.heading = rwcourse;
 
 	rwy.length = rwlength;
-	rwy.width = (atoi( token[1].c_str() ) * SG_METER_TO_FEET);
+	rwy.width = atoi( token[1].c_str() ) * SG_METER_TO_FEET;
 
         rwy.disp_thresh1 = atoi( token[11].c_str() );
         rwy.disp_thresh2 = atoi( token[20].c_str() );
