@@ -35,7 +35,8 @@
 
 
 struct TGRunway {
-    std::string rwy_no;
+    std::string rwy_no1;
+    std::string rwy_no2;
 
     double lon;
     double lat;

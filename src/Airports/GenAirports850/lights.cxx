@@ -291,7 +291,7 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
     point_list r_normals; r_normals.clear();
     int i;
 
-    cout << "gen threshold " << rwy_info.rwy_no << endl;
+    cout << "gen threshold " << rwy_info.rwy_no1 << endl;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
@@ -585,7 +585,7 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
     point_list normals; normals.clear();
     int i;
 
-    cout << "gen touchdown zone lights " << rwy_info.rwy_no << endl;
+    cout << "gen touchdown zone lights " << rwy_info.rwy_no1 << endl;
 
     Point3D normal;
 
@@ -694,7 +694,7 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
     string flag;
     double gs_angle = 3.0;
 
-    cout << "gen vasi " << rwy_info.rwy_no << endl;
+    cout << "gen vasi " << rwy_info.rwy_no1 << endl;
 
     Point3D normal;
 
@@ -719,12 +719,12 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
         ref = corner[0];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
         gs_angle = rwy_info.gs_angle1;
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
         gs_angle = rwy_info.gs_angle2;
     }
 
@@ -860,7 +860,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
     string flag;
     double gs_angle = 3.0;
 
-    cout << "gen papi " << rwy_info.rwy_no << endl;
+    cout << "gen papi " << rwy_info.rwy_no1 << endl;
 
     Point3D normal;
 
@@ -885,12 +885,12 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
         ref = corner[0];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
         gs_angle = rwy_info.gs_angle1;
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
         gs_angle = rwy_info.gs_angle2;
     }
 
@@ -973,7 +973,7 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
     int i;
     string flag;
 
-    cout << "gen reil " << rwy_info.rwy_no << endl;
+    cout << "gen reil " << rwy_info.rwy_no1 << endl;
 
     Point3D normal;
 
@@ -999,12 +999,12 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
         ref2 = corner[1];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
         length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -1068,11 +1068,11 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
     int i, j;
     string flag;
     if ( kind == "1" ) {
-        cout << "gen Calvert lights " << rwy_info.rwy_no << endl;
+        cout << "gen Calvert lights " << rwy_info.rwy_no1 << endl;
     } else if ( kind == "2" ) {
-	cout << "gen Calvert/II lights " << rwy_info.rwy_no << endl;
+	cout << "gen Calvert/II lights " << rwy_info.rwy_no1 << endl;
     } else {
-	cout << "gen unknown Calvert lights " << rwy_info.rwy_no << endl;
+	cout << "gen unknown Calvert lights " << rwy_info.rwy_no1 << endl;
     }
 
     Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
@@ -1102,11 +1102,11 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
     }
 
     double dist = rwy_info.length;
@@ -1459,7 +1459,7 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
     int i, j;
     string flag;
 
-    cout << "gen ALSF/SALS lights " << rwy_info.rwy_no << endl;
+    cout << "gen ALSF/SALS lights " << rwy_info.rwy_no1 << endl;
 
     Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
@@ -1488,11 +1488,11 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
     }
 
     double dist = rwy_info.length;
@@ -1970,7 +1970,7 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
     int i;
     string flag;
 
-    cout << "gen odals " << rwy_info.rwy_no << endl;
+    cout << "gen odals " << rwy_info.rwy_no1 << endl;
 
     // ODALS lighting is omni-directional, but we generate a normal as
     // a placeholder to keep everything happy.
@@ -1998,12 +1998,12 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
         ref2 = corner[1];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
         length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -2077,7 +2077,7 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
     int i, j;
     string flag;
 
-    cout << "gen SSALx lights " << rwy_info.rwy_no << endl;
+    cout << "gen SSALx lights " << rwy_info.rwy_no1 << endl;
 
     Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
@@ -2106,11 +2106,11 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
     }
 
     double dist = rwy_info.length;
@@ -2347,7 +2347,7 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
     int i, j;
     string flag;
 
-    cout << "gen SSALx lights " << rwy_info.rwy_no << endl;
+    cout << "gen SSALx lights " << rwy_info.rwy_no1 << endl;
 
     Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
@@ -2376,11 +2376,11 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no + "-i";
+        flag = rwy_info.rwy_no1 + "-i";
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no;
+        flag = rwy_info.rwy_no1;
     }
 
     double dist = rwy_info.length;
@@ -2606,7 +2606,7 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 			superpoly_list &lights, TGPolygon *apt_base ) {
 
     string lighting_flags = rwy_info.lighting_flags;
-    SG_LOG( SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no << " "
+    SG_LOG( SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no1 << " "
             << rwy_info.lighting_flags );
     
     int vasi1 =  atoi( lighting_flags.substr(0,1).c_str() );
@@ -2931,7 +2931,7 @@ void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
                          superpoly_list &lights )
 {
     SG_LOG( SG_GENERAL, SG_DEBUG, "gen taxiway lights "
-            << taxiway_info.rwy_no << " "
+            << taxiway_info.rwy_no1 << " "
             << taxiway_info.lighting_flags );
 
     string lighting_flags = taxiway_info.lighting_flags;

@@ -216,19 +216,6 @@ static TGPolygon calc_elevations( TGAptSurface &surf,
 }
 
 
-#if 0                           // DEAD CODE 10/15/2004 CLO
-// strip trailing spaces
-static void my_chomp( string& str ) {
-    SG_LOG(SG_GENERAL, SG_DEBUG, "my_chomp()");
-    SG_LOG(SG_GENERAL, SG_DEBUG, "'" << str.substr( str.length() - 1, 1 ) << "'");
-    while ( str.substr( str.length() - 1, 1 ) == " " ) {
-	str = str.substr( 0, str.length() - 1 );
-	SG_LOG(SG_GENERAL, SG_DEBUG, "'" << str.substr( str.length() - 1, 1 ) << "'");
-    }
-}
-#endif
-
-
 // build a runway
 static void build_runway( const TGRunway& rwy_info,
                           double alt_m,
@@ -378,7 +365,7 @@ void build_airport( string airport_id, float alt_m,
 
     SG_LOG( SG_GENERAL, SG_INFO, "Building " << airport_id );
 
-    // parse runways/taxiways and generate the vertex list
+    // parse runways and generate the vertex list
     runway_list runways; runways.clear();
     runway_list taxiways; taxiways.clear();
 
@@ -391,8 +378,9 @@ void build_airport( string airport_id, float alt_m,
 	TGRunway rwy;
 
 	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
-	rwy.rwy_no = token[8];
-        rwy.really_taxiway = (rwy.rwy_no == "xxx");
+	rwy.rwy_no1 = token[8];
+	rwy.rwy_no2 = token[17];
+        rwy.really_taxiway = (rwy.rwy_no1 == "xxx");
         rwy.generated = false;
 
 	//first runway end coordinates
@@ -411,6 +399,7 @@ void build_airport( string airport_id, float alt_m,
 	//calculate runway length
 	double rwlength((SGGeodesy::distanceM(pos_1, pos_2)) * SG_METER_TO_FEET);
 
+	//calculate runway centerpoint
 	double rwcenter_lat = (lat_1 + lat_2) / 2;
 	double rwcenter_lon = (lon_1 + lon_2) / 2;
 	SG_LOG( SG_GENERAL, SG_INFO, "pos1 is " << lat_1 << lon_1 );
@@ -430,11 +419,11 @@ void build_airport( string airport_id, float alt_m,
 	rwy.length = rwlength;
 	rwy.width = atoi( token[1].c_str() ) * SG_METER_TO_FEET;
 
-        rwy.disp_thresh1 = atoi( token[11].c_str() );
-        rwy.disp_thresh2 = atoi( token[20].c_str() );
+        rwy.disp_thresh1 = atoi( token[11].c_str() ) * SG_METER_TO_FEET;
+        rwy.disp_thresh2 = atoi( token[20].c_str() ) * SG_METER_TO_FEET;
 
-        rwy.stopway1 = atoi( token[12].c_str() );
-        rwy.stopway2 = atoi( token[21].c_str() );
+        rwy.stopway1 = atoi( token[12].c_str() ) * SG_METER_TO_FEET;
+        rwy.stopway2 = atoi( token[21].c_str() ) * SG_METER_TO_FEET;
 
 	rwy.lighting_flags = token[9];
 	rwy.surface_code = atoi( token[2].c_str() );
@@ -452,7 +441,7 @@ void build_airport( string airport_id, float alt_m,
 		rwy.gs_angle1 = rwy.gs_angle2 = 3.0;
 	}
 
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  no    = " << rwy.rwy_no);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  no1/2    = " << rwy.rwy_no1 << " " << rwy.rwy_no2);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy.lon);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy.heading);

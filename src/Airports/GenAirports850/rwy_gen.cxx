@@ -45,7 +45,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
 			texparams_list *texparams,
 			TGPolygon *accum )
 {
-    SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy_info.rwy_no );
+    SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy_info.rwy_no1 << rwy_info.rwy_no2);
 
     //
     // Generate the basic runway outlines
@@ -100,7 +100,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
     double length = rwy_info.length / 2.0 + 2.0;
     if ( length < 3075 ) {
         SG_LOG( SG_GENERAL, SG_ALERT,
-	        "Runway " << rwy_info.rwy_no << " is not long enough ("
+	        "Runway " << rwy_info.rwy_no1 << " is not long enough ("
                 << rwy_info.length << ") for precision markings!");
     }
 
@@ -241,11 +241,11 @@ void gen_precision_rwy( const TGRunway& rwy_info,
     // Runway designation letter
     //
 
-    int len = rwy_info.rwy_no.length();
+    int len = rwy_info.rwy_no1.length();
     string letter = "";
     string rev_letter = "";
     for ( i = 0; i < len; ++i ) {
-	string tmp = rwy_info.rwy_no.substr(i, 1);
+	string tmp = rwy_info.rwy_no1.substr(i, 1);
 	if ( tmp == "L" ) {
 	    letter = "L";
 	    rev_letter = "R";
@@ -258,7 +258,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
 	}
     }
 	    
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwy_info.rwy_no);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwy_info.rwy_no1);
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
 
     if ( !letter.empty() ) {
@@ -287,12 +287,12 @@ void gen_precision_rwy( const TGRunway& rwy_info,
     // Runway designation number(s)
     //
 
-    len = rwy_info.rwy_no.length();
-    string snum = rwy_info.rwy_no;
+    len = rwy_info.rwy_no1.length();
+    string snum = rwy_info.rwy_no1;
     for ( i = 0; i < len; ++i ) {
-	string tmp = rwy_info.rwy_no.substr(i, 1);
+	string tmp = rwy_info.rwy_no1.substr(i, 1);
 	if ( tmp == "L" || tmp == "R" || tmp == "C" || tmp == " " ) {
-	    snum = rwy_info.rwy_no.substr(0, i);
+	    snum = rwy_info.rwy_no1.substr(0, i);
 	}
     }
     SG_LOG(SG_GENERAL, SG_INFO, "Runway num = '" << snum << "'");
