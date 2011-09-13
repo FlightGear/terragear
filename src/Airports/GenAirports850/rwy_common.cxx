@@ -64,15 +64,7 @@ void gen_number_block( const TGRunway& rwy_info,
 
     // printf("tex1 = '%s'  tex2 = '%s'\n", tex1, tex2);
 
-    if ( num < 10 ) {
-	gen_runway_section( rwy_info, poly,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    heading,
-			    material, tex1,
-			    rwy_polys, texparams, accum );
-    } else if ( num == 11 ) {
+    if ( num < 10 || num == 11 ) {
 	gen_runway_section( rwy_info, poly,
 			    start_pct, end_pct,
 			    0.0, 1.0,

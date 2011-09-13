@@ -51,7 +51,8 @@ struct TGRunway {
     std::string lighting_flags;
     int surface_code;
     std::string shoulder_code;
-    int marking_code;
+    int marking_code1;
+    int marking_code2;
     double smoothness;
     bool   dist_remaining;
 

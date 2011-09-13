@@ -275,7 +275,7 @@ static void build_runway( const TGRunway& rwy_info,
     }
 
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "marking code = " << rwy_info.marking_code);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "marking code = " << rwy_info.marking_code1 << " / " << rwy_info.marking_code2);
 
     if ( rwy_info.really_taxiway ) {
 	gen_taxiway( rwy_info, alt_m, material,
@@ -286,22 +286,13 @@ static void build_runway( const TGRunway& rwy_info,
     {
 	gen_simple_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
-    } else if ( rwy_info.marking_code == 3 /* Precision */ ) {
-	// precision runway markings
+    } else if ( rwy_info.marking_code1 == 3 ||
+		rwy_info.marking_code1 == 2 ||
+		rwy_info.marking_code1 == 1 ||
+		rwy_info.marking_code1 == 0 ) {
+
 	gen_rwy( rwy_info, alt_m, material,
 			   rwy_polys, texparams, accum );
-    } else if ( rwy_info.marking_code == 2 /* Non-precision */ ) {
-	// non-precision runway markings
-	gen_rwy( rwy_info, alt_m, material,
-			       rwy_polys, texparams, accum );
-    } else if ( rwy_info.marking_code == 1 /* Visual */ ) {
-	// visual runway markings
-	gen_rwy( rwy_info, alt_m, material,
-			rwy_polys, texparams, accum );
-    } else if ( rwy_info.marking_code == 0 /* No known markings, lets assume Visual */ ) {
-	// visual runway markings
-	gen_rwy( rwy_info, alt_m, material,
-			rwy_polys, texparams, accum );
     } else if ( surface_code == 13 /* Water buoys */ ) {
 	// do nothing for now.
     } else {
@@ -309,7 +300,7 @@ static void build_runway( const TGRunway& rwy_info,
 	// right here so the programmer has to fix his code if a
 	// new code ever gets introduced. :-)
         SG_LOG( SG_GENERAL, SG_ALERT, "Unknown runway code = " <<
-                rwy_info.marking_code );
+                rwy_info.marking_code1 );
 	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
     }
 
@@ -380,6 +371,10 @@ void build_airport( string airport_id, float alt_m,
         rwy.really_taxiway = (rwy.rwy_no1 == "xxx");
         rwy.generated = false;
 
+	rwy.surface_code = atoi( token[2].c_str() );
+	rwy.shoulder_code = token[3];
+        rwy.smoothness = atof( token[4].c_str() );
+
 	//first runway end coordinates
 	double lat_1 = atof( token[9].c_str() );
 	double lon_1 = atof( token[10].c_str() );
@@ -422,11 +417,11 @@ void build_airport( string airport_id, float alt_m,
         rwy.stopway1 = atoi( token[12].c_str() ) * SG_METER_TO_FEET;
         rwy.stopway2 = atoi( token[21].c_str() ) * SG_METER_TO_FEET;
 
+	rwy.marking_code1 = atoi( token[13].c_str() );
+	rwy.marking_code2 = atoi( token[22].c_str() );
+
 	rwy.lighting_flags = token[9];
-	rwy.surface_code = atoi( token[2].c_str() );
-	rwy.shoulder_code = token[3];
-        rwy.marking_code = atoi( token[13].c_str() );
-        rwy.smoothness = atof( token[4].c_str() );
+
         rwy.dist_remaining = (atoi( token[14].c_str() ) == 1 );
 
 	if (token.size()>15) {
@@ -446,7 +441,7 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << rwy.width);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lighting = " << rwy.lighting_flags);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_code);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  mrkgs  = " << rwy.marking_code);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  mrkgs1/2  = " << rwy.marking_code1 << " / " << rwy.marking_code2);
         SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy.disp_thresh1);
         SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy.stopway1);
         SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy.disp_thresh2);
@@ -528,13 +523,11 @@ void build_airport( string airport_id, float alt_m,
 	}
     }
 
-    TGSuperPoly sp;
-    TGTexParams tp;
 
     // First pass: generate the precision runways since these have
     // precidence
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	if ( runways[i].marking_code == 3 /* Precision */ ) {
+	if ( runways[i].marking_code1 == 3 /* Precision */ ) {
 	    build_runway( runways[i], alt_m,
 			  &rwy_polys, &texparams, &accum,
                           &apt_base, &apt_clearing );
@@ -543,8 +536,8 @@ void build_airport( string airport_id, float alt_m,
 
     // 2nd pass: generate the non-precision and visual runways
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	if ( runways[i].marking_code == 2 /* Non-precision */
-             || runways[i].marking_code == 1 /* Visual */ )
+	if ( runways[i].marking_code1 == 2 /* Non-precision */
+             || runways[i].marking_code1 == 1 /* Visual */ )
         {
             if ( runways[i].surface_code != 13 /* Water */ ) {
                 // only build non-water runways
@@ -557,9 +550,9 @@ void build_airport( string airport_id, float alt_m,
 
     // 3rd pass: generate all remaining runways not covered in the first pass
     for ( i = 0; i < (int)runways.size(); ++i ) {
-	if ( runways[i].marking_code != 3 /* Precision */
-             && runways[i].marking_code != 2 /* Non-precision */
-             && runways[i].marking_code != 1 /* Visual */ )
+	if ( runways[i].marking_code1 != 3 /* Precision */
+             && runways[i].marking_code1 != 2 /* Non-precision */
+             && runways[i].marking_code1 != 1 /* Visual */ )
         {
             if ( runways[i].surface_code != 6 /* Asphalt Helipad */ &&
                  runways[i].surface_code != 7 /* Concrete Helipad */ &&
@@ -577,37 +570,6 @@ void build_airport( string airport_id, float alt_m,
 
     // 4th pass: generate all taxiways
 
-#if 0
-    // we want to generate in order of largest size first so this will
-    // look a little weird, but that's all I'm doing, otherwise a
-    // simple list traversal would work fine.
-    bool done = false;
-    while ( !done ) {
-        // find the largest taxiway
-        int largest_idx = -1;
-        double max_size = 0;
-        for ( i = 0; i < (int)taxiways.size(); ++i ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "taxiway i = " << i );
-            double size = taxiways[i].length * taxiways[i].width;
-            if ( size > max_size && !taxiways[i].generated ) {
-                SG_LOG( SG_GENERAL, SG_DEBUG, "taxiway max i = " << i );
-                max_size = size;
-                largest_idx = i;
-            }
-        }
-
-        if ( largest_idx >= 0 ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "generating " << largest_idx );
-            build_runway( taxiways[largest_idx], alt_m,
-                          &rwy_polys, &texparams, &accum,
-                          &apt_base, &apt_clearing );
-            taxiways[largest_idx].generated = true;
-        } else {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "done with taxiways." );
-            done = true;
-        }
-    }
-#else
     /* Ralf Gerlich: Generate Taxiways in specified order from bottom to top */
     for ( i=0; i<taxiways.size(); ++i ) {
             SG_LOG( SG_GENERAL, SG_DEBUG, "generating " << i );
@@ -616,7 +578,6 @@ void build_airport( string airport_id, float alt_m,
                           &apt_base, &apt_clearing );
             taxiways[i].generated = true;
     }
-#endif
 
     // Now generate small surface for each beacon
     TGPolygon obj_base, obj_safe_base;
