@@ -1,4 +1,4 @@
-// rwy_prec.hxx -- Build a precision runway
+// rwy_gen.hxx -- Build a runway
 //
 // Written by Curtis Olson, started February 2002.
 //
@@ -33,12 +33,12 @@
 #include "texparams.hxx"
 
 
-// generate a precision approach runway.  The routine modifies
+// generate a runway.  The routine modifies
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
 
-void gen_precision_rwy( const TGRunway& rwy_info,
+void gen_rwy( const TGRunway& rwy_info,
                         double alt_m,
 			const std::string& material,
 			superpoly_list *rwy_polys,

@@ -1,4 +1,4 @@
-// rwy_prec.cxx -- Build a precision runway
+// rwy_gen.cxx -- Build a runway
 //
 // Written by Curtis Olson, started February 2002.
 //
@@ -18,7 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id: rwy_prec.cxx,v 1.18 2004-11-19 22:25:49 curt Exp $
+// $Id: rwy_gen.cxx,v 1.18 2004-11-19 22:25:49 curt Exp $
 //
 
 #include <simgear/compiler.h>
@@ -26,26 +26,25 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "rwy_common.hxx"
-#include "rwy_nonprec.hxx"
 
 #include <stdlib.h>
 
 using std::string;
 
 
-// generate a precision approach runway.  The routine modifies
+// generate a runway.  The routine modifies
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
 
-void gen_precision_rwy( const TGRunway& rwy_info,
+void gen_rwy( const TGRunway& rwy_info,
                         double alt_m,
 			const string& material,
 			superpoly_list *rwy_polys,
 			texparams_list *texparams,
 			TGPolygon *accum )
 {
-    SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy_info.rwy_no1 << rwy_info.rwy_no2);
+    SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy_info.rwy_no1 << " / " << rwy_info.rwy_no2);
 
     //
     // Generate the basic runway outlines
@@ -242,26 +241,38 @@ void gen_precision_rwy( const TGRunway& rwy_info,
     //
 
     int len = rwy_info.rwy_no1.length();
-    string letter = "";
-    string rev_letter = "";
+    string letter1 = "";
+    string letter2 = "";
     for ( i = 0; i < len; ++i ) {
 	string tmp = rwy_info.rwy_no1.substr(i, 1);
 	if ( tmp == "L" ) {
-	    letter = "L";
-	    rev_letter = "R";
+	    letter1 = "L";
 	} else if ( tmp == "R" ) {
-	    letter = "R";
-	    rev_letter = "L";
+	    letter1 = "R";
 	} else if ( tmp == "C" ) {
-	    letter = "C";
-	    rev_letter = "C";
+	    letter1 = "C";
+	}
+    }
+
+    len = rwy_info.rwy_no2.length();
+    for ( i = 0; i < len; ++i ) {
+	string tmp = rwy_info.rwy_no2.substr(i, 1);
+	if ( tmp == "L" ) {
+	    letter2 = "L";
+	} else if ( tmp == "R" ) {
+	    letter2 = "R";
+	} else if ( tmp == "C" ) {
+	    letter2 = "C";
 	}
     }
 	    
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwy_info.rwy_no1);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation1 = " << rwy_info.rwy_no1);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter1 = " << letter1);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation2 = " << rwy_info.rwy_no2);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter2 = " << letter2);
 
-    if ( !letter.empty() ) {
+    //TODO: add empty airport end generation
+    if ( !letter1.empty() && !letter2.empty() ) {
 	start1_pct = end1_pct;
 	end1_pct = start1_pct + ( 90.0 / length );
 	gen_runway_section( rwy_info, runway_a,
@@ -269,7 +280,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading,
-			    material, rev_letter,
+			    material, letter2,
 			    rwy_polys, texparams, accum );
 
 	start2_pct = end2_pct;
@@ -279,7 +290,7 @@ void gen_precision_rwy( const TGRunway& rwy_info,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
 			    rwy_info.heading + 180.0,
-			    material, letter,
+			    material, letter1,
 			    rwy_polys, texparams, accum );
     }
 
@@ -288,33 +299,44 @@ void gen_precision_rwy( const TGRunway& rwy_info,
     //
 
     len = rwy_info.rwy_no1.length();
-    string snum = rwy_info.rwy_no1;
+    string snum1 = rwy_info.rwy_no1;
     for ( i = 0; i < len; ++i ) {
 	string tmp = rwy_info.rwy_no1.substr(i, 1);
 	if ( tmp == "L" || tmp == "R" || tmp == "C" || tmp == " " ) {
-	    snum = rwy_info.rwy_no1.substr(0, i);
+	    snum1 = rwy_info.rwy_no1.substr(0, i);
 	}
     }
-    SG_LOG(SG_GENERAL, SG_INFO, "Runway num = '" << snum << "'");
-    int num = atoi( snum.c_str() );
-    while ( num <= 0 ) {
-        num += 36;
+
+    len = rwy_info.rwy_no2.length();
+    string snum2 = rwy_info.rwy_no2;
+    for ( i = 0; i < len; ++i ) {
+	string tmp = rwy_info.rwy_no2.substr(i, 1);
+	if ( tmp == "L" || tmp == "R" || tmp == "C" || tmp == " " ) {
+	    snum2 = rwy_info.rwy_no2.substr(0, i);
+	}
+    }
+    SG_LOG(SG_GENERAL, SG_INFO, "Runway num1 = '" << snum1 << "'");
+    SG_LOG(SG_GENERAL, SG_INFO, "Runway num2 = '" << snum2 << "'");
+
+    int num1 = atoi( snum1.c_str() );
+    int num2 = atoi( snum2.c_str() );
+    while ( num1 <= 0 ) {
+        num1 += 36;
     }
 
     start2_pct = end2_pct;
     end2_pct = start2_pct + ( 80.0 / length );
     gen_number_block( rwy_info, material, runway_b, rwy_info.heading + 180.0,
-		      num, start2_pct, end2_pct, rwy_polys, texparams, accum );
+		      num1, start2_pct, end2_pct, rwy_polys, texparams, accum );
 
-    num += 18;
-    while ( num > 36 ) {
-	num -= 36;
+    while ( num2 <= 0 ) {
+	num2 += 36;
     }
 
     start1_pct = end1_pct;
     end1_pct = start1_pct + ( 80.0 / length );
     gen_number_block( rwy_info, material, runway_a, rwy_info.heading,
-		      num, start1_pct, end1_pct, rwy_polys, texparams, accum );
+		      num2, start1_pct, end1_pct, rwy_polys, texparams, accum );
 
     //
     // Touch down zone x3

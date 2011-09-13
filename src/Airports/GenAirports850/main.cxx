@@ -52,7 +52,6 @@
 #include <Geometry/util.hxx>
 
 #include "build.hxx"
-#include "convex_hull.hxx"
 
 using std::vector;
 using std::cout;

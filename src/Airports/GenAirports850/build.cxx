@@ -57,17 +57,14 @@
 #include <Triangulate/trieles.hxx>
 
 #include "apt_surface.hxx"
-#include "convex_hull.hxx"
 #include "elevations.hxx"
 #include "lights.hxx"
 #include "point2d.hxx"
 #include "poly_extra.hxx"
 #include "runway.hxx"
 #include "rwy_common.hxx"
-#include "rwy_nonprec.hxx"
 #include "rwy_gen.hxx"
 #include "rwy_simple.hxx"
-#include "rwy_visual.hxx"
 #include "taxiway.hxx"
 #include "texparams.hxx"
 
@@ -291,19 +288,19 @@ static void build_runway( const TGRunway& rwy_info,
 			rwy_polys, texparams, accum );
     } else if ( rwy_info.marking_code == 3 /* Precision */ ) {
 	// precision runway markings
-	gen_precision_rwy( rwy_info, alt_m, material,
+	gen_rwy( rwy_info, alt_m, material,
 			   rwy_polys, texparams, accum );
     } else if ( rwy_info.marking_code == 2 /* Non-precision */ ) {
 	// non-precision runway markings
-	gen_non_precision_rwy( rwy_info, alt_m, material,
+	gen_rwy( rwy_info, alt_m, material,
 			       rwy_polys, texparams, accum );
     } else if ( rwy_info.marking_code == 1 /* Visual */ ) {
 	// visual runway markings
-	gen_visual_rwy( rwy_info, alt_m, material,
+	gen_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
     } else if ( rwy_info.marking_code == 0 /* No known markings, lets assume Visual */ ) {
 	// visual runway markings
-	gen_visual_rwy( rwy_info, alt_m, material,
+	gen_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
     } else if ( surface_code == 13 /* Water buoys */ ) {
 	// do nothing for now.
@@ -674,9 +671,6 @@ void build_airport( string airport_id, float alt_m,
         SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
 	return;
     }
-
-    // generate convex hull (no longer)
-    // TGPolygon hull = convex_hull(apt_pts);
 
     TGPolygon filled_base = tgPolygonStripHoles( apt_base );
     // write_polygon( filled_base, "base" );
