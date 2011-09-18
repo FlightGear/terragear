@@ -9,6 +9,7 @@
 #include <osg/Geometry>
 #include <osg/Group>
 
+#include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
 
 #include "beznode.hxx"
@@ -267,6 +268,13 @@ void Runway::gen_simple_rwy( double alt_m, const string& material, superpoly_lis
     	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
 	
+    // do this before clipping and generating the base
+    runway_a = remove_dups( runway_a );
+    runway_a = reduce_degeneracy( runway_a );
+
+    runway_b = remove_dups( runway_b );
+    runway_b = reduce_degeneracy( runway_b );
+
     TGSuperPoly sp;
     TGTexParams tp;
 

@@ -295,6 +295,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     TGPolygon base_poly    = tgPolygonDiff( divided_base, accum );
 
     // do this when generating the polys themselves...
+#if 0
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) 
     {
     	SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes/remove dups section = " << k << " " << rwy_polys[k].get_material());
@@ -339,6 +340,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	rwy_polys[k].set_poly( poly );
     }
     // END do this when generating polys
+#endif
 
     // add segments to polygons to remove any possible "T"
     // intersections

@@ -598,7 +598,20 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
     string material;
     int j, k;
 
-    material = "pa_tiedown";
+    switch( surface_type )
+    {
+        case 1:
+            material = "pa_tiedown";
+            break;
+
+        case 2:
+            material = "pc_tiedown";
+            break;
+
+        default:
+            SG_LOG(SG_GENERAL, SG_DEBUG, "ClosedPoly::BuildBtg: unknown material " << surface_type );
+            exit(1);
+    }
 
     // verify the poly has been generated
     if ( pre_tess.contours() )    
@@ -622,17 +635,16 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
         TGTexParams tp;
 
         TGPolygon clipped = tgPolygonDiff( pre_tess, *accum );
-
         SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
 
         TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
-
         SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
-
 
         sp.erase();
         sp.set_poly( split );
         sp.set_material( material );
+        sp.set_flag("taxi");
+
         rwy_polys->push_back( sp );
         SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
         *accum = tgPolygonUnion( pre_tess, *accum );
