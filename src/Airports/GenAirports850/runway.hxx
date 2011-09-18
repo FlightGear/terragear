@@ -1,129 +1,84 @@
-// runway.hxx -- class to store runway info
-//
-// Written by Curtis Olson, started November 1999.
-//
-// Copyright (C) 1999  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//
-// $Id: runway.hxx,v 1.16 2005-04-20 18:20:15 curt Exp $
-//
+#ifndef _RUNWAY_H_
+#define _RUNWAY_H_
 
-
-#ifndef _RUNWAY_HXX
-#define _RUNWAY_HXX
-
-
-#include <string>
-#include <vector>
-
-#include <Geometry/point3d.hxx>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <Polygon/polygon.hxx>
+#include <Polygon/superpoly.hxx>
+#include <Geometry/point3d.hxx>
 
+#include "texparams.hxx"
 
-struct TGRunway {
-    int type;
-    std::string rwy_no1;
-    std::string rwy_no2;
+#include <osg/Group>
 
-    double lon;
-    double lat;
-    double heading;
-    double length;
-    double width;
-    double disp_thresh1;
-    double disp_thresh2;
-    double stopway1;
-    double stopway2;
+using std::string;
 
-    int surface_code;
-    int shoulder_code;
-    double smoothness;
-    bool centre_lights;
-    int edge_lights;
-    int marking_code1;
-    int marking_code2;
-    int alc1_flag;
-    int alc2_flag;
-    bool has_tdz1;
-    bool has_tdz2;
-    int reil1;
-    int reil2;
+class Runway
+{
+public:
+    Runway(char* def);
 
-    bool   dist_remaining;
+    bool IsPrecision()
+    {
+        return true;
+    }
 
-    TGPolygon threshold;
-    TGPolygon tens, tens_margin, ones, ones_margin;
-    TGPolygon letter, letter_margin_left, letter_margin_right;
-    TGPolygon pre_td_zone;
-    TGPolygon td3_zone, td2_zone, td1a_zone, td1b_zone;
-    TGPolygon aim_point;
-    bool generated;
+    Point3D GetStart(void)
+    {
+        return ( Point3D( lon[0], lat[0], 0.0f ));
+    }
+
+    Point3D GetEnd(void)
+    {
+        return ( Point3D( lon[1], lat[1], 0.0f ));
+    }
+
+    Point3D GetMidpoint(void)
+    {
+        return ( Point3D( (lon[0]+lon[1])/2.0f, (lat[0]+lat[1])/2.0f, 0.0f) );
+    }
+
+    int BuildOsg( osg::Group* airport );
+    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    
+private:
+    // data for whole runway
+    int     surface;
+    int     shoulder;
+    int     centerline_lights;
+    int     edge_lights;
+    int     dist_remain_signs;
+    
+    double  width;
+    double  length;
+    double  heading;
+    double  smoothness;
+
+    // data for each end
+    char    rwnum[2][16];
+    double  lat[2];
+    double  lon[2];
+    double  threshold[2];
+    double  overrun[2];
+
+    int     marking[2];
+    int     approach_lights[2];
+    int     tz_lights[2];
+    int     reil[2];
+
+    // Build Helpers
+    TGPolygon gen_wgs84_area( Point3D origin, double length_m, double displ1, double displ2, double width_m, double heading_deg, double alt_m, bool add_mid );
+    TGPolygon gen_runway_w_mid( double alt_m, double length_extend_m, double width_extend_m );
+//    void      gen_runway_section( const TGPolygon& runway, double startl_pct, double endl_pct, double startw_pct, double endw_pct, double minu, double maxu, double minv, double maxv, double heading,
+//                                  const string& prefix, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum  );
+//    void      gen_runway_stopway( const TGPolygon& runway_a, const TGPolygon& runway_b, const string& prefix, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon* accum );
+    TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend );
+
+    void        gen_simple_rwy(         double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum );
+    void        gen_marked_rwy(         double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum );
 };
-typedef std::vector < TGRunway > runway_list;
-typedef runway_list::iterator runway_list_iterator;
-typedef runway_list::const_iterator const_runway_list_iterator;
 
-struct TGLightobj {
-    double lon;
-    double lat;
-    int type;
-    double heading;
-    double glideslope;
-    std::string rwy_name;
-};
-typedef std::vector < TGLightobj > light_list;
-typedef light_list::iterator light_list_iterator;
-typedef light_list::const_iterator const_light_list_iterator;
+typedef std::vector <Runway *> RunwayList;
 
-
-
-
-// given a runway center point, length, width, and heading, and
-// altitude (meters) generate the lon and lat 4 corners using wgs84
-// math.
-TGPolygon gen_wgs84_area( Point3D origin,
-                          double length_m,
-                          double displ1, double displ2,
-                          double width_m,
-                          double heading_deg,
-                          double alt_m,
-                          bool add_mid );
-
-// generate an area for a runway with expantion specified as a scale
-// factor (return result points in degrees)
-TGPolygon gen_runway_area_w_scale( const TGRunway& runway, 
-                                   double alt_m,
-				   double length_scale = 1.0,
-				   double width_scale = 1.0 );
-
-// generate an area for a runway with expansion specified in meters
-// (return result points in degrees)
-TGPolygon gen_runway_area_w_extend( const TGRunway& runway, 
-                                    double alt_m,
-				    double length_extend,
-                                    double displ1, double displ2,
-				    double width_extend );
-
-
-// generate an area for half a runway
-TGPolygon gen_runway_w_mid( const TGRunway& runway,
-                            double alt_m,
-			    double length_extend_m,
-			    double width_extend_m );
-
-
-#endif // _RUNWAY_HXX
+#endif

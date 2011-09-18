@@ -48,9 +48,7 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 
 // lookup node elevations for each point in the specified nurbs++
 // matrix.
-void tgCalcElevations( const string &root, const string_list elev_src,
-                       SimpleMatrix &Pts, double average );
+void tgCalcElevations( const string &root, const string_list elev_src, SimpleMatrix &Pts, double average );
 
 // clamp all elevations to the specified range
-void tgClampElevations( SimpleMatrix &Pts,
-			double center_m, double max_clamp_m );
+void tgClampElevations( SimpleMatrix &Pts, double center_m, double max_clamp_m );

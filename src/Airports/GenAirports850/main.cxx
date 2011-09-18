@@ -1,67 +1,85 @@
-// main.cxx -- main loop
-//
-// Written by Curtis Olson, started March 1998.
-//
-// Copyright (C) 1998  Curtis L. Olson  - http://www.flightgear.org/~curt
-//
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-//
-// $Id: main.cxx,v 1.37 2005/12/19 15:53:21 curt Exp $
-//
+/* OpenSceneGraph example, osgshaderterrain.
+*
+*  Permission is hereby granted, free of charge, to any person obtaining a copy
+*  of this software and associated documentation files (the "Software"), to deal
+*  in the Software without restriction, including without limitation the rights
+*  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+*  copies of the Software, and to permit persons to whom the Software is
+*  furnished to do so, subject to the following conditions:
+*
+*  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+*  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+*  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+*  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+*  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+*  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+*  THE SOFTWARE.
+*/
 
+#include <osg/AlphaFunc>
+#include <osg/Billboard>
+#include <osg/BlendFunc>
+#include <osg/Depth>
+#include <osg/Geode>
+#include <osg/Geometry>
+#include <osg/Group>
+#include <osg/GL2Extensions>
+#include <osg/Material>
+#include <osg/Math>
+#include <osg/MatrixTransform>
+#include <osg/PolygonMode>
+#include <osg/PolygonOffset>
+#include <osg/Program>
+#include <osg/Projection>
+#include <osg/Shader>
+#include <osg/ShapeDrawable>
+#include <osg/StateSet>
+#include <osg/Switch>
+#include <osg/Texture2D>
+#include <osg/Uniform>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
+#include <osgDB/ReadFile>
+#include <osgDB/FileUtils>
 
-#include <simgear/compiler.h>
-#include <simgear/structure/exception.hxx>
-#include <simgear/misc/sg_path.hxx>
+#include <osgUtil/Tessellator>
+#include <osgUtil/SmoothingVisitor>
+#include <osgText/Text>
+#include <osgViewer/Viewer>
+#include <osgViewer/ViewerEventHandlers>
+#include <osgUtil/Optimizer>
 
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
+#include <osgGA/TrackballManipulator>
+#include <osgGA/FlightManipulator>
+#include <osgGA/TerrainManipulator>
+#include <osgGA/StateSetManipulator>
 
-#include <list>
-#include <vector>
-
-#include <stdio.h>
 #include <string.h>
-#include <string>
 #include <iostream>
 
-#include <simgear/constants.h>
-#include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/misc/sg_path.hxx>
+
 #include <simgear/misc/sgstream.hxx>
-#include <simgear/misc/strutils.hxx>
+//#include <simgear/misc/strutils.hxx>
 
 #include <Polygon/index.hxx>
-#include <Geometry/util.hxx>
 
-#include "build.hxx"
+#include "beznode.hxx"
+#include "closedpoly.hxx"
+#include "linearfeature.hxx"
+#include "parser.hxx"
 
-using std::vector;
-using std::cout;
-using std::endl;
-
-
-int nudge = 10;
-double slope_max = 0.2;
-
-static int is_in_range( string_list & runway_list, float min_lat, float max_lat, float min_lon, float max_lon );
+// TODO : Modularize this function
+// IDEAS 
+// 1) Start / Stop MarkStyle
+// 2) Start / Stop LightStyle
+// 3) holes
+// 4) CreatePavementSS(pavement type)
+// 5) CreateMarkingSS(marking type)
+// 6) CalcStripeOffsets should be AddMarkingVerticies, and take the 2 distances from pavement edge...
+// SCRAP ALL IDEAS - Markings are encapsulated in LinearFeature class. 
+// Start creates a new object
+// End closes the object (and should add it to a list - either in the parser, or ClosedPoly)
 
 // Display usage
 static void usage( int argc, char **argv ) {
@@ -72,6 +90,7 @@ static void usage( int argc, char **argv ) {
 	   << "[--clear-dem-path] [--dem-path=<path>] [--max-slope=<decimal>] "
            << "[ --airport=abcd ]  [--tile=<tile>] [--chunk=<chunk>] [--verbose] [--help]");
 }
+
 
 void setup_default_elevation_sources(string_list& elev_src) {
     elev_src.push_back( "SRTM2-Africa-3" );
@@ -86,58 +105,29 @@ void setup_default_elevation_sources(string_list& elev_src) {
     elev_src.push_back( "SRTM-30" );
 }
 
-// Display help and usage
-static void help( int argc, char **argv, const string_list& elev_src ) {
-    cout << "genapts generates airports for use in generating scenery for the FlightGear flight simulator.  ";
-    cout << "Airport, runway, and taxiway vector data and attributes are input, and generated 3D airports ";
-    cout << "are output for further processing by the TerraGear scenery creation tools.  ";
-    cout << "\n\n";
-    cout << "The standard input file is runways.dat.gz which is found in $FG_ROOT/Airports.  ";
-    cout << "This file is periodically generated for the FlightGear project by Robin Peel, who ";
-    cout << "maintains an airport database for both the X-Plane and FlightGear simulators.  ";
-    cout << "The format of this file is documented on the FlightGear web site.  ";
-    cout << "Any other input file corresponding to this format may be used as input to genapts.  ";
-    cout << "Input files may be gzipped or left as plain text as required.  ";
-    cout << "\n\n";
-    cout << "Processing all the world's airports takes a *long* time.  To cut down processing time ";
-    cout << "when only some airports are required, you may refine the input selection either by airport ";
-    cout << "or by area.  By airport, either one airport can be specified using --airport=abcd, where abcd is ";
-    cout << "a valid airport code eg. --airport-id=KORD, or a starting airport can be specified using --start-id=abcd ";
-    cout << "where once again abcd is a valid airport code.  In this case, all airports in the file subsequent to the ";
-    cout << "start-id are done.  This is convienient when re-starting after a previous error.  ";
-    cout << "\nAn input area may be specified by lat and lon extent using min and max lat and lon.  ";
-    cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string ";
-    cout << "such as eg. w080n40, e000s27.  ";
-    cout << "\nAn input file containing only a subset of the world's ";
-    cout << "airports may of course be used.";
-    cout << "\n\n";
-    cout << "It is necessary to generate the elevation data for the area of interest PRIOR TO GENERATING THE AIRPORTS.  ";
-    cout << "Failure to do this will result in airports being generated with an elevation of zero.  ";
-    cout << "The following subdirectories of the work-dir will be searched for elevation files:\n\n";
-    
-    string_list::const_iterator elev_src_it;
-    for (elev_src_it = elev_src.begin(); elev_src_it != elev_src.end(); elev_src_it++) {
-    	    cout << *elev_src_it << "\n";
-    }
-    cout << "\n";
-    usage( argc, argv );
-}
 
+// TODO: where do these belong
+int nudge = 10;
+double slope_max = 0.2;
 
-// reads the apt_full file and extracts and processes the individual
-// airport records
-int main( int argc, char **argv ) {
+int main(int argc, char **argv)
+{
     float min_lon = -180;
     float max_lon = 180;
     float min_lat = -90;
     float max_lat = 90;
-    bool ready_to_go = true;
+    bool  ready_to_go = true;
+    bool  view_osg = false;
 
     string_list elev_src;
     elev_src.clear();
     setup_default_elevation_sources(elev_src);
 
-    sglog().setLogLevels( SG_GENERAL, SG_INFO );
+    // Set verbose
+    sglog().setLogLevels( SG_GENERAL, SG_BULK );
+//    sglog().setLogLevels( SG_GENERAL, SG_INFO );
+
+    SG_LOG(SG_GENERAL, SG_INFO, "Run genapt");
 
     // parse arguments
     string work_dir = "";
@@ -145,63 +135,109 @@ int main( int argc, char **argv ) {
     string start_id = "";
     string airport_id = "";
     int arg_pos;
-    for (arg_pos = 1; arg_pos < argc; arg_pos++) {
+
+    for (arg_pos = 1; arg_pos < argc; arg_pos++) 
+    {
         string arg = argv[arg_pos];
-        if ( arg.find("--work=") == 0 ) {
+        if ( arg.find("--work=") == 0 ) 
+        {
             work_dir = arg.substr(7);
-	} else if ( arg.find("--input=") == 0 ) {
-	    input_file = arg.substr(8);
-        } else if ( arg.find("--terrain=") == 0 ) {
+    	} 
+        else if ( arg.find("--input=") == 0 ) 
+        {
+	        input_file = arg.substr(8);
+        } 
+        else if ( arg.find("--terrain=") == 0 ) 
+        {
             elev_src.push_back( arg.substr(10) );
- 	} else if ( arg.find("--start-id=") == 0 ) {
-	    start_id = arg.substr(11);
-	    ready_to_go = false;
- 	} else if ( arg.find("--nudge=") == 0 ) {
-	    nudge = atoi( arg.substr(8).c_str() );
-	} else if ( arg.find("--min-lon=") == 0 ) {
-	    min_lon = atof( arg.substr(10).c_str() );
-	} else if ( arg.find("--max-lon=") == 0 ) {
-	    max_lon = atof( arg.substr(10).c_str() );
-	} else if ( arg.find("--min-lat=") == 0 ) {
-	    min_lat = atof( arg.substr(10).c_str() );
-	} else if ( arg.find("--max-lat=") == 0 ) {
-	    max_lat = atof( arg.substr(10).c_str() );
-        } else if ( arg.find("--chunk=") == 0 ) {
-            tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(),
-                                                     10.0);
+     	} 
+        else if ( arg.find("--start-id=") == 0 ) 
+        {
+    	    start_id = arg.substr(11);
+    	    ready_to_go = false;
+     	} 
+        else if ( arg.find("--nudge=") == 0 ) 
+        {
+    	    nudge = atoi( arg.substr(8).c_str() );
+    	} 
+        else if ( arg.find("--min-lon=") == 0 ) 
+        {
+    	    min_lon = atof( arg.substr(10).c_str() );
+    	} 
+        else if ( arg.find("--max-lon=") == 0 ) 
+        {
+    	    max_lon = atof( arg.substr(10).c_str() );
+    	} 
+        else if ( arg.find("--min-lat=") == 0 ) 
+        {
+    	    min_lat = atof( arg.substr(10).c_str() );
+    	} 
+        else if ( arg.find("--max-lat=") == 0 ) 
+        {
+    	    max_lat = atof( arg.substr(10).c_str() );
+        } 
+#if 0
+        else if ( arg.find("--chunk=") == 0 ) 
+        {
+            tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(), 10.0);
             min_lon = rectangle.getMin().x();
             min_lat = rectangle.getMin().y();
             max_lon = rectangle.getMax().x();
             max_lat = rectangle.getMax().y();
-        } else if ( arg.find("--tile=") == 0 ) {
+        } 
+        else if ( arg.find("--tile=") == 0 ) 
+        {
             tg::Rectangle rectangle = tg::parseTile(arg.substr(7).c_str());
             min_lon = rectangle.getMin().x();
             min_lat = rectangle.getMin().y();
             max_lon = rectangle.getMax().x();
             max_lat = rectangle.getMax().y();
-	} else if ( arg.find("--airport=") == 0 ) {
-	    airport_id = arg.substr(10).c_str();
-	    ready_to_go = false;
-	} else if ( arg == "--clear-dem-path" ) {
-	    elev_src.clear();
-	} else if ( arg.find("--dem-path=") == 0 ) {
-	    elev_src.push_back( arg.substr(11) );
-	} else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) {
-	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
-	} else if ( (arg.find("--max-slope=") == 0) ) {
-	    slope_max = atof( arg.substr(12).c_str() );
-	} else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) {
-	    help( argc, argv, elev_src );
-	    exit(-1);
-	} else {
-	    usage( argc, argv );
-	    exit(-1);
-	}
+    	} 
+#endif
+        else if ( arg.find("--airport=") == 0 ) 
+        {
+    	    airport_id = arg.substr(10).c_str();
+    	    ready_to_go = false;
+    	} 
+        else if ( arg == "--clear-dem-path" ) 
+        {
+    	    elev_src.clear();
+    	} 
+        else if ( arg.find("--dem-path=") == 0 ) 
+        {
+    	    elev_src.push_back( arg.substr(11) );
+    	} 
+        else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) 
+        {
+    	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
+    	} 
+        else if ( arg.find("--view") == 0 )
+        {
+            SG_LOG(SG_GENERAL, SG_INFO, "Found --view : view OSG model" );
+            view_osg = true;
+        }
+        else if ( (arg.find("--max-slope=") == 0) ) 
+        {
+    	    slope_max = atof( arg.substr(12).c_str() );
+    	} 
+#if 0
+        else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) 
+        {
+    	    help( argc, argv, elev_src );
+    	    exit(-1);
+    	} 
+#endif
+        else 
+        {
+    	    usage( argc, argv );
+    	    exit(-1);
+    	}
     }
 
     SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
     SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
-    for ( unsigned int i = 0; i < elev_src.size(); ++i ) {
+    for ( unsigned int i = 0; i < elev_src.size(); ++i ) 
+    {
         SG_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
     }
     SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
@@ -210,26 +246,29 @@ int main( int argc, char **argv ) {
     SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min_lat << ':' << max_lat);
 
     if (max_lon < min_lon || max_lat < min_lat ||
-	min_lat < -90 || max_lat > 90 ||
-	min_lon < -180 || max_lon > 180) {
+	    min_lat < -90 || max_lat > 90 ||
+	    min_lon < -180 || max_lon > 180) 
+    {
         SG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
-	exit(1);
+    	exit(1);
     }
 
-    if ( work_dir == "" ) {
-	SG_LOG( SG_GENERAL, SG_ALERT, 
-		"Error: no work directory specified." );
-	usage( argc, argv );
-	exit(-1);
+    if ( work_dir == "" ) 
+    {
+    	SG_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
+    	usage( argc, argv );
+	    exit(-1);
     }
 
-    if ( input_file == "" ) {
-	SG_LOG( SG_GENERAL, SG_ALERT, 
-		"Error: no input file." );
-	exit(-1);
+    if ( input_file == "" ) 
+    {
+    	SG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
+    	exit(-1);
     }
 
     // make work directory
+    SG_LOG(SG_GENERAL, SG_INFO, "Creating airportarea directory");
+
     string airportareadir=work_dir+"/AirportArea";
     SGPath sgp( airportareadir );
     sgp.append( "dummy" );
@@ -242,264 +281,60 @@ int main( int argc, char **argv ) {
     poly_index_init( counter_file );
 
     sg_gzifstream in( input_file );
-    if ( !in.is_open() ) {
+    if ( !in.is_open() ) 
+    {
         SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
         exit(-1);
     }
 
-    string_list runways_list;
-    string_list water_rw_list;
-    string_list beacon_list;
-    string_list tower_list;
-    string_list windsock_list;
-    string_list light_list;
+    SG_LOG(SG_GENERAL, SG_INFO, "Creating parser");
 
-    vector<string> token;
-    string last_apt_id = "";
-    string last_apt_info = "";
-    string last_apt_type = "";
-    string line;
-    char tmp[2048];
+    // Create the parser...
+    Parser* parser = new Parser(input_file);
 
-    while ( ! in.eof() ) {
-	in.getline(tmp, 2048);
-	line = tmp;
-	SG_LOG( SG_GENERAL, SG_DEBUG, "-> '" << line << "'" );
-        if ( line.length() ) {
-            token = simgear::strutils::split( line );
-            if ( token.size() ) {
-                SG_LOG( SG_GENERAL, SG_DEBUG, "token[0] " << token[0] );
-            }
-        } else {
-            token.clear();
-        }
+    SG_LOG(SG_GENERAL, SG_INFO, "Parse katl");
+    parser->Parse((char*)"katl");
 
-        if ( !line.length() || !token.size() ) {
-            // empty line, skip
-        } else if ( (token[0] == "#") || (token[0] == "//") ) {
-	    // comment, skip
-        } else if ( token[0] == "I" ) {
-            // First line, indicates IBM (i.e. DOS line endings I
-            // believe.)
+    if (view_osg)
+    {
+        // just view in OSG
+        osg::Group* airportNode;
 
-            // move past this line and read and discard the next line
-            // which is the version and copyright information
-            in.getline(tmp, 2048);
-            vector<string> vers_token = simgear::strutils::split( tmp );
-            SG_LOG( SG_GENERAL, SG_INFO, "Data version = " << vers_token[0] );
-	} else if ( token[0] == "1" /* Airport */ ||
-                    token[0] == "16" /* Seaplane base */ ||
-                    token[0] == "17" /* Heliport */ ) {
+        SG_LOG(SG_GENERAL, SG_INFO, "View OSG");
+        airportNode = parser->CreateOsgGroup();
 
-            // extract some airport runway info
-            string rwy;
-            float lat, lon;
-            
-            string id = token[4];
-            int elev = atoi( token[1].c_str() );
-            SG_LOG( SG_GENERAL, SG_INFO, "Next airport = " << id << " " << elev );
+        // construct the viewer.
+        osgViewer::Viewer viewer;
 
-            if ( !last_apt_id.empty()) {
-                if ( runways_list.size() ) {
-                    vector<string> rwy_token
-                        = simgear::strutils::split( runways_list[0] );
-		    if ( token[0] == "100" ){
-                    rwy = token[8];
-                    lat = atof( token[9].c_str() );
-                    lon = atof( token[10].c_str() );
-		    }
+        // add the thread model handler
+        viewer.addEventHandler(new osgViewer::ThreadingHandler);
 
-                    if ( airport_id.length() && airport_id == last_apt_id ) {
-                        ready_to_go = true;
-                    } else if ( start_id.length() && start_id == last_apt_id ) {
-                        ready_to_go = true;
-                    }
+        // add the window size toggle handler
+        viewer.addEventHandler(new osgViewer::WindowSizeHandler);
 
-                    if ( ready_to_go ) {
-                        // check point our location
-                        char command[256];
-                        sprintf( command,
-                                 "echo before building %s >> %s",
-                                 last_apt_id.c_str(),
-                                 lastaptfile.c_str() );
-                        system( command );
+        // add model to viewer.
+        viewer.setSceneData( airportNode );
+        viewer.setUpViewAcrossAllScreens();
 
-                        // process previous record
-                        // process_airport(last_apt_id, runways_list, argv[2]);
-                        try {
-                            if ( last_apt_type == "16" /* Seaplane base */ ) {
-                                // skip building seaplane bases
-                            } else {
-                                if( is_in_range( runways_list, min_lat, max_lat, min_lon, max_lon ) ) {
-                                    build_airport( last_apt_id,
-                                                   elev * SG_FEET_TO_METER,
-                                                   runways_list,
-						   water_rw_list,
-                                                   beacon_list,
-                                                   tower_list,
-                                                   windsock_list,
-						   light_list,
-                                                   work_dir, elev_src );
-                                }
-                            }
-                        } catch (sg_exception &e) {
-                            SG_LOG( SG_GENERAL, SG_ALERT,
-                                    "Failed to build airport = "
-                                    << last_apt_id );
-                            SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
-                                    << e.getMessage() );
-                            exit(-1);
-                        }
-                        if ( airport_id.length() ) {
-                            ready_to_go = false;
-                        }
-                    }
-		} else {
-		    if(!airport_id.length()) {
-			SG_LOG(SG_GENERAL, SG_INFO,
-                               "ERRO: No runways, skipping = " << id);
-		    }
-		}
-            }
+        // create the windows and run the threads.
+        viewer.realize();
+    
+        viewer.setCameraManipulator(new osgGA::TrackballManipulator());
 
-            last_apt_id = id;
-            last_apt_info = line;
-            last_apt_type = token[0];
+        osgUtil::Optimizer optimzer;
+        optimzer.optimize(airportNode);
 
-            // clear runway list for start of next airport
-            runways_list.clear();
-	    water_rw_list.clear();
-            beacon_list.clear();
-            tower_list.clear();
-            windsock_list.clear();
-	    light_list.clear();
-        } else if ( token[0] == "100" || token[0] == "102") {
-            // runway entry (Land or heli)
-            runways_list.push_back(line);
-	} else if ( token[0] == "101" ) {
-            // Water runway. Here we don't have to create any textures.
-            // Only place some buoys
-            water_rw_list.push_back(line);
-        } else if ( token[0] == "18" ) {
-            // beacon entry
-            beacon_list.push_back(line);
-        } else if ( token[0] == "14" ) {
-            // control tower entry
-            tower_list.push_back(line);
-        } else if ( token[0] == "19" ) {
-            // windsock entry
-            windsock_list.push_back(line);
-	} else if ( token[0] == "21" ) {
-            // PAPI / VASI list
-            light_list.push_back(line);
-        } else if ( token[0] == "15" ) {
-            // ignore custom startup locations
-        } else if ( token[0] == "50" || token[0] == "51" || token[0] == "52" 
-                    || token[0] == "53" || token[0] == "54" || token[0] == "55" 
-                    || token[0] == "56" )
-        {
-            // ignore frequency entries
-        } else if ( token[0] == "99" ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "End of file reached" );
-	} else if ( token[0] == "00" ) {
-		// ??
-	} else if ( token[0] >= "110" ) {
-		//ignore taxiways for now
-	} else if ( token[0] == "10" ) {
-		//ignore old taxiways for now
-        } else {
-            SG_LOG( SG_GENERAL, SG_ALERT, 
-                    "Unknown line in file: " << line );
-            exit(-1);
-        }
+        viewer.run();    
+    }
+    else
+    {
+        // write a .btg file....
+        SG_LOG(SG_GENERAL, SG_INFO, "Write BTG");
+        parser->WriteBtg(work_dir, elev_src);
     }
 
-    cout << "last_apt_id.length() = " << last_apt_id.length() << endl;
-
-    if ( !last_apt_id.empty()) {
-        char ctmp, tmpid[32], rwy[32];
-        string id;
-        float lat, lon;
-        int elev = 0;
-
-        if ( runways_list.size() ) {
-            sscanf( runways_list[0].c_str(), "%c %s %s %f %f",
-                    &ctmp, tmpid, rwy, &lat, &lon );
-        }
-
-        if ( start_id.length() && start_id == last_apt_id ) {
-            ready_to_go = true;
-        }
-
-        if ( ready_to_go ) {
-            // check point our location
-            char command[256];
-            sprintf( command,
-                     "echo before building %s >> %s",
-                     last_apt_id.c_str(),
-                     lastaptfile.c_str() );
-            system( command );
-
-            // process previous record
-            // process_airport(last_apt_id, runways_list, argv[2]);
-            try {
-                if ( last_apt_type == "16" /* Seaplane base */ ) {
-                    // skip building seaplane bases
-                } else {
-                    if( is_in_range( runways_list, min_lat, max_lat, min_lon, max_lon ) ) {
-                        build_airport( last_apt_id, elev * SG_FEET_TO_METER,
-                                       runways_list,
-				       water_rw_list,
-                                       beacon_list,
-                                       tower_list,
-                                       windsock_list,
-				       light_list,
-                                       work_dir, elev_src );
-                    }
-                }
-            } catch (sg_exception &e) {
-                SG_LOG( SG_GENERAL, SG_ALERT,
-                        "Failed to build airport = "
-                        << last_apt_id );
-                SG_LOG( SG_GENERAL, SG_ALERT, "Exception: "
-                        << e.getMessage() );
-                exit(-1);
-            }
-        } else {
-            SG_LOG(SG_GENERAL, SG_INFO, "Skipping airport " << id);
-        }
-    }
-
-    SG_LOG(SG_GENERAL, SG_INFO, "[FINISHED CORRECTLY]");
+    SG_LOG(SG_GENERAL, SG_INFO, "Done");
 
     return 0;
 }
 
-static int is_in_range( string_list & runways_raw, float min_lat, float max_lat, float min_lon, float max_lon )
-{
-    int i;
-    int rwy_count = 0;
-    double apt_lon = 0.0, apt_lat = 0.0;
-
-    for ( i = 0; i < (int)runways_raw.size(); ++i ) {
-        ++rwy_count;
-
-	string rwy_str = runways_raw[i];
-        vector<string> token = simgear::strutils::split( rwy_str );
-
-        apt_lat += atof( token[1].c_str() );
-        apt_lon += atof( token[2].c_str() );
-    }
-
-    if( rwy_count > 0 ) {
-      apt_lat /= rwy_count;
-      apt_lon /= rwy_count;
-    }
-
-    if( apt_lat >= min_lat && apt_lat <= max_lat &&
-        apt_lon >= min_lon && apt_lon <= max_lon ) {
-        return 1;
-    }
-
-    return 0;
-}

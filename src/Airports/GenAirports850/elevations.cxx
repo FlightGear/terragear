@@ -145,7 +145,6 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 
 // lookup node elevations for each point in the specified simple
 // matrix.  Returns average of all points.
-
 void tgCalcElevations( const string &root, const string_list elev_src,
                        SimpleMatrix &Pts, const double average )
 {
@@ -251,7 +250,6 @@ void tgCalcElevations( const string &root, const string_list elev_src,
     SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of matrix = "
            << grid_average);
 }
-
 
 // clamp all elevations to the specified range
 
