@@ -2604,7 +2604,7 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 // top level runway light generator
 void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 			superpoly_list &lights, TGPolygon *apt_base ) {
-
+#if 0
     string lighting_flags = rwy_info.lighting_flags;
     SG_LOG( SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no1 << " "
             << rwy_info.lighting_flags );
@@ -2615,61 +2615,59 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     int vasi2 =  atoi( lighting_flags.substr(3,1).c_str() );
     int rwylt2 = atoi( lighting_flags.substr(4,1).c_str() );
     int app2 =   atoi( lighting_flags.substr(5,1).c_str() );
+#endif
 
     unsigned int i;
 
     // Make edge lighting
-    if ( rwylt1 >= 2 /* Has edge lighting */ ) {
+    if ( rwy_info.edge_lights == 2 /* Has edge lighting */ ) {
         // forward direction
-        superpoly_list s = gen_runway_edge_lights( rwy_info, rwylt1, false );
+        superpoly_list s = gen_runway_edge_lights( rwy_info, rwy_info.edge_lights, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
-    }
-    if ( rwylt2 >= 2 /* Has edge lighting */ ) {
+
         // reverse direction
-        superpoly_list s = gen_runway_edge_lights( rwy_info, rwylt2, true );
+        s = gen_runway_edge_lights( rwy_info, rwy_info.edge_lights, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
     // Centerline lighting
-    if ( rwylt1 >= 4 /* Has centerline lighting */ ) {
+    if ( rwy_info.centre_lights == 1 /* Has centerline lighting */ ) {
         // forward direction
         superpoly_list s = gen_runway_center_line_lights( rwy_info, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
-    }
-    if ( rwylt2 >= 4 /* Has centerline lighting */ ) {
-        // reverse direction
-        superpoly_list s = gen_runway_center_line_lights( rwy_info, true );
+
+	s = gen_runway_center_line_lights( rwy_info, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
     // Touchdown zone lighting
-    if ( rwylt1 >= 5 /* Has touchdown zone lighting */ ) {
+    if ( rwy_info.has_tdz1 == 1 /* Has touchdown zone lighting */ ) {
         TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, false );
         lights.push_back( s );
     }
-    if ( rwylt2 >= 5 /* Has touchdown zone lighting */ ) {
+    if ( rwy_info.has_tdz2 == 1 /* Has touchdown zone lighting */ ) {
         TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, true );
         lights.push_back( s );
     }
 
     // REIL lighting
-    if ( rwylt1 >= 3 /* Has REIL lighting */ ) {
+    if ( rwy_info.reil1 > 0 /* Has REIL lighting */ ) {
         TGSuperPoly s = gen_reil( rwy_info, alt_m, false );
         lights.push_back( s );
     }
-    if ( rwylt2 >= 3 /* Has REIL lighting */ ) {
+    if ( rwy_info.reil2 > 0 /* Has REIL lighting */ ) {
         TGSuperPoly s = gen_reil( rwy_info, alt_m, true );
         lights.push_back( s );
     }
-
+#if 0
     // VASI/PAPI lighting
     if ( vasi1 == 2 /* Has VASI */ ) {
         TGSuperPoly s = gen_vasi( rwy_info, alt_m, false, apt_base );
@@ -2685,7 +2683,7 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
         TGSuperPoly s = gen_papi( rwy_info, alt_m, true, apt_base );
         lights.push_back( s );
     }
-
+#endif
     // Approach lighting
 
     ////////////////////////////////////////////////////////////
@@ -2696,26 +2694,26 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    if ( app1 == 4 /* ALSF-I */ ) {
+    if ( rwy_info.alc1_flag == 1 /* ALSF-I */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "1", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == 4 /* ALSF-I */ ) {
+    if ( rwy_info.alc2_flag == 1 /* ALSF-I */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    if ( app1 == 5 /* ALSF-II */ ) {
+    if ( rwy_info.alc1_flag == 2 /* ALSF-II */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "2", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == 5 /* ALSF-II */ ) {
+    if (rwy_info.alc2_flag  == 2 /* ALSF-II */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2732,13 +2730,13 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    if ( app1 == 7 || app1 == 8 /* Calvert 1, 2, and 3 */ ) {
+    if ( rwy_info.alc1_flag == 3 || rwy_info.alc1_flag == 4 /* Calvert 1, 2, and 3 */ ) {
         superpoly_list s = gen_calvert( rwy_info, alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == 7 || app2 == 8 /* Calvert 1, 2, and 3 */ ) {
+    if ( rwy_info.alc2_flag == 3 || rwy_info.alc2_flag == 4 /* Calvert 1, 2, and 3 */ ) {
         superpoly_list s = gen_calvert( rwy_info, alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2753,26 +2751,26 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // data is provided in our database
     ////////////////////////////////////////////////////////////
 
-    if ( app1 == -1 /* MALS not supported by data base */ ) {
+    if ( rwy_info.alc1_flag == 10 /* MALS not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "x", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == -1 /* MALS not supported by data base */ ) {
+    if ( rwy_info.alc2_flag == 10 /* MALS not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "x", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    if ( app1 == -1 /* MALSF not supported by data base */ ) {
+    if ( rwy_info.alc1_flag == 9 /* MALSF not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "F", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == -1 /* MALSF not supported by data base */ ) {
+    if ( rwy_info.alc2_flag == 9 /* MALSF not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "F", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2787,13 +2785,13 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // This is also likely airport specific
     ////////////////////////////////////////////////////////////
 
-    if ( app1 == -1 /* MALSR not supported by data base */ ) {
+    if ( rwy_info.alc1_flag == 8 /* MALSR not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == -1 /* MALSR not supported by data base */ ) {
+    if ( rwy_info.alc2_flag == 8 /* MALSR not supported by data base */ ) {
         superpoly_list s = gen_malsx( rwy_info, alt_m, "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2808,11 +2806,11 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // No clue ...
     ////////////////////////////////////////////////////////////
 
-    if ( app1 == 6 /* ODALS Omni-directional approach light system */ ) {
+    if ( rwy_info.alc1_flag == 11 /* ODALS Omni-directional approach light system */ ) {
         TGSuperPoly s = gen_odals( rwy_info, alt_m, false );
         lights.push_back( s );
     }
-    if ( app2 == 6 /* ODALS Omni-directional approach light system */ ) {
+    if ( rwy_info.alc2_flag == 11 /* ODALS Omni-directional approach light system */ ) {
         TGSuperPoly s = gen_odals( rwy_info, alt_m, true );
         lights.push_back( s );
     }
@@ -2826,98 +2824,98 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 
     // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
     // a shorter center bar)
-    if ( app1 == -1 /* SALS not supported by database */ ) {
+    if ( rwy_info.alc1_flag == 7 /* SALS not supported by database */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "O", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == -1 /* SALS not supported by database */ ) {
+    if ( rwy_info.alc2_flag == 7 /* SALS not supported by database */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "O", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    if ( app1 == 3 /* SALSF */ ) {
+    if ( rwy_info.alc1_flag == -1 /* SALSF */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "P", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == 3 /* SALSF */ ) {
+    if ( rwy_info.alc2_flag == -1 /* SALSF */ ) {
         superpoly_list s = gen_alsf( rwy_info, alt_m, "P", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    if ( app1 == -1 /* SSALF not supported by database */ ) {
+    if ( rwy_info.alc1_flag == 6 /* SSALF not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "F", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == -1 /* SSALF not supported by database */ ) {
+    if ( rwy_info.alc2_flag == 6 /* SSALF not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "F", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    if ( app1 == -1 /* SSALR not supported by database */ ) {
+    if ( rwy_info.alc1_flag == 5 /* SSALR not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == -1 /* SSALR not supported by database */ ) {
+    if ( rwy_info.alc2_flag == 5 /* SSALR not supported by database */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
 
-    if ( app1 == 2 /* SSALS */ ) {
+    if ( rwy_info.alc1_flag == -1 /* SSALS */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    if ( app2 == 2 /* SSALS */ ) {
+    if ( rwy_info.alc2_flag == -1 /* SSALS */ ) {
         superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-
+    cout << "Edge light = " << rwy_info.edge_lights << " Centre light = " << rwy_info.centre_lights << endl;
+    cout << "ALC1 flag = " << rwy_info.alc1_flag << " ALC2 flag2 = " << rwy_info.alc2_flag << endl;
     // Many aproach lighting systems define the threshold lighting
     // needed, but for those that don't (i.e. REIL, ODALS, or Edge
     // lights defined but no approach lights)
     // make threshold lighting
-    cout << "rwylt1 = " << rwylt1 << " app1 = " << app1 << endl;
-    if ( rwylt1 >= 3 /* Has REIL lighting */
-         || app1 == 6 /* ODALS Omni-directional approach light system */
-         || ( rwylt1 >= 2  && app1 <= 1 ) /* Has edge lighting, but no
+
+    if ( rwy_info.reil1 > 0 /* Has REIL lighting */
+         || rwy_info.alc1_flag == 11 /* ODALS Omni-directional approach light system */
+         || ( rwy_info.edge_lights > 0  && rwy_info.alc1_flag == 0 ) /* Has edge lighting, but no
                                              approach lighting */ )
     {
         // forward direction
         cout << "threshold lights for forward direction" << endl;
-        superpoly_list s = gen_runway_threshold_lights( rwy_info, rwylt1,
+        superpoly_list s = gen_runway_threshold_lights( rwy_info, 0,
                                                         alt_m, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
-    cout << "rwylt2 = " << rwylt2 << " app2 = " << app2 << endl;
-    if ( rwylt2 >= 3 /* Has REIL lighting */
-         || app2 == 6 /* ODALS Omni-directional approach light system */
-         || ( rwylt2 >= 2 && app2 <= 1 ) /* Has edge lighting, but no
-                                            approach lighting */ )
+    if ( rwy_info.reil2 > 0 /* Has REIL lighting */
+         || rwy_info.alc2_flag == 11 /* ODALS Omni-directional approach light system */
+         || ( rwy_info.edge_lights > 0  && rwy_info.alc2_flag == 0 ) /* Has edge lighting, but no
+                                             approach lighting */ )
     {
         // reverse direction
         cout << "threshold lights for reverse direction" << endl;
-        superpoly_list s = gen_runway_threshold_lights( rwy_info, rwylt1,
+        superpoly_list s = gen_runway_threshold_lights( rwy_info, 0,
                                                         alt_m, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
@@ -2925,7 +2923,7 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     }
 }
 
-
+#if 0
 // top level taxiway light generator
 void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
                          superpoly_list &lights )
@@ -2971,3 +2969,4 @@ void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
     }
 
 }
+#endif

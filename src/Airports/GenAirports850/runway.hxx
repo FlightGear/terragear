@@ -48,12 +48,20 @@ struct TGRunway {
     double stopway1;
     double stopway2;
 
-    std::string lighting_flags;
     int surface_code;
-    std::string shoulder_code;
+    int shoulder_code;
+    double smoothness;
+    bool centre_lights;
+    int edge_lights;
     int marking_code1;
     int marking_code2;
-    double smoothness;
+    int alc1_flag;
+    int alc2_flag;
+    bool has_tdz1;
+    bool has_tdz2;
+    int reil1;
+    int reil2;
+
     bool   dist_remaining;
 
     double gs_angle1;
@@ -65,8 +73,6 @@ struct TGRunway {
     TGPolygon pre_td_zone;
     TGPolygon td3_zone, td2_zone, td1a_zone, td1b_zone;
     TGPolygon aim_point;
-
-    bool really_taxiway;
     bool generated;
 };
 

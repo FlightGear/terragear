@@ -225,48 +225,19 @@ static void build_runway( const TGRunway& rwy_info,
     SG_LOG(SG_GENERAL, SG_DEBUG, "surface code = " << rwy_info.surface_code);
     int surface_code = rwy_info.surface_code;
     SG_LOG(SG_GENERAL, SG_DEBUG, "surface code = " << surface_code);
-    string lighting_flags = rwy_info.lighting_flags;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "lighting flags = " << lighting_flags);
-
-    string vasi1 = lighting_flags.substr(0,1);
-    string rwylt1 = lighting_flags.substr(1,1);
-    string apprch1 = lighting_flags.substr(2,1);
-    string vasi2 = lighting_flags.substr(3,1);
-    string rwylt2 = lighting_flags.substr(4,1);
-    string apprch2 = lighting_flags.substr(5,1);
 
     string material;
     if ( surface_code == 1 /* Asphalt */ ) {
-        if ( !rwy_info.really_taxiway ) {
             material = "pa_";
-        } else {
-            if ( rwy_info.width <= 150 && rwylt1 == "6" ) {
-                material = "pa_taxiway";
-            } else {
-                material = "pa_tiedown";
-            }
-        }
     } else if ( surface_code == 2 /* Concrete */ ) {
-        if ( !rwy_info.really_taxiway ) {
             material = "pc_";
-        } else {
-            if ( rwy_info.width <= 150 && rwylt1 == "6" ) {
-                material = "pc_taxiway";
-            } else {
-                material = "pc_tiedown";
-            }
-        }
     } else if ( surface_code == 3 /* Turf/Grass */ ) {
         material = "grass_rwy";
     } else if ( surface_code == 4 /* Dirt */
                 || surface_code == 5 /* Gravel */ ) {
         material = "dirt_rwy";
     } else if ( surface_code == 12 /* Dry Lakebed */ ) {
-        if ( rwy_info.really_taxiway ) {
-            material = "lakebed_taxiway";
-        } else {
-            material = "dirt_rwy";
-        }
+	material = "dirt_rwy";
     } else if ( surface_code == 13 /* Water runway (buoy's?) */ ) {
         // water
     } else {
@@ -277,10 +248,7 @@ static void build_runway( const TGRunway& rwy_info,
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "marking code = " << rwy_info.marking_code1 << " / " << rwy_info.marking_code2);
 
-    if ( rwy_info.really_taxiway ) {
-	gen_taxiway( rwy_info, alt_m, material,
-                     rwy_polys, texparams, accum );
-    } else if ( surface_code == 3 /* Turf/Grass */
+      if ( surface_code == 3 /* Turf/Grass */
                 || surface_code == 4 /* Dirt */
                 || surface_code == 5 /* Gravel */ )
     {
@@ -305,17 +273,10 @@ static void build_runway( const TGRunway& rwy_info,
     }
 
     TGPolygon base, safe_base;
-    if ( rwy_info.really_taxiway ) {
-	base = gen_runway_area_w_extend( rwy_info, 0.0, 10.0, 0.0, 0.0, 10.0 );
-        // also clear a safe area around the taxiway
-        safe_base
-            = gen_runway_area_w_extend( rwy_info, 0.0, 40.0, 0.0, 0.0, 40.0 );
-    } else {
-	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1* SG_FEET_TO_METER, -rwy_info.stopway2* SG_FEET_TO_METER, 20.0 );
-        // also clear a safe area around the runway
-        safe_base
-            = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway1* SG_FEET_TO_METER, -rwy_info.stopway2* SG_FEET_TO_METER, 50.0 );
-    }
+
+    base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1* SG_FEET_TO_METER, -rwy_info.stopway2* SG_FEET_TO_METER, 20.0 );
+    // also clear a safe area around the runway
+    safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway1* SG_FEET_TO_METER, -rwy_info.stopway2* SG_FEET_TO_METER, 50.0 );
     *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
 
     // add base to apt_base
@@ -368,12 +329,16 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
 	rwy.rwy_no1 = token[8];
 	rwy.rwy_no2 = token[17];
-        rwy.really_taxiway = (rwy.rwy_no1 == "xxx");
         rwy.generated = false;
 
 	rwy.surface_code = atoi( token[2].c_str() );
-	rwy.shoulder_code = token[3];
+	rwy.shoulder_code = atoi( token[3].c_str() );
         rwy.smoothness = atof( token[4].c_str() );
+
+	rwy.centre_lights = atoi( token[5].c_str() );
+	rwy.edge_lights = atoi( token[6].c_str() );
+
+	rwy.dist_remaining = (atoi( token[7].c_str() ) == 1 );
 
 	//first runway end coordinates
 	double lat_1 = atof( token[9].c_str() );
@@ -420,9 +385,16 @@ void build_airport( string airport_id, float alt_m,
 	rwy.marking_code1 = atoi( token[13].c_str() );
 	rwy.marking_code2 = atoi( token[22].c_str() );
 
-	rwy.lighting_flags = token[9];
+	//rwy.lighting_flags = token[9];
+	rwy.alc1_flag = atoi( token[14].c_str() );
+	rwy.alc2_flag = atoi( token[23].c_str() );
 
-        rwy.dist_remaining = (atoi( token[14].c_str() ) == 1 );
+	rwy.has_tdz1 = atoi( token[15].c_str() );
+	rwy.has_tdz2 = atoi( token[24].c_str() );
+
+	rwy.reil1 = atoi( token[16].c_str() );
+	rwy.reil2 = atoi( token[25].c_str() );
+
 
 	if (token.size()>15) {
 		string vasi_angles = token[15];
@@ -439,7 +411,7 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy.heading);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << rwy.length);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << rwy.width);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  lighting = " << rwy.lighting_flags);
+	//SG_LOG( SG_GENERAL, SG_DEBUG, "  lighting = " << rwy.lighting_flags);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_code);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  mrkgs1/2  = " << rwy.marking_code1 << " / " << rwy.marking_code2);
         SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy.disp_thresh1);
@@ -447,11 +419,7 @@ void build_airport( string airport_id, float alt_m,
         SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy.disp_thresh2);
         SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy.stopway2);
 
-        if ( rwy.really_taxiway ) {
-            taxiways.push_back( rwy );
-        } else {
-            runways.push_back( rwy );
-        }
+        runways.push_back( rwy );
     }
     SG_LOG(SG_GENERAL, SG_INFO, "Runway count = " << runways.size() );
     SG_LOG(SG_GENERAL, SG_INFO, "Taxiway count = " << taxiways.size() );
