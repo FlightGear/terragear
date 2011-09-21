@@ -368,6 +368,11 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 			    rwy_polys, texparams, accum );
     }
 
+    gen_runway_stopway( rwy_info, runway_half, rwhalf,
+                       material,
+                       rwy_polys, texparams, accum );
+
+
 }
 
 

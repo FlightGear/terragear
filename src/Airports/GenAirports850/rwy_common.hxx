@@ -43,8 +43,8 @@ void gen_number_block( const TGRunway& rwy_info,
 
 // generate the runway stopway
 void gen_runway_stopway( const TGRunway& rwy_info,
-                         const TGPolygon& runway_a,
-                         const TGPolygon& runway_b,
+                         const TGPolygon& runway_half,
+                         int rwhalf,
                          const std::string& prefix,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,

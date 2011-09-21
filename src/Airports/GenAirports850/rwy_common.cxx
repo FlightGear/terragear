@@ -92,37 +92,46 @@ void gen_number_block( const TGRunway& rwy_info,
 
 // generate the runway stopway
 void gen_runway_stopway( const TGRunway& rwy_info,
-                         const TGPolygon& runway_a,
-                         const TGPolygon& runway_b,
+                         const TGPolygon& runway_half,
+			 int rwhalf,
                          const string& prefix,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
                          TGPolygon* accum ) {
     const float length = rwy_info.length / 2.0 + 2.0;
     double start1_pct = 0.0;
-    double start2_pct = 0.0;
     double end1_pct = 0.0;
-    double end2_pct = 0.0;
     double part_len = 0.0;
+    double heading = 0.0;
+    double stopway = 0.0;
 
     int count=0;
     int i=0;
 
-    if (rwy_info.stopway1 > 0.0) {
+    if (rwhalf == 1) {
+	    heading = rwy_info.heading + 180.0;
+	    stopway = rwy_info.stopway1;
+    }
+    else if (rwhalf == 2) {
+	    heading = rwy_info.heading;
+	    stopway = rwy_info.stopway2;
+    }
+
+    if (stopway > 0.0) {
         /* Generate approach end stopway */
-        count = (int) (rwy_info.stopway1 * 2.0/ rwy_info.width);
+        count = (int) (stopway * 2.0/ rwy_info.width);
         if(count < 1) count = 1;
-        part_len = rwy_info.stopway1 / (double) count;
+        part_len = stopway / (double) count;
         for(i=0;i<count;i++)
         {
             start1_pct=end1_pct;
             end1_pct = start1_pct + ( part_len / length );
             gen_runway_section( rwy_info,
-                                runway_b,
+                                runway_half,
                                 - end1_pct, -start1_pct,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0, //last number is lengthwise
-                                rwy_info.heading + 180.0,
+                                heading,
                                 prefix,
                                 "stopway",
                                 rwy_polys,
@@ -130,28 +139,7 @@ void gen_runway_stopway( const TGRunway& rwy_info,
                                 accum);
         }
     }
-    if (rwy_info.stopway2 > 0.0) {
-        /* Generate reciprocal end stopway */
-        count = (int) (rwy_info.stopway2 * 2.0 / rwy_info.width);
-        if(count < 1) count = 1;
-        part_len = rwy_info.stopway2 / (double) count;
-        for(i=0;i<count;i++)
-        {
-            start2_pct=end2_pct;
-            end2_pct = start2_pct + ( part_len / length );
-            gen_runway_section( rwy_info,
-                                runway_a,
-                                - end2_pct, -start2_pct,
-                                0.0, 1.0,
-                                0.0, 1.0, 0.0, 1.0,
-                                rwy_info.heading,
-                                prefix,
-                                "stopway",
-                                rwy_polys,
-                                texparams,
-                                accum);
-        }
-    }
+
 }
 
 // generate a section of runway
