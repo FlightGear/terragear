@@ -48,19 +48,19 @@ void gen_prec_marking( const TGRunway& rwy_info,
     // onwards to the middle (one half).
     // Set order of sections and their corresponding size
     static const struct marking prec_rw[] = {
-						{ "tz_three", 380 },
-						{ "rest", 200 },
-						{ "aim", 400 },
-						{ "tz_two_a", 400 },
-						{ "rest", 200 },
-						{ "tz_two_b", 200 },
-						{ "rest", 200 },
-						{ "tz_one_a", 400 },
-						{ "rest", 200 },
-						{ "tz_one_b", 200 }
+						{ "tz_three", 380 * SG_FEET_TO_METER },
+						{ "rest", 200 * SG_FEET_TO_METER },
+						{ "aim", 400 * SG_FEET_TO_METER },
+						{ "tz_two_a", 400 * SG_FEET_TO_METER },
+						{ "rest", 200 * SG_FEET_TO_METER },
+						{ "tz_two_b", 200 * SG_FEET_TO_METER },
+						{ "rest", 200 * SG_FEET_TO_METER },
+						{ "tz_one_a", 400 * SG_FEET_TO_METER },
+						{ "rest", 200 * SG_FEET_TO_METER },
+						{ "tz_one_b", 200 * SG_FEET_TO_METER }
 					   };
 
-    double length = rwy_info.length / 2.0 + 2.0;
+    double length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
 
     for ( int i=0; i < sizeof prec_rw / sizeof prec_rw[0]; ++i) {
     SG_LOG(SG_GENERAL, SG_INFO, "PREC_RW = " << prec_rw[i].tex << " lenght: " << prec_rw[i].size);
@@ -90,11 +90,11 @@ void gen_non_prec_marking( const TGRunway& rwy_info,
     // onwards to the middle (one half).
     // Set order of sections and their corresponding size
     static const struct marking non_prec_rw[] = {
-						{ "centerline", 200 },
-						{ "aim", 400 }
+						{ "centerline", 200 * SG_FEET_TO_METER },
+						{ "aim", 400 * SG_FEET_TO_METER }
 					   };
 
-    double length = rwy_info.length / 2.0 + 2.0;
+    double length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
 
     for ( int i=0; i < sizeof non_prec_rw / sizeof non_prec_rw[0]; ++i) {
     SG_LOG(SG_GENERAL, SG_INFO, "NON_PREC_RW = " << non_prec_rw[i].tex << " lenght: " << non_prec_rw[i].size);
@@ -169,8 +169,8 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     // we add 2' to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they
     // belong.
-    double length = rwy_info.length / 2.0 + 2.0;
-    if ( length < 3075 ) {
+    double length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
+    if ( length < 3075 * SG_FEET_TO_METER ) {
         SG_LOG( SG_GENERAL, SG_ALERT,
 	        "Runway " << rwy_info.rwy_no1 << " is not long enough ("
                 << rwy_info.length << ") for precision markings!");
@@ -206,14 +206,14 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
                 << disp_thresh );
 
         // reserve 90' for final arrows
-        double thresh = disp_thresh - 90.0;
+        double thresh = disp_thresh - 90.0 * SG_FEET_TO_METER;
 
         // number of full center arrows
-        int count = (int)(thresh / 200.0);
+        int count = (int)(thresh / 200.0 * SG_FEET_TO_METER);
 
         // length of starting partial arrow
-        double part_len = thresh - ( count * 200.0 );
-        double tex_pct = (200.0 - part_len) / 200.0;
+        double part_len = thresh - ( count * 200.0 * SG_FEET_TO_METER);
+        double tex_pct = (200.0 * SG_FEET_TO_METER - part_len) / 200.0 * SG_FEET_TO_METER;
 
         // starting (possibly partial chunk)
         start1_pct = end1_pct;
@@ -229,7 +229,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
         // main chunks
         for ( i = 0; i < count; ++i ) {
             start1_pct = end1_pct;
-            end1_pct = start1_pct + ( 200.0 / length );
+            end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
             gen_runway_section( rwy_info, runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -241,7 +241,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
         // final arrows
         start1_pct = end1_pct;
-        end1_pct = start1_pct + ( 90.0 / length );
+        end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
         gen_runway_section( rwy_info, runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
@@ -259,7 +259,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     //
 
     start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 202.0 / length );
+    end1_pct = start1_pct + ( 202.0 * SG_FEET_TO_METER / length );
     gen_runway_section( rwy_info, runway_half,
 			start1_pct, end1_pct,
 			0.0, 1.0,
@@ -292,7 +292,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
     if ( !letter.empty() ) {
 	start1_pct = end1_pct;
-	end1_pct = start1_pct + ( 90.0 / length );
+	end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
 	gen_runway_section( rwy_info, runway_half,
 			    start1_pct, end1_pct,
 			    0.0, 1.0,
@@ -323,7 +323,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     }
 
     start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 80.0 / length );
+    end1_pct = start1_pct + ( 80.0 * SG_FEET_TO_METER / length );
     gen_number_block( rwy_info, material, runway_half, heading,
 		      num, start1_pct, end1_pct, rwy_polys, texparams, accum );
  }
@@ -351,7 +351,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     // fit the 'rest' texture in as many times as will go evenly into
     // the remaining distance so we don't end up with a super short
     // section at the end.
-    double ideal_rest_inc = ( 200.0 / length );
+    double ideal_rest_inc = ( 200.0 * SG_FEET_TO_METER / length );
     int divs = (int)((1.0 - end1_pct) / ideal_rest_inc) + 1;
     double rest1_inc = (1.0 - end1_pct) / divs;
 

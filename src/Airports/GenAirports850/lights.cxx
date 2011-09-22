@@ -98,7 +98,7 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
     point_list y_normals; y_normals.clear();
     int i;
 
-    double len = rwy_info.length * SG_FEET_TO_METER;
+    double len = rwy_info.length;
     int divs = (int)(len / 60.0) + 1;
 
     Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
@@ -107,8 +107,8 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     2.0 );
 
     point_list corner;
@@ -205,7 +205,7 @@ static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
     point_list b_normals; b_normals.clear();
     int i;
 
-    double len = rwy_info.length * SG_FEET_TO_METER;
+    double len = rwy_info.length;
     int divs;
     if ( len > 100.0 ) {
         // for lengths of 300' or more, max spacing is 200'
@@ -297,8 +297,8 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     0.0 );
 
     point_list corner;
@@ -422,8 +422,8 @@ static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     2.0 );
 
     point_list corner;
@@ -593,8 +593,8 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     0.0 );
 
     point_list corner;
@@ -702,8 +702,8 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     0.0 );
 
     point_list corner;
@@ -868,8 +868,8 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     0.0 );
 
     point_list corner;
@@ -981,8 +981,8 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     0.0 );
 
     point_list corner;
@@ -1080,15 +1080,15 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
 
     // Generate the threshold lights
 
-    double len = rwy_info.length * SG_FEET_TO_METER;
+    double len = rwy_info.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     2.0 );
 
     point_list corner;
@@ -1466,15 +1466,15 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
 
     // Generate the threshold lights
 
-    double len = rwy_info.length * SG_FEET_TO_METER;
+    double len = rwy_info.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     2.0 );
 
     point_list corner;
@@ -1980,8 +1980,8 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     0.0 );
 
     point_list corner;
@@ -2084,15 +2084,15 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
 
     // Generate the threshold lights
 
-    double len = rwy_info.length * SG_FEET_TO_METER;
+    double len = rwy_info.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     2.0 );
 
     point_list corner;
@@ -2354,15 +2354,15 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 
     // Generate the threshold lights
 
-    double len = rwy_info.length * SG_FEET_TO_METER;
+    double len = rwy_info.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1 * SG_FEET_TO_METER,
-                                    rwy_info.disp_thresh2 * SG_FEET_TO_METER,
+                                    rwy_info.disp_thresh1,
+                                    rwy_info.disp_thresh2,
                                     2.0 );
 
     point_list corner;

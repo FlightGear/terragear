@@ -98,7 +98,7 @@ void gen_runway_stopway( const TGRunway& rwy_info,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
                          TGPolygon* accum ) {
-    const float length = rwy_info.length / 2.0 + 2.0;
+    const float length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
     double part_len = 0.0;
@@ -276,19 +276,19 @@ void gen_runway_section( const TGRunway& rwy_info,
     // we add 2' to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they
     // belong.
-    double len = rwy_info.length / 2.0 + 2;
+    double len = rwy_info.length / 2.0 + 2 * SG_FEET_TO_METER;
     double sect_len = len * ( endl_pct - startl_pct );
 
     // we add 2' to both sides of the runway (4' total) for texture
     // overlap.  This puts the lines on the texture back to the edge
     // of the runway where they belong.
-    double wid = rwy_info.width + 4;
+    double wid = rwy_info.width + 4 * SG_FEET_TO_METER;
     double sect_wid = wid * ( endw_pct - startw_pct );
 
     TGTexParams tp;
     tp = TGTexParams( p0,
-                      sect_wid * SG_FEET_TO_METER,
-                      sect_len * SG_FEET_TO_METER,
+                      sect_wid,
+                      sect_len,
                       heading );
     tp.set_minu( minu );
     tp.set_maxu( maxu );

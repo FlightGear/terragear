@@ -274,9 +274,9 @@ static void build_runway( const TGRunway& rwy_info,
 
     TGPolygon base, safe_base;
 
-    base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1* SG_FEET_TO_METER, -rwy_info.stopway2* SG_FEET_TO_METER, 20.0 );
+    base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1, -rwy_info.stopway2, 20.0 );
     // also clear a safe area around the runway
-    safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway1* SG_FEET_TO_METER, -rwy_info.stopway2* SG_FEET_TO_METER, 50.0 );
+    safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway1, -rwy_info.stopway2, 50.0 );
     *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
 
     // add base to apt_base
@@ -354,7 +354,7 @@ void build_airport( string airport_id, float alt_m,
 	double rwcourse(SGGeodesy::courseDeg(pos_1, pos_2));
 
 	//calculate runway length
-	double rwlength((SGGeodesy::distanceM(pos_1, pos_2)) * SG_METER_TO_FEET);
+	double rwlength(SGGeodesy::distanceM(pos_1, pos_2));
 
 	//calculate runway centerpoint
 	double rwcenter_lat = (lat_1 + lat_2) / 2;
@@ -374,13 +374,13 @@ void build_airport( string airport_id, float alt_m,
 	rwy.heading = rwcourse;
 
 	rwy.length = rwlength;
-	rwy.width = atoi( token[1].c_str() ) * SG_METER_TO_FEET;
+	rwy.width = atoi( token[1].c_str() );
 
-        rwy.disp_thresh1 = atoi( token[11].c_str() ) * SG_METER_TO_FEET;
-        rwy.disp_thresh2 = atoi( token[20].c_str() ) * SG_METER_TO_FEET;
+        rwy.disp_thresh1 = atoi( token[11].c_str() );
+        rwy.disp_thresh2 = atoi( token[20].c_str() );
 
-        rwy.stopway1 = atoi( token[12].c_str() ) * SG_METER_TO_FEET;
-        rwy.stopway2 = atoi( token[21].c_str() ) * SG_METER_TO_FEET;
+        rwy.stopway1 = atoi( token[12].c_str() );
+        rwy.stopway2 = atoi( token[21].c_str() );
 
 	rwy.marking_code1 = atoi( token[13].c_str() );
 	rwy.marking_code2 = atoi( token[22].c_str() );
