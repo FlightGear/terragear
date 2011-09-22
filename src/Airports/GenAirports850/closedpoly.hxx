@@ -25,12 +25,17 @@ public:
     int  Finish();
     int  BuildOsg( osg::Group* airport );
     int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
-    
+
+    FeatureList* GetFeatures()
+    {
+        return &features;
+    }        
+
 private:
     //osg::DrawArrays* CreatePrimitive( BezContour* contour, osg::Vec3Array* v_pave );
     // convert the BezierPoly to a normal Poly (adding nodes for the curves)
     void CreateConvexHull( void );
-    void ConvertContour( BezContour* src, point_list *dst, bool reverse );
+    void ConvertContour( BezContour* src, point_list *dst );
     osg::DrawArrays* CreateOsgPrimitive( point_list contour, osg::Vec3Array* vpave );
     void ExpandContour( point_list& src, TGPolygon& dst, double dist );
 

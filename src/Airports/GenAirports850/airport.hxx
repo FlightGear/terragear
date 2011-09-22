@@ -30,6 +30,14 @@ public:
         features.push_back( feature );
     }
 
+    void AddFeatures( FeatureList* feature_list )
+    {
+        for (int i=0; i<feature_list->size(); i++)
+        {
+            features.push_back( feature_list->at(i) );
+        }
+    }
+
     void BuildOsg( osg::Group* airport );
     void BuildBtg( const string& root, const string_list& elev_src );
 

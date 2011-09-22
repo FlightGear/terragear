@@ -1,6 +1,4 @@
-#include "beznode.hxx"
-#include "linearfeature.hxx"
-#include "math.h"
+#include <stdlib.h>
 
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/math/SGVec3.hxx>
@@ -12,375 +10,254 @@
 #include <osg/PolygonMode>
 #include <osg/PolygonOffset>
 
-int LinearFeature::Finish( osg::Group* airport )
+#include <Geometry/poly_support.hxx>
+
+#include "beznode.hxx"
+#include "linearfeature.hxx"
+#include "math.h"
+
+void LinearFeature::ConvertContour( BezContour* src  )
 {
-    BezNode*    node;
-    int         i, j;
-    int         prev_dir = 0;
-    double      direction;
-    double      dist1, dist2;
-
-    printf("Finish a %s Linear Feature with %d verticies\n", closed ? "closed" : "open", contour.size());
-    
-    BezNode* prevNode;
-    BezNode* curNode;
-    BezNode* nextNode;
-
+    BezNode*    prevNode;
+    BezNode*    curNode;
+    BezNode*    nextNode;
+        
     Point3D prevLoc;
     Point3D curLoc;
     Point3D nextLoc;
+    Point3D cp1;
+    Point3D cp2;         
 
-    Point3D  st_cur1;
-    Point3D  st_cur2;
-    double st_curx, st_cury, az2;
+    int curve_type = CURVE_LINEAR;
+    Marking* cur_mark = NULL;
+    int i;
 
-    // create a DrawElement for the stripe triangle strip
-    int stripe_idx = 0;
-    int cur_marking = 0;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
 
-    osg::Vec3dArray* v_stripe = new osg::Vec3dArray;
+    // clear anything in the point list
+    points.empty();
 
-    for (i=0; i<contour.size(); i++)
+    // iterate through each bezier node in the contour
+    for (i=0; i <= src->size()-1; i++)
     {
-        printf("\nHandling Node %d\n\n", i );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "\nHandling Node " << i << "\n\n");
 
         if (i == 0)
         {
-            // if closed, set prev node to last in the contour
-            if (closed)
-            {
-                prevNode = contour.at( contour.size()-1 );
-            }
-            else
-            {
-                prevNode = NULL;
-            }
+            // set prev node to last in the contour, as all contours must be closed
+            prevNode = src->at( src->size()-1 );
         }
         else
         {
-            prevNode = contour.at( i-1 );
+            // otherwise, it's just the previous index
+            prevNode = src->at( i-1 );
         }
 
-        curNode = contour.at(i);
+        curNode = src->at(i);
 
-        if (i<contour.size()-1)
+        if (i < src->size() - 1)
         {
-            nextNode = contour.at(i+1);
+            nextNode = src->at(i+1);
         }
         else
         {
-            // if closed, set next node to the first in the contour
-            if (closed)
+            // for the last node, next is the first. as all contours are closed
+            nextNode = src->at(0);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////
+        // remember the index for the starting stopping of marks on the converted contour
+
+        // are we watching a mark for the end?
+        if (cur_mark)
+        {
+            if (curNode->GetMarking() != cur_mark->type)
             {
-                nextNode = contour.at(0);
-            }
-            else
-            {
-                nextNode = NULL;
+                // amrking has ended, or changed
+                cur_mark->end_idx = points.size();
+                marks.push_back(cur_mark);
+                cur_mark = NULL;
             }
         }
+        
+        // should we start a new mark?
+        if (cur_mark == NULL)
+        {
+            if (curNode->GetMarking())
+            {
+                // we aren't watching a mark, and this node has one
+                cur_mark = new Marking;
+                cur_mark->type = curNode->GetMarking();
+                cur_mark->start_idx = points.size();
+            }
+        }
+        ////////////////////////////////////////////////////////////////////////////////////
+
 
         // determine the type of curve from prev (just to get correct prev location)
         // once we start drawing the curve from cur to next, we can just remember the prev loc
-        if (prevNode)
-        {        
-            if (prevNode->HasNextCp())
-            {
-                // curve from prev is cubic or quadratic 
-                if(curNode->HasPrevCp())
-                {
-                    // curve from prev is cubic : calculate the last location on the curve
-                    prevLoc = CalculateCubicLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-                }
-                else
-                {
-                    // curve from prev is quadratic : use prev node next cp
-                    prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-                }
-            }
-            else 
-            {
-                // curve from prev is quadratic or linear
-                if( curNode->HasPrevCp() )
-                {
-                    // curve from prev is quadratic : calculate the last location on the curve
-                    prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-                }
-                else
-                {
-                    // curve from prev is linear : just use prev node location
-                    prevLoc = prevNode->GetLoc();
-                }
-            }
-        }
-        else
+        if (prevNode->HasNextCp())
         {
-            prevLoc = Point3D(0.0f, 0.0f, 0.0f);
-        }
-
-        int curve_type = CURVE_LINEAR;
-        Point3D cp1;
-        Point3D cp2;            
-
-        if ( nextNode)
-        {
-            // now determine how we will iterate through cur node to next node 
-            if( curNode->HasNextCp() )
+            // curve from prev is cubic or quadratic 
+            if(curNode->HasPrevCp())
             {
-                // next curve is cubic or quadratic
-                if( nextNode->HasPrevCp() )
-                {
-                    // curve is cubic : need both control points
-                    curve_type = CURVE_CUBIC;
-                    cp1 = curNode->GetNextCp();
-                    cp2 = nextNode->GetPrevCp();
-                }
-                else
-                {
-                    // curve is quadratic using current nodes cp as the cp
-                    curve_type = CURVE_QUADRATIC;
-                    cp1 = curNode->GetNextCp();
-                }
+                // curve from prev is cubic : calculate the last location on the curve
+                prevLoc = CalculateCubicLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
             }
             else
             {
-                // next curve is quadratic or linear
-                if( nextNode->HasPrevCp() )
-                {
-                    // curve is quadratic using next nodes cp as the cp
-                    curve_type = CURVE_QUADRATIC;
-                    cp1 = nextNode->GetPrevCp();
-                }
-                else
-                {
-                    // curve is linear
-                    curve_type = CURVE_LINEAR;
-                }
+                // curve from prev is quadratic : use prev node next cp
+                prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
+            }
+        }
+        else 
+        {
+            // curve from prev is quadratic or linear
+            if( curNode->HasPrevCp() )
+            {
+                // curve from prev is quadratic : calculate the last location on the curve
+                prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
+            }
+            else
+            {
+                // curve from prev is linear : just use prev node location
+                prevLoc = prevNode->GetLoc();
+            }
+        }                    
+
+        // now determine how we will iterate from current node to next node 
+        if( curNode->HasNextCp() )
+        {
+            // next curve is cubic or quadratic
+            if( nextNode->HasPrevCp() )
+            {
+                // curve is cubic : need both control points
+                curve_type = CURVE_CUBIC;
+                cp1 = curNode->GetNextCp();
+                cp2 = nextNode->GetPrevCp();
+            }
+            else
+            {
+                // curve is quadratic using current nodes cp as the cp
+                curve_type = CURVE_QUADRATIC;
+                cp1 = curNode->GetNextCp();
             }
         }
         else
         {
-            curve_type = CURVE_NONE;
+            // next curve is quadratic or linear
+            if( nextNode->HasPrevCp() )
+            {
+                // curve is quadratic using next nodes cp as the cp
+                curve_type = CURVE_QUADRATIC;
+                cp1 = nextNode->GetPrevCp();
+            }
+            else
+            {
+                // curve is linear
+                curve_type = CURVE_LINEAR;
+            }
         }
 
         // initialize current location
         curLoc = curNode->GetLoc();
-        switch( curve_type )
+        if (curve_type != CURVE_LINEAR)
         {
-            case CURVE_QUADRATIC:
-            case CURVE_CUBIC:
-                for (int p=0; p<BEZIER_DETAIL; p++)
+            for (int p=0; p<BEZIER_DETAIL; p++)
+            {
+                // calculate next location
+                if (curve_type == CURVE_QUADRATIC)
                 {
-                    // calculate next location
-                    if (curve_type == CURVE_QUADRATIC)
-                    {
-                        nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
-                    }
-                    else
-                    {
-                        nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
-                    }
-
-                    // set the verticies
-                    // convert from lat/lon to geodisc
-                    // (maybe later) - check some simgear objects...
-                    // printf("Added vertex at %lf,%lf\n", 
-                    // add the pavement vertex
-                    if (p==0)
-                    {
-                        printf("adding Curve Anchor node (type %d) at (%lf,%lf)\n", curve_type, curLoc.x(), curLoc.y());
-                    }
-                    else
-                    {
-                        printf("   add bezier node (type %d) at (%lf,%lf)\n", curve_type, curLoc.x(), curLoc.y());
-                    }
-    
-                    // find the average direction at this vertex...
-                    direction = CalcMarkingVerticies( &prevLoc, &curLoc, &nextLoc, -1, &prev_dir, &dist1, &dist2 );
-
-                    printf("got dir for bezier : prev_dir %d, dist1 %lf, dist2 %lf\n", prev_dir, dist1, dist2);
-
-                    // distance can't be constant - it's the hypotenous of a right triangler with a constant offset from the outer rim.              
-                    geo_direct_wgs_84( curLoc.x(), curLoc.y(), direction, dist1, &st_curx, &st_cury, &az2 );
-                    st_cur1 = Point3D( st_curx, st_cury, 0.0f );
-                    v_stripe->push_back( SGPoint3DtoOSGVec3d(st_cur1) );
-
-                    geo_direct_wgs_84( curLoc.x(), curLoc.y(), direction, dist2, &st_curx, &st_cury, &az2 );
-                    st_cur2 = Point3D( st_curx, st_cury, 0.0f );
-                    v_stripe->push_back( SGPoint3DtoOSGVec3d(st_cur2) );
-    
-                    printf("node at (%lf,%lf) has stripe verticies (%lf,%lf) and (%lf,%lf)\n", 
-                        curLoc.x(), curLoc.y(), 
-                        st_cur1.x(), st_cur1.y(),
-                        st_cur2.x(), st_cur2.y() 
-                    );
-
-                    // now set set prev and cur locations for the next iteration
-                    prevLoc = curLoc;
-                    curLoc = nextLoc;
+                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
                 }
-                break;
+                else
+                {
+                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
+                }
 
-            case CURVE_LINEAR:
-                nextLoc = nextNode->GetLoc();
+                // add the feature vertex
+                points.push_back( curLoc );
 
-                printf("adding Linear Anchor node at (%lf,%lf)\n", curLoc.x(), curLoc.y());
+                if (p==0)
+                {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
+                }
+                else
+                {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
+                }
 
-                // find the average direction at this vertex...
-                direction = CalcMarkingVerticies( &prevLoc, &curLoc, &nextLoc, -1, &prev_dir, &dist1, &dist2 );
+                // now set set prev and cur locations for the next iteration
+                prevLoc = curLoc;
+                curLoc = nextLoc;
+            }
+        }
+        else
+        {
+            nextLoc = nextNode->GetLoc();
 
-                printf("got dir for linear : prev_dir %d, dist1 %lf, dist2 %lf\n", prev_dir, dist1, dist2);
+            // just add the one vertex - linear
+            points.push_back( curLoc );
 
-                // distance can't be constant - it's the hypotenous of a right triangler with a constant offset from the outer rim.              
-                printf("calc direct: curLoc is (%lf,%lf), direction is %lf, dist is %lf\n", curLoc.x(), curLoc.y(), direction, dist1);
-
-                geo_direct_wgs_84( curLoc.x(), curLoc.y(), direction, dist1, &st_curx, &st_cury, &az2 );
-                st_cur1 = Point3D( st_curx, st_cury, 0.0f );
-                
-                v_stripe->push_back( SGPoint3DtoOSGVec3d(st_cur1) );
-
-                geo_direct_wgs_84( curLoc.x(), curLoc.y(), direction, dist2, &st_curx, &st_cury, &az2 );
-                st_cur2 = Point3D( st_curx, st_cury, 0.0f );
-                v_stripe->push_back( SGPoint3DtoOSGVec3d(st_cur2) );
-
-                printf("node at (%lf,%lf) has stripe verticies (%lf,%lf) and (%lf,%lf)\n", 
-                    curLoc.x(), curLoc.y(), 
-                    st_cur1.x(), st_cur1.y(),
-                    st_cur2.x(), st_cur2.y() 
-                );
-                break;
-
-            case CURVE_NONE:
-                nextLoc = Point3D(0.0f, 0.0f, 0.0f);
-
-                // we need to add the last verticies based on cur and prev position.
-                // find the average direction at this vertex...
-                direction = CalcMarkingVerticies( &prevLoc, &curLoc, &nextLoc, -1, &prev_dir, &dist1, &dist2 );
-
-                printf("got dir for term points : prev_dir %lf, dist1 %lf, dist2 %lf\n", prev_dir, dist1, dist2);
-
-                // distance can't be constant - it's the hypotenous of a right triangler with a constant offset from the outer rim.              
-                geo_direct_wgs_84( curLoc.x(), curLoc.y(), direction, dist1, &st_curx, &st_cury, &az2 );
-                st_cur1 = Point3D( st_curx, st_cury, 0.0f );
-                v_stripe->push_back( SGPoint3DtoOSGVec3d(st_cur1) );
-
-                geo_direct_wgs_84( curLoc.x(), curLoc.y(), direction, dist2, &st_curx, &st_cury, &az2 );
-                st_cur2 = Point3D( st_curx, st_cury, 0.0f );
-                v_stripe->push_back( SGPoint3DtoOSGVec3d(st_cur2) );
-
-                printf("node at (%lf,%lf) has stripe verticies (%lf,%lf) and (%lf,%lf)\n", 
-                    curLoc.x(), curLoc.y(), 
-                    st_cur1.x(), st_cur1.y(),
-                    st_cur2.x(), st_cur2.y() 
-                );
-                break;
+            SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
         }
     }
-
-    printf("End feature %d \n", v_stripe->size() );
-    airport->addChild(FinishMarking( v_stripe ) );
-}
-
-int LinearFeature::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
-{
-    string material;
-
-    return 1;
 }
 
 
-// this should be in the class
-// TODO: Should Be AddMidMarkingVerticies - and handle offset (used in LinearFeature::Finish only)
-double CalcMiddleMarkingVerticies( Point3D *prev, Point3D *cur, Point3D *next, int wind, int *prev_dir, double *dist1, double *dist2 )
+Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *next, double offset_by )
 {
-    int    turn_direction;
-    bool   reverse_dir = false;
     double offset_dir;
     double next_dir;
     double az1, az2;
     double dist;
+    double pt_x, pt_y;
 
-    printf("Find averate angle for mark: prev (%lf,%lf), cur(%lf,%lf), next(%lf,%lf)\n", prev->x(), prev->y(), cur->x(), cur->y(), next->x(), next->y());
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << *prev << "), "
+                                                                  "cur (" << *cur  << "), "
+                                                                 "next (" << *next << ")" );
 
     // first, find if the line turns left or right ar src
     // for this, take the cross product of the vectors from prev to src, and src to next.
     // if the cross product is negetive, we've turned to the left
     // if the cross product is positive, we've turned to the right
     // if the cross product is 0, then we need to use the direction passed in
-    SGVec3d dir1 = cur->toSGVec3d() - prev->toSGVec3d();
+    SGVec3d dir1 = prev->toSGVec3d() - cur->toSGVec3d();
     dir1 = normalize(dir1);
-
-    printf("normalized dir1 is (%lf,%lf)\n", dir1.x(), dir1.y());
 
     SGVec3d dir2 = next->toSGVec3d() - cur->toSGVec3d();
     dir2 = normalize(dir2);
 
-    printf("normalized dir2 is (%lf,%lf)\n", dir2.x(), dir2.y());
-
-    SGVec3d cp = cross(dir1,dir2);
-    if (cp.z() < 0.0)
-    {
-        turn_direction = -1;
-    }
-    else if (cp.z() > 0.0)
-    {
-        turn_direction = 1;
-    }
-    else
-    {
-        turn_direction = 0;
-    }
-
-    printf("turn direction is %d\n", turn_direction);
-
     // Now find the average
-    SGVec3d avg = -dir1 + dir2;
-
-    printf("avg is (%lf,%lf)\n", avg.x(), avg.y());
-
-    // now determine which way the direction needs to point
-    if ((wind == -1) && (turn_direction == 1))
-    {
-        reverse_dir = true;
-    }
-    if ((wind == 1) && (turn_direction == -1))
-    {
-        reverse_dir = true;
-    }
-
-    printf("reverse dir is %d\n", reverse_dir);
+    SGVec3d avg = dir1 + dir2;
+    avg = normalize(avg);
 
     // find the offset angle
-    geo_inverse_wgs_84( 0.0f, 0.0f, avg.x(), avg.y(), &offset_dir, &az2, &dist);
-    if (reverse_dir)
-    {
-        offset_dir += 180;
-        while (offset_dir >= 360.0)
-        {
-            offset_dir -= 360.0;
-        }
-    }
-    printf("offset direction is %lf\n", offset_dir);
+    geo_inverse_wgs_84( 0.0f, 0.0f, avg.y(), avg.x(), &offset_dir, &az2, &dist);
 
     // find the direction to the next point
-    geo_inverse_wgs_84( cur->x(), cur->y(), next->x(), next->y(), &next_dir, &az2, &dist);
-    printf("next direction is %lf\n", next_dir);
+    geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
 
     // calculate correct distance for the offset point
-    *dist1 = (-LINE_WIDTH)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
-    *dist2 = (LINE_WIDTH)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
+    dist = (offset_by)/sin(SGMiscd::deg2rad(offset_dir-next_dir));
 
-    return offset_dir;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "heading is " << offset_dir << " distance is " << dist );
+
+    // calculate the point from cur
+    geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, dist, &pt_y, &pt_x, &az2 );
+
+    return Point3D(pt_x, pt_y, 0.0f);
 }
 
-// TODO: Should Be AddStartMarkingVerticies - and handle offset (used in LinearFeature::Finish only)
-double CalcStartMarkingVerticies( Point3D *cur, Point3D *next, int wind, int *prev_dir, double *dist1, double *dist2 )
+Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double offset_by )
 {
     double offset_dir;
     double az1, az2;
     double dist;
+    double pt_x, pt_y;
 
-    printf("Find start angle for mark: cur(%lf,%lf), next(%lf,%lf)\n", cur->x(), cur->y(), next->x(), next->y());
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << *cur  << "), "
+                                                            "next (" << *next << ")" );
 
     // find the offset angle
     geo_inverse_wgs_84( cur->x(), cur->y(), next->x(), next->y(), &offset_dir, &az2, &dist);
@@ -390,23 +267,24 @@ double CalcStartMarkingVerticies( Point3D *cur, Point3D *next, int wind, int *pr
         offset_dir += 360;
     }
 
-    printf("offset direction is %lf\n", offset_dir);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "heading is " << offset_dir << " distance is " << offset_by );
 
-    // calculate correct distance for the offset point
-    *dist1 = (-LINE_WIDTH);
-    *dist2 = (LINE_WIDTH);
+    // calculate the point from cur
+    geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
 
-    return offset_dir;
+    return Point3D(pt_x, pt_y, 0.0f);
 }
 
 // TODO: Should Be AddEndMarkingVerticies - and handle offset (used in LinearFeature::Finish only)
-double CalcEndMarkingVerticies( Point3D *prev, Point3D *cur, int wind, int *prev_dir, double *dist1, double *dist2 )
+Point3D LinearFeature::OffsetPointLast( Point3D *prev, Point3D *cur, double offset_by )
 {
     double offset_dir;
     double az1, az2;
     double dist;
+    double pt_x, pt_y;
 
-    printf("Find end angle for mark: prev(%lf,%lf), cur(%lf,%lf)\n", prev->x(), prev->y(), cur->x(), cur->y());
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << *prev  << "), "
+                                                              "cur (" << *cur << ")" );
 
     // find the offset angle
     geo_inverse_wgs_84( prev->x(), prev->y(), cur->x(), cur->y(), &offset_dir, &az2, &dist);
@@ -416,135 +294,177 @@ double CalcEndMarkingVerticies( Point3D *prev, Point3D *cur, int wind, int *prev
         offset_dir += 360;
     }
 
-    printf("offset direction is %lf\n", offset_dir);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "heading is " << offset_dir << " distance is " << offset_by );
 
-    // calculate correct distance for the offset point
-    *dist1 = (-LINE_WIDTH);
-    *dist2 = (LINE_WIDTH);
+    // calculate the point from cur
+    geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
 
-    return offset_dir;
+    return Point3D(pt_x, pt_y, 0.0f);
 }
 
-// TODO: Should Be AddMarkingVerticies - and handle offset (used in LinearFeature::Finish only)
-double CalcMarkingVerticies( Point3D *prev, Point3D *cur, Point3D *next, int wind, int *prev_dir, double *dist1, double *dist2 )
+
+
+int LinearFeature::Finish()
 {
-    double offset_dir;
-    
-    // first, we need to see if we want to average the directions (we have both prev, and next)
-    if ( (prev->x() == 0.0f) && (prev->y() == 0.0f) )
+    TGPolygon   poly;
+    TGSuperPoly sp;
+    TGTexParams tp;
+    Point3D     prev_inner, prev_outer;
+    Point3D     cur_inner,  cur_outer;
+    double      heading;
+    double      dist;
+    double      az2;
+    int         i, j;
+    string      material;
+
+
+    // create the inner and outer boundaries to generate polys
+    // this generates 2 point lists for the contours, and remembers 
+    // the start stop points for markings
+    ConvertContour( &contour );
+
+    // now generate the supoerpoly and texparams list
+    for (i=0; i<marks.size(); i++)
     {
-        // direction is 90 degrees less than from current to next
-        offset_dir = CalcStartMarkingVerticies( cur, next, wind, prev_dir, dist1, dist2 );
-        printf("got dist 1: %lf, dist2: %lf\n", *dist1, *dist2);
-    }
-    else if ( (next->x() == 0.0f) && (next->y() == 0.0f) )
-    {
-        // direction is 90 degrees less than from current to next
-        offset_dir = CalcEndMarkingVerticies( prev, cur, wind, prev_dir, dist1, dist2 );
-        printf("got dist 1: %lf, dist2: %lf\n", *dist1, *dist2);
-    }
-    else
-    {
-        offset_dir = CalcMiddleMarkingVerticies( prev, cur, next, wind, prev_dir, dist1, dist2 );
-        printf("got dist 1: %lf, dist2: %lf\n", *dist1, *dist2);
-    }
+        prev_inner = Point3D(0.0f, 0.0f, 0.0f);
+        prev_outer = Point3D(0.0f, 0.0f, 0.0f);
 
-    printf("return from CalcMarkingVerticies: dirst1: %lf, dist2: %lf\n", *dist1, *dist2);
-
-    return offset_dir;
-}
-
-// need to refactor this stuff.
-osg::Geode* FinishMarking( osg::Vec3dArray* verticies )
-{
-    osg::Geometry* stripe = NULL;
-    osg::Geode* geode_stripe = NULL;
-    osg::StateSet* ss_stripe = NULL;
-    osg::PolygonMode* polymode = NULL;
-    osg::Vec4Array* col_stripe = NULL;
-    int j;
-
-    // set up polygon offset
-    osg::PolygonOffset* polyoffset = new osg::PolygonOffset;
-    polyoffset->setFactor(-1.00f);
-    polyoffset->setUnits(-1.00f);
-
-    polymode = new osg::PolygonMode;
-    polymode->setMode(  osg::PolygonMode::FRONT_AND_BACK, osg::PolygonMode::LINE );
-
-    col_stripe = new osg::Vec4Array;
-    col_stripe->push_back(osg::Vec4(1.0f,1.0f,0.0f,1.0f));
-
-    // Create a new stripe geometry
-    stripe = new osg::Geometry;
-    stripe->setColorArray(col_stripe);
-    stripe->setColorBinding(osg::Geometry::BIND_OVERALL);
-
-    ss_stripe = new osg::StateSet();
-    ss_stripe->setAttributeAndModes(polyoffset,osg::StateAttribute::OVERRIDE|osg::StateAttribute::ON);
-#if WIREFRAME
-    ss_stripe->setAttributeAndModes(polymode,osg::StateAttribute::OVERRIDE|osg::StateAttribute::ON);
-#endif
-    geode_stripe = new osg::Geode();
-    geode_stripe->setStateSet(ss_stripe);
-
-    stripe->setVertexArray(verticies);
-
-    // create the index array for the stripe       
-    osg::DrawElementsUShort& drawElements = *(new osg::DrawElementsUShort(GL_TRIANGLE_STRIP,verticies->size()));
-
-    for (j=0; j<verticies->size(); j++)
-    {
-        drawElements[j] = j;
-    }
-            
-    for (int k=0; k<j; k++)
-    {
-        printf("index %d is %d\n", k, drawElements[k]);
-    }
-
-    stripe->addPrimitiveSet(&drawElements);
-
-    geode_stripe->addDrawable(stripe);
-   
-    return geode_stripe;
-}
-
-// TODO: Add this into Linear Feature
-osg::Vec3dArray* StartMarking()
-{
-    osg::Vec3dArray* v_marking = new osg::Vec3dArray;
-
-    return v_marking;
-}
-
-// TODO: move this into LinearFeature
-osg::Vec3dArray* CheckMarking(int cur_marking, int new_marking, osg::Vec3dArray* v_marking, osg::Group* airport)
-{
-    // check if we need to finish a marking
-    printf("Check Marking : current is %d, new is %d\n", cur_marking, new_marking);
-
-    if ( (v_marking != NULL) && (cur_marking != new_marking) )
-    {
-        printf("End current marking %d and start new marking %d : mark poly has %d verticies\n", cur_marking, new_marking, v_marking->size() );
-        for (int k=0; k<v_marking->size(); k++)
+        // which material for this mark?
+        switch( marks[i]->type )
         {
-            printf("vertex %d is (%lf, %lf)\n", k, v_marking->at(k).x(), v_marking->at(k).y());
+            case LF_NONE:
+            case LF_SOLID_YELLOW:
+            case LF_BROKEN_YELLOW:
+            case LF_SOLID_DBL_YELLOW:
+            case LF_RUNWAY_HOLD:
+            case LF_OTHER_HOLD:
+            case LF_ILS_HOLD:
+            case LF_SAFETYZONE_CENTERLINE:
+            case LF_SINGLE_LANE_QUEUE:
+            case LF_DOUBLE_LANE_QUEUE:
+
+            case LF_B_SOLID_YELLOW:
+            case LF_B_BROKEN_YELLOW:
+            case LF_B_SOLID_DBL_YELLOW:
+            case LF_B_RUNWAY_HOLD:
+            case LF_B_OTHER_HOLD:
+            case LF_B_ILS_HOLD:
+            case LF_B_SAFETYZONE_CENTERLINE:
+            case LF_B_SINGLE_LANE_QUEUE:
+            case LF_B_DOUBLE_LANE_QUEUE:
+
+            case LF_SOLID_WHITE:
+            case LF_CHECKERBOARD_WHITE:
+            case LF_BROKEN_WHITE:
+
+            case LF_BIDIR_GREEN:
+            case LF_OMNIDIR_BLUE:
+            case LF_UNIDIR_CLOSE_AMBER:
+            case LF_UNIDIR_CLOSE_AMBER_PULSE:
+            case LF_BIDIR_GREEN_AMBER:
+            case LF_OMNIDIR_RED:
+                material = "gloff_lf_b_solid_yellow";
+                break;
+
+            default:
+                SG_LOG(SG_GENERAL, SG_DEBUG, "ClosedPoly::BuildBtg: unknown material " << marks[i]->type );
+                exit(1);
         }
 
-        // END THE CURRENT MARKING
-        airport->addChild(FinishMarking( v_marking ) );
-        v_marking = NULL;    
-    }
-            
-    // Start recording a new marking
-    if ( (v_marking == NULL) && (new_marking != 0) )
-    {
-        // start a new marking 
-        printf("Start new marking %d\n", new_marking);
-    
-        v_marking = StartMarking();
-    }
+        for (j = marks[i]->start_idx; j < marks[i]->end_idx; j++)
+        {
+            // for each point on the PointsList, generate a quad from
+            // start to next, offset by 2 distnaces from the edge
 
-    return v_marking;    
+            if (j == 0)
+            {
+                // first point on the contour - offset heading is 90deg 
+                cur_outer = OffsetPointFirst( &points[j], &points[j+1], 0.4 );
+                cur_inner = OffsetPointFirst( &points[j], &points[j+1], 0.5 );
+            }
+            else if (j == points.size()-1)
+            {
+                // last point on the contour - offset heading is 90deg 
+                cur_outer = OffsetPointFirst( &points[j-1], &points[j], 0.4 );
+                cur_inner = OffsetPointFirst( &points[j-1], &points[j], 0.5 );
+            }
+            else
+            {
+                cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], 0.4 );
+                cur_inner = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], 0.5 );
+            }
+
+            if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
+            {
+                geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
+
+                poly.erase();
+                poly.add_node( 0, prev_outer );
+                poly.add_node( 0, prev_inner );
+                poly.add_node( 0, cur_inner );
+                poly.add_node( 0, cur_outer );
+
+                sp.erase();
+                sp.set_poly( poly );
+                sp.set_material( material );
+                feature_polys.push_back(sp);
+
+                tp = TGTexParams( prev_inner, 0.1, 1.0, heading );
+                feature_tps.push_back(tp);
+            }
+
+            prev_outer = cur_outer;
+            prev_inner = cur_inner;
+        }
+    }
+}
+
+int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, TGPolygon* line_accum )
+{
+    string material;
+    int j, k;
+
+#if 0
+
+    // verify the poly has been generated
+    if ( pre_tess.contours() )    
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: original poly has " << pre_tess.contours() << " contours");
+    
+        // do this before clipping and generating the base
+    	pre_tess = remove_dups( pre_tess );
+        pre_tess = reduce_degeneracy( pre_tess );
+
+        for (int c=0; c<pre_tess.contours(); c++)
+        {
+            for (int pt=0; pt<pre_tess.contour_size(c); pt++)
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: contour " << c << " pt " << pt << ": (" << pre_tess.get_pt(c, pt).x() << "," << pre_tess.get_pt(c, pt).y() << ")" );
+            }
+        }
+
+
+        TGSuperPoly sp;
+        TGTexParams tp;
+
+        TGPolygon clipped = tgPolygonDiff( pre_tess, *line_accum );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
+
+        TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
+
+        sp.erase();
+        sp.set_poly( split );
+        sp.set_material( material );
+        sp.set_flag("taxi");
+
+        line_polys->push_back( sp );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
+        *line_accum = tgPolygonUnion( pre_tess, *line_accum );
+        tp = TGTexParams( pre_tess.get_pt(0,0), 0.2 /* TODO poly width */, 1.0 /* TODO poly length */, texture_heading );
+        texparams->push_back( tp );
+    }
+#endif
+
+    return 1;
 }

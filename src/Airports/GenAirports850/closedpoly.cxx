@@ -45,6 +45,10 @@ void ClosedPoly::AddNode( BezNode* node )
     cur_contour->push_back( node );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : (" << node->GetLoc().x() << "," << node->GetLoc().y() << ")");
+
+
+    // TODO: Create ONE linear feature for each contour.  
+    // Parse the polys in linear feature
     // if recording a linear feature on the pavement, add this node
     // to it as well
     // TODO: just doing marking now, need lighting as well
@@ -71,7 +75,7 @@ void ClosedPoly::AddNode( BezNode* node )
         // TODO: With offset, as all pavement markings should be 
         // a bit in from the edge
         SG_LOG(SG_GENERAL, SG_DEBUG, "   Starting a new linear feature");
-        cur_feat = new LinearFeature(NULL);
+        cur_feat = new LinearFeature( (char*)"none" );
         cur_feat->AddNode( node );
         cur_marking = node->GetMarking();
     }
@@ -129,7 +133,7 @@ int ClosedPoly::CloseCurContour()
     }
 }
 
-void ClosedPoly::ConvertContour( BezContour* src, point_list *dst, bool reverse )
+void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
 {
     BezNode*    prevNode;
     BezNode*    curNode;
@@ -150,19 +154,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst, bool reverse 
 
     // clear anything in this point list
     dst->empty();
-
-    if (reverse)
-    {
-        start = src->size()-1;
-        end   = -1;
-        inc   = -1;
-    }
-    else
-    {
-        start = 0;
-        end   = src->size();
-        inc   = 1;
-    }
 
     // iterate through each bezier node in the contour
     for (i=0; i <= src->size()-1; i++)
@@ -486,7 +477,7 @@ int ClosedPoly::Finish()
     if (boundary != NULL)
     {
         // create the boundary
-        ConvertContour( boundary, &dst_contour, false );
+        ConvertContour( boundary, &dst_contour );
     
         // and add it to the geometry 
         pre_tess.add_contour( dst_contour, 0 );
@@ -495,7 +486,7 @@ int ClosedPoly::Finish()
         for (int i=0; i<holes.size(); i++)
         {
             dst_contour.clear();
-            ConvertContour( holes[i], &dst_contour, false );
+            ConvertContour( holes[i], &dst_contour );
             pre_tess.add_contour( dst_contour, 1 );
         }
     }
