@@ -29,87 +29,109 @@
 
 using std::string;
 
-struct marking
+struct sections
 {
     const char* tex;
     int size;
 };
 
-void gen_prec_marking( const TGRunway& rwy_info,
+void gen_rw_marking( const TGRunway& rwy_info,
            const TGPolygon& runway,
 	   double &start1_pct, double &end1_pct,
 	   double heading,
 	   const string& material,
 	   superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         TGPolygon *accum) {
+                         TGPolygon *accum, int marking) {
 
+    std::vector<sections> rw_marking_list;
+
+    if (marking == 5){
+    // UK Precision runway sections from after the designation number
+    // onwards to the middle (one half).
+    // Set order of sections and their corresponding size
+    static const struct sections uk_prec[] = {
+	    { "tz_one_a", 380 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "aim_uk", 400 * SG_FEET_TO_METER },
+	    { "tz_one_a", 400 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "tz_one_b", 200 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "tz_one_a", 400 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "tz_one_b", 200 * SG_FEET_TO_METER }
+	    };
+	    rw_marking_list.clear();
+	    rw_marking_list.insert(  rw_marking_list.begin(), uk_prec, uk_prec + sizeof(uk_prec) / sizeof(uk_prec[0]) );
+    }
+
+    else if (marking == 4){
+    // UK non-precision runway sections from after the designation number
+    // onwards to the middle (one half).
+    // Set order of sections and their corresponding size
+    static const struct sections uk_nprec[] = {
+	    { "centerline", 200 * SG_FEET_TO_METER },
+	    { "aim_uk", 400 * SG_FEET_TO_METER },
+	    };
+	    rw_marking_list.clear();
+	    rw_marking_list.insert(  rw_marking_list.begin(), uk_nprec, uk_nprec + sizeof(uk_nprec) / sizeof(uk_nprec[0]) );
+    }
+
+    else if (marking == 3){
     // Precision runway sections from after the designation number
     // onwards to the middle (one half).
     // Set order of sections and their corresponding size
-    static const struct marking prec_rw[] = {
-						{ "tz_three", 380 * SG_FEET_TO_METER },
-						{ "rest", 200 * SG_FEET_TO_METER },
-						{ "aim", 400 * SG_FEET_TO_METER },
-						{ "tz_two_a", 400 * SG_FEET_TO_METER },
-						{ "rest", 200 * SG_FEET_TO_METER },
-						{ "tz_two_b", 200 * SG_FEET_TO_METER },
-						{ "rest", 200 * SG_FEET_TO_METER },
-						{ "tz_one_a", 400 * SG_FEET_TO_METER },
-						{ "rest", 200 * SG_FEET_TO_METER },
-						{ "tz_one_b", 200 * SG_FEET_TO_METER }
-					   };
-
-    double length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
-
-    for ( int i=0; i < sizeof prec_rw / sizeof prec_rw[0]; ++i) {
-    SG_LOG(SG_GENERAL, SG_INFO, "PREC_RW = " << prec_rw[i].tex << " lenght: " << prec_rw[i].size);
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( prec_rw[i].size / length );
-    gen_runway_section( rwy_info, runway,
-			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			heading,
-			material, prec_rw[i].tex,
-			rwy_polys, texparams, accum );
+    static const struct sections prec[] = {
+	    { "tz_three", 380 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "aim", 400 * SG_FEET_TO_METER },
+	    { "tz_two_a", 400 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "tz_two_b", 200 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "tz_one_a", 400 * SG_FEET_TO_METER },
+	    { "rest", 200 * SG_FEET_TO_METER },
+	    { "tz_one_b", 200 * SG_FEET_TO_METER }
+	    };
+	    rw_marking_list.clear();
+	    rw_marking_list.insert(  rw_marking_list.begin(), prec, prec + sizeof(prec) / sizeof(prec[0]) );
     }
 
-}
-
-void gen_non_prec_marking( const TGRunway& rwy_info,
-           const TGPolygon& runway,
-	   double &start1_pct, double &end1_pct,
-	   double heading,
-	   const string& material,
-	   superpoly_list *rwy_polys,
-                         texparams_list *texparams,
-                         TGPolygon *accum) {
-
+    else if (marking == 2){
     // Non-precision runway sections from after the designation number
     // onwards to the middle (one half).
     // Set order of sections and their corresponding size
-    static const struct marking non_prec_rw[] = {
-						{ "centerline", 200 * SG_FEET_TO_METER },
-						{ "aim", 400 * SG_FEET_TO_METER }
-					   };
+    static const struct sections nprec[] = {
+	    { "centerline", 200 * SG_FEET_TO_METER },
+	    { "aim", 400 * SG_FEET_TO_METER }
+	    };
+	    rw_marking_list.clear();
+	    rw_marking_list.insert(  rw_marking_list.begin(), nprec, nprec + sizeof(nprec) / sizeof(nprec[0]) );
+    }
 
-    double length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
+    //Now create the sections of the runway type
+    double length = rwy_info.length / 2.0 + 0.5;
 
-    for ( int i=0; i < sizeof non_prec_rw / sizeof non_prec_rw[0]; ++i) {
-    SG_LOG(SG_GENERAL, SG_INFO, "NON_PREC_RW = " << non_prec_rw[i].tex << " lenght: " << non_prec_rw[i].size);
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( non_prec_rw[i].size / length );
-    gen_runway_section( rwy_info, runway,
+    for ( int i=0; i < rw_marking_list.size(); ++i) {
+	    SG_LOG(SG_GENERAL, SG_INFO, "Runway section texture = " << rw_marking_list[i].tex << " lenght: " << rw_marking_list[i].size);
+
+	    if ( end1_pct < 1.0 ) {
+		    start1_pct = end1_pct;
+		    end1_pct = start1_pct + ( rw_marking_list[i].size / length );
+		    gen_runway_section( rwy_info, runway,
 			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			heading,
-			material, non_prec_rw[i].tex,
-			rwy_polys, texparams, accum );
+			  0.0, 1.0,
+			  0.0, 1.0, 0.0, 1.0,
+			  heading,
+			  material, rw_marking_list[i].tex,
+			  rwy_polys, texparams, accum );
+	    }
     }
 
 }
+
+
 // generate a runway.  The routine modifies
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
@@ -140,8 +162,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
     if (rwhalf == 1) {
 
-    //Create first half of the runway (first entry in apt.dat)
-    // runway half "b" (actually the first half)
+    //Create the first half of the runway (first entry in apt.dat)
     runway_half.erase();
     runway_half.add_node( 0, runway.get_pt(0, 3) );
     runway_half.add_node( 0, runway.get_pt(0, 4) );
@@ -151,14 +172,14 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
     else if (rwhalf == 2) {
 
-     // runway half "a" (actually the second half in apt.dat)
+    //Create the second runway half from apt.dat
     runway_half.erase();
     runway_half.add_node( 0, runway.get_pt(0, 0) );
     runway_half.add_node( 0, runway.get_pt(0, 1) );
     runway_half.add_node( 0, runway.get_pt(0, 2) );
     runway_half.add_node( 0, runway.get_pt(0, 5) );
     }
-	
+
     Point3D p;
     SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway half pts (run " << rwhalf << ")");
     for ( i = 0; i < runway_half.contour_size( 0 ); ++i ) {
@@ -166,16 +187,17 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
 
-    // we add 2' to the length for texture overlap.  This puts the
+    // we add 0.5m to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they
     // belong.
-    double length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
+    double length = rwy_info.length / 2.0 + 0.5;
     if ( length < 3075 * SG_FEET_TO_METER ) {
         SG_LOG( SG_GENERAL, SG_ALERT,
 	        "Runway " << rwy_info.rwy_no1 << " is not long enough ("
                 << rwy_info.length << ") for precision markings!");
     }
 
+    int marking = 0;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
     double disp_thresh = 0.0;
@@ -189,18 +211,20 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     //
 
     if (rwhalf == 1) {
+	    marking = rwy_info.marking_code1;
 	    disp_thresh = rwy_info.disp_thresh1;
 	    heading = rwy_info.heading + 180.0;
 	    rwname = rwy_info.rwy_no1;
 	    stopway = rwy_info.stopway1;
     }
     else if (rwhalf == 2) {
+	    marking = rwy_info.marking_code2;
 	    disp_thresh = rwy_info.disp_thresh2;
 	    heading = rwy_info.heading;
 	    rwname = rwy_info.rwy_no2;
 	    stopway = rwy_info.stopway2;
     }
-    
+    SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << marking );
     if ( disp_thresh > 0.0 ) {
         SG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is "
                 << disp_thresh );
@@ -252,7 +276,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     }
 
 
- if ((rwhalf == 1 && !rwy_info.marking_code1 == 0) || (rwhalf == 2 && !rwy_info.marking_code2 == 0)){
+ if (!marking == 0){
 
     //
     // Threshold
@@ -329,20 +353,13 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
  }
 
 
-    if ((rwhalf == 1 && rwy_info.marking_code1 == 3) || (rwhalf == 2 && rwy_info.marking_code2 == 3)){
-    gen_prec_marking( rwy_info, runway_half,
+    if (marking > 1){
+    // Generate remaining markings depending on type of runway
+    gen_rw_marking( rwy_info, runway_half,
 		 start1_pct, end1_pct,
 		 heading, material,
-		 rwy_polys, texparams, accum );
+		 rwy_polys, texparams, accum, marking );
     }
-
-    if ((rwhalf == 1 && rwy_info.marking_code1 == 2) || (rwhalf == 2 && rwy_info.marking_code2 == 2)){
-    gen_non_prec_marking( rwy_info, runway_half,
-		 start1_pct, end1_pct,
-		 heading, material,
-		 rwy_polys, texparams, accum );
-    }
-
 
     //
     // The rest ...
@@ -374,6 +391,4 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
 
 }
-
-
 }

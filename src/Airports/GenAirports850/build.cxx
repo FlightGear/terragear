@@ -254,7 +254,9 @@ static void build_runway( const TGRunway& rwy_info,
     {
 	gen_simple_rwy( rwy_info, alt_m, material,
 			rwy_polys, texparams, accum );
-    } else if ( rwy_info.marking_code1 == 3 ||
+    } else if (rwy_info.marking_code1 == 5 ||
+		rwy_info.marking_code1 == 4 ||
+		rwy_info.marking_code1 == 3 ||
 		rwy_info.marking_code1 == 2 ||
 		rwy_info.marking_code1 == 1 ||
 		rwy_info.marking_code1 == 0 ) {
@@ -267,7 +269,7 @@ static void build_runway( const TGRunway& rwy_info,
 	// unknown runway code ... hehe, I know, let's just die
 	// right here so the programmer has to fix his code if a
 	// new code ever gets introduced. :-)
-        SG_LOG( SG_GENERAL, SG_ALERT, "Unknown runway code = " <<
+        SG_LOG( SG_GENERAL, SG_ALERT, "Unknown runway marking code = " <<
                 rwy_info.marking_code1 );
 	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
     }
