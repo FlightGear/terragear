@@ -124,8 +124,8 @@ int main(int argc, char **argv)
     setup_default_elevation_sources(elev_src);
 
     // Set verbose
-    sglog().setLogLevels( SG_GENERAL, SG_BULK );
-//    sglog().setLogLevels( SG_GENERAL, SG_INFO );
+//    sglog().setLogLevels( SG_GENERAL, SG_BULK );
+    sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
     SG_LOG(SG_GENERAL, SG_INFO, "Run genapt");
 

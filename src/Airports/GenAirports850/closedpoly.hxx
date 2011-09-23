@@ -19,16 +19,17 @@ class ClosedPoly
 {
 public:
     ClosedPoly( int st, float s, float th, char* desc );
-
+    
+    inline string GetDescription() { return description; }
     void AddNode( BezNode* node );
     int  CloseCurContour();
     int  Finish();
     int  BuildOsg( osg::Group* airport );
     int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
-    FeatureList* GetFeatures()
+    FeatureList* GetMarkings()
     {
-        return &features;
+        return &markings;
     }        
 
 private:
@@ -39,10 +40,10 @@ private:
     osg::DrawArrays* CreateOsgPrimitive( point_list contour, osg::Vec3Array* vpave );
     void ExpandContour( point_list& src, TGPolygon& dst, double dist );
 
-    int   surface_type;
-    float smoothness;
-    float texture_heading;
-    char  description[64];
+    int    surface_type;
+    float  smoothness;
+    float  texture_heading;
+    string description;
     
     // outer boundary definition as bezier nodes
     BezContour* boundary;
@@ -53,17 +54,15 @@ private:
     // contour that nodes will be added until done
     BezContour* cur_contour;
 
-
     // outer boundary as convex hull
     point_list hull;
 
     // Converted polygon after parsing complete
     TGPolygon pre_tess;
 
-    // pavement definitions can have multiple linear features (markings)
-    LinearFeature* cur_feat;
-    FeatureList features;
-    int cur_marking;
+    // pavement definitions have multiple linear features (markings and lights for each contour)
+    LinearFeature* cur_marking;
+    FeatureList markings;
 };
 
 typedef std::vector <ClosedPoly *> PavementList;

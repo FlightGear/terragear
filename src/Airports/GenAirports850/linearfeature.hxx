@@ -61,13 +61,20 @@ public:
     {
         if ( desc )
         {
-            strcpy( description, desc );
+            description = desc;
         }
         else
         {
-            strcpy( description, "none" );
+            description = "none";
         }
     }
+
+    LinearFeature( string desc )
+    {
+        description = desc;
+    }
+
+    inline string GetDescription() { return description; }
 
     void AddNode( BezNode* b )
     {
@@ -89,7 +96,7 @@ private:
     void ConvertContour( BezContour* src );
 
     // text description
-    char  description[256];
+    string description;
     
     // contour definition (each beznode has marking type)
     BezContour  contour;

@@ -22,17 +22,16 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
     texture_heading = th;
     if ( desc )
     {
-        strcpy( description, desc );
+        description = desc;
     }
     else
     {
-        strcpy( description, "none" );
+        description = "none";
     }
         
     boundary = NULL;
     cur_contour = NULL;
-    cur_feat = NULL;
-    cur_marking = 0;
+    cur_marking = NULL;
 }
 
 void ClosedPoly::AddNode( BezNode* node )
@@ -44,6 +43,7 @@ void ClosedPoly::AddNode( BezNode* node )
     }
     cur_contour->push_back( node );
 
+
     SG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : (" << node->GetLoc().x() << "," << node->GetLoc().y() << ")");
 
 
@@ -52,33 +52,22 @@ void ClosedPoly::AddNode( BezNode* node )
     // if recording a linear feature on the pavement, add this node
     // to it as well
     // TODO: just doing marking now, need lighting as well
-    if (cur_feat)
+    if (!cur_marking)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_marking);
-        cur_feat->AddNode( node );
-
-        // if it should end, end it, and add to feature list
-        if (cur_marking != node->GetMarking())
+        string marking_desc = description + ":";
+        if (boundary)
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "   Node has marking " << node->GetMarking() << " end it");
-            features.push_back( cur_feat );
-            cur_feat = NULL;
-            cur_marking = 0;
+            marking_desc += "hole";
         }
-    }
+        else
+        {
+            marking_desc += "boundary";
+        }
 
-    // should we start a new feature here?
-    SG_LOG(SG_GENERAL, SG_DEBUG, "   Node has marking " << node->GetMarking() << " cur marking is " << cur_marking);
-    if ( (cur_marking == 0) && (node->GetMarking()))
-    {
-        // Yes - create a new linear feature
-        // TODO: With offset, as all pavement markings should be 
-        // a bit in from the edge
-        SG_LOG(SG_GENERAL, SG_DEBUG, "   Starting a new linear feature");
-        cur_feat = new LinearFeature( (char*)"none" );
-        cur_feat->AddNode( node );
-        cur_marking = node->GetMarking();
-    }
+        SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_marking);
+        cur_marking = new LinearFeature(marking_desc /* TODO offset */ );
+    } 
+    cur_marking->AddNode( node );
 }
 
 void ClosedPoly::CreateConvexHull( void )
@@ -104,15 +93,14 @@ int ClosedPoly::CloseCurContour()
 
     // if we are recording a pavement marking - it must be closed - 
     // add the first node of the poly
-    if (cur_feat)
+    if (cur_marking)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
+        // cur_marking->Close();
+        cur_marking->Finish();
 
-        cur_feat->AddNode( cur_contour->at(0) );
-
-        features.push_back( cur_feat );
-        cur_feat = NULL;  
-        cur_marking = 0;      
+        markings.push_back(cur_marking);
+        cur_marking = NULL;        
     }
 
     // add the contour to the poly - first one is the outer boundary

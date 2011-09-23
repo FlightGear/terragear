@@ -169,7 +169,7 @@ LinearFeature* Parser::ParseFeature( char* line )
         feature = new LinearFeature(NULL);
     }
         
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Linear Feature with desription \"" << line << "\"");
+    SG_LOG(SG_GENERAL, SG_ALERT, "Creating Linear Feature with desription \"" << line << "\"");
 
     return feature;
 }
@@ -329,6 +329,7 @@ int Parser::ParseLine(char* line)
                     }
                     if (cur_airport)
                     {
+                        cur_feat->Finish();
                         cur_airport->AddFeature( cur_feat );
                     }
                     SetState( STATE_NONE );
@@ -355,6 +356,7 @@ int Parser::ParseLine(char* line)
                     }
                     if (cur_airport)
                     {
+                        cur_feat->Finish();
                         cur_airport->AddFeature( cur_feat );
                     }
                     SetState( STATE_NONE );

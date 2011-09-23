@@ -350,6 +350,7 @@ static ColumnVector qr_method( Real* y,
   // Get diagonals of Hat matrix
   DiagonalMatrix Hat;  Hat << X1 * X1.t();
 
+#ifdef DEBUG
   cout << "A vector = " << A << endl;
   cout << "A rows = " << A.nrows() << endl;
 
@@ -362,6 +363,7 @@ static ColumnVector qr_method( Real* y,
   cout << setw(9) << setprecision(3) << 
     (X.columns(2,4) | Y | Fitted | Y1 | Hat.as_column());
   cout << "\n\n";
+#endif
 
   return A;
 }
@@ -471,7 +473,7 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
       + A(16)*x*x*y*y*y;
     result += offset.z();
 
-    printf("result = %.6f %.6f %.2f\n", lon_deg, lat_deg, result);
+    // printf("result = %.6f %.6f %.2f\n", lon_deg, lat_deg, result);
 
     return result;
 }

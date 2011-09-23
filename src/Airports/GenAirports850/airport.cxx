@@ -268,29 +268,28 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     // Now generate pavements, and gather the linear features and lights from them
+    SG_LOG(SG_GENERAL, SG_ALERT, "Features before pavement add " << features.size() );
+
     if (pavements.size())
     {
         for ( i=0; i<pavements.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Build Pavement Poly " << i);
-            pavements[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, &apt_base, &apt_clearing );
-            AddFeatures( pavements[i]->GetFeatures() );
+            AddFeatures( pavements[i]->GetMarkings() );
         }
     }
-    else
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "no pavements");
-    }
-    // wipe out the pavements to save memory
-    pavements.clear();
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "Features after pavement add " << features.size() );
 
     // Then the linear features
     if (features.size())
     {
         for ( i=0; i<features.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Build feature Poly " << i);
-            features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum );
+            SG_LOG(SG_GENERAL, SG_ALERT, "Build feature Poly " << i << ": " << features[i]->GetDescription() );
+
+            // cut the linear feature in until we get the geometry right...
+            // features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum );
+            features[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum );
         }
     }
     else
@@ -299,6 +298,23 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
     // wipe out the pavements to save memory
     features.clear();
+
+    // Now generate pavements, and gather the linear features and lights from them
+    if (pavements.size())
+    {
+        for ( i=0; i<pavements.size(); i++ )
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Build Pavement Poly " << i << ": " << pavements[i]->GetDescription());
+            pavements[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, &apt_base, &apt_clearing );
+            AddFeatures( pavements[i]->GetMarkings() );
+        }
+    }
+    else
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "no pavements");
+    }
+    // wipe out the pavements to save memory
+    pavements.clear();
 
     if ( apt_base.total_size() == 0 ) 
     {
@@ -1087,6 +1103,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     SGBinObject obj;
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "number of NODES is  " << wgs84_nodes.size() );
 
     obj.set_gbs_center( gbs_center );
     obj.set_gbs_radius( gbs_radius );
