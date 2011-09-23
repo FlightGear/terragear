@@ -350,30 +350,16 @@ void build_airport( string airport_id, float alt_m,
 	double lon_2 = atof( token[19].c_str() );
 	SGGeod pos_2(SGGeod::fromDegFt(lon_2, lat_2, 0.0));
 
-	//calculate runway heading
-	double rwcourse(SGGeodesy::courseDeg(pos_1, pos_2));
+	//runway centerpoint
+	rwy.lat = (lat_1 + lat_2) / 2;
+	rwy.lon = (lon_1 + lon_2) / 2;
 
-	//calculate runway length
-	double rwlength(SGGeodesy::distanceM(pos_1, pos_2));
+	apt_lat += rwy.lat;
+	apt_lon += rwy.lon;
 
-	//calculate runway centerpoint
-	double rwcenter_lat = (lat_1 + lat_2) / 2;
-	double rwcenter_lon = (lon_1 + lon_2) / 2;
-	SG_LOG( SG_GENERAL, SG_INFO, "pos1 is " << lat_1 << lon_1 );
-	SG_LOG( SG_GENERAL, SG_INFO, "pos2 is " << lat_2 << lon_2 );
-	SG_LOG( SG_GENERAL, SG_INFO, "course is " << rwcourse );
-	SG_LOG( SG_GENERAL, SG_INFO, "distance is " << rwlength );
-	SG_LOG( SG_GENERAL, SG_INFO, "lat center is " << rwcenter_lat );
-	SG_LOG( SG_GENERAL, SG_INFO, "lon center is " << rwcenter_lon );
-	rwy.lat = rwcenter_lat;
-        apt_lat += rwy.lat;
+	rwy.heading = (SGGeodesy::courseDeg(pos_1, pos_2));
 
-	rwy.lon = rwcenter_lon;
-        apt_lon += rwy.lon;
-
-	rwy.heading = rwcourse;
-
-	rwy.length = rwlength;
+	rwy.length = (SGGeodesy::distanceM(pos_1, pos_2));
 	rwy.width = atoi( token[1].c_str() );
 
         rwy.disp_thresh1 = atoi( token[11].c_str() );
@@ -385,7 +371,6 @@ void build_airport( string airport_id, float alt_m,
 	rwy.marking_code1 = atoi( token[13].c_str() );
 	rwy.marking_code2 = atoi( token[22].c_str() );
 
-	//rwy.lighting_flags = token[9];
 	rwy.alc1_flag = atoi( token[14].c_str() );
 	rwy.alc2_flag = atoi( token[23].c_str() );
 
@@ -395,19 +380,21 @@ void build_airport( string airport_id, float alt_m,
 	rwy.reil1 = atoi( token[16].c_str() );
 	rwy.reil2 = atoi( token[25].c_str() );
 
+	SG_LOG( SG_GENERAL, SG_INFO, "pos1 is " << lat_1 << lon_1 );
+	SG_LOG( SG_GENERAL, SG_INFO, "pos2 is " << lat_2 << lon_2 );
+	SG_LOG( SG_GENERAL, SG_INFO, "heading is " << rwy.heading );
+	SG_LOG( SG_GENERAL, SG_INFO, "length is " << rwy.length );
+	SG_LOG( SG_GENERAL, SG_INFO, "width is " << rwy.width);
+	SG_LOG( SG_GENERAL, SG_INFO, "lat center is " << rwy.lat );
+	SG_LOG( SG_GENERAL, SG_INFO, "lon center is " << rwy.lon );
+
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  no1/2    = " << rwy.rwy_no1 << " " << rwy.rwy_no2);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy.lon);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy.heading);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << rwy.length);
-	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << rwy.width);
-	//SG_LOG( SG_GENERAL, SG_DEBUG, "  lighting = " << rwy.lighting_flags);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_code);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  mrkgs1/2  = " << rwy.marking_code1 << " / " << rwy.marking_code2);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy.disp_thresh1);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy.stopway1);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy.disp_thresh2);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy.stopway2);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth1= " << rwy.disp_thresh1);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy.disp_thresh2);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy.stopway1);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy.stopway2);
 
         runways.push_back( rwy );
     }
