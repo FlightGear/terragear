@@ -289,7 +289,8 @@ void build_airport( string airport_id, float alt_m,
                     string_list& runways_raw,
                     string_list& beacons_raw,
                     string_list& towers_raw,
-                    string_list& windsocks_raw,                    
+                    string_list& windsocks_raw,
+                    string_list& lights_raw,
                     const string& root,
                     const string_list& elev_src )
 {
@@ -316,7 +317,6 @@ void build_airport( string airport_id, float alt_m,
 
     // parse runways and generate the vertex list
     runway_list runways; runways.clear();
-    runway_list taxiways; taxiways.clear();
 
     for ( i = 0; i < (int)runways_raw.size(); ++i ) {
         ++rwy_count;
@@ -395,16 +395,6 @@ void build_airport( string airport_id, float alt_m,
 	rwy.reil1 = atoi( token[16].c_str() );
 	rwy.reil2 = atoi( token[25].c_str() );
 
-
-	if (token.size()>15) {
-		string vasi_angles = token[15];
-		vector<string> vasis = simgear::strutils::split( vasi_angles, "." );
-		rwy.gs_angle1 = atof( vasis[0].c_str() ) * 0.01;
-		rwy.gs_angle2 = atof( vasis[1].c_str() ) * 0.01;
-	} else {
-		rwy.gs_angle1 = rwy.gs_angle2 = 3.0;
-	}
-
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  no1/2    = " << rwy.rwy_no1 << " " << rwy.rwy_no2);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy.lon);
@@ -422,7 +412,6 @@ void build_airport( string airport_id, float alt_m,
         runways.push_back( rwy );
     }
     SG_LOG(SG_GENERAL, SG_INFO, "Runway count = " << runways.size() );
-    SG_LOG(SG_GENERAL, SG_INFO, "Taxiway count = " << taxiways.size() );
 
     SGBucket b( apt_lon / (double)rwy_count, apt_lat / (double)rwy_count );
     SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
@@ -492,6 +481,26 @@ void build_airport( string airport_id, float alt_m,
     }
 
 
+
+    // parse all light objects (PAPI/VASI) etc.
+    light_list lightobj; lightobj.clear();
+    for ( i = 0; i < (int)lights_raw.size(); ++i ) {
+	    string light_str = lights_raw[i];
+	    vector<string> token = simgear::strutils::split( light_str );
+
+	    TGLightobj light;
+
+	    light.lat = atof( token[1].c_str() );
+	    light.lon = atof( token[2].c_str() );
+	    light.type = atoi( token[3].c_str() );
+	    light.heading = atof( token[4].c_str() );
+	    light.glideslope = atof( token[5].c_str() );
+	    light.rwy_name = token[6];
+	    lightobj.push_back( light );
+    }
+
+
+//TODO: Clean up
     // First pass: generate the precision runways since these have
     // precidence
     for ( i = 0; i < (int)runways.size(); ++i ) {
@@ -536,17 +545,6 @@ void build_airport( string airport_id, float alt_m,
         }
     }
 
-    // 4th pass: generate all taxiways
-
-    /* Ralf Gerlich: Generate Taxiways in specified order from bottom to top */
-    for ( i=0; i<taxiways.size(); ++i ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "generating " << i );
-            build_runway( taxiways[i], alt_m,
-                          &rwy_polys, &texparams, &accum,
-                          &apt_base, &apt_clearing );
-            taxiways[i].generated = true;
-    }
-
     // Now generate small surface for each beacon
     TGPolygon obj_base, obj_safe_base;
     double obj_hdg = runways[0].heading;
@@ -588,10 +586,15 @@ void build_airport( string airport_id, float alt_m,
 	gen_runway_lights( runways[i], alt_m, rwy_lights, &apt_base );
     }
 
-    // 6th pass: generate all taxiway lights
-    for ( i = 0; i < (int)taxiways.size(); ++i ) {
-        gen_taxiway_lights( taxiways[i], alt_m, rwy_lights );
+    //generate runway light objects
+    for ( i = 0; i < (int)lightobj.size(); ++i ) {
+	gen_airport_lightobj( lightobj[i], alt_m, rwy_lights );
     }
+
+    // 6th pass: generate all taxiway lights
+    //for ( i = 0; i < (int)taxiways.size(); ++i ) {
+    //    gen_taxiway_lights( taxiways[i], alt_m, rwy_lights );
+    //}
 
     // write_polygon( accum, "accum" );
     // write_polygon( apt_base, "base" );

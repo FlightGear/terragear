@@ -251,6 +251,7 @@ int main( int argc, char **argv ) {
     string_list beacon_list;
     string_list tower_list;
     string_list windsock_list;
+    string_list light_list;
 
     vector<string> token;
     string last_apt_id = "";
@@ -335,6 +336,7 @@ int main( int argc, char **argv ) {
                                                    beacon_list,
                                                    tower_list,
                                                    windsock_list,
+						   light_list,
                                                    work_dir, elev_src );
                                 }
                             }
@@ -367,6 +369,7 @@ int main( int argc, char **argv ) {
             beacon_list.clear();
             tower_list.clear();
             windsock_list.clear();
+	    light_list.clear();
         } else if ( token[0] == "100" ) {
             // runway entry
             runways_list.push_back(line);
@@ -380,7 +383,8 @@ int main( int argc, char **argv ) {
             // windsock entry
             windsock_list.push_back(line);
 	} else if ( token[0] == "21" ) {
-            // light object
+            // PAPI / VASI list
+            light_list.push_back(line);
         } else if ( token[0] == "15" ) {
             // ignore custom startup locations
         } else if ( token[0] == "50" || token[0] == "51" || token[0] == "52" 
@@ -439,6 +443,7 @@ int main( int argc, char **argv ) {
                                        beacon_list,
                                        tower_list,
                                        windsock_list,
+				       light_list,
                                        work_dir, elev_src );
                     }
                 }

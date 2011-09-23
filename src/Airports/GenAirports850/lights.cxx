@@ -683,9 +683,9 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
     return result;
 }
 
-
+/*
 // generate a simple 2 bar VASI
-static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
+static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
                              bool recip, TGPolygon *apt_base )
 {
     point_list lights; lights.clear();
@@ -847,110 +847,103 @@ static TGSuperPoly gen_vasi( const TGRunway& rwy_info, float alt_m,
     result.set_flag( flag );
 
     return result;
+    
 }
+*/
 
-
-// generate a simple PAPI
-static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
-                             bool recip, TGPolygon *apt_base  )
+// Generate the airports light objects (PAPI/VASI)
+void gen_airport_lightobj( const TGLightobj& rwy_light, float alt_m, superpoly_list &lights )
 {
-    point_list lights; lights.clear();
+    point_list lightobj; lightobj.clear();
     point_list normals; normals.clear();
-    int i;
-    string flag;
-    double gs_angle = 3.0;
 
-    cout << "gen papi " << rwy_info.rwy_no1 << endl;
+    cout << "gen papi " << rwy_light.rwy_name << endl;
 
-    Point3D normal;
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
-                                    0.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
-
-    // determine the start point.
     Point3D ref;
-    double length_hdg, left_hdg;
     double lon, lat, r;
-    if ( recip ) {
-        ref = corner[0];
-        length_hdg = rwy_info.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no1 + "-i";
-        gs_angle = rwy_info.gs_angle1;
-    } else {
-        ref = corner[2];
-        length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no1;
-        gs_angle = rwy_info.gs_angle2;
-    }
+    double gs_angle = rwy_light.glideslope;
+    double left_hdg = rwy_light.heading - 90.0;
 
-    left_hdg = length_hdg - 90.0;
+    ref.setlat( rwy_light.lat );
+    ref.setlon( rwy_light.lon );
+
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
 
     if ( gs_angle < 0.5 ) {
         gs_angle = 3.0;
     }
 
-    // offset 950' upwind
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                        950 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
-    // offset 50' left
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
-                        50 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
+    // Calculate the normal once for all object parts.
+    // SG takes care of the angle.
+
+    // calculate a second point in the object heading direction
+    geo_direct_wgs_84 ( rwy_light.lat, rwy_light.lon, rwy_light.heading,
+			100, &lat, &lon, &r);
+
+    Point3D end1, end2;
+
+    end1.setlat( lat );
+    end1.setlon( lon );
+
+    end2.setlat( rwy_light.lat);
+    end2.setlon( rwy_light.lon);
+
+    Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
+    Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
+
+    Point3D up = cart1;
+    double length = up.distance3D( Point3D(0.0) );
+    up = up / length;
+
+    Point3D obj_vec = cart2 - cart1;
+
+    // angle up specified amount
+    length = obj_vec.distance3D( Point3D(0.0) );
+    double up_length = length * tan( rwy_light.glideslope * SG_DEGREES_TO_RADIANS);
+    Point3D light_vec = obj_vec + (up * up_length);
+
+    length = light_vec.distance3D( Point3D(0.0) );
+    Point3D normal = light_vec / length;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "obj_normal = " << normal);
+
+    // We know our normal, now create the lights
 
     // unit1
     Point3D pt1 = ref;
-    lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, gs_angle + 0.5, recip );
+    lightobj.push_back( pt1 );
     normals.push_back( normal );
     
     // unit2
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, gs_angle + 0.167, recip );
+    lightobj.push_back( pt1 );
     normals.push_back( normal );
 
     // unit3
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, gs_angle - 0.167, recip );
+    lightobj.push_back( pt1 );
     normals.push_back( normal );
 
     // unit4
     geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
-    lights.push_back( pt1 );
-    normal = gen_runway_light_vector( rwy_info, gs_angle - 0.5, recip );
+    lightobj.push_back( pt1 );
     normals.push_back( normal );
 
-    // grass base
+   /* // grass base
     Point3D base_pt = (ref + pt1) / 2.0;
     TGPolygon obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 30.0,
                                          length_hdg, alt_m, false );
-    *apt_base = tgPolygonUnion( obj_base, *apt_base );
+    *apt_base = tgPolygonUnion( obj_base, *apt_base );*/
 
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( lights, false );
+    lights_poly.add_contour( lightobj, false );
     normals_poly.add_contour( normals, false );
 
     TGSuperPoly result;
@@ -958,9 +951,7 @@ static TGSuperPoly gen_papi( const TGRunway& rwy_info, float alt_m,
     result.set_normals( normals_poly );
     result.set_material( "RWY_VASI_LIGHTS" );
 
-    result.set_flag( flag );
-
-    return result;
+    lights.push_back( result);
 }
 
 
@@ -2667,23 +2658,8 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
         TGSuperPoly s = gen_reil( rwy_info, alt_m, true );
         lights.push_back( s );
     }
-#if 0
-    // VASI/PAPI lighting
-    if ( vasi1 == 2 /* Has VASI */ ) {
-        TGSuperPoly s = gen_vasi( rwy_info, alt_m, false, apt_base );
-        lights.push_back( s );
-    } else if ( vasi1 == 3 /* Has PAPI */ ) {
-        TGSuperPoly s = gen_papi( rwy_info, alt_m, false, apt_base );
-        lights.push_back( s );
-    }
-    if ( vasi2 == 2 /* Has VASI */ ) {
-        TGSuperPoly s = gen_vasi( rwy_info, alt_m, true, apt_base );
-        lights.push_back( s );
-    } else if ( vasi2 == 3 /* Has PAPI */ ) {
-        TGSuperPoly s = gen_papi( rwy_info, alt_m, true, apt_base );
-        lights.push_back( s );
-    }
-#endif
+
+
     // Approach lighting
 
     ////////////////////////////////////////////////////////////

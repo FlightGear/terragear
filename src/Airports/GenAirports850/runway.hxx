@@ -64,9 +64,6 @@ struct TGRunway {
 
     bool   dist_remaining;
 
-    double gs_angle1;
-    double gs_angle2;
-
     TGPolygon threshold;
     TGPolygon tens, tens_margin, ones, ones_margin;
     TGPolygon letter, letter_margin_left, letter_margin_right;
@@ -75,11 +72,23 @@ struct TGRunway {
     TGPolygon aim_point;
     bool generated;
 };
-
-
 typedef std::vector < TGRunway > runway_list;
 typedef runway_list::iterator runway_list_iterator;
 typedef runway_list::const_iterator const_runway_list_iterator;
+
+struct TGLightobj {
+    double lon;
+    double lat;
+    int type;
+    double heading;
+    double glideslope;
+    std::string rwy_name;
+};
+typedef std::vector < TGLightobj > light_list;
+typedef light_list::iterator light_list_iterator;
+typedef light_list::const_iterator const_light_list_iterator;
+
+
 
 
 // given a runway center point, length, width, and heading, and

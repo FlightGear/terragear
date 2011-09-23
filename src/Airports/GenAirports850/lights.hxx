@@ -41,4 +41,7 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
                          superpoly_list &lights );
 
+// generate light objects
+void gen_airport_lightobj( const TGLightobj& rwy_light, float alt_m, superpoly_list &lights );
+
 #endif // _RWY_LIGHTS_HXX
