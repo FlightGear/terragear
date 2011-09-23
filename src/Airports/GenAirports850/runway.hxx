@@ -35,6 +35,7 @@
 
 
 struct TGRunway {
+    int type;
     std::string rwy_no1;
     std::string rwy_no2;
 

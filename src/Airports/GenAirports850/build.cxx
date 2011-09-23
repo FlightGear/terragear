@@ -64,6 +64,7 @@
 #include "runway.hxx"
 #include "rwy_common.hxx"
 #include "rwy_gen.hxx"
+#include "heli_gen.hxx"
 #include "rwy_simple.hxx"
 #include "taxiway.hxx"
 #include "texparams.hxx"
@@ -230,24 +231,25 @@ static void build_runway( const TGRunway& rwy_info,
     if ( surface_code == 1 /* Asphalt */ ) {
             material = "pa_";
     } else if ( surface_code == 2 /* Concrete */ ) {
-            material = "pc_";
+	    material = "pc_";
     } else if ( surface_code == 3 /* Turf/Grass */ ) {
-        material = "grass_rwy";
+	    material = "grass_rwy";
     } else if ( surface_code == 4 /* Dirt */
-                || surface_code == 5 /* Gravel */ ) {
-        material = "dirt_rwy";
-    } else if ( surface_code == 12 /* Dry Lakebed */ ) {
-	material = "dirt_rwy";
-    } else if ( surface_code == 13 /* Water runway (buoy's?) */ ) {
-        // water
+	    || surface_code == 5 /* Gravel */
+	    || surface_code == 12 /* Dry lakebed */ ) {
+	    material = "dirt_rwy";
     } else {
         SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface_code);
 	throw sg_exception("unknown runway type!");
     }
-
+if ( rwy_info.type == 102 ){
+SG_LOG(SG_GENERAL, SG_INFO, "Generating Helipad" );
+gen_heli( rwy_info, alt_m, material,
+			   rwy_polys, texparams, accum );
+}
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "marking code = " << rwy_info.marking_code1 << " / " << rwy_info.marking_code2);
-
+if ( rwy_info.type == 100 ){
       if ( surface_code == 3 /* Turf/Grass */
                 || surface_code == 4 /* Dirt */
                 || surface_code == 5 /* Gravel */ )
@@ -273,16 +275,28 @@ static void build_runway( const TGRunway& rwy_info,
                 rwy_info.marking_code1 );
 	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
     }
+}
 
     TGPolygon base, safe_base;
+    if (rwy_info.type == 100){
+	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1, -rwy_info.stopway2, 20.0 );
+	// also clear a safe area around the runway
+	safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway1, -rwy_info.stopway2, 50.0 );
+	*apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
 
-    base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1, -rwy_info.stopway2, 20.0 );
-    // also clear a safe area around the runway
-    safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway1, -rwy_info.stopway2, 50.0 );
-    *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
+	// add base to apt_base
+	*apt_base = tgPolygonUnion( base, *apt_base );
+    }
 
-    // add base to apt_base
-    *apt_base = tgPolygonUnion( base, *apt_base );
+    if (rwy_info.type == 102){
+	base = gen_runway_area_w_extend( rwy_info, 0.0, 10.0, 0, 0, 10.0 );
+	// also clear a safe area around the runway
+	safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 40.0, 0, 0, 40.0 );
+	*apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
+
+	// add base to apt_base
+	*apt_base = tgPolygonUnion( base, *apt_base );
+    }
 }
 
 
@@ -329,6 +343,12 @@ void build_airport( string airport_id, float alt_m,
 	TGRunway rwy;
 
 	SG_LOG(SG_GENERAL, SG_DEBUG, rwy_str);
+
+	rwy.type = atoi( token[0].c_str() );
+	SG_LOG( SG_GENERAL, SG_INFO, "apt_type = " << rwy.type );
+
+     if (rwy.type == 100) /*Land runway*/{
+
 	rwy.rwy_no1 = token[8];
 	rwy.rwy_no2 = token[17];
         rwy.generated = false;
@@ -397,7 +417,41 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy.disp_thresh2);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy.stopway1);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy.stopway2);
+     }
 
+     if (rwy.type == 102) /*Helipad*/{
+
+
+	rwy.rwy_no1 = token[1];
+        rwy.generated = false;
+
+	rwy.surface_code = atoi( token[7].c_str() );
+	rwy.shoulder_code = atoi( token[9].c_str() );
+        rwy.smoothness = atof( token[10].c_str() );
+
+	rwy.edge_lights = atoi( token[11].c_str() );
+
+	rwy.lat = atof( token[2].c_str() );
+	rwy.lon = atof( token[3].c_str() );
+
+	apt_lat += rwy.lat;
+	apt_lon += rwy.lon;
+
+	rwy.heading = atof( token[4].c_str() );
+
+	rwy.length = atof( token[5].c_str() );
+	rwy.width = atoi( token[6].c_str() );
+
+
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  no1    = " << rwy.rwy_no1 );
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lat   = " << rwy.lat);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  lon   = " << rwy.lon);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  hdg   = " << rwy.heading);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  len   = " << rwy.length);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << rwy.width);
+	SG_LOG( SG_GENERAL, SG_DEBUG, "  sfc   = " << rwy.surface_code);
+
+     }
         runways.push_back( rwy );
     }
     SG_LOG(SG_GENERAL, SG_INFO, "Runway count = " << runways.size() );

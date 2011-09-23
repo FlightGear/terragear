@@ -324,10 +324,8 @@ int main( int argc, char **argv ) {
                         // process previous record
                         // process_airport(last_apt_id, runways_list, argv[2]);
                         try {
-                            if ( last_apt_type == "16" /* Seaplane base */ ||
-                                 last_apt_type == "17" /* Heliport */ ) {
-                                // skip building heliports and
-                                // seaplane bases
+                            if ( last_apt_type == "16" /* Seaplane base */ ) {
+                                // skip building seaplane bases
                             } else {
                                 if( is_in_range( runways_list, min_lat, max_lat, min_lon, max_lon ) ) {
                                     build_airport( last_apt_id,
@@ -370,7 +368,7 @@ int main( int argc, char **argv ) {
             tower_list.clear();
             windsock_list.clear();
 	    light_list.clear();
-        } else if ( token[0] == "100" ) {
+        } else if ( token[0] == "100" || token[0] == "102") {
             // runway entry
             runways_list.push_back(line);
         } else if ( token[0] == "18" ) {
@@ -396,6 +394,8 @@ int main( int argc, char **argv ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "End of file reached" );
 	} else if ( token[0] == "00" ) {
 		// ??
+	} else if ( token[0] >= "110" ) {
+		//ignore lines for now
         } else {
             SG_LOG( SG_GENERAL, SG_ALERT, 
                     "Unknown line in file: " << line );
@@ -432,10 +432,8 @@ int main( int argc, char **argv ) {
             // process previous record
             // process_airport(last_apt_id, runways_list, argv[2]);
             try {
-                if ( last_apt_type == "16" /* Seaplane base */ ||
-                     last_apt_type == "17" /* Heliport */ ) {
-                    // skip building heliports and
-                    // seaplane bases
+                if ( last_apt_type == "16" /* Seaplane base */ ) {
+                    // skip building seaplane bases
                 } else {
                     if( is_in_range( runways_list, min_lat, max_lat, min_lon, max_lon ) ) {
                         build_airport( last_apt_id, elev * SG_FEET_TO_METER,

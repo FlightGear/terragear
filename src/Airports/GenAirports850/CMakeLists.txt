@@ -4,7 +4,8 @@ add_executable(genapts850
     apt_surface.hxx apt_surface.cxx 
 	build.cxx build.hxx 
 	elevations.cxx elevations.hxx 
-	global.hxx 
+	global.hxx
+        heli_gen.cxx heli_gen.hxx
 	lights.hxx lights.cxx 
 	main.cxx 
 	point2d.cxx point2d.hxx 

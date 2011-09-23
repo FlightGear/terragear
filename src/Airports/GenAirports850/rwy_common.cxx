@@ -273,16 +273,16 @@ void gen_runway_section( const TGRunway& rwy_info,
     // potential artifacts and we may add or remove points and need to
     // do new texture coordinate calcs later.
 
-    // we add 2' to the length for texture overlap.  This puts the
+    // we add 0.5m to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they
     // belong.
-    double len = rwy_info.length / 2.0 + 2 * SG_FEET_TO_METER;
+    double len = rwy_info.length / 2.0 + 0.5;
     double sect_len = len * ( endl_pct - startl_pct );
 
-    // we add 2' to both sides of the runway (4' total) for texture
+    // we add 0.5m to both sides of the runway (4' total) for texture
     // overlap.  This puts the lines on the texture back to the edge
     // of the runway where they belong.
-    double wid = rwy_info.width + 4 * SG_FEET_TO_METER;
+    double wid = rwy_info.width + 0.5;
     double sect_wid = wid * ( endw_pct - startw_pct );
 
     TGTexParams tp;
