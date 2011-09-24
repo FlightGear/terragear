@@ -173,6 +173,97 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly, const TGTexPa
     return result;
 }
 
+static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTexParams& tp )
+{
+    int i, j;
+    TGPolygon result;
+    result.erase();
+
+    Point3D ref = tp.get_ref();
+    double width = tp.get_width();
+    double length = tp.get_length();
+    double heading = tp.get_heading();
+    double minu = tp.get_minu();
+    double maxu = tp.get_maxu();
+    double minv = tp.get_minv();
+    double maxv = tp.get_maxv();
+    SG_LOG( SG_GENERAL, SG_DEBUG, "section ref = " << ref );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << width );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  length = " << length );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  heading = " << heading );
+    Point3D p, t;
+    double x, y, tx, ty;
+
+    for ( i = 0; i < in_poly.contours(); ++i ) 
+    {
+    	for ( j = 0; j < in_poly.contour_size( i ); ++j ) 
+        {
+    	    p = in_poly.get_pt( i, j );
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "point = " << p);
+
+    	    //
+    	    // 1. Calculate distance and bearing from the center of
+    	    // the feature
+    	    //
+
+    	    // given alt, lat1, lon1, lat2, lon2, calculate starting
+    	    // and ending az1, az2 and distance (s).  Lat, lon, and
+    	    // azimuth are in degrees.  distance in meters
+    	    double az1, az2, dist;
+    	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
+    				&az1, &az2, &dist );
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course = " << az2);
+
+    	    //
+    	    // 2. Rotate this back into a coordinate system where Y
+    	    // runs the length of the runway and X runs crossways.
+    	    //
+
+    	    double course = az2 - heading;
+    	    while ( course < -360 ) { course += 360; }
+    	    while ( course > 360 ) { course -= 360; }
+    	    SG_LOG( SG_GENERAL, SG_DEBUG,
+                        "  course = " << course << "  dist = " << dist );
+
+    	    //
+    	    // 3. Convert from polar to cartesian coordinates
+    	    //
+
+    	    x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
+    	    y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  x = " << x << " y = " << y);
+
+    	    //
+    	    // 4. Map x, y point into texture coordinates
+    	    //
+    	    double tmp;
+
+            tmp = x / width;
+            tx = tmp * (maxu - minu) + minu;
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
+
+            //if ( tx < 0.0 ) { tx = 0.0; }
+            //if ( tx > 1.0 ) { tx = 1.0; }
+
+    	    ty = y / length;
+            tmp = y / length;
+            ty = tmp * (maxv - minv) + minv;
+
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
+
+            //if ( ty < 0.0 ) { ty = 0.0; }
+            //if ( ty > 1.0 ) { ty = 1.0; }
+
+    	    t = Point3D( tx, ty, 0 );
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ", " << ty << ")");
+
+    	    result.add_node( i, t );
+    	}
+    }
+
+    return result;
+}
+
 // TODO : Add somewhere
 // Determine node elevations of a point_list based on the provided
 // TGAptSurface.  Offset is added to the final elevation
@@ -518,7 +609,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
-        tc = rwy_section_tex_coords( tri, pvmt_tps[i], false );
+        if (pvmt_polys[i].get_flag() == "lf")
+        {
+            tc = linear_feature_tex_coords( tri, pvmt_tps[i] );
+        }
+        else
+        {
+            tc = rwy_section_tex_coords( tri, pvmt_tps[i], false );
+        }
 
     	pvmt_polys[i].set_tris( tri );
 	    pvmt_polys[i].set_texcoords( tc );

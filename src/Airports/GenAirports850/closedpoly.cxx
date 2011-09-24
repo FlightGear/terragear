@@ -65,7 +65,7 @@ void ClosedPoly::AddNode( BezNode* node )
         }
 
         SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_marking);
-        cur_marking = new LinearFeature(marking_desc /* TODO offset */ );
+        cur_marking = new LinearFeature(marking_desc, 1.5f, 0.6f );
     } 
     cur_marking->AddNode( node );
 }

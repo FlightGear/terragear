@@ -162,11 +162,11 @@ LinearFeature* Parser::ParseFeature( char* line )
 
     if (strlen( line ))
     {
-        feature = new LinearFeature(line);
+        feature = new LinearFeature(line, 0.0f, 1.0f);
     }
     else
     {
-        feature = new LinearFeature(NULL);
+        feature = new LinearFeature(NULL, 0.0f, 1.0f);
     }
         
     SG_LOG(SG_GENERAL, SG_ALERT, "Creating Linear Feature with desription \"" << line << "\"");

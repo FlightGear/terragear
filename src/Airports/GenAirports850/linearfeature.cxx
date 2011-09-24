@@ -350,6 +350,7 @@ int LinearFeature::Finish()
     double      heading;
     double      dist;
     double      az2;
+    double      last_end_v;
     int         i, j;
     string      material;
 
@@ -369,7 +370,12 @@ int LinearFeature::Finish()
         switch( marks[i]->type )
         {
             case LF_NONE:
+                break;
+
             case LF_SOLID_YELLOW:
+                material = "lf_sng_solid_yellow";
+                break;
+
             case LF_BROKEN_YELLOW:
             case LF_SOLID_DBL_YELLOW:
             case LF_RUNWAY_HOLD:
@@ -401,7 +407,7 @@ int LinearFeature::Finish()
             case LF_OMNIDIR_RED:
                 //material = "gloff_lf_b_solid_yellow";
                 // material = "pa_lftest";
-                material = "pa_tiedown";
+                material = "pa_tstlin";
                 break;
 
             default:
@@ -409,9 +415,10 @@ int LinearFeature::Finish()
                 exit(1);
         }
 
+        last_end_v   = 0.0f;
         for (j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
-            SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
 
             // for each point on the PointsList, generate a quad from
             // start to next, offset by 2 distnaces from the edge
@@ -419,19 +426,19 @@ int LinearFeature::Finish()
             if (j == marks[i]->start_idx)
             {
                 // first point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointFirst( &points[j], &points[j+1], 1.0 );
-                cur_inner = OffsetPointFirst( &points[j], &points[j+1], 2.0 );
+                cur_outer = OffsetPointFirst( &points[j], &points[j+1], offset-width/2.0f );
+                cur_inner = OffsetPointFirst( &points[j], &points[j+1], offset+width/2.0f );
             }
             else if (j == marks[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointLast( &points[j-1], &points[j], 1.0 );
-                cur_inner = OffsetPointLast( &points[j-1], &points[j], 2.0 );
+                cur_outer = OffsetPointLast( &points[j-1], &points[j], offset-width/2.0f );
+                cur_inner = OffsetPointLast( &points[j-1], &points[j], offset+width/2.0f );
             }
             else
             {
-                cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], 1.0 );
-                cur_inner = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], 2.0 );
+                cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset-width/2.0f );
+                cur_inner = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset+width/2.0f );
             }
 
             if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
@@ -447,10 +454,22 @@ int LinearFeature::Finish()
                 sp.erase();
                 sp.set_poly( poly );
                 sp.set_material( material );
+                sp.set_flag("lf");
                 feature_polys.push_back(sp);
 
-                tp = TGTexParams( prev_inner, 0.1, 1.0, heading );
+                tp = TGTexParams( prev_inner, width, 1.0f, heading );
+    
+//                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: calculating minv for mark " << i << " poly " << j << " distance " << dist << " cur minv " << last_end_v << " next minv " << (fmod( (last_end_v + dist), 1.0f )) );
+
+//                tp.set_minv(last_end_v);
+//                tp.set_maxv(0.5);
                 feature_tps.push_back(tp);
+
+                // this almost works....
+                last_end_v = 1.0f - (fmod( (last_end_v + dist), 1.0f ));
+
+//                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: last_end_v is  " << last_end_v );
+
             }
 
             prev_outer = cur_outer;

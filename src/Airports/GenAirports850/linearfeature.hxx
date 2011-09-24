@@ -57,7 +57,7 @@ typedef std::vector <Marking*> MarkingList;
 class LinearFeature
 {
 public:
-    LinearFeature( char* desc )
+    LinearFeature( char* desc, double o, double w )
     {
         if ( desc )
         {
@@ -67,11 +67,15 @@ public:
         {
             description = "none";
         }
+        offset = o;
+        width = w;
     }
 
-    LinearFeature( string desc )
+    LinearFeature( string desc, double o, double w )
     {
         description = desc;
+        offset = o;
+        width = w;
     }
 
     inline string GetDescription() { return description; }
@@ -90,6 +94,8 @@ private:
     Point3D OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *next, double offset_by );
     Point3D OffsetPointLast( Point3D *prev, Point3D *cur, double offset_by );
 
+    double      offset;
+    double      width;
     MarkingList marks;
     Marking*    cur_mark;
 
