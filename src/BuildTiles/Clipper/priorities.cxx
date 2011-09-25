@@ -101,7 +101,7 @@ int load_area_types( const std::string& filename ) {
         AreaType index = (AreaType)area_types.size();
         area_types.push_back(descriptor);
         area_names[descriptor.name]=index;
-        SG_LOG(SG_GENERAL, SG_INFO, "  " << descriptor.name << " " << descriptor.kind);
+        SG_LOG(SG_GENERAL, SG_INFO, "  " << index << " " << descriptor.name << " " << descriptor.kind);
         in >> skipcomment;
     }
     
