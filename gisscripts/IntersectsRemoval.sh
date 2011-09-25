@@ -42,19 +42,19 @@ InitCutoutTable () {
     ${PSQL} "DELETE FROM geometry_columns WHERE f_table_name LIKE '${CUTLAYER}'"
 #    ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
 #                 wkb_geometry geometry, \
-#                 CONSTRAINT enforce_dims_wkb_geometry CHECK (ndims(wkb_geometry) = 2), \
-#                 CONSTRAINT enforce_geotype_wkb_geometry CHECK ((geometrytype(wkb_geometry) = 'POLYGON'::text) \
-#                     OR  (geometrytype(wkb_geometry) = 'MULTIPOLYGON'::text)), \
-#                 CONSTRAINT enforce_srid_wkb_geometry CHECK (srid(wkb_geometry) = 4326) \
+#                 CONSTRAINT enforce_dims_wkb_geometry CHECK (ST_NDims(wkb_geometry) = 2), \
+#                 CONSTRAINT enforce_geotype_wkb_geometry CHECK ((ST_GeometryType(wkb_geometry) = 'ST_Polygon'::text) \
+#                     OR  (geometrytype(wkb_geometry) = 'ST_MultiPolygon'::text)), \
+#                 CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326) \
 #                 )"
     ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
                  wkb_geometry geometry, \
-                 CONSTRAINT enforce_dims_wkb_geometry CHECK (ndims(wkb_geometry) = 2), \
-                 CONSTRAINT enforce_geotype_wkb_geometry CHECK (geometrytype(wkb_geometry) = 'POLYGON'::text), \
-                 CONSTRAINT enforce_srid_wkb_geometry CHECK (srid(wkb_geometry) = 4326) \
+                 CONSTRAINT enforce_dims_wkb_geometry CHECK (ST_NDims(wkb_geometry) = 2), \
+                 CONSTRAINT enforce_geotype_wkb_geometry CHECK (ST_GeometryType(wkb_geometry) = 'ST_Polygon'::text), \
+                 CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326) \
                  )"
     ${PSQL} "INSERT INTO geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type) \
-                 VALUES ('', 'public', '${CUTLAYER}', 'wkb_geometry', 2, 4326, 'POLYGON')"
+                 VALUES ('', 'public', '${CUTLAYER}', 'wkb_geometry', 2, 4326, 'ST_Polygon')"
     
     ${PSQL} "ALTER TABLE ${CUTLAYER} ADD PRIMARY KEY (ogc_fid)"
     ${PSQL} "ALTER TABLE ${CUTLAYER} ALTER COLUMN wkb_geometry SET STORAGE MAIN"
@@ -63,9 +63,9 @@ InitCutoutTable () {
 InitDiffTable () {
     ${PSQL} "DROP TABLE ${DIFFLAYER}"
     ${PSQL} "DELETE FROM geometry_columns WHERE f_table_name LIKE '${DIFFLAYER}'"
-    ${PSQL} "CREATE TABLE ${DIFFLAYER} (ogc_fid serial NOT NULL, wkb_geometry geometry NOT NULL, CONSTRAINT enforce_srid_wkb_geometry CHECK (srid(wkb_geometry) = 4326))"
+    ${PSQL} "CREATE TABLE ${DIFFLAYER} (ogc_fid serial NOT NULL, wkb_geometry geometry NOT NULL, CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326))"
     ${PSQL} "INSERT INTO geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type) \
-                 VALUES ('', 'public', '${DIFFLAYER}', 'wkb_geometry', 2, 4326, 'POLYGON')"
+                 VALUES ('', 'public', '${DIFFLAYER}', 'wkb_geometry', 2, 4326, 'ST_Polygon')"
 }
 
 ImportShape () {
@@ -127,7 +127,7 @@ CheckIntersects () {
         exit 1
     else
         for CSLAYER in `${PSQL} "SELECT f_table_name FROM geometry_columns WHERE f_table_name LIKE '${LAYERPREFIX}%' \
-            AND type LIKE 'POLYGON' ORDER BY f_table_name"`; do
+            AND type LIKE 'ST_Polygon' ORDER BY f_table_name"`; do
             InitDiffTable
             for OGC_FID in `${PSQL} "SELECT ogc_fid FROM ${CSLAYER} WHERE wkb_geometry && (SELECT wkb_geometry FROM ${CUTLAYER}) ORDER BY ogc_fid"`; do
                 RETURN=`${PSQL} "SELECT ST_Intersects((SELECT wkb_geometry FROM ${CUTLAYER}), (SELECT wkb_geometry FROM ${CSLAYER} WHERE ogc_fid = ${OGC_FID}))"`
