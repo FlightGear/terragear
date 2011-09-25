@@ -32,7 +32,7 @@ void LinearFeature::ConvertContour( BezContour* src  )
     Marking* cur_mark = NULL;
     int i;
 
-    SG_LOG(SG_GENERAL, SG_ALERT, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
+    SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
     // clear anything in the point list
     points.empty();
@@ -40,7 +40,7 @@ void LinearFeature::ConvertContour( BezContour* src  )
     // iterate through each bezier node in the contour
     for (i=0; i <= src->size()-1; i++)
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, " LinearFeature::ConvertContour: Handling Node " << i << "\n\n");
+        SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour: Handling Node " << i << "\n\n");
 
         if (i == 0)
         {
@@ -73,7 +73,7 @@ void LinearFeature::ConvertContour( BezContour* src  )
         {
             if (curNode->GetMarking() != cur_mark->type)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.size() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.size() );
 
                 // marking has ended, or changed
                 cur_mark->end_idx = points.size();
@@ -82,7 +82,7 @@ void LinearFeature::ConvertContour( BezContour* src  )
             }
             else
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->start_idx << " with type " << cur_mark->type );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->start_idx << " with type " << cur_mark->type );
             }
         }
         
@@ -91,7 +91,7 @@ void LinearFeature::ConvertContour( BezContour* src  )
         {
             if (curNode->GetMarking())
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::ConvertContour Start Marking from " << points.size() << " with type " << curNode->GetMarking() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Marking from " << points.size() << " with type " << curNode->GetMarking() );
 
                 // we aren't watching a mark, and this node has one
                 cur_mark = new Marking;
@@ -214,7 +214,7 @@ void LinearFeature::ConvertContour( BezContour* src  )
     // check for marking that goes all the way to the end...
    if (cur_mark)
    {
-       SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.size() );
+       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.size() );
 
        cur_mark->end_idx = points.size()-1;
        marks.push_back(cur_mark);
@@ -231,7 +231,7 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
     double dist;
     double pt_x, pt_y;
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Find average angle for contour: prev (" << *prev << "), "
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << *prev << "), "
                                                                   "cur (" << *cur  << "), "
                                                                  "next (" << *next << ")" );
 
@@ -252,7 +252,7 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
 
     // check the turn direction
     SGVec3d cp = cross( dir1, dir2 );
-    SG_LOG(SG_GENERAL, SG_ALERT, "\tcross product of dir1: " << dir1 << " and dir2: " << dir2 << " is " << cp );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tcross product of dir1: " << dir1 << " and dir2: " << dir2 << " is " << cp );
 
     // find the offset angle
     geo_inverse_wgs_84( avg.y(), avg.x(), 0.0f, 0.0f, &offset_dir, &az2, &dist);
@@ -273,12 +273,12 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
     // calculate correct distance for the offset point
     dist = (offset_by)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "\theading is " << offset_dir << " distance is " << dist );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << dist );
 
     // calculate the point from cur
     geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, dist, &pt_y, &pt_x, &az2 );
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "\tpoint is (" << pt_x << "," << pt_y << ")" );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
 
     return Point3D(pt_x, pt_y, 0.0f);
 }
@@ -290,7 +290,7 @@ Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double off
     double dist;
     double pt_x, pt_y;
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Find OffsetPoint at Start : cur (" << *cur  << "), "
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << *cur  << "), "
                                                             "next (" << *next << ")" );
 
     // find the offset angle
@@ -301,12 +301,12 @@ Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double off
         offset_dir += 360;
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "\theading is " << offset_dir << " distance is " << offset_by );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
 
     // calculate the point from cur
     geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "\tpoint is (" << pt_x << "," << pt_y << ")" );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
 
     return Point3D(pt_x, pt_y, 0.0f);
 }
@@ -319,7 +319,7 @@ Point3D LinearFeature::OffsetPointLast( Point3D *prev, Point3D *cur, double offs
     double dist;
     double pt_x, pt_y;
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Find OffsetPoint at End   : prev (" << *prev  << "), "
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << *prev  << "), "
                                                               "cur (" << *cur << ")" );
 
     // find the offset angle
@@ -330,14 +330,19 @@ Point3D LinearFeature::OffsetPointLast( Point3D *prev, Point3D *cur, double offs
         offset_dir += 360;
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "\theading is " << offset_dir << " distance is " << offset_by );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
 
     // calculate the point from cur
     geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "\tpoint is (" << pt_x << "," << pt_y << ")" );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
 
     return Point3D(pt_x, pt_y, 0.0f);
+}
+
+Point3D midpoint( Point3D p0, Point3D p1 )
+{
+    return Point3D( (p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2, (p0.z() + p1.z()) / 2 );
 }
 
 int LinearFeature::Finish()
@@ -353,6 +358,7 @@ int LinearFeature::Finish()
     double      last_end_v;
     int         i, j;
     string      material;
+    int         mat_idx = 0;
 
 
     // create the inner and outer boundaries to generate polys
@@ -373,8 +379,8 @@ int LinearFeature::Finish()
                 break;
 
             case LF_SOLID_YELLOW:
-                material = "lf_sng_solid_yellow";
-                break;
+                //material = "lf_sng_solid_yellow";
+                //break;
 
             case LF_BROKEN_YELLOW:
             case LF_SOLID_DBL_YELLOW:
@@ -407,7 +413,7 @@ int LinearFeature::Finish()
             case LF_OMNIDIR_RED:
                 //material = "gloff_lf_b_solid_yellow";
                 // material = "pa_lftest";
-                material = "pa_tstlin";
+                // material = "pa_tstlin";
                 break;
 
             default:
@@ -419,6 +425,50 @@ int LinearFeature::Finish()
         for (j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
+
+                switch (mat_idx%10)
+                {
+                    case 0:
+                        material = "pa_tstlin0";
+                        break;
+
+                    case 1:
+                        material = "pa_tstlin1";
+                        break;
+
+                    case 2:
+                        material = "pa_tstlin2";
+                        break;
+
+                    case 3:
+                        material = "pa_tstlin3";
+                        break;
+
+                    case 4:
+                        material = "pa_tstlin4";
+                        break;
+
+                    case 5:
+                        material = "pa_tstlin5";
+                        break;
+
+                    case 6:
+                        material = "pa_tstlin6";
+                        break;
+
+                    case 7:
+                        material = "pa_tstlin7";
+                        break;
+
+                    case 8:
+                        material = "pa_tstlin8";
+                        break;
+
+                    case 9:
+                        material = "pa_tstlin9";
+                        break;
+                }
+                mat_idx++;
 
             // for each point on the PointsList, generate a quad from
             // start to next, offset by 2 distnaces from the edge
@@ -443,13 +493,15 @@ int LinearFeature::Finish()
 
             if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
             {
-                geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
+                Point3D prev_mp = midpoint( prev_outer, prev_inner );
+                Point3D cur_mp  = midpoint( cur_outer,  cur_inner  );
+                geo_inverse_wgs_84( prev_mp.y(), prev_mp.x(), cur_mp.y(), cur_mp.x(), &heading, &az2, &dist);
 
                 poly.erase();
-                poly.add_node( 0, prev_outer );
                 poly.add_node( 0, prev_inner );
-                poly.add_node( 0, cur_inner );
+                poly.add_node( 0, prev_outer );
                 poly.add_node( 0, cur_outer );
+                poly.add_node( 0, cur_inner );
 
                 sp.erase();
                 sp.set_poly( poly );
@@ -458,18 +510,10 @@ int LinearFeature::Finish()
                 feature_polys.push_back(sp);
 
                 tp = TGTexParams( prev_inner, width, 1.0f, heading );
-    
-//                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: calculating minv for mark " << i << " poly " << j << " distance " << dist << " cur minv " << last_end_v << " next minv " << (fmod( (last_end_v + dist), 1.0f )) );
-
-//                tp.set_minv(last_end_v);
-//                tp.set_maxv(0.5);
+                tp.set_minv(last_end_v);
                 feature_tps.push_back(tp);
 
-                // this almost works....
-                last_end_v = 1.0f - (fmod( (last_end_v + dist), 1.0f ));
-
-//                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: last_end_v is  " << last_end_v );
-
+                last_end_v = 1.0f - (fmod( (dist - last_end_v), 1.0f ));
             }
 
             prev_outer = cur_outer;
@@ -490,10 +534,10 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
         poly = feature_polys[i].get_poly();
         clipped = tgPolygonDiff( poly, *line_accum );
 
-        SG_LOG(SG_GENERAL, SG_ALERT, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
 
         TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
-        SG_LOG(SG_GENERAL, SG_ALERT, "BuildBtg: split poly has " << split.contours() << " contours");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
 
         feature_polys[i].set_poly( split );
         line_polys->push_back( feature_polys[i] );

@@ -188,9 +188,13 @@ static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTe
     double minv = tp.get_minv();
     double maxv = tp.get_maxv();
     SG_LOG( SG_GENERAL, SG_DEBUG, "section ref = " << ref );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  width = " << width );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  length = " << length );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  width   = " << width );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  length  = " << length );
     SG_LOG( SG_GENERAL, SG_DEBUG, "  heading = " << heading );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  minv    = " << minv );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  maxv    = " << maxv );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  heading = " << heading );
+
     Point3D p, t;
     double x, y, tx, ty;
 
@@ -199,7 +203,7 @@ static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTe
     	for ( j = 0; j < in_poly.contour_size( i ); ++j ) 
         {
     	    p = in_poly.get_pt( i, j );
-    	    SG_LOG(SG_GENERAL, SG_DEBUG, "point = " << p);
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "tex coords for contour " << i << "point " << j << ": " << p );
 
     	    //
     	    // 1. Calculate distance and bearing from the center of
@@ -212,7 +216,7 @@ static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTe
     	    double az1, az2, dist;
     	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
     				&az1, &az2, &dist );
-    	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course = " << az2);
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course from ref = " << az2);
 
     	    //
     	    // 2. Rotate this back into a coordinate system where Y
@@ -242,17 +246,13 @@ static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTe
             tx = tmp * (maxu - minu) + minu;
     	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
 
-            //if ( tx < 0.0 ) { tx = 0.0; }
-            //if ( tx > 1.0 ) { tx = 1.0; }
-
+/*
     	    ty = y / length;
             tmp = y / length;
-            ty = tmp * (maxv - minv) + minv;
-
+            ty = tmp + minv;
+*/
+            ty = (y/length) + minv;
     	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
-
-            //if ( ty < 0.0 ) { ty = 0.0; }
-            //if ( ty > 1.0 ) { ty = 1.0; }
 
     	    t = Point3D( tx, ty, 0 );
     	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ", " << ty << ")");
