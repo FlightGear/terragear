@@ -26,14 +26,15 @@
 #define _CONTOUR_TREE_HXX
 
 
-#ifndef __cplusplus                                                          
+#ifndef __cplusplus
 # error This library requires C++
-#endif                                   
+#endif
 
 
 #include <simgear/compiler.h>
 
 #include <vector>
+#include <cstddef>
 
 // forward declaration
 class TGContourNode;
@@ -51,7 +52,7 @@ class TGContourNode {
 
 private:
 
-    int contour_num;		// -1 for the root node
+    int contour_num;        // -1 for the root node
     contour_kids kids;
 
 public:
@@ -68,9 +69,9 @@ public:
     inline TGContourNode *get_kid( int n ) const { return kids[n]; }
     inline void add_kid( TGContourNode *kid ) { kids.push_back( kid ); }
     inline void remove_kid( int n ) {
-	// cout << "kids[" << n << "] = " << kids[n] << endl;
-	delete kids[n];
-	kids[n] = NULL;
+    // cout << "kids[" << n << "] = " << kids[n] << endl;
+    delete kids[n];
+    kids[n] = NULL;
     }
 };
 

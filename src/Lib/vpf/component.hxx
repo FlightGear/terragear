@@ -46,7 +46,7 @@ protected:
    * @param path The base path for the component.
    */
   VpfComponent (VpfTableManager &table_manager,
-		const std::string &path);
+        const std::string &path);
 
 
   /**
@@ -57,7 +57,7 @@ protected:
 #ifdef __MSDOS__
   static const char PATHSEP = '\\';
 #else
-  static const char PATHSEP = '/';	// FIXME: make more robust
+  static const char PATHSEP = '/';  // FIXME: make more robust
 #endif
 
 
@@ -105,7 +105,7 @@ protected:
    * @return true if the file exists, false otherwise.
    */
   virtual bool hasFile (const std::string &path,
-			const std::string &file) const;
+            const std::string &file) const;
 
 
   /**
@@ -121,7 +121,7 @@ protected:
    * @return The absolute file name.
    */
   virtual std::string getFileName (const std::string &path,
-				   const std::string &file) const;
+                   const std::string &file) const;
 
 
   /**
@@ -188,7 +188,7 @@ protected:
 
 private:
   std::string _path;
-  mutable VpfTableManager &_table_manager;
+  VpfTableManager &_table_manager;
 
 };
 
