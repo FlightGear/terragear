@@ -18,8 +18,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id: lights.cxx,v 1.41 2005-12-19 16:51:25 curt Exp $
-//
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -86,11 +84,47 @@ static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
     return light_vec;
 }
 
+static superpoly_list gen_helipad_lights(const TGRunway& rwy_info){
+
+    point_list c_lights; c_lights.clear();
+    point_list c_normals; c_normals.clear();
+    double lat2, lon2, az2;
+
+    // Create a circle of lights approx. where the white circle is
+    for (int deg=0; deg<360; deg+=30){
+	geo_direct_wgs_84(0, rwy_info.lat, rwy_info.lon, deg ,
+			  rwy_info.width * 0.46 , &lat2, &lon2, &az2 );
+
+	c_lights.push_back( Point3D( lon2, lat2, 0.0 ) );
+
+	Point3D tmp = Point3D( lon2, lat2, 0.0 );
+	Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
+	double length = vec.distance3D( Point3D(0.0) );
+	vec = vec / length;
+	c_normals.push_back( vec );
+    }
+
+    TGPolygon lights_poly; lights_poly.erase();
+    TGPolygon normals_poly; normals_poly.erase();
+    lights_poly.add_contour( c_lights, false );
+    normals_poly.add_contour( c_normals, false );
+
+    TGSuperPoly green;
+    green.set_poly( lights_poly );
+    green.set_normals( normals_poly );
+    green.set_material( "RWY_GREEN_LIGHTS" );
+
+    superpoly_list result; result.clear();
+
+    result.push_back( green );
+
+    return result;
+}
+
 
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
-static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info,
-                                              const int kind, bool recip )
+static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool recip )
 {
     point_list w_lights; w_lights.clear();
     point_list y_lights; y_lights.clear();
@@ -506,7 +540,7 @@ static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
 }
 
 
-// generate runway center line lighting, 50' spacing.
+// generate taxiway center line lighting, 50' spacing.
 static superpoly_list gen_taxiway_center_line_lights( const TGRunway& rwy_info,
                                                       bool recip )
 {
@@ -2595,38 +2629,32 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 // top level runway light generator
 void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 			superpoly_list &lights, TGPolygon *apt_base ) {
-#if 0
-    string lighting_flags = rwy_info.lighting_flags;
-    SG_LOG( SG_GENERAL, SG_DEBUG, "gen runway lights " << rwy_info.rwy_no1 << " "
-            << rwy_info.lighting_flags );
-    
-    int vasi1 =  atoi( lighting_flags.substr(0,1).c_str() );
-    int rwylt1 = atoi( lighting_flags.substr(1,1).c_str() );
-    int app1 =   atoi( lighting_flags.substr(2,1).c_str() );
-    int vasi2 =  atoi( lighting_flags.substr(3,1).c_str() );
-    int rwylt2 = atoi( lighting_flags.substr(4,1).c_str() );
-    int app2 =   atoi( lighting_flags.substr(5,1).c_str() );
-#endif
 
     unsigned int i;
 
     // Make edge lighting
-    if ( rwy_info.edge_lights == 2 /* Has edge lighting */ ) {
+    if ( rwy_info.edge_lights >= 1 /* Has edge lighting */ ) {
         // forward direction
-        superpoly_list s = gen_runway_edge_lights( rwy_info, rwy_info.edge_lights, false );
+        superpoly_list s = gen_runway_edge_lights( rwy_info, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
 
         // reverse direction
-        s = gen_runway_edge_lights( rwy_info, rwy_info.edge_lights, true );
+        s = gen_runway_edge_lights( rwy_info, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights.push_back( s[i] );
         }
     }
+    if ( rwy_info.type == 102){
+	superpoly_list s = gen_helipad_lights( rwy_info );
+	for ( i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+	}
+    }
 
     // Centerline lighting
-    if ( rwy_info.centre_lights == 1 /* Has centerline lighting */ ) {
+    if ( rwy_info.centre_lights == 1 && rwy_info.type != 102 /* Has centerline lighting */ ) {
         // forward direction
         superpoly_list s = gen_runway_center_line_lights( rwy_info, false );
         for ( i = 0; i < s.size(); ++i ) {
@@ -2873,8 +2901,8 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 
     if ( rwy_info.reil1 > 0 /* Has REIL lighting */
          || rwy_info.alc1_flag == 11 /* ODALS Omni-directional approach light system */
-         || ( rwy_info.edge_lights > 0  && rwy_info.alc1_flag == 0 ) /* Has edge lighting, but no
-                                             approach lighting */ )
+         || ( rwy_info.edge_lights > 0  && rwy_info.alc1_flag == 0 && !rwy_info.type == 102 ) /* Has edge lighting, but no
+                                             approach lighting and is not a heliport */ )
     {
         // forward direction
         cout << "threshold lights for forward direction" << endl;
@@ -2886,8 +2914,8 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     }
     if ( rwy_info.reil2 > 0 /* Has REIL lighting */
          || rwy_info.alc2_flag == 11 /* ODALS Omni-directional approach light system */
-         || ( rwy_info.edge_lights > 0  && rwy_info.alc2_flag == 0 ) /* Has edge lighting, but no
-                                             approach lighting */ )
+         || ( rwy_info.edge_lights > 0  && rwy_info.alc2_flag == 0 && !rwy_info.type == 102 ) /* Has edge lighting, but no
+                                             approach lighting and is not a heliport */ )
     {
         // reverse direction
         cout << "threshold lights for reverse direction" << endl;
