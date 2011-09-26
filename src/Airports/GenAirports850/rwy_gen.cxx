@@ -276,11 +276,22 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     }
 
 
- if (!marking == 0){
+ if (marking == 0){
 
-    //
-    // Threshold
-    //
+    // No threshold
+
+    start1_pct = end1_pct;
+    end1_pct = start1_pct + ( 10 / length );
+    gen_runway_section( rwy_info, runway_half,
+			start1_pct, end1_pct,
+			0.0, 1.0,
+                        0.0, 1.0, 0.0, 1.0,
+			heading,
+			material, "no_threshold",
+			rwy_polys, texparams, accum );
+ } else {
+
+    // Thresholds for all others
 
     start1_pct = end1_pct;
     end1_pct = start1_pct + ( 202.0 * SG_FEET_TO_METER / length );
@@ -291,8 +302,9 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 			heading,
 			material, "threshold",
 			rwy_polys, texparams, accum );
+ }
 
-
+if (!marking == 0){
     //
     // Runway designation letter
     //
