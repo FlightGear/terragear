@@ -248,6 +248,7 @@ int main( int argc, char **argv ) {
     }
 
     string_list runways_list;
+    string_list water_rw_list;
     string_list beacon_list;
     string_list tower_list;
     string_list windsock_list;
@@ -302,9 +303,11 @@ int main( int argc, char **argv ) {
                 if ( runways_list.size() ) {
                     vector<string> rwy_token
                         = simgear::strutils::split( runways_list[0] );
+		    if ( token[0] == "100" ){
                     rwy = token[8];
                     lat = atof( token[9].c_str() );
                     lon = atof( token[10].c_str() );
+		    }
 
                     if ( airport_id.length() && airport_id == last_apt_id ) {
                         ready_to_go = true;
@@ -331,6 +334,7 @@ int main( int argc, char **argv ) {
                                     build_airport( last_apt_id,
                                                    elev * SG_FEET_TO_METER,
                                                    runways_list,
+						   water_rw_list,
                                                    beacon_list,
                                                    tower_list,
                                                    windsock_list,
@@ -364,13 +368,18 @@ int main( int argc, char **argv ) {
 
             // clear runway list for start of next airport
             runways_list.clear();
+	    water_rw_list.clear();
             beacon_list.clear();
             tower_list.clear();
             windsock_list.clear();
 	    light_list.clear();
         } else if ( token[0] == "100" || token[0] == "102") {
-            // runway entry
+            // runway entry (Land or heli)
             runways_list.push_back(line);
+	} else if ( token[0] == "101" ) {
+            // Water runway. Here we don't have to create any textures.
+            // Only place some buoys
+            water_rw_list.push_back(line);
         } else if ( token[0] == "18" ) {
             // beacon entry
             beacon_list.push_back(line);
@@ -395,7 +404,9 @@ int main( int argc, char **argv ) {
 	} else if ( token[0] == "00" ) {
 		// ??
 	} else if ( token[0] >= "110" ) {
-		//ignore lines for now
+		//ignore taxiways for now
+	} else if ( token[0] == "10" ) {
+		//ignore old taxiways for now
         } else {
             SG_LOG( SG_GENERAL, SG_ALERT, 
                     "Unknown line in file: " << line );
@@ -438,6 +449,7 @@ int main( int argc, char **argv ) {
                     if( is_in_range( runways_list, min_lat, max_lat, min_lon, max_lon ) ) {
                         build_airport( last_apt_id, elev * SG_FEET_TO_METER,
                                        runways_list,
+				       water_rw_list,
                                        beacon_list,
                                        tower_list,
                                        windsock_list,

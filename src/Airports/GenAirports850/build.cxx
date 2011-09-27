@@ -236,46 +236,50 @@ static void build_runway( const TGRunway& rwy_info,
 	    material = "grass_rwy";
     } else if ( surface_code == 4 /* Dirt */
 	    || surface_code == 5 /* Gravel */
-	    || surface_code == 12 /* Dry lakebed */ ) {
+	    || surface_code == 12 /* Dry lakebed */
+	    || surface_code == 13 /* Water */
+	    || surface_code == 14 /* Snow/Ice */
+	    || surface_code == 15 /* Transparent */) {
 	    material = "dirt_rwy";
     } else {
         SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface_code);
 	throw sg_exception("unknown runway type!");
     }
-if ( rwy_info.type == 102 ){
-SG_LOG(SG_GENERAL, SG_INFO, "Generating Helipad" );
-gen_heli( rwy_info, alt_m, material,
-			   rwy_polys, texparams, accum );
-}
+
+    if ( rwy_info.type == 102 ){
+	SG_LOG(SG_GENERAL, SG_INFO, "Generating Helipad" );
+	gen_heli( rwy_info, alt_m, material,
+		  rwy_polys, texparams, accum );
+    }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "marking code = " << rwy_info.marking_code1 << " / " << rwy_info.marking_code2);
-if ( rwy_info.type == 100 ){
-      if ( surface_code == 3 /* Turf/Grass */
-                || surface_code == 4 /* Dirt */
-                || surface_code == 5 /* Gravel */ )
-    {
-	gen_simple_rwy( rwy_info, alt_m, material,
-			rwy_polys, texparams, accum );
-    } else if (rwy_info.marking_code1 == 5 ||
-		rwy_info.marking_code1 == 4 ||
-		rwy_info.marking_code1 == 3 ||
-		rwy_info.marking_code1 == 2 ||
-		rwy_info.marking_code1 == 1 ||
-		rwy_info.marking_code1 == 0 ) {
+    if ( rwy_info.type == 100 ){
+	if ( surface_code == 3 /* Turf/Grass */
+	    || surface_code == 4 /* Dirt */
+	    || surface_code == 5 /* Gravel */ )
+	{
+	    gen_simple_rwy( rwy_info, alt_m, material,
+			    rwy_polys, texparams, accum );
+	} else if (rwy_info.marking_code1 == 5 ||
+	    rwy_info.marking_code1 == 4 ||
+	    rwy_info.marking_code1 == 3 ||
+	    rwy_info.marking_code1 == 2 ||
+	    rwy_info.marking_code1 == 1 ||
+	    rwy_info.marking_code1 == 0 ) {
 
-	gen_rwy( rwy_info, alt_m, material,
-			   rwy_polys, texparams, accum );
-    } else if ( surface_code == 13 /* Water buoys */ ) {
-	// do nothing for now.
-    } else {
-	// unknown runway code ... hehe, I know, let's just die
-	// right here so the programmer has to fix his code if a
-	// new code ever gets introduced. :-)
-        SG_LOG( SG_GENERAL, SG_ALERT, "Unknown runway marking code = " <<
-                rwy_info.marking_code1 );
-	throw sg_exception("Unknown runway code in build.cxx:build_airport()");
+	    gen_rwy( rwy_info, alt_m, material,
+		     rwy_polys, texparams, accum );
+	    } else if ( surface_code == 13 /* Water buoys */ ) {
+		// do nothing for now.
+	    } else {
+		// unknown runway code ... hehe, I know, let's just die
+		// right here so the programmer has to fix his code if a
+		// new code ever gets introduced. :-)
+		SG_LOG( SG_GENERAL, SG_ALERT, "Unknown runway marking code = " <<
+		rwy_info.marking_code1 );
+		throw sg_exception("Unknown runway code in build.cxx:build_airport()");
+	    }
     }
-}
 
     TGPolygon base, safe_base;
     if (rwy_info.type == 100){
@@ -303,6 +307,7 @@ if ( rwy_info.type == 100 ){
 // build 3d airport
 void build_airport( string airport_id, float alt_m,
                     string_list& runways_raw,
+                    string_list& water_raw,
                     string_list& beacons_raw,
                     string_list& towers_raw,
                     string_list& windsocks_raw,
@@ -458,6 +463,38 @@ void build_airport( string airport_id, float alt_m,
 
     SGBucket b( apt_lon / (double)rwy_count, apt_lat / (double)rwy_count );
     SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
+
+    point_list water_rw; water_rw.clear();
+    for ( i = 0; i < (int)water_raw.size(); ++i ) {
+	string water_str = water_raw[i];
+        vector<string> token = simgear::strutils::split( water_str );
+
+	//first runway end coordinates
+	double lat_1 = atof( token[4].c_str() );
+	double lon_1 = atof( token[5].c_str() );
+	SGGeod pos_1(SGGeod::fromDegFt(lon_1, lat_1, 0.0));
+
+	//opposite end coordinates
+	double lat_2 = atof( token[7].c_str() );
+	double lon_2 = atof( token[8].c_str() );
+	SGGeod pos_2(SGGeod::fromDegFt(lon_2, lat_2, 0.0));
+
+	//runway centerpoint
+	Point3D rw_center = Point3D( (lon_1 + lon_2) / 2 , (lat_1 + lat_2) / 2, 0);
+
+	double heading = (SGGeodesy::courseDeg(pos_1, pos_2));
+
+	double length = (SGGeodesy::distanceM(pos_1, pos_2));
+	double width = atoi( token[1].c_str() );
+
+	TGPolygon rw_outline = gen_wgs84_area(rw_center, length, 0, 0, width,
+					      heading, 0, false);
+
+	for ( i = 0; i < rw_outline.contour_size( 0 ); ++i ) {
+	water_rw.push_back( rw_outline.get_pt( 0, i ) );
+	}
+
+    }
 
     point_list beacons; beacons.clear();
     for ( i = 0; i < (int)beacons_raw.size(); ++i ) {
@@ -1051,6 +1088,8 @@ void build_airport( string airport_id, float alt_m,
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
     SG_LOG(SG_GENERAL, SG_INFO, "Computing beacon node elevations");
+    point_list water_buoys_nodes = calc_elevations( apt_surf, water_rw, 0.0 );
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing beacon node elevations");
     point_list beacon_nodes = calc_elevations( apt_surf, beacons, 0.0 );
     SG_LOG(SG_GENERAL, SG_INFO, "Computing tower node elevations");
     point_list tower_nodes = calc_elevations( apt_surf, towers, 0.0 );
@@ -1337,6 +1376,13 @@ void build_airport( string airport_id, float alt_m,
 
     // write out airport object reference
     write_index( objpath, b, name );
+
+    // write out water runway buoys references
+    for ( i = 0; i < (int)water_buoys_nodes.size(); ++i ) {
+        write_index_shared( objpath, b, water_buoys_nodes[i],
+                            "Models/Airport/water_rw_buoy.ac",
+                            0.0 );
+    }
 
     // write out beacon references
     for ( i = 0; i < (int)beacon_nodes.size(); ++i ) {
