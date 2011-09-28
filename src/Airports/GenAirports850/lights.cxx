@@ -199,12 +199,13 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool rec
     TGSuperPoly white;
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
-    white.set_material( "RWY_WHITE_LIGHTS" );
-    /* other intensities for when the data file supports it
-     *
-     * white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
-     * white.set_material( "RWY_WHITE_LOW_LIGHTS" );
-     */
+    //Different intensities
+    if (rwy_info.edge_lights == 3)
+        white.set_material( "RWY_WHITE_LIGHTS" );
+    else if (rwy_info.edge_lights == 2)
+        white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
+    else if (rwy_info.edge_lights == 1)
+        white.set_material( "RWY_WHITE_LOW_LIGHTS" );
 
     lights_poly.erase();
     normals_poly.erase();
@@ -214,12 +215,13 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool rec
     TGSuperPoly yellow;
     yellow.set_poly( lights_poly );
     yellow.set_normals( normals_poly );
-    yellow.set_material( "RWY_YELLOW_LIGHTS" );
-    /* other intensities for when the data file supports it
-     *
-     * yellow.set_material( "RWY_YELLOW_MEDIUM_LIGHTS" );
-     * yellow.set_material( "RWY_YELLOW_LOW_LIGHTS" );
-     */
+    //Different intensities
+    if (rwy_info.edge_lights == 3)
+        yellow.set_material( "RWY_YELLOW_LIGHTS" );
+    else if (rwy_info.edge_lights == 2)
+        yellow.set_material( "RWY_YELLOW_MEDIUM_LIGHTS" );
+    else if (rwy_info.edge_lights == 1)
+        yellow.set_material( "RWY_YELLOW_LOW_LIGHTS" );
 
     superpoly_list result; result.clear();
 
@@ -2633,7 +2635,7 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     unsigned int i;
 
     // Make edge lighting
-    if ( rwy_info.edge_lights >= 1 /* Has edge lighting */ ) {
+    if ( rwy_info.edge_lights > 0 /* Has edge lighting */ ) {
         // forward direction
         superpoly_list s = gen_runway_edge_lights( rwy_info, false );
         for ( i = 0; i < s.size(); ++i ) {
