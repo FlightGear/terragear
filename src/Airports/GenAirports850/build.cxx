@@ -282,16 +282,18 @@ static void build_runway( const TGRunway& rwy_info,
     }
 
     TGPolygon base, safe_base;
+    //Land runway
     if (rwy_info.type == 100){
-	base = gen_runway_area_w_extend( rwy_info, 0.0, 20.0, -rwy_info.stopway1, -rwy_info.stopway2, 20.0 );
+	base = gen_runway_area_w_extend( rwy_info, 0.0, rwy_info.width * 0.25, -rwy_info.stopway1, -rwy_info.stopway2, rwy_info.width * 0.25 );
 	// also clear a safe area around the runway
-	safe_base = gen_runway_area_w_extend( rwy_info, 0.0, 180.0, -rwy_info.stopway1, -rwy_info.stopway2, 50.0 );
+	safe_base = gen_runway_area_w_extend( rwy_info, 0.0, rwy_info.width * 0.25, -rwy_info.stopway1, -rwy_info.stopway2, rwy_info.width * 0.25 );
 	*apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
 
 	// add base to apt_base
 	*apt_base = tgPolygonUnion( base, *apt_base );
     }
 
+    //Helipad
     if (rwy_info.type == 102){
 	base = gen_runway_area_w_extend( rwy_info, 0.0, 10.0, 0, 0, 10.0 );
 	// also clear a safe area around the runway
