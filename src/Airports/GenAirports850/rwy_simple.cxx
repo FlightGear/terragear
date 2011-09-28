@@ -18,8 +18,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
-// $Id: rwy_simple.cxx,v 1.12 2004-11-19 22:25:49 curt Exp $
-//
+
 
 
 #include <simgear/compiler.h>
@@ -42,97 +41,124 @@ void gen_simple_rwy( const TGRunway& rwy_info,
 		     texparams_list *texparams,
 		     TGPolygon *accum )
 {
-    int j, k;
+    int i;
 
     TGPolygon runway = gen_runway_w_mid( rwy_info, alt_m, 0.0, 0.0 );
 
-    // runway half "a"
-    TGPolygon runway_a;
-    runway_a.erase();
-    runway_a.add_node( 0, runway.get_pt(0, 0) );
-    runway_a.add_node( 0, runway.get_pt(0, 1) );
-    runway_a.add_node( 0, runway.get_pt(0, 2) );
-    runway_a.add_node( 0, runway.get_pt(0, 5) );
+    TGPolygon runway_half;
 
-    // runway half "b"
-    TGPolygon runway_b;
-    runway_b.erase();
-    runway_b.add_node( 0, runway.get_pt(0, 5) );
-    runway_b.add_node( 0, runway.get_pt(0, 2) );
-    runway_b.add_node( 0, runway.get_pt(0, 3) );
-    runway_b.add_node( 0, runway.get_pt(0, 4) );
-	
-    Point3D p;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway pts (a half)");
-    for ( j = 0; j < runway_a.contour_size( 0 ); ++j ) {
-	p = runway_a.get_pt(0, j);
-	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
-    }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway pts (b half)");
-    for ( j = 0; j < runway_b.contour_size( 0 ); ++j ) {
-	p = runway_b.get_pt(0, j);
-	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
-    }
-	
-    TGSuperPoly sp;
-    TGTexParams tp;
+for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
-    TGPolygon clipped_a = tgPolygonDiff( runway_a, *accum );
-    TGPolygon split_a = tgPolygonSplitLongEdges( clipped_a, 400.0 );
-    sp.erase();
-    sp.set_poly( split_a );
-    sp.set_material( material );
-    rwy_polys->push_back( sp );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
-    *accum = tgPolygonUnion( runway_a, *accum );
-    tp = TGTexParams( runway_a.get_pt(0,0),
-		      rwy_info.width,
-		      rwy_info.length / 2.0,
-                      rwy_info.heading );
-    texparams->push_back( tp );
+    if (rwhalf == 1) {
 
-    TGPolygon clipped_b = tgPolygonDiff( runway_b, *accum );
-    TGPolygon split_b = tgPolygonSplitLongEdges( clipped_b, 400.0 );
-    sp.erase();
-    sp.set_poly( split_b );
-    sp.set_material( material );
-    rwy_polys->push_back( sp );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
-    *accum = tgPolygonUnion( runway_b, *accum );
-    tp = TGTexParams( runway_b.get_pt(0,2),
-		      rwy_info.width,
-		      rwy_info.length / 2.0,
-                      rwy_info.heading + 180.0 );
-    texparams->push_back( tp );
-
-#if 0
-    // after clip, but before removing T intersections
-    char tmpa[256], tmpb[256];
-    sprintf( tmpa, "a%d", i );
-    sprintf( tmpb, "b%d", i );
-    write_polygon( clipped_a, tmpa );
-    write_polygon( clipped_b, tmpb );
-#endif
-
-    // print runway points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts (a)");
-    for ( j = 0; j < clipped_a.contours(); ++j ) {
-	for ( k = 0; k < clipped_a.contour_size( j ); ++k ) {
-	    p = clipped_a.get_pt(j, k);
-	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
-	}
+    //Create the first half of the runway (first entry in apt.dat)
+    runway_half.erase();
+    runway_half.add_node( 0, runway.get_pt(0, 3) );
+    runway_half.add_node( 0, runway.get_pt(0, 4) );
+    runway_half.add_node( 0, runway.get_pt(0, 5) );
+    runway_half.add_node( 0, runway.get_pt(0, 2) );
     }
 
-    // print runway points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts (b)");
-    for ( j = 0; j < clipped_b.contours(); ++j ) {
-	for ( k = 0; k < clipped_b.contour_size( j ); ++k ) {
-	    p = clipped_b.get_pt(j, k);
-	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
-	}
+    else if (rwhalf == 2) {
+
+    //Create the second runway half from apt.dat
+    runway_half.erase();
+    runway_half.add_node( 0, runway.get_pt(0, 0) );
+    runway_half.add_node( 0, runway.get_pt(0, 1) );
+    runway_half.add_node( 0, runway.get_pt(0, 2) );
+    runway_half.add_node( 0, runway.get_pt(0, 5) );
     }
-    
-  //  gen_runway_stopway( rwy_info, runway_a, runway_b,
-  //  	    		material,
-  //  	    		rwy_polys, texparams, accum );
+
+    // we add 0.5m to the length for texture overlap.  This puts the
+    // lines on the texture back to the edge of the runway where they
+    // belong.
+    double length = rwy_info.length / 2.0 + 0.5;
+    int marking = 0;
+    double start1_pct = 0.0;
+    double end1_pct = 0.0;
+    double disp_thresh = 0.0;
+    double heading = 0.0;
+    double stopway = 0.0;
+    string rwname;
+
+
+    //
+    // Displaced threshold if it exists
+    //
+
+    if (rwhalf == 1) {
+            marking = rwy_info.marking_code1;
+            disp_thresh = rwy_info.disp_thresh1;
+            heading = rwy_info.heading + 180.0;
+            rwname = rwy_info.rwy_no1;
+            stopway = rwy_info.stopway1;
+    }
+    else if (rwhalf == 2) {
+            marking = rwy_info.marking_code2;
+            disp_thresh = rwy_info.disp_thresh2;
+            heading = rwy_info.heading;
+            rwname = rwy_info.rwy_no2;
+            stopway = rwy_info.stopway2;
+    }
+    SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << marking );
+    if ( disp_thresh > 0.0 ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is "
+                << disp_thresh );
+
+        // reserve 90' for final arrows
+        double thresh = disp_thresh - 90.0 * SG_FEET_TO_METER;
+
+        // number of full center arrows
+        int count = (int)(thresh / 200.0 * SG_FEET_TO_METER);
+
+        // length of starting partial arrow
+        double part_len = thresh - ( count * 200.0 * SG_FEET_TO_METER);
+        double tex_pct = (200.0 * SG_FEET_TO_METER - part_len) / 200.0 * SG_FEET_TO_METER;
+
+        // starting (possibly partial chunk)
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( part_len / length );
+        gen_runway_section( rwy_info, runway_half,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, tex_pct, 1.0,
+                            heading,
+                            material, "dspl_thresh",
+                            rwy_polys, texparams, accum );
+
+        // main chunks
+        for ( i = 0; i < count; ++i ) {
+            start1_pct = end1_pct;
+            end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
+            gen_runway_section( rwy_info, runway_half,
+                                start1_pct, end1_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, "dspl_thresh",
+                                rwy_polys, texparams, accum );
+        }
+
+        // final arrows
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
+        gen_runway_section( rwy_info, runway_half,
+                            start1_pct, end1_pct,
+                            0.0, 1.0,
+                            0.0, 1.0, 0.0, 1.0,
+                            heading,
+                            material, "dspl_arrows",
+                            rwy_polys, texparams, accum );
+    }
+
+        gen_runway_section( rwy_info, runway_half,
+                            0, 1,
+                            0.0, 1.0,
+                            0.0, 0.28, 0.0, 1.0,
+                            heading,
+                            material, "",
+                            rwy_polys, texparams, accum );
+
+}
+
 }
