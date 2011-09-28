@@ -422,6 +422,8 @@ void build_airport( string airport_id, float alt_m,
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  dspth2= " << rwy.disp_thresh2);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  stop1 = " << rwy.stopway1);
 	SG_LOG( SG_GENERAL, SG_DEBUG, "  stop2 = " << rwy.stopway2);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  edge = " << rwy.edge_lights);
+        SG_LOG( SG_GENERAL, SG_DEBUG, "  center = " << rwy.centre_lights);
      }
 
      if (rwy.type == 102) /*Helipad*/{
@@ -1218,7 +1220,7 @@ void build_airport( string airport_id, float alt_m,
         // calculate light node elevations
 
         point_list geod_light_nodes
-            = calc_elevations( apt_surf, light_nodes.get_node_list(), 0.5 );
+            = calc_elevations( apt_surf, light_nodes.get_node_list(), 0.0 );
         TGPolygon p;
         p.add_contour( geod_light_nodes, 0 );
         TGSuperPoly s;
