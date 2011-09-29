@@ -356,6 +356,7 @@ int LinearFeature::Finish()
     double      dist;
     double      az2;
     double      last_end_v;
+    double      width;
     int         i, j;
     string      material;
     int         mat_idx = 0;
@@ -379,45 +380,121 @@ int LinearFeature::Finish()
                 break;
 
             case LF_SOLID_YELLOW:
-                //material = "lf_sng_solid_yellow";
-                //break;
+                material = "lf_sng_solid_yellow";
+                width = 0.25f;
+                break;
 
             case LF_BROKEN_YELLOW:
+                material = "lf_sng_broken_yellow";
+                width = 0.25f;
+                break;
+
             case LF_SOLID_DBL_YELLOW:
+                material = "lf_dbl_solid_yellow";
+                width = 0.5f;
+                break;
+
             case LF_RUNWAY_HOLD:
+                material = "lf_runway_hold";
+                width = 1.0f;
+                break;
+
             case LF_OTHER_HOLD:
+                material = "lf_other_hold";
+                width = 0.5f;
+                break;
+
             case LF_ILS_HOLD:
+                material = "lf_ils_hold";
+                width = 1.0f;
+                break;
+
             case LF_SAFETYZONE_CENTERLINE:
+                material = "lf_safetyzone_centerline";
+                width = 0.75f;
+                break;
+
             case LF_SINGLE_LANE_QUEUE:
+                material = "lf_sng_lane_queue";
+                width = 0.25f;
+                break;
+
             case LF_DOUBLE_LANE_QUEUE:
+                material = "lf_dbl_lane_queue";
+                width = 0.5f;
+                break;
 
             case LF_B_SOLID_YELLOW:
+                material = "lf_dbl_solid_yellow";
+                width = 0.25f;
+                break;
+
             case LF_B_BROKEN_YELLOW:
+                material = "lf_sng_broken_yellow_border";
+                width = 0.25f;
+                break;
+
             case LF_B_SOLID_DBL_YELLOW:
+                material = "lf_dbl_solid_yellow_border";
+                width = 0.5f;
+                break;
+
             case LF_B_RUNWAY_HOLD:
+                material = "lf_runway_hold_border";
+                width = 1.0f;
+                break;
+
             case LF_B_OTHER_HOLD:
+                material = "lf_other_hold_border";
+                width = 0.5f;
+                break;
+
             case LF_B_ILS_HOLD:
+                material = "lf_ils_hold_border";
+                width = 1.0f;
+                break;
+
             case LF_B_SAFETYZONE_CENTERLINE:
+                material = "lf_safetyzone_centerline_border";
+                width = 0.75f;
+                break;
+
             case LF_B_SINGLE_LANE_QUEUE:
+                material = "lf_sng_lane_queue_border";
+                width = 0.25f;
+                break;
+
             case LF_B_DOUBLE_LANE_QUEUE:
+                material = "lf_dbl_lane_queue_border";
+                width = 0.5f;
+                break;
 
             case LF_SOLID_WHITE:
-            case LF_CHECKERBOARD_WHITE:
-            case LF_BROKEN_WHITE:
+                material = "lf_sng_solid_white";
+                width = 0.25f;
+                break;
 
-            case LF_BIDIR_GREEN:
-            case LF_OMNIDIR_BLUE:
-            case LF_UNIDIR_CLOSE_AMBER:
-            case LF_UNIDIR_CLOSE_AMBER_PULSE:
-            case LF_BIDIR_GREEN_AMBER:
-            case LF_OMNIDIR_RED:
-                //material = "gloff_lf_b_solid_yellow";
-                // material = "pa_lftest";
-                // material = "pa_tstlin";
+            case LF_CHECKERBOARD_WHITE:
+                material = "lf_checkerboard_white";
+                width = 0.5f;
+                break;
+
+            case LF_BROKEN_WHITE:
+                material = "lf_broken_white";
+                width = 0.25f;
+                break;
+
+            case 101:
+            case 102:
+            case 103:
+            case 104:
+            case 105:
+            case 106:
+                // don't generate lights yet...
                 break;
 
             default:
-                SG_LOG(SG_GENERAL, SG_DEBUG, "ClosedPoly::BuildBtg: unknown material " << marks[i]->type );
+                SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown material " << marks[i]->type );
                 exit(1);
         }
 
@@ -425,51 +502,6 @@ int LinearFeature::Finish()
         for (j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
-
-                switch (mat_idx%10)
-                {
-                    case 0:
-                        material = "pa_tstlin0";
-                        break;
-
-                    case 1:
-                        material = "pa_tstlin1";
-                        break;
-
-                    case 2:
-                        material = "pa_tstlin2";
-                        break;
-
-                    case 3:
-                        material = "pa_tstlin3";
-                        break;
-
-                    case 4:
-                        material = "pa_tstlin4";
-                        break;
-
-                    case 5:
-                        material = "pa_tstlin5";
-                        break;
-
-                    case 6:
-                        material = "pa_tstlin6";
-                        break;
-
-                    case 7:
-                        material = "pa_tstlin7";
-                        break;
-
-                    case 8:
-                        material = "pa_tstlin8";
-                        break;
-
-                    case 9:
-                        material = "pa_tstlin9";
-                        break;
-                }
-                mat_idx++;
-
             // for each point on the PointsList, generate a quad from
             // start to next, offset by 2 distnaces from the edge
 

@@ -65,7 +65,7 @@ void ClosedPoly::AddNode( BezNode* node )
         }
 
         SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_marking);
-        cur_marking = new LinearFeature(marking_desc, 1.5f, 0.6f );
+        cur_marking = new LinearFeature(marking_desc, 1.0f );
     } 
     cur_marking->AddNode( node );
 }
@@ -622,12 +622,12 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
         sp.erase();
         sp.set_poly( split );
         sp.set_material( material );
-        sp.set_flag("taxi");
+        //sp.set_flag("taxi");
 
         rwy_polys->push_back( sp );
         SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
         *accum = tgPolygonUnion( pre_tess, *accum );
-        tp = TGTexParams( pre_tess.get_pt(0,0), 20.0 /* TODO poly width */, 20.0 /* TODO poly length */, texture_heading );
+        tp = TGTexParams( pre_tess.get_pt(0,0), 1.0 /* TODO poly width */, 1.0 /* TODO poly length */, texture_heading );
         texparams->push_back( tp );
 
         ExpandContour( hull, base, 20.0 );

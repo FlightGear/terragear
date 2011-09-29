@@ -244,6 +244,10 @@ static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTe
 
             tmp = x / width;
             tx = tmp * (maxu - minu) + minu;
+
+            if ( tx < -1.0 )  { tx = -1.0; }
+            if ( tx > 1.0 ) { tx = 1.0; }
+
     	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
 
 /*

@@ -57,7 +57,7 @@ typedef std::vector <Marking*> MarkingList;
 class LinearFeature
 {
 public:
-    LinearFeature( char* desc, double o, double w )
+    LinearFeature( char* desc, double o )
     {
         if ( desc )
         {
@@ -68,14 +68,12 @@ public:
             description = "none";
         }
         offset = o;
-        width = w;
     }
 
-    LinearFeature( string desc, double o, double w )
+    LinearFeature( string desc, double o )
     {
         description = desc;
         offset = o;
-        width = w;
     }
 
     inline string GetDescription() { return description; }
