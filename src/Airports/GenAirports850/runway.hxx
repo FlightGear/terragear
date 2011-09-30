@@ -76,13 +76,49 @@ private:
     // Build Helpers
     TGPolygon gen_wgs84_area( Point3D origin, double length_m, double displ1, double displ2, double width_m, double heading_deg, double alt_m, bool add_mid );
     TGPolygon gen_runway_w_mid( double alt_m, double length_extend_m, double width_extend_m );
-//    void      gen_runway_section( const TGPolygon& runway, double startl_pct, double endl_pct, double startw_pct, double endw_pct, double minu, double maxu, double minv, double maxv, double heading,
-//                                  const string& prefix, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum  );
-//    void      gen_runway_stopway( const TGPolygon& runway_a, const TGPolygon& runway_b, const string& prefix, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon* accum );
     TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend );
 
-    void        gen_simple_rwy(         double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum );
-    void        gen_marked_rwy(         double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum );
+    void gen_number_block( const std::string& material,
+                           TGPolygon poly, double heading, int num,
+                           double start_pct, double end_pct,
+                           superpoly_list *rwy_polys,
+                           texparams_list *texparams,
+                           TGPolygon *accum );
+
+    // generate the runway overrun area
+    void gen_runway_overrun( const TGPolygon& runway_half,
+                             int rwhalf,
+                             const std::string& prefix,
+                             superpoly_list *rwy_polys,
+                             texparams_list *texparams,
+                             TGPolygon* accum );
+
+    // generate a section of runway
+    void gen_runway_section( const TGPolygon& runway,
+                             double startl_pct, double endl_pct,
+                             double startw_pct, double endw_pct,
+                             double minu, double maxu, double minv, double maxv,
+                             double heading,
+                             const std::string& prefix,
+                             const std::string& material,
+                             superpoly_list *rwy_polys,
+                             texparams_list *texparams,
+                             TGPolygon *accum  );
+
+    void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum );
+    void gen_rwy( double alt_m,
+                  const std::string& material,
+                  superpoly_list *rwy_polys,
+                  texparams_list *texparams,
+                  TGPolygon *accum );
+
+    void gen_rw_marking( const TGPolygon& runway,
+                         double &start1_pct, double &end1_pct,
+                         double heading,
+                         const string& material,
+                         superpoly_list *rwy_polys,
+                         texparams_list *texparams,
+                         TGPolygon *accum, int marking);
 };
 
 typedef std::vector <Runway *> RunwayList;

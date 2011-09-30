@@ -232,7 +232,7 @@ void Runway::gen_simple_rwy( double alt_m, const string& material, superpoly_lis
 }
 #endif
 
-void Runway::gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum )
+/*void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum )
 {
     int j, k;
 
@@ -327,7 +327,7 @@ void Runway::gen_simple_rwy( double alt_m, const string& material, superpoly_lis
     	    		material,
     	    		rwy_polys, texparams, accum );
 #endif
-}
+}*/
 
 #if 0
 void Runway::gen_marked_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum )
@@ -377,11 +377,11 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
 
     if ( rwy.surface == 1 /* Asphalt */ )
     {
-        material = "pa_tiedown";
+        material = "pa_";
     } 
     else if ( rwy.surface == 2 /* Concrete */ )
     {
-        material = "pc_tiedown";
+        material = "pc_";
     } 
     else if ( rwy.surface == 3 /* Turf/Grass */ )
     {
@@ -411,7 +411,7 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         case 1: // asphalt:
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: asphalt or concrete" << rwy.surface);
-            gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
+            gen_rwy( alt_m, material, rwy_polys, texparams, accum );
             break;
     
         case 3: // Grass

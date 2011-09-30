@@ -22,8 +22,7 @@
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
-
-#include "rwy_common.hxx"
+#include "runway.hxx"
 
 #include <stdlib.h>
 
@@ -35,8 +34,7 @@ struct sections
     int size;
 };
 
-void gen_rw_marking( const TGRunway& rwy_info,
-           const TGPolygon& runway,
+void Runway::gen_rw_marking( const TGPolygon& runway,
 	   double &start1_pct, double &end1_pct,
 	   double heading,
 	   const string& material,
@@ -111,7 +109,7 @@ void gen_rw_marking( const TGRunway& rwy_info,
     }
 
     //Now create the sections of the runway type
-    double length = rwy_info.length / 2.0 + 0.5;
+    double length = rwy.length / 2.0 + 0.5;
 
     for ( int i=0; i < rw_marking_list.size(); ++i) {
 	    SG_LOG(SG_GENERAL, SG_INFO, "Runway section texture = " << rw_marking_list[i].tex << " lenght: " << rw_marking_list[i].size);
@@ -119,7 +117,7 @@ void gen_rw_marking( const TGRunway& rwy_info,
 	    if ( end1_pct < 1.0 ) {
 		    start1_pct = end1_pct;
 		    end1_pct = start1_pct + ( rw_marking_list[i].size / length );
-		    gen_runway_section( rwy_info, runway,
+		    gen_runway_section( runway,
 			start1_pct, end1_pct,
 			  0.0, 1.0,
 			  0.0, 1.0, 0.0, 1.0,
@@ -137,14 +135,13 @@ void gen_rw_marking( const TGRunway& rwy_info,
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
 
-void gen_rwy( const TGRunway& rwy_info,
-                        double alt_m,
+void Runway::gen_rwy( double alt_m,
 			const string& material,
 			superpoly_list *rwy_polys,
 			texparams_list *texparams,
 			TGPolygon *accum )
 {
-    SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy_info.rwy_no1 << " / " << rwy_info.rwy_no2);
+    SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
 
     //
     // Generate the basic runway outlines
@@ -152,7 +149,7 @@ void gen_rwy( const TGRunway& rwy_info,
 
     int i;
 
-    TGPolygon runway = gen_runway_w_mid( rwy_info, alt_m,
+    TGPolygon runway = gen_runway_w_mid( alt_m,
                                          2 * SG_FEET_TO_METER,
                                          2 * SG_FEET_TO_METER );
 
@@ -190,11 +187,11 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     // we add 0.5m to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they
     // belong.
-    double length = rwy_info.length / 2.0 + 0.5;
+    double length = rwy.length / 2.0 + 0.5;
     if ( length < 3075 * SG_FEET_TO_METER ) {
         SG_LOG( SG_GENERAL, SG_ALERT,
-	        "Runway " << rwy_info.rwy_no1 << " is not long enough ("
-                << rwy_info.length << ") for precision markings!");
+	        "Runway " << rwy.rwnum[0] << " is not long enough ("
+                << rwy.length << ") for precision markings!");
     }
 
     int marking = 0;
@@ -206,23 +203,23 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     string rwname;
 
 
-    // 
+    //
     // Displaced threshold if it exists
     //
 
     if (rwhalf == 1) {
-	    marking = rwy_info.marking_code1;
-	    disp_thresh = rwy_info.disp_thresh1;
-	    heading = rwy_info.heading + 180.0;
-	    rwname = rwy_info.rwy_no1;
-	    stopway = rwy_info.stopway1;
+	    marking = rwy.marking[0];
+	    disp_thresh = rwy.threshold[0];
+	    heading = rwy.heading + 180.0;
+	    rwname = rwy.rwnum[0];
+	    stopway = rwy.overrun[0];
     }
     else if (rwhalf == 2) {
-	    marking = rwy_info.marking_code2;
-	    disp_thresh = rwy_info.disp_thresh2;
-	    heading = rwy_info.heading;
-	    rwname = rwy_info.rwy_no2;
-	    stopway = rwy_info.stopway2;
+            marking = rwy.marking[1];
+            disp_thresh = rwy.threshold[1];
+            heading = rwy.heading;
+            rwname = rwy.rwnum[1];
+            stopway = rwy.overrun[1];
     }
     SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << marking );
     if ( disp_thresh > 0.0 ) {
@@ -242,7 +239,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
         // starting (possibly partial chunk)
         start1_pct = end1_pct;
         end1_pct = start1_pct + ( part_len / length );
-        gen_runway_section( rwy_info, runway_half,
+        gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
                             0.0, 1.0, tex_pct, 1.0,
@@ -254,7 +251,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
         for ( i = 0; i < count; ++i ) {
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
-            gen_runway_section( rwy_info, runway_half,
+            gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
@@ -266,7 +263,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
         // final arrows
         start1_pct = end1_pct;
         end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
-        gen_runway_section( rwy_info, runway_half,
+        gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
@@ -282,7 +279,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
     start1_pct = end1_pct;
     end1_pct = start1_pct + ( 10 / length );
-    gen_runway_section( rwy_info, runway_half,
+    gen_runway_section( runway_half,
 			start1_pct, end1_pct,
 			0.0, 1.0,
                         0.0, 1.0, 0.0, 1.0,
@@ -295,7 +292,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 
     start1_pct = end1_pct;
     end1_pct = start1_pct + ( 202.0 * SG_FEET_TO_METER / length );
-    gen_runway_section( rwy_info, runway_half,
+    gen_runway_section( runway_half,
 			start1_pct, end1_pct,
 			0.0, 1.0,
                         0.0, 1.0, 0.0, 1.0,
@@ -322,14 +319,13 @@ if (!marking == 0){
 	}
     }
 
-	    
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation1 = " << rwname);
     SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter1 = " << letter);
 
     if ( !letter.empty() ) {
 	start1_pct = end1_pct;
 	end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
-	gen_runway_section( rwy_info, runway_half,
+	gen_runway_section( runway_half,
 			    start1_pct, end1_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
@@ -360,14 +356,14 @@ if (!marking == 0){
 
     start1_pct = end1_pct;
     end1_pct = start1_pct + ( 80.0 * SG_FEET_TO_METER / length );
-    gen_number_block( rwy_info, material, runway_half, heading,
+    gen_number_block( material, runway_half, heading,
 		      num, start1_pct, end1_pct, rwy_polys, texparams, accum );
  }
 
 
     if (marking > 1){
     // Generate remaining markings depending on type of runway
-    gen_rw_marking( rwy_info, runway_half,
+    gen_rw_marking( runway_half,
 		 start1_pct, end1_pct,
 		 heading, material,
 		 rwy_polys, texparams, accum, marking );
@@ -388,7 +384,7 @@ if (!marking == 0){
 	start1_pct = end1_pct;
 	end1_pct = start1_pct + rest1_inc;
 
-	gen_runway_section( rwy_info, runway_half,
+	gen_runway_section( runway_half,
 			    start1_pct, end1_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
@@ -397,7 +393,7 @@ if (!marking == 0){
 			    rwy_polys, texparams, accum );
     }
 
-    gen_runway_stopway( rwy_info, runway_half, rwhalf,
+    gen_runway_overrun( runway_half, rwhalf,
                        material,
                        rwy_polys, texparams, accum );
 

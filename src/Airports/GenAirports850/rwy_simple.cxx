@@ -24,18 +24,16 @@
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
-
-#include "poly_extra.hxx"
-#include "rwy_common.hxx"
+#include <Polygon/superpoly.hxx>
 #include "texparams.hxx"
+#include "runway.hxx"
 
 using std::string;
 
 
 // generate a simple runway.  The routine modifies rwy_polys,
 // texparams, and accum
-void gen_simple_rwy( const TGRunway& rwy_info,
-                     double alt_m,
+void Runway::gen_simple_rwy( double alt_m,
                      const string& material,
 		     superpoly_list *rwy_polys,
 		     texparams_list *texparams,
@@ -43,7 +41,7 @@ void gen_simple_rwy( const TGRunway& rwy_info,
 {
     int i;
 
-    TGPolygon runway = gen_runway_w_mid( rwy_info, alt_m, 0.0, 0.0 );
+    TGPolygon runway = gen_runway_w_mid( alt_m, 0.0, 0.0 );
 
     TGPolygon runway_half;
 
@@ -72,7 +70,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     // we add 0.5m to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they
     // belong.
-    double length = rwy_info.length / 2.0 + 0.5;
+    double length = rwy.length / 2.0 + 0.5;
     int marking = 0;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
@@ -87,18 +85,18 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     //
 
     if (rwhalf == 1) {
-            marking = rwy_info.marking_code1;
-            disp_thresh = rwy_info.disp_thresh1;
-            heading = rwy_info.heading + 180.0;
-            rwname = rwy_info.rwy_no1;
-            stopway = rwy_info.stopway1;
+            marking = rwy.marking[0];
+            disp_thresh = rwy.threshold[0];
+            heading = rwy.heading + 180.0;
+            rwname = rwy.rwnum[0];
+            stopway = rwy.overrun[0];
     }
     else if (rwhalf == 2) {
-            marking = rwy_info.marking_code2;
-            disp_thresh = rwy_info.disp_thresh2;
-            heading = rwy_info.heading;
-            rwname = rwy_info.rwy_no2;
-            stopway = rwy_info.stopway2;
+            marking = rwy.marking[1];
+            disp_thresh = rwy.threshold[1];
+            heading = rwy.heading;
+            rwname = rwy.rwnum[1];
+            stopway = rwy.overrun[1];
     }
     SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << marking );
     if ( disp_thresh > 0.0 ) {
@@ -118,7 +116,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
         // starting (possibly partial chunk)
         start1_pct = end1_pct;
         end1_pct = start1_pct + ( part_len / length );
-        gen_runway_section( rwy_info, runway_half,
+        Runway::gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
                             0.0, 1.0, tex_pct, 1.0,
@@ -130,7 +128,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
         for ( i = 0; i < count; ++i ) {
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
-            gen_runway_section( rwy_info, runway_half,
+            Runway::gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
@@ -142,7 +140,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
         // final arrows
         start1_pct = end1_pct;
         end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
-        gen_runway_section( rwy_info, runway_half,
+        Runway::gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
@@ -151,7 +149,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
                             rwy_polys, texparams, accum );
     }
 
-        gen_runway_section( rwy_info, runway_half,
+        Runway::gen_runway_section( runway_half,
                             0, 1,
                             0.0, 1.0,
                             0.0, 0.28, 0.0, 1.0,

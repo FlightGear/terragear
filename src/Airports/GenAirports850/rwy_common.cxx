@@ -27,15 +27,14 @@
 
 #include "global.hxx"
 #include "poly_extra.hxx"
-#include "rwy_common.hxx"
+#include "runway.hxx"
 
 #include <stdlib.h>
 
 using std::string;
 
 
-void gen_number_block( const TGRunway& rwy_info,
-                       const string& material,
+void Runway::gen_number_block( const string& material,
                        TGPolygon poly, double heading, int num,
                        double start_pct, double end_pct,
                        superpoly_list *rwy_polys,
@@ -65,7 +64,7 @@ void gen_number_block( const TGRunway& rwy_info,
     // printf("tex1 = '%s'  tex2 = '%s'\n", tex1, tex2);
 
     if ( num < 10 || num == 11 ) {
-	gen_runway_section( rwy_info, poly,
+	gen_runway_section( poly,
 			    start_pct, end_pct,
 			    0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
@@ -73,14 +72,14 @@ void gen_number_block( const TGRunway& rwy_info,
 			    material, tex1,
 			    rwy_polys, texparams, accum );
     } else {
-        gen_runway_section( rwy_info, poly,
+        gen_runway_section( poly,
                             start_pct, end_pct,
                             0.0, 0.5,
                             0.0, 1.0, 0.0, 1.0,
                             heading,
                             material, tex1,
                             rwy_polys, texparams, accum );
-        gen_runway_section( rwy_info, poly,
+        gen_runway_section( poly,
                             start_pct, end_pct,
                             0.5, 1.0,
                             0.0, 1.0, 0.0, 1.0,
@@ -90,44 +89,42 @@ void gen_number_block( const TGRunway& rwy_info,
     }
 }
 
-// generate the runway stopway
-void gen_runway_stopway( const TGRunway& rwy_info,
-                         const TGPolygon& runway_half,
+// generate the runway overrun area
+void Runway::gen_runway_overrun( const TGPolygon& runway_half,
 			 int rwhalf,
                          const string& prefix,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
                          TGPolygon* accum ) {
-    const float length = rwy_info.length / 2.0 + 2.0 * SG_FEET_TO_METER;
+    const float length = rwy.length / 2.0 + 2.0 * SG_FEET_TO_METER;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
     double part_len = 0.0;
     double heading = 0.0;
-    double stopway = 0.0;
+    double overrun = 0.0;
 
     int count=0;
     int i=0;
 
     if (rwhalf == 1) {
-	    heading = rwy_info.heading + 180.0;
-	    stopway = rwy_info.stopway1;
+	    heading = rwy.heading + 180.0;
+	    overrun = rwy.overrun[0];
     }
     else if (rwhalf == 2) {
-	    heading = rwy_info.heading;
-	    stopway = rwy_info.stopway2;
+	    heading = rwy.heading;
+	    overrun = rwy.overrun[1];
     }
 
-    if (stopway > 0.0) {
-        /* Generate approach end stopway */
-        count = (int) (stopway * 2.0/ rwy_info.width);
+    if (overrun > 0.0) {
+        /* Generate approach end overrun */
+        count = (int) (overrun * 2.0/ rwy.width);
         if(count < 1) count = 1;
-        part_len = stopway / (double) count;
+        part_len = overrun / (double) count;
         for(i=0;i<count;i++)
         {
             start1_pct=end1_pct;
             end1_pct = start1_pct + ( part_len / length );
-            gen_runway_section( rwy_info,
-                                runway_half,
+            gen_runway_section( runway_half,
                                 - end1_pct, -start1_pct,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0, //last number is lengthwise
@@ -143,8 +140,7 @@ void gen_runway_stopway( const TGRunway& rwy_info,
 }
 
 // generate a section of runway
-void gen_runway_section( const TGRunway& rwy_info,
-                         const TGPolygon& runway,
+void Runway::gen_runway_section( const TGPolygon& runway,
                          double startl_pct, double endl_pct,
                          double startw_pct, double endw_pct,
                          double minu, double maxu, double minv, double maxv,
@@ -248,7 +244,7 @@ void gen_runway_section( const TGRunway& rwy_info,
 	    SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
 	}
     }
-    
+
     // Clip the new polygon against what ever has already been created.
     TGPolygon clipped = tgPolygonDiff( section, *accum );
 
@@ -276,13 +272,13 @@ void gen_runway_section( const TGRunway& rwy_info,
     // we add 0.5m to the length for texture overlap.  This puts the
     // lines on the texture back to the edge of the runway where they
     // belong.
-    double len = rwy_info.length / 2.0 + 0.5;
+    double len = rwy.length / 2.0 + 0.5;
     double sect_len = len * ( endl_pct - startl_pct );
 
     // we add 0.5m to both sides of the runway (4' total) for texture
     // overlap.  This puts the lines on the texture back to the edge
     // of the runway where they belong.
-    double wid = rwy_info.width + 0.5;
+    double wid = rwy.width + 0.5;
     double sect_wid = wid * ( endw_pct - startw_pct );
 
     TGTexParams tp;

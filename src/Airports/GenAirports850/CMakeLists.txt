@@ -12,6 +12,9 @@ add_executable(genapts850
 	point2d.cxx point2d.hxx 
 	poly_extra.cxx poly_extra.hxx 
 	runway.cxx runway.hxx
+	rwy_simple.cxx
+	rwy_gen.cxx
+	rwy_common.cxx
 	texparams.hxx
 	)
   

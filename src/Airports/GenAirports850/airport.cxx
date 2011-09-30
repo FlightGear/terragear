@@ -624,7 +624,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	pvmt_polys[i].set_tris( tri );
 	    pvmt_polys[i].set_texcoords( tc );
-	    pvmt_polys[i].set_tri_mode( GL_TRIANGLES );
     }
 
     // tesselate the polygons and prepair them for final output
@@ -642,7 +641,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	line_polys[i].set_tris( tri );
 	    line_polys[i].set_texcoords( tc );
-	    line_polys[i].set_tri_mode( GL_TRIANGLES );
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating base");
