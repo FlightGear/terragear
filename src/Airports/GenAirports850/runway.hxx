@@ -17,39 +17,14 @@ using std::string;
 class Runway
 {
 public:
-    Runway(char* def);
-
-    bool IsPrecision()
-    {
-        return true;
-    }
-
-    Point3D GetStart(void)
-    {
-        return ( Point3D( lon[0], lat[0], 0.0f ));
-    }
-
-    Point3D GetEnd(void)
-    {
-        return ( Point3D( lon[1], lat[1], 0.0f ));
-    }
-
-    Point3D GetMidpoint(void)
-    {
-        return ( Point3D( (lon[0]+lon[1])/2.0f, (lat[0]+lat[1])/2.0f, 0.0f) );
-    }
-
-    int BuildOsg( osg::Group* airport );
-    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
-    
-private:
+    struct TGRunway {
     // data for whole runway
     int     surface;
     int     shoulder;
     int     centerline_lights;
     int     edge_lights;
     int     dist_remain_signs;
-    
+
     double  width;
     double  length;
     double  heading;
@@ -66,6 +41,37 @@ private:
     int     approach_lights[2];
     int     tz_lights[2];
     int     reil[2];
+    };
+typedef std::vector < TGRunway > runway_list;
+
+TGRunway rwy;
+
+    Runway(char* def);
+
+    bool IsPrecision()
+    {
+        return true;
+    }
+
+    Point3D GetStart(void)
+    {
+        return ( Point3D( rwy.lon[0], rwy.lat[0], 0.0f ));
+    }
+
+    Point3D GetEnd(void)
+    {
+        return ( Point3D( rwy.lon[1], rwy.lat[1], 0.0f ));
+    }
+
+    Point3D GetMidpoint(void)
+    {
+        return ( Point3D( (rwy.lon[0]+rwy.lon[1])/2.0f, (rwy.lat[0]+rwy.lat[1])/2.0f, 0.0f) );
+    }
+
+    int BuildOsg( osg::Group* airport );
+    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    
+private:
 
     // Build Helpers
     TGPolygon gen_wgs84_area( Point3D origin, double length_m, double displ1, double displ2, double width_m, double heading_deg, double alt_m, bool add_mid );

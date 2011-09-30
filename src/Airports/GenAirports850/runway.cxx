@@ -42,15 +42,15 @@ Runway::Runway(char* definition)
 
     // int fscanf(FILE *stream, const char *format, ...);
     sscanf(definition, "%lf %d %d %lf %d %d %d %s %lf %lf %lf %lf %d %d %d %d %s %lf %lf %lf %lf %d %d %d %d", 
-        &width,  &surface, &shoulder, &smoothness, &centerline_lights, &edge_lights, &dist_remain_signs, 
-        rwnum[0], &lat[0], &lon[0], &threshold[0], &overrun[0], &marking[0], &approach_lights[0], &tz_lights[0], &reil[0],
-        rwnum[1], &lat[1], &lon[1], &threshold[1], &overrun[1], &marking[1], &approach_lights[1], &tz_lights[1], &reil[1]
+        &rwy.width,  &rwy.surface, &rwy.shoulder, &rwy.smoothness, &rwy.centerline_lights, &rwy.edge_lights, &rwy.dist_remain_signs,
+        &rwy.rwnum[0], &rwy.lat[0], &rwy.lon[0], &rwy.threshold[0], &rwy.overrun[0], &rwy.marking[0], &rwy.approach_lights[0], &rwy.tz_lights[0], &rwy.reil[0],
+        &rwy.rwnum[1], &rwy.lat[1], &rwy.lon[1], &rwy.threshold[1], &rwy.overrun[1], &rwy.marking[1], &rwy.approach_lights[1], &rwy.tz_lights[1], &rwy.reil[1]
     );
 
     // calculate runway heading and length (used a lot)
-    geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &heading, &az2, &length );
+    geo_inverse_wgs_84( rwy.lat[0], rwy.lon[0], rwy.lat[1], rwy.lon[1], &rwy.heading, &az2, &rwy.length );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") heading: " << heading << " length: " << length << " width: " << width );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << rwy.lon[0] << "," << rwy.lat[0] << ") to (" << rwy.lon[1] << "," << rwy.lat[1] << ") heading: " << rwy.heading << " length: " << rwy.length << " width: " << rwy.width );
 } 
 
 int Runway::BuildOsg ( osg::Group* airport )
@@ -69,13 +69,13 @@ int Runway::BuildOsg ( osg::Group* airport )
     
     // first, find the runway direction vector
     // static int geo_inverse_wgs_84( double lat1, double lon1, double lat2, double lon2, double *az1, double *az2, double *s )
-    geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &az1, &az2, &dist);
+    geo_inverse_wgs_84( rwy.lat[0], rwy.lon[0], rwy.lat[1], rwy.lon[1], &az1, &az2, &dist);
 
     // now, need to caculate the 4 verticies
     // static int geo_direct_wgs_84( double lat1, double lon1, double az1, double s, double *lat2, double *lon2, double *az2 )
-    geo_direct_wgs_84( lat[0], lon[0], az1+90, width/2, &v0_lat, &v0_lon, &az2 );
+    geo_direct_wgs_84( rwy.lat[0], rwy.lon[0], az1+90, rwy.width/2, &v0_lat, &v0_lon, &az2 );
     geo_direct_wgs_84( v0_lat, v0_lon, az1, dist, &v1_lat, &v1_lon, &az2 );
-    geo_direct_wgs_84( v1_lat, v1_lon, az1-90, width, &v2_lat, &v2_lon, &az2 );
+    geo_direct_wgs_84( v1_lat, v1_lon, az1-90, rwy.width, &v2_lat, &v2_lon, &az2 );
     geo_direct_wgs_84( v2_lat, v2_lon, az1+180, dist, &v3_lat, &v3_lon, &az2 );
 
     // convert from lat/lon to geodisc
@@ -183,7 +183,7 @@ TGPolygon Runway::gen_runway_area_w_extend( double alt_m, double length_extend, 
     TGPolygon result_list;
     Point3D origin = GetMidpoint();
 
-    result_list = gen_wgs84_area( origin, length + 2.0*length_extend, displ1, displ2, width + 2.0*width_extend, heading, alt_m, false );
+    result_list = gen_wgs84_area( origin, rwy.length + 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, alt_m, false );
 
     // display points
     SG_LOG(SG_GENERAL, SG_DEBUG, "Results w/ extend (new way)");
@@ -202,7 +202,7 @@ TGPolygon Runway::gen_runway_w_mid( double alt_m, double length_extend_m, double
     TGPolygon result_list;
     Point3D origin = GetMidpoint();
 
-    result_list = gen_wgs84_area( origin, length + 2.0*length_extend_m, 0.0, 0.0, width + 2.0 * width_extend_m, heading, alt_m, true );
+    result_list = gen_wgs84_area( origin, rwy.length + 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, alt_m, true );
 
     // display points
     SG_LOG(SG_GENERAL, SG_DEBUG, "Results w/ mid (new way)");
@@ -286,7 +286,7 @@ void Runway::gen_simple_rwy( double alt_m, const string& material, superpoly_lis
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_a = " << clipped_a.contours());
     *accum = tgPolygonUnion( runway_a, *accum );
-    tp = TGTexParams( runway_a.get_pt(0,0), width, length/2.0, heading );
+    tp = TGTexParams( runway_a.get_pt(0,0), rwy.width, rwy.length/2.0, rwy.heading );
     texparams->push_back( tp );
 
     TGPolygon clipped_b = tgPolygonDiff( runway_b, *accum );
@@ -297,7 +297,7 @@ void Runway::gen_simple_rwy( double alt_m, const string& material, superpoly_lis
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "clipped_b = " << clipped_b.contours());
     *accum = tgPolygonUnion( runway_b, *accum );
-    tp = TGTexParams( runway_b.get_pt(0,2), width, length/2.0, heading+180.0 );
+    tp = TGTexParams( runway_b.get_pt(0,2), rwy.width, rwy.length/2.0, rwy.heading+180.0 );
     texparams->push_back( tp );
 
     // print runway points
@@ -375,49 +375,49 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
     TGPolygon base, safe_base;
     string material;
 
-    if ( surface == 1 /* Asphalt */ ) 
+    if ( rwy.surface == 1 /* Asphalt */ )
     {
         material = "pa_tiedown";
     } 
-    else if ( surface == 2 /* Concrete */ ) 
+    else if ( rwy.surface == 2 /* Concrete */ )
     {
         material = "pc_tiedown";
     } 
-    else if ( surface == 3 /* Turf/Grass */ ) 
+    else if ( rwy.surface == 3 /* Turf/Grass */ )
     {
         material = "grass_rwy";
     } 
-    else if ( surface == 4 /* Dirt */ || surface == 5 /* Gravel */ ) 
+    else if ( rwy.surface == 4 /* Dirt */ || rwy.surface == 5 /* Gravel */ )
     {
         material = "dirt_rwy";
     } 
-    else if ( surface == 12 /* Dry Lakebed */ ) 
+    else if ( rwy.surface == 12 /* Dry Lakebed */ )
     {
         material = "dirt_rwy";
     } 
-    else if ( surface == 13 /* Water runway (buoy's?) */ ) 
+    else if ( rwy.surface == 13 /* Water runway (buoy's?) */ )
     {
         // water
     } 
     else 
     {
-        SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface);
+        SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
     	throw sg_exception("unknown runway type!");
     }
 
     // first, check the surface type - anything but concrete and asphalt are easy
-    switch( surface )
+    switch( rwy.surface )
     {
         case 1: // asphalt:
         case 2: // concrete
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: asphalt or concrete" << surface);
+            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: asphalt or concrete" << rwy.surface);
             gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
             break;
     
         case 3: // Grass
         case 4: // Dirt
         case 5: // Gravel
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: Turf, Dirt or Gravel" << surface );
+            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
 	        gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
             break;
 
@@ -438,15 +438,15 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
             break;
 
         default: // unknown
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: unknown" << surface);
+            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: unknown" << rwy.surface);
             break;
     }    
 
     // generate area around runways
-    base      = gen_runway_area_w_extend( 0.0, 20.0, -overrun[0], -overrun[1], 20.0 );
+    base      = gen_runway_area_w_extend( 0.0, 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );
 
     // also clear a safe area around the runway
-    safe_base = gen_runway_area_w_extend( 0.0, 180.0, -overrun[0], -overrun[1], 50.0 );
+    safe_base = gen_runway_area_w_extend( 0.0, 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
 
     // add this to the airport clearing
     *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
