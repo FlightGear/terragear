@@ -587,8 +587,16 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             material = "pc_tiedown";
             break;
 
+        case 3:
+            material = "grass_rwy";
+            break;
+
+        case 4:
+            material = "grass_rwy";
+            break;
+
         default:
-            SG_LOG(SG_GENERAL, SG_DEBUG, "ClosedPoly::BuildBtg: unknown material " << surface_type );
+            SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown material " << surface_type );
             exit(1);
     }
 
@@ -627,7 +635,7 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
         rwy_polys->push_back( sp );
         SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
         *accum = tgPolygonUnion( pre_tess, *accum );
-        tp = TGTexParams( pre_tess.get_pt(0,0), 1.0 /* TODO poly width */, 1.0 /* TODO poly length */, texture_heading );
+        tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
         texparams->push_back( tp );
 
         ExpandContour( hull, base, 20.0 );

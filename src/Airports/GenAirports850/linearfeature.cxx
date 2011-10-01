@@ -222,20 +222,21 @@ void LinearFeature::ConvertContour( BezContour* src  )
     }
 }
 
-
 Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *next, double offset_by )
 {
     double offset_dir;
     double next_dir;
     double az1, az2;
     double dist;
+    double theta;
     double pt_x, pt_y;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << *prev << "), "
                                                                   "cur (" << *cur  << "), "
                                                                  "next (" << *next << ")" );
 
-    // first, find if the line turns left or right ar src
+ 
+   // first, find if the line turns left or right ar src
     // for this, take the cross product of the vectors from prev to src, and src to next.
     // if the cross product is negetive, we've turned to the left
     // if the cross product is positive, we've turned to the right
@@ -252,33 +253,73 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
 
     // check the turn direction
     SGVec3d cp = cross( dir1, dir2 );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\tcross product of dir1: " << dir1 << " and dir2: " << dir2 << " is " << cp );
+    SG_LOG(SG_GENERAL, SG_ALERT, "\tcross product of dir1: " << dir1 << " and dir2: " << dir2 << " is " << cp );
 
-    // find the offset angle
-    geo_inverse_wgs_84( avg.y(), avg.x(), 0.0f, 0.0f, &offset_dir, &az2, &dist);
+    // calculate the angle between cur->prev and cur->next
+    theta = SGMiscd::rad2deg(CalculateTheta(*prev, *cur, *next));
 
-    // if we turned right, reverse the heading 
-    if (cp.z() < 0.0f)
+    if ( abs(theta - 180.0) < 0.1 )
     {
-        offset_dir += 180.0;
+        SG_LOG(SG_GENERAL, SG_ALERT, "\nLinearFeature: (theta close to 180) " << description << ": theta is " << theta );
+
+        // find the direction to the next point
+        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+
+        offset_dir = next_dir - 90.0;
+        while (offset_dir < 0.0)
+        {
+            offset_dir += 360.0;
+        }
+
+        // straight line blows up math - dist should be exactly as given
+        dist = offset_by;        
     }
-    while (offset_dir >= 360.0)
+    else if ( abs(theta) < 0.1 )
     {
-        offset_dir -= 360.0;
+        SG_LOG(SG_GENERAL, SG_ALERT, "\nLinearFeature: (theta close to 0) " << description << ": theta is " << theta );
+
+        // find the direction to the next point
+        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+
+        offset_dir = next_dir - 90;
+        while (offset_dir < 0.0)
+        {
+            offset_dir += 360.0;
+        }
+
+        // straight line blows up math - dist should be exactly as given
+        dist = offset_by;        
+    }
+    else
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "\nLinearFeature: (theta NOT close to 180) " << description << ": theta is " << theta );
+
+        // find the offset angle
+        geo_inverse_wgs_84( avg.y(), avg.x(), 0.0f, 0.0f, &offset_dir, &az2, &dist);
+
+        // if we turned right, reverse the heading 
+        if (cp.z() < 0.0f)
+        {
+            offset_dir += 180.0;
+        }
+        while (offset_dir >= 360.0)
+        {
+            offset_dir -= 360.0;
+        }
+
+        // find the direction to the next point
+        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+
+        // calculate correct distance for the offset point
+        dist = (offset_by)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
     }
 
-    // find the direction to the next point
-    geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
-
-    // calculate correct distance for the offset point
-    dist = (offset_by)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << dist );
+    SG_LOG(SG_GENERAL, SG_ALERT, "\theading is " << offset_dir << " distance is " << dist );
 
     // calculate the point from cur
     geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, dist, &pt_y, &pt_x, &az2 );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
+    SG_LOG(SG_GENERAL, SG_ALERT, "\tpoint is (" << pt_x << "," << pt_y << ")" );
 
     return Point3D(pt_x, pt_y, 0.0f);
 }
