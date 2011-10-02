@@ -155,9 +155,9 @@ void Runway::gen_rwy( double alt_m,
 
     TGPolygon runway_half;
 
-for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
+for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
 
-    if (rwhalf == 1) {
+    if (rwhalf == 0) {
 
     //Create the first half of the runway (first entry in apt.dat)
     runway_half.erase();
@@ -167,7 +167,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     runway_half.add_node( 0, runway.get_pt(0, 2) );
     }
 
-    else if (rwhalf == 2) {
+    else if (rwhalf == 1) {
 
     //Create the second runway half from apt.dat
     runway_half.erase();
@@ -194,12 +194,9 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
                 << rwy.length << ") for precision markings!");
     }
 
-    int marking = 0;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
-    double disp_thresh = 0.0;
     double heading = 0.0;
-    double stopway = 0.0;
     string rwname;
 
 
@@ -207,27 +204,21 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     // Displaced threshold if it exists
     //
 
-    if (rwhalf == 1) {
-	    marking = rwy.marking[0];
-	    disp_thresh = rwy.threshold[0];
+    if (rwhalf == 0) {
 	    heading = rwy.heading + 180.0;
-	    rwname = rwy.rwnum[0];
-	    stopway = rwy.overrun[0];
+            rwname = rwy.rwnum[0];
     }
-    else if (rwhalf == 2) {
-            marking = rwy.marking[1];
-            disp_thresh = rwy.threshold[1];
+    else if (rwhalf == 1) {
             heading = rwy.heading;
             rwname = rwy.rwnum[1];
-            stopway = rwy.overrun[1];
     }
-    SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << marking );
-    if ( disp_thresh > 0.0 ) {
+    SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << rwy.marking[rwhalf] );
+    if ( rwy.threshold[rwhalf] > 0.0 ) {
         SG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is "
-                << disp_thresh );
+                << rwy.threshold[rwhalf] );
 
         // reserve 90' for final arrows
-        double thresh = disp_thresh - 90.0 * SG_FEET_TO_METER;
+        double thresh = rwy.threshold[rwhalf] - 90.0 * SG_FEET_TO_METER;
 
         // number of full center arrows
         int count = (int)(thresh / 200.0 * SG_FEET_TO_METER);
@@ -273,7 +264,7 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
     }
 
 
- if (marking == 0){
+ if (rwy.marking[rwhalf] == 0){
 
     // No threshold
 
@@ -301,11 +292,10 @@ for ( int rwhalf=1; rwhalf<3; ++rwhalf ){
 			rwy_polys, texparams, accum );
  }
 
-if (!marking == 0){
+if (!rwy.marking[rwhalf] == 0){
     //
     // Runway designation letter
     //
-
     int len = rwname.length();
     string letter = "";
     for ( i = 0; i < len; ++i ) {
@@ -319,8 +309,8 @@ if (!marking == 0){
 	}
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation1 = " << rwname);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter1 = " << letter);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
 
     if ( !letter.empty() ) {
 	start1_pct = end1_pct;
@@ -361,12 +351,12 @@ if (!marking == 0){
  }
 
 
-    if (marking > 1){
+    if (rwy.marking[rwhalf] > 1){
     // Generate remaining markings depending on type of runway
     gen_rw_marking( runway_half,
 		 start1_pct, end1_pct,
 		 heading, material,
-		 rwy_polys, texparams, accum, marking );
+		 rwy_polys, texparams, accum, rwy.marking[rwhalf] );
     }
 
     //
