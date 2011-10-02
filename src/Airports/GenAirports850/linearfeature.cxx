@@ -405,10 +405,10 @@ int LinearFeature::Finish()
 
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers 
-    // the start stop points for markings
+    // the start stop points for markings and lights
     ConvertContour( &contour );
 
-    // now generate the supoerpoly and texparams list
+    // now generate the supoerpoly and texparams lists for markings
     for (i=0; i<marks.size(); i++)
     {
         prev_inner = Point3D(0.0f, 0.0f, 0.0f);
@@ -524,18 +524,9 @@ int LinearFeature::Finish()
                 material = "lf_broken_white";
                 width = 0.25f;
                 break;
-
-            case 101:
-            case 102:
-            case 103:
-            case 104:
-            case 105:
-            case 106:
-                // don't generate lights yet...
-                break;
-
+    
             default:
-                SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown material " << marks[i]->type );
+                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << marks[i]->type );
                 exit(1);
         }
 
@@ -580,11 +571,11 @@ int LinearFeature::Finish()
                 sp.set_poly( poly );
                 sp.set_material( material );
                 sp.set_flag("lf");
-                feature_polys.push_back(sp);
+                marking_polys.push_back(sp);
 
                 tp = TGTexParams( prev_inner, width, 1.0f, heading );
                 tp.set_minv(last_end_v);
-                feature_tps.push_back(tp);
+                marking_tps.push_back(tp);
 
                 last_end_v = 1.0f - (fmod( (dist - last_end_v), 1.0f ));
             }
@@ -593,18 +584,44 @@ int LinearFeature::Finish()
             prev_inner = cur_inner;
         }
     }
+
+    // now generate the supoerpoly list for lights
+    for (i=0; i<lights.size(); i++)
+    {
+        // which material for this light
+        switch( lights[i]->type )
+        {
+            case LF_BIDIR_GREEN:
+                break;
+
+            case LF_OMNIDIR_BLUE:
+                break;
+
+            case LF_UNIDIR_CLOSE_AMBER:
+                break;
+
+            case LF_UNIDIR_CLOSE_AMBER_PULSE:
+                break;
+
+            case LF_BIDIR_GREEN_AMBER:
+                break;
+
+            case LF_OMNIDIR_RED:
+                break;
+        }
+    }
 }
 
-int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, TGPolygon* line_accum )
+int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, TGPolygon* line_accum, superpoly_list* lights )
 {
     TGPolygon poly; 
     TGPolygon clipped;
     TGPolygon split;
     int i;
 
-    for (i=0; i<feature_polys.size(); i++)
+    for (i=0; i<marking_polys.size(); i++)
     {
-        poly = feature_polys[i].get_poly();
+        poly = marking_polys[i].get_poly();
         clipped = tgPolygonDiff( poly, *line_accum );
 
         SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
@@ -612,11 +629,11 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
         TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
         SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
 
-        feature_polys[i].set_poly( split );
-        line_polys->push_back( feature_polys[i] );
+        marking_polys[i].set_poly( split );
+        line_polys->push_back( marking_polys[i] );
 
         *line_accum = tgPolygonUnion( poly, *line_accum );
-        line_tps->push_back( feature_tps[i] );
+        line_tps->push_back( marking_tps[i] );
     }
 
     return 1;

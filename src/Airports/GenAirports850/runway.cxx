@@ -370,7 +370,7 @@ void Runway::gen_marked_rwy( double alt_m, const string& material, superpoly_lis
 }
 #endif
 
-int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
+int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {
     TGPolygon base, safe_base;
     string material;

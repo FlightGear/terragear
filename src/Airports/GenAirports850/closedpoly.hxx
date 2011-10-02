@@ -27,10 +27,10 @@ public:
     int  BuildOsg( osg::Group* airport );
     int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
-    FeatureList* GetMarkings()
+    FeatureList* GetFeatures()
     {
-        return &markings;
-    }        
+        return &features;
+    }
 
 private:
     //osg::DrawArrays* CreatePrimitive( BezContour* contour, osg::Vec3Array* v_pave );
@@ -61,8 +61,8 @@ private:
     TGPolygon pre_tess;
 
     // pavement definitions have multiple linear features (markings and lights for each contour)
-    LinearFeature* cur_marking;
-    FeatureList markings;
+    LinearFeature* cur_feature;
+    FeatureList features;
 };
 
 typedef std::vector <ClosedPoly *> PavementList;

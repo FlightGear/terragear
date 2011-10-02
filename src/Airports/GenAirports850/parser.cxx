@@ -38,14 +38,14 @@ BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
 {
     double lat, lon;
     double ctrl_lat, ctrl_lon;
-    int mark_type, light_type;
+    int feat_type1, feat_type2;
     BezNode *curNode = NULL;
 
     bool hasCtrl;
     bool close;
     bool term;
-    bool hasMarking = false;
-    bool hasLighting = false;
+    bool hasFeat1 = false;
+    bool hasFeat2 = false;
     int  numParams;
 
     switch(type)
@@ -90,26 +90,26 @@ BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
     // parse the line
     if (hasCtrl)
     {
-        numParams = sscanf(line, "%lf %lf %lf %lf %d %d", &lat, &lon, &ctrl_lat, &ctrl_lon, &mark_type, &light_type);
+        numParams = sscanf(line, "%lf %lf %lf %lf %d %d", &lat, &lon, &ctrl_lat, &ctrl_lon, &feat_type1, &feat_type2);
         if (numParams > 4)
         {
-            hasMarking = true;
+            hasFeat1 = true;
         }
         if (numParams > 5)
         {
-            hasLighting = true;
+            hasFeat2 = true;
         }
     }
     else
     {
-        numParams = sscanf(line, "%lf %lf %d %d", &lat, &lon, &mark_type, &light_type);
+        numParams = sscanf(line, "%lf %lf %d %d", &lat, &lon, &feat_type1, &feat_type2);
         if (numParams > 2)
         {
-            hasMarking = true;
+            hasFeat1 = true;
         }
         if (numParams > 3)
         {
-            hasLighting = true;
+            hasFeat2 = true;
         }
     }
 
@@ -143,14 +143,28 @@ BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
         }
     }
 
-    if (hasMarking)
+    if (hasFeat1)
     {
-       curNode->SetMarking( mark_type );
+        if (feat_type1 < 100)
+        {
+            curNode->SetMarking( feat_type1 );
+        }
+        else
+        {
+            curNode->SetLighting( feat_type1 );
+        }
     }
 
-    if (hasLighting)
+    if (hasFeat2)
     {
-       curNode->SetLighting( light_type );
+        if (feat_type2 < 100)
+        {
+            curNode->SetMarking( feat_type2 );
+        }
+        else
+        {
+            curNode->SetLighting( feat_type2 );
+        }
     }
 
     return curNode;

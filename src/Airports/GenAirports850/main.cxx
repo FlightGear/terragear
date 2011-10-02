@@ -293,7 +293,7 @@ int main(int argc, char **argv)
     Parser* parser = new Parser(input_file);
 
     SG_LOG(SG_GENERAL, SG_INFO, "Parse katl");
-    parser->Parse((char*)"katl");
+    parser->Parse((char*)"edfe");
 
     if (view_osg)
     {

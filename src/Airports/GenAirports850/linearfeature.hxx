@@ -53,6 +53,14 @@ public:
 };
 typedef std::vector <Marking*> MarkingList;
 
+struct Lighting
+{
+public:
+    int type;
+    int start_idx;
+    int end_idx;
+};
+typedef std::vector <Lighting*> LightingList;
 
 class LinearFeature
 {
@@ -85,7 +93,7 @@ public:
 
     int Finish();
     int BuildOsg( osg::Group* airport );
-    int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, TGPolygon* line_accum ); 
+    int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, TGPolygon* line_accum, superpoly_list* lights ); 
 
 private:
     Point3D OffsetPointFirst( Point3D *cur, Point3D *next, double offset_by );
@@ -94,8 +102,12 @@ private:
 
     double      offset;
     double      width;
-    MarkingList marks;
-    Marking*    cur_mark;
+
+    MarkingList     marks;
+    Marking*        cur_mark;
+
+    LightingList    lights;
+    Lighting*       cur_light;
 
     void ConvertContour( BezContour* src );
 
@@ -108,8 +120,10 @@ private:
     // contour definition after bezier interpolation
     point_list  points;
     
-    superpoly_list feature_polys;
-    texparams_list feature_tps;
+    superpoly_list marking_polys;
+    texparams_list marking_tps;
+
+    superpoly_list lighting_polys;
 };
 
 typedef std::vector <LinearFeature *> FeatureList;

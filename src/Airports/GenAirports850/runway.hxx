@@ -69,7 +69,7 @@ TGRunway rwy;
     }
 
     int BuildOsg( osg::Group* airport );
-    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
     
 private:
 

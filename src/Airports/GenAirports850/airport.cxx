@@ -353,65 +353,60 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SGBucket b( apt_lon, apt_lat );
     SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
 
-    // Build precision runways first
-    for (i=0; i<runways.size(); i++ ) 
-    {
-        if ( runways[i]->IsPrecision() ) 
-        {
-            runways[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &accum, &apt_base, &apt_clearing );
-	    }
-    }
+    superpoly_list rwy_lights; 
+    rwy_lights.clear();
 
-    // Now generate pavements, and gather the linear features and lights from them
-    SG_LOG(SG_GENERAL, SG_ALERT, "Features before pavement add " << features.size() );
-
+    // If we are cutting in the linear features, add them first
     if (pavements.size())
     {
         for ( i=0; i<pavements.size(); i++ )
         {
-            AddFeatures( pavements[i]->GetMarkings() );
+            AddFeatures( pavements[i]->GetFeatures() );
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Features after pavement add " << features.size() );
-
-    // Then the linear features
+    // Add the linear features
     if (features.size())
     {
         for ( i=0; i<features.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Build feature Poly " << i << ": " << features[i]->GetDescription() );
+            SG_LOG(SG_GENERAL, SG_ALERT, "Build Feature Poly " << i << ": " << features[i]->GetDescription() );
 
             // cut the linear feature in until we get the geometry right...
             // features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum );
-            features[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum );
+            features[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, &rwy_lights );
         }
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, "no pavements");
+        SG_LOG(SG_GENERAL, SG_ALERT, "no markings");
     }
-    // wipe out the pavements to save memory
-    features.clear();
 
-    // Now generate pavements, and gather the linear features and lights from them
+    // Build runways next
+    for (i=0; i<runways.size(); i++ ) 
+    {
+        if ( runways[i]->IsPrecision() ) 
+        {
+            runways[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, &apt_base, &apt_clearing );
+	    }
+    }
+
+    // Build the pavements
     if (pavements.size())
     {
         for ( i=0; i<pavements.size(); i++ )
         {
             SG_LOG(SG_GENERAL, SG_ALERT, "Build Pavement Poly " << i << ": " << pavements[i]->GetDescription());
             pavements[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, &apt_base, &apt_clearing );
-            AddFeatures( pavements[i]->GetMarkings() );
+            // AddFeatures( pavements[i]->GetMarkings() );
         }
     }
     else
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "no pavements");
     }
-    // wipe out the pavements to save memory
-    pavements.clear();
 
-    if ( apt_base.total_size() == 0 ) 
+    if ( apt_base.total_size() == 0 )
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
     	return;
@@ -894,14 +889,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
-#if 0
     // extend the min/max coordinates of airport area to cover all
     // lights as well
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) 
     {
-        for ( j = 0;
-              j < (int)rwy_lights[i].get_poly().get_contour(0).size();
-              ++j )
+        for ( j = 0; j < (int)rwy_lights[i].get_poly().get_contour(0).size(); ++j )
         {
             Point3D p = rwy_lights[i].get_poly().get_contour(0)[j];
             if ( p.lon() < min_deg.lon() ) 
@@ -922,7 +914,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             }
         }
     }
-#endif
 
     // need newmat....
 
@@ -1070,11 +1061,9 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	strips_tc.push_back( base_tc );
     }
 
-
-#if 0
     // add light points
-
-    superpoly_list tmp_light_list; tmp_light_list.clear();
+    superpoly_list tmp_light_list; 
+    tmp_light_list.clear();
     typedef map < string, double, less<string> > elev_map_type;
     typedef elev_map_type::const_iterator const_elev_map_iterator;
     elev_map_type elevation_map;
@@ -1082,7 +1071,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG(SG_GENERAL, SG_INFO, "Computing runway/approach lighting elevations");
 
     // pass one, calculate raw elevations from Array
-
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) 
     {
         TGTriNodes light_nodes;
@@ -1095,7 +1083,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
 
         // calculate light node elevations
-
         point_list geod_light_nodes = calc_elevations( apt_surf, light_nodes.get_node_list(), 0.5 );
         TGPolygon p;
         p.add_contour( geod_light_nodes, 0 );
@@ -1155,7 +1142,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         pts_n.push_back( pt_n );
         pt_materials.push_back( rwy_lights[i].get_material() );
     }
-#endif
 
     // calculate wgs84 mapping of nodes
     std::vector< SGVec3d > wgs84_nodes;

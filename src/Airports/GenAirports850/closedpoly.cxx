@@ -31,7 +31,7 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
         
     boundary = NULL;
     cur_contour = NULL;
-    cur_marking = NULL;
+    cur_feature = NULL;
 }
 
 void ClosedPoly::AddNode( BezNode* node )
@@ -52,22 +52,22 @@ void ClosedPoly::AddNode( BezNode* node )
     // if recording a linear feature on the pavement, add this node
     // to it as well
     // TODO: just doing marking now, need lighting as well
-    if (!cur_marking)
+    if (!cur_feature)
     {
-        string marking_desc = description + ":";
+        string feature_desc = description + ":";
         if (boundary)
         {
-            marking_desc += "hole";
+            feature_desc += "hole";
         }
         else
         {
-            marking_desc += "boundary";
+            feature_desc += "boundary";
         }
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_marking);
-        cur_marking = new LinearFeature(marking_desc, 1.0f );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_feature);
+        cur_feature = new LinearFeature(feature_desc, 1.0f );
     } 
-    cur_marking->AddNode( node );
+    cur_feature->AddNode( node );
 }
 
 void ClosedPoly::CreateConvexHull( void )
@@ -93,14 +93,13 @@ int ClosedPoly::CloseCurContour()
 
     // if we are recording a pavement marking - it must be closed - 
     // add the first node of the poly
-    if (cur_marking)
+    if (cur_feature)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
-        // cur_marking->Close();
-        cur_marking->Finish();
+        cur_feature->Finish();
 
-        markings.push_back(cur_marking);
-        cur_marking = NULL;        
+        features.push_back(cur_feature);
+        cur_feature = NULL;        
     }
 
     // add the contour to the poly - first one is the outer boundary
@@ -596,7 +595,7 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             break;
 
         default:
-            SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown material " << surface_type );
+            SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown surface type " << surface_type );
             exit(1);
     }
 
