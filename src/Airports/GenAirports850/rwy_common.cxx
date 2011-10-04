@@ -106,11 +106,11 @@ void Runway::gen_runway_overrun( const TGPolygon& runway_half,
     int count=0;
     int i=0;
 
-    if (rwhalf == 1) {
+    if (rwhalf == 0) {
 	    heading = rwy.heading + 180.0;
 	    overrun = rwy.overrun[0];
     }
-    else if (rwhalf == 2) {
+    else if (rwhalf == 1) {
 	    heading = rwy.heading;
 	    overrun = rwy.overrun[1];
     }
