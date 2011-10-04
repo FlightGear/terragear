@@ -1082,7 +1082,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
 
         // calculate light node elevations
-        point_list geod_light_nodes = calc_elevations( apt_surf, light_nodes.get_node_list(), 0.5 );
+        point_list geod_light_nodes = calc_elevations( apt_surf, light_nodes.get_node_list(), 0.0 );
         TGPolygon p;
         p.add_contour( geod_light_nodes, 0 );
         TGSuperPoly s;
