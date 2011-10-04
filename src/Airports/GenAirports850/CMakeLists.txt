@@ -6,6 +6,7 @@ add_executable(genapts850
 	convex_hull.hxx convex_hull.cxx
 	elevations.cxx elevations.hxx 
 	global.hxx
+	lights.cxx
 	linearfeature.hxx linearfeature.cxx
 	main.cxx
 	parser.hxx parser.cxx

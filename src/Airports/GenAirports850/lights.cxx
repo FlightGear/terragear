@@ -30,7 +30,7 @@
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 
-#include "lights.hxx"
+#include "runway.hxx"
 
 using std::cout;
 using std::endl;
@@ -42,13 +42,12 @@ using std::string;
 // of the runway.  Combine this with an appropriate portion of the
 // local 'up' vector based on the provide 'angle' gives the light
 // direction vector for the runway.
-static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
-                                        double angle, bool recip ) {
+Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
     double length;
 
     // Generate the 4 corners of the runway
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0, 0.0, 0.0, 0.0 );
+        = gen_runway_area_w_extend( 0.0, 0.0, 0.0, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -84,7 +83,7 @@ static Point3D gen_runway_light_vector( const TGRunway& rwy_info,
     return light_vec;
 }
 
-static superpoly_list gen_helipad_lights(const TGRunway& rwy_info){
+/*static superpoly_list gen_helipad_lights(const TGRunway& rwy_info){
 
     point_list c_lights; c_lights.clear();
     point_list c_normals; c_normals.clear();
@@ -95,7 +94,7 @@ static superpoly_list gen_helipad_lights(const TGRunway& rwy_info){
 	geo_direct_wgs_84(0, rwy_info.lat, rwy_info.lon, deg ,
 			  rwy_info.width * 0.46 , &lat2, &lon2, &az2 );
 
-	c_lights.push_back( Point3D( lon2, lat2, 0.0 ) );
+	c_lights->push_back( Point3D( lon2, lat2, 0.0 ) );
 
 	Point3D tmp = Point3D( lon2, lat2, 0.0 );
 	Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
@@ -119,12 +118,12 @@ static superpoly_list gen_helipad_lights(const TGRunway& rwy_info){
     result.push_back( green );
 
     return result;
-}
+}*/
 
 
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
-static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool recip )
+superpoly_list Runway::gen_runway_edge_lights( bool recip )
 {
     point_list w_lights; w_lights.clear();
     point_list y_lights; y_lights.clear();
@@ -132,17 +131,16 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool rec
     point_list y_normals; y_normals.clear();
     int i;
 
-    double len = rwy_info.length;
-    int divs = (int)(len / 60.0) + 1;
+    int divs = (int)(rwy.length / 60.0) + 1;
 
-    Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal = gen_runway_light_vector( 3.0, recip );
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 2.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     2.0 );
 
     point_list corner;
@@ -165,7 +163,7 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool rec
         pt2 = corner[2];
     }
 
-    double dist = rwy_info.length;
+    double dist = rwy.length;
     double step = dist / divs;
 
     w_lights.push_back( pt1 );
@@ -200,11 +198,11 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool rec
     white.set_poly( lights_poly );
     white.set_normals( normals_poly );
     //Different intensities
-    if (rwy_info.edge_lights == 3)
+    if (rwy.edge_lights == 3)
         white.set_material( "RWY_WHITE_LIGHTS" );
-    else if (rwy_info.edge_lights == 2)
+    else if (rwy.edge_lights == 2)
         white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
-    else if (rwy_info.edge_lights == 1)
+    else if (rwy.edge_lights == 1)
         white.set_material( "RWY_WHITE_LOW_LIGHTS" );
 
     lights_poly.erase();
@@ -216,11 +214,11 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool rec
     yellow.set_poly( lights_poly );
     yellow.set_normals( normals_poly );
     //Different intensities
-    if (rwy_info.edge_lights == 3)
+    if (rwy.edge_lights == 3)
         yellow.set_material( "RWY_YELLOW_LIGHTS" );
-    else if (rwy_info.edge_lights == 2)
+    else if (rwy.edge_lights == 2)
         yellow.set_material( "RWY_YELLOW_MEDIUM_LIGHTS" );
-    else if (rwy_info.edge_lights == 1)
+    else if (rwy.edge_lights == 1)
         yellow.set_material( "RWY_YELLOW_LOW_LIGHTS" );
 
     superpoly_list result; result.clear();
@@ -234,14 +232,13 @@ static superpoly_list gen_runway_edge_lights( const TGRunway& rwy_info, bool rec
 
 // generate taxiway edge lighting
 // 100 meters spacing or the next number down that divides evenly.
-static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
-                                               const int kind, bool recip )
+superpoly_list Runway::gen_taxiway_edge_lights( const int kind, bool recip )
 {
     point_list b_lights; b_lights.clear();
     point_list b_normals; b_normals.clear();
     int i;
 
-    double len = rwy_info.length;
+    double len = rwy.length;
     int divs;
     if ( len > 100.0 ) {
         // for lengths of 300' or more, max spacing is 200'
@@ -254,7 +251,7 @@ static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 0.0, 0.0, 2.0 );
+        = gen_runway_area_w_extend( 0.0, 2.0, 0.0, 0.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -276,7 +273,7 @@ static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
         pt2 = corner[2];
     }
 
-    double dist = rwy_info.length;
+    double dist = rwy.length;
     double step = dist / divs;
 
     Point3D up = sgGeodToCart( corner[0] * SG_DEGREES_TO_RADIANS );
@@ -317,8 +314,7 @@ static superpoly_list gen_taxiway_edge_lights( const TGRunway& rwy_info,
 
 
 // generate threshold lights for a 3 degree approach 
-static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
-                                                   const int kind,
+superpoly_list Runway::gen_runway_threshold_lights( const int kind,
                                                    float alt_m, bool recip )
 {
     point_list g_lights; g_lights.clear();
@@ -327,14 +323,14 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
     point_list r_normals; r_normals.clear();
     int i;
 
-    cout << "gen threshold " << rwy_info.rwy_no1 << endl;
+    cout << "gen threshold " << rwy.rwnum[0] << endl;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 0.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     0.0 );
 
     point_list corner;
@@ -351,22 +347,22 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
         ref2 = corner[1];
         ref3 = corner[3];
         ref4 = corner[2];
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
         ref3 = corner[1];
         ref4 = corner[0];
-        length_hdg = rwy_info.heading;
+        length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
     cout << "length hdg = " << length_hdg
          << " left heading = " << left_hdg << endl;
 
-    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
+    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
     // offset 5' downwind
     geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
@@ -439,8 +435,7 @@ static superpoly_list gen_runway_threshold_lights( const TGRunway& rwy_info,
 
 
 // generate runway center line lighting, 50' spacing.
-static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
-                                                     bool recip )
+superpoly_list Runway::gen_runway_center_line_lights( bool recip )
 {
     point_list w_lights; w_lights.clear();
     point_list r_lights; r_lights.clear();
@@ -448,18 +443,18 @@ static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
     point_list r_normals; r_normals.clear();
     int i;
 
-    double len = rwy_info.length;
+    double len = rwy.length;
     // this should be 25' technically but I'm trying 50' to space things out
     int divs = (int)(len / (50.0*SG_FEET_TO_METER)) + 1;
 
-    Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal = gen_runway_light_vector( 3.0, recip );
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 2.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     2.0 );
 
     point_list corner;
@@ -541,25 +536,24 @@ static superpoly_list gen_runway_center_line_lights( const TGRunway& rwy_info,
     return result;
 }
 
-
+/*
 // generate taxiway center line lighting, 50' spacing.
-static superpoly_list gen_taxiway_center_line_lights( const TGRunway& rwy_info,
-                                                      bool recip )
+static superpoly_list gen_taxiway_center_line_lights( bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list g_normals; g_normals.clear();
     int i;
 
-    double len = rwy_info.length;
+    double len = rwy.length;
     // this should be ??' technically but I'm trying 50' to space things out
     int divs = (int)(len / 70) + 1;
 
-    Point3D normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    Point3D normal = gen_runway_light_vector( 3.0, recip );
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0, 0.0, 0.0, 2.0 );
+        = gen_runway_area_w_extend( 0.0, 2.0, 0.0, 0.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -611,26 +605,25 @@ static superpoly_list gen_taxiway_center_line_lights( const TGRunway& rwy_info,
 
     return result;
 }
-
+*/
 
 // generate touch down zone lights
-static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
-                                              float alt_m, bool recip )
+TGSuperPoly Runway::gen_touchdown_zone_lights( float alt_m, bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     int i;
 
-    cout << "gen touchdown zone lights " << rwy_info.rwy_no1 << endl;
+    cout << "gen touchdown zone lights " << rwy.rwnum[0] << endl;
 
     Point3D normal;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 0.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     0.0 );
 
     point_list corner;
@@ -644,18 +637,18 @@ static TGSuperPoly gen_touchdown_zone_lights( const TGRunway& rwy_info,
     double lon, lat, r;
     if ( recip ) {
         ref = (corner[0] + corner[1]) / 2;
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref = (corner[2] + corner[3]) / 2;
-        length_hdg = rwy_info.heading;
+        length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
     cout << "length hdg = " << length_hdg
          << " left heading = " << left_hdg << endl;
 
-    normal = gen_runway_light_vector( rwy_info, 3.0, recip );
+    normal = gen_runway_light_vector( 3.0, recip );
 
     for ( i = 0; i < 30; ++i ) {
         // offset 100' upwind
@@ -730,7 +723,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     string flag;
     double gs_angle = 3.0;
 
-    cout << "gen vasi " << rwy_info.rwy_no1 << endl;
+    cout << "gen vasi " << rwy.rwnum[0] << endl;
 
     Point3D normal;
 
@@ -738,8 +731,8 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     // routine returns.
     TGPolygon poly_corners
         = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     0.0 );
 
     point_list corner;
@@ -755,12 +748,12 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
         ref = corner[0];
         length_hdg = rwy_info.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no1 + "-i";
+        flag = rwy.rwnum[1];
         gs_angle = rwy_info.gs_angle1;
     } else {
         ref = corner[2];
         length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no1;
+        flag = rwy.rwnum[0];
         gs_angle = rwy_info.gs_angle2;
     }
 
@@ -888,7 +881,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
 */
 
 // Generate the airports light objects (PAPI/VASI)
-void gen_airport_lightobj( const TGLightobj& rwy_light, float alt_m, superpoly_list &lights )
+/*void gen_airport_lightobj( const TGLightobj& rwy_light, float alt_m, superpoly_list &lights )
 {
     point_list lightobj; lightobj.clear();
     point_list normals; normals.clear();
@@ -971,11 +964,11 @@ void gen_airport_lightobj( const TGLightobj& rwy_light, float alt_m, superpoly_l
     lightobj.push_back( pt1 );
     normals.push_back( normal );
 
-   /* // grass base
+    // grass base
     Point3D base_pt = (ref + pt1) / 2.0;
     TGPolygon obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 30.0,
                                          length_hdg, alt_m, false );
-    *apt_base = tgPolygonUnion( obj_base, *apt_base );*/
+    *apt_base = tgPolygonUnion( obj_base, *apt_base );
 
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
@@ -989,27 +982,26 @@ void gen_airport_lightobj( const TGLightobj& rwy_light, float alt_m, superpoly_l
 
     lights.push_back( result);
 }
-
+*/
 
 // generate REIL lights
-static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
-                             bool recip )
+TGSuperPoly Runway::gen_reil( float alt_m, bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     int i;
     string flag;
 
-    cout << "gen reil " << rwy_info.rwy_no1 << endl;
+    cout << "gen reil " << rwy.rwnum[0] << endl;
 
     Point3D normal;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 0.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     0.0 );
 
     point_list corner;
@@ -1024,14 +1016,14 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
     if ( recip ) {
         ref1 = corner[0];
         ref2 = corner[1];
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no1 + "-i";
+        flag = rwy.rwnum[1];
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
-        length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no1;
+        length_hdg = rwy.heading;
+        flag = rwy.rwnum[0];
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -1048,7 +1040,7 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
     ref1 = Point3D( lon, lat, 0.0 );
 
     lights.push_back( ref1 );
-    normal = gen_runway_light_vector( rwy_info, 10, recip );
+    normal = gen_runway_light_vector( 10, recip );
     normals.push_back( normal );
     
     // offset 40' downwind
@@ -1061,7 +1053,7 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
     ref2 = Point3D( lon, lat, 0.0 );
 
     lights.push_back( ref2 );
-    normal = gen_runway_light_vector( rwy_info, 10, recip );
+    normal = gen_runway_light_vector( 10, recip );
     normals.push_back( normal );
 
     TGPolygon lights_poly; lights_poly.erase();
@@ -1081,8 +1073,7 @@ static TGSuperPoly gen_reil( const TGRunway& rwy_info, float alt_m,
 
 
 // generate Calvert-I/II approach lighting schemes
-static superpoly_list gen_calvert( const TGRunway& rwy_info,
-                                   float alt_m, const string &kind, bool recip )
+superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -1095,27 +1086,27 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
     int i, j;
     string flag;
     if ( kind == "1" ) {
-        cout << "gen Calvert lights " << rwy_info.rwy_no1 << endl;
+        cout << "gen Calvert lights " << rwy.rwnum[0] << endl;
     } else if ( kind == "2" ) {
-	cout << "gen Calvert/II lights " << rwy_info.rwy_no1 << endl;
+	cout << "gen Calvert/II lights " << rwy.rwnum[0] << endl;
     } else {
-	cout << "gen unknown Calvert lights " << rwy_info.rwy_no1 << endl;
+	cout << "gen unknown Calvert lights " << rwy.rwnum[0] << endl;
     }
 
-    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
+    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
     // Generate the threshold lights
 
-    double len = rwy_info.length;
+    double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 2.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     2.0 );
 
     point_list corner;
@@ -1129,14 +1120,14 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no1 + "-i";
+        flag = rwy.rwnum[1];
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no1;
+        flag = rwy.rwnum[0];
     }
 
-    double dist = rwy_info.length;
+    double dist = rwy.length;
     double step = dist / divs;
 
     g_lights.push_back( pt );
@@ -1162,11 +1153,11 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
     double lon, lat, r;
     if ( recip ) {
         ref_save = (corner[0] + corner[1]) / 2;
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref_save = (corner[2] + corner[3]) / 2;
-        length_hdg = rwy_info.heading;
+        length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -1472,8 +1463,7 @@ static superpoly_list gen_calvert( const TGRunway& rwy_info,
 }
 
 // generate ALSF-I/II and SALS/SALSF approach lighting schemes
-static superpoly_list gen_alsf( const TGRunway& rwy_info,
-                                float alt_m, const string &kind, bool recip )
+superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -1486,22 +1476,22 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
     int i, j;
     string flag;
 
-    cout << "gen ALSF/SALS lights " << rwy_info.rwy_no1 << endl;
+    cout << "gen ALSF/SALS lights " << rwy.rwnum[0] << endl;
 
-    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
+    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
     // Generate the threshold lights
 
-    double len = rwy_info.length;
+    double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 2.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     2.0 );
 
     point_list corner;
@@ -1515,14 +1505,14 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no1 + "-i";
+        flag = rwy.rwnum[1];
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no1;
+        flag = rwy.rwnum[0];
     }
 
-    double dist = rwy_info.length;
+    double dist = rwy.length;
     double step = dist / divs;
 
     g_lights.push_back( pt );
@@ -1548,11 +1538,11 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
     double lon, lat, r;
     if ( recip ) {
         ref_save = (corner[0] + corner[1]) / 2;
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref_save = (corner[2] + corner[3]) / 2;
-        length_hdg = rwy_info.heading;
+        length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -1989,15 +1979,14 @@ static superpoly_list gen_alsf( const TGRunway& rwy_info,
 
 
 // generate ODALS lights
-static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
-                              bool recip )
+TGSuperPoly Runway::gen_odals( float alt_m, bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     int i;
     string flag;
 
-    cout << "gen odals " << rwy_info.rwy_no1 << endl;
+    cout << "gen odals " << rwy.rwnum[0] << endl;
 
     // ODALS lighting is omni-directional, but we generate a normal as
     // a placeholder to keep everything happy.
@@ -2006,9 +1995,9 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 0.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     0.0 );
 
     point_list corner;
@@ -2023,14 +2012,14 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
     if ( recip ) {
         ref1 = corner[0];
         ref2 = corner[1];
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy_info.rwy_no1 + "-i";
+        flag = rwy.rwnum[1];
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
-        length_hdg = rwy_info.heading;
-        flag = rwy_info.rwy_no1;
+        length_hdg = rwy.heading;
+        flag = rwy.rwnum[0];
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -2090,8 +2079,7 @@ static TGSuperPoly gen_odals( const TGRunway& rwy_info, float alt_m,
 
 // generate SSALS, SSALF, and SSALR approach lighting scheme (kind =
 // S, F, or R)
-static superpoly_list gen_ssalx( const TGRunway& rwy_info,
-                                 float alt_m, const string& kind, bool recip )
+superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -2104,22 +2092,22 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
     int i, j;
     string flag;
 
-    cout << "gen SSALx lights " << rwy_info.rwy_no1 << endl;
+    cout << "gen SSALx lights " << rwy.rwnum[0] << endl;
 
-    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
+    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
     // Generate the threshold lights
 
-    double len = rwy_info.length;
+    double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 2.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     2.0 );
 
     point_list corner;
@@ -2133,14 +2121,14 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no1 + "-i";
+        flag = rwy.rwnum[1];
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no1;
+        flag = rwy.rwnum[0];
     }
 
-    double dist = rwy_info.length;
+    double dist = rwy.length;
     double step = dist / divs;
 
     g_lights.push_back( pt );
@@ -2166,11 +2154,11 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
     double lon, lat, r;
     if ( recip ) {
         ref_save = (corner[0] + corner[1]) / 2;
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref_save = (corner[2] + corner[3]) / 2;
-        length_hdg = rwy_info.heading;
+        length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -2360,8 +2348,7 @@ static superpoly_list gen_ssalx( const TGRunway& rwy_info,
 
 // generate MALS, MALSF, and MALSR approach lighting scheme (kind =
 // ' ', F, or R)
-static superpoly_list gen_malsx( const TGRunway& rwy_info,
-                                 float alt_m, const string& kind, bool recip )
+superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -2374,22 +2361,22 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
     int i, j;
     string flag;
 
-    cout << "gen SSALx lights " << rwy_info.rwy_no1 << endl;
+    cout << "gen SSALx lights " << rwy.rwnum[0] << endl;
 
-    Point3D normal1 = gen_runway_light_vector( rwy_info, 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( rwy_info, 3.0, !recip );
+    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
     // Generate the threshold lights
 
-    double len = rwy_info.length;
+    double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 2.0,
-                                    rwy_info.disp_thresh1,
-                                    rwy_info.disp_thresh2,
+        = gen_runway_area_w_extend( 0.0, 2.0,
+                                    rwy.threshold[0],
+                                    rwy.threshold[1],
                                     2.0 );
 
     point_list corner;
@@ -2403,14 +2390,14 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
     if ( recip ) {
         inc = (corner[0] - corner[1]) / divs;
         pt = corner[1];
-        flag = rwy_info.rwy_no1 + "-i";
+        flag = rwy.rwnum[1];
     } else {
         inc = (corner[2] - corner[3]) / divs;
         pt = corner[3];
-        flag = rwy_info.rwy_no1;
+        flag = rwy.rwnum[0];
     }
 
-    double dist = rwy_info.length;
+    double dist = rwy.length;
     double step = dist / divs;
 
     g_lights.push_back( pt );
@@ -2436,11 +2423,11 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
     double lon, lat, r;
     if ( recip ) {
         ref_save = (corner[0] + corner[1]) / 2;
-        length_hdg = rwy_info.heading + 180.0;
+        length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref_save = (corner[2] + corner[3]) / 2;
-        length_hdg = rwy_info.heading;
+        length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
@@ -2629,64 +2616,63 @@ static superpoly_list gen_malsx( const TGRunway& rwy_info,
 
 
 // top level runway light generator
-void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
-			superpoly_list &lights, TGPolygon *apt_base ) {
+void Runway::gen_runway_lights( float alt_m, superpoly_list *lights, TGPolygon *apt_base ) {
 
     unsigned int i;
 
     // Make edge lighting
-    if ( rwy_info.edge_lights > 0 /* Has edge lighting */ ) {
+    if ( rwy.edge_lights > 0 /* Has edge lighting */ ) {
         // forward direction
-        superpoly_list s = gen_runway_edge_lights( rwy_info, false );
+        superpoly_list s = gen_runway_edge_lights( false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
 
         // reverse direction
-        s = gen_runway_edge_lights( rwy_info, true );
+        s = gen_runway_edge_lights( true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.type == 102){
+/*    if ( rwy_info.type == 102){
 	superpoly_list s = gen_helipad_lights( rwy_info );
 	for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
 	}
-    }
+    }*/
 
     // Centerline lighting
-    if ( rwy_info.centre_lights == 1 && rwy_info.type != 102 /* Has centerline lighting */ ) {
+    if ( rwy.centerline_lights == 1 /* Has centerline lighting */ ) {
         // forward direction
-        superpoly_list s = gen_runway_center_line_lights( rwy_info, false );
+        superpoly_list s = gen_runway_center_line_lights( false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
 
-	s = gen_runway_center_line_lights( rwy_info, true );
+	s = gen_runway_center_line_lights( true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
     // Touchdown zone lighting
-    if ( rwy_info.has_tdz1 == 1 /* Has touchdown zone lighting */ ) {
-        TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, false );
-        lights.push_back( s );
+    if ( rwy.tz_lights[0] == 1 /* Has touchdown zone lighting */ ) {
+        TGSuperPoly s = gen_touchdown_zone_lights( alt_m, false );
+        lights->push_back( s );
     }
-    if ( rwy_info.has_tdz2 == 1 /* Has touchdown zone lighting */ ) {
-        TGSuperPoly s = gen_touchdown_zone_lights( rwy_info, alt_m, true );
-        lights.push_back( s );
+    if ( rwy.tz_lights[1] == 1 /* Has touchdown zone lighting */ ) {
+        TGSuperPoly s = gen_touchdown_zone_lights( alt_m, true );
+        lights->push_back( s );
     }
 
     // REIL lighting
-    if ( rwy_info.reil1 > 0 /* Has REIL lighting */ ) {
-        TGSuperPoly s = gen_reil( rwy_info, alt_m, false );
-        lights.push_back( s );
+    if ( rwy.reil[0] > 0 /* Has REIL lighting */ ) {
+        TGSuperPoly s = gen_reil( alt_m, false );
+        lights->push_back( s );
     }
-    if ( rwy_info.reil2 > 0 /* Has REIL lighting */ ) {
-        TGSuperPoly s = gen_reil( rwy_info, alt_m, true );
-        lights.push_back( s );
+    if ( rwy.reil[1] > 0 /* Has REIL lighting */ ) {
+        TGSuperPoly s = gen_reil( alt_m, true );
+        lights->push_back( s );
     }
 
 
@@ -2700,29 +2686,29 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    if ( rwy_info.alc1_flag == 1 /* ALSF-I */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "1", false );
+    if ( rwy.approach_lights[0] == 1 /* ALSF-I */ ) {
+        superpoly_list s = gen_alsf( alt_m, "1", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == 1 /* ALSF-I */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "1", true );
+    if ( rwy.approach_lights[1] == 1 /* ALSF-I */ ) {
+        superpoly_list s = gen_alsf( alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
-    if ( rwy_info.alc1_flag == 2 /* ALSF-II */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "2", false );
+    if ( rwy.approach_lights[0] == 2 /* ALSF-II */ ) {
+        superpoly_list s = gen_alsf( alt_m, "2", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if (rwy_info.alc2_flag  == 2 /* ALSF-II */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "2", true );
+    if (rwy.approach_lights[1]  == 2 /* ALSF-II */ ) {
+        superpoly_list s = gen_alsf( alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
@@ -2736,16 +2722,16 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    if ( rwy_info.alc1_flag == 3 || rwy_info.alc1_flag == 4 /* Calvert 1, 2, and 3 */ ) {
-        superpoly_list s = gen_calvert( rwy_info, alt_m, "1", true );
+    if ( rwy.approach_lights[0] == 3 || rwy.approach_lights[0] == 4 /* Calvert 1, 2, and 3 */ ) {
+        superpoly_list s = gen_calvert( alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == 3 || rwy_info.alc2_flag == 4 /* Calvert 1, 2, and 3 */ ) {
-        superpoly_list s = gen_calvert( rwy_info, alt_m, "2", true );
+    if ( rwy.approach_lights[1] == 3 || rwy.approach_lights[1] == 4 /* Calvert 1, 2, and 3 */ ) {
+        superpoly_list s = gen_calvert( alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
     ////////////////////////////////////////////////////////////
@@ -2757,29 +2743,29 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // data is provided in our database
     ////////////////////////////////////////////////////////////
 
-    if ( rwy_info.alc1_flag == 10 /* MALS not supported by data base */ ) {
-        superpoly_list s = gen_malsx( rwy_info, alt_m, "x", false );
+    if ( rwy.approach_lights[0] == 10 /* MALS not supported by data base */ ) {
+        superpoly_list s = gen_malsx( alt_m, "x", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == 10 /* MALS not supported by data base */ ) {
-        superpoly_list s = gen_malsx( rwy_info, alt_m, "x", true );
+    if ( rwy.approach_lights[1] == 10 /* MALS not supported by data base */ ) {
+        superpoly_list s = gen_malsx( alt_m, "x", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
-    if ( rwy_info.alc1_flag == 9 /* MALSF not supported by data base */ ) {
-        superpoly_list s = gen_malsx( rwy_info, alt_m, "F", false );
+    if ( rwy.approach_lights[0] == 9 /* MALSF not supported by data base */ ) {
+        superpoly_list s = gen_malsx( alt_m, "F", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == 9 /* MALSF not supported by data base */ ) {
-        superpoly_list s = gen_malsx( rwy_info, alt_m, "F", true );
+    if ( rwy.approach_lights[1] == 9 /* MALSF not supported by data base */ ) {
+        superpoly_list s = gen_malsx( alt_m, "F", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
@@ -2791,16 +2777,16 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // This is also likely airport specific
     ////////////////////////////////////////////////////////////
 
-    if ( rwy_info.alc1_flag == 8 /* MALSR not supported by data base */ ) {
-        superpoly_list s = gen_malsx( rwy_info, alt_m, "R", false );
+    if ( rwy.approach_lights[0] == 8 /* MALSR not supported by data base */ ) {
+        superpoly_list s = gen_malsx( alt_m, "R", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == 8 /* MALSR not supported by data base */ ) {
-        superpoly_list s = gen_malsx( rwy_info, alt_m, "R", true );
+    if ( rwy.approach_lights[1] == 8 /* MALSR not supported by data base */ ) {
+        superpoly_list s = gen_malsx( alt_m, "R", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
@@ -2812,13 +2798,13 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
     // No clue ...
     ////////////////////////////////////////////////////////////
 
-    if ( rwy_info.alc1_flag == 11 /* ODALS Omni-directional approach light system */ ) {
-        TGSuperPoly s = gen_odals( rwy_info, alt_m, false );
-        lights.push_back( s );
+    if ( rwy.approach_lights[0] == 11 /* ODALS Omni-directional approach light system */ ) {
+        TGSuperPoly s = gen_odals( alt_m, false );
+        lights->push_back( s );
     }
-    if ( rwy_info.alc2_flag == 11 /* ODALS Omni-directional approach light system */ ) {
-        TGSuperPoly s = gen_odals( rwy_info, alt_m, true );
-        lights.push_back( s );
+    if ( rwy.approach_lights[1] == 11 /* ODALS Omni-directional approach light system */ ) {
+        TGSuperPoly s = gen_odals( alt_m, true );
+        lights->push_back( s );
     }
 
     ////////////////////////////////////////////////////////////
@@ -2830,149 +2816,101 @@ void gen_runway_lights( const TGRunway& rwy_info, float alt_m,
 
     // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
     // a shorter center bar)
-    if ( rwy_info.alc1_flag == 7 /* SALS not supported by database */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "O", false );
+    if ( rwy.approach_lights[0] == 7 /* SALS not supported by database */ ) {
+        superpoly_list s = gen_alsf( alt_m, "O", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == 7 /* SALS not supported by database */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "O", true );
+    if ( rwy.approach_lights[1] == 7 /* SALS not supported by database */ ) {
+        superpoly_list s = gen_alsf( alt_m, "O", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
-        }
-    }
-
-    if ( rwy_info.alc1_flag == -1 /* SALSF */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "P", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
-        }
-    }
-    if ( rwy_info.alc2_flag == -1 /* SALSF */ ) {
-        superpoly_list s = gen_alsf( rwy_info, alt_m, "P", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
-    if ( rwy_info.alc1_flag == 6 /* SSALF not supported by database */ ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "F", false );
+    if ( rwy.approach_lights[0] == -1 /* SALSF */ ) {
+        superpoly_list s = gen_alsf( alt_m, "P", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == 6 /* SSALF not supported by database */ ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "F", true );
+    if ( rwy.approach_lights[1] == -1 /* SALSF */ ) {
+        superpoly_list s = gen_alsf( alt_m, "P", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
-        }
-    }
-
-    if ( rwy_info.alc1_flag == 5 /* SSALR not supported by database */ ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "R", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
-        }
-    }
-    if ( rwy_info.alc2_flag == 5 /* SSALR not supported by database */ ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "R", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 
-    if ( rwy_info.alc1_flag == -1 /* SSALS */ ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", false );
+    if ( rwy.approach_lights[0] == 6 /* SSALF not supported by database */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "F", false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.alc2_flag == -1 /* SSALS */ ) {
-        superpoly_list s = gen_ssalx( rwy_info, alt_m, "S", true );
+    if ( rwy.approach_lights[1] == 6 /* SSALF not supported by database */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "F", true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    cout << "Edge light = " << rwy_info.edge_lights << " Centre light = " << rwy_info.centre_lights << endl;
-    cout << "ALC1 flag = " << rwy_info.alc1_flag << " ALC2 flag2 = " << rwy_info.alc2_flag << endl;
+
+    if ( rwy.approach_lights[0] == 5 /* SSALR not supported by database */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "R", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] == 5 /* SSALR not supported by database */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "R", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+
+    if ( rwy.approach_lights[0] == -1 /* SSALS */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "S", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] == -1 /* SSALS */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "S", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    cout << "Edge light = " << rwy.edge_lights << " Centre light = " << rwy.centerline_lights << endl;
+    cout << "ALC1 flag = " << rwy.approach_lights[0] << " ALC2 flag2 = " << rwy.approach_lights[1] << endl;
     // Many aproach lighting systems define the threshold lighting
     // needed, but for those that don't (i.e. REIL, ODALS, or Edge
     // lights defined but no approach lights)
     // make threshold lighting
 
-    if ( rwy_info.reil1 > 0 /* Has REIL lighting */
-         || rwy_info.alc1_flag == 11 /* ODALS Omni-directional approach light system */
-         || ( rwy_info.edge_lights > 0  && rwy_info.alc1_flag == 0 && !rwy_info.type == 102 ) /* Has edge lighting, but no
-                                             approach lighting and is not a heliport */ )
+    if ( rwy.reil[0] > 0 /* Has REIL lighting */
+         || rwy.approach_lights[0] == 11 /* ODALS Omni-directional approach light system */
+         || ( rwy.edge_lights > 0  && rwy.approach_lights[0] == 0 ) /* Has edge lighting, but no
+                                             approach lighting */ )
     {
         // forward direction
         cout << "threshold lights for forward direction" << endl;
-        superpoly_list s = gen_runway_threshold_lights( rwy_info, 0,
+        superpoly_list s = gen_runway_threshold_lights( 0,
                                                         alt_m, false );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
-    if ( rwy_info.reil2 > 0 /* Has REIL lighting */
-         || rwy_info.alc2_flag == 11 /* ODALS Omni-directional approach light system */
-         || ( rwy_info.edge_lights > 0  && rwy_info.alc2_flag == 0 && !rwy_info.type == 102 ) /* Has edge lighting, but no
-                                             approach lighting and is not a heliport */ )
+    if ( rwy.reil[1] > 0 /* Has REIL lighting */
+         || rwy.approach_lights[1] == 11 /* ODALS Omni-directional approach light system */
+         || ( rwy.edge_lights > 0  && rwy.approach_lights[1] == 0 ) /* Has edge lighting, but no
+                                             approach lighting */ )
     {
         // reverse direction
         cout << "threshold lights for reverse direction" << endl;
-        superpoly_list s = gen_runway_threshold_lights( rwy_info, 0,
+        superpoly_list s = gen_runway_threshold_lights( 0,
                                                         alt_m, true );
         for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
+            lights->push_back( s[i] );
         }
     }
 }
-
-#if 0
-// top level taxiway light generator
-void gen_taxiway_lights( const TGRunway& taxiway_info, float alt_m,
-                         superpoly_list &lights )
-{
-    SG_LOG( SG_GENERAL, SG_DEBUG, "gen taxiway lights "
-            << taxiway_info.rwy_no1 << " "
-            << taxiway_info.lighting_flags );
-
-    string lighting_flags = taxiway_info.lighting_flags;
-    int rwylt1 = atoi( lighting_flags.substr(1,1).c_str() );
-    int rwylt2 = atoi( lighting_flags.substr(4,1).c_str() );
-
-    unsigned int i;
-
-    // Centerline lighting
-    if ( rwylt1 == 6 /* taxiway lit, assume centerline too */ ) {
-        // forward direction
-        superpoly_list s
-            = gen_taxiway_center_line_lights( taxiway_info, false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
-        }
-    }
-
-    if ( rwylt2 == 6 /* taxiway lit, assume centerline too */ ) {
-        // reverse direction
-        superpoly_list s
-            = gen_taxiway_center_line_lights( taxiway_info, true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
-        }
-    }
-
-    // Make edge lighting
-    if ( rwylt1 == 6 /* taxiway blue lit */ ) {
-        // forward direction (blue lights are omni-directional so we
-        // don't need to generate the reverse direction
-        superpoly_list s;
-        s = gen_taxiway_edge_lights( taxiway_info, rwylt1, false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights.push_back( s[i] );
-        }
-    }
-
-}
-#endif

@@ -42,9 +42,8 @@ public:
     int     tz_lights[2];
     int     reil[2];
     };
-typedef std::vector < TGRunway > runway_list;
 
-TGRunway rwy;
+    TGRunway rwy;
 
     Runway(char* def);
 
@@ -81,16 +80,16 @@ private:
     void gen_number_block( const std::string& material,
                            TGPolygon poly, double heading, int num,
                            double start_pct, double end_pct,
-                           superpoly_list *rwy_polys,
-                           texparams_list *texparams,
-                           TGPolygon *accum );
+                           superpoly_list* rwy_polys,
+                           texparams_list* texparams,
+                           TGPolygon* accum );
 
     // generate the runway overrun area
     void gen_runway_overrun( const TGPolygon& runway_half,
                              int rwhalf,
                              const std::string& prefix,
-                             superpoly_list *rwy_polys,
-                             texparams_list *texparams,
+                             superpoly_list* rwy_polys,
+                             texparams_list* texparams,
                              TGPolygon* accum );
 
     // generate a section of runway
@@ -101,24 +100,39 @@ private:
                              double heading,
                              const std::string& prefix,
                              const std::string& material,
-                             superpoly_list *rwy_polys,
-                             texparams_list *texparams,
-                             TGPolygon *accum  );
+                             superpoly_list* rwy_polys,
+                             texparams_list* texparams,
+                             TGPolygon* accum  );
 
     void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum );
     void gen_rwy( double alt_m,
                   const std::string& material,
-                  superpoly_list *rwy_polys,
-                  texparams_list *texparams,
-                  TGPolygon *accum );
+                  superpoly_list* rwy_polys,
+                  texparams_list* texparams,
+                  TGPolygon* accum );
 
     void gen_rw_marking( const TGPolygon& runway,
                          double &start1_pct, double &end1_pct,
                          double heading,
                          const string& material,
-                         superpoly_list *rwy_polys,
-                         texparams_list *texparams,
-                         TGPolygon *accum, int marking);
+                         superpoly_list* rwy_polys,
+                         texparams_list* texparams,
+                         TGPolygon* accum, int marking);
+
+    void gen_runway_lights( float alt_m, superpoly_list* lights, TGPolygon* apt_base );
+
+    Point3D gen_runway_light_vector( double angle, bool recip );
+    superpoly_list gen_runway_edge_lights( bool recip );
+    superpoly_list gen_taxiway_edge_lights( const int kind, bool recip );
+    superpoly_list gen_runway_threshold_lights( const int kind, float alt_m, bool recip );
+    superpoly_list gen_runway_center_line_lights( bool recip );
+    TGSuperPoly gen_touchdown_zone_lights( float alt_m, bool recip );
+    TGSuperPoly gen_reil( float alt_m, bool recip );
+    superpoly_list gen_calvert( float alt_m, const string &kind, bool recip );
+    superpoly_list gen_alsf( float alt_m, const string &kind, bool recip );
+    TGSuperPoly gen_odals( float alt_m, bool recip );
+    superpoly_list gen_ssalx( float alt_m, const string& kind, bool recip );
+    superpoly_list gen_malsx( float alt_m, const string& kind, bool recip );
 };
 
 typedef std::vector <Runway *> RunwayList;

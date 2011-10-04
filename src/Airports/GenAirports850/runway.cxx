@@ -412,6 +412,7 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: asphalt or concrete" << rwy.surface);
             gen_rwy( alt_m, material, rwy_polys, texparams, accum );
+            gen_runway_lights( alt_m, rwy_lights, apt_base );
             break;
     
         case 3: // Grass
@@ -419,6 +420,7 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         case 5: // Gravel
             SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
 	        gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
+                gen_runway_lights( alt_m, rwy_lights, apt_base );
             break;
 
         case 12: // dry lakebed
