@@ -1111,7 +1111,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Done with lighting calc_elevations()");
+    SG_LOG(SG_GENERAL, SG_INFO, "Done with lighting calc_elevations() num light polys is " << rwy_lights.size() );
 
     // pass two, for each light group check if we need to lift (based
     // on flag) and do so, then output next structures.
@@ -1120,6 +1120,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         // tmp_light_list is a parallel structure to rwy_lights
         point_list geod_light_nodes = tmp_light_list[i].get_poly().get_contour(0);
         
+        SG_LOG(SG_GENERAL, SG_INFO, "got a point list with " <<  geod_light_nodes.size() << " points" );
+
         // this is a little round about, but what we want to calculate the
         // light node elevations as ground + an offset so we do them
         // seperately, then we add them back into nodes to get the index

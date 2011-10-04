@@ -18,19 +18,21 @@
 
 void LinearFeature::ConvertContour( BezContour* src  )
 {
-    BezNode*    prevNode;
-    BezNode*    curNode;
-    BezNode*    nextNode;
+    BezNode*  prevNode;
+    BezNode*  curNode;
+    BezNode*  nextNode;
         
-    Point3D prevLoc;
-    Point3D curLoc;
-    Point3D nextLoc;
-    Point3D cp1;
-    Point3D cp2;         
+    Point3D   prevLoc;
+    Point3D   curLoc;
+    Point3D   nextLoc;
+    Point3D   cp1;
+    Point3D   cp2;         
 
-    int curve_type = CURVE_LINEAR;
-    Marking* cur_mark = NULL;
-    int i;
+    int       curve_type = CURVE_LINEAR;
+    Marking*  cur_mark = NULL;
+    Lighting* cur_light = NULL;
+    double    lgt_dist = 0.0f;
+    int       i;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
@@ -97,6 +99,43 @@ void LinearFeature::ConvertContour( BezContour* src  )
                 cur_mark = new Marking;
                 cur_mark->type = curNode->GetMarking();
                 cur_mark->start_idx = points.size();
+            }
+        }
+        ////////////////////////////////////////////////////////////////////////////////////
+
+
+        ////////////////////////////////////////////////////////////////////////////////////
+        // remember the index for the starting stopping of lights on the converted contour
+
+        // are we watching a mark for the end?
+        if (cur_light)
+        {
+            if (curNode->GetLighting() != cur_light->type)
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting has changed from " << cur_light->type << " to " << curNode->GetLighting() << " save light from " << cur_light->start_idx << " to " << points.size() );
+
+                // lighting has ended, or changed : add final light
+                cur_light->end_idx = points.size();
+                lights.push_back(cur_light);
+                cur_light = NULL;
+            }
+            else
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Lighting from " << cur_light->start_idx << " with type " << cur_light->type );
+            }
+        }
+        
+        // should we start a new light?
+        if (cur_light == NULL)
+        {
+            if (curNode->GetLighting())
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Lighting from " << points.size() << " with type " << curNode->GetLighting() );
+
+                // we aren't watching a mark, and this node has one
+                cur_light = new Lighting;
+                cur_light->type = curNode->GetLighting();
+                cur_light->start_idx = points.size();
             }
         }
         ////////////////////////////////////////////////////////////////////////////////////
@@ -219,6 +258,16 @@ void LinearFeature::ConvertContour( BezContour* src  )
        cur_mark->end_idx = points.size()-1;
        marks.push_back(cur_mark);
        cur_mark = NULL;                    
+    }
+
+    // check for lighting that goes all the way to the end...
+   if (cur_light)
+   {
+       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting from " << cur_light->start_idx << " with type " << cur_light->type << " ends at the end of the contour: " << points.size() );
+
+       cur_light->end_idx = points.size()-1;
+       lights.push_back(cur_light);
+       cur_light = NULL;                    
     }
 }
 
@@ -389,6 +438,7 @@ Point3D midpoint( Point3D p0, Point3D p1 )
 int LinearFeature::Finish()
 {
     TGPolygon   poly;
+    TGPolygon   normals_poly;
     TGSuperPoly sp;
     TGTexParams tp;
     Point3D     prev_inner, prev_outer;
@@ -585,30 +635,78 @@ int LinearFeature::Finish()
         }
     }
 
-    // now generate the supoerpoly list for lights
+    // now generate the supoerpoly list for lights with constant distance between lights (depending on feature type)
     for (i=0; i<lights.size(); i++)
     {
         // which material for this light
         switch( lights[i]->type )
         {
             case LF_BIDIR_GREEN:
+                material = "RWY_GREEN_TAXIWAY_LIGHTS";
                 break;
 
             case LF_OMNIDIR_BLUE:
+                material = "RWY_BLUE_TAXIWAY_LIGHTS";
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER:
+                material = "RWY_YELLOW_LIGHTS";
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER_PULSE:
+                material = "RWY_YELLOW_LIGHTS";
                 break;
 
             case LF_BIDIR_GREEN_AMBER:
+                material = "RWY_GREEN_TAXIWAY_LIGHTS";
                 break;
 
             case LF_OMNIDIR_RED:
+                material = "RWY_RED_LIGHTS";
                 break;
         }
+
+        poly.erase();
+        normals_poly.erase();
+        sp.erase();
+
+        cur_light_dist = 0.0f;
+        for (j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for light " << i << " whose start idx is " << lights[i]->start_idx << " and end idx is " << lights[i]->end_idx << " cur idx is " << j );
+            // for each point on the PointsList, offset by 2 distnaces from the edge, and add a point to the superpoly contour
+
+            if (j == lights[i]->start_idx)
+            {
+                // first point on the light - offset heading is 90deg 
+                cur_outer = OffsetPointFirst( &points[j], &points[j+1], offset );
+            }
+            else if (j == lights[i]->end_idx)
+            {
+                // last point on the mark - offset heading is 90deg 
+                cur_outer = OffsetPointLast( &points[j-1], &points[j], offset );
+            }
+            else
+            {
+                cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset );
+            }
+    
+            poly.add_node(0, cur_outer);
+
+            // calculate the normal
+    	    Point3D tmp = Point3D( cur_outer.x(), cur_outer.y(), 0.0 );
+    	    Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
+    	    double length = vec.distance3D( Point3D(0.0) );
+    	    vec = vec / length;
+
+            normals_poly.add_node(0, vec );
+        }
+
+        sp.set_poly( poly );
+        sp.set_normals( normals_poly );
+        sp.set_material( material );
+        sp.set_flag("");
+        lighting_polys.push_back(sp);
     }
 }
 
@@ -619,21 +717,30 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
     TGPolygon split;
     int i;
 
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
+
     for (i=0; i<marking_polys.size(); i++)
     {
         poly = marking_polys[i].get_poly();
         clipped = tgPolygonDiff( poly, *line_accum );
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipped poly has " << clipped.contours() << " contours");
 
         TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: split poly has " << split.contours() << " contours");
 
         marking_polys[i].set_poly( split );
         line_polys->push_back( marking_polys[i] );
 
         *line_accum = tgPolygonUnion( poly, *line_accum );
         line_tps->push_back( marking_tps[i] );
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: add " << lighting_polys.size() << " light defs");
+    for (i=0; i<lighting_polys.size(); i++)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: adding light " << i );
+        lights->push_back( lighting_polys[i] );
     }
 
     return 1;
