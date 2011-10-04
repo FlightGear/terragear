@@ -451,6 +451,7 @@ int LinearFeature::Finish()
     int         i, j;
     string      material;
     int         mat_idx = 0;
+    double      cur_light_dist = 0.0f;
 
 
     // create the inner and outer boundaries to generate polys
