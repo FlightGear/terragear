@@ -452,6 +452,9 @@ int LinearFeature::Finish()
     string      material;
     int         mat_idx = 0;
     double      cur_light_dist = 0.0f;
+    double      light_delta;
+    double      intpart;
+    double      pt_x, pt_y;
 
 
     // create the inner and outer boundaries to generate polys
@@ -639,31 +642,40 @@ int LinearFeature::Finish()
     // now generate the supoerpoly list for lights with constant distance between lights (depending on feature type)
     for (i=0; i<lights.size(); i++)
     {
+        prev_outer = Point3D(0.0f, 0.0f, 0.0f);
+        cur_light_dist = 0.0f;
+
         // which material for this light
         switch( lights[i]->type )
         {
             case LF_BIDIR_GREEN:
                 material = "RWY_GREEN_TAXIWAY_LIGHTS";
+                light_delta = 10.0f;
                 break;
 
             case LF_OMNIDIR_BLUE:
                 material = "RWY_BLUE_TAXIWAY_LIGHTS";
+                light_delta = 10.0f;
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER:
                 material = "RWY_YELLOW_LIGHTS";
+                light_delta = 4.0f;
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER_PULSE:
                 material = "RWY_YELLOW_LIGHTS";
+                light_delta = 4.0f;
                 break;
 
             case LF_BIDIR_GREEN_AMBER:
                 material = "RWY_GREEN_TAXIWAY_LIGHTS";
+                light_delta = 10.0f;
                 break;
 
             case LF_OMNIDIR_RED:
                 material = "RWY_RED_LIGHTS";
+                light_delta = 10.0f;
                 break;
         }
 
@@ -671,7 +683,6 @@ int LinearFeature::Finish()
         normals_poly.erase();
         sp.erase();
 
-        cur_light_dist = 0.0f;
         for (j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for light " << i << " whose start idx is " << lights[i]->start_idx << " and end idx is " << lights[i]->end_idx << " cur idx is " << j );
@@ -692,22 +703,72 @@ int LinearFeature::Finish()
                 cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset );
             }
     
-            poly.add_node(0, cur_outer);
+            if ( (prev_outer.x() != 0.0f) && (prev_outer.y() != 0.0f) )
+            {
+                Point3D tmp;
 
-            // calculate the normal
-    	    Point3D tmp = Point3D( cur_outer.x(), cur_outer.y(), 0.0 );
-    	    Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
-    	    double length = vec.distance3D( Point3D(0.0) );
-    	    vec = vec / length;
+                // calculate the heading and distance from prev to cur
+                geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
+                
+                if (cur_light_dist > dist)
+                {
+                    // no lights in this segment - increment cur_light_dist only
+                    cur_light_dist += dist;
+                }
+                else
+                {
+                    while (cur_light_dist < dist)
+                    {
+                        if (cur_light_dist == 0.0f)
+                        {
+                            tmp = prev_outer;
+                        }
+                        else
+                        {
+                            // calculate the position of the next light
+                            geo_direct_wgs_84( prev_outer.y(), prev_outer.x(), heading, cur_light_dist, &pt_y, &pt_x, &az2 );
+            	            tmp = Point3D( pt_x, pt_y, 0.0 );
+                        }
+                                    
+                        poly.add_node(0, tmp);
 
-            normals_poly.add_node(0, vec );
+                        // calculate the normal
+                	    Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
+                	    double length = vec.distance3D( Point3D(0.0) );
+                	    vec = vec / length;
+
+                        normals_poly.add_node(0, vec );
+
+                        // update current light distance
+                        cur_light_dist += light_delta;
+                    }
+
+                    // add the remaining distance to the last light
+//                  cur_light_dist += modf( dist, &intpart );
+
+                    // remove
+                    cur_light_dist = fmod (cur_light_dist, light_delta);
+                }
+            }
+
+            prev_outer = cur_outer;
         }
 
-        sp.set_poly( poly );
-        sp.set_normals( normals_poly );
-        sp.set_material( material );
-        sp.set_flag("");
-        lighting_polys.push_back(sp);
+        // if there were lights generated - create the superpoly
+        if (poly.total_size())
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding superpoly with " << poly.total_size() << " lights" );
+
+            sp.set_poly( poly );
+            sp.set_normals( normals_poly );
+            sp.set_material( material );
+            sp.set_flag("");
+            lighting_polys.push_back(sp);
+        }
+        else
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: No points for linear feature " << description << " light index " << i );
+        }
     }
 }
 

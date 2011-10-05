@@ -859,6 +859,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // Now build the fitted airport surface ...
 
     // calculation min/max coordinates of airport area
+    SG_LOG(SG_GENERAL, SG_DEBUG, " calculation min/max coordinates of airport area");
+
     Point3D min_deg(9999.0, 9999.0, 0), max_deg(-9999.0, -9999.0, 0);
     for ( j = 0; j < (int)nodes.get_node_list().size(); ++j ) 
     {
@@ -883,8 +885,13 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     // extend the min/max coordinates of airport area to cover all
     // lights as well
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, " extend the min/max coordinates of airport area to cover all lights as well : num rwy lights is " << rwy_lights.size() );
+
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) 
     {
+        SG_LOG(SG_GENERAL, SG_DEBUG, " extend the min/max coordinates of airport area to cover all lights as well : rwy light " << i << "has " << rwy_lights[i].get_poly().get_contour(0).size() << " lights " );
+
         for ( j = 0; j < (int)rwy_lights[i].get_poly().get_contour(0).size(); ++j )
         {
             Point3D p = rwy_lights[i].get_poly().get_contour(0)[j];
@@ -906,6 +913,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             }
         }
     }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, " done " );
 
     // Extend the area a bit so we don't have wierd things on the edges
     double dlon = max_deg.lon() - min_deg.lon();
