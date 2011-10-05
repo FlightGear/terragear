@@ -402,6 +402,8 @@ int Parser::ParseLine(char* line)
             case LIGHTING_OBJECT:
                 SetState( STATE_PARSE_SIMPLE );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing lighting object: " << line);
+                cur_object = new LightingObj(line);
+                cur_airport->AddObj( cur_object );
                 break;
             case COMM_FREQ1_CODE:
                 SetState( STATE_PARSE_SIMPLE );

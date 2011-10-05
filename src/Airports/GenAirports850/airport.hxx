@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "runway.hxx"
+#include "object.hxx"
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
 
@@ -18,6 +19,11 @@ public:
     void AddRunway( Runway* runway )
     {
         runways.push_back( runway );
+    }
+
+    void AddObj( LightingObj* lightobj )
+    {
+        lightobjects.push_back( lightobj );
     }
 
     void AddPavement( ClosedPoly* pavement )
@@ -51,6 +57,7 @@ private:
     PavementList    pavements;
     FeatureList     features;
     RunwayList      runways;
+    LightingObjList lightobjects;
 };
 
 typedef std::vector <Airport *> AirportList;

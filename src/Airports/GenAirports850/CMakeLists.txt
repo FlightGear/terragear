@@ -9,6 +9,7 @@ add_executable(genapts850
 	lights.cxx
 	linearfeature.hxx linearfeature.cxx
 	main.cxx
+	object.hxx object.cxx
 	parser.hxx parser.cxx
 	point2d.cxx point2d.hxx 
 	poly_extra.cxx poly_extra.hxx 

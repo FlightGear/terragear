@@ -89,6 +89,7 @@ private:
     ClosedPoly*     cur_pavement;
     LinearFeature*  cur_feat;
     BezNode*        prev_node;
+    LightingObj*    cur_object;
 
     AirportList     airports;
 

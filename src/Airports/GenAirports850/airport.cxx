@@ -383,6 +383,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 	    }
     }
 
+    if (lightobjects.size())
+    {
+        for ( i=0; i<lightobjects.size(); i++ )
+        {
+            lightobjects[i]->BuildBtg( altitude, &rwy_lights );
+        }
+    }
+
     // Build the pavements
     if (pavements.size())
     {
