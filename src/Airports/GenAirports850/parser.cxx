@@ -273,6 +273,11 @@ int Parser::ParseLine(char* line)
             case HELIPAD_CODE:
                 SetState( STATE_PARSE_SIMPLE );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing helipad: " << line);
+                cur_helipad = new Helipad(line);
+                if (cur_airport)
+                {
+                    cur_airport->AddHelipad( cur_helipad );
+                }
                 break;
 
             case PAVEMENT_CODE:

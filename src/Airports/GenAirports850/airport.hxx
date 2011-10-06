@@ -6,6 +6,7 @@
 
 #include "runway.hxx"
 #include "object.hxx"
+#include "helipad.hxx"
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
 #include "linked_objects.hxx"
@@ -25,6 +26,11 @@ public:
     void AddObj( LightingObj* lightobj )
     {
         lightobjects.push_back( lightobj );
+    }
+
+    void AddHelipad( Helipad* helipad )
+    {
+        helipads.push_back( helipad );
     }
 
     void AddPavement( ClosedPoly* pavement )
@@ -71,6 +77,7 @@ private:
     LightingObjList lightobjects;
     WindsockList    windsocks;
     BeaconList      beacons;
+    HelipadList     helipads;
 };
 
 typedef std::vector <Airport *> AirportList;

@@ -83,44 +83,6 @@ Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
     return light_vec;
 }
 
-/*static superpoly_list gen_helipad_lights(const TGRunway& rwy_info){
-
-    point_list c_lights; c_lights.clear();
-    point_list c_normals; c_normals.clear();
-    double lat2, lon2, az2;
-
-    // Create a circle of lights approx. where the white circle is
-    for (int deg=0; deg<360; deg+=30){
-	geo_direct_wgs_84(0, rwy_info.lat, rwy_info.lon, deg ,
-			  rwy_info.width * 0.46 , &lat2, &lon2, &az2 );
-
-	c_lights->push_back( Point3D( lon2, lat2, 0.0 ) );
-
-	Point3D tmp = Point3D( lon2, lat2, 0.0 );
-	Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
-	double length = vec.distance3D( Point3D(0.0) );
-	vec = vec / length;
-	c_normals.push_back( vec );
-    }
-
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( c_lights, false );
-    normals_poly.add_contour( c_normals, false );
-
-    TGSuperPoly green;
-    green.set_poly( lights_poly );
-    green.set_normals( normals_poly );
-    green.set_material( "RWY_GREEN_LIGHTS" );
-
-    superpoly_list result; result.clear();
-
-    result.push_back( green );
-
-    return result;
-}*/
-
-
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
 superpoly_list Runway::gen_runway_edge_lights( bool recip )
@@ -2634,12 +2596,6 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights, TGPolygon *
             lights->push_back( s[i] );
         }
     }
-/*    if ( rwy_info.type == 102){
-	superpoly_list s = gen_helipad_lights( rwy_info );
-	for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-	}
-    }*/
 
     // Centerline lighting
     if ( rwy.centerline_lights == 1 /* Has centerline lighting */ ) {

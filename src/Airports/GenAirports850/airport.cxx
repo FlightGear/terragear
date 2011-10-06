@@ -1,5 +1,6 @@
 #include "beznode.hxx"
 #include "runway.hxx"
+#include "helipad.hxx"
 #include "airport.hxx"
 
 #include <list>
@@ -391,6 +392,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
+    // Build helipads (use runway poly- and texture list for this)
+    if (helipads.size())
+    {
+        for (i=0; i<helipads.size(); i++ )
+        {
+            helipads[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, &apt_base, &apt_clearing );
+        }
+    }
     // Build the pavements
     if (pavements.size())
     {

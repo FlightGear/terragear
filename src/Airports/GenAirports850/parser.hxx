@@ -86,6 +86,7 @@ private:
     // (first is outside boundry, remaining are holes)
     Airport*        cur_airport;
     Runway*         cur_runway;
+    Helipad*        cur_helipad;
     ClosedPoly*     cur_pavement;
     LinearFeature*  cur_feat;
     BezNode*        prev_node;
