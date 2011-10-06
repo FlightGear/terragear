@@ -103,6 +103,30 @@ int Runway::BuildOsg ( osg::Group* airport )
     return 0;
 }
 
+WaterRunway::WaterRunway(char* definition)
+{
+    sscanf(definition, "%lf %d %s %lf %lf %s %lf %lf", &width, &buoys, &rwnum[0], &lat[0], &lon[0], &rwnum[1], &lat[1], &lon[1]);
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
+}
+
+TGPolygon WaterRunway::GetNodes()
+{
+    TGPolygon buoy_nodes;
+    buoy_nodes.erase();
+    if (buoys == 1){ /*no point to calculate stuff we don't need*/
+
+        double heading, az2, length;
+        // calculate runway heading and length
+        geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &heading, &az2, &length );
+
+        // create a polygon for the 4 buoy points
+        // TODO: The amount of points can be increased if needed (more buoys)
+        buoy_nodes = gen_wgs84_area(Point3D( (lon[0] + lon[1]) / 2 , (lat[0] + lat[1]) / 2, 0), length, 0, 0, width, heading, 0, false);
+    }
+    return buoy_nodes;
+}
+
 
 int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {

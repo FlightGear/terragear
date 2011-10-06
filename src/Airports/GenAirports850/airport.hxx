@@ -23,6 +23,11 @@ public:
         runways.push_back( runway );
     }
 
+    void AddWaterRunway( WaterRunway* waterrunway )
+    {
+        waterrunways.push_back( waterrunway );
+    }
+
     void AddObj( LightingObj* lightobj )
     {
         lightobjects.push_back( lightobj );
@@ -79,6 +84,7 @@ private:
     PavementList    pavements;
     FeatureList     features;
     RunwayList      runways;
+    WaterRunwayList waterrunways;
     LightingObjList lightobjects;
     WindsockList    windsocks;
     BeaconList      beacons;

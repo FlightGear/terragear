@@ -145,7 +145,22 @@ private:
     superpoly_list gen_ssalx( float alt_m, const string& kind, bool recip );
     superpoly_list gen_malsx( float alt_m, const string& kind, bool recip );
 };
-
 typedef std::vector <Runway *> RunwayList;
+
+
+class WaterRunway
+{
+public:
+    WaterRunway(char* def);
+
+    double  width;
+    int     buoys;
+    char    rwnum[2][16];
+    double  lat[2];
+    double  lon[2];
+
+    TGPolygon GetNodes();
+};
+typedef std::vector <WaterRunway *> WaterRunwayList;
 
 #endif

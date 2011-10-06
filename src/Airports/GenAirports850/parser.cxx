@@ -269,6 +269,11 @@ int Parser::ParseLine(char* line)
             case WATER_RUNWAY_CODE:
                 SetState( STATE_PARSE_SIMPLE );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing water runway: " << line);
+                cur_waterrunway = new WaterRunway(line);
+                if (cur_airport)
+                {
+                    cur_airport->AddWaterRunway( cur_waterrunway );
+                }
                 break;
             case HELIPAD_CODE:
                 SetState( STATE_PARSE_SIMPLE );

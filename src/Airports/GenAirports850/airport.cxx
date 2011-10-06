@@ -995,6 +995,21 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
     point_list taxisigns_nodes = calc_elevations( apt_surf, ts_nodes, 0.0 );
 
+    // calc water runway buoys elevations:
+    point_list buoy_nodes;
+    buoy_nodes.clear();
+    for ( i = 0; i < (int)waterrunways.size(); ++i )
+    {
+        TGPolygon tmp_nodes;
+        tmp_nodes.erase();
+        tmp_nodes = waterrunways[i]->GetNodes();
+        for (j=0; j< tmp_nodes.contour_size( 0 ); ++j )
+        {
+            buoy_nodes.push_back( tmp_nodes.get_pt( 0, j ) );
+        }
+    }
+    point_list water_buoys_nodes = calc_elevations( apt_surf, buoy_nodes, 0.0 );
+
 
     // add base skirt (to hide potential cracks)
     //
@@ -1314,8 +1329,13 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                             0.0 );
     }
 
-
-
+    // write out water buoys
+    for ( i = 0; i < (int)water_buoys_nodes.size(); ++i )
+    {
+    write_index_shared( objpath, b, water_buoys_nodes[i],
+                            "Models/Airport/water_rw_buoy.xml",
+                            0.0 );
+    }
 
 
     string holepath = root + "/AirportArea";
