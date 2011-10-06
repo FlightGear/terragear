@@ -179,10 +179,10 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
     }    
 
     // generate area around runways
-    base      = gen_runway_area_w_extend( 0.0, 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );
+    base      = gen_runway_area_w_extend( 0.0, rwy.width * 0.25, -rwy.overrun[0], -rwy.overrun[1], rwy.width * 0.25);
 
     // also clear a safe area around the runway
-    safe_base = gen_runway_area_w_extend( 0.0, 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
+    safe_base = gen_runway_area_w_extend( 0.0, rwy.width, -rwy.overrun[0], -rwy.overrun[1], rwy.width );
 
     // add this to the airport clearing
     *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
