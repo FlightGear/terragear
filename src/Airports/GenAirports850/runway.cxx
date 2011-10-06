@@ -12,6 +12,7 @@
 #include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
 
+#include "apt_math.hxx"
 #include "beznode.hxx"
 #include "runway.hxx"
 
@@ -100,118 +101,6 @@ int Runway::BuildOsg ( osg::Group* airport )
     airport->addChild( geode );
 
     return 0;
-}
-
-TGPolygon Runway::gen_wgs84_area(   Point3D origin,
-                                    double length_m,
-                                    double displ1, double displ2,
-                                    double width_m,
-                                    double heading_deg,
-                                    double alt_m,
-                                    bool   add_mid )
-{
-    TGPolygon result_list;
-    double length_hdg = heading_deg;
-    double left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-
-    // move to the +l end/center of the runway
-    Point3D ref = origin;
-    double lon, lat, r;
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                        length_m / 2.0 - displ2, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
-
-    // move to the l,-w corner (then we add points in a clockwise direction)
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
-                        -width_m / 2.0, &lat, &lon, &r );
-    Point3D p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
-
-    // move to the l,w corner
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
-                        width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
-
-    if ( add_mid ) {
-        // move to the 0,w point (then we add points in a clockwise direction)
-
-        ref = origin;
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
-                            width_m / 2.0, &lat, &lon, &r );
-        p = Point3D( lon, lat, 0.0 );
-        result_list.add_node( 0, p );
-    }
-
-    // move to the -l end/center of the runway
-    ref = origin;
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
-                        displ1 - length_m/2.0, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
-
-    // move to the -l,w corner (then we add points in a clockwise direction)
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
-                        width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
-
-    // move to the -l,-w corner
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
-                        -width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
-
-    if ( add_mid ) {
-        // move to the 0,-w point (then we add points in a clockwise direction)
-
-        ref = origin;
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
-                            -width_m / 2.0, &lat, &lon, &r );
-        p = Point3D( lon, lat, 0.0 );
-        result_list.add_node( 0, p );
-    }
-
-    return result_list;
-}
-
-
-// generate an area for a runway with expansion specified in meters
-// (return result points in degrees)
-TGPolygon Runway::gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend ) 
-{
-    TGPolygon result_list;
-    Point3D origin = GetMidpoint();
-
-    result_list = gen_wgs84_area( origin, rwy.length + 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, alt_m, false );
-
-    // display points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Results w/ extend (new way)");
-    for ( int i = 0; i < result_list.contour_size( 0 ); ++i ) 
-    {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  " << result_list.get_pt(0, i));
-    }
-
-    return result_list;
-}
-
-
-// generate an area for a runway and include midpoints
-TGPolygon Runway::gen_runway_w_mid( double alt_m, double length_extend_m, double width_extend_m ) 
-{
-    TGPolygon result_list;
-    Point3D origin = GetMidpoint();
-
-    result_list = gen_wgs84_area( origin, rwy.length + 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, alt_m, true );
-
-    // display points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Results w/ mid (new way)");
-    for ( int i = 0; i < result_list.contour_size( 0 ); ++i ) 
-    {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  " << result_list.get_pt(0, i));
-    }
-
-    return result_list;
 }
 
 

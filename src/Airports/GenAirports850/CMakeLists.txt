@@ -1,5 +1,6 @@
 add_executable(genapts850
 	airport.hxx airport.cxx
+	apt_math.hxx apt_math.cxx
 	apt_surface.hxx apt_surface.cxx
 	beznode.hxx
 	closedpoly.hxx closedpoly.cxx

@@ -8,6 +8,7 @@
 #include <Polygon/superpoly.hxx>
 #include <Geometry/point3d.hxx>
 
+#include "apt_math.hxx"
 #include "texparams.hxx"
 
 #include <osg/Group>
@@ -17,6 +18,33 @@ using std::string;
 class Runway
 {
 public:
+
+    Runway(char* def);
+
+    bool IsPrecision()
+    {
+        return true;
+    }
+
+    Point3D GetStart(void)
+    {
+        return ( Point3D( rwy.lon[0], rwy.lat[0], 0.0f ));
+    }
+
+    Point3D GetEnd(void)
+    {
+        return ( Point3D( rwy.lon[1], rwy.lat[1], 0.0f ));
+    }
+
+    Point3D GetMidpoint(void)
+    {
+        return ( Point3D( (rwy.lon[0]+rwy.lon[1])/2.0f, (rwy.lat[0]+rwy.lat[1])/2.0f, 0.0f) );
+    }
+
+    int BuildOsg( osg::Group* airport );
+    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    
+private:
     struct TGRunway {
     // data for whole runway
     int     surface;
@@ -45,37 +73,20 @@ public:
 
     TGRunway rwy;
 
-    Runway(char* def);
-
-    bool IsPrecision()
+    // Build Helpers:
+    // generate an area for a runway and include midpoints
+    TGPolygon gen_runway_w_mid( double alt_m, double length_extend_m, double width_extend_m )
     {
-        return true;
+        return ( gen_wgs84_area(Point3D(GetMidpoint()), rwy.length + 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, alt_m, true) );
     }
 
-    Point3D GetStart(void)
+    // generate an area for a runway with expansion specified in meters
+    // (return result points in degrees)
+    TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
     {
-        return ( Point3D( rwy.lon[0], rwy.lat[0], 0.0f ));
+        return ( gen_wgs84_area(Point3D(GetMidpoint()), rwy.length + 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, alt_m, false) );
     }
 
-    Point3D GetEnd(void)
-    {
-        return ( Point3D( rwy.lon[1], rwy.lat[1], 0.0f ));
-    }
-
-    Point3D GetMidpoint(void)
-    {
-        return ( Point3D( (rwy.lon[0]+rwy.lon[1])/2.0f, (rwy.lat[0]+rwy.lat[1])/2.0f, 0.0f) );
-    }
-
-    int BuildOsg( osg::Group* airport );
-    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
-    
-private:
-
-    // Build Helpers
-    TGPolygon gen_wgs84_area( Point3D origin, double length_m, double displ1, double displ2, double width_m, double heading_deg, double alt_m, bool add_mid );
-    TGPolygon gen_runway_w_mid( double alt_m, double length_extend_m, double width_extend_m );
-    TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend );
 
     void gen_number_block( const std::string& material,
                            TGPolygon poly, double heading, int num,
