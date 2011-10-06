@@ -949,13 +949,31 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
 #if 0 // TODO : along with taxiway sign elevations
-    SG_LOG(SG_GENERAL, SG_INFO, "Computing beacon node elevations");
-    point_list beacon_nodes = calc_elevations( apt_surf, beacons, 0.0 );
     SG_LOG(SG_GENERAL, SG_INFO, "Computing tower node elevations");
     point_list tower_nodes = calc_elevations( apt_surf, towers, 0.0 );
-    SG_LOG(SG_GENERAL, SG_INFO, "Computing windsock node elevations");
-    point_list windsock_nodes = calc_elevations( apt_surf, windsocks, 0.0 );
 #endif
+
+    // calc windsock elevations:
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing windsock node elevations");
+    point_list ws_nodes;
+    ws_nodes.clear();
+    for ( i = 0; i < (int)windsocks.size(); ++i ) 
+    {
+        p = windsocks[i]->GetLoc();
+        ws_nodes.push_back( p );
+    }
+    point_list windsock_nodes = calc_elevations( apt_surf, ws_nodes, 0.0 );
+
+
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing beacon node elevations");
+    point_list b_nodes;
+    b_nodes.clear();
+    for ( i = 0; i < (int)beacons.size(); ++i ) 
+    {
+        p = beacons[i]->GetLoc();
+        b_nodes.push_back( p );
+    }
+    point_list beacon_nodes = calc_elevations( apt_surf, b_nodes, 0.0 );
 
     // add base skirt (to hide potential cracks)
     //
@@ -1233,6 +1251,32 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     write_index( objpath, b, name );
 
 #if 0 // TODO : along with taxiway signs
+    // write out tower references
+    for ( i = 0; i < (int)tower_nodes.size(); ++i ) 
+    {
+        write_index_shared( objpath, b, tower_nodes[i],
+                            "Models/Airport/tower.xml",
+                            0.0 );
+    }
+#endif
+
+    // write out windsock references : TODO - save elevation data in the windsock object
+    for ( i = 0; i < (int)windsock_nodes.size(); ++i ) 
+    {
+    	if ( windsocks[i]->IsLit() ) 
+        {
+            write_index_shared( objpath, b, windsock_nodes[i],
+                                "Models/Airport/windsock_lit.xml",
+                                0.0 );
+        }
+        else
+        {
+            write_index_shared( objpath, b, windsock_nodes[i],
+                                "Models/Airport/windsock.xml",
+                                0.0 );
+    	} 
+    }
+
     // write out beacon references
     for ( i = 0; i < (int)beacon_nodes.size(); ++i ) 
     {
@@ -1241,31 +1285,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                             0.0 );
     }
 
-    // write out tower references
-    for ( i = 0; i < (int)tower_nodes.size(); ++i ) 
-    {
-        write_index_shared( objpath, b, tower_nodes[i],
-                            "Models/Airport/tower.xml",
-                            0.0 );
-    }
-
-    // write out windsock references
-    for ( i = 0; i < (int)windsock_nodes.size(); ++i ) 
-    {
-    	if ( windsock_types[i] == 0 ) 
-        {
-            write_index_shared( objpath, b, windsock_nodes[i],
-                                "Models/Airport/windsock.xml",
-                                0.0 );
-    	} 
-        else 
-        {
-            write_index_shared( objpath, b, windsock_nodes[i],
-                                "Models/Airport/windsock_lit.xml",
-                                0.0 );
-    	}
-    }
-#endif
 
     string holepath = root + "/AirportArea";
     // long int poly_index = poly_index_next();

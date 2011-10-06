@@ -8,6 +8,7 @@ add_executable(genapts850
 	global.hxx
 	lights.cxx
 	linearfeature.hxx linearfeature.cxx
+	linked_objects.hxx linked_objects.cxx
 	main.cxx
 	object.hxx object.cxx
 	parser.hxx parser.cxx

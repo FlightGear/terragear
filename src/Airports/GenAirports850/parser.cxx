@@ -390,10 +390,14 @@ int Parser::ParseLine(char* line)
             case LIGHT_BEACON_CODE:
                 SetState( STATE_PARSE_SIMPLE );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing light beacon: " << line);
+                cur_beacon = new Beacon(line);
+                cur_airport->AddBeacon( cur_beacon );                                
                 break;
             case WINDSOCK_CODE:
                 SetState( STATE_PARSE_SIMPLE );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing windsock: " << line);
+                SG_LOG(SG_GENERAL, SG_ALERT, "Parsing windsock: " << line);
+                cur_windsock = new Windsock(line);
+                cur_airport->AddWindsock( cur_windsock );                                
                 break;
             case TAXIWAY_SIGN:
                 SetState( STATE_PARSE_SIMPLE );

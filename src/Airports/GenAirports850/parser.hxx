@@ -90,6 +90,8 @@ private:
     LinearFeature*  cur_feat;
     BezNode*        prev_node;
     LightingObj*    cur_object;
+    Windsock*       cur_windsock;
+    Beacon*         cur_beacon;
 
     AirportList     airports;
 

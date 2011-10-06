@@ -8,6 +8,7 @@
 #include "object.hxx"
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
+#include "linked_objects.hxx"
 
 using std::string;
 
@@ -45,6 +46,16 @@ public:
         }
     }
 
+    void AddWindsock( Windsock* windsock )
+    {
+        windsocks.push_back( windsock );
+    }
+
+    void AddBeacon( Beacon* beacon )
+    {
+        beacons.push_back( beacon );
+    }
+
     void BuildOsg( osg::Group* airport );
     void BuildBtg( const string& root, const string_list& elev_src );
 
@@ -58,6 +69,8 @@ private:
     FeatureList     features;
     RunwayList      runways;
     LightingObjList lightobjects;
+    WindsockList    windsocks;
+    BeaconList      beacons;
 };
 
 typedef std::vector <Airport *> AirportList;
