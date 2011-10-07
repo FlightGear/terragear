@@ -93,6 +93,7 @@ private:
     LightingObj*    cur_object;
     Windsock*       cur_windsock;
     Beacon*         cur_beacon;
+    Sign*           cur_sign;
 
     AirportList     airports;
 

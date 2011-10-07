@@ -62,6 +62,11 @@ public:
         beacons.push_back( beacon );
     }
 
+    void AddSign( Sign* sign )
+    {
+        signs.push_back( sign );
+    }
+
     void BuildOsg( osg::Group* airport );
     void BuildBtg( const string& root, const string_list& elev_src );
 
@@ -77,6 +82,7 @@ private:
     LightingObjList lightobjects;
     WindsockList    windsocks;
     BeaconList      beacons;
+    SignList        signs;
     HelipadList     helipads;
 };
 

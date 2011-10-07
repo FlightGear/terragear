@@ -115,6 +115,29 @@ void write_index_shared( const string &base, const SGBucket &b,
     fclose( fp );
 }
 
+void write_object_sign( const string &base, const SGBucket &b,
+                         const Point3D &p, const string& sign,
+                         const double &heading )
+{
+    string dir = base + "/" + b.gen_base_path();
+    SGPath sgp( dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
+
+    string file = dir + "/" + b.gen_index_str() + ".ind";
+    // string file = dir + "/" + name;
+    cout << "Output file = " << file << endl;
+
+    FILE *fp;
+    if ( (fp = fopen( file.c_str(), "a" )) == NULL ) {
+	cout << "ERROR: opening " << file << " for writing!" << endl;
+	exit(-1);
+    }
+
+    fprintf( fp, "OBJECT_SIGN %s %.6f %.6f %.1f %.2f\n", sign.c_str(),
+             p.lon(), p.lat(), p.elev(), heading );
+    fclose( fp );
+}
 
 void write_boundary( const string& base, const SGBucket& b, 
 		     const TGPolygon& bounds, long int p_index )

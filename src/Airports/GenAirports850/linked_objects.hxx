@@ -57,5 +57,34 @@ public:
 
 typedef std::vector <Beacon *> BeaconList;
 
+class Sign
+{
+public:
+    Sign(char* def);
+
+    double lat;
+    double lon;
+    double heading;
+    int    reserved;
+    int    size;
+    string sgn_def;
+
+    Point3D GetLoc()
+    {
+        return Point3D( lon, lat, 0.0f );
+    }
+
+    double GetHeading()
+    {
+        return heading;
+    }
+
+    string GetDefinition()
+    {
+        return sgn_def;
+    }
+};
+
+typedef std::vector <Sign *> SignList;
 
 #endif

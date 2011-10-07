@@ -984,6 +984,18 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
     point_list beacon_nodes = calc_elevations( apt_surf, b_nodes, 0.0 );
 
+    // calc taxiway sign elevations:
+    SG_LOG(SG_GENERAL, SG_INFO, "Computing taxiway sign node elevations");
+    point_list ts_nodes;
+    ts_nodes.clear();
+    for ( i = 0; i < (int)signs.size(); ++i ) 
+    {
+        p = signs[i]->GetLoc();
+        ts_nodes.push_back( p );
+    }
+    point_list taxisigns_nodes = calc_elevations( apt_surf, ts_nodes, 0.0 );
+
+
     // add base skirt (to hide potential cracks)
     //
     // this has to happen after we've calculated the node elevations
@@ -1293,6 +1305,17 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                             "Models/Airport/beacon.xml",
                             0.0 );
     }
+
+    // write out taxiway signs references
+    for ( i = 0; i < (int)taxisigns_nodes.size(); ++i ) 
+    {
+        write_object_sign( objpath, b, taxisigns_nodes[i],
+                            signs[i]->GetDefinition(),
+                            0.0 );
+    }
+
+
+
 
 
     string holepath = root + "/AirportArea";

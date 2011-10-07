@@ -407,6 +407,8 @@ int Parser::ParseLine(char* line)
             case TAXIWAY_SIGN:
                 SetState( STATE_PARSE_SIMPLE );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway sign: " << line);
+                cur_sign = new Sign(line);
+                cur_airport->AddSign( cur_sign );                                
                 break;
             case LIGHTING_OBJECT:
                 SetState( STATE_PARSE_SIMPLE );

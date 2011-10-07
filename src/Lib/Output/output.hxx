@@ -53,6 +53,12 @@ void write_index_shared( const std::string &base, const SGBucket &b,
                          const Point3D &p, const std::string& name,
                          const double &heading );
 
+// update index file (list of shared objects to be included in final
+// scenery build)
+void write_object_sign( const std::string &base, const SGBucket &b,
+                         const Point3D &p, const std::string& sign,
+                         const double &heading );
+
 void write_boundary( const std::string& base, const SGBucket& b, 
 		     const TGPolygon& bounds, long int p_index );
 
