@@ -109,7 +109,7 @@ void Runway::gen_rw_marking( const TGPolygon& runway,
     }
 
     //Now create the sections of the runway type
-    double length = rwy.length / 2.0 + 0.5;
+    double length = rwy.length / 2.0;
 
     for ( int i=0; i < rw_marking_list.size(); ++i) {
 	    SG_LOG(SG_GENERAL, SG_INFO, "Runway section texture = " << rw_marking_list[i].tex << " lenght: " << rw_marking_list[i].size);
@@ -184,10 +184,7 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
 	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
     }
 
-    // we add 0.5m to the length for texture overlap.  This puts the
-    // lines on the texture back to the edge of the runway where they
-    // belong.
-    double length = rwy.length / 2.0 + 0.5;
+    double length = rwy.length / 2.0;
     if ( length < 3075 * SG_FEET_TO_METER ) {
         SG_LOG( SG_GENERAL, SG_ALERT,
 	        "Runway " << rwy.rwnum[0] << " is not long enough ("

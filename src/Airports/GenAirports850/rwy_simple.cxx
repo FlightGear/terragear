@@ -67,10 +67,7 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
     runway_half.add_node( 0, runway.get_pt(0, 5) );
     }
 
-    // we add 0.5m to the length for texture overlap.  This puts the
-    // lines on the texture back to the edge of the runway where they
-    // belong.
-    double length = rwy.length / 2.0 + 0.5;
+    double length = rwy.length / 2.0;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
     double heading = 0.0;

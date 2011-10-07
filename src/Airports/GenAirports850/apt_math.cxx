@@ -232,16 +232,13 @@ void gen_tex_section( const TGPolygon& runway,
     // potential artifacts and we may add or remove points and need to
     // do new texture coordinate calcs later.
 
-    // we add 0.5m to the length for texture overlap.  This puts the
-    // lines on the texture back to the edge of the runway where they
-    // belong.
-    double len = length / 2.0 + 0.5;
+    double len = length / 2.0;
     double sect_len = len * ( endl_pct - startl_pct );
 
-    // we add 0.5m to both sides of the runway (4' total) for texture
+    // we add 0.6m to both sides of the runway (1.2m total) for texture
     // overlap.  This puts the lines on the texture back to the edge
     // of the runway where they belong.
-    double wid = width + 0.5;
+    double wid = width + 1.2;
     double sect_wid = wid * ( endw_pct - startw_pct );
 
     TGTexParams tp;
