@@ -75,10 +75,6 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
     double end1_pct = 0.0;
     double heading = 0.0;
 
-    //
-    // Displaced threshold if it exists
-    //
-
     if (rwhalf == 0) {
             heading = rwy.heading + 180.0;
     }
@@ -86,56 +82,23 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
             heading = rwy.heading;
     }
     SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << rwy.marking[rwhalf] );
+
+    // Displaced threshold if it exists
     if ( rwy.threshold[rwhalf] > 0.0 ) {
         SG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is "
                 << rwy.threshold[rwhalf] );
 
-        // reserve 90' for final arrows
-        double thresh = rwy.threshold[rwhalf] - 90.0 * SG_FEET_TO_METER;
-
-        // number of full center arrows
-        int count = (int)(thresh / 200.0 * SG_FEET_TO_METER);
-
-        // length of starting partial arrow
-        double part_len = thresh - ( count * 200.0 * SG_FEET_TO_METER);
-        double tex_pct = (200.0 * SG_FEET_TO_METER - part_len) / 200.0 * SG_FEET_TO_METER;
-
-        // starting (possibly partial chunk)
         start1_pct = end1_pct;
-        end1_pct = start1_pct + ( part_len / length );
-        Runway::gen_runway_section( runway_half,
-                            start1_pct, end1_pct,
-                            0.0, 1.0,
-                            0.0, 1.0, tex_pct, 1.0,
-                            heading,
-                            material, "dspl_thresh",
-                            rwy_polys, texparams, accum );
-
-        // main chunks
-        for ( i = 0; i < count; ++i ) {
-            start1_pct = end1_pct;
-            end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
-            Runway::gen_runway_section( runway_half,
-                                start1_pct, end1_pct,
-                                0.0, 1.0,
-                                0.0, 1.0, 0.0, 1.0,
-                                heading,
-                                material, "dspl_thresh",
-                                rwy_polys, texparams, accum );
-        }
-
-        // final arrows
-        start1_pct = end1_pct;
-        end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
+        end1_pct = start1_pct + ( rwy.threshold[rwhalf] / length );
         Runway::gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
                             heading,
-                            material, "dspl_arrows",
+                            material, "",
                             rwy_polys, texparams, accum );
     }
-
+        // Generate runway
         Runway::gen_runway_section( runway_half,
                             0, 1,
                             0.0, 1.0,
