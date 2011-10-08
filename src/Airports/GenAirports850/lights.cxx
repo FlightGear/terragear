@@ -2578,7 +2578,7 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
 
 
 // top level runway light generator
-void Runway::gen_runway_lights( float alt_m, superpoly_list *lights, TGPolygon *apt_base ) {
+void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
 
     unsigned int i;
 

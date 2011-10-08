@@ -130,7 +130,7 @@ private:
                          texparams_list* texparams,
                          TGPolygon* accum, int marking);
 
-    void gen_runway_lights( float alt_m, superpoly_list* lights, TGPolygon* apt_base );
+    void gen_runway_lights( float alt_m, superpoly_list* lights );
 
     Point3D gen_runway_light_vector( double angle, bool recip );
     superpoly_list gen_runway_edge_lights( bool recip );

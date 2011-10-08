@@ -57,6 +57,11 @@ public:
         }
     }
 
+    void SetBoundary( ClosedPoly* bndry )
+    {
+        boundary = bndry;
+    }
+
     void AddWindsock( Windsock* windsock )
     {
         windsocks.push_back( windsock );
@@ -90,6 +95,7 @@ private:
     BeaconList      beacons;
     SignList        signs;
     HelipadList     helipads;
+    ClosedPoly*     boundary;
 };
 
 typedef std::vector <Airport *> AirportList;

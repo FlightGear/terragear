@@ -59,8 +59,16 @@ public:
     {
         filename        = f;
         cur_airport     = NULL;
+        cur_runway      = NULL;
+        cur_waterrunway = NULL;
+        cur_helipad     = NULL;
         cur_pavement    = NULL;
+        cur_boundary    = NULL;
         cur_feat        = NULL;
+        cur_object      = NULL;
+        cur_windsock    = NULL;
+        cur_beacon      = NULL;
+        cur_sign        = NULL;
         prev_node       = NULL;
         cur_state       = STATE_NONE;
     }
@@ -76,10 +84,12 @@ private:
     LinearFeature*  ParseFeature( char* line );
     ClosedPoly*     ParsePavement( char* line );
     osg::Geode*     ParseRunway(char* line );
+    ClosedPoly*     ParseBoundary( char* line );
+
     int             ParseLine( char* line );
 
-//    int ParseBoundry(char* line, Node* airport);
-
+    BezNode*        prev_node;
+    int             cur_state;
     string          filename;
 
     // a polygon conists of an array of contours 
@@ -89,16 +99,14 @@ private:
     WaterRunway*    cur_waterrunway;
     Helipad*        cur_helipad;
     ClosedPoly*     cur_pavement;
+    ClosedPoly*     cur_boundary;
     LinearFeature*  cur_feat;
-    BezNode*        prev_node;
     LightingObj*    cur_object;
     Windsock*       cur_windsock;
     Beacon*         cur_beacon;
     Sign*           cur_sign;
 
     AirportList     airports;
-
-    int cur_state;
 };
 
 #endif

@@ -114,17 +114,20 @@ void Helipad::BuildBtg( float alt_m,
 
 
     // generate area around helipad
-    TGPolygon base, safe_base;
-    base      = gen_runway_area_w_extend( 0.0, maxsize * 0.25 , 0.0, 0.0, maxsize * 0.25 );
+    if (apt_base)
+    {
+        TGPolygon base, safe_base;
+        base      = gen_runway_area_w_extend( 0.0, maxsize * 0.25 , 0.0, 0.0, maxsize * 0.25 );
 
-    // also clear a safe area around the pad
-    safe_base = gen_runway_area_w_extend( 0.0, maxsize * 0.5, 0.0, 0.0, maxsize * 0.5 );
+        // also clear a safe area around the pad
+        safe_base = gen_runway_area_w_extend( 0.0, maxsize * 0.5, 0.0, 0.0, maxsize * 0.5 );
 
-    // add this to the airport clearing
-    *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
+        // add this to the airport clearing
+        *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
 
-    // and add the clearing to the base
-    *apt_base = tgPolygonUnion( base, *apt_base );
+        // and add the clearing to the base
+        *apt_base = tgPolygonUnion( base, *apt_base );
+    }
 
     // Now generate the helipad lights
     superpoly_list s = gen_helipad_lights();

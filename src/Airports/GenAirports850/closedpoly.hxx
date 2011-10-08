@@ -18,13 +18,20 @@ using std::string;
 class ClosedPoly
 {
 public:
+    ClosedPoly( char* desc );
     ClosedPoly( int st, float s, float th, char* desc );
     
     inline string GetDescription() { return description; }
     void AddNode( BezNode* node );
     int  CloseCurContour();
     int  Finish();
+
     int  BuildOsg( osg::Group* airport );
+
+    // Build BTG for airport base for airports with boundary
+    int  BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing );
+
+    // Build BTG for pavements for airports with no boundary
     int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
     FeatureList* GetFeatures()
@@ -40,6 +47,7 @@ private:
     osg::DrawArrays* CreateOsgPrimitive( point_list contour, osg::Vec3Array* vpave );
     void ExpandContour( point_list& src, TGPolygon& dst, double dist );
 
+    bool   is_pavement;
     int    surface_type;
     float  smoothness;
     float  texture_heading;

@@ -211,6 +211,30 @@ ClosedPoly* Parser::ParsePavement( char* line )
     return poly;
 }
 
+ClosedPoly* Parser::ParseBoundary( char* line )
+{
+    ClosedPoly* poly;
+    char  desc[256];
+    char  *d = NULL;
+    int   numParams;
+
+    numParams = sscanf(line, "%ls", desc);
+
+    if (numParams == 1)
+    {
+        d = strstr(line,desc);
+    }
+    else
+    {
+        d = "none";
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly for airport boundary : " << d);
+    poly = new ClosedPoly(d);
+
+    return poly;
+}
+
 int Parser::SetState( int state )
 {
     // if we are currently parsing pavement, the oly way we know we are done 
@@ -221,6 +245,14 @@ int Parser::SetState( int state )
         cur_pavement->Finish();
         cur_airport->AddPavement( cur_pavement );
         cur_pavement = NULL;
+    } 
+
+    if ( cur_airport && cur_state == STATE_PARSE_BOUNDARY )
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding boundary");
+        cur_boundary->Finish();
+        cur_airport->SetBoundary( cur_boundary );
+        cur_boundary = NULL;
     } 
 
     cur_state = state;
@@ -297,8 +329,7 @@ int Parser::ParseLine(char* line)
 
             case BOUNDRY_CODE:
                 SetState( STATE_PARSE_BOUNDARY );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing airport boundary: " << line);
-//              ParseBoundry(line); 
+                cur_boundary = ParseBoundary( line ); 
                 break;
 
             case NODE_CODE:
@@ -316,6 +347,10 @@ int Parser::ParseLine(char* line)
                     else if ( cur_state == STATE_PARSE_FEATURE )
                     {
                         cur_feat->AddNode( prev_node );
+                    }
+                    else if ( cur_state == STATE_PARSE_BOUNDARY )
+                    {
+                        cur_boundary->AddNode( prev_node );
                     }
                 }
 
@@ -339,6 +374,19 @@ int Parser::ParseLine(char* line)
                         cur_pavement->AddNode( cur_node );
                     }
                     cur_pavement->CloseCurContour();
+                }
+                else if ( cur_state == STATE_PARSE_BOUNDARY )
+                {
+                    if (cur_node != prev_node)
+                    {
+                        cur_boundary->AddNode( prev_node );
+                        cur_boundary->AddNode( cur_node );
+                    }
+                    else
+                    {
+                        cur_boundary->AddNode( cur_node );
+                    }
+                    cur_boundary->CloseCurContour();
                 }
                 else if ( cur_state == STATE_PARSE_FEATURE )
                 {

@@ -14,12 +14,31 @@
 #include "convex_hull.hxx"
 #include "closedpoly.hxx"
 
+ClosedPoly::ClosedPoly( char* desc )
+{
+    is_pavement = false;
+
+    if ( desc )
+    {
+        description = desc;
+    }
+    else
+    {
+        description = "none";
+    }
+        
+    boundary = NULL;
+    cur_contour = NULL;
+    cur_feature = NULL;
+}
 
 ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
 {
     surface_type = st;
     smoothness   = s;
     texture_heading = th;
+    is_pavement = true;
+
     if ( desc )
     {
         description = desc;
@@ -43,31 +62,28 @@ void ClosedPoly::AddNode( BezNode* node )
     }
     cur_contour->push_back( node );
 
-
     SG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : (" << node->GetLoc().x() << "," << node->GetLoc().y() << ")");
 
-
-    // TODO: Create ONE linear feature for each contour.  
-    // Parse the polys in linear feature
-    // if recording a linear feature on the pavement, add this node
-    // to it as well
-    // TODO: just doing marking now, need lighting as well
-    if (!cur_feature)
+    // For pavement polys, add a linear feature for each contour
+    if (is_pavement)
     {
-        string feature_desc = description + ":";
-        if (boundary)
+        if (!cur_feature)
         {
-            feature_desc += "hole";
-        }
-        else
-        {
-            feature_desc += "boundary";
-        }
+            string feature_desc = description + ":";
+            if (boundary)
+            {
+                feature_desc += "hole";
+            }
+            else
+            {
+                feature_desc += "boundary";
+            }
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_feature);
-        cur_feature = new LinearFeature(feature_desc, 1.0f );
-    } 
-    cur_feature->AddNode( node );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_feature);
+            cur_feature = new LinearFeature(feature_desc, 1.0f );
+        } 
+        cur_feature->AddNode( node );
+    }
 }
 
 void ClosedPoly::CreateConvexHull( void )
@@ -77,17 +93,20 @@ void ClosedPoly::CreateConvexHull( void )
     Point3D    p;
     int        i;
 
-    if (boundary->size() > 2){
+    if (boundary->size() > 2)
+    {
         for (i=0; i<boundary->size(); i++)
         {
-
             p = boundary->at(i)->GetLoc();
             nodes.push_back( p );
         }
         convexHull = convex_hull( nodes );
         hull = convexHull.get_contour(0);
-    } else
+    } 
+    else
+    {
         SG_LOG(SG_GENERAL, SG_ALERT, "Boundary size too small: " << boundary->size() << ". Ignoring..." );
+    }
 }
 
 int ClosedPoly::CloseCurContour()
@@ -281,9 +300,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
             SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
         }
     }
-
-    // Add the first point again?
-    // dst->push_back( src->at(0)->GetLoc() );
 }
 
 void ExpandPoint( Point3D *prev, Point3D *cur, Point3D *next, double expand_by, double *heading, double *offset )
@@ -459,7 +475,7 @@ int ClosedPoly::Finish()
     // error handling
     if (boundary == NULL)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "no boundary");
+        SG_LOG(SG_GENERAL, SG_ALERT, "no boundary");
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Converting a poly with " << holes.size() << " holes");
@@ -485,7 +501,7 @@ int ClosedPoly::Finish()
     delete boundary;
     boundary = NULL;
 
-    // The convert the hole contours
+    // and the hole contours
     holes.clear();
 }
 
@@ -579,84 +595,109 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
     string material;
     int j, k;
 
-    switch( surface_type )
+    if (is_pavement)
     {
-        case 1:
-            material = "pa_tiedown";
-            break;
+        switch( surface_type )
+        {
+            case 1:
+                material = "pa_tiedown";
+                break;
 
-        case 2:
-            material = "pc_tiedown";
-            break;
+            case 2:
+                material = "pc_tiedown";
+                break;
 
-        case 3:
-            material = "grass_rwy";
-            break;
-// TODO Differentiate more here:
-        case 4:
-        case 5:
-        case 12:
-        case 13:
-        case 14:
-        case 15:
-            material = "grass_rwy";
-            break;
+            case 3:
+                material = "grass_rwy";
+                break;
+            
+            // TODO Differentiate more here:
+            case 4:
+            case 5:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+                material = "grass_rwy";
+                break;
 
-        default:
-            SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown surface type " << surface_type );
-            exit(1);
+            default:
+                SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown surface type " << surface_type );
+                exit(1);
+        }
+
+        // verify the poly has been generated
+        if ( pre_tess.contours() )    
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
+    
+            // do this before clipping and generating the base
+        	pre_tess = remove_dups( pre_tess );
+            pre_tess = reduce_degeneracy( pre_tess );
+
+            for (int c=0; c<pre_tess.contours(); c++)
+            {
+                for (int pt=0; pt<pre_tess.contour_size(c); pt++)
+                {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: contour " << c << " pt " << pt << ": (" << pre_tess.get_pt(c, pt).x() << "," << pre_tess.get_pt(c, pt).y() << ")" );
+                }
+            }
+
+
+            TGSuperPoly sp;
+            TGTexParams tp;
+
+            TGPolygon clipped = tgPolygonDiff( pre_tess, *accum );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
+
+            TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
+
+            sp.erase();
+            sp.set_poly( split );
+            sp.set_material( material );
+            //sp.set_flag("taxi");
+
+            rwy_polys->push_back( sp );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
+            *accum = tgPolygonUnion( pre_tess, *accum );
+            tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
+            texparams->push_back( tp );
+
+            if ( apt_base )
+            {           
+                ExpandContour( hull, base, 20.0 );
+                ExpandContour( hull, safe_base, 50.0 );
+        
+                // add this to the airport clearing
+                *apt_clearing = tgPolygonUnion( safe_base, *apt_clearing);
+
+                // and add the clearing to the base
+                *apt_base = tgPolygonUnion( base, *apt_base );
+            }
+        }
     }
+
+    // clean up to save ram : we're done here...
+    return 1;
+}
+
+int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing )
+{
+    TGPolygon base, safe_base;
 
     // verify the poly has been generated
     if ( pre_tess.contours() )    
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
     
-        // do this before clipping and generating the base
-    	pre_tess = remove_dups( pre_tess );
-        pre_tess = reduce_degeneracy( pre_tess );
-
-        for (int c=0; c<pre_tess.contours(); c++)
-        {
-            for (int pt=0; pt<pre_tess.contour_size(c); pt++)
-            {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: contour " << c << " pt " << pt << ": (" << pre_tess.get_pt(c, pt).x() << "," << pre_tess.get_pt(c, pt).y() << ")" );
-            }
-        }
-
-
-        TGSuperPoly sp;
-        TGTexParams tp;
-
-        TGPolygon clipped = tgPolygonDiff( pre_tess, *accum );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
-
-        TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
-
-        sp.erase();
-        sp.set_poly( split );
-        sp.set_material( material );
-        //sp.set_flag("taxi");
-
-        rwy_polys->push_back( sp );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
-        *accum = tgPolygonUnion( pre_tess, *accum );
-        tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
-        texparams->push_back( tp );
-
-        ExpandContour( hull, base, 20.0 );
-        ExpandContour( hull, safe_base, 50.0 );
+        hull = pre_tess.get_contour(0);
+        ExpandContour( hull, safe_base, 20.0 );
         
         // add this to the airport clearing
         *apt_clearing = tgPolygonUnion( safe_base, *apt_clearing);
 
         // and add the clearing to the base
-        *apt_base = tgPolygonUnion( base, *apt_base );
+        *apt_base = tgPolygonUnion( pre_tess, *apt_base );
     }
-
-    // clean up to save ram : we're done here...
-
-
-    return 1;
 }

@@ -35,14 +35,12 @@ Airport::Airport( int c, char* def)
 
     code = c;
 
-	SG_LOG(SG_GENERAL, SG_DEBUG, "sscanf " << def);
     numParams = sscanf(def, "%d %d %d %s %ls", &altitude, &x, &y, tmp, d);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "done ");
-	SG_LOG(SG_GENERAL, SG_DEBUG, "got " << altitude << ", " << tmp << ", " << d);
 
     altitude *= SG_FEET_TO_METER;
     icao = tmp;
     description = d;
+    boundary = NULL;
 }
 
 // TODO: fix OSG - it was nice, but unnecesary...
@@ -380,7 +378,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         if ( runways[i]->IsPrecision() ) 
         {
-            runways[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, &apt_base, &apt_clearing );
+            if (boundary)
+            {
+                runways[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, NULL, NULL );
+            }
+            else
+            {
+                runways[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, &apt_base, &apt_clearing );
+            }
 	    }
     }
 
@@ -397,7 +402,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for (i=0; i<helipads.size(); i++ )
         {
-            helipads[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, &apt_base, &apt_clearing );
+            if (boundary)
+            {
+                helipads[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, NULL, NULL );
+            }
+            else
+            {
+                helipads[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, &apt_base, &apt_clearing );
+            }
         }
     }
     // Build the pavements
@@ -406,13 +418,26 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         for ( i=0; i<pavements.size(); i++ )
         {
             SG_LOG(SG_GENERAL, SG_ALERT, "Build Pavement Poly " << i << ": " << pavements[i]->GetDescription());
-            pavements[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, &apt_base, &apt_clearing );
-            // AddFeatures( pavements[i]->GetMarkings() );
+
+            if (boundary)
+            {
+                pavements[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, NULL, NULL );
+            }
+            else
+            {
+                pavements[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, &apt_base, &apt_clearing );
+            }
         }
     }
     else
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "no pavements");
+    }
+
+    // build the base and clearing if there's a boundary
+    if (boundary)
+    {
+        boundary->BuildBtg( altitude, &apt_base, &apt_clearing );
     }
 
     if ( apt_base.total_size() == 0 )
