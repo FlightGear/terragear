@@ -77,14 +77,17 @@ void ClosedPoly::CreateConvexHull( void )
     Point3D    p;
     int        i;
 
-    for (i=0; i<boundary->size(); i++)
-    {
-        p = boundary->at(i)->GetLoc();
-        nodes.push_back( p );
-    }
+    if (boundary->size() > 2){
+        for (i=0; i<boundary->size(); i++)
+        {
 
-    convexHull = convex_hull( nodes );
-    hull = convexHull.get_contour(0);
+            p = boundary->at(i)->GetLoc();
+            nodes.push_back( p );
+        }
+        convexHull = convex_hull( nodes );
+        hull = convexHull.get_contour(0);
+    } else
+        SG_LOG(SG_GENERAL, SG_ALERT, "Boundary size too small: " << boundary->size() << ". Ignoring..." );
 }
 
 int ClosedPoly::CloseCurContour()
@@ -589,8 +592,13 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
         case 3:
             material = "grass_rwy";
             break;
-
+// TODO Differentiate more here:
         case 4:
+        case 5:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
             material = "grass_rwy";
             break;
 
