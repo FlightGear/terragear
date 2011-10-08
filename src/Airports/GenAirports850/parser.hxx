@@ -1,6 +1,9 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
 
+#include <iostream>
+#include <fstream>
+
 #include "beznode.hxx"
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
@@ -52,12 +55,20 @@
 
 #define END_OF_FILE                     (99)
 
+using namespace std;
+
+
+typedef std::vector <long> ParseList;
+
 class Parser
 {
 public:
-    Parser(string& f)
+    Parser(string& datafile, const string& root, const string_list& elev_src)
     {
-        filename        = f;
+        filename        = datafile;
+        work_dir        = root;
+        elevation       = elev_src;
+
         cur_airport     = NULL;
         cur_runway      = NULL;
         cur_waterrunway = NULL;
@@ -73,11 +84,18 @@ public:
         cur_state       = STATE_NONE;
     }
     
-    int             Parse( char* icao );
-    void            WriteBtg( const string& root, const string_list& elev_src );
-    osg::Group*     CreateOsgGroup( void );
+//    int             Parse( char* icao );
+    void            FindAirport( string icao );
+    void            AddAirport( string icao );
+    void            AddAirports( float min_lat, float min_lon, float max_lat, float max_lon );
+    void            Parse( void );
+
+//    osg::Group*     CreateOsgGroup( void );
     
+
 private:
+    bool            IsAirportDefinition( char* line, string icao );
+
     int             SetState( int state );
 
     BezNode*        ParseNode( int type, char* line, BezNode* prevNode );
@@ -91,6 +109,8 @@ private:
     BezNode*        prev_node;
     int             cur_state;
     string          filename;
+    string_list     elevation;
+    string          work_dir;
 
     // a polygon conists of an array of contours 
     // (first is outside boundry, remaining are holes)
@@ -106,7 +126,8 @@ private:
     Beacon*         cur_beacon;
     Sign*           cur_sign;
 
-    AirportList     airports;
+    // List of positions in database file to parse
+    ParseList       parse_positions;
 };
 
 #endif

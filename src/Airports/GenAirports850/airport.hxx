@@ -77,6 +77,11 @@ public:
         signs.push_back( sign );
     }
 
+    string GetIcao( )
+    {
+        return icao;
+    }
+
     void BuildOsg( osg::Group* airport );
     void BuildBtg( const string& root, const string_list& elev_src );
 

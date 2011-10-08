@@ -29,18 +29,54 @@
 Airport::Airport( int c, char* def)
 {
     int   numParams;
-    char  d[100];
-    char  tmp[16];
+    char* tok;
     int   x, y;
 
     code = c;
 
-    numParams = sscanf(def, "%d %d %d %s %ls", &altitude, &x, &y, tmp, d);
+    // we need to tokenize airports, since we can't scanf two strings next to each other...
+    numParams = 0;
+    bool done = false;
+    
+    while (!done)
+    {
+        // trim leading whitespace
+        while(isspace(*def)) def++;
+
+        tok = strtok(def, " \t\r\n");
+
+        if (tok)
+        {
+            def += strlen(tok)+1;
+
+            switch( numParams )
+            {
+                case 0:
+                    altitude = atoi(tok);
+                    break;
+
+                case 1:
+                    x = atoi(tok);
+                    break;
+
+                case 2:
+                    y = atoi(tok);
+                    break;
+
+                case 3:
+                    icao = tok;
+                    description = def;
+                    done = true;
+                    break;
+            }
+        }
+        numParams++;
+    }
 
     altitude *= SG_FEET_TO_METER;
-    icao = tmp;
-    description = d;
     boundary = NULL;
+
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Created airport with icao " << icao << " and description " << description );
 }
 
 // TODO: fix OSG - it was nice, but unnecesary...

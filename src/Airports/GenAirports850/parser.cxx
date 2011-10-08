@@ -3,35 +3,140 @@
 
 #include "parser.hxx"
 
-#if 0
-int Parser::ParseBoundry(char* line)
-{
-    return 0;    
-} 
-#endif
 
-int Parser::Parse( char* icao )
+bool Parser::IsAirportDefinition( char* line, string icao )
 {
-    string line;
-    char tmp[2048];
+    char*    tok;
+    int      code;
+    Airport* airport = NULL;
+    bool     match = false;
+    
+    // Get the number code
+    tok = strtok(line, " \t\r\n");
 
-    sg_gzifstream in( filename );
+    if (tok)
+    {
+        line += strlen(tok)+1;
+        code = atoi(tok);
+
+        switch(code)
+        {
+            case LAND_AIRPORT_CODE: 
+            case SEA_AIRPORT_CODE:
+                airport = new Airport( code, line );
+                if ( airport->GetIcao() == icao )
+                {
+
+                    match = true;
+                }
+                break;
+
+            case HELIPORT_CODE:
+            case LAND_RUNWAY_CODE:
+            case WATER_RUNWAY_CODE:
+            case HELIPAD_CODE:
+            case PAVEMENT_CODE:
+            case LINEAR_FEATURE_CODE:
+            case BOUNDRY_CODE:
+            case NODE_CODE:
+            case BEZIER_NODE_CODE:
+            case CLOSE_NODE_CODE:
+            case CLOSE_BEZIER_NODE_CODE:
+            case TERM_NODE_CODE:
+            case TERM_BEZIER_NODE_CODE:
+            case AIRPORT_VIEWPOINT_CODE:
+            case AIRPLANE_STARTUP_LOCATION_CODE:
+            case LIGHT_BEACON_CODE:
+            case WINDSOCK_CODE:
+            case TAXIWAY_SIGN:
+            case LIGHTING_OBJECT:
+            case COMM_FREQ1_CODE:
+            case COMM_FREQ2_CODE:
+            case COMM_FREQ3_CODE:
+            case COMM_FREQ4_CODE:
+            case COMM_FREQ5_CODE:
+            case COMM_FREQ6_CODE:
+            case COMM_FREQ7_CODE:
+            case END_OF_FILE :
+                break;
+        }
+    }
+
+    return match;
+}
+
+void Parser::AddAirport( string icao )
+{
+    char line[2048];
+    long cur_pos;
+    bool found = false;
+
+    ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
         SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-    while ( !in.eof() ) 
+    SG_LOG( SG_GENERAL, SG_ALERT, "Adding airport " << icao << " to parse list");
+    while ( !in.eof() && !found ) 
     {
-    	in.getline(tmp, 2048);
-    	line = tmp;
+        // remember the position of this line
+        cur_pos = in.tellg();
 
-        // Parse the line
-        ParseLine(tmp);
+        // get a line
+    	in.getline(line, 2048);
+
+        // this is and airport definition - remember it
+        if ( IsAirportDefinition( line, icao ) )
+        {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Found airport " << line << " at " << cur_pos );
+            parse_positions.push_back( cur_pos );
+            found = true;
+        }
+    }    
+}
+
+void Parser::Parse()
+{
+    char tmp[2048];
+    bool done = false;
+    int  i;
+
+    ifstream in( filename.c_str() );
+    if ( !in.is_open() ) 
+    {
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        exit(-1);
     }
 
-    return 1;
+    // for each position in parse_positions, parse an airport
+    for (i=0; i<parse_positions.size(); i++)
+    {
+        SetState(STATE_NONE);
+
+        in.clear();
+
+        SG_LOG( SG_GENERAL, SG_ALERT, "seeking to " << parse_positions[i] );
+        in.seekg(parse_positions[i], ios::beg);
+
+        while ( !in.eof() && (cur_state != STATE_DONE ) )
+        {
+        	in.getline(tmp, 2048);
+
+            // Parse the line
+            ParseLine(tmp);
+        }
+
+        // write the airport BTG
+        if (cur_airport)
+        {
+            cur_airport->BuildBtg( work_dir, elevation );
+
+            delete cur_airport;
+            cur_airport = NULL;
+        }
+    }
 }
 
 BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
@@ -183,7 +288,7 @@ LinearFeature* Parser::ParseFeature( char* line )
         feature = new LinearFeature(NULL, 0.0f);
     }
         
-    SG_LOG(SG_GENERAL, SG_ALERT, "Creating Linear Feature with desription \"" << line << "\"");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Linear Feature with desription \"" << line << "\"");
 
     return feature;
 }
@@ -226,7 +331,7 @@ ClosedPoly* Parser::ParseBoundary( char* line )
     }
     else
     {
-        d = "none";
+        d = (char *)"none";
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly for airport boundary : " << d);
@@ -278,10 +383,16 @@ int Parser::ParseLine(char* line)
         {
             case LAND_AIRPORT_CODE: 
             case SEA_AIRPORT_CODE:
-                SetState( STATE_PARSE_SIMPLE );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
-                cur_airport = new Airport( code, line );
-                airports.push_back( cur_airport );
+                if (cur_state == STATE_NONE)
+                {
+                    SetState( STATE_PARSE_SIMPLE );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
+                    cur_airport = new Airport( code, line );
+                }
+                else
+                {
+                    SetState( STATE_DONE );
+                }
                 break;
             case HELIPORT_CODE:
                 SetState( STATE_PARSE_SIMPLE );
@@ -504,19 +615,10 @@ int Parser::ParseLine(char* line)
         }
     }
 
-    return 0;
+    return cur_state;
 }
 
-void Parser::WriteBtg( const string& root, const string_list& elev_src )
-{
-    int i;
-
-    for (i=0; i<airports.size(); i++)
-    {
-        airports[i]->BuildBtg( root, elev_src );
-    }
-}
-
+#if 0
 osg::Group* Parser::CreateOsgGroup( void )
 {
     osg::Group* airportNode = new osg::Group();
@@ -530,4 +632,5 @@ osg::Group* Parser::CreateOsgGroup( void )
 
     return airportNode;
 }
+#endif
 

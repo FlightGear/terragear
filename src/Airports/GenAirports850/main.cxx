@@ -58,16 +58,18 @@
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>
-
 #include <simgear/misc/sgstream.hxx>
-//#include <simgear/misc/strutils.hxx>
 
 #include <Polygon/index.hxx>
+#include <Geometry/util.hxx>
 
 #include "beznode.hxx"
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
 #include "parser.hxx"
+
+using namespace std;
+
 
 // TODO : Modularize this function
 // IDEAS 
@@ -105,6 +107,42 @@ void setup_default_elevation_sources(string_list& elev_src) {
     elev_src.push_back( "SRTM-30" );
 }
 
+// Display help and usage
+static void help( int argc, char **argv, const string_list& elev_src ) {
+    cout << "genapts generates airports for use in generating scenery for the FlightGear flight simulator.  \n";
+    cout << "Airport, runway, and taxiway vector data and attributes are input, and generated 3D airports \n";
+    cout << "are output for further processing by the TerraGear scenery creation tools.  \n";
+    cout << "\n\n";
+    cout << "The standard input file is runways.dat.gz which is found in $FG_ROOT/Airports.  \n";
+    cout << "This file is periodically generated for the FlightGear project by Robin Peel, who \n";
+    cout << "maintains an airport database for both the X-Plane and FlightGear simulators.  \n";
+    cout << "The format of this file is documented on the FlightGear web site.  \n";
+    cout << "Any other input file corresponding to this format may be used as input to genapts.  \n";
+    cout << "Input files may be gzipped or left as plain text as required.  \n";
+    cout << "\n\n";
+    cout << "Processing all the world's airports takes a *long* time.  To cut down processing time \n";
+    cout << "when only some airports are required, you may refine the input selection either by airport \n";
+    cout << "or by area.  By airport, either one airport can be specified using --airport=abcd, where abcd is \n";
+    cout << "a valid airport code eg. --airport-id=KORD, or a starting airport can be specified using --start-id=abcd \n";
+    cout << "where once again abcd is a valid airport code.  In this case, all airports in the file subsequent to the \n";
+    cout << "start-id are done.  This is convienient when re-starting after a previous error.  \n";
+    cout << "\nAn input area may be specified by lat and lon extent using min and max lat and lon.  \n";
+    cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string \n";
+    cout << "such as eg. w080n40, e000s27.  \n";
+    cout << "\nAn input file containing only a subset of the world's \n";
+    cout << "airports may of course be used.\n";
+    cout << "\n\n";
+    cout << "It is necessary to generate the elevation data for the area of interest PRIOR TO GENERATING THE AIRPORTS.  \n";
+    cout << "Failure to do this will result in airports being generated with an elevation of zero.  \n";
+    cout << "The following subdirectories of the work-dir will be searched for elevation files:\n\n";
+    
+    string_list::const_iterator elev_src_it;
+    for (elev_src_it = elev_src.begin(); elev_src_it != elev_src.end(); elev_src_it++) {
+    	    cout << *elev_src_it << "\n";
+    }
+    cout << "\n";
+    usage( argc, argv );
+}
 
 // TODO: where do these belong
 int nudge = 10;
@@ -116,7 +154,6 @@ int main(int argc, char **argv)
     float max_lon = 180;
     float min_lat = -90;
     float max_lat = 90;
-    bool  ready_to_go = true;
     bool  view_osg = false;
 
     string_list elev_src;
@@ -154,7 +191,6 @@ int main(int argc, char **argv)
         else if ( arg.find("--start-id=") == 0 ) 
         {
     	    start_id = arg.substr(11);
-    	    ready_to_go = false;
      	} 
         else if ( arg.find("--nudge=") == 0 ) 
         {
@@ -176,7 +212,6 @@ int main(int argc, char **argv)
         {
     	    max_lat = atof( arg.substr(10).c_str() );
         } 
-#if 0
         else if ( arg.find("--chunk=") == 0 ) 
         {
             tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(), 10.0);
@@ -193,11 +228,9 @@ int main(int argc, char **argv)
             max_lon = rectangle.getMax().x();
             max_lat = rectangle.getMax().y();
     	} 
-#endif
         else if ( arg.find("--airport=") == 0 ) 
         {
     	    airport_id = arg.substr(10).c_str();
-    	    ready_to_go = false;
     	} 
         else if ( arg == "--clear-dem-path" ) 
         {
@@ -220,13 +253,11 @@ int main(int argc, char **argv)
         {
     	    slope_max = atof( arg.substr(12).c_str() );
     	} 
-#if 0
         else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) 
         {
     	    help( argc, argv, elev_src );
     	    exit(-1);
     	} 
-#endif
         else 
         {
     	    usage( argc, argv );
@@ -290,48 +321,40 @@ int main(int argc, char **argv)
     SG_LOG(SG_GENERAL, SG_INFO, "Creating parser");
 
     // Create the parser...
-    Parser* parser = new Parser(input_file);
+    Parser* parser = new Parser(input_file, work_dir, elev_src);
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Parse katl");
-    parser->Parse((char*)"edfe");
-
-    if (view_osg)
+    // just one airport 
+    if ( airport_id != "" )
     {
-        // just view in OSG
-        osg::Group* airportNode;
+        // just find and add the one airport
+        parser->AddAirport( airport_id );
 
-        SG_LOG(SG_GENERAL, SG_INFO, "View OSG");
-        airportNode = parser->CreateOsgGroup();
+        SG_LOG(SG_GENERAL, SG_INFO, "Finished Adding airport - now parse");
+        
+        // and start the parser
+        parser->Parse();
+    }
+#if 0
+    else if ( start_id != "" )
+    {
+        // scroll forward in datafile
+        parser->FindAirport( start_id );
 
-        // construct the viewer.
-        osgViewer::Viewer viewer;
+        // add remaining airports within boundary
+        parser->AddAirports( min_lat, min_lon, max_lat, max_lon );
 
-        // add the thread model handler
-        viewer.addEventHandler(new osgViewer::ThreadingHandler);
-
-        // add the window size toggle handler
-        viewer.addEventHandler(new osgViewer::WindowSizeHandler);
-
-        // add model to viewer.
-        viewer.setSceneData( airportNode );
-        viewer.setUpViewAcrossAllScreens();
-
-        // create the windows and run the threads.
-        viewer.realize();
-    
-        viewer.setCameraManipulator(new osgGA::TrackballManipulator());
-
-        osgUtil::Optimizer optimzer;
-        optimzer.optimize(airportNode);
-
-        viewer.run();    
+        // parse all the airports that were found
+        parser->Parse();
     }
     else
     {
-        // write a .btg file....
-        SG_LOG(SG_GENERAL, SG_INFO, "Write BTG");
-        parser->WriteBtg(work_dir, elev_src);
+        // find all airports within given boundary
+        parser->AddAirports( min_lat, min_lon, max_lat, max_lon );
+
+        // and parser them
+        parser->Parse();
     }
+#endif
 
     SG_LOG(SG_GENERAL, SG_INFO, "Done");
 
