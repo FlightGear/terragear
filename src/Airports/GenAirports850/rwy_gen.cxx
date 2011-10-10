@@ -289,63 +289,10 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
 			rwy_polys, texparams, accum );
  }
 
-if (!rwy.marking[rwhalf] == 0){
-    //
-    // Runway designation letter
-    //
-    int len = rwname.length();
-    string letter = "";
-    for ( i = 0; i < len; ++i ) {
-	string tmp = rwname.substr(i, 1);
-	if ( tmp == "L" ) {
-	    letter = "L";
-	} else if ( tmp == "R" ) {
-	    letter = "R";
-	} else if ( tmp == "C" ) {
-	    letter = "C";
-	}
-    }
+    // Runway designation block
+    gen_rw_designation( material, runway_half, heading,
+                        rwname, start1_pct, end1_pct, rwy_polys, texparams, accum );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
-
-    if ( !letter.empty() ) {
-	start1_pct = end1_pct;
-	end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
-	gen_runway_section( runway_half,
-			    start1_pct, end1_pct,
-			    0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    heading,
-			    material, letter,
-			    rwy_polys, texparams, accum );
-    }
-
-    //
-    // Runway designation number(s)
-    //
-
-    len = rwname.length();
-    string snum = rwname;
-    for ( i = 0; i < len; ++i ) {
-	string tmp = rwname.substr(i, 1);
-	if ( tmp == "L" || tmp == "R" || tmp == "C" || tmp == " " ) {
-	    snum = rwname.substr(0, i);
-	}
-    }
-
-    SG_LOG(SG_GENERAL, SG_INFO, "Runway num = '" << snum );
-
-    int num = atoi( snum.c_str() );
-    while ( num <= 0 ) {
-        num += 36;
-    }
-
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 80.0 * SG_FEET_TO_METER / length );
-    gen_number_block( material, runway_half, heading,
-		      num, start1_pct, end1_pct, rwy_polys, texparams, accum );
- }
 
 
     if (rwy.marking[rwhalf] > 1){

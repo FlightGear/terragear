@@ -35,58 +35,80 @@
 using std::string;
 
 
-void Runway::gen_number_block( const string& material,
-                       TGPolygon poly, double heading, int num,
-                       double start_pct, double end_pct,
-                       superpoly_list *rwy_polys,
-                       texparams_list *texparams,
-                       TGPolygon *accum )
+void Runway::gen_rw_designation( const string& material,
+                                 TGPolygon poly, double heading, string rwname,
+                                 double &start_pct, double &end_pct,
+                                 superpoly_list *rwy_polys,
+                                 texparams_list *texparams,
+                                 TGPolygon *accum )
 {
-    char tex1[32]; tex1[0] = '\0';
-    char tex2[32]; tex2[0] = '\0';
+    if (rwname != "XX"){ /* Do not create a designation block if the runway name is set to none */
+        string letter = "";
+        double length = rwy.length / 2.0;
+        for ( int i = 0; i < rwname.length(); ++i ) {
+            string tmp = rwname.substr(i, 1);
+            if ( tmp == "L" || tmp == "R" || tmp == "C" ) {
+                rwname = rwname.substr(0, i);
+                letter = tmp;
+            }
+        }
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway num = " << num);
+        // create runway designation letter
+        if ( !letter.empty() ) {
+            start_pct = end_pct;
+            end_pct = start_pct + ( 90.0 * SG_FEET_TO_METER / length );
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, letter,
+                                rwy_polys, texparams, accum );
+        }
 
-    if ( num == 0 ) {
-        SG_LOG( SG_GENERAL, SG_ALERT,
-                "Ack! Someone passed in a runway number of '0'" );
-        exit(-1);
-    }
 
-    if ( num == 11 ) {
-	sprintf( tex1, "11" );
-    } else if ( num < 10 ) {
-	sprintf( tex1, "%dc", num );
-    } else {
-	sprintf( tex1, "%dl", num / 10 );
-	sprintf( tex2, "%dr", num - (num / 10 * 10));
-    }
+        // create runway designation number(s)
+        if (rwname == "0")
+            rwname = "36";
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
 
-    // printf("tex1 = '%s'  tex2 = '%s'\n", tex1, tex2);
+        char tex1[32]; tex1[0] = '\0';
+        char tex2[32]; tex2[0] = '\0';
 
-    if ( num < 10 || num == 11 ) {
-	gen_runway_section( poly,
-			    start_pct, end_pct,
-			    0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    heading,
-			    material, tex1,
-			    rwy_polys, texparams, accum );
-    } else {
-        gen_runway_section( poly,
-                            start_pct, end_pct,
-                            0.0, 0.5,
-                            0.0, 1.0, 0.0, 1.0,
-                            heading,
-                            material, tex1,
-                            rwy_polys, texparams, accum );
-        gen_runway_section( poly,
-                            start_pct, end_pct,
-                            0.5, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-                            heading,
-                            material, tex2,
-                            rwy_polys, texparams, accum );
+        start_pct = end_pct;
+        end_pct = start_pct + ( 80.0 * SG_FEET_TO_METER / length );
+
+        if (rwname.length() == 2) {
+            sprintf( tex1, "%c%c", rwname[0], 'l');
+            sprintf( tex2, "%c%c", rwname[1], 'r');
+
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.0, 0.5,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, tex1,
+                                rwy_polys, texparams, accum );
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.5, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, tex2,
+                                rwy_polys, texparams, accum );
+
+        } else if (rwname.length() == 1) {
+            sprintf( tex1, "%c%c", rwname[0], 'c');
+
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, tex1,
+                                rwy_polys, texparams, accum );
+        }
     }
 }
 

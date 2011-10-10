@@ -88,12 +88,12 @@ private:
     }
 
 
-    void gen_number_block( const std::string& material,
-                           TGPolygon poly, double heading, int num,
-                           double start_pct, double end_pct,
-                           superpoly_list* rwy_polys,
-                           texparams_list* texparams,
-                           TGPolygon* accum );
+    void gen_rw_designation( const std::string& material,
+                             TGPolygon poly, double heading, string rwname,
+                             double &start_pct, double &end_pct,
+                             superpoly_list* rwy_polys,
+                             texparams_list* texparams,
+                             TGPolygon* accum );
 
     // generate the runway overrun area
     void gen_runway_overrun( const TGPolygon& runway_half,
