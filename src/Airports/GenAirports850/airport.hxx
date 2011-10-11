@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "runway.hxx"
 #include "object.hxx"
@@ -82,6 +83,21 @@ public:
         return icao;
     }
 
+    void GetBuildTime( struct timeval& tm )
+    {
+        tm = build_time;
+    }
+
+    void GetTriangulationTime( struct timeval& tm )
+    {
+        tm = triangulation_time;
+    }
+
+    void GetCleanupTime( struct timeval& tm )
+    {
+        tm = cleanup_time;
+    }
+
     void BuildOsg( osg::Group* airport );
     void BuildBtg( const string& root, const string_list& elev_src );
 
@@ -101,6 +117,11 @@ private:
     SignList        signs;
     HelipadList     helipads;
     ClosedPoly*     boundary;
+
+    // stats
+    struct timeval  build_time;
+    struct timeval  cleanup_time;
+    struct timeval  triangulation_time;
 };
 
 typedef std::vector <Airport *> AirportList;

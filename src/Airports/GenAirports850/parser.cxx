@@ -1,3 +1,5 @@
+#include <sys/time.h>
+
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
 
@@ -102,6 +104,12 @@ void Parser::Parse()
     char tmp[2048];
     bool done = false;
     int  i;
+    struct timeval parse_start;
+    struct timeval parse_end;
+    struct timeval parse_time;
+    struct timeval build_time;
+    struct timeval clean_time;
+    struct timeval triangulation_time;
 
     ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
@@ -114,12 +122,12 @@ void Parser::Parse()
     for (i=0; i<parse_positions.size(); i++)
     {
         SetState(STATE_NONE);
-
         in.clear();
 
         SG_LOG( SG_GENERAL, SG_ALERT, "seeking to " << parse_positions[i] );
         in.seekg(parse_positions[i], ios::beg);
 
+        gettimeofday(&parse_start, NULL);
         while ( !in.eof() && (cur_state != STATE_DONE ) )
         {
         	in.getline(tmp, 2048);
@@ -127,15 +135,27 @@ void Parser::Parse()
             // Parse the line
             ParseLine(tmp);
         }
+        gettimeofday(&parse_end, NULL);
+        timersub(&parse_end, &parse_start, &parse_time);
 
         // write the airport BTG
         if (cur_airport)
         {
             cur_airport->BuildBtg( work_dir, elevation );
 
+            cur_airport->GetBuildTime( build_time );
+            cur_airport->GetCleanupTime( clean_time );
+            cur_airport->GetTriangulationTime( triangulation_time );
+
             delete cur_airport;
             cur_airport = NULL;
         }
+
+
+        SG_LOG( SG_GENERAL, SG_ALERT, "Time to parse       " << parse_time.tv_sec << ":" << parse_time.tv_usec );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Time to build       " << build_time.tv_sec << ":" << build_time.tv_usec );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Time to clean up    " << clean_time.tv_sec << ":" << clean_time.tv_usec );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Time to triangulate " << triangulation_time.tv_sec << ":" << triangulation_time.tv_usec );
     }
 }
 

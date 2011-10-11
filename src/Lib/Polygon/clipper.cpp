@@ -39,6 +39,11 @@
 #include <cstdlib>
 #include <ostream>
 
+// TEMP : clipper debugging
+#include <simgear/debug/logstream.hxx>
+
+
+
 //Workaround for older compilers that don't have std::abs
 #if (__GNUC__ == 2 && __GNUC_MINOR__ <= 97) || (defined(_MSC_VER) && _MSC_VER <= 1500)
 namespace std
@@ -1367,6 +1372,7 @@ void Clipper::SetWindingCount(TEdge &edge)
   }
 
   //update windCnt2 ...
+
   if ( IsNonZeroAltFillType(edge) )
   {
     //nonZero filling ...
@@ -1634,6 +1640,7 @@ void Clipper::DeleteFromSEL(TEdge *e)
   if( SelPrev ) SelPrev->nextInSEL = SelNext;
   else m_SortedEdges = SelNext;
   if( SelNext ) SelNext->prevInSEL = SelPrev;
+
   e->nextInSEL = 0;
   e->prevInSEL = 0;
 }
@@ -1915,6 +1922,7 @@ void Clipper::AppendPolygon(TEdge *e1, TEdge *e2)
 //------------------------------------------------------------------------------
 
 
+
 OutRec* Clipper::CreateOutRec()
 {
   OutRec* result = new OutRec;
@@ -1930,6 +1938,7 @@ OutRec* Clipper::CreateOutRec()
 void Clipper::AddOutPt(TEdge *e, TEdge *altE, const IntPoint &pt)
 {
   bool ToFront = (e->side == esLeft);
+
   if(  e->outIdx < 0 )
   {
     OutRec *outRec = CreateOutRec();
@@ -2210,7 +2219,9 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
   if( horzEdge->nextInLML )
   {
     if( horzEdge->outIdx >= 0 )
+	{
       AddOutPt( horzEdge, 0, IntPoint(horzEdge->xtop, horzEdge->ytop));
+	}
     UpdateEdgeIntoAEL( horzEdge );
   }
   else
@@ -2469,7 +2480,10 @@ void Clipper::ProcessEdgesAtTopOfScanbeam(const long64 topY)
   {
     if( IsIntermediate( e, topY ) )
     {
-      if( e->outIdx >= 0 ) AddOutPt(e, 0, IntPoint(e->xtop,e->ytop));
+      if( e->outIdx >= 0 ) 
+	  {
+		AddOutPt(e, 0, IntPoint(e->xtop,e->ytop));
+	  }
       UpdateEdgeIntoAEL(e);
 
       //if output polygons share an edge, they'll need joining later ...
@@ -2548,6 +2562,7 @@ void Clipper::FixupOutPolygon(OutRec &outRec)
 void Clipper::BuildResult(Polygons &polys)
 {
   int k = 0;
+
   polys.resize(m_PolyOuts.size());
   for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
   {

@@ -25,9 +25,16 @@
 //
 //    http://www.cs.man.ac.uk/aig/staff/alan/software/
 //
+
+// which clipping lib to use?
+#define CLIP_GPC
+//#define CLIP_CLIPPER
+
+#ifdef CLIP_GPC
 extern "C" {
 #include <gpc.h>
 }
+#endif
 
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
@@ -40,6 +47,11 @@ extern "C" {
 
 #include "polygon.hxx"
 #include "point2d.hxx"
+
+#ifdef CLIP_CLIPPER
+#include "clipper.hpp"
+using namespace ClipperLib;
+#endif
 
 using std::endl;
 
@@ -299,7 +311,15 @@ void TGPolygon::write_contour( const int contour, const string& file ) const {
     fclose(fp);
 }
 
+// Set operation type
+typedef enum {
+    POLY_DIFF,			// Difference
+    POLY_INT,			// Intersection
+    POLY_XOR,			// Exclusive or
+    POLY_UNION			// Union
+} clip_op;
 
+#ifdef CLIP_GPC
 //
 // wrapper functions for gpc polygon clip routines
 //
@@ -310,9 +330,6 @@ void make_gpc_poly( const TGPolygon& in, gpc_polygon *out ) {
     v_list.num_vertices = 0;
     v_list.vertex = new gpc_vertex[FG_MAX_VERTICES];
 
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "making a gpc_poly");
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "  input contours = " << in.contours());
-
     Point3D p;
     // build the gpc_polygon structures
     for ( int i = 0; i < in.contours(); ++i ) {
@@ -322,6 +339,14 @@ void make_gpc_poly( const TGPolygon& in, gpc_polygon *out ) {
 	  sprintf(message, "Polygon too large, need to increase FG_MAX_VERTICES to a least %d", in.contour_size(i));
 	  throw sg_exception(message);;
 	}
+
+#if 0
+    SG_LOG(SG_GENERAL, SG_ALERT, 
+        "  make_clipper_poly : processing contour " << i << ", nodes = " 
+        << in.contour_size(i) << ", hole = "
+        << in.get_hole_flag(i) 
+    );
+#endif
 
 	for ( int j = 0; j < in.contour_size( i ); ++j ) {
 	    p = in.get_pt( i, j );
@@ -335,16 +360,6 @@ void make_gpc_poly( const TGPolygon& in, gpc_polygon *out ) {
     // free alocated memory
     delete [] v_list.vertex;
 }
-
-
-// Set operation type
-typedef enum {
-    POLY_DIFF,			// Difference
-    POLY_INT,			// Intersection
-    POLY_XOR,			// Exclusive or
-    POLY_UNION			// Union
-} clip_op;
-
 
 // Generic clipping routine
 TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, 
@@ -371,13 +386,13 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
 
     gpc_op op;
     if ( poly_op == POLY_DIFF ) {
-	op = GPC_DIFF;
+    	op = GPC_DIFF;
     } else if ( poly_op == POLY_INT ) {
-	op = GPC_INT;
+	    op = GPC_INT;
     } else if ( poly_op == POLY_XOR ) {
-	op = GPC_XOR;
+    	op = GPC_XOR;
     } else if ( poly_op == POLY_UNION ) {
-	op = GPC_UNION;
+	    op = GPC_UNION;
     } else {
         throw sg_exception("Unknown polygon op, exiting.");
     }
@@ -385,29 +400,12 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
     gpc_polygon_clip( op, gpc_subject, gpc_clip, gpc_result );
 
     for ( int i = 0; i < gpc_result->num_contours; ++i ) {
-	// SG_LOG(SG_GENERAL, SG_DEBUG,
-        //        "  processing contour = " << i << ", nodes = " 
-	//        << gpc_result->contour[i].num_vertices << ", hole = "
-	//        << gpc_result->hole[i]);
-	
-	// sprintf(junkn, "g.%d", junkc++);
-	// junkfp = fopen(junkn, "w");
+    	for ( int j = 0; j < gpc_result->contour[i].num_vertices; j++ ) {
+	        Point3D p( gpc_result->contour[i].vertex[j].x, gpc_result->contour[i].vertex[j].y, -9999.0 );
+    	    result.add_node(i, p);
+    	}
 
-	for ( int j = 0; j < gpc_result->contour[i].num_vertices; j++ ) {
-	    Point3D p( gpc_result->contour[i].vertex[j].x,
-		       gpc_result->contour[i].vertex[j].y,
-		       -9999.0 );
-	    // junkp = in_nodes.get_node( index );
-	    // fprintf(junkfp, "%.4f %.4f\n", junkp.x(), junkp.y());
-	    result.add_node(i, p);
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  - " << index);
-	}
-	// fprintf(junkfp, "%.4f %.4f\n", 
-	//    gpc_result->contour[i].vertex[0].x, 
-	//    gpc_result->contour[i].vertex[0].y);
-	// fclose(junkfp);
-
-	result.set_hole_flag( i, gpc_result->hole[i] );
+    	result.set_hole_flag( i, gpc_result->hole[i] );
     }
 
     // free allocated memory
@@ -417,7 +415,166 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
 
     return result;
 }
+#endif
 
+#ifdef CLIP_CLIPPER
+
+#define FIXEDPT (1000000000000)
+
+IntPoint MakeClipperPoint( Point3D pt )
+{
+	long64 x, y;
+
+	x = (long64)( pt.x() * FIXEDPT );
+	y = (long64)( pt.y() * FIXEDPT );
+
+	return IntPoint( x, y );
+}
+
+Point3D MakeTGPoint( IntPoint pt )
+{
+	double x, y;
+
+	x = (double)( ((double)pt.X) / (double)FIXEDPT );
+	y = (double)( ((double)pt.Y) / (double)FIXEDPT );
+
+	return Point3D( x, y, -9999.0f);
+}
+
+void make_clipper_poly( const TGPolygon& in, Polygons *out ) 
+{
+    Polygon  contour;
+    Point3D  p;
+    int      i, j;	
+
+    if (in.contours())
+    {
+        // assume contour 0 is boundary, 1..x are holes
+        // create the boundary
+
+#if 0
+        SG_LOG(SG_GENERAL, SG_ALERT, 
+            "  make_clipper_poly : processing boundary contour, nodes = " 
+            << in.contour_size(0) << ", hole = "
+            << in.get_hole_flag(0) 
+        );
+#endif
+
+        for (j=0; j<in.contour_size(0); ++j)
+        {
+	        p = in.get_pt( 0, j );
+            contour.push_back(MakeClipperPoint(p));
+        }
+        out->push_back(contour);
+
+        // create the holes
+        for (i=1; i<in.contours(); ++i ) 
+        {        
+#if 0
+            SG_LOG(SG_GENERAL, SG_ALERT, 
+                "  make_clipper_poly : processing hole " << i << ", nodes = " 
+                << in.contour_size(i) << ", hole = "
+                << in.get_hole_flag(i) 
+            );
+#endif
+
+            contour.clear();
+	        for (j=0; j<in.contour_size(i); ++j) 
+            {
+        	    p = in.get_pt( i, j );
+                contour.push_back(MakeClipperPoint(p));
+            }
+            out->push_back(contour);
+	    }
+    }
+}
+
+TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
+{
+    TGPolygon result;
+
+    Polygons clipper_subject;
+    make_clipper_poly( subject, &clipper_subject );
+
+    Polygons clipper_clip;
+    make_clipper_poly( clip, &clipper_clip );
+
+    //ExPolygons clipper_result;
+    Polygons clipper_result;
+
+    ClipType op;
+    if ( poly_op == POLY_DIFF ) {
+	    op = ctDifference;
+    } else if ( poly_op == POLY_INT ) {
+	    op = ctIntersection;
+    } else if ( poly_op == POLY_XOR ) {
+	    op = ctXor;
+    } else if ( poly_op == POLY_UNION ) {
+    	op = ctUnion;
+    } else {
+        throw sg_exception("Unknown polygon op, exiting.");
+    }
+
+    Clipper c;
+	c.Clear();
+	c.AddPolygons(clipper_subject, ptSubject);
+	c.AddPolygons(clipper_clip, ptClip);
+
+    Point3D p;
+    int res_contour = 0;
+	if (c.Execute(op, clipper_result, pftEvenOdd, pftEvenOdd))
+    {
+#if 0 // ExPolygons
+            for (int i=0; i<clipper_result.size(); i++)
+            {
+                struct ExPolygon* pg = &clipper_result[i];
+
+                // Get the boundary contour
+                for (int j = 0; j < pg->outer.size(); j++)
+                {
+                    p = Point3D( pg->outer[j].X, pg->outer[j].Y, -9999.0 );
+        	        result.add_node(res_contour, p);
+                }
+            	result.set_hole_flag(res_contour, 0);
+                res_contour++;
+
+                // then the holes
+                for (int j = 0; j < pg->holes.size(); j++)
+                {
+                    for (int k = 0; k < pg->holes[j].size(); k++)
+                    {
+                        p = Point3D( pg->holes[j].at(k).X, pg->holes[j].at(k).Y, -9999.0 );
+            	        result.add_node(res_contour, p);
+                    }
+              	    result.set_hole_flag(res_contour, 1);
+                    res_contour++;
+                }
+            }
+#endif
+        for (int i=0; i<clipper_result.size(); i++)
+        {
+            Polygon* pg = &clipper_result[i];
+			IntPoint ip;
+
+            for (int j = 0; j < pg->size(); j++)
+            {
+				ip = IntPoint( pg->at(j).X, pg->at(j).Y );
+         	    result.add_node(i, MakeTGPoint(ip));
+            }
+            if (i==0)
+            {
+                result.set_hole_flag(i, 0);                    
+            }
+            else
+            {
+                result.set_hole_flag(i, 1);                    
+            }
+        }
+    }
+
+    return result;
+}
+#endif
 
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip ) {

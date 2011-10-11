@@ -358,6 +358,13 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     double apt_lon = 0.0, apt_lat = 0.0;
     int rwy_count = 0;
 
+    struct timeval  build_start;
+    struct timeval  build_end;
+    struct timeval  cleanup_start;
+    struct timeval  cleanup_end;
+    struct timeval  triangulation_start;
+    struct timeval  triangulation_end;
+
     // Find the average of all the runway long / lats
     // TODO : Need runway object...    
     for (i=0; i<runways.size(); i++)
@@ -391,6 +398,9 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             AddFeatures( pavements[i]->GetFeatures() );
         }
     }
+
+    // Starting to clip the polys
+    gettimeofday(&build_start, NULL);
 
     // Add the linear features
     if (features.size())
@@ -489,6 +499,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     TGPolygon filled_base  = tgPolygonStripHoles( apt_base );
     TGPolygon divided_base = tgPolygonSplitLongEdges( filled_base, 200.0 );
     TGPolygon base_poly    = tgPolygonDiff( divided_base, accum );
+
+    gettimeofday(&build_end, NULL);
+    timersub(&build_end, &build_start, &build_time);
+
+    gettimeofday(&cleanup_start, NULL);
 
     // add segments to polygons to remove any possible "T"
     // intersections
@@ -632,6 +647,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	line_polys[k].set_poly( poly );
     }
 
+    
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes base ");
     SG_LOG(SG_GENERAL, SG_DEBUG, " before: " << base_poly);
@@ -649,6 +665,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     base_poly = remove_tiny_contours( base_poly );
     // write_polygon( base_poly, "base-fin" );
     SG_LOG(SG_GENERAL, SG_DEBUG, " after clean up: " << base_poly);
+
+    gettimeofday(&cleanup_end, NULL);
+    timersub(&cleanup_end, &cleanup_start, &cleanup_time);
+
+    gettimeofday(&triangulation_start, NULL);
 
     // tesselate the polygons and prepair them for final output
     for ( i = 0; i < (int)rwy_polys.size(); ++i ) 
@@ -710,6 +731,9 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating base");
     TGPolygon base_tris = polygon_tesselate_alt( base_poly );
+
+    gettimeofday(&triangulation_end, NULL);
+    timersub(&triangulation_end, &triangulation_start, &triangulation_time);
 
     //
     // We should now have the runway polygons all generated with their
