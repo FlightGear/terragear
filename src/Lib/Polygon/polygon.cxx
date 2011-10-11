@@ -27,8 +27,8 @@
 //
 
 // which clipping lib to use?
-#define CLIP_GPC
-//#define CLIP_CLIPPER
+//#define CLIP_GPC
+#define CLIP_CLIPPER
 
 #ifdef CLIP_GPC
 extern "C" {
@@ -499,8 +499,8 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, const TGPolyg
     Polygons clipper_clip;
     make_clipper_poly( clip, &clipper_clip );
 
-    //ExPolygons clipper_result;
-    Polygons clipper_result;
+    ExPolygons clipper_result;
+    //Polygons clipper_result;
 
     ClipType op;
     if ( poly_op == POLY_DIFF ) {
@@ -524,50 +524,30 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, const TGPolyg
     int res_contour = 0;
 	if (c.Execute(op, clipper_result, pftEvenOdd, pftEvenOdd))
     {
-#if 0 // ExPolygons
-            for (int i=0; i<clipper_result.size(); i++)
-            {
-                struct ExPolygon* pg = &clipper_result[i];
-
-                // Get the boundary contour
-                for (int j = 0; j < pg->outer.size(); j++)
-                {
-                    p = Point3D( pg->outer[j].X, pg->outer[j].Y, -9999.0 );
-        	        result.add_node(res_contour, p);
-                }
-            	result.set_hole_flag(res_contour, 0);
-                res_contour++;
-
-                // then the holes
-                for (int j = 0; j < pg->holes.size(); j++)
-                {
-                    for (int k = 0; k < pg->holes[j].size(); k++)
-                    {
-                        p = Point3D( pg->holes[j].at(k).X, pg->holes[j].at(k).Y, -9999.0 );
-            	        result.add_node(res_contour, p);
-                    }
-              	    result.set_hole_flag(res_contour, 1);
-                    res_contour++;
-                }
-            }
-#endif
-        for (int i=0; i<clipper_result.size(); i++)
+     	for (int i=0; i<clipper_result.size(); i++)
         {
-            Polygon* pg = &clipper_result[i];
+        	struct ExPolygon* pg = &clipper_result[i];
 			IntPoint ip;
 
-            for (int j = 0; j < pg->size(); j++)
+			// Get the boundary contour
+            for (int j = 0; j < pg->outer.size(); j++)
             {
-				ip = IntPoint( pg->at(j).X, pg->at(j).Y );
-         	    result.add_node(i, MakeTGPoint(ip));
+				ip = IntPoint( pg->outer[j].X, pg->outer[j].Y );
+        	    result.add_node(res_contour, MakeTGPoint(ip));
             }
-            if (i==0)
+            result.set_hole_flag(res_contour, 0);
+            res_contour++;
+
+            // then the holes
+            for (int j = 0; j < pg->holes.size(); j++)
             {
-                result.set_hole_flag(i, 0);                    
-            }
-            else
-            {
-                result.set_hole_flag(i, 1);                    
+                for (int k = 0; k < pg->holes[j].size(); k++)
+                {
+					ip = IntPoint( pg->holes[j].at(k).X, pg->holes[j].at(k).Y );
+                   	result.add_node(res_contour, MakeTGPoint(ip));
+                }
+                result.set_hole_flag(res_contour, 1);
+                res_contour++;
             }
         }
     }
