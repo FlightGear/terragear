@@ -38,15 +38,11 @@
 #  include <stdlib.h>
 #endif
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include "rawdem.h"
+extern "C" {    
+    #include "rawdem.h"
+}
 
-#ifdef _MSC_VER
-#define M_ISDIR _S_IFDIR
-#else
-#define M_ISDIR __S_IFDIR
-#endif
+#include <simgear/misc/sg_path.hxx>
 
 static void give_help( char * name )
 {
@@ -56,18 +52,6 @@ static void give_help( char * name )
    printf(" --max-lat=<degs> - set maximum latitude for output.\n");
    printf(" --min-lon=<degs> - set minimum longitude for output.\n");
    printf(" --max-lon=<degs> - set maximum longitude for output.\n");
-}
-
-static int is_file_or_directory( char * cur_item )
-{
-   struct stat buf;
-   if( stat( cur_item, &buf ) == 0 ) {
-      if ( buf.st_mode & M_ISDIR )
-         return 1; // is directory
-      else
-         return 2; // is file
-   }
-   return 0;
 }
 
 int main(int argc, char **argv) {
@@ -176,7 +160,7 @@ int main(int argc, char **argv) {
 
     /* get output dir */
     strcpy(output_dir, argv[last_arg+1]);
-    if ( is_file_or_directory( output_dir ) != 1 ) {
+    if (!SGPath(output_dir).isDir() ) {
        printf( "ERROR: Ouput directory [%s], does not exist!\n", output_dir );
        exit(1);
     }

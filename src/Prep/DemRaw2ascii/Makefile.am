@@ -25,6 +25,7 @@
 
 bin_PROGRAMS = raw2ascii
 
-raw2ascii_SOURCES = main.c rawdem.c rawdem.h
+raw2ascii_SOURCES = main.cxx rawdem.c rawdem.h
 
-raw2ascii_LDADD = $(base_LIBS)
+raw2ascii_LDADD = $(base_LIBS) -lsgmisc -lsgdebug
+

@@ -43,10 +43,6 @@ using std:: string ;
 
 #define MAXBUF 1024
 
-#if defined (__APPLE__)
-typedef int socklen_t;
-#endif
-
 static double start_lon, start_lat;
 static double lat = 0.0;
 static double lon = 0.0;

@@ -6,8 +6,9 @@
 
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
+#include <simgear/misc/sg_path.hxx>
+
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <iostream>
 #include <string.h>
 #include <stdlib.h>
@@ -16,12 +17,6 @@
 using std::cout;
 using std::endl;
 using std::string;
-
-#ifdef _MSC_VER
-#define M_ISDIR _S_IFDIR
-#else
-#define M_ISDIR __S_IFDIR
-#endif
 
 static void give_help( char * name )
 {
@@ -41,18 +36,6 @@ static void check_for_help( int argc, char **argv )
          exit(0);
       }
    }
-}
-
-static int is_file_or_directory( char * cur_item )
-{
-   struct stat buf;
-   if( stat( cur_item, &buf ) == 0 ) {
-      if ( buf.st_mode & M_ISDIR )
-         return 1; // is directory
-      else
-         return 2; // is file
-   }
-   return 0;
 }
 
 int main( int argc, char **argv ) {
@@ -76,7 +59,7 @@ int main( int argc, char **argv ) {
     lat = atof( argv[2] );
     string work_dir = argv[3];
     
-    if ( is_file_or_directory((char *) work_dir.c_str() ) != 1 ) {
+    if ( !SGPath(work_dir).isDir() ) {
        cout << "ERROR: '" << work_dir << "' is not a valid directory!" << endl;
        exit(1);
     }
@@ -96,7 +79,7 @@ int main( int argc, char **argv ) {
     string base = b.gen_base_path();
     string path = work_dir + "/" + base;
 
-    if ( is_file_or_directory((char *) path.c_str() ) != 1 ) {
+    if ( !SGPath(path).isDir() ) {
        cout << "ERROR: '" << path << "' is not a valid directory!" << endl;
        exit(1);
     }
@@ -105,9 +88,9 @@ int main( int argc, char **argv ) {
     cout << "arraybase = " << arraybase << endl;
     
     path = arraybase + ".arr";
-    if ( is_file_or_directory((char *) path.c_str() ) != 2 ) {
+    if ( !SGPath(path).exists() ) {
       path += ".gz";
-       if ( is_file_or_directory((char *) path.c_str() ) != 2 ) {
+       if ( !SGPath(path).exists() ) {
          cout << "WARNING: can not locate " << arraybase << ".arr, nor .arr.gz!" << endl;
          cout << "Query will probably fail, with zero result!" << endl;
        }
