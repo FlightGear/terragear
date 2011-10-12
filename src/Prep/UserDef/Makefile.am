@@ -8,7 +8,7 @@ tguserdef_LDADD = \
 	$(top_builddir)/src/Lib/Output/libOutput.a \
 	$(top_builddir)/src/Lib/poly2tri/libpoly2tri.a \
 	$(top_builddir)/src/Lib/TriangleJRS/libTriangleJRS.a \
-	-lsgbucket -lsgmisc -lsgmath -lsgprops -lsgio -lsgstructure -lsgxml \
+	-lsgbucket -lsgmath -lsgprops -lsgmisc -lsgio -lsgstructure -lsgxml \
 	-lsgdebug \
 	-lOpenThreads \
 	-lgenpolyclip -lz
