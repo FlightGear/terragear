@@ -42,9 +42,10 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/misc/sg_dir.hxx>
 #include <simgear/structure/exception.hxx>
 
-#include <plib/ul.h>
+#include <boost/foreach.hpp>
 
 #include <Array/array.hxx>
 
@@ -209,35 +210,21 @@ void fit_file(const std::string& path) {
         gzclose(fp);
 }
 
-void walk_path(const std::string& path) {
-        struct stat statbuf;
-        if (stat(path.c_str(),&statbuf)!=0) {
-                SG_LOG(SG_GENERAL, SG_ALERT ,"ERROR: Unable to stat '" << path << "':" << strerror(errno));
-                return;
+void walk_path(const SGPath& path) {
+    if (!path.exists()) {
+        SG_LOG(SG_GENERAL, SG_ALERT ,"ERROR: Unable to stat '" << path.str() << "':" << strerror(errno));
+        return;
+    }
+    
+    if ((path.lower_extension() == "arr") || (path.complete_lower_extension() == "arr.gz")) {
+        fit_file(path.str());
+    } else if (path.isDir()) {
+        simgear::Dir d(path);
+        simgear::PathList subdirs = d.children(simgear::Dir::TYPE_DIR | simgear::Dir::NO_DOT_OR_DOTDOT);
+        BOOST_FOREACH(const SGPath& p, subdirs) {
+            walk_path(p);
         }
-        
-        if (endswith(path,".arr.gz") || endswith(path,".arr")) {
-                fit_file(path);
-        } else if (S_ISDIR(statbuf.st_mode)) {
-                ulDir* dir=ulOpenDir(path.c_str());
-                if (!dir) {
-                        SG_LOG(SG_GENERAL, SG_ALERT ,"ERROR: Unable to open directory '" << path << "':" << strerror(errno));
-                        return;
-                }
-                
-                struct ulDirEnt* dirent;
-                
-                while ((dirent=ulReadDir(dir))) {
-                        if (!strcmp(dirent->d_name,".") || !strcmp(dirent->d_name,"..")) {
-                                continue; // skip . and ..
-                        }
-                        SGPath subpath(path);
-                        subpath.append(dirent->d_name);
-                        walk_path(subpath.str());
-                }
-                
-                ulCloseDir(dir);
-        }
+    }
 }
 
 void usage(char* progname, const std::string& msg) {
@@ -311,7 +298,7 @@ int main(int argc, char** argv) {
         SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);
         if (optind<argc) {
                 while (optind<argc) {
-                        walk_path(argv[optind++]);
+                        walk_path(SGPath(argv[optind++]));
                 }
         } else {
                 usage(argv[0],"Insufficient arguments");

@@ -39,11 +39,14 @@
 #include <string>
 #include <vector>
 
-#include <plib/sg.h>
-
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/misc/sg_dir.hxx>
+#include <simgear/misc/sg_path.hxx>
+#include <simgear/math/SGMath.hxx>
+
+#include <boost/foreach.hpp>
 
 #include <Geometry/poly_support.hxx>
 #include <Array/array.hxx>
@@ -82,50 +85,35 @@ double nudge=0.0;
 
 
 // Scan a directory and load polygon files.
-static int actual_load_polys( const string& dir,
+static int actual_load_polys( const SGPath& dir,
 			      TGConstruct& c,
 			      TGClipper& clipper ) {
     int counter = 0;
-    string base = c.get_bucket().gen_base_path();
-    string tile_str = c.get_bucket().gen_index_str();
-    string ext;
-    string file, f_index, full_path;
-    int pos;
+   // string base = c.get_bucket().gen_base_path();
+    //string tile_str = c.get_bucket().gen_index_str();
 
-    ulDir *d;
-    struct ulDirEnt *de;
-
-    if ( (d = ulOpenDir( dir.c_str() )) == NULL ) {
-        cout << "cannot open directory " << dir << "\n";
-	return 0;
+    simgear::Dir d(dir);
+    if (!d.exists()) {
+        cout << "directory not found:" << dir.str() << "\n";
+	    return 0;
     }
-
-    // load all matching polygon files
-    while ( (de = ulReadDir(d)) != NULL ) {
-        file = de->d_name;
-        pos = file.find(".");
-        f_index = file.substr(0, pos);
-
-        if ( tile_str == f_index ) {
-            ext = file.substr(pos + 1);
-            cout << file << "  " << f_index << "  '" << ext << "'" << endl;
-            full_path = dir + "/" + file;
-            if ( (ext == "arr") || (ext == "arr.gz") ||
-                 (ext == "fit") || (ext == "fit.gz") || (ext == "ind") ) {
-                // skip
-            } else if (ext == "osgb36") {
-                cout << "Loading osgb36 poly definition file\n";
-                clipper.load_osgb36_polys( full_path );
-                ++counter;
-            } else {
-                cout << "ext = '" << ext << "'" << endl;
-                clipper.load_polys( full_path );
-                ++counter;
-            }
+    
+    BOOST_FOREACH(const SGPath& p, d.children(simgear::Dir::TYPE_FILE)) {
+        string lext = p.complete_lower_extension();
+        if ((lext == "arr") || (lext == "arr.gz") || 
+            (lext == "fit") || (lext == "fit.gz") || (lext == "ind")) 
+        {
+            // skipped!
+        } else if (lext == "osgb36") {
+            cout << "Loading osgb36 poly definition file\n";
+            clipper.load_osgb36_polys( p.str() );
+            ++counter;
+        } else {
+            cout << "ext = '" << lext << "'" << endl;
+            clipper.load_polys( p.str() );
+            ++counter;
         }
-    }
-
-    ulCloseDir(d);
+    } // of directory file children
 	
     return counter;
 }
@@ -745,7 +733,7 @@ static double tri_ele_area( const TGConstruct& c, const TGTriEle tri ) {
 
 // caclulate the normal for the specified triangle face
 static Point3D calc_normal( TGConstruct& c, int i ) {
-    sgVec3 v1, v2, normal;
+    SGVec3d v1, v2, normal;
 
     point_list wgs84_nodes = c.get_wgs84_nodes();
     triele_list tri_elements = c.get_tri_elements();
@@ -786,19 +774,16 @@ static Point3D calc_normal( TGConstruct& c, int i ) {
     }
 
     if ( degenerate ) {
-	sgSetVec3( normal, p1.x(), p1.y(), p1.z() );
-	sgNormalizeVec3( normal );
-	cout << "Degenerate tri!" << endl;
+        normal = normalize(SGVec3d(p1.x(), p1.y(), p1.z()));
+	    cout << "Degenerate tri!" << endl;
     } else {
-	v1[0] = p2.x() - p1.x();
-	v1[1] = p2.y() - p1.y();
-	v1[2] = p2.z() - p1.z();
-	v2[0] = p3.x() - p1.x();
-	v2[1] = p3.y() - p1.y();
-	v2[2] = p3.z() - p1.z();
-
-	sgVectorProductVec3( normal, v1, v2 );
-	sgNormalizeVec3( normal );
+    	v1[0] = p2.x() - p1.x();
+    	v1[1] = p2.y() - p1.y();
+    	v1[2] = p2.z() - p1.z();
+    	v2[0] = p3.x() - p1.x();
+    	v2[1] = p3.y() - p1.y();
+    	v2[2] = p3.z() - p1.z();
+    	normal = normalize(cross(v1, v2));
     }
 
     return Point3D( normal[0], normal[1], normal[2] );

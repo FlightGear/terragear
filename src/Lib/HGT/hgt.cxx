@@ -42,8 +42,9 @@
 
 #include <simgear/constants.h>
 #include <simgear/io/lowlevel.hxx>
+#include <simgear/misc/sg_dir.hxx>
 
-#include <plib/ul.h>
+#include <boost/foreach.hpp>
 
 #include "hgt.hxx"
 
@@ -81,7 +82,7 @@ TGHgt::open ( const SGPath &f ) {
 
     // open input file (or read from stdin)
     if ( file_name.str() ==  "-" ) {
-	cout << "Loading HGT data file: stdin" << endl;
+        cout << "Loading HGT data file: stdin" << endl;
         if ( (fd = gzdopen(0, "r")) == NULL ) { // 0 == STDIN_FILENO
             cout << "ERROR: opening stdin" << endl;
             return false;
@@ -90,31 +91,24 @@ TGHgt::open ( const SGPath &f ) {
         if ( file_name.extension() == "zip" ) {
             // extract the .zip file to /tmp and point the file name
             // to the extracted file
-	    SGPath tmp_dir = string( tempnam( 0, "hgt" ) );
-	    tmp_dir.append( "dummy" );
-	    tmp_dir.create_dir( 0700 );
-	    cout << "Extracting " << file_name.str() << " to " << tmp_dir.dir() << endl;
-	    string command = "unzip -d \"" + tmp_dir.dir() + "\" " + file_name.base();
-	    system( command.c_str() );
+            SGPath tmp_dir_path = string( tempnam( 0, "hgt" ) );
+            simgear::Dir tmp_dir(tmp_dir_path);
+            
+            SGPath dummy = tmp_dir.file( "dummy" );
+            dummy.create_dir( 0700 );
+            cout << "Extracting " << file_name.str() << " to " << tmp_dir_path.str() << endl;
+            string command = "unzip -d \"" + tmp_dir_path.str() + "\" " + file_name.base();
+            system( command.c_str() );
 
-	    file_name = tmp_dir.dir();
-	    ulDir *dir = ulOpenDir( tmp_dir.dir().c_str() );
-	    if ( dir ) {
-		ulDirEnt *de;
-		while ( ( de = ulReadDir( dir ) ) != 0 ) {
-		    if ( !strcmp(de->d_name,".") || !strcmp(de->d_name,"..") || de->d_isdir ) {
-			continue;
-		    }
-		    SGPath file( de->d_name );
-		    string ext = file.extension();
-		    if ( ext == "HGT" || ext == "hgt" ) {
-			file_name.append( de->d_name );
-			break;
-		    }
-		}
-		ulCloseDir( dir );
-	    }
-
+            simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
+            BOOST_FOREACH(const SGPath& file, files) {
+                string ext = file.extension();
+                if ( ext == "HGT" || ext == "hgt" ) {
+                    file_name = file;
+                    break;
+                }
+            }
+            
             remove_tmp_file = true;
             remove_file_name = file_name.str();
 
@@ -203,19 +197,12 @@ TGHgt::~TGHgt() {
     delete [] data;
     delete [] output_data;
     if ( remove_tmp_file ) {
-	ulDir *dir = ulOpenDir( remove_file_name.dir().c_str() );
-	if ( dir ) {
-	    ulDirEnt *de;
-	    while ( ( de = ulReadDir( dir ) ) != 0 ) {
-                if ( !strcmp(de->d_name,".") || !strcmp(de->d_name,"..") || de->d_isdir ) {
-                    continue;
-                }
-		SGPath file( remove_file_name.dir() );
-		file.append( de->d_name );
-		unlink( file.c_str() );
-	    }
-	    ulCloseDir( dir );
-	}
+        simgear::Dir dir(remove_file_name.dir());
+        simgear::PathList files = dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
+        BOOST_FOREACH(const SGPath& file, files) {
+            unlink( file.c_str() );
+        }
+        
         rmdir( remove_file_name.dir().c_str() );
     }
 }

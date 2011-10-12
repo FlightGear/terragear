@@ -843,7 +843,6 @@ void build_airport( string airport_id, float alt_m,
 
 	rwy_polys[i].set_tris( tri );
 	rwy_polys[i].set_texcoords( tc );
-	rwy_polys[i].set_tri_mode( GL_TRIANGLES );
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating base");

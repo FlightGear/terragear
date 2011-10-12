@@ -40,12 +40,13 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/misc/sg_dir.hxx>
+
+#include <boost/foreach.hpp>
 
 #include <tiffio.h>
 
 #include <Polygon/point2d.hxx>
-
-#include <plib/ul.h>
 
 #include <zlib.h>
 
@@ -105,14 +106,14 @@ TGSrtmTiff::TGSrtmTiff( const SGPath &file, LoadKind lk ) {
     remove_tmp_file = false;
     output_data = 0;
     if ( lkind == BottomLeft ) {
-	data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-	output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
+        data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
+        output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     } else if ( lkind == TopLeft ) {
-	data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
+        data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     } else if ( lkind == BottomRight ) {
-	data = new short int[1][MAX_HGT_SIZE];
+        data = new short int[1][MAX_HGT_SIZE];
     } else /* if ( lkind == TopRight ) */ {
-	data = new short int[1][MAX_HGT_SIZE];
+        data = new short int[1][MAX_HGT_SIZE];
     }
     TGSrtmTiff::open( file );
 }
@@ -121,38 +122,31 @@ TGSrtmTiff::~TGSrtmTiff() {
     delete[] data;
     delete[] output_data;
     if ( remove_tmp_file ) {
-	ulDir *dir = ulOpenDir( remove_file_name.dir().c_str() );
-	if ( dir ) {
-	    ulDirEnt *de;
-	    while ( ( de = ulReadDir( dir ) ) != 0 ) {
-                if ( !strcmp(de->d_name,".") || !strcmp(de->d_name,"..") || de->d_isdir ) {
-                    continue;
-                }
-		SGPath file( remove_file_name.dir() );
-		file.append( de->d_name );
-		unlink( file.c_str() );
-	    }
-	    ulCloseDir( dir );
-	}
+        simgear::Dir dir(remove_file_name.dir());
+        simgear::PathList files = dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
+        BOOST_FOREACH(const SGPath& file, files) {
+            unlink( file.c_str() );
+        }
+        
         rmdir( remove_file_name.dir().c_str() );
     }
     if ( tif )
-	TIFFClose( tif );
+        TIFFClose( tif );
 }
 
 bool TGSrtmTiff::pos_from_name( string name, string &pfx, int &x, int &y ) {
     size_t p = name.find( '_' );
     if ( p == string::npos )
-	return false;
+        return false;
     pfx = name.substr( 0, p );
     name.erase( 0, p + 1 );
     p = name.find( '.' );
     if ( p == string::npos )
-	return false;
+        return false;
     name.erase( p );
     p = name.find( '_' );
     if ( p == string::npos )
-	return false;
+        return false;
 
     x = atoi( name.substr( 0, p ).c_str() );
     y = atoi( name.substr( p+1 ).c_str() );
@@ -168,31 +162,23 @@ bool TGSrtmTiff::open( const SGPath &f ) {
     if ( ext == "zip" ) {
         // extract the .zip file to /tmp and point the file name
         // to the extracted file
-	SGPath tmp_dir = string( tempnam( 0, "hgt" ) );
-	tmp_dir.append( "dummy" );
-	tmp_dir.create_dir( 0700 );
-        cout << "Extracting " << file_name.str() << " to " << tmp_dir.dir() << endl;
-        string command = "unzip -d \"" + tmp_dir.dir() + "\" " + file_name.str();
+        SGPath tmp_dir_path = string( tempnam( 0, "srtm" ) );
+        simgear::Dir tmp_dir(tmp_dir_path);
+        SGPath dummy = tmp_dir.file( "dummy" );
+        dummy.create_dir( 0700 );
+        cout << "Extracting " << file_name.str() << " to " << tmp_dir_path.str() << endl;
+        string command = "unzip -d \"" + tmp_dir_path.str() + "\" " + file_name.base();
         system( command.c_str() );
 
-        file_name = tmp_dir.dir();
-	ulDir *dir = ulOpenDir( tmp_dir.dir().c_str() );
-	if ( dir ) {
-	    ulDirEnt *de;
-	    while ( ( de = ulReadDir( dir ) ) != 0 ) {
-                if ( !strcmp(de->d_name,".") || !strcmp(de->d_name,"..") || de->d_isdir ) {
-                    continue;
-                }
-		SGPath file( de->d_name );
-		string ext = file.extension();
-		if ( ext == "TIF" || ext == "tif" ) {
-		    file_name.append( de->d_name );
-		    break;
-		}
-	    }
-	    ulCloseDir( dir );
-	}
-
+        simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
+        BOOST_FOREACH(const SGPath& file, files) {
+            string ext = file.extension();
+            if ( ext == "TIF" || ext == "tif" ) {
+                file_name = file;
+                break;
+            }
+        }
+        
         remove_tmp_file = true;
         remove_file_name = file_name.str();
 
@@ -232,122 +218,122 @@ bool TGSrtmTiff::load() {
 
     tdata_t buf = _TIFFmalloc( TIFFScanlineSize( tif ) );
     if ( lkind == BottomLeft ) {
-	uint32 row = 0;
-	for ( ; row < h; row++ ) {
-	    TIFFReadScanline( tif, buf, row );
-	    uint32 col = 0;
-	    for ( ; col < w; col++ ) {
-		int16 v = ((int16*)buf)[col];
-		if ( v == -32768 )
-		    v = 0;
-		data[col][6000-1-row] = v;
-	    }
-	    for ( ; col < 6000; col++ ) {
-		data[col][6000-1-row] = 0;
-	    }
-	}
-	for ( ; row < 6000; row++ ) {
-	    uint32 col = 0;
-	    for ( ; col < 6000; col++ ) {
-		data[col][6000-1-row] = 0;
-	    }
-	}
-	int x1 = int( originx / 18000.0 ) + 37,
-	    y1 = int( 12 - ( originy / 18000.0 ) ),
-	    x2 = x1 + 1,
-	    y2 = y1 - 1;
-	if ( x2 > 72 )
-	    x2 -= 72;
-	{
-	    ostringstream name;
-	    name << prefix << "_" << std::setfill( '0' ) << std::setw( 2 ) << x2 << "_" << std::setfill( '0' ) << std::setw( 2 ) << y1 << "." << ext;
-	    SGPath f = dir;
-	    f.append( name.str() );
-	    if ( f.exists() ) {
-		TGSrtmTiff s( f.str(), BottomRight );
-		s.load();
-		s.close();
-		for ( int i = 0; i < 6000; ++i ) {
-		    data[6000][i] = s.data[0][i];
-		}
-	    } else {
-		for ( int i = 0; i < 6000; ++i ) {
-		    data[6000][i] = 0;
-		}
-	    }
-	}
-	if ( y2 != 0 ) {
-	    ostringstream name;
-	    name << prefix << "_" << std::setfill( '0' ) << std::setw( 2 ) << x1 << "_" << std::setfill( '0' ) << std::setw( 2 ) << y2 << "." << ext;
-	    SGPath f = dir;
-	    f.append( name.str() );
-	    if ( f.exists() ) {
-		TGSrtmTiff s( f.str(), TopLeft );
-		s.load();
-		s.close();
-		for ( int i = 0; i < 6000; ++i ) {
-		    data[i][6000] = s.data[i][0];
-		}
-	    } else {
-		for ( int i = 0; i < 6000; ++i ) {
-		    data[i][6000] = 0;
-		}
-	    }
-	} else {
-	    for ( int i = 0; i < 6000; ++i ) {
-		data[i][6000] = data[i][6000-1];
-	    }
-	}
-	if ( y2 != 0 ) {
-	    ostringstream name;
-	    name << prefix << "_" << std::setfill( '0' ) << std::setw( 2 ) << x2 << "_" << std::setfill( '0' ) << std::setw( 2 ) << y2 << "." << ext;
-	    SGPath f = dir;
-	    f.append( name.str() );
-	    if ( f.exists() ) {
-		TGSrtmTiff s( f.str(), TopRight );
-		s.load();
-		s.close();
-		data[6000][6000] = s.data[0][0];
-	    } else {
-		data[6000][6000] = 0;
-	    }
-	} else {
-	    data[6000][6000] = data[6000][6000-1];
-	}
+        uint32 row = 0;
+        for ( ; row < h; row++ ) {
+            TIFFReadScanline( tif, buf, row );
+            uint32 col = 0;
+            for ( ; col < w; col++ ) {
+                int16 v = ((int16*)buf)[col];
+                if ( v == -32768 )
+                    v = 0;
+                data[col][6000-1-row] = v;
+            }
+            for ( ; col < 6000; col++ ) {
+                data[col][6000-1-row] = 0;
+            }
+        }
+        for ( ; row < 6000; row++ ) {
+            uint32 col = 0;
+            for ( ; col < 6000; col++ ) {
+                data[col][6000-1-row] = 0;
+            }
+        }
+        int x1 = int( originx / 18000.0 ) + 37,
+            y1 = int( 12 - ( originy / 18000.0 ) ),
+            x2 = x1 + 1,
+            y2 = y1 - 1;
+        if ( x2 > 72 )
+            x2 -= 72;
+        {
+            ostringstream name;
+            name << prefix << "_" << std::setfill( '0' ) << std::setw( 2 ) << x2 << "_" << std::setfill( '0' ) << std::setw( 2 ) << y1 << "." << ext;
+            SGPath f = dir;
+            f.append( name.str() );
+            if ( f.exists() ) {
+                TGSrtmTiff s( f.str(), BottomRight );
+                s.load();
+                s.close();
+                for ( int i = 0; i < 6000; ++i ) {
+                    data[6000][i] = s.data[0][i];
+                }
+            } else {
+                for ( int i = 0; i < 6000; ++i ) {
+                    data[6000][i] = 0;
+                }
+            }
+        }
+        if ( y2 != 0 ) {
+            ostringstream name;
+            name << prefix << "_" << std::setfill( '0' ) << std::setw( 2 ) << x1 << "_" << std::setfill( '0' ) << std::setw( 2 ) << y2 << "." << ext;
+            SGPath f = dir;
+            f.append( name.str() );
+            if ( f.exists() ) {
+                TGSrtmTiff s( f.str(), TopLeft );
+                s.load();
+                s.close();
+                for ( int i = 0; i < 6000; ++i ) {
+                    data[i][6000] = s.data[i][0];
+                }
+            } else {
+                for ( int i = 0; i < 6000; ++i ) {
+                    data[i][6000] = 0;
+                }
+            }
+        } else {
+            for ( int i = 0; i < 6000; ++i ) {
+                data[i][6000] = data[i][6000-1];
+            }
+        }
+        if ( y2 != 0 ) {
+            ostringstream name;
+            name << prefix << "_" << std::setfill( '0' ) << std::setw( 2 ) << x2 << "_" << std::setfill( '0' ) << std::setw( 2 ) << y2 << "." << ext;
+            SGPath f = dir;
+            f.append( name.str() );
+            if ( f.exists() ) {
+                TGSrtmTiff s( f.str(), TopRight );
+                s.load();
+                s.close();
+                data[6000][6000] = s.data[0][0];
+            } else {
+                data[6000][6000] = 0;
+            }
+        } else {
+            data[6000][6000] = data[6000][6000-1];
+        }
     } else if ( lkind == TopLeft ) {
-	TIFFReadScanline( tif, buf, 0 );
-	uint32 col = 0;
-	for ( ; col < w; col++ ) {
-	    int16 v = ((int16*)buf)[col];
-	    if ( v == -32768 )
-		v = 0;
-	    data[col][0] = v;
-	}
-	for ( ; col < 6000; col++ ) {
-	    data[col][0] = 0;
-	}
+        TIFFReadScanline( tif, buf, 0 );
+        uint32 col = 0;
+        for ( ; col < w; col++ ) {
+            int16 v = ((int16*)buf)[col];
+            if ( v == -32768 )
+                v = 0;
+            data[col][0] = v;
+        }
+        for ( ; col < 6000; col++ ) {
+            data[col][0] = 0;
+        }
     } else if ( lkind == BottomRight ) {
-	uint32 row = 0;
-	for ( ; row < h; row++ ) {
-	    TIFFReadScanline( tif, buf, row );
-	    int16 v = ((int16*)buf)[0];
-	    if ( v == -32768 )
-		v = 0;
-	    data[0][6000-1-row] = v;
-	}
-	for ( ; row < 6000; row++ ) {
-	    data[0][6000-1-row] = 0;
-	}
+        uint32 row = 0;
+        for ( ; row < h; row++ ) {
+            TIFFReadScanline( tif, buf, row );
+            int16 v = ((int16*)buf)[0];
+            if ( v == -32768 )
+                v = 0;
+            data[0][6000-1-row] = v;
+        }
+        for ( ; row < 6000; row++ ) {
+            data[0][6000-1-row] = 0;
+        }
     } else /* if ( lkind == TopRight ) */ {
-	if ( h == 6000 ) {
-	    TIFFReadScanline( tif, buf, h-1 );
-	    int16 v = ((int16*)buf)[0];
-	    if ( v == -32768 )
-		v = 0;
-	    data[0][0] = v;
-	} else {
-	    data[0][0] = 0;
-	}
+        if ( h == 6000 ) {
+            TIFFReadScanline( tif, buf, h-1 );
+            int16 v = ((int16*)buf)[0];
+            if ( v == -32768 )
+                v = 0;
+            data[0][0] = v;
+        } else {
+            data[0][0] = 0;
+        }
     }
     _TIFFfree(buf);
 
@@ -356,7 +342,7 @@ bool TGSrtmTiff::load() {
 
 bool TGSrtmTiff::close() {
     if ( tif )
-	TIFFClose( tif );
+        TIFFClose( tif );
     tif = 0;
     return true;
 }
@@ -365,10 +351,10 @@ int main(int argc, char **argv) {
     sglog().setLogLevels( SG_ALL, SG_WARN );
 
     if ( argc != 3 ) {
-	cout << "Usage " << argv[0] << " <hgt_file> <work_dir>"
+        cout << "Usage " << argv[0] << " <hgt_file> <work_dir>"
              << endl;
         cout << endl;
-	exit(-1);
+        exit(-1);
     }
 
     string hgt_name = argv[1];
@@ -388,32 +374,32 @@ int main(int argc, char **argv) {
     SGBucket b_min( min.x, min.y );
 
     max.x = (hgt.get_originx() + hgt.get_cols() * hgt.get_col_step()) / 3600.0 
-	- SG_HALF_BUCKET_SPAN;
+        - SG_HALF_BUCKET_SPAN;
     max.y = (hgt.get_originy() + hgt.get_rows() * hgt.get_row_step()) / 3600.0 
-	- SG_HALF_BUCKET_SPAN;
+        - SG_HALF_BUCKET_SPAN;
     SGBucket b_max( max.x, max.y );
 
     if ( b_min == b_max ) {
-	hgt.write_area( work_dir, b_min );
+        hgt.write_area( work_dir, b_min );
     } else {
-	SGBucket b_cur;
-	int dx, dy, i, j;
+        SGBucket b_cur;
+        int dx, dy, i, j;
 
-	sgBucketDiff(b_min, b_max, &dx, &dy);
-	cout << "HGT file spans tile boundaries (ok)" << endl;
-	cout << "  dx = " << dx << "  dy = " << dy << endl;
+        sgBucketDiff(b_min, b_max, &dx, &dy);
+        cout << "HGT file spans tile boundaries (ok)" << endl;
+        cout << "  dx = " << dx << "  dy = " << dy << endl;
 
-	if ( (dx > 50) || (dy > 50) ) {
-	    cout << "somethings really wrong!!!!" << endl;
-	    exit(-1);
-	}
+        if ( (dx > 50) || (dy > 50) ) {
+            cout << "somethings really wrong!!!!" << endl;
+            exit(-1);
+        }
 
-	for ( j = 0; j <= dy; j++ ) {
-	    for ( i = 0; i <= dx; i++ ) {
-		b_cur = sgBucketOffset(min.x, min.y, i, j);
-		hgt.write_area( work_dir, b_cur );
-	    }
-	}
+        for ( j = 0; j <= dy; j++ ) {
+            for ( i = 0; i <= dx; i++ ) {
+                b_cur = sgBucketOffset(min.x, min.y, i, j);
+                hgt.write_area( work_dir, b_cur );
+            }
+        }
     }
 
     return 0;

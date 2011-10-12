@@ -43,5 +43,4 @@ void TGSuperPoly::erase() {
     normals.erase();
     texcoords.erase();
     tris.erase();
-    tri_mode = (GLenum)0;
 }

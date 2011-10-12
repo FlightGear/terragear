@@ -36,11 +36,6 @@
 #include <string>
 #include <vector>
 
-#ifdef _MSC_VER
-#  include <windows.h>
-#endif
-#include <GL/gl.h>
-
 #include "polygon.hxx"
 
 class TGSuperPoly {
@@ -52,7 +47,6 @@ private:
     TGPolygon normals;		// corresponding normals
     TGPolygon texcoords;	// corresponding texture coordinates
     TGPolygon tris;		// triangulation
-    GLenum tri_mode;		// GL_TRIANGLE, GL_FAN, GL_TRISTRIP, etc.
     std::string flag;           // For various potential record keeping needs
 
 public:
@@ -75,9 +69,6 @@ public:
 
     inline TGPolygon get_tris() const { return tris; }
     inline void set_tris( const TGPolygon &p ) { tris = p; }
-
-    inline GLenum get_tri_mode() const { return tri_mode; }
-    inline void set_tri_mode( const GLenum &m ) { tri_mode = m; }
 
     inline std::string get_flag() const { return flag; }
     inline void set_flag( const std::string f ) { flag = f; }
