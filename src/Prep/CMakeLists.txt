@@ -12,6 +12,7 @@ add_subdirectory(ShapeFile)
 add_subdirectory(TGVPF)
 add_subdirectory(Terra)
 add_subdirectory(TerraFit)
+add_subdirectory(OGRDecode)
 
 
 

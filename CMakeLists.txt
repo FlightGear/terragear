@@ -31,6 +31,7 @@ find_package(SimGear 2.5.0 REQUIRED)
 find_package(GPC REQUIRED)
 find_package(TIFF) # needed for SRTM
 find_package(NewMat11)
+find_package(GDAL) # needed for OGRDecode
 
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
