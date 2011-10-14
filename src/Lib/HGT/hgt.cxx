@@ -53,23 +53,20 @@ using std::endl;
 using std::string;
 
 
-TGHgt::TGHgt( int _res ) {
+TGHgt::TGHgt( int _res ) 
+{
     hgt_resolution = _res;
 
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-
-    remove_tmp_file = false;
 }
 
 
-TGHgt::TGHgt( int _res, const SGPath &file ) {
+TGHgt::TGHgt( int _res, const SGPath &file )
+{
     hgt_resolution = _res;
-
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-
-    remove_tmp_file = false;
 
     TGHgt::open( file );
 }
@@ -91,27 +88,22 @@ TGHgt::open ( const SGPath &f ) {
         if ( file_name.extension() == "zip" ) {
             // extract the .zip file to /tmp and point the file name
             // to the extracted file
-            SGPath tmp_dir_path = string( tempnam( 0, "hgt" ) );
-            simgear::Dir tmp_dir(tmp_dir_path);
+            tmp_dir = simgear::Dir::tempDir("hgt");
             
-            SGPath dummy = tmp_dir.file( "dummy" );
-            dummy.create_dir( 0700 );
-            cout << "Extracting " << file_name.str() << " to " << tmp_dir_path.str() << endl;
-            string command = "unzip -d \"" + tmp_dir_path.str() + "\" " + file_name.base();
+            cout << "Extracting " << file_name.str() << " to " << tmp_dir.path().str() << endl;
+            string command = "unzip -d \"" + tmp_dir.path().str() + "\" " + file_name.base();
             system( command.c_str() );
 
             simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
             BOOST_FOREACH(const SGPath& file, files) {
-                string ext = file.extension();
-                if ( ext == "HGT" || ext == "hgt" ) {
+                string ext = file.lower_extension();
+                if ( ext == "hgt" ) {
                     file_name = file;
                     break;
                 }
             }
             
             remove_tmp_file = true;
-            remove_file_name = file_name.str();
-
             cout << "Proceeding with " << file_name.str() << endl;
         }
 
@@ -148,12 +140,6 @@ TGHgt::open ( const SGPath &f ) {
 bool
 TGHgt::close () {
     gzclose(fd);
-
-    if ( remove_tmp_file ) {
-        unlink( remove_file_name.c_str() );
-        rmdir( remove_file_name.dir().c_str() );
-    }
-
     return true;
 }
 
@@ -196,13 +182,4 @@ TGHgt::~TGHgt() {
     // printf("class TGSrtmBase DEstructor called.\n");
     delete [] data;
     delete [] output_data;
-    if ( remove_tmp_file ) {
-        simgear::Dir dir(remove_file_name.dir());
-        simgear::PathList files = dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
-        BOOST_FOREACH(const SGPath& file, files) {
-            unlink( file.c_str() );
-        }
-        
-        rmdir( remove_file_name.dir().c_str() );
-    }
 }

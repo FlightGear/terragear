@@ -37,6 +37,12 @@ using std::cout;
 using std::endl;
 using std::string;
 
+TGSrtmBase::~TGSrtmBase()
+{
+    if (remove_tmp_file) {
+        tmp_dir.remove(true /*recursive*/);
+    }
+}
 
 // write out the area of data covered by the specified bucket.  Data
 // is written out column by column starting at the lower left hand

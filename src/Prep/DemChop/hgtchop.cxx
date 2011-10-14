@@ -33,6 +33,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/misc/sg_dir.hxx>
 
 #include <HGT/hgt.hxx>
 #include <Polygon/point2d.hxx>
@@ -67,8 +68,8 @@ int main(int argc, char **argv) {
     }
 
     SGPath sgp( work_dir );
-    sgp.append( "dummy" );
-    sgp.create_dir( 0755 );
+    simgear::Dir workDir(sgp);
+    workDir.create(0755);
 
     TGHgt hgt(resolution, hgt_name);
     hgt.load();

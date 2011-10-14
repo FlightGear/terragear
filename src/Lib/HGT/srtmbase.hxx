@@ -31,11 +31,15 @@
 #include <simgear/compiler.h>
 
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/misc/sg_path.hxx>
+#include <simgear/misc/sg_dir.hxx>
 
 class TGSrtmBase {
 
 protected:
+    TGSrtmBase() : remove_tmp_file(false)
+    {}
+    
+    ~TGSrtmBase();
 
     // coordinates (in arc seconds) of south west corner
     double originx, originy;
@@ -47,7 +51,7 @@ protected:
     double col_step, row_step;
 
     bool remove_tmp_file;
-    SGPath remove_file_name;
+    simgear::Dir tmp_dir;
 
 public:
 

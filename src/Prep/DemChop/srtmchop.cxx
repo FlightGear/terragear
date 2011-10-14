@@ -94,7 +94,6 @@ private:
 TGSrtmTiff::TGSrtmTiff( const SGPath &file ) {
     lkind = BottomLeft;
     tif = 0;
-    remove_tmp_file = false;
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     opened = TGSrtmTiff::open( file );
@@ -103,7 +102,6 @@ TGSrtmTiff::TGSrtmTiff( const SGPath &file ) {
 TGSrtmTiff::TGSrtmTiff( const SGPath &file, LoadKind lk ) {
     lkind = lk;
     tif = 0;
-    remove_tmp_file = false;
     output_data = 0;
     if ( lkind == BottomLeft ) {
         data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
@@ -121,15 +119,6 @@ TGSrtmTiff::TGSrtmTiff( const SGPath &file, LoadKind lk ) {
 TGSrtmTiff::~TGSrtmTiff() {
     delete[] data;
     delete[] output_data;
-    if ( remove_tmp_file ) {
-        simgear::Dir dir(remove_file_name.dir());
-        simgear::PathList files = dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
-        BOOST_FOREACH(const SGPath& file, files) {
-            unlink( file.c_str() );
-        }
-        
-        rmdir( remove_file_name.dir().c_str() );
-    }
     if ( tif )
         TIFFClose( tif );
 }
@@ -160,28 +149,22 @@ bool TGSrtmTiff::open( const SGPath &f ) {
     int x, y;
     pos_from_name( file_name.file(), prefix, x, y );
     if ( ext == "zip" ) {
-        // extract the .zip file to /tmp and point the file name
-        // to the extracted file
-        SGPath tmp_dir_path = string( tempnam( 0, "srtm" ) );
-        simgear::Dir tmp_dir(tmp_dir_path);
-        SGPath dummy = tmp_dir.file( "dummy" );
-        dummy.create_dir( 0700 );
-        cout << "Extracting " << file_name.str() << " to " << tmp_dir_path.str() << endl;
-        string command = "unzip -d \"" + tmp_dir_path.str() + "\" " + file_name.base();
+        tmp_dir = simgear::Dir::tempDir("srtm");
+        
+        cout << "Extracting " << file_name.str() << " to " << tmp_dir.path().str() << endl;
+        string command = "unzip -d \"" + tmp_dir.path().str() + "\" " + file_name.base();
         system( command.c_str() );
 
         simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
         BOOST_FOREACH(const SGPath& file, files) {
-            string ext = file.extension();
-            if ( ext == "TIF" || ext == "tif" ) {
+            string ext = file.lower_extension();
+            if ( (ext == "tif") || (ext == "tiff") ) {
                 file_name = file;
                 break;
             }
         }
         
         remove_tmp_file = true;
-        remove_file_name = file_name.str();
-
         cout << "Proceeding with " << file_name.str() << endl;
     }
 
@@ -361,8 +344,8 @@ int main(int argc, char **argv) {
     string work_dir = argv[2];
 
     SGPath sgp( work_dir );
-    sgp.append( "dummy" );
-    sgp.create_dir( 0755 );
+    simgear::Dir workDir(sgp);
+    workDir.create( 0755 );
 
     TGSrtmTiff hgt( hgt_name );
     hgt.load();
