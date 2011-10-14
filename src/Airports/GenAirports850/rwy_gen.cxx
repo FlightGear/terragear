@@ -22,6 +22,7 @@
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/sg_geodesy.hxx>
 #include "runway.hxx"
 
 #include <stdlib.h>
@@ -331,4 +332,79 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
 
 
 }
+}
+
+void Runway::BuildShoulder( float alt_m,
+                            superpoly_list *rwy_polys,
+                            texparams_list *texparams,
+                            ClipPolyType *accum )
+{
+    string shoulder_surface = "";
+    double shoulder_width;
+    if (rwy.shoulder > 0){  // Add a shoulder to the runway
+        shoulder_width = rwy.width * 0.15;
+        if (shoulder_width > 8.0){
+            shoulder_width = 8.0;
+        }
+        if (rwy.shoulder == 1){
+            shoulder_surface = "pa_shoulder";
+        } else if (rwy.shoulder == 2){
+            shoulder_surface = "pc_shoulder";
+        } else SG_LOG(SG_GENERAL, SG_ALERT, "Unknown shoulder surface code = " << rwy.shoulder );
+
+    } else if (rwy.shoulder == 0){ // We add a fake shoulder if the runway has an asphalt or concrete surface
+        shoulder_width = 1;
+        if (rwy.surface == 1){
+            shoulder_surface = "pa_shoulder_f";
+        } else if (rwy.surface == 2){
+            shoulder_surface = "pc_shoulder_f";
+        }
+    }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Shoulder width = " << shoulder_width );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Shoulder surface is: " << shoulder_surface );
+
+    double lat, lon,r;
+    // Create both shoulder sides
+    for (int i=0; i<2; ++i){
+        double step;
+        double lat, lon,r;
+
+        if (i == 0){
+            step= (rwy.width + shoulder_width)*0.5;
+        } else if (i == 1) {
+            step= -(rwy.width + shoulder_width)*0.5;
+        }
+        double left_hdg = rwy.heading - 90.0;
+        if ( left_hdg < 0 ) { left_hdg += 360.0; }
+
+        geo_direct_wgs_84 ( alt_m, rwy.lat[0], rwy.lon[0], left_hdg,
+                            step, &lat, &lon, &r );
+
+        Point3D shoulder1 = Point3D( lon, lat, 0.0f );
+
+        geo_direct_wgs_84 ( alt_m, rwy.lat[1], rwy.lon[1], left_hdg,
+                            step, &lat, &lon, &r );
+
+        Point3D shoulder2 = Point3D( lon, lat, 0.0f );
+
+        TGPolygon shoulder = gen_wgs84_area( shoulder1, shoulder2, 0.0, 0.0, 0.0, shoulder_width, rwy.heading, alt_m, false);
+
+        TGSuperPoly sp;
+        TGTexParams tp;
+        TGPolygon clipped = tgPolygonDiff( shoulder, *accum );
+        TGPolygon split = tgPolygonSplitLongEdges( clipped, 400.0 );
+
+        sp.erase();
+        sp.set_poly( split );
+        sp.set_material( shoulder_surface );
+        rwy_polys->push_back( sp );
+
+        *accum = tgPolygonUnion( shoulder, *accum );
+        tp = TGTexParams( shoulder.get_pt(0,0), shoulder_width , rwy.length + 2, rwy.heading );
+        if (i == 1){
+            tp.set_maxu(0);
+            tp.set_minu(1);
+        }
+        texparams->push_back( tp );
+    }
 }

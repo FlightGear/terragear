@@ -39,7 +39,18 @@ public:
         return ( Point3D( (rwy.lon[0]+rwy.lon[1])/2.0f, (rwy.lat[0]+rwy.lat[1])/2.0f, 0.0f) );
     }
 
+    bool GetsShoulder()
+    {
+        if (rwy.surface < 3 || rwy.shoulder > 0)
+            return true;
+            else return false;
+    }
+
     int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    void BuildShoulder( float alt_m,
+                                superpoly_list *rwy_polys,
+                                texparams_list *texparams,
+                                ClipPolyType *accum );
     
 private:
     struct TGRunway {
@@ -83,7 +94,6 @@ private:
     {
         return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), rwy.length + 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, alt_m, false) );
     }
-
 
     void gen_rw_designation( const std::string& material,
                              TGPolygon poly, double heading, string rwname,

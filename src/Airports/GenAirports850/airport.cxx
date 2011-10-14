@@ -438,6 +438,15 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         SG_LOG(SG_GENERAL, SG_DEBUG, "no pavements");
     }
 
+    // Build runway shoulders here
+    for (i=0; i<runways.size(); i++ )
+    {
+        if ( runways[i]->GetsShoulder() )
+        {
+            runways[i]->BuildShoulder( altitude, &rwy_polys, &rwy_tps, &accum );
+        }
+    }
+
     // build the base and clearing if there's a boundary
     if (boundary)
     {
