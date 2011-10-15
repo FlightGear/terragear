@@ -153,6 +153,16 @@ class WaterRunway
 public:
     WaterRunway(char* def);
 
+    Point3D GetStart(void)
+    {
+        return ( Point3D( lon[0], lat[0], 0.0f ));
+    }
+
+    Point3D GetEnd(void)
+    {
+        return ( Point3D( lon[1], lat[1], 0.0f ));
+    }
+
     double  width;
     int     buoys;
     char    rwnum[2][16];

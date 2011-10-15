@@ -168,7 +168,7 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
     {
         case 1: // asphalt:
         case 2: // concrete
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: asphalt or concrete" << rwy.surface);
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete" << rwy.surface);
             gen_rwy( alt_m, material, rwy_polys, texparams, accum );
             gen_runway_lights( alt_m, rwy_lights );
             break;
@@ -176,29 +176,29 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         case 3: // Grass
         case 4: // Dirt
         case 5: // Gravel
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
 	        gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
                 gen_runway_lights( alt_m, rwy_lights );
             break;
 
         case 12: // dry lakebed
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: Dry Lakebed");
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Dry Lakebed");
             break;
 
         case 13: // water
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: Water");
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Water");
             break;
 
         case 14: // snow
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: Snow");
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Snow");
             break;
 
         case 15: // transparent
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: transparent");
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: transparent");
             break;
 
         default: // unknown
-            SG_LOG( SG_GENERAL, SG_ALERT, "Build Runway: unknown" << rwy.surface);
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: unknown" << rwy.surface);
             break;
     }    
 

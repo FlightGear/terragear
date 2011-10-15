@@ -319,8 +319,6 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Creating parser");
-
     // Create the parser...
     Parser* parser = new Parser(input_file, work_dir, elev_src);
 
@@ -335,7 +333,6 @@ int main(int argc, char **argv)
         // and start the parser
         parser->Parse();
     }
-#if 0
     else if ( start_id != "" )
     {
         // scroll forward in datafile
@@ -355,7 +352,6 @@ int main(int argc, char **argv)
         // and parser them
         parser->Parse();
     }
-#endif
 
     SG_LOG(SG_GENERAL, SG_INFO, "Done");
 

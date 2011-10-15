@@ -112,7 +112,7 @@ void Runway::gen_rw_marking( const TGPolygon& runway,
     double length = rwy.length / 2.0;
 
     for ( int i=0; i < rw_marking_list.size(); ++i) {
-	    SG_LOG(SG_GENERAL, SG_INFO, "Runway section texture = " << rw_marking_list[i].tex << " lenght: " << rw_marking_list[i].size);
+	    SG_LOG(SG_GENERAL, SG_DEBUG, "Runway section texture = " << rw_marking_list[i].tex << " lenght: " << rw_marking_list[i].size);
 
 	    if ( end1_pct < 1.0 ) {
 		    start1_pct = end1_pct;
@@ -141,7 +141,7 @@ void Runway::gen_rwy( double alt_m,
 			texparams_list *texparams,
 			ClipPolyType *accum )
 {
-    SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
 
     //
     // Generate the basic runway outlines
@@ -186,7 +186,7 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
 
     double length = rwy.length / 2.0;
     if ( length < 3075 * SG_FEET_TO_METER ) {
-        SG_LOG( SG_GENERAL, SG_ALERT,
+        SG_LOG( SG_GENERAL, SG_DEBUG,
 	        "Runway " << rwy.rwnum[0] << " is not long enough ("
                 << rwy.length << ") for precision markings!");
     }
@@ -209,9 +209,9 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
             heading = rwy.heading;
             rwname = rwy.rwnum[1];
     }
-    SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << rwy.marking[rwhalf] );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
     if ( rwy.threshold[rwhalf] > 0.0 ) {
-        SG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is "
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
                 << rwy.threshold[rwhalf] );
 
         // reserve 90' for final arrows

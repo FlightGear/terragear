@@ -30,6 +30,11 @@ public:
     Helipad(char* def);
     void BuildBtg( float alt_m, superpoly_list* heli_polys, texparams_list* texparams, superpoly_list* heli_lights, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
+	Point3D GetLoc()
+	{
+		return Point3D( heli.lon, heli.lat, 0.0f );
+	}
+
 private:
     struct TGRunway {
     // data for whole runway

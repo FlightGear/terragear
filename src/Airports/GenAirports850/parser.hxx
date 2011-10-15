@@ -59,6 +59,7 @@ using namespace std;
 
 
 typedef std::vector <long> ParseList;
+typedef std::vector <string> IcaoList;
 
 class Parser
 {
@@ -128,6 +129,7 @@ private:
 
     // List of positions in database file to parse
     ParseList       parse_positions;
+	IcaoList		airport_icaos;
 };
 
 #endif

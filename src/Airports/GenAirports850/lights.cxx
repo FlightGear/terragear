@@ -2836,8 +2836,9 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
             lights->push_back( s[i] );
         }
     }
-    cout << "Edge light = " << rwy.edge_lights << " Centre light = " << rwy.centerline_lights << endl;
-    cout << "ALC1 flag = " << rwy.approach_lights[0] << " ALC2 flag2 = " << rwy.approach_lights[1] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Edge light = " << rwy.edge_lights << " Centre light = " << rwy.centerline_lights );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "ALC1 flag = " << rwy.approach_lights[0] << " ALC2 flag2 = " << rwy.approach_lights[1] );
+
     // Many aproach lighting systems define the threshold lighting
     // needed, but for those that don't (i.e. REIL, ODALS, or Edge
     // lights defined but no approach lights)
@@ -2849,7 +2850,7 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
                                              approach lighting */ )
     {
         // forward direction
-        cout << "threshold lights for forward direction" << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "threshold lights for forward direction" );
         superpoly_list s = gen_runway_threshold_lights( 0,
                                                         alt_m, false );
         for ( i = 0; i < s.size(); ++i ) {
@@ -2862,7 +2863,7 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
                                              approach lighting */ )
     {
         // reverse direction
-        cout << "threshold lights for reverse direction" << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "threshold lights for reverse direction" );
         superpoly_list s = gen_runway_threshold_lights( 0,
                                                         alt_m, true );
         for ( i = 0; i < s.size(); ++i ) {

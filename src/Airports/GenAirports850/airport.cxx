@@ -366,23 +366,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // TODO : Need runway object...    
     for (i=0; i<runways.size(); i++)
     {
-        printf("runway %d from (%lf,%lf) to (%lf,%lf) : midpoint is (%lf,%lf)\n", 
-            i,
-            runways[i]->GetStart().x(),    runways[i]->GetStart().y(),
-            runways[i]->GetEnd().x(),      runways[i]->GetEnd().y(),
-            runways[i]->GetMidpoint().x(), runways[i]->GetMidpoint().y()
-        );
-
         apt_lon += runways.at(i)->GetMidpoint().x();
         apt_lat += runways.at(i)->GetMidpoint().y();
     }
     apt_lon = apt_lon / (double)runways.size();
     apt_lat = apt_lat / (double)runways.size();
 
-    printf("Average is (%lf,%lf\n", apt_lon, apt_lat);
-
     SGBucket b( apt_lon, apt_lat );
-    SG_LOG(SG_GENERAL, SG_INFO, b.gen_base_path() << "/" << b.gen_index_str());
+    SG_LOG(SG_GENERAL, SG_DEBUG, b.gen_base_path() << "/" << b.gen_index_str());
 
     superpoly_list rwy_lights; 
     rwy_lights.clear();
@@ -404,7 +395,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( i=0; i<features.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Build Feature Poly " << i << ": " << features[i]->GetDescription() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Feature Poly " << i << ": " << features[i]->GetDescription() );
 
             // cut the linear feature in until we get the geometry right...
             // features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum );
@@ -413,7 +404,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, "no markings");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "no markings");
     }
 
     // Build runways next
@@ -460,7 +451,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( i=0; i<pavements.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Build Pavement Poly " << i << ": " << pavements[i]->GetDescription());
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement Poly " << i << ": " << pavements[i]->GetDescription());
 
             if (boundary)
             {
@@ -474,7 +465,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, "no pavements");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "no pavements");
     }
 
     // build the base and clearing if there's a boundary
@@ -487,10 +478,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
     	return;
-    }
-    else
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Lookin good");
     }
 
     TGPolygon filled_base  = tgPolygonStripHoles( apt_base );
@@ -1025,10 +1012,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG(SG_GENERAL, SG_DEBUG, "min = " << min_deg << " max = " << max_deg );
 
     TGAptSurface apt_surf( root, elev_src, min_deg, max_deg, average );
-    SG_LOG(SG_GENERAL, SG_INFO, "Airport surface created");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
 
     // calculate node elevations
-    SG_LOG(SG_GENERAL, SG_INFO, "Computing airport node elevations");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing airport node elevations");
     point_list geod_nodes = calc_elevations( apt_surf,
                                              nodes.get_node_list(),
                                              0.0 );
@@ -1045,7 +1032,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 #endif
 
     // calc windsock elevations:
-    SG_LOG(SG_GENERAL, SG_INFO, "Computing windsock node elevations");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing windsock node elevations");
     point_list ws_nodes;
     ws_nodes.clear();
     for ( i = 0; i < (int)windsocks.size(); ++i ) 
@@ -1056,7 +1043,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     point_list windsock_nodes = calc_elevations( apt_surf, ws_nodes, 0.0 );
 
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Computing beacon node elevations");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing beacon node elevations");
     point_list b_nodes;
     b_nodes.clear();
     for ( i = 0; i < (int)beacons.size(); ++i ) 
@@ -1067,7 +1054,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     point_list beacon_nodes = calc_elevations( apt_surf, b_nodes, 0.0 );
 
     // calc taxiway sign elevations:
-    SG_LOG(SG_GENERAL, SG_INFO, "Computing taxiway sign node elevations");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing taxiway sign node elevations");
     point_list ts_nodes;
     ts_nodes.clear();
     for ( i = 0; i < (int)signs.size(); ++i ) 
@@ -1127,7 +1114,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         else 
         {
             string message = "Ooops missing node when building skirt (in init)";
-            SG_LOG( SG_GENERAL, SG_INFO, message << " " << p );
+            SG_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
     	    throw sg_exception( message );
     	}
 
@@ -1152,7 +1139,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             else 
             {
                 string message = "Ooops missing node when building skirt (in loop)";
-                SG_LOG( SG_GENERAL, SG_INFO, message << " " << p );
+                SG_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
                 throw sg_exception( message );
 	        }
 	    }
@@ -1176,7 +1163,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         else 
         {
             string message = "Ooops missing node when building skirt (at end)";
-            SG_LOG( SG_GENERAL, SG_INFO, message << " " << p );
+            SG_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
             throw sg_exception( message );
     	}
 
@@ -1211,7 +1198,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     typedef elev_map_type::const_iterator const_elev_map_iterator;
     elev_map_type elevation_map;
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Computing runway/approach lighting elevations");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing runway/approach lighting elevations");
 
     // pass one, calculate raw elevations from Array
     for ( i = 0; i < (int)rwy_lights.size(); ++i ) 
@@ -1254,7 +1241,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Done with lighting calc_elevations() num light polys is " << rwy_lights.size() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with lighting calc_elevations() num light polys is " << rwy_lights.size() );
 
     // pass two, for each light group check if we need to lift (based
     // on flag) and do so, then output next structures.
@@ -1263,8 +1250,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         // tmp_light_list is a parallel structure to rwy_lights
         point_list geod_light_nodes = tmp_light_list[i].get_poly().get_contour(0);
         
-        SG_LOG(SG_GENERAL, SG_INFO, "got a point list with " <<  geod_light_nodes.size() << " points" );
-
         // this is a little round about, but what we want to calculate the
         // light node elevations as ground + an offset so we do them
         // seperately, then we add them back into nodes to get the index
@@ -1334,8 +1319,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     SGBinObject obj;
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "number of NODES is  " << wgs84_nodes.size() );
 
     obj.set_gbs_center( gbs_center );
     obj.set_gbs_radius( gbs_radius );
@@ -1414,7 +1397,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // write out water buoys
     for ( i = 0; i < (int)water_buoys_nodes.size(); ++i )
     {
-    write_index_shared( objpath, b, water_buoys_nodes[i],
+    	write_index_shared( objpath, b, water_buoys_nodes[i],
                             "Models/Airport/water_rw_buoy.xml",
                             0.0 );
     }

@@ -78,11 +78,11 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
     else if (rwhalf == 1) {
             heading = rwy.heading;
     }
-    SG_LOG( SG_GENERAL, SG_INFO, "runway marking = " << rwy.marking[rwhalf] );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
 
     // Displaced threshold if it exists
     if ( rwy.threshold[rwhalf] > 0.0 ) {
-        SG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is "
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
                 << rwy.threshold[rwhalf] );
 
         start1_pct = end1_pct;

@@ -35,6 +35,7 @@
 #include <simgear/misc/strutils.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/math/leastsqs.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include "array.hxx"
 
@@ -78,10 +79,10 @@ bool TGArray::open( const string& file_base ) {
     string array_name = file_base + ".arr.gz";
     array_in = new sg_gzifstream( array_name );
     if ( ! array_in->is_open() ) {
-        cout << "  Cannot open " << array_name << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << array_name );
         success = false;
     } else {
-        cout << "  Opening array data file: " << array_name << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening array data file: " << array_name );
     }
 
     // open fitted data file
@@ -92,9 +93,9 @@ bool TGArray::open( const string& file_base ) {
         // can do a really stupid/crude fit on the fly, but it will
         // not be nearly as nice as what the offline terrafit utility
         // would have produced.
-        cout << "  Cannot open " << fitted_name << endl;
+		SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << fitted_name );
     } else {
-        cout << "  Opening fitted data file: " << fitted_name << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening fitted data file: " << fitted_name );
     }
 
     return success;
@@ -126,10 +127,9 @@ TGArray::parse( SGBucket& b ) {
 	*array_in >> cols >> col_step;
 	*array_in >> rows >> row_step;
 
-	cout << "    origin  = " << originx << "  " << originy << endl;
-	cout << "    cols = " << cols << "  rows = " << rows << endl;
-	cout << "    col_step = " << col_step 
-	     << "  row_step = " << row_step <<endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
 	for ( int i = 0; i < cols; i++ ) {
 	    for ( int j = 0; j < rows; j++ ) {
@@ -137,7 +137,7 @@ TGArray::parse( SGBucket& b ) {
 	    }
 	}
 
-	cout << "    Done parsing\n";
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    Done parsing" );
     } else {
 	// file not open (not found?), fill with zero'd data
 
@@ -152,10 +152,9 @@ TGArray::parse( SGBucket& b ) {
 	rows = 3;
 	row_step = (max_y - originy) / (rows - 1);
 
-	cout << "    origin  = " << originx << "  " << originy << endl;
-	cout << "    cols = " << cols << "  rows = " << rows << endl;
-	cout << "    col_step = " << col_step 
-	     << "  row_step = " << row_step <<endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
 	for ( int i = 0; i < cols; i++ ) {
 	    for ( int j = 0; j < rows; j++ ) {
@@ -163,7 +162,7 @@ TGArray::parse( SGBucket& b ) {
 	    }
 	}
 
-	cout << "    File not open, so using zero'd data" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
     }
 
     // Parse/load the fitted data file
@@ -192,16 +191,16 @@ bool TGArray::write( const string root_dir, SGBucket& b ) {
     sgp.create_dir( 0755 );
 
     string array_file = path + "/" + b.gen_index_str() + ".arr.new.gz";
-    cout << "array_file = " << array_file << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "array_file = " << array_file );
 
     // write the file
     gzFile fp;
     if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
-	cout << "ERROR:  cannot open " << array_file << " for writing!" << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "ERROR:  cannot open " << array_file << " for writing!" );
 	return false;
     }
 
-    cout << "origin = " << originx << ", " << originy << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "origin = " << originx << ", " << originy );
     gzprintf( fp, "%d %d\n", (int)originx, (int)originy );
     gzprintf( fp, "%d %d %d %d\n", cols, (int)col_step, rows, (int)row_step );
     for ( int i = 0; i < cols; ++i ) {
@@ -306,7 +305,7 @@ void TGArray::add_corner_node( int i, int j, double val ) {
     double x = (originx + i * col_step) / 3600.0;
     double y = (originy + j * row_step) / 3600.0;
     // cout << "originx = " << originx << "  originy = " << originy << endl;
-    cout << "corner = " << Point3D(x, y, val) << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "corner = " << Point3D(x, y, val) );
     corner_list.push_back( Point3D(x, y, val) );
 }
 

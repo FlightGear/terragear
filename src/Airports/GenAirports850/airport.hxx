@@ -46,7 +46,6 @@ public:
 
     void AddFeature( LinearFeature* feature )
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Adding Feature");
         features.push_back( feature );
     }
 

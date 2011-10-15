@@ -139,7 +139,7 @@ TGAptSurface::TGAptSurface( const string& path,
     // interesting
     if ( xdivs < 8 ) { xdivs = 8; }
     if ( ydivs < 8 ) { ydivs = 8; }
-    SG_LOG(SG_GENERAL, SG_INFO, "  M(" << ydivs << "," << xdivs << ")");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
 
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
@@ -307,13 +307,13 @@ static ColumnVector qr_method( Real* y,
 			       Real* t13, Real* t14, Real* t15,
 			       int nobs, int npred )
 {
-  cout << "QR triangularisation" << endl;;
+  SG_LOG(SG_GENERAL, SG_DEBUG, "QR triangularisation" );
 
   // QR triangularisation method
  
   // load data - 1s into col 1 of matrix
   int npred1 = npred+1;
-  cout << "nobs = " << nobs << " npred1 = " << npred1 << endl;
+  SG_LOG(SG_GENERAL, SG_DEBUG, "nobs = " << nobs << " npred1 = " << npred1 );
 
   Matrix X(nobs,npred1); ColumnVector Y(nobs);
   X.column(1) = 1.0;
@@ -437,10 +437,9 @@ void TGAptSurface::fit() {
 		   &t9[0], &t10[0], &t11[0], &t12[0], &t13[0], &t14[0], &t15[0],
 		   nobs, npred
 		  );
-    cout << "surface_coefficients size = " << surface_coefficients.nrows() << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "surface_coefficients size = " << surface_coefficients.nrows() );
   }
   CatchAll { cout << BaseException::what(); }
-
 }
 
 

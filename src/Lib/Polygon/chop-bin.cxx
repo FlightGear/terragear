@@ -96,25 +96,23 @@ static void clip_and_write_poly( string root, long int p_index,
     fclose(bfp);
     */
 
-    cout << "shape contours = " << shape.contours() << "  ";
+    SG_LOG(SG_GENERAL, SG_DEBUG, "shape contours = " << shape.contours() );
     for ( int ii = 0; ii < shape.contours(); ii++ ) {
-        cout << "hole = " << shape.get_hole_flag(ii) << " ";
+        SG_LOG(SG_GENERAL, SG_DEBUG, "   hole = " << shape.get_hole_flag(ii) );
     }
-    cout << endl;
 
     result = tgPolygonInt( base, shape );
 
     // write_polygon(shape, "shape");
     // write_polygon(result, "result");
 
-    cout << "result contours = " << result.contours() << "  ";
+    SG_LOG(SG_GENERAL, SG_DEBUG, "result contours = " << result.contours() );
     for ( int ii = 0; ii < result.contours(); ii++ ) {
-        cout << "hole = " << result.get_hole_flag(ii) << " ";
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  hole = " << result.get_hole_flag(ii) );
         //if ( result.get_hole_flag(ii) ) {
         //    exit(0);
         //}
     }
-    cout << endl;
     if ( preserve3d ) {
         result.inherit_elevations( shape );
     }

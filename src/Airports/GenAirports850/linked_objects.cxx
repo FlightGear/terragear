@@ -22,7 +22,7 @@ Sign::Sign( char* definition )
 
     sscanf(definition, "%lf %lf %lf %d %d %s", &lat, &lon, &heading, &reserved, &size, sgdef );
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Read Sign: (" << lon << "," << lat << ") heading " << heading << " size " << size << " definition: " << sgdef  );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Read Sign: (" << lon << "," << lat << ") heading " << heading << " size " << size << " definition: " << sgdef  );
 
     sgn_def = sgdef;
 }
