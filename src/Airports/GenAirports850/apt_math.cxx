@@ -112,7 +112,7 @@ void gen_tex_section( const TGPolygon& runway,
                          const string& material,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         TGPolygon *accum  ) {
+                         ClipPolyType *accum  ) {
 
     int j, k;
 

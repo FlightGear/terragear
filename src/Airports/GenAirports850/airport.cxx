@@ -330,13 +330,10 @@ static TGPolygon calc_elevations( TGAptSurface &surf,
 
 void Airport::BuildBtg(const string& root, const string_list& elev_src )
 {
+	ClipPolyType accum;
+	ClipPolyType line_accum;
     TGPolygon apt_base;
     TGPolygon apt_clearing;
-
-    TGPolygon accum;
-    accum.erase(); 
-    TGPolygon line_accum;
-    line_accum.erase();
 
     // runways
     superpoly_list rwy_polys;
@@ -486,7 +483,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         boundary->BuildBtg( altitude, &apt_base, &apt_clearing );
     }
 
-    if ( apt_base.total_size() == 0 )
+	if ( apt_base.total_size() == 0 )
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
     	return;

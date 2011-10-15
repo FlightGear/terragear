@@ -93,7 +93,7 @@ public:
 
     int Finish();
     int BuildOsg( osg::Group* airport );
-    int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, TGPolygon* line_accum, superpoly_list* lights ); 
+    int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights ); 
 
 private:
     Point3D OffsetPointFirst( Point3D *cur, Point3D *next, double offset_by );

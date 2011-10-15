@@ -40,7 +40,7 @@ void Runway::gen_rw_marking( const TGPolygon& runway,
 	   const string& material,
 	   superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         TGPolygon *accum, int marking) {
+                         ClipPolyType *accum, int marking) {
 
     std::vector<sections> rw_marking_list;
 
@@ -139,7 +139,7 @@ void Runway::gen_rwy( double alt_m,
 			const string& material,
 			superpoly_list *rwy_polys,
 			texparams_list *texparams,
-			TGPolygon *accum )
+			ClipPolyType *accum )
 {
     SG_LOG( SG_GENERAL, SG_INFO, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
 

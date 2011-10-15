@@ -42,7 +42,7 @@ public:
     }
 
     int BuildOsg( osg::Group* airport );
-    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
     
 private:
     struct TGRunway {
@@ -93,7 +93,7 @@ private:
                              double &start_pct, double &end_pct,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
-                             TGPolygon* accum );
+                             ClipPolyType* accum );
 
     // generate the runway overrun area
     void gen_runway_overrun( const TGPolygon& runway_half,
@@ -101,7 +101,7 @@ private:
                              const std::string& prefix,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
-                             TGPolygon* accum );
+                             ClipPolyType* accum );
 
     // generate a section of runway
     void gen_runway_section( const TGPolygon& runway,
@@ -113,14 +113,14 @@ private:
                              const std::string& material,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
-                             TGPolygon* accum  );
+                             ClipPolyType* accum  );
 
-    void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, TGPolygon *accum );
+    void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum );
     void gen_rwy( double alt_m,
                   const std::string& material,
                   superpoly_list* rwy_polys,
                   texparams_list* texparams,
-                  TGPolygon* accum );
+                  ClipPolyType* accum );
 
     void gen_rw_marking( const TGPolygon& runway,
                          double &start1_pct, double &end1_pct,
@@ -128,7 +128,7 @@ private:
                          const string& material,
                          superpoly_list* rwy_polys,
                          texparams_list* texparams,
-                         TGPolygon* accum, int marking);
+                         ClipPolyType* accum, int marking);
 
     void gen_runway_lights( float alt_m, superpoly_list* lights );
 

@@ -37,7 +37,7 @@ void Runway::gen_simple_rwy( double alt_m,
                      const string& material,
 		     superpoly_list *rwy_polys,
 		     texparams_list *texparams,
-		     TGPolygon *accum )
+		     ClipPolyType *accum )
 {
     int i;
 

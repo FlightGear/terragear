@@ -772,7 +772,7 @@ int LinearFeature::Finish()
     }
 }
 
-int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, TGPolygon* line_accum, superpoly_list* lights )
+int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights )
 {
     TGPolygon poly; 
     TGPolygon clipped;

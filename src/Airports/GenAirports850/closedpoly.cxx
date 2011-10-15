@@ -589,7 +589,7 @@ int ClosedPoly::BuildOsg( osg::Group* airport )
     }
 }
 
-int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
+int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {
     TGPolygon base, safe_base;
     string material;

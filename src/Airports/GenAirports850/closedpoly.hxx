@@ -32,7 +32,7 @@ public:
     int  BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
     // Build BTG for pavements for airports with no boundary
-    int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, TGPolygon* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
     FeatureList* GetFeatures()
     {

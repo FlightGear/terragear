@@ -29,6 +29,24 @@
 # error This library requires C++
 #endif                                   
 
+// which clipping lib to use?
+//#define CLIP_GPC
+#define CLIP_CLIPPER
+
+#ifdef CLIP_GPC
+extern "C" {
+#include <gpc.h>
+}
+
+typedef gpc_polygon	ClipPolyType;
+#endif
+
+#ifdef CLIP_CLIPPER
+#include "clipper.hpp"
+using namespace ClipperLib;
+
+typedef Polygons ClipPolyType;
+#endif
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
@@ -219,6 +237,7 @@ TGPolygon tgPolygon2tristrip( const TGPolygon& poly );
 
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip );
+TGPolygon tgPolygonDiff( const TGPolygon& subject, const ClipPolyType& clip );
 
 // Intersection
 TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip );
@@ -228,6 +247,7 @@ TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip );
 
 // Union
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
+ClipPolyType tgPolygonUnion( const TGPolygon& subject, const ClipPolyType& clip );
 
 // Output
 std::ostream &operator<< (std::ostream &output, const TGPolygon &poly);

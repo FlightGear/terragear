@@ -79,7 +79,7 @@ void Helipad::BuildBtg( float alt_m,
 			superpoly_list *rwy_polys,
 			texparams_list *texparams,
                         superpoly_list *rwy_lights,
-			TGPolygon *accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
+			ClipPolyType *accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {
     SG_LOG( SG_GENERAL, SG_INFO, "Building helipad = " << heli.designator );
 

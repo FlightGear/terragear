@@ -40,7 +40,7 @@ void Runway::gen_rw_designation( const string& material,
                                  double &start_pct, double &end_pct,
                                  superpoly_list *rwy_polys,
                                  texparams_list *texparams,
-                                 TGPolygon *accum )
+                                 ClipPolyType *accum )
 {
     if (rwname != "XX"){ /* Do not create a designation block if the runway name is set to none */
         string letter = "";
@@ -118,7 +118,7 @@ void Runway::gen_runway_overrun( const TGPolygon& runway_half,
                          const string& prefix,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         TGPolygon* accum ) {
+                         ClipPolyType* accum ) {
     const float length = rwy.length / 2.0 + 2.0 * SG_FEET_TO_METER;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
@@ -171,7 +171,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
                          const string& material,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         TGPolygon *accum  ) {
+                         ClipPolyType *accum  ) {
     gen_tex_section( runway,
                          startl_pct, endl_pct,
                          startw_pct, endw_pct,
