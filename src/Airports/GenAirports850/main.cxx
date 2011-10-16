@@ -156,6 +156,7 @@ int main(int argc, char **argv)
     float min_lat = -90;
     float max_lat = 90;
     bool  view_osg = false;
+	long  position = 0;
 
     string_list elev_src;
     elev_src.clear();
@@ -335,11 +336,13 @@ int main(int argc, char **argv)
     }
     else if ( start_id != "" )
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
+
         // scroll forward in datafile
-        parser->AddAirport( start_id );
+        position = parser->FindAirport( start_id );
 
         // add remaining airports within boundary
-        parser->AddAirports( min_lat, min_lon, max_lat, max_lon );
+        parser->AddAirports( position, min_lat, min_lon, max_lat, max_lon );
 
         // parse all the airports that were found
         parser->Parse();
@@ -347,7 +350,7 @@ int main(int argc, char **argv)
     else
     {
         // find all airports within given boundary
-        parser->AddAirports( min_lat, min_lon, max_lat, max_lon );
+        parser->AddAirports( 0, min_lat, min_lon, max_lat, max_lon );
 
         // and parser them
         parser->Parse();

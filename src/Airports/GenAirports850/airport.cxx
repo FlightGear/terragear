@@ -1021,9 +1021,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                                              0.0 );
     divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "DIVIDED");
-    SG_LOG(SG_GENERAL, SG_DEBUG, divided_base);
-
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
 #if 0 // TODO : along with taxiway sign elevations
@@ -1041,7 +1038,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         ws_nodes.push_back( p );
     }
     point_list windsock_nodes = calc_elevations( apt_surf, ws_nodes, 0.0 );
-
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done");
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Computing beacon node elevations");
     point_list b_nodes;
@@ -1052,6 +1049,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         b_nodes.push_back( p );
     }
     point_list beacon_nodes = calc_elevations( apt_surf, b_nodes, 0.0 );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done");
 
     // calc taxiway sign elevations:
     SG_LOG(SG_GENERAL, SG_DEBUG, "Computing taxiway sign node elevations");
@@ -1063,7 +1061,9 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         ts_nodes.push_back( p );
     }
     point_list taxisigns_nodes = calc_elevations( apt_surf, ts_nodes, 0.0 );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Done");
 
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing water buoy elevations");
     // calc water runway buoys elevations:
     point_list water_buoys_nodes;
     if ( waterrunways.size() > 0){
@@ -1084,7 +1084,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             water_buoys_nodes = calc_elevations( apt_surf, buoy_nodes, 0.0 );
         }
     }
-
 
     // add base skirt (to hide potential cracks)
     //

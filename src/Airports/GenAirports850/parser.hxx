@@ -84,9 +84,11 @@ public:
         prev_node       = NULL;
         cur_state       = STATE_NONE;
     }
-
+    
+//    int             Parse( char* icao );
+    long            FindAirport( string icao );
     void            AddAirport( string icao );
-    void            AddAirports( float min_lat, float min_lon, float max_lat, float max_lon );
+    void            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
     void            Parse( void );
 
 //    osg::Group*     CreateOsgGroup( void );

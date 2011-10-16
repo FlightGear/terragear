@@ -20,6 +20,10 @@ class ClosedPoly
 public:
     ClosedPoly( char* desc );
     ClosedPoly( int st, float s, float th, char* desc );
+	~ClosedPoly()
+	{
+		SG_LOG( SG_GENERAL, SG_DEBUG, "Deleting ClosedPoly " << description );
+	}
     
     inline string GetDescription() { return description; }
     void AddNode( BezNode* node );

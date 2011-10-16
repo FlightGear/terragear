@@ -91,15 +91,55 @@ void Parser::AddAirport( string icao )
         // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
             parse_positions.push_back( cur_pos );
-            airport_icaos.push_back( icao );
+			airport_icaos.push_back( icao );
             found = true;
         }
     }    
 }
 
-void Parser::AddAirports( float min_lat, float min_lon, float max_lat, float max_lon )
+long Parser::FindAirport( string icao )
+{
+    char line[2048];
+    long cur_pos;
+    bool found = false;
+
+    ifstream in( filename.c_str() );
+    if ( !in.is_open() ) 
+    {
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        exit(-1);
+    }
+
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
+    while ( !in.eof() && !found ) 
+    {
+        // remember the position of this line
+        cur_pos = in.tellg();
+
+        // get a line
+    	in.getline(line, 2048);
+
+        // this is and airport definition - remember it
+        if ( IsAirportDefinition( line, icao ) )
+        {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
+            found = true;
+        }
+    }    
+
+	if (found)
+	{
+		return cur_pos;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+void Parser::AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon )
 {
     Airport* airport = NULL;
     char 	 line[2048];
@@ -115,7 +155,6 @@ void Parser::AddAirports( float min_lat, float min_lon, float max_lat, float max
 	done  = false;
 	match = false;
 
-
 	// start from current position, and push all airports where a runway start or end 
 	// lies within the given min/max coordinates
 
@@ -125,6 +164,11 @@ void Parser::AddAirports( float min_lat, float min_lon, float max_lat, float max
         SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
+
+	if (start_pos)
+	{
+        in.seekg(start_pos, ios::beg);
+	}
 
 	while (!done)
 	{
@@ -274,6 +318,7 @@ void Parser::Parse()
     struct timeval build_time;
     struct timeval clean_time;
     struct timeval triangulation_time;
+	time_t curtime;   
 
     ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
@@ -288,11 +333,12 @@ void Parser::Parse()
         SetState(STATE_NONE);
         in.clear();
 
+        gettimeofday(&parse_start, NULL);
+
         SG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
-        SG_LOG( SG_GENERAL, SG_ALERT, "Parsing airport " << airport_icaos[i] << " at position " << parse_positions[i] );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Parsing airport " << airport_icaos[i] << " at " << parse_positions[i] << " start time " << ctime(&parse_start.tv_sec) );
         in.seekg(parse_positions[i], ios::beg);
 
-        gettimeofday(&parse_start, NULL);
         while ( !in.eof() && (cur_state != STATE_DONE ) )
         {
         	in.getline(tmp, 2048);
