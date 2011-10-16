@@ -1065,19 +1065,25 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     point_list taxisigns_nodes = calc_elevations( apt_surf, ts_nodes, 0.0 );
 
     // calc water runway buoys elevations:
-    point_list buoy_nodes;
-    buoy_nodes.clear();
-    for ( i = 0; i < (int)waterrunways.size(); ++i )
-    {
-        TGPolygon tmp_nodes;
-        tmp_nodes.erase();
-        tmp_nodes = waterrunways[i]->GetNodes();
-        for (j=0; j< tmp_nodes.contour_size( 0 ); ++j )
+    point_list water_buoys_nodes;
+    if ( waterrunways.size() > 0){
+        if ( waterrunways[0]->HasBuoys() )
         {
-            buoy_nodes.push_back( tmp_nodes.get_pt( 0, j ) );
+            point_list buoy_nodes;
+            buoy_nodes.clear();
+            for ( i = 0; i < (int)waterrunways.size(); ++i )
+            {
+                TGPolygon tmp_nodes;
+                tmp_nodes.erase();
+                tmp_nodes = waterrunways[i]->GetNodes();
+                for (j=0; j< tmp_nodes.contour_size( 0 ); ++j )
+                {
+                    buoy_nodes.push_back( tmp_nodes.get_pt( 0, j ) );
+                }
+            }
+            water_buoys_nodes = calc_elevations( apt_surf, buoy_nodes, 0.0 );
         }
     }
-    point_list water_buoys_nodes = calc_elevations( apt_surf, buoy_nodes, 0.0 );
 
 
     // add base skirt (to hide potential cracks)

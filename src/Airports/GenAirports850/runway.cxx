@@ -114,16 +114,14 @@ TGPolygon WaterRunway::GetNodes()
 {
     TGPolygon buoy_nodes;
     buoy_nodes.erase();
-    if (buoys == 1){ /*no point to calculate stuff we don't need*/
 
-        double heading, az2, length;
-        // calculate runway heading and length
-        geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &heading, &az2, &length );
+    double heading, az2, length;
+    // calculate runway heading and length
+    geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &heading, &az2, &length );
 
-        // create a polygon for the 4 buoy points
-        // TODO: The amount of points can be increased if needed (more buoys)
-        buoy_nodes = gen_wgs84_area(Point3D( (lon[0] + lon[1]) / 2 , (lat[0] + lat[1]) / 2, 0), length, 0, 0, width, heading, 0, false);
-    }
+    // create a polygon for the 4 buoy points
+    // TODO: The amount of points can be increased if needed (more buoys)
+    buoy_nodes = gen_wgs84_area(Point3D( (lon[0] + lon[1]) / 2 , (lat[0] + lat[1]) / 2, 0), length, 0, 0, width, heading, 0, false);
     return buoy_nodes;
 }
 

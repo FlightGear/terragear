@@ -163,6 +163,14 @@ public:
         return ( Point3D( lon[1], lat[1], 0.0f ));
     }
 
+    bool HasBuoys()
+    {
+        if (buoys == 1)
+        return true;
+        else
+        return false;
+    }
+
     double  width;
     int     buoys;
     char    rwnum[2][16];
