@@ -336,7 +336,7 @@ int main(int argc, char **argv)
     else if ( start_id != "" )
     {
         // scroll forward in datafile
-        parser->FindAirport( start_id );
+        parser->AddAirport( start_id );
 
         // add remaining airports within boundary
         parser->AddAirports( min_lat, min_lon, max_lat, max_lon );

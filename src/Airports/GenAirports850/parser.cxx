@@ -93,38 +93,7 @@ void Parser::AddAirport( string icao )
         {
             SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
             parse_positions.push_back( cur_pos );
-            found = true;
-        }
-    }    
-}
-
-void Parser::FindAirport( string icao )
-{
-    char line[2048];
-    long cur_pos;
-    bool found = false;
-
-    ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
-    {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
-        exit(-1);
-    }
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
-    while ( !in.eof() && !found ) 
-    {
-        // remember the position of this line
-        cur_pos = in.tellg();
-
-        // get a line
-    	in.getline(line, 2048);
-
-        // this is and airport definition - remember it
-        if ( IsAirportDefinition( line, icao ) )
-        {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
-            parse_positions.push_back( cur_pos );
+            airport_icaos.push_back( icao );
             found = true;
         }
     }    
@@ -320,7 +289,7 @@ void Parser::Parse()
         in.clear();
 
         SG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
-        SG_LOG( SG_GENERAL, SG_ALERT, "Parsing airport " << airport_icaos[i] << " at " << parse_positions[i] );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Parsing airport " << airport_icaos[i] << " at position " << parse_positions[i] );
         in.seekg(parse_positions[i], ios::beg);
 
         gettimeofday(&parse_start, NULL);

@@ -84,9 +84,7 @@ public:
         prev_node       = NULL;
         cur_state       = STATE_NONE;
     }
-    
-//    int             Parse( char* icao );
-    void            FindAirport( string icao );
+
     void            AddAirport( string icao );
     void            AddAirports( float min_lat, float min_lon, float max_lat, float max_lon );
     void            Parse( void );
