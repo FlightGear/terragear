@@ -156,7 +156,15 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
     else if ( rwy.surface == 13 /* Water runway (buoy's?) */ )
     {
         // water
-    } 
+    }
+    else if ( rwy.surface == 14 /* Snow / Ice */ )
+    {
+        // Ice
+    }
+    else if ( rwy.surface == 15 /* Transparent */ )
+    {
+        //Transparent texture
+    }
     else 
     {
         SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
