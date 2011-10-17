@@ -16,3 +16,10 @@ configure
 depcomp
 install-sh
 missing
+cmake_install.cmake
+CMakeFiles
+CMakeCache.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+cmake_uninstall.cmake
+CTestTestfile.cmake
