@@ -746,6 +746,7 @@ int Parser::ParseLine(char* line)
                         cur_feat->Finish();
                         cur_airport->AddFeature( cur_feat );
                     }
+                    cur_feat = NULL;
                     SetState( STATE_NONE );
                 }
                 prev_node = NULL;
@@ -755,24 +756,39 @@ int Parser::ParseLine(char* line)
             case TERM_NODE_CODE:
             case TERM_BEZIER_NODE_CODE:
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing termination node: " << line);
-                cur_node = ParseNode( code, line, prev_node );
 
                 if ( cur_state == STATE_PARSE_FEATURE )
                 {
-                    if (cur_node != prev_node)
+                    // we have some bad data - termination nodes right after the
+                    // linear feature declaration - can't do anything with a
+                    // single point - detect and delete.
+                    if ( prev_node )
                     {
-                        cur_feat->AddNode( prev_node );
-                        cur_feat->AddNode( cur_node );
+                        cur_node = ParseNode( code, line, prev_node );
+
+                        if (cur_node != prev_node)
+                        {
+                            cur_feat->AddNode( prev_node );
+                            cur_feat->AddNode( cur_node );
+                        }
+                        else
+                        {
+                            cur_feat->AddNode( cur_node );
+                        }
+                        if (cur_airport)
+                        {
+                            cur_feat->Finish();
+                            cur_airport->AddFeature( cur_feat );
+                        }
                     }
                     else
                     {
-                        cur_feat->AddNode( cur_node );
+                        SG_LOG(SG_GENERAL, SG_ALERT, "Parsing termination node with no previous nodes!!!" );
+
+                        // this feature is bogus...
+                        delete cur_feat;
                     }
-                    if (cur_airport)
-                    {
-                        cur_feat->Finish();
-                        cur_airport->AddFeature( cur_feat );
-                    }
+                    cur_feat = NULL;
                     SetState( STATE_NONE );
                 }
                 prev_node = NULL;
