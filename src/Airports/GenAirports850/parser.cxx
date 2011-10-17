@@ -102,7 +102,7 @@ void Parser::AddAirport( string icao )
 long Parser::FindAirport( string icao )
 {
     char line[2048];
-    long cur_pos;
+    long cur_pos = 0;
     bool found = false;
 
     ifstream in( filename.c_str() );
@@ -141,19 +141,18 @@ long Parser::FindAirport( string icao )
 
 void Parser::AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon )
 {
-    Airport* airport = NULL;
-    char 	 line[2048];
-	char*	 def;
-    long 	 cur_pos;
-	long	 cur_apt_pos;
-	string   cur_apt_name;
-    char*    tok;
-    int      code;
-	bool 	 match;
-	bool 	 done;
-    
-	done  = false;
-	match = false;
+        char 	 line[2048];
+        char*	 def;
+        long 	 cur_pos;
+        long	 cur_apt_pos;
+        string   cur_apt_name;
+        char*    tok;
+        int      code;
+        bool 	 match;
+        bool 	 done;
+
+        done  = false;
+        match = false;
 
 	// start from current position, and push all airports where a runway start or end 
 	// lies within the given min/max coordinates
@@ -310,7 +309,6 @@ void Parser::AddAirports( long start_pos, float min_lat, float min_lon, float ma
 void Parser::Parse()
 {
     char tmp[2048];
-    bool done = false;
     int  i;
     struct timeval parse_start;
     struct timeval parse_end;
@@ -318,7 +316,6 @@ void Parser::Parse()
     struct timeval build_time;
     struct timeval clean_time;
     struct timeval triangulation_time;
-	time_t curtime;   
 
     ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
@@ -377,9 +374,9 @@ BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
     int feat_type1, feat_type2;
     BezNode *curNode = NULL;
 
-    bool hasCtrl;
-    bool close;
-    bool term;
+    bool hasCtrl = false;
+    bool close = false;
+    bool term = false;
     bool hasFeat1 = false;
     bool hasFeat2 = false;
     int  numParams;

@@ -42,7 +42,7 @@ superpoly_list Helipad::gen_helipad_lights(void){
 
     point_list c_lights; c_lights.clear();
     point_list c_normals; c_normals.clear();
-    double lat2, lon2, az2;
+    double lat2 = 0, lon2 = 0, az2;
 
     // Create a circle of lights approx. where the white circle is
     for (int deg=0; deg<360; deg+=10){

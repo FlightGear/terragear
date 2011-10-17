@@ -348,12 +348,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     texparams_list line_tps;
 
     int i, j, k;
-    char buf[120];  // For debugging output
     Point3D p;
 
     // parse main airport information
     double apt_lon = 0.0, apt_lat = 0.0;
-    int rwy_count = 0;
 
     struct timeval  build_start;
     struct timeval  build_end;

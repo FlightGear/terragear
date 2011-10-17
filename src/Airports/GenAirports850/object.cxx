@@ -17,7 +17,7 @@ void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
     
 
     Point3D ref;
-    double lon2, lat2, r;
+    double lon2 = 0, lat2 = 0, r;
     double left_hdg = heading - 90.0;
 
     ref.setlat( lat );

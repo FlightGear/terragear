@@ -31,7 +31,6 @@ void LinearFeature::ConvertContour( BezContour* src  )
     int       curve_type = CURVE_LINEAR;
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
-    double    lgt_dist = 0.0f;
     int       i;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
@@ -275,10 +274,10 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
 {
     double offset_dir;
     double next_dir;
-    double az1, az2;
+    double az2;
     double dist;
     double theta;
-    double pt_x, pt_y;
+    double pt_x = 0, pt_y = 0;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << *prev << "), "
                                                                   "cur (" << *cur  << "), "
@@ -376,9 +375,9 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
 Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double offset_by )
 {
     double offset_dir;
-    double az1, az2;
+    double az2;
     double dist;
-    double pt_x, pt_y;
+    double pt_x = 0, pt_y = 0;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << *cur  << "), "
                                                             "next (" << *next << ")" );
@@ -405,9 +404,9 @@ Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double off
 Point3D LinearFeature::OffsetPointLast( Point3D *prev, Point3D *cur, double offset_by )
 {
     double offset_dir;
-    double az1, az2;
+    double az2;
     double dist;
-    double pt_x, pt_y;
+    double pt_x = 0, pt_y = 0;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << *prev  << "), "
                                                               "cur (" << *cur << ")" );
@@ -447,14 +446,12 @@ int LinearFeature::Finish()
     double      dist;
     double      az2;
     double      last_end_v;
-    double      width;
+    double      width = 0;
     int         i, j;
     string      material;
-    int         mat_idx = 0;
     double      cur_light_dist = 0.0f;
-    double      light_delta;
-    double      intpart;
-    double      pt_x, pt_y;
+    double      light_delta = 0;
+    double      pt_x = 0, pt_y = 0;
 
 
     // create the inner and outer boundaries to generate polys

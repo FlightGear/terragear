@@ -60,7 +60,7 @@ int Runway::BuildOsg ( osg::Group* airport )
     double az1, az2, dist;
 
     // rectangle verticies
-    double v0_lat, v0_lon, v1_lat, v1_lon, v2_lat, v2_lon, v3_lat, v3_lon;
+    double v0_lat = 0, v0_lon = 0, v1_lat = 0, v1_lon = 0, v2_lat = 0, v2_lon = 0, v3_lat = 0, v3_lon = 0;
 
     // Create a node for the runway
     osg::Geode* geode = new osg::Geode();

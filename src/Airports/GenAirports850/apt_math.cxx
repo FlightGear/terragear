@@ -44,7 +44,7 @@ TGPolygon gen_wgs84_area(   Point3D origin,
 
     // move to the +l end/center of the runway
     Point3D ref = origin;
-    double lon, lat, r;
+    double lon = 0, lat = 0, r = 0;
     geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg,
                         length_m / 2.0 - displ2, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );

@@ -154,8 +154,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
     Point3D cp1;
     Point3D cp2;    
 
-    int start, end, inc;        
-
     int curve_type = CURVE_LINEAR;
     int i;
 
@@ -304,11 +302,9 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
 
 void ExpandPoint( Point3D *prev, Point3D *cur, Point3D *next, double expand_by, double *heading, double *offset )
 {
-    int    turn_direction;
-    bool   reverse_dir = false;
     double offset_dir;
     double next_dir;
-    double az1, az2;
+    double az2;
     double dist;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << *prev << "), "
@@ -348,12 +344,11 @@ void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
     point_list expanded_boundary;
     Point3D prevPoint, curPoint, nextPoint;
     double theta;
-    double expand_by;
-    double expanded_x, expanded_y;
+    double expanded_x = 0, expanded_y = 0;
     Point3D expanded_point;
 
-    double h1, h2, h3;
-    double o1, o2, o3;
+    double h1;
+    double o1;
     double az2;
     int i;
         
@@ -468,9 +463,7 @@ osg::DrawArrays* ClosedPoly::CreateOsgPrimitive( point_list contour, osg::Vec3Ar
 // finish the poly - convert to TGPolygon, and tesselate
 int ClosedPoly::Finish()
 {
-    BezContour*         src_contour;
     point_list          dst_contour;
-    BezNode*            node;
 
     // error handling
     if (boundary == NULL)
@@ -507,8 +500,6 @@ int ClosedPoly::Finish()
 
 int ClosedPoly::BuildOsg( osg::Group* airport )
 {
-    BezContour*         contour;
-    BezNode*            node;
     osg::Geode*         geode_pave; // has the stateset, and geometry for this poly
     osg::Geometry*      pavement;
     osg::StateSet*      ss_pave;    // just a simple stateset for now
@@ -516,7 +507,6 @@ int ClosedPoly::BuildOsg( osg::Group* airport )
     osg::Vec4Array*     col_pave;   // just grey for now...
     osg::Vec3Array*     v_pave;     // ALL verticies (boundary and holes)
     osg::DrawArrays*    primitive;  // an index array for boundary / hole
-    int                 num_verts;  // number of verticies in a contour
     int                 i;          // ?
 
     if ( pre_tess.contours() )
@@ -593,7 +583,6 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
 {
     TGPolygon base, safe_base;
     string material;
-    int j, k;
 
     if (is_pavement)
     {

@@ -342,7 +342,6 @@ static ColumnVector qr_method( Real* y,
   QRZ(X1, U); QRZ(X1, Y1, M);    // Y1 now contains resids
   ColumnVector A = U.i() * M;
   ColumnVector Fitted = X * A;
-  Real ResVar = sum_square(Y1) / (nobs-npred1);
 
   // get variances of estimates
   U = U.i(); DiagonalMatrix D; D << U * U.t();
