@@ -1184,10 +1184,15 @@ int main(int argc, char **argv) {
 
     // cpu time limit since occassionally the triangulator can go into
     // an infinite loop.
-    limit.rlim_cur = 300;	// seconds
-    limit.rlim_max = 300;	// seconds
-    result = setrlimit( RLIMIT_CPU, &limit );
-    cout << "result of setting mem limit = " << result << endl;
+    limit.rlim_cur = 43200;	// seconds
+    limit.rlim_max = 43200;	// seconds
+    if (setrlimit( RLIMIT_CPU, &limit )) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Error setting RLIMIT_CPU, aborting");
+        exit(-1);
+    } else {
+        cout << "Setting RLIMIT_CPU to " << limit.rlim_cur << " seconds" << endl;
+    };
+    
 #endif  // end of stuff that crashes Cygwin
 
     // main construction data management class
