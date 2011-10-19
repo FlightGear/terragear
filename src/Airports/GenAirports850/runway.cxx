@@ -5,10 +5,6 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
-#include <osg/Geode>
-#include <osg/Geometry>
-#include <osg/Group>
-
 #include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
 
@@ -54,54 +50,6 @@ Runway::Runway(char* definition)
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << rwy.lon[0] << "," << rwy.lat[0] << ") to (" << rwy.lon[1] << "," << rwy.lat[1] << ") heading: " << rwy.heading << " length: " << rwy.length << " width: " << rwy.width );
 } 
 
-int Runway::BuildOsg ( osg::Group* airport )
-{
-    // calculated distance, and azimuths
-    double az1, az2, dist;
-
-    // rectangle verticies
-    double v0_lat = 0, v0_lon = 0, v1_lat = 0, v1_lon = 0, v2_lat = 0, v2_lon = 0, v3_lat = 0, v3_lon = 0;
-
-    // Create a node for the runway
-    osg::Geode* geode = new osg::Geode();
-
-    osg::Geometry* geometry = new osg::Geometry;
-    osg::Vec3dArray& v = *(new osg::Vec3dArray(4));
-    
-    // first, find the runway direction vector
-    // static int geo_inverse_wgs_84( double lat1, double lon1, double lat2, double lon2, double *az1, double *az2, double *s )
-    geo_inverse_wgs_84( rwy.lat[0], rwy.lon[0], rwy.lat[1], rwy.lon[1], &az1, &az2, &dist);
-
-    // now, need to caculate the 4 verticies
-    // static int geo_direct_wgs_84( double lat1, double lon1, double az1, double s, double *lat2, double *lon2, double *az2 )
-    geo_direct_wgs_84( rwy.lat[0], rwy.lon[0], az1+90, rwy.width/2, &v0_lat, &v0_lon, &az2 );
-    geo_direct_wgs_84( v0_lat, v0_lon, az1, dist, &v1_lat, &v1_lon, &az2 );
-    geo_direct_wgs_84( v1_lat, v1_lon, az1-90, rwy.width, &v2_lat, &v2_lon, &az2 );
-    geo_direct_wgs_84( v2_lat, v2_lon, az1+180, dist, &v3_lat, &v3_lon, &az2 );
-
-    // convert from lat/lon to geodisc
-    // (maybe later) - check some simgear objects...
-    v[0].set(v0_lat, v0_lon, 0.0f);
-    v[1].set(v1_lat, v1_lon, 0.0f);
-    v[2].set(v2_lat, v2_lon, 0.0f);
-    v[3].set(v3_lat, v3_lon, 0.0f);
-
-    geometry->setVertexArray(&v);
-
-    osg::DrawElementsUShort& drawElements = *(new osg::DrawElementsUShort(GL_TRIANGLE_STRIP,4));
-    geometry->addPrimitiveSet(&drawElements);
-    
-    drawElements[0] = 3;
-    drawElements[1] = 0;
-    drawElements[2] = 2;
-    drawElements[3] = 1;
-
-    geode->addDrawable(geometry);
-
-    airport->addChild( geode );
-
-    return 0;
-}
 
 WaterRunway::WaterRunway(char* definition)
 {

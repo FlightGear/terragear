@@ -79,34 +79,6 @@ Airport::Airport( int c, char* def)
     SG_LOG( SG_GENERAL, SG_DEBUG, "Created airport with icao " << icao << " and description " << description );
 }
 
-// TODO: fix OSG - it was nice, but unnecesary...
-void Airport::BuildOsg( osg::Group* airport )
-{
-    // draw for OSG
-    int i;
-
-#if 0
-    for (i=0; i<runways.size(); i++)
-    {
-        runways.at(i)->BuildOsg( airport );
-    }
-#endif
-
-    for (i=0; i<pavements.size(); i++)
-    {
-    	SG_LOG(SG_GENERAL, SG_DEBUG, " Adding pavement " << i << "to airport");
-        pavements.at(i)->BuildOsg(airport);
-    }
-
-#if 0
-    for (i=0; i<features.size(); i++)
-    {
-        features.at(i)->Finish(airport);
-    }
-#endif
-}
-
-
 // TODO: Add to runway object
 // calculate texture coordinates for runway section using the provided
 // texturing parameters.  Returns a mirror polygon to the runway,

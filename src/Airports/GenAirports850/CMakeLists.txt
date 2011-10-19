@@ -30,7 +30,6 @@ target_link_libraries(genapts850
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY}
-	${NEWMAT_LIBRARY}
-        osg osgDB osgGA osgUtil osgViewer)
+	${NEWMAT_LIBRARY})
 
 install(TARGETS genapts850 RUNTIME DESTINATION bin)

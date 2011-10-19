@@ -7,8 +7,6 @@
 
 #include "texparams.hxx"
 
-#include <osg/Group>
-
 using std::string;
 
 
@@ -92,7 +90,6 @@ public:
     }
 
     int Finish();
-    int BuildOsg( osg::Group* airport );
     int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights ); 
 
 private:
@@ -129,12 +126,7 @@ private:
 typedef std::vector <LinearFeature *> FeatureList;
 
 // add this to the class
-
 extern double CalcMarkingVerticies( Point3D *prev, Point3D *cur, Point3D *next, double *dist1, double *dist2 );
-
-// don't know what to do with these
-extern osg::Geode* FinishMarking( osg::Vec3dArray* verticies );
-extern osg::Vec3dArray* CheckMarking(int cur_marking, int new_marking, osg::Vec3dArray* v_marking, osg::Group* airport);
 
 #endif
 

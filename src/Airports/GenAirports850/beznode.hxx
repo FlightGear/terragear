@@ -5,15 +5,8 @@
 #include <float.h>
 #include <iostream>
 
-#include <osg/Vec3d>
 #include <Geometry/point3d.hxx>
 #include <simgear/debug/logstream.hxx>
-
-// TODO: where to put this
-inline osg::Vec3d SGPoint3DtoOSGVec3d( Point3D p )
-{
-    return osg::Vec3d( p.x(), p.y(), p.z() );
-}
 
 // TEMP...
 inline Point3D CalculateQuadraticLocation( Point3D p0, Point3D cp, Point3D p1, double t )

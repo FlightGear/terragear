@@ -861,20 +861,3 @@ int Parser::ParseLine(char* line)
 
     return cur_state;
 }
-
-#if 0
-osg::Group* Parser::CreateOsgGroup( void )
-{
-    osg::Group* airportNode = new osg::Group();
-    int i;
-
-    for (i=0; i<airports.size(); i++)
-    {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Add airport " << i << " to node");
-        airports[i]->BuildOsg( airportNode );
-    }
-
-    return airportNode;
-}
-#endif
-

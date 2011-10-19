@@ -97,7 +97,6 @@ public:
         tm = cleanup_time;
     }
 
-    void BuildOsg( osg::Group* airport );
     void BuildBtg( const string& root, const string_list& elev_src );
 
 private:

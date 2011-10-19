@@ -11,8 +11,6 @@
 #include "apt_math.hxx"
 #include "texparams.hxx"
 
-#include <osg/Group>
-
 using std::string;
 
 class Runway
@@ -41,7 +39,6 @@ public:
         return ( Point3D( (rwy.lon[0]+rwy.lon[1])/2.0f, (rwy.lat[0]+rwy.lat[1])/2.0f, 0.0f) );
     }
 
-    int BuildOsg( osg::Group* airport );
     int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
     
 private:

@@ -85,15 +85,11 @@ public:
         cur_state       = STATE_NONE;
     }
     
-//    int             Parse( char* icao );
     long            FindAirport( string icao );
     void            AddAirport( string icao );
     void            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
     void            Parse( void );
-
-//    osg::Group*     CreateOsgGroup( void );
     
-
 private:
     bool            IsAirportDefinition( char* line, string icao );
 
@@ -102,7 +98,6 @@ private:
     BezNode*        ParseNode( int type, char* line, BezNode* prevNode );
     LinearFeature*  ParseFeature( char* line );
     ClosedPoly*     ParsePavement( char* line );
-    osg::Geode*     ParseRunway(char* line );
     ClosedPoly*     ParseBoundary( char* line );
 
     int             ParseLine( char* line );

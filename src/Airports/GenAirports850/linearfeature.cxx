@@ -4,12 +4,6 @@
 #include <simgear/math/SGVec3.hxx>
 #include <simgear/math/SGMisc.hxx>
 
-#include <osg/Geode>
-#include <osg/Geometry>
-#include <osg/Group>
-#include <osg/PolygonMode>
-#include <osg/PolygonOffset>
-
 #include <Geometry/poly_support.hxx>
 
 #include "beznode.hxx"

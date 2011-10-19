@@ -4,10 +4,6 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
-#include <osg/Geode>
-#include <osg/PolygonMode>
-#include <osgUtil/Tessellator>
-
 #include <Geometry/poly_support.hxx>
 
 #include "beznode.hxx"
@@ -394,12 +390,6 @@ void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
             {
                 SG_LOG(SG_GENERAL, SG_DEBUG, "\ntheta is " << theta << " distance is " << o1 << " CLAMPING to " << dist*2 );
                 o1 = dist*2;
-
-                if (o1 > 100)
-                {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "\nClosed POLY " << description << ": theta is " << theta << " distance is " << o1 << " WHAT HAPPENED " );
-                    exit(1);
-                }
             }
 
             geo_direct_wgs_84( curPoint.y(), curPoint.x(), h1, o1, &expanded_y, &expanded_x, &az2 );
@@ -427,12 +417,6 @@ void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
             // calculate the expanded point heading and offset from current point
             ExpandPoint( &prevPoint, &curPoint, &nextPoint, dist, &h1, &o1 );
 
-            if (o1 > dist*2)
-            {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "\ntheta is " << theta << " distance is " << o1 << " WHAT HAPPENED " );
-                exit(1);
-            }
-
             geo_direct_wgs_84( curPoint.y(), curPoint.x(), h1, o1, &expanded_y, &expanded_x, &az2 );
             expanded_point = Point3D( expanded_x, expanded_y, 0.0f );
             expanded_boundary.push_back( expanded_point );
@@ -440,24 +424,6 @@ void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
     }
 
     dst.add_contour( expanded_boundary, 9 );
-}
-
-osg::DrawArrays* ClosedPoly::CreateOsgPrimitive( point_list contour, osg::Vec3Array* vpave )
-{
-    int i;
-    Point3D p;
-    osg::DrawArrays* primitive;
-    int start_vert = vpave->size();
-
-    for (i=0; i<contour.size(); i++)
-    {
-        p = contour[i];
-        vpave->push_back( osg::Vec3d(p.x(), p.y(), 0.0) );
-    }
-
-    primitive = new osg::DrawArrays(osg::PrimitiveSet::POLYGON, start_vert, vpave->size()-start_vert);    
-
-    return primitive;
 }
 
 // finish the poly - convert to TGPolygon, and tesselate
@@ -496,87 +462,6 @@ int ClosedPoly::Finish()
 
     // and the hole contours
     holes.clear();
-}
-
-int ClosedPoly::BuildOsg( osg::Group* airport )
-{
-    osg::Geode*         geode_pave; // has the stateset, and geometry for this poly
-    osg::Geometry*      pavement;
-    osg::StateSet*      ss_pave;    // just a simple stateset for now
-    osg::PolygonMode*   polymode;
-    osg::Vec4Array*     col_pave;   // just grey for now...
-    osg::Vec3Array*     v_pave;     // ALL verticies (boundary and holes)
-    osg::DrawArrays*    primitive;  // an index array for boundary / hole
-    int                 i;          // ?
-
-    if ( pre_tess.contours() )
-    {
-        // Setup a polygonmode for wireframe debuging
-        polymode = new osg::PolygonMode;
-        polymode->setMode(  osg::PolygonMode::FRONT_AND_BACK, osg::PolygonMode::LINE );
-
-        // Create a drawable for the pavement poly (boundary and holes)
-        pavement = new osg::Geometry;
-
-        // make pavement grey : do this when reading the poly
-        col_pave = new osg::Vec4Array;
-        col_pave->push_back(osg::Vec4(0.5f,0.5f,0.5f,1.0f));
-        pavement->setColorArray(col_pave);
-        pavement->setColorBinding(osg::Geometry::BIND_OVERALL);
-
-        // set up pavement stateset
-        geode_pave = new osg::Geode();
-        ss_pave = new osg::StateSet();
-    
-#if WIREFRAME
-        ss_pave->setAttribute( polymode );
-#endif
-        geode_pave->setStateSet(ss_pave);
-
-        v_pave = new osg::Vec3Array;
-        pavement->setVertexArray(v_pave);
-
-        // create the boundary
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "  Adding pavement boundary");
-        primitive = CreateOsgPrimitive( pre_tess.get_contour( 0 ), v_pave );
-        if (hull.size() > 0)
-        {
-        	SG_LOG(SG_GENERAL, SG_DEBUG, "  boundary has  " << hull.size() << "verts" );
-        }
-
-        // add the hole contours
-        for (i=1; i<pre_tess.contours(); i++)
-        {
-            primitive = CreateOsgPrimitive( pre_tess.get_contour( i ), v_pave );
-            pavement->addPrimitiveSet(primitive);
-        }
-        
-        osgUtil::Tessellator *tess = new osgUtil::Tessellator;
-        tess->setTessellationType(osgUtil::Tessellator::TESS_TYPE_GEOMETRY);
-        tess->retessellatePolygons(*pavement);
-
-        geode_pave->addDrawable(pavement);
-        airport->addChild(geode_pave);
-
-#if 0   // debug ExpandPoly
-        TGPolygon base;
-        ExpandPoly( hull, base, 20 );
-        primitive = CreateOsgPrimitive( base.get_contour( 0 ), v_pave );
-        pavement->addPrimitiveSet(primitive);
-#endif
-
-        geode_pave->addDrawable(pavement);
-        airport->addChild(geode_pave);
-
-        // add the pavement markings
-#if 0
-        printf("ClosedPoly::Finish - Finish %d linear features\n", features.size());
-        for (int feat=0; feat<features.size(); feat++)
-        {
-            features.at(feat)->Finish(airport);
-        }
-#endif
-    }
 }
 
 int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )

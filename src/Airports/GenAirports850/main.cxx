@@ -16,43 +16,6 @@
 *  THE SOFTWARE.
 */
 
-#include <osg/AlphaFunc>
-#include <osg/Billboard>
-#include <osg/BlendFunc>
-#include <osg/Depth>
-#include <osg/Geode>
-#include <osg/Geometry>
-#include <osg/Group>
-#include <osg/GL2Extensions>
-#include <osg/Material>
-#include <osg/Math>
-#include <osg/MatrixTransform>
-#include <osg/PolygonMode>
-#include <osg/PolygonOffset>
-#include <osg/Program>
-#include <osg/Projection>
-#include <osg/Shader>
-#include <osg/ShapeDrawable>
-#include <osg/StateSet>
-#include <osg/Switch>
-#include <osg/Texture2D>
-#include <osg/Uniform>
-
-#include <osgDB/ReadFile>
-#include <osgDB/FileUtils>
-
-#include <osgUtil/Tessellator>
-#include <osgUtil/SmoothingVisitor>
-#include <osgText/Text>
-#include <osgViewer/Viewer>
-#include <osgViewer/ViewerEventHandlers>
-#include <osgUtil/Optimizer>
-
-#include <osgGA/TrackballManipulator>
-#include <osgGA/FlightManipulator>
-#include <osgGA/TerrainManipulator>
-#include <osgGA/StateSetManipulator>
-
 #include <string.h>
 #include <iostream>
 
@@ -155,7 +118,6 @@ int main(int argc, char **argv)
     float max_lon = 180;
     float min_lat = -90;
     float max_lat = 90;
-    bool  view_osg = false;
 	long  position = 0;
 
     string_list elev_src;
@@ -246,11 +208,6 @@ int main(int argc, char **argv)
         {
     	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
     	} 
-        else if ( arg.find("--view") == 0 )
-        {
-            SG_LOG(SG_GENERAL, SG_INFO, "Found --view : view OSG model" );
-            view_osg = true;
-        }
         else if ( (arg.find("--max-slope=") == 0) ) 
         {
     	    slope_max = atof( arg.substr(12).c_str() );

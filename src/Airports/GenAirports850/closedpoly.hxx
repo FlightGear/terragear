@@ -10,9 +10,6 @@
 
 #include "texparams.hxx"
 
-#include <osg/Geometry>
-#include <osg/Vec3d>
-
 using std::string;
 
 class ClosedPoly
@@ -30,8 +27,6 @@ public:
     int  CloseCurContour();
     int  Finish();
 
-    int  BuildOsg( osg::Group* airport );
-
     // Build BTG for airport base for airports with boundary
     int  BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
@@ -44,11 +39,9 @@ public:
     }
 
 private:
-    //osg::DrawArrays* CreatePrimitive( BezContour* contour, osg::Vec3Array* v_pave );
     // convert the BezierPoly to a normal Poly (adding nodes for the curves)
     void CreateConvexHull( void );
     void ConvertContour( BezContour* src, point_list *dst );
-    osg::DrawArrays* CreateOsgPrimitive( point_list contour, osg::Vec3Array* vpave );
     void ExpandContour( point_list& src, TGPolygon& dst, double dist );
 
     bool   is_pavement;
