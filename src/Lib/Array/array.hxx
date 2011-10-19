@@ -40,7 +40,7 @@
 #include <simgear/math/sg_types.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#define ARRAY_SIZE_1 1201
+#define ARRAY_SIZE_1 20000
 
 
 class TGArray {

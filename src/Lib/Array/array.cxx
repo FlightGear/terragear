@@ -131,6 +131,11 @@ TGArray::parse( SGBucket& b ) {
 	SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
+        if ((cols>ARRAY_SIZE_1) || (rows>ARRAY_SIZE_1)) {
+            cout << "error, ARRAY_SIZE_1=" << ARRAY_SIZE_1 <<" is too small (cols=" << cols << ", rows=" << rows << "), aborting." << endl;
+            exit(-1);
+        }
+
 	for ( int i = 0; i < cols; i++ ) {
 	    for ( int j = 0; j < rows; j++ ) {
 		*array_in >> in_data[i][j];
