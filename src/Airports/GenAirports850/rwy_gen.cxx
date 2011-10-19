@@ -149,9 +149,7 @@ void Runway::gen_rwy( double alt_m,
 
     int i;
 
-    TGPolygon runway = gen_runway_w_mid( alt_m,
-                                         2 * SG_FEET_TO_METER,
-                                         2 * SG_FEET_TO_METER );
+    TGPolygon runway = gen_runway_w_mid( alt_m, 0, 0 );
 
     TGPolygon runway_half;
 

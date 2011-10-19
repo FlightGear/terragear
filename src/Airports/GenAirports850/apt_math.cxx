@@ -29,7 +29,7 @@
 
 using std::string;
 
-TGPolygon gen_wgs84_area(   Point3D origin,
+TGPolygon gen_wgs84_area( Point3D origin,
                                     double length_m,
                                     double displ1, double displ2,
                                     double width_m,
@@ -101,6 +101,79 @@ TGPolygon gen_wgs84_area(   Point3D origin,
 
     return result_list;
 }
+
+TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
+                          double length_m,
+                          double displ1, double displ2,
+                          double width_m,
+                          double heading_deg,
+                          double alt_m,
+                          bool   add_mid )
+{
+    TGPolygon result_list;
+    double left_hdg = heading_deg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+
+    // move from end2 to the displaced threshold
+    Point3D ref = end2;
+    double lon = 0, lat = 0, r = 0;
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading_deg,
+                        -displ2, &lat, &lon, &r );
+    ref = Point3D( lon, lat, 0.0 );
+
+    // move to the l,-w corner (then we add points in a clockwise direction)
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                        -width_m / 2.0, &lat, &lon, &r );
+    Point3D p = Point3D( lon, lat, 0.0 );
+    result_list.add_node( 0, p );
+
+    // move to the l,w corner
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                        width_m / 2.0, &lat, &lon, &r );
+    p = Point3D( lon, lat, 0.0 );
+    result_list.add_node( 0, p );
+
+    if ( add_mid ) {
+        // move to the 0,w point (then we add points in a clockwise direction)
+
+        ref = Point3D( (end1.lon()+end2.lon())/2.0f, (end1.lat()+end2.lat())/2.0f, 0.0f);
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                            width_m / 2.0, &lat, &lon, &r );
+        p = Point3D( lon, lat, 0.0 );
+        result_list.add_node( 0, p );
+    }
+
+    // move to the end1 center to the displ. threshold
+    ref = end1;
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading_deg,
+                        displ1, &lat, &lon, &r );
+    ref = Point3D( lon, lat, 0.0 );
+
+    // move to the -l,w corner (then we add points in a clockwise direction)
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                        width_m / 2.0, &lat, &lon, &r );
+    p = Point3D( lon, lat, 0.0 );
+    result_list.add_node( 0, p );
+
+    // move to the -l,-w corner
+    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                        -width_m / 2.0, &lat, &lon, &r );
+    p = Point3D( lon, lat, 0.0 );
+    result_list.add_node( 0, p );
+
+    if ( add_mid ) {
+        // move to the 0,-w point (then we add points in a clockwise direction)
+
+        ref = Point3D( (end1.lon()+end2.lon())/2.0f, (end1.lat()+end2.lat())/2.0f, 0.0f);
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                            -width_m / 2.0, &lat, &lon, &r );
+        p = Point3D( lon, lat, 0.0 );
+        result_list.add_node( 0, p );
+    }
+
+    return result_list;
+}
+
 
 // generate a section of texture
 void gen_tex_section( const TGPolygon& runway,
@@ -235,11 +308,7 @@ void gen_tex_section( const TGPolygon& runway,
     double len = length / 2.0;
     double sect_len = len * ( endl_pct - startl_pct );
 
-    // we add 0.6m to both sides of the runway (1.2m total) for texture
-    // overlap.  This puts the lines on the texture back to the edge
-    // of the runway where they belong.
-    double wid = width + 1.2;
-    double sect_wid = wid * ( endw_pct - startw_pct );
+    double sect_wid = width * ( endw_pct - startw_pct );
 
     TGTexParams tp;
     tp = TGTexParams( p0,
