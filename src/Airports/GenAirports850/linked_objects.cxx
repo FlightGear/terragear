@@ -18,7 +18,7 @@ Beacon::Beacon( char* definition )
 
 Sign::Sign( char* definition )
 {
-    char sgdef[128];
+    char sgdef[256];
 
     sscanf(definition, "%lf %lf %lf %d %d %s", &lat, &lon, &heading, &reserved, &size, sgdef );
 
