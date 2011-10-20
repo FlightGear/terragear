@@ -25,6 +25,7 @@ bool Parser::IsAirportDefinition( char* line, string icao )
         {
             case LAND_AIRPORT_CODE: 
             case SEA_AIRPORT_CODE:
+            case HELIPORT_CODE:
                 airport = new Airport( code, line );
                 if ( airport->GetIcao() == icao )
                 {
@@ -32,7 +33,6 @@ bool Parser::IsAirportDefinition( char* line, string icao )
                 }
                 break;
 
-            case HELIPORT_CODE:
             case LAND_RUNWAY_CODE:
             case WATER_RUNWAY_CODE:
             case HELIPAD_CODE:
@@ -623,8 +623,16 @@ int Parser::ParseLine(char* line)
                 }
                 break;
             case HELIPORT_CODE:
-                SetState( STATE_PARSE_SIMPLE );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
+                if (cur_state == STATE_NONE)
+                {
+                    SetState( STATE_PARSE_SIMPLE );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
+                    cur_airport = new Airport( code, line );
+                }
+                else
+                {
+                    SetState( STATE_DONE );
+                }
                 break;
 
             case LAND_RUNWAY_CODE:
