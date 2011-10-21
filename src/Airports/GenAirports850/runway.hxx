@@ -85,14 +85,14 @@ private:
     // generate an area for a runway and include midpoints
     TGPolygon gen_runway_w_mid( double alt_m, double length_extend_m, double width_extend_m )
     {
-         return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), rwy.length + 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, alt_m, true) );
+         return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, alt_m, true) );
     }
 
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
     TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
     {
-        return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), rwy.length + 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, alt_m, false) );
+        return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, alt_m, false) );
     }
 
     void gen_rw_designation( const std::string& material,

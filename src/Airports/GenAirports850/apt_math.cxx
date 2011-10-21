@@ -118,7 +118,7 @@ TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
     Point3D ref = end2;
     double lon = 0, lat = 0, r = 0;
     geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading_deg,
-                        -displ2, &lat, &lon, &r );
+                        length_m / 2.0 - displ2, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
 
     // move to the l,-w corner (then we add points in a clockwise direction)
@@ -146,7 +146,7 @@ TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
     // move to the end1 center to the displ. threshold
     ref = end1;
     geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading_deg,
-                        displ1, &lat, &lon, &r );
+                        displ1 - length_m / 2.0, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
 
     // move to the -l,w corner (then we add points in a clockwise direction)
