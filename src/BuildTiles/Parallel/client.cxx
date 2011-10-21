@@ -52,7 +52,7 @@ using std::cout;
 using std::cerr;
 using std::endl;
 
-#define MAXBUF 1024
+#define MAXBUF 16384
 #define BUSY_WAIT_TIME 30
 
 using std::string;
@@ -145,7 +145,7 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
     long int tile;
     int sock, len;
     fd_set ready;
-    char message[256];
+    char message[MAXBUF];
 
     // loop till we get a socket connection
     while ( (sock = make_socket( (char *)host.c_str(), port )) < 0 ) {
@@ -175,7 +175,7 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
 
     if ( FD_ISSET(sock, &ready) ) {
 	/* input coming from socket */
-	if ( (len = read(sock, message, 1024)) > 0 ) {
+	if ( (len = read(sock, message, MAXBUF)) > 0 ) {
 	    message[len] = '\0';
 	    tile = atoi(message);
 	    cout << "  tile to construct = " << tile << endl;

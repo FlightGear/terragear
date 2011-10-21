@@ -41,7 +41,7 @@ using std:: string ;
 #  define WAIT_ANY (pid_t)-1
 #endif
 
-#define MAXBUF 1024
+#define MAXBUF 16384
 
 static double start_lon, start_lat;
 static double lat = 0.0;
