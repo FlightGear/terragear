@@ -29,3 +29,4 @@ target_link_libraries(genapts
 	${GPC_LIBRARY}
 	${NEWMAT_LIBRARY})
 
+install(TARGETS genapts RUNTIME DESTINATION bin)

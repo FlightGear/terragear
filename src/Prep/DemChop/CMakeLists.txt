@@ -6,13 +6,17 @@ target_link_libraries(demchop
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
 
+install(TARGETS demchop RUNTIME DESTINATION bin)
+
 add_executable(hgtchop hgtchop.cxx point2d.hxx)
 
 target_link_libraries(hgtchop 
     HGT
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
-	
+
+install(TARGETS hgtchop RUNTIME DESTINATION bin)
+
 if(TIFF_FOUND)
 add_executable(srtmchop srtmchop.cxx point2d.hxx)
 target_link_libraries(srtmchop 
@@ -21,6 +25,7 @@ target_link_libraries(srtmchop
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
 	
+install(TARGETS srtmchop RUNTIME DESTINATION bin)
 endif(TIFF_FOUND)
 
 add_executable(fillvoids fillvoids.cxx)
@@ -29,9 +34,12 @@ target_link_libraries(fillvoids
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
 
+install(TARGETS fillvoids RUNTIME DESTINATION bin)
+
 add_executable(testassem testassem.cxx)
 target_link_libraries(testassem 
     Array
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
-	
+
+install(TARGETS testassem RUNTIME DESTINATION bin)

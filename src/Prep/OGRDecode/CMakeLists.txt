@@ -11,4 +11,5 @@ target_link_libraries(ogr-decode
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
 
+install(TARGETS ogr-decode RUNTIME DESTINATION bin)
 endif(GDAL_FOUND)

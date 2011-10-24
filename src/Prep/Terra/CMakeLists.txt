@@ -1,10 +1,8 @@
-
-
 add_library(Terra STATIC 
     Array.h Geom.h 
     GreedyInsert.cc GreedyInsert.h 
     Heap.cc Heap.h 
-	Map.cc Map.h 
+    Map.cc Map.h
     Mask.cc Mask.h 
     Quadedge.cc Quadedge.h 
     Subdivision.cc Subdivision.h 

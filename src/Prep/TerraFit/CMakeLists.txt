@@ -6,3 +6,4 @@ target_link_libraries(terrafit
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
 	
+install(TARGETS terrafit RUNTIME DESTINATION bin)

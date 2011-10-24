@@ -18,6 +18,9 @@ target_link_libraries(fgfs-construct
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
 
+install(TARGETS fgfs-construct RUNTIME DESTINATION bin)
+INSTALL(FILES usgsmap.txt DESTINATION ${PKGDATADIR} )
+
 
 add_executable(fgfs-master 
     master.cxx)
@@ -26,3 +29,5 @@ target_link_libraries(fgfs-master
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	)
+
+install(TARGETS fgfs-master RUNTIME DESTINATION bin)

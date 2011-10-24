@@ -9,6 +9,8 @@ target_link_libraries(gshhs
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
+
+install(TARGETS gshhs RUNTIME DESTINATION bin)
 	
 add_executable(gshhs_debug 
     debug.cxx)
@@ -19,3 +21,4 @@ target_link_libraries(gshhs_debug
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
     	
+install(TARGETS gshhs_debug RUNTIME DESTINATION bin)

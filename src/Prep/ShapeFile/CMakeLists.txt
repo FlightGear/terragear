@@ -7,6 +7,8 @@ target_link_libraries(shape-decode
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
+
+install(TARGETS shape-decode RUNTIME DESTINATION bin)
 	
 add_executable(noaa-decode noaa-decode.cxx)
 
@@ -16,3 +18,4 @@ target_link_libraries(noaa-decode
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
     	
+install(TARGETS noaa-decode RUNTIME DESTINATION bin)

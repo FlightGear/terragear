@@ -11,3 +11,5 @@ target_link_libraries(testclipper
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
+
+INSTALL(FILES default_priorities.txt DESTINATION ${PKGDATADIR} )
