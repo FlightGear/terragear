@@ -121,14 +121,14 @@ if(${SIMGEAR_LIBRARIES} STREQUAL "SIMGEAR_LIBRARIES-NOTFOUND")
         timing
         io
         serial
+        math
         structure
         props
         xml
         misc
         threads
         debug
-        magvar
-        math)
+        magvar)
 
     set(scene_comps
         ephem

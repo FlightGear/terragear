@@ -34,9 +34,8 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h> /* tmp for read() */
 #endif
-#ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-#endif
+
+#include <cstdlib>
 
 extern "C" {    
     #include "rawdem.h"

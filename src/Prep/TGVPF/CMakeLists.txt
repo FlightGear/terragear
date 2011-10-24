@@ -7,3 +7,4 @@ target_link_libraries(tgvpf
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
 	
+install(TARGETS tgvpf RUNTIME DESTINATION bin)

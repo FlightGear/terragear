@@ -9,3 +9,4 @@ target_link_libraries(e00lines
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})
 	
+install(TARGETS e00lines RUNTIME DESTINATION bin)
