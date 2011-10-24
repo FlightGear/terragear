@@ -3,3 +3,5 @@ terragear.suo
 *.user
 x64
 Win32
+Debug
+Release
