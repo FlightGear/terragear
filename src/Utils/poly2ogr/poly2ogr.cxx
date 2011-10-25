@@ -35,12 +35,14 @@
 #  include <unistd.h>
 #endif
 
+#include <boost/foreach.hpp>
+
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
-
-#include <plib/ul.h>
+#include <simgear/misc/sg_path.hxx>
+#include <simgear/misc/sg_dir.hxx>
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/point2d.hxx>
@@ -411,49 +413,31 @@ void process_points_file(const std::string& path) {
         }
 }
 
-void process_file(const std::string& path) {
-        struct stat sbuf;
-        
-        if ( stat(path.c_str(),&sbuf) != 0 ) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Unable to stat path '" << path << "'");
-                return;
+void process_file(const SGPath& path)
+{
+    if (path.isDir()) {
+    // recurse downwards!
+        simgear::Dir d(path);
+        int flags = simgear::Dir::TYPE_FILE | simgear::Dir::TYPE_DIR |
+            simgear::Dir::NO_DOT_OR_DOTDOT;
+        BOOST_FOREACH(const SGPath& c, d.children(flags)) {
+            process_file(c);
         }
-        
-        if (S_ISDIR(sbuf.st_mode)) {
-                ulDir* dir;
-                
-                dir=ulOpenDir(path.c_str());
-                if (!dir) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open directory '" << path << "'");
-                        return;
-                }
-                
-                struct ulDirEnt *de;
-                
-                while ((de=ulReadDir(dir))) {
-                        if (!strcmp(de->d_name,".") || !strcmp(de->d_name,"..")) {
-                                continue;
-                        }
-                        
-                        std::string subpath=path+"/"+de->d_name;
-                        process_file(subpath);
-                }
-                
-                ulCloseDir(dir);
-        } else if (endswith(path,".pts")) {
-                // This is a points file
-                process_points_file(path);
-        } else if (endswith(path,".btg.gz") || endswith(path,".btg")) {
-                // This is a scenery file
-                process_scenery_file(path);
-        } else if (!endswith(path,".gz") &&
-                        !endswith(path,".arr") &&
-                        !endswith(path,".fit") &&
-                        !endswith(path,".stg") &&
-                        !endswith(path,".ind")) {
-                // should be a polygon file
-                process_polygon_file(path);
-        }
+    
+        return;
+    }
+    
+    string lext = path.complete_lower_extension();
+    if (lext == "pts") {
+        process_points_file(path.str());
+    } else if ((lext == "btg.gz") || (lext == "btg")) {
+        process_scenery_file(path.str());
+    } else if ((lext != "gz") && (lext != "arr") && (lext != "fit") &&
+               (lext != "stg") && (lext != "ind")) 
+    {
+        // should be a polygon file
+        process_polygon_file(path.str());
+    }
 }
 
 void usage(const char* progname, const std::string& msg) {
@@ -553,7 +537,7 @@ int main(int argc, char** argv) {
         }
         
         for (int i=optind;i<argc;i++) {
-                process_file(argv[i]);
+                process_file(SGPath(argv[i]));
         }
         
         OGRDataSource::DestroyDataSource( datasource );

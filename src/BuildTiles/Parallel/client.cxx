@@ -41,14 +41,16 @@
 #include <string>
 #include <vector>
 
-#include <simgear/bucket/newbucket.hxx>
+#include <boost/foreach.hpp>
 
-#include <plib/ul.h>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/misc/sg_path.hxx>
+#include <simgear/misc/sg_dir.hxx>
+#include <simgear/misc/strutils.hxx>
 
 using std::cout;
 using std::cerr;
 using std::endl;
-
 
 #define MAXBUF 1024
 #define BUSY_WAIT_TIME 30
@@ -76,7 +78,7 @@ void check_master_switch() {
 // check if the host system is free of interactive users
 int system_free() {
 
-#if !defined(BSD) && !defined(__CYGWIN__) && !defined(_MSC_VER)
+#if !defined(BSD) && !defined(__CYGWIN__) && !defined(_MSC_VER) && !defined(__APPLE__)
     struct utmp *uptr;
 
     setutent();
@@ -189,88 +191,68 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
     return -1;
 }
 
-bool endswith(const char* s, const char* suffix) {
-        size_t slen=strlen(s);
-        size_t sufflen=strlen(suffix);
-        if (slen<sufflen)
-                return false;
-        return (strncmp(s+slen-sufflen,suffix,sufflen)==0);
-}
-
 // check if the tile really has to be generated
 static bool must_generate( const SGBucket& b ) {
     if (do_overwrite)
             return true;
     
-    string btg_file = output_base + "/" + b.gen_base_path()
-	+ "/" + b.gen_index_str() + ".btg.gz";
-    string stg_file = output_base + "/" + b.gen_base_path()
-	+ "/" + b.gen_index_str() + ".stg";
-    struct stat btg_stat, stg_stat;
-    bool have_btg, have_stg;
-    
-    have_btg= ( stat( btg_file.c_str(), &btg_stat ) == 0 );
-    have_stg = ( stat( stg_file.c_str(), &stg_stat ) == 0 );
-    
-    if ( !have_btg ) {
-            cout << "Output file " << btg_file << " was not found\n";
+    SGPath btg_file(output_base + "/" + b.gen_base_path()
+	+ "/" + b.gen_index_str() + ".btg.gz");
+    SGPath stg_file (output_base + "/" + b.gen_base_path()
+	+ "/" + b.gen_index_str() + ".stg");
+
+
+    if ( !btg_file.exists() ) {
+        cout << "Output file " << btg_file.str() << " was not found\n";
     }
     
-    if ( !have_stg ) {
-            cout << "Output file " << stg_file << " was not found\n";
+    if ( !stg_file.exists() ) {
+        cout << "Output file " << stg_file.str() << " was not found\n";
     }
     
     /* Now check the load dirs for any source data and
      * whether any of that is newer than the btg-file or the stg-file
      */
-    const string& prefix=b.gen_index_str()+".";
-    size_t prefix_len=prefix.size();
+    const string prefix=b.gen_index_str()+".";
     for (int i = 0; i < (int)load_dirs.size(); i++) {
-            string path=load_dirs[i]+"/"+b.gen_base_path();
-            ulDir *loaddir=ulOpenDir(path.c_str());
-            if (!loaddir) {
-                    if (errno!=ENOENT)
-                            cout << " Could not open load directory " << path << ":" << strerror(errno) << "\n";
-                    continue;
+        SGPath path(load_dirs[i]+"/"+b.gen_base_path());
+        simgear::Dir loadDir(path);
+        if (!loadDir.exists()) {
+            cout << " Could not open load directory " << path.str() << ":" << strerror(errno) << "\n";
+            continue;
+        }
+        
+        BOOST_FOREACH(const SGPath& c, loadDir.children(simgear::Dir::TYPE_FILE)) {
+            if (!simgear::strutils::starts_with(c.file(), prefix)) {
+                continue;
             }
             
-            struct ulDirEnt* de;
-            struct stat src_stat;
-            
-            while ((de=ulReadDir(loaddir))) {
-                    if (strncmp(de->d_name,prefix.c_str(),prefix_len))
-                            continue;
-                    string file=path+"/"+de->d_name;
-                    if ( stat(file.c_str(), &src_stat) != 0) {
-                            /* huh!? */
-                            cerr << " Could not stat file " << file << ":" << strerror(errno) << "\n";
-                            continue;
-                    }
-                    if ( have_btg && src_stat.st_mtime>btg_stat.st_mtime ) {
-                            cout << " File " << file << " is newer than btg-file => rebuild\n";
-			    ulCloseDir(loaddir);
-                            return true;
-                    }
-                    if ( have_stg && src_stat.st_mtime>stg_stat.st_mtime ) {
-                            cout << " File " << file << " is newer than stg-file => rebuild\n";
-			    ulCloseDir(loaddir);
-                            return true;
-                    }
-                    /* Ignore elevation data, as it is not used if we have no
-                     * landmass data. So in addition to elevation data we need at
-                     * least one polygon file.
-                     */
-                    if ( endswith( de->d_name, ".arr.gz" ) || endswith( de->d_name, ".fit.gz" ) )
-                            continue;
-                    if ( !(have_stg && have_btg) ) {
-                            cout << " There is source-data (" << file << ") for tile " << b.gen_index_str() << " but .btg or .stg is missing => build\n";
-			    ulCloseDir(loaddir);
-                            return true;
-                    }
+            if (btg_file.exists() && (btg_file.modTime() < c.modTime())) {
+                 cout << " File " << c.str() << " is newer than btg-file => rebuild\n";
+                 return true;
             }
             
-            ulCloseDir(loaddir);
-    }
+            if (stg_file.exists() && (stg_file.modTime() < c.modTime())) {
+                 cout << " File " << c.str() << " is newer than stg-file => rebuild\n";
+                 return true;
+            }
+            
+            /* Ignore elevation data, as it is not used if we have no
+             * landmass data. So in addition to elevation data we need at
+             * least one polygon file.
+             */
+            string lext = c.complete_lower_extension();
+            if ((lext == "arr.gz") || (lext == "fit.gz")) {
+                continue;
+            }
+            
+            if ( !(stg_file.exists() && btg_file.exists()) ) {
+                cout << " There is source-data (" << c.str() << ") for tile " << b.gen_index_str() << " but .btg or .stg is missing => build\n";
+                return true;
+            }
+        } // of load-dir child iteration
+            
+    } // of load dirs iteration
     
     return false;
 }
