@@ -116,10 +116,10 @@ if(${SIMGEAR_LIBRARIES} STREQUAL "SIMGEAR_LIBRARIES-NOTFOUND")
   # linker such as GNU ld on Linux
     set(comps
         nasal
-        bucket
         route
         timing
         io
+        bucket
         serial
         math
         structure
