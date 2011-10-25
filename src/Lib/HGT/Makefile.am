@@ -6,7 +6,7 @@ noinst_PROGRAMS = testhgt
 
 testhgt_SOURCES = testhgt.cxx
 testhgt_LDADD = libHGT.a \
-	-lsgbucket -lsgmisc -lsgdebug -lz -lplibul
+	-lsgbucket -lsgmisc -lsgdebug -lz
 
 INCLUDES = -I$(top_srcdir)/src
 

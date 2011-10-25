@@ -42,7 +42,7 @@ hgtchop_SOURCES = \
 
 hgtchop_LDADD = \
 	$(top_builddir)/src/Lib/HGT/libHGT.a \
-	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz -lplibul
+	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz
 	$(base_LIBS)
 
 if HAVE_LIBTIFF
@@ -51,7 +51,7 @@ srtmchop_SOURCES = \
 
 srtmchop_LDADD = \
 	$(top_builddir)/src/Lib/HGT/libHGT.a \
-	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz -lplibul -ltiff
+	-lsgbucket -lsgmisc -lsgdebug -lsgxml -lz -ltiff
 	$(base_LIBS)
 endif
 

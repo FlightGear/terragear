@@ -29,8 +29,6 @@
 #include <config.h>
 #endif
 
-#include <plib/sg.h>
-
 #include <simgear/compiler.h>
 
 #include <stdio.h>

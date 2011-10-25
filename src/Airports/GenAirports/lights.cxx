@@ -25,9 +25,10 @@
 #  include <config.h>
 #endif
 
+#include <cstdlib>
+
 #include <simgear/math/sg_geodesy.hxx>
 
-#include <plib/sg.h>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 

@@ -26,14 +26,6 @@ if test "x$with_simgear" != "x" ; then
     EXTRA_DIRS="${EXTRA_DIRS} $with_simgear"
 fi
 
-# specify the plib location
-AC_ARG_WITH(plib, [  --with-plib=PREFIX      Specify the prefix path to plib])
-
-if test "x$with_plib" != "x" ; then
-    echo "plib prefix is $with_plib"
-    EXTRA_DIRS="${EXTRA_DIRS} $with_plib"
-fi
-
 # specify the osg location
 AC_ARG_WITH(osg, [  --with-osg=PREFIX       Specify the prefix path to osg])
 
@@ -170,7 +162,6 @@ dnl Check for MS Windows environment
 AC_CHECK_HEADER(windows.h)
 
 dnl extra library and include directories
-# EXTRA_DIRS="/usr/local/plib /usr/X11R6"
 EXTRA_DIRS="$EXTRA_DIRS /usr/X11R6"
 
 if test -d /opt/X11R6 ; then
@@ -291,8 +282,6 @@ AC_CHECK_LIB(tiff, TIFFOpen,,,)
 AM_CONDITIONAL(HAVE_LIBTIFF, test x$ac_cv_lib_tiff_TIFFOpen = xyes)
 
 AC_LANG_PUSH(C++)
-# needed for plib 1.8.x or later
-AC_CHECK_LIB(plibul, ulInit,,,)
 
 opengl_LIBS="$LIBS"
 LIBS="$base_LIBS"
@@ -303,19 +292,6 @@ AC_SUBST(network_LIBS)
 AC_SUBST(support_LIBS)
 
 AM_CONDITIONAL(HAVE_XWINDOWS, test "x$ac_cv_lib_X11_XCreateWindow" = "xyes" )
-
-dnl Check for "plib" without which we cannot go on
-AC_CHECK_HEADER(plib/sg.h)
-if test "x$ac_cv_header_plib_sg_h" != "xyes"; then
-    echo
-    echo "You *must* have the plib library installed on your system to build"
-    echo "TerraGear!"
-    echo
-    echo "Please see README.plib for more details."
-    echo
-    echo "configure aborted."
-    exit
-fi
 
 dnl Check for "libnewmat" without which we cannot build airport surfaces
 AC_CHECK_HEADER(newmat/newmat.h)

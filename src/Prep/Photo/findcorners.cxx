@@ -2,11 +2,9 @@
 
 #include <simgear/compiler.h>
 
-#include <stdlib.h>
-
 #include <iostream>
-
-#include <plib/sg.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <simgear/math/sg_geodesy.hxx>
 

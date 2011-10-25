@@ -41,8 +41,6 @@
 #include <map>
 #include <string>
 
-#include <plib/sg.h>			// plib include
-
 #include <simgear/constants.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/io/sg_binobj.hxx>
@@ -913,11 +911,10 @@ void build_airport( string airport_id, float alt_m,
     // SG_LOG(SG_GENERAL, SG_DEBUG, "geod = " << p);
     // SG_LOG(SG_GENERAL, SG_DEBUG, "cart = " << tmp);
 
-    sgdVec3 tmp;
-    sgdSetVec3( tmp, vnt.x(), vnt.y(), vnt.z() );
-    sgdNormalizeVec3( tmp );
+    SGVec3d tmp( vnt.x(), vnt.y(), vnt.z() );
+    tmp = normalize(tmp);
+    Point3D vn( tmp.x(), tmp.y(), tmp.z() );
 
-    Point3D vn( tmp[0], tmp[1], tmp[2] );
     SG_LOG(SG_GENERAL, SG_DEBUG, "found normal for this airport = " << tmp);
 
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) {

@@ -29,6 +29,7 @@
 #include <simgear/compiler.h>
 
 #include <stdio.h>
+#include <cstdlib>
 #include <time.h>
 #include <zlib.h>
 
