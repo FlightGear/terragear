@@ -28,7 +28,9 @@
 
 #include <stdlib.h>    // for system()
 #include <sys/stat.h>  // for stat()
-#include <unistd.h>    // for stat()
+#ifndef _MSC_VER
+#   include <unistd.h>    // for stat()
+#endif
 
 #include <string>
 #include <iostream>
