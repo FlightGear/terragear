@@ -36,10 +36,6 @@
 #include <Array/array.hxx>
 #include <Polygon/point2d.hxx>
 
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
-
 #include <stdlib.h>
 
 using std::cout;

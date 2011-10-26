@@ -7,9 +7,10 @@ add_library(Terra STATIC
     Quadedge.cc Quadedge.h 
     Subdivision.cc Subdivision.h 
     Vec2.h Vec3.h
+	getopt.c getopt.h 
 )
 
 add_executable(terra_bin 
-    cmdline.cc getopt.c getopt.h greedy.cc output.cc terra.cc terra.h version.h)
+    cmdline.cc greedy.cc output.cc terra.cc terra.h version.h)
 
 target_link_libraries(terra_bin Terra)

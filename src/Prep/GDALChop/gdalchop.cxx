@@ -36,15 +36,14 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/lowlevel.hxx>
-
-#ifdef _MSC_VER
-#  include <Win32/mkdir.hpp>
-#endif
+#include <simgear/misc/sg_path.hxx>
 
 #include <gdal.h>
 #include <gdal_priv.h>
 #include <gdalwarper.h>
 #include <ogr_spatialref.h>
+
+#include <boost/scoped_array.hpp>
 
 using std::cout;
 using std::string;
@@ -296,15 +295,11 @@ void write_bucket(const string& work_dir, SGBucket bucket,
                   int span_x, int span_y,
                   int col_step, int row_step,
                   bool compress=true) {
-        string base = bucket.gen_base_path();
-        string path = work_dir + "/" + base;
-#ifdef _MSC_VER
-        fg_mkdir( path.c_str() );
-#else
-        string command = "mkdir -p " + path;
-        system( command.c_str() );
-#endif
-        string array_file = path + "/" + bucket.gen_index_str() + ".arr";
+        SGPath path(work_dir);
+        path.append(bucket.gen_base_path());
+        path.create_dir( 0755 );
+
+        string array_file = path.str() + "/" + bucket.gen_index_str() + ".arr";
         
         FILE *fp;
         if ( (fp = fopen(array_file.c_str(), "w")) == NULL ) {
@@ -359,15 +354,15 @@ void process_bucket(const string& work_dir, SGBucket bucket,
         span_y=bucket.get_height()*3600/row_step;
         
         int cellcount=(span_x+1)*(span_y+1);
-        int buffer[cellcount];
+        boost::scoped_array<int> buffer(new int[cellcount]);
         
-        ::memset(buffer,-1,(span_x+1)*(span_y+1)*sizeof(int));
+        ::memset(buffer.get(),-1,(span_x+1)*(span_y+1)*sizeof(int));
         
         for (int i=0;i<imagecount;i++) {
             double inorth,isouth,ieast,iwest;
             images[i]->GetBounds(inorth,isouth,ieast,iwest);
             
-            images[i]->GetDataChunk(buffer,
+            images[i]->GetDataChunk(buffer.get(),
                 bwest, bsouth,
                 col_step/3600.0, row_step/3600.0,
                 span_x+1, span_y+1);
@@ -397,7 +392,7 @@ void process_bucket(const string& work_dir, SGBucket bucket,
         
         /* ...and write it out */
         write_bucket(work_dir, bucket,
-                     buffer,
+                     buffer.get(),
                      min_x, min_y,
                      span_x, span_y,
                      col_step, row_step);
@@ -412,14 +407,9 @@ int main(int argc, const char **argv) {
 	exit(-1);
     }
 
-    string work_dir = argv[1];
+    SGPath work_dir( argv[1] );
 
-#ifdef _MSC_VER
-    fg_mkdir( work_dir.c_str() );
-#else
-    string command = "mkdir -p " + work_dir;
-    system( command.c_str() );
-#endif
+    work_dir.create_dir( 0755 );
 
     GDALAllRegister();
 
@@ -444,7 +434,7 @@ int main(int argc, const char **argv) {
     const char** tilenames=argv+dashpos+1;
     const char** datasetnames=argv+2;
     
-    ImageInfo *images[datasetcount];
+    boost::scoped_array<ImageInfo *> images( new ImageInfo *[datasetcount] );
     
     double north=-1000,south=1000,east=-1000,west=1000;
     
@@ -504,7 +494,7 @@ int main(int argc, const char **argv) {
             for (int y=0;y<=dy;y++) {
                 SGBucket bucket=sgBucketOffset(west,south,x,y);
                 
-                process_bucket(work_dir,bucket,images,datasetcount);
+                process_bucket(work_dir.str(),bucket,images.get(),datasetcount);
             }
         }
     } else {
@@ -515,7 +505,7 @@ int main(int argc, const char **argv) {
         for (int i=0;i<tilecount;i++) {
             SGBucket bucket(atol(tilenames[i]));
             
-            process_bucket(work_dir,bucket,images,datasetcount,true);
+            process_bucket(work_dir.str(),bucket,images.get(),datasetcount,true);
         }
     }
     
