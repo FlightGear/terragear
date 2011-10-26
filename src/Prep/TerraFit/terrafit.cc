@@ -54,6 +54,8 @@
 #include <Prep/Terra/Mask.h>
 
 using std::istream;
+using simgear::Dir;
+using simgear::PathList;
 
 /*
  * Benchmark: Processing 800 individual buckets:
@@ -143,37 +145,20 @@ bool endswith(const std::string& s1, const std::string& suffix) {
         return s1.compare(s1len-sufflen,sufflen,suffix)==0;
 }
 
-void fit_file(const std::string& path) {
+void fit_file(const SGPath& path) {
+    
         SG_LOG(SG_GENERAL, SG_INFO,"Working on file '" << path << "'");
         
-        std::string infile,outfile;
-        if (endswith(path,".arr.gz")) {
-                infile=path.substr(0,path.size()-7);
-        } else if (endswith(path,".arr")) {
-                infile=path.substr(0,path.size()-4);
-        } else {
-                /* actually should not happen */
-                SG_LOG(SG_GENERAL, SG_ALERT, "unknown input file extension = " << path);
-                throw sg_exception("unknown input file extension!");
-        }
-        
-        outfile=infile+".fit.gz";
-        
-        struct stat statbuf;
-        if (stat(path.c_str(),&statbuf)!=0) {
-                SG_LOG(SG_GENERAL, SG_ALERT ,"ERROR: Unable to stat '" << path << "':" << strerror(errno));
-                return;
-        }
-        
-        time_t src_mtime=statbuf.st_mtime;
-        
-        if (stat(outfile.c_str(),&statbuf)==0 && statbuf.st_mtime>src_mtime) {
-                SG_LOG(SG_GENERAL, SG_INFO ,"Skipping " << outfile << ", source " << path << " is older");
-                return;
+        SGPath outPath(path.dir());
+        outPath.append(path.file_base() + ".fit.gz");
+                
+        if (outPath.exists() && (path.modTime() < outPath.modTime())) {
+            SG_LOG(SG_GENERAL, SG_INFO ,"Skipping " << outPath << ", source " << path << " is older");
+            return;
         }
         
         SGBucket bucket(0,0); // dummy bucket
-        TGArray inarray(infile);
+        TGArray inarray(path.dir() + "/" + path.file_base());
         inarray.parse(bucket);
         inarray.close();
         
@@ -186,8 +171,8 @@ void fit_file(const std::string& path) {
         greedy_insertion(mesh);
         
         gzFile fp;
-        if ( (fp = gzopen( outfile.c_str(), "wb9" )) == NULL ) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "ERROR: opening " << outfile << " for writing!");
+        if ( (fp = gzopen( outPath.c_str(), "wb9" )) == NULL ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "ERROR: opening " << outPath << " for writing!");
                 return;
         }
         
@@ -211,6 +196,7 @@ void fit_file(const std::string& path) {
 }
 
 void walk_path(const SGPath& path) {
+    
     if (!path.exists()) {
         SG_LOG(SG_GENERAL, SG_ALERT ,"ERROR: Unable to stat '" << path.str() << "':" << strerror(errno));
         return;
@@ -219,9 +205,9 @@ void walk_path(const SGPath& path) {
     if ((path.lower_extension() == "arr") || (path.complete_lower_extension() == "arr.gz")) {
         fit_file(path.str());
     } else if (path.isDir()) {
-        simgear::Dir d(path);
-        simgear::PathList subdirs = d.children(simgear::Dir::TYPE_DIR | simgear::Dir::NO_DOT_OR_DOTDOT);
-        BOOST_FOREACH(const SGPath& p, subdirs) {
+        Dir d(path);
+        int flags = Dir::TYPE_DIR | Dir::TYPE_FILE | Dir::NO_DOT_OR_DOTDOT;
+        BOOST_FOREACH(const SGPath& p, d.children(flags)) {
             walk_path(p);
         }
     }
