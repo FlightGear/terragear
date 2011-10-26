@@ -23,6 +23,8 @@ if(NOT CMAKE_BUILD_TYPE)
       FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
+option(ENABLE_GDAL "Set to ON to build TerraGear with GDAL support" ON)
+
 # check required dependencies
 find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
@@ -31,7 +33,10 @@ find_package(SimGear 2.5.0 REQUIRED)
 find_package(GPC REQUIRED)
 find_package(TIFF) # needed for SRTM
 find_package(NewMat11)
-find_package(GDAL) # needed for OGRDecode
+
+if(ENABLE_GDAL)
+    find_package(GDAL) # build OGRDecode
+endif(ENABLE_GDAL)
 
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
