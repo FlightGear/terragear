@@ -1,0 +1,5 @@
+Win32
+x64
+*.sdf
+*.user
+*.suo
