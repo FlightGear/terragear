@@ -29,24 +29,40 @@
 # error This library requires C++
 #endif                                   
 
-// which clipping lib to use?
+/* which clipping lib to use? Looks like we should go with clipper
+ * It appears to be both faster and generates better accuracy
+ */
+
 //#define CLIP_GPC
 #define CLIP_CLIPPER
+
+/* Set to 1 to allow keeping accum poly in native clipping lib format
+ * Although it seems to work on some airports, EHAM is pretty broken 
+ * when turned on
+ */
+
+#define CLIP_NATIVE     0
 
 #ifdef CLIP_GPC
 extern "C" {
 #include <gpc.h>
 }
 
+#if CLIP_NATIVE // optimization apparently causing errors
 typedef gpc_polygon	ClipPolyType;
 #endif
+
+#endif /* CLIP_GPC */
 
 #ifdef CLIP_CLIPPER
 #include "clipper.hpp"
 using namespace ClipperLib;
 
+#if CLIP_NATIVE // optimization apparently causing errors
 typedef Polygons ClipPolyType;
 #endif
+
+#endif /* CLIP_CLIPPER */
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
@@ -203,6 +219,10 @@ public:
 };
 
 
+#if !CLIP_NATIVE
+typedef TGPolygon	ClipPolyType;
+#endif
+
 typedef std::vector < TGPolygon > poly_list;
 typedef poly_list::iterator poly_list_iterator;
 typedef poly_list::const_iterator const_poly_list_iterator;
@@ -237,7 +257,10 @@ TGPolygon tgPolygon2tristrip( const TGPolygon& poly );
 
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip );
+
+#if CLIP_NATIVE
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const ClipPolyType& clip );
+#endif
 
 // Intersection
 TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip );
@@ -247,7 +270,10 @@ TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip );
 
 // Union
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
+
+#if CLIP_NATIVE
 ClipPolyType tgPolygonUnion( const TGPolygon& subject, const ClipPolyType& clip );
+#endif
 
 // Output
 std::ostream &operator<< (std::ostream &output, const TGPolygon &poly);

@@ -690,10 +690,11 @@ TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_DIFF, subject, clip );
 }
 
+#if CLIP_NATIVE
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const ClipPolyType& clip ) {
     return polygon_clip( POLY_DIFF, subject, clip );
 }
-
+#endif
 
 // Intersection
 TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip ) {
@@ -712,10 +713,11 @@ TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_UNION, subject, clip );
 }
 
+#if CLIP_NATIVE
 ClipPolyType tgPolygonUnion( const TGPolygon& subject, const ClipPolyType& clip ) {
     return polygon_clip_keep_native_fmt( POLY_UNION, subject, clip );
 }
-
+#endif
 
 // canonify the polygon winding, outer contour must be anti-clockwise,
 // all inner contours must be clockwise.
