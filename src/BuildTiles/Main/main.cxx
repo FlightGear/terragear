@@ -89,8 +89,7 @@ static int actual_load_polys( const SGPath& dir,
 			      TGConstruct& c,
 			      TGClipper& clipper ) {
     int counter = 0;
-   // string base = c.get_bucket().gen_base_path();
-    //string tile_str = c.get_bucket().gen_index_str();
+    string tile_str = c.get_bucket().gen_index_str();
 
     simgear::Dir d(dir);
     if (!d.exists()) {
@@ -99,6 +98,10 @@ static int actual_load_polys( const SGPath& dir,
     }
     
     BOOST_FOREACH(const SGPath& p, d.children(simgear::Dir::TYPE_FILE)) {
+        if (p.file_base() != tile_str) {
+            continue;
+        }
+        
         string lext = p.complete_lower_extension();
         if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
             (lext == "fit") || (lext == "fit.gz") || (lext == "ind")) 
