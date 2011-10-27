@@ -100,7 +100,7 @@ static int actual_load_polys( const SGPath& dir,
     
     BOOST_FOREACH(const SGPath& p, d.children(simgear::Dir::TYPE_FILE)) {
         string lext = p.complete_lower_extension();
-        if ((lext == "arr") || (lext == "arr.gz") || 
+        if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
             (lext == "fit") || (lext == "fit.gz") || (lext == "ind")) 
         {
             // skipped!
