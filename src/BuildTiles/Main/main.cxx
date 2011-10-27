@@ -424,13 +424,6 @@ static void second_triangulate( TGConstruct& c, TGTriangle& t ) {
 }
 
 
-// calculate distance based on x,y only
-static double distance2D( const Point3D p1, const Point3D p2 ) {
-    double dx = p1.x() - p2.x();
-    double dy = p1.y() - p2.y();
-    return sqrt( dx*dx + dy*dy );
-}
-
 inline void calc_gc_course_dist( const Point3D& start, const Point3D& dest, 
                                  double *course, double *dist )
 {
@@ -1151,7 +1144,6 @@ int main(int argc, char **argv) {
     // routine can blow up and allocate memory forever.  We'd like
     // this process to die before things get out of hand so we can try
     // again with a smaller interior angle limit.
-    int result;
     struct rlimit limit;
     limit.rlim_cur = 40000000;
     limit.rlim_max = 40000000;
