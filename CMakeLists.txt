@@ -82,6 +82,8 @@ check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
 check_include_file(windows.h HAVE_WINDOWS_H)
 
+check_function_exists (rint HAVE_RINT)
+
 set(PKGDATADIR ${CMAKE_INSTALL_PREFIX}/share/TerraGear)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
