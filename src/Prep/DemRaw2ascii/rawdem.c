@@ -26,19 +26,20 @@
 #  include <config.h>
 #endif
 
-#include <math.h>		/* rint() */
+#include <math.h>               /* rint() */
 #include <stdio.h>
-#include <stdlib.h>		/* atoi() atof() */
-#include <string.h>		/* swab() */
+#include <stdlib.h>             /* atoi() atof() */
+#include <string.h>             /* swab() */
 
-#include <sys/types.h>		/* open() */
+#include <sys/types.h>          /* open() */
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 #ifdef _MSC_VER
 #  include <io.h>
 #endif
 #ifdef HAVE_UNISTD_H
-#  include <unistd.h>		/* close() */
+#  include <unistd.h>           /* close() */
 #endif
 
 #include "rawdem.h"
@@ -49,9 +50,9 @@ double round( double a ) {
     long i;
  
     if ( a > 0.0 ) {
-	i = (long)( a + 0.5 );
+        i = (long)( a + 0.5 );
     } else {
-	i = (long)( a - 0.5 );
+        i = (long)( a - 0.5 );
     }
     
     return (double)i;
@@ -64,10 +65,20 @@ int reads(int fd, char *buf, unsigned int len) {
   char c;
 
   len--;
-  while ( (i < len) && (read(fd, &c, 1) != 0) )
+  while ( i < len)
   {
-    if ((c == '\n') || (c == '\r') )
-      break;
+      int sz = read(fd, &c, 1);
+      if (sz == 0)
+          return 0;
+      
+      if (sz < 0)
+      {
+          printf("read failed: %s\n", strerror(errno));
+          return 0;
+      }
+      
+      if ((c == '\n') || (c == '\r') )
+          break;
 
     buf[i++] = c;
   }
@@ -76,7 +87,6 @@ int reads(int fd, char *buf, unsigned int len) {
     buf[i++] = '\n';
 
   buf[i] = '\0';
-
   return i;
 }
 
@@ -85,114 +95,113 @@ int reads(int fd, char *buf, unsigned int len) {
  * DEM file */
 void rawReadDemHdr( fgRAWDEM *raw, char *hdr_file ) {
     FILE *hdr;
-    static char line[256], key[256], value[256];
+    char line[256], key[256], value[256];
     int i, len, offset;
     double tmp;
 
     if ( (hdr = fopen(hdr_file, "r")) == NULL ) {
-	printf("Error opening DEM header file: %s\n", hdr_file);
-	exit(-1);
+        printf("Error opening DEM header file: %s\n", hdr_file);
+        exit(-1);
     }
-
+    
     /* default to big endian if nothing else */
     raw->big_endian = 1;
 
     /* process each line */
     while ( (reads(fileno(hdr), line, 256) != 0) ) {
 
-   len = strlen(line);
-   while(len && ((line[len - 1] == '\n')||(line[len - 1] == '\r'))) {
-      len--;
-      line[len] = 0; // kill EOL characters
-   }
-   printf("%s ", line);
- 
-	len = strlen(line);
+        len = strlen(line);
+        while(len && ((line[len - 1] == '\n')||(line[len - 1] == '\r'))) {
+            len--;
+            line[len] = 0; // kill EOL characters
+        }
+        printf("%s ", line);
+        len = strlen(line);
 
-	/* extract key */
-	i = 0;
-	while ( (line[i] != ' ') && (i < len) ) {
-	    key[i] = line[i];
-	    i++;
-	}
-	key[i] = '\0';
+        /* extract key */
+        i = 0;
+        while ( (line[i] != ' ') && (i < len) ) {
+            key[i] = line[i];
+            i++;
+        }
+        key[i] = '\0';
 
-	/* skip middle space */
-	while ( (line[i] == ' ') && (i < len) ) {
-	    i++;
-	}
-	offset = i;
+        /* skip middle space */
+        while ( (line[i] == ' ') && (i < len) ) {
+            i++;
+        }
+        offset = i;
 
-	/* extract value */
-	while ( (line[i] != '\n') && (i < len) ) {
-	    value[i-offset] = line[i];
-	    i++;
-	}
-	value[i-offset] = '\0';
-	/* printf("key='%s'  value='%s'\n", key, value); */
+        /* extract value */
+        while ( (line[i] != '\n') && (i < len) ) {
+            value[i-offset] = line[i];
+            i++;
+        }
+        value[i-offset] = '\0';
+        /* printf("key='%s'  value='%s'\n", key, value); */
 
-	if ( strcmp(key, "BYTEORDER") == 0 ) {
-	    if ( strcmp( value, "M" ) == 0 ) {
-		raw->big_endian = 1;
-      printf( "- set big_endian\n" );
-      } else {
-      printf( "- unset big_endian (not 'M'!)\n" );
-		raw->big_endian = 0;
-	    }
-	} else if ( strcmp(key, "NROWS") == 0 ) {
-	    raw->nrows = atoi(value);
-       printf( "- set rows to %d\n", raw->nrows );
-	} else if ( strcmp(key, "NCOLS") == 0 ) {
-	    raw->ncols = atoi(value);
-       printf( "- set cols to %d\n", raw->ncols );
-	} else if ( strcmp(key, "ULXMAP") == 0 ) {
-	    tmp = atof(value);
+        if ( strcmp(key, "BYTEORDER") == 0 ) {
+            if ( strcmp( value, "M" ) == 0 ) {
+                raw->big_endian = 1;
+                printf( "- set big_endian\n" );
+            } else {
+                printf( "- unset big_endian (not 'M'!)\n" );
+                raw->big_endian = 0;
+            }
+        } else if ( strcmp(key, "NROWS") == 0 ) {
+            raw->nrows = atoi(value);
+            printf( "- set rows to %d\n", raw->nrows );
+        } else if ( strcmp(key, "NCOLS") == 0 ) {
+            raw->ncols = atoi(value);
+            printf( "- set cols to %d\n", raw->ncols );
+        } else if ( strcmp(key, "ULXMAP") == 0 ) {
+            tmp = atof(value);
 #ifdef HAVE_RINT
-	    raw->ulxmap = (int)rint(tmp * 3600.0); /* convert to arcsec */
+            raw->ulxmap = (int)rint(tmp * 3600.0); /* convert to arcsec */
 #else
-	    raw->ulxmap = (int)round(tmp * 3600.0); /* convert to arcsec */
+            raw->ulxmap = (int)round(tmp * 3600.0); /* convert to arcsec */
 #endif
-       printf( "- set ulxmap to %d arcsecs (%d degrees)\n", raw->ulxmap,
-          raw->ulxmap / 3600);
-	} else if ( strcmp(key, "ULYMAP") == 0 ) {
-	    tmp = atof(value);
+            printf( "- set ulxmap to %d arcsecs (%d degrees)\n", raw->ulxmap,
+                raw->ulxmap / 3600);
+        } else if ( strcmp(key, "ULYMAP") == 0 ) {
+            tmp = atof(value);
 #ifdef HAVE_RINT
-	    raw->ulymap = (int)rint(tmp * 3600.0); /* convert to arcsec */
+            raw->ulymap = (int)rint(tmp * 3600.0); /* convert to arcsec */
 #else
-	    raw->ulymap = (int)round(tmp * 3600.0); /* convert to arcsec */
+            raw->ulymap = (int)round(tmp * 3600.0); /* convert to arcsec */
 #endif
-       printf( "- set ulymap to %d arcsecs (%d degrees)\n", raw->ulymap,
-          raw->ulymap / 3600);
-	} else if ( strcmp(key, "XDIM") == 0 ) {
-	    tmp = atof(value);
+            printf( "- set ulymap to %d arcsecs (%d degrees)\n", raw->ulymap,
+                raw->ulymap / 3600);
+        } else if ( strcmp(key, "XDIM") == 0 ) {
+            tmp = atof(value);
 #ifdef HAVE_RINT
-	    raw->xdim = (int)rint(tmp * 3600.0);   /* convert to arcsec */
+            raw->xdim = (int)rint(tmp * 3600.0);   /* convert to arcsec */
 #else
-	    raw->xdim = (int)round(tmp * 3600.0);   /* convert to arcsec */
+            raw->xdim = (int)round(tmp * 3600.0);   /* convert to arcsec */
 #endif
-       printf( "- set xdim to %d arcsecs (%f degrees)\n", raw->xdim,
-          (double)raw->xdim / 3600.0);
-	} else if ( strcmp(key, "YDIM") == 0 ) {
-	    tmp = atof(value);
+            printf( "- set xdim to %d arcsecs (%f degrees)\n", raw->xdim,
+                (double)raw->xdim / 3600.0);
+        } else if ( strcmp(key, "YDIM") == 0 ) {
+            tmp = atof(value);
 #ifdef HAVE_RINT
-	    raw->ydim = (int)rint(tmp * 3600.0);   /* convert to arcsec */
+            raw->ydim = (int)rint(tmp * 3600.0);   /* convert to arcsec */
 #else
-	    raw->ydim = (int)round(tmp * 3600.0);   /* convert to arcsec */
+            raw->ydim = (int)round(tmp * 3600.0);   /* convert to arcsec */
 #endif
-       printf( "- set ydim to %d arcsecs (%f degrees)\n", raw->ydim,
-          (double)raw->ydim / 3600.0);
-	} else {
-	    /* ignore for now */
-      printf( "- ignore for now\n" );
-	}
-    }
+            printf( "- set ydim to %d arcsecs (%f degrees)\n", raw->ydim,
+                (double)raw->ydim / 3600.0);
+        } else {
+            /* ignore for now */
+            printf( "- ignore for now: '%s'\n", key );
+        }
+    } // of line iteration
 
     raw->rootx = raw->ulxmap - (raw->xdim / 2);
     raw->rooty = raw->ulymap + (raw->ydim / 2);
 
     printf("%d %d %d %d %d %d %d %d\n", raw->nrows, raw->ncols,
            raw->ulxmap, raw->ulymap, raw->rootx, raw->rooty, raw->xdim,
-	   raw->ydim);
+           raw->ydim);
 }
 
 
@@ -204,8 +213,8 @@ void rawOpenDemFile( fgRAWDEM *raw, char *raw_dem_file ) {
 #else
     if ( (raw->fd = open(raw_dem_file ,O_RDONLY | O_BINARY)) == -1 ) {
 #endif
-	printf("Error opening Raw DEM file: %s\n", raw_dem_file);
-	exit(-1);
+        printf("Error opening Raw DEM file: %s\n", raw_dem_file);
+        exit(-1);
     }
     raw->min = raw->max = 0;
 }
@@ -224,8 +233,8 @@ void rawAdvancePosition( fgRAWDEM *raw, int arcsec ) {
     offset = 2 * raw->ncols * ( arcsec  / raw->ydim );
 
     if ( (result = lseek(raw->fd, offset, SEEK_SET)) == -1 ) {
-	printf("Error lseek filed trying to offset by %ld\n", offset);
-	exit(-1);
+        printf("Error lseek filed trying to offset by %ld\n", offset);
+        exit(-1);
     }
 
     printf("Successful seek ahead of %ld bytes\n", result);
@@ -239,17 +248,17 @@ void rawReadNextRow( fgRAWDEM *raw, int index ) {
     short int value;
 
     if ( raw->ncols > MAX_COLS ) {
-	printf("Error, buf needs to be bigger in rawReadNextRow()\n");
-	exit(-1);
+        printf("Error, buf needs to be bigger in rawReadNextRow()\n");
+        exit(-1);
     }
 
     /* printf("Attempting to read %d bytes\n", 2 * raw->ncols); */
     result = read(raw->fd, buf, 2 * raw->ncols);
     /* printf("Read %d bytes\n", result); */
     if ( result != 2 * raw->ncols ) {
-	printf("Error reading %d number of bytes!  Got %d instead\n",
-	       2 * raw->ncols, result);
-	exit(-1);
+        printf("Error reading %d number of bytes!  Got %d instead\n",
+               2 * raw->ncols, result);
+        exit(-1);
     }
 
     /* reverse byte order */
@@ -258,23 +267,23 @@ void rawReadNextRow( fgRAWDEM *raw, int index ) {
     /* swab(frombuf, tobuf, 2 * raw->ncols); */
 
     for ( i = 0; i < raw->ncols; i++ ) {
-	/* printf("hi = %d  lo = %d\n", buf[2*i], buf[2*i + 1]); */
+        /* printf("hi = %d  lo = %d\n", buf[2*i], buf[2*i + 1]); */
 
-	/* the endianness of the data is determined by the creator of
-	   the data file, we see it as a byte stream.  The actual
-	   endianess is in the header file someplace but I don't yet
-	   know how to read it out.  So for the time being we assume
-	   that the data is always big endian */
+        /* the endianness of the data is determined by the creator of
+           the data file, we see it as a byte stream.  The actual
+           endianess is in the header file someplace but I don't yet
+           know how to read it out.  So for the time being we assume
+           that the data is always big endian */
 
-	if ( raw->big_endian ) {
-	    value = ( (buf[2*i]) << 8 ) | buf[2*i + 1];
-	} else {
-	    value = ( (buf[2*i + 1]) << 8 ) | buf[2*i];
-	}
-	raw->strip[index][i] = value;
+        if ( raw->big_endian ) {
+            value = ( (buf[2*i]) << 8 ) | buf[2*i + 1];
+        } else {
+            value = ( (buf[2*i + 1]) << 8 ) | buf[2*i];
+        }
+        raw->strip[index][i] = value;
 
-	if ( value < raw->min ) { raw->min = value; }
-	if ( value > raw->max ) { raw->max = value; }
+        if ( value < raw->min ) { raw->min = value; }
+        if ( value > raw->max ) { raw->max = value; }
     }
 
     /* printf( " so far, min = %d  max = %d\n", raw->min, raw->max ); */
@@ -303,20 +312,20 @@ void rawConvertCenter2Edge( fgRAWDEM *raw ) {
 
     /* derive edge nodes */
     for ( i = 1; i < 120; i++ ) {
-	raw->edge[i][0] = (raw->center[i-1][0] + raw->center[i][0]) / 2.0f;
-	raw->edge[i][120] = (raw->center[i-1][119] + raw->center[i][119]) / 2.0f;
-	raw->edge[0][i] = (raw->center[0][i-1] + raw->center[0][i]) / 2.0f;
-	raw->edge[120][i] = (raw->center[119][i-1] + raw->center[119][i]) / 2.0f;
+        raw->edge[i][0] = (raw->center[i-1][0] + raw->center[i][0]) / 2.0f;
+        raw->edge[i][120] = (raw->center[i-1][119] + raw->center[i][119]) / 2.0f;
+        raw->edge[0][i] = (raw->center[0][i-1] + raw->center[0][i]) / 2.0f;
+        raw->edge[120][i] = (raw->center[119][i-1] + raw->center[119][i]) / 2.0f;
     }
 
     /* derive internal nodes */
     for ( j = 1; j < 120; j++ ) {
-	for ( i = 1; i < 120; i++ ) {
-	    raw->edge[i][j] = ( raw->center[i-1][j-1] + 
-				raw->center[i]  [j-1] +
-				raw->center[i]  [j]   +
-				raw->center[i-1][j] ) / 4.0f;
-	}
+        for ( i = 1; i < 120; i++ ) {
+            raw->edge[i][j] = ( raw->center[i-1][j-1] + 
+                                raw->center[i]  [j-1] +
+                                raw->center[i]  [j]   +
+                                raw->center[i-1][j] ) / 4.0f;
+        }
     }
 }
 
@@ -333,19 +342,19 @@ void rawDumpAsciiDEM( fgRAWDEM *raw, char *path, int ilon, int ilat ) {
     /* Generate output file name */
 
     if ( ilon >= 0 ) {
-	lon = ilon;
-	lon_sign = 'e';
+        lon = ilon;
+        lon_sign = 'e';
     } else {
-	lon = -ilon;
-	lon_sign = 'w';
+        lon = -ilon;
+        lon_sign = 'w';
     }
 
     if ( ilat >= 0 ) {
-	lat = ilat;
-	lat_sign = 'n';
+        lat = ilat;
+        lat_sign = 'n';
     } else {
-	lat = -ilat;
-	lat_sign = 's';
+        lat = -ilat;
+        lat_sign = 's';
     }
 
     sprintf(outfile, "%s/%c%03d%c%02d.dem", path, lon_sign, lon, lat_sign, lat);
@@ -362,8 +371,8 @@ void rawDumpAsciiDEM( fgRAWDEM *raw, char *path, int ilon, int ilat ) {
     printf("outfile = %s\n", outfile);
 
     if ( (fd = fopen(outfile, "w")) == NULL ) {
-	printf("Error opening output file = %s\n", outfile);
-	exit(-1);
+        printf("Error opening output file = %s\n", outfile);
+        exit(-1);
     }
 
     /* Dump the "A" record */
@@ -449,32 +458,32 @@ void rawDumpAsciiDEM( fgRAWDEM *raw, char *path, int ilon, int ilat ) {
     /* Dump "B" records */
 
     for ( j = 0; j <= 120; j++ ) {
-	/* row / column id of this profile */
-	fprintf(fd, "%6d%6d", 1, j + 1);
+        /* row / column id of this profile */
+        fprintf(fd, "%6d%6d", 1, j + 1);
 
-	/* Number of rows and columns (elevation points) in this
+        /* Number of rows and columns (elevation points) in this
            profile */
-	fprintf(fd, "%6d%6d", 3600 / raw->xdim + 1, 1);
+        fprintf(fd, "%6d%6d", 3600 / raw->xdim + 1, 1);
 
-	/* Ground planimetric coordinates (arc-seconds) of the first
-	 * elevation in the profile */
-	fprintf(fd, "%20.15fD+06", ilon * 3600.0 / 1000000.0);
-	fprintf(fd, "%20.15fD+06", (ilat * 3600.0 + j * raw->ydim) / 1000000.0);
+        /* Ground planimetric coordinates (arc-seconds) of the first
+         * elevation in the profile */
+        fprintf(fd, "%20.15fD+06", ilon * 3600.0 / 1000000.0);
+        fprintf(fd, "%20.15fD+06", (ilat * 3600.0 + j * raw->ydim) / 1000000.0);
 
-	/* Elevation of local datum for the profile.  Always zero for
-	 * 1-degree DEM, the reference is mean sea level. */
-	fprintf(fd, "%6.1f", 0.0);
-	fprintf(fd, "%18s", "");
+        /* Elevation of local datum for the profile.  Always zero for
+         * 1-degree DEM, the reference is mean sea level. */
+        fprintf(fd, "%6.1f", 0.0);
+        fprintf(fd, "%18s", "");
 
-	/* Minimum and maximum elevations for the profile. */
-	fprintf(fd, "   %20.15E", 0.0);
-	fprintf(fd, "   %20.15E", 0.0);
+        /* Minimum and maximum elevations for the profile. */
+        fprintf(fd, "   %20.15E", 0.0);
+        fprintf(fd, "   %20.15E", 0.0);
 
-	/* One (usually) dimensional array (1,prof_num_cols) of
+        /* One (usually) dimensional array (1,prof_num_cols) of
            elevations */
-	for ( i = 0; i <= 120; i++ ) {
-	    fprintf(fd, "%6.0f", raw->edge[j][i]);
-	}
+        for ( i = 0; i <= 120; i++ ) {
+            fprintf(fd, "%6.0f", raw->edge[j][i]);
+        }
     }
 
     fprintf(fd, "\n");
@@ -496,13 +505,13 @@ void rawProcessStrip( fgRAWDEM *raw, int lat_degrees, char *path ) {
     /* convert to arcsec */
     lat = lat_degrees * 3600;
 
-    printf("Max Latitude = %d arcsec (%f degs)\n", lat, lat_degrees);
+    printf("Max Latitude = %d arcsec (%d degs)\n", lat, lat_degrees);
 
     /* validity check ... */
     if ( (lat > raw->rooty) || 
-	 (lat < (raw->rooty - raw->nrows * raw->ydim + 1)) ) {
-	printf("Latitude out of range for this DEM file\n");
-	return;
+         (lat < (raw->rooty - raw->nrows * raw->ydim + 1)) ) {
+        printf("Latitude out of range for this DEM file\n");
+        return;
     }
 
     printf ("Reading strip starting at %d (top and working down)\n", lat);
@@ -515,16 +524,16 @@ void rawProcessStrip( fgRAWDEM *raw, int lat_degrees, char *path ) {
     yrange = 3600 / raw->ydim;
 
     for ( i = 0; i < yrange; i++ ) {
-	index = yrange - i - 1;
-	/* printf("About to read into row %d\n", index); */
-	rawReadNextRow(raw, index);
+        index = yrange - i - 1;
+        /* printf("About to read into row %d\n", index); */
+        rawReadNextRow(raw, index);
 
-	for ( j = 0; j < raw->ncols; j++ ) {
-	    if ( raw->strip[index][j] < -1000 ) {
-		/* map ocean (or stuff insanely low) to 0 for now */
-		raw->strip[index][j] = 0;
-	    } 
-	}
+        for ( j = 0; j < raw->ncols; j++ ) {
+            if ( raw->strip[index][j] < -1000 ) {
+                /* map ocean (or stuff insanely low) to 0 for now */
+                raw->strip[index][j] = 0;
+            } 
+        }
     }
 
     /* extract individual tiles from the strip */
@@ -532,37 +541,37 @@ void rawProcessStrip( fgRAWDEM *raw, int lat_degrees, char *path ) {
     num_degrees = span / 3600;
     tile_width = raw->ncols / num_degrees;
     printf("span = %d  num_degrees = %d  width = %d\n", 
-	   span, num_degrees, tile_width);
+           span, num_degrees, tile_width);
 
     for ( i = 0; i < num_degrees; i++ ) {
-	xstart = i * tile_width;
-	xend = xstart + 120;
+        xstart = i * tile_width;
+        xend = xstart + 120;
 
-	min = 10000; max = -10000;
-	for ( row = 0; row < yrange; row++ ) {
-	    for ( col = xstart; col < xend; col++ ) {
-		/* Copy from strip to pixel centered tile.  Yep,
+        min = 10000; max = -10000;
+        for ( row = 0; row < yrange; row++ ) {
+            for ( col = xstart; col < xend; col++ ) {
+                /* Copy from strip to pixel centered tile.  Yep,
                  * row/col are reversed here.  raw->strip is backwards
                  * for convenience.  I am converting to [x,y] now. */
-		raw->center[col-xstart][row] = raw->strip[row][col];
+                raw->center[col-xstart][row] = raw->strip[row][col];
 
-		if ( raw->strip[row][col] < min) {
-		    min = raw->strip[row][col];
-		}
-		
-		if ( raw->strip[row][col] > max) {
-		    max = raw->strip[row][col];
-		}
-	    }
-	}
+                if ( raw->strip[row][col] < min) {
+                    min = raw->strip[row][col];
+                }
+                
+                if ( raw->strip[row][col] > max) {
+                    max = raw->strip[row][col];
+                }
+            }
+        }
 
-	raw->tmp_min = min;
-	raw->tmp_max = max;
+        raw->tmp_min = min;
+        raw->tmp_max = max;
 
-	/* Convert from pixel centered to pixel edge values */
-	rawConvertCenter2Edge(raw);
+        /* Convert from pixel centered to pixel edge values */
+        rawConvertCenter2Edge(raw);
 
-	/* Dump out the ascii format DEM file */
-	rawDumpAsciiDEM(raw, path, (raw->rootx / 3600) + i, lat_degrees - 1);
+        /* Dump out the ascii format DEM file */
+        rawDumpAsciiDEM(raw, path, (raw->rootx / 3600) + i, lat_degrees - 1);
     }
 }
