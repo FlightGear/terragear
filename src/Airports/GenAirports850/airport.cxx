@@ -369,7 +369,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
             // cut the linear feature in until we get the geometry right...
             // features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum );
-            features[i]->BuildBtg( altitude, &pvmt_polys, &pvmt_tps, &accum, &rwy_lights );
+            features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum, &rwy_lights );
         }
     }
     else
@@ -679,7 +679,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // tesselate the polygons and prepair them for final output
     for ( i = 0; i < (int)line_polys.size(); ++i ) 
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i << " flag = " << pvmt_polys[i].get_flag());
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i << " flag = " << line_polys[i].get_flag());
 
     	TGPolygon poly = line_polys[i].get_poly();
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
@@ -687,7 +687,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
-        tc = rwy_section_tex_coords( tri, line_tps[i], false );
+        tc = linear_feature_tex_coords( tri, line_tps[i] );
 
     	line_polys[i].set_tris( tri );
 	    line_polys[i].set_texcoords( tc );
