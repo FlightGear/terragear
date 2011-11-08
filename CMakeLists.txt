@@ -72,6 +72,9 @@ find_package(Threads REQUIRED)
 find_package(SimGear 2.5.0 REQUIRED)
 find_package(GPC REQUIRED)
 find_package(TIFF) # needed for SRTM
+if (CMAKE_CL_64)
+	find_package(JPEG) # needed for SRTM
+endif (CMAKE_CL_64)
 find_package(NewMat11)
 
 if(ENABLE_GDAL)
@@ -98,7 +101,7 @@ if(WIN32)
         #     SET(WARNING_FLAGS "${WARNING_FLAGS} /wd${warning}")
         # endforeach(warning)
         
-        set(MSVC_FLAGS "-DNOMINMAX -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -D__CRT_NONSTDC_NO_WARNINGS")
+        set(MSVC_FLAGS "-DNOMINMAX -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -D__CRT_NONSTDC_NO_WARNINGS -DNO_OPENSCENEGRAPH_INTERFACE -DNO_TIMER")
         if (${MSVC_VERSION} EQUAL 1600)
 		  set( MSVC_LD_FLAGS "/FORCE:MULTIPLE" )
         endif (${MSVC_VERSION} EQUAL 1600)
