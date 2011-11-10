@@ -18,10 +18,14 @@ target_link_libraries(hgtchop
 install(TARGETS hgtchop RUNTIME DESTINATION bin)
 
 if(TIFF_FOUND)
+if(MSVC AND CMAKE_CL_64)
+	set( SRTMCHOP_LIBRARIES ${JPEG_LIBRARY} )
+endif(MSVC AND CMAKE_CL_64)
 add_executable(srtmchop srtmchop.cxx point2d.hxx)
 target_link_libraries(srtmchop 
     HGT
     ${TIFF_LIBRARIES}
+	${SRTMCHOP_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
 	
