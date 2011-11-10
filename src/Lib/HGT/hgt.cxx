@@ -123,11 +123,11 @@ TGHgt::open ( const SGPath &f ) {
     string name = file_name.file();
     cout << "  Name = " << name << endl;
     originy = atof( name.substr(1, 2).c_str() ) * 3600.0;
-    if ( name.substr(0, 1) == "S" ) {
+    if ( name.substr(0, 1) == "S" || name.substr(0, 1) == "s" ) {
         originy = -originy;
     }
     originx = atof( name.substr(4, 3).c_str() ) * 3600.0;
-    if ( name.substr(3, 1) == "W" ) {
+    if ( name.substr(3, 1) == "W" ||  name.substr(3, 1) == "w") {
         originx = -originx;
     }
     cout << "  Origin = " << originx << ", " << originy << endl;
