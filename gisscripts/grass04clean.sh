@@ -24,7 +24,6 @@
 # $MODE-values for the "case" clause, like 'grass04clean.sh_shp_first'
 COMMAND=`basename ${0} | cut -f 1 -d \_`
 MODE=`basename ${0} | cut -f 2 -d \_`
-RUN=`basename ${0} | cut -f 3 -d \_`
 
 #PATCHMAP=clc00_nl
 PATCHMAP=clc00
@@ -40,19 +39,12 @@ esac
 #
 MIN_AREA=10
 
-case ${RUN} in
-	first)
-	    v.clean input=${PATCHMAP} output=${PATCHMAP}_clean tool=snap,bpol,rmdupl,rmline,break,rmdupl,rmdangle,rmarea thresh=${SNAP},0,0,0,0,0,0,${MIN_AREA} type=boundary --verbose
-	    v.dissolve input=${PATCHMAP}_clean output=${PATCHMAP}_dissolved
-	;;
-	second)
-	    v.clean input=${PATCHMAP}_dissolved output=${PATCHMAP}_clobber tool=break,rmdupl,rmdangle type=boundary --verbose
-	;;
-	loop)
-	    g.remove vect=${PATCHMAP}_dissolved
-	    g.rename vect=${PATCHMAP}_clobber,${PATCHMAP}_dissolved
-	    ${COMMAND}_${MODE}_second
-	;;
-esac
+v.clean input=${PATCHMAP}_patched output=${PATCHMAP}_bpol -c tool=bpol type=boundary --verbose
+v.clean input=${PATCHMAP}_bpol output=${PATCHMAP}_break -c tool=snap thresh=${SNAP} type=boundary --verbose
+v.split input=${PATCHMAP}_break output=${PATCHMAP}_split layer=-1 vertices=100 --verbose
+v.clean input=${PATCHMAP}_split output=${PATCHMAP}_rmsa -c tool=rmsa type=boundary --verbose
+v.clean input=${PATCHMAP}_rmsa output=${PATCHMAP}_rmline tool=rmline,rmdangle,rmarea,prune thresh=0,-1,1,0.00001 type=boundary --verbose
+v.build.polylines input=${PATCHMAP}_rmline output=${PATCHMAP}_polyline --verbose
+v.dissolve input=${PATCHMAP}_polyline output=${PATCHMAP}_dissolved --verbose
 
 # EOF

@@ -86,7 +86,8 @@ for MAP in `echo $(Selection)`; do
     if [ ${DEBUG} = "true" ]; then
         echo "${PREFIX} # ${MAP} # ${DSN} # ${LAYER}"
     fi
-    v.in.ogr dsn="${DSN}" layer=${LAYER} output=${MAP} snap=${SNAP} min_area=${MIN_AREA} ${SPAT} --verbose
+#    v.in.ogr dsn="${DSN}" layer=${LAYER} output=${MAP} snap=${SNAP} min_area=${MIN_AREA} ${SPAT} --verbose
+    v.in.ogr dsn="${DSN}" layer=${LAYER} output=${MAP} --verbose
 done
 
 # EOF

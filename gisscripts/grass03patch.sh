@@ -28,13 +28,13 @@ PATCHMAP=clc00
 
 case ${MODE} in
 	shp)
-	    MLIST=`g.mlist type=vect separator=, pattern="c[0-9][0-9][0-9]_int"`
+	    MLIST=`g.mlist type=vect pattern="c[0-9][0-9][0-9]_int" fs=,`
 	;;
 	ldb)
-	    MLIST=`g.mlist type=vect separator=, pattern="cs_*_int"`
+	    MLIST=`g.mlist type=vect pattern="cs_*_int" fs=,`
 	;;
 esac
 
-v.patch input=${MLIST} output=${PATCHMAP}
+v.patch input=${MLIST} output=${PATCHMAP}_patched
 
 # EOF

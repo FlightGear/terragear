@@ -30,18 +30,18 @@ MAPPINGFILE=${BASEDIR}/CORINEtoCStest.txt
 #
 
 case ${MODE} in
-	shp)
-	    SELECTION=`g.mlist type=vect pattern="c[0-9][0-9][0-9]"`
-	    Code00map () {
-	        CODE00=`echo ${MAP} | tr -d c`
-	    }
-	;;
-	ldb)
-	    SELECTION=`g.mlist type=vect pattern="cs_*"`
-	    Code00map () {
-	        CODE00=`grep "\ ${MAP}"\$ ${MAPPINGFILE} | awk '{print $1}'`
-	    }
-	;;
+        shp)
+            SELECTION=`g.mlist type=vect pattern="c[0-9][0-9][0-9]"`
+            Code00map () {
+                CODE00=`echo ${MAP} | tr -d c`
+            }
+        ;;
+        ldb)
+            SELECTION=`g.mlist type=vect pattern="cs_*"`
+            Code00map () {
+                CODE00=`grep "\ ${MAP}"\$ ${MAPPINGFILE} | awk '{print $1}'`
+            }
+        ;;
 esac
 
 #
