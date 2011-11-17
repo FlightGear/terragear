@@ -14,16 +14,14 @@ void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
     point_list lightobj; lightobj.clear();
     point_list normals; normals.clear();
 
-    
-
     Point3D ref;
     double lon2 = 0, lat2 = 0, r;
+
     double left_hdg = heading - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
     ref.setlat( lat );
     ref.setlon( lon );
-
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
     if ( glideslope < 0.5 ) {
         glideslope = 3.0;
@@ -65,33 +63,73 @@ void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
 
 
     // We know our normal, now create the lights
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI = " << assoc_rw);
+    Point3D pt1;
 
-    // unit1
-    Point3D pt1 = ref;
-    lightobj.push_back( pt1 );
-    normals.push_back( normal );
+    if (type == 2)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4L = " << assoc_rw);
 
-    // unit2
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                        30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-    pt1 = Point3D( lon2, lat2, 0.0 );
-    lightobj.push_back( pt1 );
-    normals.push_back( normal );
+        // unit1
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                            -45 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
 
-    // unit3
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                        30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-    pt1 = Point3D( lon2, lat2, 0.0 );
-    lightobj.push_back( pt1 );
-    normals.push_back( normal );
+        // unit2
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
 
-    // unit4
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                        30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-    pt1 = Point3D( lon2, lat2, 0.0 );
-    lightobj.push_back( pt1 );
-    normals.push_back( normal );
+        // unit3
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit4
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+    }
+
+    if (type == 3)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4R = " << assoc_rw);
+
+        // unit1
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
+                            45 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit2
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            -30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit3
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            -30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit4
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            -30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+    }
 
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
