@@ -64,9 +64,9 @@ CropWood		other	# Cropland/Woodland Mosaic
 AgroForest		other
 Olives			other
 GolfCourse		other	# GolfCourse
-GreenSpace		other
+Greenspace		other
 GrassCover		other	# Grassland
-GrassLand		other
+Grassland		other
 ScrubCover		other	# Scrub
 Scrub			other
 ShrubGrassCover		other	# Mixed Shrubland/Grassland
