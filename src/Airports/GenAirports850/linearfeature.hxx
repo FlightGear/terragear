@@ -3,9 +3,9 @@
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
-#include <Geometry/point3d.hxx>
+#include <Polygon/texparams.hxx>
 
-#include "texparams.hxx"
+#include <Geometry/point3d.hxx>
 
 using std::string;
 

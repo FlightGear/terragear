@@ -6,8 +6,8 @@
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 #include <Geometry/point3d.hxx>
-#include "texparams.hxx"
 
 
 using std::string;

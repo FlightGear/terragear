@@ -28,9 +28,9 @@
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 
 #include "runway.hxx"
-#include "texparams.hxx"
 
 
 void gen_number_block( const TGRunway& rwy_info,

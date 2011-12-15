@@ -27,7 +27,6 @@
 
 #include "apt_math.hxx"
 #include "global.hxx"
-#include "poly_extra.hxx"
 #include "runway.hxx"
 
 #include <stdlib.h>

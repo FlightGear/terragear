@@ -28,7 +28,6 @@
 
 #include "poly_extra.hxx"
 #include "rwy_common.hxx"
-#include "texparams.hxx"
 #include "rwy_nonprec.hxx"
 
 using std::string;

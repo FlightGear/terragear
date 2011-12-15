@@ -843,6 +843,8 @@ TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len ) {
 	result.set_hole_flag( i, poly.get_hole_flag( i ) );
     }
 
+    SG_LOG(SG_GENERAL, SG_DEBUG, "split_long_edges() complete");
+
     return result;
 }
 

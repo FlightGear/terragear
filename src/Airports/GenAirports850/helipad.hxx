@@ -21,8 +21,7 @@
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
-
-#include "texparams.hxx"
+#include <Polygon/texparams.hxx>
 
 class Helipad
 {

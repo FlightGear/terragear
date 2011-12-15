@@ -22,8 +22,6 @@
 
 #include "apt_math.hxx"
 #include "global.hxx"
-#include "poly_extra.hxx"
-
 
 #include <stdlib.h>
 

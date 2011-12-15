@@ -28,9 +28,9 @@
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 
 #include "runway.hxx"
-#include "texparams.hxx"
 
 
 // generate a taxiway.  The routine modifies rwy_polys, texparams, and

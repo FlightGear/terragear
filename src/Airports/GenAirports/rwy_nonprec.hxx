@@ -28,9 +28,9 @@
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 
 #include "runway.hxx"
-#include "texparams.hxx"
 
 
 // generate a non-precision approach runway.  The routine modifies

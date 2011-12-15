@@ -17,7 +17,6 @@ add_executable(genapts
 	rwy_simple.cxx rwy_simple.hxx 
 	rwy_visual.cxx rwy_visual.hxx 
 	taxiway.cxx taxiway.hxx 
-	texparams.hxx
 	)
   
 target_link_libraries(genapts

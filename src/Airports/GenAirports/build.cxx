@@ -54,6 +54,7 @@
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 #include <Triangulate/trieles.hxx>
 
 #include "apt_surface.hxx"
@@ -69,7 +70,6 @@
 #include "rwy_simple.hxx"
 #include "rwy_visual.hxx"
 #include "taxiway.hxx"
-#include "texparams.hxx"
 
 #include "build.hxx"
 

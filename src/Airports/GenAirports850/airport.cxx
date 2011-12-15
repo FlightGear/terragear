@@ -17,14 +17,17 @@
 #include <simgear/misc/texcoord.hxx>
 
 #include <Polygon/polygon.hxx>
+#include <Polygon/texparams.hxx>
 #include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 #include <Polygon/chop.hxx>
 
 #include <Geometry/poly_support.hxx>
+#include <Geometry/poly_extra.hxx>
+
 #include <Output/output.hxx>
 
 #include "elevations.hxx"
-#include "poly_extra.hxx"
 
 Airport::Airport( int c, char* def)
 {
@@ -461,8 +464,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     TGPolygon filled_base  = tgPolygonStripHoles( apt_base );
     TGPolygon divided_base = tgPolygonSplitLongEdges( filled_base, 200.0 );
-    TGPolygon base_poly    = tgPolygonDiff( filled_base, accum );
-    //TGPolygon base_poly    = tgPolygonDiff( divided_base, accum );
+    //TGPolygon base_poly    = tgPolygonDiff( filled_base, accum );
+    TGPolygon base_poly    = tgPolygonDiff( divided_base, accum );
 
     gettimeofday(&build_end, NULL);
     timersub(&build_end, &build_start, &build_time);

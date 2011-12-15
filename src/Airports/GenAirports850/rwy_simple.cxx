@@ -25,7 +25,6 @@
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <Polygon/superpoly.hxx>
-#include "texparams.hxx"
 #include "runway.hxx"
 
 using std::string;
