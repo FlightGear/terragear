@@ -25,9 +25,9 @@
 #define _SUPERPOLY_HXX
 
 
-#ifndef __cplusplus                                                          
+#ifndef __cplusplus
 # error This library requires C++
-#endif                                   
+#endif
 
 
 #include <simgear/compiler.h>
@@ -42,39 +42,75 @@ class TGSuperPoly {
 
 private:
 
-    std::string material;	// material/texture name
-    TGPolygon poly;		// master polygon
-    TGPolygon normals;		// corresponding normals
-    TGPolygon texcoords;	// corresponding texture coordinates
-    TGPolygon tris;		// triangulation
-    std::string flag;           // For various potential record keeping needs
+std::string material;   // material/texture name
+TGPolygon poly;         // master polygon
+TGPolygon normals;      // corresponding normals
+TGPolygon texcoords;    // corresponding texture coordinates
+TGPolygon tris;         // triangulation
+std::string flag;       // For various potential record keeping needs
 
 public:
 
-    // Constructor and destructor
-    TGSuperPoly( void );
-    ~TGSuperPoly( void );
+// Constructor and destructor
+TGSuperPoly( void );
+~TGSuperPoly( void );
 
-    inline std::string get_material() const { return material; }
-    inline void set_material( const std::string &m ) { material = m; }
+inline std::string get_material() const
+{
+    return material;
+}
+inline void set_material( const std::string &m )
+{
+    material = m;
+}
 
-    inline TGPolygon get_poly() const { return poly; }
-    inline void set_poly( const TGPolygon &p ) { poly = p; }
+inline TGPolygon get_poly() const
+{
+    return poly;
+}
+inline void set_poly( const TGPolygon &p )
+{
+    poly = p;
+}
 
-    inline TGPolygon get_normals() const { return normals; }
-    inline void set_normals( const TGPolygon &p ) { normals = p; }
+inline TGPolygon get_normals() const
+{
+    return normals;
+}
+inline void set_normals( const TGPolygon &p )
+{
+    normals = p;
+}
 
-    inline TGPolygon get_texcoords() const { return texcoords; }
-    inline void set_texcoords( const TGPolygon &p ) { texcoords = p; }
+inline TGPolygon get_texcoords() const
+{
+    return texcoords;
+}
+inline void set_texcoords( const TGPolygon &p )
+{
+    texcoords = p;
+}
 
-    inline TGPolygon get_tris() const { return tris; }
-    inline void set_tris( const TGPolygon &p ) { tris = p; }
+inline TGPolygon get_tris() const
+{
+    return tris;
+}
+inline void set_tris( const TGPolygon &p )
+{
+    tris = p;
+}
 
-    inline std::string get_flag() const { return flag; }
-    inline void set_flag( const std::string f ) { flag = f; }
+inline std::string get_flag() const
+{
+    return flag;
+}
+inline void set_flag( const std::string f )
+{
+    flag = f;
+}
 
-    // erase the polygon
-    void erase();
+// erase the polygon
+void erase();
 
 };
 

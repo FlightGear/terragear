@@ -19,7 +19,7 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 // $Id: names.hxx,v 1.16 2007-10-31 15:05:13 curt Exp $
- 
+
 
 #ifndef _NAMES_HXX
 #define _NAMES_HXX
@@ -31,17 +31,17 @@
 
 inline static bool is_ocean_area( const std::string &area )
 {
-	return area=="Ocean" || area=="Bay  Estuary or Ocean";
+    return area == "Ocean" || area == "Bay  Estuary or Ocean";
 }
 
 inline static bool is_void_area( const std::string &area )
 {
-	return area=="Void Area";
+    return area == "Void Area";
 }
 
 inline static bool is_null_area( const std::string& area )
 {
-	return area=="Null";
+    return area == "Null";
 }
 
 #endif // _NAMES_HXX

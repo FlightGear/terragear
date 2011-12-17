@@ -19,7 +19,7 @@
 // Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 //
 // $Id: index.cxx,v 1.7 2004-11-19 22:25:50 curt Exp $
- 
+
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 
@@ -35,15 +35,16 @@ static long int poly_index;
 static string poly_path;
 
 // initialize the unique polygon index counter stored in path
-bool poly_index_init( string path ) {
+bool poly_index_init( string path )
+{
     poly_path = path;
 
     FILE *fp = fopen( poly_path.c_str(), "r" );
 
     if ( fp == NULL ) {
-	SG_LOG(SG_GENERAL, SG_WARN, "Warning: cannot open " << poly_path);
-	poly_index = 0;
-	return false;
+        SG_LOG(SG_GENERAL, SG_WARN, "Warning: cannot open " << poly_path);
+        poly_index = 0;
+        return false;
     }
 
     fscanf( fp, "%ld", &poly_index );
@@ -55,15 +56,15 @@ bool poly_index_init( string path ) {
 
 
 // increment the persistant counter and return the next poly_index
-long int poly_index_next() {
+long int poly_index_next()
+{
     ++poly_index;
 
     FILE *fp = fopen( poly_path.c_str(), "w" );
 
-    if ( fp == NULL ) {
-	SG_LOG(SG_GENERAL, SG_ALERT,
-	       "Error cannot open " << poly_path << " for writing");
-    }
+    if ( fp == NULL )
+        SG_LOG(SG_GENERAL, SG_ALERT,
+               "Error cannot open " << poly_path << " for writing");
 
     fprintf( fp, "%ld\n", poly_index );
 

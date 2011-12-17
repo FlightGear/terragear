@@ -26,18 +26,20 @@
 
 // Constructor
 TGSuperPoly::TGSuperPoly() :
-flag( "" )
+    flag( "" )
 {
 }
 
 
 // Destructor
-TGSuperPoly::~TGSuperPoly() {
+TGSuperPoly::~TGSuperPoly()
+{
 }
 
 
 // erase the "super" polygon
-void TGSuperPoly::erase() {
+void TGSuperPoly::erase()
+{
     material = "";
     poly.erase();
     normals.erase();

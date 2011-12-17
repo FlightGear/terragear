@@ -44,7 +44,7 @@ enum fgSideType {
 // results.  Doesn't work with holes.  Returns true if routine thinks
 // it was successful.
 
-TGPolygon horizontal_clip( const TGPolygon& in, const double y, 
+TGPolygon horizontal_clip( const TGPolygon& in, const double y,
                            const fgSideType side );
 
 
