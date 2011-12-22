@@ -81,6 +81,7 @@ public:
     static Point3D fromSGVec3(const SGVec3<double>& cart);
     static Point3D fromSGVec3(const SGVec3<float>& cart);
     static Point3D fromSGVec2(const SGVec2<double>& cart);
+    static Point3D fromSGVec2(const SGVec2<float>& cart);
 
     // Assignment operators
 
@@ -244,6 +245,16 @@ inline Point3D Point3D::fromSGVec2(const SGVec2<double>& cart)
   pt.setz(0);
   return pt;
 }
+
+inline Point3D Point3D::fromSGVec2(const SGVec2<float>& cart)
+{
+  Point3D pt;
+  pt.setx(cart.x());
+  pt.sety(cart.y());
+  pt.setz(0);
+  return pt;
+}
+
 
 // ASSIGNMENT OPERATORS
 

@@ -56,6 +56,7 @@ using std::ostream_iterator;
 using std::sort;
 using std::vector;
 
+#if 0 // unused
 // Given a line segment specified by two endpoints p1 and p2, return
 // the slope of the line.
 static double slope( const Point3D& p0, const Point3D& p1 ) {
@@ -66,8 +67,9 @@ static double slope( const Point3D& p0, const Point3D& p1 ) {
 	return DBL_MAX;
     }
 }
+#endif
 
-
+#if 0 // unused
 // Given a line segment specified by two endpoints p1 and p2, return
 // the y value of a point on the line that intersects with the
 // verticle line through x.  Return true if an intersection is found,
@@ -111,15 +113,20 @@ static bool intersects( Point3D p0, Point3D p1, double x, Point3D *result ) {
 
     return false;
 }
+#endif
 
 // basic triangulation of a polygon with out adding points or
 // splitting edges, this should triangulate around interior holes.
-void polygon_tesselate( const TGPolygon &p,
+void polygon_tesselate( const TGPolygon &p, 
+            const point_list &extra_nodes, 
 			triele_list &elelist,
-			point_list &out_pts )
+			point_list &out_pts,
+            string tri_flags )
 {
     struct triangulateio in, out, vorout;
     int i;
+
+    tri_flags = "pzqenXYYQ";
 
     // make sure all elements of these structs point to "NULL"
     zero_triangulateio( &in );
@@ -132,62 +139,77 @@ void polygon_tesselate( const TGPolygon &p,
     double max_x = p.get_pt(0,0).x();
 
     int total_pts = 0;
+    int total_segments = 0;
+
     for ( i = 0; i < p.contours(); ++i ) {
-	total_pts += p.contour_size( i );
+        total_pts += p.contour_size( i );
     }
+    total_segments = total_pts;
+    total_pts += extra_nodes.size();
 
     in.numberofpoints = total_pts;
     in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
 
     counter = 0;
     for ( i = 0; i < p.contours(); ++i ) {
-	point_list contour = p.get_contour( i );
-	for ( int j = 0; j < (int)contour.size(); ++j ) {
-	    in.pointlist[2*counter] = contour[j].x();
-	    in.pointlist[2*counter + 1] = contour[j].y();
-	    if ( contour[j].x() > max_x ) {
-		    max_x = contour[j].x();
-	    }
-	    ++counter;
-	}
+        point_list contour = p.get_contour( i );
+        for ( int j = 0; j < (int)contour.size(); ++j ) {
+            in.pointlist[2*counter] = contour[j].x();
+            in.pointlist[2*counter + 1] = contour[j].y();
+            /* remember largest x value of the polygon to 
+             * easily calc outside point 
+             */
+            if ( contour[j].x() > max_x ) {
+                max_x = contour[j].x();
+            }
+            ++counter;
+        }
     }
 
+    for ( i = 0; i < (int)extra_nodes.size(); ++i ) {
+        in.pointlist[2*counter] = extra_nodes[i].x();
+        in.pointlist[2*counter + 1] = extra_nodes[i].y();
+        ++counter;
+    }
+
+    /* set the node attribute to elevation data */
     in.numberofpointattributes = 1;
     in.pointattributelist = (REAL *) malloc(in.numberofpoints *
 					    in.numberofpointattributes *
 					    sizeof(REAL));
     counter = 0;
     for ( i = 0; i < p.contours(); ++i ) {
-	point_list contour = p.get_contour( i );
-	for ( int j = 0; j < (int)contour.size(); ++j ) {
-	    in.pointattributelist[counter] = contour[j].z();
-	    ++counter;
-	}
+        point_list contour = p.get_contour( i );
+        for ( int j = 0; j < (int)contour.size(); ++j ) {
+            in.pointattributelist[counter] = contour[j].z();
+            ++counter;
+        }
     }
 
-    // in.pointmarkerlist = (int *) malloc(in.numberofpoints * sizeof(int));
-    // for ( i = 0; i < in.numberofpoints; ++i) {
-    //    in.pointmarkerlist[i] = 0;
-    // }
+    for ( i = 0; i < (int)extra_nodes.size(); ++i ) {
+        in.pointattributelist[counter] = extra_nodes[i].z();
+        ++counter;
+    }
+
     in.pointmarkerlist = NULL;
 
     // segment list
-    in.numberofsegments = in.numberofpoints;
+    in.numberofsegments = total_segments;
     in.segmentlist = (int *) malloc(in.numberofsegments * 2 * sizeof(int));
     counter = 0;
     start = 0;
     end = -1;
 
     for ( i = 0; i < p.contours(); ++i ) {
-	point_list contour = p.get_contour( i );
-	start = end + 1;
-	end = start + contour.size() - 1;
-	for ( int j = 0; j < (int)contour.size() - 1; ++j ) {
-	    in.segmentlist[counter++] = j + start;
-	    in.segmentlist[counter++] = j + start + 1;
-	}
-	in.segmentlist[counter++] = end;
-	in.segmentlist[counter++] = start;
+        point_list contour = p.get_contour( i );
+        start = end + 1;
+        end = start + contour.size() - 1;
+        for ( int j = 0; j < (int)contour.size() - 1; ++j ) {
+            in.segmentlist[counter++] = j + start;
+            in.segmentlist[counter++] = j + start + 1;
+        }
+        in.segmentlist[counter++] = end;
+        in.segmentlist[counter++] = start;
     }
 
     in.segmentmarkerlist = (int *) malloc(in.numberofsegments * sizeof(int));
@@ -198,21 +220,22 @@ void polygon_tesselate( const TGPolygon &p,
     // hole list
     in.numberofholes = 1;
     for ( i = 0; i < p.contours(); ++i ) {
-	if ( p.get_hole_flag( i ) ) {
-	    ++in.numberofholes;
-	}
+        if ( p.get_hole_flag( i ) ) {
+            ++in.numberofholes;
+        }
     }
     in.holelist = (REAL *) malloc(in.numberofholes * 2 * sizeof(REAL));
+    
     // outside of polygon
     counter = 0;
     in.holelist[counter++] = max_x + 1.0;
     in.holelist[counter++] = 0.0;
 
     for ( i = 0; i < (int)p.contours(); ++i ) {
-	if ( p.get_hole_flag( i ) ) {
-	    in.holelist[counter++] = p.get_point_inside(i).x();
-	    in.holelist[counter++] = p.get_point_inside(i).y();
-	}
+        if ( p.get_hole_flag( i ) ) {
+            in.holelist[counter++] = p.get_point_inside(i).x();
+            in.holelist[counter++] = p.get_point_inside(i).y();
+        }
     }
 
     // region list
@@ -249,12 +272,7 @@ void polygon_tesselate( const TGPolygon &p,
     // no new points on boundary (Y), no internal segment
     // splitting (YY), no quality refinement (q)
     // Quite (Q)
-
-    string tri_options;
-    tri_options = "pzYYenQ";	// add multiple "V" entries for verbosity
-    //cout << "Triangulation with options = " << tri_options << endl;
-
-    triangulate( (char *)tri_options.c_str(), &in, &out, &vorout );
+    triangulate( (char *)tri_flags.c_str(), &in, &out, &vorout );
 
     // TEMPORARY
     // write_tri_data(&out);
@@ -267,27 +285,26 @@ void polygon_tesselate( const TGPolygon &p,
     int n1, n2, n3;
     double attribute;
     for ( i = 0; i < out.numberoftriangles; ++i ) {
-	n1 = out.trianglelist[i * 3];
-	n2 = out.trianglelist[i * 3 + 1];
-	n3 = out.trianglelist[i * 3 + 2];
-	if ( out.numberoftriangleattributes > 0 ) {
-	    attribute = out.triangleattributelist[i];
-	} else {
-	    attribute = 0.0;
-	}
-	// cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
-
-	elelist.push_back( TGTriEle( n1, n2, n3, attribute ) );
+        n1 = out.trianglelist[i * 3];
+        n2 = out.trianglelist[i * 3 + 1];
+        n3 = out.trianglelist[i * 3 + 2];
+        if ( out.numberoftriangleattributes > 0 ) {
+            attribute = out.triangleattributelist[i];
+        } else {
+            attribute = 0.0;
+        }
+        // cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
+        elelist.push_back( TGTriEle( n1, n2, n3, attribute ) );
     }
 
     // output points
     out_pts.clear();
     double x, y, z;
     for ( i = 0; i < out.numberofpoints; ++i ) {
-	x = out.pointlist[i * 2    ];
-	y = out.pointlist[i * 2 + 1];
-	z = out.pointattributelist[i];
-	out_pts.push_back( Point3D(x, y, z) );
+        x = out.pointlist[i * 2    ];
+        y = out.pointlist[i * 2 + 1];
+        z = out.pointattributelist[i];
+        out_pts.push_back( Point3D(x, y, z) );
     }
    
     // free mem allocated to the "Triangle" structures
@@ -321,6 +338,7 @@ void polygon_tesselate( const TGPolygon &p,
 
 TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
     TGPolygon result;
+    point_list extra_nodes;
     result.erase();
     int i;
 
@@ -340,7 +358,8 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
     // 2.  Do a final triangulation of the entire polygon
     triele_list trieles;
     point_list nodes;
-    polygon_tesselate( p, trieles, nodes );
+//    polygon_tesselate( p, extra_nodes, trieles, nodes, "pzYYenQ" );
+    polygon_tesselate( p, extra_nodes, trieles, nodes, "pzenQ" );
 
     // 3.  Convert the tesselated output to a list of tringles.
     //     basically a polygon with a contour for every triangle
@@ -352,6 +371,41 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
 	result.add_node( i, p1 );
 	result.add_node( i, p2 );
 	result.add_node( i, p3 );
+    }
+
+    return result;
+}
+
+TGPolygon polygon_tesselate_alt_with_extra( TGPolygon &p, const point_list& extra_nodes ) {
+    TGPolygon result;
+    result.erase();
+    int i;
+
+    // Bail right away if polygon is empty
+    if ( p.contours() == 0 ) {
+        return result;
+    }
+
+    // 1.  Robustly find a point inside each contour that is not
+    //     inside any other contour
+    calc_points_inside( p );
+    for ( i = 0; i < p.contours(); ++i );
+
+    // 2.  Do a final triangulation of the entire polygon
+    triele_list trieles;
+    point_list  nodes;
+    polygon_tesselate( p, extra_nodes, trieles, nodes, "pzenQ" );
+
+    // 3.  Convert the tesselated output to a list of tringles.
+    //     basically a polygon with a contour for every triangle
+    for ( i = 0; i < (int)trieles.size(); ++i ) {
+        TGTriEle t = trieles[i];
+        Point3D p1 = nodes[ t.get_n1() ];
+        Point3D p2 = nodes[ t.get_n2() ];
+        Point3D p3 = nodes[ t.get_n3() ];
+        result.add_node( i, p1 );
+        result.add_node( i, p2 );
+        result.add_node( i, p3 );
     }
 
     return result;
@@ -369,7 +423,7 @@ static void intersect_yline_with_contour( double yline, TGContourNode *node, TGP
         
         // cout << "intersect_yline_with_contour() yline=" << yline << endl;
         
-        for ( int i = 0; i < count; ++i ) {
+        for ( int i = 0; i < (int)count; ++i ) {
                 const Point3D &p0 = pts[ i ];
                 const Point3D &p1 = pts[ ( i + 1 ) % count ];
                 
@@ -404,7 +458,7 @@ static void write_tree_element( TGContourNode *node, TGPolygon& p, int hole=0) {
     
     if (contour_num != -1) {
             char buf[256];
-            sprintf(buf, "failed/element%ld.poly",contour_num);
+            sprintf(buf, "failed/element%d.poly",contour_num);
             FILE *treefp = fopen(buf,"w");
             
             fprintf(treefp,"#2D\n");
@@ -412,7 +466,7 @@ static void write_tree_element( TGContourNode *node, TGPolygon& p, int hole=0) {
             
             fprintf(treefp,"1\n");
             
-            fprintf(treefp,"%ld\n",p.contour_size(contour_num));
+            fprintf(treefp,"%d\n",p.contour_size(contour_num));
             fprintf(treefp,"%d\n",hole);
             
             for (int i=0;i<p.contour_size(contour_num);i++) {
@@ -487,7 +541,7 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     Point3D lastpt=*point_it;
 
     double maxdiff=0.0;
-    double yline; // the y-location of the intersection line
+    double yline=0.0;   // the y-location of the intersection line
     
     while ((++point_it) != allpoints.end()) {
             double diff=point_it->y()-lastpt.y();
@@ -526,7 +580,7 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     
     double maxlen=0.0;
     int longest=0;
-    for ( int i = 0; i < xcuts.size(); i+=2 ) {
+    for ( int i = 0; i < (int)xcuts.size(); i+=2 ) {
             double x0 = xcuts[ i ];
             double x1 = xcuts[ i + 1 ];
             
