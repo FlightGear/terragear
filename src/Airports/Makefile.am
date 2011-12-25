@@ -1,7 +1,0 @@
-if HAVE_NEWMAT
-GEN_AIRPORTS_DIR = GenAirports
-else
-GEN_AIRPORTS_DIR =
-endif
-
-SUBDIRS = $(GEN_AIRPORTS_DIR)
