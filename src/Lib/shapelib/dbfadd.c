@@ -57,9 +57,11 @@
 static char rcsid[] = 
   "$Id: dbfadd.c,v 1.7 2002/01/15 14:36:07 warmerda Exp $";
 
-#include "shapefil.h"
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
+
+#include "shapefil.h"
 
 int main( int argc, char ** argv )
 

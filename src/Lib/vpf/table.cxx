@@ -529,49 +529,57 @@ VpfTable::read_double (istream &input) const
 short
 VpfTable::make_short (char buf[2]) const
 {
-  if (_system_byte_order == _file_byte_order) {
-    return *((short *)buf);
-  } else {
-    char out[2];
-    swap2(buf, out);
-    return *((short *)out);
-  }
+    if (_system_byte_order == _file_byte_order) {
+        return *((short *)buf);
+    } else {
+        char out[2];
+        short *out_short = (short *)out;
+
+        swap2(buf, out);
+        return *out_short;
+    }
 }
 
 int
 VpfTable::make_int (char buf[4]) const
 {
-  if (_system_byte_order == _file_byte_order) {
-    return *((int *)buf);
-  } else {
-    char out[4];
-    swap4(buf, out);
-    return *((int *)out);
-  }
+    if (_system_byte_order == _file_byte_order) {
+        return *((int *)buf);
+    } else {
+        char out[4];
+        int *int_out = (int *)out;
+
+        swap4(buf, out);
+        return *int_out;
+    }
 }
 
 float
 VpfTable::make_float (char buf[4]) const
 {
-  if (_system_byte_order == _file_byte_order) {
-    return *((float *)buf);
-  } else {
-    char out[4];
-    swap4(buf, out);
-    return *((float *)out);
-  }
+    if (_system_byte_order == _file_byte_order) {
+        return *((float *)buf);
+    } else {
+        char out[4];
+        float *float_out = (float *)out;
+
+        swap4(buf, out);
+        return *float_out;
+    }
 }
 
 double
 VpfTable::make_double (char buf[8]) const
 {
-  if (_system_byte_order == _file_byte_order) {
-    return *((double *)buf);
-  } else {
-    char out[8];
-    swap8(buf, out);
-    return *((double *)out);
-  }
+    if (_system_byte_order == _file_byte_order) {
+        return *((double *)buf);
+    } else {
+        char out[8];
+        double *double_out = (double *)out;
+
+        swap8(buf, out);
+        return *double_out;
+    }
 }
 
 

@@ -485,37 +485,41 @@ VpfValue::convertType (char rawType)
 ostream &
 operator<< (ostream &output, const VpfValue &value)
 {
-  switch (value.getType()) {
-  case VpfValue::TEXT:
-    output << value.getText();
-    break;
-  case VpfValue::INT:
-    output << value.getInt();
-    break;
-  case VpfValue::REAL:
-    output << value.getReal();
-    break;
-  case VpfValue::POINTS: {
-    int nPoints = value.getElementCount();
-    for (int i = 0; i < nPoints; i++) {
-      if (i > 0)
-	output << ',';
-      output << '{' << value.getPoint(i).x << ','
-	     << value.getPoint(i).y << ',' << value.getPoint(i).z << '}';
+    switch (value.getType()) {
+        case VpfValue::TEXT:
+            output << value.getText();
+            break;
+        case VpfValue::INT:
+            output << value.getInt();
+            break;
+        case VpfValue::REAL:
+            output << value.getReal();
+            break;
+        case VpfValue::POINTS: {
+            int nPoints = value.getElementCount();
+            for (int i = 0; i < nPoints; i++) {
+                if (i > 0) {
+	                output << ',';
+                }
+                output << '{' << value.getPoint(i).x << ',' 
+                              << value.getPoint(i).y << ',' 
+                              << value.getPoint(i).z << '}';
+            }
+            break;
+        }
+        case VpfValue::DATE:
+            output << value.getDate();	// FIXME
+            break;
+        case VpfValue::CROSSREF:
+            output << value.getCrossRef().current_tile_key << ','
+	               << value.getCrossRef().next_tile_id << ','
+	               << value.getCrossRef().next_tile_key;
+            break;
+        default:
+            break;
     }
-    break;
-  }
-  case VpfValue::DATE:
-    output << value.getDate();	// FIXME
-    break;
-  case VpfValue::CROSSREF:
-    output << value.getCrossRef().current_tile_key << ','
-	   << value.getCrossRef().next_tile_id << ','
-	   << value.getCrossRef().next_tile_key;
-    break;
-  }
 
-  return output;
+    return output;
 }
 
 // end of value.cxx

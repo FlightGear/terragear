@@ -415,6 +415,8 @@ double Area(const Polygon &poly)
     case rtHi:
       UseFullInt64Range = true;
       break;
+    case rtLo:
+      break;
     case rtError:
       throw "Coordinate exceeds range bounds.";
   }

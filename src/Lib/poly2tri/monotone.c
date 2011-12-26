@@ -289,7 +289,7 @@ static int traverse_polygon(mcur, trnum, from, dir)
   trap_t *t = &tr[trnum];
   int mnew;
   int v0, v1;
-  int retval;
+  int retval = 0;
   int do_switch = FALSE;
 
   if ((trnum <= 0) || visited[trnum])

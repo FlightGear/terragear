@@ -37,7 +37,7 @@ strAppend (string &s, int i)
   s += buf;
 }
 
-
+#if 0 /* UNUSED */
 /**
  * Append a double-precision real to a string.
  */
@@ -48,7 +48,7 @@ strAppend (string &s, double f)
   sprintf(buf, "%f", f);
   s += buf;
 }
-
+#endif
 
 /**
  * Skip newlines.
@@ -141,7 +141,6 @@ checkZeros (istream &input)
   }
 }
 
-
 /**
  * Check that the expected integer appears, or throw an exception.
  */
@@ -157,7 +156,7 @@ expect (istream &input, int i)
   }
 }
 
-
+#if 0 /* UNUSED */
 /**
  * Check that the expected real number appears, or throw an exception.
  */
@@ -172,7 +171,7 @@ expect (istream &input, double f)
     throw E00Exception(message.c_str());
   }
 }
-
+#endif
 
 /**
  * Check that the expected string appears, or throw an exception.
@@ -541,8 +540,6 @@ E00::readIFO ()
 {
   int line_pos = 0;
   string line = "";
-  int intval;
-  double realval;
 
   checkPrecision(*_input);
 
@@ -689,7 +686,7 @@ E00::postProcess ()
 const E00::IFO *
 E00::getIFO (const string &fileName) const
 {
-  for (int i = 0; i < ifo_section.size(); i++) {
+  for (int i = 0; i < (int)ifo_section.size(); i++) {
     if (ifo_section[i].fileName == fileName)
       return &(ifo_section[i]);
   }
@@ -705,7 +702,7 @@ E00::getIFOItem (const string &fileName, int entry,
     return 0;
 
   int pos = -1;
-  for (int i = 0; i < ifo->defs.size(); i++) {
+  for (int i = 0; i < (int)ifo->defs.size(); i++) {
     if (ifo->defs[i].itemName == itemName)
       pos = i;
   }
@@ -723,8 +720,8 @@ E00::getIFOItemType (const string &fileName, const string &itemName) const
   if (ifo == 0)
     return 0;
 
-  int pos = -1;
-  for (int i = 0; i < ifo->defs.size(); i++) {
+  // int pos = -1;
+  for (int i = 0; i < (int)ifo->defs.size(); i++) {
     if (ifo->defs[i].itemName == itemName)
       return &(ifo->defs[i].itemType);
   }

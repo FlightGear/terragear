@@ -76,8 +76,10 @@
  * Initial revision
  */
 
+#if 0
 static char rcsid[] = 
   "$Id: shputils.c,v 1.7 2003/02/25 17:20:22 warmerda Exp $";
+#endif
 
 #include <stdlib.h>
 #include "shapefil.h"
@@ -121,6 +123,8 @@ void setext(char *pt, char *ext);
 int strncasecmp2(char *s1, char *s2, int n);
 void mergefields(void);
 void findselect(void);
+int  findunit(char *unit);
+
 void showitems(void);
 int selectrec();
 int check_theme_bnd();
@@ -394,6 +398,9 @@ int main( int argc, char ** argv )
                     DBFWriteDoubleAttribute(hDBFappend, jRecord, pt[i],
                                             (DBFReadDoubleAttribute( hDBF, iRecord, i )) );
                     break;
+
+                  default:
+                    break;  
                 }
             }
 	}
@@ -686,8 +693,8 @@ char      *pt;
 		        isum = isum + itmp;
 		}
 		mean=isum/maxrec;
-		if (ilow < ihigh)       printf("%d to %d \t(%.1f)",ilow,ihigh,mean);
-		else if (ilow == ihigh) printf("= %d",ilow);
+		if (ilow < ihigh)       printf("%ld to %ld \t(%.1f)",ilow,ihigh,mean);
+		else if (ilow == ihigh) printf("= %ld",ilow);
 		                   else printf("No Values");
 		break;
 
@@ -712,6 +719,8 @@ char      *pt;
 		else printf("No Values");
 		break;
 
+          default:
+            break;
 	    }
 
         }
@@ -720,161 +729,207 @@ char      *pt;
 
 int selectrec()
 {
-long int value, ty;
+    long int value, ty;
 
-   ty = DBFGetFieldInfo( hDBF, iselectitem, NULL, &iWidth, &iDecimals);
-      switch(ty)
-      {
-      case FTString:
-        puts("Invalid Item");
-        iselect=FALSE;
-	break;
-      case FTInteger:
-        value = DBFReadIntegerAttribute( hDBF, iRecord, iselectitem );
-        for (j = 0; j<selcount; j++)
-          {
-          if (selectvalues[j] == value)
-               if (iunselect) return(0);  /* Keep this record */
-                        else  return(1);  /* Skip this record */
-          }
-	break;
-      case FTDouble:
-        puts("Invalid Item");
-        iselect=FALSE;
-        break;
-      }
-      if (iunselect) return(1);  /* Skip this record */
-               else  return(0);  /* Keep this record */
+    ty = DBFGetFieldInfo( hDBF, iselectitem, NULL, &iWidth, &iDecimals);
+    switch(ty) {
+        case FTString:
+            puts("Invalid Item");
+            iselect=FALSE;
+	        break;
+
+        case FTInteger:
+            value = DBFReadIntegerAttribute( hDBF, iRecord, iselectitem );
+            for (j = 0; j<selcount; j++) {
+                if (selectvalues[j] == value) {
+                    if (iunselect) {
+                        return(0);  /* Keep this record */
+                    } else {
+                        return(1);  /* Skip this record */
+                    }
+                }
+            }
+	        break;
+
+        case FTDouble:
+            puts("Invalid Item");
+            iselect=FALSE;
+            break;
+
+        default:
+            break;
+    }
+      
+    if (iunselect) {
+        return(1);  /* Skip this record */
+    } else {
+        return(0);  /* Keep this record */
+    }
 }
 
 
 int check_theme_bnd()
 {
     if ( (adfBoundsMin[0] >= cxmin) && (adfBoundsMax[0] <= cxmax) &&
-         (adfBoundsMin[1] >= cymin) && (adfBoundsMax[1] <= cymax) )
-    {   /** Theme is totally inside clip area **/
-        if (ierase) nEntities=0; /** SKIP THEME  **/
-        else   iclip=FALSE; /** WRITE THEME (Clip not needed) **/
+         (adfBoundsMin[1] >= cymin) && (adfBoundsMax[1] <= cymax) ) {   
+        /** Theme is totally inside clip area **/
+        if (ierase) {
+            nEntities=0; /** SKIP THEME  **/
+        } else {
+            iclip=FALSE; /** WRITE THEME (Clip not needed) **/
+        }
     }
             
     if ( ( (adfBoundsMin[0] < cxmin) && (adfBoundsMax[0] < cxmin) ) ||
          ( (adfBoundsMin[1] < cymin) && (adfBoundsMax[1] < cymin) ) ||
          ( (adfBoundsMin[0] > cxmax) && (adfBoundsMax[0] > cxmax) ) ||
-         ( (adfBoundsMin[1] > cymax) && (adfBoundsMax[1] > cymax) ) )
-    {   /** Theme is totally outside clip area **/
-        if (ierase) iclip=FALSE; /** WRITE THEME (Clip not needed) **/
-             else   nEntities=0; /** SKIP THEME  **/
+         ( (adfBoundsMin[1] > cymax) && (adfBoundsMax[1] > cymax) ) ) {   
+        /** Theme is totally outside clip area **/
+        if (ierase) {
+            iclip=FALSE; /** WRITE THEME (Clip not needed) **/
+        } else {
+            nEntities=0; /** SKIP THEME  **/
+        }
     }
             
-    if (nEntities == 0)
+    if (nEntities == 0) {
         puts("WARNING: Theme is outside the clip area."); /** SKIP THEME  **/
+    }
+
+    return 0;
 }
 
-clip_boundary()
+int clip_boundary()
 {
     int  inside;
     int  prev_outside;
     int  i2;
     int  j2;
     
-       /*** FIRST check the boundary of the feature ***/
-       if ( ( (psCShape->dfXMin < cxmin) && (psCShape->dfXMax < cxmin) ) ||
-            ( (psCShape->dfYMin < cymin) && (psCShape->dfYMax < cymin) ) ||
-            ( (psCShape->dfXMin > cxmax) && (psCShape->dfXMax > cxmax) ) ||
-            ( (psCShape->dfYMin > cymax) && (psCShape->dfYMax > cymax) ) )
-            {   /** Feature is totally outside clip area **/
-            	if (ierase) return(1); /** WRITE RECORD **/
-            	     else   return(0); /** SKIP  RECORD **/
-            }
+    /*** FIRST check the boundary of the feature ***/
+    if ( ( (psCShape->dfXMin < cxmin) && (psCShape->dfXMax < cxmin) ) ||
+         ( (psCShape->dfYMin < cymin) && (psCShape->dfYMax < cymin) ) ||
+         ( (psCShape->dfXMin > cxmax) && (psCShape->dfXMax > cxmax) ) ||
+         ( (psCShape->dfYMin > cymax) && (psCShape->dfYMax > cymax) ) ) {   
+            /** Feature is totally outside clip area **/
+        if (ierase) {
+            return(1); /** WRITE RECORD **/
+        } else {
+            return(0); /** SKIP  RECORD **/
+        }
+    }
        
-       if ( (psCShape->dfXMin >= cxmin) && (psCShape->dfXMax <= cxmax) &&
-            (psCShape->dfYMin >= cymin) && (psCShape->dfYMax <= cymax) )
-            {   /** Feature is totally inside clip area **/
-            	if (ierase) return(0); /** SKIP  RECORD **/
-            	     else   return(1); /** WRITE RECORD **/
-            }
+    if ( (psCShape->dfXMin >= cxmin) && (psCShape->dfXMax <= cxmax) &&
+          (psCShape->dfYMin >= cymin) && (psCShape->dfYMax <= cymax) ) {   
+        /** Feature is totally inside clip area **/
+        if (ierase) {
+            return(0); /** SKIP  RECORD **/
+        } else {
+            return(1); /** WRITE RECORD **/
+        }
+    }
             
-       if (iinside) 
-            { /** INSIDE * Feature might touch the boundary or could be outside **/
-            if (ierase)  return(1); /** WRITE RECORD **/
-                 else    return(0); /** SKIP  RECORD **/
-            }
-       
-       if (itouch)
-          {   /** TOUCH **/
-          if ( ( (psCShape->dfXMin <= cxmin) || (psCShape->dfXMax >= cxmax) ) && 
-                 (psCShape->dfYMin >= cymin) && (psCShape->dfYMax <= cymax)    )
-               {   /** Feature intersects the clip boundary only on the X axis **/
-               if (ierase) return(0); /** SKIP  RECORD **/
-                    else   return(1); /** WRITE RECORD **/
-               }
+    if (iinside) { /** INSIDE * Feature might touch the boundary or could be outside **/
+        if (ierase) {
+            return(1); /** WRITE RECORD **/
+        } else {
+            return(0); /** SKIP  RECORD **/
+        }
+    }
 
-          if (   (psCShape->dfXMin >= cxmin) && (psCShape->dfXMax <= cxmax)   && 
-               ( (psCShape->dfYMin <= cymin) || (psCShape->dfYMax >= cymax) )  )
-               {   /** Feature intersects the clip boundary only on the Y axis **/
-               if (ierase) return(0); /** SKIP  RECORD **/
-                    else   return(1); /** WRITE RECORD **/
-               }
+    if (itouch) {
+        /** TOUCH **/
+        if ( ( (psCShape->dfXMin <= cxmin) || (psCShape->dfXMax >= cxmax) ) && 
+               (psCShape->dfYMin >= cymin) && (psCShape->dfYMax <= cymax)    ) {
+            /** Feature intersects the clip boundary only on the X axis **/
+            if (ierase) {
+                return(0); /** SKIP  RECORD **/
+            } else {
+                return(1); /** WRITE RECORD **/
+            }
+        }
+
+        if (   (psCShape->dfXMin >= cxmin) && (psCShape->dfXMax <= cxmax)   && 
+             ( (psCShape->dfYMin <= cymin) || (psCShape->dfYMax >= cymax) )  ) {
+            /** Feature intersects the clip boundary only on the Y axis **/
+            if (ierase) {
+                return(0); /** SKIP  RECORD **/
+            } else {
+                return(1); /** WRITE RECORD **/
+            }
+        }
                
-          for( j2 = 0; j2 < psCShape->nVertices; j2++ ) 
-               {   /** At least one vertex must be inside the clip boundary **/
-               if ( (psCShape->padfX[j2] >= cxmin  &&  psCShape->padfX[j2] <= cxmax) ||
-                    (psCShape->padfY[j2] >= cymin  &&  psCShape->padfY[j2] <= cymax)  )
-                    if (ierase) return(0); /** SKIP  RECORD **/
-                         else   return(1); /** WRITE RECORD **/
-               }
+        for( j2 = 0; j2 < psCShape->nVertices; j2++ ) {
+            /** At least one vertex must be inside the clip boundary **/
+            if ( (psCShape->padfX[j2] >= cxmin  &&  psCShape->padfX[j2] <= cxmax) ||
+                 (psCShape->padfY[j2] >= cymin  &&  psCShape->padfY[j2] <= cymax)  ) {
+                if (ierase) {
+                    return(0); /** SKIP  RECORD **/
+                } else {
+                    return(1); /** WRITE RECORD **/
+                }
+            }
+        }
                
-          /** All vertices are outside the clip boundary **/ 
-          if (ierase) return(1); /** WRITE RECORD **/
-               else   return(0); /** SKIP  RECORD **/
-          }   /** End TOUCH **/
+        /** All vertices are outside the clip boundary **/ 
+        if (ierase) {
+            return(1); /** WRITE RECORD **/
+        } else {
+            return(0); /** SKIP  RECORD **/
+        }
+    } /** End TOUCH **/
           
-       if (icut)
-          {   /** CUT **/
-          /*** Check each vertex in the feature with the Boundary and "CUT" ***/
-          /*** THIS CODE WAS NOT COMPLETED!  READ NOTE AT THE BOTTOM ***/
-          i2=0;
-          prev_outside=FALSE;
-          for( j2 = 0; j2 < psCShape->nVertices; j2++ ) 
-             {
-             inside = psCShape->padfX[j2] >= cxmin  &&  psCShape->padfX[j2] <= cxmax  &&
-                      psCShape->padfY[j2] >= cymin  &&  psCShape->padfY[j2] <= cymax ;
+    if (icut) {   
+        /** CUT **/
+        /*** Check each vertex in the feature with the Boundary and "CUT" ***/
+        /*** THIS CODE WAS NOT COMPLETED!  READ NOTE AT THE BOTTOM ***/
+        i2=0;
+        prev_outside=FALSE;
+        for( j2 = 0; j2 < psCShape->nVertices; j2++ ) {
+            inside = psCShape->padfX[j2] >= cxmin  &&  psCShape->padfX[j2] <= cxmax  &&
+                     psCShape->padfY[j2] >= cymin  &&  psCShape->padfY[j2] <= cymax ;
                       
-             if (ierase) inside=(! inside);
-             if (inside)
-                 {
-                 if (i2 != j2)
-                     {
-                     if (prev_outside)
-                         {
-                         /*** AddIntersection(i2);   /*** Add intersection ***/
-                         prev_outside=FALSE;
-                         }
-                     psCShape->padfX[i2]=psCShape->padfX[j2];     /** move vertex **/
-                     psCShape->padfY[i2]=psCShape->padfY[j2];
-                     }
-                 i2++;
-                 } else {
-                 if ( (! prev_outside) && (j2 > 0) )
-                     {
-                     /*** AddIntersection(i2);   /*** Add intersection (Watch out for j2==i2-1) ***/
-                     /*** Also a polygon may overlap twice and will split into a several parts  ***/
-                     prev_outside=TRUE;
-                     }
-                 }
-             }
+            if (ierase) {
+                inside=(! inside);
+            }
+             
+            if (inside) {
+                if (i2 != j2) {
+                    if (prev_outside) {
+                        /*** Add intersection ***/
+                        prev_outside=FALSE;
+                    }
+                    psCShape->padfX[i2]=psCShape->padfX[j2];     /** move vertex **/
+                    psCShape->padfY[i2]=psCShape->padfY[j2];
+                }
+                i2++;
+            } else {
+                if ( (! prev_outside) && (j2 > 0) ) {
+                    /*** Add intersection (Watch out for j2==i2-1) ***/
+                    /*** Also a polygon may overlap twice and will split into a several parts  ***/
+                    prev_outside=TRUE;
+                }
+            }
+        }
              
         printf("Vertices:%d   OUT:%d   Number of Parts:%d\n",
                 psCShape->nVertices,i2, psCShape->nParts );
                
-             psCShape->nVertices = i2;
+        psCShape->nVertices = i2;
              
-             if (i2 < 2) return(0); /** SKIP RECORD **/
-             /*** (WE ARE NOT CREATING INTERESECTIONS and some lines could be reduced to one point) **/
+        if (i2 < 2) {
+            return(0); /** SKIP RECORD **/
+        }
         
-             if (i2 == 0) return(0); /** SKIP  RECORD **/
-                  else    return(1); /** WRITE RECORD **/
-          }  /** End CUT **/
+        /*** (WE ARE NOT CREATING INTERESECTIONS and some lines could be reduced to one point) **/
+        if (i2 == 0) {
+            return(0); /** SKIP  RECORD **/
+        } else {
+            return(1); /** WRITE RECORD **/
+        }
+    } /** End CUT **/
+
+    return -1;
 }
 
 
@@ -909,31 +964,29 @@ int j,i;
    return(0);
 }
 
-
 #define  NKEYS (sizeof(unitkeytab) / sizeof(struct unitkey))
-findunit(unit)
-   char *unit;
-   {
+int findunit(char *unit)
+{
    struct unitkey {
      char   *name;
      double value;
    } unitkeytab[] = {
-     "CM",            39.37,
-     "CENTIMETER",    39.37,
-     "CENTIMETERS",   39.37,  /** # of inches * 100 in unit **/
-     "METER",          3937,
-     "METERS",         3937,
-     "KM",          3937000,
-     "KILOMETER",   3937000, 
-     "KILOMETERS",  3937000,
-     "INCH",            100,
-     "INCHES",          100,
-     "FEET",           1200,
-     "FOOT",           1200,
-     "YARD",           3600,
-     "YARDS",          3600,       
-     "MILE",        6336000,
-     "MILES",       6336000  
+     { "CM",            39.37 },
+     { "CENTIMETER",    39.37 },
+     { "CENTIMETERS",   39.37 },  /** # of inches * 100 in unit **/
+     { "METER",          3937 },
+     { "METERS",         3937 },
+     { "KM",          3937000 },
+     { "KILOMETER",   3937000 }, 
+     { "KILOMETERS",  3937000 },
+     { "INCH",            100 },
+     { "INCHES",          100 },
+     { "FEET",           1200 },
+     { "FOOT",           1200 },
+     { "YARD",           3600 },
+     { "YARDS",          3600 },       
+     { "MILE",        6336000 },
+     { "MILES",       6336000 } 
    };
 
    double unitfactor=0;

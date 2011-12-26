@@ -605,7 +605,7 @@ void build_airport( string airport_id, float alt_m,
     }
 #else
     /* Ralf Gerlich: Generate Taxiways in specified order from bottom to top */
-    for ( i=0; i<taxiways.size(); ++i ) {
+    for ( i=0; i<(int)taxiways.size(); ++i ) {
             SG_LOG( SG_GENERAL, SG_DEBUG, "generating " << i );
             build_runway( taxiways[i], alt_m,
                           &rwy_polys, &texparams, &accum,
@@ -970,7 +970,7 @@ void build_airport( string airport_id, float alt_m,
 	tri_materials.push_back( "Grass" );
 
 	std::vector < SGGeod > geodNodes;
-	for ( j = 0; j < nodes.get_node_list().size(); j++ ) {
+	for ( j = 0; j < (int)nodes.get_node_list().size(); j++ ) {
 	    Point3D node = nodes.get_node_list()[j];
 	    geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
 	}
@@ -1162,7 +1162,7 @@ void build_airport( string airport_id, float alt_m,
 	strip_materials.push_back( "Grass" );
 
 	std::vector < SGGeod > geodNodes;
-	for ( j = 0; j < nodes.get_node_list().size(); j++ ) {
+	for ( j = 0; j < (int)nodes.get_node_list().size(); j++ ) {
 	    Point3D node = nodes.get_node_list()[j];
 	    geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
 	}
@@ -1285,7 +1285,7 @@ void build_airport( string airport_id, float alt_m,
 	wgs84_nodes.push_back( cart );
     }
     SGSphered d;
-    for ( i = 0; i < wgs84_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)wgs84_nodes.size(); ++i ) {
         d.expandBy(wgs84_nodes[ i ]);
     }
     
@@ -1306,13 +1306,13 @@ void build_airport( string airport_id, float alt_m,
     string name = airport_id + ".btg";
     
     std::vector< SGVec3f > normals_3f;
-    for ( i=0; i < normals.get_node_list().size(); i++ ) {
+    for ( i=0; i < (int)normals.get_node_list().size(); i++ ) {
         Point3D node = normals.get_node_list()[i];
         normals_3f.push_back( node.toSGVec3f() );
     }
 
     std::vector< SGVec2f > texcoords_2f;
-    for ( i=0; i < texcoords.get_node_list().size(); i++ ) {
+    for ( i=0; i < (int)texcoords.get_node_list().size(); i++ ) {
         Point3D node = texcoords.get_node_list()[i];
         texcoords_2f.push_back( node.toSGVec2f() );
     }

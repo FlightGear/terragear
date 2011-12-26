@@ -139,7 +139,7 @@ static unsigned int timestamp = 0;
 
 static void overEdge(Edge *e, edge_callback fn, void *closure)
 {
-    if( e->token != timestamp )
+    if( e->token != (int)timestamp )
     {
 	e->token = timestamp;
 	e->Sym()->token = timestamp;
@@ -247,37 +247,42 @@ Edge *Subdivision::locate(const Vec2& x, Edge *start)
         real to = triArea(x, eo->Dest(), eo->Org());
         real td = triArea(x, ed->Dest(), ed->Org());
 
-        if (td>0)                       // x is below ed
-            if (to>0 || to==0 && t==0) {// x is interior, or origin endpoint
+        if ( td > 0 ) {                             // x is below ed
+            if ( (to > 0) || (to==0 && t==0) ) {    // x is interior, or origin endpoint
                 startingEdge = e;
                 return e;
             }
-            else {                      // x is below ed, below eo
+            else {                                  // x is below ed, below eo
                 t = to;
                 e = eo;
             }
-        else                            // x is on or above ed
-            if (to>0)                   // x is above eo
-                if (td==0 && t==0) {    // x is destination endpoint
+        } 
+        else {                                      // x is on or above ed
+            if (to>0) {                             // x is above eo
+                if (td==0 && t==0) {                // x is destination endpoint
                     startingEdge = e;
                     return e;
                 }
-                else {                  // x is on or above ed and above eo
+                else {                              // x is on or above ed and above eo
                     t = td;
                     e = ed;
                 }
-            else                        // x is on or below eo
-                if (t==0 && !leftOf(eo->Dest(), e))
+            }
+            else {                                  // x is on or below eo
+                if (t==0 && !leftOf(eo->Dest(), e)) {
 		    // x on e but subdiv. is to right
                     e = e->Sym();
-                else if (rand()&1) {  // x is on or above ed and
-                    t = to;             // on or below eo; step randomly
+                }
+                else if (rand()&1) {                // x is on or above ed and
+                    t = to;                         // on or below eo; step randomly
                     e = eo;
                 }
                 else {
                     t = td;
                     e = ed;
                 }
+            }
+        }
     }
 }
 
@@ -372,7 +377,7 @@ void Subdivision::optimize(Vec2& x, Edge *s)
     do {
 
 	Edge *e = spoke->Lnext();
-	Edge *t = e->Oprev();
+	// Edge *t = e->Oprev();
 
 	if( isInterior(e) && shouldSwap(x, e) )
 	    swap(e);

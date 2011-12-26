@@ -69,7 +69,7 @@ getIntersection (const Point3D &p0, const Point3D &p1,
 void
 makePolygon (const Point3D &p, double width, TGPolygon &polygon)
 {
-  double x, y, az;
+  double x = 0.0f, y = 0.0f, az = 0.0f;
   double lon = p.x();
   double lat = p.y();
 
@@ -101,7 +101,12 @@ makePolygon (const Line &line, double width, TGPolygon &polygon)
     const Point3D p1 = line.getPoint(i);
     const Point3D p2 = line.getPoint(i+1);
 
-    double angle1, angle2, dist, x, y, az;
+    double angle1 = 0.0f;
+    double angle2 = 0.0f;
+    double dist = 0.0f;
+    double x = 0.0f;
+    double y = 0.0f;
+    double az = 0.0f;
       
     geo_inverse_wgs_84(0, p1.y(), p1.x(), p2.y(), p2.x(), &angle1, &angle2, &dist);
     polygon.erase();
@@ -420,9 +425,12 @@ makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list
     Point3D prev_inner = Point3D(0.0f, 0.0f, 0.0f);
     Point3D prev_outer = Point3D(0.0f, 0.0f, 0.0f);
 
-    double last_end_v;
-    double heading, az2, dist;
-    double pt_x, pt_y;
+    double last_end_v = 0.0f;
+    double heading = 0.0f;
+    double az2 = 0.0f;
+    double dist = 0.0f;
+    double pt_x = 0.0f;
+    double pt_y = 0.0f;
 
     TGPolygon   poly;
     TGTexParams tp;
