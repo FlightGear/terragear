@@ -354,7 +354,7 @@ void Runway::BuildShoulder( float alt_m,
         } else SG_LOG(SG_GENERAL, SG_ALERT, "Unknown shoulder surface code = " << rwy.shoulder );
 
     } else if (rwy.shoulder == 0){ // We add a fake shoulder if the runway has an asphalt or concrete surface
-        shoulder_width = 1;
+        shoulder_width = 1.0;
         if (rwy.surface == 1){
             shoulder_surface = "pa_shoulder_f";
         } else if (rwy.surface == 2){
@@ -365,6 +365,13 @@ void Runway::BuildShoulder( float alt_m,
     SG_LOG(SG_GENERAL, SG_DEBUG, "Shoulder surface is: " << shoulder_surface );
 
     if (shoulder_width > 0.0f) {
+
+        // we need to break these shoulders up into managable pieces, as we're asked to triangulate
+        // 3-4 km long by 1m wide strips - jrs-can't handle it.
+        double max_dist = (double)shoulder_width * 50.0f;
+        int numSegs = (rwy.length / max_dist) + 1;
+        double dist = rwy.length / (double)numSegs;
+
         // Create both shoulder sides
         for (int i=0; i<2; ++i){
             double step;
@@ -374,44 +381,40 @@ void Runway::BuildShoulder( float alt_m,
             /* If the are 'equal' there's a good chance roundoff error can create a  */
             /* REALY thin long polygon, which causes a segfault  */
             if (i == 0){
-                step= (rwy.width + shoulder_width)*0.5 - 0.00001;
+                step= (rwy.width + shoulder_width)*0.5;
             } else if (i == 1) {
-                step= -(rwy.width + shoulder_width)*0.5 + 0.00001;
+                step= -(rwy.width + shoulder_width)*0.5;
             }
             double left_hdg = rwy.heading - 90.0;
 
             if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
-            geo_direct_wgs_84 ( alt_m, rwy.lat[0], rwy.lon[0], left_hdg,
-                                step, &lat, &lon, &r );
+            geo_direct_wgs_84 ( alt_m, rwy.lat[0], rwy.lon[0], left_hdg, step, &lat, &lon, &r );
+            Point3D ref = Point3D( lon, lat, 0.0f );
 
-            Point3D shoulder1 = Point3D( lon, lat, 0.0f );
+            for (int j=0; j<numSegs; j++)
+            {
+                geo_direct_wgs_84 ( alt_m, ref.y(), ref.x(), rwy.heading, (j*dist), &lat, &lon, &r );
+                TGPolygon shoulderSegment = gen_wgs84_rect( lat, lon, rwy.heading, dist+0.2, shoulder_width+0.5 );
 
-            geo_direct_wgs_84 ( alt_m, rwy.lat[1], rwy.lon[1], left_hdg,
-                                step, &lat, &lon, &r );
+                TGSuperPoly sp;
+                TGTexParams tp;
+                TGPolygon clipped = tgPolygonDiff( shoulderSegment, *accum );
 
-            Point3D shoulder2 = Point3D( lon, lat, 0.0f );
+                sp.erase();
+                sp.set_poly( clipped );
+                sp.set_material( shoulder_surface );
+                rwy_polys->push_back( sp );
 
-            TGPolygon shoulder = gen_wgs84_area( shoulder1, shoulder2, 0.0, 0.0, 0.0, shoulder_width, rwy.heading, alt_m, false);
+                *accum = tgPolygonUnion( shoulderSegment, *accum );
 
-            TGSuperPoly sp;
-            TGTexParams tp;
-            TGPolygon clipped = tgPolygonDiff( shoulder, *accum );
-            TGPolygon split = tgPolygonSplitLongEdges( clipped, 400.0 );
-
-            sp.erase();
-            sp.set_poly( split );
-            sp.set_material( shoulder_surface );
-            rwy_polys->push_back( sp );
-
-            *accum = tgPolygonUnion( shoulder, *accum );
-
-            tp = TGTexParams( shoulder.get_pt(0,0), shoulder_width , rwy.length + 2, rwy.heading );
-            if (i == 1){
-                tp.set_maxu(0);
-                tp.set_minu(1);
+                tp = TGTexParams( shoulderSegment.get_pt(0,0), -shoulder_width, dist, rwy.heading );
+                if (i == 0){
+                    tp.set_maxu(0);
+                    tp.set_minu(1);
+                }
+                texparams->push_back( tp );
             }
-            texparams->push_back( tp );
         }
     }
 }

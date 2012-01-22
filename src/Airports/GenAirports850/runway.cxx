@@ -136,8 +136,8 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         case 4: // Dirt
         case 5: // Gravel
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
-	        gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
-                gen_runway_lights( alt_m, rwy_lights );
+            gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
+            gen_runway_lights( alt_m, rwy_lights );
             break;
 
         case 12: // dry lakebed
@@ -164,10 +164,10 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
     if (apt_base)
     {
         // generate area around runways
-        base      = gen_runway_area_w_extend( 0.0, rwy.width * 0.25, -rwy.overrun[0], -rwy.overrun[1], rwy.width * 0.25);
+        base      = gen_runway_area_w_extend( 0.0, 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0);
 
         // also clear a safe area around the runway
-        safe_base = gen_runway_area_w_extend( 0.0, rwy.width, -rwy.overrun[0], -rwy.overrun[1], rwy.width );
+        safe_base = gen_runway_area_w_extend( 0.0, 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
 
         // add this to the airport clearing
         *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);

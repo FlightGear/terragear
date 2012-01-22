@@ -51,7 +51,7 @@ public:
 
     void AddFeatures( FeatureList* feature_list )
     {
-        for (int i=0; i<feature_list->size(); i++)
+        for (unsigned int i=0; i<feature_list->size(); i++)
         {
             features.push_back( feature_list->at(i) );
         }

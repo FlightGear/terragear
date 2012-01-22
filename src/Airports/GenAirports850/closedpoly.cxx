@@ -10,6 +10,15 @@
 #include "convex_hull.hxx"
 #include "closedpoly.hxx"
 
+static void stringPurifier( string& s )
+{
+    for ( string::iterator it = s.begin(), itEnd = s.end(); it!=itEnd; ++it) {
+        if ( static_cast<unsigned int>(*it) < 32 || static_cast<unsigned int>(*it) > 127 ) {
+            (*it) = ' ';
+        }
+    }
+}
+
 ClosedPoly::ClosedPoly( char* desc )
 {
     is_pavement = false;
@@ -17,6 +26,7 @@ ClosedPoly::ClosedPoly( char* desc )
     if ( desc )
     {
         description = desc;
+        stringPurifier(description);
     }
     else
     {
@@ -38,6 +48,7 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
     if ( desc )
     {
         description = desc;
+        stringPurifier(description);
     }
     else
     {
@@ -65,7 +76,7 @@ void ClosedPoly::AddNode( BezNode* node )
     {
         if (!cur_feature)
         {
-            string feature_desc = description + ":";
+            string feature_desc = description + " - ";
             if (boundary)
             {
                 feature_desc += "hole";
@@ -84,10 +95,10 @@ void ClosedPoly::AddNode( BezNode* node )
 
 void ClosedPoly::CreateConvexHull( void )
 {
-    TGPolygon  convexHull;
-    point_list nodes;
-    Point3D    p;
-    int        i;
+    TGPolygon    convexHull;
+    point_list   nodes;
+    Point3D      p;
+    unsigned int i;
 
     if (boundary->size() > 2)
     {
@@ -105,7 +116,7 @@ void ClosedPoly::CreateConvexHull( void )
     }
 }
 
-int ClosedPoly::CloseCurContour()
+void ClosedPoly::CloseCurContour()
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "Close Contour");
 
@@ -151,7 +162,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
     Point3D cp2;    
 
     int curve_type = CURVE_LINEAR;
-    int i;
+    unsigned int i;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
 
@@ -346,7 +357,7 @@ void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
     double h1;
     double o1;
     double az2;
-    int i;
+    unsigned int i;
         
     // iterate through each bezier node in the contour
     for (i=0; i<src.size(); i++)
@@ -427,7 +438,7 @@ void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
 }
 
 // finish the poly - convert to TGPolygon, and tesselate
-int ClosedPoly::Finish()
+void ClosedPoly::Finish()
 {
     point_list          dst_contour;
 
@@ -448,7 +459,7 @@ int ClosedPoly::Finish()
         pre_tess.add_contour( dst_contour, 0 );
 
         // The convert the hole contours
-        for (int i=0; i<holes.size(); i++)
+        for (unsigned int i=0; i<holes.size(); i++)
         {
             dst_contour.clear();
             ConvertContour( holes[i], &dst_contour );
@@ -574,4 +585,6 @@ int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clear
         // and add the clearing to the base
         *apt_base = tgPolygonUnion( pre_tess, *apt_base );
     }
+
+    return 1;
 }

@@ -25,6 +25,9 @@ TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
                           double alt_m,
                           bool   add_mid );
 
+TGPolygon gen_wgs84_rect( double lat, double lon, double heading, double length, double width );
+
+
 void gen_tex_section( const TGPolygon& runway,
                          double startl_pct, double endl_pct,
                          double startw_pct, double endw_pct,

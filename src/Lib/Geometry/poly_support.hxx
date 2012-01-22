@@ -53,7 +53,7 @@ inline double triangle_area( const Point3D p1,
 
 // basic triangulation of a polygon with out adding points or
 // splitting edges
-void polygon_tesselate( const TGPolygon &p,
+int polygon_tesselate( const TGPolygon &p,
             const point_list &extra_nodes,
 			triele_list &elelist,
 			point_list &out_pts,
@@ -64,10 +64,10 @@ void polygon_tesselate( const TGPolygon &p,
 // with one contour per tesselated triangle.  This is mostly just a
 // wrapper for the polygon_tesselate() function.  Note, this routine
 // will modify the points_inside list for your polygon.
-TGPolygon polygon_tesselate_alt( TGPolygon &p );
+TGPolygon polygon_tesselate_alt( TGPolygon &p, bool verbose );
 
 TGPolygon polygon_tesselate_alt_with_extra( TGPolygon &p, 
-            const point_list &extra_nodes );
+            const point_list &extra_nodes, bool verbose );
 
 // calculate some "arbitrary" point inside each of the polygons contours
 void calc_points_inside( TGPolygon& p );

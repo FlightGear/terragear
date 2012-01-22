@@ -172,6 +172,39 @@ TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
     return result_list;
 }
 
+TGPolygon gen_wgs84_rect( double lat, double lon, double heading, double length, double width )
+{
+    TGPolygon result_list;
+    double ptlat, ptlon, r;
+    Point3D p;
+
+    // starting point is in the middle of the rectangle width, at the beginning - stretch to heading
+    
+    // Point 1 is -90deg, 1/2 width away
+    double left_hdg = heading -90;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+
+    geo_direct_wgs_84 ( 0.0, lat, lon, left_hdg, width / 2.0, &ptlat, &ptlon, &r );
+    p = Point3D( ptlon, ptlat, 0.0 );
+    result_list.add_node( 0, p );
+
+    // Point 2 is heading, length away from point 1
+    geo_direct_wgs_84 ( 0.0, ptlat, ptlon, heading, length, &ptlat, &ptlon, &r );
+    p = Point3D( ptlon, ptlat, 0.0 );
+    result_list.add_node( 0, p );
+
+    // Point 3 is -90deg, -width away from point 2
+    geo_direct_wgs_84 ( 0.0, ptlat, ptlon, left_hdg, -width, &ptlat, &ptlon, &r );
+    p = Point3D( ptlon, ptlat, 0.0 );
+    result_list.add_node( 0, p );
+
+    // last point is heading, -length from point 3
+    geo_direct_wgs_84 ( 0.0, ptlat, ptlon, heading, -length, &ptlat, &ptlon, &r );
+    p = Point3D( ptlon, ptlat, 0.0 );
+    result_list.add_node( 0, p );
+
+    return result_list;
+}
 
 // generate a section of texture
 void gen_tex_section( const TGPolygon& runway,

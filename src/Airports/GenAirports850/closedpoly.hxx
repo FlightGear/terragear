@@ -24,8 +24,8 @@ public:
     
     inline string GetDescription() { return description; }
     void AddNode( BezNode* node );
-    int  CloseCurContour();
-    int  Finish();
+    void CloseCurContour();
+    void Finish();
 
     // Build BTG for airport base for airports with boundary
     int  BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing );

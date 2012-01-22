@@ -63,6 +63,8 @@ TGArray::TGArray( const string &file ):
     for (int i = 0; i < ARRAY_SIZE_1; i++)
         in_data[i] = new int[ARRAY_SIZE_1];
 
+    SG_LOG(SG_GENERAL, SG_ALERT, "ps TGArray CONstructor called." );
+
     TGArray::open(file);
 }
 
@@ -75,7 +77,7 @@ bool TGArray::open( const string& file_base ) {
     string array_name = file_base + ".arr.gz";
     array_in = new sg_gzifstream( array_name );
     if ( ! array_in->is_open() ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << array_name );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  ps: Cannot open " << array_name );
         success = false;
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening array data file: " << array_name );
@@ -89,7 +91,7 @@ bool TGArray::open( const string& file_base ) {
         // can do a really stupid/crude fit on the fly, but it will
         // not be nearly as nice as what the offline terrafit utility
         // would have produced.
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << fitted_name );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  ps: Cannot open " << fitted_name );
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening fitted data file: " << fitted_name );
     }

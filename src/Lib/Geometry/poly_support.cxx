@@ -50,8 +50,6 @@ extern "C" {
 #include "trisegs.hxx"
 
 using std::copy;
-using std::cout;
-using std::endl;
 using std::ostream_iterator;
 using std::sort;
 using std::vector;
@@ -117,7 +115,7 @@ static bool intersects( Point3D p0, Point3D p1, double x, Point3D *result ) {
 
 // basic triangulation of a polygon with out adding points or
 // splitting edges, this should triangulate around interior holes.
-void polygon_tesselate( const TGPolygon &p, 
+int polygon_tesselate( const TGPolygon &p, 
             const point_list &extra_nodes, 
 			triele_list &elelist,
 			point_list &out_pts,
@@ -125,8 +123,7 @@ void polygon_tesselate( const TGPolygon &p,
 {
     struct triangulateio in, out, vorout;
     int i;
-
-    tri_flags = "pzqenXYYQ";
+    int success = 0;
 
     // make sure all elements of these structs point to "NULL"
     zero_triangulateio( &in );
@@ -272,7 +269,7 @@ void polygon_tesselate( const TGPolygon &p,
     // no new points on boundary (Y), no internal segment
     // splitting (YY), no quality refinement (q)
     // Quite (Q)
-    triangulate( (char *)tri_flags.c_str(), &in, &out, &vorout );
+    success = triangulate( (char *)tri_flags.c_str(), &in, &out, &vorout );
 
     // TEMPORARY
     // write_tri_data(&out);
@@ -280,33 +277,36 @@ void polygon_tesselate( const TGPolygon &p,
     // now copy the results back into the corresponding TGTriangle
     // structures
 
-    // triangles
-    elelist.clear();
-    int n1, n2, n3;
-    double attribute;
-    for ( i = 0; i < out.numberoftriangles; ++i ) {
-        n1 = out.trianglelist[i * 3];
-        n2 = out.trianglelist[i * 3 + 1];
-        n3 = out.trianglelist[i * 3 + 2];
-        if ( out.numberoftriangleattributes > 0 ) {
-            attribute = out.triangleattributelist[i];
-        } else {
-            attribute = 0.0;
+    if (success >= 0) {
+    
+        // triangles
+        elelist.clear();
+        int n1, n2, n3;
+        double attribute;
+        for ( i = 0; i < out.numberoftriangles; ++i ) {
+            n1 = out.trianglelist[i * 3];
+            n2 = out.trianglelist[i * 3 + 1];
+            n3 = out.trianglelist[i * 3 + 2];
+            if ( out.numberoftriangleattributes > 0 ) {
+                attribute = out.triangleattributelist[i];
+            } else {
+                attribute = 0.0;
+            }
+            // cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
+            elelist.push_back( TGTriEle( n1, n2, n3, attribute ) );
         }
-        // cout << "triangle = " << n1 << " " << n2 << " " << n3 << endl;
-        elelist.push_back( TGTriEle( n1, n2, n3, attribute ) );
+
+        // output points
+        out_pts.clear();
+        double x, y, z;
+        for ( i = 0; i < out.numberofpoints; ++i ) {
+            x = out.pointlist[i * 2    ];
+            y = out.pointlist[i * 2 + 1];
+            z = out.pointattributelist[i];
+            out_pts.push_back( Point3D(x, y, z) );
+        }
     }
 
-    // output points
-    out_pts.clear();
-    double x, y, z;
-    for ( i = 0; i < out.numberofpoints; ++i ) {
-        x = out.pointlist[i * 2    ];
-        y = out.pointlist[i * 2 + 1];
-        z = out.pointattributelist[i];
-        out_pts.push_back( Point3D(x, y, z) );
-    }
-   
     // free mem allocated to the "Triangle" structures
     free(in.pointlist);
     free(in.pointattributelist);
@@ -327,6 +327,8 @@ void polygon_tesselate( const TGPolygon &p,
     free(vorout.pointattributelist);
     free(vorout.edgelist);
     free(vorout.normlist);
+
+    return success;
 }
 
 
@@ -336,7 +338,7 @@ void polygon_tesselate( const TGPolygon &p,
 // wrapper for the polygon_tesselate() function.  Note, this routine
 // will modify the points_inside list for your polygon.
 
-TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
+TGPolygon polygon_tesselate_alt( TGPolygon &p, bool verbose ) {
     TGPolygon result;
     point_list extra_nodes;
     result.erase();
@@ -358,25 +360,42 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p ) {
     // 2.  Do a final triangulation of the entire polygon
     triele_list trieles;
     point_list nodes;
-//    polygon_tesselate( p, extra_nodes, trieles, nodes, "pzYYenQ" );
-    polygon_tesselate( p, extra_nodes, trieles, nodes, "pzenQ" );
+    string flags;
+    if (verbose) {
+        flags = "pzqenXYY";
+    } else {
+        flags = "pzqenXYYQ";
+    }
 
-    // 3.  Convert the tesselated output to a list of tringles.
-    //     basically a polygon with a contour for every triangle
-    for ( i = 0; i < (int)trieles.size(); ++i ) {
-	TGTriEle t = trieles[i];
-	Point3D p1 = nodes[ t.get_n1() ];
-	Point3D p2 = nodes[ t.get_n2() ];
-	Point3D p3 = nodes[ t.get_n3() ];
-	result.add_node( i, p1 );
-	result.add_node( i, p2 );
-	result.add_node( i, p3 );
+    if ( polygon_tesselate( p, extra_nodes, trieles, nodes, flags ) >= 0 ) {
+        // 3.  Convert the tesselated output to a list of tringles.
+        //     basically a polygon with a contour for every triangle
+        for ( i = 0; i < (int)trieles.size(); ++i ) {
+        	TGTriEle t = trieles[i];
+        	Point3D p1 = nodes[ t.get_n1() ];
+        	Point3D p2 = nodes[ t.get_n2() ];
+        	Point3D p3 = nodes[ t.get_n3() ];
+        	result.add_node( i, p1 );
+        	result.add_node( i, p2 );
+        	result.add_node( i, p3 );
+        }
+    } 
+
+    // check the result for nan point
+    for (int c = 0; c < result.contours(); c++) {    
+        point_list contour = result.get_contour( c );
+        for ( int d = 0; d < (int)contour.size(); ++d ) {
+            if ( isnan( contour[d].x() ) || isnan( contour[d].y() ) ) {
+                printf("Uh-oh - got nan from tesselation\n");
+                exit(0);
+            }
+        }
     }
 
     return result;
 }
 
-TGPolygon polygon_tesselate_alt_with_extra( TGPolygon &p, const point_list& extra_nodes ) {
+TGPolygon polygon_tesselate_alt_with_extra( TGPolygon &p, const point_list& extra_nodes, bool verbose ) {
     TGPolygon result;
     result.erase();
     int i;
@@ -394,18 +413,25 @@ TGPolygon polygon_tesselate_alt_with_extra( TGPolygon &p, const point_list& extr
     // 2.  Do a final triangulation of the entire polygon
     triele_list trieles;
     point_list  nodes;
-    polygon_tesselate( p, extra_nodes, trieles, nodes, "pzenQ" );
+    string flags;
+    if (verbose) {
+        flags = "VVpzqenXYY";
+    } else {
+        flags = "pzqenXYYQ";
+    }
 
-    // 3.  Convert the tesselated output to a list of tringles.
-    //     basically a polygon with a contour for every triangle
-    for ( i = 0; i < (int)trieles.size(); ++i ) {
-        TGTriEle t = trieles[i];
-        Point3D p1 = nodes[ t.get_n1() ];
-        Point3D p2 = nodes[ t.get_n2() ];
-        Point3D p3 = nodes[ t.get_n3() ];
-        result.add_node( i, p1 );
-        result.add_node( i, p2 );
-        result.add_node( i, p3 );
+    if ( polygon_tesselate( p, extra_nodes, trieles, nodes, flags ) >= 0 ) {
+        // 3.  Convert the tesselated output to a list of tringles.
+        //     basically a polygon with a contour for every triangle
+        for ( i = 0; i < (int)trieles.size(); ++i ) {
+            TGTriEle t = trieles[i];
+            Point3D p1 = nodes[ t.get_n1() ];
+            Point3D p2 = nodes[ t.get_n2() ];
+            Point3D p3 = nodes[ t.get_n3() ];
+            result.add_node( i, p1 );
+            result.add_node( i, p2 );
+            result.add_node( i, p3 );
+        }
     }
 
     return result;
@@ -598,7 +624,7 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
 }
 
 static void print_contour_tree( TGContourNode *node, string indent ) {
-    cout << indent << node->get_contour_num() << endl;
+    // cout << indent << node->get_contour_num() << endl;
 
     indent += "  ";
     for ( int i = 0; i < node->get_num_kids(); ++i ) {
@@ -997,7 +1023,7 @@ static point_list reduce_contour_degeneracy( const point_list& contour ) {
 	    // remove bad node from contour.  But only remove one node.  If
 	    // the 'badness' is caused by coincident adjacent nodes, we don't
 	    // want to remove both of them, just one (either will do.)
-  	    cout << "found a bad node = " << bad_node << endl;
+  	    // cout << "found a bad node = " << bad_node << endl;
 	    point_list tmp; tmp.clear();
 	    bool found_one = false;
 	    for ( int j = 0; j < (int)result.size(); ++j ) {
@@ -1045,11 +1071,11 @@ static point_list remove_small_cycles( const point_list& contour ) {
         result.push_back( contour[i] );
         for ( unsigned int j = i + 1; j < contour.size(); ++j ) {
             if ( contour[i] == contour[j] && i + 4 > j ) {
-                cout << "detected a small cycle: i = "
-                     << i << " j = " << j << endl;
-                for ( unsigned int k = i; k <= j; ++k ) {
-                    cout << "  " << contour[k] << endl;
-                }
+                // cout << "detected a small cycle: i = "
+                //     << i << " j = " << j << endl;
+                //for ( unsigned int k = i; k <= j; ++k ) {
+                //    cout << "  " << contour[k] << endl;
+                //}
                 i = j;
             }
         }

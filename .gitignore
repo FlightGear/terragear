@@ -3,6 +3,7 @@ Makefile.in
 .deps
 *.o
 *.a
+*~
 COPYING
 INSTALL
 VERSION

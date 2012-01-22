@@ -68,21 +68,23 @@ double tgAverageElevation( const string &root, const string_list elev_src,
     }
 
     while ( !done ) {
-	// find first node with -9999 elevation
+        // find first node with -9999 elevation
         Point3D first(0.0);
         bool found_one = false;
         for ( i = 0; i < points.size(); ++i ) {
             if ( points[i].z() < -9000.0 && !found_one ) {
                 first = points[i];
+                SG_LOG( SG_GENERAL, SG_DEBUG, "founf first = " << first );
+
                 found_one = true;
             }
         }
 
-	if ( found_one ) {
-	    SGBucket b( first.x(), first.y() );
-	    string base = b.gen_base_path();
+        if ( found_one ) {
+            SGBucket b( first.x(), first.y() );
+            string base = b.gen_base_path();
 
-	    // try the various elevation sources
+            // try the various elevation sources
             i = 0;
             bool found_file = false;
             while ( !found_file && i < elev_src.size() ) {
@@ -98,7 +100,7 @@ double tgAverageElevation( const string &root, const string_list elev_src,
             
             // this will fill in a zero structure if no array data
             // found/opened
-	    array.parse( b );
+            array.parse( b );
 
             // this will do a hasty job of removing voids by inserting
             // data from the nearest neighbor (sort of)

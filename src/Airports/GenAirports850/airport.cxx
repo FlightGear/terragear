@@ -325,6 +325,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     int i, j, k;
     Point3D p;
 
+    bool verbose_triangulation = false;
+
     // parse main airport information
     double apt_lon = 0.0, apt_lat = 0.0;
 
@@ -334,16 +336,24 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     struct timeval  cleanup_end;
     struct timeval  triangulation_start;
     struct timeval  triangulation_end;
+    struct timeval  log_time;
 
-    // Find the average of all the runway long / lats
-    // TODO : Need runway object...    
+    // Find the average of all the runway and heliport long / lats
+    int num_samples = 0;
     for (i=0; i<runways.size(); i++)
     {
-        apt_lon += runways.at(i)->GetMidpoint().x();
-        apt_lat += runways.at(i)->GetMidpoint().y();
+        apt_lon += runways[i]->GetMidpoint().x();
+        apt_lat += runways[i]->GetMidpoint().y();
+        num_samples++;
     }
-    apt_lon = apt_lon / (double)runways.size();
-    apt_lat = apt_lat / (double)runways.size();
+    for (i=0; i<helipads.size(); i++)
+    {
+        apt_lon += helipads[i]->GetLoc().x();
+        apt_lat += helipads[i]->GetLoc().y();
+        num_samples++;
+    }
+    apt_lon = apt_lon / (double)num_samples;
+    apt_lat = apt_lat / (double)num_samples;
 
     SGBucket b( apt_lon, apt_lat );
     SG_LOG(SG_GENERAL, SG_DEBUG, b.gen_base_path() << "/" << b.gen_index_str());
@@ -368,7 +378,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( i=0; i<features.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Feature Poly " << i << ": " << features[i]->GetDescription() );
+            SG_LOG(SG_GENERAL, SG_INFO, "Build Feature Poly " << i << " of " << features.size() << " : " << features[i]->GetDescription() );
 
             // cut the linear feature in until we get the geometry right...
             // features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum );
@@ -380,9 +390,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         SG_LOG(SG_GENERAL, SG_DEBUG, "no markings");
     }
 
+    gettimeofday(&log_time, NULL);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << ctime(&log_time.tv_sec) );
+
     // Build runways next
     for (i=0; i<runways.size(); i++ ) 
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build Runway " << i << " of " << runways.size());
+
         if ( runways[i]->IsPrecision() ) 
         {
             if (boundary)
@@ -393,13 +408,18 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             {
                 runways[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, &apt_base, &apt_clearing );
             }
-	    }
+        }
     }
+
+    gettimeofday(&log_time, NULL);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building runways for " << icao << " at " << ctime(&log_time.tv_sec) );
 
     if (lightobjects.size())
     {
         for ( i=0; i<lightobjects.size(); i++ )
         {
+            SG_LOG(SG_GENERAL, SG_INFO, "Build runway light " << i << " of " << lightobjects.size());
+
             lightobjects[i]->BuildBtg( altitude, &rwy_lights );
         }
     }
@@ -407,6 +427,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // Build helipads (use runway poly- and texture list for this)
     if (helipads.size())
     {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Build helipad " << i << " of " << helipads.size());
+
         for (i=0; i<helipads.size(); i++ )
         {
             if (boundary)
@@ -419,12 +441,13 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             }
         }
     }
+
     // Build the pavements
     if (pavements.size())
     {
         for ( i=0; i<pavements.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement Poly " << i << ": " << pavements[i]->GetDescription());
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement " << i << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
 
             if (boundary)
             {
@@ -441,9 +464,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         SG_LOG(SG_GENERAL, SG_DEBUG, "no pavements");
     }
 
+    gettimeofday(&log_time, NULL);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building pavements for " << icao << " at " << ctime(&log_time.tv_sec) );
+
     // Build runway shoulders here
     for (i=0; i<runways.size(); i++ )
     {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Build Runway shoulder " << i << " of " << runways.size());
+
         if ( runways[i]->GetsShoulder() )
         {
             runways[i]->BuildShoulder( altitude, &rwy_polys, &rwy_tps, &accum );
@@ -453,10 +481,12 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // build the base and clearing if there's a boundary
     if (boundary)
     {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Build user defined boundary " );
+
         boundary->BuildBtg( altitude, &apt_base, &apt_clearing );
     }
 
-	if ( apt_base.total_size() == 0 )
+    if ( apt_base.total_size() == 0 )
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
     	return;
@@ -464,7 +494,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     TGPolygon filled_base  = tgPolygonStripHoles( apt_base );
     TGPolygon divided_base = tgPolygonSplitLongEdges( filled_base, 200.0 );
-    //TGPolygon base_poly    = tgPolygonDiff( filled_base, accum );
     TGPolygon base_poly    = tgPolygonDiff( divided_base, accum );
 
     gettimeofday(&build_end, NULL);
@@ -477,6 +506,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     TGTriNodes tmp_nodes;
 
     // build temporary node list from runways...
+    SG_LOG(SG_GENERAL, SG_INFO, "Build Node List " );
+
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) 
     {
     	TGPolygon poly = rwy_polys[k].get_poly();
@@ -484,7 +515,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         {
     	    for ( j = 0; j < poly.contour_size( i ); ++j ) 
             {
-        		tmp_nodes.unique_add( poly.get_pt(i, j) );
+                tmp_nodes.unique_add( poly.get_pt(i, j) );
+                //tmp_nodes.course_add( poly.get_pt(i, j) );
     	    }
     	}
     }
@@ -498,6 +530,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	    for ( j = 0; j < poly.contour_size( i ); ++j ) 
             {
         		tmp_nodes.unique_add( poly.get_pt(i, j) );
+                //tmp_nodes.course_add( poly.get_pt(i, j) );
     	    }
     	}
     }
@@ -511,6 +544,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	    for ( j = 0; j < poly.contour_size( i ); ++j ) 
             {
         		tmp_nodes.unique_add( poly.get_pt(i, j) );
+                //tmp_nodes.course_add( poly.get_pt(i, j) );
     	    }
     	}
     }
@@ -521,6 +555,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	for ( j = 0; j < base_poly.contour_size( i ); ++j ) 
         {
     	    tmp_nodes.unique_add( base_poly.get_pt(i, j) );
+            //tmp_nodes.course_add( base_poly.get_pt(i, j) );
     	}
     }
 
@@ -531,8 +566,12 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 	    for ( j = 0; j < divided_base.contour_size( i ); ++j ) 
         {
     	    tmp_nodes.unique_add( divided_base.get_pt(i, j) );
+            //tmp_nodes.course_add( divided_base.get_pt(i, j) );
     	}
     }
+
+    gettimeofday(&log_time, NULL);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished collecting nodes for " << icao << " at " << ctime(&log_time.tv_sec) );
 
     // second pass : runways
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) 
@@ -564,6 +603,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	line_polys[k].set_poly( poly );
     }
 
+    gettimeofday(&log_time, NULL);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished adding intermediate nodes for " << icao << " at " << ctime(&log_time.tv_sec) );
 
     // One more pass to try to get rid of other yukky stuff
     for ( k = 0; k < (int)rwy_polys.size(); ++k ) 
@@ -572,12 +613,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	SG_LOG(SG_GENERAL, SG_DEBUG, "total size of section " << k << " before =" << poly.total_size());
 
+        poly = remove_cycles( poly );
         poly = remove_dups( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = " << poly.total_size());
         poly = remove_bad_contours( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_bad() = " << poly.total_size());
         poly = remove_tiny_contours( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_tiny_contours() = " << poly.total_size());
 
     	rwy_polys[k].set_poly( poly );
     }
@@ -588,12 +627,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	SG_LOG(SG_GENERAL, SG_DEBUG, "total size of section " << k << " before =" << poly.total_size());
 
+        poly = remove_cycles( poly );
         poly = remove_dups( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = " << poly.total_size());
         poly = remove_bad_contours( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_bad() = " << poly.total_size());
         poly = remove_tiny_contours( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_tiny_contours() = " << poly.total_size());
 
     	pvmt_polys[k].set_poly( poly );
     }
@@ -604,17 +641,16 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	SG_LOG(SG_GENERAL, SG_DEBUG, "total size of section " << k << " before =" << poly.total_size());
 
+        poly = remove_cycles( poly );
         poly = remove_dups( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_dups() = " << poly.total_size());
         poly = remove_bad_contours( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_bad() = " << poly.total_size());
         poly = remove_tiny_contours( poly );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after remove_tiny_contours() = " << poly.total_size());
 
     	line_polys[k].set_poly( poly );
     }
 
-    
+    gettimeofday(&log_time, NULL);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning poly for " << icao << " at " << ctime(&log_time.tv_sec) );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes base ");
     SG_LOG(SG_GENERAL, SG_DEBUG, " before: " << base_poly);
@@ -623,15 +659,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     base_poly = add_nodes_to_poly( base_poly, tmp_nodes );
     SG_LOG(SG_GENERAL, SG_DEBUG, " after adding tmp_nodes: " << base_poly);
 
-    // write_polygon( base_poly, "base-add" );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "remove dups base ");
+    base_poly = remove_cycles( base_poly );
     base_poly = remove_dups( base_poly );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "remove bad contours base");
     base_poly = remove_bad_contours( base_poly );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "remove small contours base");
     base_poly = remove_tiny_contours( base_poly );
-    // write_polygon( base_poly, "base-fin" );
-    SG_LOG(SG_GENERAL, SG_DEBUG, " after clean up: " << base_poly);
 
     gettimeofday(&cleanup_end, NULL);
     timersub(&cleanup_end, &cleanup_start, &cleanup_time);
@@ -641,11 +672,19 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // tesselate the polygons and prepair them for final output
     for ( i = 0; i < (int)rwy_polys.size(); ++i ) 
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i << " flag = " << rwy_polys[i].get_flag());
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating runway poly = " << i << " of " << rwy_polys.size() << " : flag = " << rwy_polys[i].get_flag());
 
     	TGPolygon poly = rwy_polys[i].get_poly();
+
+#if 0
+        if ( i == 62 ) {
+            tgChopNormalPolygon( "/home/pete", "Base", poly, false );
+            verbose_triangulation = true;
+        }
+#endif
+
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
-	    TGPolygon tri = polygon_tesselate_alt( poly );
+        TGPolygon tri = polygon_tesselate_alt( poly, verbose_triangulation );
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
@@ -658,11 +697,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // tesselate the polygons and prepair them for final output
     for ( i = 0; i < (int)pvmt_polys.size(); ++i ) 
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i << " flag = " << pvmt_polys[i].get_flag());
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating pavement poly = " << i << " of " << pvmt_polys.size() << " : flag = " << pvmt_polys[i].get_flag());
 
     	TGPolygon poly = pvmt_polys[i].get_poly();
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
-	    TGPolygon tri = polygon_tesselate_alt( poly );
+	    TGPolygon tri = polygon_tesselate_alt( poly, false );
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
@@ -682,27 +721,30 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // tesselate the polygons and prepair them for final output
     for ( i = 0; i < (int)line_polys.size(); ++i ) 
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating section = " << i << " flag = " << line_polys[i].get_flag());
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating line poly = " << i << " of " << line_polys.size() << " : flag = " << line_polys[i].get_flag());
 
     	TGPolygon poly = line_polys[i].get_poly();
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
-	    TGPolygon tri = polygon_tesselate_alt( poly );
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
+
+  	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
+        TGPolygon tri = polygon_tesselate_alt( poly, false );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
         tc = linear_feature_tex_coords( tri, line_tps[i] );
 
-    	line_polys[i].set_tris( tri );
-	    line_polys[i].set_texcoords( tc );
+      	line_polys[i].set_tris( tri );
+        line_polys[i].set_texcoords( tc );
     }
 
-#if 0    
-	{
-    	string polypath = root + "/AirportArea";
-    	tgChopNormalPolygon( polypath, "Base", base_poly, false );
-	}
+#if 1
+    {
+        tgChopNormalPolygon( "/home/pete", "Base", base_poly, false );
+        verbose_triangulation = true;
+    }
 #endif
-	TGPolygon base_tris = polygon_tesselate_alt( base_poly );
+
+    SG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly ");
+	TGPolygon base_tris = polygon_tesselate_alt( base_poly, verbose_triangulation );
 
     gettimeofday(&triangulation_end, NULL);
     timersub(&triangulation_end, &triangulation_start, &triangulation_time);
@@ -776,6 +818,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	    for ( j = 0; j < tri_poly.contour_size(i); ++j ) 
             {
         		p = tri_poly.get_pt( i, j );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "adding runway point = " << p);
+
         		index = nodes.unique_add( p );
         		tri_v.push_back( index );
 
@@ -878,6 +922,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	for ( j = 0; j < base_tris.contour_size(i); ++j ) 
         {
     	    p = base_tris.get_pt( i, j );
+
+            SG_LOG(SG_GENERAL, SG_DEBUG, "adding base point " << p);
     	    index = nodes.unique_add( p );
     	    tri_v.push_back( index );
 
@@ -916,6 +962,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
     	for ( j = 0; j < divided_base.contour_size( i ); ++j ) 
         {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "adding divided base point " << p);
+            
     	    nodes.unique_add( divided_base.get_pt(i, j) );
     	}
     }
@@ -927,7 +975,22 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // it avoids biases introduced from the surrounding area if the
     // airport is located in a bowl or on a hill.
 
+    SG_LOG(SG_GENERAL, SG_DEBUG, " calcaverage elevation");
+    
+    {
+        point_list dbg = nodes.get_node_list();
+
+        // dump the node list
+        SG_LOG(SG_GENERAL, SG_DEBUG, " node list size is " << dbg.size() );
+        for (unsigned int w = 0; w<dbg.size(); w++)
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, " node " << w << " is " << dbg[w] );            
+        }
+    }
+
     double average = tgAverageElevation( root, elev_src, nodes.get_node_list() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, " done");
+
     // cout << "average airport elevation = " << average << endl;
 
     // Now build the fitted airport surface ...

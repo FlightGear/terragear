@@ -36,8 +36,8 @@
 
 
 #define FG_PROXIMITY_EPSILON 0.000001
-#define FG_COURSE_EPSILON 0.0003
-
+//#define FG_COURSE_EPSILON 0.0003
+#define FG_COURSE_EPSILON 0.0001
 
 class TGTriNodes {
 
