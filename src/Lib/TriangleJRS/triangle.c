@@ -12945,7 +12945,7 @@ void statistics()
 
 #ifdef TRILIBRARY
 
-void triangulate(triswitches, in, out, vorout)
+int triangulate(triswitches, in, out, vorout)
 char *triswitches;
 struct triangulateio *in;
 struct triangulateio *out;
@@ -13261,7 +13261,6 @@ char **argv;
 #endif /* not REDUCED */
 
   triangledeinit();
-#ifndef TRILIBRARY
+
   return 0;
-#endif /* not TRILIBRARY */
 }

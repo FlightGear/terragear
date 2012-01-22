@@ -245,13 +245,13 @@ int main( int argc, char **argv ) {
         geod = SGGeod::fromDegM( geod_nodes[i].x(), geod_nodes[i].y(), geod_nodes[i].z() );
         SGVec3d cart = SGVec3d::fromGeod(geod);
         cout << cart << endl;
-	wgs84_nodes.push_back( cart );
+        wgs84_nodes.push_back( cart );
     }
 
     // bounding sphere
     SGBucket b( (x0 + x2) / 2, (y0 + y2) / 2 );
     SGSphered d;
-    for ( i = 0; i < wgs84_nodes.size(); ++i ) {
+    for ( i = 0; i < (int)wgs84_nodes.size(); ++i ) {
         d.expandBy(wgs84_nodes[ i ]);
     }
     

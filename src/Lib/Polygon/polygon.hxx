@@ -55,42 +55,20 @@ class TGPolygon;
  * when turned on
  */
 
-#define CLIP_NATIVE 0
-
-#ifdef CLIP_GPC
 extern "C" {
 #include <gpc.h>
 }
 
-#if CLIP_NATIVE // optimization apparently causing errors
-typedef gpc_polygon	ClipPolyType;
-#else
-typedef TGPolygon	ClipPolyType;
-#endif
-
-#endif /* CLIP_GPC */
-
-#ifdef CLIP_CLIPPER
 #include "clipper.hpp"
 using namespace ClipperLib;
 
-#if CLIP_NATIVE // optimization apparently causing errors
-typedef Polygons    ClipPolyType;
-#else
-typedef TGPolygon	ClipPolyType;
-#endif
-
-#endif /* CLIP_CLIPPER */
-
-
-
 #define FG_MAX_VERTICES 1500000
 
+typedef TGPolygon ClipPolyType;
 
 typedef std::vector < point_list > polytype;
 typedef polytype::iterator polytype_iterator;
 typedef polytype::const_iterator const_polytype_iterator;
-
 
 class TGPolygon {
 
