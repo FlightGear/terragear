@@ -22,8 +22,8 @@
 PGHOST=geoscope.optiputer.net
 PGUSER=martin
 PGDATABASE=landcover
-PGSQL2SHPCS="-h ${PGHOST} -u ${PGUSER} -g wkb_geometry -b -r ${PGDATABASE}"
-PSQL="psql -tA -h ${PGHOST} -U ${PGUSER} -d ${PGDATABASE} -c"
+PSQL="psql -h ${PGHOST} -U ${PGUSER} -d ${PGDATABASE} -tA -c"
+PGSQL2SHP=/opt/PostgreSQL/bin/pgsql2shp
 SHAPE=`basename ${1} | cut -f 1 -d \. | uniq`
 CUTLAYER=temphole
 DIFFLAYER=tempdiff
@@ -39,12 +39,11 @@ MODE="testing"  # production, testing
 
 InitCutoutTable () {
     ${PSQL} "DROP TABLE ${CUTLAYER}"
-    ${PSQL} "DELETE FROM geometry_columns WHERE f_table_name LIKE '${CUTLAYER}'"
 #    ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
 #                 wkb_geometry geometry, \
 #                 CONSTRAINT enforce_dims_wkb_geometry CHECK (ST_NDims(wkb_geometry) = 2), \
 #                 CONSTRAINT enforce_geotype_wkb_geometry CHECK ((ST_GeometryType(wkb_geometry) = 'ST_Polygon'::text) \
-#                     OR  (geometrytype(wkb_geometry) = 'ST_MultiPolygon'::text)), \
+#                     OR  (ST_GeometryType(wkb_geometry) = 'ST_MultiPolygon'::text)), \
 #                 CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326) \
 #                 )"
     ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
@@ -53,8 +52,6 @@ InitCutoutTable () {
                  CONSTRAINT enforce_geotype_wkb_geometry CHECK (ST_GeometryType(wkb_geometry) = 'ST_Polygon'::text), \
                  CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326) \
                  )"
-    ${PSQL} "INSERT INTO geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type) \
-                 VALUES ('', 'public', '${CUTLAYER}', 'wkb_geometry', 2, 4326, 'ST_Polygon')"
     
     ${PSQL} "ALTER TABLE ${CUTLAYER} ADD PRIMARY KEY (ogc_fid)"
     ${PSQL} "ALTER TABLE ${CUTLAYER} ALTER COLUMN wkb_geometry SET STORAGE MAIN"
@@ -62,10 +59,7 @@ InitCutoutTable () {
 
 InitDiffTable () {
     ${PSQL} "DROP TABLE ${DIFFLAYER}"
-    ${PSQL} "DELETE FROM geometry_columns WHERE f_table_name LIKE '${DIFFLAYER}'"
     ${PSQL} "CREATE TABLE ${DIFFLAYER} (ogc_fid serial NOT NULL, wkb_geometry geometry NOT NULL, CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326))"
-    ${PSQL} "INSERT INTO geometry_columns (f_table_catalog, f_table_schema, f_table_name, f_geometry_column, coord_dimension, srid, type) \
-                 VALUES ('', 'public', '${DIFFLAYER}', 'wkb_geometry', 2, 4326, 'ST_Polygon')"
 }
 
 ImportShape () {
@@ -74,7 +68,7 @@ ImportShape () {
     RETURN=${?}
     if [ ${RETURN} -eq 0 ]; then
         echo "Layer ${SHAPE} erfolgreich nach ${CUTLAYER} importiert"
-        ${PSQL} "CREATE INDEX ${CUTLAYER}_gindex ON ${CUTLAYER} USING GIST (wkb_geometry GIST_GEOMETRY_OPS)"
+        ${PSQL} "CREATE INDEX ${CUTLAYER}_gindex ON ${CUTLAYER} USING GIST (wkb_geometry GIST_GEOMETRY_OPS_2D)"
     else
         echo "Fehler beim Import von ${SHAPE} nach ${CUTLAYER} - exiting !!"
         exit 1
@@ -103,9 +97,9 @@ CheckWithin () {
 
 SingularizeDump () {
     if [ `${PSQL} "SELECT COUNT(*) FROM ${DIFFLAYER}"` -gt 0 ]; then
-        for OGC_FID in `${PSQL} "SELECT ogc_fid FROM ${DIFFLAYER} WHERE NumGeometries(wkb_geometry) IS NOT NULL"`; do
+        for OGC_FID in `${PSQL} "SELECT ogc_fid FROM ${DIFFLAYER} WHERE ST_NumGeometries(wkb_geometry) IS NOT NULL"`; do
             ${PSQL} "INSERT INTO ${DIFFLAYER} (wkb_geometry) \
-                (SELECT GeometryN(wkb_geometry, generate_series(1, NumGeometries(wkb_geometry))) \
+                (SELECT ST_GeometryN(wkb_geometry, generate_series(1, ST_NumGeometries(wkb_geometry))) \
                 AS wkb_geometry \
                 FROM ${DIFFLAYER} \
                 WHERE ogc_fid = ${OGC_FID})"
@@ -113,7 +107,9 @@ SingularizeDump () {
         done
         CPSTRING="INSERT INTO ${CSLAYER} (wkb_geometry) (SELECT wkb_geometry FROM ${DIFFLAYER})"
         if [ ${MODE} == "testing" ]; then
-            pgsql2shp -f ${DUMPDIR}/${CSLAYER}.shp ${PGSQL2SHPCS} "SELECT * FROM ${DIFFLAYER}"
+            ${PGSQL2SHP} -f ${DUMPDIR}/${CSLAYER}.shp \
+                -h ${PGHOST} -u ${PGUSER} -g wkb_geometry -b -r ${PGDATABASE} \
+                "SELECT * FROM ${DIFFLAYER}"
         elif [ ${MODE} == "production" ]; then
             ${PSQL} "${CPSTRING}"
         fi
