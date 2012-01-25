@@ -30,7 +30,7 @@ cd `dirname ${0}` && export BASEDIR=`pwd`
 cd ${RUNDIR}
 #
 
-MAPPINGFILE=${BASEDIR}/CORINEtoCStest.txt
+MAPPINGFILE=${BASEDIR}/CORINEtoCS.txt
 #EXTRACTPREFIX=clc00_nl_
 EXTRACTPREFIX=clc00_
 CLEANMAP=${EXTRACTPREFIX}_dissolved
@@ -39,7 +39,7 @@ case ${MODE} in
 	shp)
 	    # Re-project from EPSG:3035 - this one is _not_ to be run inside
 	    # the import location !!!
-	    v.proj location=corine mapset=PERMANENT input=${CLEANMAP}  # output=${CLEANMAP}
+	    v.proj location=corine_laea mapset=PERMANENT input=${CLEANMAP}  # output=${CLEANMAP}
 	;;
 esac
 

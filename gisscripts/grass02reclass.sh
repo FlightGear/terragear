@@ -26,7 +26,7 @@ RUNDIR=`pwd`
 cd `dirname ${0}` && export BASEDIR=`pwd`
 cd ${RUNDIR}
 #
-MAPPINGFILE=${BASEDIR}/CORINEtoCStest.txt
+MAPPINGFILE=${BASEDIR}/CORINEtoCS.txt
 #
 
 case ${MODE} in
