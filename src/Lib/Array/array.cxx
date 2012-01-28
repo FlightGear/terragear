@@ -71,14 +71,13 @@ TGArray::TGArray( const string &file ):
 
 // open an Array file (and fitted file if it exists)
 bool TGArray::open( const string& file_base ) {
-    bool success = true;
-
     // open array data file
     string array_name = file_base + ".arr.gz";
     array_in = new sg_gzifstream( array_name );
-    if ( ! array_in->is_open() ) {
+    if ( !array_in->is_open() ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  ps: Cannot open " << array_name );
-        success = false;
+        delete array_in;
+        array_in = NULL;
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening array data file: " << array_name );
     }
@@ -92,23 +91,30 @@ bool TGArray::open( const string& file_base ) {
         // not be nearly as nice as what the offline terrafit utility
         // would have produced.
         SG_LOG(SG_GENERAL, SG_DEBUG, "  ps: Cannot open " << fitted_name );
+        delete fitted_in;
+        fitted_in = NULL;
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening fitted data file: " << fitted_name );
     }
 
-    return success;
+    return (array_in != NULL) ? true : false;
 }
 
 
 // close an Array file
 bool
 TGArray::close() {
-    // the sg_gzifstream doesn't seem to have a close()
+    if (array_in) {
+        array_in->close();
+        delete array_in;
+        array_in = NULL;
+    }
 
-    array_in->close();
-    fitted_in->close();
-    delete array_in;
-    delete fitted_in;
+    if (fitted_in ) {
+        fitted_in->close();
+        delete fitted_in;
+        fitted_in = NULL;
+    }
 
     return true;
 }
@@ -119,52 +125,52 @@ TGArray::close() {
 bool
 TGArray::parse( SGBucket& b ) {
     // Parse/load the array data file
-    if ( array_in->is_open() ) {
-	// file open, parse
-	*array_in >> originx >> originy;
-	*array_in >> cols >> col_step;
-	*array_in >> rows >> row_step;
+    if ( array_in && array_in->is_open() ) {
+        // file open, parse
+        *array_in >> originx >> originy;
+        *array_in >> cols >> col_step;
+        *array_in >> rows >> row_step;
 
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
-	for ( int i = 0; i < cols; i++ ) {
-	    for ( int j = 0; j < rows; j++ ) {
-		*array_in >> in_data[i][j];
-	    }
-	}
+        for ( int i = 0; i < cols; i++ ) {
+            for ( int j = 0; j < rows; j++ ) {
+        	*array_in >> in_data[i][j];
+            }
+        }
 
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    Done parsing" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    Done parsing" );
     } else {
-	// file not open (not found?), fill with zero'd data
+        // file not open (not found?), fill with zero'd data
 
-	originx = ( b.get_center_lon() - 0.5 * b.get_width() ) * 3600.0;
-	originy = ( b.get_center_lat() - 0.5 * b.get_height() ) * 3600.0;
+        originx = ( b.get_center_lon() - 0.5 * b.get_width() ) * 3600.0;
+        originy = ( b.get_center_lat() - 0.5 * b.get_height() ) * 3600.0;
 
-	double max_x = ( b.get_center_lon() + 0.5 * b.get_width() ) * 3600.0;
-	double max_y = ( b.get_center_lat() + 0.5 * b.get_height() ) * 3600.0;
+        double max_x = ( b.get_center_lon() + 0.5 * b.get_width() ) * 3600.0;
+        double max_y = ( b.get_center_lat() + 0.5 * b.get_height() ) * 3600.0;
 
-	cols = 3;
-	col_step = (max_x - originx) / (cols - 1);
-	rows = 3;
-	row_step = (max_y - originy) / (rows - 1);
+        cols = 3;
+        col_step = (max_x - originx) / (cols - 1);
+        rows = 3;
+        row_step = (max_y - originy) / (rows - 1);
 
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
-	for ( int i = 0; i < cols; i++ ) {
-	    for ( int j = 0; j < rows; j++ ) {
-		in_data[i][j] = 0;
-	    }
-	}
+        for ( int i = 0; i < cols; i++ ) {
+            for ( int j = 0; j < rows; j++ ) {
+                in_data[i][j] = 0;
+            }
+        }
 
-	SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
     }
 
     // Parse/load the fitted data file
-    if ( fitted_in->is_open() ) {
+    if ( fitted_in && fitted_in->is_open() ) {
         int fitted_size;
         double x, y, z;
         *fitted_in >> fitted_size;

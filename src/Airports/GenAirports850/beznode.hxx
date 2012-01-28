@@ -9,6 +9,18 @@
 #include <simgear/debug/logstream.hxx>
 
 // TEMP...
+inline Point3D CalculateLinearLocation( Point3D p0, Point3D p1, double t )
+{
+    Point3D result;
+
+    double term1 = (1.0f - t);
+    double term2 = t;
+
+    result = (p0 * term1) + (p1 * term2);
+
+    return result;
+}
+
 inline Point3D CalculateQuadraticLocation( Point3D p0, Point3D cp, Point3D p1, double t )
 {
     Point3D result;
@@ -112,22 +124,22 @@ public:
         return (loc - (pt - loc));
     }
 
-    void SetMarking( int m )
+    void SetMarking( unsigned int m )
     {
         mark = m;
     }
 
-    int GetMarking( )
+    unsigned int GetMarking( )
     {
         return mark;
     }
 
-    void SetLighting( int l )
+    void SetLighting( unsigned int l )
     {
         light = l;
     }
 
-    int GetLighting( )
+    unsigned int GetLighting( )
     {
         return light;
     }
@@ -182,11 +194,11 @@ public:
     }
 
 private:
-    Point3D  loc;
-    Point3D  prev_cp;
-    Point3D  next_cp;
-    int      mark;
-    int      light;
+    Point3D         loc;
+    Point3D         prev_cp;
+    Point3D         next_cp;
+    unsigned int    mark;
+    unsigned int    light;
 };
 
 

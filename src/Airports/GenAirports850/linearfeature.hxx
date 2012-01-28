@@ -45,18 +45,18 @@ using std::string;
 struct Marking
 {
 public:
-    int type;
-    int start_idx;
-    int end_idx;
+    unsigned int type;
+    unsigned int start_idx;
+    unsigned int end_idx;
 };
 typedef std::vector <Marking*> MarkingList;
 
 struct Lighting
 {
 public:
-    int type;
-    int start_idx;
-    int end_idx;
+    unsigned int type;
+    unsigned int start_idx;
+    unsigned int end_idx;
 };
 typedef std::vector <Lighting*> LightingList;
 
@@ -81,6 +81,8 @@ public:
         description = desc;
         offset = o;
     }
+
+    ~LinearFeature();
 
     inline string GetDescription() { return description; }
 

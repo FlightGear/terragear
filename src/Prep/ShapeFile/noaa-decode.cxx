@@ -41,6 +41,8 @@ using std:: cout ;
 using std:: string ;
 using std:: endl ;
 
+#define NOAA_DEBUG  (0)
+
 // return the type of the shapefile record
 std::string get_shapefile_type(DBFHandle& hDBF, int rec) {
 
@@ -317,54 +319,49 @@ int main( int argc, char **argv ) {
     }
 
     int iPart;
+
+#if NOAA_DEBUG
     const char *pszPlus;
+#endif
+
     for ( i = 0; i < nEntities; i++ ) {
-	// fetch i-th record (shape)
+        // fetch i-th record (shape)
         SHPObject *psShape;
  
-	shape.erase();
+        shape.erase();
 
         psShape = SHPReadObject( hSHP, i );
 
-	SG_LOG( SG_GENERAL, SG_DEBUG, "Processing record = " << i 
-		<< " of " << nEntities
-		<< "  rings = " << psShape->nParts
-		<< "  total vertices = " << psShape->nVertices );
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Processing record = " << i 
+            << " of " << nEntities
+            << "  rings = " << psShape->nParts
+            << "  total vertices = " << psShape->nVertices );
 
-	string area = "Default";
-	if ( force_area_type.length() == 0 ) {
-	    area = get_shapefile_type(hDBF, i);
-	    SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " << area);
-	} else {
-	    area = force_area_type;
-	}
+        string area = "Default";
+        if ( force_area_type.length() == 0 ) {
+            area = get_shapefile_type(hDBF, i);
+            SG_LOG( SG_GENERAL, SG_DEBUG, "  area type = " << area);
+        } else {
+            area = force_area_type;
+        }
 
-	SG_LOG( SG_GENERAL, SG_INFO, "  record type = " 
-		<< SHPTypeName(psShape->nSHPType) );
-	SG_LOG( SG_GENERAL, SG_INFO, "  bounds = (" 
-		<< psShape->dfXMin << "," << psShape->dfYMin << ")  "
-		<< psShape->dfZMin << "," <<  psShape->dfMMin
-		<< " to (" << psShape->dfXMax << "," << psShape->dfYMax << ")  "
-		<< psShape->dfZMax << "," << psShape->dfMMax );
-
-#if 0
-        printf( "\nShape:%d (%s)  nVertices=%d, nParts=%d\n"
-                "  Bounds:(%12.3f,%12.3f, %g, %g)\n"
-                "      to (%12.3f,%12.3f, %g, %g)\n",
-                i, SHPTypeName(psShape->nSHPType),
-                psShape->nVertices, psShape->nParts,
-                psShape->dfXMin, psShape->dfYMin,
-                psShape->dfZMin, psShape->dfMMin,
-                psShape->dfXMax, psShape->dfYMax,
-                psShape->dfZMax, psShape->dfMMax );
-#endif
+        SG_LOG( SG_GENERAL, SG_INFO, "  record type = " 
+        	<< SHPTypeName(psShape->nSHPType) );
+        SG_LOG( SG_GENERAL, SG_INFO, "  bounds = (" 
+            << psShape->dfXMin << "," << psShape->dfYMin << ")  "
+            << psShape->dfZMin << "," <<  psShape->dfMMin
+            << " to (" << psShape->dfXMax << "," << psShape->dfYMax << ")  "
+            << psShape->dfZMax << "," << psShape->dfMMax );
 
         for ( j = 0, iPart = 1; j < psShape->nVertices; j++ ) {
+            shape.add_node( iPart - 1, Point3D(psShape->padfX[j], psShape->padfY[j], 0) );
+
+#if NOAA_DEBUG
             const char *pszPartType = "";
  
             if ( j == 0 && psShape->nParts > 0 ) {
                 pszPartType = SHPPartTypeName( psShape->panPartType[0] );
-	    }
+            }
             
             if( iPart < psShape->nParts
                 && psShape->panPartStart[iPart] == j )
@@ -374,80 +371,67 @@ int main( int argc, char **argv ) {
                 pszPlus = "+";
             } else {
                 pszPlus = " ";
-	    }
- 
-	    shape.add_node( iPart - 1, 
-			    Point3D(psShape->padfX[j], psShape->padfY[j], 0)
-			    );
-#if 0
-            printf("%d %d %s (%12.3f,%12.3f, %g, %g) %s \n",
-		   iPart, j,
-                   pszPlus,
-                   psShape->padfX[j],
-                   psShape->padfY[j],
-                   psShape->padfZ[j],
-                   psShape->padfM[j],
-                   pszPartType );
-#endif
+            }
+ #endif
         }
 	
         SHPDestroyObject( psShape );
 
-	// check/set hole status for each contour.  negative area
-	// means counter clockwise winding indicating the ring/contour
-	// is a hole.
-	for ( int i = 0; i < shape.contours(); ++i ) {
-	    double area = shape.area_contour( i );
-	    if ( area > 0 ) {
-		cout << "contour " << i << " = area" << endl;
-		shape.set_hole_flag( i, false );
-	    } else {
-		cout << "contour " << i << " = hole" << endl;
-		shape.set_hole_flag( i, true );
-	    }
-	}
+        // check/set hole status for each contour.  negative area
+        // means counter clockwise winding indicating the ring/contour
+        // is a hole.
+        for ( int i = 0; i < shape.contours(); ++i ) {
+            double area = shape.area_contour( i );
+            if ( area > 0 ) {
+                cout << "contour " << i << " = area" << endl;
+                shape.set_hole_flag( i, false );
+            } else {
+                cout << "contour " << i << " = hole" << endl;
+                shape.set_hole_flag( i, true );
+            }
+        }
 
-	if ( force_area_type.length() > 0 ) {
-	    // interior of polygon is assigned to force_area_type,
-	    // holes are preserved
+        if ( force_area_type.length() > 0 ) {
+            // interior of polygon is assigned to force_area_type,
+            // holes are preserved
 
-	    area = force_area_type;
-	    tgChopNormalPolygon(work_dir, area, shape, false);
-	} else if ( is_ocean_area(area) ) {
-	    // interior of polygon is ocean, holes are islands
+            area = force_area_type;
+            tgChopNormalPolygon(work_dir, area, shape, false);
+        } else if ( is_ocean_area(area) ) {
+            // interior of polygon is ocean, holes are islands
 
-	    SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
+            SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
 
-	    // Ocean data now comes from GSHHS so we want to ignore
-	    // all other ocean data
-	    // tgChopPolygon(work_dir, area, shape, false);
-	} else if ( is_void_area(area) ) {
-	    // interior is ????
+            // Ocean data now comes from GSHHS so we want to ignore
+            // all other ocean data
+            // tgChopPolygon(work_dir, area, shape, false);
+        } else if ( is_void_area(area) ) {
+            // interior is ????
 
-	    // skip for now
-	    SG_LOG(  SG_GENERAL, SG_ALERT, "Void area ... SKIPPING!" );
+            // skip for now
+            SG_LOG(  SG_GENERAL, SG_ALERT, "Void area ... SKIPPING!" );
 
-	    if ( shape.contours() > 1 ) {
-		SG_LOG(  SG_GENERAL, SG_ALERT, "  Void area with holes!" );
-		// exit(-1);
-	    }
+            if ( shape.contours() > 1 ) {
+                SG_LOG(  SG_GENERAL, SG_ALERT, "  Void area with holes!" );
+                // exit(-1);
+            }
 
-	    // tgChopPolygon(work_dir, area, shape, false);
-	} else if ( is_null_area(area) ) {
-	    // interior is ????
+            // tgChopPolygon(work_dir, area, shape, false);
+        } else if ( is_null_area(area) ) {
+            // interior is ????
 
-	    // skip for now
-	    SG_LOG(  SG_GENERAL, SG_ALERT, "Null area ... SKIPPING!" );
+            // skip for now
+            SG_LOG(  SG_GENERAL, SG_ALERT, "Null area ... SKIPPING!" );
 
-	    if ( shape.contours() > 1 ) {
-		SG_LOG(  SG_GENERAL, SG_ALERT, "  Null area with holes!" );
-		// exit(-1);
-	    }
+            if ( shape.contours() > 1 ) {
+                SG_LOG(  SG_GENERAL, SG_ALERT, "  Null area with holes!" );
+                // exit(-1);
+            }
 
-	    // tgChopPolygon(work_dir, area, shape, false);
-	} else {
-	    tgChopNormalPolygon(work_dir, area, shape, false);
-	}
+            // tgChopPolygon(work_dir, area, shape, false);
+        } else {
+            tgChopNormalPolygon(work_dir, area, shape, false);
+        }
     }
 
     DBFClose( hDBF );

@@ -40,4 +40,10 @@ TGContourNode::TGContourNode( int n ) {
 
 // Destructor
 TGContourNode::~TGContourNode() {
+    for ( unsigned int i = 0; i < kids.size(); ++i ) {
+        if ( kids[i] != NULL ) {
+            delete kids[i];
+        }
+    }
 }
+

@@ -47,9 +47,6 @@
 // forward declaration
 class TGPolygon;
 
-#define CLIP_GPC
-// #define CLIP_CLIPPER
-
 /* Set to 1 to allow keeping accum poly in native clipping lib format
  * Although it seems to work on some airports, EHAM is pretty broken 
  * when turned on
@@ -261,10 +258,6 @@ TGPolygon tgPolygon2tristrip( const TGPolygon& poly );
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip );
 
-#if CLIP_NATIVE
-TGPolygon tgPolygonDiff( const TGPolygon& subject, const ClipPolyType& clip );
-#endif
-
 // Intersection
 TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip );
 
@@ -274,13 +267,20 @@ TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip );
 // Union
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
 
-#if CLIP_NATIVE
-ClipPolyType tgPolygonUnion( const TGPolygon& subject, const ClipPolyType& clip );
-#endif
+// wrapper for clipper clip routines
+
+// Difference
+TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip );
+
+// Union
+TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip );
+
+
+// Expand / Shrink
+TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta);
 
 // Output
 std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);
-
 
 #endif // _POLYGON_HXX
 

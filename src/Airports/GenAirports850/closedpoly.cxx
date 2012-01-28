@@ -60,6 +60,13 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
     cur_feature = NULL;
 }
 
+ClosedPoly::~ClosedPoly()
+{
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Deleting ClosedPoly " << description );
+
+    
+}
+
 void ClosedPoly::AddNode( BezNode* node )
 {
     // if this is the first node of the contour - create a new contour
@@ -468,10 +475,21 @@ void ClosedPoly::Finish()
     }
 
     // save memory by deleting unneeded resources
+    for (unsigned int i=0; i<boundary->size(); i++)
+    {
+        delete boundary->at(i);
+    }
     delete boundary;
     boundary = NULL;
 
     // and the hole contours
+    for (unsigned int i=0; i<holes.size(); i++)
+    {
+        for (unsigned int j=0; j<holes[i]->size(); j++)
+        {
+            delete holes[i]->at(j);
+        }
+    }
     holes.clear();
 }
 
@@ -520,14 +538,15 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
         	pre_tess = remove_dups( pre_tess );
             pre_tess = reduce_degeneracy( pre_tess );
 
-            for (int c=0; c<pre_tess.contours(); c++)
-            {
-                for (int pt=0; pt<pre_tess.contour_size(c); pt++)
-                {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: contour " << c << " pt " << pt << ": (" << pre_tess.get_pt(c, pt).x() << "," << pre_tess.get_pt(c, pt).y() << ")" );
-                }
-            }
-
+            //for (int c=0; c<pre_tess.contours(); c++)
+            //{
+            //    for (int pt=0; pt<pre_tess.contour_size(c); pt++)
+            //    {
+            //        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: contour " << c << " pt " << pt << ": (" << pre_tess.get_pt(c, pt).x() << "," << pre_tess.get_pt(c, pt).y() << ")" );
+            //    }
+            //}
+            // grow pretess by a little bit
+            pre_tess = tgPolygonExpand( pre_tess, 0.05);     // 5cm
 
             TGSuperPoly sp;
             TGTexParams tp;
@@ -551,9 +570,16 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
 
             if ( apt_base )
             {           
-                ExpandContour( hull, base, 20.0 );
-                ExpandContour( hull, safe_base, 50.0 );
-        
+                // ExpandContour( hull, base, 20.0 );
+                base = tgPolygonExpand( pre_tess, 20.0); 
+
+                // dump pre_tess and base
+                //SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: original poly " << pre_tess );
+                //SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: expanded poly " << base );
+                       
+                // ExpandContour( hull, safe_base, 50.0 );
+                safe_base = tgPolygonExpand( pre_tess, 50.0);        
+
                 // add this to the airport clearing
                 *apt_clearing = tgPolygonUnion( safe_base, *apt_clearing);
 

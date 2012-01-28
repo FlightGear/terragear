@@ -313,6 +313,8 @@ int main(int argc, char **argv)
         parser->Parse();
     }
 
+    delete parser;
+
     SG_LOG(SG_GENERAL, SG_INFO, "Done");
 
     return 0;

@@ -18,6 +18,7 @@ class Airport
 {
 public:
     Airport( int c, char* def);
+    ~Airport();
 
     void AddRunway( Runway* runway )
     {

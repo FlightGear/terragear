@@ -27,9 +27,9 @@
 #endif
 
 // libnewmat includes and defines
-#define WANT_STREAM		// include.h will get stream fns
-#define WANT_MATH		// include.h will get math fns
-				// newmatap.h will get include.h
+#define WANT_STREAM	            // include.h will get stream fns
+#define WANT_MATH               // include.h will get math fns
+                                // newmatap.h will get include.h
 #include <newmat/newmatap.h>	// need matrix applications
 #include <newmat/newmatio.h>	// need matrix output routines
 
@@ -74,7 +74,7 @@ double tgAverageElevation( const string &root, const string_list elev_src,
         for ( i = 0; i < points.size(); ++i ) {
             if ( points[i].z() < -9000.0 && !found_one ) {
                 first = points[i];
-                SG_LOG( SG_GENERAL, SG_DEBUG, "founf first = " << first );
+                SG_LOG( SG_GENERAL, SG_DEBUG, "found first = " << first );
 
                 found_one = true;
             }
@@ -88,12 +88,11 @@ double tgAverageElevation( const string &root, const string_list elev_src,
             i = 0;
             bool found_file = false;
             while ( !found_file && i < elev_src.size() ) {
-                string array_path = root + "/" + elev_src[i] + "/" + base 
-                    + "/" + b.gen_index_str();
+                string array_path = root + "/" + elev_src[i] + "/" + base + "/" + b.gen_index_str();
+
                 if ( array.open(array_path) ) {
                     found_file = true;
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = "
-                            << array_path );
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
                 }                    
                 i++;
             }
@@ -106,10 +105,10 @@ double tgAverageElevation( const string &root, const string_list elev_src,
             // data from the nearest neighbor (sort of)
             array.remove_voids();
 
-	    // update all the non-updated elevations that are inside
-	    // this array file
-	    double elev;
-	    done = true;
+            // update all the non-updated elevations that are inside
+            // this array file
+            double elev;
+            done = true;
             for ( i = 0; i < points.size(); ++i ) {
                 if ( points[i].z() < -9000.0 ) {
                     done = false;
@@ -123,11 +122,11 @@ double tgAverageElevation( const string &root, const string_list elev_src,
                     }
                 }
             }
-
-	    array.close();
-	} else {
-	    done = true;
-	}
+        
+            array.close();
+        } else {
+            done = true;
+        }
     }
 
     // now find the average height of the queried points
@@ -138,8 +137,7 @@ double tgAverageElevation( const string &root, const string_list elev_src,
         count++;
     }
     double average = total / (double) count;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of point list = "
-           << average);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of point list = " << average);
 
     return average;
 }
@@ -161,15 +159,15 @@ void tgCalcElevations( const string &root, const string_list elev_src,
 
     // set all elevations to -9999
     for ( j = 0; j < Pts.rows(); ++j ) {
-      for ( i = 0; i < Pts.cols(); ++i ) {
-	Point3D p = Pts.element(i, j);
-	p.setz( -9999.0 );
-	Pts.set(i, j, p);
-      }
+        for ( i = 0; i < Pts.cols(); ++i ) {
+            Point3D p = Pts.element(i, j);
+            p.setz( -9999.0 );
+            Pts.set(i, j, p);
+        }
     }
 
     while ( !done ) {
-	// find first node with -9999 elevation
+        // find first node with -9999 elevation
         Point3D first(0.0);
         bool found_one = false;
         for ( j = 0; j < Pts.rows(); ++j ) {
@@ -182,36 +180,35 @@ void tgCalcElevations( const string &root, const string_list elev_src,
             }
         }
 
-	if ( found_one ) {
-	    SGBucket b( first.x(), first.y() );
-	    string base = b.gen_base_path();
+        if ( found_one ) {
+            SGBucket b( first.x(), first.y() );
+            string base = b.gen_base_path();
 
-	    // try the various elevation sources
+            // try the various elevation sources
             j = 0;
             bool found_file = false;
             while ( !found_file && j < (int)elev_src.size() ) {
-                string array_path = root + "/" + elev_src[j] + "/" + base 
-                    + "/" + b.gen_index_str();
+                string array_path = root + "/" + elev_src[j] + "/" + base + "/" + b.gen_index_str();
+
                 if ( array.open(array_path) ) {
                     found_file = true;
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = "
-                            << array_path );
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
                 }                    
                 j++;
-            }
+            }            
             
             // this will fill in a zero structure if no array data
             // found/opened
-	    array.parse( b );
+            array.parse( b );
 
             // this will do a hasty job of removing voids by inserting
             // data from the nearest neighbor (sort of)
             array.remove_voids();
 
-	    // update all the non-updated elevations that are inside
-	    // this array file
-	    double elev;
-	    done = true;
+            // update all the non-updated elevations that are inside
+            // this array file
+            double elev;
+            done = true;
             for ( j = 0; j < Pts.rows(); ++j ) {
                 for ( i = 0; i < Pts.cols(); ++i ) {
                     Point3D p = Pts.element(i,j);
@@ -220,20 +217,18 @@ void tgCalcElevations( const string &root, const string_list elev_src,
                         elev = array.altitude_from_grid( p.x() * 3600.0,
                                                          p.y() * 3600.0 );
                         if ( elev > -9000 ) {
-			  p.setz( elev );
-			  Pts.set(i, j, p);
-			  // cout << "interpolating for " << p << endl;
-			  // cout << p.x() << " " << p.y() << " " << p.z()
-			  //      << endl;
+                            p.setz( elev );
+                            Pts.set(i, j, p);
                         }
                     }
                 }
             }
 
-	    array.close();
-	} else {
-	    done = true;
-	}
+            array.close();
+
+        } else {
+            done = true;
+        }
     }
 
     // do some post processing for sanity's sake
@@ -249,14 +244,13 @@ void tgCalcElevations( const string &root, const string_list elev_src,
         }
     }
     double grid_average = total / (double) count;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of matrix = "
-           << grid_average);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of matrix = " << grid_average);
 }
 
 // clamp all elevations to the specified range
-
 void tgClampElevations( SimpleMatrix &Pts,
-                        double center_m, double max_clamp_m )
+                        double center_m, 
+                        double max_clamp_m )
 {
     int i, j;
 

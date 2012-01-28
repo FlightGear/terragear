@@ -305,7 +305,6 @@ typedef enum {
     POLY_UNION			// Union
 } clip_op;
 
-#ifdef CLIP_GPC
 //
 // wrapper functions for gpc polygon clip routines
 //
@@ -401,95 +400,24 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
 
     // free allocated memory
     gpc_free_polygon( gpc_subject );
+    delete gpc_subject;
+
     gpc_free_polygon( gpc_clip );
+    delete gpc_clip;
+
     gpc_free_polygon( gpc_result );
+    delete gpc_result;
 
     return result;
 }
 
-// Generic clipping routine
-TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, const gpc_polygon& clip )
-{
-    TGPolygon result;
 
-    gpc_polygon *gpc_subject = new gpc_polygon;
-    gpc_subject->num_contours = 0;
-    gpc_subject->contour = NULL;
-    gpc_subject->hole = NULL;
-    make_gpc_poly( subject, gpc_subject );
 
-	gpc_polygon *gpc_clip = (gpc_polygon*)&clip;
 
-    gpc_polygon *gpc_result = new gpc_polygon;
-    gpc_result->num_contours = 0;
-    gpc_result->contour = NULL;
-    gpc_result->hole = NULL;
-
-    gpc_op op;
-    if ( poly_op == POLY_DIFF ) {
-    	op = GPC_DIFF;
-    } else if ( poly_op == POLY_INT ) {
-	    op = GPC_INT;
-    } else if ( poly_op == POLY_XOR ) {
-    	op = GPC_XOR;
-    } else if ( poly_op == POLY_UNION ) {
-	    op = GPC_UNION;
-    } else {
-        throw sg_exception("Unknown polygon op, exiting.");
-    }
-
-    gpc_polygon_clip( op, gpc_subject, gpc_clip, gpc_result );
-
-	make_tg_poly( gpc_result, &result );
-
-    // free allocated memory
-    gpc_free_polygon( gpc_subject );
-    gpc_free_polygon( gpc_result );
-
-    return result;
-}
-
-gpc_polygon polygon_clip_keep_native_fmt( clip_op poly_op, const TGPolygon& subject, const gpc_polygon& clip )
-{
-    gpc_polygon *gpc_subject = new gpc_polygon;
-    gpc_subject->num_contours = 0;
-    gpc_subject->contour = NULL;
-    gpc_subject->hole = NULL;
-    make_gpc_poly( subject, gpc_subject );
-
-	gpc_polygon *gpc_clip = (gpc_polygon*)&clip;
-
-    gpc_polygon result;
-    result.num_contours = 0;
-    result.contour = NULL;
-    result.hole = NULL;
-
-    gpc_op op;
-    if ( poly_op == POLY_DIFF ) {
-    	op = GPC_DIFF;
-    } else if ( poly_op == POLY_INT ) {
-	    op = GPC_INT;
-    } else if ( poly_op == POLY_XOR ) {
-    	op = GPC_XOR;
-    } else if ( poly_op == POLY_UNION ) {
-	    op = GPC_UNION;
-    } else {
-        throw sg_exception("Unknown polygon op, exiting.");
-    }
-
-    gpc_polygon_clip( op, gpc_subject, gpc_clip, &result );
-
-    // free allocated memory
-    gpc_free_polygon( gpc_subject );
-
-	return result;
-}
-#endif
-
-#ifdef CLIP_CLIPPER
 
 //#define FIXEDPT (10000000000000)
 #define FIXEDPT (10000000000000000)
+#define FIXED1M (            90090)
 
 IntPoint MakeClipperPoint( Point3D pt )
 {
@@ -511,49 +439,60 @@ Point3D MakeTGPoint( IntPoint pt )
 	return Point3D( x, y, -9999.0f);
 }
 
+double MakeClipperDelta( double mDelta )
+{
+    double cDelta = mDelta * ( FIXEDPT / FIXED1M );
+
+    // SG_LOG(SG_GENERAL, SG_INFO, "mdelta:" << mDelta << " is " << cDelta );
+    
+    return( cDelta );
+}
+
 void make_clipper_poly( const TGPolygon& in, Polygons *out ) 
 {
     Polygon  contour;
     Point3D  p;
     int      i, j;	
 
-    if (in.contours())
-    {
-        // assume contour 0 is boundary, 1..x are holes
-        // create the boundary
-        for (j=0; j<in.contour_size(0); ++j)
+    for (i=0; i<in.contours(); i++) {
+        // create a clipper contour
+        contour.clear();
+	    for (j=0; j<in.contour_size(i); ++j) 
         {
-	        p = in.get_pt( 0, j );
+            p = in.get_pt( i, j );
             contour.push_back(MakeClipperPoint(p));
         }
-        out->push_back(contour);
 
-        // create the holes
-        for (i=1; i<in.contours(); ++i ) 
-        {        
-            contour.clear();
-	        for (j=0; j<in.contour_size(i); ++j) 
-            {
-        	    p = in.get_pt( i, j );
-                contour.push_back(MakeClipperPoint(p));
+        if ( in.get_hole_flag( i ) )
+        {
+            // holes need to be orientation: false 
+            if ( Orientation( contour ) ) {
+                //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper poly - hole contour needs to be reversed" );
+                ReversePoints( contour );
             }
-            out->push_back(contour);
-	    }
+        } else {
+            // boundaries need to be orientation: true
+            if ( !Orientation( contour ) ) {
+                //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper poly - boundary contour needs to be reversed" );
+                ReversePoints( contour );
+            }
+        }
+        out->push_back(contour);
     }
 }
 
-void make_tg_poly( const ExPolygons& in, TGPolygon *out )
+void make_tg_poly_from_clipper_ex( const ExPolygons& in, TGPolygon *out )
 {
 	int res_contour = 0;
 	out->erase();
 
-  	for (int i=0; i<in.size(); i++)
+  	for (unsigned int i=0; i<in.size(); i++)
     {
       	const struct ExPolygon* pg = &in[i];
 		IntPoint ip;
 
 		// Get the boundary contour
-        for (int j = 0; j < pg->outer.size(); j++)
+        for (unsigned int j = 0; j < pg->outer.size(); j++)
         {
 			ip = IntPoint( pg->outer[j].X, pg->outer[j].Y );
        	    out->add_node(res_contour, MakeTGPoint(ip));
@@ -562,9 +501,9 @@ void make_tg_poly( const ExPolygons& in, TGPolygon *out )
         res_contour++;
 
         // then the holes
-        for (int j = 0; j < pg->holes.size(); j++)
+        for (unsigned int j = 0; j < pg->holes.size(); j++)
         {
-            for (int k = 0; k < pg->holes[j].size(); k++)
+            for (unsigned int k = 0; k < pg->holes[j].size(); k++)
             {
 				ip = IntPoint( pg->holes[j].at(k).X, pg->holes[j].at(k).Y );
                	out->add_node(res_contour, MakeTGPoint(ip));
@@ -575,7 +514,34 @@ void make_tg_poly( const ExPolygons& in, TGPolygon *out )
     }
 }
 
-TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
+void make_tg_poly_from_clipper( const Polygons& in, TGPolygon *out )
+{
+	out->erase();
+
+    // for each polygon, we need to check the orientation, to set the hole flag...
+    for (unsigned int i=0; i<in.size(); i++)
+    {
+        IntPoint ip;
+
+        for (unsigned int j = 0; j < in[i].size(); j++)
+        {
+            ip = IntPoint( in[i][j].X, in[i][j].Y );
+            //SG_LOG(SG_GENERAL, SG_INFO, "Building TG Poly : Add point (" << ip.X << "," << ip.Y << ") to contour " << i );
+            out->add_node( i, MakeTGPoint(ip) );
+        }
+
+        if ( Orientation( in[i] ) ) {
+            //SG_LOG(SG_GENERAL, SG_INFO, "Building TG Poly : contour " << i << " is boundary " );
+            out->set_hole_flag(i, 0);
+        } else {
+            //SG_LOG(SG_GENERAL, SG_INFO, "Building TG Poly : contour " << i << " is hole " );
+            out->set_hole_flag(i, 1);
+        }
+    }
+}
+
+
+TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
 {
     TGPolygon result;
 
@@ -606,119 +572,42 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, const TGPolyg
 	c.AddPolygons(clipper_clip, ptClip);
 
 	c.Execute(op, clipper_result, pftEvenOdd, pftEvenOdd);
-	make_tg_poly( clipper_result, &result );
+	make_tg_poly_from_clipper_ex( clipper_result, &result );
 
 	return result;
 }
-
-TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, const Polygons& clipper_clip )
-{
-    TGPolygon result;
-
-    Polygons clipper_subject;
-    make_clipper_poly( subject, &clipper_subject );
-
-    ExPolygons clipper_result;
-
-    ClipType op;
-    if ( poly_op == POLY_DIFF ) {
-	    op = ctDifference;
-    } else if ( poly_op == POLY_INT ) {
-	    op = ctIntersection;
-    } else if ( poly_op == POLY_XOR ) {
-	    op = ctXor;
-    } else if ( poly_op == POLY_UNION ) {
-    	op = ctUnion;
-    } else {
-        throw sg_exception("Unknown polygon op, exiting.");
-    }
-
-    Clipper c;
-	c.Clear();
-	c.AddPolygons(clipper_subject, ptSubject);
-	c.AddPolygons(clipper_clip, ptClip);
-
-	c.Execute(op, clipper_result, pftEvenOdd, pftEvenOdd);
-	make_tg_poly( clipper_result, &result );
-
-	return result;
-}
-
-Polygons polygon_clip_keep_native_fmt( clip_op poly_op, const TGPolygon& subject, const Polygons& clipper_clip )
-{
-    Polygons clipper_subject;
-    make_clipper_poly( subject, &clipper_subject );
-
-    ExPolygons clipper_result;
-	Polygons result;
-
-    ClipType op;
-    if ( poly_op == POLY_DIFF ) {
-	    op = ctDifference;
-    } else if ( poly_op == POLY_INT ) {
-	    op = ctIntersection;
-    } else if ( poly_op == POLY_XOR ) {
-	    op = ctXor;
-    } else if ( poly_op == POLY_UNION ) {
-    	op = ctUnion;
-    } else {
-        throw sg_exception("Unknown polygon op, exiting.");
-    }
-
-    Clipper c;
-	c.Clear();
-	c.AddPolygons(clipper_subject, ptSubject);
-	c.AddPolygons(clipper_clip, ptClip);
-
-	c.Execute(op, clipper_result, pftEvenOdd, pftEvenOdd);
-	
-	// copy contours to polygons structure
-	for (int i=0; i<clipper_result.size(); i++)
-	{
-		result.push_back( clipper_result[i].outer );
-		for (int j=0; j<clipper_result[i].holes.size(); j++)
-		{
-			result.push_back( clipper_result[i].holes[j] );
-		}
-	}
-
-	return result;
-}
-#endif
 
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_DIFF, subject, clip );
 }
 
-#if CLIP_NATIVE
-TGPolygon tgPolygonDiff( const TGPolygon& subject, const ClipPolyType& clip ) {
-    return polygon_clip( POLY_DIFF, subject, clip );
-}
-#endif
-
 // Intersection
 TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_INT, subject, clip );
 }
-
 
 // Exclusive or
 TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_XOR, subject, clip );
 }
 
-
 // Union
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_UNION, subject, clip );
 }
 
-#if CLIP_NATIVE
-ClipPolyType tgPolygonUnion( const TGPolygon& subject, const ClipPolyType& clip ) {
-    return polygon_clip_keep_native_fmt( POLY_UNION, subject, clip );
+
+
+// CLIPPER
+TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip ) {
+    return polygon_clip_clipper( POLY_DIFF, subject, clip );
 }
-#endif
+
+TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip ) {
+    return polygon_clip_clipper( POLY_UNION, subject, clip );
+}
+
 
 // canonify the polygon winding, outer contour must be anti-clockwise,
 // all inner contours must be clockwise.
@@ -869,6 +758,43 @@ TGPolygon tgPolygonStripHoles( const TGPolygon &poly ) {
     return result;
 }
 
+void PrintClipperPoly( Polygons polys )
+{
+    int nContours = polys.size();
+
+    SG_LOG(SG_GENERAL, SG_INFO, "CLIPPER POLY : contours " << nContours );
+
+    for (int i = 0; i < nContours; i++) {
+    	int nPoints = polys[i].size();
+        SG_LOG(SG_GENERAL, SG_INFO, nPoints );
+    	
+    	for (int j = 0; j < nPoints; j++) {
+            SG_LOG(SG_GENERAL, SG_INFO, "(" << polys[i][j].X << "," << polys[i][j].Y << ")" );
+	    }
+    }
+}
+
+TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta)
+{
+    TGPolygon result;
+
+    Polygons clipper_src, clipper_dst;
+    
+    make_clipper_poly( poly, &clipper_src );
+
+    //SG_LOG(SG_GENERAL, SG_INFO, "Clipper Source" );
+    //PrintClipperPoly( clipper_src );
+
+    // convert delta from meters to clipper units
+    OffsetPolygons( clipper_src, clipper_dst, MakeClipperDelta(delta) );
+
+    //SG_LOG(SG_GENERAL, SG_INFO, "Clipper Dest" );
+    //PrintClipperPoly( clipper_dst );
+
+	make_tg_poly_from_clipper( clipper_dst, &result );
+
+    return result;
+}
 
 #if 0
 // Wrapper for the fast Polygon Triangulation based on Seidel's

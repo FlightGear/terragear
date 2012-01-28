@@ -311,6 +311,9 @@ int polygon_tesselate( const TGPolygon &p,
     free(in.pointlist);
     free(in.pointattributelist);
     free(in.pointmarkerlist);
+    free(in.segmentlist);
+    free(in.segmentmarkerlist);
+    free(in.holelist);
     free(in.regionlist);
     free(out.pointlist);
     free(out.pointattributelist);
@@ -634,7 +637,6 @@ static void print_contour_tree( TGContourNode *node, string indent ) {
     }
 }
 
-
 // Build the contour "is inside of" tree
 static void build_contour_tree( TGContourNode *node,
 				const TGPolygon &p,
@@ -730,7 +732,7 @@ void calc_points_inside( TGPolygon& p ) {
     // starters)
     int_list avail;
     for ( int i = 0; i < p.contours(); ++i ) {
-	avail.push_back( 1 );
+        avail.push_back( 1 );
     }
 
     // create and initialize the root node
@@ -745,6 +747,9 @@ void calc_points_inside( TGPolygon& p ) {
     // contour/hole
     // cout << " calc_point_inside()\n";
     calc_point_inside( ct, p );
+
+    // free the memory
+    delete ct;
 }
 
 

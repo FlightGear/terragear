@@ -175,7 +175,9 @@ TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
 TGPolygon gen_wgs84_rect( double lat, double lon, double heading, double length, double width )
 {
     TGPolygon result_list;
-    double ptlat, ptlon, r;
+    double ptlat = 0.0f;
+    double ptlon = 0.0f;
+    double r     = 0.0f;
     Point3D p;
 
     // starting point is in the middle of the rectangle width, at the beginning - stretch to heading

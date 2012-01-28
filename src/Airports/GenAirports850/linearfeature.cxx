@@ -25,7 +25,6 @@ void LinearFeature::ConvertContour( BezContour* src  )
     int       curve_type = CURVE_LINEAR;
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
-    int       i;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
@@ -33,7 +32,7 @@ void LinearFeature::ConvertContour( BezContour* src  )
     points.empty();
 
     // iterate through each bezier node in the contour
-    for (i=0; i <= src->size()-1; i++)
+    for (unsigned int i=0; i <= src->size()-1; i++)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour: Handling Node " << i << "\n\n");
 
@@ -234,12 +233,49 @@ void LinearFeature::ConvertContour( BezContour* src  )
         }
         else
         {
-            nextLoc = nextNode->GetLoc();
+            // For linear features, sometime long linear lines confuse the tesselator.  Add intermediate nodes to keep the rectangles from
+            // getting too long.
+            double az1 = 0.0f;
+            double az2 = 0.0f;
+            double dist = 0.0f;
 
-            // just add the one vertex - linear
-            points.push_back( curLoc );
+            // calculate linear distance to determine how many segments we want
+            Point3D destLoc = nextNode->GetLoc();
+            geo_inverse_wgs_84( curLoc.y(), curLoc.x(), destLoc.y(), destLoc.x(), &az1, &az2, &dist);            
 
-            SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+            if (dist > 10.0)
+            {
+                int num_segs = (dist / 10.0f) + 1;
+
+                for (int p=0; p<num_segs; p++)
+                {
+                    // calculate next location
+                    nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+
+                    // add the feature vertex
+                    points.push_back( curLoc );
+
+                    if (p==0)
+                    {
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    }
+                    else
+                    {
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    }
+
+                    // now set set prev and cur locations for the next iteration
+                    prevLoc = curLoc;
+                    curLoc = nextLoc;
+                }
+            }
+            else
+            {
+                // just add the one vertex - dist is small
+                points.push_back( curLoc );
+
+                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+            }
         }
     }
 
@@ -261,6 +297,19 @@ void LinearFeature::ConvertContour( BezContour* src  )
        cur_light->end_idx = points.size()-1;
        lights.push_back(cur_light);
        cur_light = NULL;                    
+    }
+}
+
+LinearFeature::~LinearFeature()
+{
+    for (unsigned int i=0; i<marks.size(); i++)
+    {
+        delete marks[i];
+    }
+
+    for (unsigned int i=0; i<lights.size(); i++)
+    {
+        delete lights[i];
     }
 }
 
@@ -441,7 +490,6 @@ int LinearFeature::Finish()
     double      az2;
     double      last_end_v;
     double      width = 0;
-    int         i, j;
     string      material;
     double      cur_light_dist = 0.0f;
     double      light_delta = 0;
@@ -454,7 +502,7 @@ int LinearFeature::Finish()
     ConvertContour( &contour );
 
     // now generate the supoerpoly and texparams lists for markings
-    for (i=0; i<marks.size(); i++)
+    for (unsigned int i=0; i<marks.size(); i++)
     {
         prev_inner = Point3D(0.0f, 0.0f, 0.0f);
         prev_outer = Point3D(0.0f, 0.0f, 0.0f);
@@ -576,7 +624,7 @@ int LinearFeature::Finish()
         }
 
         last_end_v   = 0.0f;
-        for (j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
+        for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
             // for each point on the PointsList, generate a quad from
@@ -631,7 +679,7 @@ int LinearFeature::Finish()
     }
 
     // now generate the supoerpoly list for lights with constant distance between lights (depending on feature type)
-    for (i=0; i<lights.size(); i++)
+    for (unsigned int i=0; i<lights.size(); i++)
     {
         prev_outer = Point3D(0.0f, 0.0f, 0.0f);
         cur_light_dist = 0.0f;
@@ -674,7 +722,7 @@ int LinearFeature::Finish()
         normals_poly.erase();
         sp.erase();
 
-        for (j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
+        for (unsigned int j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for light " << i << " whose start idx is " << lights[i]->start_idx << " and end idx is " << lights[i]->end_idx << " cur idx is " << j );
             // for each point on the PointsList, offset by 2 distnaces from the edge, and add a point to the superpoly contour
@@ -761,36 +809,37 @@ int LinearFeature::Finish()
             SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: No points for linear feature " << description << " light index " << i );
         }
     }
+
+    return 1;
 }
 
 int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights )
 {
     TGPolygon poly; 
     TGPolygon clipped;
-    TGPolygon split;
-    int i;
+    //TGPolygon split;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
 
-    for (i=0; i<marking_polys.size(); i++)
+    for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
         poly = marking_polys[i].get_poly();
-        clipped = tgPolygonDiff( poly, *line_accum );
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipped poly has " << clipped.contours() << " contours");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipping poly " << i << " of " << marking_polys.size() );
+        clipped = tgPolygonDiffClipper( poly, *line_accum );
 
-        TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: split poly has " << split.contours() << " contours");
+//        TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
+//        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: split poly has " << split.contours() << " contours");
 
-        marking_polys[i].set_poly( split );
+        marking_polys[i].set_poly( clipped );
         line_polys->push_back( marking_polys[i] );
 
-        *line_accum = tgPolygonUnion( poly, *line_accum );
+        *line_accum = tgPolygonUnionClipper( poly, *line_accum );
         line_tps->push_back( marking_tps[i] );
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: add " << lighting_polys.size() << " light defs");
-    for (i=0; i<lighting_polys.size(); i++)
+    for ( unsigned i = 0; i < lighting_polys.size(); i++)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: adding light " << i );
         lights->push_back( lighting_polys[i] );
