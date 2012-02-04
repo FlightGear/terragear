@@ -540,6 +540,38 @@ void make_tg_poly_from_clipper( const Polygons& in, TGPolygon *out )
     }
 }
 
+Polygons clipper_simplify( ExPolygons &in )
+{
+    Polygons out;
+    Polygon  contour;
+
+  	for (unsigned int i=0; i<in.size(); i++)
+    {
+      	const struct ExPolygon* pg = &in[i];
+
+        // first the boundary
+        contour = pg->outer;
+        if ( !Orientation( contour ) ) {
+            ReversePoints( contour );
+        }
+        out.push_back( contour );
+        
+        // then the holes
+        for (unsigned int j = 0; j < pg->holes.size(); j++)
+        {
+            contour = pg->holes[j];
+            if ( Orientation( contour ) ) {
+                ReversePoints( contour );
+            }
+            out.push_back( contour );
+        }
+    }
+
+    // Now simplify
+    SimplifyPolygons(out);
+
+    return out;
+}
 
 TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
 {
@@ -572,7 +604,11 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
 	c.AddPolygons(clipper_clip, ptClip);
 
 	c.Execute(op, clipper_result, pftEvenOdd, pftEvenOdd);
-	make_tg_poly_from_clipper_ex( clipper_result, &result );
+
+    // verify each result is simple
+    Polygons simple_result = clipper_simplify( clipper_result );
+    
+	make_tg_poly_from_clipper( simple_result, &result );
 
 	return result;
 }
@@ -607,7 +643,6 @@ TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip 
 TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip_clipper( POLY_UNION, subject, clip );
 }
-
 
 // canonify the polygon winding, outer contour must be anti-clockwise,
 // all inner contours must be clockwise.

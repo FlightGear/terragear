@@ -349,16 +349,12 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p, bool verbose ) {
 
     // Bail right away if polygon is empty
     if ( p.contours() == 0 ) {
-	return result;
+        return result;
     }
 
     // 1.  Robustly find a point inside each contour that is not
     //     inside any other contour
     calc_points_inside( p );
-    for ( i = 0; i < p.contours(); ++i ) {
-	//cout << "final point inside =" << p.get_point_inside( i )
-	//     << endl;
-    }
 
     // 2.  Do a final triangulation of the entire polygon
     triele_list trieles;
@@ -366,8 +362,21 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p, bool verbose ) {
     string flags;
     if (verbose) {
         flags = "pzqenXYY";
+//        flags = "pzqenXY";      // allow adding interior points
     } else {
         flags = "pzqenXYYQ";
+//        flags = "pzqenXYQ";     // allow adding interior points
+    }
+
+    // check the input for nan point
+    for (int c = 0; c < p.contours(); c++) {    
+        point_list contour = p.get_contour( c );
+        for ( int d = 0; d < (int)contour.size(); ++d ) {
+            if ( isnan( contour[d].x() ) || isnan( contour[d].y() ) ) {
+                printf("Uh-oh - got nan before tesselation\n");
+                exit(0);
+            }
+        }
     }
 
     if ( polygon_tesselate( p, extra_nodes, trieles, nodes, flags ) >= 0 ) {

@@ -40,8 +40,8 @@ Runway::Runway(char* definition)
     // int fscanf(FILE *stream, const char *format, ...);
     sscanf(definition, "%lf %d %d %lf %d %d %d %s %lf %lf %lf %lf %d %d %d %d %s %lf %lf %lf %lf %d %d %d %d", 
         &rwy.width,  &rwy.surface, &rwy.shoulder, &rwy.smoothness, &rwy.centerline_lights, &rwy.edge_lights, &rwy.dist_remain_signs,
-        &rwy.rwnum[0], &rwy.lat[0], &rwy.lon[0], &rwy.threshold[0], &rwy.overrun[0], &rwy.marking[0], &rwy.approach_lights[0], &rwy.tz_lights[0], &rwy.reil[0],
-        &rwy.rwnum[1], &rwy.lat[1], &rwy.lon[1], &rwy.threshold[1], &rwy.overrun[1], &rwy.marking[1], &rwy.approach_lights[1], &rwy.tz_lights[1], &rwy.reil[1]
+        rwy.rwnum[0], &rwy.lat[0], &rwy.lon[0], &rwy.threshold[0], &rwy.overrun[0], &rwy.marking[0], &rwy.approach_lights[0], &rwy.tz_lights[0], &rwy.reil[0],
+        rwy.rwnum[1], &rwy.lat[1], &rwy.lon[1], &rwy.threshold[1], &rwy.overrun[1], &rwy.marking[1], &rwy.approach_lights[1], &rwy.tz_lights[1], &rwy.reil[1]
     );
 
     // calculate runway heading and length (used a lot)
@@ -53,7 +53,7 @@ Runway::Runway(char* definition)
 
 WaterRunway::WaterRunway(char* definition)
 {
-    sscanf(definition, "%lf %d %s %lf %lf %s %lf %lf", &width, &buoys, &rwnum[0], &lat[0], &lon[0], &rwnum[1], &lat[1], &lon[1]);
+    sscanf(definition, "%lf %d %s %lf %lf %s %lf %lf", &width, &buoys, rwnum[0], &lat[0], &lon[0], rwnum[1], &lat[1], &lon[1]);
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
 }
@@ -175,4 +175,6 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         // and add the clearing to the base
         *apt_base = tgPolygonUnion( base, *apt_base );
     }
+
+    return 0;
 }

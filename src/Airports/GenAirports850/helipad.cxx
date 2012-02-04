@@ -32,7 +32,7 @@ Helipad::Helipad(char* definition)
 
     // int fscanf(FILE *stream, const char *format, ...);
     sscanf(definition, "%s %lf %lf %lf %lf %lf %d %d %d %lf %d",
-        &heli.designator, &heli.lat, &heli.lon, &heli.heading, &heli.length, &heli.width, &heli.surface,
+        heli.designator, &heli.lat, &heli.lon, &heli.heading, &heli.length, &heli.width, &heli.surface,
         &heli.marking, &heli.shoulder, &heli.smoothness, &heli.edge_lights);
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read helipad: (" << heli.lon << "," << heli.lat << ") heading: " << heli.heading << " length: " << heli.length << " width: " << heli.width );
@@ -131,7 +131,7 @@ void Helipad::BuildBtg( float alt_m,
 
     // Now generate the helipad lights
     superpoly_list s = gen_helipad_lights();
-        for ( int i = 0; i < s.size(); ++i ) {
-            rwy_lights->push_back( s[i] );
-        }
+    for ( unsigned int i = 0; i < s.size(); ++i ) {
+        rwy_lights->push_back( s[i] );
+    }
 }

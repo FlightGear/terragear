@@ -309,7 +309,6 @@ void Parser::AddAirports( long start_pos, float min_lat, float min_lon, float ma
 void Parser::Parse()
 {
     char tmp[2048];
-    int  i;
     struct timeval parse_start;
     struct timeval parse_end;
     struct timeval parse_time;
@@ -325,7 +324,7 @@ void Parser::Parse()
     }
 
     // for each position in parse_positions, parse an airport
-    for (i=0; i<parse_positions.size(); i++)
+    for ( unsigned int i=0; i < parse_positions.size(); i++)
     {
         SetState(STATE_NONE);
         in.clear();
@@ -502,6 +501,9 @@ BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
         }
     }
 
+    curNode->SetTerm( term );
+    curNode->SetClose( close );
+
     return curNode;
 }
 
@@ -533,7 +535,7 @@ ClosedPoly* Parser::ParsePavement( char* line )
     char  *d = NULL;
     int   numParams;
 
-    numParams = sscanf(line, "%d %f %f %ls", &st, &s, &th, desc);
+    numParams = sscanf(line, "%d %f %f %s", &st, &s, &th, desc);
 
     if (numParams == 4)
     {
@@ -557,7 +559,7 @@ ClosedPoly* Parser::ParseBoundary( char* line )
     char  *d = NULL;
     int   numParams;
 
-    numParams = sscanf(line, "%ls", desc);
+    numParams = sscanf(line, "%s", desc);
 
     if (numParams == 1)
     {
@@ -595,6 +597,8 @@ int Parser::SetState( int state )
     } 
 
     cur_state = state;
+
+    return cur_state;
 }
 
 // TODO: This should be a loop here, and main should just pass the file name and airport code...
@@ -756,7 +760,7 @@ int Parser::ParseLine(char* line)
                         }
                         if (cur_airport)
                         {
-                            cur_feat->Finish();
+                            cur_feat->Finish( true );
                             cur_airport->AddFeature( cur_feat );
                         }
                         cur_feat = NULL;
@@ -790,7 +794,7 @@ int Parser::ParseLine(char* line)
                             }
                             if (cur_airport)
                             {
-                                cur_feat->Finish();
+                                cur_feat->Finish( false );
                                 cur_airport->AddFeature( cur_feat );
                             }
                         }

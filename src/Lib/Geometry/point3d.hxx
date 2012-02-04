@@ -46,7 +46,8 @@
 #include <simgear/math/SGMath.hxx>
 
 
-const double fgPoint3_Epsilon = 0.0000001;
+//const double fgPoint3_Epsilon = 0.0000001;
+const double fgPoint3_Epsilon = 0.000001;
 
 enum {PX, PY, PZ};		    // axes
 

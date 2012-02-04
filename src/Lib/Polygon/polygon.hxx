@@ -275,7 +275,6 @@ TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip 
 // Union
 TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip );
 
-
 // Expand / Shrink
 TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta);
 

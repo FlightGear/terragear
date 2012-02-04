@@ -10,7 +10,7 @@
 #include "linearfeature.hxx"
 #include "math.h"
 
-void LinearFeature::ConvertContour( BezContour* src  )
+void LinearFeature::ConvertContour( BezContour* src, bool closed )
 {
     BezNode*  prevNode;
     BezNode*  curNode;
@@ -243,9 +243,9 @@ void LinearFeature::ConvertContour( BezContour* src  )
             Point3D destLoc = nextNode->GetLoc();
             geo_inverse_wgs_84( curLoc.y(), curLoc.x(), destLoc.y(), destLoc.x(), &az1, &az2, &dist);            
 
-            if (dist > 10.0)
+            if (dist > 100.0)
             {
-                int num_segs = (dist / 10.0f) + 1;
+                int num_segs = (dist / 100.0f) + 1;
 
                 for (int p=0; p<num_segs; p++)
                 {
@@ -267,21 +267,42 @@ void LinearFeature::ConvertContour( BezContour* src  )
                     // now set set prev and cur locations for the next iteration
                     prevLoc = curLoc;
                     curLoc = nextLoc;
+
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Set prevLoc = (" << prevLoc.x() << "," << prevLoc.y() << ") and curLoc = (" << curLoc.x() << "," << curLoc.y() << ")" );                    
                 }
             }
             else
             {
+                nextLoc = nextNode->GetLoc();
+
                 // just add the one vertex - dist is small
                 points.push_back( curLoc );
 
                 SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+
+                prevLoc = curLoc;
+                curLoc = nextLoc;
+
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Set prevLoc = (" << prevLoc.x() << "," << prevLoc.y() << ") and curLoc = (" << curLoc.x() << "," << curLoc.y() << ")" );                    
             }
         }
     }
 
+    // TEST TEST TEST : This should do it
+#if 1
+    if (closed)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at (" << curLoc.x() << "," << curLoc.y() << ")");
+
+        // need to add the markings for last segment
+        points.push_back( curLoc );
+    }
+#endif
+    // TEST TEST TEST
+
     // check for marking that goes all the way to the end...
-   if (cur_mark)
-   {
+    if (cur_mark)
+    {
        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.size() );
 
        cur_mark->end_idx = points.size()-1;
@@ -290,8 +311,8 @@ void LinearFeature::ConvertContour( BezContour* src  )
     }
 
     // check for lighting that goes all the way to the end...
-   if (cur_light)
-   {
+    if (cur_light)
+    {
        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting from " << cur_light->start_idx << " with type " << cur_light->type << " ends at the end of the contour: " << points.size() );
 
        cur_light->end_idx = points.size()-1;
@@ -477,7 +498,7 @@ Point3D midpoint( Point3D p0, Point3D p1 )
     return Point3D( (p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2, (p0.z() + p1.z()) / 2 );
 }
 
-int LinearFeature::Finish()
+int LinearFeature::Finish( bool closed )
 {
     TGPolygon   poly;
     TGPolygon   normals_poly;
@@ -499,7 +520,7 @@ int LinearFeature::Finish()
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers 
     // the start stop points for markings and lights
-    ConvertContour( &contour );
+    ConvertContour( &contour, closed );
 
     // now generate the supoerpoly and texparams lists for markings
     for (unsigned int i=0; i<marks.size(); i++)
@@ -782,11 +803,8 @@ int LinearFeature::Finish()
                         cur_light_dist += light_delta;
                     }
 
-                    // add the remaining distance to the last light
-//                  cur_light_dist += modf( dist, &intpart );
-
-                    // remove
-                    cur_light_dist = fmod (cur_light_dist, light_delta);
+                    // start next segment at the correct distance
+                    cur_light_dist = cur_light_dist - dist;
                 }
             }
 
@@ -817,24 +835,28 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
 {
     TGPolygon poly; 
     TGPolygon clipped;
-    //TGPolygon split;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
-
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
         poly = marking_polys[i].get_poly();
 
         SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipping poly " << i << " of " << marking_polys.size() );
+#if 1
+        clipped = tgPolygonDiff( poly, *line_accum );
+#else
         clipped = tgPolygonDiffClipper( poly, *line_accum );
-
-//        TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
-//        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: split poly has " << split.contours() << " contours");
+#endif
 
         marking_polys[i].set_poly( clipped );
         line_polys->push_back( marking_polys[i] );
 
+#if 1
+        *line_accum = tgPolygonUnion( poly, *line_accum );
+#else
         *line_accum = tgPolygonUnionClipper( poly, *line_accum );
+#endif
+
         line_tps->push_back( marking_tps[i] );
     }
 

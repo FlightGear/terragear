@@ -372,6 +372,9 @@ void Runway::BuildShoulder( float alt_m,
         int numSegs = (rwy.length / max_dist) + 1;
         double dist = rwy.length / (double)numSegs;
 
+        //int numSegs = 1;
+        //double dist = rwy.length;
+
         // Create both shoulder sides
         for (int i=0; i<2; ++i){
             double step;
@@ -395,18 +398,25 @@ void Runway::BuildShoulder( float alt_m,
             for (int j=0; j<numSegs; j++)
             {
                 geo_direct_wgs_84 ( alt_m, ref.y(), ref.x(), rwy.heading, (j*dist), &lat, &lon, &r );
-                TGPolygon shoulderSegment = gen_wgs84_rect( lat, lon, rwy.heading, dist+0.2, shoulder_width+0.5 );
+                TGPolygon shoulderSegment = gen_wgs84_rect( lat, lon, rwy.heading, dist, shoulder_width+0.1 );
 
                 TGSuperPoly sp;
                 TGTexParams tp;
+#if 1
                 TGPolygon clipped = tgPolygonDiff( shoulderSegment, *accum );
-
+#else
+                TGPolygon clipped = tgPolygonDiffClipper( shoulderSegment, *accum );
+#endif
                 sp.erase();
                 sp.set_poly( clipped );
                 sp.set_material( shoulder_surface );
                 rwy_polys->push_back( sp );
 
+#if 1
                 *accum = tgPolygonUnion( shoulderSegment, *accum );
+#else
+                *accum = tgPolygonUnionClipper( shoulderSegment, *accum );
+#endif
 
                 tp = TGTexParams( shoulderSegment.get_pt(0,0), -shoulder_width, dist, rwy.heading );
                 if (i == 0){

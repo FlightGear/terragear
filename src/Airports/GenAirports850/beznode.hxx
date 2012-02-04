@@ -88,34 +88,42 @@ class BezNode
 public:
     BezNode( Point3D l ) : prev_cp(0.0f, 0.0f, 0.0f), next_cp(0.0f, 0.0f, 0.0f)
     {
-        loc  = l;
-        mark = 0;
+        loc   = l;
+        mark  = 0;
         light = 0;
+        term  = false;
+        close = false;
     }
 
     BezNode( double lat, double lon ) : prev_cp(0.0f, 0.0f, 0.0f), next_cp(0.0f, 0.0f, 0.0f)
     {
-        loc = Point3D( lon, lat, 0.0f );
-        mark = 0;
+        loc   = Point3D( lon, lat, 0.0f );
+        mark  = 0;
         light = 0;
+        term  = false;
+        close = false;
     }
 
     BezNode( Point3D l, Point3D cp )
     {
-        loc = l;
+        loc     = l;
         next_cp = cp;
         prev_cp = Mirror(cp);
-        mark = 0;
-        light = 0;
+        mark    = 0;
+        light   = 0;
+        term    = false;
+        close   = false;
     }
 
     BezNode( double lat, double lon, double cp_lat, double cp_lon )
     {
-        loc = Point3D( lon, lat, 0.0f );
+        loc     = Point3D( lon, lat, 0.0f );
         next_cp = Point3D( cp_lon, cp_lat, 0.0f );
         prev_cp = Mirror( next_cp );
-        mark = 0;
-        light = 0;
+        mark    = 0;
+        light   = 0;
+        term    = false;
+        close   = false;
     }
 
     Point3D Mirror( Point3D pt )
@@ -142,6 +150,16 @@ public:
     unsigned int GetLighting( )
     {
         return light;
+    }
+
+    void SetClose( bool c )
+    {
+        close = c;
+    }
+
+    void SetTerm( bool t )
+    {
+        term = t;
     }
 
     bool IsAt( double lat, double lon )
@@ -199,6 +217,8 @@ private:
     Point3D         next_cp;
     unsigned int    mark;
     unsigned int    light;
+    bool            term;
+    bool            close;
 };
 
 

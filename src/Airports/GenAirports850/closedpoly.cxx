@@ -132,7 +132,7 @@ void ClosedPoly::CloseCurContour()
     if (cur_feature)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
-        cur_feature->Finish();
+        cur_feature->Finish(true);
 
         features.push_back(cur_feature);
         cur_feature = NULL;        
@@ -535,6 +535,7 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
     
             // do this before clipping and generating the base
+            pre_tess = remove_bad_contours( pre_tess );
         	pre_tess = remove_dups( pre_tess );
             pre_tess = reduce_degeneracy( pre_tess );
 
@@ -545,15 +546,36 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             //        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: contour " << c << " pt " << pt << ": (" << pre_tess.get_pt(c, pt).x() << "," << pre_tess.get_pt(c, pt).y() << ")" );
             //    }
             //}
+
+            //SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
+            //for (int i=0; i<pre_tess.contours(); i++)
+            //{
+            //    SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original countour " << i << " has " << pre_tess.contour_size(i) << " points" );
+            //}
+
             // grow pretess by a little bit
-            pre_tess = tgPolygonExpand( pre_tess, 0.05);     // 5cm
+            //pre_tess = tgPolygonExpand( pre_tess, 0.05);     // 5cm
 
             TGSuperPoly sp;
             TGTexParams tp;
 
-            TGPolygon clipped = tgPolygonDiff( pre_tess, *accum );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
+            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: expanded poly has " << pre_tess.contours() << " contours");
+            for (int i=0; i<pre_tess.contours(); i++)
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: expanded countour " << i << " has " << pre_tess.contour_size(i) << " points" );
+            }
 
+#if 1
+            TGPolygon clipped = tgPolygonDiffClipper( pre_tess, *accum );
+#else
+            TGPolygon clipped = tgPolygonDiff( pre_tess, *accum );
+#endif
+            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
+            for (int i=0; i<clipped.contours(); i++)
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly countour " << i << " has " << clipped.contour_size(i) << " points" );
+            }
+            
             TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
             SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
 
@@ -564,7 +586,11 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
 
             rwy_polys->push_back( sp );
             SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
+#if 1
+            *accum = tgPolygonUnionClipper( pre_tess, *accum );
+#else
             *accum = tgPolygonUnion( pre_tess, *accum );
+#endif
             tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
             texparams->push_back( tp );
 
@@ -581,10 +607,10 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
                 safe_base = tgPolygonExpand( pre_tess, 50.0);        
 
                 // add this to the airport clearing
-                *apt_clearing = tgPolygonUnion( safe_base, *apt_clearing);
+                *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing);
 
                 // and add the clearing to the base
-                *apt_base = tgPolygonUnion( base, *apt_base );
+                *apt_base = tgPolygonUnionClipper( base, *apt_base );
             }
         }
     }
