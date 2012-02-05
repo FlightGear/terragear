@@ -132,6 +132,9 @@ public:
     // Special functions
     double distance3D(const Point3D& a) const;        // distance between
     double distance3Dsquared(const Point3D& a) const; // distance between ^ 2
+
+    bool   IsEqual2D(const Point3D& a) const;         // equality check in X,Y only
+    bool   HasElevation() const;                      // does point have elevation data?
 };
 
 
@@ -376,6 +379,19 @@ inline SGVec2f Point3D::toSGVec2f(void) const
 {
   return SGVec2f(x(), y());
 }
+
+inline bool Point3D::IsEqual2D(const Point3D& a) const
+{
+    return
+	fabs(a.n[PX] - n[PX]) < fgPoint3_Epsilon &&
+	fabs(a.n[PY] - n[PY]) < fgPoint3_Epsilon;
+}
+
+inline bool Point3D::HasElevation() const
+{
+    return fabs( n[PZ] + 9999.0 > fgPoint3_Epsilon );
+}
+
 
 // FRIENDS
 

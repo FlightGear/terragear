@@ -669,6 +669,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_bad_contours( poly );
         poly = remove_tiny_contours( poly );
         poly = remove_spikes( poly );
+        poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
 
     	rwy_polys[k].set_poly( poly );
@@ -685,6 +686,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_bad_contours( poly );
         poly = remove_tiny_contours( poly );
         poly = remove_spikes( poly );
+        poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
 
     	pvmt_polys[k].set_poly( poly );
@@ -701,6 +703,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_bad_contours( poly );
         poly = remove_tiny_contours( poly );
         poly = remove_spikes( poly );
+        poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
 
     	line_polys[k].set_poly( poly );
@@ -722,6 +725,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     base_poly = remove_bad_contours( base_poly );
     base_poly = remove_tiny_contours( base_poly );
     base_poly = remove_spikes( base_poly );
+    base_poly = remove_dups( base_poly );
     base_poly = remove_bad_contours( base_poly );
 
     gettimeofday(&cleanup_end, NULL);
@@ -737,7 +741,15 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = rwy_polys[i].get_poly();
 
 #if 0
-        if ( i == 162 ) {
+        if ( i == 2 ) {
+            SG_LOG(SG_GENERAL, SG_INFO, "Problem poly before remove_dups: " << poly );
+
+            sglog().setLogLevels( SG_GENERAL, SG_BULK );
+            poly = remove_dups( poly );
+            sglog().setLogLevels( SG_GENERAL, SG_INFO );
+
+            SG_LOG(SG_GENERAL, SG_INFO, "Problem poly after remove_dups(): " << poly );
+
             tgChopNormalPolygon( "/home/pete", "Base", poly, false );
 
             verbose_triangulation = true;

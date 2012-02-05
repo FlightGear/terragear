@@ -761,7 +761,7 @@ void calc_points_inside( TGPolygon& p ) {
     delete ct;
 }
 
-
+#if 0
 // remove duplicate nodes in a polygon should they exist.  Returns the
 // fixed polygon
 TGPolygon remove_dups( const TGPolygon &poly ) {
@@ -808,7 +808,124 @@ TGPolygon remove_dups( const TGPolygon &poly ) {
 
     return result;
 }
+#endif
 
+static point_list remove_contour_dups( const point_list& contour ) {
+    point_list result;
+    result.clear();
+
+    int iters = 0;
+    bool found;
+    unsigned int cur, next;
+
+    for ( unsigned int i = 0; i < contour.size(); i++ )
+    {
+        result.push_back( contour[i] );
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "remove contour dups : original contour has " << result.size() << " points" );
+
+    do
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_dups: start new iteration");
+        found = false;
+
+        // Step 1 - find a neighboring duplicate point
+        for ( unsigned int i = 0; i < result.size() && !found; i++ ) {
+            if (i == result.size()-1 ) {
+                cur  = i;
+                next = 0;
+                SG_LOG(SG_GENERAL, SG_DEBUG, " cur is last point: " << cur << ": " << result[cur] << " next is first point: " << next << result[next] );
+            } else {
+                cur  = i;
+                next = i+1;
+                SG_LOG(SG_GENERAL, SG_DEBUG, " cur is: " << cur << ": " << result[cur] << " next is : " << next << result[next] );
+            }
+            
+            if ( result[cur].IsEqual2D( result[next] ) ) {
+                // keep the point with higher Z
+                if ( result[cur].z() < result[next].z() ) {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_dups: erasing " << result[cur] );
+                    result.erase( result.begin()+cur );
+                } else {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_dups: erasing " << result[next] );
+                    result.erase( result.begin()+next );
+                }
+                found = true;
+            }
+        }
+
+        iters++;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_dups : after " << iters << "iterations, contour has " << result.size() << " points" );
+    } while( found );
+
+    return result;
+}
+
+TGPolygon remove_dups( const TGPolygon& poly )
+{
+    TGPolygon result;
+    // cout << "remove dups: " << poly << endl;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+        point_list contour = poly.get_contour(i);
+        contour = remove_contour_dups( contour );
+        result.add_contour( contour, poly.get_hole_flag(i) );
+    }
+
+    return result;
+}
+
+
+
+
+#if 0 // fails to remove dupes with different Z
+// remove duplicate nodes in a polygon should they exist.  Returns the
+// fixed polygon
+TGPolygon remove_dups( const TGPolygon &poly ) {
+    TGPolygon result;
+    point_list contour, new_contour;
+    result.erase();
+
+    TGPolygon tmp = poly;
+    for ( int i = 0; i < tmp.contours(); ++i ) {
+        contour = poly.get_contour( i );
+	// cout << "testing contour " << i << "  size = " << contour.size() 
+	//      << "  hole = " << poly.get_hole_flag( i ) << endl;
+	bool have_dups = true;
+	while ( have_dups && contour.size() ) {
+	    have_dups = false;
+	    new_contour.clear();
+	    Point3D last = contour[ contour.size() - 1 ];
+	    for ( int j = 0; j < (int)contour.size(); ++j ) {
+		// cout << "  " << i << " " << j << endl;
+		Point3D cur = contour[j];
+		if ( cur == last ) {
+		    have_dups = true;
+		    // cout << "skipping a duplicate point" << endl;
+		} else {
+		    new_contour.push_back( cur );
+		    last = cur;
+		}
+	    }
+	    contour = new_contour;
+	}
+
+	// cout << "  final size = " << contour.size() << endl;
+
+	if ( contour.size() ) {
+	    int flag = poly.get_hole_flag( i );
+	    result.add_contour( contour, flag );
+	} else {
+	    // too small an area ... add a token point to the contour
+	    // to keep other things happy, but this "bad" contour will
+	    // get nuked later
+	    result.add_node( i, poly.get_pt( i, 0 ) );
+	}
+    }
+
+    return result;
+}
+#endif
 
 static inline double
 snap (double value, double grid_size)
@@ -1257,6 +1374,8 @@ static point_list remove_contour_spikes( const point_list& contour ) {
     {
         result.push_back( contour[i] );
     }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "remove contour spikes : original contour has " << result.size() << " points" );
 
     do
     {
