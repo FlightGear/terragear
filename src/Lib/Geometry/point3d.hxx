@@ -37,6 +37,7 @@
 
 #include <simgear/compiler.h>
 
+#include <stdio.h>
 #include <cassert>
 #include <cmath>
 #include <istream>
@@ -170,7 +171,9 @@ operator >> ( std::istream& in, Point3D& p)
 inline std::ostream&
 operator<< ( std::ostream& out, const Point3D& p )
 {
-    return out << p.n[PX] << ", " << p.n[PY] << ", " << p.n[PZ];
+    char buff[128];
+    sprintf( buff, "(%3.10lf, %3.10lf, %3.10lf)", p.n[PX], p.n[PY], p.n[PZ]);
+    return out << buff;
 }
 
 ///////////////////////////

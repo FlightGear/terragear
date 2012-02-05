@@ -1076,25 +1076,126 @@ TGPolygon reduce_degeneracy( const TGPolygon& poly ) {
 }
 
 // find short cycles in a contour and snip them out.
+#if 0
 static point_list remove_small_cycles( const point_list& contour ) {
     point_list result;
     result.clear();
+
+#if 0 // this isn't detected !
+(5.3060288916,7.2584178625,-9999.0000000000)
+(5.3060247586,7.2584197157,-9999.0000000000)
+(5.3059325744,7.2582152235,-9999.0000000000)
+(5.3059201957,7.2582207878,-9999.0000000000)
+(5.3060123814,7.2584252839,-9999.0000000000)
+(5.3060247586,7.2584197157,-9999.0000000000)
+#endif
 
     unsigned int i = 0;
     while ( i < contour.size() ) {
         result.push_back( contour[i] );
         for ( unsigned int j = i + 1; j < contour.size(); ++j ) {
-            if ( contour[i] == contour[j] && i + 4 > j ) {
-                // cout << "detected a small cycle: i = "
-                //     << i << " j = " << j << endl;
-                //for ( unsigned int k = i; k <= j; ++k ) {
-                //    cout << "  " << contour[k] << endl;
-                //}
-                i = j;
+            if ( contour[i] == contour[j] ) {
+                if ( i + 4 > j ) {
+                    SG_LOG(SG_GENERAL, SG_INFO, "detected a small cycle: i = " << i << " j = " << j );
+                    for ( unsigned int k = i; k <= j; ++k ) {
+                        SG_LOG(SG_GENERAL, SG_INFO, "  " << contour[k] );
+                    }
+                    i = j;
+                }
+                else {
+                    SG_LOG(SG_GENERAL, SG_INFO, "detected a cycle, but i = " << i << " j = " << j );
+                }
             }
         }
         ++i;
     }
+
+    return result;
+}
+#endif
+
+static point_list remove_small_cycles( const point_list& contour ) {
+    point_list result;
+    bool found;
+    result.clear();
+    int iters = 0;
+
+#if 0 // this isn't detected !
+(5.3060288916,7.2584178625,-9999.0000000000)
+(5.3060247586,7.2584197157,-9999.0000000000)
+(5.3059325744,7.2582152235,-9999.0000000000)
+(5.3059201957,7.2582207878,-9999.0000000000)
+(5.3060123814,7.2584252839,-9999.0000000000)
+(5.3060247586,7.2584197157,-9999.0000000000)
+#endif
+
+    for ( unsigned int i = 0; i < contour.size(); i++ )
+    {
+        result.push_back( contour[i] );
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "remove small cycles : original contour has " << result.size() << " points" );
+
+    do
+    {
+        found = false;
+
+        // Step 1 - find a duplicate point
+        for ( unsigned int i = 0; i < result.size() && !found; i++ ) {
+            // first check until the end of the vector
+            for ( unsigned int j = i + 1; j < result.size() && !found; j++ ) {
+                if ( result[i] == result[j] ) {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "detected a dupe: i = " << i << " j = " << j );
+
+                    // We found a dupe - calculate the distance between them
+                    if ( i + 4 > j ) {
+                        // it's within target distance - remove the points in between, and start again
+                        if ( j-i == 1 ) {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing " << i );
+                            result.erase( result.begin()+i );
+                        } else {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing from " << i << " to " << j-1 );
+                            result.erase( result.begin()+i,result.begin()+(j-1) );
+                        }
+                        found = true;
+                    }
+                }
+            }
+
+            // then check from beginning to the first point (wrap around)
+            for ( unsigned int j = 0; j < i && !found; j++ ) {
+                if ( (i != j) && (result[i] == result[j]) ) {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "detected a dupe: i = " << i << " j = " << j );
+
+                    // We found a dupe - calculate the distance between them
+                    if ( (result.size() - i + j) < 4 ) {
+                        // it's within target distance - remove from the end point to the end of the vector
+                        if ( i == result.size() - 1 ) {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing " << result.size()-1 );
+                            result.erase( result.begin()+result.size()-1 );
+                        } else {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing from " << i << " to " << result.size()-1 );
+                            result.erase( result.begin()+i, result.begin()+result.size()-1 );
+                        }
+
+                        // then remove from the beginning of the vector to the beginning point
+                        if ( j == 1 ) {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing " << j-1 );
+                            result.erase( result.begin() );
+                        } else if ( j > 1) {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing from 0 " <<  " to " <<  j-1 );
+                            result.erase( result.begin(), result.begin()+j-1 );
+                        }
+
+                        found = true;
+                    }
+                }
+            }
+        }
+
+        iters++;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove small cycles : after " << iters << "iterations, contour has " << result.size() << " points" );
+    } while( found );
 
     return result;
 }
@@ -1108,14 +1209,107 @@ TGPolygon remove_cycles( const TGPolygon& poly ) {
     TGPolygon result;
     // cout << "remove cycles: " << poly << endl;
     for ( int i = 0; i < poly.contours(); ++i ) {
-	point_list contour = poly.get_contour(i);
-	contour = remove_small_cycles( contour );
-	result.add_contour( contour, poly.get_hole_flag(i) );
+        point_list contour = poly.get_contour(i);
+        contour = remove_small_cycles( contour );
+        result.add_contour( contour, poly.get_hole_flag(i) );
     }
 
     return result;
 }
 
+
+static double CalculateTheta( Point3D p0, Point3D p1, Point3D p2 )
+{
+    Point3D u, v;
+    double  udist, vdist, uv_dot, tmp;
+
+    // u . v = ||u|| * ||v|| * cos(theta)
+
+    u = p1 - p0;
+    udist = sqrt( u.x() * u.x() + u.y() * u.y() );
+    // printf("udist = %.6f\n", udist);
+
+    v = p1 - p2;
+    vdist = sqrt( v.x() * v.x() + v.y() * v.y() );
+    // printf("vdist = %.6f\n", vdist);
+
+    uv_dot = u.x() * v.x() + u.y() * v.y();
+    // printf("uv_dot = %.6f\n", uv_dot);
+
+    tmp = uv_dot / (udist * vdist);
+    // printf("tmp = %.6f\n", tmp);
+
+    return acos(tmp);
+}
+
+
+static point_list remove_contour_spikes( const point_list& contour ) {
+    point_list result;
+    result.clear();
+
+    int iters = 0;
+    double theta;
+    bool found;
+
+    Point3D cur, prev, next;
+
+    for ( unsigned int i = 0; i < contour.size(); i++ )
+    {
+        result.push_back( contour[i] );
+    }
+
+    do
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_spikes: start new iteration");
+        found = false;
+
+        // Step 1 - find a duplicate point
+        for ( unsigned int i = 0; i < result.size() && !found; i++ ) {
+            if (i == 0) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, " cur is first point: " << i << ": " << result[0]);
+                cur = result[0];
+                prev = result[result.size()-1];
+                next = result[1];
+            } else if ( i == result.size()-1 ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, " cur is last point: " << i << ": " << result[i]);
+                cur = result[i];
+                prev = result[i-1];
+                next = result[0];
+            } else {
+                SG_LOG(SG_GENERAL, SG_DEBUG, " cur is: " << i << ": " << result[i] );
+                cur = result[i];
+                prev = result[i-1];
+                next = result[i+1];
+            }
+            
+            theta = SGMiscd::rad2deg(CalculateTheta(prev, cur, next));
+
+            if ( abs(theta) < 0.1 ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_spikes: (theta is " << theta << ") erasing " << i << " prev is " << prev << " cur is " << cur << " next is " << next );
+                result.erase( result.begin()+i );
+                found = true;
+            }
+        }
+
+        iters++;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_spikes : after " << iters << "iterations, contour has " << result.size() << " points" );
+    } while( found );
+
+    return result;
+}
+
+TGPolygon remove_spikes( const TGPolygon& poly )
+{
+    TGPolygon result;
+    // cout << "remove spikes: " << poly << endl;
+    for ( int i = 0; i < poly.contours(); ++i ) {
+        point_list contour = poly.get_contour(i);
+        contour = remove_contour_spikes( contour );
+        result.add_contour( contour, poly.get_hole_flag(i) );
+    }
+
+    return result;
+}
 
 // remove any degenerate contours
 TGPolygon remove_bad_contours( const TGPolygon &poly ) {

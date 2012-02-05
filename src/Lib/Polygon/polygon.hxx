@@ -278,6 +278,11 @@ TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip
 // Expand / Shrink
 TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta);
 
+// Simplify
+TGPolygon tgPolygonSimplify(const TGPolygon &poly);
+
+
+
 // Output
 std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);
 

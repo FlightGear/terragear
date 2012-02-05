@@ -831,6 +831,20 @@ TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta)
     return result;
 }
 
+TGPolygon tgPolygonSimplify(const TGPolygon &poly)
+{
+    TGPolygon result;
+    Polygons clipper_poly;
+    
+    make_clipper_poly( poly, &clipper_poly );
+
+    SimplifyPolygons(clipper_poly);
+
+	make_tg_poly_from_clipper( clipper_poly, &result );
+
+    return result;
+}
+
 #if 0
 // Wrapper for the fast Polygon Triangulation based on Seidel's
 // Algorithm by Atul Narkhede and Dinesh Manocha
@@ -977,15 +991,26 @@ TGPolygon polygon_to_tristrip_old( const TGPolygon& in_poly ) {
 ostream &
 operator<< (ostream &output, const TGPolygon &poly)
 {
+    char buff[128];
     int nContours = poly.contours();
-    output << nContours << endl;
+
+    output << "Contours : " << nContours << endl;
     for (int i = 0; i < nContours; i++) {
-	int nPoints = poly.contour_size(i);
-	output << nPoints << endl;
-	output << poly.get_hole_flag(i) << endl;
-	for (int j = 0; j < nPoints; j++) {
-	    output << poly.get_pt(i, j) << endl;
-	}
+        int nPoints = poly.contour_size(i);
+        if ( poly.get_hole_flag(i) ) {
+            output << " hole contour " << i << " has " << nPoints << " points " << endl;
+        } else {
+            output << " boundary contour " << i << " has " << nPoints << " points " << endl;
+        }
+
+        for (int j = 0; j < nPoints; j++) {
+            sprintf( buff, "(%3.10lf,%3.10lf,%3.10lf)", 
+                poly.get_pt(i, j).x(),
+                poly.get_pt(i, j).y(),
+                poly.get_pt(i, j).z()
+            );
+            output << buff << endl;
+        }
     }
 
     return output;  // MSVC

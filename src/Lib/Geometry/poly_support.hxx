@@ -91,6 +91,11 @@ TGPolygon reduce_degeneracy( const TGPolygon& poly );
 // extraneous nonsense.
 TGPolygon remove_cycles( const TGPolygon& poly );
 
+// Occasionally the outline of the clipped polygon can have long spikes 
+// that come close to doubling back on the same segment - this kills 
+// triangulation
+TGPolygon remove_spikes( const TGPolygon& poly );
+
 
 // Find a point in the given node list that lies between start and
 // end, return true if something found, false if nothing found.

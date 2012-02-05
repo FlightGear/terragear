@@ -668,6 +668,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
         poly = remove_tiny_contours( poly );
+        poly = remove_spikes( poly );
+        poly = remove_bad_contours( poly );
 
     	rwy_polys[k].set_poly( poly );
     }
@@ -682,6 +684,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
         poly = remove_tiny_contours( poly );
+        poly = remove_spikes( poly );
+        poly = remove_bad_contours( poly );
 
     	pvmt_polys[k].set_poly( poly );
     }
@@ -696,6 +700,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
         poly = remove_tiny_contours( poly );
+        poly = remove_spikes( poly );
+        poly = remove_bad_contours( poly );
 
     	line_polys[k].set_poly( poly );
     }
@@ -715,6 +721,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     base_poly = remove_dups( base_poly );
     base_poly = remove_bad_contours( base_poly );
     base_poly = remove_tiny_contours( base_poly );
+    base_poly = remove_spikes( base_poly );
+    base_poly = remove_bad_contours( base_poly );
 
     gettimeofday(&cleanup_end, NULL);
     timersub(&cleanup_end, &cleanup_start, &cleanup_time);
@@ -729,9 +737,12 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = rwy_polys[i].get_poly();
 
 #if 0
-        if ( i == 62 ) {
+        if ( i == 162 ) {
             tgChopNormalPolygon( "/home/pete", "Base", poly, false );
+
             verbose_triangulation = true;
+        } else {
+            verbose_triangulation = false;
         }
 #endif
 
@@ -754,7 +765,9 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = pvmt_polys[i].get_poly();
 
 #if 0
-        if ( i == 0 ) {
+        if ( i == 1 ) {
+            SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << poly );
+
             tgChopNormalPolygon( "/home/pete", "Base", poly, false );
             verbose_triangulation = true;
         } else {
@@ -788,7 +801,9 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = line_polys[i].get_poly();
 
 #if 0
-        if ( i == 4558 ) {
+        if ( i == 627 ) {
+            SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << poly );
+
             tgChopNormalPolygon( "/home/pete", "Base", poly, false );
             verbose_triangulation = true;
         } else {
@@ -809,6 +824,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
 #if 0
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << base_poly );
+
         tgChopNormalPolygon( "/home/pete", "Base", base_poly, false );
         verbose_triangulation = true;
     }

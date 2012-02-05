@@ -343,10 +343,12 @@ void Runway::BuildShoulder( float alt_m,
     double shoulder_width = 0.0f;
 
     if (rwy.shoulder > 0){  // Add a shoulder to the runway
-        shoulder_width = rwy.width * 0.15;
-        if (shoulder_width > 8.0){
-            shoulder_width = 8.0;
-        }
+        //shoulder_width = rwy.width * 0.15;
+        //if (shoulder_width > 11.0){
+        //    shoulder_width = 11.0;
+        //}
+        shoulder_width = 11.0f;
+
         if (rwy.shoulder == 1){
             shoulder_surface = "pa_shoulder";
         } else if (rwy.shoulder == 2){
@@ -368,12 +370,9 @@ void Runway::BuildShoulder( float alt_m,
 
         // we need to break these shoulders up into managable pieces, as we're asked to triangulate
         // 3-4 km long by 1m wide strips - jrs-can't handle it.
-        double max_dist = (double)shoulder_width * 50.0f;
+        double max_dist = (double)shoulder_width * 25.0f;
         int numSegs = (rwy.length / max_dist) + 1;
         double dist = rwy.length / (double)numSegs;
-
-        //int numSegs = 1;
-        //double dist = rwy.length;
 
         // Create both shoulder sides
         for (int i=0; i<2; ++i){
@@ -384,9 +383,9 @@ void Runway::BuildShoulder( float alt_m,
             /* If the are 'equal' there's a good chance roundoff error can create a  */
             /* REALY thin long polygon, which causes a segfault  */
             if (i == 0){
-                step= (rwy.width + shoulder_width)*0.5;
+                step= (rwy.width + shoulder_width) * 0.5;
             } else if (i == 1) {
-                step= -(rwy.width + shoulder_width)*0.5;
+                step= -(rwy.width + shoulder_width) * 0.5;
             }
             double left_hdg = rwy.heading - 90.0;
 
@@ -398,7 +397,7 @@ void Runway::BuildShoulder( float alt_m,
             for (int j=0; j<numSegs; j++)
             {
                 geo_direct_wgs_84 ( alt_m, ref.y(), ref.x(), rwy.heading, (j*dist), &lat, &lon, &r );
-                TGPolygon shoulderSegment = gen_wgs84_rect( lat, lon, rwy.heading, dist, shoulder_width+0.1 );
+                TGPolygon shoulderSegment = gen_wgs84_rect( lat, lon, rwy.heading, dist, shoulder_width+1.0f );
 
                 TGSuperPoly sp;
                 TGTexParams tp;
