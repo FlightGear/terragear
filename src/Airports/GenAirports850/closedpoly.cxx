@@ -596,14 +596,7 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
 
             if ( apt_base )
             {           
-                // ExpandContour( hull, base, 20.0 );
                 base = tgPolygonExpand( pre_tess, 20.0); 
-
-                // dump pre_tess and base
-                //SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: original poly " << pre_tess );
-                //SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: expanded poly " << base );
-                       
-                // ExpandContour( hull, safe_base, 50.0 );
                 safe_base = tgPolygonExpand( pre_tess, 50.0);        
 
                 // add this to the airport clearing
@@ -619,6 +612,8 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
     return 1;
 }
 
+// Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges 
+// - resulting in no base, which we can't handle
 int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {
     TGPolygon base, safe_base;
@@ -628,14 +623,14 @@ int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clear
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
     
-        hull = pre_tess.get_contour(0);
-        ExpandContour( hull, safe_base, 20.0 );
+        base = tgPolygonExpand( pre_tess, 2.0); 
+        safe_base = tgPolygonExpand( pre_tess, 5.0);        
         
         // add this to the airport clearing
         *apt_clearing = tgPolygonUnion( safe_base, *apt_clearing);
 
         // and add the clearing to the base
-        *apt_base = tgPolygonUnion( pre_tess, *apt_base );
+        *apt_base = tgPolygonUnion( base, *apt_base );
     }
 
     return 1;

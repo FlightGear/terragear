@@ -723,6 +723,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     base_poly = remove_cycles( base_poly );
     base_poly = remove_dups( base_poly );
     base_poly = remove_bad_contours( base_poly );
+    base_poly = tgPolygonSimplify( base_poly );
     base_poly = remove_tiny_contours( base_poly );
     base_poly = remove_spikes( base_poly );
     base_poly = remove_dups( base_poly );
