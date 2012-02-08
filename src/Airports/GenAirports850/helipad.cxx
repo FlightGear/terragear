@@ -129,9 +129,12 @@ void Helipad::BuildBtg( float alt_m,
         *apt_base = tgPolygonUnion( base, *apt_base );
     }
 
-    // Now generate the helipad lights
-    superpoly_list s = gen_helipad_lights();
-    for ( unsigned int i = 0; i < s.size(); ++i ) {
-        rwy_lights->push_back( s[i] );
+    if (heli.edge_lights)
+    {
+        // Now generate the helipad lights
+        superpoly_list s = gen_helipad_lights();
+        for ( unsigned int i = 0; i < s.size(); ++i ) {
+            rwy_lights->push_back( s[i] );
+        }
     }
 }
