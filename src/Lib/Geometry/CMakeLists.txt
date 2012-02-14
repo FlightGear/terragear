@@ -1,4 +1,6 @@
-
+if (GDAL_FOUND)
+include_directories(${GDAL_INCLUDE_DIR})
+endif (GDAL_FOUND)
 
 add_library(Geometry STATIC 
     contour_tree.cxx

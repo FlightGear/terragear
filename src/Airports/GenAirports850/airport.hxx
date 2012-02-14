@@ -58,6 +58,11 @@ public:
         }
     }
 
+    int NumFeatures( void )
+    {
+        return features.size();
+    }
+
     void SetBoundary( ClosedPoly* bndry )
     {
         boundary = bndry;

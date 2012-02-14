@@ -6,25 +6,32 @@
 
 #include <Geometry/poly_support.hxx>
 
+// for debugging clipping errors
+#include <Polygon/chop.hxx>
+
 #include "beznode.hxx"
 #include "linearfeature.hxx"
 #include "math.h"
 
 void LinearFeature::ConvertContour( BezContour* src, bool closed )
 {
-    BezNode*  prevNode;
     BezNode*  curNode;
     BezNode*  nextNode;
         
-    Point3D   prevLoc;
     Point3D   curLoc;
     Point3D   nextLoc;
     Point3D   cp1;
     Point3D   cp2;         
 
     int       curve_type = CURVE_LINEAR;
+    double    total_dist, linear_dist;
+    double    meter_dist = 1.0f/96560.64f;
+    double    theta1, theta2;
+    int       num_segs = BEZIER_DETAIL;
+
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
+
 
     SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
@@ -34,19 +41,6 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     // iterate through each bezier node in the contour
     for (unsigned int i=0; i <= src->size()-1; i++)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour: Handling Node " << i << "\n\n");
-
-        if (i == 0)
-        {
-            // set prev node to last in the contour, as all contours must be closed
-            prevNode = src->at( src->size()-1 );
-        }
-        else
-        {
-            // otherwise, it's just the previous index
-            prevNode = src->at( i-1 );
-        }
-
         curNode = src->at(i);
 
         if (i < src->size() - 1)
@@ -132,38 +126,6 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         }
         ////////////////////////////////////////////////////////////////////////////////////
 
-
-        // determine the type of curve from prev (just to get correct prev location)
-        // once we start drawing the curve from cur to next, we can just remember the prev loc
-        if (prevNode->HasNextCp())
-        {
-            // curve from prev is cubic or quadratic 
-            if(curNode->HasPrevCp())
-            {
-                // curve from prev is cubic : calculate the last location on the curve
-                prevLoc = CalculateCubicLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-            }
-            else
-            {
-                // curve from prev is quadratic : use prev node next cp
-                prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-            }
-        }
-        else 
-        {
-            // curve from prev is quadratic or linear
-            if( curNode->HasPrevCp() )
-            {
-                // curve from prev is quadratic : calculate the last location on the curve
-                prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-            }
-            else
-            {
-                // curve from prev is linear : just use prev node location
-                prevLoc = prevNode->GetLoc();
-            }
-        }                    
-
         // now determine how we will iterate from current node to next node 
         if( curNode->HasNextCp() )
         {
@@ -174,12 +136,17 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 curve_type = CURVE_CUBIC;
                 cp1 = curNode->GetNextCp();
                 cp2 = nextNode->GetPrevCp();
+                total_dist = CubicDistance( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc() );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
+                theta2 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp2, nextNode->GetLoc()) );
             }
             else
             {
                 // curve is quadratic using current nodes cp as the cp
                 curve_type = CURVE_QUADRATIC;
                 cp1 = curNode->GetNextCp();
+                total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
             }
         }
         else
@@ -190,28 +157,123 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 // curve is quadratic using next nodes cp as the cp
                 curve_type = CURVE_QUADRATIC;
                 cp1 = nextNode->GetPrevCp();
+                total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
             }
             else
             {
                 // curve is linear
                 curve_type = CURVE_LINEAR;
+                total_dist = LinearDistance( curNode->GetLoc(), nextNode->GetLoc() );
             }
+        }
+
+        // One more test - some people are using bezier curves to draw straight lines - this can cause a bit of havoc...  
+        // Sometimes, the control point lies just beyond the final point.  We try to make a 'hook' at the end, which makes some really bad polys
+        // Just convert the entire segment to linear
+        // this can be detected in quadratic curves (current issue in LFKJ) when the contol point lies within the line generated from point 1 to point 2
+        // theat close to 180 at the control point to the cur node and next node
+        if ( curve_type == CURVE_QUADRATIC )
+        {
+            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve with cp in line : convert to linear: " << description << ": theta is " << theta1 );
+                curve_type = CURVE_LINEAR;
+            }
+            else
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve withOUT cp in line : keep quadtratic: " << description << ": theta is " << theta1 );
+            }
+        }
+
+        if ( curve_type == CURVE_CUBIC )
+        {
+            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve with cp1 in line : " << description << ": theta is " << theta1 );
+
+                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
+                {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               and cp2 in line : " << description << ": theta is " << theta2 << " CONVERTING TO LINEAR" );
+
+                    curve_type = CURVE_LINEAR;
+                }
+                else
+                {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 NOT in line : " << description << ": theta is " << theta2 );
+                }
+            }
+            else
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve withOUT cp1 in line : keep quadtratic: " << description << ": theta is " << theta1 );
+
+                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
+                {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 IS in line : " << description << ": theta is " << theta2 );
+                }
+                else
+                {
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               AND cp2 NOT in line : " << description << ": theta is " << theta2 );
+                }
+            }
+        }
+
+        double num_meters = total_dist / meter_dist;
+        if (num_meters < 4.0f)
+        {
+            if (curve_type != CURVE_LINEAR)
+            {
+                // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 1/2 meter
+                num_segs = ((int)num_meters + 1) * 2;
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( < 4.0) so num_segs is " << num_segs );
+            }
+            else
+            {
+                num_segs = 1;
+            }
+        }
+        else if (num_meters > 800.0f)
+        {
+            // If total distance is > 800 meters, then we need to modify num Segments so that each segment <= 100 meters
+            num_segs = num_meters / 100.0f + 1;
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( > 100.0) so num_segs is " << num_segs );
+        }
+        else
+        {
+            if (curve_type != CURVE_LINEAR)
+            {            
+                num_segs = 8;
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " (OK) so num_segs is " << num_segs );
+            }
+            else
+            {
+                num_segs = 1;
+            }
+        }
+
+        // if only one segment, revert to linear
+        if (num_segs == 1)
+        {
+            curve_type = CURVE_LINEAR;
         }
 
         // initialize current location
         curLoc = curNode->GetLoc();
         if (curve_type != CURVE_LINEAR)
         {
-            for (int p=0; p<BEZIER_DETAIL; p++)
+            for (int p=0; p<num_segs; p++)
             {
                 // calculate next location
                 if (curve_type == CURVE_QUADRATIC)
                 {
-                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
+                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
                 }
                 else
                 {
-                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
+                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
                 }
 
                 // add the feature vertex
@@ -227,26 +289,16 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 }
 
                 // now set set prev and cur locations for the next iteration
-                prevLoc = curLoc;
                 curLoc = nextLoc;
             }
         }
         else
         {
-            // For linear features, sometime long linear lines confuse the tesselator.  Add intermediate nodes to keep the rectangles from
-            // getting too long.
-            double az1 = 0.0f;
-            double az2 = 0.0f;
-            double dist = 0.0f;
-
             // calculate linear distance to determine how many segments we want
             Point3D destLoc = nextNode->GetLoc();
-            geo_inverse_wgs_84( curLoc.y(), curLoc.x(), destLoc.y(), destLoc.x(), &az1, &az2, &dist);            
 
-            if (dist > 100.0)
+            if (num_segs > 1)
             {
-                int num_segs = (dist / 100.0f) + 1;
-
                 for (int p=0; p<num_segs; p++)
                 {
                     // calculate next location
@@ -265,10 +317,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                     }
 
                     // now set set prev and cur locations for the next iteration
-                    prevLoc = curLoc;
                     curLoc = nextLoc;
-
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Set prevLoc = (" << prevLoc.x() << "," << prevLoc.y() << ") and curLoc = (" << curLoc.x() << "," << curLoc.y() << ")" );                    
                 }
             }
             else
@@ -280,16 +329,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 
                 SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
 
-                prevLoc = curLoc;
                 curLoc = nextLoc;
-
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Set prevLoc = (" << prevLoc.x() << "," << prevLoc.y() << ") and curLoc = (" << curLoc.x() << "," << curLoc.y() << ")" );                    
             }
         }
     }
 
-    // TEST TEST TEST : This should do it
-#if 1
     if (closed)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at (" << curLoc.x() << "," << curLoc.y() << ")");
@@ -297,8 +341,6 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         // need to add the markings for last segment
         points.push_back( curLoc );
     }
-#endif
-    // TEST TEST TEST
 
     // check for marking that goes all the way to the end...
     if (cur_mark)
@@ -402,6 +444,20 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
         // straight line blows up math - dist should be exactly as given
         dist = offset_by;        
     }
+    else if ( isnan(theta) ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta is NAN) " << description );
+        // find the direction to the next point
+        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+
+        offset_dir = next_dir - 90.0;
+        while (offset_dir < 0.0)
+        {
+            offset_dir += 360.0;
+        }
+
+        // straight line blows up math - dist should be exactly as given
+        dist = offset_by;                
+    }
     else
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta NOT close to 180) " << description << ": theta is " << theta );
@@ -498,7 +554,9 @@ Point3D midpoint( Point3D p0, Point3D p1 )
     return Point3D( (p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2, (p0.z() + p1.z()) / 2 );
 }
 
-int LinearFeature::Finish( bool closed )
+#define DEBUG_LF    (0)
+
+int LinearFeature::Finish( bool closed, unsigned int idx )
 {
     TGPolygon   poly;
     TGPolygon   normals_poly;
@@ -516,6 +574,15 @@ int LinearFeature::Finish( bool closed )
     double      light_delta = 0;
     double      pt_x = 0, pt_y = 0;
 
+#if DEBUG_LF
+    void* ds_id;
+    void* l_id;
+
+    // Create a datasource for each linear feature
+    char ds_name[128];
+    sprintf(ds_name, "./lf_debug/%04d_%s", idx, description.c_str());
+    ds_id = tgShapefileOpenDatasource( ds_name );
+#endif
 
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers 
@@ -644,6 +711,13 @@ int LinearFeature::Finish( bool closed )
                 exit(1);
         }
 
+#if DEBUG_LF
+        // Create a new layer in the datasource for each Mark
+        char layer_name[128];
+        sprintf( layer_name, "%04d_%s", i, material.c_str() );
+        l_id = tgShapefileOpenLayer( ds_id, layer_name );
+#endif
+
         last_end_v   = 0.0f;
         for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
@@ -681,6 +755,12 @@ int LinearFeature::Finish( bool closed )
                 poly.add_node( 0, cur_outer );
                 poly.add_node( 0, cur_inner );
 
+#if DEBUG_LF
+                char feature_name[128];
+                sprintf( feature_name, "%04d", j);
+                tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
+#endif
+
                 sp.erase();
                 sp.set_poly( poly );
                 sp.set_material( material );
@@ -698,6 +778,11 @@ int LinearFeature::Finish( bool closed )
             prev_inner = cur_inner;
         }
     }
+
+#if DEBUG_LF
+    // Close the datasource
+    tgShapefileCloseDatasource( ds_id );
+#endif
 
     // now generate the supoerpoly list for lights with constant distance between lights (depending on feature type)
     for (unsigned int i=0; i<lights.size(); i++)
@@ -831,15 +916,23 @@ int LinearFeature::Finish( bool closed )
     return 1;
 }
 
-int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights )
+int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights, bool debug )
 {
     TGPolygon poly; 
     TGPolygon clipped;
+
+    if (debug) {
+        sglog().setLogLevels( SG_GENERAL, SG_BULK );
+    } else {
+        sglog().setLogLevels( SG_GENERAL, SG_INFO );
+    }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
         poly = marking_polys[i].get_poly();
+        poly = tgPolygonSimplify( poly );
+        poly = remove_tiny_contours( poly );
 
         SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipping poly " << i << " of " << marking_polys.size() );
 #if 1
@@ -848,8 +941,42 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
         clipped = tgPolygonDiffClipper( poly, *line_accum );
 #endif
 
+        // clean the poly before union with accum
+        clipped = reduce_degeneracy( clipped );
+
         marking_polys[i].set_poly( clipped );
         line_polys->push_back( marking_polys[i] );
+
+#if LF_DEBUG
+        if ( (debug) && ( i == 78 ) ) {
+            void* ds_id;
+            void* l_id;
+
+            SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << poly );
+
+            char ds_name[128];
+            sprintf(ds_name, "./lf_debug/problem");
+            ds_id = tgShapefileOpenDatasource( ds_name );
+
+            char layer_name[128];
+            sprintf( layer_name, "problem");
+            l_id = tgShapefileOpenLayer( ds_id, layer_name );
+
+            char feature_name[128];
+            sprintf( feature_name, "prob");
+            tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
+
+            sprintf( layer_name, "accum");
+            l_id = tgShapefileOpenLayer( ds_id, layer_name );
+
+            sprintf( feature_name, "accum");
+            tgShapefileCreateFeature( ds_id, l_id, *line_accum, feature_name );
+
+            tgShapefileCloseDatasource( ds_id );        
+        }
+#endif
+
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: union poly " << i << " of " << marking_polys.size() );
 
 #if 1
         *line_accum = tgPolygonUnion( poly, *line_accum );

@@ -88,7 +88,8 @@ public:
     long            FindAirport( string icao );
     void            AddAirport( string icao );
     void            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
-    void            Parse( void );
+    void            RemoveAirport( string icao );
+    void            Parse( string last_apt_file );
     
 private:
     bool            IsAirportDefinition( char* line, string icao );

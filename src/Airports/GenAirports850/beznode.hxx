@@ -9,6 +9,12 @@
 #include <simgear/debug/logstream.hxx>
 
 // TEMP...
+inline double LinearDistance( Point3D p0, Point3D p1 )
+{
+    return sqrt( pow( fabs( p1.x()-p0.x() ), 2 ) + 
+                 pow( fabs( p1.y()-p0.y() ), 2 ) );
+}
+
 inline Point3D CalculateLinearLocation( Point3D p0, Point3D p1, double t )
 {
     Point3D result;
@@ -19,6 +25,11 @@ inline Point3D CalculateLinearLocation( Point3D p0, Point3D p1, double t )
     result = (p0 * term1) + (p1 * term2);
 
     return result;
+}
+
+inline double QuadraticDistance( Point3D p0, Point3D cp, Point3D p1 )
+{
+    return LinearDistance( p0, cp ) + LinearDistance( cp, p1 );
 }
 
 inline Point3D CalculateQuadraticLocation( Point3D p0, Point3D cp, Point3D p1, double t )
@@ -34,7 +45,11 @@ inline Point3D CalculateQuadraticLocation( Point3D p0, Point3D cp, Point3D p1, d
     return result;
 }
 
-// TODO: Should be in a math library
+inline double CubicDistance( Point3D p0, Point3D cp0, Point3D cp1, Point3D p1 )
+{
+    return LinearDistance( p0, cp0 ) + LinearDistance( cp0, cp1 ) + LinearDistance( cp1, p1 );
+}
+
 inline Point3D CalculateCubicLocation( Point3D p0, Point3D cp0, Point3D cp1, Point3D p1, double t )
 {
     Point3D result;

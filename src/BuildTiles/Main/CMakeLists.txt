@@ -14,6 +14,7 @@ target_link_libraries(fgfs-construct
     Polygon Geometry
     Array Optimize Output landcover poly2tri
     TriangleJRS
+    ${GDAL_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY})

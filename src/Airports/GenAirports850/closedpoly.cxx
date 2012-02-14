@@ -100,6 +100,7 @@ void ClosedPoly::AddNode( BezNode* node )
     }
 }
 
+#if 0
 void ClosedPoly::CreateConvexHull( void )
 {
     TGPolygon    convexHull;
@@ -122,6 +123,7 @@ void ClosedPoly::CreateConvexHull( void )
         SG_LOG(SG_GENERAL, SG_ALERT, "Boundary size too small: " << boundary->size() << ". Ignoring..." );
     }
 }
+#endif
 
 void ClosedPoly::CloseCurContour()
 {
@@ -132,7 +134,7 @@ void ClosedPoly::CloseCurContour()
     if (cur_feature)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
-        cur_feature->Finish(true);
+        cur_feature->Finish(true, features.size() );
 
         features.push_back(cur_feature);
         cur_feature = NULL;        
@@ -145,7 +147,7 @@ void ClosedPoly::CloseCurContour()
         boundary = cur_contour;
 
         // generate the convex hull from the bezcontour node locations
-        CreateConvexHull();
+        // CreateConvexHull();
 
         cur_contour = NULL;
     }
@@ -158,18 +160,18 @@ void ClosedPoly::CloseCurContour()
 
 void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
 {
-    BezNode*    prevNode;
     BezNode*    curNode;
     BezNode*    nextNode;
         
-    Point3D prevLoc;
     Point3D curLoc;
     Point3D nextLoc;
     Point3D cp1;
     Point3D cp2;    
 
     int curve_type = CURVE_LINEAR;
-    unsigned int i;
+    double    total_dist;
+    double    meter_dist = 1.0f/96560.64f;
+    int       num_segs = BEZIER_DETAIL;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
 
@@ -177,23 +179,11 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
     dst->empty();
 
     // iterate through each bezier node in the contour
-    for (i=0; i <= src->size()-1; i++)
+    for (unsigned int i = 0; i <= src->size()-1; i++)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "\nHandling Node " << i << "\n\n");
 
-        if (i == 0)
-        {
-            // set prev node to last in the contour, as all contours must be closed
-            prevNode = src->at( src->size()-1 );
-        }
-        else
-        {
-            // otherwise, it's just the previous index
-            prevNode = src->at( i-1 );
-        }
-
         curNode = src->at(i);
-
         if (i < src->size() - 1)
         {
             nextNode = src->at(i+1);
@@ -203,37 +193,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
             // for the last node, next is the first. as all contours are closed
             nextNode = src->at(0);
         }
-
-        // determine the type of curve from prev (just to get correct prev location)
-        // once we start drawing the curve from cur to next, we can just remember the prev loc
-        if (prevNode->HasNextCp())
-        {
-            // curve from prev is cubic or quadratic 
-            if(curNode->HasPrevCp())
-            {
-                // curve from prev is cubic : calculate the last location on the curve
-                prevLoc = CalculateCubicLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-            }
-            else
-            {
-                // curve from prev is quadratic : use prev node next cp
-                prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), prevNode->GetNextCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-            }
-        }
-        else 
-        {
-            // curve from prev is quadratic or linear
-            if( curNode->HasPrevCp() )
-            {
-                // curve from prev is quadratic : calculate the last location on the curve
-                prevLoc = CalculateQuadraticLocation( prevNode->GetLoc(), curNode->GetPrevCp(), curNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (BEZIER_DETAIL-1) );
-            }
-            else
-            {
-                // curve from prev is linear : just use prev node location
-                prevLoc = prevNode->GetLoc();
-            }
-        }                    
 
         // now determine how we will iterate from current node to next node 
         if( curNode->HasNextCp() )
@@ -245,12 +204,14 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 curve_type = CURVE_CUBIC;
                 cp1 = curNode->GetNextCp();
                 cp2 = nextNode->GetPrevCp();
+                total_dist = CubicDistance( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc() );
             }
             else
             {
                 // curve is quadratic using current nodes cp as the cp
                 curve_type = CURVE_QUADRATIC;
                 cp1 = curNode->GetNextCp();
+                total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
             }
         }
         else
@@ -261,28 +222,94 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 // curve is quadratic using next nodes cp as the cp
                 curve_type = CURVE_QUADRATIC;
                 cp1 = nextNode->GetPrevCp();
+                total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
             }
             else
             {
                 // curve is linear
                 curve_type = CURVE_LINEAR;
+                total_dist = LinearDistance( curNode->GetLoc(), nextNode->GetLoc() );
             }
         }
+
+#if 0
+        double num_meters = total_dist / meter_dist;
+
+        // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 0.5 meter
+        if (num_meters < 4.0f)
+        {
+            num_segs = ((int)num_meters + 1) * 2;
+        }
+        else if (num_meters > 800.0f)
+        {
+            num_segs = num_meters / 100.0f + 1;
+        }
+        else
+        {
+            num_segs = 8;
+        }
+#endif
+
+        double num_meters = total_dist / meter_dist;
+        if (num_meters < 4.0f)
+        {
+            if (curve_type != CURVE_LINEAR)
+            {
+                // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 1/2 meter
+                num_segs = ((int)num_meters + 1) * 2;
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( < 4.0) so num_segs is " << num_segs );
+            }
+            else
+            {
+                num_segs = 1;
+            }
+        }
+        else if (num_meters > 800.0f)
+        {
+            // If total distance is > 800 meters, then we need to modify num Segments so that each segment <= 100 meters
+            num_segs = num_meters / 100.0f + 1;
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( > 100.0) so num_segs is " << num_segs );
+        }
+        else
+        {
+            if (curve_type != CURVE_LINEAR)
+            {            
+                num_segs = 8;
+                // num_segs = 16;
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " (OK) so num_segs is " << num_segs );
+            }
+            else
+            {
+                // make sure linear segments don't got over 100m
+                //num_segs = 1;
+                num_segs = num_meters / 100.0f + 1;
+            }
+        }
+
+        // if only one segment, revert to linear
+        if (num_segs == 1)
+        {
+            curve_type = CURVE_LINEAR;
+        }
+
 
         // initialize current location
         curLoc = curNode->GetLoc();
         if (curve_type != CURVE_LINEAR)
         {
-            for (int p=0; p<BEZIER_DETAIL; p++)
+            for (int p=0; p<num_segs; p++)
             {
                 // calculate next location
                 if (curve_type == CURVE_QUADRATIC)
                 {
-                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
+                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
                 }
                 else
                 {
-                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/BEZIER_DETAIL) * (p+1) );                    
+                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
                 }
 
                 // add the pavement vertex
@@ -298,22 +325,57 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                     SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
                 }
 
-                // now set set prev and cur locations for the next iteration
-                prevLoc = curLoc;
+                // now set set cur location for the next iteration
                 curLoc = nextLoc;
             }
         }
         else
         {
-            nextLoc = nextNode->GetLoc();
+//            nextLoc = nextNode->GetLoc();
 
-            // just add the one vertex - linear
-            dst->push_back( curLoc );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+//            // just add the one vertex - linear
+//            dst->push_back( curLoc );
+//            SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+
+            if (num_segs > 1)
+            {
+                for (int p=0; p<num_segs; p++)
+                {
+                    // calculate next location
+                    nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+
+                    // add the feature vertex
+                    dst->push_back( curLoc );
+
+                    if (p==0)
+                    {
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    }
+                    else
+                    {
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    }
+
+                    // now set set prev and cur locations for the next iteration
+                    curLoc = nextLoc;
+                }
+            }
+            else
+            {
+                nextLoc = nextNode->GetLoc();
+
+                // just add the one vertex - dist is small
+                dst->push_back( curLoc );
+
+                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+
+                curLoc = nextLoc;
+            }
         }
     }
 }
 
+#if 0
 void ExpandPoint( Point3D *prev, Point3D *cur, Point3D *next, double expand_by, double *heading, double *offset )
 {
     double offset_dir;
@@ -352,7 +414,9 @@ void ExpandPoint( Point3D *prev, Point3D *cur, Point3D *next, double expand_by, 
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "heading is " << *heading << " distance is " << *offset );
 }
+#endif
 
+#if 0
 void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
 {
     point_list expanded_boundary;
@@ -443,6 +507,7 @@ void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
 
     dst.add_contour( expanded_boundary, 9 );
 }
+#endif
 
 // finish the poly - convert to TGPolygon, and tesselate
 void ClosedPoly::Finish()
@@ -465,7 +530,7 @@ void ClosedPoly::Finish()
         // and add it to the geometry 
         pre_tess.add_contour( dst_contour, 0 );
 
-        // The convert the hole contours
+        // Then convert the hole contours
         for (unsigned int i=0; i<holes.size(); i++)
         {
             dst_contour.clear();
@@ -535,23 +600,8 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
     
             // do this before clipping and generating the base
-            pre_tess = remove_bad_contours( pre_tess );
-        	pre_tess = remove_dups( pre_tess );
+            pre_tess = tgPolygonSimplify( pre_tess );
             pre_tess = reduce_degeneracy( pre_tess );
-
-            //for (int c=0; c<pre_tess.contours(); c++)
-            //{
-            //    for (int pt=0; pt<pre_tess.contour_size(c); pt++)
-            //    {
-            //        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: contour " << c << " pt " << pt << ": (" << pre_tess.get_pt(c, pt).x() << "," << pre_tess.get_pt(c, pt).y() << ")" );
-            //    }
-            //}
-
-            //SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
-            //for (int i=0; i<pre_tess.contours(); i++)
-            //{
-            //    SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original countour " << i << " has " << pre_tess.contour_size(i) << " points" );
-            //}
 
             // grow pretess by a little bit
             //pre_tess = tgPolygonExpand( pre_tess, 0.05);     // 5cm
@@ -566,9 +616,9 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             }
 
 #if 1
-            TGPolygon clipped = tgPolygonDiffClipper( pre_tess, *accum );
-#else
             TGPolygon clipped = tgPolygonDiff( pre_tess, *accum );
+#else
+            TGPolygon clipped = tgPolygonDiffClipper( pre_tess, *accum );
 #endif
             SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
             for (int i=0; i<clipped.contours(); i++)
@@ -587,9 +637,9 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             rwy_polys->push_back( sp );
             SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
 #if 1
-            *accum = tgPolygonUnionClipper( pre_tess, *accum );
-#else
             *accum = tgPolygonUnion( pre_tess, *accum );
+#else
+            *accum = tgPolygonUnionClipper( pre_tess, *accum );
 #endif
             tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
             texparams->push_back( tp );

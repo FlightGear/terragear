@@ -23,6 +23,8 @@
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
+
+#include "beznode.hxx"
 #include "runway.hxx"
 
 #include <stdlib.h>
@@ -153,80 +155,78 @@ void Runway::gen_rwy( double alt_m,
     TGPolygon runway = gen_runway_w_mid( alt_m, 0, 0 );
 
     TGPolygon runway_half;
+    for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
 
-for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
+        if (rwhalf == 0) {
 
-    if (rwhalf == 0) {
+            //Create the first half of the runway (first entry in apt.dat)
+            runway_half.erase();
+            runway_half.add_node( 0, runway.get_pt(0, 3) );
+            runway_half.add_node( 0, runway.get_pt(0, 4) );
+            runway_half.add_node( 0, runway.get_pt(0, 5) );
+            runway_half.add_node( 0, runway.get_pt(0, 2) );
+        }
+    
+        else if (rwhalf == 1) {
 
-    //Create the first half of the runway (first entry in apt.dat)
-    runway_half.erase();
-    runway_half.add_node( 0, runway.get_pt(0, 3) );
-    runway_half.add_node( 0, runway.get_pt(0, 4) );
-    runway_half.add_node( 0, runway.get_pt(0, 5) );
-    runway_half.add_node( 0, runway.get_pt(0, 2) );
-    }
+            //Create the second runway half from apt.dat
+            runway_half.erase();
+            runway_half.add_node( 0, runway.get_pt(0, 0) );
+            runway_half.add_node( 0, runway.get_pt(0, 1) );
+            runway_half.add_node( 0, runway.get_pt(0, 2) );
+            runway_half.add_node( 0, runway.get_pt(0, 5) );
+        }
 
-    else if (rwhalf == 1) {
+        Point3D p;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway half pts (run " << rwhalf << ")");
+        for ( i = 0; i < runway_half.contour_size( 0 ); ++i ) {
+	        p = runway_half.get_pt(0, i);
+	        SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
+        }
 
-    //Create the second runway half from apt.dat
-    runway_half.erase();
-    runway_half.add_node( 0, runway.get_pt(0, 0) );
-    runway_half.add_node( 0, runway.get_pt(0, 1) );
-    runway_half.add_node( 0, runway.get_pt(0, 2) );
-    runway_half.add_node( 0, runway.get_pt(0, 5) );
-    }
-
-    Point3D p;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway half pts (run " << rwhalf << ")");
-    for ( i = 0; i < runway_half.contour_size( 0 ); ++i ) {
-	p = runway_half.get_pt(0, i);
-	SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
-    }
-
-    double length = rwy.length / 2.0;
-    if ( length < 3075 * SG_FEET_TO_METER ) {
-        SG_LOG( SG_GENERAL, SG_DEBUG,
-	        "Runway " << rwy.rwnum[0] << " is not long enough ("
+        double length = rwy.length / 2.0;
+        if ( length < 3075 * SG_FEET_TO_METER ) {
+            SG_LOG( SG_GENERAL, SG_DEBUG,
+                "Runway " << rwy.rwnum[0] << " is not long enough ("
                 << rwy.length << ") for precision markings!");
-    }
+        }
 
-    double start1_pct = 0.0;
-    double end1_pct = 0.0;
-    double heading = 0.0;
-    string rwname;
+        double start1_pct = 0.0;
+        double end1_pct = 0.0;
+        double heading = 0.0;
+        string rwname;
 
+        //
+        // Displaced threshold if it exists
+        //
 
-    //
-    // Displaced threshold if it exists
-    //
-
-    if (rwhalf == 0) {
-	    heading = rwy.heading + 180.0;
+        if (rwhalf == 0) {
+            heading = rwy.heading + 180.0;
             rwname = rwy.rwnum[0];
-    }
-    else if (rwhalf == 1) {
+        }
+        else if (rwhalf == 1) {
             heading = rwy.heading;
             rwname = rwy.rwnum[1];
-    }
-    SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
-    if ( rwy.threshold[rwhalf] > 0.0 ) {
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
+        }
+        SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
+        if ( rwy.threshold[rwhalf] > 0.0 ) {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
                 << rwy.threshold[rwhalf] );
 
-        // reserve 90' for final arrows
-        double thresh = rwy.threshold[rwhalf] - 90.0 * SG_FEET_TO_METER;
+            // reserve 90' for final arrows
+            double thresh = rwy.threshold[rwhalf] - 90.0 * SG_FEET_TO_METER;
 
-        // number of full center arrows
-        int count = (int)(thresh / 200.0 * SG_FEET_TO_METER);
+            // number of full center arrows
+            int count = (int)(thresh / 200.0 * SG_FEET_TO_METER);
 
-        // length of starting partial arrow
-        double part_len = thresh - ( count * 200.0 * SG_FEET_TO_METER);
-        double tex_pct = (200.0 * SG_FEET_TO_METER - part_len) / 200.0 * SG_FEET_TO_METER;
+            // length of starting partial arrow
+            double part_len = thresh - ( count * 200.0 * SG_FEET_TO_METER);
+            double tex_pct = (200.0 * SG_FEET_TO_METER - part_len) / 200.0 * SG_FEET_TO_METER;
 
-        // starting (possibly partial chunk)
-        start1_pct = end1_pct;
-        end1_pct = start1_pct + ( part_len / length );
-        gen_runway_section( runway_half,
+            // starting (possibly partial chunk)
+            start1_pct = end1_pct;
+            end1_pct = start1_pct + ( part_len / length );
+            gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
                             0.0, 1.0, tex_pct, 1.0,
@@ -234,72 +234,70 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
                             material, "dspl_thresh",
                             rwy_polys, texparams, accum );
 
-        // main chunks
-        for ( i = 0; i < count; ++i ) {
-            start1_pct = end1_pct;
-            end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
-            gen_runway_section( runway_half,
+            // main chunks
+            for ( i = 0; i < count; ++i ) {
+                start1_pct = end1_pct;
+                end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
+                gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
                                 material, "dspl_thresh",
                                 rwy_polys, texparams, accum );
-        }
+            }
 
-        // final arrows
-        start1_pct = end1_pct;
-        end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
-        gen_runway_section( runway_half,
+            // final arrows
+            start1_pct = end1_pct;
+            end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
+            gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
                             heading,
                             material, "dspl_arrows",
                             rwy_polys, texparams, accum );
+        }
+
+
+    if (rwy.marking[rwhalf] == 0){
+
+        // No threshold
+
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 10 / length );
+        gen_runway_section( runway_half,
+                    start1_pct, end1_pct,
+                    0.0, 1.0,
+                    0.0, 1.0, 0.0, 1.0,
+                    heading,
+                    material, "no_threshold",
+                    rwy_polys, texparams, accum );
+    } else {
+
+        // Thresholds for all others
+
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + ( 202.0 * SG_FEET_TO_METER / length );
+        gen_runway_section( runway_half,
+                    start1_pct, end1_pct,
+                    0.0, 1.0,
+                    0.0, 1.0, 0.0, 1.0,
+                    heading,
+                    material, "threshold",
+                    rwy_polys, texparams, accum );
     }
-
-
- if (rwy.marking[rwhalf] == 0){
-
-    // No threshold
-
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 10 / length );
-    gen_runway_section( runway_half,
-			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			heading,
-			material, "no_threshold",
-			rwy_polys, texparams, accum );
- } else {
-
-    // Thresholds for all others
-
-    start1_pct = end1_pct;
-    end1_pct = start1_pct + ( 202.0 * SG_FEET_TO_METER / length );
-    gen_runway_section( runway_half,
-			start1_pct, end1_pct,
-			0.0, 1.0,
-                        0.0, 1.0, 0.0, 1.0,
-			heading,
-			material, "threshold",
-			rwy_polys, texparams, accum );
- }
 
     // Runway designation block
     gen_rw_designation( material, runway_half, heading,
                         rwname, start1_pct, end1_pct, rwy_polys, texparams, accum );
 
-
-
     if (rwy.marking[rwhalf] > 1){
-    // Generate remaining markings depending on type of runway
-    gen_rw_marking( runway_half,
-		 start1_pct, end1_pct,
-		 heading, material,
-		 rwy_polys, texparams, accum, rwy.marking[rwhalf] );
+        // Generate remaining markings depending on type of runway
+        gen_rw_marking( runway_half,
+                start1_pct, end1_pct,
+                heading, material,
+                rwy_polys, texparams, accum, rwy.marking[rwhalf] );
     }
 
     //
@@ -314,48 +312,49 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
     double rest1_inc = (1.0 - end1_pct) / divs;
 
     while ( end1_pct < 1.0 ) {
-	start1_pct = end1_pct;
-	end1_pct = start1_pct + rest1_inc;
+        start1_pct = end1_pct;
+        end1_pct = start1_pct + rest1_inc;
 
-	gen_runway_section( runway_half,
+        gen_runway_section( runway_half,
 			    start1_pct, end1_pct,
-			    0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-			    heading,
-			    material, "rest",
-			    rwy_polys, texparams, accum );
-    }
+                0.0, 1.0,
+                0.0, 1.0, 0.0, 1.0,
+                heading,
+                material, "rest",
+                rwy_polys, texparams, accum );
+        }
 
-    gen_runway_overrun( runway_half, rwhalf,
+        gen_runway_overrun( runway_half, rwhalf,
                        material,
                        rwy_polys, texparams, accum );
-
-
-}
+    }
 }
 
 void Runway::BuildShoulder( float alt_m,
                             superpoly_list *rwy_polys,
                             texparams_list *texparams,
-                            ClipPolyType *accum )
+                            ClipPolyType *accum,
+                            TGPolygon* apt_base, 
+                            TGPolygon* apt_clearing )
 {
+    TGPolygon base, safe_base;
+
     string shoulder_surface = "";
     double shoulder_width = 0.0f;
 
-    if (rwy.shoulder > 0){  // Add a shoulder to the runway
-        //shoulder_width = rwy.width * 0.15;
-        //if (shoulder_width > 11.0){
-        //    shoulder_width = 11.0;
-        //}
+    if (rwy.shoulder > 0){  
+        // Add a shoulder to the runway
         shoulder_width = 11.0f;
 
         if (rwy.shoulder == 1){
             shoulder_surface = "pa_shoulder";
         } else if (rwy.shoulder == 2){
             shoulder_surface = "pc_shoulder";
-        } else SG_LOG(SG_GENERAL, SG_ALERT, "Unknown shoulder surface code = " << rwy.shoulder );
-
-    } else if (rwy.shoulder == 0){ // We add a fake shoulder if the runway has an asphalt or concrete surface
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Unknown shoulder surface code = " << rwy.shoulder );
+        }
+    } else {  
+        // We add a fake shoulder if the runway has an asphalt or concrete surface
         shoulder_width = 1.0;
         if (rwy.surface == 1){
             shoulder_surface = "pa_shoulder_f";
@@ -363,48 +362,104 @@ void Runway::BuildShoulder( float alt_m,
             shoulder_surface = "pc_shoulder_f";
         }
     }
+
     SG_LOG(SG_GENERAL, SG_DEBUG, "Shoulder width = " << shoulder_width );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Shoulder surface is: " << shoulder_surface );
 
     if (shoulder_width > 0.0f) {
-
         // we need to break these shoulders up into managable pieces, as we're asked to triangulate
         // 3-4 km long by 1m wide strips - jrs-can't handle it.
         double max_dist = (double)shoulder_width * 25.0f;
-        int numSegs = (rwy.length / max_dist) + 1;
-        double dist = rwy.length / (double)numSegs;
+        if (max_dist > 100.0f) {
+            max_dist = 100.0f;
+        }
+        int    numSegs = (rwy.length / max_dist) + 1;
+        double dist    = rwy.length / numSegs;
 
-        // Create both shoulder sides
-        for (int i=0; i<2; ++i){
-            double step;
-            double lat = 0.0f, lon = 0.0f, r;
+        TGPolygon   poly;
+        TGSuperPoly sp;
+        TGTexParams tp;
 
-            /* nudge the shoulders so the really long lines overlap the runway a bit */
-            /* If the are 'equal' there's a good chance roundoff error can create a  */
-            /* REALY thin long polygon, which causes a segfault  */
-            if (i == 0){
-                step= (rwy.width + shoulder_width) * 0.5;
-            } else if (i == 1) {
-                step= -(rwy.width + shoulder_width) * 0.5;
+        double lat = 0.0f;
+        double lon = 0.0f;
+        double r   = 0.0f;
+        Point3D inner_start, inner_end;
+        Point3D outer_start, outer_end;
+        Point3D curInnerLoc, nextInnerLoc;
+        Point3D curOuterLoc, nextOuterLoc;
+
+        // Create two paralell lines from start position to end position, and interpolate in between
+        // many airports line the taxiway directly to the corner of the runway.  This can create problems, 
+        // so extend the shoulders 0.5 meters past each end of the runway
+        for (int i=0; i<2; i++) {
+            double rev_hdg =  rwy.heading - 180.0;
+            if ( rev_hdg < 0 ) { rev_hdg += 360.0; }
+
+            if (i == 0) {
+                // left side
+                double left_hdg = rwy.heading - 90.0;
+                if ( left_hdg < 0 ) { left_hdg += 360.0; }
+
+                geo_direct_wgs_84 ( 0, rwy.lat[0], rwy.lon[0], left_hdg, rwy.width*.5, &lat, &lon, &r );
+                geo_direct_wgs_84 ( 0, lat, lon, rev_hdg, 0.5f, &lat, &lon, &r );
+
+                inner_start = Point3D( lon, lat, 0.0f );
+                geo_direct_wgs_84 ( 0, lat, lon, rwy.heading, rwy.length+1.0f, &lat, &lon, &r );
+                inner_end   = Point3D( lon, lat, 0.0f );
+
+                geo_direct_wgs_84 ( 0, rwy.lat[0], rwy.lon[0], left_hdg, rwy.width*.5 + shoulder_width, &lat, &lon, &r );
+                geo_direct_wgs_84 ( 0, lat, lon, rev_hdg, 0.5f, &lat, &lon, &r );
+
+                outer_start = Point3D( lon, lat, 0.0f );
+                geo_direct_wgs_84 ( 0, lat, lon, rwy.heading, rwy.length+1.0f, &lat, &lon, &r );
+                outer_end   = Point3D( lon, lat, 0.0f );
+            } else {
+                // right side
+                double right_hdg = rwy.heading + 90.0;
+                if ( right_hdg > 360 ) { right_hdg -= 360.0; }
+
+                geo_direct_wgs_84 ( 0, rwy.lat[0], rwy.lon[0], right_hdg, rwy.width*.5, &lat, &lon, &r );
+                geo_direct_wgs_84 ( 0, lat, lon, rev_hdg, 0.5f, &lat, &lon, &r );
+
+                inner_start = Point3D( lon, lat, 0.0f );
+                geo_direct_wgs_84 ( 0, lat, lon, rwy.heading, rwy.length+1.0f, &lat, &lon, &r );
+                inner_end   = Point3D( lon, lat, 0.0f );
+
+                geo_direct_wgs_84 ( 0, rwy.lat[0], rwy.lon[0], right_hdg, rwy.width*.5 + shoulder_width, &lat, &lon, &r );
+                geo_direct_wgs_84 ( 0, lat, lon, rev_hdg, 0.5f, &lat, &lon, &r );
+
+                outer_start = Point3D( lon, lat, 0.0f );
+                geo_direct_wgs_84 ( 0, lat, lon, rwy.heading, rwy.length+1.0f, &lat, &lon, &r );
+                outer_end   = Point3D( lon, lat, 0.0f );
             }
-            double left_hdg = rwy.heading - 90.0;
 
-            if ( left_hdg < 0 ) { left_hdg += 360.0; }
+            curInnerLoc = inner_start;
+            curOuterLoc = outer_start;
 
-            geo_direct_wgs_84 ( alt_m, rwy.lat[0], rwy.lon[0], left_hdg, step, &lat, &lon, &r );
-            Point3D ref = Point3D( lon, lat, 0.0f );
-
-            for (int j=0; j<numSegs; j++)
+            for (int p=0; p<numSegs; p++)
             {
-                geo_direct_wgs_84 ( alt_m, ref.y(), ref.x(), rwy.heading, (j*dist), &lat, &lon, &r );
-                TGPolygon shoulderSegment = gen_wgs84_rect( lat, lon, rwy.heading, dist, shoulder_width+1.0f );
+                // calculate next locations
+                nextInnerLoc = CalculateLinearLocation( inner_start, inner_end, (1.0f/numSegs) * (p+1) );                    
+                nextOuterLoc = CalculateLinearLocation( outer_start, outer_end, (1.0f/numSegs) * (p+1) );                    
 
-                TGSuperPoly sp;
-                TGTexParams tp;
+                // Generate a poly
+                poly.erase();
+                if (i == 0 ) {
+                    poly.add_node( 0, curInnerLoc );
+                    poly.add_node( 0, nextInnerLoc );
+                    poly.add_node( 0, nextOuterLoc );
+                    poly.add_node( 0, curOuterLoc );
+                } else {
+                    poly.add_node( 0, curOuterLoc );
+                    poly.add_node( 0, nextOuterLoc );
+                    poly.add_node( 0, nextInnerLoc );
+                    poly.add_node( 0, curInnerLoc );
+                }
+
 #if 1
-                TGPolygon clipped = tgPolygonDiff( shoulderSegment, *accum );
+                TGPolygon clipped = tgPolygonDiff( poly, *accum );
 #else
-                TGPolygon clipped = tgPolygonDiffClipper( shoulderSegment, *accum );
+                TGPolygon clipped = tgPolygonDiffClipper( poly, *accum );
 #endif
                 sp.erase();
                 sp.set_poly( clipped );
@@ -412,18 +467,34 @@ void Runway::BuildShoulder( float alt_m,
                 rwy_polys->push_back( sp );
 
 #if 1
-                *accum = tgPolygonUnion( shoulderSegment, *accum );
+                *accum = tgPolygonUnion( poly, *accum );
 #else
-                *accum = tgPolygonUnionClipper( shoulderSegment, *accum );
+                *accum = tgPolygonUnionClipper( poly, *accum );
 #endif
 
-                tp = TGTexParams( shoulderSegment.get_pt(0,0), -shoulder_width, dist, rwy.heading );
-                if (i == 0){
+                tp = TGTexParams( poly.get_pt(0,0), shoulder_width, dist, rwy.heading );
+                tp.set_maxv(dist);
+                // reverse u direction for right side
+                if ( i == 1 ) {
                     tp.set_maxu(0);
                     tp.set_minu(1);
                 }
                 texparams->push_back( tp );
+
+                // Add to base / safe base
+                base      = tgPolygonExpand( poly, 20.0f );
+                safe_base = tgPolygonExpand( poly, 50.0f );
+
+                // add this to the airport clearing
+                *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
+
+                // and add the clearing to the base
+                *apt_base = tgPolygonUnion( base, *apt_base );
+
+                // now set cur locations for the next iteration
+                curInnerLoc = nextInnerLoc;
+                curOuterLoc = nextOuterLoc;
             }
-        }
+       }
     }
 }

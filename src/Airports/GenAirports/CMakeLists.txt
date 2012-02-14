@@ -24,6 +24,7 @@ target_link_libraries(genapts
     TriangleJRS
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+    ${GDAL_LIBRARY}
 	${GPC_LIBRARY}
 	${NEWMAT_LIBRARY})
 

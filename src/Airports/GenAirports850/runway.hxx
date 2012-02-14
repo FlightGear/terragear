@@ -50,7 +50,9 @@ public:
     void BuildShoulder( float alt_m,
                                 superpoly_list *rwy_polys,
                                 texparams_list *texparams,
-                                ClipPolyType *accum );
+                                ClipPolyType *accum,
+                                TGPolygon* apt_base, 
+                                TGPolygon* apt_clearing );
     
 private:
     struct TGRunway {
@@ -152,6 +154,7 @@ private:
     superpoly_list gen_ssalx( float alt_m, const string& kind, bool recip );
     superpoly_list gen_malsx( float alt_m, const string& kind, bool recip );
 };
+
 typedef std::vector <Runway *> RunwayList;
 
 

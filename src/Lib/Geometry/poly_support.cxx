@@ -1452,25 +1452,161 @@ TGPolygon remove_bad_contours( const TGPolygon &poly ) {
 
 // remove any too small contours
 TGPolygon remove_tiny_contours( const TGPolygon &poly ) {
+    double min_area = SG_EPSILON*SG_EPSILON;
     TGPolygon result;
     result.erase();
 
     for ( int i = 0; i < poly.contours(); ++i ) {
-	point_list contour = poly.get_contour( i );
+        point_list contour = poly.get_contour( i );
         
-        double area=poly.area_contour(i);
-        
-        if (-SG_EPSILON*SG_EPSILON<area && area<SG_EPSILON*SG_EPSILON) {
-            // cout << "tossing a bad contour " << i << " (too small)" << endl;
+        double area=poly.area_contour(i);        
+
+        if (-min_area<area && area<min_area) {
+            SG_LOG(SG_GENERAL, SG_INFO, "remove_tiny_contours " << i << " area is " << area << ": removing");
             continue;
+        } else {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "remove_tiny_contours NO - " << i << " area is " << area << " requirement is " << min_area);
         }
         
-	/* keeping the contour */
-	int flag = poly.get_hole_flag( i );
-	result.add_contour( contour, flag );
+        /* keeping the contour */
+        int flag = poly.get_hole_flag( i );
+        result.add_contour( contour, flag );
     }
 
     return result;
 }
 
+// remove any too small contours
+TGPolygon remove_small_contours( const TGPolygon &poly ) {
+    double min_area = 200*SG_EPSILON*SG_EPSILON;
+    TGPolygon result;
+    result.erase();
+
+    for ( int i = 0; i < poly.contours(); ++i ) {
+        point_list contour = poly.get_contour( i );
+        
+        double area=poly.area_contour(i);        
+
+        if (-min_area<area && area<min_area) {
+            SG_LOG(SG_GENERAL, SG_INFO, "remove_small_contours " << i << " area is " << area << ": removing");
+            continue;
+        }
+        
+        /* keeping the contour */
+        int flag = poly.get_hole_flag( i );
+        result.add_contour( contour, flag );
+    }
+
+    return result;
+}
+
+// seperate
+#include <ogrsf_frmts.h>
+const char* format_name="ESRI Shapefile";
+
+void tgShapefileInit( void )
+{
+    OGRRegisterAll();
+}
+
+void* tgShapefileOpenDatasource( const char* datasource_name )
+{
+    OGRDataSource *datasource;
+    OGRSFDriver   *ogrdriver;
+        
+    ogrdriver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(format_name);
+    if (!ogrdriver) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unknown datasource format driver: " << format_name);
+        exit(1);
+    }
+        
+    datasource = ogrdriver->CreateDataSource(datasource_name, NULL);
+    if (!datasource) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to create datasource: " << datasource_name);
+        exit(1);
+    }
+
+    return (void*)datasource;
+}
+
+void* tgShapefileOpenLayer( void* ds_id, const char* layer_name ) {
+    OGRDataSource* datasource = (OGRDataSource *)ds_id;
+    OGRLayer* layer;
+        
+    OGRSpatialReference srs;
+    srs.SetWellKnownGeogCS("WGS84");
+    layer = datasource->CreateLayer( layer_name, &srs, wkbPolygon25D, NULL);
+    if (!layer) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Creation of layer '" << layer_name << "' failed");
+        return NULL;
+    }
+        
+    OGRFieldDefn descriptionField("ID", OFTString);
+    descriptionField.SetWidth(128);
+        
+    if( layer->CreateField( &descriptionField ) != OGRERR_NONE ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Creation of field 'Description' failed");
+    }
+        
+    return (void*)layer;
+}
+
+void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description )
+{        
+    OGRDataSource* datasource = (OGRDataSource *)ds_id;
+    OGRLayer*      layer      = (OGRLayer*)l_id;
+    OGRPolygon*    polygon    = new OGRPolygon();
+
+    for ( int i = 0; i < poly.contours(); i++ ) {
+        bool skip_ring=false;
+        point_list contour = poly.get_contour( i );
+
+        if (contour.size()<3) {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
+            skip_ring=true;
+        }
+                        
+        // FIXME: Current we ignore the hole-flag and instead assume
+        //        that the first ring is not a hole and the rest
+        //        are holes
+        OGRLinearRing *ring=new OGRLinearRing();
+        for (unsigned int pt = 0; pt < contour.size(); pt++) {
+            OGRPoint *point=new OGRPoint();
+                                
+            point->setX( contour[pt].x() );
+            point->setY( contour[pt].y() );
+            point->setZ( 0.0 );
+            ring->addPoint(point);
+        }
+        ring->closeRings();
+                        
+        if (!skip_ring) {
+            polygon->addRingDirectly(ring);
+        }
+       
+        OGRFeature* feature = NULL;
+        feature = new OGRFeature( layer->GetLayerDefn() );
+        feature->SetField("ID", description);
+        feature->SetGeometry(polygon);
+        if( layer->CreateFeature( feature ) != OGRERR_NONE )
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+        }
+        OGRFeature::DestroyFeature(feature);
+    }
+}
+
+void tgShapefileCloseLayer( void* l_id )
+{
+    OGRLayer* layer = (OGRLayer *)l_id;
+
+    //OGRLayer::DestroyLayer( layer );
+}
+
+void tgShapefileCloseDatasource( void* ds_id )
+{
+    OGRDataSource* datasource = (OGRDataSource *)ds_id;
+
+    OGRDataSource::DestroyDataSource( datasource );
+}
 

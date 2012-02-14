@@ -25,6 +25,7 @@
 
 #include <Polygon/index.hxx>
 #include <Geometry/util.hxx>
+#include <Geometry/poly_support.hxx>
 
 #include "beznode.hxx"
 #include "closedpoly.hxx"
@@ -50,10 +51,10 @@ using namespace std;
 static void usage( int argc, char **argv ) {
     SG_LOG(SG_GENERAL, SG_ALERT, 
 	   "Usage " << argv[0] << " --input=<apt_file> "
-	   << "--work=<work_dir> [ --start-id=abcd ] [ --nudge=n ] "
+	   << "--work=<work_dir> [ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
 	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
 	   << "[--clear-dem-path] [--dem-path=<path>] [--max-slope=<decimal>] "
-           << "[ --airport=abcd ]  [--tile=<tile>] [--chunk=<chunk>] [--verbose] [--help]");
+       << "[ --airport=abcd ]  [--tile=<tile>] [--chunk=<chunk>] [--verbose] [--help]");
 }
 
 
@@ -90,6 +91,8 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
     cout << "a valid airport code eg. --airport-id=KORD, or a starting airport can be specified using --start-id=abcd \n";
     cout << "where once again abcd is a valid airport code.  In this case, all airports in the file subsequent to the \n";
     cout << "start-id are done.  This is convienient when re-starting after a previous error.  \n";
+    cout << "If you want to restart with the airport after a problam icao, use --restart-id=abcd, as this works the same as\n";
+    cout << " with the exception that the airport abcd is skipped \n";
     cout << "\nAn input area may be specified by lat and lon extent using min and max lat and lon.  \n";
     cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string \n";
     cout << "such as eg. w080n40, e000s27.  \n";
@@ -134,7 +137,9 @@ int main(int argc, char **argv)
     string work_dir = "";
     string input_file = "";
     string start_id = "";
+    string restart_id = "";
     string airport_id = "";
+    string last_apt_file = "./last_apt.txt";
     int arg_pos;
 
     for (arg_pos = 1; arg_pos < argc; arg_pos++) 
@@ -156,10 +161,18 @@ int main(int argc, char **argv)
         {
     	    start_id = arg.substr(11);
      	} 
+        else if ( arg.find("--restart-id=") == 0 ) 
+        {
+    	    restart_id = arg.substr(13);
+     	} 
         else if ( arg.find("--nudge=") == 0 ) 
         {
     	    nudge = atoi( arg.substr(8).c_str() );
     	} 
+        else if ( arg.find("--last_apt_file=") == 0 ) 
+        {
+    	    last_apt_file = arg.substr(16);
+     	} 
         else if ( arg.find("--min-lon=") == 0 ) 
         {
     	    min_lon = atof( arg.substr(10).c_str() );
@@ -270,6 +283,9 @@ int main(int argc, char **argv)
     string counter_file = airportareadir+"/poly_counter";
     poly_index_init( counter_file );
 
+    // Initialize shapefile support (for debugging)
+    tgShapefileInit();
+
     sg_gzifstream in( input_file );
     if ( !in.is_open() ) 
     {
@@ -289,7 +305,7 @@ int main(int argc, char **argv)
         SG_LOG(SG_GENERAL, SG_INFO, "Finished Adding airport - now parse");
         
         // and start the parser
-        parser->Parse();
+        parser->Parse( last_apt_file );
     }
     else if ( start_id != "" )
     {
@@ -302,7 +318,23 @@ int main(int argc, char **argv)
         parser->AddAirports( position, min_lat, min_lon, max_lat, max_lon );
 
         // parse all the airports that were found
-        parser->Parse();
+        parser->Parse( last_apt_file );
+    }
+    else if ( restart_id != "" )
+    {
+        SG_LOG(SG_GENERAL, SG_INFO, "move forward airport after " << restart_id );
+
+        // scroll forward in datafile
+        position = parser->FindAirport( restart_id );
+
+        // add all remaining airports within boundary
+        parser->AddAirports( position, min_lat, min_lon, max_lat, max_lon );
+
+        // but remove the restart id - it's broken
+        parser->RemoveAirport( restart_id );
+
+        // parse all the airports that were found
+        parser->Parse( last_apt_file );
     }
     else
     {
@@ -310,12 +342,13 @@ int main(int argc, char **argv)
         parser->AddAirports( 0, min_lat, min_lon, max_lat, max_lon );
 
         // and parser them
-        parser->Parse();
+        parser->Parse( last_apt_file );
     }
 
     delete parser;
 
     SG_LOG(SG_GENERAL, SG_INFO, "Done");
+    exit(0);
 
     return 0;
 }

@@ -25,6 +25,7 @@ target_link_libraries(genapts850
     Polygon Geometry
     Array Optimize Output poly2tri
     TriangleJRS
+    ${GDAL_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GPC_LIBRARY}

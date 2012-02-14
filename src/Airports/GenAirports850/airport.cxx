@@ -29,6 +29,12 @@
 
 #include "elevations.hxx"
 
+
+#include <stdio.h>
+
+string SGLOG_GREEN  = "\033[0;32m";
+string SGLOG_NORMAL = "\033[0m";
+
 Airport::Airport( int c, char* def)
 {
     int   numParams;
@@ -426,6 +432,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
+#if 0
+    if (icao == "SSOK")
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Injecting error at icao " << icao );
+        exit(-1);
+    }
+#endif
+
     // Starting to clip the polys
     gettimeofday(&build_start, NULL);
 
@@ -435,7 +449,17 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         for ( unsigned int i=0; i<features.size(); i++ )
         {
             SG_LOG(SG_GENERAL, SG_INFO, "Build Feature Poly " << i << " of " << features.size() << " : " << features[i]->GetDescription() );
-            features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum, &rwy_lights );
+
+#if 0
+            if ( i == 22 ) {
+                features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum, &rwy_lights, true );
+            } else {
+                //features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum, &rwy_lights, false );
+            }
+#else
+            features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum, &rwy_lights, false );
+#endif
+
         }
     }
     else
@@ -526,6 +550,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     gettimeofday(&log_time, NULL);
     SG_LOG( SG_GENERAL, SG_ALERT, "Finished building pavements for " << icao << " at " << ctime(&log_time.tv_sec) );
 
+#if 0
     // Build runway shoulders here
     for ( unsigned int i=0; i<runways.size(); i++ )
     {
@@ -533,9 +558,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
         if ( runways[i]->GetsShoulder() )
         {
-            runways[i]->BuildShoulder( altitude, &rwy_polys, &rwy_tps, &accum );
+            runways[i]->BuildShoulder( altitude, &rwy_polys, &rwy_tps, &accum, &apt_base, &apt_clearing );
         }
     }
+#endif
 
     // build the base and clearing if there's a boundary
     if (boundary)
@@ -671,6 +697,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_spikes( poly );
         poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
+        poly = remove_small_contours( poly );
 
     	rwy_polys[k].set_poly( poly );
     }
@@ -688,6 +715,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_spikes( poly );
         poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
+        poly = remove_small_contours( poly );
 
     	pvmt_polys[k].set_poly( poly );
     }
@@ -701,10 +729,12 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         poly = remove_cycles( poly );
         poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
+        poly = tgPolygonSimplify( poly );
         poly = remove_tiny_contours( poly );
         poly = remove_spikes( poly );
         poly = remove_dups( poly );
         poly = remove_bad_contours( poly );
+        poly = remove_tiny_contours( poly );
 
     	line_polys[k].set_poly( poly );
     }
@@ -728,6 +758,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     base_poly = remove_spikes( base_poly );
     base_poly = remove_dups( base_poly );
     base_poly = remove_bad_contours( base_poly );
+    base_poly = remove_small_contours( base_poly );
 
     gettimeofday(&cleanup_end, NULL);
     timersub(&cleanup_end, &cleanup_start, &cleanup_time);
@@ -778,7 +809,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = pvmt_polys[i].get_poly();
 
 #if 0
-        if ( i == 1 ) {
+        if ( i == 0 ) {
             SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << poly );
 
             tgChopNormalPolygon( "/home/pete", "Base", poly, false );
@@ -814,10 +845,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = line_polys[i].get_poly();
 
 #if 0
-        if ( i == 627 ) {
+        if ( i == 282 ) {
             SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << poly );
 
-            tgChopNormalPolygon( "/home/pete", "Base", poly, false );
+            tgChopNormalPolygon( "/home/pete/", "Base", poly, false );
             verbose_triangulation = true;
         } else {
             verbose_triangulation = false;
@@ -839,7 +870,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << base_poly );
 
-        tgChopNormalPolygon( "/home/pete", "Base", base_poly, false );
+        tgChopNormalPolygon( "/home/pete/", "Base", base_poly, false );
         verbose_triangulation = true;
     }
 #endif
@@ -1099,7 +1130,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // Now build the fitted airport surface ...
 
     // calculation min/max coordinates of airport area
-    SG_LOG(SG_GENERAL, SG_INFO, " calculation min/max coordinates of airport area");
+    SG_LOG(SG_GENERAL, SG_DEBUG, " calculation min/max coordinates of airport area");
 
     Point3D min_deg(9999.0, 9999.0, 0), max_deg(-9999.0, -9999.0, 0);
     for ( unsigned int j = 0; j < nodes.get_node_list().size(); ++j ) 
@@ -1127,7 +1158,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Before extending for lights: min = " << min_deg << " max = " << max_deg );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Before extending for lights: min = " << min_deg << " max = " << max_deg );
 
     // extend the min/max coordinates of airport area to cover all
     // lights as well
@@ -1158,8 +1189,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             }
         }
     }
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, " done " );
 
     // Extend the area a bit so we don't have wierd things on the edges
     double dlon = max_deg.lon() - min_deg.lon();
@@ -1571,4 +1600,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // write_boundary( holepath, b, hull, poly_index );
     tgChopNormalPolygon( holepath, "Hole", divided_base, true );
     tgChopNormalPolygon( holepath, "Airport", apt_clearing, false );
+
+    SG_LOG( SG_GENERAL, SG_ALERT, SGLOG_GREEN << "\nSUCCESS generating " << icao << SGLOG_NORMAL << "\n" );
 }

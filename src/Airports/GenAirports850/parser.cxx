@@ -306,7 +306,18 @@ void Parser::AddAirports( long start_pos, float min_lat, float min_lon, float ma
 	}
 }
 
-void Parser::Parse()
+void Parser::RemoveAirport( string icao )
+{
+    for (unsigned int i = 0; i < airport_icaos.size(); i++ ) {
+        if (airport_icaos[i] == icao) {
+            parse_positions.erase(parse_positions.begin()+i);
+            airport_icaos.erase(airport_icaos.begin()+i);
+            break;
+        }
+    }
+}
+
+void Parser::Parse( string last_apt_file )
 {
     char tmp[2048];
     struct timeval parse_start;
@@ -334,6 +345,11 @@ void Parser::Parse()
         SG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
         SG_LOG( SG_GENERAL, SG_ALERT, "Parsing airport " << airport_icaos[i] << " at " << parse_positions[i] << " start time " << ctime(&parse_start.tv_sec) );
         in.seekg(parse_positions[i], ios::beg);
+
+        // save the airport we are working on
+        char command[256];
+        sprintf( command, "echo %s > %s", airport_icaos[i].c_str(), last_apt_file.c_str() );
+        system( command );
 
         while ( !in.eof() && (cur_state != STATE_DONE ) )
         {
@@ -760,7 +776,7 @@ int Parser::ParseLine(char* line)
                         }
                         if (cur_airport)
                         {
-                            cur_feat->Finish( true );
+                            cur_feat->Finish( true, cur_airport->NumFeatures() );
                             cur_airport->AddFeature( cur_feat );
                         }
                         cur_feat = NULL;
@@ -794,7 +810,7 @@ int Parser::ParseLine(char* line)
                             }
                             if (cur_airport)
                             {
-                                cur_feat->Finish( false );
+                                cur_feat->Finish( false, cur_airport->NumFeatures()  );
                                 cur_airport->AddFeature( cur_feat );
                             }
                         }

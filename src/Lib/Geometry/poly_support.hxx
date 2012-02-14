@@ -107,6 +107,16 @@ TGPolygon remove_bad_contours( const TGPolygon &poly );
 
 // remove any too small contours
 TGPolygon remove_tiny_contours( const TGPolygon &poly );
+TGPolygon remove_small_contours( const TGPolygon &poly );
+
+
+// Write Polygons to Shapefile Support
+void    tgShapefileInit( void );
+void*   tgShapefileOpenDatasource( const char* datasource_name );
+void*   tgShapefileOpenLayer( void* ds_id, const char* layer_name );
+void    tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* feature_name );
+void    tgShapefileCloseLayer( void* l_id );
+void    tgShapefileCloseDatasource( void* ds_id );
 
 
 #endif // _POLY_SUPPORT_HXX
