@@ -2678,13 +2678,26 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
     // Please send me documentation for this configuration
     ////////////////////////////////////////////////////////////
 
-    if ( rwy.approach_lights[0] == 3 || rwy.approach_lights[0] == 4 /* Calvert 1, 2, and 3 */ ) {
+    if ( rwy.approach_lights[0] == 3  /* Calvert I */ ) {
+        superpoly_list s = gen_calvert( alt_m, "1", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] == 3  /* Calvert I */ ) {
         superpoly_list s = gen_calvert( alt_m, "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
-    if ( rwy.approach_lights[1] == 3 || rwy.approach_lights[1] == 4 /* Calvert 1, 2, and 3 */ ) {
+
+    if ( rwy.approach_lights[0] == 4  /* Calvert II */ ) {
+        superpoly_list s = gen_calvert( alt_m, "2", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] == 4  /* Calvert II */ ) {
         superpoly_list s = gen_calvert( alt_m, "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
