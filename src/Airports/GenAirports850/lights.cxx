@@ -2634,14 +2634,6 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
 
     // Approach lighting
 
-    ////////////////////////////////////////////////////////////
-    // NOT IMPLIMENTED:
-    //
-    // code "A" == ALS Approach light system (assumed white lights)
-    // 
-    // Please send me documentation for this configuration
-    ////////////////////////////////////////////////////////////
-
     if ( rwy.approach_lights[0] == 1 /* ALSF-I */ ) {
         superpoly_list s = gen_alsf( alt_m, "1", false );
         for ( i = 0; i < s.size(); ++i ) {
@@ -2668,16 +2660,6 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
         }
     }
 
-    ////////////////////////////////////////////////////////////
-    // NOT IMPLIMENTED:
-    //
-    // code: "D" CAL Calvert (British)
-    //
-    // code: "E" CAL-II Calvert (British) - Cat II and II
-    // 
-    // Please send me documentation for this configuration
-    ////////////////////////////////////////////////////////////
-
     if ( rwy.approach_lights[0] == 3  /* Calvert I */ ) {
         superpoly_list s = gen_calvert( alt_m, "1", false );
         for ( i = 0; i < s.size(); ++i ) {
@@ -2703,69 +2685,86 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
             lights->push_back( s[i] );
         }
     }
-    ////////////////////////////////////////////////////////////
-    // NOT IMPLIMENTED:
-    //
-    // code: "F" LDIN
-    // 
-    // This configuration is airport specific and no additional placement
-    // data is provided in our database
-    ////////////////////////////////////////////////////////////
 
-    if ( rwy.approach_lights[0] == 10 /* MALS not supported by data base */ ) {
-        superpoly_list s = gen_malsx( alt_m, "x", false );
+    if ( rwy.approach_lights[0] == 5 /* SSALR */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
-    if ( rwy.approach_lights[1] == 10 /* MALS not supported by data base */ ) {
-        superpoly_list s = gen_malsx( alt_m, "x", true );
+    if ( rwy.approach_lights[1] == 5 /* SSALR */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
-    if ( rwy.approach_lights[0] == 9 /* MALSF not supported by data base */ ) {
-        superpoly_list s = gen_malsx( alt_m, "F", false );
+    if ( rwy.approach_lights[0] == 6 /* SSALF */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "F", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
-    if ( rwy.approach_lights[1] == 9 /* MALSF not supported by data base */ ) {
-        superpoly_list s = gen_malsx( alt_m, "F", true );
+    if ( rwy.approach_lights[1] == 6 /* SSALF */ ) {
+        superpoly_list s = gen_ssalx( alt_m, "F", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
-    ////////////////////////////////////////////////////////////
-    // NOT IMPLIMENTED:
-    //
-    // code: "I" NSTD Non standard
-    // 
-    // This is also likely airport specific
-    ////////////////////////////////////////////////////////////
+    // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
+    // a shorter center bar)
+    if ( rwy.approach_lights[0] == 7 /* SALS */ ) {
+        superpoly_list s = gen_alsf( alt_m, "O", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] == 7 /* SALS */ ) {
+        superpoly_list s = gen_alsf( alt_m, "O", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
 
-    if ( rwy.approach_lights[0] == 8 /* MALSR not supported by data base */ ) {
+    if ( rwy.approach_lights[0] == 8 /* MALSR */ ) {
         superpoly_list s = gen_malsx( alt_m, "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
-    if ( rwy.approach_lights[1] == 8 /* MALSR not supported by data base */ ) {
+    if ( rwy.approach_lights[1] == 8 /* MALSR */ ) {
         superpoly_list s = gen_malsx( alt_m, "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
-    ////////////////////////////////////////////////////////////
-    // NOT IMPLIMENTED:
-    //
-    // code: "K" MIL OVRN Something military
-    //
-    // No clue ...
-    ////////////////////////////////////////////////////////////
+    if ( rwy.approach_lights[0] == 9 /* MALSF */ ) {
+        superpoly_list s = gen_malsx( alt_m, "F", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] == 9 /* MALSF */ ) {
+        superpoly_list s = gen_malsx( alt_m, "F", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+
+    if ( rwy.approach_lights[0] == 10 /* MALSX */ ) {
+        superpoly_list s = gen_malsx( alt_m, "x", false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] == 10 /* MALSX */ ) {
+        superpoly_list s = gen_malsx( alt_m, "x", true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
 
     if ( rwy.approach_lights[0] == 11 /* ODALS Omni-directional approach light system */ ) {
         TGSuperPoly s = gen_odals( alt_m, false );
@@ -2779,76 +2778,38 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
     ////////////////////////////////////////////////////////////
     // NOT IMPLIMENTED:
     //
-    // code: "M" RAIL Runway alignment indicator lights (icw other systems)
+    // code: 12 - RAIL Runway alignment indicator lights (icw other systems)
     //
     ////////////////////////////////////////////////////////////
 
-    // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
-    // a shorter center bar)
-    if ( rwy.approach_lights[0] == 7 /* SALS not supported by database */ ) {
-        superpoly_list s = gen_alsf( alt_m, "O", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
-    if ( rwy.approach_lights[1] == 7 /* SALS not supported by database */ ) {
-        superpoly_list s = gen_alsf( alt_m, "O", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == -1 /* SALSF */ ) {
+    if ( rwy.approach_lights[0] == -1 /* SALSF not supported by database */ ) {
         superpoly_list s = gen_alsf( alt_m, "P", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
-    if ( rwy.approach_lights[1] == -1 /* SALSF */ ) {
+    if ( rwy.approach_lights[1] == -1 /* SALSF not supported by database */ ) {
         superpoly_list s = gen_alsf( alt_m, "P", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
-    if ( rwy.approach_lights[0] == 6 /* SSALF not supported by database */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "F", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
-    if ( rwy.approach_lights[1] == 6 /* SSALF not supported by database */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "F", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
-
-    if ( rwy.approach_lights[0] == 5 /* SSALR not supported by database */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "R", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
-    if ( rwy.approach_lights[1] == 5 /* SSALR not supported by database */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "R", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
-
-    if ( rwy.approach_lights[0] == -1 /* SSALS */ ) {
+    if ( rwy.approach_lights[0] == -1 /* SSALS not supported by database */ ) {
         superpoly_list s = gen_ssalx( alt_m, "S", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
-    if ( rwy.approach_lights[1] == -1 /* SSALS */ ) {
+    if ( rwy.approach_lights[1] == -1 /* SSALS not supported by database */ ) {
         superpoly_list s = gen_ssalx( alt_m, "S", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
+
+
     SG_LOG(SG_GENERAL, SG_DEBUG, "Edge light = " << rwy.edge_lights << " Centre light = " << rwy.centerline_lights );
     SG_LOG(SG_GENERAL, SG_DEBUG, "ALC1 flag = " << rwy.approach_lights[0] << " ALC2 flag2 = " << rwy.approach_lights[1] );
 
