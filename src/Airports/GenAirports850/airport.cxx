@@ -448,7 +448,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( unsigned int i=0; i<features.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build Feature Poly " << i << " of " << features.size() << " : " << features[i]->GetDescription() );
+            SG_LOG(SG_GENERAL, SG_INFO, "Build Feature Poly " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
 
 #if 0
             if ( i == 22 ) {
@@ -473,7 +473,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // Build runways next
     for ( unsigned int i=0; i<runways.size(); i++ ) 
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Build Runway " << i << " of " << runways.size());
+        SG_LOG(SG_GENERAL, SG_INFO, "Build Runway " << i + 1 << " of " << runways.size());
 
         if ( runways[i]->IsPrecision() ) 
         {
@@ -495,7 +495,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( unsigned int i=0; i<lightobjects.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build runway light " << i << " of " << lightobjects.size());
+            SG_LOG(SG_GENERAL, SG_INFO, "Build runway light " << i + 1 << " of " << lightobjects.size());
             lightobjects[i]->BuildBtg( altitude, &rwy_lights );
         }
     }
@@ -505,7 +505,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( unsigned int i=0; i<helipads.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build helipad " << i << " of " << helipads.size());
+            SG_LOG(SG_GENERAL, SG_INFO, "Build helipad " << i + 1 << " of " << helipads.size());
             if (boundary)
             {
                 helipads[i]->BuildBtg( altitude, &rwy_polys, &rwy_tps, &rwy_lights, &accum, NULL, NULL );
@@ -522,7 +522,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( unsigned int i=0; i<pavements.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build Pavement " << i << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
+            SG_LOG(SG_GENERAL, SG_INFO, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
 
 #if 0
             if (i == 30) {
@@ -768,7 +768,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // tesselate the polygons and prepair them for final output
     for ( unsigned int i = 0; i < rwy_polys.size(); ++i ) 
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating runway poly = " << i << " of " << rwy_polys.size() << " : flag = " << rwy_polys[i].get_flag());
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating runway poly = " << i + 1 << " of " << rwy_polys.size() << " : flag = " << rwy_polys[i].get_flag());
 
     	TGPolygon poly = rwy_polys[i].get_poly();
 
@@ -804,7 +804,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // tesselate the polygons and prepair them for final output
     for ( unsigned int i = 0; i < pvmt_polys.size(); ++i ) 
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating pavement poly = " << i << " of " << pvmt_polys.size() << " : flag = " << pvmt_polys[i].get_flag());
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating pavement poly = " << i + 1 << " of " << pvmt_polys.size() << " : flag = " << pvmt_polys[i].get_flag());
 
     	TGPolygon poly = pvmt_polys[i].get_poly();
 
@@ -840,7 +840,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // tesselate the polygons and prepair them for final output
     for ( unsigned int i = 0; i < line_polys.size(); ++i ) 
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating line poly = " << i << " of " << line_polys.size() << " : flag = " << line_polys[i].get_flag());
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating line poly = " << i + 1 << " of " << line_polys.size() << " : flag = " << line_polys[i].get_flag());
 
     	TGPolygon poly = line_polys[i].get_poly();
 
