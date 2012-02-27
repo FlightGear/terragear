@@ -64,7 +64,67 @@ void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
     // We know our normal, now create the lights
     Point3D pt1;
 
-    if (type == 2)
+    if (type == 1)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating VASI = " << assoc_rw);
+
+        // VASI coordinates describe the center between the two bars.
+        // Space between the bars is 700 ft
+
+        // Go to downwind bar
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading,
+                            -350 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+
+        // unit1
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            -16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit2
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit3
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // Go to upwind bar
+        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading,
+                            350 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+
+        // unit4
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            -16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit5
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+
+        // unit6
+        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
+                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        pt1 = Point3D( lon2, lat2, 0.0 );
+        lightobj.push_back( pt1 );
+        normals.push_back( normal );
+    }
+
+    else if (type == 2)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4L = " << assoc_rw);
 
@@ -97,7 +157,7 @@ void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
         normals.push_back( normal );
     }
 
-    if (type == 3)
+    else if (type == 3)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4R = " << assoc_rw);
 
@@ -128,6 +188,11 @@ void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
         pt1 = Point3D( lon2, lat2, 0.0 );
         lightobj.push_back( pt1 );
         normals.push_back( normal );
+    }
+
+    else
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unknown lighting object (PAPI/VASI...) code: " << type);
     }
 
     TGPolygon lights_poly; lights_poly.erase();
