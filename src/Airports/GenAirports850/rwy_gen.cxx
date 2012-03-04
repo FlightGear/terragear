@@ -24,6 +24,7 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
+#include "global.hxx"
 #include "beznode.hxx"
 #include "runway.hxx"
 
@@ -84,11 +85,259 @@ static const struct sections nprec[] = {
     { "aim", 400 * SG_FEET_TO_METER }
 };
 
+
+// generate a section of texture
+void Runway::gen_runway_section( const TGPolygon& runway,
+                                 double startl_pct, double endl_pct,
+                                 double startw_pct, double endw_pct,
+                                 double minu, double maxu, double minv, double maxv,
+                                 double heading,
+                                 const string& prefix,
+                                 const string& material,
+                                 superpoly_list *rwy_polys,
+                                 texparams_list *texparams,
+                                 ClipPolyType *accum,
+                                 poly_list& slivers ) 
+{
+    int j, k;
+    double width = rwy.width;
+    double length = rwy.length;
+
+    Point3D a0 = runway.get_pt(0, 1);
+    Point3D a1 = runway.get_pt(0, 2);
+    Point3D a2 = runway.get_pt(0, 0);
+    Point3D a3 = runway.get_pt(0, 3);
+
+    if ( startl_pct > 0.0 ) {
+        startl_pct -= nudge * SG_EPSILON;
+    }
+    if ( endl_pct < 1.0 ) {
+        endl_pct += nudge * SG_EPSILON;
+    }
+
+    if ( endl_pct > 1.0 ) {
+        endl_pct = 1.0;
+    }
+
+    // partial "w" percentages could introduce "T" intersections which
+    // we compensate for later, but could still cause problems now
+    // with our polygon clipping code.  This attempts to compensate
+    // for that by nudging the areas a bit bigger so we don't end up
+    // with polygon slivers.
+    if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
+        if ( startw_pct > 0.0 ) {
+            startw_pct -= nudge * SG_EPSILON;
+        }
+        if ( endw_pct < 1.0 ) {
+            endw_pct += nudge * SG_EPSILON;
+        }
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct
+           << " end len % = " << endl_pct);
+
+    double dlx, dly;
+
+    dlx = a1.x() - a0.x();
+    dly = a1.y() - a0.y();
+
+    Point3D t0 = Point3D( a0.x() + dlx * startl_pct,
+                          a0.y() + dly * startl_pct, 0);
+    Point3D t1 = Point3D( a0.x() + dlx * endl_pct,
+                          a0.y() + dly * endl_pct, 0);
+
+    dlx = a3.x() - a2.x();
+    dly = a3.y() - a2.y();
+
+    Point3D t2 = Point3D( a2.x() + dlx * startl_pct,
+                          a2.y() + dly * startl_pct, 0);
+
+    Point3D t3 = Point3D( a2.x() + dlx * endl_pct,
+                          a2.y() + dly * endl_pct, 0);
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "start wid % = " << startw_pct
+           << " end wid % = " << endw_pct);
+
+    double dwx, dwy;
+
+    dwx = t0.x() - t2.x();
+    dwy = t0.y() - t2.y();
+
+    Point3D p0 = Point3D( t2.x() + dwx * startw_pct,
+                          t2.y() + dwy * startw_pct, 0);
+
+    Point3D p1 = Point3D( t2.x() + dwx * endw_pct,
+                          t2.y() + dwy * endw_pct, 0);
+
+    dwx = t1.x() - t3.x();
+    dwy = t1.y() - t3.y();
+
+    Point3D p2 = Point3D( t3.x() + dwx * startw_pct,
+                          t3.y() + dwy * startw_pct, 0);
+
+    Point3D p3 = Point3D( t3.x() + dwx * endw_pct,
+                          t3.y() + dwy * endw_pct, 0);
+
+    TGPolygon section;
+    section.erase();
+
+    section.add_node( 0, p2 );
+    section.add_node( 0, p0 );
+    section.add_node( 0, p1 );
+    section.add_node( 0, p3 );
+
+    // print runway points
+    SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << prefix << material);
+    for ( j = 0; j < section.contours(); ++j ) {
+        for ( k = 0; k < section.contour_size( j ); ++k ) {
+            Point3D p = section.get_pt(j, k);
+            SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
+        }
+    }
+
+    // Clip the new polygon against what ever has already been created.
+#if 0
+    TGPolygon clipped = tgPolygonDiff( section, *accum );
+#else
+    TGPolygon clipped = tgPolygonDiffClipper( section, *accum );
+#endif
+
+    tgPolygonFindSlivers( clipped, slivers );
+
+    // Split long edges to create an object that can better flow with
+    // the surface terrain
+    TGPolygon split = tgPolygonSplitLongEdges( clipped, 400.0 );
+
+    // Create the final output and push on to the runway super_polygon
+    // list
+    TGSuperPoly sp;
+    sp.erase();
+    sp.set_poly( split );
+    sp.set_material( prefix + material );
+    rwy_polys->push_back( sp );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
+
+#if 0
+    *accum = tgPolygonUnion( section, *accum );
+#else
+    *accum = tgPolygonUnionClipper( section, *accum );
+#endif
+
+    // Store away what we need to know for texture coordinate
+    // calculation.  (CLO 10/20/02: why can't we calculate texture
+    // coordinates here?  Oh, becuase later we need to massage the
+    // polygons to avoid "T" intersections and clean up other
+    // potential artifacts and we may add or remove points and need to
+    // do new texture coordinate calcs later.
+
+    double len = length / 2.0;
+    double sect_len = len * ( endl_pct - startl_pct );
+
+    double sect_wid = width * ( endw_pct - startw_pct );
+
+    TGTexParams tp;
+    tp = TGTexParams( p0,
+                      sect_wid,
+                      sect_len,
+                      heading );
+    tp.set_minu( minu );
+    tp.set_maxu( maxu );
+    tp.set_minv( minv );
+    tp.set_maxv( maxv );
+    texparams->push_back( tp );
+
+    // print runway points
+    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts " << prefix + material);
+    for ( j = 0; j < clipped.contours(); ++j ) {
+        for ( k = 0; k < clipped.contour_size( j ); ++k ) {
+            Point3D p = clipped.get_pt(j, k);
+            SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
+        }
+    }
+}
+
+void Runway::gen_rw_designation( const string& material,
+                                 TGPolygon poly, double heading, string rwname,
+                                 double &start_pct, double &end_pct,
+                                 superpoly_list *rwy_polys,
+                                 texparams_list *texparams,
+                                 ClipPolyType *accum,
+                                 poly_list& slivers )
+{
+    if (rwname != "XX") { /* Do not create a designation block if the runway name is set to none */
+        string letter = "";
+        double length = rwy.length / 2.0;
+        for ( unsigned int i = 0; i < rwname.length(); ++i ) {
+            string tmp = rwname.substr(i, 1);
+            if ( tmp == "L" || tmp == "R" || tmp == "C" ) {
+                rwname = rwname.substr(0, i);
+                letter = tmp;
+            }
+        }
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
+
+        // create runway designation letter
+        if ( !letter.empty() ) {
+            start_pct = end_pct;
+            end_pct = start_pct + ( 90.0 * SG_FEET_TO_METER / length );
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, letter,
+                                rwy_polys, texparams, accum, slivers );
+        }
+
+
+        // create runway designation number(s)
+        if (rwname == "0")
+            rwname = "36";
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
+
+        char tex1[32]; tex1[0] = '\0';
+        char tex2[32]; tex2[0] = '\0';
+
+        start_pct = end_pct;
+        end_pct = start_pct + ( 80.0 * SG_FEET_TO_METER / length );
+
+        if (rwname.length() == 2) {
+            sprintf( tex1, "%c%c", rwname[0], 'l');
+            sprintf( tex2, "%c%c", rwname[1], 'r');
+
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.0, 0.5,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, tex1,
+                                rwy_polys, texparams, accum, slivers );
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.5, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, tex2,
+                                rwy_polys, texparams, accum, slivers );
+
+        } else if (rwname.length() == 1) {
+            sprintf( tex1, "%c%c", rwname[0], 'c');
+
+            gen_runway_section( poly,
+                                start_pct, end_pct,
+                                0.0, 1.0,
+                                0.0, 1.0, 0.0, 1.0,
+                                heading,
+                                material, tex1,
+                                rwy_polys, texparams, accum, slivers );
+        }
+    }
+}
+
 // generate a runway.  The routine modifies
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
-
 void Runway::gen_rwy( const string& material,
                       superpoly_list *rwy_polys,
                       texparams_list *texparams,
@@ -300,9 +549,38 @@ void Runway::gen_rwy( const string& material,
                                 rwy_polys, texparams, accum, slivers );
         }
 
-        gen_runway_overrun( runway_half, rwhalf,
-                            material,
-                            rwy_polys, texparams, accum, slivers );
+        length = rwy.length / 2.0 + 2.0 * SG_FEET_TO_METER;
+        start1_pct = 0.0;
+        end1_pct = 0.0;
+        
+        double part_len = 0.0;
+        int count=0;
+
+        if (rwy.overrun[rwhalf] > 0.0) {
+            /* Generate approach end overrun */
+            count = (int) (rwy.overrun[rwhalf] * 2.0/ rwy.width);
+            if(count < 1) {
+                count = 1;
+            }
+
+            part_len = rwy.overrun[rwhalf] / (double)count;
+            for(int i=0; i<count; i++) {
+                start1_pct=end1_pct;
+                end1_pct = start1_pct + ( part_len / length );
+            
+                gen_runway_section( runway_half,
+                                    -end1_pct, -start1_pct,
+                                    0.0, 1.0,
+                                    0.0, 1.0, 0.0, 1.0, //last number is lengthwise
+                                    heading,
+                                    material,
+                                    "stopway",
+                                    rwy_polys,
+                                    texparams,
+                                    accum,
+                                    slivers );
+            }
+        }
     }
 }
 

@@ -112,29 +112,21 @@ private:
                              ClipPolyType* accum,
                              poly_list& slivers );
 
-    // generate the runway overrun area
-    void gen_runway_overrun( const TGPolygon& runway_half,
-                             int rwhalf,
-                             const std::string& prefix,
-                             superpoly_list* rwy_polys,
-                             texparams_list* texparams,
-                             ClipPolyType* accum,
-                             poly_list& slivers  );
-
     // generate a section of runway
     void gen_runway_section( const TGPolygon& runway,
-                             double startl_pct, double endl_pct,
-                             double startw_pct, double endw_pct,
-                             double minu, double maxu, double minv, double maxv,
-                             double heading,
-                             const std::string& prefix,
-                             const std::string& material,
-                             superpoly_list* rwy_polys,
-                             texparams_list* texparams,
-                             ClipPolyType* accum,
-                             poly_list& slivers   );
+                      double startl_pct, double endl_pct,
+                      double startw_pct, double endw_pct,
+                      double minu, double maxu, double minv, double maxv,
+                      double heading,
+                      const string& prefix,
+                      const string& material,
+                      superpoly_list *rwy_polys,
+                      texparams_list *texparams,
+                      ClipPolyType *accum,
+                      poly_list& slivers );
 
     void gen_simple_rwy( const string& material, superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
+    
     void gen_rwy( const std::string& material,
                   superpoly_list* rwy_polys,
                   texparams_list* texparams,

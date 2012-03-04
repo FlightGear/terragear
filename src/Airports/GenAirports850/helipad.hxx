@@ -56,6 +56,19 @@ private:
 
     TGRunway heli;
 
+
+    void gen_helipad( const TGPolygon& runway,
+                      double startl_pct, double endl_pct,
+                      double startw_pct, double endw_pct,
+                      double minu, double maxu, double minv, double maxv,
+                      double heading,
+                      const string& prefix,
+                      const string& material,
+                      superpoly_list *rwy_polys,
+                      texparams_list *texparams,
+                      ClipPolyType *accum,
+                      poly_list& slivers );
+
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
     TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
