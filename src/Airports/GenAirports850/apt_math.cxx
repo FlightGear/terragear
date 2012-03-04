@@ -218,7 +218,8 @@ void gen_tex_section( const TGPolygon& runway,
                          const string& material,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         ClipPolyType *accum  ) {
+                         ClipPolyType *accum,
+                         poly_list& slivers ) {
 
     int j, k;
 
@@ -315,7 +316,13 @@ void gen_tex_section( const TGPolygon& runway,
     }
 
     // Clip the new polygon against what ever has already been created.
+#if 0
     TGPolygon clipped = tgPolygonDiff( section, *accum );
+#else
+    TGPolygon clipped = tgPolygonDiffClipper( section, *accum );
+#endif
+
+    tgPolygonFindSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
@@ -329,7 +336,12 @@ void gen_tex_section( const TGPolygon& runway,
     sp.set_material( prefix + material );
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
+
+#if 0
     *accum = tgPolygonUnion( section, *accum );
+#else
+    *accum = tgPolygonUnionClipper( section, *accum );
+#endif
 
     // Store away what we need to know for texture coordinate
     // calculation.  (CLO 10/20/02: why can't we calculate texture

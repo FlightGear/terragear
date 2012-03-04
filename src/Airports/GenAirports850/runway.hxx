@@ -46,11 +46,12 @@ public:
             else return false;
     }
 
-    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
     void BuildShoulder( float alt_m,
                                 superpoly_list *rwy_polys,
                                 texparams_list *texparams,
                                 ClipPolyType *accum,
+                                poly_list& slivers, 
                                 TGPolygon* apt_base, 
                                 TGPolygon* apt_clearing );
     
@@ -102,7 +103,8 @@ private:
                              double &start_pct, double &end_pct,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
-                             ClipPolyType* accum );
+                             ClipPolyType* accum,
+                             poly_list& slivers );
 
     // generate the runway overrun area
     void gen_runway_overrun( const TGPolygon& runway_half,
@@ -110,7 +112,8 @@ private:
                              const std::string& prefix,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
-                             ClipPolyType* accum );
+                             ClipPolyType* accum,
+                             poly_list& slivers  );
 
     // generate a section of runway
     void gen_runway_section( const TGPolygon& runway,
@@ -122,14 +125,16 @@ private:
                              const std::string& material,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
-                             ClipPolyType* accum  );
+                             ClipPolyType* accum,
+                             poly_list& slivers   );
 
-    void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum );
+    void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
     void gen_rwy( double alt_m,
                   const std::string& material,
                   superpoly_list* rwy_polys,
                   texparams_list* texparams,
-                  ClipPolyType* accum );
+                  ClipPolyType* accum,
+                  poly_list& slivers  );
 
     void gen_rw_marking( const TGPolygon& runway,
                          double &start1_pct, double &end1_pct,
@@ -137,7 +142,9 @@ private:
                          const string& material,
                          superpoly_list* rwy_polys,
                          texparams_list* texparams,
-                         ClipPolyType* accum, int marking);
+                         ClipPolyType* accum, 
+                         poly_list& slivers,
+                         int marking );
 
     void gen_runway_lights( float alt_m, superpoly_list* lights );
 

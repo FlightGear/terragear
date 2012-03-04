@@ -79,7 +79,7 @@ void Helipad::BuildBtg( float alt_m,
 			superpoly_list *rwy_polys,
 			texparams_list *texparams,
                         superpoly_list *rwy_lights,
-			ClipPolyType *accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
+			ClipPolyType *accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {
     SG_LOG( SG_GENERAL, SG_INFO, "Building helipad = " << heli.designator );
 
@@ -110,7 +110,7 @@ void Helipad::BuildBtg( float alt_m,
                         0.0, 1.0, 0.0, 1.0,
                         heli.heading, heli.width, heli.length,
                         "pc_", "heli",
-                        rwy_polys, texparams, accum );
+                        rwy_polys, texparams, accum, slivers );
 
 
     // generate area around helipad
@@ -123,10 +123,10 @@ void Helipad::BuildBtg( float alt_m,
         safe_base = gen_runway_area_w_extend( 0.0, maxsize * 0.5, 0.0, 0.0, maxsize * 0.5 );
 
         // add this to the airport clearing
-        *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
+        *apt_clearing = tgPolygonUnionClipper(safe_base, *apt_clearing);
 
         // and add the clearing to the base
-        *apt_base = tgPolygonUnion( base, *apt_base );
+        *apt_base = tgPolygonUnionClipper( base, *apt_base );
     }
 
     if (heli.edge_lights)

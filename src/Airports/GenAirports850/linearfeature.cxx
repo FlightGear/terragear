@@ -742,6 +742,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset-width/2.0f );
                 cur_inner = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset+width/2.0f );
             }
+            cur_outer.snap();
+            cur_inner.snap();
 
             if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
             {
@@ -832,7 +834,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for light " << i << " whose start idx is " << lights[i]->start_idx << " and end idx is " << lights[i]->end_idx << " cur idx is " << j );
             // for each point on the PointsList, offset by 2 distnaces from the edge, and add a point to the superpoly contour
-
             if (j == lights[i]->start_idx)
             {
                 // first point on the light - offset heading is 90deg 
@@ -855,42 +856,34 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 // calculate the heading and distance from prev to cur
                 geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
                 
-                if (cur_light_dist > dist)
+                while (cur_light_dist < dist)
                 {
-                    // no lights in this segment - increment cur_light_dist only
-                    cur_light_dist += dist;
-                }
-                else
-                {
-                    while (cur_light_dist < dist)
+                    if (cur_light_dist == 0.0f)
                     {
-                        if (cur_light_dist == 0.0f)
-                        {
-                            tmp = prev_outer;
-                        }
-                        else
-                        {
-                            // calculate the position of the next light
-                            geo_direct_wgs_84( prev_outer.y(), prev_outer.x(), heading, cur_light_dist, &pt_y, &pt_x, &az2 );
-            	            tmp = Point3D( pt_x, pt_y, 0.0 );
-                        }
-                                    
-                        poly.add_node(0, tmp);
-
-                        // calculate the normal
-                	    Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
-                	    double length = vec.distance3D( Point3D(0.0) );
-                	    vec = vec / length;
-
-                        normals_poly.add_node(0, vec );
-
-                        // update current light distance
-                        cur_light_dist += light_delta;
+                        tmp = prev_outer;
                     }
+                    else
+                    {
+                        // calculate the position of the next light
+                        geo_direct_wgs_84( prev_outer.y(), prev_outer.x(), heading, cur_light_dist, &pt_y, &pt_x, &az2 );
+                        tmp = Point3D( pt_x, pt_y, 0.0 );
+                    }
+                                    
+                    poly.add_node(0, tmp);
 
-                    // start next segment at the correct distance
-                    cur_light_dist = cur_light_dist - dist;
+                    // calculate the normal
+                    Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
+                    double length = vec.distance3D( Point3D(0.0) );
+                    vec = vec / length;
+
+                    normals_poly.add_node(0, vec );
+
+                    // update current light distance
+                    cur_light_dist += light_delta;
                 }
+
+                // start next segment at the correct distance
+                cur_light_dist = cur_light_dist - dist;
             }
 
             prev_outer = cur_outer;
@@ -916,30 +909,28 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     return 1;
 }
 
-int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights, bool debug )
+int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights, bool make_shapefiles )
 {
     TGPolygon poly; 
     TGPolygon clipped;
+    void*     ds_id = NULL;        // If we are going to build shapefiles
+    void*     l_id  = NULL;        // datasource and layer IDs
 
-    if (debug) {
-        sglog().setLogLevels( SG_GENERAL, SG_BULK );
-    } else {
-        sglog().setLogLevels( SG_GENERAL, SG_INFO );
+    if ( make_shapefiles ) {
+        char ds_name[128];
+        sprintf(ds_name, "./lf_debug/problem");
+        ds_id = tgShapefileOpenDatasource( ds_name );
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
         poly = marking_polys[i].get_poly();
-        poly = tgPolygonSimplify( poly );
-        poly = remove_tiny_contours( poly );
+        //poly = tgPolygonSimplify( poly );
+        //poly = remove_tiny_contours( poly );
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipping poly " << i << " of " << marking_polys.size() );
-#if 1
-        clipped = tgPolygonDiff( poly, *line_accum );
-#else
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipping poly " << i << " of " << marking_polys.size() << " with CLIPPER ");
         clipped = tgPolygonDiffClipper( poly, *line_accum );
-#endif
 
         // clean the poly before union with accum
         clipped = reduce_degeneracy( clipped );
@@ -947,44 +938,31 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
         marking_polys[i].set_poly( clipped );
         line_polys->push_back( marking_polys[i] );
 
-#if LF_DEBUG
-        if ( (debug) && ( i == 78 ) ) {
-            void* ds_id;
-            void* l_id;
-
-            SG_LOG(SG_GENERAL, SG_INFO, "Problem poly: " << poly );
-
-            char ds_name[128];
-            sprintf(ds_name, "./lf_debug/problem");
-            ds_id = tgShapefileOpenDatasource( ds_name );
-
+        /* If debugging this lf, write the poly, and the accum buffer at each step into their own layers */
+        if (ds_id) {
             char layer_name[128];
-            sprintf( layer_name, "problem");
+            sprintf( layer_name, "poly_%d", i );
             l_id = tgShapefileOpenLayer( ds_id, layer_name );
 
             char feature_name[128];
-            sprintf( feature_name, "prob");
+            sprintf( feature_name, "poly_%d", i);
             tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
 
-            sprintf( layer_name, "accum");
+            sprintf( layer_name, "accum_%d", i );
             l_id = tgShapefileOpenLayer( ds_id, layer_name );
 
-            sprintf( feature_name, "accum");
+            sprintf( feature_name, "accum_%d", i );
             tgShapefileCreateFeature( ds_id, l_id, *line_accum, feature_name );
-
-            tgShapefileCloseDatasource( ds_id );        
         }
-#endif
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: union poly " << i << " of " << marking_polys.size() );
-
-#if 1
-        *line_accum = tgPolygonUnion( poly, *line_accum );
-#else
+        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: union poly " << i << " of " << marking_polys.size() << " with CLIPPER " );
         *line_accum = tgPolygonUnionClipper( poly, *line_accum );
-#endif
 
         line_tps->push_back( marking_tps[i] );
+    }
+
+    if (ds_id) {
+        tgShapefileCloseDatasource( ds_id );        
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: add " << lighting_polys.size() << " light defs");

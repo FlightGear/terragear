@@ -127,8 +127,7 @@ int main(int argc, char **argv)
     elev_src.clear();
     setup_default_elevation_sources(elev_src);
 
-    // Set verbose
-    // sglog().setLogLevels( SG_GENERAL, SG_BULK );
+    // Set Normal logging
     sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
     SG_LOG(SG_GENERAL, SG_INFO, "Run genapt");
@@ -140,6 +139,11 @@ int main(int argc, char **argv)
     string restart_id = "";
     string airport_id = "";
     string last_apt_file = "./last_apt.txt";
+    int    dump_rwy_poly  = -1;
+    int    dump_pvmt_poly = -1;
+    int    dump_feat_poly = -1;
+    int    dump_base_poly = -1;
+
     int arg_pos;
 
     for (arg_pos = 1; arg_pos < argc; arg_pos++) 
@@ -225,6 +229,22 @@ int main(int argc, char **argv)
         {
     	    slope_max = atof( arg.substr(12).c_str() );
     	} 
+        else if ( arg.find("--dump-rwy=") == 0 ) 
+        {
+    	    dump_rwy_poly = atoi( arg.substr(11).c_str() );
+    	} 
+        else if ( arg.find("--dump-pvmt=") == 0 ) 
+        {
+    	    dump_pvmt_poly = atoi( arg.substr(12).c_str() );
+    	} 
+        else if ( arg.find("--dump-feat=") == 0 ) 
+        {
+    	    dump_feat_poly = atoi( arg.substr(12).c_str() );
+    	} 
+        else if ( arg.find("--dump-base=") == 0 ) 
+        {
+    	    dump_base_poly = atoi( arg.substr(12).c_str() );
+    	} 
         else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) 
         {
     	    help( argc, argv, elev_src );
@@ -295,6 +315,9 @@ int main(int argc, char **argv)
 
     // Create the parser...
     Parser* parser = new Parser(input_file, work_dir, elev_src);
+
+    // Add any debug 
+    parser->SetDebugPolys( dump_rwy_poly, dump_pvmt_poly, dump_feat_poly, dump_base_poly );
 
     // just one airport 
     if ( airport_id != "" )

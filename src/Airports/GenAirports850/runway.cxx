@@ -79,7 +79,7 @@ TGPolygon WaterRunway::GetNodes()
 }
 
 
-int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
+int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {
     TGPolygon base, safe_base;
     string material;
@@ -128,7 +128,7 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         case 1: // asphalt:
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete" << rwy.surface);
-            gen_rwy( alt_m, material, rwy_polys, texparams, accum );
+            gen_rwy( alt_m, material, rwy_polys, texparams, accum, slivers );
             gen_runway_lights( alt_m, rwy_lights );
             break;
     
@@ -136,7 +136,7 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         case 4: // Dirt
         case 5: // Gravel
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
-            gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum );
+            gen_simple_rwy( alt_m, material, rwy_polys, texparams, accum, slivers );
             gen_runway_lights( alt_m, rwy_lights );
             break;
 
@@ -172,10 +172,10 @@ int Runway::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* te
         safe_base = gen_runway_area_w_extend( 0.0, 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
 
         // add this to the airport clearing
-        *apt_clearing = tgPolygonUnion(safe_base, *apt_clearing);
+        *apt_clearing = tgPolygonUnionClipper(safe_base, *apt_clearing);
 
         // and add the clearing to the base
-        *apt_base = tgPolygonUnion( base, *apt_base );
+        *apt_base = tgPolygonUnionClipper( base, *apt_base );
     }
 
     return 0;

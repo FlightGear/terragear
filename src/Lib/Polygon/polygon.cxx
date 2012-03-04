@@ -163,22 +163,18 @@ double tgPolygonCalcAngle(point2d a, point2d b, point2d c) {
 // positive areas indicate clockwise winding.
 
 double TGPolygon::area_contour( const int contour ) const {
-    // area = 1/2 * sum[i = 0 to k-1][x(i)*y(i+1) - x(i+1)*y(i)]
-    // where i=k is defined as i=0
-
     point_list c = poly[contour];
-    int size = c.size();
-    double sum = 0.0;
+    double area = 0.0;
+    int i, j;
 
-    for ( int i = 0; i < size; ++i ) {
-	sum += c[(i+1)%size].x() * c[i].y() - c[i].x() * c[(i+1)%size].y();
+    j = c.size() - 1;
+    for (i=0; i<c.size(); i++) {
+        area += (c[j].x() + c[i].x()) * (c[j].y() - c[i].y()); 
+        j=i; 
     }
 
-    // area can be negative or positive depending on the polygon
-    // winding order
-    return fabs(sum / 2.0);
+    return fabs(area * 0.5); 
 }
-
 
 // return the smallest interior angle of the contour
 double TGPolygon::minangle_contour( const int contour ) {
@@ -283,6 +279,74 @@ void TGPolygon::write( const string& file ) const {
     }
 
     fclose(fp);
+}
+
+
+// Move slivers from in polygon to out polygon.
+void tgPolygonFindSlivers( TGPolygon& in, poly_list& slivers ) 
+{
+    // traverse each contour of the polygon and attempt to identify
+    // likely slivers
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonFindSlivers()");
+
+    TGPolygon out;
+    int i;
+
+    out.erase();
+
+    double angle_cutoff = 10.0 * SGD_DEGREES_TO_RADIANS;
+    double area_cutoff = 0.000000001;
+    double min_angle;
+    double area;
+
+    point_list contour;
+    int hole_flag;
+
+    // process contours in reverse order so deleting a contour doesn't
+    // foul up our sequence
+    for ( i = in.contours() - 1; i >= 0; --i ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "contour " << i );
+
+        min_angle = in.minangle_contour( i );
+        area = in.area_contour( i );
+
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  min_angle (rad) = " << min_angle );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  min_angle (deg) = " << min_angle * 180.0 / SGD_PI );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  area = " << area );
+
+        if ( ((min_angle < angle_cutoff) && (area < area_cutoff)) ||
+           ( area < area_cutoff / 10.0) )
+        {
+            if ((min_angle < angle_cutoff) && (area < area_cutoff))
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "      WE THINK IT'S A SLIVER! - min angle < 10 deg, and area < 10 sq meters");
+            }
+            else
+            {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "      WE THINK IT'S A SLIVER! - min angle > 10 deg, but area < 1 sq meters");
+            }
+
+            // check if this is a hole
+            hole_flag = in.get_hole_flag( i );
+
+            if ( hole_flag ) {
+                // just delete/eliminate/remove sliver holes
+                // cout << "just deleting a sliver hole" << endl;
+                in.delete_contour( i );
+            } else {
+                // move sliver contour to out polygon
+                contour = in.get_contour( i );
+                in.delete_contour( i );
+                out.add_contour( contour, hole_flag );
+            }
+        }
+    }
+
+    if ( out.contours() )
+    {
+        slivers.push_back( out );
+    }
 }
 
 
@@ -431,12 +495,16 @@ IntPoint MakeClipperPoint( Point3D pt )
 
 Point3D MakeTGPoint( IntPoint pt )
 {
+    Point3D tg_pt;
 	double x, y;
 
 	x = (double)( ((double)pt.X) / (double)FIXEDPT );
 	y = (double)( ((double)pt.Y) / (double)FIXEDPT );
 
-	return Point3D( x, y, -9999.0f);
+    tg_pt = Point3D( x, y, -9999.0f);
+    tg_pt.snap();
+
+	return tg_pt;
 }
 
 double MakeClipperDelta( double mDelta )

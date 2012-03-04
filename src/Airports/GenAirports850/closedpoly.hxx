@@ -25,10 +25,10 @@ public:
     void Finish();
 
     // Build BTG for airport base for airports with boundary
-    int  BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    int  BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles );
 
     // Build BTG for pavements for airports with no boundary
-    int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    int  BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles );
 
     FeatureList* GetFeatures()
     {

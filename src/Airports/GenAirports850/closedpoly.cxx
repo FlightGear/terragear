@@ -4,11 +4,15 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
+#include <Polygon/polygon.hxx>
+#include <Polygon/chop.hxx>
 #include <Geometry/poly_support.hxx>
 
 #include "beznode.hxx"
 #include "convex_hull.hxx"
 #include "closedpoly.hxx"
+
+#define NO_BEZIER       (0)
 
 static void stringPurifier( string& s )
 {
@@ -63,8 +67,6 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
 ClosedPoly::~ClosedPoly()
 {
     SG_LOG( SG_GENERAL, SG_DEBUG, "Deleting ClosedPoly " << description );
-
-    
 }
 
 void ClosedPoly::AddNode( BezNode* node )
@@ -99,31 +101,6 @@ void ClosedPoly::AddNode( BezNode* node )
         cur_feature->AddNode( node );
     }
 }
-
-#if 0
-void ClosedPoly::CreateConvexHull( void )
-{
-    TGPolygon    convexHull;
-    point_list   nodes;
-    Point3D      p;
-    unsigned int i;
-
-    if (boundary->size() > 2)
-    {
-        for (i=0; i<boundary->size(); i++)
-        {
-            p = boundary->at(i)->GetLoc();
-            nodes.push_back( p );
-        }
-        convexHull = convex_hull( nodes );
-        hull = convexHull.get_contour(0);
-    } 
-    else
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Boundary size too small: " << boundary->size() << ". Ignoring..." );
-    }
-}
-#endif
 
 void ClosedPoly::CloseCurContour()
 {
@@ -232,33 +209,15 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
             }
         }
 
-#if 0
         double num_meters = total_dist / meter_dist;
-
-        // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 0.5 meter
-        if (num_meters < 4.0f)
-        {
-            num_segs = ((int)num_meters + 1) * 2;
-        }
-        else if (num_meters > 800.0f)
-        {
-            num_segs = num_meters / 100.0f + 1;
-        }
-        else
-        {
-            num_segs = 8;
-        }
-#endif
-
-        double num_meters = total_dist / meter_dist;
-        if (num_meters < 4.0f)
+        if (num_meters < 8.0f)
         {
             if (curve_type != CURVE_LINEAR)
             {
-                // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 1/2 meter
-                num_segs = ((int)num_meters + 1) * 2;
+                // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 2 meters
+                num_segs = ((int)num_meters + 1);
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( < 4.0) so num_segs is " << num_segs );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( < 16.0) so num_segs is " << num_segs );
             }
             else
             {
@@ -277,17 +236,21 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
             if (curve_type != CURVE_LINEAR)
             {            
                 num_segs = 8;
-                // num_segs = 16;
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " (OK) so num_segs is " << num_segs );
             }
             else
             {
                 // make sure linear segments don't got over 100m
-                //num_segs = 1;
                 num_segs = num_meters / 100.0f + 1;
             }
+
+//          num_segs = 1;
         }
+
+#if NO_BEZIER
+        num_segs = 1;
+#endif
 
         // if only one segment, revert to linear
         if (num_segs == 1)
@@ -315,7 +278,9 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 // add the pavement vertex
                 // convert from lat/lon to geo
                 // (maybe later) - check some simgear objects...
+                curLoc.snap();
                 dst->push_back( curLoc );
+
                 if (p==0)
                 {
                     SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
@@ -331,12 +296,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
         }
         else
         {
-//            nextLoc = nextNode->GetLoc();
-
-//            // just add the one vertex - linear
-//            dst->push_back( curLoc );
-//            SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
-
             if (num_segs > 1)
             {
                 for (int p=0; p<num_segs; p++)
@@ -345,6 +304,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
 
                     // add the feature vertex
+                    curLoc.snap();
                     dst->push_back( curLoc );
 
                     if (p==0)
@@ -365,6 +325,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 nextLoc = nextNode->GetLoc();
 
                 // just add the one vertex - dist is small
+                curLoc.snap();
                 dst->push_back( curLoc );
 
                 SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
@@ -374,140 +335,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
         }
     }
 }
-
-#if 0
-void ExpandPoint( Point3D *prev, Point3D *cur, Point3D *next, double expand_by, double *heading, double *offset )
-{
-    double offset_dir;
-    double next_dir;
-    double az2;
-    double dist;
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << *prev << "), "
-                                                                  "cur (" << *cur  << "), "
-                                                                 "next (" << *next << ")" );
-
-    // first, find if the line turns left or right ar src
-    // for this, take the cross product of the vectors from prev to src, and src to next.
-    // if the cross product is negetive, we've turned to the left
-    // if the cross product is positive, we've turned to the right
-    // if the cross product is 0, then we need to use the direction passed in
-    SGVec3d dir1 = prev->toSGVec3d() - cur->toSGVec3d();
-    dir1 = normalize(dir1);
-
-    SGVec3d dir2 = next->toSGVec3d() - cur->toSGVec3d();
-    dir2 = normalize(dir2);
-
-    // Now find the average
-    SGVec3d avg = dir1 + dir2;
-    avg = normalize(avg);
-
-    // find the offset angle
-    geo_inverse_wgs_84( avg.y(), avg.x(), 0.0f, 0.0f, &offset_dir, &az2, &dist);
-
-    // find the direction to the next point
-    geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
-
-    // calculate correct distance for the offset point
-    *offset  = (expand_by)/sin(SGMiscd::deg2rad(offset_dir-next_dir));
-    *heading = offset_dir;
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "heading is " << *heading << " distance is " << *offset );
-}
-#endif
-
-#if 0
-void ClosedPoly::ExpandContour( point_list& src, TGPolygon& dst, double dist )
-{
-    point_list expanded_boundary;
-    Point3D prevPoint, curPoint, nextPoint;
-    double theta;
-    double expanded_x = 0, expanded_y = 0;
-    Point3D expanded_point;
-
-    double h1;
-    double o1;
-    double az2;
-    unsigned int i;
-        
-    // iterate through each bezier node in the contour
-    for (i=0; i<src.size(); i++)
-    {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nExpanding point " << i << "\n\n");
-
-        if (i == 0)
-        {
-            // set prev node to last in the contour, as all contours must be closed
-            prevPoint = src.at( src.size()-1 );
-        }
-        else
-        {
-            // otherwise, it's just the last index
-            prevPoint = src.at( i-1 );
-        }
-
-        curPoint = src.at(i);
-
-        if (i<src.size()-1)
-        {
-            nextPoint = src.at(i+1);
-        }
-        else
-        {
-            // for the last node, next is the first. as all contours are closed
-            nextPoint = src.at(0);
-        }
-
-        // calculate the angle between cur->prev and cur->next
-        theta = SGMiscd::rad2deg(CalculateTheta(prevPoint, curPoint, nextPoint));
-
-        if ( theta < 90.0 )
-        {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "\nClosed POLY case 1 (theta < 90) " << description << ": theta is " << theta );
-
-            // calculate the expanded point heading and offset from current point
-            ExpandPoint( &prevPoint, &curPoint, &nextPoint, dist, &h1, &o1 );
-
-            if (o1 > dist*2.0)
-            {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "\ntheta is " << theta << " distance is " << o1 << " CLAMPING to " << dist*2 );
-                o1 = dist*2;
-            }
-
-            geo_direct_wgs_84( curPoint.y(), curPoint.x(), h1, o1, &expanded_y, &expanded_x, &az2 );
-            expanded_point = Point3D( expanded_x, expanded_y, 0.0f );
-            expanded_boundary.push_back( expanded_point );
-        }
-        else if ( abs(theta - 180.0) < 0.1 )
-        {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "\nClosed POLY case 2 (theta close to 180) " << description << ": theta is " << theta );
-
-            // calculate the expanded point heading and offset from current point
-            ExpandPoint( &prevPoint, &curPoint, &nextPoint, dist, &h1, &o1 );
-
-            // straight line blows up math - dist should be exactly as given
-            o1 = dist;
-
-            geo_direct_wgs_84( curPoint.y(), curPoint.x(), h1, o1, &expanded_y, &expanded_x, &az2 );
-            expanded_point = Point3D( expanded_x, expanded_y, 0.0f );
-            expanded_boundary.push_back( expanded_point );
-        }
-        else
-        {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "\nClosed POLY case 3 (fall through) " << description << ": theta is " << theta );
-
-            // calculate the expanded point heading and offset from current point
-            ExpandPoint( &prevPoint, &curPoint, &nextPoint, dist, &h1, &o1 );
-
-            geo_direct_wgs_84( curPoint.y(), curPoint.x(), h1, o1, &expanded_y, &expanded_x, &az2 );
-            expanded_point = Point3D( expanded_x, expanded_y, 0.0f );
-            expanded_boundary.push_back( expanded_point );
-        }
-    }
-
-    dst.add_contour( expanded_boundary, 9 );
-}
-#endif
 
 // finish the poly - convert to TGPolygon, and tesselate
 void ClosedPoly::Finish()
@@ -558,10 +385,18 @@ void ClosedPoly::Finish()
     holes.clear();
 }
 
-int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, TGPolygon* apt_base, TGPolygon* apt_clearing )
+int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
-    string material;
+    string    material;
+    void*     ds_id = NULL;        // If we are going to build shapefiles
+    void*     l_id  = NULL;        // datasource and layer IDs
+
+    if ( make_shapefiles ) {
+        char ds_name[128];
+        sprintf(ds_name, "./cp_debug/problem");
+        ds_id = tgShapefileOpenDatasource( ds_name );
+    }
 
     if (is_pavement)
     {
@@ -600,47 +435,49 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
             SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
     
             // do this before clipping and generating the base
-            pre_tess = tgPolygonSimplify( pre_tess );
-            pre_tess = reduce_degeneracy( pre_tess );
-
-            // grow pretess by a little bit
-            //pre_tess = tgPolygonExpand( pre_tess, 0.05);     // 5cm
-
+            // pre_tess = tgPolygonSimplify( pre_tess );
+            // pre_tess = reduce_degeneracy( pre_tess );
+    
             TGSuperPoly sp;
             TGTexParams tp;
 
-            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: expanded poly has " << pre_tess.contours() << " contours");
-            for (int i=0; i<pre_tess.contours(); i++)
-            {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: expanded countour " << i << " has " << pre_tess.contour_size(i) << " points" );
-            }
-
-#if 1
-            TGPolygon clipped = tgPolygonDiff( pre_tess, *accum );
-#else
             TGPolygon clipped = tgPolygonDiffClipper( pre_tess, *accum );
-#endif
-            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly has " << clipped.contours() << " contours");
-            for (int i=0; i<clipped.contours(); i++)
-            {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: clipped poly countour " << i << " has " << clipped.contour_size(i) << " points" );
-            }
-            
-            TGPolygon split   = tgPolygonSplitLongEdges( clipped, 400.0 );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: split poly has " << split.contours() << " contours");
+            SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
+
+            tgPolygonFindSlivers( clipped, slivers );
 
             sp.erase();
-            sp.set_poly( split );
+            sp.set_poly( clipped );
             sp.set_material( material );
             //sp.set_flag("taxi");
 
             rwy_polys->push_back( sp );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
-#if 1
-            *accum = tgPolygonUnion( pre_tess, *accum );
-#else
+
             *accum = tgPolygonUnionClipper( pre_tess, *accum );
-#endif
+
+            /* If debugging this poly, write the poly, and clipped poly and the accum buffer into their own layers */
+            if (ds_id) {
+                char layer_name[128];
+                char feature_name[128];
+
+                sprintf( layer_name, "original" );
+                l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                sprintf( feature_name, "original" );
+                tgShapefileCreateFeature( ds_id, l_id, pre_tess, feature_name );
+
+                sprintf( layer_name, "clipped" );
+                l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                sprintf( feature_name, "clipped" );
+                tgShapefileCreateFeature( ds_id, l_id, clipped, feature_name );
+
+                sprintf( layer_name, "accum" );
+                l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                sprintf( feature_name, "accum" );
+                tgShapefileCreateFeature( ds_id, l_id, *accum, feature_name );
+
+                tgShapefileCloseDatasource( ds_id );        
+            }
+
             tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
             texparams->push_back( tp );
 
@@ -664,7 +501,7 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
 
 // Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges 
 // - resulting in no base, which we can't handle
-int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing )
+int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
 
@@ -677,10 +514,10 @@ int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clear
         safe_base = tgPolygonExpand( pre_tess, 5.0);        
         
         // add this to the airport clearing
-        *apt_clearing = tgPolygonUnion( safe_base, *apt_clearing);
+        *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing);
 
         // and add the clearing to the base
-        *apt_base = tgPolygonUnion( base, *apt_base );
+        *apt_base = tgPolygonUnionClipper( base, *apt_base );
     }
 
     return 1;

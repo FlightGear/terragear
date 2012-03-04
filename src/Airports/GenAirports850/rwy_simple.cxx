@@ -36,10 +36,9 @@ void Runway::gen_simple_rwy( double alt_m,
                      const string& material,
 		     superpoly_list *rwy_polys,
 		     texparams_list *texparams,
-		     ClipPolyType *accum )
+		     ClipPolyType *accum,
+             poly_list& slivers )
 {
-    int i;
-
     TGPolygon runway = gen_runway_w_mid( alt_m, 0.0, 0.0 );
 
     TGPolygon runway_half;
@@ -92,7 +91,7 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
                             0.0, 1.0, 0.0, 1.0,
                             heading,
                             material, "",
-                            rwy_polys, texparams, accum );
+                            rwy_polys, texparams, accum, slivers );
     }
         // Generate runway
         Runway::gen_runway_section( runway_half,
@@ -101,7 +100,7 @@ for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
                             0.0, 0.28, 0.0, 1.0,
                             heading,
                             material, "",
-                            rwy_polys, texparams, accum );
+                            rwy_polys, texparams, accum, slivers );
 
 }
 

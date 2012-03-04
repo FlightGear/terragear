@@ -103,7 +103,10 @@ public:
         tm = cleanup_time;
     }
 
+    void merge_slivers( superpoly_list& polys, poly_list& slivers );
     void BuildBtg( const string& root, const string_list& elev_src );
+
+    void SetDebugPolys( int rwy, int pvmt, int feat, int base );
 
 private:
     int     code;               // airport, heliport or sea port
@@ -126,6 +129,12 @@ private:
     struct timeval  build_time;
     struct timeval  cleanup_time;
     struct timeval  triangulation_time;
+
+    // debug
+    int dbg_rwy_poly;
+    int dbg_pvmt_poly;
+    int dbg_feat_poly;
+    int dbg_base_poly;
 };
 
 typedef std::vector <Airport *> AirportList;

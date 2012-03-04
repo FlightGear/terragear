@@ -83,8 +83,15 @@ public:
         cur_sign        = NULL;
         prev_node       = NULL;
         cur_state       = STATE_NONE;
+
+        // Debug
+        rwy_poly  = -1;
+        pvmt_poly = -1;
+        feat_poly = -1;
+        base_poly = -1;
     }
     
+    void            SetDebugPolys( int rwy, int pvmt, int feat, int base );
     long            FindAirport( string icao );
     void            AddAirport( string icao );
     void            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
@@ -126,6 +133,12 @@ private:
     // List of positions in database file to parse
     ParseList       parse_positions;
 	IcaoList		airport_icaos;
+
+    // debug
+    int rwy_poly;
+    int pvmt_poly;
+    int feat_poly;
+    int base_poly;
 };
 
 #endif

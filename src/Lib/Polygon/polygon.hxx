@@ -252,6 +252,7 @@ TGPolygon tgPolygonStripHoles( const TGPolygon &poly );
 
 TGPolygon tgPolygon2tristrip( const TGPolygon& poly );
 
+void tgPolygonFindSlivers( TGPolygon& in, poly_list& slivers );
 
 // wrapper functions for gpc polygon clip routines
 

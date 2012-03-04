@@ -317,6 +317,14 @@ void Parser::RemoveAirport( string icao )
     }
 }
 
+void Parser::SetDebugPolys( int rwy, int pvmt, int feat, int base )
+{
+    rwy_poly  = rwy;
+    pvmt_poly = pvmt;
+    feat_poly = feat;
+    base_poly = base;
+}
+
 void Parser::Parse( string last_apt_file )
 {
     char tmp[2048];
@@ -644,6 +652,7 @@ int Parser::ParseLine(char* line)
                         SetState( STATE_PARSE_SIMPLE );
                         SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
                         cur_airport = new Airport( code, line );
+                        cur_airport->SetDebugPolys( rwy_poly, pvmt_poly, feat_poly, base_poly );
                     }
                     else
                     {
@@ -656,6 +665,7 @@ int Parser::ParseLine(char* line)
                         SetState( STATE_PARSE_SIMPLE );
                         SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
                         cur_airport = new Airport( code, line );
+                        cur_airport->SetDebugPolys( rwy_poly, pvmt_poly, feat_poly, base_poly );
                     }
                     else
                     {

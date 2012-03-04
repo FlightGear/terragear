@@ -37,6 +37,7 @@ void gen_tex_section( const TGPolygon& runway,
                          const string& material,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         ClipPolyType *accum  );
+                         ClipPolyType *accum,
+                         poly_list& slivers  );
 
 #endif

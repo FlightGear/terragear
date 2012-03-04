@@ -50,6 +50,9 @@
 //const double fgPoint3_Epsilon = 0.0000001;
 const double fgPoint3_Epsilon = 0.000001;
 
+#define DO_SNAP     0
+#define SNAP_GRID   (0.0000001)
+
 enum {PX, PY, PZ};		    // axes
 
 // Kludge for msvc++ 6.0 - requires forward decls of friend functions.
@@ -100,6 +103,8 @@ public:
     void setlat(const double y);
     void setradius(const double z);
     void setelev(const double z);
+
+    void snap(void);
 
     // Queries 
 
@@ -214,6 +219,7 @@ inline Point3D Point3D::fromSGGeod(const SGGeod& geod)
   pt.setlon(geod.getLongitudeRad());
   pt.setlat(geod.getLatitudeRad());
   pt.setelev(geod.getElevationM());
+
   return pt;
 }
 
@@ -223,6 +229,7 @@ inline Point3D Point3D::fromSGGeoc(const SGGeoc& geoc)
   pt.setlon(geoc.getLongitudeRad());
   pt.setlat(geoc.getLatitudeRad());
   pt.setradius(geoc.getRadiusM());
+
   return pt;
 }
 
@@ -232,6 +239,7 @@ inline Point3D Point3D::fromSGVec3(const SGVec3<double>& cart)
   pt.setx(cart.x());
   pt.sety(cart.y());
   pt.setz(cart.z());
+
   return pt;
 }
 
@@ -241,6 +249,7 @@ inline Point3D Point3D::fromSGVec3(const SGVec3<float>& cart)
   pt.setx(cart.x());
   pt.sety(cart.y());
   pt.setz(cart.z());
+
   return pt;
 }
 
@@ -250,6 +259,7 @@ inline Point3D Point3D::fromSGVec2(const SGVec2<double>& cart)
   pt.setx(cart.x());
   pt.sety(cart.y());
   pt.setz(0);
+
   return pt;
 }
 
@@ -259,6 +269,7 @@ inline Point3D Point3D::fromSGVec2(const SGVec2<float>& cart)
   pt.setx(cart.x());
   pt.sety(cart.y());
   pt.setz(0);
+
   return pt;
 }
 
@@ -267,27 +278,36 @@ inline Point3D Point3D::fromSGVec2(const SGVec2<float>& cart)
 
 inline Point3D& Point3D::operator = (const Point3D& p)
 {
-    n[PX] = p.n[PX]; n[PY] = p.n[PY]; n[PZ] = p.n[PZ]; return *this;
+    n[PX] = p.n[PX]; n[PY] = p.n[PY]; n[PZ] = p.n[PZ]; 
+
+    return *this;
 }
 
 inline Point3D& Point3D::operator += ( const Point3D& p )
 {
-    n[PX] += p.n[PX]; n[PY] += p.n[PY]; n[PZ] += p.n[PZ]; return *this;
+    n[PX] += p.n[PX]; n[PY] += p.n[PY]; n[PZ] += p.n[PZ]; 
+    
+    return *this;
 }
 
 inline Point3D& Point3D::operator -= ( const Point3D& p )
 {
-    n[PX] -= p.n[PX]; n[PY] -= p.n[PY]; n[PZ] -= p.n[PZ]; return *this;
+    n[PX] -= p.n[PX]; n[PY] -= p.n[PY]; n[PZ] -= p.n[PZ]; 
+
+    return *this;
 }
 
 inline Point3D& Point3D::operator *= ( const double d )
 {
-    n[PX] *= d; n[PY] *= d; n[PZ] *= d; return *this;
+    n[PX] *= d; n[PY] *= d; n[PZ] *= d; 
+
+    return *this;
 }
 
 inline Point3D& Point3D::operator /= ( const double d )
 {
     double d_inv = 1./d; n[PX] *= d_inv; n[PY] *= d_inv; n[PZ] *= d_inv;
+
     return *this;
 }
 
@@ -317,6 +337,13 @@ inline void Point3D::setradius(const double z) {
 
 inline void Point3D::setelev(const double z) {
     n[PZ] = z;
+}
+
+inline void Point3D::snap( void )
+{
+    n[PX] =  SNAP_GRID * round( n[PX]/SNAP_GRID );
+    n[PY] =  SNAP_GRID * round( n[PY]/SNAP_GRID );
+    n[PZ] =  SNAP_GRID * round( n[PZ]/SNAP_GRID );
 }
 
 // QUERIES
@@ -417,12 +444,16 @@ inline Point3D operator * (const Point3D& a, const double d)
 
 inline Point3D operator * (const double d, const Point3D& a)
 {
-    return a*d;
+    Point3D pt = a*d;
+
+    return pt;
 }
 
 inline Point3D operator / (const Point3D& a, const double d)
 {
-    return Point3D(a) *= (1.0 / d );
+    Point3D pt = Point3D(a) *= (1.0 / d );
+
+    return pt;
 }
 
 inline bool operator == (const Point3D& a, const Point3D& b)

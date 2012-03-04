@@ -33,6 +33,8 @@
 #include <simgear/structure/exception.hxx>
 
 #include <Polygon/polygon.hxx>
+#include <Polygon/chop.hxx>
+
 #include <Triangulate/trieles.hxx>
 
 #include <algorithm>
@@ -361,10 +363,10 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p, bool verbose ) {
     point_list nodes;
     string flags;
     if (verbose) {
-        flags = "pzqenXYY";
+        flags = "pzenXYY";
 //        flags = "pzqenXY";      // allow adding interior points
     } else {
-        flags = "pzqenXYYQ";
+        flags = "pzenXYYQ";
 //        flags = "pzqenXYQ";     // allow adding interior points
     }
 
@@ -427,9 +429,9 @@ TGPolygon polygon_tesselate_alt_with_extra( TGPolygon &p, const point_list& extr
     point_list  nodes;
     string flags;
     if (verbose) {
-        flags = "VVpzqenXYY";
+        flags = "VVpzenXYY";
     } else {
-        flags = "pzqenXYYQ";
+        flags = "pzenXYYQ";
     }
 
     if ( polygon_tesselate( p, extra_nodes, trieles, nodes, flags ) >= 0 ) {
@@ -613,7 +615,7 @@ static void calc_point_inside( TGContourNode *node, TGPolygon &p ) {
     // cout << endl;
     
     if ( xcuts.size() < 2 || (xcuts.size() % 2) != 0 ) {
-            throw sg_exception("Geometric inconsistency in calc_point_inside()");
+        throw sg_exception("Geometric inconsistency in calc_point_inside()");
     }
     
     double maxlen=0.0;

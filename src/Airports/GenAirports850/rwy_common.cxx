@@ -39,12 +39,13 @@ void Runway::gen_rw_designation( const string& material,
                                  double &start_pct, double &end_pct,
                                  superpoly_list *rwy_polys,
                                  texparams_list *texparams,
-                                 ClipPolyType *accum )
+                                 ClipPolyType *accum,
+                                 poly_list& slivers )
 {
     if (rwname != "XX"){ /* Do not create a designation block if the runway name is set to none */
         string letter = "";
         double length = rwy.length / 2.0;
-        for ( int i = 0; i < rwname.length(); ++i ) {
+        for ( unsigned int i = 0; i < rwname.length(); ++i ) {
             string tmp = rwname.substr(i, 1);
             if ( tmp == "L" || tmp == "R" || tmp == "C" ) {
                 rwname = rwname.substr(0, i);
@@ -63,7 +64,7 @@ void Runway::gen_rw_designation( const string& material,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
                                 material, letter,
-                                rwy_polys, texparams, accum );
+                                rwy_polys, texparams, accum, slivers );
         }
 
 
@@ -88,14 +89,14 @@ void Runway::gen_rw_designation( const string& material,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
                                 material, tex1,
-                                rwy_polys, texparams, accum );
+                                rwy_polys, texparams, accum, slivers );
             gen_runway_section( poly,
                                 start_pct, end_pct,
                                 0.5, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
                                 material, tex2,
-                                rwy_polys, texparams, accum );
+                                rwy_polys, texparams, accum, slivers );
 
         } else if (rwname.length() == 1) {
             sprintf( tex1, "%c%c", rwname[0], 'c');
@@ -106,7 +107,7 @@ void Runway::gen_rw_designation( const string& material,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
                                 material, tex1,
-                                rwy_polys, texparams, accum );
+                                rwy_polys, texparams, accum, slivers );
         }
     }
 }
@@ -117,7 +118,8 @@ void Runway::gen_runway_overrun( const TGPolygon& runway_half,
                          const string& prefix,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         ClipPolyType* accum ) {
+                         ClipPolyType* accum,
+                         poly_list& slivers ) {
     const float length = rwy.length / 2.0 + 2.0 * SG_FEET_TO_METER;
     double start1_pct = 0.0;
     double end1_pct = 0.0;
@@ -155,7 +157,8 @@ void Runway::gen_runway_overrun( const TGPolygon& runway_half,
                                 "stopway",
                                 rwy_polys,
                                 texparams,
-                                accum);
+                                accum,
+                                slivers );
         }
     }
 
@@ -170,7 +173,8 @@ void Runway::gen_runway_section( const TGPolygon& runway,
                          const string& material,
                          superpoly_list *rwy_polys,
                          texparams_list *texparams,
-                         ClipPolyType *accum  ) {
+                         ClipPolyType *accum,
+                         poly_list& slivers  ) {
     gen_tex_section( runway,
                          startl_pct, endl_pct,
                          startw_pct, endw_pct,
@@ -180,6 +184,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
                          material,
                          rwy_polys,
                          texparams,
-                         accum  );
+                         accum,
+                         slivers  );
 
 }
