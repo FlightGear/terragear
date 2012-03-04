@@ -32,8 +32,7 @@ using std::string;
 
 // generate a simple runway.  The routine modifies rwy_polys,
 // texparams, and accum
-void Runway::gen_simple_rwy( const string& material,
-                             superpoly_list *rwy_polys,
+void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                              texparams_list *texparams,
                              ClipPolyType *accum,
                              poly_list& slivers )
@@ -89,7 +88,7 @@ void Runway::gen_simple_rwy( const string& material,
                                         0.0, 1.0,
                                         0.0, 1.0, 0.0, 1.0,
                                         heading,
-                                        material, "",
+                                        "",
                                         rwy_polys, texparams, 
                                         accum, slivers );
         }
@@ -100,7 +99,7 @@ void Runway::gen_simple_rwy( const string& material,
                                     0.0, 1.0,
                                     0.0, 0.28, 0.0, 1.0,
                                     heading,
-                                    material, "",
+                                    "",
                                     rwy_polys, texparams, 
                                     accum, slivers );
 

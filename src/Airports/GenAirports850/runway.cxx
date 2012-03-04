@@ -82,27 +82,26 @@ TGPolygon WaterRunway::GetNodes()
 int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing )
 {
     TGPolygon base, safe_base;
-    string material;
 
     if ( rwy.surface == 1 /* Asphalt */ )
     {
-        material = "pa_";
+        material_prefix = "pa_";
     } 
     else if ( rwy.surface == 2 /* Concrete */ )
     {
-        material = "pc_";
+        material_prefix = "pc_";
     } 
     else if ( rwy.surface == 3 /* Turf/Grass */ )
     {
-        material = "grass_rwy";
+        material_prefix = "grass_rwy";
     } 
     else if ( rwy.surface == 4 /* Dirt */ || rwy.surface == 5 /* Gravel */ )
     {
-        material = "dirt_rwy";
+        material_prefix = "dirt_rwy";
     } 
     else if ( rwy.surface == 12 /* Dry Lakebed */ )
     {
-        material = "dirt_rwy";
+        material_prefix = "dirt_rwy";
     } 
     else if ( rwy.surface == 13 /* Water runway (buoy's?) */ )
     {
@@ -128,7 +127,7 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         case 1: // asphalt:
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete" << rwy.surface);
-            gen_rwy( material, rwy_polys, texparams, accum, slivers );
+            gen_rwy( rwy_polys, texparams, accum, slivers );
             gen_runway_lights( rwy_lights );
             break;
     
@@ -136,7 +135,7 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         case 4: // Dirt
         case 5: // Gravel
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
-            gen_simple_rwy( material, rwy_polys, texparams, accum, slivers );
+            gen_simple_rwy( rwy_polys, texparams, accum, slivers );
             gen_runway_lights( rwy_lights );
             break;
 
@@ -166,13 +165,13 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         // If we have shoulders, we need to grow even further...
 
         // generate area around runways
-        base      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0);
+        base      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );
 
         // also clear a safe area around the runway
         safe_base = gen_runway_area_w_extend( 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
 
         // add this to the airport clearing
-        *apt_clearing = tgPolygonUnionClipper(safe_base, *apt_clearing);
+        *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing );
 
         // and add the clearing to the base
         *apt_base = tgPolygonUnionClipper( base, *apt_base );

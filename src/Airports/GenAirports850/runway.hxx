@@ -64,48 +64,48 @@ public:
 private:
     struct TGRunway {
     // data for whole runway
-    int     surface;
-    int     shoulder;
-    int     centerline_lights;
-    int     edge_lights;
-    int     dist_remain_signs;
+        int     surface;
+        int     shoulder;
+        int     centerline_lights;
+        int     edge_lights;
+        int     dist_remain_signs;
 
-    double  width;
-    double  length;
-    double  heading;
-    double  smoothness;
+        double  width;
+        double  length;
+        double  heading;
+        double  smoothness;
 
-    // data for each end
-    char    rwnum[2][16];
-    double  lat[2];
-    double  lon[2];
-    double  threshold[2];
-    double  overrun[2];
+        // data for each end
+        char    rwnum[2][16];
+        double  lat[2];
+        double  lon[2];
+        double  threshold[2];
+        double  overrun[2];
 
-    int     marking[2];
-    int     approach_lights[2];
-    int     tz_lights[2];
-    int     reil[2];
+        int     marking[2];
+        int     approach_lights[2];
+        int     tz_lights[2];
+        int     reil[2];
     };
 
-    TGRunway rwy;
+    TGRunway      rwy;
+    std::string   material_prefix;
 
     // Build Helpers:
     // generate an area for a runway and include midpoints
     TGPolygon gen_runway_w_mid( double length_extend_m, double width_extend_m )
     {
-         return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, true) );
+         return ( gen_wgs84_area( GetStart(), GetEnd(), 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, true) );
     }
 
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
     TGPolygon gen_runway_area_w_extend( double length_extend, double displ1, double displ2, double width_extend )
     {
-        return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, false) );
+        return ( gen_wgs84_area( GetStart(), GetEnd(), 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, false) );
     }
 
-    void gen_rw_designation( const std::string& material,
-                             TGPolygon poly, double heading, string rwname,
+    void gen_rw_designation( TGPolygon poly, double heading, string rwname,
                              double &start_pct, double &end_pct,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
@@ -118,17 +118,15 @@ private:
                       double startw_pct, double endw_pct,
                       double minu, double maxu, double minv, double maxv,
                       double heading,
-                      const string& prefix,
                       const string& material,
                       superpoly_list *rwy_polys,
                       texparams_list *texparams,
                       ClipPolyType *accum,
                       poly_list& slivers );
 
-    void gen_simple_rwy( const string& material, superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
+    void gen_simple_rwy( superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
     
-    void gen_rwy( const std::string& material,
-                  superpoly_list* rwy_polys,
+    void gen_rwy( superpoly_list* rwy_polys,
                   texparams_list* texparams,
                   ClipPolyType* accum,
                   poly_list& slivers  );

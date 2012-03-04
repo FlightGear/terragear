@@ -92,7 +92,6 @@ void Runway::gen_runway_section( const TGPolygon& runway,
                                  double startw_pct, double endw_pct,
                                  double minu, double maxu, double minv, double maxv,
                                  double heading,
-                                 const string& prefix,
                                  const string& material,
                                  superpoly_list *rwy_polys,
                                  texparams_list *texparams,
@@ -187,7 +186,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
     section.add_node( 0, p3 );
 
     // print runway points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << prefix << material);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
     for ( j = 0; j < section.contours(); ++j ) {
         for ( k = 0; k < section.contour_size( j ); ++k ) {
             Point3D p = section.get_pt(j, k);
@@ -196,12 +195,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
     }
 
     // Clip the new polygon against what ever has already been created.
-#if 0
-    TGPolygon clipped = tgPolygonDiff( section, *accum );
-#else
     TGPolygon clipped = tgPolygonDiffClipper( section, *accum );
-#endif
-
     tgPolygonFindSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
@@ -213,15 +207,11 @@ void Runway::gen_runway_section( const TGPolygon& runway,
     TGSuperPoly sp;
     sp.erase();
     sp.set_poly( split );
-    sp.set_material( prefix + material );
+    sp.set_material( material_prefix + material );
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
 
-#if 0
-    *accum = tgPolygonUnion( section, *accum );
-#else
     *accum = tgPolygonUnionClipper( section, *accum );
-#endif
 
     // Store away what we need to know for texture coordinate
     // calculation.  (CLO 10/20/02: why can't we calculate texture
@@ -232,7 +222,6 @@ void Runway::gen_runway_section( const TGPolygon& runway,
 
     double len = length / 2.0;
     double sect_len = len * ( endl_pct - startl_pct );
-
     double sect_wid = width * ( endw_pct - startw_pct );
 
     TGTexParams tp;
@@ -247,7 +236,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
     texparams->push_back( tp );
 
     // print runway points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts " << prefix + material);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "clipped runway pts " << material_prefix + material);
     for ( j = 0; j < clipped.contours(); ++j ) {
         for ( k = 0; k < clipped.contour_size( j ); ++k ) {
             Point3D p = clipped.get_pt(j, k);
@@ -256,8 +245,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
     }
 }
 
-void Runway::gen_rw_designation( const string& material,
-                                 TGPolygon poly, double heading, string rwname,
+void Runway::gen_rw_designation( TGPolygon poly, double heading, string rwname,
                                  double &start_pct, double &end_pct,
                                  superpoly_list *rwy_polys,
                                  texparams_list *texparams,
@@ -285,14 +273,16 @@ void Runway::gen_rw_designation( const string& material,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, letter,
+                                letter,
                                 rwy_polys, texparams, accum, slivers );
         }
 
 
         // create runway designation number(s)
-        if (rwname == "0")
+        if (rwname == "0") {
             rwname = "36";
+        }
+
         SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
 
         char tex1[32]; tex1[0] = '\0';
@@ -310,14 +300,14 @@ void Runway::gen_rw_designation( const string& material,
                                 0.0, 0.5,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, tex1,
+                                tex1,
                                 rwy_polys, texparams, accum, slivers );
             gen_runway_section( poly,
                                 start_pct, end_pct,
                                 0.5, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, tex2,
+                                tex2,
                                 rwy_polys, texparams, accum, slivers );
 
         } else if (rwname.length() == 1) {
@@ -328,7 +318,7 @@ void Runway::gen_rw_designation( const string& material,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, tex1,
+                                tex1,
                                 rwy_polys, texparams, accum, slivers );
         }
     }
@@ -338,8 +328,7 @@ void Runway::gen_rw_designation( const string& material,
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
-void Runway::gen_rwy( const string& material,
-                      superpoly_list *rwy_polys,
+void Runway::gen_rwy( superpoly_list *rwy_polys,
                       texparams_list *texparams,
                       ClipPolyType *accum,
                       poly_list& slivers )
@@ -427,7 +416,7 @@ void Runway::gen_rwy( const string& material,
                             0.0, 1.0,
                             0.0, 1.0, tex_pct, 1.0,
                             heading,
-                            material, "dspl_thresh",
+                            "dspl_thresh",
                             rwy_polys, texparams, accum, slivers );
 
             // main chunks
@@ -439,7 +428,7 @@ void Runway::gen_rwy( const string& material,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, "dspl_thresh",
+                                "dspl_thresh",
                                 rwy_polys, texparams, accum, slivers );
             }
 
@@ -451,7 +440,7 @@ void Runway::gen_rwy( const string& material,
                             0.0, 1.0,
                             0.0, 1.0, 0.0, 1.0,
                             heading,
-                            material, "dspl_arrows",
+                            "dspl_arrows",
                             rwy_polys, texparams, accum, slivers );
         }
 
@@ -464,7 +453,7 @@ void Runway::gen_rwy( const string& material,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, "no_threshold",
+                                "no_threshold",
                                 rwy_polys, texparams, accum, slivers );
         } else {
             // Thresholds for all others
@@ -475,12 +464,12 @@ void Runway::gen_rwy( const string& material,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, "threshold",
+                                "threshold",
                                 rwy_polys, texparams, accum, slivers );
         }
 
         // Runway designation block
-        gen_rw_designation( material, runway_half, heading,
+        gen_rw_designation( runway_half, heading,
                             rwname, start1_pct, end1_pct, 
                             rwy_polys, texparams, accum, slivers );
 
@@ -519,7 +508,7 @@ void Runway::gen_rwy( const string& material,
                                         0.0, 1.0,
                                         0.0, 1.0, 0.0, 1.0,
                                         heading,
-                                        material, rw_marking_list[i].tex,
+                                        rw_marking_list[i].tex,
                                         rwy_polys, texparams, accum, slivers );
                 }
             }
@@ -545,7 +534,7 @@ void Runway::gen_rwy( const string& material,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
-                                material, "rest",
+                                "rest",
                                 rwy_polys, texparams, accum, slivers );
         }
 
@@ -573,7 +562,6 @@ void Runway::gen_rwy( const string& material,
                                     0.0, 1.0,
                                     0.0, 1.0, 0.0, 1.0, //last number is lengthwise
                                     heading,
-                                    material,
                                     "stopway",
                                     rwy_polys,
                                     texparams,
