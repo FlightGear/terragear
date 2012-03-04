@@ -32,8 +32,6 @@
 
 #include "runway.hxx"
 
-using std::cout;
-using std::endl;
 using std::string;
 
 
@@ -281,8 +279,8 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
     point_list r_normals; r_normals.clear();
     int i;
 
-    cout << "gen threshold " << rwy.rwnum[0] << endl;
-
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen threshold " << rwy.rwnum[0] );
+    
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
     TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
@@ -315,8 +313,7 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
@@ -569,7 +566,7 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
     point_list normals; normals.clear();
     int i;
 
-    cout << "gen touchdown zone lights " << rwy.rwnum[0] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen touchdown zone lights " << rwy.rwnum[0] );
 
     Point3D normal;
 
@@ -582,25 +579,29 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
+        corner.push_back( poly_corners.get_pt( 0, i ) );
     }
 
     // determine the start point.
     Point3D ref;
     double length_hdg, left_hdg;
-    double lon, lat, r;
+    double lon = 0.0f, lat = 0.0f, r;
     if ( recip ) {
         ref = (corner[0] + corner[1]) / 2;
         length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        if ( length_hdg > 360.0 ) { 
+            length_hdg -= 360.0; 
+        }
     } else {
         ref = (corner[2] + corner[3]) / 2;
         length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    if ( left_hdg < 0 ) { 
+        left_hdg += 360.0; 
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     normal = gen_runway_light_vector( 3.0, recip );
 
@@ -677,7 +678,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light,
     string flag;
     double gs_angle = 3.0;
 
-    cout << "gen vasi " << rwy.rwnum[0] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen vasi " << rwy.rwnum[0] );
 
     Point3D normal;
 
@@ -839,7 +840,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light,
     point_list lightobj; lightobj.clear();
     point_list normals; normals.clear();
 
-    cout << "gen papi " << rwy_light.rwy_name << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen papi " << rwy_light.rwy_name 
 
     Point3D ref;
     double lon, lat, r;
@@ -945,7 +946,7 @@ TGSuperPoly Runway::gen_reil( bool recip )
     int i;
     string flag;
 
-    cout << "gen reil " << rwy.rwnum[0] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen reil " << rwy.rwnum[0] );
 
     Point3D normal;
 
@@ -978,9 +979,10 @@ TGSuperPoly Runway::gen_reil( bool recip )
         flag = rwy.rwnum[0];
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    if ( left_hdg < 0 ) { 
+        left_hdg += 360.0; 
+    }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     // offset 40' downwind
     geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
@@ -1038,11 +1040,11 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
     int i, j;
     string flag;
     if ( kind == "1" ) {
-        cout << "gen Calvert lights " << rwy.rwnum[0] << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "gen Calvert lights " << rwy.rwnum[0] );
     } else if ( kind == "2" ) {
-	cout << "gen Calvert/II lights " << rwy.rwnum[0] << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "gen Calvert/II lights " << rwy.rwnum[0] );
     } else {
-	cout << "gen unknown Calvert lights " << rwy.rwnum[0] << endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "gen unknown Calvert lights " << rwy.rwnum[0] );
     }
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
@@ -1111,9 +1113,10 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
         length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    if ( left_hdg < 0 ) { 
+        left_hdg += 360.0; 
+    }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     Point3D ref = ref_save;
     //
@@ -1427,7 +1430,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
     int i, j;
     string flag;
 
-    cout << "gen ALSF/SALS lights " << rwy.rwnum[0] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen ALSF/SALS lights " << rwy.rwnum[0] );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
@@ -1495,9 +1498,10 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    if ( left_hdg < 0 ) { 
+        left_hdg += 360.0; 
+    }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     Point3D ref = ref_save;
 
@@ -1936,7 +1940,7 @@ TGSuperPoly Runway::gen_odals( bool recip )
     int i;
     string flag;
 
-    cout << "gen odals " << rwy.rwnum[0] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen odals " << rwy.rwnum[0] );
 
     // ODALS lighting is omni-directional, but we generate a normal as
     // a placeholder to keep everything happy.
@@ -1971,9 +1975,10 @@ TGSuperPoly Runway::gen_odals( bool recip )
         flag = rwy.rwnum[0];
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    if ( left_hdg < 0 ) { 
+        left_hdg += 360.0; 
+    }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     Point3D ref = ( ref1 + ref2 ) / 2.0;
 
@@ -2041,7 +2046,7 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
     int i, j;
     string flag;
 
-    cout << "gen SSALx lights " << rwy.rwnum[0] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen SSALx lights " << rwy.rwnum[0] );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
@@ -2109,9 +2114,10 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
         length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    if ( left_hdg < 0 ) { 
+        left_hdg += 360.0; 
+    }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     Point3D ref = ref_save;
 
@@ -2309,7 +2315,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
     int i, j;
     string flag;
 
-    cout << "gen SSALx lights " << rwy.rwnum[0] << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "gen SSALx lights " << rwy.rwnum[0] );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
@@ -2328,7 +2334,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
+        corner.push_back( poly_corners.get_pt( 0, i ) );
     }
 
     Point3D inc;
@@ -2377,9 +2383,10 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
         length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    cout << "length hdg = " << length_hdg
-         << " left heading = " << left_hdg << endl;
+    if ( left_hdg < 0 ) { 
+        left_hdg += 360.0; 
+    }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     Point3D ref = ref_save;
 

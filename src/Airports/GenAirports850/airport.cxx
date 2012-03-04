@@ -773,48 +773,18 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
     {
     	TGPolygon poly = rwy_polys[k].get_poly();
-
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size of section " << k << " before =" << poly.total_size());
-
-#if 0
-        poly = remove_cycles( poly );
-        poly = remove_dups( poly );
-        poly = remove_bad_contours( poly );
-        poly = remove_tiny_contours( poly );
-        poly = remove_spikes( poly );
-        poly = remove_dups( poly );
-        poly = remove_bad_contours( poly );
-        poly = remove_small_contours( poly );
-#endif
-
     	rwy_polys[k].set_poly( poly );
     }
 
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
     {
     	TGPolygon poly = pvmt_polys[k].get_poly();
-
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size of section " << k << " before =" << poly.total_size());
-
-#if 0
-        poly = remove_cycles( poly );
-        poly = remove_dups( poly );
-        poly = remove_bad_contours( poly );
-        poly = remove_tiny_contours( poly );
-        poly = remove_spikes( poly );
-        poly = remove_dups( poly );
-        poly = remove_bad_contours( poly );
-        poly = remove_small_contours( poly );
-#endif
-
     	pvmt_polys[k].set_poly( poly );
     }
 
     for ( unsigned int k = 0; k < line_polys.size(); ++k ) 
     {
     	TGPolygon poly = line_polys[k].get_poly();
-
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "total size of section " << k << " before =" << poly.total_size());
 
         poly = remove_cycles( poly );
         poly = remove_dups( poly );
@@ -840,23 +810,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     base_poly = add_nodes_to_poly( base_poly, tmp_pvmt_nodes );
     SG_LOG(SG_GENERAL, SG_DEBUG, " after adding tmp_nodes: " << base_poly);
 
-#if 0
-    base_poly = remove_cycles( base_poly );
-    base_poly = remove_dups( base_poly );
-    base_poly = remove_bad_contours( base_poly );
-    base_poly = tgPolygonSimplify( base_poly );
-    base_poly = remove_tiny_contours( base_poly );
-    base_poly = remove_spikes( base_poly );
-    base_poly = remove_dups( base_poly );
-    base_poly = remove_bad_contours( base_poly );
-    base_poly = remove_small_contours( base_poly );
-#endif
-
     // Finally find slivers in base
-    SG_LOG(SG_GENERAL, SG_INFO, "before find slivers in base - contours is : " << base_poly.contours() );
     tgPolygonFindSlivers( base_poly, slivers );
-    SG_LOG(SG_GENERAL, SG_INFO, "after find slivers in base - contours is : " << base_poly.contours() );
-
     merge_slivers( rwy_polys, slivers );
     merge_slivers( pvmt_polys, slivers );
 
