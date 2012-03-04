@@ -4,7 +4,6 @@ add_executable(genapts850
 	apt_surface.hxx apt_surface.cxx
 	beznode.hxx
 	closedpoly.hxx closedpoly.cxx
-	convex_hull.hxx convex_hull.cxx
 	elevations.cxx elevations.hxx 
 	global.hxx
 	helipad.hxx helipad.cxx

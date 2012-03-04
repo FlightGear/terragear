@@ -9,7 +9,6 @@
 #include <Geometry/poly_support.hxx>
 
 #include "beznode.hxx"
-#include "convex_hull.hxx"
 #include "closedpoly.hxx"
 
 #define NO_BEZIER       (0)
