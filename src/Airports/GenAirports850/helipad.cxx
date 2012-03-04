@@ -75,11 +75,13 @@ superpoly_list Helipad::gen_helipad_lights(void){
     return result;
 }
 
-void Helipad::BuildBtg( float alt_m,
-			superpoly_list *rwy_polys,
-			texparams_list *texparams,
+void Helipad::BuildBtg( superpoly_list *rwy_polys,
+                        texparams_list *texparams,
                         superpoly_list *rwy_lights,
-			ClipPolyType *accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing )
+                        ClipPolyType *accum, 
+                        poly_list& slivers, 
+                        TGPolygon* apt_base, 
+                        TGPolygon* apt_clearing )
 {
     SG_LOG( SG_GENERAL, SG_INFO, "Building helipad = " << heli.designator );
 
@@ -89,7 +91,7 @@ void Helipad::BuildBtg( float alt_m,
     Point3D helicenter = Point3D( heli.lon, heli.lat, 0.0);
 
 
-    TGPolygon helipad = gen_wgs84_area( helicenter, heli.length, 0, 0, heli.width, heli.heading, alt_m, false);
+    TGPolygon helipad = gen_wgs84_area( helicenter, heli.length, 0, 0, heli.width, heli.heading, false);
 
     double start1_pct = 0.0;
     double end1_pct = 0.0;

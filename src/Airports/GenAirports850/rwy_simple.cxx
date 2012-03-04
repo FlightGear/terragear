@@ -32,76 +32,77 @@ using std::string;
 
 // generate a simple runway.  The routine modifies rwy_polys,
 // texparams, and accum
-void Runway::gen_simple_rwy( double alt_m,
-                     const string& material,
-		     superpoly_list *rwy_polys,
-		     texparams_list *texparams,
-		     ClipPolyType *accum,
-             poly_list& slivers )
+void Runway::gen_simple_rwy( const string& material,
+                             superpoly_list *rwy_polys,
+                             texparams_list *texparams,
+                             ClipPolyType *accum,
+                             poly_list& slivers )
 {
-    TGPolygon runway = gen_runway_w_mid( alt_m, 0.0, 0.0 );
+    TGPolygon runway = gen_runway_w_mid( 0.0, 0.0 );
 
     TGPolygon runway_half;
 
-for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
+    for ( int rwhalf=0; rwhalf<2; ++rwhalf ) {
 
-    if (rwhalf == 0) {
+        if (rwhalf == 0) {
 
-    //Create the first half of the runway (first entry in apt.dat)
-    runway_half.erase();
-    runway_half.add_node( 0, runway.get_pt(0, 3) );
-    runway_half.add_node( 0, runway.get_pt(0, 4) );
-    runway_half.add_node( 0, runway.get_pt(0, 5) );
-    runway_half.add_node( 0, runway.get_pt(0, 2) );
-    }
+            //Create the first half of the runway (first entry in apt.dat)
+            runway_half.erase();
+            runway_half.add_node( 0, runway.get_pt(0, 3) );
+            runway_half.add_node( 0, runway.get_pt(0, 4) );
+            runway_half.add_node( 0, runway.get_pt(0, 5) );
+            runway_half.add_node( 0, runway.get_pt(0, 2) );
+        }
 
-    else if (rwhalf == 1) {
+        else if (rwhalf == 1) {
 
-    //Create the second runway half from apt.dat
-    runway_half.erase();
-    runway_half.add_node( 0, runway.get_pt(0, 0) );
-    runway_half.add_node( 0, runway.get_pt(0, 1) );
-    runway_half.add_node( 0, runway.get_pt(0, 2) );
-    runway_half.add_node( 0, runway.get_pt(0, 5) );
-    }
+            //Create the second runway half from apt.dat
+            runway_half.erase();
+            runway_half.add_node( 0, runway.get_pt(0, 0) );
+            runway_half.add_node( 0, runway.get_pt(0, 1) );
+            runway_half.add_node( 0, runway.get_pt(0, 2) );
+            runway_half.add_node( 0, runway.get_pt(0, 5) );
+        }
 
-    double length = rwy.length / 2.0;
-    double start1_pct = 0.0;
-    double end1_pct = 0.0;
-    double heading = 0.0;
+        double length = rwy.length / 2.0;
+        double start1_pct = 0.0;
+        double end1_pct = 0.0;
+        double heading = 0.0;
 
-    if (rwhalf == 0) {
+        if (rwhalf == 0) {
             heading = rwy.heading + 180.0;
-    }
-    else if (rwhalf == 1) {
+        }
+        else if (rwhalf == 1) {
             heading = rwy.heading;
-    }
-    SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
+        }
+        SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
 
-    // Displaced threshold if it exists
-    if ( rwy.threshold[rwhalf] > 0.0 ) {
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
-                << rwy.threshold[rwhalf] );
+        // Displaced threshold if it exists
+        if ( rwy.threshold[rwhalf] > 0.0 ) {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
+                                           << rwy.threshold[rwhalf] );
 
-        start1_pct = end1_pct;
-        end1_pct = start1_pct + ( rwy.threshold[rwhalf] / length );
-        Runway::gen_runway_section( runway_half,
-                            start1_pct, end1_pct,
-                            0.0, 1.0,
-                            0.0, 1.0, 0.0, 1.0,
-                            heading,
-                            material, "",
-                            rwy_polys, texparams, accum, slivers );
-    }
+            start1_pct = end1_pct;
+            end1_pct = start1_pct + ( rwy.threshold[rwhalf] / length );
+            Runway::gen_runway_section( runway_half,
+                                        start1_pct, end1_pct,
+                                        0.0, 1.0,
+                                        0.0, 1.0, 0.0, 1.0,
+                                        heading,
+                                        material, "",
+                                        rwy_polys, texparams, 
+                                        accum, slivers );
+        }
+        
         // Generate runway
         Runway::gen_runway_section( runway_half,
-                            0, 1,
-                            0.0, 1.0,
-                            0.0, 0.28, 0.0, 1.0,
-                            heading,
-                            material, "",
-                            rwy_polys, texparams, accum, slivers );
+                                    0, 1,
+                                    0.0, 1.0,
+                                    0.0, 0.28, 0.0, 1.0,
+                                    heading,
+                                    material, "",
+                                    rwy_polys, texparams, 
+                                    accum, slivers );
 
-}
-
+    }
 }

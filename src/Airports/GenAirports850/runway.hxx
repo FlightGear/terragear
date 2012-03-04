@@ -46,14 +46,20 @@ public:
             else return false;
     }
 
-    int BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
-    void BuildShoulder( float alt_m,
-                                superpoly_list *rwy_polys,
-                                texparams_list *texparams,
-                                ClipPolyType *accum,
-                                poly_list& slivers, 
-                                TGPolygon* apt_base, 
-                                TGPolygon* apt_clearing );
+    int BuildBtg( superpoly_list* rwy_polys, 
+                  texparams_list* texparams, 
+                  superpoly_list* rwy_lights, 
+                  ClipPolyType* accum, 
+                  poly_list& slivers, 
+                  TGPolygon* apt_base, 
+                  TGPolygon* apt_clearing );
+
+    void BuildShoulder( superpoly_list *rwy_polys,
+                        texparams_list *texparams,
+                        ClipPolyType *accum,
+                        poly_list& slivers, 
+                        TGPolygon* apt_base, 
+                        TGPolygon* apt_clearing );
     
 private:
     struct TGRunway {
@@ -86,16 +92,16 @@ private:
 
     // Build Helpers:
     // generate an area for a runway and include midpoints
-    TGPolygon gen_runway_w_mid( double alt_m, double length_extend_m, double width_extend_m )
+    TGPolygon gen_runway_w_mid( double length_extend_m, double width_extend_m )
     {
-         return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, alt_m, true) );
+         return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend_m, 0.0, 0.0, rwy.width + 2.0 * width_extend_m, rwy.heading, true) );
     }
 
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
-    TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
+    TGPolygon gen_runway_area_w_extend( double length_extend, double displ1, double displ2, double width_extend )
     {
-        return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, alt_m, false) );
+        return ( gen_wgs84_area( Point3D(GetStart()), Point3D(GetEnd()), 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, false) );
     }
 
     void gen_rw_designation( const std::string& material,
@@ -128,9 +134,8 @@ private:
                              ClipPolyType* accum,
                              poly_list& slivers   );
 
-    void gen_simple_rwy( double alt_m, const string& material, superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
-    void gen_rwy( double alt_m,
-                  const std::string& material,
+    void gen_simple_rwy( const string& material, superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
+    void gen_rwy( const std::string& material,
                   superpoly_list* rwy_polys,
                   texparams_list* texparams,
                   ClipPolyType* accum,
@@ -146,20 +151,20 @@ private:
                          poly_list& slivers,
                          int marking );
 
-    void gen_runway_lights( float alt_m, superpoly_list* lights );
+    void gen_runway_lights( superpoly_list* lights );
 
     Point3D gen_runway_light_vector( double angle, bool recip );
     superpoly_list gen_runway_edge_lights( bool recip );
     superpoly_list gen_taxiway_edge_lights( const int kind, bool recip );
-    superpoly_list gen_runway_threshold_lights( const int kind, float alt_m, bool recip );
+    superpoly_list gen_runway_threshold_lights( const int kind, bool recip );
     superpoly_list gen_runway_center_line_lights( bool recip );
-    TGSuperPoly gen_touchdown_zone_lights( float alt_m, bool recip );
-    TGSuperPoly gen_reil( float alt_m, bool recip );
-    superpoly_list gen_calvert( float alt_m, const string &kind, bool recip );
-    superpoly_list gen_alsf( float alt_m, const string &kind, bool recip );
-    TGSuperPoly gen_odals( float alt_m, bool recip );
-    superpoly_list gen_ssalx( float alt_m, const string& kind, bool recip );
-    superpoly_list gen_malsx( float alt_m, const string& kind, bool recip );
+    TGSuperPoly gen_touchdown_zone_lights( bool recip );
+    TGSuperPoly gen_reil( bool recip );
+    superpoly_list gen_calvert( const string &kind, bool recip );
+    superpoly_list gen_alsf( const string &kind, bool recip );
+    TGSuperPoly gen_odals( bool recip );
+    superpoly_list gen_ssalx( const string& kind, bool recip );
+    superpoly_list gen_malsx( const string& kind, bool recip );
 };
 
 typedef std::vector <Runway *> RunwayList;

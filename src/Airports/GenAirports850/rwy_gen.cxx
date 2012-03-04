@@ -140,12 +140,11 @@ void Runway::gen_rw_marking( const TGPolygon& runway,
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
 
-void Runway::gen_rwy( double alt_m,
-			const string& material,
-			superpoly_list *rwy_polys,
-			texparams_list *texparams,
-			ClipPolyType *accum,
-            poly_list& slivers )
+void Runway::gen_rwy( const string& material,
+                      superpoly_list *rwy_polys,
+                      texparams_list *texparams,
+                      ClipPolyType *accum,
+                      poly_list& slivers )
 {
     SG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
 
@@ -155,7 +154,7 @@ void Runway::gen_rwy( double alt_m,
 
     int i;
 
-    TGPolygon runway = gen_runway_w_mid( alt_m, 0, 0 );
+    TGPolygon runway = gen_runway_w_mid( 0, 0 );
 
     TGPolygon runway_half;
     for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
@@ -333,8 +332,7 @@ void Runway::gen_rwy( double alt_m,
     }
 }
 
-void Runway::BuildShoulder( float alt_m,
-                            superpoly_list *rwy_polys,
+void Runway::BuildShoulder( superpoly_list *rwy_polys,
                             texparams_list *texparams,
                             ClipPolyType *accum,
                             poly_list& slivers, 
@@ -460,12 +458,7 @@ void Runway::BuildShoulder( float alt_m,
                     poly.add_node( 0, curInnerLoc );
                 }
 
-#if 0
-                TGPolygon clipped = tgPolygonDiff( poly, *accum );
-#else
                 TGPolygon clipped = tgPolygonDiffClipper( poly, *accum );
-#endif
-
                 tgPolygonFindSlivers( clipped, slivers );
 
                 sp.erase();
@@ -473,11 +466,7 @@ void Runway::BuildShoulder( float alt_m,
                 sp.set_material( shoulder_surface );
                 rwy_polys->push_back( sp );
 
-#if 0
-                *accum = tgPolygonUnion( poly, *accum );
-#else
                 *accum = tgPolygonUnionClipper( poly, *accum );
-#endif
 
                 tp = TGTexParams( poly.get_pt(0,0), shoulder_width, dist, rwy.heading );
                 tp.set_maxv(dist);

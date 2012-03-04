@@ -27,7 +27,7 @@ class Helipad
 {
 public:
     Helipad(char* def);
-    void BuildBtg( float alt_m, superpoly_list* heli_polys, texparams_list* texparams, superpoly_list* heli_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    void BuildBtg( superpoly_list* heli_polys, texparams_list* texparams, superpoly_list* heli_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
 	Point3D GetLoc()
 	{
@@ -60,7 +60,7 @@ private:
     // (return result points in degrees)
     TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
     {
-        return ( gen_wgs84_area(Point3D(heli.lon, heli.lat, 0.0f), heli.length + 2.0*length_extend, displ1, displ2, heli.width + 2.0*width_extend, heli.heading, alt_m, false) );
+        return ( gen_wgs84_area(Point3D(heli.lon, heli.lat, 0.0f), heli.length + 2.0*length_extend, displ1, displ2, heli.width + 2.0*width_extend, heli.heading, false) );
     }
 
     superpoly_list gen_helipad_lights(void);

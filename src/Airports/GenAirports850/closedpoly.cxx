@@ -385,7 +385,7 @@ void ClosedPoly::Finish()
     holes.clear();
 }
 
-int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
+int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
     string    material;
@@ -501,7 +501,7 @@ int ClosedPoly::BuildBtg( float alt_m, superpoly_list* rwy_polys, texparams_list
 
 // Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges 
 // - resulting in no base, which we can't handle
-int ClosedPoly::BuildBtg( float alt_m, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
+int ClosedPoly::BuildBtg( TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
 

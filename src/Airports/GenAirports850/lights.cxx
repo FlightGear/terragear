@@ -46,8 +46,7 @@ Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
     double length;
 
     // Generate the 4 corners of the runway
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 0.0, 0.0, 0.0, 0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0, 0.0, 0.0, 0.0 );
     point_list corner;
     for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
 	corner.push_back( poly_corners.get_pt( 0, i ) );
@@ -99,11 +98,10 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -212,8 +210,7 @@ superpoly_list Runway::gen_taxiway_edge_lights( const int kind, bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0, 0.0, 0.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0, 0.0, 0.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -276,8 +273,7 @@ superpoly_list Runway::gen_taxiway_edge_lights( const int kind, bool recip )
 
 
 // generate threshold lights for a 3 degree approach 
-superpoly_list Runway::gen_runway_threshold_lights( const int kind,
-                                                   float alt_m, bool recip )
+superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list g_normals; g_normals.clear();
@@ -289,11 +285,10 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 0.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -327,10 +322,10 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind,
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
     // offset 5' downwind
-    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
                         -5 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref1 = Point3D( lon, lat, 0.0 );
-    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg, 
                         -5 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
 
@@ -349,10 +344,10 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind,
         r_normals.push_back( normal2 );
 
         // offset 10' towards center
-        geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg, 
                             -10 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref1 = Point3D( lon, lat, 0.0 );
-        geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), left_hdg, 
+        geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg, 
                             10 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref2 = Point3D( lon, lat, 0.0 );
     }
@@ -413,11 +408,10 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -514,8 +508,7 @@ static superpoly_list gen_taxiway_center_line_lights( bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0, 0.0, 0.0, 2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0, 0.0, 0.0, 2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -570,7 +563,7 @@ static superpoly_list gen_taxiway_center_line_lights( bool recip )
 */
 
 // generate touch down zone lights
-TGSuperPoly Runway::gen_touchdown_zone_lights( float alt_m, bool recip )
+TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
@@ -582,11 +575,10 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( float alt_m, bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 0.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -614,26 +606,26 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( float alt_m, bool recip )
 
     for ( i = 0; i < 30; ++i ) {
         // offset 100' upwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             100 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
         Point3D pt1 = ref;
 
         // left side bar
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                             36 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt1 = Point3D( lon, lat, 0.0 );
         lights.push_back( pt1 );
         normals.push_back( normal );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt1 = Point3D( lon, lat, 0.0 );
         lights.push_back( pt1 );
         normals.push_back( normal );
 
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt1 = Point3D( lon, lat, 0.0 );
         lights.push_back( pt1 );
@@ -642,19 +634,19 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( float alt_m, bool recip )
         pt1 = ref;
 
         // right side bar
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                             -36 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt1 = Point3D( lon, lat, 0.0 );
         lights.push_back( pt1 );
         normals.push_back( normal );
     
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt1 = Point3D( lon, lat, 0.0 );
         lights.push_back( pt1 );
         normals.push_back( normal );
 
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt1 = Point3D( lon, lat, 0.0 );
         lights.push_back( pt1 );
@@ -676,7 +668,7 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( float alt_m, bool recip )
 
 /*
 // generate a simple 2 bar VASI
-static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
+static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, 
                              bool recip, TGPolygon *apt_base )
 {
     point_list lights; lights.clear();
@@ -691,11 +683,10 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( rwy_info, 0.0, 0.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -727,11 +718,11 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     }
 
     // offset 600' upwind
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                         600 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
     // offset 50' left
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg, 
+    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg, 
                         50 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
 
@@ -742,31 +733,31 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     Point3D pt1 = ref;
     lights.push_back( pt1 );
     normals.push_back( normal );
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
     
     // unit2
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
 
     // unit3
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
@@ -775,11 +766,11 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     // grass base
     Point3D base_pt = (ref + pt1) / 2.0;
     TGPolygon obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 15.0,
-                                         length_hdg, alt_m, false );
+                                         length_hdg, false );
     *apt_base = tgPolygonUnion( obj_base, *apt_base );
 
     // upwind bar
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                         700 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
 
@@ -789,31 +780,31 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     pt1 = ref;
     lights.push_back( pt1 );
     normals.push_back( normal );
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
     
     // unit2
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
 
     // unit3
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         16 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
     normals.push_back( normal );
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         1 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lights.push_back( pt1 );
@@ -822,7 +813,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     // grass base
     base_pt = (ref + pt1) / 2.0;
     obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 15.0,
-                               length_hdg, alt_m, false );
+                               length_hdg, false );
     *apt_base = tgPolygonUnion( obj_base, *apt_base );
 
     TGPolygon lights_poly; lights_poly.erase();
@@ -843,7 +834,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
 */
 
 // Generate the airports light objects (PAPI/VASI)
-/*void gen_airport_lightobj( const TGLightobj& rwy_light, float alt_m, superpoly_list &lights )
+/*void gen_airport_lightobj( const TGLightobj& rwy_light, superpoly_list &lights )
 {
     point_list lightobj; lightobj.clear();
     point_list normals; normals.clear();
@@ -906,21 +897,21 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     normals.push_back( normal );
     
     // unit2
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lightobj.push_back( pt1 );
     normals.push_back( normal );
 
     // unit3
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lightobj.push_back( pt1 );
     normals.push_back( normal );
 
     // unit4
-    geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
                         30 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt1 = Point3D( lon, lat, 0.0 );
     lightobj.push_back( pt1 );
@@ -929,7 +920,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
     // grass base
     Point3D base_pt = (ref + pt1) / 2.0;
     TGPolygon obj_base = gen_wgs84_area( base_pt, 15.0, 0.0, 0.0, 30.0,
-                                         length_hdg, alt_m, false );
+                                         length_hdg, false );
     *apt_base = tgPolygonUnion( obj_base, *apt_base );
 
     TGPolygon lights_poly; lights_poly.erase();
@@ -947,7 +938,7 @@ static TGSuperPoly gen_vasi( const TGLightobj& rwy_light, float alt_m,
 */
 
 // generate REIL lights
-TGSuperPoly Runway::gen_reil( float alt_m, bool recip )
+TGSuperPoly Runway::gen_reil( bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
@@ -960,11 +951,10 @@ TGSuperPoly Runway::gen_reil( float alt_m, bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 0.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -993,11 +983,11 @@ TGSuperPoly Runway::gen_reil( float alt_m, bool recip )
          << " left heading = " << left_hdg << endl;
 
     // offset 40' downwind
-    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
                         -40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref1 = Point3D( lon, lat, 0.0 );
     // offset 40' left
-    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg, 
                         40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref1 = Point3D( lon, lat, 0.0 );
 
@@ -1006,11 +996,11 @@ TGSuperPoly Runway::gen_reil( float alt_m, bool recip )
     normals.push_back( normal );
     
     // offset 40' downwind
-    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg, 
                         -40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
     // offset 40' left
-    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), left_hdg, 
+    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg, 
                         -40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
 
@@ -1035,7 +1025,7 @@ TGSuperPoly Runway::gen_reil( float alt_m, bool recip )
 
 
 // generate Calvert-I/II approach lighting schemes
-superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip )
+superpoly_list Runway::gen_calvert( const string &kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -1065,11 +1055,10 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1140,7 +1129,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 
     int count;
     //if ( kind == "1" || kind == "2" ) {
-    //    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+    //    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
     //                        -100 * SG_FEET_TO_METER, &lat, &lon, &r );
     //    ref = Point3D( lon, lat, 0.0 );
     //    count = 10;
@@ -1155,19 +1144,19 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
         pt = ref;
 
         // centre lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), length_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), length_hdg, 
                             -1 * CALVERT_HORIZ_SPACING, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
 
 	if (kind == "1" ) {
             if ( i >= 10 && i < 20 ) {
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                     CALVERT_VERT_SPACING/2, &lat, &lon, &r );
                 pair = Point3D( lon, lat, 0.0 );
                 w_lights.push_back( pair );
                 w_normals.push_back( normal1 );
 
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                     -1 * CALVERT_VERT_SPACING/2, &lat, &lon,
                                     &r );
                 pair = Point3D( lon, lat, 0.0 );
@@ -1177,13 +1166,13 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
                 w_lights.push_back( pt );
                 w_normals.push_back( normal1 );
 
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                     CALVERT_VERT_SPACING, &lat, &lon, &r );
                 pair = Point3D( lon, lat, 0.0 );
                 w_lights.push_back( pair );
                 w_normals.push_back( normal1 );
 
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                     -1 * CALVERT_VERT_SPACING, &lat, &lon, &r );
                 pair = Point3D( lon, lat, 0.0 );
                 w_lights.push_back( pair );
@@ -1227,7 +1216,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 	
 	if ( kind == "2" ) {
             saved = pt;
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 CALVERT2_VERT_SPACING, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             w_lights.push_back( pt );
@@ -1235,7 +1224,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 
             // five rows < 300m
             if ( i < 10 ) {
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                     CALVERT2_VERT_SPACING, &lat, &lon, &r );
                 pt = Point3D( lon, lat, 0.0 );
                 w_lights.push_back( pt );
@@ -1243,7 +1232,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 
                 // outer strip of lights
                 for (j=0;j<9;j++) {
-                    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
                                         CALVERT2_VERT_SPACING, &lat, &lon, &r );
                     pt = Point3D( lon, lat, 0.0 );
                     if ( i == 0 || j > 3 ) {
@@ -1254,7 +1243,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
             }
 
             pt = saved;
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             w_lights.push_back( pt );
@@ -1262,7 +1251,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 
             // five rows < 300m
             if ( i < 10 ) {
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                     -1 * CALVERT2_VERT_SPACING, &lat, &lon,
                                     &r );
                 pt = Point3D( lon, lat, 0.0 );
@@ -1270,7 +1259,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
                 w_normals.push_back( normal1 );
                 // outer strip of lights
                 for ( j = 0; j < 9; j++ ) {
-                    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
                                         -1 * CALVERT2_VERT_SPACING, &lat, &lon,
                                         &r );
                     pt = Point3D( lon, lat, 0.0 );
@@ -1324,12 +1313,12 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 
             // space out from centre lights
             if ( j == 0 ) {
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
                                     CALVERT_VERT_SPACING * j, &lat, &lon, &r );
                 pt = Point3D( lon, lat, 0.0 );
             }
 
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 spacing, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
 
@@ -1347,13 +1336,13 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
             // right side lights
             // space out from centre lights
             if ( j == 0 ) {
-                geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg,
+                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
                                     -1 * CALVERT_VERT_SPACING * j, &lat, &lon,
                                     &r );
                 pt = Point3D( lon, lat, 0.0 );
             }
 
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 -1 * spacing, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
 
@@ -1425,7 +1414,7 @@ superpoly_list Runway::gen_calvert( float alt_m, const string &kind, bool recip 
 }
 
 // generate ALSF-I/II and SALS/SALSF approach lighting schemes
-superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
+superpoly_list Runway::gen_alsf( const string &kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -1450,11 +1439,10 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1516,13 +1504,13 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
     int count;
     if ( kind == "1" || kind == "2" ) {
         // ALSF-I or ALSF-II
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -100 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
         count = 30;
     } else {
         // SALS/SALSF
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -300 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
         count = 13;
@@ -1534,13 +1522,13 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         w_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -1549,19 +1537,19 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
 
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -100 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
     }
@@ -1572,26 +1560,26 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         // Terminating bar
 
         // offset 200' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -200 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
         pt = ref;
  
         // left 3 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             15 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
 
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
 
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
@@ -1600,19 +1588,19 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         pt = ref;
 
         // right 3 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -15 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
@@ -1622,26 +1610,26 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
 
         for ( i = 0; i < 9; ++i ) {
             // offset 100' downwind
-            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                                 -100 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
 
             pt = ref;
  
             // left 3 side lights
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 36 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
             r_normals.push_back( normal1 );
 
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
             r_normals.push_back( normal1 );
 
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
@@ -1650,19 +1638,19 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
             pt = ref;
 
             // right 3 side lights
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 -36 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
             r_normals.push_back( normal1 );
     
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 -5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
             r_normals.push_back( normal1 );
     
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 -5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
@@ -1676,21 +1664,21 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         ref = ref_save;
 
         // offset 100' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -100 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
     
         pt = ref;
 
         // left 5 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             75 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
 
         for ( j = 0; j < 4; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
@@ -1700,14 +1688,14 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         pt = ref;
 
         // rioght 5 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -75 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
 
         for ( j = 0; j < 4; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             r_lights.push_back( pt );
@@ -1719,21 +1707,21 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         ref = ref_save;
 
         // offset 500' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -500 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
     
         pt = ref;
 
         // left 4 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             11.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
 
         for ( j = 0; j < 3; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             w_lights.push_back( pt );
@@ -1743,14 +1731,14 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         pt = ref;
 
         // right 4 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -11.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
 
         for ( j = 0; j < 3; ++j ) {
-            geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                                 -5 * SG_FEET_TO_METER, &lat, &lon, &r );
             pt = Point3D( lon, lat, 0.0 );
             w_lights.push_back( pt );
@@ -1763,7 +1751,7 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
     if ( kind == "O" || kind == "P" ) {
         // generate SALS secondary threshold
 
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -200 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
         count = 30;
@@ -1773,13 +1761,13 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         r_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
@@ -1788,13 +1776,13 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
         r_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         r_lights.push_back( pt );
@@ -1806,21 +1794,21 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
     ref = ref_save;
 
     // offset 1000' downwind
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                         -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
     
     pt = ref;
  
     // left 8 side lights
-    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                         15 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt = Point3D( lon, lat, 0.0 );
     w_lights.push_back( pt );
     w_normals.push_back( normal1 );
 
     for ( j = 0; j < 7; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -1830,14 +1818,14 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
     pt = ref;
  
     // right 8 side lights
-    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                         -15 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt = Point3D( lon, lat, 0.0 );
     w_lights.push_back( pt );
     w_normals.push_back( normal1 );
 
     for ( j = 0; j < 7; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -1850,7 +1838,7 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         // generate rabbit lights
 
         // start 1000' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -1859,7 +1847,7 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
             s_normals.push_back( normal1 );
 
             // offset 100' downwind
-            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                                 -100 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
         }
@@ -1867,7 +1855,7 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
         // generate 3 sequenced lights aligned with last 3 light bars
 
         // start 1300' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -1300 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -1876,7 +1864,7 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
             s_normals.push_back( normal1 );
              
             // offset 100' downwind
-            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                                 -100 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
         }
@@ -1941,7 +1929,7 @@ superpoly_list Runway::gen_alsf( float alt_m, const string &kind, bool recip )
 
 
 // generate ODALS lights
-TGSuperPoly Runway::gen_odals( float alt_m, bool recip )
+TGSuperPoly Runway::gen_odals( bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
@@ -1956,11 +1944,10 @@ TGSuperPoly Runway::gen_odals( float alt_m, bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 0.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    0.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       0.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -1991,11 +1978,11 @@ TGSuperPoly Runway::gen_odals( float alt_m, bool recip )
     Point3D ref = ( ref1 + ref2 ) / 2.0;
 
     // offset 40' downwind
-    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
                         -40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref1 = Point3D( lon, lat, 0.0 );
     // offset 40' left
-    geo_direct_wgs_84 ( alt_m, ref1.lat(), ref1.lon(), left_hdg, 
+    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg, 
                         40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref1 = Point3D( lon, lat, 0.0 );
 
@@ -2003,11 +1990,11 @@ TGSuperPoly Runway::gen_odals( float alt_m, bool recip )
     normals.push_back( normal );
     
     // offset 40' downwind
-    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg, 
                         -40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
     // offset 40' left
-    geo_direct_wgs_84 ( alt_m, ref2.lat(), ref2.lon(), left_hdg, 
+    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg, 
                         -40 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
 
@@ -2016,7 +2003,7 @@ TGSuperPoly Runway::gen_odals( float alt_m, bool recip )
 
     for ( i = 0; i < 5; ++i ) {
         // offset 100m downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -100, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
         lights.push_back( ref );
@@ -2041,7 +2028,7 @@ TGSuperPoly Runway::gen_odals( float alt_m, bool recip )
 
 // generate SSALS, SSALF, and SSALR approach lighting scheme (kind =
 // S, F, or R)
-superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
+superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -2066,11 +2053,10 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -2131,7 +2117,7 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
 
     for ( i = 0; i < 7; ++i ) {
         // offset 200' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -200 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -2140,13 +2126,13 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
         w_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2155,13 +2141,13 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
         pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2173,21 +2159,21 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
     ref = ref_save;
 
     // offset 1000' downwind
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                         -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
     
     pt = ref;
  
     // left 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                         15 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt = Point3D( lon, lat, 0.0 );
     w_lights.push_back( pt );
     w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2197,14 +2183,14 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
     pt = ref;
  
     // right 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                         -15 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt = Point3D( lon, lat, 0.0 );
     w_lights.push_back( pt );
     w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2217,7 +2203,7 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
         ref = ref_save;
 
         // start 1600' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -1600 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -2226,7 +2212,7 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
             s_normals.push_back( normal1 );
 
             // offset 200' downwind
-            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                                 -200 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
         }
@@ -2235,7 +2221,7 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
         ref = ref_save;
 
         // start 1000' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -2244,7 +2230,7 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
             s_normals.push_back( normal1 );
              
             // offset 200' downwind
-            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                                 -200 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
         }
@@ -2310,7 +2296,7 @@ superpoly_list Runway::gen_ssalx( float alt_m, const string& kind, bool recip )
 
 // generate MALS, MALSF, and MALSR approach lighting scheme (kind =
 // ' ', F, or R)
-superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
+superpoly_list Runway::gen_malsx( const string& kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
@@ -2335,11 +2321,10 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
 
     // using TGPolygon is a bit innefficient, but that's what the
     // routine returns.
-    TGPolygon poly_corners
-        = gen_runway_area_w_extend( 0.0, 2.0,
-                                    rwy.threshold[0],
-                                    rwy.threshold[1],
-                                    2.0 );
+    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
+                                                       rwy.threshold[0],
+                                                       rwy.threshold[1],
+                                                       2.0 );
 
     point_list corner;
     for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
@@ -2400,7 +2385,7 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
 
     for ( i = 0; i < 7; ++i ) {
         // offset 200' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -200 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -2409,13 +2394,13 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
         w_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2424,13 +2409,13 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
         pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
         w_normals.push_back( normal1 );
     
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2442,21 +2427,21 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
     ref = ref_save;
 
     // offset 1000' downwind
-    geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                         -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
     ref = Point3D( lon, lat, 0.0 );
     
     pt = ref;
  
     // left 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                         23 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt = Point3D( lon, lat, 0.0 );
     w_lights.push_back( pt );
     w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2466,14 +2451,14 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
     pt = ref;
  
     // right 5 side lights
-    geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                         -23 * SG_FEET_TO_METER, &lat, &lon, &r );
     pt = Point3D( lon, lat, 0.0 );
     w_lights.push_back( pt );
     w_normals.push_back( normal1 );
 
     for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( alt_m, pt.lat(), pt.lon(), left_hdg, 
+        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
                             -2.5 * SG_FEET_TO_METER, &lat, &lon, &r );
         pt = Point3D( lon, lat, 0.0 );
         w_lights.push_back( pt );
@@ -2486,7 +2471,7 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
         ref = ref_save;
 
         // start 1600' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -1600 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -2495,7 +2480,7 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
             s_normals.push_back( normal1 );
 
             // offset 200' downwind
-            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                                 -200 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
         }
@@ -2504,7 +2489,7 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
         ref = ref_save;
 
         // start 1000' downwind
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                             -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
@@ -2513,7 +2498,7 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
             s_normals.push_back( normal1 );
              
             // offset 200' downwind
-            geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), length_hdg, 
+            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
                                 -200 * SG_FEET_TO_METER, &lat, &lon, &r );
             ref = Point3D( lon, lat, 0.0 );
         }
@@ -2578,7 +2563,7 @@ superpoly_list Runway::gen_malsx( float alt_m, const string& kind, bool recip )
 
 
 // top level runway light generator
-void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
+void Runway::gen_runway_lights( superpoly_list *lights ) {
 
     unsigned int i;
 
@@ -2613,21 +2598,21 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
 
     // Touchdown zone lighting
     if ( rwy.tz_lights[0] == 1 /* Has touchdown zone lighting */ ) {
-        TGSuperPoly s = gen_touchdown_zone_lights( alt_m, false );
+        TGSuperPoly s = gen_touchdown_zone_lights( false );
         lights->push_back( s );
     }
     if ( rwy.tz_lights[1] == 1 /* Has touchdown zone lighting */ ) {
-        TGSuperPoly s = gen_touchdown_zone_lights( alt_m, true );
+        TGSuperPoly s = gen_touchdown_zone_lights( true );
         lights->push_back( s );
     }
 
     // REIL lighting
     if ( rwy.reil[0] > 0 /* Has REIL lighting */ ) {
-        TGSuperPoly s = gen_reil( alt_m, false );
+        TGSuperPoly s = gen_reil( false );
         lights->push_back( s );
     }
     if ( rwy.reil[1] > 0 /* Has REIL lighting */ ) {
-        TGSuperPoly s = gen_reil( alt_m, true );
+        TGSuperPoly s = gen_reil( true );
         lights->push_back( s );
     }
 
@@ -2635,78 +2620,78 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
     // Approach lighting
 
     if ( rwy.approach_lights[0] == 1 /* ALSF-I */ ) {
-        superpoly_list s = gen_alsf( alt_m, "1", false );
+        superpoly_list s = gen_alsf( "1", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 1 /* ALSF-I */ ) {
-        superpoly_list s = gen_alsf( alt_m, "1", true );
+        superpoly_list s = gen_alsf( "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 2 /* ALSF-II */ ) {
-        superpoly_list s = gen_alsf( alt_m, "2", false );
+        superpoly_list s = gen_alsf( "2", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if (rwy.approach_lights[1]  == 2 /* ALSF-II */ ) {
-        superpoly_list s = gen_alsf( alt_m, "2", true );
+        superpoly_list s = gen_alsf( "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 3  /* Calvert I */ ) {
-        superpoly_list s = gen_calvert( alt_m, "1", false );
+        superpoly_list s = gen_calvert( "1", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 3  /* Calvert I */ ) {
-        superpoly_list s = gen_calvert( alt_m, "1", true );
+        superpoly_list s = gen_calvert( "1", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 4  /* Calvert II */ ) {
-        superpoly_list s = gen_calvert( alt_m, "2", false );
+        superpoly_list s = gen_calvert( "2", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 4  /* Calvert II */ ) {
-        superpoly_list s = gen_calvert( alt_m, "2", true );
+        superpoly_list s = gen_calvert( "2", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 5 /* SSALR */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "R", false );
+        superpoly_list s = gen_ssalx( "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 5 /* SSALR */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "R", true );
+        superpoly_list s = gen_ssalx( "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 6 /* SSALF */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "F", false );
+        superpoly_list s = gen_ssalx( "F", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 6 /* SSALF */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "F", true );
+        superpoly_list s = gen_ssalx( "F", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
@@ -2715,63 +2700,63 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
     // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
     // a shorter center bar)
     if ( rwy.approach_lights[0] == 7 /* SALS */ ) {
-        superpoly_list s = gen_alsf( alt_m, "O", false );
+        superpoly_list s = gen_alsf( "O", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 7 /* SALS */ ) {
-        superpoly_list s = gen_alsf( alt_m, "O", true );
+        superpoly_list s = gen_alsf( "O", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 8 /* MALSR */ ) {
-        superpoly_list s = gen_malsx( alt_m, "R", false );
+        superpoly_list s = gen_malsx( "R", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 8 /* MALSR */ ) {
-        superpoly_list s = gen_malsx( alt_m, "R", true );
+        superpoly_list s = gen_malsx( "R", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 9 /* MALSF */ ) {
-        superpoly_list s = gen_malsx( alt_m, "F", false );
+        superpoly_list s = gen_malsx( "F", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 9 /* MALSF */ ) {
-        superpoly_list s = gen_malsx( alt_m, "F", true );
+        superpoly_list s = gen_malsx( "F", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 10 /* MALSX */ ) {
-        superpoly_list s = gen_malsx( alt_m, "x", false );
+        superpoly_list s = gen_malsx( "x", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == 10 /* MALSX */ ) {
-        superpoly_list s = gen_malsx( alt_m, "x", true );
+        superpoly_list s = gen_malsx( "x", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == 11 /* ODALS Omni-directional approach light system */ ) {
-        TGSuperPoly s = gen_odals( alt_m, false );
+        TGSuperPoly s = gen_odals( false );
         lights->push_back( s );
     }
     if ( rwy.approach_lights[1] == 11 /* ODALS Omni-directional approach light system */ ) {
-        TGSuperPoly s = gen_odals( alt_m, true );
+        TGSuperPoly s = gen_odals( true );
         lights->push_back( s );
     }
 
@@ -2784,26 +2769,26 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
 
 
     if ( rwy.approach_lights[0] == -1 /* SALSF not supported by database */ ) {
-        superpoly_list s = gen_alsf( alt_m, "P", false );
+        superpoly_list s = gen_alsf( "P", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == -1 /* SALSF not supported by database */ ) {
-        superpoly_list s = gen_alsf( alt_m, "P", true );
+        superpoly_list s = gen_alsf( "P", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
 
     if ( rwy.approach_lights[0] == -1 /* SSALS not supported by database */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "S", false );
+        superpoly_list s = gen_ssalx( "S", false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
     if ( rwy.approach_lights[1] == -1 /* SSALS not supported by database */ ) {
-        superpoly_list s = gen_ssalx( alt_m, "S", true );
+        superpoly_list s = gen_ssalx( "S", true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
@@ -2825,8 +2810,7 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
     {
         // forward direction
         SG_LOG(SG_GENERAL, SG_DEBUG, "threshold lights for forward direction" );
-        superpoly_list s = gen_runway_threshold_lights( 0,
-                                                        alt_m, false );
+        superpoly_list s = gen_runway_threshold_lights( 0, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
@@ -2838,8 +2822,7 @@ void Runway::gen_runway_lights( float alt_m, superpoly_list *lights ) {
     {
         // reverse direction
         SG_LOG(SG_GENERAL, SG_DEBUG, "threshold lights for reverse direction" );
-        superpoly_list s = gen_runway_threshold_lights( 0,
-                                                        alt_m, true );
+        superpoly_list s = gen_runway_threshold_lights( 0, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
