@@ -141,16 +141,6 @@ private:
                   ClipPolyType* accum,
                   poly_list& slivers  );
 
-    void gen_rw_marking( const TGPolygon& runway,
-                         double &start1_pct, double &end1_pct,
-                         double heading,
-                         const string& material,
-                         superpoly_list* rwy_polys,
-                         texparams_list* texparams,
-                         ClipPolyType* accum, 
-                         poly_list& slivers,
-                         int marking );
-
     void gen_runway_lights( superpoly_list* lights );
 
     Point3D gen_runway_light_vector( double angle, bool recip );
