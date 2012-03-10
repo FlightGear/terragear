@@ -8,6 +8,7 @@
 #include <Polygon/chop.hxx>
 #include <Geometry/poly_support.hxx>
 
+#include "global.hxx"
 #include "beznode.hxx"
 #include "closedpoly.hxx"
 
@@ -277,7 +278,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 // add the pavement vertex
                 // convert from lat/lon to geo
                 // (maybe later) - check some simgear objects...
-                curLoc.snap();
                 dst->push_back( curLoc );
 
                 if (p==0)
@@ -303,7 +303,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
 
                     // add the feature vertex
-                    curLoc.snap();
                     dst->push_back( curLoc );
 
                     if (p==0)
@@ -324,7 +323,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 nextLoc = nextNode->GetLoc();
 
                 // just add the one vertex - dist is small
-                curLoc.snap();
                 dst->push_back( curLoc );
 
                 SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
@@ -363,6 +361,8 @@ void ClosedPoly::Finish()
             ConvertContour( holes[i], &dst_contour );
             pre_tess.add_contour( dst_contour, 1 );
         }
+
+        pre_tess = snap( pre_tess, gSnap );
     }
 
     // save memory by deleting unneeded resources
@@ -441,9 +441,9 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
             TGTexParams tp;
 
             TGPolygon clipped = tgPolygonDiffClipper( pre_tess, *accum );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
-
             tgPolygonFindSlivers( clipped, slivers );
+
+            SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
 
             sp.erase();
             sp.set_poly( clipped );
@@ -453,6 +453,7 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
             rwy_polys->push_back( sp );
 
             *accum = tgPolygonUnionClipper( pre_tess, *accum );
+//            *accum = tgPolygonUnionClipper( clipped, *accum );
 
             /* If debugging this poly, write the poly, and clipped poly and the accum buffer into their own layers */
             if (ds_id) {

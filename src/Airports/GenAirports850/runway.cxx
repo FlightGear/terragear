@@ -8,6 +8,7 @@
 #include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
 
+#include "global.hxx"
 #include "apt_math.hxx"
 #include "beznode.hxx"
 #include "runway.hxx"
@@ -166,9 +167,11 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
 
         // generate area around runways
         base      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );
+        base      = snap( base, gSnap );
 
         // also clear a safe area around the runway
         safe_base = gen_runway_area_w_extend( 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
+        safe_base = snap( safe_base, gSnap );
 
         // add this to the airport clearing
         *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing );

@@ -27,6 +27,7 @@
 
 #include <Output/output.hxx>
 
+#include "global.hxx"
 #include "elevations.hxx"
 
 
@@ -773,12 +774,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
     {
     	TGPolygon poly = rwy_polys[k].get_poly();
+        poly = snap(poly, gSnap);
     	rwy_polys[k].set_poly( poly );
     }
 
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
     {
     	TGPolygon poly = pvmt_polys[k].get_poly();
+        poly = snap(poly, gSnap);
     	pvmt_polys[k].set_poly( poly );
     }
 
@@ -808,6 +811,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG(SG_GENERAL, SG_DEBUG, " tmp_feat_nodes size = " << tmp_feat_nodes.get_node_list().size());
 
     base_poly = add_nodes_to_poly( base_poly, tmp_pvmt_nodes );
+    base_poly = snap( base_poly, gSnap );
     SG_LOG(SG_GENERAL, SG_DEBUG, " after adding tmp_nodes: " << base_poly);
 
     // Finally find slivers in base

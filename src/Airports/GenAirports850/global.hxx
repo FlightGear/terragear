@@ -28,6 +28,9 @@
 
 extern int nudge;
 
+// Each polygon vertex is snapped to a grid with this resolution (~1cm by default)
+extern double gSnap;
+
 // Final grid size for airport surface (in meters)
 const double coarse_grid = 300.0;
 

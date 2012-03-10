@@ -502,7 +502,6 @@ Point3D MakeTGPoint( IntPoint pt )
 	y = (double)( ((double)pt.Y) / (double)FIXEDPT );
 
     tg_pt = Point3D( x, y, -9999.0f);
-    tg_pt.snap();
 
 	return tg_pt;
 }

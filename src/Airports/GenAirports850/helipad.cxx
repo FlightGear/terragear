@@ -18,6 +18,8 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
+#include <Geometry/poly_support.hxx>
+
 #include "global.hxx"
 #include "apt_math.hxx"
 #include "helipad.hxx"
@@ -61,11 +63,17 @@ void Helipad::gen_helipad( const TGPolygon& runway,
     Point3D a2 = runway.get_pt(0, 0);
     Point3D a3 = runway.get_pt(0, 3);
 
+#if 0
     if ( startl_pct > 0.0 ) {
         startl_pct -= nudge * SG_EPSILON;
     }
     if ( endl_pct < 1.0 ) {
         endl_pct += nudge * SG_EPSILON;
+    }
+#endif
+
+    if ( startl_pct < 0.0 ) {
+        startl_pct = 0.0;
     }
 
     if ( endl_pct > 1.0 ) {
@@ -77,6 +85,7 @@ void Helipad::gen_helipad( const TGPolygon& runway,
     // with our polygon clipping code.  This attempts to compensate
     // for that by nudging the areas a bit bigger so we don't end up
     // with polygon slivers.
+#if 0
     if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
         if ( startw_pct > 0.0 ) {
             startw_pct -= nudge * SG_EPSILON;
@@ -85,6 +94,7 @@ void Helipad::gen_helipad( const TGPolygon& runway,
             endw_pct += nudge * SG_EPSILON;
         }
     }
+#endif
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct
            << " end len % = " << endl_pct);
@@ -138,6 +148,7 @@ void Helipad::gen_helipad( const TGPolygon& runway,
     section.add_node( 0, p0 );
     section.add_node( 0, p1 );
     section.add_node( 0, p3 );
+    section = snap( section, gSnap );
 
     // print runway points
     SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << prefix << material);
@@ -149,12 +160,7 @@ void Helipad::gen_helipad( const TGPolygon& runway,
     }
 
     // Clip the new polygon against what ever has already been created.
-#if 0
-    TGPolygon clipped = tgPolygonDiff( section, *accum );
-#else
     TGPolygon clipped = tgPolygonDiffClipper( section, *accum );
-#endif
-
     tgPolygonFindSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
@@ -170,11 +176,7 @@ void Helipad::gen_helipad( const TGPolygon& runway,
     rwy_polys->push_back( sp );
     SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
 
-#if 0
-    *accum = tgPolygonUnion( section, *accum );
-#else
     *accum = tgPolygonUnionClipper( section, *accum );
-#endif
 
     // Store away what we need to know for texture coordinate
     // calculation.  (CLO 10/20/02: why can't we calculate texture
@@ -292,9 +294,11 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
     {
         TGPolygon base, safe_base;
         base      = gen_runway_area_w_extend( 0.0, maxsize * 0.25 , 0.0, 0.0, maxsize * 0.25 );
+        base      = snap( base, gSnap ); 
 
         // also clear a safe area around the pad
         safe_base = gen_runway_area_w_extend( 0.0, maxsize * 0.5, 0.0, 0.0, maxsize * 0.5 );
+        safe_base = snap( safe_base, gSnap );
 
         // add this to the airport clearing
         *apt_clearing = tgPolygonUnionClipper(safe_base, *apt_clearing);

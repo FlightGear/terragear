@@ -9,6 +9,7 @@
 // for debugging clipping errors
 #include <Polygon/chop.hxx>
 
+#include "global.hxx"
 #include "beznode.hxx"
 #include "linearfeature.hxx"
 #include "math.h"
@@ -742,8 +743,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset-width/2.0f );
                 cur_inner = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset+width/2.0f );
             }
-            cur_outer.snap();
-            cur_inner.snap();
 
             if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
             {
@@ -756,6 +755,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 poly.add_node( 0, prev_outer );
                 poly.add_node( 0, cur_outer );
                 poly.add_node( 0, cur_inner );
+                poly = snap( poly, gSnap );
 
 #if DEBUG_LF
                 char feature_name[128];

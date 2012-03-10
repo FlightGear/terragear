@@ -50,9 +50,6 @@
 //const double fgPoint3_Epsilon = 0.0000001;
 const double fgPoint3_Epsilon = 0.000001;
 
-#define DO_SNAP     0
-#define SNAP_GRID   (0.0000001)
-
 enum {PX, PY, PZ};		    // axes
 
 // Kludge for msvc++ 6.0 - requires forward decls of friend functions.
@@ -104,7 +101,7 @@ public:
     void setradius(const double z);
     void setelev(const double z);
 
-    void snap(void);
+    void snap( double grid );
 
     // Queries 
 
@@ -339,11 +336,11 @@ inline void Point3D::setelev(const double z) {
     n[PZ] = z;
 }
 
-inline void Point3D::snap( void )
+inline void Point3D::snap( double grid )
 {
-    n[PX] =  SNAP_GRID * round( n[PX]/SNAP_GRID );
-    n[PY] =  SNAP_GRID * round( n[PY]/SNAP_GRID );
-    n[PZ] =  SNAP_GRID * round( n[PZ]/SNAP_GRID );
+    n[PX] =  grid * round( n[PX]/grid );
+    n[PY] =  grid * round( n[PY]/grid );
+    n[PZ] =  grid * round( n[PZ]/grid );
 }
 
 // QUERIES

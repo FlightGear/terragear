@@ -929,36 +929,21 @@ TGPolygon remove_dups( const TGPolygon &poly ) {
 }
 #endif
 
-static inline double
-snap (double value, double grid_size)
-{
-				// I have no idea if this really works.
-  double factor = 1.0 / grid_size;
-  return double(int(value * factor)) / factor;
-}
-
-static inline Point3D
-snap (const Point3D &p, double grid_size)
-{
-  Point3D result;
-  result.setx(snap(p.x(), grid_size));
-  result.sety(snap(p.y(), grid_size));
-  result.setz(snap(p.z(), grid_size));
-  //cout << result << endl;
-  return result;
-}
-
 // snap all points in a polygon to the given grid size.
 TGPolygon snap (const TGPolygon &poly, double grid_size)
 {
-  TGPolygon result;
-  for (int contour = 0; contour < poly.contours(); contour++) {
-    for (int i = 0; i < poly.contour_size(contour); i++) {
-      result.add_node(contour, snap(poly.get_pt(contour, i), grid_size));
+    TGPolygon result;
+    Point3D   pt;
+    for (int contour = 0; contour < poly.contours(); contour++) {
+        for (int i = 0; i < poly.contour_size(contour); i++) {
+            pt = poly.get_pt(contour, i);
+            pt.snap( grid_size );
+            result.add_node(contour, pt);
+        }
+        result.set_hole_flag(contour, poly.get_hole_flag(contour));
     }
-    result.set_hole_flag(contour, poly.get_hole_flag(contour));
-  }
-  return result;
+  
+    return result;
 }
 
 

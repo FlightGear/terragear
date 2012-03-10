@@ -112,8 +112,9 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
 }
 
 // TODO: where do these belong
-int nudge = 10;
+int nudge = 0;
 double slope_max = 0.2;
+double gSnap = 0.0000001;
 
 int main(int argc, char **argv)
 {
@@ -172,6 +173,10 @@ int main(int argc, char **argv)
         else if ( arg.find("--nudge=") == 0 ) 
         {
     	    nudge = atoi( arg.substr(8).c_str() );
+    	}
+        else if ( arg.find("--snap=") == 0 ) 
+        {
+    	    gSnap = atof( arg.substr(7).c_str() );
     	} 
         else if ( arg.find("--last_apt_file=") == 0 ) 
         {
