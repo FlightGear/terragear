@@ -1,8 +1,8 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  4.6.5                                                           *
-* Date      :  17 January 2011                                                 *
+* Version   :  4.7.3                                                           *
+* Date      :  7 March 2012                                                    *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2012                                         *
 *                                                                              *
@@ -352,8 +352,15 @@ bool Orientation(const Polygon &poly)
 }
 //------------------------------------------------------------------------------
 
+inline bool PointsEqual( const IntPoint &pt1, const IntPoint &pt2)
+{
+  return ( pt1.X == pt2.X && pt1.Y == pt2.Y );
+}
+//------------------------------------------------------------------------------
+
 bool Orientation(OutRec *outRec, bool UseFullInt64Range)
 {
+  //first make sure bottomPt is correctly assigned ...
   OutPt *opBottom = outRec->pts, *op = outRec->pts->next;
   while (op != outRec->pts)
   {
@@ -364,28 +371,28 @@ bool Orientation(OutRec *outRec, bool UseFullInt64Range)
     }
     op = op->next;
   }
+  outRec->bottomPt = opBottom;
+  opBottom->idx = outRec->idx;
 
-  IntPoint vec1, vec2;
-  vec1.X = op->pt.X - op->prev->pt.X;
-  vec1.Y = op->pt.Y - op->prev->pt.Y;
-  vec2.X = op->next->pt.X - op->pt.X;
-  vec2.Y = op->next->pt.Y - op->pt.Y;
+  op = opBottom;
+  //find vertices either side of bottomPt (skipping duplicate points) ....
+  OutPt *opPrev = op->prev;
+  OutPt *opNext = op->next;
+  while (op != opPrev && PointsEqual(op->pt, opPrev->pt)) 
+    opPrev = opPrev->prev;
+  while (op != opNext && PointsEqual(op->pt, opNext->pt))
+    opNext = opNext->next;
+
+  IntPoint ip1, ip2;
+  ip1.X = op->pt.X - opPrev->pt.X;
+  ip1.Y = op->pt.Y - opPrev->pt.Y;
+  ip2.X = opNext->pt.X - op->pt.X;
+  ip2.Y = opNext->pt.Y - op->pt.Y;
 
   if (UseFullInt64Range)
-  {
-    Int128 cross = Int128(vec1.X) * Int128(vec2.Y) - Int128(vec2.X) * Int128(vec1.Y);
-    return cross > 0;
-  }
+    return Int128(ip1.X) * Int128(ip2.Y) - Int128(ip2.X) * Int128(ip1.Y) > 0;
   else
-  {
-    return (vec1.X * vec2.Y - vec2.X * vec1.Y) > 0;
-  }
-}
-//------------------------------------------------------------------------------
-
-inline bool PointsEqual( const IntPoint &pt1, const IntPoint &pt2)
-{
-  return ( pt1.X == pt2.X && pt1.Y == pt2.Y );
+    return (ip1.X * ip2.Y - ip2.X * ip1.Y) > 0;
 }
 //------------------------------------------------------------------------------
 
@@ -473,9 +480,7 @@ bool PointInPolygon(const IntPoint &pt, OutPt *pp, bool UseFullInt64Range)
 
 bool SlopesEqual(TEdge &e1, TEdge &e2, bool UseFullInt64Range)
 {
-  if (e1.ybot == e1.ytop) return (e2.ybot == e2.ytop);
-  else if (e1.xbot == e1.xtop) return (e2.xbot == e2.xtop);
-  else if (UseFullInt64Range)
+  if (UseFullInt64Range)
     return Int128(e1.ytop - e1.ybot) * Int128(e2.xtop - e2.xbot) ==
       Int128(e1.xtop - e1.xbot) * Int128(e2.ytop - e2.ybot);
   else return (e1.ytop - e1.ybot)*(e2.xtop - e2.xbot) ==
@@ -486,9 +491,7 @@ bool SlopesEqual(TEdge &e1, TEdge &e2, bool UseFullInt64Range)
 bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
   const IntPoint pt3, bool UseFullInt64Range)
 {
-  if (pt1.Y == pt2.Y) return (pt2.Y == pt3.Y);
-  else if (pt1.X == pt2.X) return (pt2.X == pt3.X);
-  else if (UseFullInt64Range)
+  if (UseFullInt64Range)
     return Int128(pt1.Y-pt2.Y) * Int128(pt2.X-pt3.X) ==
       Int128(pt1.X-pt2.X) * Int128(pt2.Y-pt3.Y);
   else return (pt1.Y-pt2.Y)*(pt2.X-pt3.X) == (pt1.X-pt2.X)*(pt2.Y-pt3.Y);
@@ -498,9 +501,7 @@ bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
 bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
   const IntPoint pt3, const IntPoint pt4, bool UseFullInt64Range)
 {
-  if (pt1.Y == pt2.Y) return (pt3.Y == pt4.Y);
-  else if (pt1.X == pt2.X) return (pt3.X == pt4.X);
-  else if (UseFullInt64Range)
+  if (UseFullInt64Range)
     return Int128(pt1.Y-pt2.Y) * Int128(pt3.X-pt4.X) ==
       Int128(pt1.X-pt2.X) * Int128(pt3.Y-pt4.Y);
   else return (pt1.Y-pt2.Y)*(pt3.X-pt4.X) == (pt1.X-pt2.X)*(pt3.Y-pt4.Y);
@@ -1477,19 +1478,34 @@ bool Clipper::IsContributing(const TEdge& edge) const
 
 void Clipper::AddLocalMinPoly(TEdge *e1, TEdge *e2, const IntPoint &pt)
 {
+  TEdge *e, *prevE;
   if( NEAR_EQUAL(e2->dx, HORIZONTAL) || ( e1->dx > e2->dx ) )
   {
     AddOutPt( e1, e2, pt );
     e2->outIdx = e1->outIdx;
     e1->side = esLeft;
     e2->side = esRight;
+    e = e1;
+    if (e->prevInAEL == e2)
+      prevE = e2->prevInAEL; 
+    else
+      prevE = e->prevInAEL;
   } else
   {
     AddOutPt( e2, e1, pt );
     e1->outIdx = e2->outIdx;
     e1->side = esRight;
     e2->side = esLeft;
+    e = e2;
+    if (e->prevInAEL == e1)
+        prevE = e1->prevInAEL;
+    else
+        prevE = e->prevInAEL;
   }
+  if (prevE && prevE->outIdx >= 0 &&
+      (TopX(*prevE, pt.Y) == TopX(*e, pt.Y)) &&
+        SlopesEqual(*e, *prevE, m_UseFullRange))
+          AddJoin(e, prevE, -1, -1);
 }
 //------------------------------------------------------------------------------
 
@@ -1620,12 +1636,6 @@ void Clipper::InsertLocalMinimaIntoAEL( const long64 botY)
 
     if( IsContributing(*lb) )
       AddLocalMinPoly( lb, rb, IntPoint(lb->xcurr, m_CurrentLM->Y) );
-
-    //if output polygons share an edge, they'll need joining later ...
-    if (lb->outIdx >= 0 && lb->prevInAEL &&
-      lb->prevInAEL->outIdx >= 0 && lb->prevInAEL->xcurr == lb->xbot &&
-       SlopesEqual(*lb, *lb->prevInAEL, m_UseFullRange))
-         AddJoin(lb, lb->prevInAEL);
 
     //if any output polygons share an edge, they'll need joining later ...
     if (rb->outIdx >= 0)
@@ -1819,8 +1829,8 @@ void Clipper::IntersectEdges(TEdge *e1, TEdge *e2,
             AddLocalMinPoly(e1, e2, pt);
           break;
         case ctDifference:
-          if ( (e1->polyType == ptClip && e1Wc2 > 0 && e2Wc2 > 0) || 
-               (e1->polyType == ptSubject && e1Wc2 <= 0 && e2Wc2 <= 0) )
+          if (e1->polyType == ptClip && e1Wc2 > 0 && e2Wc2 > 0 || 
+              e1->polyType == ptSubject && e1Wc2 <= 0 && e2Wc2 <= 0)
                 AddLocalMinPoly(e1, e2, pt);
           break;
         case ctXor:
@@ -2976,14 +2986,28 @@ void Clipper::JoinCommonEdges(bool fixHoleLinkages)
       //make sure any holes contained by outRec2 now link to outRec1 ...
       if (fixHoleLinkages) CheckHoleLinkages2(outRec1, outRec2);
 
+      //since it's possible for outRec2->bottomPt to be cleaned up 
+      //in FixupOutPolygon() below, we need to keep a copy of it ...
+      IntPoint ip = outRec2->bottomPt->pt;
+
+      //now cleanup redundant edges too ...
+      FixupOutPolygon(*outRec1);
+
+      if (outRec1->pts) {
+        //sort out hole vs outer and then recheck orientation ...
+        if (outRec1->isHole != outRec2->isHole && (ip.Y > outRec1->bottomPt->pt.Y ||
+          (ip.Y == outRec1->bottomPt->pt.Y && ip.X < outRec1->bottomPt->pt.X)))
+            outRec1->isHole = outRec2->isHole;
+        if (outRec1->isHole == Orientation(outRec1, m_UseFullRange))
+          ReversePolyPtLinks(*outRec1->pts);
+      }
+
       //delete the obsolete pointer ...
       int OKIdx = outRec1->idx;
       int ObsoleteIdx = outRec2->idx;
       outRec2->pts = 0;
       outRec2->bottomPt = 0;
       outRec2->AppendLink = outRec1;
-      //holes are practically always joined to outers, not vice versa ...
-      if (outRec1->isHole && !outRec2->isHole) outRec1->isHole = false;
 
       //now fixup any subsequent Joins that match this polygon
       for (JoinList::size_type k = i+1; k < m_Joins.size(); k++)
@@ -2992,12 +3016,6 @@ void Clipper::JoinCommonEdges(bool fixHoleLinkages)
         if (j2->poly1Idx == ObsoleteIdx) j2->poly1Idx = OKIdx;
         if (j2->poly2Idx == ObsoleteIdx) j2->poly2Idx = OKIdx;
       }
-
-      //now cleanup redundant edges too ...
-      if (outRec1->pts)
-        FixupOutPolygon(*outRec1);
-      else
-        FixupOutPolygon(*outRec2);
     }
   }
 }
