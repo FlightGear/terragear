@@ -770,21 +770,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     gettimeofday(&log_time, NULL);
     SG_LOG( SG_GENERAL, SG_ALERT, "Finished adding intermediate nodes for " << icao << " at " << ctime(&log_time.tv_sec) );
 
-    // One more pass to try to get rid of other yukky stuff
-    for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
-    {
-    	TGPolygon poly = rwy_polys[k].get_poly();
-        poly = snap(poly, gSnap);
-    	rwy_polys[k].set_poly( poly );
-    }
-
-    for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
-    {
-    	TGPolygon poly = pvmt_polys[k].get_poly();
-        poly = snap(poly, gSnap);
-    	pvmt_polys[k].set_poly( poly );
-    }
-
     for ( unsigned int k = 0; k < line_polys.size(); ++k ) 
     {
     	TGPolygon poly = line_polys[k].get_poly();
@@ -818,6 +803,22 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     tgPolygonFindSlivers( base_poly, slivers );
     merge_slivers( rwy_polys, slivers );
     merge_slivers( pvmt_polys, slivers );
+
+    // Then snap rwy and pavement to grid (was done right after adding intermediate nodes...)
+    for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
+    {
+    	TGPolygon poly = rwy_polys[k].get_poly();
+        poly = snap(poly, gSnap);
+        poly = remove_dups( poly );
+    	rwy_polys[k].set_poly( poly );
+    }
+    for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
+    {
+    	TGPolygon poly = pvmt_polys[k].get_poly();
+        poly = snap(poly, gSnap);
+        poly = remove_dups( poly );
+    	pvmt_polys[k].set_poly( poly );
+    }
 
     gettimeofday(&cleanup_end, NULL);
     timersub(&cleanup_end, &cleanup_start, &cleanup_time);

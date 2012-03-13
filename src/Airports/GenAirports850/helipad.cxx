@@ -63,14 +63,12 @@ void Helipad::gen_helipad( const TGPolygon& runway,
     Point3D a2 = runway.get_pt(0, 0);
     Point3D a3 = runway.get_pt(0, 3);
 
-#if 0
     if ( startl_pct > 0.0 ) {
         startl_pct -= nudge * SG_EPSILON;
     }
     if ( endl_pct < 1.0 ) {
         endl_pct += nudge * SG_EPSILON;
     }
-#endif
 
     if ( startl_pct < 0.0 ) {
         startl_pct = 0.0;
@@ -85,7 +83,6 @@ void Helipad::gen_helipad( const TGPolygon& runway,
     // with our polygon clipping code.  This attempts to compensate
     // for that by nudging the areas a bit bigger so we don't end up
     // with polygon slivers.
-#if 0
     if ( startw_pct > 0.0 || endw_pct < 1.0 ) {
         if ( startw_pct > 0.0 ) {
             startw_pct -= nudge * SG_EPSILON;
@@ -94,7 +91,6 @@ void Helipad::gen_helipad( const TGPolygon& runway,
             endw_pct += nudge * SG_EPSILON;
         }
     }
-#endif
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct
            << " end len % = " << endl_pct);

@@ -112,9 +112,9 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
 }
 
 // TODO: where do these belong
-int nudge = 0;
+int nudge = 10;
 double slope_max = 0.2;
-double gSnap = 0.0000001;
+double gSnap = 0.00000001;      // approx 1 mm
 
 int main(int argc, char **argv)
 {
