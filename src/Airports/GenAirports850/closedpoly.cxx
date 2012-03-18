@@ -363,6 +363,7 @@ void ClosedPoly::Finish()
         }
 
         pre_tess = snap( pre_tess, gSnap );
+        pre_tess = remove_dups( pre_tess );
     }
 
     // save memory by deleting unneeded resources
@@ -387,13 +388,15 @@ void ClosedPoly::Finish()
 int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
+    TGPolygon pre_accum;
+
     string    material;
     void*     ds_id = NULL;        // If we are going to build shapefiles
     void*     l_id  = NULL;        // datasource and layer IDs
 
     if ( make_shapefiles ) {
         char ds_name[128];
-        sprintf(ds_name, "./cp_debug/problem");
+        sprintf(ds_name, "./cp_debug");
         ds_id = tgShapefileOpenDatasource( ds_name );
     }
 
@@ -431,8 +434,8 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
         // verify the poly has been generated
         if ( pre_tess.contours() )    
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
-    
+            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours" << " and " << pre_tess.total_size() << " points" );
+
             // do this before clipping and generating the base
             // pre_tess = tgPolygonSimplify( pre_tess );
             // pre_tess = reduce_degeneracy( pre_tess );
@@ -440,6 +443,18 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
             TGSuperPoly sp;
             TGTexParams tp;
 
+            if ( make_shapefiles ) {
+                char layer_name[128];
+                char feature_name[128];
+
+                sprintf( layer_name, "original" );
+                l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                sprintf( feature_name, "original" );
+                tgShapefileCreateFeature( ds_id, l_id, pre_tess, feature_name );
+
+                pre_accum = *accum;
+            }
+    
             TGPolygon clipped = tgPolygonDiffClipper( pre_tess, *accum );
             tgPolygonFindSlivers( clipped, slivers );
 
@@ -453,30 +468,29 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
             rwy_polys->push_back( sp );
 
             *accum = tgPolygonUnionClipper( pre_tess, *accum );
-//            *accum = tgPolygonUnionClipper( clipped, *accum );
 
             /* If debugging this poly, write the poly, and clipped poly and the accum buffer into their own layers */
-            if (ds_id) {
+            if ( make_shapefiles ) {
                 char layer_name[128];
                 char feature_name[128];
-
-                sprintf( layer_name, "original" );
-                l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "original" );
-                tgShapefileCreateFeature( ds_id, l_id, pre_tess, feature_name );
 
                 sprintf( layer_name, "clipped" );
                 l_id = tgShapefileOpenLayer( ds_id, layer_name );
                 sprintf( feature_name, "clipped" );
                 tgShapefileCreateFeature( ds_id, l_id, clipped, feature_name );
 
-                sprintf( layer_name, "accum" );
+                sprintf( layer_name, "pre_accum" );
                 l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "accum" );
-                tgShapefileCreateFeature( ds_id, l_id, *accum, feature_name );
+                sprintf( feature_name, "pre_accum" );
+                tgShapefileCreateFeature( ds_id, l_id, pre_accum, feature_name );
 
-                tgShapefileCloseDatasource( ds_id );        
+                sprintf( layer_name, "post_accum" );
+                l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                sprintf( feature_name, "post_accum" );
+                tgShapefileCreateFeature( ds_id, l_id, *accum, feature_name );
             }
+
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tp construct");
 
             tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
             texparams->push_back( tp );
@@ -484,13 +498,39 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
             if ( apt_base )
             {           
                 base = tgPolygonExpand( pre_tess, 20.0); 
-                safe_base = tgPolygonExpand( pre_tess, 50.0);        
+                if ( make_shapefiles ) {
+                    char layer_name[128];
+                    char feature_name[128];
 
+                    sprintf( layer_name, "exp_base" );
+                    l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                    sprintf( feature_name, "exp_base" );
+                    tgShapefileCreateFeature( ds_id, l_id, base, feature_name );
+                }
+
+                safe_base = tgPolygonExpand( pre_tess, 50.0);        
+                if ( make_shapefiles ) {
+                    char layer_name[128];
+                    char feature_name[128];
+
+                    SG_LOG(SG_GENERAL, SG_INFO, "expanded safe poly: " << safe_base);
+
+                    sprintf( layer_name, "exp_safe_base" );
+                    l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                    sprintf( feature_name, "exp_safe_base" );
+                    tgShapefileCreateFeature( ds_id, l_id, safe_base, feature_name );
+                }                
+    
                 // add this to the airport clearing
                 *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing);
 
                 // and add the clearing to the base
                 *apt_base = tgPolygonUnionClipper( base, *apt_base );
+            }
+
+            if ( make_shapefiles )
+            {
+                tgShapefileCloseDatasource( ds_id );
             }
         }
     }

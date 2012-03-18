@@ -86,10 +86,10 @@ Airport::Airport( int c, char* def)
     altitude *= SG_FEET_TO_METER;
     boundary = NULL;
 
-    dbg_rwy_poly  = -1;
-    dbg_pvmt_poly = -1;
-    dbg_feat_poly = -1;
-    dbg_base_poly = -1;
+    dbg_rwy_poly  = 0;
+    dbg_pvmt_poly = 0;
+    dbg_feat_poly = 0;
+    dbg_base_poly = 0;
 
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Created airport with icao " << icao << ", control tower " << ct << ", and description " << description );
@@ -518,7 +518,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         {
             SG_LOG(SG_GENERAL, SG_INFO, "Build Feature Poly " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
 
-            if ( (dbg_feat_poly >= 0) && (i == (unsigned int)dbg_feat_poly) ) {
+            if ( (dbg_feat_poly > 0) && (i == (unsigned int)dbg_feat_poly-1) ) {
                 SG_LOG(SG_GENERAL, SG_INFO, "Problem feat poly (" << i << ")");
 
                 make_shapefiles = true;
@@ -601,7 +601,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             SG_LOG(SG_GENERAL, SG_INFO, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
             slivers.clear();
 
-            if ( (dbg_pvmt_poly >= 0) && (i == (unsigned int)dbg_pvmt_poly) ) {
+            if ( (dbg_pvmt_poly > 0) && (i == (unsigned int)dbg_pvmt_poly-1) ) {
                 SG_LOG(SG_GENERAL, SG_INFO, "Problem pvmt poly (" << i << ")");
 
                 make_shapefiles = true;
@@ -810,6 +810,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = rwy_polys[k].get_poly();
         poly = snap(poly, gSnap);
         poly = remove_dups( poly );
+        poly = remove_bad_contours( poly );
     	rwy_polys[k].set_poly( poly );
     }
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
@@ -817,6 +818,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	TGPolygon poly = pvmt_polys[k].get_poly();
         poly = snap(poly, gSnap);
         poly = remove_dups( poly );
+        poly = remove_bad_contours( poly );
     	pvmt_polys[k].set_poly( poly );
     }
 
@@ -832,7 +834,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	TGPolygon poly = rwy_polys[i].get_poly();
 
-        if ( (dbg_rwy_poly >= 0) && (i == (unsigned int)dbg_rwy_poly) ) {
+        if ( (dbg_rwy_poly > 0) && (i == (unsigned int)dbg_rwy_poly-1) ) {
             SG_LOG(SG_GENERAL, SG_INFO, "Problem rwy poly (" << i << ") : " << poly );
 
             tgChopNormalPolygon( "/home/pete", "rwy", poly, false );
@@ -860,7 +862,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	TGPolygon poly = pvmt_polys[i].get_poly();
 
-        if ( (dbg_pvmt_poly >= 0) && (i == (unsigned int)dbg_pvmt_poly) ) {
+        if ( (dbg_pvmt_poly > 0) && (i == (unsigned int)dbg_pvmt_poly-1) ) {
             SG_LOG(SG_GENERAL, SG_INFO, "Problem pvmt poly (" << i << ") : " << poly );
 
             tgChopNormalPolygon( "/home/pete", "pvmt", poly, false );
@@ -894,7 +896,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     	TGPolygon poly = line_polys[i].get_poly();
 
-        if ( (dbg_feat_poly >= 0) && (i == (unsigned int)dbg_feat_poly) ) {
+        if ( (dbg_feat_poly > 0) && (i == (unsigned int)dbg_feat_poly-1) ) {
             SG_LOG(SG_GENERAL, SG_INFO, "Problem feat poly (" << i << ") : " << poly );
 
             tgChopNormalPolygon( "/home/pete/", "feat", poly, false );
@@ -914,7 +916,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         line_polys[i].set_texcoords( tc );
     }
 
-    if ( dbg_base_poly >= 0 ) {
+    if ( dbg_base_poly > 0 ) {
         SG_LOG(SG_GENERAL, SG_INFO, "Problem base poly: " << base_poly );
 
         tgChopNormalPolygon( "/home/pete/", "Base", base_poly, false );
