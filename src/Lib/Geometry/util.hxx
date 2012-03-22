@@ -17,6 +17,8 @@
 #include <string>
 
 #include <Polygon/polygon.hxx>
+#include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 
 #include "line.hxx"
 
@@ -91,6 +93,7 @@ void makePolygon (const Point3D &p, double width, TGPolygon &polygon);
  */
 void makePolygon (const Line &line, double width, TGPolygon &polygon);
 
+void makePolygonsTP (const Line &line, double width, poly_list &segments, texparams_list &tps);
 
 /**
  * Make a 2D bounding rectangle for a polygon.

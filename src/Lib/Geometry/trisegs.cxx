@@ -22,6 +22,8 @@
 
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
+#include <simgear/debug/logstream.hxx>
+
 #include <Geometry/point3d.hxx>
 
 #include <iostream>
@@ -29,10 +31,6 @@
 #include "trinodes.hxx"
 
 #include "trisegs.hxx"
-
-using std::cout;
-using std::endl;
-
 
 // Constructor 
 TGTriSegments::TGTriSegments( void ) {
@@ -51,12 +49,11 @@ int TGTriSegments::unique_add( const TGTriSeg& s )
     triseg_list_iterator current, last;
     int counter = 0;
 
-    // cout << s.get_n1() << "," << s.get_n2() << endl;
+    // SG_LOG(SG_GENERAL, SG_DEBUG, s.get_n1() << "," << s.get_n2() );
 
     // check if segment has duplicated endpoints
     if ( s.get_n1() == s.get_n2() ) {
-	cout << "WARNING: ignoring null segment with the same "
-	     << "point for both endpoints" << endl;
+	    SG_LOG(SG_GENERAL, SG_ALERT, "WARNING: ignoring null segment with the same point for both endpoints" );
 	return -1;
     }
 
@@ -65,7 +62,7 @@ int TGTriSegments::unique_add( const TGTriSeg& s )
     last = seg_list.end();
     for ( ; current != last; ++current ) {
 	if ( s == *current ) {
-	    // cout << "found an existing segment match" << endl;
+	    // SG_LOG(SG_GENERAL, SG_DEBUG, "found an existing segment match" );
 	    return counter;
 	}
 	
@@ -95,7 +92,7 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 
     // bool temp = false;
     // if ( s == TGTriSeg( 170, 206 ) ) {
-    //   cout << "this is it!" << endl;
+    //   SG_LOG(SG_GENERAL, SG_DEBUG, "this is it!" );
     //   temp = true;
     // }
 
@@ -118,7 +115,7 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 	b = p1.y() - m * p1.x();
 
 	// if ( temp ) {
-	//   cout << "m = " << m << " b = " << b << endl;
+	//   SG_LOG(SG_GENERAL, SG_DEBUG, "m = " << m << " b = " << b );
 	// }
 
 	current = nodes.begin();
@@ -129,15 +126,14 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 		 && (current->x() < (p1.x() - SG_EPSILON)) ) {
 
 		// if ( temp ) {
-		//   cout << counter << endl;
+		//   SG_LOG(SG_GENERAL, SG_DEBUG, counter );
 		// }
 
 		y_err = fabs(current->y() - (m * current->x() + b));
 
 		if ( y_err < FG_PROXIMITY_EPSILON ) {
-		    //cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
-		    //cout << p0 << " < " << *current << " < "
-		    //     << p1 << endl;
+		    //SG_LOG(SG_GENERAL, SG_DEBUG, "FOUND EXTRA SEGMENT NODE (Y)" );
+		    //SG_LOG(SG_GENERAL, SG_DEBUG,  p0 << " < " << *current << " < " << p1 );
 		    found_extra = true;
 		    if ( y_err < y_err_min ) {
 			extra_index = counter;
@@ -162,13 +158,13 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 
 	// bool temp = true;
 	// if ( temp ) {
-	//   cout << "xdist = " << xdist << " ydist = " << ydist << endl;
-	//   cout << "  p0 = " << p0 << "  p1 = " << p1 << endl;
-	//   cout << "  m1 = " << m1 << " b1 = " << b1 << endl;
+	//   SG_LOG(SG_GENERAL, SG_DEBUG, "xdist = " << xdist << " ydist = " << ydist );
+	//   SG_LOG(SG_GENERAL, SG_DEBUG, "  p0 = " << p0 << "  p1 = " << p1 );
+	//   SG_LOG(SG_GENERAL, SG_DEBUG, "  m1 = " << m1 << " b1 = " << b1 );
 	// }
 
-	// cout << "  should = 0 = " << fabs(p0.x() - (m1 * p0.y() + b1)) << endl;;
-	// cout << "  should = 0 = " << fabs(p1.x() - (m1 * p1.y() + b1)) << endl;;
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "  should = 0 = " << fabs(p0.x() - (m1 * p0.y() + b1)) );
+	// SG_LOG(SG_GENERAL, SG_DEBUG, "  should = 0 = " << fabs(p1.x() - (m1 * p1.y() + b1)) );
 
 	current = nodes.begin();
 	last = nodes.end();
@@ -180,13 +176,12 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 		x_err = fabs(current->x() - (m1 * current->y() + b1));
 
 		// if ( temp ) {
-		//   cout << "  (" << counter << ") x_err = " << x_err << endl;
+		//   SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << counter << ") x_err = " << x_err );
 		// }
 
 		if ( x_err < FG_PROXIMITY_EPSILON ) {
-		    //cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
-		    //cout << p0 << " < " << *current << " < "
-		    //     << p1 << endl;
+		    //SG_LOG(SG_GENERAL, SG_DEBUG, "FOUND EXTRA SEGMENT NODE (X)" );
+		    //SG_LOG(SG_GENERAL, SG_DEBUG, p0 << " < " << *current << " < " << p1 );
 		    found_extra = true;
 		    if ( x_err < x_err_min ) {
 			extra_index = counter;
@@ -200,8 +195,7 @@ void TGTriSegments::unique_divide_and_add( const point_list& nodes,
 
     if ( found_extra ) {
 	// recurse with two sub segments
-	cout << "dividing " << s.get_n1() << " " << extra_index 
-	     << " " << s.get_n2() << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "dividing " << s.get_n1() << " " << extra_index << " " << s.get_n2() );
 	unique_divide_and_add( nodes, TGTriSeg( s.get_n1(), extra_index, 
 						s.get_boundary_marker() ) );
 	unique_divide_and_add( nodes, TGTriSeg( extra_index, s.get_n2(), 

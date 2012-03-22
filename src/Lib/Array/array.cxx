@@ -32,28 +32,25 @@
 
 #include <simgear/constants.h>
 #include <simgear/misc/sgstream.hxx>
+#include <simgear/debug/logstream.hxx>
 #include <simgear/misc/strutils.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/math/leastsqs.hxx>
-#include <simgear/debug/logstream.hxx>
 
 #include "array.hxx"
 
 using std::string;
-using std::cout;
-using std::endl;
 
 
 TGArray::TGArray( void ):
   array_in(NULL),
   fitted_in(NULL)
 {
-    // cout << "class TGArray CONstructor called." << endl;
-    //in_data = new int[ARRAY_SIZE_1][ARRAY_SIZE_1];
+    SG_LOG(SG_GENERAL, SG_DEBUG, "class TGArray CONstructor called." );
     in_data = new int*[ARRAY_SIZE_1];
-    for (int i = 0; i < ARRAY_SIZE_1; i++)
+    for (int i = 0; i < ARRAY_SIZE_1; i++) {
         in_data[i] = new int[ARRAY_SIZE_1]; 
-    // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
+    }
 }
 
 
@@ -61,11 +58,10 @@ TGArray::TGArray( const string &file ):
   array_in(NULL),
   fitted_in(NULL)
 {
-    // cout << "class TGArray CONstructor called." << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "class TGArray CONstructor called." );
     in_data = new int* [ARRAY_SIZE_1];
     for (int i = 0; i < ARRAY_SIZE_1; i++)
         in_data[i] = new int[ARRAY_SIZE_1];
-    // out_data = new float[ARRAY_SIZE_1][ARRAY_SIZE_1];
 
     TGArray::open(file);
 }
@@ -79,10 +75,10 @@ bool TGArray::open( const string& file_base ) {
     string array_name = file_base + ".arr.gz";
     array_in = new sg_gzifstream( array_name );
     if ( ! array_in->is_open() ) {
-		SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << array_name );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << array_name );
         success = false;
     } else {
-		SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening array data file: " << array_name );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening array data file: " << array_name );
     }
 
     // open fitted data file
@@ -93,7 +89,7 @@ bool TGArray::open( const string& file_base ) {
         // can do a really stupid/crude fit on the fly, but it will
         // not be nearly as nice as what the offline terrafit utility
         // would have produced.
-		SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << fitted_name );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << fitted_name );
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening fitted data file: " << fitted_name );
     }
@@ -130,11 +126,6 @@ TGArray::parse( SGBucket& b ) {
 	SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
-
-        if ((cols>ARRAY_SIZE_1) || (rows>ARRAY_SIZE_1)) {
-            cout << "error, ARRAY_SIZE_1=" << ARRAY_SIZE_1 <<" is too small (cols=" << cols << ", rows=" << rows << "), aborting." << endl;
-            exit(-1);
-        }
 
 	for ( int i = 0; i < cols; i++ ) {
 	    for ( int j = 0; j < rows; j++ ) {
@@ -178,7 +169,7 @@ TGArray::parse( SGBucket& b ) {
         for ( int i = 0; i < fitted_size; ++i ) {
             *fitted_in >> x >> y >> z;
             fitted_list.push_back( Point3D(x, y, z) );
-            // cout << " loading fitted = " << Point3D(x, y, z) << endl;
+            SG_LOG(SG_GENERAL, SG_DEBUG, " loading fitted = " << Point3D(x, y, z) );
         }
     }
 
@@ -201,7 +192,7 @@ bool TGArray::write( const string root_dir, SGBucket& b ) {
     // write the file
     gzFile fp;
     if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
-	SG_LOG(SG_GENERAL, SG_DEBUG, "ERROR:  cannot open " << array_file << " for writing!" );
+	SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
 	return false;
     }
 
@@ -309,7 +300,7 @@ void TGArray::add_corner_node( int i, int j, double val ) {
     
     double x = (originx + i * col_step) / 3600.0;
     double y = (originy + j * row_step) / 3600.0;
-    // cout << "originx = " << originx << "  originy = " << originy << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "originx = " << originx << "  originy = " << originy );
     SG_LOG(SG_GENERAL, SG_DEBUG, "corner = " << Point3D(x, y, val) );
     corner_list.push_back( Point3D(x, y, val) );
 }
@@ -319,7 +310,7 @@ void TGArray::add_corner_node( int i, int j, double val ) {
 void TGArray::add_fit_node( int i, int j, double val ) {
     double x = (originx + i * col_step) / 3600.0;
     double y = (originy + j * row_step) / 3600.0;
-    // cout << Point3D(x, y, val) << endl;
+    SG_LOG(SG_GENERAL, SG_DEBUG, Point3D(x, y, val) );
     fitted_list.push_back( Point3D(x, y, val) );
 }
 
@@ -557,8 +548,7 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 
     if ( (xindex < 0) || (xindex + 1 >= cols) ||
 	 (yindex < 0) || (yindex + 1 >= rows) ) {
-	// cout << "WARNING: Attempt to interpolate value outside of array!!!" 
-	//      << endl;
+	SG_LOG(SG_GENERAL, SG_DEBUG, "WARNING: Attempt to interpolate value outside of array!!!" );
 	return -9999;
     }
 
@@ -567,7 +557,6 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 
     if ( dx > dy ) {
 	// lower triangle
-	// printf("  Lower triangle\n");
 
 	x1 = xindex; 
 	y1 = yindex; 
@@ -581,11 +570,6 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 	y3 = yindex + 1; 
 	z3 = in_data[x3][y3];
 
-	// printf("  dx = %.2f  dy = %.2f\n", dx, dy);
-	// printf("  (x1,y1,z1) = (%d,%d,%d)\n", x1, y1, z1);
-	// printf("  (x2,y2,z2) = (%d,%d,%d)\n", x2, y2, z2);
-	// printf("  (x3,y3,z3) = (%d,%d,%d)\n", x3, y3, z3);
-
         if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
             // don't interpolate off a void
             return closest_nonvoid_elev( lon, lat );
@@ -594,8 +578,6 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 	zA = dx * (z2 - z1) + z1;
 	zB = dx * (z3 - z1) + z1;
 	
-	// printf("  zA = %.2f  zB = %.2f\n", zA, zB);
-
 	if ( dx > SG_EPSILON ) {
 	    elev = dy * (zB - zA) / dx + zA;
 	} else {
@@ -603,7 +585,6 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 	}
     } else {
 	// upper triangle
-	// printf("  Upper triangle\n");
 
 	x1 = xindex; 
 	y1 = yindex; 
@@ -616,11 +597,6 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 	x3 = xindex + 1; 
 	y3 = yindex + 1; 
 	z3 = in_data[x3][y3];
-
-	// printf("  dx = %.2f  dy = %.2f\n", dx, dy);
-	// printf("  (x1,y1,z1) = (%d,%d,%d)\n", x1, y1, z1);
-	// printf("  (x2,y2,z2) = (%d,%d,%d)\n", x2, y2, z2);
-	// printf("  (x3,y3,z3) = (%d,%d,%d)\n", x3, y3, z3);
  
         if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
             // don't interpolate off a void
@@ -630,9 +606,6 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 	zA = dy * (z2 - z1) + z1;
 	zB = dy * (z3 - z1) + z1;
 	
-	// printf("  zA = %.2f  zB = %.2f\n", zA, zB );
-	// printf("  xB - xA = %.2f\n", col_step * dy / row_step);
-
 	if ( dy > SG_EPSILON ) {
 	    elev = dx * (zB - zA) / dy    + zA;
 	} else {
@@ -764,11 +737,9 @@ void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 
 
 TGArray::~TGArray( void ) {
-    // printf("class TGArray DEstructor called.\n");
     for (int i = 0; i < ARRAY_SIZE_1; i++)
         delete [] in_data[i];
     delete [] in_data;
-    // delete [] out_data;
 }
 
 

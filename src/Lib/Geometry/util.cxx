@@ -11,8 +11,12 @@
 #include <simgear/structure/exception.hxx>
 
 #include <Polygon/polygon.hxx>
+#include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 
 #include <stdlib.h>
+
+#define MP_STRETCH  (0.000001)
 
 using std::vector;
 
@@ -209,6 +213,294 @@ makePolygon (const Line &line, double width, TGPolygon &polygon)
   // cout << "tnode = " << segment_list[0].get_pt(0, 3) << endl;
 
   polygon.set_hole_flag(0, 0);  // mark as solid
+}
+
+inline double CalculateTheta( Point3D p0, Point3D p1, Point3D p2 )
+{
+    Point3D u, v;
+    double  udist, vdist, uv_dot, tmp;
+
+    // u . v = ||u|| * ||v|| * cos(theta)
+
+    u = p1 - p0;
+    udist = sqrt( u.x() * u.x() + u.y() * u.y() );
+    // printf("udist = %.6f\n", udist);
+
+    v = p1 - p2;
+    vdist = sqrt( v.x() * v.x() + v.y() * v.y() );
+    // printf("vdist = %.6f\n", vdist);
+
+    uv_dot = u.x() * v.x() + u.y() * v.y();
+    // printf("uv_dot = %.6f\n", uv_dot);
+
+    tmp = uv_dot / (udist * vdist);
+    // printf("tmp = %.6f\n", tmp);
+
+    return acos(tmp);
+}
+
+Point3D OffsetPointMiddle( Point3D prev, Point3D cur, Point3D next, double offset_by, int& turn_dir )
+{
+    double offset_dir;
+    double next_dir;
+    double az2;
+    double dist;
+    double theta;
+    double pt_x = 0, pt_y = 0;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << prev << "), "
+                                                                  "cur (" << cur  << "), "
+                                                                 "next (" << next << ")" );
+
+ 
+    // first, find if the line turns left or right ar src
+    // for this, take the cross product of the vectors from prev to src, and src to next.
+    // if the cross product is negetive, we've turned to the left
+    // if the cross product is positive, we've turned to the right
+    // if the cross product is 0, then we need to use the direction passed in
+    SGVec3d dir1 = prev.toSGVec3d() - cur.toSGVec3d();
+    dir1 = normalize(dir1);
+
+    SGVec3d dir2 = next.toSGVec3d() - cur.toSGVec3d();
+    dir2 = normalize(dir2);
+
+    // Now find the average
+    SGVec3d avg = dir1 + dir2;
+    avg = normalize(avg);
+
+    // check the turn direction
+    SGVec3d cp = cross( dir1, dir2 );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tcross product of dir1: " << dir1 << " and dir2: " << dir2 << " is " << cp );
+
+    // calculate the angle between cur->prev and cur->next
+    theta = SGMiscd::rad2deg(CalculateTheta(prev, cur, next));
+
+    if ( abs(theta - 180.0) < 0.1 )
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta close to 180) theta is " << theta );
+
+        // find the direction to the next point
+        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
+
+        offset_dir = next_dir - 90.0;
+        while (offset_dir < 0.0)
+        {
+            offset_dir += 360.0;
+        }
+
+        // straight line blows up math - dist should be exactly as given
+        dist = offset_by;        
+    }
+    else if ( abs(theta) < 0.1 )
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta close to 0) : theta is " << theta );
+
+        // find the direction to the next point
+        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
+
+        offset_dir = next_dir - 90;
+        while (offset_dir < 0.0)
+        {
+            offset_dir += 360.0;
+        }
+
+        // straight line blows up math - dist should be exactly as given
+        dist = offset_by;        
+    }
+    else
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta NOT close to 180) : theta is " << theta );
+
+        // find the offset angle
+        geo_inverse_wgs_84( avg.y(), avg.x(), 0.0f, 0.0f, &offset_dir, &az2, &dist);
+
+        // if we turned right, reverse the heading 
+        if (cp.z() < 0.0f)
+        {
+            turn_dir = 0;
+            offset_dir += 180.0;
+        }
+        else
+        {
+            turn_dir = 1;
+        }
+
+        while (offset_dir >= 360.0)
+        {
+            offset_dir -= 360.0;
+        }
+
+        // find the direction to the next point
+        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
+
+        // calculate correct distance for the offset point
+        dist = (offset_by)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << dist );
+
+    // calculate the point from cur
+    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, dist, &pt_y, &pt_x, &az2 );
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
+
+    return Point3D(pt_x, pt_y, 0.0f);
+}
+
+Point3D OffsetPointFirst( Point3D cur, Point3D next, double offset_by )
+{
+    double offset_dir;
+    double az2;
+    double dist;
+    double pt_x = 0, pt_y = 0;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << cur  << "), "
+                                                            "next (" << next << ")" );
+
+    // find the offset angle
+    geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &offset_dir, &az2, &dist);
+    offset_dir -= 90;
+    if (offset_dir < 0)
+    {
+        offset_dir += 360;
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
+
+    // calculate the point from cur
+    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
+
+    return Point3D(pt_x, pt_y, 0.0f);
+}
+
+Point3D OffsetPointLast( Point3D prev, Point3D cur, double offset_by )
+{
+    double offset_dir;
+    double az2;
+    double dist;
+    double pt_x = 0, pt_y = 0;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << prev  << "), "
+                                                              "cur (" << cur << ")" );
+
+    // find the offset angle
+    geo_inverse_wgs_84( prev.y(), prev.x(), cur.y(), cur.x(), &offset_dir, &az2, &dist);
+    offset_dir -= 90;
+    if (offset_dir < 0)
+    {
+        offset_dir += 360;
+    }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
+
+    // calculate the point from cur
+    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
+
+    return Point3D(pt_x, pt_y, 0.0f);
+}
+
+Point3D midpoint( Point3D p0, Point3D p1 )
+{
+    return Point3D( (p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2, (p0.z() + p1.z()) / 2 );
+}
+
+void
+makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list &tps)
+{
+    int nPoints = line.getPointCount();
+    int i;
+    int turn_dir;
+
+    Point3D cur_inner;
+    Point3D cur_outer;
+    Point3D prev_inner = Point3D(0.0f, 0.0f, 0.0f);
+    Point3D prev_outer = Point3D(0.0f, 0.0f, 0.0f);
+
+    double last_end_v;
+    double heading, az2, dist;
+    double pt_x, pt_y;
+
+    TGPolygon   poly;
+    TGTexParams tp;
+
+    // generate poly and texparam lists for each line segment
+    for (i=0; i<nPoints; i++)
+    {
+        last_end_v   = 0.0f;
+        turn_dir = 0;
+
+        SG_LOG(SG_GENERAL, SG_DEBUG, "makePolygonsTP: calculating offsets for segment " << i);
+
+        // for each point on the PointsList, generate a quad from
+        // start to next, offset by 1/2 width from the edge
+        if (i == 0)
+        {
+            // first point on the list - offset heading is 90deg 
+            cur_outer = OffsetPointFirst( line.getPoint(i), line.getPoint(i+1), -width/2.0f );
+            cur_inner = OffsetPointFirst( line.getPoint(i), line.getPoint(i+1),  width/2.0f );
+        }
+        else if (i == nPoints-1)
+        {
+            // last point on the list - offset heading is 90deg 
+            cur_outer = OffsetPointLast( line.getPoint(i-1), line.getPoint(i), -width/2.0f );
+            cur_inner = OffsetPointLast( line.getPoint(i-1), line.getPoint(i),  width/2.0f );
+        }
+        else
+        {
+            // middle section
+            cur_outer = OffsetPointMiddle( line.getPoint(i-1), line.getPoint(i), line.getPoint(i+1), -width/2.0f, turn_dir );
+            cur_inner = OffsetPointMiddle( line.getPoint(i-1), line.getPoint(i), line.getPoint(i+1),  width/2.0f, turn_dir );
+        }
+
+        if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
+        {
+            Point3D prev_mp = midpoint( prev_outer, prev_inner );
+            Point3D cur_mp  = midpoint( cur_outer,  cur_inner  );
+            geo_inverse_wgs_84( prev_mp.y(), prev_mp.x(), cur_mp.y(), cur_mp.x(), &heading, &az2, &dist);
+
+            poly.erase();
+
+            poly.add_node( 0, prev_inner );
+            poly.add_node( 0, prev_outer );
+
+            // we need to extend one of the points so we're sure we don't create adjacent edges
+            if (turn_dir == 0)
+            {
+                // turned right - offset outer
+                geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
+                geo_direct_wgs_84( cur_outer.y(), cur_outer.x(), heading, MP_STRETCH, &pt_y, &pt_x, &az2 );
+
+                poly.add_node( 0, Point3D( pt_x, pt_y, 0.0f) );
+                //poly.add_node( 0, cur_outer );
+                poly.add_node( 0, cur_inner );
+            }
+            else
+            {
+                // turned left - offset inner
+                geo_inverse_wgs_84( prev_inner.y(), prev_inner.x(), cur_inner.y(), cur_inner.x(), &heading, &az2, &dist);
+                geo_direct_wgs_84( cur_inner.y(), cur_inner.x(), heading, MP_STRETCH, &pt_y, &pt_x, &az2 );
+
+                poly.add_node( 0, cur_outer );
+                poly.add_node( 0, Point3D( pt_x, pt_y, 0.0f) );
+                //poly.add_node( 0, cur_inner );
+            }
+
+            polys.push_back(poly);
+
+            tp = TGTexParams( prev_inner, width, 20.0f, heading );
+            tp.set_minv(last_end_v);
+            tps.push_back(tp);
+
+            last_end_v = 1.0f - (fmod( (dist - last_end_v), 1.0f ));
+        }
+
+        prev_outer = cur_outer;
+        prev_inner = cur_inner;
+    }
 }
 
 
