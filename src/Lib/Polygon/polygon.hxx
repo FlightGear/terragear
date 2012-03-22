@@ -29,40 +29,6 @@
 # error This library requires C++
 #endif
 
-/* which clipping lib to use? Looks like we should go with clipper
- * It appears to be both faster and generates better accuracy
- */
-
-//#define CLIP_GPC
-#define CLIP_CLIPPER
-
-/* Set to 1 to allow keeping accum poly in native clipping lib format
- * Although it seems to work on some airports, EHAM is pretty broken 
- * when turned on
- */
-
-#define CLIP_NATIVE     0
-
-#ifdef CLIP_GPC
-extern "C" {
-#include <gpc.h>
-}
-
-#if CLIP_NATIVE // optimization apparently causing errors
-typedef gpc_polygon	ClipPolyType;
-#endif
-
-#endif /* CLIP_GPC */
-
-#ifdef CLIP_CLIPPER
-#include "clipper.hpp"
-using namespace ClipperLib;
-
-#if CLIP_NATIVE // optimization apparently causing errors
-typedef Polygons ClipPolyType;
-#endif
-
-#endif /* CLIP_CLIPPER */
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
@@ -73,6 +39,50 @@ typedef Polygons ClipPolyType;
 #include <vector>
 
 #include "point2d.hxx"
+
+/* which clipping lib to use? Looks like we should go with clipper
+ * It appears to be both faster and generates better accuracy
+ */
+
+// forward declaration
+class TGPolygon;
+
+#define CLIP_GPC
+// #define CLIP_CLIPPER
+
+/* Set to 1 to allow keeping accum poly in native clipping lib format
+ * Although it seems to work on some airports, EHAM is pretty broken 
+ * when turned on
+ */
+
+#define CLIP_NATIVE 0
+
+#ifdef CLIP_GPC
+extern "C" {
+#include <gpc.h>
+}
+
+#if CLIP_NATIVE // optimization apparently causing errors
+typedef gpc_polygon	ClipPolyType;
+#else
+typedef TGPolygon	ClipPolyType;
+#endif
+
+#endif /* CLIP_GPC */
+
+#ifdef CLIP_CLIPPER
+#include "clipper.hpp"
+using namespace ClipperLib;
+
+#if CLIP_NATIVE // optimization apparently causing errors
+typedef Polygons    ClipPolyType;
+#else
+typedef TGPolygon	ClipPolyType;
+#endif
+
+#endif /* CLIP_CLIPPER */
+
+
 
 #define FG_MAX_VERTICES 1500000
 
@@ -237,10 +247,6 @@ void write( const std::string& file ) const;
 void write_contour( const int contour, const std::string& file ) const;
 };
 
-
-#if !CLIP_NATIVE
-typedef TGPolygon	ClipPolyType;
-#endif
 
 typedef std::vector < TGPolygon > poly_list;
 typedef poly_list::iterator poly_list_iterator;

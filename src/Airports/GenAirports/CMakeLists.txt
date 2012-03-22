@@ -8,8 +8,7 @@ add_executable(genapts
 	global.hxx 
 	lights.hxx lights.cxx 
 	main.cxx 
-	point2d.cxx point2d.hxx 
-	poly_extra.cxx poly_extra.hxx 
+	point2d.cxx point2d.hxx  
 	runway.cxx runway.hxx 
 	rwy_common.cxx rwy_common.hxx 
 	rwy_nonprec.cxx rwy_nonprec.hxx 

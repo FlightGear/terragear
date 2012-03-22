@@ -26,7 +26,6 @@
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 
-#include "poly_extra.hxx"
 #include "rwy_common.hxx"
 #include "taxiway.hxx"
 

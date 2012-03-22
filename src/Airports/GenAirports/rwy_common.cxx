@@ -26,7 +26,6 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "global.hxx"
-#include "poly_extra.hxx"
 #include "rwy_common.hxx"
 
 #include <stdlib.h>

@@ -48,6 +48,7 @@
 #include <simgear/misc/texcoord.hxx>
 
 #include <Geometry/poly_support.hxx>
+#include <Geometry/poly_extra.hxx>
 #include <Geometry/trinodes.hxx>
 #include <Output/output.hxx>
 #include <Polygon/chop.hxx>
@@ -62,7 +63,6 @@
 #include "elevations.hxx"
 #include "lights.hxx"
 #include "point2d.hxx"
-#include "poly_extra.hxx"
 #include "runway.hxx"
 #include "rwy_common.hxx"
 #include "rwy_nonprec.hxx"
