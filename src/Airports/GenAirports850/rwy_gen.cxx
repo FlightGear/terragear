@@ -378,10 +378,19 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
         }
 
         double length = rwy.length / 2.0;
-        if ( length < 3075 * SG_FEET_TO_METER ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG,
-                "Runway " << rwy.rwnum[0] << " is not long enough ("
-                << rwy.length << ") for precision markings!");
+
+        // Make sure our runway is long enough for the desired marking variant
+        if ( (rwy.marking[rwhalf]==2 || rwy.marking[rwhalf]==4) && length < 1150 * SG_FEET_TO_METER ) {
+            SG_LOG( SG_GENERAL, SG_ALERT,
+                "Runway " << rwy.rwnum[rwhalf] << " is not long enough ("
+                << rwy.length << "m) for non-precision markings!  Setting runway markings to visual!");
+            rwy.marking[rwhalf]=1;
+        }
+        if ( (rwy.marking[rwhalf]==3 || rwy.marking[rwhalf]==5) && length < 3075 * SG_FEET_TO_METER ) {
+            SG_LOG( SG_GENERAL, SG_ALERT,
+                "Runway " << rwy.rwnum[rwhalf] << " is not long enough ("
+                << rwy.length << "m) for precision markings!  Setting runway markings to visual!");
+            rwy.marking[rwhalf]=1;
         }
 
         double start1_pct = 0.0;
