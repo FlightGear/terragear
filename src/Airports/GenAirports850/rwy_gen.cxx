@@ -116,10 +116,6 @@ void Runway::gen_runway_section( const TGPolygon& runway,
         endl_pct += nudge * SG_EPSILON;
     }
 
-    if ( startl_pct < 0.0 ) {
-        startl_pct = 0.0;
-    }
-
     if ( endl_pct > 1.0 ) {
         endl_pct = 1.0;
     }
@@ -546,7 +542,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
             end1_pct = start1_pct + rest1_inc;
 
             gen_runway_section( runway_half,
-			                    start1_pct, end1_pct,
+                                start1_pct, end1_pct,
                                 0.0, 1.0,
                                 0.0, 1.0, 0.0, 1.0,
                                 heading,
@@ -554,7 +550,6 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                 rwy_polys, texparams, accum, slivers );
         }
 
-        length = rwy.length / 2.0 + 2.0 * SG_FEET_TO_METER;
         start1_pct = 0.0;
         end1_pct = 0.0;
         
