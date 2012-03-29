@@ -137,6 +137,14 @@ public:
 
     bool   IsEqual2D(const Point3D& a) const;         // equality check in X,Y only
     bool   HasElevation() const;                      // does point have elevation data?
+
+#ifdef _MSC_VER
+    double round(double d)
+    {
+        return floor(d + 0.5);
+    }
+#endif
+
 };
 
 
