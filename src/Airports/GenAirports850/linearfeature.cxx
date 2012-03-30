@@ -25,7 +25,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     Point3D   cp2;         
 
     int       curve_type = CURVE_LINEAR;
-    double    total_dist, linear_dist;
+    double    total_dist;
     double    meter_dist = 1.0f/96560.64f;
     double    theta1, theta2;
     int       num_segs = BEZIER_DETAIL;
@@ -811,8 +811,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER_PULSE:
-                material = "RWY_YELLOW_LIGHTS";
-                light_delta = 4.0f;
+                material = "RWY_YELLOW_PULSE_LIGHTS";
+                light_delta = 1.0f;
                 break;
 
             case LF_BIDIR_GREEN_AMBER:
