@@ -3,7 +3,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined( __CYGWIN__ ) || defined( __CYGWIN32__ ) || defined( _MSC_VER )
+#include <winsock2.h>
+#else
 #include <sys/time.h>
+#endif
 
 #include "runway.hxx"
 #include "object.hxx"
