@@ -421,7 +421,7 @@ inline bool Point3D::IsEqual2D(const Point3D& a) const
 
 inline bool Point3D::HasElevation() const
 {
-    return fabs( n[PZ] + 9999.0 > fgPoint3_Epsilon );
+    return ( fabs( n[PZ] + 9999.0 ) > fgPoint3_Epsilon );
 }
 
 
