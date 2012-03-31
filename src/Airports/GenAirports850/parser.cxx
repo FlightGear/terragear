@@ -1,4 +1,10 @@
-#include <sys/time.h>
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>		// for timing
+#endif
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
@@ -328,12 +334,15 @@ void Parser::SetDebugPolys( int rwy, int pvmt, int feat, int base )
 void Parser::Parse( string last_apt_file )
 {
     char tmp[2048];
+
+#if !defined(_MSC_VER)
     struct timeval parse_start;
     struct timeval parse_end;
     struct timeval parse_time;
     struct timeval build_time;
     struct timeval clean_time;
     struct timeval triangulation_time;
+#endif
 
     ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
@@ -348,10 +357,12 @@ void Parser::Parse( string last_apt_file )
         SetState(STATE_NONE);
         in.clear();
 
+#if !defined(_MSC_VER)
         gettimeofday(&parse_start, NULL);
-
         SG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
         SG_LOG( SG_GENERAL, SG_ALERT, "Parsing airport " << airport_icaos[i] << " at " << parse_positions[i] << " start time " << ctime(&parse_start.tv_sec) );
+#endif
+
         in.seekg(parse_positions[i], ios::beg);
 
         // save the airport we are working on
@@ -366,11 +377,13 @@ void Parser::Parse( string last_apt_file )
             // Parse the line
             ParseLine(tmp);
         }
+
+#if !defined(_MSC_VER)
         gettimeofday(&parse_end, NULL);
         timersub(&parse_end, &parse_start, &parse_time);
-        
         SG_LOG( SG_GENERAL, SG_ALERT, "Finished parsing airport " << airport_icaos[i] << " at " << ctime(&parse_end.tv_sec) );
-
+#endif
+        
         // write the airport BTG
         if (cur_airport)
         {
@@ -384,11 +397,12 @@ void Parser::Parse( string last_apt_file )
             cur_airport = NULL;
         }
 
-
+#if !defined(_MSC_VER)
         SG_LOG( SG_GENERAL, SG_DEBUG, "Time to parse       " << parse_time.tv_sec << ":" << parse_time.tv_usec );
         SG_LOG( SG_GENERAL, SG_DEBUG, "Time to build       " << build_time.tv_sec << ":" << build_time.tv_usec );
         SG_LOG( SG_GENERAL, SG_DEBUG, "Time to clean up    " << clean_time.tv_sec << ":" << clean_time.tv_usec );
         SG_LOG( SG_GENERAL, SG_DEBUG, "Time to triangulate " << triangulation_time.tv_sec << ":" << triangulation_time.tv_usec );
+#endif
     }
 }
 

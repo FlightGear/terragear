@@ -771,7 +771,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 tp.set_minv(last_end_v);
                 marking_tps.push_back(tp);
 
-                last_end_v = 1.0f - (fmod( (dist - last_end_v), 1.0f ));
+                last_end_v = (double)1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
             }
 
             prev_outer = cur_outer;
