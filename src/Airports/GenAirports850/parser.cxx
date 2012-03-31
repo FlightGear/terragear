@@ -389,9 +389,11 @@ void Parser::Parse( string last_apt_file )
         {
             cur_airport->BuildBtg( work_dir, elevation );
 
+#if !defined(_MSC_VER)
             cur_airport->GetBuildTime( build_time );
             cur_airport->GetCleanupTime( clean_time );
             cur_airport->GetTriangulationTime( triangulation_time );
+#endif
 
             delete cur_airport;
             cur_airport = NULL;
