@@ -4,10 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if defined( __CYGWIN__ ) || defined( __CYGWIN32__ ) || defined( _MSC_VER )
-#include <winsock2.h>
-#else
-#include <sys/time.h>
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>		// for timing
 #endif
 
 #include "runway.hxx"
