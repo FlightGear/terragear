@@ -296,8 +296,6 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         else
         {
             // calculate linear distance to determine how many segments we want
-            Point3D destLoc = nextNode->GetLoc();
-
             if (num_segs > 1)
             {
                 for (int p=0; p<num_segs; p++)

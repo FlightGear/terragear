@@ -57,8 +57,6 @@ extern "C" {
 }
 
 #include "clipper.hpp"
-using namespace ClipperLib;
-
 #define FG_MAX_VERTICES 1500000
 
 typedef TGPolygon ClipPolyType;

@@ -165,12 +165,14 @@ double tgPolygonCalcAngle(point2d a, point2d b, point2d c) {
 double TGPolygon::area_contour( const int contour ) const {
     point_list c = poly[contour];
     double area = 0.0;
-    int i, j;
+    unsigned int i, j;
 
-    j = c.size() - 1;
-    for (i=0; i<c.size(); i++) {
-        area += (c[j].x() + c[i].x()) * (c[j].y() - c[i].y()); 
-        j=i; 
+    if (c.size()) {
+        j = c.size() - 1;
+        for (i=0; i<c.size(); i++) {
+            area += (c[j].x() + c[i].x()) * (c[j].y() - c[i].y()); 
+            j=i; 
+        }
     }
 
     return fabs(area * 0.5); 
@@ -483,17 +485,17 @@ TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject,
 #define FIXEDPT (10000000000000000)
 #define FIXED1M (            90090)
 
-IntPoint MakeClipperPoint( Point3D pt )
+static ClipperLib::IntPoint MakeClipperPoint( Point3D pt )
 {
-	long64 x, y;
+	ClipperLib::long64 x, y;
 
-	x = (long64)( pt.x() * FIXEDPT );
-	y = (long64)( pt.y() * FIXEDPT );
+	x = (ClipperLib::long64)( pt.x() * FIXEDPT );
+	y = (ClipperLib::long64)( pt.y() * FIXEDPT );
 
-	return IntPoint( x, y );
+	return ClipperLib::IntPoint( x, y );
 }
 
-Point3D MakeTGPoint( IntPoint pt )
+static Point3D MakeTGPoint( ClipperLib::IntPoint pt )
 {
     Point3D tg_pt;
 	double x, y;
@@ -515,9 +517,9 @@ double MakeClipperDelta( double mDelta )
     return( cDelta );
 }
 
-void make_clipper_poly( const TGPolygon& in, Polygons *out ) 
+void make_clipper_poly( const TGPolygon& in, ClipperLib::Polygons *out ) 
 {
-    Polygon  contour;
+    ClipperLib::Polygon contour;
     Point3D  p;
     int      i, j;	
 
@@ -548,20 +550,20 @@ void make_clipper_poly( const TGPolygon& in, Polygons *out )
     }
 }
 
-void make_tg_poly_from_clipper_ex( const ExPolygons& in, TGPolygon *out )
+void make_tg_poly_from_clipper_ex( const ClipperLib::ExPolygons& in, TGPolygon *out )
 {
 	int res_contour = 0;
 	out->erase();
 
   	for (unsigned int i=0; i<in.size(); i++)
     {
-      	const struct ExPolygon* pg = &in[i];
-		IntPoint ip;
+      	const struct ClipperLib::ExPolygon* pg = &in[i];
+		ClipperLib::IntPoint ip;
 
 		// Get the boundary contour
         for (unsigned int j = 0; j < pg->outer.size(); j++)
         {
-			ip = IntPoint( pg->outer[j].X, pg->outer[j].Y );
+			ip = ClipperLib::IntPoint( pg->outer[j].X, pg->outer[j].Y );
        	    out->add_node(res_contour, MakeTGPoint(ip));
         }
         out->set_hole_flag(res_contour, 0);
@@ -572,7 +574,7 @@ void make_tg_poly_from_clipper_ex( const ExPolygons& in, TGPolygon *out )
         {
             for (unsigned int k = 0; k < pg->holes[j].size(); k++)
             {
-				ip = IntPoint( pg->holes[j].at(k).X, pg->holes[j].at(k).Y );
+				ip = ClipperLib::IntPoint( pg->holes[j].at(k).X, pg->holes[j].at(k).Y );
                	out->add_node(res_contour, MakeTGPoint(ip));
             }
             out->set_hole_flag(res_contour, 1);
@@ -581,18 +583,18 @@ void make_tg_poly_from_clipper_ex( const ExPolygons& in, TGPolygon *out )
     }
 }
 
-void make_tg_poly_from_clipper( const Polygons& in, TGPolygon *out )
+void make_tg_poly_from_clipper( const ClipperLib::Polygons& in, TGPolygon *out )
 {
 	out->erase();
 
     // for each polygon, we need to check the orientation, to set the hole flag...
     for (unsigned int i=0; i<in.size(); i++)
     {
-        IntPoint ip;
+        ClipperLib::IntPoint ip;
 
         for (unsigned int j = 0; j < in[i].size(); j++)
         {
-            ip = IntPoint( in[i][j].X, in[i][j].Y );
+            ip = ClipperLib::IntPoint( in[i][j].X, in[i][j].Y );
             //SG_LOG(SG_GENERAL, SG_INFO, "Building TG Poly : Add point (" << ip.X << "," << ip.Y << ") to contour " << i );
             out->add_node( i, MakeTGPoint(ip) );
         }
@@ -607,14 +609,14 @@ void make_tg_poly_from_clipper( const Polygons& in, TGPolygon *out )
     }
 }
 
-Polygons clipper_simplify( ExPolygons &in )
+ClipperLib::Polygons clipper_simplify( ClipperLib::ExPolygons &in )
 {
-    Polygons out;
-    Polygon  contour;
+    ClipperLib::Polygons out;
+    ClipperLib::Polygon  contour;
 
   	for (unsigned int i=0; i<in.size(); i++)
     {
-      	const struct ExPolygon* pg = &in[i];
+      	const struct ClipperLib::ExPolygon* pg = &in[i];
 
         // first the boundary
         contour = pg->outer;
@@ -644,36 +646,36 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
 {
     TGPolygon result;
 
-    Polygons clipper_subject;
+    ClipperLib::Polygons clipper_subject;
     make_clipper_poly( subject, &clipper_subject );
 
-    Polygons clipper_clip;
+    ClipperLib::Polygons clipper_clip;
     make_clipper_poly( clip, &clipper_clip );
 
-    ExPolygons clipper_result;
+    ClipperLib::ExPolygons clipper_result;
 
-    ClipType op;
+    ClipperLib::ClipType op;
     if ( poly_op == POLY_DIFF ) {
-	    op = ctDifference;
+	    op = ClipperLib::ctDifference;
     } else if ( poly_op == POLY_INT ) {
-	    op = ctIntersection;
+	    op = ClipperLib::ctIntersection;
     } else if ( poly_op == POLY_XOR ) {
-	    op = ctXor;
+	    op = ClipperLib::ctXor;
     } else if ( poly_op == POLY_UNION ) {
-    	op = ctUnion;
+    	op = ClipperLib::ctUnion;
     } else {
         throw sg_exception("Unknown polygon op, exiting.");
     }
 
-    Clipper c;
+    ClipperLib::Clipper c;
 	c.Clear();
-	c.AddPolygons(clipper_subject, ptSubject);
-	c.AddPolygons(clipper_clip, ptClip);
+	c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+	c.AddPolygons(clipper_clip, ClipperLib::ptClip);
 
-	c.Execute(op, clipper_result, pftEvenOdd, pftEvenOdd);
+	c.Execute(op, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     // verify each result is simple
-    Polygons simple_result = clipper_simplify( clipper_result );
+    ClipperLib::Polygons simple_result = clipper_simplify( clipper_result );
     
 	make_tg_poly_from_clipper( simple_result, &result );
 
@@ -860,7 +862,7 @@ TGPolygon tgPolygonStripHoles( const TGPolygon &poly ) {
     return result;
 }
 
-void PrintClipperPoly( Polygons polys )
+void PrintClipperPoly( ClipperLib::Polygons polys )
 {
     int nContours = polys.size();
 
@@ -880,7 +882,7 @@ TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta)
 {
     TGPolygon result;
 
-    Polygons clipper_src, clipper_dst;
+    ClipperLib::Polygons clipper_src, clipper_dst;
     
     make_clipper_poly( poly, &clipper_src );
 
@@ -901,7 +903,7 @@ TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta)
 TGPolygon tgPolygonSimplify(const TGPolygon &poly)
 {
     TGPolygon result;
-    Polygons clipper_poly;
+    ClipperLib::Polygons clipper_poly;
     
     make_clipper_poly( poly, &clipper_poly );
 
