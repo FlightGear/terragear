@@ -4,13 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
-#ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>		// for timing
-#endif
+#include <simgear/timing/timestamp.hxx>
 
 #include "runway.hxx"
 #include "object.hxx"
@@ -95,17 +89,17 @@ public:
         return icao;
     }
 
-    void GetBuildTime( struct timeval& tm )
+    void GetBuildTime( SGTimeStamp& tm )
     {
         tm = build_time;
     }
 
-    void GetTriangulationTime( struct timeval& tm )
+    void GetTriangulationTime( SGTimeStamp& tm )
     {
         tm = triangulation_time;
     }
 
-    void GetCleanupTime( struct timeval& tm )
+    void GetCleanupTime( SGTimeStamp& tm )
     {
         tm = cleanup_time;
     }
@@ -133,9 +127,9 @@ private:
     ClosedPoly*     boundary;
 
     // stats
-    struct timeval  build_time;
-    struct timeval  cleanup_time;
-    struct timeval  triangulation_time;
+    SGTimeStamp build_time;
+    SGTimeStamp cleanup_time;
+    SGTimeStamp triangulation_time;
 
     // debug
     int dbg_rwy_poly;

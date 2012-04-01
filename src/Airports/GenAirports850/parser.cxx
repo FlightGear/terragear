@@ -1,13 +1,8 @@
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
-#ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>		// for timing
-#endif
+#include <ctime>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
+#include <simgear/timing/timestamp.hxx>
 
 #include "parser.hxx"
 
@@ -334,15 +329,14 @@ void Parser::SetDebugPolys( int rwy, int pvmt, int feat, int base )
 void Parser::Parse( string last_apt_file )
 {
     char tmp[2048];
-
-#if !defined(_MSC_VER)
-    struct timeval parse_start;
-    struct timeval parse_end;
-    struct timeval parse_time;
-    struct timeval build_time;
-    struct timeval clean_time;
-    struct timeval triangulation_time;
-#endif
+    
+    SGTimeStamp parse_start;
+    SGTimeStamp parse_end;
+    SGTimeStamp parse_time;
+    SGTimeStamp build_time;
+    SGTimeStamp clean_time;
+    SGTimeStamp triangulation_time;
+    time_t      log_time;
 
     ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
@@ -357,11 +351,10 @@ void Parser::Parse( string last_apt_file )
         SetState(STATE_NONE);
         in.clear();
 
-#if !defined(_MSC_VER)
-        gettimeofday(&parse_start, NULL);
+        parse_start.stamp();
+        log_time = time(0);
         SG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
-        SG_LOG( SG_GENERAL, SG_ALERT, "Parsing airport " << airport_icaos[i] << " at " << parse_positions[i] << " start time " << ctime(&parse_start.tv_sec) );
-#endif
+        SG_LOG( SG_GENERAL, SG_ALERT, "Start airport " << airport_icaos[i] << " at " << parse_positions[i] << ": start time " << ctime(&log_time) );
 
         in.seekg(parse_positions[i], ios::beg);
 
@@ -378,33 +371,29 @@ void Parser::Parse( string last_apt_file )
             ParseLine(tmp);
         }
 
-#if !defined(_MSC_VER)
-        gettimeofday(&parse_end, NULL);
-        timersub(&parse_end, &parse_start, &parse_time);
-        SG_LOG( SG_GENERAL, SG_ALERT, "Finished parsing airport " << airport_icaos[i] << " at " << ctime(&parse_end.tv_sec) );
-#endif
+        parse_end.stamp();
+        parse_time = parse_end - parse_start;
         
         // write the airport BTG
         if (cur_airport)
         {
             cur_airport->BuildBtg( work_dir, elevation );
 
-#if !defined(_MSC_VER)
             cur_airport->GetBuildTime( build_time );
             cur_airport->GetCleanupTime( clean_time );
             cur_airport->GetTriangulationTime( triangulation_time );
-#endif
 
             delete cur_airport;
             cur_airport = NULL;
         }
 
-#if !defined(_MSC_VER)
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Time to parse       " << parse_time.tv_sec << ":" << parse_time.tv_usec );
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Time to build       " << build_time.tv_sec << ":" << build_time.tv_usec );
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Time to clean up    " << clean_time.tv_sec << ":" << clean_time.tv_usec );
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Time to triangulate " << triangulation_time.tv_sec << ":" << triangulation_time.tv_usec );
-#endif
+        log_time = time(0);
+        SG_LOG( SG_GENERAL, SG_ALERT, "Finished airport " << airport_icaos[i] << ": end time " << ctime(&log_time) );
+
+        SG_LOG( SG_GENERAL, SG_INFO, "Time to parse       " << parse_time );
+        SG_LOG( SG_GENERAL, SG_INFO, "Time to build       " << build_time );
+        SG_LOG( SG_GENERAL, SG_INFO, "Time to clean up    " << clean_time );
+        SG_LOG( SG_GENERAL, SG_INFO, "Time to triangulate " << triangulation_time );
     }
 }
 

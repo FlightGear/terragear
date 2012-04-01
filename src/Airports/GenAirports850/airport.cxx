@@ -6,6 +6,7 @@
 #include <list>
 #include <map>
 #include <string>
+#include <ctime>
 
 #include <simgear/compiler.h>
 #include <simgear/structure/exception.hxx>
@@ -468,15 +469,13 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // parse main airport information
     double apt_lon = 0.0, apt_lat = 0.0;
 
-#if !defined(_MSC_VER)
-    struct timeval  build_start;
-    struct timeval  build_end;
-    struct timeval  cleanup_start;
-    struct timeval  cleanup_end;
-    struct timeval  triangulation_start;
-    struct timeval  triangulation_end;
-    struct timeval  log_time;
-#endif
+    SGTimeStamp build_start;
+    SGTimeStamp build_end;
+    SGTimeStamp cleanup_start;
+    SGTimeStamp cleanup_end;
+    SGTimeStamp triangulation_start;
+    SGTimeStamp triangulation_end;
+    time_t      log_time;
 
     // Find the average of all the runway and heliport long / lats
     int num_samples = 0;
@@ -511,9 +510,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     // Starting to clip the polys (for now - only UNIX builds)
-#if !defined(_MSC_VER)
-    gettimeofday(&build_start, NULL);
-#endif
+    build_start.stamp();
 
     // Add the linear features
     if (features.size())
@@ -538,10 +535,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         SG_LOG(SG_GENERAL, SG_DEBUG, "no markings");
     }
 
-#if !defined(_MSC_VER)
-    gettimeofday(&log_time, NULL);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << ctime(&log_time.tv_sec) );
-#endif
+    log_time = time(0);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << ctime(&log_time) );
 
     // Build runways next
     for ( unsigned int i=0; i<runways.size(); i++ ) 
@@ -565,10 +560,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         merge_slivers( rwy_polys, slivers );
     }
 
-#if !defined(_MSC_VER)
-    gettimeofday(&log_time, NULL);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building runways for " << icao << " at " << ctime(&log_time.tv_sec) );
-#endif
+    log_time = time(0);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building runways for " << icao << " at " << ctime(&log_time) );
 
     if (lightobjects.size())
     {
@@ -636,10 +629,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         SG_LOG(SG_GENERAL, SG_DEBUG, "no pavements");
     }
 
-#if !defined(_MSC_VER)
-    gettimeofday(&log_time, NULL);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building pavements for " << icao << " at " << ctime(&log_time.tv_sec) );
-#endif
+    log_time = time(0);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Pavements for " << icao << " at " << ctime(&log_time) );
 
     // Build runway shoulders here
 #if 0
@@ -677,15 +668,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     TGPolygon divided_base = tgPolygonSplitLongEdges( filled_base, 200.0 );
     TGPolygon base_poly    = tgPolygonDiffClipper( divided_base, accum );
 
-#if !defined(_MSC_VER)
-    gettimeofday(&build_end, NULL);
-    timersub(&build_end, &build_start, &build_time);
-#endif
+    build_end.stamp();
+    build_time = build_end - build_start;
 
-
-#if !defined(_MSC_VER)
-    gettimeofday(&cleanup_start, NULL);
-#endif
+    cleanup_start.stamp();
 
     // add segments to polygons to remove any possible "T"
     // intersections
@@ -752,10 +738,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	}
     }
 
-#if !defined(_MSC_VER)
-    gettimeofday(&log_time, NULL);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished collecting nodes for " << icao << " at " << ctime(&log_time.tv_sec) );
-#endif
+    log_time = time(0);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished collecting nodes for " << icao << " at " << ctime(&log_time) );
 
     // second pass : runways
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
@@ -784,10 +768,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	line_polys[k].set_poly( poly );
     }
 
-#if !defined(_MSC_VER)
-    gettimeofday(&log_time, NULL);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished adding intermediate nodes for " << icao << " at " << ctime(&log_time.tv_sec) );
-#endif
+    log_time = time(0);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished adding intermediate nodes for " << icao << " at " << ctime(&log_time) );
 
     for ( unsigned int k = 0; k < line_polys.size(); ++k ) 
     {
@@ -806,10 +788,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	line_polys[k].set_poly( poly );
     }
 
-#if !defined(_MSC_VER)
-    gettimeofday(&log_time, NULL);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << ctime(&log_time.tv_sec) );
-#endif
+    log_time = time(0);
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << ctime(&log_time) );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes base ");
     SG_LOG(SG_GENERAL, SG_DEBUG, " before: " << base_poly);
@@ -843,14 +823,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	pvmt_polys[k].set_poly( poly );
     }
 
-#if !defined(_MSC_VER)
-    gettimeofday(&cleanup_end, NULL);
-    timersub(&cleanup_end, &cleanup_start, &cleanup_time);
-#endif
+    cleanup_end.stamp();
+    cleanup_time = cleanup_end - cleanup_start;
 
-#if !defined(_MSC_VER)
-    gettimeofday(&triangulation_start, NULL);
-#endif
+    triangulation_start.stamp();
 
     // tesselate the polygons and prepair them for final output
     for ( unsigned int i = 0; i < rwy_polys.size(); ++i ) 
@@ -954,10 +930,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     SG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly - done : contours = " << base_tris.contours());
 
-#if !defined(_MSC_VER)
-    gettimeofday(&triangulation_end, NULL);
-    timersub(&triangulation_end, &triangulation_start, &triangulation_time);
-#endif
+    triangulation_end.stamp();
+    triangulation_time = triangulation_end - triangulation_start;
 
     //
     // We should now have the runway polygons all generated with their
