@@ -1067,7 +1067,7 @@ int main(int argc, char **argv) {
     
     bool ignoreLandmass = false;
     
-    sglog().setLogLevels( SG_ALL, SG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_INFO );
 
     //
     // Parse the command-line arguments.
