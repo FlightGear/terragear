@@ -858,7 +858,7 @@ static point_list remove_contour_dups( const point_list& contour ) {
         }
 
         iters++;
-        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_dups : after " << iters << "iterations, contour has " << result.size() << " points" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_dups : after " << iters << " iterations, contour has " << result.size() << " points" );
     } while( found );
 
     return result;
@@ -1298,7 +1298,7 @@ static point_list remove_small_cycles( const point_list& contour ) {
         }
 
         iters++;
-        SG_LOG(SG_GENERAL, SG_DEBUG, "remove small cycles : after " << iters << "iterations, contour has " << result.size() << " points" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove small cycles : after " << iters << " iterations, contour has " << result.size() << " points" );
     } while( found );
 
     return result;
@@ -1398,7 +1398,7 @@ static point_list remove_contour_spikes( const point_list& contour ) {
         }
 
         iters++;
-        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_spikes : after " << iters << "iterations, contour has " << result.size() << " points" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "remove_contour_spikes : after " << iters << " iterations, contour has " << result.size() << " points" );
     } while( found );
 
     return result;
