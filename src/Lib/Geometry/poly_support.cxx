@@ -1167,10 +1167,12 @@ TGPolygon reduce_degeneracy( const TGPolygon& poly ) {
     TGPolygon result;
 
     for ( int i = 0; i < poly.contours(); ++i ) {
-        // cout << "reduce_degeneracy() contour = " << i << endl;
-	point_list contour = poly.get_contour(i);
-	contour = reduce_contour_degeneracy( contour );
-	result.add_contour( contour, poly.get_hole_flag(i) );
+        if ( poly.get_contour(i).size() > 0)
+        {
+            point_list contour = poly.get_contour(i);
+            contour = reduce_contour_degeneracy( contour );
+            result.add_contour( contour, poly.get_hole_flag(i) );
+        }
 
 	// maintain original hole flag setting
 	// result.set_hole_flag( i, poly.get_hole_flag( i ) );
