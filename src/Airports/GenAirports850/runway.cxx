@@ -80,7 +80,7 @@ TGPolygon WaterRunway::GetNodes()
 }
 
 
-int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing )
+int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
 
@@ -128,7 +128,7 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         case 1: // asphalt:
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete" << rwy.surface);
-            gen_rwy( rwy_polys, texparams, accum, slivers );
+            gen_rwy( rwy_polys, texparams, accum, slivers, make_shapefiles );
             gen_runway_lights( rwy_lights );
             break;
     
@@ -163,8 +163,6 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
 
     if (apt_base)
     {
-        // If we have shoulders, we need to grow even further...
-
         // generate area around runways
         base      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );
         base      = snap( base, gSnap );

@@ -553,8 +553,6 @@ Point3D midpoint( Point3D p0, Point3D p1 )
     return Point3D( (p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2, (p0.z() + p1.z()) / 2 );
 }
 
-#define DEBUG_LF    (0)
-
 int LinearFeature::Finish( bool closed, unsigned int idx )
 {
     TGPolygon   poly;
@@ -572,16 +570,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     double      cur_light_dist = 0.0f;
     double      light_delta = 0;
     double      pt_x = 0, pt_y = 0;
-
-#if DEBUG_LF
-    void* ds_id;
-    void* l_id;
-
-    // Create a datasource for each linear feature
-    char ds_name[128];
-    sprintf(ds_name, "./lf_debug/%04d_%s", idx, description.c_str());
-    ds_id = tgShapefileOpenDatasource( ds_name );
-#endif
 
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers 
@@ -710,13 +698,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 exit(1);
         }
 
-#if DEBUG_LF
-        // Create a new layer in the datasource for each Mark
-        char layer_name[128];
-        sprintf( layer_name, "%04d_%s", i, material.c_str() );
-        l_id = tgShapefileOpenLayer( ds_id, layer_name );
-#endif
-
         last_end_v   = 0.0f;
         for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
@@ -755,12 +736,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 poly.add_node( 0, cur_inner );
                 poly = snap( poly, gSnap );
 
-#if DEBUG_LF
-                char feature_name[128];
-                sprintf( feature_name, "%04d", j);
-                tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
-#endif
-
                 sp.erase();
                 sp.set_poly( poly );
                 sp.set_material( material );
@@ -778,11 +753,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             prev_inner = cur_inner;
         }
     }
-
-#if DEBUG_LF
-    // Close the datasource
-    tgShapefileCloseDatasource( ds_id );
-#endif
 
     // now generate the supoerpoly list for lights with constant distance between lights (depending on feature type)
     for (unsigned int i=0; i<lights.size(); i++)
@@ -916,7 +886,7 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
 
     if ( make_shapefiles ) {
         char ds_name[128];
-        sprintf(ds_name, "./lf_debug/problem");
+        sprintf(ds_name, "./lf_debug");
         ds_id = tgShapefileOpenDatasource( ds_name );
     }
 

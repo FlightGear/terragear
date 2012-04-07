@@ -255,6 +255,96 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly, const TGTexPa
     return result;
 }
 
+static TGPolygon shoulder_tex_coords( const TGPolygon& in_poly, const TGTexParams& tp )
+{
+    int i, j;
+    TGPolygon result;
+    result.erase();
+
+    Point3D ref = tp.get_ref();
+    double width = tp.get_width();
+    double length = tp.get_length();
+    double heading = tp.get_heading();
+    double minu = tp.get_minu();
+    double maxu = tp.get_maxu();
+    double minv = tp.get_minv();
+    double maxv = tp.get_maxv();
+    SG_LOG( SG_GENERAL, SG_DEBUG, "section ref = " << ref );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  width   = " << width );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  length  = " << length );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  heading = " << heading );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  minv    = " << minv );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  maxv    = " << maxv );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  heading = " << heading );
+
+    Point3D p, t;
+    double x, y, tx, ty;
+
+    for ( i = 0; i < in_poly.contours(); ++i ) 
+    {
+    	for ( j = 0; j < in_poly.contour_size( i ); ++j ) 
+        {
+    	    p = in_poly.get_pt( i, j );
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "tex coords for contour " << i << "point " << j << ": " << p );
+
+    	    //
+    	    // 1. Calculate distance and bearing from the center of
+    	    // the feature
+    	    //
+
+    	    // given alt, lat1, lon1, lat2, lon2, calculate starting
+    	    // and ending az1, az2 and distance (s).  Lat, lon, and
+    	    // azimuth are in degrees.  distance in meters
+    	    double az1, az2, dist;
+    	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
+    				&az1, &az2, &dist );
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course from ref = " << az2);
+
+    	    //
+    	    // 2. Rotate this back into a coordinate system where Y
+    	    // runs the length of the runway and X runs crossways.
+    	    //
+
+    	    double course = az2 - heading;
+    	    while ( course < -360 ) { course += 360; }
+    	    while ( course > 360 ) { course -= 360; }
+    	    SG_LOG( SG_GENERAL, SG_DEBUG,
+                        "  course = " << course << "  dist = " << dist );
+
+    	    //
+    	    // 3. Convert from polar to cartesian coordinates
+    	    //
+
+    	    x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
+    	    y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  x = " << x << " y = " << y);
+
+    	    //
+    	    // 4. Map x, y point into texture coordinates
+    	    //
+    	    double tmp;
+
+            tmp = x / width;
+            tx = tmp * (maxu - minu) + minu;
+
+            if ( tx < 0.00 ) { tx = 0.0; }
+            if ( tx > 1.00 ) { tx = 1.0; }
+
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
+
+            ty = (y/length) + minv;
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
+
+    	    t = Point3D( tx, ty, 0 );
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ", " << ty << ")");
+
+    	    result.add_node( i, t );
+    	}
+    }
+
+    return result;
+}
+
 // TODO: add to linear feature class 
 static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTexParams& tp )
 {
@@ -546,13 +636,21 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
         if ( runways[i]->IsPrecision() ) 
         {
+            if ( (dbg_rwy_poly > 0) && (i == (unsigned int)dbg_rwy_poly-1) ) {
+                SG_LOG(SG_GENERAL, SG_INFO, "Problem runway poly (" << i << ")");
+
+                make_shapefiles = true;
+            } else {
+                make_shapefiles = false;
+            }
+
             if (boundary)
             {
-                runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL );
+                runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
             }
             else
             {
-                runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing );
+                runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing, make_shapefiles );
             }
         }
 
@@ -633,7 +731,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Pavements for " << icao << " at " << ctime(&log_time) );
 
     // Build runway shoulders here
-#if 0
     for ( unsigned int i=0; i<runways.size(); i++ )
     {
         SG_LOG(SG_GENERAL, SG_INFO, "Build Runway shoulder " << i + 1 << " of " << runways.size());
@@ -641,14 +738,21 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         if ( runways[i]->GetsShoulder() )
         {
             slivers.clear();
-            runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, &apt_base, &apt_clearing );
+
+            if (boundary)
+            {
+                runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, NULL, NULL );
+            }
+            else
+            {
+                runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, &apt_base, &apt_clearing );
+            }
 
             // Now try to merge any slivers we found
             merge_slivers( rwy_polys, slivers );
             merge_slivers( pvmt_polys, slivers );
         }
     }
-#endif
 
     // build the base and clearing if there's a boundary
     if (boundary)
@@ -850,7 +954,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
-        tc = rwy_section_tex_coords( tri, rwy_tps[i], true );
+        if (rwy_polys[i].get_flag() == "shoulder")
+        {
+            tc = shoulder_tex_coords( tri, rwy_tps[i] );
+        }
+        else
+        {
+            tc = rwy_section_tex_coords( tri, rwy_tps[i], true );
+        }
 
     	rwy_polys[i].set_tris( tri );
 	    rwy_polys[i].set_texcoords( tc );

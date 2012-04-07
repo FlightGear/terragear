@@ -90,7 +90,9 @@ void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                                         heading,
                                         "",
                                         rwy_polys, texparams, 
-                                        accum, slivers );
+                                        NULL, NULL,
+                                        accum, slivers,
+                                        false );
         }
         
         // Generate runway
@@ -101,7 +103,8 @@ void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                                     heading,
                                     "",
                                     rwy_polys, texparams, 
-                                    accum, slivers );
-
+                                    NULL, NULL,
+                                    accum, slivers,
+                                    false );
     }
 }

@@ -41,9 +41,7 @@ public:
 
     bool GetsShoulder()
     {
-        if (rwy.surface < 3 || rwy.shoulder > 0)
-            return true;
-            else return false;
+        return (rwy.surface < 3) ? true : false;
     }
 
     int BuildBtg( superpoly_list* rwy_polys, 
@@ -52,7 +50,8 @@ public:
                   ClipPolyType* accum, 
                   poly_list& slivers, 
                   TGPolygon* apt_base, 
-                  TGPolygon* apt_clearing );
+                  TGPolygon* apt_clearing,
+                  bool make_shapefiles );
 
     void BuildShoulder( superpoly_list *rwy_polys,
                         texparams_list *texparams,
@@ -91,6 +90,11 @@ private:
     TGRunway      rwy;
     std::string   material_prefix;
 
+    // storage for Shoulders - The superpolys are generated during rwy construction,
+    // but not clipped until shoulder construction.
+    superpoly_list  shoulder_polys;
+    texparams_list  shoulder_tps;
+
     // Build Helpers:
     // generate an area for a runway and include midpoints
     TGPolygon gen_runway_w_mid( double length_extend_m, double width_extend_m )
@@ -110,7 +114,8 @@ private:
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
                              ClipPolyType* accum,
-                             poly_list& slivers );
+                             poly_list& slivers,
+                             bool make_shapefiles );
 
     // generate a section of runway
     void gen_runway_section( const TGPolygon& runway,
@@ -121,15 +126,28 @@ private:
                       const string& material,
                       superpoly_list *rwy_polys,
                       texparams_list *texparams,
+                      superpoly_list *shoulder_polys,
+                      texparams_list *shoulder_tps,
                       ClipPolyType *accum,
-                      poly_list& slivers );
+                      poly_list& slivers,
+                      bool make_shapefiles );
+
+    // generate a section of shoulder
+    void gen_shoulder_section( Point3D p0, Point3D p1, 
+                               Point3D t0, Point3D t1, 
+                               int side,
+                               double heading,
+                               double width,
+                               std::string surface, 
+                               TGSuperPoly& sp, TGTexParams& tp );
 
     void gen_simple_rwy( superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
     
     void gen_rwy( superpoly_list* rwy_polys,
                   texparams_list* texparams,
                   ClipPolyType* accum,
-                  poly_list& slivers  );
+                  poly_list& slivers,
+                  bool make_shapefiles );
 
     void gen_runway_lights( superpoly_list* lights );
 
