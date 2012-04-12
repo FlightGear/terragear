@@ -775,12 +775,12 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
             case LF_UNIDIR_CLOSE_AMBER:
                 material = "RWY_YELLOW_LIGHTS";
-                light_delta = 4.0f;
+                light_delta = 2.0f;
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER_PULSE:
                 material = "RWY_YELLOW_PULSE_LIGHTS";
-                light_delta = 1.0f;
+                light_delta = 2.0f;
                 break;
 
             case LF_BIDIR_GREEN_AMBER:
