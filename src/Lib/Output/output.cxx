@@ -76,7 +76,7 @@ void write_index( const string& base, const SGBucket& b, const string& name )
 
     string file = dir + "/" + b.gen_index_str() + ".ind";
     // string file = dir + "/" + name;
-    cout << "Output file = " << file << endl;
+    cout << "Writing object to " << file << endl;
 
     FILE *fp;
     if ( (fp = fopen( file.c_str(), "a" )) == NULL ) {
@@ -102,7 +102,7 @@ void write_index_shared( const string &base, const SGBucket &b,
 
     string file = dir + "/" + b.gen_index_str() + ".ind";
     // string file = dir + "/" + name;
-    cout << "Output file = " << file << endl;
+    cout << "Writing shared object to " << file << endl;
 
     FILE *fp;
     if ( (fp = fopen( file.c_str(), "a" )) == NULL ) {
@@ -126,7 +126,7 @@ void write_object_sign( const string &base, const SGBucket &b,
 
     string file = dir + "/" + b.gen_index_str() + ".ind";
     // string file = dir + "/" + name;
-    cout << "Output file = " << file << endl;
+    cout << "Writing sign to " << file << endl;
 
     FILE *fp;
     if ( (fp = fopen( file.c_str(), "a" )) == NULL ) {
@@ -156,7 +156,7 @@ void write_boundary( const string& base, const SGBucket& b,
     file += ".";
     file += poly_index;
 
-    cout << "Output file = " << file << endl;
+    cout << "Writing boundary to " << file << endl;
 
     FILE *fp;
     if ( (fp = fopen( file.c_str(), "w" )) == NULL ) {

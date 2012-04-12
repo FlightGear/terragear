@@ -300,7 +300,7 @@ int main(int argc, char **argv)
     }
 
     // make work directory
-    SG_LOG(SG_GENERAL, SG_INFO, "Creating airportarea directory");
+    SG_LOG(SG_GENERAL, SG_INFO, "Creating AirportArea directory");
 
     string airportareadir=work_dir+"/AirportArea";
     SGPath sgp( airportareadir );
