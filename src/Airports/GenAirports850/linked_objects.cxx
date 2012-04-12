@@ -25,8 +25,7 @@ Sign::Sign( char* definition )
 
     // 850 format sign heading is the heading which points away from the visible numbers
     // Flightgear wants the heading to be the heading in which the sign is read
-    heading = def_heading - 180.0;
-    if ( heading < 0 ) { heading += 360.0; }
+    heading = -def_heading + 360.0;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read Sign: (" << lon << "," << lat << ") heading " << def_heading << " size " << size << " definition: " << sgdef << " calc view heading: " << heading );
 
