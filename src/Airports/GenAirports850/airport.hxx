@@ -9,6 +9,7 @@
 #include "runway.hxx"
 #include "object.hxx"
 #include "helipad.hxx"
+#include "taxiway.hxx"
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
 #include "linked_objects.hxx"
@@ -39,6 +40,11 @@ public:
     void AddHelipad( Helipad* helipad )
     {
         helipads.push_back( helipad );
+    }
+
+    void AddTaxiway( Taxiway* taxiway )
+    {
+        taxiways.push_back( taxiway );
     }
 
     void AddPavement( ClosedPoly* pavement )
@@ -107,7 +113,7 @@ public:
     void merge_slivers( superpoly_list& polys, poly_list& slivers );
     void BuildBtg( const string& root, const string_list& elev_src );
 
-    void SetDebugPolys( int rwy, int pvmt, int feat, int base );
+    void SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base );
 
 private:
     int     code;               // airport, heliport or sea port
@@ -119,6 +125,7 @@ private:
     FeatureList     features;
     RunwayList      runways;
     WaterRunwayList waterrunways;
+    TaxiwayList     taxiways;
     LightingObjList lightobjects;
     WindsockList    windsocks;
     BeaconList      beacons;
@@ -133,6 +140,7 @@ private:
 
     // debug
     int dbg_rwy_poly;
+    int dbg_taxi_poly;
     int dbg_pvmt_poly;
     int dbg_feat_poly;
     int dbg_base_poly;

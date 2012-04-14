@@ -149,9 +149,10 @@ Airport::~Airport()
     }
 }
 
-void Airport::SetDebugPolys( int rwy, int pvmt, int feat, int base )
+void Airport::SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base )
 {
     dbg_rwy_poly  = rwy;
+    dbg_taxi_poly = taxi;
     dbg_pvmt_poly = pvmt;
     dbg_feat_poly = feat;
     dbg_base_poly = base;
@@ -729,6 +730,42 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     log_time = time(0);
     SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Pavements for " << icao << " at " << ctime(&log_time) );
+
+    // Build the legacy taxiways
+    if (taxiways.size())
+    {
+        for ( unsigned int i=0; i<taxiways.size(); i++ )
+        {
+            SG_LOG(SG_GENERAL, SG_INFO, "Build Taxiway " << i + 1 << " of " << taxiways.size());
+            slivers.clear();
+
+            if ( (dbg_taxi_poly > 0) && (i == (unsigned int)dbg_taxi_poly-1) ) {
+                SG_LOG(SG_GENERAL, SG_INFO, "Problem taxi poly (" << i << ")");
+
+                make_shapefiles = true;
+            } else {
+                make_shapefiles = false;
+            }
+
+            if (boundary)
+            {
+                taxiways[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
+            }
+            else
+            {
+                taxiways[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing, make_shapefiles );
+            }
+
+            // Now try to merge any slivers we found
+            merge_slivers( rwy_polys, slivers );
+            merge_slivers( pvmt_polys, slivers );
+        }
+    }
+    else
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "no taxiways");
+    }
+
 
     // Build runway shoulders here
     for ( unsigned int i=0; i<runways.size(); i++ )

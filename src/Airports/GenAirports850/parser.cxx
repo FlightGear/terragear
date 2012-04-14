@@ -279,6 +279,7 @@ void Parser::AddAirports( long start_pos, float min_lat, float min_lon, float ma
 					}
 					break;
 
+                case TAXIWAY_CODE:
     	        case PAVEMENT_CODE:
 	            case LINEAR_FEATURE_CODE:
     	        case BOUNDRY_CODE:
@@ -318,9 +319,10 @@ void Parser::RemoveAirport( string icao )
     }
 }
 
-void Parser::SetDebugPolys( int rwy, int pvmt, int feat, int base )
+void Parser::SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base )
 {
     rwy_poly  = rwy;
+    taxi_poly = taxi;
     pvmt_poly = pvmt;
     feat_poly = feat;
     base_poly = base;
@@ -657,7 +659,7 @@ int Parser::ParseLine(char* line)
                         SetState( STATE_PARSE_SIMPLE );
                         SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
                         cur_airport = new Airport( code, line );
-                        cur_airport->SetDebugPolys( rwy_poly, pvmt_poly, feat_poly, base_poly );
+                        cur_airport->SetDebugPolys( rwy_poly, taxi_poly, pvmt_poly, feat_poly, base_poly );
                     }
                     else
                     {
@@ -670,7 +672,7 @@ int Parser::ParseLine(char* line)
                         SetState( STATE_PARSE_SIMPLE );
                         SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
                         cur_airport = new Airport( code, line );
-                        cur_airport->SetDebugPolys( rwy_poly, pvmt_poly, feat_poly, base_poly );
+                        cur_airport->SetDebugPolys( rwy_poly, taxi_poly, pvmt_poly, feat_poly, base_poly );
                     }
                     else
                     {
@@ -704,6 +706,16 @@ int Parser::ParseLine(char* line)
                     if (cur_airport)
                     {
                         cur_airport->AddHelipad( cur_helipad );
+                    }
+                    break;
+    
+                case TAXIWAY_CODE:
+                    SetState( STATE_PARSE_SIMPLE );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway: " << line);
+                    cur_taxiway = new Taxiway(line);
+                    if (cur_airport)
+                    {
+                        cur_airport->AddTaxiway( cur_taxiway );
                     }
                     break;
     

@@ -141,6 +141,7 @@ int main(int argc, char **argv)
     string airport_id = "";
     string last_apt_file = "./last_apt.txt";
     int    dump_rwy_poly  = -1;
+    int    dump_taxi_poly = -1;
     int    dump_pvmt_poly = -1;
     int    dump_feat_poly = -1;
     int    dump_base_poly = -1;
@@ -237,6 +238,10 @@ int main(int argc, char **argv)
         else if ( arg.find("--dump-rwy=") == 0 ) 
         {
     	    dump_rwy_poly = atoi( arg.substr(11).c_str() );
+    	}
+        else if ( arg.find("--dump-taxi=") == 0 ) 
+        {
+    	    dump_taxi_poly = atoi( arg.substr(12).c_str() );
     	} 
         else if ( arg.find("--dump-pvmt=") == 0 ) 
         {
@@ -322,7 +327,7 @@ int main(int argc, char **argv)
     Parser* parser = new Parser(input_file, work_dir, elev_src);
 
     // Add any debug 
-    parser->SetDebugPolys( dump_rwy_poly, dump_pvmt_poly, dump_feat_poly, dump_base_poly );
+    parser->SetDebugPolys( dump_rwy_poly, dump_taxi_poly, dump_pvmt_poly, dump_feat_poly, dump_base_poly );
 
     // just one airport 
     if ( airport_id != "" )

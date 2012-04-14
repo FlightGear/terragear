@@ -20,6 +20,7 @@
 #define MAXLINE (256)
 
 #define LAND_AIRPORT_CODE               (1)
+#define TAXIWAY_CODE                    (10)
 #define SEA_AIRPORT_CODE                (16)
 #define HELIPORT_CODE                   (17)
 
@@ -74,6 +75,7 @@ public:
         cur_runway      = NULL;
         cur_waterrunway = NULL;
         cur_helipad     = NULL;
+        cur_taxiway     = NULL;
         cur_pavement    = NULL;
         cur_boundary    = NULL;
         cur_feat        = NULL;
@@ -91,7 +93,7 @@ public:
         base_poly = -1;
     }
     
-    void            SetDebugPolys( int rwy, int pvmt, int feat, int base );
+    void            SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base );
     long            FindAirport( string icao );
     void            AddAirport( string icao );
     void            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
@@ -119,6 +121,7 @@ private:
     // a polygon conists of an array of contours 
     // (first is outside boundry, remaining are holes)
     Airport*        cur_airport;
+    Taxiway*        cur_taxiway;
     Runway*         cur_runway;
     WaterRunway*    cur_waterrunway;
     Helipad*        cur_helipad;
@@ -136,6 +139,7 @@ private:
 
     // debug
     int rwy_poly;
+    int taxi_poly;
     int pvmt_poly;
     int feat_poly;
     int base_poly;

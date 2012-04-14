@@ -17,6 +17,7 @@ add_executable(genapts850
 	runway.cxx runway.hxx
 	rwy_simple.cxx
 	rwy_gen.cxx
+    taxiway.cxx taxiway.hxx
 	)
   
 target_link_libraries(genapts850
