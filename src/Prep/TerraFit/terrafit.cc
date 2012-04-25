@@ -287,7 +287,7 @@ int main(int argc, char** argv) {
                         walk_path(SGPath(argv[optind++]));
                 }
         } else {
-                usage(argv[0],"Insufficient arguments");
+                SG_LOG(SG_GENERAL, SG_INFO, "Use 'terrafit --help' for commands");
                 exit(1);
         }
 }
