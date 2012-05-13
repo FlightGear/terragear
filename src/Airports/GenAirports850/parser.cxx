@@ -1,13 +1,26 @@
 #include <ctime>
 
+#include <Poco/Mutex.h>
+#include <Poco/Pipe.h>
+#include <Poco/PipeStream.h>
+#include <Poco/Process.h>
+#include <Poco/Runnable.h>
+#include <Poco/Semaphore.h>
+#include <Poco/Thread.h>
+#include <Poco/Timespan.h>
+#include <Poco/Net/ServerSocket.h>
+#include <Poco/Net/SocketAddress.h>
+#include <Poco/Net/SocketStream.h>
+#include <Poco/Net/Socket.h>
+#include <Poco/Net/StreamSocket.h>
+
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
 #include <simgear/timing/timestamp.hxx>
 
 #include "parser.hxx"
 
-
-bool Parser::IsAirportDefinition( char* line, string icao )
+bool Parser::GetAirportDefinition( char* line, string& icao )
 {
     char*    tok;
     int      code;
@@ -28,295 +41,16 @@ bool Parser::IsAirportDefinition( char* line, string icao )
             case SEA_AIRPORT_CODE:
             case HELIPORT_CODE:
                 airport = new Airport( code, line );
-                if ( airport->GetIcao() == icao )
-                {
-                    match = true;
-                }
+                icao = airport->GetIcao();
+                match = true;
                 break;
 
-            case LAND_RUNWAY_CODE:
-            case WATER_RUNWAY_CODE:
-            case HELIPAD_CODE:
-            case PAVEMENT_CODE:
-            case LINEAR_FEATURE_CODE:
-            case BOUNDRY_CODE:
-            case NODE_CODE:
-            case BEZIER_NODE_CODE:
-            case CLOSE_NODE_CODE:
-            case CLOSE_BEZIER_NODE_CODE:
-            case TERM_NODE_CODE:
-            case TERM_BEZIER_NODE_CODE:
-            case AIRPORT_VIEWPOINT_CODE:
-            case AIRPLANE_STARTUP_LOCATION_CODE:
-            case LIGHT_BEACON_CODE:
-            case WINDSOCK_CODE:
-            case TAXIWAY_SIGN:
-            case LIGHTING_OBJECT:
-            case COMM_FREQ1_CODE:
-            case COMM_FREQ2_CODE:
-            case COMM_FREQ3_CODE:
-            case COMM_FREQ4_CODE:
-            case COMM_FREQ5_CODE:
-            case COMM_FREQ6_CODE:
-            case COMM_FREQ7_CODE:
-            case END_OF_FILE :
+            default:
                 break;
         }
     }
 
     return match;
-}
-
-void Parser::AddAirport( string icao )
-{
-    char line[2048];
-    long cur_pos;
-    bool found = false;
-
-    ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
-    {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
-        exit(-1);
-    }
-
-    SG_LOG( SG_GENERAL, SG_INFO, "Adding airport " << icao << " to parse list");
-    while ( !in.eof() && !found ) 
-    {
-        // remember the position of this line
-        cur_pos = in.tellg();
-
-        // get a line
-    	in.getline(line, 2048);
-
-        // this is and airport definition - remember it
-        if ( IsAirportDefinition( line, icao ) )
-        {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
-            parse_positions.push_back( cur_pos );
-			airport_icaos.push_back( icao );
-            found = true;
-        }
-    }    
-}
-
-long Parser::FindAirport( string icao )
-{
-    char line[2048];
-    long cur_pos = 0;
-    bool found = false;
-
-    ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
-    {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
-        exit(-1);
-    }
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
-    while ( !in.eof() && !found ) 
-    {
-        // remember the position of this line
-        cur_pos = in.tellg();
-
-        // get a line
-    	in.getline(line, 2048);
-
-        // this is and airport definition - remember it
-        if ( IsAirportDefinition( line, icao ) )
-        {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
-            found = true;
-        }
-    }    
-
-	if (found)
-	{
-		return cur_pos;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
-void Parser::AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon )
-{
-        char 	 line[2048];
-        char*	 def;
-        long 	 cur_pos;
-        long	 cur_apt_pos;
-        string   cur_apt_name;
-        char*    tok;
-        int      code;
-        bool 	 match;
-        bool 	 done;
-
-        done  = false;
-        match = false;
-
-	// start from current position, and push all airports where a runway start or end 
-	// lies within the given min/max coordinates
-
-    ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
-    {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
-        exit(-1);
-    }
-
-	if (start_pos)
-	{
-        in.seekg(start_pos, ios::beg);
-	}
-
-	while (!done)
-	{
-	  	// remember the position of this line
-	   	cur_pos = in.tellg();
-
-	   	// get a line
-	   	in.getline(line, 2048);
-		def = &line[0];
-
-    	// Get the number code
-    	tok = strtok(def, " \t\r\n");
-
-	    if (tok)
-    	{
-    	    def += strlen(tok)+1;
-    	    code = atoi(tok);
-
-	        switch(code)
-    	    {
-    	        case LAND_AIRPORT_CODE: 
-    	        case SEA_AIRPORT_CODE:
-    	        case HELIPORT_CODE:
-					{
-						Airport* airport = new Airport( code, def );
-						if (match)
-						{
-							parse_positions.push_back( cur_apt_pos );
-							airport_icaos.push_back( cur_apt_name );
-						}
-						// remember this new apt pos and name, and clear match
-						cur_apt_pos  = cur_pos;
-						cur_apt_name = airport->GetIcao();
-						delete airport;
-
-						match = false;
-					}
-    	            break;
-
-				case END_OF_FILE:
-					if (match)
-					{
-						parse_positions.push_back( cur_apt_pos );
-						airport_icaos.push_back( cur_apt_name );
-					}
-					done = true;
-					break;
-
-	            case LAND_RUNWAY_CODE:
-					// if the the runway start / end  coords are within the rect, 
-					// we have a winner
-					{ 
-						Runway* runway = new Runway(def);
-						Point3D start = runway->GetStart();
-						Point3D end   = runway->GetEnd();
-						if ( (start.x() >= min_lon ) && 
-						     (start.y() >= min_lat ) &&
-							 (start.x() <= max_lon ) &&
-							 (start.y() <= max_lat ) ) {
-							match = true;
-						}
-						else if ( (end.x() >= min_lon ) && 
-						     (end.y() >= min_lat ) &&
-							 (end.x() <= max_lon ) &&
-							 (end.y() <= max_lat ) ) {
-							match = true;
-						}
-						delete runway;
-					}
-					break;
-
-    	        case WATER_RUNWAY_CODE:
-					// if the the runway start / end  coords are within the rect, 
-					// we have a winner
-					{ 
-						WaterRunway* runway = new WaterRunway(def);
-						Point3D start = runway->GetStart();
-						Point3D end   = runway->GetEnd();
-						if ( (start.x() >= min_lon ) && 
-						     (start.y() >= min_lat ) &&
-							 (start.x() <= max_lon ) &&
-							 (start.y() <= max_lat ) ) {
-							match = true;
-						}
-						else if ( (end.x() >= min_lon ) && 
-						     (end.y() >= min_lat ) &&
-							 (end.x() <= max_lon ) &&
-							 (end.y() <= max_lat ) ) {
-							match = true;
-						}
-						delete runway;
-					}
-					break;
-
-    	        case HELIPAD_CODE:
-					// if the heliport coords are within the rect, we have
-					// a winner
-					{ 
-						Helipad* helipad = new Helipad(def);
-						Point3D  loc = helipad->GetLoc();
-						if ( (loc.x() >= min_lon ) && 
-						     (loc.y() >= min_lat ) &&
-							 (loc.x() <= max_lon ) &&
-							 (loc.y() <= max_lat ) ) {
-							match = true;
-						}
-						delete helipad;
-					}
-					break;
-
-                case TAXIWAY_CODE:
-    	        case PAVEMENT_CODE:
-	            case LINEAR_FEATURE_CODE:
-    	        case BOUNDRY_CODE:
-    	        case NODE_CODE:
-    	        case BEZIER_NODE_CODE:
-    	        case CLOSE_NODE_CODE:
-    	        case CLOSE_BEZIER_NODE_CODE:
-    	        case TERM_NODE_CODE:
-    	        case TERM_BEZIER_NODE_CODE:
-    	        case AIRPORT_VIEWPOINT_CODE:
-    	        case AIRPLANE_STARTUP_LOCATION_CODE:
-    	        case LIGHT_BEACON_CODE:
-    	        case WINDSOCK_CODE:
-    	        case TAXIWAY_SIGN:
-    	        case LIGHTING_OBJECT:
-    	        case COMM_FREQ1_CODE:
-    	        case COMM_FREQ2_CODE:
-    	        case COMM_FREQ3_CODE:
-    	        case COMM_FREQ4_CODE:
-    	        case COMM_FREQ5_CODE:
-    	        case COMM_FREQ6_CODE:
-    	        case COMM_FREQ7_CODE:
-    	            break;
-    	    }
-    	}
-	}
-}
-
-void Parser::RemoveAirport( string icao )
-{
-    for (unsigned int i = 0; i < airport_icaos.size(); i++ ) {
-        if (airport_icaos[i] == icao) {
-            parse_positions.erase(parse_positions.begin()+i);
-            airport_icaos.erase(airport_icaos.begin()+i);
-            break;
-        }
-    }
 }
 
 void Parser::SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base )
@@ -328,10 +62,11 @@ void Parser::SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base )
     base_poly = base;
 }
 
-void Parser::Parse( string last_apt_file )
+void Parser::Parse( long pos )
 {
-    char tmp[2048];
-    
+    char line[2048];
+    string icao;
+
     SGTimeStamp parse_start;
     SGTimeStamp parse_end;
     SGTimeStamp parse_time;
@@ -346,31 +81,31 @@ void Parser::Parse( string last_apt_file )
         SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
+    in.seekg(pos, ios::beg);
 
-    // for each position in parse_positions, parse an airport
-    for ( unsigned int i=0; i < parse_positions.size(); i++)
-    {
+    // get a line
+ 	in.getline(line, 2048);
+
+    // Verify this is and airport definition and get the icao
+    if( GetAirportDefinition( line, icao ) ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "Found airport " << icao << " at " << pos );
+
+        // Start parse at pos
         SetState(STATE_NONE);
         in.clear();
 
         parse_start.stamp();
         log_time = time(0);
         SG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
-        SG_LOG( SG_GENERAL, SG_ALERT, "Start airport " << airport_icaos[i] << " at " << parse_positions[i] << ": start time " << ctime(&log_time) );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Start airport " << icao << " at " << pos << ": start time " << ctime(&log_time) );
 
-        in.seekg(parse_positions[i], ios::beg);
-
-        // save the airport we are working on
-        char command[256];
-        sprintf( command, "echo %s > %s", airport_icaos[i].c_str(), last_apt_file.c_str() );
-        system( command );
-
+        in.seekg(pos, ios::beg);
         while ( !in.eof() && (cur_state != STATE_DONE ) )
         {
-        	in.getline(tmp, 2048);
+        	in.getline(line, 2048);
 
             // Parse the line
-            ParseLine(tmp);
+            ParseLine(line);
         }
 
         parse_end.stamp();
@@ -390,12 +125,11 @@ void Parser::Parse( string last_apt_file )
         }
 
         log_time = time(0);
-        SG_LOG( SG_GENERAL, SG_ALERT, "Finished airport " << airport_icaos[i] << ": end time " << ctime(&log_time) );
-
-        SG_LOG( SG_GENERAL, SG_INFO, "Time to parse       " << parse_time );
-        SG_LOG( SG_GENERAL, SG_INFO, "Time to build       " << build_time );
-        SG_LOG( SG_GENERAL, SG_INFO, "Time to clean up    " << clean_time );
-        SG_LOG( SG_GENERAL, SG_INFO, "Time to triangulate " << triangulation_time );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Finished airport " << icao << 
+            " : parse " << parse_time << " : build " << build_time << 
+            " : clean " << clean_time << " : tesselate " << triangulation_time );
+    } else {
+        SG_LOG( SG_GENERAL, SG_INFO, "Not an airport at pos " << pos << " line is: " << line );  
     }
 }
 

@@ -114,6 +114,7 @@ public:
     void BuildBtg( const string& root, const string_list& elev_src );
 
     void SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base );
+    void DumpStats( void );
 
 private:
     int     code;               // airport, heliport or sea port

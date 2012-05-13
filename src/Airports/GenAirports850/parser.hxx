@@ -58,10 +58,6 @@
 
 using namespace std;
 
-
-typedef std::vector <long> ParseList;
-typedef std::vector <string> IcaoList;
-
 class Parser
 {
 public:
@@ -94,14 +90,11 @@ public:
     }
     
     void            SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base );
-    long            FindAirport( string icao );
-    void            AddAirport( string icao );
-    void            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
-    void            RemoveAirport( string icao );
-    void            Parse( string last_apt_file );
-    
+    void            Parse( long pos );
+
 private:
     bool            IsAirportDefinition( char* line, string icao );
+    bool            GetAirportDefinition( char* line, string& icao );
 
     int             SetState( int state );
 
@@ -132,10 +125,6 @@ private:
     Windsock*       cur_windsock;
     Beacon*         cur_beacon;
     Sign*           cur_sign;
-
-    // List of positions in database file to parse
-    ParseList       parse_positions;
-	IcaoList		airport_icaos;
 
     // debug
     int rwy_poly;

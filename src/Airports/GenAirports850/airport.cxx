@@ -91,6 +91,7 @@ Airport::Airport( int c, char* def)
     dbg_pvmt_poly = 0;
     dbg_feat_poly = 0;
     dbg_base_poly = 0;
+    dbg_taxi_poly = 0;
 
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Created airport with icao " << icao << ", control tower " << ct << ", and description " << description );
@@ -121,6 +122,11 @@ Airport::~Airport()
     for (unsigned int i=0; i<pavements.size(); i++)
     {
         delete pavements[i];
+    }
+
+    for (unsigned int i=0; i<taxiways.size(); i++)
+    {
+        delete taxiways[i];
     }
 
     for (unsigned int i=0; i<lightobjects.size(); i++)
@@ -525,8 +531,6 @@ void Airport::merge_slivers( superpoly_list& polys, poly_list& slivers_list ) {
     }
 }
 
-
-
 void Airport::BuildBtg(const string& root, const string_list& elev_src )
 {
 	ClipPolyType accum;
@@ -599,6 +603,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             AddFeatures( pavements[i]->GetFeatures() );
         }
     }
+
+    SG_LOG(SG_GENERAL, SG_INFO, "Parse Complete - Runways: " << runways.size() << " Pavements: " << pavements.size() << " Features: " << features.size() << " Taxiways: " << taxiways.size() );
 
     // Starting to clip the polys (for now - only UNIX builds)
     build_start.stamp();
@@ -1803,5 +1809,5 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     tgChopNormalPolygon( holepath, "Hole", divided_base, true );
     tgChopNormalPolygon( holepath, "Airport", apt_clearing, false );
 
-    SG_LOG( SG_GENERAL, SG_ALERT, SGLOG_GREEN << "\nSUCCESS generating " << icao << SGLOG_NORMAL << "\n" );
+    //SG_LOG( SG_GENERAL, SG_ALERT, SGLOG_GREEN << "\nSUCCESS generating " << icao << SGLOG_NORMAL << "\n" );
 }

@@ -16,6 +16,12 @@
 #include <string.h>
 #include <iostream>
 
+#include <Poco/Environment.h>
+#include <Poco/Net/SocketAddress.h>
+#include <Poco/Net/Socket.h>
+#include <Poco/Net/StreamSocket.h>
+#include <Poco/Net/SocketStream.h>
+
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sgstream.hxx>
@@ -28,8 +34,10 @@
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
 #include "parser.hxx"
+#include "scheduler.hxx"
 
 using namespace std;
+using namespace Poco;
 
 
 // TODO : Modularize this function
@@ -113,6 +121,11 @@ int nudge = 10;
 double slope_max = 0.2;
 double gSnap = 0.00000001;      // approx 1 mm
 
+// For creating a buffered stream to write to the socket
+Net::StreamSocket  ss;
+Net::SocketStreamBuf ssb( ss );
+ostream os(&ssb);
+
 int main(int argc, char **argv)
 {
     float min_lon = -180;
@@ -121,6 +134,7 @@ int main(int argc, char **argv)
     float max_lat = 90;
 	long  position = 0;
 
+    // Setup elevation directories
     string_list elev_src;
     elev_src.clear();
     setup_default_elevation_sources(elev_src);
@@ -128,23 +142,24 @@ int main(int argc, char **argv)
     // Set Normal logging
     sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Run genapt");
-
     // parse arguments
     string work_dir = "";
     string input_file = "";
+    string summary_file = "./genapt850.csv";
     string start_id = "";
     string restart_id = "";
     string airport_id = "";
+    long   airport_pos = -1;
     string last_apt_file = "./last_apt.txt";
     int    dump_rwy_poly  = -1;
     int    dump_taxi_poly = -1;
     int    dump_pvmt_poly = -1;
     int    dump_feat_poly = -1;
     int    dump_base_poly = -1;
+    int    num_threads    =  Poco::Environment::processorCount();
+    int    redirect_port  = -1;
 
     int arg_pos;
-
     for (arg_pos = 1; arg_pos < argc; arg_pos++) 
     {
         string arg = argv[arg_pos];
@@ -163,7 +178,11 @@ int main(int argc, char **argv)
         else if ( arg.find("--start-id=") == 0 ) 
         {
     	    start_id = arg.substr(11);
-     	} 
+     	}
+        else if ( arg.find("--airport-pos=") == 0 )
+        {
+            airport_pos = atol( arg.substr(14).c_str() );
+        }
         else if ( arg.find("--restart-id=") == 0 ) 
         {
     	    restart_id = arg.substr(13);
@@ -228,6 +247,10 @@ int main(int argc, char **argv)
         {
     	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
     	} 
+        else if ( arg.find("--redirect-port=") == 0 )  
+        {
+            redirect_port = atoi( arg.substr(16).c_str() );
+    	}
         else if ( (arg.find("--max-slope=") == 0) ) 
         {
     	    slope_max = atof( arg.substr(12).c_str() );
@@ -264,6 +287,7 @@ int main(int argc, char **argv)
     	}
     }
 
+    SG_LOG(SG_GENERAL, SG_INFO, "Run genapt with " << num_threads << " threads" );
     SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
     SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
     for ( unsigned int i = 0; i < elev_src.size(); ++i ) 
@@ -304,6 +328,7 @@ int main(int argc, char **argv)
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
     
+    string command = argv[0];
     string lastaptfile = work_dir+"/last_apt";
 
     // initialize persistant polygon counter
@@ -320,62 +345,68 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
-    // Create the parser...
-    Parser* parser = new Parser(input_file, work_dir, elev_src);
+    // Create the scheduler
+    Scheduler* scheduler = new Scheduler(command, input_file, work_dir, elev_src);
 
     // Add any debug 
-    parser->SetDebugPolys( dump_rwy_poly, dump_taxi_poly, dump_pvmt_poly, dump_feat_poly, dump_base_poly );
+    // TODO : parser->SetDebugPolys( dump_rwy_poly, dump_taxi_poly, dump_pvmt_poly, dump_feat_poly, dump_base_poly );
+
+    // check for output redirect
+    if ( redirect_port >= 0 ) {
+
+        // create a stream socket back to the main process
+        Net::SocketAddress sa( "localhost", redirect_port );
+        ss.connect(sa);
+
+        // then a buffered stream to write to the socket
+        os.rdbuf(&ssb);
+
+        // then hook up SG_LOG to the stream buf
+        sglog().set_output( os );  
+    } else {
+        // this is the main program - 
+        SG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
+    }
 
     // just one airport 
     if ( airport_id != "" )
     {
         // just find and add the one airport
-        parser->AddAirport( airport_id );
+        scheduler->AddAirport( airport_id );
 
         SG_LOG(SG_GENERAL, SG_INFO, "Finished Adding airport - now parse");
         
-        // and start the parser
-        parser->Parse( last_apt_file );
+        // and schedule parsers
+        scheduler->Schedule( num_threads, summary_file );
+    }
+    // We are given an airport position from a main scheduler - parse this
+    else if ( airport_pos != -1 )
+    {
+        // create and start the real parser
+        Parser parser(input_file, work_dir, elev_src);
+        parser.Parse( airport_pos );        
     }
     else if ( start_id != "" )
     {
         SG_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
 
         // scroll forward in datafile
-        position = parser->FindAirport( start_id );
+        position = scheduler->FindAirport( start_id );
 
         // add remaining airports within boundary
-        parser->AddAirports( position, min_lat, min_lon, max_lat, max_lon );
+        scheduler->AddAirports( position, min_lat, min_lon, max_lat, max_lon );
 
         // parse all the airports that were found
-        parser->Parse( last_apt_file );
-    }
-    else if ( restart_id != "" )
-    {
-        SG_LOG(SG_GENERAL, SG_INFO, "move forward airport after " << restart_id );
-
-        // scroll forward in datafile
-        position = parser->FindAirport( restart_id );
-
-        // add all remaining airports within boundary
-        parser->AddAirports( position, min_lat, min_lon, max_lat, max_lon );
-
-        // but remove the restart id - it's broken
-        parser->RemoveAirport( restart_id );
-
-        // parse all the airports that were found
-        parser->Parse( last_apt_file );
+        scheduler->Schedule( num_threads, summary_file );
     }
     else
     {
         // find all airports within given boundary
-        parser->AddAirports( 0, min_lat, min_lon, max_lat, max_lon );
+        scheduler->AddAirports( 0, min_lat, min_lon, max_lat, max_lon );
 
         // and parser them
-        parser->Parse( last_apt_file );
+        scheduler->Schedule( num_threads, summary_file );
     }
-
-    delete parser;
 
     SG_LOG(SG_GENERAL, SG_INFO, "Done");
     exit(0);
