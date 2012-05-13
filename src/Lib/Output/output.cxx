@@ -117,7 +117,7 @@ void write_index_shared( const string &base, const SGBucket &b,
 
 void write_object_sign( const string &base, const SGBucket &b,
                          const Point3D &p, const string& sign,
-                         const double &heading )
+                         const double &heading, const int &size)
 {
     string dir = base + "/" + b.gen_base_path();
     SGPath sgp( dir );
@@ -134,8 +134,8 @@ void write_object_sign( const string &base, const SGBucket &b,
 	exit(-1);
     }
 
-    fprintf( fp, "OBJECT_SIGN %s %.6f %.6f %.1f %.2f\n", sign.c_str(),
-             p.lon(), p.lat(), p.elev(), heading );
+    fprintf( fp, "OBJECT_SIGN %s %.6f %.6f %.1f %.2f %u\n", sign.c_str(),
+             p.lon(), p.lat(), p.elev(), heading, size );
     fclose( fp );
 }
 

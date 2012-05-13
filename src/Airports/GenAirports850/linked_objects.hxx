@@ -83,6 +83,11 @@ public:
     {
         return sgn_def;
     }
+
+    int GetSize()
+    {
+        return size;
+    }
 };
 
 typedef std::vector <Sign *> SignList;

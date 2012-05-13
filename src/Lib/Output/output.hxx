@@ -57,7 +57,7 @@ void write_index_shared( const std::string &base, const SGBucket &b,
 // scenery build)
 void write_object_sign( const std::string &base, const SGBucket &b,
                          const Point3D &p, const std::string& sign,
-                         const double &heading );
+                         const double &heading, const int &size );
 
 void write_boundary( const std::string& base, const SGBucket& b, 
 		     const TGPolygon& bounds, long int p_index );

@@ -1792,7 +1792,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         write_object_sign( objpath, b, taxisigns_nodes[i],
                             signs[i]->GetDefinition(),
-                            signs[i]->GetHeading() );
+                            signs[i]->GetHeading(),
+                            signs[i]->GetSize() );
     }
 
     // write out water buoys
