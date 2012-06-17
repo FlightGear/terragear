@@ -82,6 +82,9 @@ if(ENABLE_GDAL)
     find_package(GDAL) # build OGRDecode
 endif(ENABLE_GDAL)
 
+find_library(POCO_FOUNDATION PocoFoundation REQUIRED)
+find_library(POCO_NET PocoNet REQUIRED)
+
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
 check_include_file(windows.h HAVE_WINDOWS_H)
