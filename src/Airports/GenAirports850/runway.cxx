@@ -103,9 +103,9 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
     } 
     else if ( rwy.surface == 12 /* Dry Lakebed */ )
     {
-        material_prefix = "dirt_rwy";
+        material_prefix = "lakebed_taxiway";
     } 
-    else if ( rwy.surface == 13 /* Water runway (buoy's?) */ )
+    else if ( rwy.surface == 13 /* Water runway (buoys) */ )
     {
         // water
     }
@@ -128,7 +128,7 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
     {
         case 1: // asphalt:
         case 2: // concrete
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete" << rwy.surface);
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete " << rwy.surface);
             gen_rwy( rwy_polys, texparams, accum, slivers, make_shapefiles );
             gen_runway_lights( rwy_lights );
             break;
@@ -136,13 +136,10 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         case 3: // Grass
         case 4: // Dirt
         case 5: // Gravel
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Turf, Dirt or Gravel" << rwy.surface );
+        case 12: // dry lakebed
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Grass, Dirt, Gravel or Dry Lakebed " << rwy.surface );
             gen_simple_rwy( rwy_polys, texparams, accum, slivers );
             gen_runway_lights( rwy_lights );
-            break;
-
-        case 12: // dry lakebed
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Dry Lakebed");
             break;
 
         case 13: // water
@@ -158,7 +155,7 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
             break;
 
         default: // unknown
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: unknown" << rwy.surface);
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: unknown: " << rwy.surface);
             break;
     }    
 

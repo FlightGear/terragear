@@ -99,7 +99,7 @@ int Taxiway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, sup
     } 
     else if ( surface == 12 /* Dry Lakebed */ )
     {
-        material = "dirt_rwy";
+        material = "lakebed_taxiway";
     } 
     else if ( surface == 13 /* Water runway (buoy's?) */ )
     {
