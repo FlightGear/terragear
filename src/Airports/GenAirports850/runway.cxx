@@ -60,24 +60,32 @@ WaterRunway::WaterRunway(char* definition)
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
 }
 
-TGPolygon WaterRunway::GetNodes()
+point_list WaterRunway::GetNodes()
 {
-    TGPolygon buoy_nodes;
-    buoy_nodes.erase();
+    point_list buoys_nodes;
+    buoys_nodes.clear();
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "WaterRunway::GetNodes" );
+    if (buoys){
+        double heading, az2, length;
+        // calculate runway heading and length
+        geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &heading, &az2, &length );
 
-    if (buoys == 1){ /*no point to calculate stuff we don't need*/
+        // create a polygon for the outline and use it to calculate the point list
+        int divs = (int)(length / 100.0);
+        TGPolygon area = gen_wgs84_area(Point3D( (lon[0] + lon[1]) / 2 , (lat[0] + lat[1]) / 2, 0),
+                                        length, 0, 0, width, heading, false);
+        Point3D pt, inc;
 
-    double heading, az2, length;
-    // calculate runway heading and length
-    geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &heading, &az2, &length );
-
-    // create a polygon for the 4 buoy points
-    // TODO: The amount of points can be increased if needed (more buoys)
-    buoy_nodes = gen_wgs84_area(Point3D( (lon[0] + lon[1]) / 2 , (lat[0] + lat[1]) / 2, 0), length, 0, 0, width, heading, false);
-	}
-    return buoy_nodes;
+        for ( int i = 0; i < area.contour_size( 0 ); ++i ) {
+            pt = area.get_pt( 0, i );
+            inc = (area.get_pt(0, i==3 ? 0 : i+1) - area.get_pt(0,i)) / divs;
+            for ( int j = 0; j < divs; ++j) {
+                buoys_nodes.push_back( pt);
+                pt += inc;
+            }
+        }
+    }
+    return buoys_nodes;
 }
 
 

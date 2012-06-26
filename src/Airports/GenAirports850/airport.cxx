@@ -1343,7 +1343,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // it avoids biases introduced from the surrounding area if the
     // airport is located in a bowl or on a hill.
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, " calcaverage elevation");
+    SG_LOG(SG_GENERAL, SG_DEBUG, " calc average elevation");
     {
         point_list dbg = nodes.get_node_list();
 
@@ -1443,7 +1443,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
 
-#if 0 // TODO : along with taxiway sign elevations
+#if 0 // TODO
     SG_LOG(SG_GENERAL, SG_INFO, "Computing tower node elevations");
     point_list tower_nodes = calc_elevations( apt_surf, towers, 0.0 );
 #endif
@@ -1483,27 +1483,15 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     point_list taxisigns_nodes = calc_elevations( apt_surf, ts_nodes, 0.0 );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done");
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing water buoy elevations");
     // calc water runway buoys elevations:
-    point_list water_buoys_nodes;
-    if ( waterrunways.size() > 0){
-        if ( waterrunways[0]->HasBuoys() )
-        {
-            point_list buoy_nodes;
-            buoy_nodes.clear();
-            for ( unsigned int i = 0; i < waterrunways.size(); ++i )
-            {
-                TGPolygon tmp_nodes;
-                tmp_nodes.erase();
-                tmp_nodes = waterrunways[i]->GetNodes();
-                for ( int j = 0; j< tmp_nodes.contour_size( 0 ); ++j )
-                {
-                    buoy_nodes.push_back( tmp_nodes.get_pt( 0, j ) );
-                }
-            }
-            water_buoys_nodes = calc_elevations( apt_surf, buoy_nodes, 0.0 );
-        }
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing water buoy elevations");
+    point_list buoy_nodes;
+    buoy_nodes.clear();
+    for ( unsigned int i = 0; i < waterrunways.size(); ++i )
+    {
+        buoy_nodes = waterrunways[i]->GetNodes();
     }
+    point_list water_buoys_nodes = calc_elevations( apt_surf, buoy_nodes, 0.0 );
 
     // add base skirt (to hide potential cracks)
     //

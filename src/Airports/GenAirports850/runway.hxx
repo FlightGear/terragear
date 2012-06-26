@@ -188,6 +188,8 @@ class WaterRunway
 public:
     WaterRunway(char* def);
 
+    point_list GetNodes();
+
     Point3D GetStart(void)
     {
         return ( Point3D( lon[0], lat[0], 0.0f ));
@@ -198,21 +200,12 @@ public:
         return ( Point3D( lon[1], lat[1], 0.0f ));
     }
 
-    bool HasBuoys()
-    {
-        if (buoys == 1)
-        return true;
-        else
-        return false;
-    }
-
+private:
     double  width;
     int     buoys;
     char    rwnum[2][16];
     double  lat[2];
     double  lon[2];
-
-    TGPolygon GetNodes();
 };
 typedef std::vector <WaterRunway *> WaterRunwayList;
 
