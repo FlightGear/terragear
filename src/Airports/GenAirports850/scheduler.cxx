@@ -1,5 +1,7 @@
 #include <cstring>
 
+#include <Poco/Environment.h>
+
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
 
@@ -218,10 +220,10 @@ void ProcessList::Launch( string command, string file, AirportInfo* pai, bool la
 
     // Wait 10 seconds for connection
     Timespan timeout( 10, 0 );
-    int retVal = pss->poll( timeout, Net::Socket::SELECT_READ );
+    bool retVal = pss->poll( timeout, Net::Socket::SELECT_READ );
 
     // If we connected - create a new entry
-    if ( retVal == true ) {
+    if ( retVal ) {
         Net::SocketAddress sockaddr;
         Net::StreamSocket sock = pss->acceptConnection( sockaddr );
 
