@@ -140,7 +140,7 @@ public:
     
     // When a slot is available, the main thread calls launch to instantiate a 
     // new pareser process 
-    void Launch( string command, string file, AirportInfo* pai, bool last );
+    void Launch( string command, string work_dir, string file, AirportInfo* pai, bool last );
     Timespan GetNextTimeout();
     void HandleReceivedMessages( Net::Socket::SocketList& slr );
     void HandleTimeouts();

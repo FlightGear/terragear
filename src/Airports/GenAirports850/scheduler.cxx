@@ -194,14 +194,15 @@ ProcessList::ProcessList( int n, string& summaryfile, Scheduler* pScheduler ) : 
     
 // When a slot is available, the main thread calls launch to instantiate a 
 // new pareser process 
-void ProcessList::Launch( string command, string file, AirportInfo* pai, bool last ) 
+void ProcessList::Launch( string command, string work_dir, string file, AirportInfo* pai, bool last ) 
 {
     Process::Args args;
     char arg[64];
     Pipe outPipe;
 
     // generate correct command line arguments
-    args.push_back("--work=work");
+    sprintf( arg, "--work=%s", work_dir.c_str() );
+    args.push_back(arg);
 
     sprintf( arg, "--input=%s", file.c_str() );
     args.push_back(arg);
@@ -818,7 +819,7 @@ void Scheduler::Schedule( int num_threads, string& summaryfile )
             }
 
             // Launch a new parser
-            procList->Launch( command, filename, &originalList[i], last );
+            procList->Launch( command, work_dir, filename, &originalList[i], last );
         }
 
         // Sync up before relaunching
