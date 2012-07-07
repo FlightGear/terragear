@@ -1,6 +1,8 @@
 # Locate SimGear
 # This module defines
-# SIMGEAR_LIBRARIES
+
+# SIMGEAR_CORE_LIBRARIES, a list of the core static libraries
+# SIMGEAR_LIBRARIES, a list of all the static libraries (core + scene)
 # SIMGEAR_FOUND, if false, do not try to link to SimGear
 # SIMGEAR_INCLUDE_DIR, where to find the headers
 #
@@ -23,18 +25,62 @@
 # (To distributed this file outside of CMake, substitute the full
 #  License text for the above reference.)
 
-# Per my request, CMake should search for frameworks first in
-# the following order:
-# ~/Library/Frameworks/SimGear.framework/Headers
-# /Library/Frameworks/SimGear.framework/Headers
-# /System/Library/Frameworks/SimGear.framework/Headers
-#
-# On OS X, this will prefer the Framework version (if found) over others.
-# People will have to manually change the cache values of
-# SimGear_LIBRARIES to override this selection or set the CMake environment
-# CMAKE_INCLUDE_PATH to modify the search paths.
-
 include(SelectLibraryConfigurations)
+
+macro(find_sg_library libName varName libs)
+    set(libVarName "${varName}_LIBRARY")
+    # do not cache the library check
+    unset(${libVarName}_DEBUG CACHE)
+    unset(${libVarName}_RELEASE CACHE)
+
+    FIND_LIBRARY(${libVarName}_DEBUG
+      NAMES ${libName}${CMAKE_DEBUG_POSTFIX}
+      HINTS $ENV{SIMGEAR_DIR}
+      PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR} libs64 libs libs/Win32 libs/Win64
+      PATHS
+      /usr/local
+      /usr
+      /opt
+    )
+    FIND_LIBRARY(${libVarName}_RELEASE
+      NAMES ${libName}${CMAKE_RELEASE_POSTFIX}
+      HINTS $ENV{SIMGEAR_DIR}
+      PATH_SUFFIXES ${CMAKE_INSTALL_LIBDIR} libs64 libs libs/Win32 libs/Win64
+      PATHS
+      /usr/local
+      /usr
+      /opt
+    )
+    
+   # message(STATUS "before: Simgear ${${libVarName}_RELEASE} ")
+  #  message(STATUS "before: Simgear ${${libVarName}_DEBUG} ")
+    
+    select_library_configurations( ${varName} )
+
+  #  message(STATUS "after:Simgear ${${libVarName}_RELEASE} ")
+  #  message(STATUS "after:Simgear ${${libVarName}_DEBUG} ")
+
+    set(componentLibRelease ${${libVarName}_RELEASE})
+  #  message(STATUS "Simgear ${libVarName}_RELEASE ${componentLibRelease}")
+    set(componentLibDebug ${${libVarName}_DEBUG})
+   # message(STATUS "Simgear ${libVarName}_DEBUG ${componentLibDebug}")
+    
+    if (NOT ${libVarName}_DEBUG)
+        if (NOT ${libVarName}_RELEASE)
+            #message(STATUS "found ${componentLib}")
+            list(APPEND ${libs} ${componentLibRelease})
+        endif()
+    else()
+        list(APPEND ${libs} optimized ${componentLibRelease} debug ${componentLibDebug})
+    endif()
+endmacro()
+
+macro(find_sg_component comp libs)
+    set(compLib "sg${comp}")
+    string(TOUPPER "SIMGEAR_${comp}" libVar)
+    
+    find_sg_library(${compLib} ${libVar} ${libs})
+endmacro()
 
 FIND_PATH(SIMGEAR_INCLUDE_DIR simgear/math/SGMath.hxx
   HINTS $ENV{SIMGEAR_DIR}
@@ -47,69 +93,56 @@ FIND_PATH(SIMGEAR_INCLUDE_DIR simgear/math/SGMath.hxx
   /opt
 )
 
-message(STATUS ${SIMGEAR_INCLUDE_DIR})
+# make sure the simgear include directory exists
+if (NOT SIMGEAR_INCLUDE_DIR)
+    message(FATAL_ERROR "Cannot find SimGear includes! (Forgot 'make install' for SimGear?) "
+            "Compile & INSTALL SimGear before configuring FlightGear. "
+            "When using non-standard locations, use 'SIMGEAR_DIR' to configure the SimGear location.")
+endif()
 
-# check for dynamic framework/library
-FIND_LIBRARY(SIMGEAR_LIBRARIES
-  NAMES simgear SimGear
-  HINTS
-  $ENV{SIMGEAR_DIR}
-  PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64
-  PATHS
-  ~/Library/Frameworks
-  /Library/Frameworks
-  /usr/local
-  /usr
-  /opt
-)
+message(STATUS "SimGear include directory: ${SIMGEAR_INCLUDE_DIR}")
+
+# make sure the simgear/version.h header exists
+if (NOT EXISTS ${SIMGEAR_INCLUDE_DIR}/simgear/version.h)
+    message(FATAL_ERROR "Found SimGear, but it does not contain a simgear/version.h include! "
+            "SimGear installation is incomplete.")
+endif()
+
+# read the simgear version header file, get the version
+file(READ ${SIMGEAR_INCLUDE_DIR}/simgear/version.h sgVersionFile)
+string(STRIP ${sgVersionFile} SIMGEAR_DEFINE)
+string(REPLACE "#define SIMGEAR_VERSION " "" SIMGEAR_VERSION ${SIMGEAR_DEFINE})
+message(STATUS "found SimGear version: ${SIMGEAR_VERSION} (needed at least ${SimGear_FIND_VERSION})")
+
+if(NOT ${SIMGEAR_VERSION} GREATER ${SimGear_FIND_VERSION})
+    message(FATAL_ERROR "You have installed a mismatching SimGear version ${SIMGEAR_VERSION} "
+            "instead of ${SimGear_FIND_VERSION} as required by TerraGear. "
+            "When using multiple SimGear installations, please use 'SIMGEAR_DIR' "
+            "to select the SimGear library location to be used.")
+endif()
 
 # dependent packages
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 
-macro(find_sg_component comp libs)
-    set(compLib "sg${comp}")
-    string(TOUPPER "SIMGEAR_${comp}" compLibBase)
-    set( compLibName ${compLibBase}_LIBRARY )
+if(SIMGEAR_SHARED)
+    message(STATUS "looking for shared Simgear libraries")
 
-    FIND_LIBRARY(${compLibName}_DEBUG
-      NAMES ${compLib}${CMAKE_DEBUG_POSTFIX}
-      HINTS $ENV{SIMGEAR_DIR}
-      PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64
-      PATHS
-      /usr/local
-      /usr
-      /opt
-    )
-    FIND_LIBRARY(${compLibName}_RELEASE
-      NAMES ${compLib}${CMAKE_RELEASE_POSTFIX}
-      HINTS $ENV{SIMGEAR_DIR}
-      PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64
-      PATHS
-      /usr/local
-      /usr
-      /opt
-    )
-    select_library_configurations( ${compLibBase} )
+    find_sg_library(SimGearCore SIMGEAR_CORE SIMGEAR_CORE_LIBRARIES)
+    find_sg_library(SimGearScene SIMGEAR_SCENE SIMGEAR_LIBRARIES)
 
-    set(componentLibRelease ${${compLibName}_RELEASE})
-    #message(STATUS "Simgear ${compLibName}_RELEASE ${componentLibRelease}")
-    set(componentLibDebug ${${compLibName}_DEBUG})
-    #message(STATUS "Simgear ${compLibName}_DEBUG ${componentLibDebug}")
-    if (NOT ${compLibName}_DEBUG)
-        if (NOT ${compLibName}_RELEASE)
-            #message(STATUS "found ${componentLib}")
-            list(APPEND ${libs} ${componentLibRelease})
-        endif()
-    else()
-        list(APPEND ${libs} optimized ${componentLibRelease} debug ${componentLibDebug})
-    endif()
-endmacro()
+ 
+    list(APPEND SIMGEAR_LIBRARIES ${SIMGEAR_CORE_LIBRARIES})
+    set(SIMGEAR_CORE_LIBRARY_DEPENDENCIES "")
+    set(SIMGEAR_SCENE_LIBRARY_DEPENDENCIES "")
+    
+   # message(STATUS "core lib ${SIMGEAR_CORE_LIBRARIES}")
+  #  message(STATUS "all libs ${SIMGEAR_LIBRARIES}")
+else(SIMGEAR_SHARED)
 
-
-if(${SIMGEAR_LIBRARIES} STREQUAL "SIMGEAR_LIBRARIES-NOTFOUND")
     set(SIMGEAR_LIBRARIES "") # clear value
     set(SIMGEAR_CORE_LIBRARIES "") # clear value
+    message(STATUS "looking for static SimGear libraries")
     
   # note the order here affects the order Simgear libraries are
   # linked in, and hence ability to link when using a traditional
@@ -127,7 +160,8 @@ if(${SIMGEAR_LIBRARIES} STREQUAL "SIMGEAR_LIBRARIES-NOTFOUND")
         misc
         threads
         debug
-        magvar)
+        magvar
+    )
 
     set(scene_comps
         ephem
@@ -140,14 +174,16 @@ if(${SIMGEAR_LIBRARIES} STREQUAL "SIMGEAR_LIBRARIES-NOTFOUND")
     foreach(component ${comps})
         find_sg_component(${component} SIMGEAR_CORE_LIBRARIES)
     endforeach()
-        
+
     foreach(component ${scene_comps})
         find_sg_component(${component} SIMGEAR_LIBRARIES)
     endforeach()
 
-    # again link order matters - scene libraires depend on core ones
+    # again link order matters - scene libraries depend on core ones
     list(APPEND SIMGEAR_LIBRARIES ${SIMGEAR_CORE_LIBRARIES})
 
+    #message(STATUS "all libs ${SIMGEAR_LIBRARIES}")
+    
     set(SIMGEAR_CORE_LIBRARY_DEPENDENCIES
         ${CMAKE_THREAD_LIBS_INIT}
         ${ZLIB_LIBRARY})
@@ -158,28 +194,35 @@ if(${SIMGEAR_LIBRARIES} STREQUAL "SIMGEAR_LIBRARIES-NOTFOUND")
 
     if(NOT MSVC)
         # basic timing routines on non windows systems, may be also cygwin?!
-        check_function_exists(clock_gettime clock_gettime_in_libc)
-        if(NOT clock_gettime_in_libc)
-            check_library_exists(rt clock_gettime "" have_rt)
-            if(have_rt)
-                list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES rt)
-            endif(have_rt)
-        endif(NOT clock_gettime_in_libc)
+        check_library_exists(rt clock_gettime "" have_rt)
+        if(have_rt)
+            list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES rt)
+        endif(have_rt)
     endif(NOT MSVC)
+endif(SIMGEAR_SHARED)
 
+if((NOT SIMGEAR_CORE_LIBRARIES)OR(NOT SIMGEAR_LIBRARIES))
+    message(FATAL_ERROR "Cannot find SimGear libraries! (Forgot 'make install' for SimGear?) "
+            "Compile & INSTALL SimGear before configuring FlightGear. "
+            "When using non-standard locations, use 'SIMGEAR_DIR' to configure the SimGear location.")
+else()
+    message(STATUS "found SimGear libraries")
 endif()
 
-# now we've found SimGear, check its version
-
+# now we've found SimGear, try test-compiling using its includes
 include(CheckCXXSourceRuns)
-
-message(STATUS "looking for version: ${SimGear_FIND_VERSION}")
 
 SET(CMAKE_REQUIRED_INCLUDES ${SIMGEAR_INCLUDE_DIR})
 
+# clear cache, run a fresh compile test every time
+unset(SIMGEAR_COMPILE_TEST CACHE)
+
+# disable OSG dependencies for test-compiling
+set(CMAKE_REQUIRED_DEFINITIONS "-DNO_OPENSCENEGRAPH_INTERFACE")
 check_cxx_source_runs(
     "#include <cstdio>
     #include \"simgear/version.h\"
+    #include \"simgear/math/SGMath.hxx\"
 
     #define xstr(s) str(s)
     #define str(s) #s
@@ -205,9 +248,15 @@ check_cxx_source_runs(
         return 0;
     }
     "
-    SIMGEAR_VERSION_OK)
+    SIMGEAR_COMPILE_TEST)
+
+if(NOT SIMGEAR_COMPILE_TEST)
+    message(FATAL_ERROR "Oops, you have installed SimGear includes, however test compiling failed. "
+            "Try removing 'CMakeCache.txt' and reconfigure with 'cmake'.")
+endif()
+unset(CMAKE_REQUIRED_DEFINITIONS)
 
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(SimGear DEFAULT_MSG
-     SIMGEAR_LIBRARIES SIMGEAR_INCLUDE_DIR SIMGEAR_VERSION_OK)
+     SIMGEAR_LIBRARIES SIMGEAR_CORE_LIBRARIES SIMGEAR_INCLUDE_DIR SIMGEAR_COMPILE_TEST)
 
