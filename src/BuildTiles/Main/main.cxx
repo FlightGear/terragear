@@ -860,9 +860,13 @@ static void do_custom_objects( const TGConstruct& c ) {
     SGBucket b = c.get_bucket();
 
     // Create/open the output .stg file for writing
-    string output_base = c.get_output_base();
-    string dest_dir = output_base + "/" + b.gen_base_path();
-    string dest_ind = dest_dir + "/" + b.gen_index_str() + ".stg";
+    SGPath dest_d(c.get_output_base().c_str());
+    dest_d.append(b.gen_base_path().c_str());
+    string dest_dir = dest_d.str();
+    SGPath dest_i(dest_d);
+    dest_i.append(b.gen_index_str());
+    dest_i.concat(".stg");
+    string dest_ind = dest_i.str();
 
     FILE *fp;
     if ( (fp = fopen( dest_ind.c_str(), "w" )) == NULL ) {
@@ -878,16 +882,23 @@ static void do_custom_objects( const TGConstruct& c ) {
     char name[256];
 
     for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
-	string base_dir = c.get_work_base() + "/" + load_dirs[i] + "/" + b.gen_base_path();
-	string index_file = base_dir + "/" + b.gen_index_str() + ".ind";
-	cout << "collecting custom objects from " << index_file << endl;
+        SGPath base(c.get_work_base().c_str());
+        base.append(load_dirs[i]);
+        base.append( b.gen_base_path() );
+        string base_dir = base.str();
+        SGPath index(base);
+        index.append( b.gen_index_str() );
+        index.concat(".ind");
+        string index_file = index.str();
+        //cout << "collecting custom objects from " << index_file << endl;
 
 	sg_gzifstream in( index_file );
 
 	if ( ! in.is_open() ) {
-	    cout << "No custom objects" << endl;
+	    //cout << "No custom objects" << endl;
 	} else {
 	    while ( ! in.eof() ) {
+                cout << "Collecting custom objects from " << index_file << endl;
                 in.getline(line, 2048);
                 cout << "line = " << line << endl;
 
@@ -898,12 +909,13 @@ static void do_custom_objects( const TGConstruct& c ) {
                     cout << "token = " << token << " name = " << name << endl;
 
                     if ( strcmp( token, "OBJECT" ) == 0 ) {
+                        base.append(name);
+                        base.concat(".gz");
+                        string basecom = base.str();
 #ifdef _MSC_VER
-                        string command = "copy " + base_dir + "/" + name + ".gz "
-                            + dest_dir;
+                        string command = "copy " + basecom + " " + dest_dir;
 #else
-                        string command = "cp " + base_dir + "/" + name + ".gz "
-                            + dest_dir;
+                        string command = "cp " + basecom + " " + dest_dir;
 #endif
                         cout << "running " << command << endl;
                         system( command.c_str() );
