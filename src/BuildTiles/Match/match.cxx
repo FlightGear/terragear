@@ -27,9 +27,11 @@
 
 #include <simgear/compiler.h>
 #include <Geometry/point3d.hxx>
+#include <Geometry/tg_nodes.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include "match.hxx"
 
@@ -369,6 +371,9 @@ void TGMatch::split_tile( TGConstruct& c ) {
     point_list nodes = c.get_geod_nodes();
     point_list point_normals = c.get_point_normals();
 
+    SG_LOG(SG_GENERAL, SG_ALERT, "number of geod nodes = " << nodes.size() );
+    SG_LOG(SG_GENERAL, SG_ALERT, "number of normals = " << point_normals.size() );
+
     for ( i = 0; i < (int)nodes.size(); ++i ) {
 	Point3D node = nodes[i];
 	Point3D normal = point_normals[i];
@@ -423,6 +428,7 @@ void TGMatch::split_tile( TGConstruct& c ) {
 	}
     }
 
+#if 0 // UNUSED
     // separate area edge segment into components
     cout << "  extracting (shared) area edge segments" << endl;
 
@@ -494,6 +500,10 @@ void TGMatch::split_tile( TGConstruct& c ) {
 	cout << "    " << body_nodes[i] << endl;
     }
     */
+#endif
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "SPLIT TILE COMPLETE " );
+
 }
 
 
@@ -677,6 +687,55 @@ void insert_normal( point_list& normals, Point3D n, int i ) {
     normals[i] = n;
 }
 
+// Just add nodes and normals to the node list
+void TGMatch::add_shared_nodes( TGConstruct& c ) {
+    TGNodes* nodes;
+    nodes = c.get_nodes();
+
+    cout << " BEFORE ADDING SHARED NODES: " << nodes->size() << endl;
+
+    if ( sw_flag ) {
+        nodes->unique_add_fixed_elevation( sw_node );
+    }
+
+    if ( se_flag ) {
+        nodes->unique_add_fixed_elevation( se_node );
+    }
+
+    if ( nw_flag ) {
+        nodes->unique_add_fixed_elevation( nw_node );
+    }
+
+    if ( ne_flag ) {
+        nodes->unique_add_fixed_elevation( ne_node );
+    }
+
+    if ( north_flag ) {
+        for (unsigned int i = 0; i < north_nodes.size(); i++) {
+            nodes->unique_add_fixed_elevation( north_nodes[i] );
+        }
+    }
+
+    if ( south_flag ) {
+        for (unsigned int i = 0; i < south_nodes.size(); i++) {
+            nodes->unique_add_fixed_elevation( south_nodes[i] );
+        }
+    }
+
+    if ( east_flag ) {
+        for (unsigned int i = 0; i < east_nodes.size(); i++) {
+            nodes->unique_add_fixed_elevation( east_nodes[i] );
+        }
+    }
+
+    if ( west_flag ) {
+        for (unsigned int i = 0; i < west_nodes.size(); i++) {
+            nodes->unique_add_fixed_elevation( west_nodes[i] );
+        }
+    }
+    
+    cout << " AFTER ADDING SHARED NODES: " << nodes->size() << endl;
+}
 
 // reassemble the tile pieces (combining the shared data and our own
 // data)
@@ -805,6 +864,7 @@ void TGMatch::assemble_tile( TGConstruct& c ) {
 					TGTriSeg(n1, n2, marker) );
     }
 
+#if 0 // UNUSED
     c.set_tri_nodes( new_nodes );
     c.set_point_normals( new_normals );
     c.set_tri_segs( new_segs );
@@ -812,5 +872,6 @@ void TGMatch::assemble_tile( TGConstruct& c ) {
     cout << "after adding all segments (should be the same):" << endl;
     cout << "  new_nodes = " << new_nodes.size() << endl;
     cout << "  new normals = " << new_normals.size() << endl;
+#endif
 
 }

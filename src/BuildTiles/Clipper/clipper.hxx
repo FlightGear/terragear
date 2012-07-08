@@ -35,8 +35,10 @@
 
 #include <simgear/compiler.h>
 
-#include <Geometry/trinodes.hxx>
-#include <Polygon/polygon.hxx>
+//#include <Geometry/trinodes.hxx>
+#include <Geometry/tg_nodes.hxx>
+#include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
 #include <Polygon/point2d.hxx>
 
 #include <string>
@@ -49,9 +51,11 @@
 class TGPolyList
 {
 public:
-    poly_list polys[TG_MAX_AREA_TYPES];
+    superpoly_list superpolys[TG_MAX_AREA_TYPES];
+    texparams_list texparams[TG_MAX_AREA_TYPES];
     TGPolygon safety_base;
 };
+
 
 
 class TGClipper 
@@ -60,7 +64,8 @@ class TGClipper
 private:
 
     TGPolyList polys_in, polys_clipped;
-    TGTriNodes fixed_elevations;
+    //TGTriNodes fixed_elevations;
+    TGNodes  nodes;
 
 public:
 
@@ -80,7 +85,7 @@ public:
     bool load_osgb36_polys(const std::string& path);
 
     // Add a polygon.
-    void add_poly(int area, const TGPolygon &poly);
+    void add_poly(int area, const TGPolygon &poly, std::string material);
 
     // Remove any slivers from in polygon and move them to out
     // polygon.
@@ -99,7 +104,9 @@ public:
     inline TGPolyList get_polys_clipped() const { return polys_clipped; }
 
     // Return the fixed elevation points list
-    inline TGTriNodes get_fixed_elevations() const { return fixed_elevations; }
+    inline TGNodes get_nodes() const { return nodes; }
+
+    inline node_list get_fixed_elevations_nodes() { return nodes.get_fixed_elevation_nodes(); }
     
     double nudge;
     

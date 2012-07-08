@@ -8,6 +8,7 @@ add_library(Geometry STATIC
     poly_support.cxx
     poly_extra.cxx
     rectangle.cxx
+    tg_nodes.cxx
     trinodes.cxx
     trisegs.cxx
     util.cxx
@@ -17,6 +18,7 @@ add_library(Geometry STATIC
     poly_support.hxx
     poly_extra.hxx
     rectangle.hxx
+    tg_nodes.hxx
     trinodes.hxx
     trisegs.hxx
     util.hxx

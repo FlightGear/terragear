@@ -29,6 +29,8 @@
 #include <Geometry/point3d.hxx>
 
 #include <Geometry/trinodes.hxx>
+#include <Geometry/tg_nodes.hxx>
+
 #include <Polygon/polygon.hxx>
 
 
@@ -45,6 +47,9 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 
 TGPolygon add_nodes_to_poly( const TGPolygon& poly, 
                              const TGTriNodes& tmp_nodes );
+
+TGPolygon add_tgnodes_to_poly( const TGPolygon& poly, 
+                               const TGNodes* nodes );
 
 
 #endif // _POLY_EXTRA_HXX

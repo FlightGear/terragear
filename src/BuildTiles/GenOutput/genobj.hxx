@@ -59,8 +59,8 @@ private:
     // texture coordinates
     TGTriNodes tex_coords;
 
-    // fan list
-    opt_list fans[TG_MAX_AREA_TYPES];
+    // fan / triangle list
+    opt_list primitives[TG_MAX_AREA_TYPES];
 
     // textures pointer list
     tex_list textures[TG_MAX_AREA_TYPES];
@@ -93,10 +93,12 @@ public:
 
     // build the necessary output structures based on the
     // triangulation data
-    int build( TGConstruct& c );
+    int build_fans( TGConstruct& c );
+    int build_tris( TGConstruct& c );
 
     // write out the fgfs scenery file
-    int write( TGConstruct &c );
+    int write_fans( TGConstruct &c );
+    int write_tris( TGConstruct &c );
 };
 
 

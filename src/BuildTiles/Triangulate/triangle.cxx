@@ -24,6 +24,7 @@
 
 #include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
+#include <Polygon/superpoly.hxx>
 #include <TriangleJRS/tri_support.h>
 
 #include "triangle.hxx"
@@ -75,8 +76,9 @@ TGTriangle::build( const point_list& corner_list,
     }
     
     // next process the polygons
+    TGSuperPoly sp;	
     TGPolygon gpc_poly;
-    const_poly_list_iterator current, last;
+    const_superpoly_list_iterator current, last;
     
     // process polygons in priority order
     cout << "prepairing node list and polygons" << endl;
@@ -84,16 +86,15 @@ TGTriangle::build( const point_list& corner_list,
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
         polylist[i].clear();
         
-        cout << "area type = " << i << " polys = " << gpc_polys.polys[i].size() 
-        << endl;
+        cout << "area type = " << i << " polys = " << gpc_polys.superpolys[i].size() << endl;
         debug_counter = 0;
-        current = gpc_polys.polys[i].begin();
-        last = gpc_polys.polys[i].end();
+        current = gpc_polys.superpolys[i].begin();
+        last = gpc_polys.superpolys[i].end();
         for ( ; current != last; ++current ) {
-            gpc_poly = *current;
+            sp = *current;
+            gpc_poly = sp.get_poly();
             
-            cout << "processing a polygon, contours = " 
-            << gpc_poly.contours() << endl;
+            // cout << "processing a polygon, contours = " << gpc_poly.contours() << endl;
             
             if (gpc_poly.contours() <= 0 ) {
                 cout << "FATAL ERROR! no contours in this polygon" << endl;
@@ -102,9 +103,7 @@ TGTriangle::build( const point_list& corner_list,
             
             int j;
             for ( j = 0; j < gpc_poly.contours(); ++j ) {
-                cout << "  processing contour = " << j << ", nodes = " 
-                << gpc_poly.contour_size( j ) << ", hole = "
-                << gpc_poly.get_hole_flag( j ) << endl;
+                // cout << "  processing contour = " << j << ", nodes = " << gpc_poly.contour_size( j ) << ", hole = " << gpc_poly.get_hole_flag( j ) << endl;
                 
                 /*
                 char junkn[256];
@@ -149,8 +148,7 @@ TGTriangle::build( const point_list& corner_list,
             gpc_poly = remove_bad_contours( gpc_poly );
             gpc_poly = remove_cycles( gpc_poly );
             
-            cout << "after sanity checks, contours = " 
-            << gpc_poly.contours() << endl;
+            // cout << "after sanity checks, contours = " << gpc_poly.contours() << endl;
             
             /*
             for ( j = 0; j < gpc_poly.contours(); ++j ) {
@@ -162,9 +160,9 @@ TGTriangle::build( const point_list& corner_list,
             }
             */
             
-            cout << "before calc_points_inside()" << endl;
+            // cout << "before calc_points_inside()" << endl;
             calc_points_inside( gpc_poly );
-            cout << "after calc_points_inside()" << endl;
+            // cout << "after calc_points_inside()" << endl;
             
             #if 0
             // old way
@@ -240,8 +238,7 @@ TGTriangle::build( const point_list& corner_list,
         // process each polygon in list
         for ( ; tp_current != tp_last; ++tp_current ) {
             poly = *tp_current;
-            cout << "  processing a polygon with contours = " 
-            << poly.contours() << endl;
+            // cout << "  processing a polygon with contours = " << poly.contours() << endl;
             for ( int j = 0; j < (int)poly.contours(); ++j) {
                 for ( int k = 0; k < (int)(poly.contour_size(j) - 1); ++k ) {
                     p1 = poly.get_pt( j, k );
@@ -280,15 +277,16 @@ TGTriangle::build( const point_list& corner_list,
     return 0;
 }
 
-
 // populate this class based on the specified gpc_polys list
 int TGTriangle::rebuild( TGConstruct& c ) {
     in_nodes.clear();
     in_segs.clear();
     
+#if 0
     in_nodes = c.get_tri_nodes();
     in_segs = c.get_tri_segs();
-    
+#endif    
+
     return 0;
 }
 
@@ -307,8 +305,12 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
     int counter;
     int i, j;
     
+    
     // point list
     point_list node_list = in_nodes.get_node_list();
+
+    cout << "TRIANGULATE : NUMBER OF INPUT NODES: " << node_list.size() << endl;
+
     in.numberofpoints = node_list.size();
     in.pointlist = (REAL *) malloc(in.numberofpoints * 2 * sizeof(REAL));
     
@@ -465,6 +467,7 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
         // use a quality value of 10 (q10) meaning no interior
         // triangle angles less than 10 degrees
         // tri_options = "pczAen";
+#if 0
         if ( angle < 0.00001 ) {
             tri_options = "pczAen";
         } else {
@@ -474,6 +477,13 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
             tri_options += angle_str;
             tri_options += "Aen";
         }
+#else
+
+        // TEST TEST TEST : NO ADDING POINTS
+        tri_options = "pzenYYQ";
+
+#endif
+
         // // string tri_options = "pzAen";
         // // string tri_options = "pczq15S400Aen";
     } else if ( pass == 2 ) {
@@ -494,6 +504,8 @@ int TGTriangle::run_triangulate( double angle, const int pass ) {
     
     // now copy the results back into the corresponding TGTriangle
     // structures
+
+    cout << "TRIANGULATE : NUMBER OF OUTPUT NODES: " << out.numberofpoints << endl;
     
     // nodes
     out_nodes.clear();

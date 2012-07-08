@@ -114,4 +114,67 @@ TGPolygon add_nodes_to_poly( const TGPolygon& poly,
     return result;
 }
 
+// Divide segment if there are other existing points on it, return the
+// new polygon
+void add_intermediate_tgnodes( int contour, const Point3D& start, 
+			     const Point3D& end, const TGNodes* nodes,
+			     TGPolygon *result )
+{
+    point_list points = nodes->get_geod_nodes();
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  add_intermediate_nodes()");
+    char buf[200];
+    snprintf(buf, 199, "   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
+	   start.x(), start.y(), start.z(), end.x(), end.y(), end.z() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, buf);
+
+    Point3D new_pt;
+    bool found_extra = find_intermediate_node( start, end, points, &new_pt );
+
+    if ( found_extra ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "dividing " << start << " " << new_pt << " " << end);
+        add_intermediate_tgnodes( contour, start, new_pt, nodes, result );
+
+        result->add_node( contour, new_pt );
+        SG_LOG(SG_GENERAL, SG_INFO, "    added = " << new_pt);
+
+        add_intermediate_tgnodes( contour, new_pt, end, nodes, result );
+    }
+}
+
+TGPolygon add_tgnodes_to_poly( const TGPolygon& poly, 
+                               const TGNodes* nodes ) {
+    TGPolygon result; result.erase();
+    Point3D p0, p1;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "add_nodes_to_poly");
+    for ( int i = 0; i < poly.contours(); ++i ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
+        for ( int j = 0; j < poly.contour_size(i) - 1; ++j ) {
+            p0 = poly.get_pt( i, j );
+            p1 = poly.get_pt( i, j + 1 );
+
+            // add start of segment
+            result.add_node( i, p0 );
+
+            // add intermediate points
+            add_intermediate_tgnodes( i, p0, p1, nodes, &result );
+
+            // end of segment is beginning of next segment
+        }
+        p0 = poly.get_pt( i, poly.contour_size(i) - 1 );
+        p1 = poly.get_pt( i, 0 );
+
+        // add start of segment
+        result.add_node( i, p0 );
+
+        // add intermediate points
+        add_intermediate_tgnodes( i, p0, p1, nodes, &result );
+
+        // maintain original hole flag setting
+        result.set_hole_flag( i, poly.get_hole_flag( i ) );
+    }
+
+    return result;
+}
 

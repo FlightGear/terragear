@@ -92,10 +92,11 @@ private:
 
     // Fixed elevations (from polygon input data with z values
     // pre-specified)
-    TGTriNodes fixed_elevations;
+    node_list fixed_elevations;
 
     // raw node list (after triangulation)
     TGTriNodes tri_nodes;
+    TGNodes nodes;
 
     // node list in geodetic coords (with fixed elevation)
     point_list geod_nodes;
@@ -114,10 +115,6 @@ private:
 
     // face normal list (for flat shading)
     point_list face_normals;
-
-    // normal list (for each point) in cart coords (for smooth
-    // shading)
-    point_list point_normals;
 
 public:
 
@@ -167,33 +164,32 @@ public:
     inline TGPolyList get_clipped_polys() const { return clipped_polys; }
     inline void set_clipped_polys( TGPolyList p ) { clipped_polys = p; }
 
-    // Fixed elevations (from polygon input data with z values
-    // pre-specified)
-    inline TGTriNodes get_fixed_elevations() const { return fixed_elevations; }
-    inline void set_fixed_elevations( TGTriNodes n ) { fixed_elevations = n; }
+    // Fixed elevations (from polygon input data with z values pre-specified)
+    inline node_list get_fixed_elevations() const { return nodes.get_fixed_elevation_nodes(); }
 
-    // node list (after triangulation)
-    inline TGTriNodes get_tri_nodes() const { return tri_nodes; }
-    inline void set_tri_nodes( TGTriNodes n ) { tri_nodes = n; }
+    // node list (after triangulation) : No need - we won't add nodes....
+//    inline TGTriNodes get_tri_nodes() const { return tri_nodes; }
+//    inline void set_tri_nodes( TGTriNodes n ) { tri_nodes = n; }
 
-    // triangle elements (after triangulation)
+    inline TGNodes* get_nodes() { return &nodes; }
+    inline void set_nodes( TGNodes n ) { nodes = n; }
+    
+    // triangle elements (after triangulation) : No need - will be in the triangulated polygons
     inline triele_list get_tri_elements() const { return tri_elements; }
     inline void set_tri_elements( triele_list e ) { tri_elements = e; }
-    inline void set_tri_attribute( int num, AreaType a ) {
-        tri_elements[num].set_attribute( a );
-    }
+    inline void set_tri_attribute( int num, AreaType a ) { tri_elements[num].set_attribute( a ); }
 
-    // edge segments (after triangulation)
+    // edge segments (after triangulation) : Same as above
     inline TGTriSegments get_tri_segs() const { return tri_segs; }
     inline void set_tri_segs( TGTriSegments s ) { tri_segs = s; }
 
     // node list in geodetic coords (with fixed elevation)
-    inline point_list get_geod_nodes() const { return geod_nodes; }
-    inline void set_geod_nodes( point_list n ) { geod_nodes = n; }
+    inline point_list get_geod_nodes() const { return nodes.get_geod_nodes(); }
+//  inline void set_geod_nodes( point_list n ) { geod_nodes = n; }
 
     // node list in cartesian coords (wgs84 model)
-    inline point_list get_wgs84_nodes() const { return wgs84_nodes; }
-    inline void set_wgs84_nodes( point_list n ) { wgs84_nodes = n; }
+    inline point_list get_wgs84_nodes() const { return nodes.get_wgs84_nodes_as_Point3d(); }
+//  inline void set_wgs84_nodes( point_list n ) { wgs84_nodes = n; }
 
     // for each node, a list of triangle indices that contain this node
     inline belongs_to_list get_reverse_ele_lookup() const { 
@@ -209,8 +205,7 @@ public:
 
     // normal list (for each point) in cart coords (for smooth
     // shading)
-    inline point_list get_point_normals() const { return point_normals; }
-    inline void set_point_normals( point_list n ) { point_normals = n; }
+    inline point_list get_point_normals() const { return nodes.get_normals(); }
 };
 
 

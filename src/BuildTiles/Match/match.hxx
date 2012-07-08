@@ -95,6 +95,10 @@ public:
     // try to find info for the specified shared component
     void load_shared( const TGConstruct& c, neighbor_type n );
 
+    // NEW TILE MATCHING - PRE TRIANGULATION
+    // Just add nodes and normals to the node list
+    void add_shared_nodes( TGConstruct& c );
+
     // split up the tile between the shared edge points, normals, and
     // segments and the body.  This must be done after calling
     // load_neighbor_data() and will ignore any shared data from the
