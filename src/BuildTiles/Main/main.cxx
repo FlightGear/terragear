@@ -862,11 +862,11 @@ static void do_custom_objects( const TGConstruct& c ) {
     // Create/open the output .stg file for writing
     SGPath dest_d(c.get_output_base().c_str());
     dest_d.append(b.gen_base_path().c_str());
-    string dest_dir = dest_d.str();
+    string dest_dir = dest_d.str_native();
     SGPath dest_i(dest_d);
     dest_i.append(b.gen_index_str());
     dest_i.concat(".stg");
-    string dest_ind = dest_i.str();
+    string dest_ind = dest_i.str_native();
 
     FILE *fp;
     if ( (fp = fopen( dest_ind.c_str(), "w" )) == NULL ) {
@@ -885,11 +885,10 @@ static void do_custom_objects( const TGConstruct& c ) {
         SGPath base(c.get_work_base().c_str());
         base.append(load_dirs[i]);
         base.append( b.gen_base_path() );
-        string base_dir = base.str();
         SGPath index(base);
         index.append( b.gen_index_str() );
         index.concat(".ind");
-        string index_file = index.str();
+        string index_file = index.str_native();
         //cout << "collecting custom objects from " << index_file << endl;
 
 	sg_gzifstream in( index_file );
@@ -911,7 +910,7 @@ static void do_custom_objects( const TGConstruct& c ) {
                     if ( strcmp( token, "OBJECT" ) == 0 ) {
                         base.append(name);
                         base.concat(".gz");
-                        string basecom = base.str();
+                        string basecom = base.str_native();
 #ifdef _MSC_VER
                         string command = "copy " + basecom + " " + dest_dir;
 #else
