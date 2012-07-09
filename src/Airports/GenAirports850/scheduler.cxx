@@ -197,7 +197,7 @@ ProcessList::ProcessList( int n, string& summaryfile, Scheduler* pScheduler ) : 
 void ProcessList::Launch( string command, string work_dir, string file, AirportInfo* pai, bool last ) 
 {
     Process::Args args;
-    char arg[64];
+    char arg[512];
     Pipe outPipe;
 
     // generate correct command line arguments
