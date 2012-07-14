@@ -45,4 +45,5 @@ void TGSuperPoly::erase()
     normals.erase();
     texcoords.erase();
     tris.erase();
+    face_normals.clear();
 }

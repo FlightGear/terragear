@@ -7,6 +7,13 @@ Hole			hole	# Leave area completely empty
 Airport			other
 Freeway			road
 Road			road
+Road-Motorway       road
+Road-Trunk          road
+Road-Residential	road
+Road-Primary	    road
+Road-Secondary	    road
+Road-Tertiary	    road
+
 Railroad		road
 Asphalt			road
 Pond			lake

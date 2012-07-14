@@ -42,12 +42,13 @@ class TGSuperPoly {
 
 private:
 
-std::string material;   // material/texture name
-TGPolygon poly;         // master polygon
-TGPolygon normals;      // corresponding normals
-TGPolygon texcoords;    // corresponding texture coordinates
-TGPolygon tris;         // triangulation
-std::string flag;       // For various potential record keeping needs
+std::string material;       // material/texture name
+TGPolygon   poly;           // master polygon
+TGPolygon   normals;        // corresponding normals
+TGPolygon   texcoords;      // corresponding texture coordinates
+TGPolygon   tris;           // triangulation
+point_list  face_normals;   // triangle normals
+std::string flag;           // For various potential record keeping needs
 
 public:
 

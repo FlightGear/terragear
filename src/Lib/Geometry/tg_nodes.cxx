@@ -33,7 +33,7 @@ int TGNodes::unique_add( const Point3D& p ) {
     last    = tg_node_list.end();
 
     for ( ; current != last; ++current ) {
-        if ( close_enough_3d(p, (*current).GetPosition() ) ) {
+        if ( close_enough_2d(p, (*current).GetPosition() ) ) {
             // cout << "found an existing match!" << endl;
             return counter;
         }
@@ -59,7 +59,7 @@ int TGNodes::unique_add_fixed_elevation( const Point3D& p ) {
     last    = tg_node_list.end();
 
     for ( ; current != last; ++current ) {
-        if ( close_enough_3d(p, (*current).GetPosition() ) ) {
+        if ( close_enough_2d(p, (*current).GetPosition() ) ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "Adding fixed elev node : node already exists at " << counter << " old position is " << (*current).GetPosition() << " new position is " << p );
 
             // Force the match to our position, and mark as fixed
@@ -168,6 +168,7 @@ point_list TGNodes::get_normals( void ) const {
     return points;
 }
 
+#if 0
 bool TGNodes::LookupFixedElevation( Point3D p, double* z )
 {
     int  index = find( p );
@@ -183,3 +184,4 @@ bool TGNodes::LookupFixedElevation( Point3D p, double* z )
 
     return found;
 }
+#endif

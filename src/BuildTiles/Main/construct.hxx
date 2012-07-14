@@ -31,28 +31,42 @@
 #endif                                   
 
 
-// Maximum nodes per tile
-#define TG_MAX_NODES 4000
-
-
-#include <simgear/compiler.h>
+#define TG_MAX_AREA_TYPES       128
 
 #include <string>
 #include <vector>
 
+#include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
+#include <simgear/misc/sg_path.hxx>
 
+#include <Array/array.hxx>
+
+#include <Polygon/superpoly.hxx>
+#include <Polygon/texparams.hxx>
+#include <Geometry/tg_nodes.hxx>
+
+#include <landcover/landcover.hxx>
+
+// TO REMOVE
+#include <Geometry/trieles.hxx>
 #include <Geometry/trinodes.hxx>
 #include <Geometry/trisegs.hxx>
-#include <Clipper/priorities.hxx>
+// TO REMOVE
 
-#include <Clipper/clipper.hxx>
-#include <Triangulate/trieles.hxx>
+#include "priorities.hxx"
 
 typedef std::vector < int_list > belongs_to_list;
 typedef belongs_to_list::iterator belongs_to_list_iterator;
 typedef belongs_to_list::const_iterator belongs_to_list_tripoly_iterator;
 
+class TGPolyList
+{
+public:
+    superpoly_list superpolys[TG_MAX_AREA_TYPES];
+    texparams_list texparams[TG_MAX_AREA_TYPES];
+    TGPolygon safety_base;
+};
 
 class TGConstruct {
 
@@ -65,9 +79,13 @@ private:
     std::string work_base;
     std::string output_base;
 
+    std::vector<std::string> load_dirs;
+
     // flag indicating whether to align texture coords within the UK
     // with the UK grid
     bool useUKGrid;
+
+    double nudge;
 
     // flag indicating whether this is a rebuild and Shared edge
     // data should only be used for fitting, but not rewritten
@@ -80,39 +98,20 @@ private:
     // flag indicating whether to ignore the landmass
     bool ignoreLandmass;
 
-    // detail level constraints
-    int min_nodes;
-    int max_nodes;
-
     // this bucket
     SGBucket bucket;
 
-    // clipped polygons (gpc format)
-    TGPolyList clipped_polys;
+    // Elevation data
+    TGArray array;
 
-    // Fixed elevations (from polygon input data with z values
-    // pre-specified)
-    node_list fixed_elevations;
+    // land class polygons
+    TGPolyList polys_in;
+    TGPolyList polys_clipped;
 
-    // raw node list (after triangulation)
-    TGTriNodes tri_nodes;
+    // All Nodes
     TGNodes nodes;
 
-    // node list in geodetic coords (with fixed elevation)
-    point_list geod_nodes;
-
-    // node list in cartesian coords (wgs84 model)
-    point_list wgs84_nodes;
-
-    // triangle elements (after triangulation)
-    triele_list tri_elements;
-
-    // edge segments (after triangulation)
-    TGTriSegments tri_segs;
-
-    // for each node, a list of triangle indices that contain this node
-    belongs_to_list reverse_ele_lookup;
-
+    // TODO : Add to superpoly
     // face normal list (for flat shading)
     point_list face_normals;
 
@@ -124,6 +123,39 @@ public:
     // Destructor
     ~TGConstruct();
     
+    void construct_bucket( SGBucket b );
+    bool load_array();
+    int  load_polys();
+    bool load_poly(const std::string& path);
+    bool load_osgb36_poly(const std::string& path);
+    void add_poly(int area, const TGPolygon &poly, std::string material);
+
+    void move_slivers( TGPolygon& in, TGPolygon& out );
+    void merge_slivers( TGPolyList& clipped, TGPolygon& slivers );
+
+    bool clip_all(const point2d& min, const point2d& max);
+
+    void add_intermediate_nodes(void);
+    void clean_clipped_polys(void);
+
+    void calc_gc_course_dist( const Point3D& start, const Point3D& dest, 
+                              double *course, double *dist );
+    double distanceSphere( const Point3D p1, const Point3D p2 );
+    void   fix_point_heights();
+
+    TGPolygon linear_tex_coords( const TGPolygon& tri, const TGTexParams& tp );
+    TGPolygon area_tex_coords( const TGPolygon& tri );
+
+    int      load_landcover ();
+    void     add_to_polys( TGPolygon &accum, const TGPolygon &poly);
+    double   measure_roughness( TGPolygon &poly );
+    AreaType get_landcover_type (const LandCover &cover, double xpos, double ypos, double dx, double dy);
+    void make_area( const LandCover &cover, TGPolygon *polys,
+                    double x1, double y1, double x2, double y2,
+                    double half_dx, double half_dy );
+
+    void do_custom_objects(void);
+
     // land cover file
     inline std::string get_cover () const { return cover; }
     inline void set_cover (const std::string &s) { cover = s; }
@@ -133,71 +165,29 @@ public:
     inline void set_work_base( const std::string s ) { work_base = s; }
     inline std::string get_output_base() const { return output_base; }
     inline void set_output_base( const std::string s ) { output_base = s; }
+    inline void set_load_dirs( const std::vector<std::string> ld ) { load_dirs = ld; }
 
     // UK grid flag
     inline bool get_useUKGrid() const { return useUKGrid; }
     inline void set_useUKGrid( const bool b ) { useUKGrid = b; }
     
+    // Nudge
+    inline void set_nudge( double n ) { nudge = n; }
+
     // shared edge write flag
-    inline bool get_write_shared_edges() const { return writeSharedEdges; }
     inline void set_write_shared_edges( const bool b ) { writeSharedEdges = b; }
     
     // own shared edge use flag
-    inline bool get_use_own_shared_edges() const { return useOwnSharedEdges; }
     inline void set_use_own_shared_edges( const bool b ) { useOwnSharedEdges = b; }
     
     // ignore landmass flag
-    inline bool get_ignore_landmass() const { return ignoreLandmass; }
     inline void set_ignore_landmass( const bool b) { ignoreLandmass = b; }
 
-    // detail level constraints
-    inline int get_min_nodes() const { return min_nodes; }
-    inline void set_min_nodes( const int n ) { min_nodes = n; }
-    inline int get_max_nodes() const { return max_nodes; }
-    inline void set_max_nodes( const int n ) { max_nodes = n; }
-
-    // this bucket
-    inline SGBucket get_bucket() const { return bucket; } 
-    inline void set_bucket( const SGBucket b ) { bucket = b; } 
-
-    // clipped polygons
-    inline TGPolyList get_clipped_polys() const { return clipped_polys; }
-    inline void set_clipped_polys( TGPolyList p ) { clipped_polys = p; }
-
-    // Fixed elevations (from polygon input data with z values pre-specified)
-    inline node_list get_fixed_elevations() const { return nodes.get_fixed_elevation_nodes(); }
-
-    // node list (after triangulation) : No need - we won't add nodes....
-//    inline TGTriNodes get_tri_nodes() const { return tri_nodes; }
-//    inline void set_tri_nodes( TGTriNodes n ) { tri_nodes = n; }
-
+    // TODO : REMOVE
     inline TGNodes* get_nodes() { return &nodes; }
-    inline void set_nodes( TGNodes n ) { nodes = n; }
-    
-    // triangle elements (after triangulation) : No need - will be in the triangulated polygons
-    inline triele_list get_tri_elements() const { return tri_elements; }
-    inline void set_tri_elements( triele_list e ) { tri_elements = e; }
-    inline void set_tri_attribute( int num, AreaType a ) { tri_elements[num].set_attribute( a ); }
-
-    // edge segments (after triangulation) : Same as above
-    inline TGTriSegments get_tri_segs() const { return tri_segs; }
-    inline void set_tri_segs( TGTriSegments s ) { tri_segs = s; }
 
     // node list in geodetic coords (with fixed elevation)
     inline point_list get_geod_nodes() const { return nodes.get_geod_nodes(); }
-//  inline void set_geod_nodes( point_list n ) { geod_nodes = n; }
-
-    // node list in cartesian coords (wgs84 model)
-    inline point_list get_wgs84_nodes() const { return nodes.get_wgs84_nodes_as_Point3d(); }
-//  inline void set_wgs84_nodes( point_list n ) { wgs84_nodes = n; }
-
-    // for each node, a list of triangle indices that contain this node
-    inline belongs_to_list get_reverse_ele_lookup() const { 
-	return reverse_ele_lookup;
-    }
-    inline void set_reverse_ele_lookup( belongs_to_list r ) {
-	reverse_ele_lookup = r;
-    }
 
     // face normal list (for flat shading)
     inline point_list get_face_normals() const { return face_normals; }

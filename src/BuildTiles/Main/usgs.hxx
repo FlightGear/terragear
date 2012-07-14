@@ -22,11 +22,11 @@
 #ifndef _USGS_HXX
 #define _USGS_HXX
 
-#include <Clipper/priorities.hxx>
+#include <string>
 
 #include <simgear/compiler.h>
 
-#include <string>
+#include "priorities.hxx"
 
 int load_usgs_map( const std::string& filename );
 AreaType translateUSGSCover( int usgs_value );

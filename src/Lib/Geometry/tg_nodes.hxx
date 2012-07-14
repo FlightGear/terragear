@@ -108,7 +108,7 @@ public:
     // tolerance as unique_add().  Returns -1 if not found.
     int find( const Point3D& p ) const;
 
-    bool LookupFixedElevation( Point3D p, double* z );
+//    bool LookupFixedElevation( Point3D p, double* z );
     void SetElevation( int idx, double z )  { tg_node_list[idx].SetElevation( z ); }
 
      // return the master node list

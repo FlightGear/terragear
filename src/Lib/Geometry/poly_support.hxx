@@ -35,8 +35,8 @@
 #include <simgear/math/sg_types.hxx>
 
 #include <Polygon/polygon.hxx>
-#include <Triangulate/trieles.hxx>
 
+#include "trieles.hxx"
 #include "trinodes.hxx"
 
 

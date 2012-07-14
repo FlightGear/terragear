@@ -136,7 +136,9 @@ void add_intermediate_tgnodes( int contour, const Point3D& start,
         add_intermediate_tgnodes( contour, start, new_pt, nodes, result );
 
         result->add_node( contour, new_pt );
-        SG_LOG(SG_GENERAL, SG_INFO, "    added = " << new_pt);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    added = " << new_pt);
+
+        // DEBUG : Was new node shared? 
 
         add_intermediate_tgnodes( contour, new_pt, end, nodes, result );
     }

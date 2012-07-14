@@ -141,13 +141,9 @@ void TGMatch::scan_share_file( const string& dir, const SGBucket& b,
 
 
 // try to find info for the specified shared component
-void TGMatch::load_shared( const TGConstruct& c, neighbor_type n ) {
-    SGBucket b = c.get_bucket();
-
+void TGMatch::load_shared( SGBucket b, string base, neighbor_type n ) {
     double clon = b.get_center_lon();
     double clat = b.get_center_lat();
-
-    string base = c.get_work_base() + "/Shared/";
 
     SGBucket cb;
 
@@ -205,27 +201,29 @@ void TGMatch::load_shared( const TGConstruct& c, neighbor_type n ) {
 
 // load any previously existing shared data from all neighbors (if
 // shared data for a component exists set that components flag to true
-void TGMatch::load_neighbor_shared( TGConstruct& c ) {
+void TGMatch::load_neighbor_shared( SGBucket b, string work ) {
     cout << "Loading existing shared data from neighbor tiles" << endl;
+
+    string base = work + "/Shared/";
 
     // start with all flags false
     sw_flag = se_flag = ne_flag = nw_flag = false;
     north_flag = south_flag = east_flag = west_flag = false;
 
-    load_shared( c, SW_Corner );
-    load_shared( c, SE_Corner );
-    load_shared( c, NE_Corner );
-    load_shared( c, NW_Corner );
+    load_shared( b, base, SW_Corner );
+    load_shared( b, base, SE_Corner );
+    load_shared( b, base, NE_Corner );
+    load_shared( b, base, NW_Corner );
 
     north_nodes.clear();
     south_nodes.clear();
     east_nodes.clear();
     west_nodes.clear();
 
-    load_shared( c, NORTH );
-    load_shared( c, SOUTH );
-    load_shared( c, EAST );
-    load_shared( c, WEST );
+    load_shared( b, base, NORTH );
+    load_shared( b, base, SOUTH );
+    load_shared( b, base, EAST );
+    load_shared( b, base, WEST );
 
     cout << "Shared data read in:" << endl;
     if ( sw_flag ) {
@@ -271,13 +269,11 @@ void TGMatch::load_neighbor_shared( TGConstruct& c ) {
 }
 
 // try to load any missing shared data from our own shared data file
-void TGMatch::load_missing_shared( TGConstruct& c ) {
-    SGBucket b = c.get_bucket();
-
+void TGMatch::load_missing_shared( SGBucket b, string work ) {
     double clon = b.get_center_lon();
     double clat = b.get_center_lat();
 
-    string base = c.get_work_base() + "/Shared/";
+    string base = work + "/Shared/";
     
     if ( !nw_flag ) {
 	scan_share_file( base, b, NW_Corner, NW_Corner );
@@ -332,7 +328,7 @@ Point3D tgFakeNormal( const Point3D& p ) {
 // segments and the body.  This must be done after calling
 // load_neighbor_data() and will ignore any shared data from the
 // current tile that already exists from a neighbor.
-void TGMatch::split_tile( TGConstruct& c ) {
+void TGMatch::split_tile( SGBucket b, TGConstruct* c ) {
     int i;
 
     cout << "Spliting tile" << endl;
@@ -340,7 +336,7 @@ void TGMatch::split_tile( TGConstruct& c ) {
 
     // calculate tile boundaries
     point2d min, max;
-    SGBucket b = c.get_bucket();
+
     min.x = b.get_center_lon() - 0.5 * b.get_width();
     min.y = b.get_center_lat() - 0.5 * b.get_height();
     max.x = b.get_center_lon() + 0.5 * b.get_width();
@@ -368,8 +364,8 @@ void TGMatch::split_tile( TGConstruct& c ) {
 
     body_nodes.clear();
 
-    point_list nodes = c.get_geod_nodes();
-    point_list point_normals = c.get_point_normals();
+    point_list nodes = c->get_geod_nodes();
+    point_list point_normals = c->get_point_normals();
 
     SG_LOG(SG_GENERAL, SG_ALERT, "number of geod nodes = " << nodes.size() );
     SG_LOG(SG_GENERAL, SG_ALERT, "number of normals = " << point_normals.size() );
@@ -509,9 +505,8 @@ void TGMatch::split_tile( TGConstruct& c ) {
 
 // write the new shared edge points, normals, and segments for this
 // tile
-void TGMatch::write_shared( TGConstruct& c ) {
-    string base = c.get_work_base();
-    SGBucket b = c.get_bucket();
+void TGMatch::write_shared( SGBucket b, TGConstruct* c ) {
+    string base = c->get_work_base();
 
     string dir = base + "/Shared/" + b.gen_base_path();
     string file = dir + "/" + b.gen_index_str();
@@ -548,30 +543,30 @@ void TGMatch::write_shared( TGConstruct& c ) {
      * means that the adjacent tile already has been built.
      */
     if ( ! sw_flag ) {
-	fprintf( fp, "sw_node %.6f %.6f %.6f\n", 
+	fprintf( fp, "sw_node %.10f %.10f %.10f\n", 
 		 sw_node.x(), sw_node.y(), sw_node.z() );
-	fprintf( fp, "sw_normal %.6f %.6f %.6f\n", 
+	fprintf( fp, "sw_normal %.10f %.10f %.10f\n", 
 		 sw_normal.x(), sw_normal.y(), sw_normal.z() );
     }
 
     if ( ! se_flag ) {
-	fprintf( fp, "se_node %.6f %.6f %.6f\n", 
+	fprintf( fp, "se_node %.10f %.10f %.10f\n", 
 		 se_node.x(), se_node.y(), se_node.z() );
-	fprintf( fp, "se_normal %.6f %.6f %.6f\n", 
+	fprintf( fp, "se_normal %.10f %.10f %.10f\n", 
 		 se_normal.x(), se_normal.y(), se_normal.z() );
     }
 
     if ( ! nw_flag ) {
-	fprintf( fp, "nw_node %.6f %.6f %.6f\n", 
+	fprintf( fp, "nw_node %.10f %.10f %.10f\n", 
 		 nw_node.x(), nw_node.y(), nw_node.z() );
-	fprintf( fp, "nw_normal %.6f %.6f %.6f\n", 
+	fprintf( fp, "nw_normal %.10f %.10f %.10f\n", 
 		 nw_normal.x(), nw_normal.y(), nw_normal.z() );
     }
 
     if ( ! ne_flag ) {
-	fprintf( fp, "ne_node %.6f %.6f %.6f\n", 
+	fprintf( fp, "ne_node %.10f %.10f %.10f\n", 
 		 ne_node.x(), ne_node.y(), ne_node.z() );
-	fprintf( fp, "ne_normal %.6f %.6f %.6f\n", 
+	fprintf( fp, "ne_normal %.10f %.10f %.10f\n", 
 		 ne_normal.x(), ne_normal.y(), ne_normal.z() );
     }
 
@@ -580,10 +575,10 @@ void TGMatch::write_shared( TGConstruct& c ) {
 	    fprintf( fp, "n_null -999.0 -999.0 -999.0\n" );
 	} else {
 	    for ( int i = 0; i < (int)north_nodes.size(); ++i ) {
-		fprintf( fp, "n_node %.6f %.6f %.6f\n", 
+		fprintf( fp, "n_node %.10f %.10f %.10f\n", 
 			 north_nodes[i].x(), north_nodes[i].y(),
 			 north_nodes[i].z() );
-		fprintf( fp, "n_normal %.6f %.6f %.6f\n", 
+		fprintf( fp, "n_normal %.10f %.10f %.10f\n", 
 			 north_normals[i].x(), north_normals[i].y(),
 			 north_normals[i].z() );
 	    }
@@ -595,10 +590,10 @@ void TGMatch::write_shared( TGConstruct& c ) {
 	    fprintf( fp, "s_null -999.0 -999.0 -999.0\n" );
 	} else {
 	    for ( int i = 0; i < (int)south_nodes.size(); ++i ) {
-		fprintf( fp, "s_node %.6f %.6f %.6f\n", 
+		fprintf( fp, "s_node %.10f %.10f %.10f\n", 
 			 south_nodes[i].x(), south_nodes[i].y(),
 			 south_nodes[i].z() );
-		fprintf( fp, "s_normal %.6f %.6f %.6f\n", 
+		fprintf( fp, "s_normal %.10f %.10f %.10f\n", 
 			 south_normals[i].x(), south_normals[i].y(),
 			 south_normals[i].z() );
 	    }
@@ -610,10 +605,10 @@ void TGMatch::write_shared( TGConstruct& c ) {
 	    fprintf( fp, "e_null -999.0 -999.0 -999.0\n" );
 	} else {
 	    for ( int i = 0; i < (int)east_nodes.size(); ++i ) {
-		fprintf( fp, "e_node %.6f %.6f %.6f\n", 
+		fprintf( fp, "e_node %.10f %.10f %.10f\n", 
 			 east_nodes[i].x(), east_nodes[i].y(), 
 			 east_nodes[i].z() );
-		fprintf( fp, "e_normal %.6f %.6f %.6f\n", 
+		fprintf( fp, "e_normal %.10f %.10f %.10f\n", 
 			 east_normals[i].x(), east_normals[i].y(),
 			 east_normals[i].z() );
 	    }
@@ -625,10 +620,10 @@ void TGMatch::write_shared( TGConstruct& c ) {
 	    fprintf( fp, "w_null -999.0 -999.0 -999.0\n" );
 	} else {
 	    for ( int i = 0; i < (int)west_nodes.size(); ++i ) {
-		fprintf( fp, "w_node %.6f %.6f %.6f\n", 
+		fprintf( fp, "w_node %.10f %.10f %.10f\n", 
 			 west_nodes[i].x(), west_nodes[i].y(),
 			 west_nodes[i].z() );
-		fprintf( fp, "w_normal %.6f %.6f %.6f\n", 
+		fprintf( fp, "w_normal %.10f %.10f %.10f\n", 
 			 west_normals[i].x(), west_normals[i].y(),
 			 west_normals[i].z() );
 	    }
@@ -642,28 +637,28 @@ void TGMatch::write_shared( TGConstruct& c ) {
     for ( int i = 0; i < (int)north_segs.size(); ++i ) {
 	p1 = nodes[ north_segs[i].get_n1() ];
 	p2 = nodes[ north_segs[i].get_n2() ];
-	fprintf( fp, "n_seg %.6f %.6f %.6f %.6f\n", 
+	fprintf( fp, "n_seg %.10f %.10f %.10f %.10f\n", 
 		 p1.x(), p1.y(), p2.x(), p2.y() );
     }
 
     for ( int i = 0; i < (int)south_segs.size(); ++i ) {
 	p1 = nodes[ south_segs[i].get_n1() ];
 	p2 = nodes[ south_segs[i].get_n2() ];
-	fprintf( fp, "s_seg %.6f %.6f %.6f %.6f\n", 
+	fprintf( fp, "s_seg %.10f %.10f %.10f %.10f\n", 
 		 p1.x(), p1.y(), p2.x(), p2.y() );
     }
 
     for ( int i = 0; i < (int)east_segs.size(); ++i ) {
 	p1 = nodes[ east_segs[i].get_n1() ];
 	p2 = nodes[ east_segs[i].get_n2() ];
-	fprintf( fp, "e_seg %.6f %.6f %.6f %.6f\n", 
+	fprintf( fp, "e_seg %.10f %.10f %.10f %.10f\n", 
 		 p1.x(), p1.y(), p2.x(), p2.y() );
     }
 
     for ( int i = 0; i < (int)west_segs.size(); ++i ) {
 	p1 = nodes[ west_segs[i].get_n1() ];
 	p2 = nodes[ west_segs[i].get_n2() ];
-	fprintf( fp, "w_seg %.6f %.6f %.6f %.6f\n", 
+	fprintf( fp, "w_seg %.10f %.10f %.10f %.10f\n", 
 		 p1.x(), p1.y(), p2.x(), p2.y() );
     }
 #endif
@@ -688,9 +683,9 @@ void insert_normal( point_list& normals, Point3D n, int i ) {
 }
 
 // Just add nodes and normals to the node list
-void TGMatch::add_shared_nodes( TGConstruct& c ) {
+void TGMatch::add_shared_nodes( TGConstruct* c ) {
     TGNodes* nodes;
-    nodes = c.get_nodes();
+    nodes = c->get_nodes();
 
     cout << " BEFORE ADDING SHARED NODES: " << nodes->size() << endl;
 
@@ -739,7 +734,7 @@ void TGMatch::add_shared_nodes( TGConstruct& c ) {
 
 // reassemble the tile pieces (combining the shared data and our own
 // data)
-void TGMatch::assemble_tile( TGConstruct& c ) {
+void TGMatch::assemble_tile( TGConstruct* c ) {
     int i;
     TGTriNodes new_nodes;
     new_nodes.clear();
@@ -824,7 +819,7 @@ void TGMatch::assemble_tile( TGConstruct& c ) {
 
     // add the body segments
 
-    point_list geod_nodes = c.get_geod_nodes();
+    point_list geod_nodes = c->get_geod_nodes();
 
     TGTriSeg seg;
     Point3D p1, p2;

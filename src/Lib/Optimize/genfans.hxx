@@ -36,7 +36,7 @@
 
 #include <simgear/math/sg_types.hxx>
 
-#include <Triangulate/trieles.hxx>
+#include <Geometry/trieles.hxx>
 
 typedef std::vector < int_list > opt_list;
 typedef opt_list::iterator opt_list_iterator;

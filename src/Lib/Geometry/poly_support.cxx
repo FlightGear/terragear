@@ -35,8 +35,6 @@
 #include <Polygon/polygon.hxx>
 #include <Polygon/chop.hxx>
 
-#include <Triangulate/trieles.hxx>
-
 #include <algorithm>
 #include <iterator>
 

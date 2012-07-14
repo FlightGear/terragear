@@ -36,7 +36,7 @@ using std::string;
 struct sections
 {
     const char* tex;
-    int size;
+    double size;
 };
 
 // UK Precision runway sections from after the designation number

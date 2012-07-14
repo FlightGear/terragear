@@ -50,13 +50,13 @@
 #include <Geometry/poly_support.hxx>
 #include <Geometry/poly_extra.hxx>
 #include <Geometry/trinodes.hxx>
+#include <Geometry/trieles.hxx>
 #include <Output/output.hxx>
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
 #include <Polygon/texparams.hxx>
-#include <Triangulate/trieles.hxx>
 
 #include "apt_surface.hxx"
 #include "convex_hull.hxx"
