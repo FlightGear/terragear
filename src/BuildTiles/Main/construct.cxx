@@ -574,7 +574,7 @@ void TGConstruct::add_intermediate_nodes( ) {
             after   = current.total_size();
 
             if (before != after) {
-               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-juntions is " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
+               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-juntions in " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
             }
 
             /* Save it back */
@@ -625,6 +625,7 @@ void TGConstruct::fix_point_heights()
         }
     }
 
+#if 0
     // now flatten some stuuf
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
         if ( is_lake_area( (AreaType)i ) ) {
@@ -779,6 +780,7 @@ void TGConstruct::fix_point_heights()
             }
         }
     }
+#endif
 }
 
 TGPolygon TGConstruct::area_tex_coords( const TGPolygon& tri )
@@ -1322,13 +1324,6 @@ void TGConstruct::construct_bucket( SGBucket b ) {
 
 //    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER ADDING SHARED EDGES" );    
 //    dump_nodes( c );
-
-    // Step 4) Add intermediate nodes
-    // need to add another add intermediate nodes function that can handle the new node class
-    add_intermediate_nodes();
-
-    // After adding intermediate nodes, clean the polys
-    clean_clipped_polys();
         
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
@@ -1344,6 +1339,13 @@ void TGConstruct::construct_bucket( SGBucket b ) {
             } 
         }
     }
+
+    // Step 4) Add intermediate nodes
+    // need to add another add intermediate nodes function that can handle the new node class
+    add_intermediate_nodes();
+
+    // After adding intermediate nodes, clean the polys
+    clean_clipped_polys();
 
 //    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER ADDING CLIPPED POLYS" );    
 //    dump_nodes( c );
