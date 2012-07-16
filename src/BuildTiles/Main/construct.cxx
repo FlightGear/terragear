@@ -574,7 +574,7 @@ void TGConstruct::add_intermediate_nodes( ) {
             after   = current.total_size();
 
             if (before != after) {
-               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-juntions in " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
+               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-junctions in " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );
             }
 
             /* Save it back */
@@ -1144,7 +1144,7 @@ bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
         for( j = 0; j < (int)polys_in.superpolys[i].size(); ++j ) {
             TGPolygon current = polys_in.superpolys[i][j].get_poly();
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_in.superpolys[i].size() );                       
+            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_in.superpolys[i].size() );
 
             tmp = current;
 
@@ -1329,7 +1329,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
             TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
 
-           SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() );                       
+           SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );
 
             for (int k=0; k< poly.contours(); k++) {
                 for (int l = 0; l < poly.contour_size(k); l++) {
@@ -1356,7 +1356,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
             TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
 
-           SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
+           SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());
 
             TGPolygon tri = polygon_tesselate_alt_with_extra( poly, extra, false );
             TGPolygon tc;
