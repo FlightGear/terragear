@@ -506,22 +506,7 @@ void Airport::merge_slivers( superpoly_list& polys, poly_list& slivers_list ) {
                     SG_LOG(SG_GENERAL, SG_DEBUG, "    FOUND a poly to merge the sliver with");
                     polys[k].set_poly( result );
                     done = true;
-
-                    // poly.write("orig");
-                    // sliver.write("sliver");
-                    // result.write("result");
-                    // cout << "press return: ";
-                    // string input;
-                    // cin >> input;
-                } else {
-                    //    cout << "    poly not a match" << endl;
-                    //    cout << "    original = " << original_contours
-                    //	 << " result = " << result_contours << endl;
-                    //    cout << "    sliver = " << endl;
-                    //    for ( k = 0; k < (int)contour.size(); ++k ) {
-                    //	 cout << "      " << contour[k].x() << ", "
-                    //	      << contour[k].y() << endl;
-	            }
+                }
 	        }
 
             if ( !done ) {

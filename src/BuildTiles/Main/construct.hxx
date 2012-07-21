@@ -66,6 +66,21 @@ public:
     superpoly_list superpolys[TG_MAX_AREA_TYPES];
     texparams_list texparams[TG_MAX_AREA_TYPES];
     TGPolygon safety_base;
+
+    void clear(void)
+    {
+        int i;
+
+        for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+            superpolys[i].clear();
+        }
+
+        for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+            texparams[i].clear();
+        }
+
+        safety_base.erase();
+    }
 };
 
 class TGConstruct {
@@ -131,7 +146,7 @@ public:
     void add_poly(int area, const TGPolygon &poly, std::string material);
 
     void move_slivers( TGPolygon& in, TGPolygon& out );
-    void merge_slivers( TGPolyList& clipped, TGPolygon& slivers );
+    void merge_slivers( TGPolyList& clipped, poly_list& slivers_list );
 
     bool clip_all(const point2d& min, const point2d& max);
 

@@ -528,24 +528,27 @@ int main(int argc, char **argv) {
 #endif  // end of stuff that crashes Cygwin
 
     // main construction data management class
-    TGConstruct c;
-
-    c.set_cover( cover );
-    c.set_work_base( work_dir );
-    c.set_output_base( output_dir );
-    c.set_load_dirs( load_dirs );
-    c.set_useUKGrid( useUKgrid );
-    c.set_write_shared_edges( writeSharedEdges );
-    c.set_use_own_shared_edges( useOwnSharedEdges );
-    c.set_ignore_landmass( ignoreLandmass );
-    c.set_nudge( nudge );
+    TGConstruct* c;
 
     if (tile_id == -1) {
         if (xdist == -1 || ydist == -1) {
             // construct the tile around the specified location
             SG_LOG(SG_GENERAL, SG_ALERT, "Building single tile at " << lat << ',' << lon);
             SGBucket b( lon, lat );
-            c.construct_bucket( b );
+
+            c = new TGConstruct();
+            c->set_cover( cover );
+            c->set_work_base( work_dir );
+            c->set_output_base( output_dir );
+            c->set_load_dirs( load_dirs );
+            c->set_useUKGrid( useUKgrid );
+            c->set_write_shared_edges( writeSharedEdges );
+            c->set_use_own_shared_edges( useOwnSharedEdges );
+            c->set_ignore_landmass( ignoreLandmass );
+            c->set_nudge( nudge );
+
+            c->construct_bucket( b );
+            delete c;
         } else {
             // build all the tiles in an area
             SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) at " << lat << ',' << lon << " with x distance " << xdist << " and y distance " << ydist);
@@ -558,7 +561,19 @@ int main(int argc, char **argv) {
             bool do_tile = true;
 
             if ( b_min == b_max ) {
-            	c.construct_bucket( b_min );
+                c = new TGConstruct();
+                c->set_cover( cover );
+                c->set_work_base( work_dir );
+                c->set_output_base( output_dir );
+                c->set_load_dirs( load_dirs );
+                c->set_useUKGrid( useUKgrid );
+                c->set_write_shared_edges( writeSharedEdges );
+                c->set_use_own_shared_edges( useOwnSharedEdges );
+                c->set_ignore_landmass( ignoreLandmass );
+                c->set_nudge( nudge );
+    
+                c->construct_bucket( b_min );
+                delete c;
             } else {
                 SGBucket b_cur;
                 int dx, dy, i, j;
@@ -576,7 +591,19 @@ int main(int argc, char **argv) {
                         }
 
                         if ( do_tile ) {
-                            c.construct_bucket( b_cur );
+                            c = new TGConstruct();
+                            c->set_cover( cover );
+                            c->set_work_base( work_dir );
+                            c->set_output_base( output_dir );
+                            c->set_load_dirs( load_dirs );
+                            c->set_useUKGrid( useUKgrid );
+                            c->set_write_shared_edges( writeSharedEdges );
+                            c->set_use_own_shared_edges( useOwnSharedEdges );
+                            c->set_ignore_landmass( ignoreLandmass );
+                            c->set_nudge( nudge );
+                
+                            c->construct_bucket( b_cur );
+                            delete c;
                         } else {
                             SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
                         }
@@ -588,7 +615,20 @@ int main(int argc, char **argv) {
         // construct the specified tile
         SG_LOG(SG_GENERAL, SG_ALERT, "Building tile " << tile_id);
         SGBucket b( tile_id );
-        c.construct_bucket( b );
+
+        c = new TGConstruct();
+        c->set_cover( cover );
+        c->set_work_base( work_dir );
+        c->set_output_base( output_dir );
+        c->set_load_dirs( load_dirs );
+        c->set_useUKGrid( useUKgrid );
+        c->set_write_shared_edges( writeSharedEdges );
+        c->set_use_own_shared_edges( useOwnSharedEdges );
+        c->set_ignore_landmass( ignoreLandmass );
+        c->set_nudge( nudge );
+
+        c->construct_bucket( b );
+        delete c;
     }
 
     SG_LOG(SG_GENERAL, SG_ALERT, "[Finished successfully]");

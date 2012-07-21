@@ -80,6 +80,8 @@ bool TGConstruct::load_array() {
     string base = bucket.gen_base_path();
     int i;
 
+    SG_LOG(SG_GENERAL, SG_ALERT, "load array");
+
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
         string array_path = get_work_base() + "/" + load_dirs[i] + "/" + base + "/" + bucket.gen_index_str();
 
@@ -89,6 +91,9 @@ bool TGConstruct::load_array() {
             SG_LOG(SG_GENERAL, SG_ALERT, "Failed to open Array file " << array_path);
         }
     }
+
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "parse array");
 
     array.parse( bucket );
     array.remove_voids( );
@@ -574,7 +579,7 @@ void TGConstruct::add_intermediate_nodes( ) {
             after   = current.total_size();
 
             if (before != after) {
-               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-junctions in " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );
+               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-juntions in " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
             }
 
             /* Save it back */
@@ -625,7 +630,6 @@ void TGConstruct::fix_point_heights()
         }
     }
 
-#if 0
     // now flatten some stuuf
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
         if ( is_lake_area( (AreaType)i ) ) {
@@ -747,9 +751,9 @@ void TGConstruct::fix_point_heights()
                     double max2 = d2 * 0.30 + min;
                     double max3 = d3 * 0.30 + min;
 
-                    if ( max1 < e1 ) { get_nodes()->SetElevation( n1, max1 ); }
-                    if ( max2 < e2 ) { get_nodes()->SetElevation( n2, max2 ); }
-                    if ( max3 < e3 ) { get_nodes()->SetElevation( n3, max3 ); }
+                    if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
+                    if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
+                    if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
                 }
             }
         }
@@ -780,7 +784,6 @@ void TGConstruct::fix_point_heights()
             }
         }
     }
-#endif
 }
 
 TGPolygon TGConstruct::area_tex_coords( const TGPolygon& tri )
@@ -945,12 +948,12 @@ void TGConstruct::do_custom_objects( ) {
         index.append( bucket.gen_index_str() );
         index.concat(".ind");
         string index_file = index.str_native();
-        //SG_LOG(SG_GENERAL, SG_ALERT, "Collecting custom objects from " << index_file);
+        SG_LOG(SG_GENERAL, SG_ALERT, "collecting custom objects from " << index_file);
 
         sg_gzifstream in( index_file );
 
         if ( ! in.is_open() ) {
-            //SG_LOG(SG_GENERAL, SG_ALERT, "No custom objects");
+            //cout << "No custom objects" << endl;
         } else {
             while ( ! in.eof() ) {
                 SG_LOG( SG_GENERAL, SG_INFO, "Collecting custom objects from " << index_file );
@@ -987,105 +990,66 @@ void TGConstruct::do_custom_objects( ) {
     fclose(fp);
 }
 
-// Move slivers from in polygon to out polygon.
-void TGConstruct::move_slivers( TGPolygon& in, TGPolygon& out ) {
-    // traverse each contour of the polygon and attempt to identify
-    // likely slivers
-    int i;
-
-    out.erase();
-
-    double angle_cutoff = 10.0 * SGD_DEGREES_TO_RADIANS;
-    double area_cutoff = 0.00000008;
-    double min_angle;
-    double area;
-
-    point_list contour;
-    int hole_flag;
-
-    // process contours in reverse order so deleting a contour doesn't
-    // foul up our sequence
-    for ( i = in.contours() - 1; i >= 0; --i ) {
-        min_angle = in.minangle_contour( i );
-        area = in.area_contour( i );
-
-        if ( ((min_angle < angle_cutoff) && (area < area_cutoff)) || 
-             ( area < area_cutoff / 10.0) ) {
-            // cout << "      WE THINK IT'S A SLIVER!" << endl;
-
-            // check if this is a hole
-            hole_flag = in.get_hole_flag( i );
-
-            if ( hole_flag ) {
-            	// just delete/eliminate/remove sliver holes
-                // cout << "just deleting a sliver hole" << endl;
-                in.delete_contour( i );
-            } else {
-                // move sliver contour to out polygon
-                contour = in.get_contour( i );
-                in.delete_contour( i );
-                out.add_contour( contour, hole_flag );
-            }
-        }
-    }
-}
-
-
 // Attempt to merge slivers into a list of polygons.
 //
 // For each sliver contour, see if a union with another polygon yields
 // a polygon with no increased contours (i.e. the sliver is adjacent
 // and can be merged.)  If so, replace the clipped polygon with the
 // new polygon that has the sliver merged in.
-void TGConstruct::merge_slivers( TGPolyList& clipped, TGPolygon& slivers ) {
-    TGPolygon poly, result, sliver;
+void TGConstruct::merge_slivers( TGPolyList& clipped,  poly_list& slivers_list ) {
+    TGPolygon poly, result, slivers, sliver;
     point_list contour;
     int original_contours, result_contours;
     bool done;
-    int area, i, j;
+    int area, i, j, k;
 
-    for ( i = 0; i < slivers.contours(); ++i ) {
-        // cout << "Merging sliver = " << i << endl;
+    for ( i = 0; i < (int)slivers_list.size(); i++ ) {
+        slivers = slivers_list[i];
 
-        // make the sliver polygon
-        contour = slivers.get_contour( i );
-        sliver.erase();
-        sliver.add_contour( contour, 0 );
-        done = false;
+        for ( j = 0; j < slivers.contours(); ++j ) {
+            // cout << "Merging sliver = " << i << endl;
 
-        for ( area = 0; area < TG_MAX_AREA_TYPES && !done; ++area ) {
+            // make the sliver polygon
+            contour = slivers.get_contour( j );
+            sliver.erase();
+            sliver.add_contour( contour, 0 );
+            done = false;
 
-            if ( is_hole_area( area ) ) {
-            	// don't merge a non-hole sliver in with a hole
-            	continue;
-            }
+            for ( area = 0; area < TG_MAX_AREA_TYPES && !done; ++area ) {
+                if ( is_hole_area( area ) ) {
+                	// don't merge a non-hole sliver in with a hole
+                	continue;
+                }
 
-            // cout << "  testing area = " << area << " with " 
-            //      << clipped.polys[area].size() << " polys" << endl;
-            for ( j = 0; j < (int)clipped.superpolys[area].size() && !done; ++j ) {
-                // cout << "  polygon = " << j << endl;
-                poly = clipped.superpolys[area][j].get_poly();
-                original_contours = poly.contours();
-                result = tgPolygonUnion( poly, sliver );
-                result_contours = result.contours();
+                // cout << "  testing area = " << area << " with " 
+                //      << clipped.polys[area].size() << " polys" << endl;
+                for ( k = 0; k < (int)clipped.superpolys[area].size() && !done; ++k ) {
+                    // cout << "  polygon = " << j << endl;
+                    poly = clipped.superpolys[area][k].get_poly();
+                    original_contours = poly.contours();
+                    result = tgPolygonUnion( poly, sliver );
+                    result_contours = result.contours();
 
-                if ( original_contours == result_contours ) {
-                    // cout << "    FOUND a poly to merge the sliver with" << endl;
-                    clipped.superpolys[area][j].set_poly( result );
-                    done = true;
+                    if ( original_contours == result_contours ) {
+                        // cout << "    FOUND a poly to merge the sliver with" << endl;
+                        clipped.superpolys[area][k].set_poly( result );
+                        done = true;
+                    }
                 }
             }
-        }
 
-        if ( !done ) {
-            // cout << "no suitable polys found for sliver merge" << endl;
+           if ( !done ) {
+                // cout << "no suitable polys found for sliver merge" << endl;
+            }
         }
     }
 }
 
 bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
-    TGPolygon accum, tmp;
-    TGPolygon slivers, remains;
+    TGPolygon accum, clipped, tmp;
+    TGPolygon remains;
+    poly_list slivers;
+    
     int i, j;
     Point3D p;
 
@@ -1144,7 +1108,7 @@ bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
         for( j = 0; j < (int)polys_in.superpolys[i].size(); ++j ) {
             TGPolygon current = polys_in.superpolys[i][j].get_poly();
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_in.superpolys[i].size() );
+            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_in.superpolys[i].size() );                       
 
             tmp = current;
 
@@ -1153,65 +1117,42 @@ bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
                 tmp = tgPolygonInt( tmp, land_mask );
             }
 
-            // Airport areas are limited to existing land mass and
-            // never override water.
-            //
-            // 9/26/2005 - CLO: We are going to add the ability to
-            // manually define airport areas when the default area
-            // isn't sufficient.  It is clear that it is impossible to
-            // auto-generate correct airport areas in all cases.  For
-            // now we default to topologically continuous scenery and
-            // wait for people to submit manual fixes.
-            //
-            // if ( i == AirportArea ) {
-            //     tmp = tgPolygonInt( tmp, land_mask );
-            //     tmp = tgPolygonDiff( tmp, water_mask );
-            // }
-
             // if a water area, cut out potential islands
             if ( is_water_area( i ) ) {
                 // clip against island mask
                 tmp = tgPolygonDiff( tmp, island_mask );
             }
 
-            // clean the poly before operations
-            // tmp = reduce_degeneracy( tmp );
-
-            TGPolygon result_union, result_diff;
-
-            if ( accum.contours() == 0 ) {
-                result_diff = tmp;
-                result_union = tmp;
-            } else {
-                result_diff = tgPolygonDiff( tmp, accum);
-                result_union = tgPolygonUnion( tmp, accum);
-            }
+            clipped = tgPolygonDiff( tmp, accum );
 
             // only add to output list if the clip left us with a polygon
-            if ( result_diff.contours() > 0 ) {
-                // move slivers from result_diff polygon to slivers polygon
-                move_slivers(result_diff, slivers);
+            if ( clipped.contours() > 0 ) {
+                // move slivers from clipped polygon to slivers polygon
+                tgPolygonFindSlivers( clipped, slivers );
 
-                // merge any slivers with previously clipped
-                // neighboring polygons
-                if ( slivers.contours() > 0 ) {
-                    merge_slivers(polys_clipped, slivers);
-                }
+//                // merge any slivers with previously clipped
+//                // neighboring polygons
+//                if ( slivers.contours() > 0 ) {
+//                    merge_slivers(polys_clipped, slivers);
+//                }
 
-                // add the sliverless result polygon (from after the
-                // move_slivers) to the clipped polys list
-                if ( result_diff.contours() > 0  ) {
+                // add the sliverless result polygon to the clipped polys list
+                if ( clipped.contours() > 0  ) {
                     TGSuperPoly sp;
                     string material = get_area_name( (AreaType)i );
 
                     sp.set_material( material );
-                    sp.set_poly( result_diff );
+                    sp.set_poly( clipped );
                     polys_clipped.superpolys[i].push_back( sp );
                 }
 	        }
-	        accum = result_union;
+
+            accum   = tgPolygonUnion( tmp, accum );
         }
     }
+
+    // Now, merge any slivers with clipped polys
+    merge_slivers(polys_clipped, slivers);
 
     // finally, what ever is left over goes to ocean
 
@@ -1224,14 +1165,14 @@ bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
     if ( remains.contours() > 0 ) {
         // cout << "remains contours = " << remains.contours() << endl;
         // move slivers from remains polygon to slivers polygon
-        move_slivers(remains, slivers);
+        tgPolygonFindSlivers( remains, slivers );
         // cout << "  After sliver move:" << endl;
         // cout << "    remains = " << remains.contours() << endl;
         // cout << "    slivers = " << slivers.contours() << endl;
 
         // merge any slivers with previously clipped
         // neighboring polygons
-        if ( slivers.contours() > 0 ) {
+        if ( slivers.size() > 0 ) {
             merge_slivers(polys_clipped, slivers);
         }
 
@@ -1329,7 +1270,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
             TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
 
-           SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );
+           SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() );                       
 
             for (int k=0; k< poly.contours(); k++) {
                 for (int l = 0; l < poly.contour_size(k); l++) {
@@ -1356,7 +1297,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
             TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
 
-           SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << ": " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());
+           SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << ":" << j << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
 
             TGPolygon tri = polygon_tesselate_alt_with_extra( poly, extra, false );
             TGPolygon tc;
@@ -1375,6 +1316,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
         }
     }
 
+#if 1 // I don't think this is necessary - triangulations set to don't add points...
     // Add triangulation points
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
@@ -1387,6 +1329,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
             } 
         }
     }
+#endif
 
     // Step 7) Flatten
     fix_point_heights();
@@ -1599,11 +1542,21 @@ void TGConstruct::construct_bucket( SGBucket b ) {
     do_output( c, output );
 #endif
 
-    array.close();
-
     // Step 15) Adding custome objects to the .stg file
     // collect custom objects and move to scenery area
     do_custom_objects();
+
+    // Step 16 : clean the data structures
+    array.close();
+
+    // land class polygons
+    polys_in.clear();
+    polys_clipped.clear();
+
+    // All Nodes
+    nodes.clear();
+
+    face_normals.clear();
 }
 
 void TGConstruct::clean_clipped_polys() {
@@ -1623,4 +1576,3 @@ void TGConstruct::clean_clipped_polys() {
         }
     }
 }
-
