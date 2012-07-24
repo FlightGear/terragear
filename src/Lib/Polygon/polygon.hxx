@@ -271,6 +271,9 @@ TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
 // Difference
 TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip );
 
+// Intersection
+TGPolygon tgPolygonIntClipper( const TGPolygon& subject, const TGPolygon& clip );
+
 // Union
 TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip );
 

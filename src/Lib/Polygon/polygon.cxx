@@ -709,6 +709,10 @@ TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip 
     return polygon_clip_clipper( POLY_DIFF, subject, clip );
 }
 
+TGPolygon tgPolygonIntClipper( const TGPolygon& subject, const TGPolygon& clip ) {
+    return polygon_clip_clipper( POLY_INT, subject, clip );
+}
+
 TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip_clipper( POLY_UNION, subject, clip );
 }

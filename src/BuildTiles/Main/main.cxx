@@ -326,50 +326,6 @@ static void do_output( TGConstruct& c, TGGenOutput& output ) {
 }
 #endif
 
-bool TGNodesSortByLon( const TGNode& n1, const TGNode& n2 )
-{
-    return ( n1.GetPosition().x() < n2.GetPosition().x() );
-}
-
-static void dump_nodes( TGConstruct& c ) {
-    for (unsigned int i=0; i<c.get_nodes()->size(); i++) {
-        TGNode node = c.get_nodes()->get_node( i );
-        string fixed;
-        
-        if ( node.GetFixedPosition() ) {
-            fixed = " z is fixed elevation ";
-        } else {
-            fixed = " z is interpolated elevation ";
-        }
-
-        SG_LOG(SG_GENERAL, SG_ALERT, "Point[" << i << "] is " << node.GetPosition() << fixed );
-    }
-}
-
-static void dump_lat_nodes( TGConstruct& c, double lat ) {
-    node_list all_nodes = c.get_nodes()->get_node_list();
-    node_list sorted_nodes;
-    for (unsigned int i=0; i<all_nodes.size(); i++) {
-        if ( fabs( all_nodes[i].GetPosition().y() - lat ) < 0.0000001 ) {
-            sorted_nodes.push_back( all_nodes[i] );
-        }
-    }
-
-    sort( sorted_nodes.begin(), sorted_nodes.end(), TGNodesSortByLon );
-
-    for (unsigned int i=0; i<sorted_nodes.size(); i++) {
-        string fixed;
-        
-        if ( sorted_nodes[i].GetFixedPosition() ) {
-            fixed = " z is fixed elevation ";
-        } else {
-            fixed = " z is interpolated elevation ";
-        }
-
-        SG_LOG(SG_GENERAL, SG_ALERT, "Point[" << i << "] is " << sorted_nodes[i].GetPosition() << fixed );
-    }
-}
-
 // display usage and exit
 static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << name);
@@ -419,6 +375,9 @@ int main(int argc, char **argv) {
     bool ignoreLandmass = false;
     
     sglog().setLogLevels( SG_ALL, SG_INFO );
+
+    // Initialize shapefile support (for debugging)
+    tgShapefileInit();
 
     //
     // Parse the command-line arguments.
