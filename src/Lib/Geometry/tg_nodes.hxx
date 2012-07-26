@@ -13,20 +13,27 @@
 #define FG_PROXIMITY_EPSILON 0.000001
 #define FG_COURSE_EPSILON 0.0001
 
-typedef std::vector < unsigned int > TGIdxList;   
+// for each node, we'll need a vector to lookup all triangles the node
+// is a member of.
+struct TGFaceLookup {
+    unsigned int    area;
+    unsigned int    poly;
+    unsigned int    tri;
+};
+typedef std::vector < TGFaceLookup > TGFaceList;
+
 
 class TGNode {
 public:
     TGNode( Point3D p ) {
         position    = p;
         normal      = Point3D();
+        CalcWgs84();
         
-
         fixed_position  = false;        // no matter what - don't move x, y, or z (likely a hole around an airport generated ny genapts)
         fixed_normal    = false;        // no matter what - don't modify the normal - likely on a normal generated on a shared edge 
 
         faces.clear();
-        neighbors.clear();
     }
 
     inline void SetFixedPosition( bool fix )        
@@ -36,21 +43,42 @@ public:
         }
     }
 
+    inline void CalcWgs84()
+    {
+        SGGeod  geod = SGGeod::fromDegM( position.x(), position.y(), position.z() );
+        wgs84 = SGVec3d::fromGeod(geod);
+    }
+
+    inline void AddFace( unsigned int area, unsigned int poly, unsigned int tri )
+    {
+        TGFaceLookup    face;
+        face.area   = area;
+        face.poly   = poly;
+        face.tri    = tri;
+
+        faces.push_back( face );
+    }
+
+    inline TGFaceList GetFaces( void ) const        { return faces; }
     inline bool GetFixedPosition( void ) const      { return fixed_position; }
     inline void SetFixedNormal( bool fix )          { fixed_normal = fix; }
     inline bool GetFixedNormal( void ) const        { return fixed_normal; }
+    inline SGVec3d GetWgs84AsSGVec3d( void ) const  { return wgs84; }
+    inline Point3D GetWgs84AsPoint3D( void ) const  { return Point3D::fromSGVec3( wgs84 ); }
 
     inline void    SetPosition( const Point3D& p )  
     { 
         if (!fixed_position) {
             position = p; 
+            CalcWgs84();
         }
     }
 
     inline void    SetElevation( double z )
     { 
         if (!fixed_position) {
-            position.setelev( z ); 
+            position.setelev( z );
+            CalcWgs84();
         }
     }
 
@@ -61,12 +89,12 @@ public:
 private:
     Point3D     position;
     Point3D     normal;
+    SGVec3d     wgs84;
 
     bool        fixed_position;
     bool        fixed_normal;
 
-    TGIdxList   faces;
-    TGIdxList   neighbors;
+    TGFaceList  faces;
 };
 typedef std::vector < TGNode > node_list;
 typedef node_list::iterator node_list_iterator;
@@ -95,7 +123,6 @@ public:
     int unique_add_fixed_elevation( const Point3D& p );
     node_list get_fixed_elevation_nodes( void ) const;
 
-
     // Add the point with no uniqueness checking
     int simple_add( const Point3D& p );
 
@@ -110,6 +137,9 @@ public:
 
 //    bool LookupFixedElevation( Point3D p, double* z );
     void SetElevation( int idx, double z )  { tg_node_list[idx].SetElevation( z ); }
+
+    Point3D GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
+    void SetNormal( int idx, Point3D n )    { tg_node_list[idx].SetNormal( n ); }
 
      // return the master node list
     inline node_list& get_node_list() { return tg_node_list; }
@@ -128,8 +158,15 @@ public:
     // return the ith point
     inline TGNode get_node( int i ) const { return tg_node_list[i]; }
 
+    inline void AddFace( int i, unsigned int area, unsigned int poly, unsigned int tri )
+    {
+        tg_node_list[i].AddFace( area, poly, tri );        
+    }
+
     // return the size of the node list
     inline size_t size() const { return tg_node_list.size(); }
+
+    void Dump( void );
 
 private:
     node_list tg_node_list;

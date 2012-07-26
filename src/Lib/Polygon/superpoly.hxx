@@ -38,6 +38,91 @@
 
 #include "polygon.hxx"
 
+// TODO : Needs to be its own class
+typedef std::vector < int > int_list;
+typedef std::vector < int_list > idx_list;
+typedef idx_list::iterator idx_list_iterator;
+typedef idx_list::const_iterator const_idx_list_iterator;
+
+class TGPolyNodes {
+
+private:
+
+    idx_list poly;                  // polygon node indexes
+
+public:
+
+    // Constructor and destructor
+    TGPolyNodes( void ) {}
+    ~TGPolyNodes( void ) {}
+
+    // Add a contour
+    inline void add_contour( const int_list contour )
+    {
+        poly.push_back( contour );
+    }
+
+    // Get a contour
+    inline int_list get_contour( const int i ) const
+    {
+        return poly[i];
+    }
+
+    // Delete a contour
+    inline void delete_contour( const int i )
+    {
+        idx_list_iterator start_poly = poly.begin();
+        poly.erase( start_poly + i );
+    }
+
+    // Add the specified node (index) to the polygon
+    inline void add_node( int contour, int n )
+    {
+        if ( contour >= (int)poly.size() ) {
+            // extend polygon
+            int_list empty_contour;
+            empty_contour.clear();
+            for ( int i = 0; i < contour - (int)poly.size() + 1; ++i ) {
+                poly.push_back( empty_contour );
+            }
+        }
+        poly[contour].push_back( n );
+    }
+
+    // return size
+    inline int contours() const
+    {
+        return poly.size();
+    }
+    inline int contour_size( int contour ) const
+    {
+        return poly[contour].size();
+    }
+    inline int total_size() const
+    {
+        int size = 0;
+
+        for ( int i = 0; i < contours(); ++i )
+            size += poly[i].size();
+        return size;
+    }
+
+    // return the ith point from the specified contour
+    inline int get_pt( int contour, int i ) const
+    {
+        return poly[contour][i];
+    }
+
+    // update the value of a point
+    inline void set_pt( int contour, int i, const int n )
+    {
+        poly[contour][i] = n;
+    }
+};
+// END TODO
+
+
+
 class TGSuperPoly {
 
 private:
@@ -46,7 +131,10 @@ std::string material;       // material/texture name
 TGPolygon   poly;           // master polygon
 TGPolygon   normals;        // corresponding normals
 TGPolygon   texcoords;      // corresponding texture coordinates
+
 TGPolygon   tris;           // triangulation
+TGPolyNodes tri_idxs;       // triangle node indexes
+
 point_list  face_normals;   // triangle normals
 std::string flag;           // For various potential record keeping needs
 
@@ -99,6 +187,29 @@ inline TGPolygon get_tris() const
 inline void set_tris( const TGPolygon &p )
 {
     tris = p;
+}
+
+inline TGPolyNodes get_tri_idxs() const
+{
+    return tri_idxs;
+}
+inline void set_tri_idxs( const TGPolyNodes &p )
+{
+    tri_idxs = p;
+}
+
+inline Point3D get_face_normal( int tri ) const
+{
+    return face_normals[tri];
+}
+
+inline point_list get_face_normals() const
+{
+    return face_normals;
+}
+inline void set_face_normals( const point_list &fns )
+{
+    face_normals = fns;
 }
 
 inline std::string get_flag() const

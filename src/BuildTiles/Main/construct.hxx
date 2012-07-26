@@ -130,6 +130,18 @@ private:
     // face normal list (for flat shading)
     point_list face_normals;
 
+private:
+    void LookupNodesPerVertex( void );
+    void LookupFacesPerNode( void );
+    void CalcFaceNormals( void );
+    void CalcPointNormals( void );
+
+    // Should be in superpoly?
+    void calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp );
+
+    // Where should this be?  Geometry library, I think...
+    double calc_tri_area( int_list& triangle_nodes );
+
 public:
 
     // Constructor

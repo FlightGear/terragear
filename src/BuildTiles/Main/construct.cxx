@@ -587,7 +587,7 @@ void TGConstruct::add_intermediate_nodes( ) {
             after   = current.total_size();
 
             if (before != after) {
-               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-juntions in " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
+               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
             }
 
             /* Save it back */
@@ -626,7 +626,8 @@ double TGConstruct::distanceSphere( const Point3D p1, const Point3D p2 ) {
 // hopefully, this will get better when we have the area lookup via superpoly...
 void TGConstruct::fix_point_heights()
 {
-    TGPolygon tri_poly;
+    //TGPolygon tri_poly;
+    TGPolyNodes tri_nodes;
     double e1, e2, e3, min;
     int    n1, n2, n3;
     Point3D p;
@@ -649,22 +650,27 @@ void TGConstruct::fix_point_heights()
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-                tri_poly.erase();
-           	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
+//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
+                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
 
-                for (int k=0; k< tri_poly.contours(); k++) {
-                    if (tri_poly.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_poly.contour_size(k) );
+//              for (int k=0; k< tri_poly.contours(); k++) {
+                for (int k=0; k< tri_nodes.contours(); k++) {
+//                  if (tri_poly.contour_size(k) != 3) {
+                    if (tri_nodes.contour_size(k) != 3) {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
                     }
 
-                    n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
+//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
+                    n1 = tri_nodes.get_pt( k, 0 );
                     e1 = nodes.get_node(n1).GetPosition().z();
 
-                    n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
+//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
+                    n2 = tri_nodes.get_pt( k, 1 );
                     e2 = nodes.get_node(n2).GetPosition().z();
 
-                    n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+                    n3 = tri_nodes.get_pt( k, 2 );
                     e3 = nodes.get_node(n3).GetPosition().z();
 
                     min = e1;
@@ -688,22 +694,29 @@ void TGConstruct::fix_point_heights()
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-           	    TGPolygon tri_poly = polys_clipped.superpolys[i][j].get_tris();
-                for (int k=0; k< tri_poly.contours(); k++) {
-                    if (tri_poly.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_poly.contour_size(k) );
+//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
+                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
+
+//              for (int k=0; k< tri_poly.contours(); k++) {
+                for (int k=0; k< tri_nodes.contours(); k++) {
+//                  if (tri_poly.contour_size(k) != 3) {
+                    if (tri_nodes.contour_size(k) != 3) {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
                     }
 
                     point_list raw_nodes = nodes.get_geod_nodes();
 
-                    n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
+//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
+                    n1 = tri_nodes.get_pt( k, 0 );
                     e1 = nodes.get_node(n1).GetPosition().z();
 
-                    n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
+//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
+                    n2 = tri_nodes.get_pt( k, 1 );
                     e2 = nodes.get_node(n2).GetPosition().z();
 
-                    n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+                    n3 = tri_nodes.get_pt( k, 2 );
                     e3 = nodes.get_node(n3).GetPosition().z();
 
                     min = e1;
@@ -731,22 +744,29 @@ void TGConstruct::fix_point_heights()
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-           	    TGPolygon tri_poly = polys_clipped.superpolys[i][j].get_tris();
-                for (int k=0; k< tri_poly.contours(); k++) {
-                    if (tri_poly.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_poly.contour_size(k) );
+//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
+                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
+
+//              for (int k=0; k< tri_poly.contours(); k++) {
+                for (int k=0; k< tri_nodes.contours(); k++) {
+//                  if (tri_poly.contour_size(k) != 3) {
+                    if (tri_nodes.contour_size(k) != 3) {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
                     }
 
                     point_list raw_nodes = nodes.get_geod_nodes();
 
-                    n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
+//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
+                    n1 = tri_nodes.get_pt( k, 0 );
                     e1 = nodes.get_node(n1).GetPosition().z();
 
-                    n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
+//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
+                    n2 = tri_nodes.get_pt( k, 1 );
                     e2 = nodes.get_node(n2).GetPosition().z();
 
-                    n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+                    n3 = tri_nodes.get_pt( k, 2 );
                     e3 = nodes.get_node(n3).GetPosition().z();
 
                     min = e1;
@@ -772,19 +792,26 @@ void TGConstruct::fix_point_heights()
 
         if ( is_ocean_area( (AreaType)i ) ) {
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-           	    TGPolygon tri_poly = polys_clipped.superpolys[i][j].get_tris();
+
+//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
+                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
 
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-                for (int k=0; k< tri_poly.contours(); k++) {
-                    if (tri_poly.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_poly.contour_size(k) );
+//              for (int k=0; k< tri_poly.contours(); k++) {
+                for (int k=0; k< tri_nodes.contours(); k++) {
+//                  if (tri_poly.contour_size(k) != 3) {
+                    if (tri_nodes.contour_size(k) != 3) {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
                     }
 
-                    n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
-                    n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
-                    n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
+                    n1 = tri_nodes.get_pt( k, 0 );
+//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
+                    n2 = tri_nodes.get_pt( k, 1 );
+//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
+                    n3 = tri_nodes.get_pt( k, 2 );
 
                     nodes.SetElevation( n1, 0.0 );
                     nodes.SetElevation( n2, 0.0 );
@@ -1253,20 +1280,8 @@ bool TGNodesSortByLon( const TGNode& n1, const TGNode& n2 )
     return ( n1.GetPosition().x() < n2.GetPosition().x() );
 }
 
-static void dump_nodes( TGNodes* nodes ) {
-    for (unsigned int i=0; i<nodes->size(); i++) {
-        TGNode node = nodes->get_node( i );
-        string fixed;
-        
-        if ( node.GetFixedPosition() ) {
-            fixed = " z is fixed elevation ";
-        } else {
-            fixed = " z is interpolated elevation ";
-        }
-
-        SG_LOG(SG_GENERAL, SG_ALERT, "Point[" << i << "] is " << node.GetPosition() << fixed );
-    }
-}
+// TODO : Add to TGNodes class
+#if 0
 
 static void dump_lat_nodes( TGConstruct& c, double lat ) {
     node_list all_nodes = c.get_nodes()->get_node_list();
@@ -1291,11 +1306,217 @@ static void dump_lat_nodes( TGConstruct& c, double lat ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Point[" << i << "] is " << sorted_nodes[i].GetPosition() << fixed );
     }
 }
+#endif
+
+// This function populates the Superpoly tri_idx polygon.
+// This polygon is a mirror of tris, except the verticies are 
+// indexes into the node array (cast as unsigned long)
+void TGConstruct::LookupNodesPerVertex( void )
+{
+    SG_LOG(SG_GENERAL, SG_ALERT, "LookupNodexPerVertex");
+
+    // for each node, traverse all the triangles - and create face lists
+    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; ++area ) {
+
+        for( unsigned int p = 0; p < polys_clipped.superpolys[area].size(); ++p ) {
+            TGPolygon   tris = polys_clipped.superpolys[area][p].get_tris();
+            TGPolyNodes tri_nodes;
+            int idx;
+
+            for (int tri=0; tri < tris.contours(); tri++) {
+
+                for (int vertex = 0; vertex < tris.contour_size(tri); vertex++) {
+                    idx = nodes.find( tris.get_pt( tri, vertex ) );
+                    if (idx >= 0) {
+                        tri_nodes.add_node( tri, idx );
+                    } else {
+                        exit(0);
+                    }
+                }
+            }
+            polys_clipped.superpolys[area][p].set_tri_idxs(tri_nodes);            
+        }
+    }
+}
+
+void TGConstruct::LookupFacesPerNode( void )
+{
+    SG_LOG(SG_GENERAL, SG_ALERT, "LookupFacesPerNode");
+    int five_percent = nodes.size()/20;
+
+    for (unsigned int n=0; n<nodes.size(); n++) {
+        // for each node, traverse all the triangles - and create face lists
+        for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; ++area ) {
+
+            for( unsigned int p = 0; p < polys_clipped.superpolys[area].size(); ++p ) {
+                TGPolyNodes tri_nodes = polys_clipped.superpolys[area][p].get_tri_idxs();
+
+                for (int tri=0; tri < tri_nodes.contours(); tri++) {
+
+                    for (int sub = 0; sub < tri_nodes.contour_size(tri); sub++) {
+
+                        if ( n == (unsigned int)tri_nodes.get_pt( tri, sub ) ) {
+                            nodes.AddFace( n, area, p, tri );
+                        }
+                    }
+                }
+            }
+        }
+
+        if (n % five_percent == 0) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "   " << n*5 / five_percent << "% complete" );
+        }            
+    }
+}
+
+double TGConstruct::calc_tri_area( int_list& triangle_nodes ) {
+    Point3D p1 = nodes.get_node( triangle_nodes[0] ).GetPosition();
+    Point3D p2 = nodes.get_node( triangle_nodes[1] ).GetPosition();
+    Point3D p3 = nodes.get_node( triangle_nodes[2] ).GetPosition();
+
+    return triangle_area( p1, p2, p3 );
+}
+
+void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
+    // for each face in the superpoly, calculate a face normal
+    SGVec3d v1, v2, normal;
+    TGPolyNodes tri_nodes = sp.get_tri_idxs();
+    int_list    face_nodes;
+    point_list  face_normals;
+
+    face_normals.clear();
+
+    for (int i=0; i<tri_nodes.contours(); i++) {
+        face_nodes = tri_nodes.get_contour(i);
+
+        Point3D p1 = wgs84_nodes[ face_nodes[0] ];
+        Point3D p2 = wgs84_nodes[ face_nodes[1] ];
+        Point3D p3 = wgs84_nodes[ face_nodes[2] ];
+
+        // do some sanity checking.  With the introduction of landuse
+        // areas, we can get some long skinny triangles that blow up our
+        // "normal" calculations here.  Let's check for really small
+        // triangle areas and check if one dimension of the triangle
+        // coordinates is nearly coincident.  If so, assign the "default"
+        // normal of straight up.
+
+        bool degenerate = false;
+        const double area_eps = 1.0e-12;
+        double area = calc_tri_area( face_nodes );
+        // cout << "   area = " << area << endl;
+        if ( area < area_eps ) {
+            degenerate = true;
+        }
+
+        // cout << "  " << p1 << endl;
+        // cout << "  " << p2 << endl;
+        // cout << "  " << p3 << endl;
+        if ( fabs(p1.x() - p2.x()) < SG_EPSILON && fabs(p1.x() - p3.x()) < SG_EPSILON ) {
+            degenerate = true;
+        }
+        if ( fabs(p1.y() - p2.y()) < SG_EPSILON && fabs(p1.y() - p3.y()) < SG_EPSILON ) {
+            degenerate = true;
+        }
+        if ( fabs(p1.z() - p2.z()) < SG_EPSILON && fabs(p1.z() - p3.z()) < SG_EPSILON ) {
+            degenerate = true;
+        }
+
+        if ( degenerate ) {
+            normal = normalize(SGVec3d(p1.x(), p1.y(), p1.z()));
+	        SG_LOG(SG_GENERAL, SG_ALERT, "Degenerate tri!");
+        } else {
+        	v1[0] = p2.x() - p1.x();
+        	v1[1] = p2.y() - p1.y();
+        	v1[2] = p2.z() - p1.z();
+        	v2[0] = p3.x() - p1.x();
+        	v2[1] = p3.y() - p1.y();
+        	v2[2] = p3.z() - p1.z();
+        	normal = normalize(cross(v1, v2));
+        }
+        
+
+        face_normals.push_back( Point3D::fromSGVec3( normal ) );
+    }
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "calculated " << face_normals.size() << " face normals ");
+
+    sp.set_face_normals( face_normals );
+}
+
+void TGConstruct::CalcFaceNormals( void )
+{
+    // traverse the superpols, and calc normals for each tri within
+    SG_LOG(SG_GENERAL, SG_ALERT, "Calculating face normals");
+
+    point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
+
+    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
+        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
+            SG_LOG( SG_CLIPPER, SG_INFO, "Calculating face normals for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_in.superpolys[i].size() );                       
+
+            calc_normals( wgs84_nodes, polys_clipped.superpolys[i][j] );
+            point_list fns = polys_clipped.superpolys[i][j].get_face_normals();
+
+            SG_LOG(SG_GENERAL, SG_ALERT, "SP " << i << "," << j << " has " << fns.size() << " face normals ");
+        }
+    }
+
+    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
+        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
+            point_list fns = polys_clipped.superpolys[i][j].get_face_normals();
+            SG_LOG(SG_GENERAL, SG_ALERT, "SP " << i << "," << j << " has " << fns.size() << " face normals ");
+        }
+    }
+}
+
+void TGConstruct::CalcPointNormals( void )
+{
+    // traverse triangle structure building the face normal table
+    SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals");
+
+    Point3D normal;
+    point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
+
+    for ( unsigned int i = 0; i<nodes.size(); i++ ) {
+        TGNode node       = nodes.get_node( i );
+        TGFaceList faces  = node.GetFaces();
+        double total_area = 0.0;
+
+        Point3D average( 0.0 );
+
+        // for each triangle that shares this node
+        for ( unsigned int j = 0; j < faces.size(); ++j ) {
+            unsigned int at   = faces[j].area;
+            unsigned int poly = faces[j].poly;
+            unsigned int tri  = faces[j].tri;
+            int_list     face_nodes;
+
+            normal     = polys_clipped.superpolys[at][poly].get_face_normal( tri );
+            face_nodes = polys_clipped.superpolys[at][poly].get_tri_idxs().get_contour( tri ) ;
+
+            double area = calc_tri_area( face_nodes );
+            normal *= area;	// scale normal weight relative to area
+            total_area += area;
+            average += normal;
+            // cout << normal << endl;
+        }
+
+        average /= total_area;
+        //cout << "average = " << average << endl;
+
+        nodes.SetNormal( i, average );
+    }
+}
 
 // master construction routine
+// TODO : Split each step into its own function, and move 
+//        into seperate files by major functionality
+//        loading, clipping, tesselating, normals, and output
+//        Also, we are still calculating some thing more than one 
+//        (like face area - need to move this into superpoly )
 void TGConstruct::construct_bucket( SGBucket b ) {
 
-    sprintf(ds_name, "./construct_debug_%d", b.gen_index() );
+    sprintf(ds_name, "./construct_debug_%ld", b.gen_index() );
     ds_id = tgShapefileOpenDatasource( ds_name );
 
     bucket = b;
@@ -1326,18 +1547,16 @@ void TGConstruct::construct_bucket( SGBucket b ) {
 
     // do clipping
     SG_LOG(SG_GENERAL, SG_ALERT, "clipping polygons");
-
     clip_all(min, max); 
 
 //    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER CLIPPING" );    
-//    dump_nodes( c );
+//    nodes.Dump();
 
     // Make sure we have the elavation nodes in the main node database
     // I'd like to do this first, but we get initial tgnodes from clipper
     point_list corner_list = array.get_corner_list();
     if ( corner_list.size() == 0 ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "corner list is 0 " );
-        // exit(0);    
     }
 
     for (unsigned int i=0; i<corner_list.size(); i++) {
@@ -1366,7 +1585,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
     m.add_shared_nodes( this );
 
 //    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER ADDING SHARED EDGES" );    
-//    dump_nodes( c );
+//    nodes.Dump();
         
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
@@ -1391,7 +1610,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
     clean_clipped_polys();
 
 //    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER ADDING CLIPPED POLYS" );    
-//    dump_nodes( c );
+//    nodes.Dump();
 
     // tesselate the polygons and prepair them for final output
     point_list extra = nodes.get_geod_nodes();
@@ -1401,6 +1620,7 @@ void TGConstruct::construct_bucket( SGBucket b ) {
 
            SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << "(" << i << ") :" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
 
+#if 0
             if ( (i == 3) && (j == 137) ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Error Poly\n" << poly );     
 
@@ -1413,21 +1633,10 @@ void TGConstruct::construct_bucket( SGBucket b ) {
                 // close befoe the crash
                 tgShapefileCloseDatasource( ds_id );
             }
+#endif
 
             TGPolygon tri = polygon_tesselate_alt_with_extra( poly, extra, false );
-            TGPolygon tc;
-
-            if ( polys_clipped.superpolys[i][j].get_flag() == "textured" ) {
-                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
-                // tc = linear_tex_coords( tri, clipped_polys.texparams[i][j] );
-                tc = area_tex_coords( tri );
-            } else {
-                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
-                tc = area_tex_coords( tri );
-            }
-
             polys_clipped.superpolys[i][j].set_tris( tri );
-      	    polys_clipped.superpolys[i][j].set_texcoords( tc );
         }
     }
 
@@ -1444,32 +1653,29 @@ void TGConstruct::construct_bucket( SGBucket b ) {
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST BEFORE FLATTEN" );    
-    dump_nodes( get_nodes() );
+//    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST BEFORE FLATTEN" );    
+//    nodes.Dump();
 
-    // Step 7) Flatten
+    // Step 7 : Generate triangle vertex to node index lists
+    LookupNodesPerVertex();
+
+    // Step 8) Flatten
     fix_point_heights();
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER FLATTEN" );    
-    dump_nodes( get_nodes() );
+//    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER FLATTEN" );    
+//    nodes.Dump();
+    
+    // Step 8) Generate face_connected list
+    LookupFacesPerNode();
+    nodes.Dump();
+
+    // Step 9 - Calculate Face Normals
+    CalcFaceNormals();
+
+    // Step 10 - Calculate Point Normals
+    CalcPointNormals();
 
 #if 0
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "REVERSE ELE LOOKUP ");
-
-    // Step 9) Generate face_connected list
-    // build the node -> element (triangle) reverse lookup table
-    c.set_reverse_ele_lookup( gen_node_ele_lookup_table( c ) );
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "FACE NORMALS ");
-
-    // Step 10) Generate Face normals
-    // build the face normal list
-    c.set_face_normals( gen_face_normals( c ) );
-
-    // Step 11) Generate node normals
-    // calculate the normals for each point in wgs84_nodes
-    c.set_point_normals( gen_point_normals( c ) );
 
     if ( c.get_cover().size() > 0 ) {
         // Now for all the remaining "default" land cover polygons, assign
@@ -1482,6 +1688,28 @@ void TGConstruct::construct_bucket( SGBucket b ) {
 
     // Step 13) Sort the triangle list by material (optional)
 #endif
+
+    // Calc texture coordinates
+    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
+        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
+            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
+
+            SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)i ) << "(" << i << ") :" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
+
+            TGPolygon tri = polys_clipped.superpolys[i][j].get_tris();
+            TGPolygon tc;
+
+            if ( polys_clipped.superpolys[i][j].get_flag() == "textured" ) {
+                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
+                // tc = linear_tex_coords( tri, clipped_polys.texparams[i][j] );
+                tc = area_tex_coords( tri );
+            } else {
+                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
+                tc = area_tex_coords( tri );
+            }
+      	    polys_clipped.superpolys[i][j].set_texcoords( tc );
+        }
+    }
 
     // write shared data
     m.split_tile( bucket, this );
@@ -1520,48 +1748,28 @@ void TGConstruct::construct_bucket( SGBucket b ) {
     int_list pt_n, tri_n, strip_n;
     int_list tri_tc, strip_tc;
 
-    // calculate "the" normal for this tile
-    // temporary - generate a single normal
-    Point3D p;
-    p.setx( bucket.get_center_lon() * SGD_DEGREES_TO_RADIANS );
-    p.sety( bucket.get_center_lat() * SGD_DEGREES_TO_RADIANS );
-    p.setz( 0 );
-    Point3D vnt = sgGeodToCart( p );
-    
-    SGVec3d tmp( vnt.x(), vnt.y(), vnt.z() );
-    tmp = normalize(tmp);
-    Point3D vn( tmp.x(), tmp.y(), tmp.z() );
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "found normal for this airport = " << tmp);
-
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
         // only tesselate non holes
         if ( !is_hole_area( i ) ) {
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Ouput nodes for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );                       
 
-            	TGPolygon tri_poly = polys_clipped.superpolys[i][j].get_tris();
-            	TGPolygon tri_txs  = polys_clipped.superpolys[i][j].get_texcoords();
-            	string material    = polys_clipped.superpolys[i][j].get_material();
+            	TGPolyNodes tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
+            	TGPolygon   tri_txs   = polys_clipped.superpolys[i][j].get_texcoords();
+            	string      material  = polys_clipped.superpolys[i][j].get_material();
 
-            	for (int k = 0; k < tri_poly.contours(); ++k) 
+            	for (int k = 0; k < tri_nodes.contours(); ++k) 
                 {
         	        tri_v.clear();
         	        tri_n.clear();
         	        tri_tc.clear();
-        	        for (int l = 0; l < tri_poly.contour_size(k); ++l) 
+        	        for (int l = 0; l < tri_nodes.contour_size(k); ++l) 
                     {
-            		    p = tri_poly.get_pt( k, l );
-            		    index = nodes.find( p );
-                        if (index < 0) { 
-                            SG_LOG(SG_GENERAL, SG_ALERT, "NODE NOT FOUND " << p);
-                            exit(0);
-                        }
-
+                        index = tri_nodes.get_pt( k, l );
             		    tri_v.push_back( index );
     
-                		// use 'the' normal
-                		index = normals.unique_add( vn );
+                        // add the node's normal
+                		index = normals.unique_add( nodes.GetNormal( index ) );
                 		tri_n.push_back( index );
     
                 		Point3D tc = tri_txs.get_pt( k, l );
@@ -1651,15 +1859,6 @@ void TGConstruct::construct_bucket( SGBucket b ) {
     {
         throw sg_exception("error writing file. :-(");
     }
-
-// TEMP TEMP TEMP TEMP
-
-#if 0
-    // Step 14) Generate the output    
-    // generate the output
-    TGGenOutput output;
-    do_output( c, output );
-#endif
 
     // Step 15) Adding custome objects to the .stg file
     // collect custom objects and move to scenery area

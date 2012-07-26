@@ -97,40 +97,29 @@ point_list TGNodes::get_geod_nodes( void ) const {
 }
 
 std::vector< SGVec3d > TGNodes::get_wgs84_nodes_as_SGVec3d( void ) const {
-    std::vector< SGVec3d > points;
-    Point3D    pos;
     const_node_list_iterator current, last;
+    std::vector< SGVec3d > points;
 
     current = tg_node_list.begin();
     last    = tg_node_list.end();
 
     for ( ; current != last; ++current ) {
-        pos = (*current).GetPosition();
-    
-        SGGeod  geod = SGGeod::fromDegM( pos.x(), pos.y(), pos.z() );
-        SGVec3d cart = SGVec3d::fromGeod(geod);
-
-        points.push_back( cart );
+        points.push_back( (*current).GetWgs84AsSGVec3d() );
     }
         
     return points;
 }
 
+
 point_list TGNodes::get_wgs84_nodes_as_Point3d( void ) const {
-    point_list points;
-    Point3D    pos;
     const_node_list_iterator current, last;
+    point_list points;
 
     current = tg_node_list.begin();
     last    = tg_node_list.end();
 
     for ( ; current != last; ++current ) {
-        pos = (*current).GetPosition();
-    
-        SGGeod  geod = SGGeod::fromDegM( pos.x(), pos.y(), pos.z() );
-        SGVec3d cart = SGVec3d::fromGeod(geod);
-
-        points.push_back( Point3D::fromSGVec3( cart ) );
+        points.push_back( (*current).GetWgs84AsPoint3D() );
     }
         
     return points;
@@ -166,6 +155,27 @@ point_list TGNodes::get_normals( void ) const {
     }
         
     return points;
+}
+
+void TGNodes::Dump( void ) {
+    for (unsigned int i=0; i<tg_node_list.size(); i++) {
+        TGNode node = tg_node_list[ i ];
+        std::string fixed;
+        
+        if ( node.GetFixedPosition() ) {
+            fixed = " z is fixed elevation ";
+        } else {
+            fixed = " z is interpolated elevation ";
+        }
+
+        SG_LOG(SG_GENERAL, SG_ALERT, "Point[" << i << "] is " << node.GetPosition() << fixed );
+        if ( node.GetFaces().size() ) {
+            TGFaceList faces = node.GetFaces();
+            for (unsigned int j=0; j<faces.size(); j++) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "\tface " << faces[j].area << "," << faces[j].poly << "," << faces[j].tri );
+            }
+        }
+    }
 }
 
 #if 0
