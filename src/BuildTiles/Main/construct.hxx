@@ -83,6 +83,9 @@ public:
     }
 };
 
+// forward declaration
+class TGMatch;
+
 class TGConstruct {
 
 private:
@@ -126,52 +129,69 @@ private:
     // All Nodes
     TGNodes nodes;
 
-    // TODO : Add to superpoly
-    // face normal list (for flat shading)
-    point_list face_normals;
-
+    // SHared Edges match data
+    TGMatch match;
+ 
 private:
+    // Load Data
+    void LoadElevationArray( void );
+    int  LoadLandclassPolys( void );
+    // Load Data Helpers
+    bool load_poly(const std::string& path);
+    bool load_osgb36_poly(const std::string& path);
+    void add_poly(int area, const TGPolygon &poly, std::string material);
+
+    // Clip Data
+    bool ClipLandclassPolys( void );
+    // Clip Helpers
+    void move_slivers( TGPolygon& in, TGPolygon& out );
+    void merge_slivers( TGPolyList& clipped, poly_list& slivers_list );
+
+    // Shared edge Matching
+    void LoadSharedEdgeData( void );
+    void SaveSharedEdgeData( void );    
+
+    // Polygon Cleaning
+    void FixTJunctions( void );
+    void clean_clipped_polys( void );
+
+    // Tesselation
+    void TesselatePolys( void );
+
+    // Elevation and Flattening
+    void   CalcElevations( void );
+
+    // Normals and texture coords
     void LookupNodesPerVertex( void );
     void LookupFacesPerNode( void );
     void CalcFaceNormals( void );
     void CalcPointNormals( void );
+    void CalcTextureCoordinates( void );
+    // Helpers
+    TGPolygon linear_tex_coords( const TGPolygon& tri, const TGTexParams& tp );
+    TGPolygon area_tex_coords( const TGPolygon& tri );
 
-    // Should be in superpoly?
+    // Output
+    void WriteBtgFile( void );
+    void AddCustomObjects( void );
+
+    // Misc
     void calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp );
-
-    // Where should this be?  Geometry library, I think...
     double calc_tri_area( int_list& triangle_nodes );
 
 public:
-
     // Constructor
     TGConstruct();
 
     // Destructor
     ~TGConstruct();
     
-    void construct_bucket( SGBucket b );
-    bool load_array();
-    int  load_polys();
-    bool load_poly(const std::string& path);
-    bool load_osgb36_poly(const std::string& path);
-    void add_poly(int area, const TGPolygon &poly, std::string material);
+    void ConstructBucket( SGBucket b );
 
-    void move_slivers( TGPolygon& in, TGPolygon& out );
-    void merge_slivers( TGPolyList& clipped, poly_list& slivers_list );
-
-    bool clip_all(const point2d& min, const point2d& max);
-
-    void add_intermediate_nodes(void);
-    void clean_clipped_polys(void);
 
     void calc_gc_course_dist( const Point3D& start, const Point3D& dest, 
                               double *course, double *dist );
     double distanceSphere( const Point3D p1, const Point3D p2 );
-    void   fix_point_heights();
-
-    TGPolygon linear_tex_coords( const TGPolygon& tri, const TGTexParams& tp );
-    TGPolygon area_tex_coords( const TGPolygon& tri );
 
     int      load_landcover ();
     void     add_to_polys( TGPolygon &accum, const TGPolygon &poly);
@@ -180,8 +200,6 @@ public:
     void make_area( const LandCover &cover, TGPolygon *polys,
                     double x1, double y1, double x2, double y2,
                     double half_dx, double half_dy );
-
-    void do_custom_objects(void);
 
     // land cover file
     inline std::string get_cover () const { return cover; }
@@ -217,8 +235,8 @@ public:
     inline point_list get_geod_nodes() const { return nodes.get_geod_nodes(); }
 
     // face normal list (for flat shading)
-    inline point_list get_face_normals() const { return face_normals; }
-    inline void set_face_normals( point_list n ) { face_normals = n; }
+//    inline point_list get_face_normals() const { return face_normals; }
+//    inline void set_face_normals( point_list n ) { face_normals = n; }
 
     // normal list (for each point) in cart coords (for smooth
     // shading)

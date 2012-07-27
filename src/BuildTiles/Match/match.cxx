@@ -28,17 +28,18 @@
 #include <simgear/compiler.h>
 #include <Geometry/point3d.hxx>
 #include <Geometry/tg_nodes.hxx>
+#include <Polygon/point2d.hxx>
+#include "match.hxx"
+#include <Main/construct.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sgstream.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include "match.hxx"
-
 #include <stdlib.h>
 
-using std::cout;
-using std::endl;
+//using std::cout;
+//using std::endl;
 using std::string;
 
 TGMatch::TGMatch( void ) {
@@ -55,15 +56,15 @@ void TGMatch::scan_share_file( const string& dir, const SGBucket& b,
 {
     string file = dir + "/"  + b.gen_base_path() + "/" + b.gen_index_str();
 
-    cout << "reading shared data from " << file << endl;
+//    cout << "reading shared data from " << file << endl;
 
     sg_gzifstream in( file );
     if ( !in.is_open() ) {
-        cout << "Cannot open file: " << file << endl;
+//        cout << "Cannot open file: " << file << endl;
 	return;
     }
 
-    cout << "open successful." << endl;
+//    cout << "open successful." << endl;
 
     string target;
     if ( search == SW_Corner ) {
@@ -202,7 +203,7 @@ void TGMatch::load_shared( SGBucket b, string base, neighbor_type n ) {
 // load any previously existing shared data from all neighbors (if
 // shared data for a component exists set that components flag to true
 void TGMatch::load_neighbor_shared( SGBucket b, string work ) {
-    cout << "Loading existing shared data from neighbor tiles" << endl;
+//    cout << "Loading existing shared data from neighbor tiles" << endl;
 
     string base = work + "/Shared/";
 
@@ -225,6 +226,7 @@ void TGMatch::load_neighbor_shared( SGBucket b, string work ) {
     load_shared( b, base, EAST );
     load_shared( b, base, WEST );
 
+#if 0
     cout << "Shared data read in:" << endl;
     if ( sw_flag ) {
 	cout << "  sw corner = " << sw_node << endl;
@@ -266,6 +268,7 @@ void TGMatch::load_neighbor_shared( SGBucket b, string work ) {
 	    cout << "    " << west_nodes[i] << endl;
 	}
     }
+#endif
 }
 
 // try to load any missing shared data from our own shared data file
@@ -318,7 +321,7 @@ Point3D tgFakeNormal( const Point3D& p ) {
     double len = Point3D(0.0).distance3D(cart);
     // cout << "len = " << len << endl;
     cart /= len;
-    cout << "new fake normal = " << cart << endl;
+    // cout << "new fake normal = " << cart << endl;
 
     return cart;
 }
@@ -331,8 +334,8 @@ Point3D tgFakeNormal( const Point3D& p ) {
 void TGMatch::split_tile( SGBucket b, TGConstruct* c ) {
     int i;
 
-    cout << "Spliting tile" << endl;
-    cout << "  extracting (shared) edge nodes and normals" << endl;
+    //cout << "Spliting tile" << endl;
+    //cout << "  extracting (shared) edge nodes and normals" << endl;
 
     // calculate tile boundaries
     point2d min, max;
@@ -505,8 +508,7 @@ void TGMatch::split_tile( SGBucket b, TGConstruct* c ) {
 
 // write the new shared edge points, normals, and segments for this
 // tile
-void TGMatch::write_shared( SGBucket b, TGConstruct* c ) {
-    string base = c->get_work_base();
+void TGMatch::write_shared( SGBucket b, string base ) {
 
     string dir = base + "/Shared/" + b.gen_base_path();
     string file = dir + "/" + b.gen_index_str();
@@ -515,9 +517,10 @@ void TGMatch::write_shared( SGBucket b, TGConstruct* c ) {
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
 
-    cout << "shared data will be written to " << file << endl;
+    //cout << "shared data will be written to " << file << endl;
 
 
+#if 0
     cout << "FLAGS" << endl;
     cout << "=====" << endl;
     cout << "sw_flag = " << sw_flag << endl;
@@ -528,10 +531,11 @@ void TGMatch::write_shared( SGBucket b, TGConstruct* c ) {
     cout << "south_flag = " << south_flag << endl;
     cout << "east_flag = " << east_flag << endl;
     cout << "west_flag = " << west_flag << endl;
+#endif
 
     FILE *fp;
     if ( (fp = fopen( file.c_str(), "w" )) == NULL ) {
-	cout << "ERROR: opening " << file << " for writing!" << endl;
+//	cout << "ERROR: opening " << file << " for writing!" << endl;
 	exit(-1);
     }
 
@@ -687,7 +691,7 @@ void TGMatch::add_shared_nodes( TGConstruct* c ) {
     TGNodes* nodes;
     nodes = c->get_nodes();
 
-    cout << " BEFORE ADDING SHARED NODES: " << nodes->size() << endl;
+//    cout << " BEFORE ADDING SHARED NODES: " << nodes->size() << endl;
 
     if ( sw_flag ) {
         nodes->unique_add_fixed_elevation( sw_node );
@@ -729,7 +733,7 @@ void TGMatch::add_shared_nodes( TGConstruct* c ) {
         }
     }
     
-    cout << " AFTER ADDING SHARED NODES: " << nodes->size() << endl;
+//    cout << " AFTER ADDING SHARED NODES: " << nodes->size() << endl;
 }
 
 // reassemble the tile pieces (combining the shared data and our own
@@ -758,9 +762,9 @@ void TGMatch::assemble_tile( TGConstruct* c ) {
     int nw_index = new_nodes.unique_add( nw_node );
     insert_normal( new_normals, nw_normal, nw_index );
 
-    cout << "after adding corners:" << endl;
-    cout << "  new_nodes = " << new_nodes.size() << endl;
-    cout << "  new normals = " << new_normals.size() << endl;
+//    cout << "after adding corners:" << endl;
+//    cout << "  new_nodes = " << new_nodes.size() << endl;
+//    cout << "  new normals = " << new_normals.size() << endl;
 
     // add the edge points
 
@@ -790,9 +794,9 @@ void TGMatch::assemble_tile( TGConstruct* c ) {
 	insert_normal( new_normals, west_normals[i], index );
     }
 
-    cout << "after adding edges:" << endl;
-    cout << "  new_nodes = " << new_nodes.size() << endl;
-    cout << "  new normals = " << new_normals.size() << endl;
+//    cout << "after adding edges:" << endl;
+//    cout << "  new_nodes = " << new_nodes.size() << endl;
+//    cout << "  new normals = " << new_normals.size() << endl;
 
     // add the body points
     for ( i = 0; i < (int)body_nodes.size(); ++i ) {
@@ -800,9 +804,9 @@ void TGMatch::assemble_tile( TGConstruct* c ) {
 	insert_normal( new_normals, body_normals[i], index );
     }
 
-    cout << "after adding body points:" << endl;
-    cout << "  new_nodes = " << new_nodes.size() << endl;
-    cout << "  new normals = " << new_normals.size() << endl;
+//    cout << "after adding body points:" << endl;
+//    cout << "  new_nodes = " << new_nodes.size() << endl;
+//    cout << "  new normals = " << new_normals.size() << endl;
 
     // add the edge segments
     new_segs.unique_divide_and_add( new_nodes.get_node_list(),
@@ -813,9 +817,10 @@ void TGMatch::assemble_tile( TGConstruct* c ) {
 				    TGTriSeg(ne_index, nw_index, 1) );
     new_segs.unique_divide_and_add( new_nodes.get_node_list(),
 				    TGTriSeg(nw_index, sw_index, 1) );
-    cout << "after adding edge segments:" << endl;
-    cout << "  new_nodes = " << new_nodes.size() << endl;
-    cout << "  new normals = " << new_normals.size() << endl;
+
+//    cout << "after adding edge segments:" << endl;
+//    cout << "  new_nodes = " << new_nodes.size() << endl;
+//    cout << "  new normals = " << new_normals.size() << endl;
 
     // add the body segments
 
@@ -840,16 +845,16 @@ void TGMatch::assemble_tile( TGConstruct* c ) {
 	// their new index)
 	n1 = new_nodes.unique_add( p1 );
 	if ( n1 >= (int)new_normals.size() ) {
-	    cout << "Adding a segment resulted in a new node, faking a normal" 
-		 << endl;
+//	    cout << "Adding a segment resulted in a new node, faking a normal" 
+//		 << endl;
 	    Point3D fake = tgFakeNormal( p1 );
 	    insert_normal( new_normals, fake, n1 );
 	}
 
 	n2 = new_nodes.unique_add( p2 );
 	if ( n2 >= (int)new_normals.size() ) {
-	    cout << "Adding a segment resulted in a new node, faking a normal" 
-		 << endl;
+//	    cout << "Adding a segment resulted in a new node, faking a normal" 
+//		 << endl;
 	    Point3D fake = tgFakeNormal( p2 );
 	    insert_normal( new_normals, fake, n2 );
 	}

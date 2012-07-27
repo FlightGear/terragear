@@ -29,13 +29,21 @@
 # error This library requires C++
 #endif                                   
 
+#include <string>
+#include <vector>
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/bucket/newbucket.hxx>
 
-#include <Main/construct.hxx>
+// TO REMOVE
+#include <Geometry/trieles.hxx>
+#include <Geometry/trinodes.hxx>
+#include <Geometry/trisegs.hxx>
+// TO REMOVE
 
+// Forward Declaration
+class TGConstruct;
 
 class TGMatch {
 
@@ -107,7 +115,7 @@ public:
 
     // write the new shared edge points, normals, and segments for
     // this tile
-    void write_shared( SGBucket b, TGConstruct* c );
+    void write_shared( SGBucket b, std::string base );
 
     // reassemble the tile pieces (combining the shared data and our
     // own data)

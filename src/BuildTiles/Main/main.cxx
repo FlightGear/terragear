@@ -60,6 +60,9 @@
 #include <Geometry/poly_support.hxx>
 #include <landcover/landcover.hxx>
 
+// TODO : Get rid of match...
+#include <Match/match.hxx>
+
 #include "construct.hxx"
 #include "usgs.hxx"
 
@@ -133,196 +136,6 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
             c.set_tri_attribute( i, new_area );
         }
     }
-}
-#endif
-
-#if 0
-// build the node -> element (triangle) reverse lookup table.  there
-// is an entry for each point containing a list of all the triangles
-// that share that point.
-static belongs_to_list gen_node_ele_lookup_table( TGConstruct& c ) {
-    belongs_to_list reverse_ele_lookup;
-    reverse_ele_lookup.clear();
-
-    int_list ele_list;
-    ele_list.clear();
-
-    // initialize reverse_ele_lookup structure by creating an empty
-    // list for each point
-    point_list wgs84_nodes = c.get_wgs84_nodes();
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "there are " << wgs84_nodes.size() << " wgs84 nodes" );
-
-    const_point_list_iterator w_current = wgs84_nodes.begin();
-    const_point_list_iterator w_last = wgs84_nodes.end();
-    for ( ; w_current != w_last; ++w_current ) {
-        reverse_ele_lookup.push_back( ele_list );
-    }
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "1 " );
-
-    // traverse triangle structure building reverse lookup table
-    triele_list tri_elements = c.get_tri_elements();
-    const_triele_list_iterator current = tri_elements.begin();
-    const_triele_list_iterator last = tri_elements.end();
-    int counter = 0;
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "2 " );
-
-    for ( ; current != last; ++current ) {
-
-        //SG_LOG(SG_GENERAL, SG_ALERT, "CURRENT " << current );
-//        SG_LOG(SG_GENERAL, SG_ALERT, "N1: " << current->get_n1() << " N2: " << current->get_n2() << " N3: " << current->get_n3() );
-        
-        reverse_ele_lookup[ current->get_n1() ].push_back( counter );
-        reverse_ele_lookup[ current->get_n2() ].push_back( counter );
-        reverse_ele_lookup[ current->get_n3() ].push_back( counter );
-        ++counter;
-    }
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "3 " );
-
-    return reverse_ele_lookup;
-}
-#endif
-
-// caclulate the area for the specified triangle face
-static double tri_ele_area( const TGConstruct& c, const TGTriEle tri ) {
-    point_list nodes = c.get_geod_nodes();
-
-    Point3D p1 = nodes[ tri.get_n1() ];
-    Point3D p2 = nodes[ tri.get_n2() ];
-    Point3D p3 = nodes[ tri.get_n3() ];
-
-    return triangle_area( p1, p2, p3 );
-}
-
-#if 0
-// caclulate the normal for the specified triangle face
-static Point3D calc_normal( TGConstruct& c, int i ) {
-    SGVec3d v1, v2, normal;
-
-    point_list wgs84_nodes = c.get_wgs84_nodes();
-    triele_list tri_elements = c.get_tri_elements();
-
-    Point3D p1 = wgs84_nodes[ tri_elements[i].get_n1() ];
-    Point3D p2 = wgs84_nodes[ tri_elements[i].get_n2() ];
-    Point3D p3 = wgs84_nodes[ tri_elements[i].get_n3() ];
-
-    // do some sanity checking.  With the introduction of landuse
-    // areas, we can get some long skinny triangles that blow up our
-    // "normal" calculations here.  Let's check for really small
-    // triangle areas and check if one dimension of the triangle
-    // coordinates is nearly coincident.  If so, assign the "default"
-    // normal of straight up.
-
-    bool degenerate = false;
-    const double area_eps = 1.0e-12;
-    double area = tri_ele_area( c, tri_elements[i] );
-    // cout << "   area = " << area << endl;
-    if ( area < area_eps ) {
-        degenerate = true;
-    }
-
-    // cout << "  " << p1 << endl;
-    // cout << "  " << p2 << endl;
-    // cout << "  " << p3 << endl;
-    if ( fabs(p1.x() - p2.x()) < SG_EPSILON && fabs(p1.x() - p3.x()) < SG_EPSILON ) {
-        degenerate = true;
-    }
-    if ( fabs(p1.y() - p2.y()) < SG_EPSILON && fabs(p1.y() - p3.y()) < SG_EPSILON ) {
-        degenerate = true;
-    }
-    if ( fabs(p1.z() - p2.z()) < SG_EPSILON && fabs(p1.z() - p3.z()) < SG_EPSILON ) {
-        degenerate = true;
-    }
-
-    if ( degenerate ) {
-        normal = normalize(SGVec3d(p1.x(), p1.y(), p1.z()));
-	    SG_LOG(SG_GENERAL, SG_ALERT, "Degenerate tri!");
-    } else {
-    	v1[0] = p2.x() - p1.x();
-    	v1[1] = p2.y() - p1.y();
-    	v1[2] = p2.z() - p1.z();
-    	v2[0] = p3.x() - p1.x();
-    	v2[1] = p3.y() - p1.y();
-    	v2[2] = p3.z() - p1.z();
-    	normal = normalize(cross(v1, v2));
-    }
-
-    return Point3D( normal[0], normal[1], normal[2] );
-}
-#endif
-
-#if 0
-// build the face normal list
-static point_list gen_face_normals( TGConstruct& c ) {
-    point_list face_normals;
-
-    // traverse triangle structure building the face normal table
-    SG_LOG(SG_GENERAL, SG_ALERT, "calculating face normals");
-
-    triele_list tri_elements = c.get_tri_elements();
-    for ( int i = 0; i < (int)tri_elements.size(); i++ ) {
-        Point3D p = calc_normal(c,  i );
-        //cout << p << endl;
-        face_normals.push_back( p );
-    }
-
-    return face_normals;
-}
-#endif
-
-#if 0
-// calculate the normals for each point in wgs84_nodes
-static point_list gen_point_normals( TGConstruct& c ) {
-    point_list point_normals;
-
-    Point3D normal;
-    SG_LOG(SG_GENERAL, SG_ALERT, "calculating node normals");
-
-    point_list wgs84_nodes = c.get_wgs84_nodes();
-    belongs_to_list reverse_ele_lookup = c.get_reverse_ele_lookup();
-    point_list face_normals = c.get_face_normals();
-    triele_list tri_elements = c.get_tri_elements();
-
-    // for each node
-    for ( int i = 0; i < (int)wgs84_nodes.size(); ++i ) {
-        int_list tri_list = reverse_ele_lookup[i];
-        double total_area = 0.0;
-
-        Point3D average( 0.0 );
-
-        // for each triangle that shares this node
-        for ( int j = 0; j < (int)tri_list.size(); ++j ) {
-            normal = face_normals[ tri_list[j] ];
-            double area = tri_ele_area( c, tri_elements[ tri_list[j] ] );
-            normal *= area;	// scale normal weight relative to area
-            total_area += area;
-            average += normal;
-            // cout << normal << endl;
-        }
-
-        average /= total_area;
-        //cout << "average = " << average << endl;
-
-        point_normals.push_back( average );
-    }
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "1st");
-    SG_LOG(SG_GENERAL, SG_ALERT, "wgs84 node list size = " << wgs84_nodes.size());
-    SG_LOG(SG_GENERAL, SG_ALERT, "normal list size = " << point_normals.size());
-
-    return point_normals;
-}
-#endif
-
-
-# if 0
-// generate the flight gear scenery file
-static void do_output( TGConstruct& c, TGGenOutput& output ) {
-    output.build_tris( c );
-    output.write_tris( c );
 }
 #endif
 
@@ -506,7 +319,7 @@ int main(int argc, char **argv) {
             c->set_ignore_landmass( ignoreLandmass );
             c->set_nudge( nudge );
 
-            c->construct_bucket( b );
+            c->ConstructBucket( b );
             delete c;
         } else {
             // build all the tiles in an area
@@ -531,7 +344,7 @@ int main(int argc, char **argv) {
                 c->set_ignore_landmass( ignoreLandmass );
                 c->set_nudge( nudge );
     
-                c->construct_bucket( b_min );
+                c->ConstructBucket( b_min );
                 delete c;
             } else {
                 SGBucket b_cur;
@@ -561,7 +374,7 @@ int main(int argc, char **argv) {
                             c->set_ignore_landmass( ignoreLandmass );
                             c->set_nudge( nudge );
                 
-                            c->construct_bucket( b_cur );
+                            c->ConstructBucket( b_cur );
                             delete c;
                         } else {
                             SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
@@ -586,7 +399,7 @@ int main(int argc, char **argv) {
         c->set_ignore_landmass( ignoreLandmass );
         c->set_nudge( nudge );
 
-        c->construct_bucket( b );
+        c->ConstructBucket( b );
         delete c;
     }
 

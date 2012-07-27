@@ -41,6 +41,7 @@
 // TODO : Needs to be its own class
 typedef std::vector < int > int_list;
 typedef std::vector < int_list > idx_list;
+typedef std::vector < double > double_list;
 typedef idx_list::iterator idx_list_iterator;
 typedef idx_list::const_iterator const_idx_list_iterator;
 
@@ -136,6 +137,7 @@ TGPolygon   tris;           // triangulation
 TGPolyNodes tri_idxs;       // triangle node indexes
 
 point_list  face_normals;   // triangle normals
+double_list face_areas;     // triangle areas
 std::string flag;           // For various potential record keeping needs
 
 public:
@@ -210,6 +212,20 @@ inline point_list get_face_normals() const
 inline void set_face_normals( const point_list &fns )
 {
     face_normals = fns;
+}
+
+inline double get_face_area( int tri ) const
+{
+    return face_areas[tri];
+}
+
+inline double_list get_face_areas() const
+{
+    return face_areas;
+}
+inline void set_face_areas( const double_list &fas )
+{
+    face_areas = fas;
 }
 
 inline std::string get_flag() const

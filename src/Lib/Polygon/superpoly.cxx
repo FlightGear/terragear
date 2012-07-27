@@ -36,7 +36,6 @@ TGSuperPoly::~TGSuperPoly()
 {
 }
 
-
 // erase the "super" polygon
 void TGSuperPoly::erase()
 {

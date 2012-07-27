@@ -83,11 +83,21 @@ TGConstruct::TGConstruct():
 
 
 // Destructor
-TGConstruct::~TGConstruct() { }
+TGConstruct::~TGConstruct() { 
+    array.close();
 
-// Load elevation data from an Array file, a regular grid of elevation
-// data) and return list of fitted nodes.
-bool TGConstruct::load_array() {
+    // land class polygons
+    polys_in.clear();
+    polys_clipped.clear();
+
+    // All Nodes
+    nodes.clear();
+}
+
+// STEP 1
+// Load elevation data from an Array file (a regular grid of elevation data) 
+// and return list of fitted nodes.
+void TGConstruct::LoadElevationArray( void ) {
     string base = bucket.gen_base_path();
     int i;
 
@@ -104,7 +114,15 @@ bool TGConstruct::load_array() {
     array.parse( bucket );
     array.remove_voids( );
 
-    return true;
+    point_list corner_list = array.get_corner_list();
+    for (unsigned int i=0; i<corner_list.size(); i++) {
+        nodes.unique_add(corner_list[i]);
+    }
+
+    point_list fit_list = array.get_fitted_list();
+    for (unsigned int i=0; i<fit_list.size(); i++) {
+        nodes.unique_add(fit_list[i]);
+    }
 }
 
 // Add a polygon to the clipper.
@@ -343,7 +361,7 @@ bool TGConstruct::load_osgb36_poly(const string& path) {
 
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
-int TGConstruct::load_polys( ) {
+int TGConstruct::LoadLandclassPolys( void ) {
     int i;
 
     string base = bucket.gen_base_path();
@@ -574,7 +592,7 @@ int TGConstruct::load_landcover()
     return count;
 }
 
-void TGConstruct::add_intermediate_nodes( ) {
+void TGConstruct::FixTJunctions( void ) {
     int before, after;
 
     // traverse each poly, and add intermediate nodes
@@ -587,7 +605,7 @@ void TGConstruct::add_intermediate_nodes( ) {
             after   = current.total_size();
 
             if (before != after) {
-               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed t-junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
+               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed T-Junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
             }
 
             /* Save it back */
@@ -624,7 +642,7 @@ double TGConstruct::distanceSphere( const Point3D p1, const Point3D p2 ) {
 // fix the elevations of the geodetic nodes
 // This should be done in the nodes class itself, except for the need for the triangle type
 // hopefully, this will get better when we have the area lookup via superpoly...
-void TGConstruct::fix_point_heights()
+void TGConstruct::CalcElevations( void )
 {
     //TGPolygon tri_poly;
     TGPolyNodes tri_nodes;
@@ -650,38 +668,24 @@ void TGConstruct::fix_point_heights()
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
                 tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
 
-//              for (int k=0; k< tri_poly.contours(); k++) {
                 for (int k=0; k< tri_nodes.contours(); k++) {
-//                  if (tri_poly.contour_size(k) != 3) {
                     if (tri_nodes.contour_size(k) != 3) {
                         SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
                     }
 
-//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
                     n1 = tri_nodes.get_pt( k, 0 );
                     e1 = nodes.get_node(n1).GetPosition().z();
-
-//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
                     n2 = tri_nodes.get_pt( k, 1 );
                     e2 = nodes.get_node(n2).GetPosition().z();
-
-//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
                     n3 = tri_nodes.get_pt( k, 2 );
                     e3 = nodes.get_node(n3).GetPosition().z();
 
                     min = e1;
                     if ( e2 < min ) { min = e2; }                  
                     if ( e3 < min ) { min = e3; }                  
-
-                    SG_LOG(SG_GENERAL, SG_ALERT, "FLATTEN LAKE: original elevations are " <<
-                        nodes.get_node(n1).GetPosition().z() << "(" << e1 << "), " <<  
-                        nodes.get_node(n2).GetPosition().z() << "(" << e2 << "), " << 
-                        nodes.get_node(n3).GetPosition().z() << "(" << e3 << ")" << 
-                        " new elevation is " << min );
 
                     nodes.SetElevation( n1, min );
                     nodes.SetElevation( n2, min );
@@ -694,12 +698,9 @@ void TGConstruct::fix_point_heights()
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
                 tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
 
-//              for (int k=0; k< tri_poly.contours(); k++) {
                 for (int k=0; k< tri_nodes.contours(); k++) {
-//                  if (tri_poly.contour_size(k) != 3) {
                     if (tri_nodes.contour_size(k) != 3) {
                         SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
@@ -707,15 +708,10 @@ void TGConstruct::fix_point_heights()
 
                     point_list raw_nodes = nodes.get_geod_nodes();
 
-//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
                     n1 = tri_nodes.get_pt( k, 0 );
                     e1 = nodes.get_node(n1).GetPosition().z();
-
-//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
                     n2 = tri_nodes.get_pt( k, 1 );
                     e2 = nodes.get_node(n2).GetPosition().z();
-
-//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
                     n3 = tri_nodes.get_pt( k, 2 );
                     e3 = nodes.get_node(n3).GetPosition().z();
 
@@ -744,12 +740,9 @@ void TGConstruct::fix_point_heights()
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
                 tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
 
-//              for (int k=0; k< tri_poly.contours(); k++) {
                 for (int k=0; k< tri_nodes.contours(); k++) {
-//                  if (tri_poly.contour_size(k) != 3) {
                     if (tri_nodes.contour_size(k) != 3) {
                         SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
@@ -757,15 +750,10 @@ void TGConstruct::fix_point_heights()
 
                     point_list raw_nodes = nodes.get_geod_nodes();
 
-//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
                     n1 = tri_nodes.get_pt( k, 0 );
                     e1 = nodes.get_node(n1).GetPosition().z();
-
-//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
                     n2 = tri_nodes.get_pt( k, 1 );
                     e2 = nodes.get_node(n2).GetPosition().z();
-
-//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
                     n3 = tri_nodes.get_pt( k, 2 );
                     e3 = nodes.get_node(n3).GetPosition().z();
 
@@ -793,24 +781,18 @@ void TGConstruct::fix_point_heights()
         if ( is_ocean_area( (AreaType)i ) ) {
             for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
 
-//         	    tri_poly = polys_clipped.superpolys[i][j].get_tris();
                 tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
 
                 SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
 
-//              for (int k=0; k< tri_poly.contours(); k++) {
                 for (int k=0; k< tri_nodes.contours(); k++) {
-//                  if (tri_poly.contour_size(k) != 3) {
                     if (tri_nodes.contour_size(k) != 3) {
                         SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
                         exit(0);                        
                     }
 
-//                  n1 = nodes.find( tri_poly.get_pt( k, 0 ) );
                     n1 = tri_nodes.get_pt( k, 0 );
-//                  n2 = nodes.find( tri_poly.get_pt( k, 1 ) );
                     n2 = tri_nodes.get_pt( k, 1 );
-//                  n3 = nodes.find( tri_poly.get_pt( k, 2 ) );
                     n3 = tri_nodes.get_pt( k, 2 );
 
                     nodes.SetElevation( n1, 0.0 );
@@ -953,7 +935,7 @@ TGPolygon TGConstruct::linear_tex_coords( const TGPolygon& tri, const TGTexParam
 }
 
 // collect custom objects and move to scenery area
-void TGConstruct::do_custom_objects( ) {
+void TGConstruct::AddCustomObjects( void ) {
     // Create/open the output .stg file for writing
     SGPath dest_d(get_output_base().c_str());
     dest_d.append(bucket.gen_base_path().c_str());
@@ -1085,16 +1067,19 @@ void TGConstruct::merge_slivers( TGPolyList& clipped,  poly_list& slivers_list )
     }
 }
 
-bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
+bool TGConstruct::ClipLandclassPolys( void ) {
     TGPolygon accum, clipped, tmp;
     TGPolygon remains;
     poly_list slivers;
-    
     int i, j;
     Point3D p;
+    point2d min, max;
 
-    SG_LOG( SG_CLIPPER, SG_INFO, "Running master clipper" );
-    SG_LOG( SG_CLIPPER, SG_INFO, "  (" << min.x << "," << min.y << ") (" << max.x << "," << max.y << ")" );
+    // Get clip bounds
+    min.x = bucket.get_center_lon() - 0.5 * bucket.get_width();
+    min.y = bucket.get_center_lat() - 0.5 * bucket.get_height();
+    max.x = bucket.get_center_lon() + 0.5 * bucket.get_width();
+    max.y = bucket.get_center_lat() + 0.5 * bucket.get_height();
 
     accum.erase();
 
@@ -1157,7 +1142,6 @@ bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
 
     // process polygons in priority order
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
-        SG_LOG( SG_CLIPPER, SG_INFO, "num polys of type (" << i << ") = " << polys_in.superpolys[i].size() );
         for( j = 0; j < (int)polys_in.superpolys[i].size(); ++j ) {
             TGPolygon current = polys_in.superpolys[i][j].get_poly();
 
@@ -1270,7 +1254,22 @@ bool TGConstruct::clip_all(const point2d& min, const point2d& max) {
         }
     }
 
-    SG_LOG( SG_CLIPPER, SG_INFO, "  master clipper finished." );
+    // Once clipping is complete, make sure any newly added intersection nodes 
+    // are added to the tgnodes
+    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
+        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
+            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
+
+            SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );                       
+
+            for (int k=0; k< poly.contours(); k++) {
+                for (int l = 0; l < poly.contour_size(k); l++) {
+                    // ensure we have all nodes...
+                    nodes.unique_add( poly.get_pt( k, l ) );
+                }
+            } 
+        }
+    }
 
     return true;
 }
@@ -1342,30 +1341,19 @@ void TGConstruct::LookupNodesPerVertex( void )
 void TGConstruct::LookupFacesPerNode( void )
 {
     SG_LOG(SG_GENERAL, SG_ALERT, "LookupFacesPerNode");
-    int five_percent = nodes.size()/20;
 
-    for (unsigned int n=0; n<nodes.size(); n++) {
-        // for each node, traverse all the triangles - and create face lists
-        for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; ++area ) {
+    // Add each face that includes a node to the node's face list
+    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; ++area ) {
+        for( unsigned int p = 0; p < polys_clipped.superpolys[area].size(); ++p ) {
+            TGPolygon tris = polys_clipped.superpolys[area][p].get_tris();
 
-            for( unsigned int p = 0; p < polys_clipped.superpolys[area].size(); ++p ) {
-                TGPolyNodes tri_nodes = polys_clipped.superpolys[area][p].get_tri_idxs();
-
-                for (int tri=0; tri < tri_nodes.contours(); tri++) {
-
-                    for (int sub = 0; sub < tri_nodes.contour_size(tri); sub++) {
-
-                        if ( n == (unsigned int)tri_nodes.get_pt( tri, sub ) ) {
-                            nodes.AddFace( n, area, p, tri );
-                        }
-                    }
+            for (int tri=0; tri < tris.contours(); tri++) {
+                for (int sub = 0; sub < tris.contour_size(tri); sub++) {
+                    int n = nodes.find( tris.get_pt( tri, sub ) );
+                    nodes.AddFace( n, area, p, tri );
                 }
             }
         }
-
-        if (n % five_percent == 0) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "   " << n*5 / five_percent << "% complete" );
-        }            
     }
 }
 
@@ -1382,9 +1370,12 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
     SGVec3d v1, v2, normal;
     TGPolyNodes tri_nodes = sp.get_tri_idxs();
     int_list    face_nodes;
+    double_list face_areas;
     point_list  face_normals;
+    double      area;
 
     face_normals.clear();
+    face_areas.clear();
 
     for (int i=0; i<tri_nodes.contours(); i++) {
         face_nodes = tri_nodes.get_contour(i);
@@ -1392,6 +1383,8 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
         Point3D p1 = wgs84_nodes[ face_nodes[0] ];
         Point3D p2 = wgs84_nodes[ face_nodes[1] ];
         Point3D p3 = wgs84_nodes[ face_nodes[2] ];
+
+        area  = calc_tri_area( face_nodes );
 
         // do some sanity checking.  With the introduction of landuse
         // areas, we can get some long skinny triangles that blow up our
@@ -1402,15 +1395,10 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
 
         bool degenerate = false;
         const double area_eps = 1.0e-12;
-        double area = calc_tri_area( face_nodes );
-        // cout << "   area = " << area << endl;
         if ( area < area_eps ) {
             degenerate = true;
         }
 
-        // cout << "  " << p1 << endl;
-        // cout << "  " << p2 << endl;
-        // cout << "  " << p3 << endl;
         if ( fabs(p1.x() - p2.x()) < SG_EPSILON && fabs(p1.x() - p3.x()) < SG_EPSILON ) {
             degenerate = true;
         }
@@ -1423,7 +1411,6 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
 
         if ( degenerate ) {
             normal = normalize(SGVec3d(p1.x(), p1.y(), p1.z()));
-	        SG_LOG(SG_GENERAL, SG_ALERT, "Degenerate tri!");
         } else {
         	v1[0] = p2.x() - p1.x();
         	v1[1] = p2.y() - p1.y();
@@ -1434,20 +1421,17 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
         	normal = normalize(cross(v1, v2));
         }
         
-
         face_normals.push_back( Point3D::fromSGVec3( normal ) );
+        face_areas.push_back( area );
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "calculated " << face_normals.size() << " face normals ");
-
     sp.set_face_normals( face_normals );
+    sp.set_face_areas( face_areas );
 }
 
 void TGConstruct::CalcFaceNormals( void )
 {
     // traverse the superpols, and calc normals for each tri within
-    SG_LOG(SG_GENERAL, SG_ALERT, "Calculating face normals");
-
     point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
 
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
@@ -1455,16 +1439,6 @@ void TGConstruct::CalcFaceNormals( void )
             SG_LOG( SG_CLIPPER, SG_INFO, "Calculating face normals for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_in.superpolys[i].size() );                       
 
             calc_normals( wgs84_nodes, polys_clipped.superpolys[i][j] );
-            point_list fns = polys_clipped.superpolys[i][j].get_face_normals();
-
-            SG_LOG(SG_GENERAL, SG_ALERT, "SP " << i << "," << j << " has " << fns.size() << " face normals ");
-        }
-    }
-
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            point_list fns = polys_clipped.superpolys[i][j].get_face_normals();
-            SG_LOG(SG_GENERAL, SG_ALERT, "SP " << i << "," << j << " has " << fns.size() << " face normals ");
         }
     }
 }
@@ -1490,128 +1464,45 @@ void TGConstruct::CalcPointNormals( void )
             unsigned int poly = faces[j].poly;
             unsigned int tri  = faces[j].tri;
             int_list     face_nodes;
+            double       face_area;
 
             normal     = polys_clipped.superpolys[at][poly].get_face_normal( tri );
             face_nodes = polys_clipped.superpolys[at][poly].get_tri_idxs().get_contour( tri ) ;
+            face_area  = polys_clipped.superpolys[at][poly].get_face_area( tri );
 
-            double area = calc_tri_area( face_nodes );
-            normal *= area;	// scale normal weight relative to area
-            total_area += area;
+            normal *= face_area;	// scale normal weight relative to area
+            total_area += face_area;
             average += normal;
-            // cout << normal << endl;
         }
-
         average /= total_area;
-        //cout << "average = " << average << endl;
 
         nodes.SetNormal( i, average );
     }
 }
 
-// master construction routine
-// TODO : Split each step into its own function, and move 
-//        into seperate files by major functionality
-//        loading, clipping, tesselating, normals, and output
-//        Also, we are still calculating some thing more than one 
-//        (like face area - need to move this into superpoly )
-void TGConstruct::construct_bucket( SGBucket b ) {
-
-    sprintf(ds_name, "./construct_debug_%ld", b.gen_index() );
-    ds_id = tgShapefileOpenDatasource( ds_name );
-
-    bucket = b;
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "Construct tile, bucket = " << bucket );
-
-    // STEP 1) Load grid of elevation data (Array)
-    load_array();
-    
-    // STEP 2) Clip 2D polygons against one another
-    if ( load_polys() == 0 ) {
-        // don't build the tile if there is no 2d data ... it *must*
-        // be ocean and the sim can build the tile on the fly.
-        return;
-    }
-
-    // Load the land use polygons if the --cover option was specified
-    if ( get_cover().size() > 0 ) {
-        load_landcover();
-    }
-
-    // Get clip bounds
-    point2d min, max;
-    min.x = bucket.get_center_lon() - 0.5 * bucket.get_width();
-    min.y = bucket.get_center_lat() - 0.5 * bucket.get_height();
-    max.x = bucket.get_center_lon() + 0.5 * bucket.get_width();
-    max.y = bucket.get_center_lat() + 0.5 * bucket.get_height();
-
-    // do clipping
-    SG_LOG(SG_GENERAL, SG_ALERT, "clipping polygons");
-    clip_all(min, max); 
-
-//    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER CLIPPING" );    
-//    nodes.Dump();
-
-    // Make sure we have the elavation nodes in the main node database
-    // I'd like to do this first, but we get initial tgnodes from clipper
-    point_list corner_list = array.get_corner_list();
-    if ( corner_list.size() == 0 ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "corner list is 0 " );
-    }
-
-    for (unsigned int i=0; i<corner_list.size(); i++) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Add corner node " << corner_list[i]  );
-        nodes.unique_add(corner_list[i]);
-    }
-
-    point_list fit_list = array.get_fitted_list();
-    for (unsigned int i=0; i<fit_list.size(); i++) {
-        nodes.unique_add(fit_list[i]);
-    }
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER FITTING" );    
-
-    // Step 3) Merge in Shared data (just add the nodes to the nodelist)
-    // When this step is complete, some nodes will have normals (from shared tiles)
-    // and some will not - need to indicate this in the new node class
-    
-    SG_LOG(SG_GENERAL, SG_ALERT, "number of geod nodes = before adding adding shared edges" << nodes.size() );
-
-    TGMatch m;
-    m.load_neighbor_shared( bucket, work_base );
+void TGConstruct::LoadSharedEdgeData( void )
+{
+    match.load_neighbor_shared( bucket, work_base );
     if ( useOwnSharedEdges ) {
-        m.load_missing_shared( bucket, work_base );
+        match.load_missing_shared( bucket, work_base );
     }
-    m.add_shared_nodes( this );
+    match.add_shared_nodes( this );
+}
 
-//    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER ADDING SHARED EDGES" );    
-//    nodes.Dump();
-        
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
+void TGConstruct::SaveSharedEdgeData( void )
+{
+    match.split_tile( bucket, this );
+    SG_LOG(SG_GENERAL, SG_ALERT, "Tile Split");
 
-           SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );                       
+    if ( writeSharedEdges ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "write shared edges");
 
-            for (int k=0; k< poly.contours(); k++) {
-                for (int l = 0; l < poly.contour_size(k); l++) {
-                    // ensure we have all nodes...
-                    nodes.unique_add( poly.get_pt( k, l ) );
-                }
-            } 
-        }
+        match.write_shared( bucket, work_base );
     }
+}
 
-    // Step 4) Add intermediate nodes
-    // need to add another add intermediate nodes function that can handle the new node class
-    add_intermediate_nodes();
-
-    // After adding intermediate nodes, clean the polys
-    clean_clipped_polys();
-
-//    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER ADDING CLIPPED POLYS" );    
-//    nodes.Dump();
-
+void TGConstruct::TesselatePolys( void )
+{
     // tesselate the polygons and prepair them for final output
     point_list extra = nodes.get_geod_nodes();
     for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
@@ -1636,95 +1527,23 @@ void TGConstruct::construct_bucket( SGBucket b ) {
 #endif
 
             TGPolygon tri = polygon_tesselate_alt_with_extra( poly, extra, false );
+
+            // ensure all added nodes are accounted for
+            for (int k=0; k< tri.contours(); k++) {
+                for (int l = 0; l < tri.contour_size(k); l++) {
+                    // ensure we have all nodes...
+                    nodes.unique_add( tri.get_pt( k, l ) );
+                }
+            } 
+
+            // Save the triangulation
             polys_clipped.superpolys[i][j].set_tris( tri );
         }
     }
+}
 
-    /* Add any points from triangulation */
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon tri_poly = polys_clipped.superpolys[i][j].get_tris();
-            for (int k=0; k< tri_poly.contours(); k++) {
-                for (int l = 0; l < tri_poly.contour_size(k); l++) {
-                    // ensure we have all nodes...
-                    nodes.unique_add( tri_poly.get_pt( k, l ) );
-                }
-            } 
-        }
-    }
-
-//    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST BEFORE FLATTEN" );    
-//    nodes.Dump();
-
-    // Step 7 : Generate triangle vertex to node index lists
-    LookupNodesPerVertex();
-
-    // Step 8) Flatten
-    fix_point_heights();
-
-//    SG_LOG(SG_GENERAL, SG_ALERT, "NODE LIST AFTER FLATTEN" );    
-//    nodes.Dump();
-    
-    // Step 8) Generate face_connected list
-    LookupFacesPerNode();
-    nodes.Dump();
-
-    // Step 9 - Calculate Face Normals
-    CalcFaceNormals();
-
-    // Step 10 - Calculate Point Normals
-    CalcPointNormals();
-
-#if 0
-
-    if ( c.get_cover().size() > 0 ) {
-        // Now for all the remaining "default" land cover polygons, assign
-        // each one it's proper type from the land use/land cover
-        // database.
-        fix_land_cover_assignments( c );
-    }
-
-    // Step 12) calculate texture coordinates for each triangle
-
-    // Step 13) Sort the triangle list by material (optional)
-#endif
-
-    // Calc texture coordinates
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
-
-            SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)i ) << "(" << i << ") :" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
-
-            TGPolygon tri = polys_clipped.superpolys[i][j].get_tris();
-            TGPolygon tc;
-
-            if ( polys_clipped.superpolys[i][j].get_flag() == "textured" ) {
-                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
-                // tc = linear_tex_coords( tri, clipped_polys.texparams[i][j] );
-                tc = area_tex_coords( tri );
-            } else {
-                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
-                tc = area_tex_coords( tri );
-            }
-      	    polys_clipped.superpolys[i][j].set_texcoords( tc );
-        }
-    }
-
-    // write shared data
-    m.split_tile( bucket, this );
-    SG_LOG(SG_GENERAL, SG_ALERT, "Tile Split");
-
-    if ( writeSharedEdges ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "write shared edges");
-
-        m.write_shared( bucket, this );
-    }
-
-//    dump_lat_nodes( c, 32.75 );
-
-// TEMP TEMP TEMP TEMP
-
+void TGConstruct::WriteBtgFile( void )
+{
     TGTriNodes normals, texcoords;
     normals.clear();
     texcoords.clear();
@@ -1859,22 +1678,6 @@ void TGConstruct::construct_bucket( SGBucket b ) {
     {
         throw sg_exception("error writing file. :-(");
     }
-
-    // Step 15) Adding custome objects to the .stg file
-    // collect custom objects and move to scenery area
-    do_custom_objects();
-
-    // Step 16 : clean the data structures
-    array.close();
-
-    // land class polygons
-    polys_in.clear();
-    polys_clipped.clear();
-
-    // All Nodes
-    nodes.clear();
-
-    face_normals.clear();
 }
 
 void TGConstruct::clean_clipped_polys() {
@@ -1905,4 +1708,133 @@ void TGConstruct::clean_clipped_polys() {
             polys_clipped.superpolys[i][j].set_poly( poly );
         }
     }
+}
+
+void TGConstruct::CalcTextureCoordinates( void )
+{
+    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
+        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
+            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
+
+            SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)i ) << "(" << i << ") :" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
+
+            TGPolygon tri = polys_clipped.superpolys[i][j].get_tris();
+            TGPolygon tc;
+
+            if ( polys_clipped.superpolys[i][j].get_flag() == "textured" ) {
+                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
+                // tc = linear_tex_coords( tri, clipped_polys.texparams[i][j] );
+                tc = area_tex_coords( tri );
+            } else {
+                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
+                tc = area_tex_coords( tri );
+            }
+      	    polys_clipped.superpolys[i][j].set_texcoords( tc );
+        }
+    }
+}
+
+// master construction routine
+// TODO : Split each step into its own function, and move 
+//        into seperate files by major functionality
+//        loading, clipping, tesselating, normals, and output
+//        Also, we are still calculating some thing more than one 
+//        (like face area - need to move this into superpoly )
+void TGConstruct::ConstructBucket( SGBucket b ) {
+
+    sprintf(ds_name, "./construct_debug_%ld", b.gen_index() );
+    ds_id = tgShapefileOpenDatasource( ds_name );
+
+    bucket = b;
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "Construct tile, bucket = " << bucket );
+
+    // STEP 1) 
+    // Load grid of elevation data (Array)
+    LoadElevationArray();
+    
+    // STEP 2) 
+    // Clip 2D polygons against one another
+    if ( LoadLandclassPolys() == 0 ) {
+        // don't build the tile if there is no 2d data ... it *must*
+        // be ocean and the sim can build the tile on the fly.
+        return;
+    }
+
+    // STEP 3)
+    // Load the land use polygons if the --cover option was specified
+    if ( get_cover().size() > 0 ) {
+        load_landcover();
+    }
+
+    // STEP 4)
+    // Clip the Landclass polygons    
+    ClipLandclassPolys(); 
+
+    // STEP 5)
+    // Merge in Shared data (just add the nodes to the nodelist)
+    // When this step is complete, some nodes will have normals (from shared tiles)
+    // and some will not
+    LoadSharedEdgeData();
+
+    // STEP 6) 
+    // Fix T-Junctions by finding nodes that lie close to polygon edges, and
+    // inserting them into the edge
+    FixTJunctions();
+
+    // TODO : Needs to be part of clipping 
+    // just before union : If we need to clean again after fixing tjunctions, make 
+    // sure we don't alter the shape
+    clean_clipped_polys();
+
+    // STEP 7)
+    // Generate triangles - we can't generate the node-face lookup table
+    // until all polys are tesselated, as extra nodes can still be generated
+    TesselatePolys();
+
+    // STEP 8) 
+    // Generate triangle vertex coordinates to node index lists
+    // NOTE: After this point, no new nodes can be added
+    LookupNodesPerVertex();
+
+    // STEP 9) 
+    // Interpolate elevations, and flatten stuff 
+    CalcElevations();
+    
+    // STEP 10) 
+    // Generate face_connected list - 
+    LookupFacesPerNode();
+
+    // STEP 11)
+    // Calculate Face Normals
+    CalcFaceNormals();
+
+    // STEP 12)
+    // Calculate Point Normals
+    CalcPointNormals();
+
+#if 0
+    if ( c.get_cover().size() > 0 ) {
+        // Now for all the remaining "default" land cover polygons, assign
+        // each one it's proper type from the land use/land cover
+        // database.
+        fix_land_cover_assignments( c );
+    }
+#endif
+
+    // STEP 13)
+    // Calculate Texture Coordinates
+    CalcTextureCoordinates();
+
+    // STEP 14)
+    // Write out the shared edge data
+    SaveSharedEdgeData();
+
+    // STEP 15)
+    // Generate the btg file
+    WriteBtgFile();
+
+    // STEP 16) 
+    // Write Custom objects to .stg file 
+    AddCustomObjects();
 }
