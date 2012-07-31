@@ -80,6 +80,21 @@ Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
     return light_vec;
 }
 
+point_list Runway::gen_corners(double l_ext, double disp1, double disp2, double w_ext)
+{
+    // using TGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    TGPolygon poly_corners = gen_runway_area_w_extend( l_ext,
+                                                       disp1,
+                                                       disp2,
+                                                       w_ext );
+    point_list corner;
+    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+        corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+    return corner;
+}
+
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
 superpoly_list Runway::gen_runway_edge_lights( bool recip )
@@ -93,18 +108,7 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     int divs = (int)(rwy.length / 60.0) + 1;
 
     Point3D normal = gen_runway_light_vector( 3.0, recip );
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       2.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners(2.0, rwy.threshold[0], rwy.threshold[1], 2.0);
 
     Point3D inc1, inc2;
     Point3D pt1, pt2;
@@ -187,89 +191,6 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     return result;
 }
 
-
-// generate taxiway edge lighting
-// 100 meters spacing or the next number down that divides evenly.
-superpoly_list Runway::gen_taxiway_edge_lights( const int kind, bool recip )
-{
-    point_list b_lights; b_lights.clear();
-    point_list b_normals; b_normals.clear();
-    int i;
-
-    double len = rwy.length;
-    int divs;
-    if ( len > 100.0 ) {
-        // for lengths of 300' or more, max spacing is 200'
-        divs = (int)(len / 70.0) + 1;
-    } else {
-        // for lengths <= 300', max spacing = 100'
-        divs = (int)(len / 35.0) + 1;
-    }
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0, 0.0, 0.0, 2.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
-
-    Point3D inc1, inc2;
-    Point3D pt1, pt2;
-
-    if ( recip ) {
-        inc1 = (corner[3] - corner[0]) / divs;
-        inc2 = (corner[2] - corner[1]) / divs;
-        pt1 = corner[0];
-        pt2 = corner[1];
-    } else {
-        inc1 = (corner[0] - corner[3]) / divs;
-        inc2 = (corner[1] - corner[2]) / divs;
-        pt1 = corner[3];
-        pt2 = corner[2];
-    }
-
-    double dist = rwy.length;
-    double step = dist / divs;
-
-    Point3D up = sgGeodToCart( corner[0] * SG_DEGREES_TO_RADIANS );
-    double length = up.distance3D( Point3D(0.0) );
-    up = up / length;
-
-    b_lights.push_back( pt1 );
-    b_normals.push_back( up );
-    b_lights.push_back( pt2 );
-    b_normals.push_back( up );
-    dist -= step;
-
-    for ( i = 0; i < divs; ++i ) {
-	pt1 += inc1;
-	pt2 += inc2;
-        b_lights.push_back( pt1 );
-        b_normals.push_back( up );
-        b_lights.push_back( pt2 );
-        b_normals.push_back( up );
-    }
-
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( b_lights, false );
-    normals_poly.add_contour( b_normals, false );
-
-    TGSuperPoly blue;
-    blue.set_poly( lights_poly );
-    blue.set_normals( normals_poly );
-    blue.set_material( "RWY_BLUE_TAXIWAY_LIGHTS" );
-
-    superpoly_list result; result.clear();
-
-    result.push_back( blue );
-
-    return result;
-}
-
-
 // generate threshold lights for a 3 degree approach 
 superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
 {
@@ -280,18 +201,8 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
     int i;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "gen threshold " << rwy.rwnum[0] );
-    
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       0.0 );
 
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
 
     // determine the start point.
     Point3D ref1, ref2, ref3, ref4;
@@ -395,25 +306,13 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
     point_list r_lights; r_lights.clear();
     point_list w_normals; w_normals.clear();
     point_list r_normals; r_normals.clear();
-    int i;
 
     double len = rwy.length;
     // this should be 25' technically but I'm trying 50' to space things out
     int divs = (int)(len / (50.0*SG_FEET_TO_METER)) + 1;
 
     Point3D normal = gen_runway_light_vector( 3.0, recip );
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       2.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     Point3D inc;
     Point3D pt1, pt2;
@@ -569,18 +468,7 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
     SG_LOG(SG_GENERAL, SG_DEBUG, "gen touchdown zone lights " << rwy.rwnum[0] );
 
     Point3D normal;
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       0.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-        corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
 
     // determine the start point.
     Point3D ref;
@@ -943,24 +831,12 @@ TGSuperPoly Runway::gen_reil( bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
-    int i;
     string flag;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "gen reil " << rwy.rwnum[0] );
 
     Point3D normal;
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       0.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
 
     // determine the start point.
     Point3D ref1, ref2;
@@ -1054,18 +930,7 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
 
     double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       2.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     Point3D inc;
     Point3D pt;
@@ -1439,18 +1304,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
 
     double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       2.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     Point3D inc;
     Point3D pt;
@@ -1946,17 +1800,7 @@ TGSuperPoly Runway::gen_odals( bool recip )
     // a placeholder to keep everything happy.
     Point3D normal( 0.0, 0.0, 0.0 );
 
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       0.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
 
     // determine the start point.
     Point3D ref1, ref2;
@@ -2055,18 +1899,7 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
 
     double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       2.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     Point3D inc;
     Point3D pt;
@@ -2324,18 +2157,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
 
     double len = rwy.length;
     int divs = (int)(len / 10.0) + 1;
-
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( 2.0,
-                                                       rwy.threshold[0],
-                                                       rwy.threshold[1],
-                                                       2.0 );
-
-    point_list corner;
-    for ( i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-        corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
+    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     Point3D inc;
     Point3D pt;
@@ -2474,7 +2296,6 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
 
     if ( kind == "R" ) {
         // generate 5 rabbit lights
-
         ref = ref_save;
 
         // start 1600' downwind
@@ -2482,7 +2303,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
                             -1600 * SG_FEET_TO_METER, &lat, &lon, &r );
         ref = Point3D( lon, lat, 0.0 );
 
-        for ( i = 0; i < 8; ++i ) {
+        for ( i = 0; i < 5; ++i ) {
             s_lights.push_back( ref );
             s_normals.push_back( normal1 );
 
@@ -2625,7 +2446,6 @@ void Runway::gen_runway_lights( superpoly_list *lights ) {
 
 
     // Approach lighting
-
     if ( rwy.approach_lights[0] == 1 /* ALSF-I */ ) {
         superpoly_list s = gen_alsf( "1", false );
         for ( i = 0; i < s.size(); ++i ) {

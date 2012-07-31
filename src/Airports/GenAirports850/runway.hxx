@@ -151,9 +151,9 @@ private:
 
     void gen_runway_lights( superpoly_list* lights );
 
+    point_list gen_corners( double l_ext, double disp1, double disp2, double w_ext );
     Point3D gen_runway_light_vector( double angle, bool recip );
     superpoly_list gen_runway_edge_lights( bool recip );
-    superpoly_list gen_taxiway_edge_lights( const int kind, bool recip );
     superpoly_list gen_runway_threshold_lights( const int kind, bool recip );
     superpoly_list gen_runway_center_line_lights( bool recip );
     TGSuperPoly gen_touchdown_zone_lights( bool recip );
