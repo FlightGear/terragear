@@ -380,7 +380,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
         string tile_str = bucket.gen_index_str();
         simgear::Dir d(poly_path);
         if (!d.exists()) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "directory not found:" << poly_path);
+            SG_LOG(SG_GENERAL, SG_ALERT, "directory not found: " << poly_path);
             continue;
         }
     
@@ -874,7 +874,7 @@ TGPolygon TGConstruct::linear_tex_coords( const TGPolygon& tri, const TGTexParam
     	for ( j = 0; j < tri.contour_size( i ); ++j ) 
         {
     	    p = tri.get_pt( i, j );
-    	    SG_LOG(SG_GENERAL, SG_DEBUG, "tex coords for contour " << i << "point " << j << ": " << p );
+    	    SG_LOG(SG_GENERAL, SG_DEBUG, "tex coords for contour " << i << " point " << j << ": " << p );
 
     	    //
     	    // 1. Calculate distance and bearing from the center of
@@ -966,12 +966,11 @@ void TGConstruct::AddCustomObjects( void ) {
         index.append( bucket.gen_index_str() );
         index.concat(".ind");
         string index_file = index.str_native();
-        SG_LOG(SG_GENERAL, SG_ALERT, "collecting custom objects from " << index_file);
 
         sg_gzifstream in( index_file );
 
         if ( ! in.is_open() ) {
-            //cout << "No custom objects" << endl;
+            //No custom objects
         } else {
             while ( ! in.eof() ) {
                 SG_LOG( SG_GENERAL, SG_INFO, "Collecting custom objects from " << index_file );
@@ -1509,7 +1508,7 @@ void TGConstruct::TesselatePolys( void )
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
             TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
 
-           SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << "(" << i << ") :" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
+           SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << "(" << i << "): " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << ": flag = " << polys_clipped.superpolys[i][j].get_flag());
 
 #if 0
             if ( (i == 3) && (j == 137) ) {
@@ -1716,7 +1715,7 @@ void TGConstruct::CalcTextureCoordinates( void )
         for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
             TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)i ) << "(" << i << ") :" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " : flag = " << polys_clipped.superpolys[i][j].get_flag());                       
+            SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)i ) << "(" << i << "): " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << ": flag = " << polys_clipped.superpolys[i][j].get_flag());
 
             TGPolygon tri = polys_clipped.superpolys[i][j].get_tris();
             TGPolygon tc;
