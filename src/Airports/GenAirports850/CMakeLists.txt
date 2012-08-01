@@ -23,7 +23,7 @@ add_executable(genapts850
   
 target_link_libraries(genapts850
     Polygon Geometry
-    Array Optimize Output poly2tri
+    Array Output poly2tri
     TriangleJRS
     ${POCO_FOUNDATION}
     ${POCO_NET}

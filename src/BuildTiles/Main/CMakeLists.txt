@@ -16,7 +16,7 @@ target_link_libraries(fgfs-construct
     Osgb36  
     Match
     Polygon Geometry
-    Array Optimize landcover poly2tri
+    Array landcover poly2tri
     TriangleJRS
     ${GDAL_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
