@@ -122,6 +122,7 @@ include_directories(
 	${Boost_INCLUDE_DIRS}
 	${ZLIB_INCLUDE_DIR}
 	${SIMGEAR_INCLUDE_DIR}
+	${GPC_INCLUDE_DIR}
 	)
 
 include_directories(${PROJECT_SOURCE_DIR}/src)

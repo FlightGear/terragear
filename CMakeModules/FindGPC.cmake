@@ -1,7 +1,7 @@
 
 FIND_PATH(GPC_INCLUDE_DIR gpc.h
   HINTS $ENV{GPC_DIR}
-  PATH_SUFFIXES include
+  PATH_SUFFIXES include include/gpcl
   PATHS
   /usr/local
   /usr
@@ -10,9 +10,8 @@ FIND_PATH(GPC_INCLUDE_DIR gpc.h
 
 
 FIND_LIBRARY(GPC_LIBRARY
-  NAMES genpolyclip gpc
-  HINTS
-  $ENV{GPC_DIR}
+  NAMES genpolyclip gpc gpcl agggpc
+  HINTS $ENV{GPC_DIR}
   PATH_SUFFIXES lib64 lib libs64 libs libs/Win32 libs/Win64
   PATHS
   /usr/local
