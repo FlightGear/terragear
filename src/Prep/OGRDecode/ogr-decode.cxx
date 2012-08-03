@@ -110,6 +110,83 @@ void processLineString(OGRLineString* poGeometry,
     tgChopNormalPolygon(work_dir, area_type, shape, false);
 }
 
+void processLineStringWithMask(OGRLineString* poGeometry,
+                               const string& work_dir,
+                               const string& area_type,
+                               int width)
+{
+    poly_list segments;
+    TGPolygon segment;
+    tg::Line line;
+    Point3D p0, p1;
+    double heading, dist, az2;
+    double pt_x = 0.0f, pt_y = 0.0f;
+    int i, j, numPoints, numSegs;
+    double max_dist;
+
+    numPoints = poGeometry->getNumPoints();
+    if (numPoints < 2) {
+        SG_LOG( SG_GENERAL, SG_WARN, "Skipping line with less than two points" );
+        return;
+    }
+
+    max_dist = (double)width * 10.0f;
+
+    // because vector data can generate adjacent polys, lets stretch the two enpoints by a little bit
+    p0 = Point3D(poGeometry->getX(0),poGeometry->getY(0),0);
+    p1 = Point3D(poGeometry->getX(1),poGeometry->getY(1),0);
+
+    geo_inverse_wgs_84( p1.y(), p1.x(), p0.y(), p0.x(), &heading, &az2, &dist);
+    geo_direct_wgs_84( p0.y(), p0.x(), heading, EP_STRETCH, &pt_y, &pt_x, &az2 );
+    line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
+
+    // now add the middle points : if they are too far apart, add intermediate nodes
+    for ( i=1;i<numPoints-1;i++) {
+        p0 = Point3D(poGeometry->getX(i-1),poGeometry->getY(i-1),0);
+        p1 = Point3D(poGeometry->getX(i  ),poGeometry->getY(i  ),0);
+        geo_inverse_wgs_84( p0.y(), p0.x(), p1.y(), p1.x(), &heading, &az2, &dist);
+
+        if (dist > max_dist)
+        {
+            numSegs = (dist / max_dist) + 1;
+            dist = dist / (double)numSegs;
+
+            for (j=0; j<numSegs; j++)
+            {
+                geo_direct_wgs_84( p0.y(), p0.x(), heading, dist*(j+1), &pt_y, &pt_x, &az2 );
+                line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
+            }        
+        }
+        else
+        {
+            line.addPoint(p1);
+        }
+    }
+
+    // then stretch the last point
+    // because vector data can generate adjacent polys, lets stretch the two enpoints by a little bit
+    p0 = Point3D(poGeometry->getX(numPoints-2),poGeometry->getY(numPoints-2),0);
+    p1 = Point3D(poGeometry->getX(numPoints-1),poGeometry->getY(numPoints-1),0);
+
+    geo_inverse_wgs_84( p0.y(), p0.x(), p1.y(), p1.x(), &heading, &az2, &dist);
+    geo_direct_wgs_84( p1.y(), p1.x(), heading, EP_STRETCH, &pt_y, &pt_x, &az2 );
+    line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
+
+    // make a plygons from the line segments
+    tg::makePolygons(line,width,segments);
+
+#if 1
+    for ( i = 0; i < (int)segments.size(); ++i ) {
+    	segment = segments[i];
+
+        tgChopNormalPolygon(work_dir, area_type, segment, false);
+    }
+#else
+    tgChopNormalPolygonsWithMask(work_dir, area_type, segments, false);
+#endif
+
+}
+
 void processLineStringWithTextureInfo(OGRLineString* poGeometry,
                                       const string& work_dir,
                                       const string& area_type,
@@ -406,7 +483,7 @@ void processLayer(OGRLayer* poLayer,
             if (texture_lines) {
                 processLineStringWithTextureInfo((OGRLineString*)poGeometry,work_dir,area_type_name,width);
             } else {
-                processLineString((OGRLineString*)poGeometry,work_dir,area_type_name,width);
+                processLineStringWithMask((OGRLineString*)poGeometry,work_dir,area_type_name,width);
             }
             break;
         }
@@ -421,7 +498,7 @@ void processLayer(OGRLayer* poLayer,
                 if (texture_lines) {
                     processLineStringWithTextureInfo((OGRLineString*)poGeometry,work_dir,area_type_name,width);
                 } else {
-                    processLineString((OGRLineString*)poGeometry,work_dir,area_type_name,width);
+                    processLineStringWithMask((OGRLineString*)poGeometry,work_dir,area_type_name,width);
                 }
             }
             break;

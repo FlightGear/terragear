@@ -93,6 +93,7 @@ void makePolygon (const Point3D &p, double width, TGPolygon &polygon);
  */
 void makePolygon (const Line &line, double width, TGPolygon &polygon);
 
+void makePolygons   (const Line &line, double width, poly_list &segments);
 void makePolygonsTP (const Line &line, double width, poly_list &segments, texparams_list &tps);
 
 /**

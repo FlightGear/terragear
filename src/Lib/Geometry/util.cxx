@@ -415,6 +415,95 @@ Point3D midpoint( Point3D p0, Point3D p1 )
 }
 
 void
+makePolygons (const Line &line, double width, poly_list& polys)
+{
+    int nPoints = line.getPointCount();
+    int i;
+    int turn_dir;
+
+    Point3D cur_inner;
+    Point3D cur_outer;
+    Point3D prev_inner = Point3D(0.0f, 0.0f, 0.0f);
+    Point3D prev_outer = Point3D(0.0f, 0.0f, 0.0f);
+
+    double heading = 0.0f;
+    double az2 = 0.0f;
+    double dist = 0.0f;
+    double pt_x = 0.0f;
+    double pt_y = 0.0f;
+
+    TGPolygon   poly;
+
+    // generate poly and texparam lists for each line segment
+    for (i=0; i<nPoints; i++)
+    {
+        turn_dir = 0;
+
+        SG_LOG(SG_GENERAL, SG_DEBUG, "makePolygonsTP: calculating offsets for segment " << i);
+
+        // for each point on the PointsList, generate a quad from
+        // start to next, offset by 1/2 width from the edge
+        if (i == 0)
+        {
+            // first point on the list - offset heading is 90deg 
+            cur_outer = OffsetPointFirst( line.getPoint(i), line.getPoint(i+1), -width/2.0f );
+            cur_inner = OffsetPointFirst( line.getPoint(i), line.getPoint(i+1),  width/2.0f );
+        }
+        else if (i == nPoints-1)
+        {
+            // last point on the list - offset heading is 90deg 
+            cur_outer = OffsetPointLast( line.getPoint(i-1), line.getPoint(i), -width/2.0f );
+            cur_inner = OffsetPointLast( line.getPoint(i-1), line.getPoint(i),  width/2.0f );
+        }
+        else
+        {
+            // middle section
+            cur_outer = OffsetPointMiddle( line.getPoint(i-1), line.getPoint(i), line.getPoint(i+1), -width/2.0f, turn_dir );
+            cur_inner = OffsetPointMiddle( line.getPoint(i-1), line.getPoint(i), line.getPoint(i+1),  width/2.0f, turn_dir );
+        }
+
+        if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
+        {
+            Point3D prev_mp = midpoint( prev_outer, prev_inner );
+            Point3D cur_mp  = midpoint( cur_outer,  cur_inner  );
+            geo_inverse_wgs_84( prev_mp.y(), prev_mp.x(), cur_mp.y(), cur_mp.x(), &heading, &az2, &dist);
+
+            poly.erase();
+
+            poly.add_node( 0, prev_inner );
+            poly.add_node( 0, prev_outer );
+
+            // we need to extend one of the points so we're sure we don't create adjacent edges
+            if (turn_dir == 0)
+            {
+                // turned right - offset outer
+                geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
+                geo_direct_wgs_84( cur_outer.y(), cur_outer.x(), heading, MP_STRETCH, &pt_y, &pt_x, &az2 );
+
+                poly.add_node( 0, Point3D( pt_x, pt_y, 0.0f) );
+                //poly.add_node( 0, cur_outer );
+                poly.add_node( 0, cur_inner );
+            }
+            else
+            {
+                // turned left - offset inner
+                geo_inverse_wgs_84( prev_inner.y(), prev_inner.x(), cur_inner.y(), cur_inner.x(), &heading, &az2, &dist);
+                geo_direct_wgs_84( cur_inner.y(), cur_inner.x(), heading, MP_STRETCH, &pt_y, &pt_x, &az2 );
+
+                poly.add_node( 0, cur_outer );
+                poly.add_node( 0, Point3D( pt_x, pt_y, 0.0f) );
+                //poly.add_node( 0, cur_inner );
+            }
+
+            polys.push_back(poly);
+        }
+
+        prev_outer = cur_outer;
+        prev_inner = cur_inner;
+    }
+}
+
+void
 makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list &tps)
 {
     int nPoints = line.getPointCount();
