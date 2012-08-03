@@ -2,13 +2,20 @@ You need to have the GPC library installed on your system to build
 some of the scenery generation tools, otherwise you won't be able to
 create scenery.
 
-You can get the library from:
-
-    http://www.cs.man.ac.uk/aig/staff/alan/software/
-
 Unfortunately, because of wording conflicts between the GPC license
 and the GPL licence used by TerraGear we are unable to include the GPC
 library with the Flight Gear distribution.
+
+
+
+Under Debian you can get the library as libgpcl-dev from the non-free
+repository and you are good to go.
+
+
+
+If you have to compile manually, you can get the library from:
+
+    http://www.cs.man.ac.uk/aig/staff/alan/software/
 
 This library comes as a single source file and header with no build
 directions or Makefile.  So, here are some directions contributed by
