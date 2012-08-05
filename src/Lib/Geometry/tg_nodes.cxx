@@ -172,7 +172,7 @@ void TGNodes::Dump( void ) {
         if ( node.GetFaces().size() ) {
             TGFaceList faces = node.GetFaces();
             for (unsigned int j=0; j<faces.size(); j++) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "\tface " << faces[j].area << "," << faces[j].poly << "," << faces[j].tri );
+                SG_LOG(SG_GENERAL, SG_ALERT, "\tface " << faces[j].area << "," << faces[j].shape << "," << faces[j].seg << "," << faces[j].tri );
             }
         }
     }

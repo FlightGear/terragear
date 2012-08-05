@@ -17,7 +17,8 @@
 // is a member of.
 struct TGFaceLookup {
     unsigned int    area;
-    unsigned int    poly;
+    unsigned int    shape;
+    unsigned int    seg;
     unsigned int    tri;
 };
 typedef std::vector < TGFaceLookup > TGFaceList;
@@ -49,11 +50,12 @@ public:
         wgs84 = SGVec3d::fromGeod(geod);
     }
 
-    inline void AddFace( unsigned int area, unsigned int poly, unsigned int tri )
+    inline void AddFace( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
     {
         TGFaceLookup    face;
         face.area   = area;
-        face.poly   = poly;
+        face.shape  = shape;
+        face.seg    = segment;
         face.tri    = tri;
 
         faces.push_back( face );
@@ -158,9 +160,9 @@ public:
     // return the ith point
     inline TGNode get_node( int i ) const { return tg_node_list[i]; }
 
-    inline void AddFace( int i, unsigned int area, unsigned int poly, unsigned int tri )
+    inline void AddFace( int i, unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
     {
-        tg_node_list[i].AddFace( area, poly, tri );        
+        tg_node_list[i].AddFace( area, shape, segment, tri );        
     }
 
     // return the size of the node list

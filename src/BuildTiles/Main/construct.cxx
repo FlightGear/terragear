@@ -127,27 +127,30 @@ void TGConstruct::LoadElevationArray( void ) {
 
 // Add a polygon to the clipper.
 void TGConstruct::add_poly( int area, const TGPolygon &poly, string material ) {
+    TGShape shape;
     TGSuperPoly sp;
 
     if ( area < TG_MAX_AREA_TYPES ) {
         sp.set_poly( poly );
         sp.set_material( material );
 
-        polys_in.superpolys[area].push_back(sp);
+        shape.sps.push_back( sp );
+
+        polys_in.add_shape( area, shape );
     } else {
         SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = " << area);
         exit(-1);
     }
 }
 
-// Load a polygon definition file.
 bool TGConstruct::load_poly(const string& path) {
     bool poly3d = false;
     string first_line;
     string poly_name;
     AreaType poly_type;
-    int contours, count, i, j;
+    int contours, count, i, j, k;
     int hole_flag;
+    int num_polys;
     double startx, starty, startz, x, y, z, lastx, lasty, lastz;
 
     sg_gzifstream in( path );
@@ -166,99 +169,118 @@ bool TGConstruct::load_poly(const string& path) {
         if ( first_line == "#2D" ) {
             poly3d = false;
             in >> poly_name;
+            num_polys = 1;
+        } else if ( first_line == "#2D_WITH_MASK" ) {
+            poly3d = false;
+            in >> poly_name;
+            in >> num_polys;
         } else if ( first_line == "#3D" ) {
             poly3d = true;
             in >> poly_name;
+            num_polys = 1;
         } else {
             // support old format (default to 2d)
             poly3d = false;
             poly_name = first_line;
+            num_polys = 1;
         }
         poly_type = get_area_type( poly_name );
-        in >> contours;
 
-        SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << ":" << poly_name << "-" << poly_type << " contours = " << contours );
-
-        poly.erase();
-
-        for ( i = 0; i < contours; ++i ) {
-            in >> count;
-
-            if ( count < 3 ) {
-                SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon with less than 3 data points." );
-                exit(-1);
-            }
-
-            in >> hole_flag;
-
-            in >> startx;
-            in >> starty;
-            if ( poly3d ) {
-                in >> startz;
-            } else {
-                startz = -9999.0;
-            }
-            
-            p = Point3D(startx+nudge, starty+nudge, startz);
-            p.snap( gSnap );
-            poly.add_node( i, p );
-
-            if ( poly3d ) {
-                nodes.unique_add_fixed_elevation( p );
-            } else {
-                nodes.unique_add( p );
-            }
-
-            for ( j = 1; j < count - 1; ++j ) {
-                in >> x;
-                in >> y;
-                if ( poly3d ) {
-                    in >> z;
-                } else {
-                    z = -9999.0;
-                }
-                p = Point3D( x+nudge, y+nudge, z );
-                p.snap( gSnap );
-                poly.add_node( i, p );
-                if ( poly3d ) {
-                    nodes.unique_add_fixed_elevation( p );
-                } else {
-                    nodes.unique_add( p );
-                }
-            }
-
-            in >> lastx;
-            in >> lasty;
-            if ( poly3d ) {
-                in >> lastz;
-            } else {
-                lastz = -9999.0;
-            }
-
-            if ( (fabs(startx - lastx) < SG_EPSILON) && 
-                 (fabs(starty - lasty) < SG_EPSILON) && 
-                 (fabs(startz - lastz) < SG_EPSILON) ) {
-                // last point same as first, discard
-            } else {
-                p = Point3D( lastx+nudge, lasty+nudge, lastz );
-                p.snap( gSnap );
-                poly.add_node( i, p );
-                if ( poly3d ) {
-                    nodes.unique_add_fixed_elevation( p );
-                } else {
-                    nodes.unique_add( p );
-                }
-            }
-        }
-
-        poly = remove_dups( poly );
-	
         int area = (int)poly_type;
         string material = get_area_name( area );
-        
-        add_poly(area, poly, material);
 
-        in >> skipcomment;
+        // Generate a new Shape for the poly
+        TGShape     shape;
+        TGSuperPoly sp;
+
+        for (k=0; k<num_polys;k++) {
+            in >> contours;
+
+            SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << ":" << poly_name << "-" << poly_type << " contours = " << contours );
+
+            poly.erase();
+
+            for ( i = 0; i < contours; ++i ) {
+                in >> count;
+
+                if ( count < 3 ) {
+                    SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon with less than 3 data points." );
+                    exit(-1);
+                }
+
+                in >> hole_flag;
+
+                in >> startx;
+                in >> starty;
+                if ( poly3d ) {
+                    in >> startz;
+                } else {
+                    startz = -9999.0;
+                }
+            
+                p = Point3D(startx+nudge, starty+nudge, startz);
+                p.snap( gSnap );
+                poly.add_node( i, p );
+
+                if ( poly3d ) {
+                    nodes.unique_add_fixed_elevation( p );
+                } else {
+                    nodes.unique_add( p );
+                }
+
+                for ( j = 1; j < count - 1; ++j ) {
+                    in >> x;
+                    in >> y;
+                    if ( poly3d ) {
+                        in >> z;
+                    } else {
+                        z = -9999.0;
+                    }
+                    p = Point3D( x+nudge, y+nudge, z );
+                    p.snap( gSnap );
+                    poly.add_node( i, p );
+                    if ( poly3d ) {
+                        nodes.unique_add_fixed_elevation( p );
+                    } else {
+                        nodes.unique_add( p );
+                    }
+                }
+
+                in >> lastx;
+                in >> lasty;
+                if ( poly3d ) {
+                    in >> lastz;
+                } else {
+                    lastz = -9999.0;
+                }
+
+                if ( (fabs(startx - lastx) < SG_EPSILON) && 
+                     (fabs(starty - lasty) < SG_EPSILON) && 
+                     (fabs(startz - lastz) < SG_EPSILON) ) {
+                    // last point same as first, discard
+                } else {
+                    p = Point3D( lastx+nudge, lasty+nudge, lastz );
+                    p.snap( gSnap );
+                    poly.add_node( i, p );
+                    if ( poly3d ) {
+                        nodes.unique_add_fixed_elevation( p );
+                    } else {
+                        nodes.unique_add( p );
+                    }
+                }
+            }
+
+            poly = remove_dups( poly );
+	        sp.set_poly( poly );
+            sp.set_material( material );
+            shape.sps.push_back( sp );
+
+            in >> skipcomment;
+        }
+
+        // Once the full poly is loaded, build the clip mask
+        shape.BuildMask();
+        polys_in.add_shape( area, shape );
     }
 
     return true;
@@ -348,10 +370,11 @@ bool TGConstruct::load_osgb36_poly(const string& path) {
             }
     	}
 
+        // TODO : Make like OGR 
         int area = (int)poly_type;
         string material = get_area_name( area );
-        
         add_poly(area, poly, material);
+        // END TODO
     
         in >> skipcomment;
     }
@@ -368,9 +391,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
     string poly_path;
     int count = 0;
 
-    for ( int i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
-        polys_in.superpolys[i].clear();
-    }
+    polys_in.clear();
 
     // load 2D polygons from all directories provided
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
@@ -579,6 +600,7 @@ int TGConstruct::load_landcover()
         // type.  Add the remaining polygons to the clipper.
         for ( int i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
             if ( polys[i].contours() ) {
+                // TODO : REMOVE add_poly
                 add_poly( i, polys[i], get_area_name((AreaType)i ));
                 count++;
             }
@@ -597,19 +619,21 @@ void TGConstruct::FixTJunctions( void ) {
 
     // traverse each poly, and add intermediate nodes
     for ( unsigned int i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
-        for( unsigned int j = 0; j < polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon current = polys_clipped.superpolys[i][j].get_poly();
+        for( unsigned int j = 0; j < polys_clipped.area_size(i); ++j ) {
+            for( unsigned int k = 0; k < polys_clipped.shape_size(i, j); ++k ) {
+                TGPolygon current = polys_clipped.get_poly(i, j, k);
 
-            before  = current.total_size();
-            current = add_tgnodes_to_poly( current, &nodes );
-            after   = current.total_size();
+                before  = current.total_size();
+                current = add_tgnodes_to_poly( current, &nodes );
+                after   = current.total_size();
 
-            if (before != after) {
-               SG_LOG( SG_CLIPPER, SG_INFO, "Fixed T-Junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << " nodes increased from " << before << " to " << after );   
+                if (before != after) {
+                   SG_LOG( SG_CLIPPER, SG_INFO, "Fixed T-Junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << "-" << k << " of " << (int)polys_clipped.area_size(i) << " nodes increased from " << before << " to " << after );   
+                }
+
+                /* Save it back */
+                polys_clipped.set_poly( i, j, k, current );
             }
-
-            /* Save it back */
-            polys_clipped.superpolys[i][j].set_poly( current );
         }
     }
 }
@@ -644,7 +668,6 @@ double TGConstruct::distanceSphere( const Point3D p1, const Point3D p2 ) {
 // hopefully, this will get better when we have the area lookup via superpoly...
 void TGConstruct::CalcElevations( void )
 {
-    //TGPolygon tri_poly;
     TGPolyNodes tri_nodes;
     double e1, e2, e3, min;
     int    n1, n2, n3;
@@ -663,141 +686,148 @@ void TGConstruct::CalcElevations( void )
     }
 
     // now flatten some stuff
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        if ( is_lake_area( (AreaType)i ) ) {
-            for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
+    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+        if ( is_lake_area( (AreaType)area ) ) {
+            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
+                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
-                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
+                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );   
+                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
 
-                for (int k=0; k< tri_nodes.contours(); k++) {
-                    if (tri_nodes.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
-                        exit(0);                        
+                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
+                        if (tri_nodes.contour_size( tri ) != 3) {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
+                            exit(0);                        
+                        }
+
+                        n1 = tri_nodes.get_pt( tri, 0 );
+                        e1 = nodes.get_node(n1).GetPosition().z();
+                        n2 = tri_nodes.get_pt( tri, 1 );
+                        e2 = nodes.get_node(n2).GetPosition().z();
+                        n3 = tri_nodes.get_pt( tri, 2 );
+                        e3 = nodes.get_node(n3).GetPosition().z();
+
+                        min = e1;
+                        if ( e2 < min ) { min = e2; }                  
+                        if ( e3 < min ) { min = e3; }                  
+
+                        nodes.SetElevation( n1, min );
+                        nodes.SetElevation( n2, min );
+                        nodes.SetElevation( n3, min );
                     }
-
-                    n1 = tri_nodes.get_pt( k, 0 );
-                    e1 = nodes.get_node(n1).GetPosition().z();
-                    n2 = tri_nodes.get_pt( k, 1 );
-                    e2 = nodes.get_node(n2).GetPosition().z();
-                    n3 = tri_nodes.get_pt( k, 2 );
-                    e3 = nodes.get_node(n3).GetPosition().z();
-
-                    min = e1;
-                    if ( e2 < min ) { min = e2; }                  
-                    if ( e3 < min ) { min = e3; }                  
-
-                    nodes.SetElevation( n1, min );
-                    nodes.SetElevation( n2, min );
-                    nodes.SetElevation( n3, min );
                 }
             }
         }
 
-        if ( is_stream_area( (AreaType)i ) ) {
-            for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
+        if ( is_stream_area( (AreaType)area ) ) {
+            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
+                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
-                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
+                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );   
+                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
 
-                for (int k=0; k< tri_nodes.contours(); k++) {
-                    if (tri_nodes.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
-                        exit(0);                        
+                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
+                        if (tri_nodes.contour_size( tri ) != 3) {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
+                            exit(0);                        
+                        }
+
+                        point_list raw_nodes = nodes.get_geod_nodes();
+
+                        n1 = tri_nodes.get_pt( tri, 0 );
+                        e1 = nodes.get_node(n1).GetPosition().z();
+                        n2 = tri_nodes.get_pt( tri, 1 );
+                        e2 = nodes.get_node(n2).GetPosition().z();
+                        n3 = tri_nodes.get_pt( tri, 2 );
+                        e3 = nodes.get_node(n3).GetPosition().z();
+
+                        min = e1;
+                        p   = raw_nodes[n1];
+
+                        if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }                  
+                        if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }                  
+
+                        double d1 = distanceSphere( p, raw_nodes[n1] ); 
+                        double d2 = distanceSphere( p, raw_nodes[n2] ); 
+                        double d3 = distanceSphere( p, raw_nodes[n3] ); 
+
+                        double max1 = d1 * 0.20 + min;
+                        double max2 = d2 * 0.20 + min;
+                        double max3 = d3 * 0.20 + min;
+
+                        if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
+                        if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
+                        if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
                     }
-
-                    point_list raw_nodes = nodes.get_geod_nodes();
-
-                    n1 = tri_nodes.get_pt( k, 0 );
-                    e1 = nodes.get_node(n1).GetPosition().z();
-                    n2 = tri_nodes.get_pt( k, 1 );
-                    e2 = nodes.get_node(n2).GetPosition().z();
-                    n3 = tri_nodes.get_pt( k, 2 );
-                    e3 = nodes.get_node(n3).GetPosition().z();
-
-                    min = e1;
-                    p   = raw_nodes[n1];
-
-                    if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }                  
-                    if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }                  
-
-                    double d1 = distanceSphere( p, raw_nodes[n1] ); 
-                    double d2 = distanceSphere( p, raw_nodes[n2] ); 
-                    double d3 = distanceSphere( p, raw_nodes[n3] ); 
-
-                    double max1 = d1 * 0.20 + min;
-                    double max2 = d2 * 0.20 + min;
-                    double max3 = d3 * 0.20 + min;
-
-                    if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
-                    if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
-                    if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
                 }
             }
         }
 
-        if ( is_road_area( (AreaType)i ) ) {
-            for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
+        if ( is_road_area( (AreaType)area ) ) {
+            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
+                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
-                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
+                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );   
+                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
 
-                for (int k=0; k< tri_nodes.contours(); k++) {
-                    if (tri_nodes.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
-                        exit(0);                        
+                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
+                        if (tri_nodes.contour_size( tri ) != 3) {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
+                            exit(0);                        
+                        }
+
+                        point_list raw_nodes = nodes.get_geod_nodes();
+
+                        n1 = tri_nodes.get_pt( tri, 0 );
+                        e1 = nodes.get_node(n1).GetPosition().z();
+                        n2 = tri_nodes.get_pt( tri, 1 );
+                        e2 = nodes.get_node(n2).GetPosition().z();
+                        n3 = tri_nodes.get_pt( tri, 2 );
+                        e3 = nodes.get_node(n3).GetPosition().z();
+
+                        min = e1;
+                        p   = raw_nodes[n1];
+
+                        if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }                  
+                        if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }                  
+
+                        double d1 = distanceSphere( p, raw_nodes[n1] ); 
+                        double d2 = distanceSphere( p, raw_nodes[n2] ); 
+                        double d3 = distanceSphere( p, raw_nodes[n3] ); 
+
+                        double max1 = d1 * 0.30 + min;
+                        double max2 = d2 * 0.30 + min;
+                        double max3 = d3 * 0.30 + min;
+
+                        if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
+                        if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
+                        if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
                     }
-
-                    point_list raw_nodes = nodes.get_geod_nodes();
-
-                    n1 = tri_nodes.get_pt( k, 0 );
-                    e1 = nodes.get_node(n1).GetPosition().z();
-                    n2 = tri_nodes.get_pt( k, 1 );
-                    e2 = nodes.get_node(n2).GetPosition().z();
-                    n3 = tri_nodes.get_pt( k, 2 );
-                    e3 = nodes.get_node(n3).GetPosition().z();
-
-                    min = e1;
-                    p   = raw_nodes[n1];
-
-                    if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }                  
-                    if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }                  
-
-                    double d1 = distanceSphere( p, raw_nodes[n1] ); 
-                    double d2 = distanceSphere( p, raw_nodes[n2] ); 
-                    double d3 = distanceSphere( p, raw_nodes[n3] ); 
-
-                    double max1 = d1 * 0.30 + min;
-                    double max2 = d2 * 0.30 + min;
-                    double max3 = d3 * 0.30 + min;
-
-                    if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
-                    if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
-                    if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
                 }
             }
         }
 
-        if ( is_ocean_area( (AreaType)i ) ) {
-            for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
+        if ( is_ocean_area( (AreaType)area ) ) {
+            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
+                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
-                tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
+                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );   
+                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
 
-                SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );   
+                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
+                        if (tri_nodes.contour_size( tri ) != 3) {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
+                            exit(0);                        
+                        }
 
-                for (int k=0; k< tri_nodes.contours(); k++) {
-                    if (tri_nodes.contour_size(k) != 3) {
-                        SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size(k) );
-                        exit(0);                        
+                        n1 = tri_nodes.get_pt( tri, 0 );
+                        n2 = tri_nodes.get_pt( tri, 1 );
+                        n3 = tri_nodes.get_pt( tri, 2 );
+
+                        nodes.SetElevation( n1, 0.0 );
+                        nodes.SetElevation( n2, 0.0 );
+                        nodes.SetElevation( n3, 0.0 );
                     }
-
-                    n1 = tri_nodes.get_pt( k, 0 );
-                    n2 = tri_nodes.get_pt( k, 1 );
-                    n3 = tri_nodes.get_pt( k, 2 );
-
-                    nodes.SetElevation( n1, 0.0 );
-                    nodes.SetElevation( n2, 0.0 );
-                    nodes.SetElevation( n3, 0.0 );
                 }
             }
         }
@@ -1013,19 +1043,17 @@ void TGConstruct::AddCustomObjects( void ) {
 // a polygon with no increased contours (i.e. the sliver is adjacent
 // and can be merged.)  If so, replace the clipped polygon with the
 // new polygon that has the sliver merged in.
-void TGConstruct::merge_slivers( TGPolyList& clipped,  poly_list& slivers_list ) {
+void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list ) {
     TGPolygon poly, result, slivers, sliver;
     point_list contour;
     int original_contours, result_contours;
     bool done;
-    int area, i, j, k;
+    int area, shape, segment, i, j;
 
     for ( i = 0; i < (int)slivers_list.size(); i++ ) {
         slivers = slivers_list[i];
 
         for ( j = 0; j < slivers.contours(); ++j ) {
-            // cout << "Merging sliver = " << i << endl;
-
             // make the sliver polygon
             contour = slivers.get_contour( j );
             sliver.erase();
@@ -1038,29 +1066,24 @@ void TGConstruct::merge_slivers( TGPolyList& clipped,  poly_list& slivers_list )
                 	continue;
                 }
 
-                // cout << "  testing area = " << area << " with " 
-                //      << clipped.polys[area].size() << " polys" << endl;
-                for ( k = 0; k < (int)clipped.superpolys[area].size() && !done; ++k ) {
-                    // cout << "  polygon = " << j << endl;
-                    poly = clipped.superpolys[area][k].get_poly();
-                    original_contours = poly.contours();
-#if USE_CLIPPER
-                    result = tgPolygonUnionClipper( poly, sliver );
-#else
-                    result = tgPolygonUnion( poly, sliver );
-#endif
-                    result_contours = result.contours();
+                for ( shape = 0; shape < (int)clipped.area_size(area) && !done; ++shape ) {
+                    for ( segment = 0; segment < (int)clipped.shape_size(area, shape) && !done; ++segment ) {
 
-                    if ( original_contours == result_contours ) {
-                        // cout << "    FOUND a poly to merge the sliver with" << endl;
-                        clipped.superpolys[area][k].set_poly( result );
-                        done = true;
+                        poly = clipped.get_poly( area, shape, segment );
+                        original_contours = poly.contours();
+#if USE_CLIPPER
+                        result = tgPolygonUnionClipper( poly, sliver );
+#else
+                        result = tgPolygonUnion( poly, sliver );
+#endif
+                        result_contours = result.contours();
+
+                        if ( original_contours == result_contours ) {
+                            clipped.set_poly( area, shape, segment, result );
+                            done = true;
+                        }
                     }
                 }
-            }
-
-           if ( !done ) {
-                // cout << "no suitable polys found for sliver merge" << endl;
             }
         }
     }
@@ -1069,6 +1092,7 @@ void TGConstruct::merge_slivers( TGPolyList& clipped,  poly_list& slivers_list )
 bool TGConstruct::ClipLandclassPolys( void ) {
     TGPolygon accum, clipped, tmp;
     TGPolygon remains;
+    TGPolygon safety_base;
     poly_list slivers;
     int i, j;
     Point3D p;
@@ -1083,22 +1107,22 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     accum.erase();
 
     // set up clipping tile : and remember to add the nodes!
-    polys_in.safety_base.erase();
+    safety_base.erase();
 
     p = Point3D(min.x, min.y, -9999.0);
-    polys_in.safety_base.add_node( 0, p );
+    safety_base.add_node( 0, p );
     nodes.unique_add( p );
 
     p = Point3D(max.x, min.y, -9999.0);
-    polys_in.safety_base.add_node( 0, p );
+    safety_base.add_node( 0, p );
     nodes.unique_add( p );
 
     p = Point3D(max.x, max.y, -9999.0);
-    polys_in.safety_base.add_node( 0, p );
+    safety_base.add_node( 0, p );
     nodes.unique_add( p );
 
     p = Point3D(min.x, max.y, -9999.0);
-    polys_in.safety_base.add_node( 0, p );
+    safety_base.add_node( 0, p );
     nodes.unique_add( p );
 
     // set up land mask, we clip most things to this since it is our
@@ -1110,30 +1134,31 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     land_mask.erase();
     water_mask.erase();
     island_mask.erase();
+
     for ( i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
         if ( is_landmass_area( i ) && !ignoreLandmass ) {
-            for ( unsigned int j = 0; j < polys_in.superpolys[i].size(); ++j ) {
+            for ( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
 #if USE_CLIPPER
-                land_mask = tgPolygonUnionClipper( land_mask, polys_in.superpolys[i][j].get_poly() );
+                land_mask = tgPolygonUnionClipper( land_mask, polys_in.get_mask(i, j) );
 #else
-                land_mask = tgPolygonUnion( land_mask, polys_in.superpolys[i][j].get_poly() );
+                land_mask = tgPolygonUnion( land_mask, polys_in.get_mask(i, j) );
 #endif
 
             }
         } else if ( is_water_area( i ) ) {
-            for (unsigned int j = 0; j < polys_in.superpolys[i].size(); j++) {
+            for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
 #if USE_CLIPPER
-                water_mask = tgPolygonUnionClipper( water_mask, polys_in.superpolys[i][j].get_poly() );
+                water_mask = tgPolygonUnionClipper( water_mask, polys_in.get_mask(i, j) );
 #else
-                water_mask = tgPolygonUnion( water_mask, polys_in.superpolys[i][j].get_poly() );
+                water_mask = tgPolygonUnion( water_mask, polys_in.get_mask(i, j) );
 #endif
             }
         } else if ( is_island_area( i ) ) {
-            for (unsigned int j = 0; j < polys_in.superpolys[i].size(); j++) {
+            for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
 #if USE_CLIPPER
-                island_mask = tgPolygonUnionClipper( island_mask, polys_in.superpolys[i][j].get_poly() );
+                island_mask = tgPolygonUnionClipper( island_mask, polys_in.get_mask(i, j) );
 #else
-                island_mask = tgPolygonUnion( island_mask, polys_in.superpolys[i][j].get_poly() );
+                island_mask = tgPolygonUnion( island_mask, polys_in.get_mask(i, j) );
 #endif
             }
         }
@@ -1141,10 +1166,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // process polygons in priority order
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
-        for( j = 0; j < (int)polys_in.superpolys[i].size(); ++j ) {
-            TGPolygon current = polys_in.superpolys[i][j].get_poly();
+        for( j = 0; j < (int)polys_in.area_size(i); ++j ) {
+            TGPolygon current = polys_in.get_mask(i, j);
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_in.superpolys[i].size() );                       
+            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << polys_in.area_size(i) );                       
 
             tmp = current;
 
@@ -1188,20 +1213,20 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 // move slivers from clipped polygon to slivers polygon
                 tgPolygonFindSlivers( clipped, slivers );
 
-                // merge any slivers with previously clipped
-                // neighboring polygons
-                //if ( slivers.contours() > 0 ) {
-                //    merge_slivers(polys_clipped, slivers);
-                //}
-
                 // add the sliverless result polygon to the clipped polys list
                 if ( clipped.contours() > 0  ) {
+                    TGShape shape;
                     TGSuperPoly sp;
-                    string material = get_area_name( (AreaType)i );
 
-                    sp.set_material( material );
-                    sp.set_poly( clipped );
-                    polys_clipped.superpolys[i].push_back( sp );
+                    sp.set_material( get_area_name( (AreaType)i ) );
+
+                    // copy all of the superpolys and texparams
+                    shape.SetMask( clipped );
+                    shape.sps = polys_in.get_shape( i, j ).sps;
+                    shape.tps = polys_in.get_shape( i, j ).tps;
+
+                    shape.sps.push_back( sp );
+                    polys_clipped.add_shape( i, shape );
                 }
 	        }
 
@@ -1223,9 +1248,9 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     // remains->num_contours = 0;
     // remains->contour = NULL;
 #if USE_CLIPPER
-    remains = tgPolygonDiffClipper( polys_in.safety_base, accum );
+    remains = tgPolygonDiffClipper( safety_base, accum );
 #else
-    remains = tgPolygonDiff( polys_in.safety_base, accum );
+    remains = tgPolygonDiff( safety_base, accum );
 #endif
 
     if ( remains.contours() > 0 ) {
@@ -1244,27 +1269,39 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
         if ( remains.contours() > 0 ) {
             TGSuperPoly sp;
+            TGShape shape;
+
             string material = get_area_name(get_sliver_target_area_type());
 
             sp.set_material( material );
             sp.set_poly( remains );
+            shape.sps.push_back( sp );
 
-            polys_clipped.superpolys[(int)get_sliver_target_area_type()].push_back(sp);
+            polys_clipped.add_shape( (int)get_sliver_target_area_type(), shape );
         }
     }
 
-    // Once clipping is complete, make sure any newly added intersection nodes 
-    // are added to the tgnodes
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
+    // Once clipping is complete, intersect the individual segments with their clip masks
+    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+        for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            SG_LOG( SG_CLIPPER, SG_INFO, "Seperating segments from clip mask for " << get_area_name( (AreaType)area ) << ":" << shape+1 << " of " << polys_clipped.area_size(area) );                       
+            polys_clipped.get_shape(area, shape).IntersectPolys();
+        }
+    }
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );                       
+    // Now make sure any newly added intersection nodes are added to the tgnodes
+    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+        for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            for (unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++) {
+                TGPolygon poly = polys_clipped.get_poly( area, shape, segment );
 
-            for (int k=0; k< poly.contours(); k++) {
-                for (int l = 0; l < poly.contour_size(k); l++) {
-                    // ensure we have all nodes...
-                    nodes.unique_add( poly.get_pt( k, l ) );
+                SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );                       
+
+                for (int con=0; con < poly.contours(); con++) {
+                    for (int node = 0; node < poly.contour_size( con ); node++) {
+                        // ensure we have all nodes...
+                        nodes.unique_add( poly.get_pt( con, node ) );
+                    }
                 }
             } 
         }
@@ -1314,25 +1351,25 @@ void TGConstruct::LookupNodesPerVertex( void )
     SG_LOG(SG_GENERAL, SG_ALERT, "LookupNodexPerVertex");
 
     // for each node, traverse all the triangles - and create face lists
-    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; ++area ) {
+    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+        for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                TGPolygon   tris = polys_clipped.get_tris( area, shape, segment );
+                TGPolyNodes tri_nodes;
+                int         idx;
 
-        for( unsigned int p = 0; p < polys_clipped.superpolys[area].size(); ++p ) {
-            TGPolygon   tris = polys_clipped.superpolys[area][p].get_tris();
-            TGPolyNodes tri_nodes;
-            int idx;
-
-            for (int tri=0; tri < tris.contours(); tri++) {
-
-                for (int vertex = 0; vertex < tris.contour_size(tri); vertex++) {
-                    idx = nodes.find( tris.get_pt( tri, vertex ) );
-                    if (idx >= 0) {
-                        tri_nodes.add_node( tri, idx );
-                    } else {
-                        exit(0);
+                for (int tri=0; tri < tris.contours(); tri++) {
+                    for (int vertex = 0; vertex < tris.contour_size(tri); vertex++) {
+                        idx = nodes.find( tris.get_pt( tri, vertex ) );
+                        if (idx >= 0) {
+                            tri_nodes.add_node( tri, idx );
+                        } else {
+                            exit(0);
+                        }
                     }
                 }
+                polys_clipped.set_tri_idxs(area, shape, segment, tri_nodes);
             }
-            polys_clipped.superpolys[area][p].set_tri_idxs(tri_nodes);            
         }
     }
 }
@@ -1342,14 +1379,16 @@ void TGConstruct::LookupFacesPerNode( void )
     SG_LOG(SG_GENERAL, SG_ALERT, "LookupFacesPerNode");
 
     // Add each face that includes a node to the node's face list
-    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; ++area ) {
-        for( unsigned int p = 0; p < polys_clipped.superpolys[area].size(); ++p ) {
-            TGPolygon tris = polys_clipped.superpolys[area][p].get_tris();
+    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+        for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                TGPolygon   tris = polys_clipped.get_tris(area, shape, segment);
 
-            for (int tri=0; tri < tris.contours(); tri++) {
-                for (int sub = 0; sub < tris.contour_size(tri); sub++) {
-                    int n = nodes.find( tris.get_pt( tri, sub ) );
-                    nodes.AddFace( n, area, p, tri );
+                for (int tri=0; tri < tris.contours(); tri++) {
+                    for (int sub = 0; sub < tris.contour_size(tri); sub++) {
+                        int n = nodes.find( tris.get_pt( tri, sub ) );
+                        nodes.AddFace( n, area, shape, segment, tri );
+                    }
                 }
             }
         }
@@ -1433,11 +1472,12 @@ void TGConstruct::CalcFaceNormals( void )
     // traverse the superpols, and calc normals for each tri within
     point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
 
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            SG_LOG( SG_CLIPPER, SG_INFO, "Calculating face normals for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_in.superpolys[i].size() );                       
-
-            calc_normals( wgs84_nodes, polys_clipped.superpolys[i][j] );
+    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+        for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                SG_LOG( SG_CLIPPER, SG_INFO, "Calculating face normals for " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << polys_in.area_size(area) );                       
+                calc_normals( wgs84_nodes, polys_clipped.get_superpoly( area, shape, segment ) ); 
+            }
         }
     }
 }
@@ -1459,22 +1499,22 @@ void TGConstruct::CalcPointNormals( void )
 
         // for each triangle that shares this node
         for ( unsigned int j = 0; j < faces.size(); ++j ) {
-            unsigned int at   = faces[j].area;
-            unsigned int poly = faces[j].poly;
-            unsigned int tri  = faces[j].tri;
+            unsigned int at      = faces[j].area;
+            unsigned int shape   = faces[j].shape;
+            unsigned int segment = faces[j].seg;
+            unsigned int tri     = faces[j].tri;
             int_list     face_nodes;
             double       face_area;
 
-            normal     = polys_clipped.superpolys[at][poly].get_face_normal( tri );
-            face_nodes = polys_clipped.superpolys[at][poly].get_tri_idxs().get_contour( tri ) ;
-            face_area  = polys_clipped.superpolys[at][poly].get_face_area( tri );
+            normal     = polys_clipped.get_face_normal( at, shape, segment, tri );
+            face_nodes = polys_clipped.get_tri_idxs( at, shape, segment ).get_contour( tri ) ;
+            face_area  = polys_clipped.get_face_area( at, shape, segment, tri );
 
             normal *= face_area;	// scale normal weight relative to area
             total_area += face_area;
             average += normal;
         }
         average /= total_area;
-
         nodes.SetNormal( i, average );
     }
 }
@@ -1504,39 +1544,44 @@ void TGConstruct::TesselatePolys( void )
 {
     // tesselate the polygons and prepair them for final output
     point_list extra = nodes.get_geod_nodes();
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
 
-           SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)i ) << "(" << i << "): " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << ": flag = " << polys_clipped.superpolys[i][j].get_flag());
+    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+        for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+
+                SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " << 
+                        shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) << 
+                        ": flag = " << polys_clipped.get_flag(area, shape, segment));
 
 #if 0
-            if ( (i == 3) && (j == 137) ) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Error Poly\n" << poly );     
+                if ( (i == 3) && (j == 137) ) {
+                    SG_LOG( SG_CLIPPER, SG_INFO, "Error Poly\n" << poly );     
 
 
-                sprintf( layer_name, "pretesselate" );
-                l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "pretesselate" );
-                tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
+                    sprintf( layer_name, "pretesselate" );
+                    l_id = tgShapefileOpenLayer( ds_id, layer_name );
+                    sprintf( feature_name, "pretesselate" );
+                    tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
 
-                // close befoe the crash
-                tgShapefileCloseDatasource( ds_id );
-            }
+                    // close befoe the crash
+                    tgShapefileCloseDatasource( ds_id );
+                }
 #endif
 
-            TGPolygon tri = polygon_tesselate_alt_with_extra( poly, extra, false );
+                TGPolygon tri = polygon_tesselate_alt_with_extra( poly, extra, false );
 
-            // ensure all added nodes are accounted for
-            for (int k=0; k< tri.contours(); k++) {
-                for (int l = 0; l < tri.contour_size(k); l++) {
-                    // ensure we have all nodes...
-                    nodes.unique_add( tri.get_pt( k, l ) );
-                }
-            } 
+                // ensure all added nodes are accounted for
+                for (int k=0; k< tri.contours(); k++) {
+                    for (int l = 0; l < tri.contour_size(k); l++) {
+                        // ensure we have all nodes...
+                        nodes.unique_add( tri.get_pt( k, l ) );
+                    }
+                } 
 
-            // Save the triangulation
-            polys_clipped.superpolys[i][j].set_tris( tri );
+                // Save the triangulation
+                polys_clipped.set_tris( area, shape, segment, tri );
+            }
         }
     }
 }
@@ -1566,39 +1611,40 @@ void TGConstruct::WriteBtgFile( void )
     int_list pt_n, tri_n, strip_n;
     int_list tri_tc, strip_tc;
 
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
+    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         // only tesselate non holes
-        if ( !is_hole_area( i ) ) {
-            for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Ouput nodes for " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.superpolys[i].size() );                       
+        if ( !is_hole_area( area ) ) {
+            for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+                for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                    SG_LOG( SG_CLIPPER, SG_INFO, "Ouput nodes for " << get_area_name( (AreaType)area ) << ":" << 
+                            shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );                       
 
-            	TGPolyNodes tri_nodes = polys_clipped.superpolys[i][j].get_tri_idxs();
-            	TGPolygon   tri_txs   = polys_clipped.superpolys[i][j].get_texcoords();
-            	string      material  = polys_clipped.superpolys[i][j].get_material();
+            	    TGPolyNodes tri_nodes = polys_clipped.get_tri_idxs(area, shape, segment);
+            	    TGPolygon   tri_txs   = polys_clipped.get_texcoords(area, shape, segment);
+            	    string      material  = polys_clipped.get_material(area, shape, segment);
 
-            	for (int k = 0; k < tri_nodes.contours(); ++k) 
-                {
-        	        tri_v.clear();
-        	        tri_n.clear();
-        	        tri_tc.clear();
-        	        for (int l = 0; l < tri_nodes.contour_size(k); ++l) 
-                    {
-                        index = tri_nodes.get_pt( k, l );
-            		    tri_v.push_back( index );
+            	    for (int k = 0; k < tri_nodes.contours(); ++k) {
+            	        tri_v.clear();
+            	        tri_n.clear();
+            	        tri_tc.clear();
+            	        for (int l = 0; l < tri_nodes.contour_size(k); ++l) {
+                            index = tri_nodes.get_pt( k, l );
+                		    tri_v.push_back( index );
     
-                        // add the node's normal
-                		index = normals.unique_add( nodes.GetNormal( index ) );
-                		tri_n.push_back( index );
+                            // add the node's normal
+                    		index = normals.unique_add( nodes.GetNormal( index ) );
+                    		tri_n.push_back( index );
     
-                		Point3D tc = tri_txs.get_pt( k, l );
-                		index = texcoords.unique_add( tc );
-                		tri_tc.push_back( index );
+                    		Point3D tc = tri_txs.get_pt( k, l );
+                    		index = texcoords.unique_add( tc );
+                    		tri_tc.push_back( index );
+                	    }
+                	    tris_v.push_back( tri_v );
+            	        tris_n.push_back( tri_n );
+            	        tris_tc.push_back( tri_tc );
+            	        tri_materials.push_back( material );
             	    }
-            	    tris_v.push_back( tri_v );
-        	        tris_n.push_back( tri_n );
-        	        tris_tc.push_back( tri_tc );
-        	        tri_materials.push_back( material );
-        	    }
+                }    
             }
         }
     }
@@ -1680,55 +1726,59 @@ void TGConstruct::WriteBtgFile( void )
 }
 
 void TGConstruct::clean_clipped_polys() {
-    int i, j;
-
     // Clean the polys
-    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
-        for( j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
-            SG_LOG( SG_CLIPPER, SG_INFO, "Cleaning poly " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << polys_clipped.superpolys[i].size() );
+    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+        for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+                SG_LOG( SG_CLIPPER, SG_INFO, "Cleaning poly " << get_area_name( (AreaType)area ) << 
+                        ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );
 
-            if ( i == 3 ) {
-                poly = remove_cycles( poly );
-                poly = remove_dups( poly );
-                poly = remove_bad_contours( poly );
-                poly = tgPolygonSimplify( poly );
-                poly = remove_tiny_contours( poly );
-                poly = remove_spikes( poly );
-                poly = remove_dups( poly );
-                poly = remove_bad_contours( poly );
-                poly = remove_tiny_contours( poly );
-            } else {
-                poly = snap(poly, gSnap);
-                poly = remove_dups( poly );
-                poly = remove_bad_contours( poly );
+                if ( area == 3 ) {
+                    poly = remove_cycles( poly );
+                    poly = remove_dups( poly );
+                    poly = remove_bad_contours( poly );
+                    poly = tgPolygonSimplify( poly );
+                    poly = remove_tiny_contours( poly );
+                    poly = remove_spikes( poly );
+                    poly = remove_dups( poly );
+                    poly = remove_bad_contours( poly );
+                    poly = remove_tiny_contours( poly );
+                } else {
+                    poly = snap(poly, gSnap);
+                    poly = remove_dups( poly );
+                    poly = remove_bad_contours( poly );
+                }
+
+                polys_clipped.set_poly( area, shape, segment, poly );
             }
-
-            polys_clipped.superpolys[i][j].set_poly( poly );
         }
     }
 }
 
 void TGConstruct::CalcTextureCoordinates( void )
 {
-    for (int i = 0; i < TG_MAX_AREA_TYPES; i++) {
-        for (int j = 0; j < (int)polys_clipped.superpolys[i].size(); ++j ) {
-            TGPolygon poly = polys_clipped.superpolys[i][j].get_poly();
+    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+        for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+                SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)area ) << "(" << area << "): " << 
+                        shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) << 
+                        ": flag = " << polys_clipped.get_flag(area, shape, segment));
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)i ) << "(" << i << "): " << j+1 << " of " << (int)polys_clipped.superpolys[i].size() << ": flag = " << polys_clipped.superpolys[i][j].get_flag());
+                TGPolygon tri = polys_clipped.get_tris( area, shape, segment );
+                TGPolygon tc;
 
-            TGPolygon tri = polys_clipped.superpolys[i][j].get_tris();
-            TGPolygon tc;
-
-            if ( polys_clipped.superpolys[i][j].get_flag() == "textured" ) {
-                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
-                // tc = linear_tex_coords( tri, clipped_polys.texparams[i][j] );
-                tc = area_tex_coords( tri );
-            } else {
-                // SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
-                tc = area_tex_coords( tri );
+                if ( polys_clipped.get_flag( area, shape, segment ) == "textured" ) {
+                    // SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
+                    // tc = linear_tex_coords( tri, clipped_polys.texparams[i][j] );
+                    tc = area_tex_coords( tri );
+                } else {
+                    // SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
+                    tc = area_tex_coords( tri );
+                }
+          	    polys_clipped.set_texcoords( area, shape, segment, tc );
             }
-      	    polys_clipped.superpolys[i][j].set_texcoords( tc );
         }
     }
 }

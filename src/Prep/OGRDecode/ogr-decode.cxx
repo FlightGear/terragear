@@ -58,6 +58,7 @@ string area_type="Default";
 string area_type_col;
 int continue_on_errors=0;
 int texture_lines = 0;
+int seperate_segments = 0;
 int max_segment_length=0; // ==0 => don't split
 int start_record=0;
 bool use_attribute_query=false;
@@ -175,16 +176,7 @@ void processLineStringWithMask(OGRLineString* poGeometry,
     // make a plygons from the line segments
     tg::makePolygons(line,width,segments);
 
-#if 1
-    for ( i = 0; i < (int)segments.size(); ++i ) {
-    	segment = segments[i];
-
-        tgChopNormalPolygon(work_dir, area_type, segment, false);
-    }
-#else
     tgChopNormalPolygonsWithMask(work_dir, area_type, segments, false);
-#endif
-
 }
 
 void processLineStringWithTextureInfo(OGRLineString* poGeometry,
@@ -482,8 +474,10 @@ void processLayer(OGRLayer* poLayer,
             }
             if (texture_lines) {
                 processLineStringWithTextureInfo((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-            } else {
+            } else if (seperate_segments) {
                 processLineStringWithMask((OGRLineString*)poGeometry,work_dir,area_type_name,width);
+            } else {
+                processLineString((OGRLineString*)poGeometry,work_dir,area_type_name,width);
             }
             break;
         }
@@ -497,8 +491,10 @@ void processLayer(OGRLayer* poLayer,
             for (int i=0;i<multils->getNumGeometries();i++) {
                 if (texture_lines) {
                     processLineStringWithTextureInfo((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-                } else {
+                } else if (seperate_segments) {
                     processLineStringWithMask((OGRLineString*)poGeometry,work_dir,area_type_name,width);
+                } else {
+                    processLineString((OGRLineString*)poGeometry,work_dir,area_type_name,width);
                 }
             }
             break;
@@ -611,10 +607,14 @@ int main( int argc, char **argv ) {
 	    argv+=2;
 	    argc-=2;
 	} else if (!strcmp(argv[1],"--texture-lines")) {
-            argv++;
-            argc--;
+        argv++;
+        argc--;
 	    texture_lines=1;
-	} else if (!strcmp(argv[1],"--continue-on-errors")) {
+	} else if (!strcmp(argv[1],"--seperate-segments")) {
+        argv++;
+        argc--;
+	    seperate_segments=1;
+    } else if (!strcmp(argv[1],"--continue-on-errors")) {
             argv++;
             argc--;
 	    continue_on_errors=1;

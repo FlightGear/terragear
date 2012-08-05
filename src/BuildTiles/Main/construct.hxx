@@ -48,39 +48,157 @@
 
 #include <landcover/landcover.hxx>
 
-// TO REMOVE
-#include <Geometry/trieles.hxx>
-#include <Geometry/trinodes.hxx>
-#include <Geometry/trisegs.hxx>
-// TO REMOVE
-
 #include "priorities.hxx"
 
-typedef std::vector < int_list > belongs_to_list;
-typedef belongs_to_list::iterator belongs_to_list_iterator;
-typedef belongs_to_list::const_iterator belongs_to_list_tripoly_iterator;
-
-class TGPolyList
+class TGShape
 {
 public:
-    superpoly_list superpolys[TG_MAX_AREA_TYPES];
-    texparams_list texparams[TG_MAX_AREA_TYPES];
-    TGPolygon safety_base;
+    TGPolygon       clip_mask;
+    superpoly_list  sps;
+    texparams_list  tps;
 
+    void    SetMask( TGPolygon mask )
+    {
+        clip_mask = mask;
+    }
+
+    void    BuildMask( void )
+    {
+        TGPolygon poly;
+        clip_mask.erase();
+
+        for (unsigned int i=0; i<sps.size(); i++)
+        {
+            poly = sps[i].get_poly();
+            clip_mask = tgPolygonUnion( clip_mask, poly );
+        }
+    }
+
+    void    IntersectPolys( void )
+    {
+        TGPolygon original, intersect;
+
+        for (unsigned int i=0; i<sps.size(); i++)
+        {
+            original  = sps[i].get_poly();
+            intersect = tgPolygonInt( clip_mask, original );
+            sps[i].set_poly( intersect );
+        }
+    }
+};
+
+typedef std::vector < TGShape > shape_list;
+typedef shape_list::iterator shape_list_iterator;
+typedef shape_list::const_iterator const_shape_list_iterator;
+
+class TGLandclass
+{
+public:
     void clear(void)
     {
         int i;
 
         for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-            superpolys[i].clear();
+            shapes[i].clear();
         }
-
-        for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-            texparams[i].clear();
-        }
-
-        safety_base.erase();
     }
+
+    inline unsigned int area_size( unsigned int area )
+    {
+        return shapes[area].size();
+    }
+    inline unsigned int shape_size( unsigned int area, unsigned int shape )
+    {
+        return shapes[area][shape].sps.size();
+    }
+
+    inline void add_shape( unsigned int area, TGShape shape )
+    {
+        shapes[area].push_back( shape );
+    }
+    inline TGShape& get_shape( unsigned int area, unsigned int shape )
+    {
+        return shapes[area][shape];
+    }
+
+    inline TGPolygon get_mask( unsigned int area, unsigned int shape )
+    {
+        return shapes[area][shape].clip_mask;
+    }
+    inline void set_mask( unsigned int area, unsigned int shape, TGPolygon mask )
+    {
+        shapes[area][shape].clip_mask = mask;
+    }
+
+
+    inline TGSuperPoly& get_superpoly( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].sps[segment];
+    }
+    inline void set_superpoly( unsigned int area, unsigned int shape, unsigned int segment, TGSuperPoly sp )
+    {
+        shapes[area][shape].sps[segment] = sp;
+    }
+
+    inline TGPolygon get_poly( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].sps[segment].get_poly();
+    }
+    inline void set_poly( unsigned int area, unsigned int shape, unsigned int segment, TGPolygon poly )
+    {
+        return shapes[area][shape].sps[segment].set_poly( poly );
+    }
+
+    inline TGPolygon get_tris( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].sps[segment].get_tris();
+    }
+    inline void set_tris( unsigned int area, unsigned int shape, unsigned int segment, TGPolygon tris )
+    {
+        shapes[area][shape].sps[segment].set_tris( tris );
+    }
+
+    inline Point3D get_face_normal( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
+    {
+        return shapes[area][shape].sps[segment].get_face_normal( tri );
+    }
+
+    inline double get_face_area( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
+    {
+        return shapes[area][shape].sps[segment].get_face_area( tri );
+    }
+
+    inline std::string get_flag( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].sps[segment].get_flag();
+    }
+
+    inline std::string get_material( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].sps[segment].get_material();
+    }
+
+
+    inline TGPolygon get_texcoords( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].sps[segment].get_texcoords();
+    }
+    inline void set_texcoords( unsigned int area, unsigned int shape, unsigned int segment, TGPolygon tcs )
+    {
+        return shapes[area][shape].sps[segment].set_texcoords( tcs );
+    }
+
+    inline TGPolyNodes get_tri_idxs( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].sps[segment].get_tri_idxs();
+    }
+    inline void set_tri_idxs( unsigned int area, unsigned int shape, unsigned int segment, TGPolyNodes tis )
+    {
+        return shapes[area][shape].sps[segment].set_tri_idxs( tis );
+    }
+
+private:
+    shape_list     shapes[TG_MAX_AREA_TYPES];
 };
 
 // forward declaration
@@ -123,8 +241,8 @@ private:
     TGArray array;
 
     // land class polygons
-    TGPolyList polys_in;
-    TGPolyList polys_clipped;
+    TGLandclass polys_in;
+    TGLandclass polys_clipped;
 
     // All Nodes
     TGNodes nodes;
@@ -145,7 +263,7 @@ private:
     bool ClipLandclassPolys( void );
     // Clip Helpers
     void move_slivers( TGPolygon& in, TGPolygon& out );
-    void merge_slivers( TGPolyList& clipped, poly_list& slivers_list );
+    void merge_slivers( TGLandclass& clipped, poly_list& slivers_list );
 
     // Shared edge Matching
     void LoadSharedEdgeData( void );
@@ -233,10 +351,6 @@ public:
 
     // node list in geodetic coords (with fixed elevation)
     inline point_list get_geod_nodes() const { return nodes.get_geod_nodes(); }
-
-    // face normal list (for flat shading)
-//    inline point_list get_face_normals() const { return face_normals; }
-//    inline void set_face_normals( point_list n ) { face_normals = n; }
 
     // normal list (for each point) in cart coords (for smooth
     // shading)
