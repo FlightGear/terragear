@@ -176,7 +176,7 @@ public:
 
     long            FindAirport( string icao );
     void            AddAirport(  string icao );
-    void            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
+    bool            AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon );
     void            RetryAirport( AirportInfo* pInfo );
 
     void            Schedule( int num_threads, string& summaryfile );

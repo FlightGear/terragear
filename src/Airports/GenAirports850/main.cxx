@@ -394,18 +394,20 @@ int main(int argc, char **argv)
         position = scheduler->FindAirport( start_id );
 
         // add remaining airports within boundary
-        scheduler->AddAirports( position, min_lat, min_lon, max_lat, max_lon );
-
-        // parse all the airports that were found
-        scheduler->Schedule( num_threads, summary_file );
+        if ( scheduler->AddAirports( position, min_lat, min_lon, max_lat, max_lon ) )
+        {
+            // parse all the airports that were found
+            scheduler->Schedule( num_threads, summary_file );
+        }
     }
     else
     {
         // find all airports within given boundary
-        scheduler->AddAirports( 0, min_lat, min_lon, max_lat, max_lon );
-
-        // and parser them
-        scheduler->Schedule( num_threads, summary_file );
+        if ( scheduler->AddAirports( 0, min_lat, min_lon, max_lat, max_lon ) )
+        {
+            // and parse them
+            scheduler->Schedule( num_threads, summary_file );
+        }
     }
 
     SG_LOG(SG_GENERAL, SG_INFO, "Done");

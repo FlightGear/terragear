@@ -590,7 +590,7 @@ void Scheduler::RetryAirport( AirportInfo* pai )
     retryList.push_back( *pai );        
 }
 
-void Scheduler::AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon )
+bool Scheduler::AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon )
 {
     char 	 line[2048];
     char*	 def;
@@ -760,6 +760,15 @@ void Scheduler::AddAirports( long start_pos, float min_lat, float min_lon, float
     	    }
     	}
 	}
+
+	// did we add airports to the parse list?
+        if ( originalList.size() )
+        {
+            return true;
+        } else
+        {
+            return false;
+        }
 }
 
 Scheduler::Scheduler(string& cmd, string& datafile, const string& root, const string_list& elev_src)
