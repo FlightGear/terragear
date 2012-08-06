@@ -60,7 +60,7 @@ using std::endl;
 
 
 int nudge = 10;
-double slope_max = 0.2;
+double slope_max = 0.02;
 
 static int is_in_range( string_list & runway_list, float min_lat, float max_lat, float min_lon, float max_lon );
 

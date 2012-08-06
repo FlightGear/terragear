@@ -118,7 +118,7 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
 
 // TODO: where do these belong
 int nudge = 10;
-double slope_max = 0.2;
+double slope_max = 0.02;
 double gSnap = 0.00000001;      // approx 1 mm
 
 // For creating a buffered stream to write to the socket
