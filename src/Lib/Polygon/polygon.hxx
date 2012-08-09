@@ -153,6 +153,20 @@ inline void set_pt( int contour, int i, const Point3D& p )
     poly[contour][i] = p;
 }
 
+inline void get_bounding_box( Point3D& min, Point3D& max )
+{
+    min = Point3D(  std::numeric_limits<double>::infinity(),  std::numeric_limits<double>::infinity(), 0.0 );
+    max = Point3D( -std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity(), 0.0 );
+    
+    for ( int i = 0; i < contours(); i++ ) {
+        for (unsigned int j = 0; j < poly[i].size(); j++) {
+            Point3D pt = poly[i][j];
+            if ( pt < min ) { min = pt; }
+            if ( pt > max ) { max = pt; }
+        }
+    }
+}
+
 // get and set an arbitrary point inside the specified polygon contour
 inline Point3D get_point_inside( const int contour ) const
 {

@@ -93,6 +93,9 @@ public:
     Point3D& operator *= ( const double d );     // multiplication by a constant
     Point3D& operator /= ( const double d );	 // division by a constant
 
+    bool operator > ( const Point3D& p );
+    bool operator < ( const Point3D& p );
+    
     void setx(const double x);
     void sety(const double y);
     void setz(const double z);
@@ -138,6 +141,8 @@ public:
     bool   IsEqual2D(const Point3D& a) const;         // equality check in X,Y only
     bool   HasElevation() const;                      // does point have elevation data?
 
+    bool   IsWithin( Point3D min, Point3D max ) const;
+    
 #ifdef _MSC_VER
     double round(double d)
     {
@@ -316,6 +321,16 @@ inline Point3D& Point3D::operator /= ( const double d )
     return *this;
 }
 
+inline bool Point3D::operator < ( const Point3D& p )
+{
+    return ( (n[PX] < p.n[PX]) && (n[PY] < p.n[PY]) );
+}
+
+inline bool Point3D::operator > ( const Point3D& p )
+{
+    return ( (n[PX] > p.n[PX]) && (n[PY] > p.n[PY]) );
+}
+
 inline void Point3D::setx(const double x) {
     n[PX] = x;
 }
@@ -424,6 +439,11 @@ inline bool Point3D::HasElevation() const
     return ( fabs( n[PZ] + 9999.0 ) > fgPoint3_Epsilon );
 }
 
+inline bool Point3D::IsWithin( Point3D min, Point3D max ) const
+{
+    return ( (min.n[PX] < n[PX]) && (min.n[PY] < n[PY]) &&
+             (max.n[PX] > n[PX]) && (max.n[PY] > n[PY]) );
+}
 
 // FRIENDS
 

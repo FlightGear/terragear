@@ -145,6 +145,7 @@ void TGConstruct::add_poly( int area, const TGPolygon &poly, string material ) {
 
 bool TGConstruct::load_poly(const string& path) {
     bool poly3d = false;
+    bool with_tp = false;
     string first_line;
     string poly_name;
     AreaType poly_type;
@@ -160,40 +161,104 @@ bool TGConstruct::load_poly(const string& path) {
         exit(-1);
     }
 
-    TGPolygon poly;
-
-    Point3D p;
+    TGPolygon   poly;
+    TGTexParams tp;
+    Point3D     p;
+    
     // (this could break things, why is it here) in >> skipcomment;
     while ( !in.eof() ) {
         in >> first_line;
         if ( first_line == "#2D" ) {
             poly3d = false;
+            with_tp = false;
+
             in >> poly_name;
             num_polys = 1;
         } else if ( first_line == "#2D_WITH_MASK" ) {
             poly3d = false;
+            with_tp = false;
+
+            in >> poly_name;
+            in >> num_polys;
+        } else if ( first_line == "#2D_WITH_TPS" ) {
+            poly3d = false;
+            with_tp = true;
+
             in >> poly_name;
             in >> num_polys;
         } else if ( first_line == "#3D" ) {
             poly3d = true;
+            with_tp = false;
+
             in >> poly_name;
             num_polys = 1;
         } else {
             // support old format (default to 2d)
             poly3d = false;
+            with_tp = false;
+
             poly_name = first_line;
             num_polys = 1;
         }
         poly_type = get_area_type( poly_name );
 
         int area = (int)poly_type;
-        string material = get_area_name( area );
+        string material; 
 
+        // only allow 1000 shapes per material
+        int extension = polys_in.area_size( area ) / 1000;
+        
+        SG_LOG( SG_CLIPPER, SG_INFO, "extension " << extension );
+        
+        if (extension)
+        {
+            char buff[32];
+            sprintf( buff, "%s_%d", get_area_name( area ).c_str(), extension );
+            
+            SG_LOG( SG_CLIPPER, SG_INFO, "buff " << buff );
+            
+            material = buff;
+            
+            SG_LOG( SG_CLIPPER, SG_INFO, "material " << material );
+        }
+        else
+        {
+            material = get_area_name( area );
+        }
+        
+        
         // Generate a new Shape for the poly
         TGShape     shape;
         TGSuperPoly sp;
 
         for (k=0; k<num_polys;k++) {
+
+            if ( with_tp ) {
+                double width, length;
+                double heading;
+                double minu, maxu;
+                double minv, maxv;
+
+                in >> x;
+                in >> y;
+                in >> width;
+                in >> length;
+                in >> heading;
+                in >> minu;
+                in >> maxu;
+                in >> minv;
+                in >> maxv;
+
+                tp.set_ref( Point3D(x, y, 0.0f) );
+                tp.set_width( width );
+                tp.set_length( length );
+                tp.set_heading( heading );
+                tp.set_minu( minu );
+                tp.set_maxu( maxu );
+                tp.set_minv( minv );
+                tp.set_maxv( maxv );
+            }
+
             in >> contours;
 
             SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << ":" << poly_name << "-" << poly_type << " contours = " << contours );
@@ -271,9 +336,19 @@ bool TGConstruct::load_poly(const string& path) {
             }
 
             poly = remove_dups( poly );
-	        sp.set_poly( poly );
+
+            sp.set_poly( poly );
             sp.set_material( material );
+
             shape.sps.push_back( sp );
+            if ( with_tp ) {
+                shape.textured = true;
+                shape.tps.push_back( tp );
+            }
+            else
+            {
+                shape.textured = false;
+            }
 
             in >> skipcomment;
         }
@@ -1222,6 +1297,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
                     // copy all of the superpolys and texparams
                     shape.SetMask( clipped );
+                    shape.textured = polys_in.get_textured( i, j );
                     shape.sps = polys_in.get_shape( i, j ).sps;
                     shape.tps = polys_in.get_shape( i, j ).tps;
 
@@ -1275,6 +1351,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
             sp.set_material( material );
             sp.set_poly( remains );
+            shape.SetMask( remains );
             shape.sps.push_back( sp );
 
             polys_clipped.add_shape( (int)get_sliver_target_area_type(), shape );
@@ -1543,13 +1620,16 @@ void TGConstruct::SaveSharedEdgeData( void )
 void TGConstruct::TesselatePolys( void )
 {
     // tesselate the polygons and prepair them for final output
-    point_list extra = nodes.get_geod_nodes();
-
+    point_list poly_extra;
+    Point3D min, max;
+    
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                 TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
-
+                poly.get_bounding_box(min, max);
+                poly_extra = nodes.get_geod_inside( min, max );
+                
                 SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " << 
                         shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) << 
                         ": flag = " << polys_clipped.get_flag(area, shape, segment));
@@ -1569,7 +1649,7 @@ void TGConstruct::TesselatePolys( void )
                 }
 #endif
 
-                TGPolygon tri = polygon_tesselate_alt_with_extra( poly, extra, false );
+                TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
 
                 // ensure all added nodes are accounted for
                 for (int k=0; k< tri.contours(); k++) {
@@ -1763,18 +1843,16 @@ void TGConstruct::CalcTextureCoordinates( void )
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                 TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
                 SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)area ) << "(" << area << "): " << 
-                        shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) << 
-                        ": flag = " << polys_clipped.get_flag(area, shape, segment));
+                        shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );
 
                 TGPolygon tri = polys_clipped.get_tris( area, shape, segment );
                 TGPolygon tc;
 
-                if ( polys_clipped.get_flag( area, shape, segment ) == "textured" ) {
-                    // SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
-                    // tc = linear_tex_coords( tri, clipped_polys.texparams[i][j] );
-                    tc = area_tex_coords( tri );
+                if ( polys_clipped.get_textured( area, shape ) ) {
+                    SG_LOG(SG_GENERAL, SG_INFO, "USE TEXTURE PARAMS for tex coord calculations" );
+                    tc = linear_tex_coords( tri, polys_clipped.get_texparams(area, shape, segment) );
                 } else {
-                    // SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
+                    SG_LOG(SG_GENERAL, SG_INFO, "USE SIMGEAR for tex coord calculations" );
                     tc = area_tex_coords( tri );
                 }
           	    polys_clipped.set_texcoords( area, shape, segment, tc );

@@ -2098,7 +2098,8 @@ void Clipper::AddOutPt(TEdge *e, const IntPoint &pt)
     op->next = op;
     op->prev = op;
     SetHoleState(e, outRec);
-  } else
+  } 
+  else
   {
     OutRec *outRec = m_PolyOuts[e->outIdx];
     OutPt* op = outRec->pts;
@@ -2109,12 +2110,17 @@ void Clipper::AddOutPt(TEdge *e, const IntPoint &pt)
     {
       //check for 'rounding' artefacts ...
       if (outRec->sides == esNeither && pt.Y == op->pt.Y)
+      {
         if (ToFront)
         {
           if (pt.X == op->pt.X +1) return;    //ie wrong side of bottomPt
         }
-        else if (pt.X == op->pt.X -1) return; //ie wrong side of bottomPt
-
+        else 
+	{
+	  if (pt.X == op->pt.X -1) return; //ie wrong side of bottomPt
+	}
+      }
+      
       outRec->sides = (EdgeSide)(outRec->sides | e->side);
       if (outRec->sides == esBoth)
       {

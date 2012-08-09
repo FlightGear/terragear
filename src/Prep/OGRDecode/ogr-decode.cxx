@@ -185,9 +185,7 @@ void processLineStringWithTextureInfo(OGRLineString* poGeometry,
                                       int width)
 {
     poly_list segments;
-    TGPolygon segment;
     texparams_list tps;
-    TGTexParams tp;
     tg::Line line;
     Point3D p0, p1;
     double heading, dist, az2;
@@ -246,12 +244,7 @@ void processLineStringWithTextureInfo(OGRLineString* poGeometry,
     // make a plygons from the line segments
     tg::makePolygonsTP(line,width,segments,tps);
 
-    for ( i = 0; i < (int)segments.size(); ++i ) {
-    	segment = segments[i];
-        tp      = tps[i];
-
-        tgChopNormalPolygonTP(work_dir, area_type, segment, tp, false);
-    }
+    tgChopNormalPolygonsWithTP(work_dir, area_type, segments, tps, false);
 }
 
 void processPolygon(OGRPolygon* poGeometry,

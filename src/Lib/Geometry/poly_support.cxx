@@ -1541,7 +1541,6 @@ void* tgShapefileOpenLayer( void* ds_id, const char* layer_name ) {
 
 void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description )
 {        
-    OGRDataSource* datasource = (OGRDataSource *)ds_id;
     OGRLayer*      layer      = (OGRLayer*)l_id;
     OGRPolygon*    polygon    = new OGRPolygon();
 
@@ -1553,21 +1552,21 @@ void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, c
             SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
             skip_ring=true;
         }
-                        
+
         // FIXME: Current we ignore the hole-flag and instead assume
         //        that the first ring is not a hole and the rest
         //        are holes
         OGRLinearRing *ring=new OGRLinearRing();
         for (unsigned int pt = 0; pt < contour.size(); pt++) {
             OGRPoint *point=new OGRPoint();
-                                
+
             point->setX( contour[pt].x() );
             point->setY( contour[pt].y() );
             point->setZ( 0.0 );
             ring->addPoint(point);
         }
         ring->closeRings();
-                        
+
         if (!skip_ring) {
             polygon->addRingDirectly(ring);
         }
@@ -1586,8 +1585,6 @@ void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, c
 
 void tgShapefileCloseLayer( void* l_id )
 {
-    OGRLayer* layer = (OGRLayer *)l_id;
-
     //OGRLayer::DestroyLayer( layer );
 }
 

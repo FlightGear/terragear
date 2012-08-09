@@ -96,6 +96,25 @@ point_list TGNodes::get_geod_nodes( void ) const {
     return points;
 }
 
+point_list TGNodes::get_geod_inside( Point3D min, Point3D max ) const {
+    point_list points;
+    const_node_list_iterator current, last;
+
+    // see if point already exists
+    current = tg_node_list.begin();
+    last    = tg_node_list.end();
+
+    for ( ; current != last; ++current ) {
+        Point3D pt = (*current).GetPosition();
+    
+        if ( pt.IsWithin( min, max ) ) {
+            points.push_back( pt );
+        }
+    }
+
+    return points;
+}
+
 std::vector< SGVec3d > TGNodes::get_wgs84_nodes_as_SGVec3d( void ) const {
     const_node_list_iterator current, last;
     std::vector< SGVec3d > points;

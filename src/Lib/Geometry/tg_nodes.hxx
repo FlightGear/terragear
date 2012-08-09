@@ -150,6 +150,9 @@ public:
     // return a point list of geodetic nodes
     point_list get_geod_nodes() const;
 
+    // Find all the nodes within a bounding box
+    point_list get_geod_inside( Point3D min, Point3D max ) const;
+        
     // return a point list of wgs84 nodes
     std::vector< SGVec3d > get_wgs84_nodes_as_SGVec3d() const;
     point_list get_wgs84_nodes_as_Point3d() const;

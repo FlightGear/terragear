@@ -54,6 +54,7 @@ class TGShape
 {
 public:
     TGPolygon       clip_mask;
+    bool            textured;
     superpoly_list  sps;
     texparams_list  tps;
 
@@ -130,6 +131,15 @@ public:
         shapes[area][shape].clip_mask = mask;
     }
 
+    inline bool get_textured( unsigned int area, unsigned int shape )
+    {
+        return shapes[area][shape].textured;
+    }
+    inline void set_textured( unsigned int area, unsigned int shape, bool t )
+    {
+        shapes[area][shape].textured = t;
+    }
+
 
     inline TGSuperPoly& get_superpoly( unsigned int area, unsigned int shape, unsigned int segment )
     {
@@ -176,6 +186,10 @@ public:
     inline std::string get_material( unsigned int area, unsigned int shape, unsigned int segment )
     {
         return shapes[area][shape].sps[segment].get_material();
+    }
+    inline TGTexParams& get_texparams( unsigned int area, unsigned int shape, unsigned int segment )
+    {
+        return shapes[area][shape].tps[segment];
     }
 
 

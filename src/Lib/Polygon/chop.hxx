@@ -28,7 +28,6 @@
 
 
 #include <string>
-
 #include "polygon.hxx"
 #include "texparams.hxx"
 
@@ -38,12 +37,12 @@ void tgChopNormalPolygon( const std::string& path, const std::string& poly_type,
                           const TGPolygon& shape, bool preserve3d );
 
 void tgChopNormalPolygonsWithMask(const std::string& path, const std::string& poly_type, 
-                          const poly_list& segments, bool preserve3d );
+                                  const poly_list& segments, bool preserve3d );
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
-void tgChopNormalPolygonTP( const std::string& path, const std::string& poly_type,
-                            const TGPolygon& shape, const TGTexParams& tp, bool preserve3d );
+void tgChopNormalPolygonsWithTP( const std::string& path, const std::string& poly_type,
+								 const poly_list& segments, const texparams_list& tps, bool preserve3d );
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file) This has a front end to a crude clipper
