@@ -541,7 +541,7 @@ int Parser::ParseLine(char* line)
                             cur_airport->AddFeature( cur_feat );
                         }
                         cur_feat = NULL;
-                        SetState( STATE_NONE );
+                        SetState( STATE_PARSE_SIMPLE );
                     }
                     prev_node = NULL;
                     cur_node  = NULL;
@@ -583,7 +583,7 @@ int Parser::ParseLine(char* line)
                             delete cur_feat;
                         }
                         cur_feat = NULL;
-                        SetState( STATE_NONE );
+                        SetState( STATE_PARSE_SIMPLE );
                     }
                     prev_node = NULL;
                     cur_node  = NULL;
