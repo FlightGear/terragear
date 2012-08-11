@@ -591,15 +591,15 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
         if ( rwy.threshold[rwhalf] > 0.0 ) {
             SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
-            // reserve 90' for final arrows
-            double thresh = rwy.threshold[rwhalf] - 90.0 * SG_FEET_TO_METER;
+            // reserve 24m for final arrows
+            double thresh = rwy.threshold[rwhalf] - 24.0;
 
-            // number of full center arrows
-            int count = (int)(thresh / 200.0 * SG_FEET_TO_METER);
+            // number of full center arrows, each 60m long
+            int count = (int)( thresh / 60.0 );
 
             // length of starting partial arrow
-            double part_len = thresh - ( count * 200.0 * SG_FEET_TO_METER);
-            double tex_pct = (200.0 * SG_FEET_TO_METER - part_len) / 200.0 * SG_FEET_TO_METER;
+            double part_len = thresh - ( count * 60.0);
+            double tex_pct = (60.0 - part_len) / 60.0;
 
             // starting (possibly partial chunk)
             start1_pct = end1_pct;
@@ -618,7 +618,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
             // main chunks
             for ( int i = 0; i < count; ++i ) {
                 start1_pct = end1_pct;
-                end1_pct = start1_pct + ( 200.0 * SG_FEET_TO_METER / length );
+                end1_pct = start1_pct + ( 60.0 / length );
                 gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -633,7 +633,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
 
             // final arrows
             start1_pct = end1_pct;
-            end1_pct = start1_pct + ( 90.0 * SG_FEET_TO_METER / length );
+            end1_pct = start1_pct + ( 24.0 / length );
             gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
