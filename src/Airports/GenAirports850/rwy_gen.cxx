@@ -591,49 +591,57 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
         if ( rwy.threshold[rwhalf] > 0.0 ) {
             SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
-            // reserve 24m for final arrows
-            double thresh = rwy.threshold[rwhalf] - 24.0;
+            double final_arrow = rwy.threshold[rwhalf];
 
-            // number of full center arrows, each 60m long
-            int count = (int)( thresh / 60.0 );
+            // If a runway has a displaced threshold we have to make sure
+            // it is long enough to build all the features
+            if (rwy.threshold[rwhalf] > 24.0)
+            {
+                // reserve 24m for final arrows
+                final_arrow = 24.0;
+                double thresh = rwy.threshold[rwhalf] - final_arrow;
 
-            // length of starting partial arrow
-            double part_len = thresh - ( count * 60.0);
-            double tex_pct = (60.0 - part_len) / 60.0;
+                // number of full center arrows, each 60m long
+                int count = (int)( thresh / 60.0 );
 
-            // starting (possibly partial chunk)
-            start1_pct = end1_pct;
-            end1_pct = start1_pct + ( part_len / length );
-            gen_runway_section( runway_half,
-                            start1_pct, end1_pct,
-                            0.0, 1.0,
-                            0.0, 1.0, tex_pct, 1.0,
-                            heading,
-                            "dspl_thresh",
-                            rwy_polys, texparams, 
-                            &shoulder_polys, &shoulder_tps,
-                            accum, slivers,
-                            make_shapefiles );
+                // length of starting partial arrow
+                double part_len = thresh - ( count * 60.0);
+                double tex_pct = (60.0 - part_len) / 60.0;
 
-            // main chunks
-            for ( int i = 0; i < count; ++i ) {
+                // starting (possibly partial chunk)
                 start1_pct = end1_pct;
-                end1_pct = start1_pct + ( 60.0 / length );
+                end1_pct = start1_pct + ( part_len / length );
                 gen_runway_section( runway_half,
-                                start1_pct, end1_pct,
-                                0.0, 1.0,
-                                0.0, 1.0, 0.0, 1.0,
-                                heading,
-                                "dspl_thresh",
-                                rwy_polys, texparams, 
-                                &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
-                                make_shapefiles );
+                                    start1_pct, end1_pct,
+                                    0.0, 1.0,
+                                    0.0, 1.0, tex_pct, 1.0,
+                                    heading,
+                                    "dspl_thresh",
+                                    rwy_polys, texparams,
+                                    &shoulder_polys, &shoulder_tps,
+                                    accum, slivers,
+                                    make_shapefiles );
+
+                // main chunks
+                for ( int i = 0; i < count; ++i ) {
+                    start1_pct = end1_pct;
+                    end1_pct = start1_pct + ( 60.0 / length );
+                    gen_runway_section( runway_half,
+                                        start1_pct, end1_pct,
+                                        0.0, 1.0,
+                                        0.0, 1.0, 0.0, 1.0,
+                                        heading,
+                                        "dspl_thresh",
+                                        rwy_polys, texparams,
+                                        &shoulder_polys, &shoulder_tps,
+                                        accum, slivers,
+                                        make_shapefiles );
+                }
             }
 
             // final arrows
             start1_pct = end1_pct;
-            end1_pct = start1_pct + ( 24.0 / length );
+            end1_pct = start1_pct + ( final_arrow / length );
             gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
