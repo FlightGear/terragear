@@ -1676,7 +1676,7 @@ void TGConstruct::TesselatePolys( void )
 
                 SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " << 
                         shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) << 
-                        ": flag = " << polys_clipped.get_flag(area, shape, segment));
+                        ": id = " << id );
 
                 TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
 
