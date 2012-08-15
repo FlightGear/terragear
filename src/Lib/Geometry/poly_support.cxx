@@ -991,8 +991,8 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 	    // cout << i << endl;
 	    Point3D current = nodes[i];
 
-	    if ( (current.x() > (p_min.x() + SG_EPSILON)) 
-		 && (current.x() < (p_max.x() - SG_EPSILON)) ) {
+	    if ( (current.x() > (p_min.x() + (SG_EPSILON)))
+		 && (current.x() < (p_max.x() - (SG_EPSILON))) ) {
 
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
 		//         current.x(), current.y(), current.z() );
@@ -1039,8 +1039,8 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 	for ( int i = 0; i < (int)nodes.size(); ++i ) {
 	    Point3D current = nodes[i];
 
-	    if ( (current.y() > (p_min.y() + SG_EPSILON)) 
-		 && (current.y() < (p_max.y() - SG_EPSILON)) ) {
+	    if ( (current.y() > (p_min.y() + (SG_EPSILON)))
+		 && (current.y() < (p_max.y() - (SG_EPSILON))) ) {
 		
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
 		//         current.x(), current.y(), current.z() );
@@ -1507,10 +1507,15 @@ void* tgShapefileOpenDatasource( const char* datasource_name )
         SG_LOG(SG_GENERAL, SG_ALERT, "Unknown datasource format driver: " << format_name);
         exit(1);
     }
-        
-    datasource = ogrdriver->CreateDataSource(datasource_name, NULL);
+
+    datasource = ogrdriver->Open(datasource_name, TRUE);
+
     if (!datasource) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to create datasource: " << datasource_name);
+        datasource = ogrdriver->CreateDataSource(datasource_name, NULL);
+    }
+    
+    if (!datasource) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open or create datasource: " << datasource_name);
         exit(1);
     }
 
@@ -1523,19 +1528,25 @@ void* tgShapefileOpenLayer( void* ds_id, const char* layer_name ) {
         
     OGRSpatialReference srs;
     srs.SetWellKnownGeogCS("WGS84");
-    layer = datasource->CreateLayer( layer_name, &srs, wkbPolygon25D, NULL);
+
+    layer = datasource->GetLayerByName(layer_name);
+
+    if (!layer) {
+        layer = datasource->CreateLayer( layer_name, &srs, wkbPolygon25D, NULL);
+
+        OGRFieldDefn descriptionField("ID", OFTString);
+        descriptionField.SetWidth(128);
+
+        if( layer->CreateField( &descriptionField ) != OGRERR_NONE ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Creation of field 'Description' failed");
+        }
+    }
+    
     if (!layer) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Creation of layer '" << layer_name << "' failed");
         return NULL;
     }
-        
-    OGRFieldDefn descriptionField("ID", OFTString);
-    descriptionField.SetWidth(128);
-        
-    if( layer->CreateField( &descriptionField ) != OGRERR_NONE ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Creation of field 'Description' failed");
-    }
-        
+
     return (void*)layer;
 }
 
@@ -1588,10 +1599,11 @@ void tgShapefileCloseLayer( void* l_id )
     //OGRLayer::DestroyLayer( layer );
 }
 
-void tgShapefileCloseDatasource( void* ds_id )
+void* tgShapefileCloseDatasource( void* ds_id )
 {
     OGRDataSource* datasource = (OGRDataSource *)ds_id;
 
     OGRDataSource::DestroyDataSource( datasource );
-}
 
+    return (void *)-1;
+}

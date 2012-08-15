@@ -441,8 +441,8 @@ inline bool Point3D::HasElevation() const
 
 inline bool Point3D::IsWithin( Point3D min, Point3D max ) const
 {
-    return ( (min.n[PX] < n[PX]) && (min.n[PY] < n[PY]) &&
-             (max.n[PX] > n[PX]) && (max.n[PY] > n[PY]) );
+    return ( (min.n[PX] <= n[PX]) && (min.n[PY] <= n[PY]) &&
+             (max.n[PX] >= n[PX]) && (max.n[PY] >= n[PY]) );
 }
 
 // FRIENDS

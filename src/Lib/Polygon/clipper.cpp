@@ -1,8 +1,8 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  4.8.5                                                           *
-* Date      :  15 July 2012                                                    *
+* Version   :  4.8.3                                                           *
+* Date      :  27 May 2012                                                     *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2012                                         *
 *                                                                              *
@@ -61,7 +61,7 @@ enum Direction { dRightToLeft, dLeftToRight };
 
 inline long64 Abs(long64 val)
 {
-  return val < 0 ? -val : val;
+  if (val < 0) return -val; else return val;
 }
 //------------------------------------------------------------------------------
 
@@ -1221,7 +1221,7 @@ bool PolySort(OutRec *or1, OutRec *or2)
   {
     if (or1->pts != or2->pts)
     {
-      return or1->pts ? true : false;
+      if (or1->pts) return true; else return false;
     }
     else return false;
   }
@@ -1235,7 +1235,8 @@ bool PolySort(OutRec *or1, OutRec *or2)
   int result = i1 - i2;
   if (result == 0 && (or1->isHole != or2->isHole))
   {
-    return or1->isHole ? false : true;
+    if (or1->isHole) return false;
+    else return true;
   }
   else return result < 0;
 }
@@ -1578,10 +1579,8 @@ void Clipper::AddLocalMaxPoly(TEdge *e1, TEdge *e2, const IntPoint &pt)
     e1->outIdx = -1;
     e2->outIdx = -1;
   }
-  else if (e1->outIdx < e2->outIdx) 
-    AppendPolygon(e1, e2); 
-  else 
-    AppendPolygon(e2, e1);
+  else
+    AppendPolygon( e1, e2 );
 }
 //------------------------------------------------------------------------------
 
@@ -2098,8 +2097,7 @@ void Clipper::AddOutPt(TEdge *e, const IntPoint &pt)
     op->next = op;
     op->prev = op;
     SetHoleState(e, outRec);
-  } 
-  else
+  } else
   {
     OutRec *outRec = m_PolyOuts[e->outIdx];
     OutPt* op = outRec->pts;
@@ -2110,17 +2108,12 @@ void Clipper::AddOutPt(TEdge *e, const IntPoint &pt)
     {
       //check for 'rounding' artefacts ...
       if (outRec->sides == esNeither && pt.Y == op->pt.Y)
-      {
         if (ToFront)
         {
           if (pt.X == op->pt.X +1) return;    //ie wrong side of bottomPt
         }
-        else 
-	{
-	  if (pt.X == op->pt.X -1) return; //ie wrong side of bottomPt
-	}
-      }
-      
+        else if (pt.X == op->pt.X -1) return; //ie wrong side of bottomPt
+
       outRec->sides = (EdgeSide)(outRec->sides | e->side);
       if (outRec->sides == esBoth)
       {
@@ -2317,7 +2310,8 @@ void Clipper::SwapPositionsInSEL(TEdge *edge1, TEdge *edge2)
 
 TEdge* GetNextInAEL(TEdge *e, Direction dir)
 {
-  return dir == dLeftToRight ? e->nextInAEL : e->prevInAEL;
+  if( dir == dLeftToRight ) return e->nextInAEL;
+  else return e->prevInAEL;
 }
 //------------------------------------------------------------------------------
 
@@ -2534,12 +2528,12 @@ bool Process1Before2(IntersectNode &node1, IntersectNode &node2)
     if (node1.edge1 == node2.edge1 || node1.edge2 == node2.edge1)
     {
       result = node2.pt.X > node1.pt.X;
-      return node2.edge1->dx > 0 ? !result : result;
+      if (node2.edge1->dx > 0) return !result; else return result;
     }
     else if (node1.edge1 == node2.edge2 || node1.edge2 == node2.edge2)
     {
       result = node2.pt.X > node1.pt.X;
-      return node2.edge2->dx > 0 ? !result : result;
+      if (node2.edge2->dx > 0) return !result; else return result;
     }
     else return node2.pt.X > node1.pt.X;
   }
@@ -2865,7 +2859,8 @@ bool Clipper::FixupIntersections()
 
 bool E2InsertsBeforeE1(TEdge &e1, TEdge &e2)
 {
-  return e2.xcurr == e1.xcurr ? e2.dx > e1.dx : e2.xcurr < e1.xcurr;
+  if (e2.xcurr == e1.xcurr) return e2.dx > e1.dx;
+  else return e2.xcurr < e1.xcurr;
 }
 //------------------------------------------------------------------------------
 
@@ -3131,13 +3126,12 @@ struct DoublePoint
 Polygon BuildArc(const IntPoint &pt,
   const double a1, const double a2, const double r)
 {
-  long64 steps = std::max(6, int(std::sqrt(std::fabs(r)) * std::fabs(a2 - a1)));
-  if (steps > 0x100000) steps = 0x100000;
-  int n = (unsigned)steps;
-  Polygon result(n);
-  double da = (a2 - a1) / (n -1);
+  int steps = std::max(6, int(std::sqrt(std::fabs(r)) * std::fabs(a2 - a1)));
+  Polygon result(steps);
+  int n = steps - 1;
+  double da = (a2 - a1) / n;
   double a = a1;
-  for (int i = 0; i < n; ++i)
+  for (int i = 0; i <= n; ++i)
   {
     result[i].X = pt.X + Round(std::cos(a)*r);
     result[i].Y = pt.Y + Round(std::sin(a)*r);
@@ -3290,18 +3284,19 @@ void DoSquare(double mul = 1.0)
         (long64)Round(m_p[m_i][m_j].Y + normals[m_k].Y * m_delta));
     IntPoint pt2 = IntPoint((long64)Round(m_p[m_i][m_j].X + normals[m_j].X * m_delta),
         (long64)Round(m_p[m_i][m_j].Y + normals[m_j].Y * m_delta));
-    double sinAngle = normals[m_k].X * normals[m_j].Y - normals[m_j].X * normals[m_k].Y;
-    if (sinAngle * m_delta >= 0)
+    if ((normals[m_k].X * normals[m_j].Y - normals[m_j].X * normals[m_k].Y) * m_delta >= 0)
     {
-      //occasionally (due to floating point math) sinAngle can be > 1 so ...
-      if (sinAngle > 1) sinAngle = 1; else if (sinAngle < -1) sinAngle = -1;
-      double dx = tan((pi - asin(sinAngle))/4) * abs(m_delta*mul);
-      pt1 = IntPoint((long64)(pt1.X -normals[m_k].Y * dx),
-        (long64)(pt1.Y + normals[m_k].X * dx));
-      AddPoint(pt1);
-      pt2 = IntPoint((long64)(pt2.X + normals[m_j].Y * dx),
-        (long64)(pt2.Y -normals[m_j].X * dx));
-      AddPoint(pt2);
+        double a1 = std::atan2(normals[m_k].Y, normals[m_k].X);
+        double a2 = std::atan2(-normals[m_j].Y, -normals[m_j].X);
+        a1 = std::fabs(a2 - a1);
+        if (a1 > pi) a1 = pi * 2 - a1;
+        double dx = std::tan((pi - a1)/4) * std::fabs(m_delta * mul);
+        pt1 = IntPoint((long64)(pt1.X -normals[m_k].Y * dx),
+          (long64)(pt1.Y + normals[m_k].X * dx));
+        AddPoint(pt1);
+        pt2 = IntPoint((long64)(pt2.X + normals[m_j].Y * dx),
+          (long64)(pt2.Y -normals[m_j].X * dx));
+        AddPoint(pt2);
     }
     else
     {

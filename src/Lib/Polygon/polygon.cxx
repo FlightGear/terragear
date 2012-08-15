@@ -51,6 +51,27 @@ TGPolygon::TGPolygon( void )
 TGPolygon::~TGPolygon( void ) {
 }
 
+void TGPolygon::get_bounding_box( Point3D& min, Point3D& max ) const
+{
+    double minx = std::numeric_limits<double>::infinity();
+    double miny = std::numeric_limits<double>::infinity();
+    double maxx = -std::numeric_limits<double>::infinity();
+    double maxy = -std::numeric_limits<double>::infinity();
+
+    for ( int i = 0; i < contours(); i++ ) {
+        for (unsigned int j = 0; j < poly[i].size(); j++) {
+            Point3D pt = poly[i][j];
+            if ( pt.x() < minx ) { minx = pt.x(); }
+            if ( pt.x() > maxx ) { maxx = pt.x(); }
+            if ( pt.y() < miny ) { miny = pt.y(); }
+            if ( pt.y() > maxy ) { maxy = pt.y(); }
+        }
+    }
+
+    min = Point3D( minx, miny, 0.0 );
+    max = Point3D( maxx, maxy, 0.0 );
+}
+
 
 // Set the elevations of points in the current polgyon based on the
 // elevations of points in source.  For points that are not found in

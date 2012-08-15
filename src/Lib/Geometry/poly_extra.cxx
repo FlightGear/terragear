@@ -34,11 +34,9 @@
 // Divide segment if there are other existing points on it, return the
 // new polygon
 void add_intermediate_nodes( int contour, const Point3D& start, 
-			     const Point3D& end, const TGTriNodes& tmp_nodes,
+			     const Point3D& end, point_list& tmp_nodes,
 			     TGPolygon *result )
 {
-    point_list nodes = tmp_nodes.get_node_list();
-
     // SG_LOG(SG_GENERAL, SG_DEBUG, "  add_intermediate_nodes()");
     char buf[200];
     snprintf(buf, 199, "   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
@@ -47,7 +45,7 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 
     
     Point3D new_pt;
-    bool found_extra = find_intermediate_node( start, end, nodes, &new_pt );
+    bool found_extra = find_intermediate_node( start, end, tmp_nodes, &new_pt );
 
     if ( found_extra ) {
 	// recurse with two sub segments
@@ -72,9 +70,10 @@ void add_intermediate_nodes( int contour, const Point3D& start,
 // avoid "T" intersections.
 
 TGPolygon add_nodes_to_poly( const TGPolygon& poly, 
-                             const TGTriNodes& tmp_nodes ) {
+                             const TGTriNodes& nodes ) {
     int i, j;
     TGPolygon result; result.erase();
+    point_list tmp_nodes = nodes.get_node_list();
     Point3D p0, p1;
 
     // SG_LOG(SG_GENERAL, SG_DEBUG, "add_nodes_to_poly");
@@ -114,42 +113,18 @@ TGPolygon add_nodes_to_poly( const TGPolygon& poly,
     return result;
 }
 
-// Divide segment if there are other existing points on it, return the
-// new polygon
-void add_intermediate_tgnodes( int contour, const Point3D& start, 
-			     const Point3D& end, const TGNodes* nodes,
-			     TGPolygon *result )
-{
-    point_list points = nodes->get_geod_nodes();
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  add_intermediate_nodes()");
-    char buf[200];
-    snprintf(buf, 199, "   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
-	   start.x(), start.y(), start.z(), end.x(), end.y(), end.z() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, buf);
-
-    Point3D new_pt;
-    bool found_extra = find_intermediate_node( start, end, points, &new_pt );
-
-    if ( found_extra ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "dividing " << start << " " << new_pt << " " << end);
-        add_intermediate_tgnodes( contour, start, new_pt, nodes, result );
-
-        result->add_node( contour, new_pt );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    added = " << new_pt);
-
-        // DEBUG : Was new node shared? 
-
-        add_intermediate_tgnodes( contour, new_pt, end, nodes, result );
-    }
-}
-
 TGPolygon add_tgnodes_to_poly( const TGPolygon& poly, 
                                const TGNodes* nodes ) {
     TGPolygon result; result.erase();
+    Point3D min, max;
     Point3D p0, p1;
+    point_list poly_points;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "add_nodes_to_poly");
+    poly.get_bounding_box(min, max);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "add_tgnodes_to_poly : min " << min << " max " << max );
+
+    poly_points = nodes->get_geod_inside( min, max );
+
     for ( int i = 0; i < poly.contours(); ++i ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
         for ( int j = 0; j < poly.contour_size(i) - 1; ++j ) {
@@ -160,7 +135,7 @@ TGPolygon add_tgnodes_to_poly( const TGPolygon& poly,
             result.add_node( i, p0 );
 
             // add intermediate points
-            add_intermediate_tgnodes( i, p0, p1, nodes, &result );
+            add_intermediate_nodes( i, p0, p1, poly_points, &result );
 
             // end of segment is beginning of next segment
         }
@@ -171,7 +146,7 @@ TGPolygon add_tgnodes_to_poly( const TGPolygon& poly,
         result.add_node( i, p0 );
 
         // add intermediate points
-        add_intermediate_tgnodes( i, p0, p1, nodes, &result );
+        add_intermediate_nodes( i, p0, p1, poly_points, &result );
 
         // maintain original hole flag setting
         result.set_hole_flag( i, poly.get_hole_flag( i ) );
@@ -179,4 +154,3 @@ TGPolygon add_tgnodes_to_poly( const TGPolygon& poly,
 
     return result;
 }
-

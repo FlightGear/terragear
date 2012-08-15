@@ -50,6 +50,8 @@
 
 #include "priorities.hxx"
 
+#define USE_CLIPPER     (0)
+
 class TGShape
 {
 public:
@@ -57,6 +59,7 @@ public:
     bool            textured;
     superpoly_list  sps;
     texparams_list  tps;
+    unsigned int    id;
 
     void    SetMask( TGPolygon mask )
     {
@@ -71,7 +74,11 @@ public:
         for (unsigned int i=0; i<sps.size(); i++)
         {
             poly = sps[i].get_poly();
+#ifdef USE_CLIPPER
+            clip_mask = tgPolygonUnionClipper( clip_mask, poly );
+#else
             clip_mask = tgPolygonUnion( clip_mask, poly );
+#endif
         }
     }
 
@@ -82,7 +89,11 @@ public:
         for (unsigned int i=0; i<sps.size(); i++)
         {
             original  = sps[i].get_poly();
+#ifdef USE_CLIPPER
+            intersect = tgPolygonIntClipper( clip_mask, original );
+#else
             intersect = tgPolygonInt( clip_mask, original );
+#endif
             sps[i].set_poly( intersect );
         }
     }
@@ -240,13 +251,26 @@ private:
     // flag indicating whether this is a rebuild and Shared edge
     // data should only be used for fitting, but not rewritten
     bool writeSharedEdges;
-    
     // flag indicating whether the shared edge data of the
     // tile to be built should be used in addition to neighbour data
     bool useOwnSharedEdges;
-    
+
     // flag indicating whether to ignore the landmass
     bool ignoreLandmass;
+
+    // path to the debug shapes
+    std::string debug_path;
+
+    // list of shapes to dump during debug
+    std::vector<unsigned int> debug_shapes;
+
+    // OGR encode variables
+    // For debug:
+    void*     ds_id;            // If we are going to build shapefiles
+    void*     l_id;             // datasource and layer IDs
+    char      ds_name[128];
+    char      layer_name[128];
+    char      feature_name[128];
 
     // this bucket
     SGBucket bucket;
@@ -263,7 +287,7 @@ private:
 
     // SHared Edges match data
     TGMatch match;
- 
+
 private:
     // Load Data
     void LoadElevationArray( void );
@@ -291,7 +315,7 @@ private:
     void TesselatePolys( void );
 
     // Elevation and Flattening
-    void   CalcElevations( void );
+    void CalcElevations( void );
 
     // Normals and texture coords
     void LookupNodesPerVertex( void );
@@ -311,14 +335,20 @@ private:
     void calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp );
     double calc_tri_area( int_list& triangle_nodes );
 
+    // debug
+    bool IsDebugShape( unsigned int id );
+    void WriteDebugShape( const char* layer_name, unsigned int area, unsigned int shape );
+
 public:
     // Constructor
     TGConstruct();
 
     // Destructor
     ~TGConstruct();
+
+    void set_bucket( SGBucket b ) { bucket = b; }
     
-    void ConstructBucket( SGBucket b );
+    void ConstructBucket();
 
 
     void calc_gc_course_dist( const Point3D& start, const Point3D& dest, 
@@ -369,6 +399,9 @@ public:
     // normal list (for each point) in cart coords (for smooth
     // shading)
     inline point_list get_point_normals() const { return nodes.get_normals(); }
+
+    // Debug
+    void set_debug( std::string path, std::vector<std::string> defs );
 };
 
 

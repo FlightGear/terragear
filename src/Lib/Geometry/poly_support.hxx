@@ -116,7 +116,7 @@ void*   tgShapefileOpenDatasource( const char* datasource_name );
 void*   tgShapefileOpenLayer( void* ds_id, const char* layer_name );
 void    tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* feature_name );
 void    tgShapefileCloseLayer( void* l_id );
-void    tgShapefileCloseDatasource( void* ds_id );
+void*   tgShapefileCloseDatasource( void* ds_id );
 
 
 #endif // _POLY_SUPPORT_HXX

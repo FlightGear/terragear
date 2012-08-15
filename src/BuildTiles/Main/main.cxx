@@ -173,6 +173,9 @@ int main(int argc, char **argv) {
     double ydist = -1;
     long tile_id = -1;
 
+    string debug_dir = ".";
+    vector<string> debug_defs;
+
     // flag indicating whether UK grid should be used for in-UK
     // texture coordinate generation
     bool useUKgrid = false;
@@ -229,6 +232,10 @@ int main(int argc, char **argv) {
             useOwnSharedEdges = true;
         } else if (arg.find("--ignore-landmass") == 0) {
             ignoreLandmass = true;
+        } else if (arg.find("--debug-dir=") == 0) {
+            debug_dir = arg.substr(12);
+        } else if (arg.find("--debug-shapes=") == 0) {
+            debug_defs.push_back( arg.substr(15) );
         } else if (arg.find("--") == 0) {
             usage(argv[0]);
         } else {
@@ -318,8 +325,11 @@ int main(int argc, char **argv) {
             c->set_use_own_shared_edges( useOwnSharedEdges );
             c->set_ignore_landmass( ignoreLandmass );
             c->set_nudge( nudge );
+            c->set_bucket( b );
 
-            c->ConstructBucket( b );
+            c->set_debug( debug_dir, debug_defs );
+
+            c->ConstructBucket();
             delete c;
         } else {
             // build all the tiles in an area
@@ -343,8 +353,11 @@ int main(int argc, char **argv) {
                 c->set_use_own_shared_edges( useOwnSharedEdges );
                 c->set_ignore_landmass( ignoreLandmass );
                 c->set_nudge( nudge );
-    
-                c->ConstructBucket( b_min );
+                c->set_bucket( b_min );
+
+                c->set_debug( debug_dir, debug_defs );
+
+                c->ConstructBucket();
                 delete c;
             } else {
                 SGBucket b_cur;
@@ -373,8 +386,11 @@ int main(int argc, char **argv) {
                             c->set_use_own_shared_edges( useOwnSharedEdges );
                             c->set_ignore_landmass( ignoreLandmass );
                             c->set_nudge( nudge );
-                
-                            c->ConstructBucket( b_cur );
+                            c->set_bucket( b_cur );
+
+                            c->set_debug( debug_dir, debug_defs );
+
+                            c->ConstructBucket();
                             delete c;
                         } else {
                             SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
@@ -398,8 +414,11 @@ int main(int argc, char **argv) {
         c->set_use_own_shared_edges( useOwnSharedEdges );
         c->set_ignore_landmass( ignoreLandmass );
         c->set_nudge( nudge );
+        c->set_bucket( b );
 
-        c->ConstructBucket( b );
+        c->set_debug( debug_dir, debug_defs );
+
+        c->ConstructBucket();
         delete c;
     }
 

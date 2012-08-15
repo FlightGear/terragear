@@ -25,6 +25,9 @@
 #  include <config.h>
 #endif
 
+#include <iostream>
+#include <sstream>
+
 #include <boost/foreach.hpp>
 
 #include <simgear/compiler.h>
@@ -53,7 +56,6 @@ double gSnap = 0.00000001;      // approx 1 mm
 static const double cover_size = 1.0 / 120.0;
 static const double half_cover_size = cover_size * 0.5;
 
-#define USE_CLIPPER     (0)
 
 // If we don't offset land use squares by some amount, then we can get
 // land use square boundaries coinciding with tile boundaries.
@@ -65,20 +67,12 @@ static const double half_cover_size = cover_size * 0.5;
 // problem.
 static const double quarter_cover_size = cover_size * 0.25;
 
-
-// For debug:
-void*     ds_id = NULL;        // If we are going to build shapefiles
-void*     l_id  = NULL;        // datasource and layer IDs
-char      ds_name[128];        // need to clean this up and add cmdline options
-char      layer_name[128];
-char      feature_name[128];
-
-
 // Constructor
 TGConstruct::TGConstruct():
         useUKGrid(false),
         writeSharedEdges(true),
-        useOwnSharedEdges(false)
+        useOwnSharedEdges(false),
+        ds_id((void*)-1)
 { }
 
 
@@ -92,6 +86,64 @@ TGConstruct::~TGConstruct() {
 
     // All Nodes
     nodes.clear();
+}
+
+void TGConstruct::set_debug( std::string path, std::vector<string> defs )
+{
+    SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
+    
+    debug_path = path;
+
+    /* Find any ids for our tile */
+    for (unsigned int i=0; i< defs.size(); i++) {
+        string dsd     = defs[i];
+        size_t d_pos   = dsd.find(":");
+        string tile    = dsd.substr(0, d_pos);
+
+        if( tile == bucket.gen_index_str() ) {
+            dsd.erase(0, d_pos+1);
+            std::stringstream ss(dsd);            
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug file " << i);
+
+                debug_shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+    }
+}
+
+bool TGConstruct::IsDebugShape( unsigned int id )
+{
+    bool is_debug = false;
+
+    for (unsigned int i=0; i<debug_shapes.size(); i++) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "have debug id " <<  debug_shapes[i] << " looking for " << id );
+
+        if ( debug_shapes[i] == id ) {
+            is_debug = true;
+            break;
+        }
+    }
+
+    return is_debug;
+}
+
+void TGConstruct::WriteDebugShape( const char* layer_name, unsigned int area, unsigned int shape )
+{
+    ds_id = tgShapefileOpenDatasource( ds_name );
+    l_id  = tgShapefileOpenLayer( ds_id, layer_name );
+    
+    sprintf( feature_name, "%s_%d", get_area_name( area ).c_str(), polys_clipped.get_shape( area, shape ).id );
+    tgShapefileCreateFeature( ds_id, l_id, polys_in.get_mask(area, shape), feature_name );
+    
+    // close after each write
+    ds_id = tgShapefileCloseDatasource( ds_id );
 }
 
 // STEP 1
@@ -153,6 +205,7 @@ bool TGConstruct::load_poly(const string& path) {
     int hole_flag;
     int num_polys;
     double startx, starty, startz, x, y, z, lastx, lasty, lastz;
+    static unsigned int cur_id = 0;
 
     sg_gzifstream in( path );
 
@@ -207,19 +260,12 @@ bool TGConstruct::load_poly(const string& path) {
 
         // only allow 1000 shapes per material
         int extension = polys_in.area_size( area ) / 1000;
-        
-        SG_LOG( SG_CLIPPER, SG_INFO, "extension " << extension );
-        
+
         if (extension)
         {
             char buff[32];
             sprintf( buff, "%s_%d", get_area_name( area ).c_str(), extension );
-            
-            SG_LOG( SG_CLIPPER, SG_INFO, "buff " << buff );
-            
             material = buff;
-            
-            SG_LOG( SG_CLIPPER, SG_INFO, "material " << material );
         }
         else
         {
@@ -260,8 +306,6 @@ bool TGConstruct::load_poly(const string& path) {
             }
 
             in >> contours;
-
-            SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << ":" << poly_name << "-" << poly_type << " contours = " << contours );
 
             poly.erase();
 
@@ -355,6 +399,8 @@ bool TGConstruct::load_poly(const string& path) {
 
         // Once the full poly is loaded, build the clip mask
         shape.BuildMask();
+        shape.id = cur_id++;
+
         polys_in.add_shape( area, shape );
     }
 
@@ -481,6 +527,8 @@ int TGConstruct::LoadLandclassPolys( void ) {
         }
     
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
+        SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << files.size() << " polys from " << d.path() );
+        
         BOOST_FOREACH(const SGPath& p, files) {
             if (p.file_base() != tile_str) {
                 continue;
@@ -1267,17 +1315,6 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
             }
 
-#if 0
-            if ( (i == 3) && (j == 137) ) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Error Poly\n" << tmp );     
-
-                sprintf( layer_name, "preclip" );
-                l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "preclip" );
-                tgShapefileCreateFeature( ds_id, l_id, tmp, feature_name );
-            }
-#endif
-
 #if USE_CLIPPER
             clipped = tgPolygonDiffClipper( tmp, accum );
 #else
@@ -1298,6 +1335,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                     // copy all of the superpolys and texparams
                     shape.SetMask( clipped );
                     shape.textured = polys_in.get_textured( i, j );
+                    shape.id  = polys_in.get_shape( i, j ).id;
                     shape.sps = polys_in.get_shape( i, j ).sps;
                     shape.tps = polys_in.get_shape( i, j ).tps;
 
@@ -1622,32 +1660,23 @@ void TGConstruct::TesselatePolys( void )
     // tesselate the polygons and prepair them for final output
     point_list poly_extra;
     Point3D min, max;
-    
+
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            unsigned int id = polys_clipped.get_shape( area, shape ).id;
+            
+            if ( IsDebugShape( id ) ) {
+                WriteDebugShape( "preteselate", area, shape );
+            }
+
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                 TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
                 poly.get_bounding_box(min, max);
                 poly_extra = nodes.get_geod_inside( min, max );
-                
+
                 SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " << 
                         shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) << 
                         ": flag = " << polys_clipped.get_flag(area, shape, segment));
-
-#if 0
-                if ( (i == 3) && (j == 137) ) {
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Error Poly\n" << poly );     
-
-
-                    sprintf( layer_name, "pretesselate" );
-                    l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                    sprintf( feature_name, "pretesselate" );
-                    tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
-
-                    // close befoe the crash
-                    tgShapefileCloseDatasource( ds_id );
-                }
-#endif
 
                 TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
 
@@ -1849,10 +1878,10 @@ void TGConstruct::CalcTextureCoordinates( void )
                 TGPolygon tc;
 
                 if ( polys_clipped.get_textured( area, shape ) ) {
-                    SG_LOG(SG_GENERAL, SG_INFO, "USE TEXTURE PARAMS for tex coord calculations" );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
                     tc = linear_tex_coords( tri, polys_clipped.get_texparams(area, shape, segment) );
                 } else {
-                    SG_LOG(SG_GENERAL, SG_INFO, "USE SIMGEAR for tex coord calculations" );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
                     tc = area_tex_coords( tri );
                 }
           	    polys_clipped.set_texcoords( area, shape, segment, tc );
@@ -1867,14 +1896,14 @@ void TGConstruct::CalcTextureCoordinates( void )
 //        loading, clipping, tesselating, normals, and output
 //        Also, we are still calculating some thing more than one 
 //        (like face area - need to move this into superpoly )
-void TGConstruct::ConstructBucket( SGBucket b ) {
+void TGConstruct::ConstructBucket() {
 
-    sprintf(ds_name, "./construct_debug_%ld", b.gen_index() );
-    ds_id = tgShapefileOpenDatasource( ds_name );
+    /* If we have some debug IDs, create a datasource */
+    if ( debug_shapes.size() ) {
+        sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
+    }
 
-    bucket = b;
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "Construct tile, bucket = " << bucket );
+    SG_LOG(SG_GENERAL, SG_ALERT, "Construct tile, bucket = " << bucket << " debug_string: " << ds_name );
 
     // STEP 1) 
     // Load grid of elevation data (Array)
