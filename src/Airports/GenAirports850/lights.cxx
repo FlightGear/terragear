@@ -137,7 +137,7 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     for ( i = 0; i < divs; ++i ) {
 	pt1 += inc1;
 	pt2 += inc2;
-        if ( dist > 2000.0 ) {
+        if ( dist > 610.0 || dist > rwy.length / 2 ) {
             w_lights.push_back( pt1 );
             w_normals.push_back( normal );
             w_lights.push_back( pt2 );
@@ -200,9 +200,7 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
     point_list r_normals; r_normals.clear();
     int i;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "gen threshold " << rwy.rwnum[0] );
-
-    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
+    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     // determine the start point.
     Point3D ref1, ref2, ref3, ref4;
@@ -224,21 +222,20 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
     }
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
-    // offset 5' downwind
+    // offset 1m downwind
     geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
-                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+                        -1.0, &lat, &lon, &r );
     ref1 = Point3D( lon, lat, 0.0 );
     geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg, 
-                        -5 * SG_FEET_TO_METER, &lat, &lon, &r );
+                        -1.0, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
 
-    // five lights for each side
-    for ( i = 0; i < 5; ++i ) {
+    // four lights for each side
+    for ( i = 0; i < 4; ++i ) {
         g_lights.push_back( ref1 );
         g_normals.push_back( normal1 );
     
@@ -251,12 +248,12 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
         r_lights.push_back( ref2 );
         r_normals.push_back( normal2 );
 
-        // offset 10' towards center
+        // offset 3m towards center
         geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg, 
-                            -10 * SG_FEET_TO_METER, &lat, &lon, &r );
+                            -3, &lat, &lon, &r );
         ref1 = Point3D( lon, lat, 0.0 );
         geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg, 
-                            10 * SG_FEET_TO_METER, &lat, &lon, &r );
+                            3, &lat, &lon, &r );
         ref2 = Point3D( lon, lat, 0.0 );
     }
 
@@ -299,7 +296,7 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
 }
 
 
-// generate runway center line lighting, 50' spacing.
+// generate runway center line lighting, 15m spacing.
 superpoly_list Runway::gen_runway_center_line_lights( bool recip )
 {
     point_list w_lights; w_lights.clear();
@@ -308,8 +305,7 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
     point_list r_normals; r_normals.clear();
 
     double len = rwy.length;
-    // this should be 25' technically but I'm trying 50' to space things out
-    int divs = (int)(len / (50.0*SG_FEET_TO_METER)) + 1;
+    int divs = (int)(len / 15.0) + 1;
 
     Point3D normal = gen_runway_light_vector( 3.0, recip );
     point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
@@ -333,10 +329,10 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
     bool use_white = true;
 
     while ( dist > 0.0 ) {
-        if ( dist > 3000.0 ) {
+        if ( dist > 900.0 ) {
             w_lights.push_back( pt1 );
             w_normals.push_back( normal );
-        } else if ( dist > 1000.0 ) {
+        } else if ( dist > 300.0 ) {
             if ( use_white ) {
                 w_lights.push_back( pt1 );
                 w_normals.push_back( normal );
