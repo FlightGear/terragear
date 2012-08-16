@@ -34,6 +34,20 @@
 
 using std::string;
 
+point_list Runway::gen_corners(double l_ext, double disp1, double disp2, double w_ext)
+{
+    // using TGPolygon is a bit innefficient, but that's what the
+    // routine returns.
+    TGPolygon poly_corners = gen_runway_area_w_extend( l_ext,
+                                                       disp1,
+                                                       disp2,
+                                                       w_ext );
+    point_list corner;
+    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
+        corner.push_back( poly_corners.get_pt( 0, i ) );
+    }
+    return corner;
+}
 
 // calculate the runway light direction vector.  We take the center of
 // one runway end - the center of the other end to get the direction
@@ -43,13 +57,7 @@ using std::string;
 Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
     double length;
 
-    // Generate the 4 corners of the runway
-    TGPolygon poly_corners = gen_runway_area_w_extend( 0.0, 0.0, 0.0, 0.0 );
-    point_list corner;
-    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-	corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
-
+    point_list corner = gen_corners(0.0, 0.0, 0.0, 0.0);
     Point3D end1, end2;
     if ( !recip ) {
         end1 = (corner[0] + corner[1]) / 2.0;
@@ -78,21 +86,6 @@ Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
     light_vec = light_vec / length;
 
     return light_vec;
-}
-
-point_list Runway::gen_corners(double l_ext, double disp1, double disp2, double w_ext)
-{
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( l_ext,
-                                                       disp1,
-                                                       disp2,
-                                                       w_ext );
-    point_list corner;
-    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-        corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
-    return corner;
 }
 
 // generate runway edge lighting
