@@ -151,6 +151,16 @@ private:
 
     void gen_runway_lights( superpoly_list* lights );
 
+    int get_thresh0(bool recip)
+    {
+        return (recip) ? 1 : 0;
+    }
+
+    int get_thresh1(bool recip)
+    {
+        return (recip) ? 0 : 1;
+    }
+
     point_list gen_corners( double l_ext, double disp1, double disp2, double w_ext );
     Point3D gen_runway_light_vector( double angle, bool recip );
     superpoly_list gen_runway_edge_lights( bool recip );

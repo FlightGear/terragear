@@ -92,13 +92,17 @@ Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
 // 60 meters spacing or the next number down that divides evenly.
 superpoly_list Runway::gen_runway_edge_lights( bool recip )
 {
+    point_list r_lights; r_lights.clear();
     point_list w_lights; w_lights.clear();
     point_list y_lights; y_lights.clear();
+    point_list r_normals; r_normals.clear();
     point_list w_normals; w_normals.clear();
     point_list y_normals; y_normals.clear();
-    int i;
 
-    int divs = (int)(rwy.length / 60.0) + 1;
+    int i;
+    double dist = rwy.length;
+    int divs = (int)(dist / 60.0) + 1;
+    double step = dist / divs;
 
     Point3D normal = gen_runway_light_vector( 3.0, recip );
     point_list corner = gen_corners(2.0, rwy.threshold[0], rwy.threshold[1], 2.0);
@@ -118,13 +122,23 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
         pt2 = corner[2];
     }
 
-    double dist = rwy.length;
-    double step = dist / divs;
+    Point3D thresh1 = pt1;
+    Point3D thresh2 = pt2;
+    int tstep;
 
-    w_lights.push_back( pt1 );
-    w_normals.push_back( normal );
-    w_lights.push_back( pt2 );
-    w_normals.push_back( normal );
+    //front threshold
+    if (rwy.threshold[get_thresh0(recip)] > step )
+    {
+        tstep = (int)(rwy.threshold[get_thresh0(recip)] / step) + 1;
+        for ( i = 0; i < tstep; ++i ) {
+            thresh1 -= inc1;
+            thresh2 -= inc2;
+            r_lights.push_back( thresh1 );
+            r_normals.push_back( normal );
+            r_lights.push_back( thresh2 );
+            r_normals.push_back( normal );
+        }
+    }
     dist -= step;
 
     for ( i = 0; i < divs; ++i ) {
@@ -135,13 +149,27 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
             w_normals.push_back( normal );
             w_lights.push_back( pt2 );
             w_normals.push_back( normal );
-        } else {
+        } else if (dist > 5) {
             y_lights.push_back( pt1 );
             y_normals.push_back( normal );
             y_lights.push_back( pt2 );
             y_normals.push_back( normal );
         }
         dist -= step;
+    }
+
+    //back threshold
+    if (rwy.threshold[get_thresh1(recip)] > step )
+    {
+        tstep = (int)(rwy.threshold[get_thresh1(recip)] / step) + 1;
+        for ( i = 0; i < tstep; ++i ) {
+            pt1 += inc1;
+            pt2 += inc2;
+            y_lights.push_back( pt1 );
+            y_normals.push_back( normal );
+            y_lights.push_back( pt2 );
+            y_normals.push_back( normal );
+        }
     }
 
     TGPolygon lights_poly; lights_poly.erase();
@@ -176,10 +204,27 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     else if (rwy.edge_lights == 1)
         yellow.set_material( "RWY_YELLOW_LOW_LIGHTS" );
 
+    lights_poly.erase();
+    normals_poly.erase();
+    lights_poly.add_contour( r_lights, false );
+    normals_poly.add_contour( r_normals, false );
+
+    TGSuperPoly red;
+    red.set_poly( lights_poly );
+    red.set_normals( normals_poly );
+    //Different intensities
+    if (rwy.edge_lights == 3)
+        red.set_material( "RWY_RED_LIGHTS" );
+    else if (rwy.edge_lights == 2)
+        red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
+    else if (rwy.edge_lights == 1)
+        red.set_material( "RWY_RED_LOW_LIGHTS" );
+
     superpoly_list result; result.clear();
 
     result.push_back( white );
     result.push_back( yellow );
+    result.push_back( red );
 
     return result;
 }
