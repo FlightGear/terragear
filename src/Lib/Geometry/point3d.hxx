@@ -142,6 +142,7 @@ public:
     bool   HasElevation() const;                      // does point have elevation data?
 
     bool   IsWithin( Point3D min, Point3D max ) const;
+    bool   IsWithin( double xmin, double xmax, double ymin, double ymax ) const;
     
 #ifdef _MSC_VER
     double round(double d)
@@ -443,6 +444,12 @@ inline bool Point3D::IsWithin( Point3D min, Point3D max ) const
 {
     return ( (min.n[PX] <= n[PX]) && (min.n[PY] <= n[PY]) &&
              (max.n[PX] >= n[PX]) && (max.n[PY] >= n[PY]) );
+}
+
+inline bool Point3D::IsWithin( double xmin, double xmax, double ymin, double ymax ) const
+{
+    return ( (xmin <= n[PX]) && (ymin <= n[PY]) &&
+             (xmax >= n[PX]) && (ymax >= n[PY]) );
 }
 
 // FRIENDS

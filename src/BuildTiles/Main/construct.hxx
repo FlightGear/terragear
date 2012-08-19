@@ -39,6 +39,7 @@
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <Array/array.hxx>
 
@@ -51,6 +52,8 @@
 #include "priorities.hxx"
 
 #define USE_CLIPPER     (0)
+#define FIND_SLIVERS    (1)
+#define USE_ACCUMULATOR (1)
 
 class TGShape
 {
@@ -59,8 +62,14 @@ public:
     bool            textured;
     superpoly_list  sps;
     texparams_list  tps;
+    AreaType        area;
     unsigned int    id;
 
+    void    GetName( char* name ) const
+    {
+        sprintf( name, "%s_%d", get_area_name( (AreaType)area ).c_str(), id );
+    }
+    
     void    SetMask( TGPolygon mask )
     {
         clip_mask = mask;
@@ -84,17 +93,23 @@ public:
 
     void    IntersectPolys( void )
     {
-        TGPolygon original, intersect;
+        if ( sps.size() > 1 ) {
+            TGPolygon original, intersect;
 
-        for (unsigned int i=0; i<sps.size(); i++)
-        {
-            original  = sps[i].get_poly();
+            for (unsigned int i=0; i<sps.size(); i++)
+            {
+                original  = sps[i].get_poly();
+
 #ifdef USE_CLIPPER
-            intersect = tgPolygonIntClipper( clip_mask, original );
+                intersect = tgPolygonIntClipper( clip_mask, original );
 #else
-            intersect = tgPolygonInt( clip_mask, original );
+                intersect = tgPolygonInt( clip_mask, original );
 #endif
-            sps[i].set_poly( intersect );
+
+                sps[i].set_poly( intersect );
+            }
+        } else {
+            sps[0].set_poly( clip_mask );
         }
     }
 };
@@ -261,6 +276,8 @@ private:
     // path to the debug shapes
     std::string debug_path;
 
+    bool debug_all;
+
     // list of shapes to dump during debug
     std::vector<unsigned int> debug_shapes;
 
@@ -308,8 +325,8 @@ private:
     void SaveSharedEdgeData( void );    
 
     // Polygon Cleaning
+    void CleanClippedPolys( void );
     void FixTJunctions( void );
-    void clean_clipped_polys( void );
 
     // Tesselation
     void TesselatePolys( void );
@@ -337,8 +354,10 @@ private:
 
     // debug
     bool IsDebugShape( unsigned int id );
-    void WriteDebugShape( const char* layer_name, unsigned int area, unsigned int shape );
-
+    void WriteDebugShape( const char* layer_name, const TGShape& shape );
+    void WriteDebugPoly( const char* layer_name, const char* name, const TGPolygon& poly );
+    void WriteDebugPolys( const char* layer_name, const poly_list& polys );
+    
 public:
     // Constructor
     TGConstruct();

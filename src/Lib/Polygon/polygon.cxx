@@ -359,6 +359,8 @@ void tgPolygonFindSlivers( TGPolygon& in, poly_list& slivers )
                 in.delete_contour( i );
             } else {
                 // move sliver contour to out polygon
+                SG_LOG(SG_GENERAL, SG_INFO, "      Found SLIVER!");
+
                 contour = in.get_contour( i );
                 in.delete_contour( i );
                 out.add_contour( contour, hole_flag );
@@ -702,6 +704,80 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
 
 	return result;
 }
+
+
+// Accumulator optimization ( to keep from massive data copies and format changes
+gpc_polygon *gpc_accumulator = NULL;
+
+void tgPolygonInitAccumulator( void )
+{
+    gpc_accumulator = new gpc_polygon;
+    gpc_accumulator->num_contours = 0;
+    gpc_accumulator->contour = NULL;
+    gpc_accumulator->hole = NULL;
+}
+
+void tgPolygonFreeAccumulator( void )
+{
+    gpc_free_polygon( gpc_accumulator );
+    delete gpc_accumulator;
+    gpc_accumulator = NULL;
+}
+
+void tgPolygonAddToAccumulator( const TGPolygon& subject )
+{
+    gpc_polygon *gpc_subject = new gpc_polygon;
+    gpc_subject->num_contours = 0;
+    gpc_subject->contour = NULL;
+    gpc_subject->hole = NULL;
+    make_gpc_poly( subject, gpc_subject );
+
+    gpc_polygon *gpc_result = new gpc_polygon;
+    gpc_result->num_contours = 0;
+    gpc_result->contour = NULL;
+    gpc_result->hole = NULL;
+
+    gpc_polygon_clip( GPC_UNION, gpc_subject, gpc_accumulator, gpc_result );
+
+    // free allocated memory
+    gpc_free_polygon( gpc_subject );
+    delete gpc_subject;
+
+    // throw away old accumulator : and use result for now on
+    gpc_free_polygon( gpc_accumulator );
+    delete gpc_accumulator;
+    gpc_accumulator = gpc_result;
+}
+
+TGPolygon tgPolygonDiffWithAccumulator( const TGPolygon& subject )
+{
+    TGPolygon result;
+
+    gpc_polygon *gpc_subject = new gpc_polygon;
+    gpc_subject->num_contours = 0;
+    gpc_subject->contour = NULL;
+    gpc_subject->hole = NULL;
+    make_gpc_poly( subject, gpc_subject );
+
+    gpc_polygon *gpc_result = new gpc_polygon;
+    gpc_result->num_contours = 0;
+    gpc_result->contour = NULL;
+    gpc_result->hole = NULL;
+
+    gpc_polygon_clip( GPC_DIFF, gpc_subject, gpc_accumulator, gpc_result );
+    make_tg_poly( gpc_result, &result );
+
+    // free allocated memory
+    gpc_free_polygon( gpc_subject );
+    delete gpc_subject;
+
+    gpc_free_polygon( gpc_result );
+    delete gpc_result;
+
+    return result;
+}
+
+
 
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip ) {

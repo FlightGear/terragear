@@ -34,33 +34,28 @@
 // Divide segment if there are other existing points on it, return the
 // new polygon
 void add_intermediate_nodes( int contour, const Point3D& start, 
-			     const Point3D& end, point_list& tmp_nodes,
-			     TGPolygon *result )
+                             const Point3D& end, point_list& tmp_nodes,
+                             TGPolygon *result,
+                             const double bbEpsilon,
+                             const double errEpsilon
+                           )
 {
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "  add_intermediate_nodes()");
-    char buf[200];
-    snprintf(buf, 199, "   %.7f %.7f %.7f <=> %.7f %.7f %.7f\n",
-	   start.x(), start.y(), start.z(), end.x(), end.y(), end.z() );
-    SG_LOG(SG_GENERAL, SG_BULK, buf);
-
-    
     Point3D new_pt;
-    bool found_extra = find_intermediate_node( start, end, tmp_nodes, &new_pt );
+
+    SG_LOG(SG_GENERAL, SG_BULK, "   " << start << " <==> " << end );
+
+    bool found_extra = find_intermediate_node( start, end, tmp_nodes, &new_pt, bbEpsilon, errEpsilon );
 
     if ( found_extra ) {
-	// recurse with two sub segments
-	// SG_LOG(SG_GENERAL, SG_DEBUG, "dividing " << p0 << " " << nodes[extra_index]
-	//      << " " << p1);
-	add_intermediate_nodes( contour, start, new_pt, tmp_nodes, 
-				result );
+        // recurse with two sub segments
+        // SG_LOG(SG_GENERAL, SG_DEBUG, "dividing " << p0 << " " << nodes[extra_index]
+        //      << " " << p1);
+        add_intermediate_nodes( contour, start, new_pt, tmp_nodes, result, bbEpsilon, errEpsilon  );
 
-	result->add_node( contour, new_pt );
+        result->add_node( contour, new_pt );
         SG_LOG(SG_GENERAL, SG_BULK, "    adding = " << new_pt);
 
-	add_intermediate_nodes( contour, new_pt, end, tmp_nodes,
-				result );
-    } else {
-	// this segment does not need to be divided
+        add_intermediate_nodes( contour, new_pt, end, tmp_nodes, result, bbEpsilon, errEpsilon  );
     }
 }
 
@@ -88,7 +83,7 @@ TGPolygon add_nodes_to_poly( const TGPolygon& poly,
 	    result.add_node( i, p0 );
 
 	    // add intermediate points
-	    add_intermediate_nodes( i, p0, p1, tmp_nodes, &result );
+        add_intermediate_nodes( i, p0, p1, tmp_nodes, &result, SG_EPSILON*10, SG_EPSILON*4 );
 
 	    // end of segment is beginning of next segment
 	}
@@ -99,7 +94,7 @@ TGPolygon add_nodes_to_poly( const TGPolygon& poly,
 	result.add_node( i, p0 );
 
 	// add intermediate points
-	add_intermediate_nodes( i, p0, p1, tmp_nodes, &result );
+    add_intermediate_nodes( i, p0, p1, tmp_nodes, &result, SG_EPSILON*10, SG_EPSILON*4 );
 
 	// end of segment is beginning of next segment
 	// 5/9/2000 CLO - this results in duplicating the last point
@@ -135,7 +130,7 @@ TGPolygon add_tgnodes_to_poly( const TGPolygon& poly,
             result.add_node( i, p0 );
 
             // add intermediate points
-            add_intermediate_nodes( i, p0, p1, poly_points, &result );
+            add_intermediate_nodes( i, p0, p1, poly_points, &result, SG_EPSILON*10, SG_EPSILON*4 );
 
             // end of segment is beginning of next segment
         }
@@ -146,7 +141,7 @@ TGPolygon add_tgnodes_to_poly( const TGPolygon& poly,
         result.add_node( i, p0 );
 
         // add intermediate points
-        add_intermediate_nodes( i, p0, p1, poly_points, &result );
+        add_intermediate_nodes( i, p0, p1, poly_points, &result, SG_EPSILON*10, SG_EPSILON*4 );
 
         // maintain original hole flag setting
         result.set_hole_flag( i, poly.get_hole_flag( i ) );

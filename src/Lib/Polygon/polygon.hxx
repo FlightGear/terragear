@@ -256,6 +256,12 @@ void tgPolygonFindSlivers( TGPolygon& in, poly_list& slivers );
 
 // wrapper functions for gpc polygon clip routines
 
+void tgPolygonInitAccumulator( void );
+void tgPolygonFreeAccumulator( void );
+void tgPolygonAddToAccumulator( const TGPolygon& subject );
+TGPolygon tgPolygonDiffWithAccumulator( const TGPolygon& subject );
+
+
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip );
 

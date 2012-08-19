@@ -273,9 +273,6 @@ void TGMatch::load_neighbor_shared( SGBucket b, string work ) {
 
 // try to load any missing shared data from our own shared data file
 void TGMatch::load_missing_shared( SGBucket b, string work ) {
-    double clon = b.get_center_lon();
-    double clat = b.get_center_lat();
-
     string base = work + "/Shared/";
     
     if ( !nw_flag ) {

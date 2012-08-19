@@ -37,8 +37,11 @@
 // Divide segment if there are other existing points on it, return the
 // new polygon
 void add_intermediate_nodes( int contour, const Point3D& start, 
-			     const Point3D& end, const TGTriNodes& tmp_nodes,
-			     TGPolygon *result );
+                             const Point3D& end, const point_list& tmp_nodes,
+                             TGPolygon *result,
+                             const double bbEpsilon = SG_EPSILON*10,
+                             const double errEpsilon = SG_EPSILON*4
+                           );
 
 
 // Search each segment for additional vertex points that may have been

@@ -946,14 +946,16 @@ TGPolygon snap (const TGPolygon &poly, double grid_size)
 }
 
 
-// static const double tgAirportEpsilon = SG_EPSILON / 10.0;
-static const double tgAirportEpsilon = SG_EPSILON;
-
+/* TODO : Verify this doesn't break genapt850 - may need an interface to
+ *        specify bounding box and error values
+ */
 
 // Find a point in the given node list that lies between start and
 // end, return true if something found, false if nothing found.
 bool find_intermediate_node( const Point3D& start, const Point3D& end,
-			     const point_list& nodes, Point3D *result )
+                             const point_list& nodes, Point3D *result,
+                             double bbEpsilon, double errEpsilon
+                           )
 {
     bool found_node = false;
     double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
@@ -991,8 +993,8 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 	    // cout << i << endl;
 	    Point3D current = nodes[i];
 
-	    if ( (current.x() > (p_min.x() + (SG_EPSILON)))
-		 && (current.x() < (p_max.x() - (SG_EPSILON))) ) {
+        if ( (current.x() > (p_min.x() + (bbEpsilon)))
+            && (current.x() < (p_max.x() - (bbEpsilon))) ) {
 
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
 		//         current.x(), current.y(), current.z() );
@@ -1000,7 +1002,7 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 		y_err = fabs(current.y() - (m * current.x() + b));
 		// cout << "y_err = " << y_err << endl;
 
-		if ( y_err < tgAirportEpsilon ) {
+        if ( y_err < errEpsilon ) {
 		    // cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
 		    // cout << p_min << " < " << current << " < "
 		    //      << p_max << endl;
@@ -1039,8 +1041,8 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 	for ( int i = 0; i < (int)nodes.size(); ++i ) {
 	    Point3D current = nodes[i];
 
-	    if ( (current.y() > (p_min.y() + (SG_EPSILON)))
-		 && (current.y() < (p_max.y() - (SG_EPSILON))) ) {
+        if ( (current.y() > (p_min.y() + (bbEpsilon)))
+            && (current.y() < (p_max.y() - (bbEpsilon))) ) {
 		
 		// printf( "found a potential candidate %.7f %.7f %.7f\n",
 		//         current.x(), current.y(), current.z() );
@@ -1052,7 +1054,7 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 		// cout << "  (" << counter << ") x_err = " << x_err << endl;
 		// }
 
-		if ( x_err < tgAirportEpsilon ) {
+        if ( x_err < errEpsilon ) {
 		    // cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
 		    // cout << p_min << " < " << current << " < "
 		    //      << p_max << endl;
@@ -1550,11 +1552,11 @@ void* tgShapefileOpenLayer( void* ds_id, const char* layer_name ) {
     return (void*)layer;
 }
 
-void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description )
+void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description, bool has_pt_inside  )
 {        
     OGRLayer*      layer      = (OGRLayer*)l_id;
     OGRPolygon*    polygon    = new OGRPolygon();
-
+    
     for ( int i = 0; i < poly.contours(); i++ ) {
         bool skip_ring=false;
         point_list contour = poly.get_contour( i );
@@ -1591,6 +1593,26 @@ void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, c
             SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
         }
         OGRFeature::DestroyFeature(feature);
+
+        // TEST TEST TEST : Add the point inside - see if we can see it in QGIS
+        if ( has_pt_inside ) {
+            OGRPoint *point=new OGRPoint();
+        
+            point->setX( poly.get_point_inside( i ).x() );
+            point->setY( poly.get_point_inside( i ).y() );
+            point->setZ( 0.0 );
+
+            SG_LOG(SG_GENERAL, SG_ALERT, "DEBUG: SET POINT INSIDE " << description << " contour " << i << " is " << poly.get_point_inside( i ) );
+            
+            feature = new OGRFeature( layer->GetLayerDefn() );
+            feature->SetField("ID", description);
+            feature->SetGeometry(point);
+            if( layer->CreateFeature( feature ) != OGRERR_NONE )
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+            }
+            OGRFeature::DestroyFeature(feature);
+        }
     }
 }
 

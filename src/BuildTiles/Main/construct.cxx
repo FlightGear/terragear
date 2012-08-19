@@ -72,6 +72,7 @@ TGConstruct::TGConstruct():
         useUKGrid(false),
         writeSharedEdges(true),
         useOwnSharedEdges(false),
+        debug_all(false),
         ds_id((void*)-1)
 { }
 
@@ -102,17 +103,22 @@ void TGConstruct::set_debug( std::string path, std::vector<string> defs )
 
         if( tile == bucket.gen_index_str() ) {
             dsd.erase(0, d_pos+1);
-            std::stringstream ss(dsd);            
-            int i;
 
-            while (ss >> i)
-            {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug file " << i);
+            if ( dsd == "all" ) {
+                debug_all = true;
+            } else {
+                std::stringstream ss(dsd);
+                int i;
 
-                debug_shapes.push_back(i);
+                while (ss >> i)
+                {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug file " << i);
 
-                if (ss.peek() == ',')
-                    ss.ignore();
+                    debug_shapes.push_back(i);
+
+                    if (ss.peek() == ',')
+                        ss.ignore();
+                }
             }
         }
     }
@@ -122,26 +128,56 @@ bool TGConstruct::IsDebugShape( unsigned int id )
 {
     bool is_debug = false;
 
-    for (unsigned int i=0; i<debug_shapes.size(); i++) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "have debug id " <<  debug_shapes[i] << " looking for " << id );
-
-        if ( debug_shapes[i] == id ) {
-            is_debug = true;
-            break;
+    /* Check global flag */
+    if ( debug_all ) {
+        is_debug = true;
+    } else {
+        for (unsigned int i=0; i<debug_shapes.size(); i++) {
+            if ( debug_shapes[i] == id ) {
+                is_debug = true;
+                break;
+            }
         }
     }
 
     return is_debug;
 }
 
-void TGConstruct::WriteDebugShape( const char* layer_name, unsigned int area, unsigned int shape )
+void TGConstruct::WriteDebugShape( const char* layer_name, const TGShape& shape )
+{
+    char name[64];
+    
+    ds_id = tgShapefileOpenDatasource( ds_name );
+    l_id  = tgShapefileOpenLayer( ds_id, layer_name );
+
+    shape.GetName( name );
+    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, name );
+
+    // close after each write
+    ds_id = tgShapefileCloseDatasource( ds_id );
+}
+
+void TGConstruct::WriteDebugPoly( const char* layer_name, const char* name, const TGPolygon& poly )
+{
+    ds_id = tgShapefileOpenDatasource( ds_name );
+    l_id  = tgShapefileOpenLayer( ds_id, layer_name );
+
+    tgShapefileCreateFeature( ds_id, l_id, poly, name );
+
+    // close after each write
+    ds_id = tgShapefileCloseDatasource( ds_id );
+}
+
+void TGConstruct::WriteDebugPolys( const char* layer_name, const poly_list& polys )
 {
     ds_id = tgShapefileOpenDatasource( ds_name );
     l_id  = tgShapefileOpenLayer( ds_id, layer_name );
     
-    sprintf( feature_name, "%s_%d", get_area_name( area ).c_str(), polys_clipped.get_shape( area, shape ).id );
-    tgShapefileCreateFeature( ds_id, l_id, polys_in.get_mask(area, shape), feature_name );
-    
+    for( unsigned int i=0; i<polys.size(); i++ ) {        
+        sprintf( feature_name, "poly_%d", i );
+        tgShapefileCreateFeature( ds_id, l_id, polys[i], feature_name );
+    }
+
     // close after each write
     ds_id = tgShapefileCloseDatasource( ds_id );
 }
@@ -383,8 +419,8 @@ bool TGConstruct::load_poly(const string& path) {
 
             sp.set_poly( poly );
             sp.set_material( material );
-
             shape.sps.push_back( sp );
+
             if ( with_tp ) {
                 shape.textured = true;
                 shape.tps.push_back( tp );
@@ -399,9 +435,14 @@ bool TGConstruct::load_poly(const string& path) {
 
         // Once the full poly is loaded, build the clip mask
         shape.BuildMask();
+        shape.area = area;
         shape.id = cur_id++;
 
         polys_in.add_shape( area, shape );
+
+        if ( IsDebugShape( shape.id ) ) {
+            WriteDebugShape( "loaded", shape );
+        }
     }
 
     return true;
@@ -1172,13 +1213,17 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list 
     int original_contours, result_contours;
     bool done;
     int area, shape, segment, i, j;
-
+    int merged = 0;
+    int total = 0;
+    
     for ( i = 0; i < (int)slivers_list.size(); i++ ) {
         slivers = slivers_list[i];
 
         for ( j = 0; j < slivers.contours(); ++j ) {
             // make the sliver polygon
             contour = slivers.get_contour( j );
+            total++;
+            
             sliver.erase();
             sliver.add_contour( contour, 0 );
             done = false;
@@ -1190,6 +1235,8 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list 
                 }
 
                 for ( shape = 0; shape < (int)clipped.area_size(area) && !done; ++shape ) {
+                    unsigned int shape_id = clipped.get_shape( area, shape ).id;
+                    
                     for ( segment = 0; segment < (int)clipped.shape_size(area, shape) && !done; ++segment ) {
 
                         poly = clipped.get_poly( area, shape, segment );
@@ -1202,7 +1249,24 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list 
                         result_contours = result.contours();
 
                         if ( original_contours == result_contours ) {
+                            SG_LOG(SG_GENERAL, SG_INFO, "MERGED SLIVER " << i << ", " << j << " into area " << get_area_name( (AreaType)area ) << " id: " << shape_id << " segment: " << segment  );
+                            
                             clipped.set_poly( area, shape, segment, result );
+                            merged++;
+
+                            /* add the sliver to the clip_mask, too */
+                            TGPolygon mask = clipped.get_mask( area, shape );
+#if USE_CLIPPER
+                            result = tgPolygonUnionClipper( mask, sliver );
+#else
+                            result = tgPolygonUnion( mask, sliver );
+#endif
+                            clipped.set_mask( area, shape, result );
+
+                            if ( IsDebugShape( shape_id ) ) {
+                                WriteDebugShape( "with_slivers", clipped.get_shape( area, shape ) );
+                            }
+                            
                             done = true;
                         }
                     }
@@ -1210,10 +1274,14 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list 
             }
         }
     }
+
+    slivers_list.clear();
+    
+    SG_LOG(SG_GENERAL, SG_INFO, " UNMERGED SLIVERS: " << total - merged );
 }
 
 bool TGConstruct::ClipLandclassPolys( void ) {
-    TGPolygon accum, clipped, tmp;
+    TGPolygon clipped, tmp;
     TGPolygon remains;
     TGPolygon safety_base;
     poly_list slivers;
@@ -1221,14 +1289,22 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     Point3D p;
     point2d min, max;
 
+#if !USE_ACCUMULATOR
+    TGPolygon accum;
+#endif
+    
     // Get clip bounds
     min.x = bucket.get_center_lon() - 0.5 * bucket.get_width();
     min.y = bucket.get_center_lat() - 0.5 * bucket.get_height();
     max.x = bucket.get_center_lon() + 0.5 * bucket.get_width();
     max.y = bucket.get_center_lat() + 0.5 * bucket.get_height();
 
+#if USE_ACCUMULATOR
+    tgPolygonInitAccumulator();
+#else
     accum.erase();
-
+#endif
+    
     // set up clipping tile : and remember to add the nodes!
     safety_base.erase();
 
@@ -1318,19 +1394,28 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #if USE_CLIPPER
             clipped = tgPolygonDiffClipper( tmp, accum );
 #else
+
+#if USE_ACCUMULATOR
+            clipped = tgPolygonDiffWithAccumulator( tmp );
+#else
             clipped = tgPolygonDiff( tmp, accum );
+#endif
+
 #endif
             // only add to output list if the clip left us with a polygon
             if ( clipped.contours() > 0 ) {
+
+#if FIND_SLIVERS
                 // move slivers from clipped polygon to slivers polygon
                 tgPolygonFindSlivers( clipped, slivers );
+#endif
 
                 // add the sliverless result polygon to the clipped polys list
                 if ( clipped.contours() > 0  ) {
                     TGShape shape;
                     TGSuperPoly sp;
 
-                    sp.set_material( get_area_name( (AreaType)i ) );
+                    //sp.set_material( get_area_name( (AreaType)i ) );
 
                     // copy all of the superpolys and texparams
                     shape.SetMask( clipped );
@@ -1339,47 +1424,81 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                     shape.sps = polys_in.get_shape( i, j ).sps;
                     shape.tps = polys_in.get_shape( i, j ).tps;
 
-                    shape.sps.push_back( sp );
+                    // shape.sps.push_back( sp );
                     polys_clipped.add_shape( i, shape );
+
+                    if ( IsDebugShape( shape.id ) ) {
+                        WriteDebugShape( "clipped", shape );
+                    }
                 }
 	        }
 
 #if USE_CLIPPER
             accum   = tgPolygonUnionClipper( tmp, accum );
+//            accum   = tgPolygonUnionClipper( clipped, accum );
+#else
+
+#if USE_ACCUMULATOR
+            tgPolygonAddToAccumulator( tmp );
+//            tgPolygonAddToAccumulator( clipped );
 #else
             accum   = tgPolygonUnion( tmp, accum );
+//            accum   = tgPolygonUnion( clipped, accum );
+#endif
+
 #endif
         }
     }
 
+    if ( debug_all || debug_shapes.size() ) {
+        // Dump the sliver list
+        WriteDebugPolys( "poly_slivers", slivers );
+    }
+
+#if FIND_SLIVERS
     // Now, merge any slivers with clipped polys
     merge_slivers(polys_clipped, slivers);
+#endif
 
+    slivers.clear();
+    
     // finally, what ever is left over goes to ocean
-
-    // clip to accum against original base tile
-    // remains = new gpc_polygon;
-    // remains->num_contours = 0;
-    // remains->contour = NULL;
 #if USE_CLIPPER
     remains = tgPolygonDiffClipper( safety_base, accum );
 #else
+
+#if USE_ACCUMULATOR
+    remains = tgPolygonDiffWithAccumulator( safety_base );
+#else
     remains = tgPolygonDiff( safety_base, accum );
+#endif
+
 #endif
 
     if ( remains.contours() > 0 ) {
         // cout << "remains contours = " << remains.contours() << endl;
         // move slivers from remains polygon to slivers polygon
+
+#if FIND_SLIVERS
         tgPolygonFindSlivers( remains, slivers );
+#endif
         // cout << "  After sliver move:" << endl;
         // cout << "    remains = " << remains.contours() << endl;
         // cout << "    slivers = " << slivers.contours() << endl;
 
+#if FIND_SLIVERS
         // merge any slivers with previously clipped
         // neighboring polygons
         if ( slivers.size() > 0 ) {
+
+            if ( debug_all || debug_shapes.size() ) {
+                // Dump the sliver list
+                WriteDebugPolys( "remains_slivers", slivers );
+            }
+                        
             merge_slivers(polys_clipped, slivers);
         }
+#endif
 
         if ( remains.contours() > 0 ) {
             TGSuperPoly sp;
@@ -1395,6 +1514,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             polys_clipped.add_shape( (int)get_sliver_target_area_type(), shape );
         }
     }
+
+#if USE_ACCUMULATOR
+    tgPolygonFreeAccumulator();
+#endif    
 
     // Once clipping is complete, intersect the individual segments with their clip masks
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
@@ -1664,9 +1787,9 @@ void TGConstruct::TesselatePolys( void )
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
             unsigned int id = polys_clipped.get_shape( area, shape ).id;
-            
+
             if ( IsDebugShape( id ) ) {
-                WriteDebugShape( "preteselate", area, shape );
+                WriteDebugShape( "preteselate", polys_clipped.get_shape(area, shape) );
             }
 
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
@@ -1834,16 +1957,20 @@ void TGConstruct::WriteBtgFile( void )
     }
 }
 
-void TGConstruct::clean_clipped_polys() {
+void TGConstruct::CleanClippedPolys() {
     // Clean the polys
+    unsigned int before, after;
+    
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
         for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
+            unsigned int id = polys_clipped.get_shape( area, shape ).id;
+            
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                 TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
-                SG_LOG( SG_CLIPPER, SG_INFO, "Cleaning poly " << get_area_name( (AreaType)area ) << 
-                        ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );
 
-                if ( area == 3 ) {
+                before  = poly.total_size();
+
+                if ( false ) {
                     poly = remove_cycles( poly );
                     poly = remove_dups( poly );
                     poly = remove_bad_contours( poly );
@@ -1859,7 +1986,18 @@ void TGConstruct::clean_clipped_polys() {
                     poly = remove_bad_contours( poly );
                 }
 
+                after = poly.total_size();
+
+                if (before != after) {
+                    SG_LOG( SG_CLIPPER, SG_INFO, "Cleanined poly " << get_area_name( (AreaType)area ) <<
+                                            ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) << " before: " << before << " after: " << after );
+                }
+
                 polys_clipped.set_poly( area, shape, segment, poly );
+            }
+
+            if ( IsDebugShape( id ) ) {
+                WriteDebugShape( "cleaned", polys_clipped.get_shape( area, shape ) );
             }
         }
     }
@@ -1899,7 +2037,7 @@ void TGConstruct::CalcTextureCoordinates( void )
 void TGConstruct::ConstructBucket() {
 
     /* If we have some debug IDs, create a datasource */
-    if ( debug_shapes.size() ) {
+    if ( debug_shapes.size() || debug_all ) {
         sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
     }
 
@@ -1928,6 +2066,11 @@ void TGConstruct::ConstructBucket() {
     ClipLandclassPolys(); 
 
     // STEP 5)
+    // Clean the polys - after this, we shouldn't change their shape (other than slightly for
+    // fix T-Junctions - as This is the end of the first pass for multicore design
+    CleanClippedPolys();
+    
+    // STEP 5)
     // Merge in Shared data (just add the nodes to the nodelist)
     // When this step is complete, some nodes will have normals (from shared tiles)
     // and some will not
@@ -1941,7 +2084,7 @@ void TGConstruct::ConstructBucket() {
     // TODO : Needs to be part of clipping 
     // just before union : If we need to clean again after fixing tjunctions, make 
     // sure we don't alter the shape
-    clean_clipped_polys();
+    // CleanClippedPolys();
 
     // STEP 7)
     // Generate triangles - we can't generate the node-face lookup table

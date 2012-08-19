@@ -100,7 +100,10 @@ TGPolygon remove_spikes( const TGPolygon& poly );
 // Find a point in the given node list that lies between start and
 // end, return true if something found, false if nothing found.
 bool find_intermediate_node( const Point3D& start, const Point3D& end,
-			     const point_list& nodes, Point3D *result );
+                             const point_list& nodes, Point3D *result,
+                             const double bbEpsilon = SG_EPSILON*10,
+                             const double errEpsilon = SG_EPSILON*4
+                           );
 
 // remove any degenerate contours
 TGPolygon remove_bad_contours( const TGPolygon &poly );
@@ -114,7 +117,7 @@ TGPolygon remove_small_contours( const TGPolygon &poly );
 void    tgShapefileInit( void );
 void*   tgShapefileOpenDatasource( const char* datasource_name );
 void*   tgShapefileOpenLayer( void* ds_id, const char* layer_name );
-void    tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* feature_name );
+void    tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* feature_name, bool has_point_inside = false );
 void    tgShapefileCloseLayer( void* l_id );
 void*   tgShapefileCloseDatasource( void* ds_id );
 
