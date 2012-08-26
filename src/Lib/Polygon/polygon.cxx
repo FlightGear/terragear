@@ -709,7 +709,7 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
 // Accumulator optimization ( to keep from massive data copies and format changes
 gpc_polygon *gpc_accumulator = NULL;
 
-void tgPolygonInitAccumulator( void )
+void tgPolygonInitGPCAccumulator( void )
 {
     gpc_accumulator = new gpc_polygon;
     gpc_accumulator->num_contours = 0;
@@ -717,7 +717,7 @@ void tgPolygonInitAccumulator( void )
     gpc_accumulator->hole = NULL;
 }
 
-void tgPolygonFreeAccumulator( void )
+void tgPolygonFreeGPCAccumulator( void )
 {
     gpc_free_polygon( gpc_accumulator );
     delete gpc_accumulator;
@@ -798,6 +798,69 @@ TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip ) {
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip( POLY_UNION, subject, clip );
 }
+
+
+
+
+// Accumulator optimization ( to keep from massive data copies and format changes
+ClipperLib::Polygons clipper_accumulator;
+
+void tgPolygonInitClipperAccumulator( void )
+{
+    clipper_accumulator.clear();
+}
+
+void tgPolygonFreeClipperAccumulator( void )
+{
+    clipper_accumulator.clear();
+}
+
+
+void tgPolygonAddToClipperAccumulator( const TGPolygon& subject )
+{
+    ClipperLib::Polygons clipper_subject;
+    make_clipper_poly( subject, &clipper_subject );
+
+    ClipperLib::ExPolygons clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
+
+    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    // verify each result is simple
+    ClipperLib::Polygons simple_result = clipper_simplify( clipper_result );
+
+    clipper_accumulator.clear();
+    clipper_accumulator = simple_result;
+}
+
+TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
+{
+    TGPolygon result;
+
+    ClipperLib::Polygons clipper_subject;
+    make_clipper_poly( subject, &clipper_subject );
+    
+    ClipperLib::ExPolygons clipper_result;
+    
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
+
+    c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    // verify each result is simple
+    ClipperLib::Polygons simple_result = clipper_simplify( clipper_result );
+
+    make_tg_poly_from_clipper( simple_result, &result );
+
+    return result;
+}
+
 
 
 

@@ -154,7 +154,7 @@ private:
     ProcessInfoList     plist;
     Net::ServerSocket*  pss;
     int                 state;
-    int                 threads;
+    unsigned int        threads;
     ofstream            csvfile;
     Scheduler*          scheduler;
 };

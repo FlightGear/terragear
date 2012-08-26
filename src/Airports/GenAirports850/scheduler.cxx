@@ -301,7 +301,7 @@ void ProcessList::HandleFinished( void )
         for ( unsigned int i=0; i< plist.size(); i++ ) {
             switch ( plist[i].GetState() ) {
                 case P_STATE_DONE:
-                    plist[i].SetErrorString( "success" );
+                    plist[i].SetErrorString( (char *)"success" );
 
                     // holding the list lock - only one thread can write to the csvfile at a time
                     csvfile << plist[i].GetInfo() << "\n";

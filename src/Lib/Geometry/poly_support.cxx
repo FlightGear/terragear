@@ -1553,10 +1553,10 @@ void* tgShapefileOpenLayer( void* ds_id, const char* layer_name ) {
 }
 
 void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description, bool has_pt_inside  )
-{        
+{
     OGRLayer*      layer      = (OGRLayer*)l_id;
     OGRPolygon*    polygon    = new OGRPolygon();
-    
+
     for ( int i = 0; i < poly.contours(); i++ ) {
         bool skip_ring=false;
         point_list contour = poly.get_contour( i );
@@ -1595,6 +1595,7 @@ void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, c
         OGRFeature::DestroyFeature(feature);
 
         // TEST TEST TEST : Add the point inside - see if we can see it in QGIS
+#if 0
         if ( has_pt_inside ) {
             OGRPoint *point=new OGRPoint();
         
@@ -1613,6 +1614,7 @@ void tgShapefileCreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, c
             }
             OGRFeature::DestroyFeature(feature);
         }
+#endif
     }
 }
 

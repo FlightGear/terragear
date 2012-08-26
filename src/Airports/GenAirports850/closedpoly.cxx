@@ -546,7 +546,7 @@ int ClosedPoly::BuildBtg( TGPolygon* apt_base, TGPolygon* apt_clearing, bool mak
     TGPolygon base, safe_base;
 
     // verify the poly has been generated
-    if ( pre_tess.contours() )    
+    if ( pre_tess.contours() )
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
     

@@ -70,9 +70,9 @@ public:
         return features.size();
     }
 
-    void SetBoundary( ClosedPoly* bndry )
+    void AddBoundary( ClosedPoly* bndry )
     {
-        boundary = bndry;
+        boundary.push_back( bndry );
     }
 
     void AddWindsock( Windsock* windsock )
@@ -132,7 +132,7 @@ private:
     BeaconList      beacons;
     SignList        signs;
     HelipadList     helipads;
-    ClosedPoly*     boundary;
+    PavementList    boundary;
 
     // stats
     SGTimeStamp build_time;

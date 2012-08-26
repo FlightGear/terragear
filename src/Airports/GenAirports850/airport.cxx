@@ -85,7 +85,6 @@ Airport::Airport( int c, char* def)
     }
 
     altitude *= SG_FEET_TO_METER;
-    boundary = NULL;
 
     dbg_rwy_poly  = 0;
     dbg_pvmt_poly = 0;
@@ -149,9 +148,9 @@ Airport::~Airport()
         delete signs[i];
     }
 
-    if (boundary)
+    for (unsigned int i=0; i<boundary.size(); i++)
     {
-        delete boundary;
+        delete boundary[i];
     }
 }
 
@@ -636,7 +635,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                 make_shapefiles = false;
             }
 
-            if (boundary)
+            if (boundary.size())
             {
                 runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
             }
@@ -670,7 +669,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             SG_LOG(SG_GENERAL, SG_INFO, "Build helipad " << i + 1 << " of " << helipads.size());
             slivers.clear();
 
-            if (boundary)
+            if (boundary.size())
             {
                 helipads[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL );
             }
@@ -700,7 +699,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                 make_shapefiles = false;
             }
 
-            if (boundary)
+            if (boundary.size())
             {
                 pavements[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &accum, slivers, NULL, NULL, make_shapefiles );
             }
@@ -738,7 +737,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                 make_shapefiles = false;
             }
 
-            if (boundary)
+            if (boundary.size())
             {
                 taxiways[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
             }
@@ -767,7 +766,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         {
             slivers.clear();
 
-            if (boundary)
+            if (boundary.size())
             {
                 runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, NULL, NULL );
             }
@@ -807,10 +806,13 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     // build the base and clearing if there's a boundary
-    if (boundary)
+    if (boundary.size())
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Build user defined boundary " );
-        boundary->BuildBtg( &apt_base, &apt_clearing, false );
+        for ( unsigned int i=0; i<boundary.size(); i++ )
+        {
+            SG_LOG(SG_GENERAL, SG_INFO, "Build Userdefined boundary " << i + 1 << " of " << boundary.size());
+            boundary[i]->BuildBtg( &apt_base, &apt_clearing, false );
+        }
     }
 
     if ( apt_base.total_size() == 0 )

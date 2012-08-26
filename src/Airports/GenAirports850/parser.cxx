@@ -357,7 +357,7 @@ int Parser::SetState( int state )
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding boundary");
         cur_boundary->Finish();
-        cur_airport->SetBoundary( cur_boundary );
+        cur_airport->AddBoundary( cur_boundary );
         cur_boundary = NULL;
     } 
 

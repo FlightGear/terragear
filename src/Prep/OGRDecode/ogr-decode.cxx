@@ -45,7 +45,8 @@
 #include <ogrsf_frmts.h>
 
 /* stretch endpoints to reduce slivers in linear data ~.1 meters */
-#define EP_STRETCH  (0.000001)  
+// #define EP_STRETCH  (0.000001)  
+#define EP_STRETCH  (0.1)
 
 using std::string;
 using std::map;

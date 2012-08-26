@@ -69,7 +69,7 @@ public:
     {
         sprintf( name, "%s_%d", get_area_name( (AreaType)area ).c_str(), id );
     }
-    
+
     void    SetMask( TGPolygon mask )
     {
         clip_mask = mask;

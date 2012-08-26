@@ -51,7 +51,8 @@
 
 using std::string;
 
-double gSnap = 0.00000001;      // approx 1 mm
+//double gSnap = 0.00000001;      // approx 1 mm
+double gSnap = 0.0000001;      // approx 1 cm
 
 static const double cover_size = 1.0 / 120.0;
 static const double half_cover_size = cover_size * 0.5;
@@ -146,12 +147,12 @@ bool TGConstruct::IsDebugShape( unsigned int id )
 void TGConstruct::WriteDebugShape( const char* layer_name, const TGShape& shape )
 {
     char name[64];
-    
+    shape.GetName( name );
+
     ds_id = tgShapefileOpenDatasource( ds_name );
     l_id  = tgShapefileOpenLayer( ds_id, layer_name );
 
-    shape.GetName( name );
-    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, name );
+    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, "test" );
 
     // close after each write
     ds_id = tgShapefileCloseDatasource( ds_id );
@@ -1236,7 +1237,7 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list 
 
                 for ( shape = 0; shape < (int)clipped.area_size(area) && !done; ++shape ) {
                     unsigned int shape_id = clipped.get_shape( area, shape ).id;
-                    
+
                     for ( segment = 0; segment < (int)clipped.shape_size(area, shape) && !done; ++segment ) {
 
                         poly = clipped.get_poly( area, shape, segment );
@@ -1300,7 +1301,13 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     max.y = bucket.get_center_lat() + 0.5 * bucket.get_height();
 
 #if USE_ACCUMULATOR
-    tgPolygonInitAccumulator();
+
+#if USE_CLIPPER
+    tgPolygonInitClipperAccumulator();
+#else
+    tgPolygonInitGPCAccumulator();
+#endif
+    
 #else
     accum.erase();
 #endif
@@ -1344,6 +1351,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
 
             }
+
         } else if ( is_water_area( i ) ) {
             for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
 #if USE_CLIPPER
@@ -1361,6 +1369,13 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
             }
         }
+    }
+
+    // Dump the masks
+    if ( debug_all || debug_shapes.size() ) {
+        WriteDebugPoly( "land_mask", "", land_mask );
+        WriteDebugPoly( "water_mask", "", water_mask );
+        WriteDebugPoly( "island_mask", "", island_mask );
     }
 
     // process polygons in priority order
@@ -1391,8 +1406,20 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
             }
 
+            if ( IsDebugShape( polys_in.get_shape( i, j ).id ) ) {
+                char name[32];
+                sprintf(name, "shape %d,%d", i,j);
+                WriteDebugPoly( "pre-clip", name, tmp );
+            }
+
 #if USE_CLIPPER
+
+#if USE_ACCUMULATOR
+            clipped = tgPolygonDiffClipperWithAccumulator( tmp );
+#else
             clipped = tgPolygonDiffClipper( tmp, accum );
+#endif
+
 #else
 
 #if USE_ACCUMULATOR
@@ -1402,6 +1429,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
 
 #endif
+
             // only add to output list if the clip left us with a polygon
             if ( clipped.contours() > 0 ) {
 
@@ -1413,14 +1441,13 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 // add the sliverless result polygon to the clipped polys list
                 if ( clipped.contours() > 0  ) {
                     TGShape shape;
-                    TGSuperPoly sp;
-
-                    //sp.set_material( get_area_name( (AreaType)i ) );
 
                     // copy all of the superpolys and texparams
                     shape.SetMask( clipped );
                     shape.textured = polys_in.get_textured( i, j );
                     shape.id  = polys_in.get_shape( i, j ).id;
+
+                    shape.area= polys_in.get_shape( i, j ).area;
                     shape.sps = polys_in.get_shape( i, j ).sps;
                     shape.tps = polys_in.get_shape( i, j ).tps;
 
@@ -1431,19 +1458,22 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                         WriteDebugShape( "clipped", shape );
                     }
                 }
-	        }
+            }
 
 #if USE_CLIPPER
-            accum   = tgPolygonUnionClipper( tmp, accum );
-//            accum   = tgPolygonUnionClipper( clipped, accum );
-#else
 
 #if USE_ACCUMULATOR
+            tgPolygonAddToClipperAccumulator( tmp );
+#else
+            accum   = tgPolygonUnionClipper( tmp, accum );
+#endif
+            
+#else
+            
+#if USE_ACCUMULATOR
             tgPolygonAddToAccumulator( tmp );
-//            tgPolygonAddToAccumulator( clipped );
 #else
             accum   = tgPolygonUnion( tmp, accum );
-//            accum   = tgPolygonUnion( clipped, accum );
 #endif
 
 #endif
@@ -1461,10 +1491,16 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
 
     slivers.clear();
-    
+
     // finally, what ever is left over goes to ocean
 #if USE_CLIPPER
+
+#if USE_ACCUMULATOR
+    remains = tgPolygonDiffClipperWithAccumulator( safety_base );
+#else
     remains = tgPolygonDiffClipper( safety_base, accum );
+#endif
+
 #else
 
 #if USE_ACCUMULATOR
@@ -1516,8 +1552,14 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     }
 
 #if USE_ACCUMULATOR
-    tgPolygonFreeAccumulator();
-#endif    
+
+#if USE_CLIPPER
+    tgPolygonFreeClipperAccumulator();
+#else
+    tgPolygonFreeGPCAccumulator();
+#endif
+
+#endif
 
     // Once clipping is complete, intersect the individual segments with their clip masks
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
@@ -1723,11 +1765,13 @@ void TGConstruct::CalcFaceNormals( void )
 void TGConstruct::CalcPointNormals( void )
 {
     // traverse triangle structure building the face normal table
-    SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals");
+    SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals: 0%");
 
     Point3D normal;
     point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
-
+    unsigned int ten_percent = nodes.size() / 10;
+    unsigned int cur_percent = 10;
+    
     for ( unsigned int i = 0; i<nodes.size(); i++ ) {
         TGNode node       = nodes.get_node( i );
         TGFaceList faces  = node.GetFaces();
@@ -1735,6 +1779,12 @@ void TGConstruct::CalcPointNormals( void )
 
         Point3D average( 0.0 );
 
+        if ( i == ten_percent ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals: " << cur_percent << "%" );
+            ten_percent += nodes.size() / 10;
+            cur_percent += 10;
+        }
+        
         // for each triangle that shares this node
         for ( unsigned int j = 0; j < faces.size(); ++j ) {
             unsigned int at      = faces[j].area;
@@ -1958,47 +2008,55 @@ void TGConstruct::WriteBtgFile( void )
 }
 
 void TGConstruct::CleanClippedPolys() {
-    // Clean the polys
     unsigned int before, after;
     
+    // Clean the polys
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
         for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
             unsigned int id = polys_clipped.get_shape( area, shape ).id;
-            
+
+            // step 1 : snap
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                 TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
-
-                before  = poly.total_size();
-
-                if ( false ) {
-                    poly = remove_cycles( poly );
-                    poly = remove_dups( poly );
-                    poly = remove_bad_contours( poly );
-                    poly = tgPolygonSimplify( poly );
-                    poly = remove_tiny_contours( poly );
-                    poly = remove_spikes( poly );
-                    poly = remove_dups( poly );
-                    poly = remove_bad_contours( poly );
-                    poly = remove_tiny_contours( poly );
-                } else {
-                    poly = snap(poly, gSnap);
-                    poly = remove_dups( poly );
-                    poly = remove_bad_contours( poly );
-                }
-
-                after = poly.total_size();
-
-                if (before != after) {
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Cleanined poly " << get_area_name( (AreaType)area ) <<
-                                            ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) << " before: " << before << " after: " << after );
-                }
-
+                poly = snap(poly, gSnap);
                 polys_clipped.set_poly( area, shape, segment, poly );
             }
 
             if ( IsDebugShape( id ) ) {
-                WriteDebugShape( "cleaned", polys_clipped.get_shape( area, shape ) );
+                WriteDebugShape( "snapped", polys_clipped.get_shape( area, shape ) );
             }
+
+            // step 2 : remove_dups
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+                poly = remove_dups( poly );
+                polys_clipped.set_poly( area, shape, segment, poly );
+            }
+
+            if ( IsDebugShape( id ) ) {
+                WriteDebugShape( "rem dupes", polys_clipped.get_shape( area, shape ) );
+            }
+
+            // step 3 : remove_bad_contours
+            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
+                TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+                poly = remove_bad_contours( poly );
+                polys_clipped.set_poly( area, shape, segment, poly );
+            }
+
+            if ( IsDebugShape( id ) ) {
+                WriteDebugShape( "rem bad contours", polys_clipped.get_shape( area, shape ) );
+            }
+
+// todo - add up all segments in a shape for printout
+#if 0
+            after = poly.total_size();
+            if (before != after) {
+                SG_LOG( SG_CLIPPER, SG_INFO, "Cleanined poly " << get_area_name( (AreaType)area ) <<
+                                                                                ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) << " before: " << before << " after: " << after );
+            }
+#endif
+
         }
     }
 }
