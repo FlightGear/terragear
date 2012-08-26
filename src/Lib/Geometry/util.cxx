@@ -18,6 +18,7 @@
 
 #define MP_STRETCH  (0.000001)
 
+using std::string;
 using std::vector;
 
 namespace tg {

@@ -22,6 +22,7 @@
 using std::vector;
 using std::cerr;
 using std::endl;
+using std::string;
 
 static string prog_name;
 static string work_dir = ".";

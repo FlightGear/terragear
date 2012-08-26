@@ -54,6 +54,7 @@ extern "C" {
 using std::copy;
 using std::ostream_iterator;
 using std::sort;
+using std::string;
 using std::vector;
 
 #if 0 // unused

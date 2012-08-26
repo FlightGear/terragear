@@ -43,6 +43,8 @@
 #include "simple_clip.hxx"
 #include "chop.hxx"
 
+using std::string;
+
 static void clip_and_write_poly( string root, long int p_index,
                                  const string &poly_type,
                                  SGBucket b, const TGPolygon& shape,

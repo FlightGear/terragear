@@ -32,6 +32,7 @@
 #include "global.hxx"
 #include "point2d.hxx"
 
+using std::string;
 
 // build 3d airport
 void build_airport( string airport_id, float alt_m,

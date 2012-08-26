@@ -268,7 +268,7 @@ void TGPolygon::shift( double lon, double lat ) {
 
 
 // output
-void TGPolygon::write( const string& file ) const {
+void TGPolygon::write( const std::string& file ) const {
     FILE *fp = fopen( file.c_str(), "w" );
 
     fprintf(fp, "%ld\n", poly.size());
@@ -353,7 +353,7 @@ void tgPolygonFindSlivers( TGPolygon& in, poly_list& slivers )
 
 
 // output
-void TGPolygon::write_contour( const int contour, const string& file ) const {
+void TGPolygon::write_contour( const int contour, const std::string& file ) const {
     FILE *fp = fopen( file.c_str(), "w" );
     
     for ( int j = 0; j < (int)poly[contour].size(); ++j ) {
