@@ -264,7 +264,7 @@ bool construct_tile( const SGBucket& b,
 		     const string& result_file,
 		     const string &cover ) {
 
-    string command = "fgfs-construct ";
+    string command = "tg-construct ";
     command = command + " --work-dir=" + work_base;
     command = command + " --output-dir=" + output_base;
     command = command + " --tile-id=" + b.gen_index_str();
