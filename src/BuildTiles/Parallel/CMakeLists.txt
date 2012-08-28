@@ -1,22 +1,20 @@
-
-
-add_executable(fgfs-tools-server
+add_executable(tg-construct-server
     server.cxx)
 
-target_link_libraries(fgfs-tools-server
+target_link_libraries(tg-construct-server
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 
-install(TARGETS fgfs-tools-server RUNTIME DESTINATION bin)
+install(TARGETS tg-construct-server RUNTIME DESTINATION bin)
 
 
-add_executable(fgfs-tools-client
+add_executable(tg-construct-client
      client.cxx)
 
-target_link_libraries(fgfs-tools-client
+target_link_libraries(tg-construct-client
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	)
 
-install(TARGETS fgfs-tools-client RUNTIME DESTINATION bin)
+install(TARGETS tg-construct-client RUNTIME DESTINATION bin)

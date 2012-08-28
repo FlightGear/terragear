@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# fgfs-launch-server -- script to launch fgfs scenery construction server
+# tg-launch-server -- script to launch fgfs scenery construction server
 #
 # Written by Curtis Olson, started May 1999.
 #
@@ -20,10 +20,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# $Id: fgfs-launch-server,v 1.9 2005-12-19 15:53:47 curt Exp $
+# $Id: tg-launch-server,v 1.9 2005-12-19 15:53:47 curt Exp $
 
 
-SERVER=fgfs-tools-server
+SERVER=tg-construct-server
 
 # check usage
 if [ $# -lt 2 ]; then

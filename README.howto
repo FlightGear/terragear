@@ -112,11 +112,11 @@ find line
 double error = 200.0 in Construct/Main/main.cxx and change initial error
 to smth like 10. Then you need to rebuild everything in that directory.
 
-I generally hate using fgfs-launch-clients and fgfs-launch-server so I'm
+I generally hate using tg-launch-clients and tg-launch-server so I'm
 doing everyting (almost) by hand. So I start from Construct/Parallel
-launch fgfs-tools-server on the computer with data on local disk and
+launch tg-construct-server on the computer with data on local disk and
 then slogin to other computers ( with data mounted over nfs) and run 
-fgfs-tools-client in rude mode.  After a while scenery is ready. 
+tg-construct-client in rude mode.  After a while scenery is ready. 
 
 	That's all folks,
 		Alexei.

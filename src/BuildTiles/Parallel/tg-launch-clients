@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# fgfs-launch-clinets -- script to launch fgfs scenery construction clients
+# tg-launch-clients -- script to launch fgfs scenery construction clients
 #
 # Written by Curtis Olson, started May 1999.
 #
@@ -20,9 +20,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# $Id: fgfs-launch-clients,v 1.17 2006-01-24 19:39:48 curt Exp $
+# $Id: tg-launch-clients,v 1.17 2006-01-24 19:39:48 curt Exp $
 
-CLIENT=fgfs-tools-client
+CLIENT=tg-construct-client
 HOSTNAME=`uname -n`
 
 # check usage
