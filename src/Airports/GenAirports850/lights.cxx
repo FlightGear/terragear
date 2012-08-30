@@ -161,14 +161,14 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     //back threshold
     if (rwy.threshold[get_thresh1(recip)] > step )
     {
-        tstep = (int)(rwy.threshold[get_thresh1(recip)] / step) + 1;
+        tstep = (int)(rwy.threshold[get_thresh1(recip)] / step) + 2;
         for ( i = 0; i < tstep; ++i ) {
-            pt1 += inc1;
-            pt2 += inc2;
             y_lights.push_back( pt1 );
             y_normals.push_back( normal );
             y_lights.push_back( pt2 );
             y_normals.push_back( normal );
+            pt1 += inc1;
+            pt2 += inc2;
         }
     }
 
@@ -230,32 +230,29 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
 }
 
 // generate threshold lights for a 3 degree approach 
-superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
+superpoly_list Runway::gen_runway_threshold_lights( int kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list g_normals; g_normals.clear();
     point_list r_lights; r_lights.clear();
     point_list r_normals; r_normals.clear();
     int i;
+    kind =1;
 
     point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     // determine the start point.
-    Point3D ref1, ref2, ref3, ref4;
+    Point3D ref1, ref2;
     double length_hdg, left_hdg;
     double lon, lat, r;
     if ( recip ) {
         ref1 = corner[0];
         ref2 = corner[1];
-        ref3 = corner[3];
-        ref4 = corner[2];
         length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
     } else {
         ref1 = corner[2];
         ref2 = corner[3];
-        ref3 = corner[1];
-        ref4 = corner[0];
         length_hdg = rwy.heading;
     }
     left_hdg = length_hdg - 90.0;
@@ -272,27 +269,128 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
                         -1.0, &lat, &lon, &r );
     ref2 = Point3D( lon, lat, 0.0 );
 
-    // four lights for each side
-    for ( i = 0; i < 4; ++i ) {
-        g_lights.push_back( ref1 );
-        g_normals.push_back( normal1 );
-    
-        g_lights.push_back( ref2 );
-        g_normals.push_back( normal1 );
+    int divs = (int)(rwy.width / 3.0) + 1;
+    Point3D inc;
+    Point3D pt1 = ref1;
+    Point3D pt2 = ref2;
 
-        r_lights.push_back( ref1 );
-        r_normals.push_back( normal2 );
-    
-        r_lights.push_back( ref2 );
+// We're at the threshold:
+    if ( GetsThreshold(recip) )
+    {
+        // four lights for each side
+        for ( i = 0; i < 4; ++i ) {
+            g_lights.push_back( pt1 );
+            g_normals.push_back( normal1 );
+
+            g_lights.push_back( pt2 );
+            g_normals.push_back( normal1 );
+
+            // offset 3m towards outside
+            geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
+                                3, &lat, &lon, &r );
+            pt1 = Point3D( lon, lat, 0.0 );
+            geo_direct_wgs_84 ( pt2.lat(), pt2.lon(), left_hdg,
+                                -3, &lat, &lon, &r );
+            pt2 = Point3D( lon, lat, 0.0 );
+        }
+        if ( kind )
+        {
+            // Add a green threshold lights bar in between the four lights
+            Point3D pt1 = ref1;
+            inc = (ref2 - ref1) / divs;
+            pt1 += inc;
+            g_lights.push_back( pt1 );
+            g_normals.push_back( normal1 );
+            for ( i = 0; i < divs-2; ++i ) {
+                pt1 += inc;
+                g_lights.push_back( pt1 );
+                g_normals.push_back( normal1 );
+            }
+        }
+    }
+
+
+    // Now step to the front of the runway
+    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg,
+                        -rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
+    ref1 = Point3D( lon, lat, 0.0 );
+    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg,
+                        -rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
+    ref2 = Point3D( lon, lat, 0.0 );
+    Point3D front1 = ref1;
+    Point3D front2 = ref2;
+
+    if ( !kind )// Create groups of four lights in front of the displaced threshold
+    {
+        for ( i = 0; i < 4; ++i ) {
+            if (GetsThreshold(recip))
+            {
+                r_lights.push_back( front1 );
+                r_normals.push_back( normal1 );
+
+                r_lights.push_back( front2 );
+                r_normals.push_back( normal1 );
+            } else {
+                g_lights.push_back( front1 );
+                g_normals.push_back( normal1 );
+
+                g_lights.push_back( front2 );
+                g_normals.push_back( normal1 );
+            }
+            r_lights.push_back( front1 );
+            r_normals.push_back( normal2 );
+
+            r_lights.push_back( front2 );
+            r_normals.push_back( normal2 );
+            // offset 3m towards center
+            geo_direct_wgs_84 ( front1.lat(), front1.lon(), left_hdg,
+                                -3, &lat, &lon, &r );
+            front1 = Point3D( lon, lat, 0.0 );
+            geo_direct_wgs_84 ( front2.lat(), front2.lon(), left_hdg,
+                                3, &lat, &lon, &r );
+            front2 = Point3D( lon, lat, 0.0 );
+        }
+    } else {
+        // Create the red (green) threshold lights bar
+        Point3D pt1 = ref1;
+        inc = (ref2 - ref1) / divs;
+        if (!GetsThreshold(recip))
+        {
+            g_lights.push_back( pt1 );
+            g_normals.push_back( normal1 );
+        }
+        r_lights.push_back( pt1 );
         r_normals.push_back( normal2 );
 
-        // offset 3m towards center
-        geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg, 
-                            -3, &lat, &lon, &r );
-        ref1 = Point3D( lon, lat, 0.0 );
-        geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg, 
-                            3, &lat, &lon, &r );
-        ref2 = Point3D( lon, lat, 0.0 );
+        for ( i = 0; i < divs; ++i ) {
+            pt1 += inc;
+            r_lights.push_back( pt1 );
+            r_normals.push_back( normal2 );
+            if (!GetsThreshold(recip))
+            {
+                g_lights.push_back( pt1 );
+                g_normals.push_back( normal1 );
+            }
+        }
+        if (GetsThreshold(recip))
+        { // In case of a threshold there is no bar at the front of the runway
+        for ( i = 0; i < 4; ++i ) {
+            r_lights.push_back( ref1 );
+            r_normals.push_back( normal1 );
+
+            r_lights.push_back( ref2 );
+            r_normals.push_back( normal1 );
+            // offset 3m towards center
+            geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg,
+                                -3, &lat, &lon, &r );
+            ref1 = Point3D( lon, lat, 0.0 );
+            geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg,
+                                3, &lat, &lon, &r );
+            ref2 = Point3D( lon, lat, 0.0 );
+
+        }
+
+        }
     }
 
     TGPolygon lights_poly; lights_poly.erase();

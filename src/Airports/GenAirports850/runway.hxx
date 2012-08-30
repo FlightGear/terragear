@@ -161,6 +161,11 @@ private:
         return (recip) ? 0 : 1;
     }
 
+    bool GetsThreshold(bool recip)
+    {
+        return (rwy.threshold[get_thresh0(recip)] > 60.0) ? true : false;
+    }
+
     point_list gen_corners( double l_ext, double disp1, double disp2, double w_ext );
     Point3D gen_runway_light_vector( double angle, bool recip );
     superpoly_list gen_runway_edge_lights( bool recip );
