@@ -342,27 +342,34 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
     point_list w_normals; w_normals.clear();
     point_list r_normals; r_normals.clear();
 
-    double len = rwy.length;
-    int divs = (int)(len / 15.0) + 1;
+    double dist = rwy.length;
+    int divs = (int)(dist / 15.0) + 1;
 
     Point3D normal = gen_runway_light_vector( 3.0, recip );
-    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
     Point3D inc;
     Point3D pt1, pt2;
+    double length_hdg;
+    double lon, lat, r;
 
     if ( recip ) {
-        pt1 = (corner[0] + corner[1] ) / 2.0;
-        pt2 = (corner[2] + corner[3] ) / 2.0;
+        length_hdg = rwy.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        geo_direct_wgs_84 ( GetEnd().lat(), GetEnd().lon(), length_hdg,
+                            rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        pt2 = GetStart();
     } else {
-        pt1 = (corner[2] + corner[3] ) / 2.0;
-        pt2 = (corner[0] + corner[1] ) / 2.0;
+        length_hdg = rwy.heading;
+        geo_direct_wgs_84 ( GetStart().lat(), GetStart().lon(), length_hdg,
+                            rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
+        pt1 = Point3D( lon, lat, 0.0 );
+        pt2 = GetEnd();
     }
     inc = (pt2 - pt1) / divs;
 
-    double dist = len;
-    double step = len / divs;
-    pt1 += inc;                 // move 25' in
+    double step = dist / divs;
+    pt1 += inc;
     dist -= step;
     bool use_white = true;
 
@@ -383,9 +390,7 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
             r_lights.push_back( pt1 );
             r_normals.push_back( normal );
         }
-  	pt1 += inc;
-  	pt1 += inc;
-        dist -= step;
+        pt1 += inc;
         dist -= step;
     }
 
