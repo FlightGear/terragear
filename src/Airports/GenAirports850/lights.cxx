@@ -230,14 +230,13 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
 }
 
 // generate threshold lights for a 3 degree approach 
-superpoly_list Runway::gen_runway_threshold_lights( int kind, bool recip )
+superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
     point_list g_normals; g_normals.clear();
     point_list r_lights; r_lights.clear();
     point_list r_normals; r_normals.clear();
     int i;
-    kind =1;
 
     point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
 
@@ -2610,34 +2609,39 @@ void Runway::gen_runway_lights( superpoly_list *lights ) {
         }
     }
 
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Edge light = " << rwy.edge_lights << " Centre light = " << rwy.centerline_lights );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "ALC1 flag = " << rwy.approach_lights[0] << " ALC2 flag2 = " << rwy.approach_lights[1] );
-
-    // Many aproach lighting systems define the threshold lighting
-    // needed, but for those that don't (i.e. REIL, ODALS, or Edge
-    // lights defined but no approach lights)
-    // make threshold lighting
-
-    if ( rwy.reil[0] > 0 /* Has REIL lighting */
-         || rwy.approach_lights[0] == 11 /* ODALS Omni-directional approach light system */
-         || ( rwy.edge_lights > 0  && rwy.approach_lights[0] == 0 ) /* Has edge lighting, but no
-                                             approach lighting */ )
+    // Approach light systems that have a threshold light bar
+    // use a central routine for its creation
+    if ( rwy.approach_lights[0] > 0 && rwy.approach_lights[0] < 11)
     {
         // forward direction
-        SG_LOG(SG_GENERAL, SG_DEBUG, "threshold lights for forward direction" );
+        superpoly_list s = gen_runway_threshold_lights( 1, false );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+    if ( rwy.approach_lights[1] > 0 && rwy.approach_lights[1] < 11)
+    {
+        // reverse direction
+        superpoly_list s = gen_runway_threshold_lights( 1, true );
+        for ( i = 0; i < s.size(); ++i ) {
+            lights->push_back( s[i] );
+        }
+    }
+
+    // If the runway has edge lights but no approach lights,
+    // or approach lights without a lights bar,
+    // create a simple threshold lighting
+    if ( rwy.edge_lights > 0  && (rwy.approach_lights[0] == 0 || rwy.approach_lights[0] > 10))
+    {
+        // forward direction
         superpoly_list s = gen_runway_threshold_lights( 0, false );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
         }
     }
-    if ( rwy.reil[1] > 0 /* Has REIL lighting */
-         || rwy.approach_lights[1] == 11 /* ODALS Omni-directional approach light system */
-         || ( rwy.edge_lights > 0  && rwy.approach_lights[1] == 0 ) /* Has edge lighting, but no
-                                             approach lighting */ )
+    if ( rwy.edge_lights > 0  && (rwy.approach_lights[1] == 0 || rwy.approach_lights[1] > 10))
     {
         // reverse direction
-        SG_LOG(SG_GENERAL, SG_DEBUG, "threshold lights for reverse direction" );
         superpoly_list s = gen_runway_threshold_lights( 0, true );
         for ( i = 0; i < s.size(); ++i ) {
             lights->push_back( s[i] );
