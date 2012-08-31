@@ -1061,47 +1061,10 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
     }
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
-
-    // Generate the threshold lights
-
-    double len = rwy.length;
-    int divs = (int)(len / 10.0) + 1;
     point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
-
-    Point3D inc;
     Point3D pt;
 
-    if ( recip ) {
-        inc = (corner[0] - corner[1]) / divs;
-        pt = corner[1];
-        flag = rwy.rwnum[1];
-    } else {
-        inc = (corner[2] - corner[3]) / divs;
-        pt = corner[3];
-        flag = rwy.rwnum[0];
-    }
-
-    double dist = rwy.length;
-    double step = dist / divs;
-
-    g_lights.push_back( pt );
-    g_normals.push_back( normal1 );
-    r_lights.push_back( pt );
-    r_normals.push_back( normal2 );
-    dist -= step;
-
-    for ( i = 0; i < divs; ++i ) {
-	pt += inc;
-        g_lights.push_back( pt );
-        g_normals.push_back( normal1 );
-        r_lights.push_back( pt );
-        r_normals.push_back( normal2 );
-        dist -= step;
-    }
-
     // Generate long center bar of lights
-
     // determine the start point.
     Point3D ref_save;
     double length_hdg, left_hdg;
@@ -1435,47 +1398,10 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
     SG_LOG(SG_GENERAL, SG_DEBUG, "gen ALSF/SALS lights " << rwy.rwnum[0] );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
-
-    // Generate the threshold lights
-
-    double len = rwy.length;
-    int divs = (int)(len / 10.0) + 1;
     point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
-
-    Point3D inc;
     Point3D pt;
 
-    if ( recip ) {
-        inc = (corner[0] - corner[1]) / divs;
-        pt = corner[1];
-        flag = rwy.rwnum[1];
-    } else {
-        inc = (corner[2] - corner[3]) / divs;
-        pt = corner[3];
-        flag = rwy.rwnum[0];
-    }
-
-    double dist = rwy.length;
-    double step = dist / divs;
-
-    g_lights.push_back( pt );
-    g_normals.push_back( normal1 );
-    r_lights.push_back( pt );
-    r_normals.push_back( normal2 );
-    dist -= step;
-
-    for ( i = 0; i < divs; ++i ) {
-	pt += inc;
-        g_lights.push_back( pt );
-        g_normals.push_back( normal1 );
-        r_lights.push_back( pt );
-        r_normals.push_back( normal2 );
-        dist -= step;
-    }
-
     // Generate long center bar of lights
-
     // determine the start point.
     Point3D ref_save;
     double length_hdg, left_hdg;
@@ -2030,47 +1956,10 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
     SG_LOG(SG_GENERAL, SG_DEBUG, "gen SSALx lights " << rwy.rwnum[0] );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
-
-    // Generate the threshold lights
-
-    double len = rwy.length;
-    int divs = (int)(len / 10.0) + 1;
     point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
-
-    Point3D inc;
     Point3D pt;
 
-    if ( recip ) {
-        inc = (corner[0] - corner[1]) / divs;
-        pt = corner[1];
-        flag = rwy.rwnum[1];
-    } else {
-        inc = (corner[2] - corner[3]) / divs;
-        pt = corner[3];
-        flag = rwy.rwnum[0];
-    }
-
-    double dist = rwy.length;
-    double step = dist / divs;
-
-    g_lights.push_back( pt );
-    g_normals.push_back( normal1 );
-    r_lights.push_back( pt );
-    r_normals.push_back( normal2 );
-    dist -= step;
-
-    for ( i = 0; i < divs; ++i ) {
-	pt += inc;
-        g_lights.push_back( pt );
-        g_normals.push_back( normal1 );
-        r_lights.push_back( pt );
-        r_normals.push_back( normal2 );
-        dist -= step;
-    }
-
     // Generate long center bar of lights (every 200')
-
     // determine the start point.
     Point3D ref_save;
     double length_hdg, left_hdg;
@@ -2288,47 +2177,10 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
     SG_LOG(SG_GENERAL, SG_DEBUG, "gen SSALx lights " << rwy.rwnum[0] );
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
-
-    // Generate the threshold lights
-
-    double len = rwy.length;
-    int divs = (int)(len / 10.0) + 1;
     point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
-
-    Point3D inc;
     Point3D pt;
 
-    if ( recip ) {
-        inc = (corner[0] - corner[1]) / divs;
-        pt = corner[1];
-        flag = rwy.rwnum[1];
-    } else {
-        inc = (corner[2] - corner[3]) / divs;
-        pt = corner[3];
-        flag = rwy.rwnum[0];
-    }
-
-    double dist = rwy.length;
-    double step = dist / divs;
-
-    g_lights.push_back( pt );
-    g_normals.push_back( normal1 );
-    r_lights.push_back( pt );
-    r_normals.push_back( normal2 );
-    dist -= step;
-
-    for ( i = 0; i < divs; ++i ) {
-	pt += inc;
-        g_lights.push_back( pt );
-        g_normals.push_back( normal1 );
-        r_lights.push_back( pt );
-        r_normals.push_back( normal2 );
-        dist -= step;
-    }
-
     // Generate long center bar of lights (every 200')
-
     // determine the start point.
     Point3D ref_save;
     double length_hdg, left_hdg;
