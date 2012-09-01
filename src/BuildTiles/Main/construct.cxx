@@ -51,8 +51,7 @@
 
 using std::string;
 
-//double gSnap = 0.00000001;      // approx 1 mm
-double gSnap = 0.0000002;      // approx 2 cm
+double gSnap = 0.00000001;      // approx 1 mm
 
 static const double cover_size = 1.0 / 120.0;
 static const double half_cover_size = cover_size * 0.5;
@@ -1853,7 +1852,7 @@ void TGConstruct::TesselatePolys( void )
                         ": id = " << id );
 
 //              TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
-                TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
+                TGPolygon tri = polygon_tesselate_alt_with_extra_cgal( poly, poly_extra, false );
 
                 // ensure all added nodes are accounted for
                 for (int k=0; k< tri.contours(); k++) {
