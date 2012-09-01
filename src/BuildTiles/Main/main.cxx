@@ -329,7 +329,7 @@ int main(int argc, char **argv) {
 
             c->set_debug( debug_dir, debug_defs );
 
-            c->ConstructBucket();
+            c->ConstructBucketStage1();
             delete c;
         } else {
             // build all the tiles in an area
@@ -357,7 +357,7 @@ int main(int argc, char **argv) {
 
                 c->set_debug( debug_dir, debug_defs );
 
-                c->ConstructBucket();
+                c->ConstructBucketStage1();
                 delete c;
             } else {
                 SGBucket b_cur;
@@ -390,7 +390,7 @@ int main(int argc, char **argv) {
 
                             c->set_debug( debug_dir, debug_defs );
 
-                            c->ConstructBucket();
+                            c->ConstructBucketStage1();
                             delete c;
                         } else {
                             SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
@@ -418,7 +418,7 @@ int main(int argc, char **argv) {
 
         c->set_debug( debug_dir, debug_defs );
 
-        c->ConstructBucket();
+        c->ConstructBucketStage1();
         delete c;
     }
 

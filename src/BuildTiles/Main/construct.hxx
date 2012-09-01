@@ -367,8 +367,9 @@ public:
 
     void set_bucket( SGBucket b ) { bucket = b; }
     
-    void ConstructBucket();
-
+    void ConstructBucketStage1();
+    void ConstructBucketStage2();
+    
 
     void calc_gc_course_dist( const Point3D& start, const Point3D& dest, 
                               double *course, double *dist );

@@ -7,6 +7,7 @@ add_library(Geometry STATIC
     line.cxx
     poly_support.cxx
     poly_extra.cxx
+    poly_cgal.cxx
     rectangle.cxx
     tg_nodes.cxx
     trinodes.cxx

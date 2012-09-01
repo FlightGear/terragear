@@ -52,11 +52,12 @@
 using std::string;
 
 //double gSnap = 0.00000001;      // approx 1 mm
-double gSnap = 0.0000001;      // approx 1 cm
+double gSnap = 0.0000002;      // approx 2 cm
 
 static const double cover_size = 1.0 / 120.0;
 static const double half_cover_size = cover_size * 0.5;
 
+static unsigned int cur_poly_id = 0;
 
 // If we don't offset land use squares by some amount, then we can get
 // land use square boundaries coinciding with tile boundaries.
@@ -242,7 +243,6 @@ bool TGConstruct::load_poly(const string& path) {
     int hole_flag;
     int num_polys;
     double startx, starty, startz, x, y, z, lastx, lasty, lastz;
-    static unsigned int cur_id = 0;
 
     sg_gzifstream in( path );
 
@@ -437,7 +437,7 @@ bool TGConstruct::load_poly(const string& path) {
         // Once the full poly is loaded, build the clip mask
         shape.BuildMask();
         shape.area = area;
-        shape.id = cur_id++;
+        shape.id = cur_poly_id++;
 
         polys_in.add_shape( area, shape );
 
@@ -1844,6 +1844,7 @@ void TGConstruct::TesselatePolys( void )
 
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                 TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+
                 poly.get_bounding_box(min, max);
                 poly_extra = nodes.get_geod_inside( min, max );
 
@@ -1851,6 +1852,7 @@ void TGConstruct::TesselatePolys( void )
                         shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) << 
                         ": id = " << id );
 
+//              TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
                 TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
 
                 // ensure all added nodes are accounted for
@@ -2092,7 +2094,7 @@ void TGConstruct::CalcTextureCoordinates( void )
 //        loading, clipping, tesselating, normals, and output
 //        Also, we are still calculating some thing more than one 
 //        (like face area - need to move this into superpoly )
-void TGConstruct::ConstructBucket() {
+void TGConstruct::ConstructBucketStage1() {
 
     /* If we have some debug IDs, create a datasource */
     if ( debug_shapes.size() || debug_all ) {
@@ -2127,11 +2129,14 @@ void TGConstruct::ConstructBucket() {
     // Clean the polys - after this, we shouldn't change their shape (other than slightly for
     // fix T-Junctions - as This is the end of the first pass for multicore design
     CleanClippedPolys();
-    
+
+    // END OF FIRST PASS : SAVE THE TILE DATA
+
     // STEP 5)
     // Merge in Shared data (just add the nodes to the nodelist)
     // When this step is complete, some nodes will have normals (from shared tiles)
     // and some will not
+    // Load Shared Edge Data X,Y coords only
     LoadSharedEdgeData();
 
     // STEP 6) 
@@ -2154,13 +2159,18 @@ void TGConstruct::ConstructBucket() {
     // NOTE: After this point, no new nodes can be added
     LookupNodesPerVertex();
 
-    // STEP 9) 
-    // Interpolate elevations, and flatten stuff 
+    // STEP 9)
+    // Interpolate elevations, and flatten stuff
     CalcElevations();
-    
-    // STEP 10) 
-    // Generate face_connected list - 
+
+    // STEP 10)
+    // Generate face_connected list - shared data contains faces, too - save them somehow
     LookupFacesPerNode();
+
+    // END OF SECOND PASS : SAVE THE TILE DATA
+
+    // load shared edge data (with elevations, and face connected list)
+    // LoadSharedEdgeDataWithElevation();
 
     // STEP 11)
     // Calculate Face Normals

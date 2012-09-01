@@ -69,6 +69,9 @@ TGPolygon polygon_tesselate_alt( TGPolygon &p, bool verbose );
 TGPolygon polygon_tesselate_alt_with_extra( TGPolygon &p, 
             const point_list &extra_nodes, bool verbose );
 
+TGPolygon polygon_tesselate_alt_with_extra_cgal( TGPolygon &p,
+            const point_list &extra_nodes, bool verbose );
+
 // calculate some "arbitrary" point inside each of the polygons contours
 void calc_points_inside( TGPolygon& p );
 
