@@ -2,6 +2,8 @@ if (GDAL_FOUND)
 include_directories(${GDAL_INCLUDE_DIR})
 endif (GDAL_FOUND)
 
+include( ${CGAL_USE_FILE} )
+
 add_library(Geometry STATIC 
     contour_tree.cxx
     line.cxx
