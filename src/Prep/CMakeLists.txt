@@ -1,5 +1,3 @@
-
-
 include_directories(${PROJECT_SOURCE_DIR}/src/Lib)
 
 # seems unfortunate that lib depends on other dirs

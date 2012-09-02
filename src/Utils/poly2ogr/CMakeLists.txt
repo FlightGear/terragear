@@ -1,7 +1,10 @@
 
 if (GDAL_FOUND)
 
-include_directories(${GDAL_INCLUDE_DIR})
+include_directories(
+	${GDAL_INCLUDE_DIR}
+	${GPC_INCLUDE_DIR}
+)
 add_executable(poly2ogr poly2ogr.cxx)
 
 if(MSVC)

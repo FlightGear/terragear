@@ -1,3 +1,8 @@
+include_directories(
+	${NEWMAT_INCLUDE_DIR}
+	${GPC_INCLUDE_DIR}
+)
+
 add_executable(genapts850
 	airport.hxx airport.cxx
 	apt_math.hxx apt_math.cxx

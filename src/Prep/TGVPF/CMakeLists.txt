@@ -1,3 +1,4 @@
+include_directories(${GPC_INCLUDE_DIR})
 
 add_executable(tgvpf tgvpf.cxx)
 

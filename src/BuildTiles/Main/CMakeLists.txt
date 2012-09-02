@@ -1,3 +1,5 @@
+include_directories(${GPC_INCLUDE_DIR})
+
 add_executable(tg-construct
     construct.cxx 
     construct.hxx

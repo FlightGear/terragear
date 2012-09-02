@@ -1,4 +1,7 @@
-
+include_directories(
+	${NEWMAT_INCLUDE_DIR}
+	${GPC_INCLUDE_DIR}
+	)
 
 add_executable(genapts
     apt_surface.hxx apt_surface.cxx 

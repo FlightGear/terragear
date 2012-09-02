@@ -1,7 +1,11 @@
 
 if (GDAL_FOUND)
 
-include_directories(${GDAL_INCLUDE_DIR})
+include_directories(
+	${GDAL_INCLUDE_DIR}
+	${GPC_INCLUDE_DIR}
+)
+
 add_executable(ogr-decode ogr-decode.cxx)
 
 target_link_libraries(ogr-decode 

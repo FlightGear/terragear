@@ -1,3 +1,4 @@
+include_directories(${GPC_INCLUDE_DIR})
 
 add_executable(e00lines 
     main.cxx)

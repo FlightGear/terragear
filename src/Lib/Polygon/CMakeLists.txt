@@ -1,4 +1,4 @@
-
+include_directories(${GPC_INCLUDE_DIR})
 
 add_library(Polygon STATIC 
     chop-bin.cxx
