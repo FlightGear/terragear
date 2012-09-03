@@ -42,7 +42,7 @@ bool poly_index_init( string path )
     FILE *fp = fopen( poly_path.c_str(), "r" );
 
     if ( fp == NULL ) {
-        SG_LOG(SG_GENERAL, SG_WARN, "Warning: cannot open " << poly_path);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Warning: cannot open " << poly_path);
         poly_index = 0;
         return false;
     }

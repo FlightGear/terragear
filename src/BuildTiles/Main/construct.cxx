@@ -196,7 +196,7 @@ void TGConstruct::LoadElevationArray( void ) {
         if ( array.open(array_path) ) {
             break;
         } else {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to open Array file " << array_path);
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Failed to open Array file " << array_path);
         }
     }
 
@@ -558,17 +558,16 @@ int TGConstruct::LoadLandclassPolys( void ) {
     // load 2D polygons from all directories provided
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
         poly_path = get_work_base() + "/" + load_dirs[i] + '/' + base;
-        SG_LOG(SG_GENERAL, SG_ALERT, "poly_path = " << poly_path);
 
         string tile_str = bucket.gen_index_str();
         simgear::Dir d(poly_path);
         if (!d.exists()) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "directory not found: " << poly_path);
+            SG_LOG(SG_GENERAL, SG_DEBUG, "directory not found: " << poly_path);
             continue;
         }
     
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
-        SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << files.size() << " polys from " << d.path() );
+        SG_LOG( SG_CLIPPER, SG_ALERT, files.size() << " Polys in " << d.path() );
         
         BOOST_FOREACH(const SGPath& p, files) {
             if (p.file_base() != tile_str) {
@@ -581,18 +580,17 @@ int TGConstruct::LoadLandclassPolys( void ) {
             {
                 // skipped!
             } else if (lext == "osgb36") {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Loading osgb36 poly definition file");
+                SG_LOG(SG_GENERAL, SG_ALERT, " Loading osgb36 poly definition file " << p.file());
                 load_osgb36_poly( p.str() );
                 ++count;
             } else {
                 load_poly( p.str() );
+                SG_LOG(SG_GENERAL, SG_ALERT, " Loaded " << p.file());
                 ++count;
             }
         } // of directory file children
-	
-        SG_LOG(SG_GENERAL, SG_ALERT, "  loaded " << count << " total polys");
     }
-
+    SG_LOG(SG_GENERAL, SG_ALERT, " Total polys used for this tile: " << count );
     return count;
 }
 
@@ -2009,7 +2007,6 @@ void TGConstruct::WriteBtgFile( void )
 }
 
 void TGConstruct::CleanClippedPolys() {
-    unsigned int before, after;
     
     // Clean the polys
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
@@ -2095,12 +2092,13 @@ void TGConstruct::CalcTextureCoordinates( void )
 //        (like face area - need to move this into superpoly )
 void TGConstruct::ConstructBucketStage1() {
 
+    SG_LOG(SG_GENERAL, SG_ALERT, "\nConstructing tile ID " << bucket.gen_index_str() << " in " << bucket.gen_base_path() );
+
     /* If we have some debug IDs, create a datasource */
     if ( debug_shapes.size() || debug_all ) {
         sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
+        SG_LOG(SG_GENERAL, SG_ALERT, "Debug_string: " << ds_name );
     }
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "Construct tile, bucket = " << bucket << " debug_string: " << ds_name );
 
     // STEP 1) 
     // Load grid of elevation data (Array)
