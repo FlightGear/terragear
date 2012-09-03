@@ -1927,10 +1927,13 @@ void TGConstruct::WriteBtgFile( void )
     {
         throw sg_exception("error writing file. :-(");
     }
-    result = obj.write_ascii( base, txtname, bucket );
-    if ( !result ) 
+    if (debug_all || debug_shapes.size())
     {
-        throw sg_exception("error writing file. :-(");
+        result = obj.write_ascii( base, txtname, bucket );
+        if ( !result )
+        {
+            throw sg_exception("error writing file. :-(");
+        }
     }
 }
 
