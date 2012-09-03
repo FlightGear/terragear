@@ -26,7 +26,6 @@ add_executable(genapts850
 target_link_libraries(genapts850
     Polygon Geometry
     Array Output poly2tri
-    TriangleJRS
     ${POCO_FOUNDATION}
     ${POCO_NET}
     ${GDAL_LIBRARY}

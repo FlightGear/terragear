@@ -21,7 +21,6 @@ add_executable(genapts
 target_link_libraries(genapts
     Polygon Geometry
     Array Output poly2tri
-    TriangleJRS
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 	${GDAL_LIBRARY}

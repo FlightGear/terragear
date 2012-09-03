@@ -2,7 +2,7 @@
 add_executable(tguserdef tguserdef.cxx)
 
 target_link_libraries(tguserdef
-    Polygon Geometry Output poly2tri TriangleJRS
+    Polygon Geometry Output poly2tri
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )

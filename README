@@ -21,15 +21,6 @@ smaller chunks is much more doable though.
 Building the Tools
 ==================
 
-IMPORTANT: if you are compiling with gcc, I recommend that you compile
-the /Libs/TriangleJRS code without optimization (-O2).  Optimization can
-lead to problems for some tiles.  (Different numerical stability properties
-in the optimized code????) Usually I will go and remove the -O2 option (twice)
-from the Makefile after it has been generated from the Makefile.am file.  Be
-warned that any time you change the Makefile.am, or rerun autogen.sh or
-configure, you will have to go back and fix this particular Makefile.
-
-
 These tools are primarily compiled and tested under Unix with the Gnu
 C/C++ compilers.  I believe they also build and run on windows with
 Cygwin.  If anyone has patches for supporting other platforms, I will

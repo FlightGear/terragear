@@ -3,7 +3,7 @@ add_executable(photo
     photo.cxx)
 
 target_link_libraries(photo
-    Polygon Geometry Array Output poly2tri TriangleJRS
+    Polygon Geometry Array Output poly2tri
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
