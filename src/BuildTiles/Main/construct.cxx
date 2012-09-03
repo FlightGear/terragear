@@ -1472,6 +1472,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             sp.set_material( material );
             sp.set_poly( remains );
             shape.SetMask( remains );
+            shape.textured = false;
             shape.sps.push_back( sp );
 
             polys_clipped.add_shape( (int)get_sliver_target_area_type(), shape );
