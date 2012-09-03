@@ -209,7 +209,7 @@ int main( int argc, char **argv ) {
 		gshhs_split_polygon(path, "Default", shape, s, n);
 	    }
 	} else {
-	    // small enough to feed to gpc directly
+	    // small enough to feed to clipper directly
 	    if ( force_area_type.length() > 0 ) {
 		split_and_shift_chunk(path, force_area_type, shape);
 	    } else {

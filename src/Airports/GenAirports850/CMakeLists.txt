@@ -1,7 +1,4 @@
-include_directories(
-	${NEWMAT_INCLUDE_DIR}
-	${GPC_INCLUDE_DIR}
-)
+include_directories(${NEWMAT_INCLUDE_DIR})
 
 add_executable(genapts850
 	airport.hxx airport.cxx
@@ -22,8 +19,8 @@ add_executable(genapts850
 	runway.cxx runway.hxx
 	rwy_simple.cxx
 	rwy_gen.cxx
-    scheduler.cxx scheduler.hxx
-    taxiway.cxx taxiway.hxx
+	scheduler.cxx scheduler.hxx
+	taxiway.cxx taxiway.hxx
 	)
   
 target_link_libraries(genapts850
@@ -35,7 +32,6 @@ target_link_libraries(genapts850
     ${GDAL_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-	${GPC_LIBRARY}
 	${NEWMAT_LIBRARY}
 	${RT_LIBRARY})
 

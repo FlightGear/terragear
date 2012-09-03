@@ -51,8 +51,6 @@ class FGMerger {
 
 private:
 
-  // gpc_vertex_list v_list;
-  // static gpc_polygon poly;
   FGPolyList polys_subject, polys_clipp, polys_out;
   
 public:

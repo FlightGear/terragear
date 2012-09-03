@@ -88,14 +88,6 @@ static void clip_and_write_poly( string root, long int p_index,
     base.add_node( 0, Point3D(max.x(), max.y(), 0) );
     base.add_node( 0, Point3D(min.x(), max.y(), 0) );
 
-    // SG_LOG( SG_GENERAL, SG_DEBUG, "base = 4 vertices" );
-
-    /*
-       FILE *bfp= fopen("base", "w");
-       gpc_write_polygon(bfp, &base);
-       fclose(bfp);
-     */
-
     SG_LOG(SG_GENERAL, SG_DEBUG, "shape contours = " << shape.contours() );
     for ( int ii = 0; ii < shape.contours(); ii++ )
         SG_LOG(SG_GENERAL, SG_DEBUG, "   hole = " << shape.get_hole_flag(ii) );
@@ -196,14 +188,6 @@ static void clip_and_write_polys_with_mask( string root, long int p_index,
     base.add_node( 0, Point3D(max.x(), min.y(), 0) );
     base.add_node( 0, Point3D(max.x(), max.y(), 0) );
     base.add_node( 0, Point3D(min.x(), max.y(), 0) );
-
-    // SG_LOG( SG_GENERAL, SG_DEBUG, "base = 4 vertices" );
-
-    /*
-       FILE *bfp= fopen("base", "w");
-       gpc_write_polygon(bfp, &base);
-       fclose(bfp);
-     */
 
     poly_list    clipped_shapes;
     TGPolygon    shape;
@@ -324,14 +308,6 @@ static void clip_and_write_polys_with_tps( string root, long int p_index,
     base.add_node( 0, Point3D(max.x(), min.y(), 0) );
     base.add_node( 0, Point3D(max.x(), max.y(), 0) );
     base.add_node( 0, Point3D(min.x(), max.y(), 0) );
-
-    // SG_LOG( SG_GENERAL, SG_DEBUG, "base = 4 vertices" );
-
-    /*
-     *       FILE *bfp= fopen("base", "w");
-     *       gpc_write_polygon(bfp, &base);
-     *       fclose(bfp);
-     */
 
     poly_list       clipped_shapes;
     texparams_list  clipped_tps;

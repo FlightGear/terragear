@@ -71,7 +71,6 @@ find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 find_package(SimGear 2.5.0 REQUIRED)
-find_package(GPC REQUIRED)
 find_package(CGAL COMPONENTS Core REQUIRED)
 find_package(TIFF) # needed for SRTM
 if (CMAKE_CL_64)

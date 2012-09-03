@@ -1073,8 +1073,7 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
 
 
 // Attempt to reduce degeneracies where a subsequent point of a
-// polygon lies *on* a previous line segment.  These artifacts are
-// occasionally introduced by the gpc polygon clipper.
+// polygon lies *on* a previous line segment.
 static point_list reduce_contour_degeneracy( const point_list& contour ) {
     point_list result = contour;
 

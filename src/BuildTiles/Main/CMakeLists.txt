@@ -1,5 +1,3 @@
-include_directories(${GPC_INCLUDE_DIR})
-
 add_executable(tg-construct
     construct.cxx 
     construct.hxx
@@ -19,9 +17,9 @@ target_link_libraries(tg-construct
     Array landcover poly2tri
     TriangleJRS
     ${GDAL_LIBRARY}
-	${SIMGEAR_CORE_LIBRARIES}
-	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-	${GPC_LIBRARY})
+    ${SIMGEAR_CORE_LIBRARIES}
+    ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+)
 
 install(TARGETS tg-construct RUNTIME DESTINATION bin)
 

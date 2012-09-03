@@ -51,7 +51,6 @@
 
 #include "priorities.hxx"
 
-#define USE_CLIPPER     (0)
 #define FIND_SLIVERS    (1)
 #define USE_ACCUMULATOR (1)
 
@@ -83,11 +82,7 @@ public:
         for (unsigned int i=0; i<sps.size(); i++)
         {
             poly = sps[i].get_poly();
-#ifdef USE_CLIPPER
             clip_mask = tgPolygonUnionClipper( clip_mask, poly );
-#else
-            clip_mask = tgPolygonUnion( clip_mask, poly );
-#endif
         }
     }
 
@@ -100,11 +95,7 @@ public:
             {
                 original  = sps[i].get_poly();
 
-#ifdef USE_CLIPPER
                 intersect = tgPolygonIntClipper( clip_mask, original );
-#else
-                intersect = tgPolygonInt( clip_mask, original );
-#endif
 
                 sps[i].set_poly( intersect );
             }

@@ -1,4 +1,3 @@
-include_directories(${GPC_INCLUDE_DIR})
 
 add_executable(photo
     photo.cxx)
@@ -7,7 +6,7 @@ target_link_libraries(photo
     Polygon Geometry Array Output poly2tri TriangleJRS
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-	${GPC_LIBRARY})
+)
 
 install(TARGETS photo RUNTIME DESTINATION bin)
 

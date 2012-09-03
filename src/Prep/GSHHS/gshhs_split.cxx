@@ -98,7 +98,7 @@ void split_and_shift_chunk( const string& path, const string& poly_type,
 
 
 // process a large shape through my crude polygon splitter to reduce
-// the polygon sizes before handing off to gpc
+// the polygon sizes before handing off to clipper
 void gshhs_split_polygon( const string& path, const string& poly_type, TGPolygon& shape, 
 			  const double min, const double max )
 {

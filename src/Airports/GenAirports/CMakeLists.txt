@@ -1,7 +1,4 @@
-include_directories(
-	${NEWMAT_INCLUDE_DIR}
-	${GPC_INCLUDE_DIR}
-	)
+include_directories(${NEWMAT_INCLUDE_DIR})
 
 add_executable(genapts
     apt_surface.hxx apt_surface.cxx 
@@ -27,8 +24,7 @@ target_link_libraries(genapts
     TriangleJRS
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-    ${GDAL_LIBRARY}
-	${GPC_LIBRARY}
+	${GDAL_LIBRARY}
 	${NEWMAT_LIBRARY})
 
 install(TARGETS genapts RUNTIME DESTINATION bin)

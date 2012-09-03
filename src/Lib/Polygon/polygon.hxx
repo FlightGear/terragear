@@ -40,21 +40,8 @@
 
 #include "point2d.hxx"
 
-/* which clipping lib to use? Looks like we should go with clipper
- * It appears to be both faster and generates better accuracy
- */
-
 // forward declaration
 class TGPolygon;
-
-/* Set to 1 to allow keeping accum poly in native clipping lib format
- * Although it seems to work on some airports, EHAM is pretty broken 
- * when turned on
- */
-
-extern "C" {
-#include <gpc.h>
-}
 
 #include "clipper.hpp"
 #define FG_MAX_VERTICES 1500000
@@ -254,13 +241,6 @@ TGPolygon tgPolygon2tristrip( const TGPolygon& poly );
 
 void tgPolygonFindSlivers( TGPolygon& in, poly_list& slivers );
 
-// wrapper functions for gpc polygon clip routines
-
-void tgPolygonInitGPCAccumulator( void );
-void tgPolygonFreeGPCAccumulator( void );
-void tgPolygonAddToAccumulator( const TGPolygon& subject );
-TGPolygon tgPolygonDiffWithAccumulator( const TGPolygon& subject );
-
 
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip );
@@ -295,8 +275,6 @@ TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta);
 
 // Simplify
 TGPolygon tgPolygonSimplify(const TGPolygon &poly);
-
-
 
 // Output
 std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);

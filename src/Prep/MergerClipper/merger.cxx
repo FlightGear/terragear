@@ -126,8 +126,6 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
 	SG_LOG( SG_CLIPPER, SG_BULK, count - 1 << " = " 
 		<< lastx << ", " << lasty );
       }
-      
-      // gpc_add_contour( poly, &v_list, hole_flag );
     }
     
     in >> skipcomment;
@@ -146,9 +144,6 @@ bool FGMerger::load_polys(const string& path, FGPolyList& subject) {
 	    << (int)poly_type);
     exit(-1);
   }
-  
-  //FILE *ofp= fopen("outfile", "w");
-  //gpc_write_polygon(ofp, &polys);
   
   return true;
 }

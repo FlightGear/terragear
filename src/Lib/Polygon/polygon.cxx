@@ -394,115 +394,6 @@ typedef enum {
     POLY_UNION			// Union
 } clip_op;
 
-//
-// wrapper functions for gpc polygon clip routines
-//
-
-// Make a gpc_poly from an TGPolygon
-void make_gpc_poly( const TGPolygon& in, gpc_polygon *out ) {
-    gpc_vertex_list v_list;
-    v_list.num_vertices = 0;
-    v_list.vertex = new gpc_vertex[FG_MAX_VERTICES];
-
-    Point3D p;
-    // build the gpc_polygon structures
-    for ( int i = 0; i < in.contours(); ++i ) {
-	// SG_LOG(SG_GENERAL, SG_DEBUG, "    contour " << i << " = " << in.contour_size( i ));
-	if ( in.contour_size( i ) > FG_MAX_VERTICES ) {
-	  char message[128];
-	  sprintf(message, "Polygon too large, need to increase FG_MAX_VERTICES to a least %d", in.contour_size(i));
-	  throw sg_exception(message);;
-	}
-
-#if 0
-    SG_LOG(SG_GENERAL, SG_ALERT, 
-        "  make_clipper_poly : processing contour " << i << ", nodes = " 
-        << in.contour_size(i) << ", hole = "
-        << in.get_hole_flag(i) 
-    );
-#endif
-
-	for ( int j = 0; j < in.contour_size( i ); ++j ) {
-	    p = in.get_pt( i, j );
-	    v_list.vertex[j].x = p.x();
-	    v_list.vertex[j].y = p.y();
-	}
-	v_list.num_vertices = in.contour_size( i );
-	gpc_add_contour( out, &v_list, in.get_hole_flag( i ) );
-    }
-
-    // free alocated memory
-    delete [] v_list.vertex;
-}
-
-void make_tg_poly( const gpc_polygon* in, TGPolygon *out )
-{
-    for ( int i = 0; i < in->num_contours; ++i ) {
-    	for ( int j = 0; j < in->contour[i].num_vertices; j++ ) {
-	        Point3D p( in->contour[i].vertex[j].x, in->contour[i].vertex[j].y, -9999.0 );
-    	    out->add_node(i, p);
-    	}
-
-    	out->set_hole_flag( i, in->hole[i] );
-    }
-}
-
-// Generic clipping routine
-TGPolygon polygon_clip( clip_op poly_op, const TGPolygon& subject, 
-			const TGPolygon& clip )
-{
-    TGPolygon result;
-
-    gpc_polygon *gpc_subject = new gpc_polygon;
-    gpc_subject->num_contours = 0;
-    gpc_subject->contour = NULL;
-    gpc_subject->hole = NULL;
-    make_gpc_poly( subject, gpc_subject );
-
-    gpc_polygon *gpc_clip = new gpc_polygon;
-    gpc_clip->num_contours = 0;
-    gpc_clip->contour = NULL;
-    gpc_clip->hole = NULL;
-    make_gpc_poly( clip, gpc_clip );
-
-    gpc_polygon *gpc_result = new gpc_polygon;
-    gpc_result->num_contours = 0;
-    gpc_result->contour = NULL;
-    gpc_result->hole = NULL;
-
-    gpc_op op;
-    if ( poly_op == POLY_DIFF ) {
-    	op = GPC_DIFF;
-    } else if ( poly_op == POLY_INT ) {
-	    op = GPC_INT;
-    } else if ( poly_op == POLY_XOR ) {
-    	op = GPC_XOR;
-    } else if ( poly_op == POLY_UNION ) {
-	    op = GPC_UNION;
-    } else {
-        throw sg_exception("Unknown polygon op, exiting.");
-    }
-
-    gpc_polygon_clip( op, gpc_subject, gpc_clip, gpc_result );
-
-	make_tg_poly( gpc_result, &result );
-
-    // free allocated memory
-    gpc_free_polygon( gpc_subject );
-    delete gpc_subject;
-
-    gpc_free_polygon( gpc_clip );
-    delete gpc_clip;
-
-    gpc_free_polygon( gpc_result );
-    delete gpc_result;
-
-    return result;
-}
-
-
-
-
 
 //#define FIXEDPT (10000000000000)
 #define FIXEDPT (10000000000000000)
@@ -706,97 +597,24 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
 }
 
 
-// Accumulator optimization ( to keep from massive data copies and format changes
-gpc_polygon *gpc_accumulator = NULL;
-
-void tgPolygonInitGPCAccumulator( void )
-{
-    gpc_accumulator = new gpc_polygon;
-    gpc_accumulator->num_contours = 0;
-    gpc_accumulator->contour = NULL;
-    gpc_accumulator->hole = NULL;
-}
-
-void tgPolygonFreeGPCAccumulator( void )
-{
-    gpc_free_polygon( gpc_accumulator );
-    delete gpc_accumulator;
-    gpc_accumulator = NULL;
-}
-
-void tgPolygonAddToAccumulator( const TGPolygon& subject )
-{
-    gpc_polygon *gpc_subject = new gpc_polygon;
-    gpc_subject->num_contours = 0;
-    gpc_subject->contour = NULL;
-    gpc_subject->hole = NULL;
-    make_gpc_poly( subject, gpc_subject );
-
-    gpc_polygon *gpc_result = new gpc_polygon;
-    gpc_result->num_contours = 0;
-    gpc_result->contour = NULL;
-    gpc_result->hole = NULL;
-
-    gpc_polygon_clip( GPC_UNION, gpc_subject, gpc_accumulator, gpc_result );
-
-    // free allocated memory
-    gpc_free_polygon( gpc_subject );
-    delete gpc_subject;
-
-    // throw away old accumulator : and use result for now on
-    gpc_free_polygon( gpc_accumulator );
-    delete gpc_accumulator;
-    gpc_accumulator = gpc_result;
-}
-
-TGPolygon tgPolygonDiffWithAccumulator( const TGPolygon& subject )
-{
-    TGPolygon result;
-
-    gpc_polygon *gpc_subject = new gpc_polygon;
-    gpc_subject->num_contours = 0;
-    gpc_subject->contour = NULL;
-    gpc_subject->hole = NULL;
-    make_gpc_poly( subject, gpc_subject );
-
-    gpc_polygon *gpc_result = new gpc_polygon;
-    gpc_result->num_contours = 0;
-    gpc_result->contour = NULL;
-    gpc_result->hole = NULL;
-
-    gpc_polygon_clip( GPC_DIFF, gpc_subject, gpc_accumulator, gpc_result );
-    make_tg_poly( gpc_result, &result );
-
-    // free allocated memory
-    gpc_free_polygon( gpc_subject );
-    delete gpc_subject;
-
-    gpc_free_polygon( gpc_result );
-    delete gpc_result;
-
-    return result;
-}
-
-
-
 // Difference
 TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip( POLY_DIFF, subject, clip );
+    return polygon_clip_clipper( POLY_DIFF, subject, clip );
 }
 
 // Intersection
 TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip( POLY_INT, subject, clip );
+    return polygon_clip_clipper( POLY_INT, subject, clip );
 }
 
 // Exclusive or
 TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip( POLY_XOR, subject, clip );
+    return polygon_clip_clipper( POLY_XOR, subject, clip );
 }
 
 // Union
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip( POLY_UNION, subject, clip );
+    return polygon_clip_clipper( POLY_UNION, subject, clip );
 }
 
 
@@ -1077,147 +895,6 @@ TGPolygon tgPolygonSimplify(const TGPolygon &poly)
 
     return result;
 }
-
-#if 0
-// Wrapper for the fast Polygon Triangulation based on Seidel's
-// Algorithm by Atul Narkhede and Dinesh Manocha
-// http://www.cs.unc.edu/~dm/CODE/GEM/chapter.html
-
-// I make this oversize because given an n sided concave polygon with
-// m, n, o, ... sided holes, I have no idea how many triangles would
-// result and I don't have time right now to see if an upper bound can
-// be determined easily.
-#define FG_MAX_TRIANGLES 100000
-
-TGPolygon polygon_to_tristrip( const TGPolygon& in_poly ) {
-    int i, j;
-
-    // canonify the polygon winding, outer contour must be
-    // anti-clockwise, all inner contours must be clockwise.
-    TGPolygon canon_poly = polygon_canonify( in_poly );
-
-    // create and fill in the required structures
-    int ncontours = canon_poly.contours();
-    int cntr[ncontours];
-    int vsize = 1;
-    for ( i = 0; i < canon_poly.contours(); ++i ) {
-	cntr[i] = canon_poly.contour_size( i );
-	vsize += cntr[i];
-    }
-    double vertices[vsize][2];
-    int counter = 1;
-    Point3D p;
-    for ( i = 0; i < canon_poly.contours(); ++i ) {
-	for ( j = 0; j < canon_poly.contour_size( i ); ++j ) {
-	    p = canon_poly.get_pt( i, j );
-	    vertices[counter][0] = p.x();
-	    vertices[counter][1] = p.y();
-	    counter++;
-	}
-    }
-    int triangles[FG_MAX_TRIANGLES][3];
-
-    // do the triangulation
-    int ntriangles = triangulate_polygon(ncontours, cntr, vertices, triangles);
-
-    /*
-    gpc_polygon *tmp_poly = new gpc_polygon;
-    tmp_poly->num_contours = 0;
-    tmp_poly->contour = NULL;
-    tmp_poly->hole = NULL;
-    make_gpc_poly( in_poly, tmp_poly );
-
-    gpc_tristrip *tmp_tristrip = new gpc_tristrip;
-    tmp_tristrip->num_strips = 0;
-    tmp_tristrip->strip = NULL;
-    
-    gpc_polygon_to_tristrip( tmp_poly, tmp_tristrip );
-
-    TGPolygon result;
-
-    for ( int i = 0; i < tmp_tristrip->num_strips; ++i ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  processing strip = "
-	       << i << ", nodes = " 
-	       << tmp_tristrip->strip[i].num_vertices);
-	
-	// sprintf(junkn, "g.%d", junkc++);
-	// junkfp = fopen(junkn, "w");
-
-	for ( int j = 0; j < tmp_tristrip->strip[i].num_vertices; j++ ) {
-	    Point3D p( tmp_tristrip->strip[i].vertex[j].x,
-		       tmp_tristrip->strip[i].vertex[j].y,
-		       0 );
-	    // junkp = in_nodes.get_node( index );
-	    // fprintf(junkfp, "%.4f %.4f\n", junkp.x(), junkp.y());
-	    result.add_node(i, p);
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  - " << index);
-	}
-	// fprintf(junkfp, "%.4f %.4f\n", 
-	//    gpc_result->contour[i].vertex[0].x, 
-	//    gpc_result->contour[i].vertex[0].y);
-	// fclose(junkfp);
-    }
-
-    // free allocated memory
-    gpc_free_polygon( tmp_poly );
-    gpc_free_tristrip( tmp_tristrip );
-    */
-
-    // return result;
-}
-#endif
-
-
-#if 0
-//
-// wrapper functions for gpc polygon to tristrip routine
-//
-
-TGPolygon polygon_to_tristrip_old( const TGPolygon& in_poly ) {
-    gpc_polygon *tmp_poly = new gpc_polygon;
-    tmp_poly->num_contours = 0;
-    tmp_poly->contour = NULL;
-    tmp_poly->hole = NULL;
-    make_gpc_poly( in_poly, tmp_poly );
-
-    gpc_tristrip *tmp_tristrip = new gpc_tristrip;
-    tmp_tristrip->num_strips = 0;
-    tmp_tristrip->strip = NULL;
-    
-    gpc_polygon_to_tristrip( tmp_poly, tmp_tristrip );
-
-    TGPolygon result;
-
-    for ( int i = 0; i < tmp_tristrip->num_strips; ++i ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  processing strip = "
-	       << i << ", nodes = " 
-	       << tmp_tristrip->strip[i].num_vertices);
-	
-	// sprintf(junkn, "g.%d", junkc++);
-	// junkfp = fopen(junkn, "w");
-
-	for ( int j = 0; j < tmp_tristrip->strip[i].num_vertices; j++ ) {
-	    Point3D p( tmp_tristrip->strip[i].vertex[j].x,
-		       tmp_tristrip->strip[i].vertex[j].y,
-		       0 );
-	    // junkp = in_nodes.get_node( index );
-	    // fprintf(junkfp, "%.4f %.4f\n", junkp.x(), junkp.y());
-	    result.add_node(i, p);
-	    // SG_LOG(SG_GENERAL, SG_DEBUG, "  - " << index);
-	}
-	// fprintf(junkfp, "%.4f %.4f\n", 
-	//    gpc_result->contour[i].vertex[0].x, 
-	//    gpc_result->contour[i].vertex[0].y);
-	// fclose(junkfp);
-    }
-
-    // free allocated memory
-    gpc_free_polygon( tmp_poly );
-    gpc_free_tristrip( tmp_tristrip );
-
-    return result;
-}
-#endif
 
 
 // Send a polygon to standard output.

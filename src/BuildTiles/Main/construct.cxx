@@ -601,11 +601,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
 // to reduce the number of separate polygons.
 void TGConstruct::add_to_polys ( TGPolygon &accum, const TGPolygon &poly) {
     if ( accum.contours() > 0 ) {
-#if USE_CLIPPER
         accum = tgPolygonUnionClipper( accum, poly );
-#else
-        accum = tgPolygonUnion( accum, poly );
-#endif
     } else {
         accum = poly;
     }
@@ -1239,11 +1235,7 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list 
 
                         poly = clipped.get_poly( area, shape, segment );
                         original_contours = poly.contours();
-#if USE_CLIPPER
                         result = tgPolygonUnionClipper( poly, sliver );
-#else
-                        result = tgPolygonUnion( poly, sliver );
-#endif
                         result_contours = result.contours();
 
                         if ( original_contours == result_contours ) {
@@ -1254,11 +1246,7 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  poly_list& slivers_list 
 
                             /* add the sliver to the clip_mask, too */
                             TGPolygon mask = clipped.get_mask( area, shape );
-#if USE_CLIPPER
                             result = tgPolygonUnionClipper( mask, sliver );
-#else
-                            result = tgPolygonUnion( mask, sliver );
-#endif
                             clipped.set_mask( area, shape, result );
 
                             if ( IsDebugShape( shape_id ) ) {
@@ -1299,11 +1287,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
 #if USE_ACCUMULATOR
 
-#if USE_CLIPPER
     tgPolygonInitClipperAccumulator();
-#else
-    tgPolygonInitGPCAccumulator();
-#endif
     
 #else
     accum.erase();
@@ -1341,29 +1325,17 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     for ( i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
         if ( is_landmass_area( i ) && !ignoreLandmass ) {
             for ( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
-#if USE_CLIPPER
                 land_mask = tgPolygonUnionClipper( land_mask, polys_in.get_mask(i, j) );
-#else
-                land_mask = tgPolygonUnion( land_mask, polys_in.get_mask(i, j) );
-#endif
 
             }
 
         } else if ( is_water_area( i ) ) {
             for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
-#if USE_CLIPPER
                 water_mask = tgPolygonUnionClipper( water_mask, polys_in.get_mask(i, j) );
-#else
-                water_mask = tgPolygonUnion( water_mask, polys_in.get_mask(i, j) );
-#endif
             }
         } else if ( is_island_area( i ) ) {
             for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
-#if USE_CLIPPER
                 island_mask = tgPolygonUnionClipper( island_mask, polys_in.get_mask(i, j) );
-#else
-                island_mask = tgPolygonUnion( island_mask, polys_in.get_mask(i, j) );
-#endif
             }
         }
     }
@@ -1386,21 +1358,13 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
             // if not a hole, clip the area to the land_mask
             if ( !ignoreLandmass && !is_hole_area( i ) ) {
-#if USE_CLIPPER
                 tmp = tgPolygonIntClipper( tmp, land_mask );
-#else
-                tmp = tgPolygonInt( tmp, land_mask );
-#endif
             }
 
             // if a water area, cut out potential islands
             if ( is_water_area( i ) ) {
                 // clip against island mask
-#if USE_CLIPPER
                 tmp = tgPolygonDiffClipper( tmp, island_mask );
-#else
-                tmp = tgPolygonDiff( tmp, island_mask );
-#endif
             }
 
             if ( IsDebugShape( polys_in.get_shape( i, j ).id ) ) {
@@ -1409,23 +1373,12 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 WriteDebugPoly( "pre-clip", name, tmp );
             }
 
-#if USE_CLIPPER
-
 #if USE_ACCUMULATOR
             clipped = tgPolygonDiffClipperWithAccumulator( tmp );
 #else
             clipped = tgPolygonDiffClipper( tmp, accum );
 #endif
 
-#else
-
-#if USE_ACCUMULATOR
-            clipped = tgPolygonDiffWithAccumulator( tmp );
-#else
-            clipped = tgPolygonDiff( tmp, accum );
-#endif
-
-#endif
 
             // only add to output list if the clip left us with a polygon
             if ( clipped.contours() > 0 ) {
@@ -1457,23 +1410,12 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 }
             }
 
-#if USE_CLIPPER
-
 #if USE_ACCUMULATOR
             tgPolygonAddToClipperAccumulator( tmp );
 #else
             accum   = tgPolygonUnionClipper( tmp, accum );
 #endif
             
-#else
-            
-#if USE_ACCUMULATOR
-            tgPolygonAddToAccumulator( tmp );
-#else
-            accum   = tgPolygonUnion( tmp, accum );
-#endif
-
-#endif
         }
     }
 
@@ -1490,22 +1432,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     slivers.clear();
 
     // finally, what ever is left over goes to ocean
-#if USE_CLIPPER
-
 #if USE_ACCUMULATOR
     remains = tgPolygonDiffClipperWithAccumulator( safety_base );
 #else
     remains = tgPolygonDiffClipper( safety_base, accum );
-#endif
-
-#else
-
-#if USE_ACCUMULATOR
-    remains = tgPolygonDiffWithAccumulator( safety_base );
-#else
-    remains = tgPolygonDiff( safety_base, accum );
-#endif
-
 #endif
 
     if ( remains.contours() > 0 ) {
@@ -1550,11 +1480,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
 #if USE_ACCUMULATOR
 
-#if USE_CLIPPER
     tgPolygonFreeClipperAccumulator();
-#else
-    tgPolygonFreeGPCAccumulator();
-#endif
 
 #endif
 
