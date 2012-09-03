@@ -29,14 +29,6 @@
 #  include <config.h>
 #endif
 
-#ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>		// set mem allocation limit
-#endif
-#ifndef _MSC_VER
-#  include <sys/resource.h>	// set mem allocation limit
-#  include <unistd.h>		// set mem allocation limit
-#endif
-
 #include <simgear/compiler.h>
 
 #include <iostream>
@@ -268,43 +260,6 @@ int main(int argc, char **argv) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Failed to load USGS map file " << usgs_map_file);
 	    exit(-1);
     }
-
-
-#if defined( __CYGWIN__ ) || defined( __CYGWIN32__ ) || defined( _MSC_VER )
-    // the next bit crashes Cygwin for me - DCL
-    // MSVC does not have the function or variable type defined - BRF
-#else
-    // set mem allocation limit.  Reason: occasionally the triangle()
-    // routine can blow up and allocate memory forever.  We'd like
-    // this process to die before things get out of hand so we can try
-    // again with a smaller interior angle limit.
-    struct rlimit limit;
-    limit.rlim_cur = 40000000;
-    limit.rlim_max = 40000000;
-
-#if 0
-    result = setrlimit( RLIMIT_DATA, &limit );
-    cout << "result of setting mem limit = " << result << endl;
-    result = setrlimit( RLIMIT_STACK, &limit );
-    cout << "result of setting mem limit = " << result << endl;
-    result = setrlimit( RLIMIT_CORE, &limit );
-    cout << "result of setting mem limit = " << result << endl;
-    result = setrlimit( RLIMIT_RSS, &limit );
-    cout << "result of setting mem limit = " << result << endl;
-#endif
-
-    // cpu time limit since occassionally the triangulator can go into
-    // an infinite loop.
-    limit.rlim_cur = 43200;	// seconds
-    limit.rlim_max = 43200;	// seconds
-    if (setrlimit( RLIMIT_CPU, &limit )) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Error setting RLIMIT_CPU, aborting");
-        exit(-1);
-    } else {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Setting RLIMIT_CPU to " << limit.rlim_cur << " seconds");
-    };
-    
-#endif  // end of stuff that crashes Cygwin
 
     // main construction data management class
     TGConstruct* c;
