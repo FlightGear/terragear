@@ -157,3 +157,9 @@ TGPolygon polygon_tesselate_alt_with_extra_cgal( TGPolygon &p, const point_list&
 
     return result;
 }
+
+TGPolygon polygon_tesselate_alt_cgal( TGPolygon &p, bool verbose ) {
+
+    point_list pl; pl.clear();
+    return ( polygon_tesselate_alt_with_extra_cgal(p, pl, verbose) );
+}
