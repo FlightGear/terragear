@@ -1,5 +1,3 @@
-
-
 add_executable(shape-decode shape-decode.cxx)
 
 target_link_libraries(shape-decode 
