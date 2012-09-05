@@ -1004,7 +1004,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
 
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
-        TGPolygon tri = polygon_tesselate_alt( poly, verbose_triangulation );
+        TGPolygon tri = polygon_tesselate_alt_cgal( poly, verbose_triangulation );
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
@@ -1038,7 +1038,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
 
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
-	    TGPolygon tri = polygon_tesselate_alt( poly, verbose_triangulation );
+	    TGPolygon tri = polygon_tesselate_alt_cgal( poly, verbose_triangulation );
 	    SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
@@ -1072,7 +1072,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
 
   	    SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << poly.contours() << " total points before = " << poly.total_size());
-        TGPolygon tri = polygon_tesselate_alt( poly, verbose_triangulation );
+        TGPolygon tri = polygon_tesselate_alt_cgal( poly, verbose_triangulation );
         SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
@@ -1089,8 +1089,12 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         verbose_triangulation = true;
     }
 
+    /* before tessellating the base, make sure there are no
+       intersecting contours */
+    base_poly = tgPolygonSimplify( base_poly );
+
     SG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly ");
-	TGPolygon base_tris = polygon_tesselate_alt( base_poly, verbose_triangulation );
+    TGPolygon base_tris = polygon_tesselate_alt_cgal( base_poly, verbose_triangulation );
     verbose_triangulation = false;
 
     SG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly - done : contours = " << base_tris.contours());
