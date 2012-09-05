@@ -1485,114 +1485,113 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     point_list water_buoys_nodes = calc_elevations( apt_surf, buoy_nodes, 0.0 );
 
     // add base skirt (to hide potential cracks)
-    //
     // this has to happen after we've calculated the node elevations
     // but before we convert to wgs84 coordinates
 
     int uindex, lindex;
 
-    for ( int i = 0; i < divided_base.contours(); ++i ) 
+    for ( int i = 0; i < divided_base.contours(); ++i )
     {
-	    strip_v.clear();
-	    strip_n.clear();
-	    strip_tc.clear();
+        strip_v.clear();
+        strip_n.clear();
+        strip_tc.clear();
 
-    	// prime the pump ...
-	    p = divided_base.get_pt( i, 0 );
-	    uindex = nodes.find( p );
-	    if ( uindex >= 0 ) 
+        // prime the pump ...
+        p = divided_base.get_pt( i, 0 );
+        uindex = nodes.find( p );
+        if ( uindex >= 0 )
         {
-    	    Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-    	    SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
-    	    lindex = nodes.simple_add( lower );
-    	    geod_nodes.push_back( lower );
-    	    strip_v.push_back( lindex );
-    	    strip_v.push_back( uindex );
+            Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
+            SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
+            lindex = nodes.simple_add( lower );
+            geod_nodes.push_back( lower );
+            strip_v.push_back( uindex );
+            strip_v.push_back( lindex );
 
-    	    // use 'the' normal.  We are pushing on two nodes so we
-    	    // need to push on two normals.
-    	    index = normals.unique_add( vn );
-    	    strip_n.push_back( index );
-    	    strip_n.push_back( index );
-     	} 
-        else 
+            // use 'the' normal.  We are pushing on two nodes so we
+            // need to push on two normals.
+            index = normals.unique_add( vn );
+            strip_n.push_back( index );
+            strip_n.push_back( index );
+        }
+        else
         {
             string message = "Ooops missing node when building skirt (in init)";
             SG_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
-    	    throw sg_exception( message );
-    	}
+            throw sg_exception( message );
+        }
 
-    	// loop through the list
-    	for ( int j = 1; j < divided_base.contour_size(i); ++j ) 
+        // loop through the list
+        for ( int j = 1; j < divided_base.contour_size(i); ++j )
         {
-    	    p = divided_base.get_pt( i, j );
-    	    uindex = nodes.find( p );
-    	    if ( uindex >= 0 ) 
+            p = divided_base.get_pt( i, j );
+            uindex = nodes.find( p );
+            if ( uindex >= 0 )
             {
-        		Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-        		SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
-        		lindex = nodes.simple_add( lower );
-        		geod_nodes.push_back( lower );
-        		strip_v.push_back( lindex );
-        		strip_v.push_back( uindex );
+                Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
+                SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
+                lindex = nodes.simple_add( lower );
+                geod_nodes.push_back( lower );
+                strip_v.push_back( uindex );
+                strip_v.push_back( lindex );
 
-        		index = normals.unique_add( vn );
-        		strip_n.push_back( index );
-        		strip_n.push_back( index );
-    	    } 
-            else 
+                index = normals.unique_add( vn );
+                strip_n.push_back( index );
+                strip_n.push_back( index );
+            }
+            else
             {
                 string message = "Ooops missing node when building skirt (in loop)";
                 SG_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
                 throw sg_exception( message );
-	        }
-	    }
+            }
+        }
 
-    	// close off the loop
-	    p = divided_base.get_pt( i, 0 );
-	    uindex = nodes.find( p );
-	    if ( uindex >= 0 ) 
+        // close off the loop
+        p = divided_base.get_pt( i, 0 );
+        uindex = nodes.find( p );
+        if ( uindex >= 0 )
         {
-    	    Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-    	    SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
-    	    lindex = nodes.simple_add( lower );
-    	    geod_nodes.push_back( lower );
-    	    strip_v.push_back( lindex );
-    	    strip_v.push_back( uindex );
+            Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
+            SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
+            lindex = nodes.simple_add( lower );
+            geod_nodes.push_back( lower );
+            strip_v.push_back( uindex );
+            strip_v.push_back( lindex );
 
-    	    index = normals.unique_add( vn );
-    	    strip_n.push_back( index );
-    	    strip_n.push_back( index );
-    	} 
-        else 
+            index = normals.unique_add( vn );
+            strip_n.push_back( index );
+            strip_n.push_back( index );
+        }
+        else
         {
             string message = "Ooops missing node when building skirt (at end)";
             SG_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
             throw sg_exception( message );
-    	}
+        }
 
-    	strips_v.push_back( strip_v );
-    	strips_n.push_back( strip_n );
-    	strip_materials.push_back( "Grass" );
+        strips_v.push_back( strip_v );
+        strips_n.push_back( strip_n );
+        strip_materials.push_back( "Grass" );
 
-    	std::vector < SGGeod > geodNodes;
-    	for ( unsigned int j = 0; j < nodes.get_node_list().size(); j++ ) 
+        std::vector < SGGeod > geodNodes;
+        for ( unsigned int j = 0; j < nodes.get_node_list().size(); j++ )
         {
-    	    Point3D node = nodes.get_node_list()[j];
-    	    geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
-    	}
-	    base_txs.clear();
-	    base_txs = sgCalcTexCoords( b, geodNodes, strip_v );
+            Point3D node = nodes.get_node_list()[j];
+            geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
+        }
+        base_txs.clear();
+        base_txs = sgCalcTexCoords( b, geodNodes, strip_v );
 
-	    base_tc.clear();
-	    for ( unsigned int j = 0; j < base_txs.size(); ++j ) 
+        base_tc.clear();
+        for ( unsigned int j = 0; j < base_txs.size(); ++j )
         {
-    	    SGVec2f tc = base_txs[j];
-    	    // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
-    	    index = texcoords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
-    	    base_tc.push_back( index );
-    	}
-    	strips_tc.push_back( base_tc );
+            SGVec2f tc = base_txs[j];
+            // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
+            index = texcoords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
+            base_tc.push_back( index );
+        }
+        strips_tc.push_back( base_tc );
     }
 
     // add light points
