@@ -54,12 +54,11 @@ using namespace Poco;
 
 // Display usage
 static void usage( int argc, char **argv ) {
-    SG_LOG(SG_GENERAL, SG_ALERT, 
-	   "Usage " << argv[0] << " --input=<apt_file> "
-	   << "--work=<work_dir> [ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
-	   << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
-	   << "[--clear-dem-path] [--dem-path=<path>] [--max-slope=<decimal>] "
-       << "[ --airport=abcd ]  [--tile=<tile>] [--chunk=<chunk>] [--verbose] [--help]");
+    SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << argv[0] << "\n--input=<apt_file>"
+    << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
+    << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
+    << "[ --airport=abcd ] [--max-slope=<decimal>] [--tile=<tile>] [--threads] [--threads=x]"
+    << "[--chunk=<chunk>] [--clear-dem-path] [--dem-path=<path>] [--verbose] [--help]");
 }
 
 
@@ -132,7 +131,7 @@ int main(int argc, char **argv)
     float max_lon = 180;
     float min_lat = -90;
     float max_lat = 90;
-	long  position = 0;
+    long  position = 0;
 
     // Setup elevation directories
     string_list elev_src;
@@ -156,7 +155,7 @@ int main(int argc, char **argv)
     int    dump_pvmt_poly = -1;
     int    dump_feat_poly = -1;
     int    dump_base_poly = -1;
-    int    num_threads    =  Poco::Environment::processorCount();
+    int    num_threads    =  1;
     int    redirect_port  = -1;
 
     int arg_pos;
@@ -170,11 +169,7 @@ int main(int argc, char **argv)
         else if ( arg.find("--input=") == 0 ) 
         {
 	        input_file = arg.substr(8);
-        } 
-        else if ( arg.find("--terrain=") == 0 ) 
-        {
-            elev_src.push_back( arg.substr(10) );
-     	} 
+        }
         else if ( arg.find("--start-id=") == 0 ) 
         {
     	    start_id = arg.substr(11);
@@ -254,7 +249,15 @@ int main(int argc, char **argv)
         else if ( (arg.find("--max-slope=") == 0) ) 
         {
     	    slope_max = atof( arg.substr(12).c_str() );
-    	} 
+        }
+	else if ( (arg.find("--threads=") == 0) )
+        {
+            num_threads = atoi( arg.substr(10).c_str() );
+        }
+	else if ( (arg.find("--threads") == 0) )
+        {
+            num_threads = Poco::Environment::processorCount();
+        }
         else if ( arg.find("--dump-rwy=") == 0 ) 
         {
     	    dump_rwy_poly = atoi( arg.substr(11).c_str() );
@@ -287,7 +290,7 @@ int main(int argc, char **argv)
     	}
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Run genapt with " << num_threads << " threads" );
+    SG_LOG(SG_GENERAL, SG_INFO, "Run genapts with " << num_threads << " threads" );
     SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
     SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
     for ( unsigned int i = 0; i < elev_src.size(); ++i ) 
