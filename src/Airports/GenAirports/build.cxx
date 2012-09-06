@@ -705,7 +705,7 @@ void build_airport( string airport_id, float alt_m,
 	    }
 	}
 
-	poly = reduce_degeneracy( poly );
+	poly = tgPolygonSimplify( poly );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after reduce_degeneracy() = "
 	       << poly.total_size());
 
@@ -828,7 +828,7 @@ void build_airport( string airport_id, float alt_m,
 
 	TGPolygon poly = rwy_polys[i].get_poly();
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size before = " << poly.total_size());
-	TGPolygon tri = polygon_tesselate_alt( poly, false );
+	TGPolygon tri = polygon_tesselate_alt_cgal( poly, false );
 	SG_LOG(SG_GENERAL, SG_DEBUG, "total size after = " << tri.total_size());
 
         TGPolygon tc;
@@ -844,7 +844,8 @@ void build_airport( string airport_id, float alt_m,
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating base");
-    TGPolygon base_tris = polygon_tesselate_alt( base_poly, false );
+    base_poly = tgPolygonSimplify( base_poly );
+    TGPolygon base_tris = polygon_tesselate_alt_cgal( base_poly, false );
 
 #if 0
     // dump more debugging output
