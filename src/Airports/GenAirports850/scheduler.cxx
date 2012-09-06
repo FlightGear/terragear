@@ -820,7 +820,7 @@ void Scheduler::Schedule( int num_threads, string& summaryfile )
             // Wait for an available process slot
             procList->WaitForSlot();
 
-            SG_LOG( SG_GENERAL, SG_INFO, "Scheduler: originalList has " << originalList.size() << ", i is " << i );
+            SG_LOG( SG_GENERAL, SG_INFO, "Scheduler: Processing layout " << i+1 << " of " << originalList.size() << "."  );
 
             // let the process list know if more airports are coming
             if ( i == originalList.size()-1 ) {
