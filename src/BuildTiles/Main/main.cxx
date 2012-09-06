@@ -136,6 +136,7 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << name);
     SG_LOG(SG_GENERAL, SG_ALERT, "[ --output-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --work-dir=<directory>");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --share-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --cover=<path to land-cover raster>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --tile-id=<id>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --lon=<degrees>");
