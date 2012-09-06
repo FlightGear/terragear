@@ -26,6 +26,8 @@
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 
+#include <Geometry/poly_support.hxx>
+
 #include "rwy_common.hxx"
 #include "taxiway.hxx"
 
@@ -52,6 +54,7 @@ void gen_taxiway( const TGRunway& rwy_info,
     runway_a.add_node( 0, runway.get_pt(0, 1) );
     runway_a.add_node( 0, runway.get_pt(0, 2) );
     runway_a.add_node( 0, runway.get_pt(0, 5) );
+    runway_a = snap( runway_a, 0.00000001 );
 
     // runway half "b"
     TGPolygon runway_b;
@@ -60,6 +63,7 @@ void gen_taxiway( const TGRunway& rwy_info,
     runway_b.add_node( 0, runway.get_pt(0, 2) );
     runway_b.add_node( 0, runway.get_pt(0, 3) );
     runway_b.add_node( 0, runway.get_pt(0, 4) );
+    runway_b = snap( runway_b, 0.00000001 );
 	
     Point3D p;
     SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway pts (a half)");
