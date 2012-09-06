@@ -24,6 +24,7 @@
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
+#include <Geometry/poly_support.hxx>
 
 #include "global.hxx"
 #include "rwy_common.hxx"
@@ -258,6 +259,7 @@ void gen_runway_section( const TGRunway& rwy_info,
     section.add_node( 0, p0 );
     section.add_node( 0, p1 );
     section.add_node( 0, p3 );
+    section = snap( section, 0.00000001 );
 
     // print runway points
     SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << prefix << material);

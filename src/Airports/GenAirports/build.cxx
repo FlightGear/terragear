@@ -1100,8 +1100,8 @@ void build_airport( string airport_id, float alt_m,
 	    SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
 	    lindex = nodes.simple_add( lower );
 	    geod_nodes.push_back( lower );
-	    strip_v.push_back( lindex );
 	    strip_v.push_back( uindex );
+	    strip_v.push_back( lindex );
 
 	    // use 'the' normal.  We are pushing on two nodes so we
 	    // need to push on two normals.
@@ -1123,8 +1123,8 @@ void build_airport( string airport_id, float alt_m,
 		SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
 		lindex = nodes.simple_add( lower );
 		geod_nodes.push_back( lower );
-		strip_v.push_back( lindex );
 		strip_v.push_back( uindex );
+		strip_v.push_back( lindex );
 
 		index = normals.unique_add( vn );
 		strip_n.push_back( index );
@@ -1145,8 +1145,8 @@ void build_airport( string airport_id, float alt_m,
 	    SG_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
 	    lindex = nodes.simple_add( lower );
 	    geod_nodes.push_back( lower );
-	    strip_v.push_back( lindex );
 	    strip_v.push_back( uindex );
+	    strip_v.push_back( lindex );
 
 	    index = normals.unique_add( vn );
 	    strip_n.push_back( index );
