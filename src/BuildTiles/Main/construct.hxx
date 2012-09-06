@@ -245,6 +245,7 @@ private:
     // paths
     std::string work_base;
     std::string output_base;
+    std::string share_base;
 
     std::vector<std::string> load_dirs;
 
@@ -383,6 +384,8 @@ public:
     inline void set_work_base( const std::string s ) { work_base = s; }
     inline std::string get_output_base() const { return output_base; }
     inline void set_output_base( const std::string s ) { output_base = s; }
+    inline std::string get_share_base() const { return share_base; }
+    inline void set_share_base( const std::string s ) { share_base = s; }
     inline void set_load_dirs( const std::vector<std::string> ld ) { load_dirs = ld; }
 
     // UK grid flag

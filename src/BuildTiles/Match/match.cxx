@@ -202,10 +202,10 @@ void TGMatch::load_shared( SGBucket b, string base, neighbor_type n ) {
 
 // load any previously existing shared data from all neighbors (if
 // shared data for a component exists set that components flag to true
-void TGMatch::load_neighbor_shared( SGBucket b, string work ) {
+void TGMatch::load_neighbor_shared( SGBucket b, string share_dir ) {
 //    cout << "Loading existing shared data from neighbor tiles" << endl;
 
-    string base = work + "/Shared/";
+    string base = share_dir + "/";
 
     // start with all flags false
     sw_flag = se_flag = ne_flag = nw_flag = false;
@@ -272,8 +272,8 @@ void TGMatch::load_neighbor_shared( SGBucket b, string work ) {
 }
 
 // try to load any missing shared data from our own shared data file
-void TGMatch::load_missing_shared( SGBucket b, string work ) {
-    string base = work + "/Shared/";
+void TGMatch::load_missing_shared( SGBucket b, string share ) {
+    string base = share + "/";
     
     if ( !nw_flag ) {
 	scan_share_file( base, b, NW_Corner, NW_Corner );
@@ -505,10 +505,10 @@ void TGMatch::split_tile( SGBucket b, TGConstruct* c ) {
 
 // write the new shared edge points, normals, and segments for this
 // tile
-void TGMatch::write_shared( SGBucket b, string base ) {
+void TGMatch::write_shared( SGBucket b, string shared ) {
 
-    string dir = base + "/Shared/" + b.gen_base_path();
-    string file = dir + "/" + b.gen_index_str();
+    string dir  = shared + "/" + b.gen_base_path();
+    string file = dir    + "/" + b.gen_index_str();
 
     SGPath sgp( dir );
     sgp.append( "dummy" );

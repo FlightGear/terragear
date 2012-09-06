@@ -1734,9 +1734,9 @@ void TGConstruct::CalcPointNormals( void )
 
 void TGConstruct::LoadSharedEdgeData( void )
 {
-    match.load_neighbor_shared( bucket, work_base );
+    match.load_neighbor_shared( bucket, share_base );
     if ( useOwnSharedEdges ) {
-        match.load_missing_shared( bucket, work_base );
+        match.load_missing_shared( bucket, share_base );
     }
     match.add_shared_nodes( this );
 }
@@ -1749,7 +1749,7 @@ void TGConstruct::SaveSharedEdgeData( void )
     if ( writeSharedEdges ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "write shared edges");
 
-        match.write_shared( bucket, work_base );
+        match.write_shared( bucket, share_base );
     }
 }
 

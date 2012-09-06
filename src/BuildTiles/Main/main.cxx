@@ -156,6 +156,7 @@ static void usage( const string name ) {
 int main(int argc, char **argv) {
     string output_dir = ".";
     string work_dir = ".";
+    string share_dir = "";
     string cover = "";
     string priorities_file = DEFAULT_PRIORITIES_FILE;
     string usgs_map_file = DEFAULT_USGS_MAPFILE;
@@ -198,6 +199,8 @@ int main(int argc, char **argv) {
             output_dir = arg.substr(13);
         } else if (arg.find("--work-dir=") == 0) {
             work_dir = arg.substr(11);
+        } else if (arg.find("--share-dir=") == 0) {
+            share_dir = arg.substr(12);
         } else if (arg.find("--tile-id=") == 0) {
             tile_id = atol(arg.substr(10).c_str());
         } else if (arg.find("--lon=") == 0) {
@@ -235,8 +238,13 @@ int main(int argc, char **argv) {
         }
     }
 
+    if ( share_dir == "" ) {
+        share_dir = work_dir + "/Shared";
+    }
+
     SG_LOG(SG_GENERAL, SG_ALERT, "Output directory is " << output_dir);
     SG_LOG(SG_GENERAL, SG_ALERT, "Working directory is " << work_dir);
+    SG_LOG(SG_GENERAL, SG_ALERT, "Shared directory is " << share_dir);
     if ( tile_id > 0 ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Tile id is " << tile_id);
     } else {
@@ -274,6 +282,7 @@ int main(int argc, char **argv) {
             c->set_cover( cover );
             c->set_work_base( work_dir );
             c->set_output_base( output_dir );
+            c->set_share_base( share_dir );
             c->set_load_dirs( load_dirs );
             c->set_useUKGrid( useUKgrid );
             c->set_write_shared_edges( writeSharedEdges );
@@ -302,6 +311,7 @@ int main(int argc, char **argv) {
                 c->set_cover( cover );
                 c->set_work_base( work_dir );
                 c->set_output_base( output_dir );
+                c->set_share_base( share_dir );
                 c->set_load_dirs( load_dirs );
                 c->set_useUKGrid( useUKgrid );
                 c->set_write_shared_edges( writeSharedEdges );
@@ -335,6 +345,7 @@ int main(int argc, char **argv) {
                             c->set_cover( cover );
                             c->set_work_base( work_dir );
                             c->set_output_base( output_dir );
+                            c->set_share_base( share_dir );
                             c->set_load_dirs( load_dirs );
                             c->set_useUKGrid( useUKgrid );
                             c->set_write_shared_edges( writeSharedEdges );
@@ -363,6 +374,7 @@ int main(int argc, char **argv) {
         c->set_cover( cover );
         c->set_work_base( work_dir );
         c->set_output_base( output_dir );
+        c->set_share_base( share_dir );
         c->set_load_dirs( load_dirs );
         c->set_useUKGrid( useUKgrid );
         c->set_write_shared_edges( writeSharedEdges );
