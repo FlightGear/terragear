@@ -59,6 +59,11 @@ private:
 
     superpoly_list gen_helipad_lights(double maxsize);
 
+    void WriteGeom( TGPolygon polygon, string material,
+                        superpoly_list *rwy_polys,
+                        ClipPolyType *accum,
+                        poly_list& slivers );
+
 };
 
 typedef std::vector <Helipad *> HelipadList;

@@ -50,7 +50,7 @@ superpoly_list Helipad::gen_helipad_lights(double maxsize){
     double length = vec.distance3D( Point3D(0.0) );
     vec = vec / length;
 
-    // Create green edge lights, 5m spacing
+    // Create yellow edge lights, 5m spacing
     int divs = (int)(maxsize / 5.0);
     TGPolygon area = gen_runway_area_w_extend(0.0, 0.0, 0.0, 0.0, 0.0);
     Point3D pt, inc;
@@ -65,7 +65,7 @@ superpoly_list Helipad::gen_helipad_lights(double maxsize){
         }
     }
 
-    // Create a circle of lights approx. where the white texture circle is
+    // Create a circle of yellow lights where the white texture circle is
     double lat = 0, lon = 0, az;
     for (int deg = 0; deg < 360; deg += 45){
         geo_direct_wgs_84(0, heli.lat, heli.lon, deg ,
@@ -92,6 +92,30 @@ superpoly_list Helipad::gen_helipad_lights(double maxsize){
     return result;
 }
 
+void Helipad::WriteGeom( TGPolygon polygon, string material,
+                        superpoly_list *rwy_polys,
+                        ClipPolyType *accum,
+                        poly_list& slivers )
+{
+    // Clip the new polygon against what ever has already been created.
+    TGPolygon clipped = tgPolygonDiffClipper( polygon, *accum );
+    tgPolygonFindSlivers( clipped, slivers );
+
+    // Split long edges to create an object that can better flow with
+    // the surface terrain
+    TGPolygon split = tgPolygonSplitLongEdges( clipped, 400.0 );
+
+    // Create the final output and push on to the runway super_polygon
+    // list
+    TGSuperPoly sp;
+    sp.erase();
+    sp.set_poly( split );
+    sp.set_material( material );
+    rwy_polys->push_back( sp );
+
+    *accum = tgPolygonUnionClipper( polygon, *accum );
+}
+
 void Helipad::BuildBtg( superpoly_list *rwy_polys,
                         texparams_list *texparams,
                         superpoly_list *rwy_lights,
@@ -105,37 +129,27 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
     //
 
     double maxsize = heli.width - heli.length;
-    if (maxsize <= 0)
+    bool area_top = false;
+    bool area_side = false;
+    if (maxsize == 0) {
         maxsize = heli.width;
-    else
+    } else if (maxsize < 0) {
+        maxsize = heli.width;
+        area_top = true;
+    } else {
         maxsize = heli.length;
+        area_side = true;
+    }
 
     TGPolygon helipad = gen_wgs84_area( GetLoc(), maxsize, 0, 0, maxsize, heli.heading, false);
     helipad = snap( helipad, gSnap );
-
     string material;
     if (heli.surface == 1)
         material = "pa_";
     else
         material = "pc_";
-
-    // Clip the new polygon against what ever has already been created.
-    TGPolygon clipped = tgPolygonDiffClipper( helipad, *accum );
-    tgPolygonFindSlivers( clipped, slivers );
-
-    // Split long edges to create an object that can better flow with
-    // the surface terrain
-    TGPolygon split = tgPolygonSplitLongEdges( clipped, 400.0 );
-
-    // Create the final output and push on to the runway super_polygon
-    // list
-    TGSuperPoly sp;
-    sp.erase();
-    sp.set_poly( split );
-    sp.set_material( material + "heli" );
-    rwy_polys->push_back( sp );
-
-    *accum = tgPolygonUnionClipper( helipad, *accum );
+    // write out
+    WriteGeom( helipad, material + "heli", rwy_polys, accum, slivers);
 
     TGTexParams tp;
     tp = TGTexParams( helipad.get_pt(0,0), maxsize, maxsize, heli.heading );
@@ -145,6 +159,51 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
     tp.set_maxv( 0 );
     texparams->push_back( tp );
 
+    if (area_top || area_side) {
+        TGPolygon area_poly; area_poly.erase();
+        point_list area; area.clear();
+        double heading = 0, areahight = 0;
+        TGPolygon heli_area = gen_runway_area_w_extend(0.0, 0.0, 0.0, 0.0, 0.0);
+        heli_area = snap( heli_area, gSnap );
+        int i = 0;
+
+        if (area_top) {
+            areahight = (heli.length - maxsize) /2;
+            heading = heli.heading;
+            i = 0;
+        } else {
+            areahight = (heli.width - maxsize) /2;
+            heading = heli.heading - 90;
+            if ( heading < 0.0 ) { heading += 360.0; }
+            i = 1;
+        }
+
+        for (;i<4; ++i) {
+            area.push_back( heli_area.get_pt( 0,i ) );
+            area.push_back( heli_area.get_pt( 0,i == 3? 0 : i+1 ) );
+            area.push_back( helipad.get_pt( 0,i == 3? 0 : i+1) );
+            area.push_back( helipad.get_pt( 0,i ) );
+            area_poly.add_contour( area, false );
+            area.clear();
+            i++;
+        }
+
+        TGPolygon area_geom;
+        for (int i = 0; i < 2; ++i) {
+            area_geom.add_contour(area_poly.get_contour(i), false);
+            WriteGeom( area_geom, material + "tiedown", rwy_polys, accum, slivers);
+
+            tp = TGTexParams( area_poly.get_pt(i,0), maxsize, areahight, heading );
+            tp.set_minu( 1 );
+            tp.set_maxu( 0 );
+            tp.set_minv( 1 );
+            tp.set_maxv( 0 );
+            texparams->push_back( tp );
+            area_geom.erase();
+            heading +=  180;
+            if ( heading > 360.0 ) { heading -= 360.0; }
+        }
+    }
 
     // generate area around helipad
     if (apt_base)
