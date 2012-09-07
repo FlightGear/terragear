@@ -18,7 +18,7 @@ extern int nudge;
 Taxiway::Taxiway(char* definition)
 {
     // variables for sdjusting 810 rwy format to 850 rwy format 
-    double pt_x, pt_y;
+    double pt_x = 0, pt_y = 0;
     double az2;
 
     // variables to store unused parameters
