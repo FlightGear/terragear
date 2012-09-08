@@ -56,157 +56,161 @@ class TGPolygon {
 
 private:
 
-polytype poly;                  // polygons
-point_list inside_list;         // point inside list
-int_list hole_list;             // hole flag list
+    polytype poly;                  // polygons
+    point_list inside_list;         // point inside list
+    int_list hole_list;             // hole flag list
 
 public:
 
-// Constructor and destructor
-TGPolygon( void );
-~TGPolygon( void );
+    // Constructor and destructor
+    TGPolygon( void );
+    ~TGPolygon( void );
 
-// Add a contour
-inline void add_contour( const point_list contour, const int hole_flag )
-{
-    poly.push_back( contour );
-    inside_list.push_back( Point3D( 0.0 ) );
-    hole_list.push_back( hole_flag );
-}
-
-// Get a contour
-inline point_list get_contour( const int i ) const
-{
-    return poly[i];
-}
-
-// Delete a contour
-inline void delete_contour( const int i )
-{
-    polytype_iterator start_poly = poly.begin();
-
-    poly.erase( start_poly + i );
-
-    point_list_iterator start_inside = inside_list.begin();
-    inside_list.erase( start_inside + i );
-
-    int_list_iterator start_hole = hole_list.begin();
-    hole_list.erase( start_hole + i );
-}
-
-// Add the specified node (index) to the polygon
-inline void add_node( int contour, Point3D p )
-{
-    if ( contour >= (int)poly.size() ) {
-        // extend polygon
-        point_list empty_contour;
-        empty_contour.clear();
-        for ( int i = 0; i < contour - (int)poly.size() + 1; ++i ) {
-            poly.push_back( empty_contour );
-            inside_list.push_back( Point3D(0.0) );
-            hole_list.push_back( 0 );
-        }
+    // Add a contour
+    inline void add_contour( const point_list contour, const int hole_flag )
+    {
+        poly.push_back( contour );
+        inside_list.push_back( Point3D( 0.0 ) );
+        hole_list.push_back( hole_flag );
     }
-    poly[contour].push_back( p );
-}
 
-// return size
-inline int contours() const
-{
-    return poly.size();
-}
-inline int contour_size( int contour ) const
-{
-    return poly[contour].size();
-}
-inline int total_size() const
-{
-    int size = 0;
+    // Get a contour
+    inline point_list get_contour( const int i ) const
+    {
+        return poly[i];
+    }
 
-    for ( int i = 0; i < contours(); ++i )
-        size += poly[i].size();
-    return size;
-}
+    // Delete a contour
+    inline void delete_contour( const int i )
+    {
+        polytype_iterator start_poly = poly.begin();
 
-// return the ith point from the specified contour
-inline Point3D get_pt( int contour, int i ) const
-{
-    return poly[contour][i];
-}
+        poly.erase( start_poly + i );
 
-// update the value of a point
-inline void set_pt( int contour, int i, const Point3D& p )
-{
-    poly[contour][i] = p;
-}
+        point_list_iterator start_inside = inside_list.begin();
+        inside_list.erase( start_inside + i );
 
-void get_bounding_box( Point3D& min, Point3D& max ) const;
+        int_list_iterator start_hole = hole_list.begin();
+        hole_list.erase( start_hole + i );
+    }
 
-// get and set an arbitrary point inside the specified polygon contour
-inline Point3D get_point_inside( const int contour ) const
-{
-    return inside_list[contour];
-}
-inline void set_point_inside( int contour, const Point3D& p )
-{
-    inside_list[contour] = p;
-}
+    // Add the specified node (index) to the polygon
+    inline void add_node( int contour, Point3D p )
+    {
+        if ( contour >= (int)poly.size() ) {
+            // extend polygon
+            point_list empty_contour;
+            empty_contour.clear();
+            for ( int i = 0; i < contour - (int)poly.size() + 1; ++i ) {
+                poly.push_back( empty_contour );
+                inside_list.push_back( Point3D(0.0) );
+                hole_list.push_back( 0 );
+            }
+        }
+        poly[contour].push_back( p );
+    }
 
-// get and set hole flag
-inline int get_hole_flag( const int contour ) const
-{
-    return hole_list[contour];
-}
-inline void set_hole_flag( const int contour, const int flag )
-{
-    hole_list[contour] = flag;
-}
-inline bool has_holes() const
-{
-    for (int i = 0; i < contours(); i++)
-        if (get_hole_flag(i))
-            return true;
-    return false;
-}
+    // return size
+    inline int contours() const
+    {
+        return poly.size();
+    }
+    inline int contour_size( int contour ) const
+    {
+        return poly[contour].size();
+    }
+    inline int total_size() const
+    {
+        int size = 0;
 
-// Set the elevations of points in the current polgyon based on
-// the elevations of points in source.  For points that are not
-// found in source, propogate the value from the nearest matching
-// point.
-void inherit_elevations( const TGPolygon &source );
+        for ( int i = 0; i < contours(); ++i )
+            size += poly[i].size();
+        return size;
+    }
 
-// Set the elevations of all points to the specified values
-void set_elevations( double elev );
+    // return the ith point from the specified contour
+    inline Point3D get_pt( int contour, int i ) const
+    {
+        return poly[contour][i];
+    }
 
-// shift every point in the polygon by lon, lat
-void shift( double lon, double lat );
+    // update the value of a point
+    inline void set_pt( int contour, int i, const Point3D& p )
+    {
+        poly[contour][i] = p;
+    }
 
-// erase
-inline void erase()
-{
-    poly.clear();
-}
+    void get_bounding_box( Point3D& min, Point3D& max ) const;
 
-// informational
+    // get and set an arbitrary point inside the specified polygon contour
+    inline Point3D get_point_inside( const int contour ) const
+    {
+        return inside_list[contour];
+    }
+    inline void set_point_inside( int contour, const Point3D& p )
+    {
+        inside_list[contour] = p;
+    }
 
-// return the area of a contour (assumes simple polygons,
-// i.e. non-self intersecting.)
-//
-// negative areas indicate counter clockwise winding
-// positive areas indicate clockwise winding.
-double area_contour( const int contour ) const;
+    // get and set hole flag
+    inline int get_hole_flag( const int contour ) const
+    {
+        return hole_list[contour];
+    }
+    inline void set_hole_flag( const int contour, const int flag )
+    {
+        hole_list[contour] = flag;
+    }
+    inline bool has_holes() const
+    {
+        for (int i = 0; i < contours(); i++)
+            if (get_hole_flag(i))
+                return true;
+        return false;
+    }
 
-// return the smallest interior angle of the contour
-double minangle_contour( const int contour );
+    // Set the elevations of points in the current polgyon based on
+    // the elevations of points in source.  For points that are not
+    // found in source, propogate the value from the nearest matching
+    // point.
+    void inherit_elevations( const TGPolygon &source );
 
-// return true if contour B is inside countour A
-bool is_inside( int a, int b ) const;
+    // Set the elevations of all points to the specified values
+    void set_elevations( double elev );
 
-// output
-void write( const std::string& file ) const;
+    // shift every point in the polygon by lon, lat
+    void shift( double lon, double lat );
 
-// output
-void write_contour( const int contour, const std::string& file ) const;
+    // erase
+    inline void erase()
+    {
+        poly.clear();
+    }
+
+    // informational
+
+    // return the area of a contour (assumes simple polygons,
+    // i.e. non-self intersecting.)
+    //
+    // negative areas indicate counter clockwise winding
+    // positive areas indicate clockwise winding.
+    double area_contour( const int contour ) const;
+
+    // return the smallest interior angle of the contour
+    double minangle_contour( const int contour );
+
+    // return true if contour B is inside countour A
+    bool is_inside( int a, int b ) const;
+
+    // output
+    void write( const std::string& file ) const;
+
+    // output
+    void write_contour( const int contour, const std::string& file ) const;
+
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGPolygon& );
+    friend std::ostream& operator<< ( std::ostream&, const TGPolygon& );
 };
 
 

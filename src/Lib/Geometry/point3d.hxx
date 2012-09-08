@@ -155,44 +155,22 @@ public:
 
 
 // input from stream
-inline std::istream&
-operator >> ( std::istream& in, Point3D& p)
+inline std::istream& operator >> ( std::istream& in, Point3D& p)
 {
-    char c;
-
     in >> p.n[PX];
-
-    // read past optional comma
-    while ( in.get(c) ) {
-	if ( (c != ' ') && (c != ',') ) {
-	    // push back on the stream
-	    in.putback(c);
-	    break;
-	}
-    }
-	
     in >> p.n[PY];
-
-    // read past optional comma
-    while ( in.get(c) ) {
-	if ( (c != ' ') && (c != ',') ) {
-	    // push back on the stream
-	    in.putback(c);
-	    break;
-	}
-    }
-	
     in >> p.n[PZ];
 
     return in;
 }
 
-inline std::ostream&
-operator<< ( std::ostream& out, const Point3D& p )
+inline std::ostream& operator<< ( std::ostream& out, const Point3D& p )
 {
-    char buff[128];
-    sprintf( buff, "(%3.10lf, %3.10lf, %3.10lf)", p.n[PX], p.n[PY], p.n[PZ]);
-    return out << buff;
+    out << p.n[PX] << " ";
+    out << p.n[PY] << " ";
+    out << p.n[PZ] << "\n";
+
+    return out;
 }
 
 ///////////////////////////

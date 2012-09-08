@@ -27,6 +27,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 #include <boost/foreach.hpp>
 
@@ -2116,6 +2117,98 @@ void TGConstruct::CalcTextureCoordinates( void )
     }
 }
 
+void TGConstruct::SaveToIntermediateFiles( int stage )
+{
+    string dir;
+    string file;
+
+    switch( stage ) {
+        case 1:     // Save the clipped polys and node list
+        {
+            dir  = share_base + "/stage1/" + bucket.gen_base_path();
+            file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
+
+            SGPath sgp( dir );
+            sgp.append( "dummy" );
+            sgp.create_dir( 0755 );
+
+            std::ofstream ofs_cp( file.c_str() );
+            ofs_cp << polys_clipped;
+            ofs_cp.close();
+
+            file = dir + "/" + bucket.gen_index_str() + "_nodes";
+
+            std::ofstream ofs_n( file.c_str() );
+            ofs_n << nodes;
+            ofs_n.close();
+            break;
+        }
+
+        case 2:     // Save the clipped polys and node list
+        {
+            dir  = share_base + "/stage2/" + bucket.gen_base_path();
+            file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
+
+            SGPath sgp( dir );
+            sgp.append( "dummy" );
+            sgp.create_dir( 0755 );
+
+            std::ofstream ofs_cp( file.c_str() );
+            ofs_cp << polys_clipped;
+            ofs_cp.close();
+
+            file = dir + "/" + bucket.gen_index_str() + "_nodes";
+
+            std::ofstream ofs_n( file.c_str() );
+            ofs_n << nodes;
+            ofs_n.close();
+            break;
+        }
+    }
+}
+
+void TGConstruct::LoadFromIntermediateFiles( int stage )
+{
+    string dir;
+    string file;
+
+    switch( stage ) {
+        case 1:     // Load the clipped polys and node list
+        {
+            dir  = share_base + "/stage1/" + bucket.gen_base_path();
+            file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
+
+            std::ifstream ifs_cp( file.c_str() );
+            ifs_cp >> polys_clipped;
+            ifs_cp.close();
+
+            file = dir + "/" + bucket.gen_index_str() + "_nodes";
+
+            std::ifstream ifs_n( file.c_str() );
+            ifs_n >> nodes;
+            ifs_n.close();
+            break;
+        }
+        
+        case 2:     // Load the clipped polys and node list
+        {
+            dir  = share_base + "/stage2/" + bucket.gen_base_path();
+            file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
+
+            std::ifstream ifs_cp( file.c_str() );
+            ifs_cp >> polys_clipped;
+            ifs_cp.close();
+
+            file = dir + "/" + bucket.gen_index_str() + "_nodes";
+
+            std::ifstream ifs_n( file.c_str() );
+            ifs_n >> nodes;
+            ifs_n.close();
+            break;
+        }
+    }
+}
+
 // master construction routine
 // TODO : Split each step into its own function, and move 
 //        into seperate files by major functionality
@@ -2137,7 +2230,7 @@ void TGConstruct::ConstructBucketStage1() {
     // STEP 1) 
     // Load grid of elevation data (Array)
     LoadElevationArray();
-    
+
     // STEP 2) 
     // Clip 2D polygons against one another
     if ( LoadLandclassPolys() == 0 ) {
@@ -2160,54 +2253,81 @@ void TGConstruct::ConstructBucketStage1() {
     // Clean the polys - after this, we shouldn't change their shape (other than slightly for
     // fix T-Junctions - as This is the end of the first pass for multicore design
     CleanClippedPolys();
+}
 
-    // END OF FIRST PASS : SAVE THE TILE DATA
+void TGConstruct::ConstructBucketStage2() {
 
-    // STEP 5)
-    // Merge in Shared data (just add the nodes to the nodelist)
-    // When this step is complete, some nodes will have normals (from shared tiles)
-    // and some will not
-    // Load Shared Edge Data X,Y coords only
+    SG_LOG(SG_GENERAL, SG_ALERT, "\nConstructing tile ID " << bucket.gen_index_str() << " in " << bucket.gen_base_path() );
+
+    /* If we have some debug IDs, create a datasource */
+    if ( debug_shapes.size() || debug_all ) {
+        sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
+        SG_LOG(SG_GENERAL, SG_ALERT, "Debug_string: " << ds_name );
+    } else {
+        strcpy( ds_name, "" );
+    }
+
+    // TEMP TEMP TEMP - save in intermediate file...)
+    // Load grid of elevation data (Array)
+    LoadElevationArray();
+
+    // restore construct from stage1 intermediate files
+    LoadFromIntermediateFiles( 1 );
+
+    // STEP 6)
+    // Merge in Shared data - should just be x,y nodes on the borders from stage1
     LoadSharedEdgeData();
 
-    // STEP 6) 
+    // STEP 7) 
     // Fix T-Junctions by finding nodes that lie close to polygon edges, and
     // inserting them into the edge
     FixTJunctions();
 
-    // TODO : Needs to be part of clipping 
-    // just before union : If we need to clean again after fixing tjunctions, make 
-    // sure we don't alter the shape
-    // CleanClippedPolys();
-
-    // STEP 7)
+    // STEP 8)
     // Generate triangles - we can't generate the node-face lookup table
     // until all polys are tesselated, as extra nodes can still be generated
     TesselatePolys();
 
-    // STEP 8) 
+    // STEP 9)
     // Generate triangle vertex coordinates to node index lists
     // NOTE: After this point, no new nodes can be added
     LookupNodesPerVertex();
 
-    // STEP 9)
+    // STEP 10)
     // Interpolate elevations, and flatten stuff
     CalcElevations();
+}
 
-    // STEP 10)
-    // Generate face_connected list - shared data contains faces, too - save them somehow
-    LookupFacesPerNode();
+void TGConstruct::ConstructBucketStage3() {
 
-    // END OF SECOND PASS : SAVE THE TILE DATA
+    SG_LOG(SG_GENERAL, SG_ALERT, "\nConstructing tile ID " << bucket.gen_index_str() << " in " << bucket.gen_base_path() );
 
-    // load shared edge data (with elevations, and face connected list)
-    // LoadSharedEdgeDataWithElevation();
+    /* If we have some debug IDs, create a datasource */
+    if ( debug_shapes.size() || debug_all ) {
+        sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
+        SG_LOG(SG_GENERAL, SG_ALERT, "Debug_string: " << ds_name );
+    } else {
+        strcpy( ds_name, "" );
+    }
+
+    // TEMP TEMP TEMP )
+    // Load grid of elevation data (Array)
+    LoadElevationArray();
 
     // STEP 11)
+    // Merge in Shared data - nodes on the shared edge should have x,y,z - we'll average the z
+    // shared edge data nodes also have 1 or 2 connected nodes so we can see their connected faces
+    //LoadSharedEdgeData();
+
+    // STEP 12)
+    // Generate face_connected list
+    LookupFacesPerNode();
+
+    // STEP 12)
     // Calculate Face Normals
     CalcFaceNormals();
 
-    // STEP 12)
+    // STEP 13)
     // Calculate Point Normals
     CalcPointNormals();
 
@@ -2220,19 +2340,19 @@ void TGConstruct::ConstructBucketStage1() {
     }
 #endif
 
-    // STEP 13)
+    // STEP 14)
     // Calculate Texture Coordinates
     CalcTextureCoordinates();
 
-    // STEP 14)
+    // STEP 15)         // only if not stages...
     // Write out the shared edge data
     SaveSharedEdgeData();
 
-    // STEP 15)
+    // STEP 16)
     // Generate the btg file
     WriteBtgFile();
 
-    // STEP 16) 
+    // STEP 17) 
     // Write Custom objects to .stg file 
     AddCustomObjects();
 }

@@ -968,30 +968,61 @@ TGPolygon tgPolygonSimplify(const TGPolygon &poly)
 
 
 // Send a polygon to standard output.
-ostream &
-operator<< (ostream &output, const TGPolygon &poly)
+std::ostream& operator << (std::ostream &output, const TGPolygon &poly)
 {
     char buff[128];
-    int nContours = poly.contours();
+    int  nContours = poly.contours();
 
-    output << "Contours : " << nContours << endl;
+    // Save the number of contours
+    output << nContours << "\n";
     for (int i = 0; i < nContours; i++) {
         int nPoints = poly.contour_size(i);
-        if ( poly.get_hole_flag(i) ) {
-            output << " hole contour " << i << " has " << nPoints << " points " << endl;
-        } else {
-            output << " boundary contour " << i << " has " << nPoints << " points " << endl;
+
+        // Save number of points in the contour
+        output << nPoints << "\n";
+
+        // Then save the points
+        for ( int j = 0; j < nPoints; j++ ) {
+            output << poly.get_pt(i, j).x() << " ";
+            output << poly.get_pt(i, j).y() << " ";
+            output << poly.get_pt(i, j).z() << "\n";
         }
 
-        for (int j = 0; j < nPoints; j++) {
-            sprintf( buff, "(%3.10lf,%3.10lf,%3.10lf)", 
-                poly.get_pt(i, j).x(),
-                poly.get_pt(i, j).y(),
-                poly.get_pt(i, j).z()
-            );
-            output << buff << endl;
-        }
+        // Then save contour hole flag
+        output << poly.get_hole_flag(i) << "\n";
     }
 
-    return output;  // MSVC
+    return output;
+}
+
+// Read a polygon from input buffer.
+std::istream& operator >> (std::istream &input, TGPolygon &poly)
+{
+    int    nContours = poly.contours();
+    double x, y, z;
+
+    // Read the number of contours
+    input >> nContours;
+    for (int i = 0; i < nContours; i++) {
+        int nPoints;
+        int hole;
+
+        // Read number of points in the contour
+        input >> nPoints;
+
+        // Then read the points
+        for ( int j = 0; j < nPoints; j++ ) {
+            input >> x;
+            input >> y;
+            input >> z;
+
+            poly.add_node(i, Point3D(x,y,z));
+        }
+
+        // Then read contour hole flag
+        input >> hole;
+        poly.set_hole_flag(i, hole);
+    }
+
+    return input;
 }

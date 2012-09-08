@@ -273,32 +273,33 @@ int main(int argc, char **argv) {
 	    exit(-1);
     }
 
-    // main construction data management class
-    TGConstruct* c;
-
+    // main construction data management class : Stage 1
     if (tile_id == -1) {
         if (xdist == -1 || ydist == -1) {
             // construct the tile around the specified location
             SG_LOG(SG_GENERAL, SG_ALERT, "Building single tile at " << lat << ',' << lon);
             SGBucket b( lon, lat );
+            TGConstruct* all_stages;
 
-            c = new TGConstruct();
-            c->set_cover( cover );
-            c->set_work_base( work_dir );
-            c->set_output_base( output_dir );
-            c->set_share_base( share_dir );
-            c->set_load_dirs( load_dirs );
-            c->set_useUKGrid( useUKgrid );
-            c->set_write_shared_edges( writeSharedEdges );
-            c->set_use_own_shared_edges( useOwnSharedEdges );
-            c->set_ignore_landmass( ignoreLandmass );
-            c->set_nudge( nudge );
-            c->set_bucket( b );
+            all_stages = new TGConstruct();
+            all_stages->set_cover( cover );
+            all_stages->set_work_base( work_dir );
+            all_stages->set_output_base( output_dir );
+            all_stages->set_share_base( share_dir );
+            all_stages->set_load_dirs( load_dirs );
+            all_stages->set_useUKGrid( useUKgrid );
+            all_stages->set_write_shared_edges( writeSharedEdges );
+            all_stages->set_use_own_shared_edges( useOwnSharedEdges );
+            all_stages->set_ignore_landmass( ignoreLandmass );
+            all_stages->set_nudge( nudge );
+            all_stages->set_bucket( b );
+            all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
-            c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+            all_stages->ConstructBucketStage1();
+            all_stages->ConstructBucketStage2();
+            all_stages->ConstructBucketStage3();
 
-            c->ConstructBucketStage1();
-            delete c;
+            delete all_stages;
         } else {
             // build all the tiles in an area
             SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) at " << lat << ',' << lon << " with x distance " << xdist << " and y distance " << ydist);
@@ -311,23 +312,27 @@ int main(int argc, char **argv) {
             bool do_tile = true;
 
             if ( b_min == b_max ) {
-                c = new TGConstruct();
-                c->set_cover( cover );
-                c->set_work_base( work_dir );
-                c->set_output_base( output_dir );
-                c->set_share_base( share_dir );
-                c->set_load_dirs( load_dirs );
-                c->set_useUKGrid( useUKgrid );
-                c->set_write_shared_edges( writeSharedEdges );
-                c->set_use_own_shared_edges( useOwnSharedEdges );
-                c->set_ignore_landmass( ignoreLandmass );
-                c->set_nudge( nudge );
-                c->set_bucket( b_min );
+                TGConstruct* all_stages;
 
-                c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+                all_stages = new TGConstruct();
+                all_stages->set_cover( cover );
+                all_stages->set_work_base( work_dir );
+                all_stages->set_output_base( output_dir );
+                all_stages->set_share_base( share_dir );
+                all_stages->set_load_dirs( load_dirs );
+                all_stages->set_useUKGrid( useUKgrid );
+                all_stages->set_write_shared_edges( writeSharedEdges );
+                all_stages->set_use_own_shared_edges( useOwnSharedEdges );
+                all_stages->set_ignore_landmass( ignoreLandmass );
+                all_stages->set_nudge( nudge );
+                all_stages->set_bucket( b_min );
+                all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
-                c->ConstructBucketStage1();
-                delete c;
+                all_stages->ConstructBucketStage1();
+                all_stages->ConstructBucketStage2();
+                all_stages->ConstructBucketStage3();
+
+                delete all_stages;
             } else {
                 SGBucket b_cur;
                 int dx, dy, i, j;
@@ -336,6 +341,8 @@ int main(int argc, char **argv) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
                 SG_LOG(SG_GENERAL, SG_ALERT, "  dx = " << dx << "  dy = " << dy);
 
+
+                // construct stage 1
                 for ( j = 0; j <= dy; j++ ) {
                     for ( i = 0; i <= dx; i++ ) {
                         b_cur = sgBucketOffset(min_x, min_y, i, j);
@@ -345,23 +352,99 @@ int main(int argc, char **argv) {
                         }
 
                         if ( do_tile ) {
-                            c = new TGConstruct();
-                            c->set_cover( cover );
-                            c->set_work_base( work_dir );
-                            c->set_output_base( output_dir );
-                            c->set_share_base( share_dir );
-                            c->set_load_dirs( load_dirs );
-                            c->set_useUKGrid( useUKgrid );
-                            c->set_write_shared_edges( writeSharedEdges );
-                            c->set_use_own_shared_edges( useOwnSharedEdges );
-                            c->set_ignore_landmass( ignoreLandmass );
-                            c->set_nudge( nudge );
-                            c->set_bucket( b_cur );
+                            TGConstruct* stage1;
+                            
+                            stage1 = new TGConstruct();
+                            stage1->set_cover( cover );
+                            stage1->set_work_base( work_dir );
+                            stage1->set_output_base( output_dir );
+                            stage1->set_share_base( share_dir );
+                            stage1->set_load_dirs( load_dirs );
+                            stage1->set_useUKGrid( useUKgrid );
+                            stage1->set_write_shared_edges( writeSharedEdges );
+                            stage1->set_use_own_shared_edges( useOwnSharedEdges );
+                            stage1->set_ignore_landmass( ignoreLandmass );
+                            stage1->set_nudge( nudge );
+                            stage1->set_bucket( b_cur );
+                            stage1->set_debug( debug_dir, debug_defs );
 
-                            c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+                            stage1->ConstructBucketStage1();
+                            stage1->SaveToIntermediateFiles(1);
+                            
+                            delete stage1;
+                        } else {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
+                        }
+                    }
+                }
 
-                            c->ConstructBucketStage1();
-                            delete c;
+                // construct stage 2
+                for ( j = 0; j <= dy; j++ ) {
+                    for ( i = 0; i <= dx; i++ ) {
+                        b_cur = sgBucketOffset(min_x, min_y, i, j);
+
+                        if ( b_cur == b_start ) {
+                            do_tile = true;
+                        }
+
+                        if ( do_tile ) {
+                            TGConstruct* stage2;
+
+                            stage2 = new TGConstruct();
+                            stage2->set_cover( cover );
+                            stage2->set_work_base( work_dir );
+                            stage2->set_output_base( output_dir );
+                            stage2->set_share_base( share_dir );
+                            stage2->set_load_dirs( load_dirs );
+                            stage2->set_useUKGrid( useUKgrid );
+                            stage2->set_write_shared_edges( writeSharedEdges );
+                            stage2->set_use_own_shared_edges( useOwnSharedEdges );
+                            stage2->set_ignore_landmass( ignoreLandmass );
+                            stage2->set_nudge( nudge );
+                            stage2->set_bucket( b_cur );
+                            stage2->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+
+                            stage2->LoadFromIntermediateFiles(1);
+                            stage2->ConstructBucketStage2();
+                            stage2->SaveToIntermediateFiles(2);
+                            
+                            delete stage2;
+                        } else {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
+                        }
+                    }
+                }
+
+                // construct stage 3
+                for ( j = 0; j <= dy; j++ ) {
+                    for ( i = 0; i <= dx; i++ ) {
+                        b_cur = sgBucketOffset(min_x, min_y, i, j);
+
+                        if ( b_cur == b_start ) {
+                            do_tile = true;
+                        }
+
+                        if ( do_tile ) {
+                            TGConstruct* stage3;
+
+                            stage3 = new TGConstruct();
+                            stage3->set_cover( cover );
+                            stage3->set_work_base( work_dir );
+                            stage3->set_output_base( output_dir );
+                            stage3->set_share_base( share_dir );
+                            stage3->set_load_dirs( load_dirs );
+                            stage3->set_useUKGrid( useUKgrid );
+                            stage3->set_write_shared_edges( writeSharedEdges );
+                            stage3->set_use_own_shared_edges( useOwnSharedEdges );
+                            stage3->set_ignore_landmass( ignoreLandmass );
+                            stage3->set_nudge( nudge );
+                            stage3->set_bucket( b_cur );
+                            stage3->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+
+                            stage3->LoadFromIntermediateFiles(2);
+                            stage3->ConstructBucketStage3();
+
+                            delete stage3;
                         } else {
                             SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
                         }
@@ -373,24 +456,27 @@ int main(int argc, char **argv) {
         // construct the specified tile
         SG_LOG(SG_GENERAL, SG_ALERT, "Building tile " << tile_id);
         SGBucket b( tile_id );
+        TGConstruct* all_stages;
 
-        c = new TGConstruct();
-        c->set_cover( cover );
-        c->set_work_base( work_dir );
-        c->set_output_base( output_dir );
-        c->set_share_base( share_dir );
-        c->set_load_dirs( load_dirs );
-        c->set_useUKGrid( useUKgrid );
-        c->set_write_shared_edges( writeSharedEdges );
-        c->set_use_own_shared_edges( useOwnSharedEdges );
-        c->set_ignore_landmass( ignoreLandmass );
-        c->set_nudge( nudge );
-        c->set_bucket( b );
+        all_stages = new TGConstruct();
+        all_stages->set_cover( cover );
+        all_stages->set_work_base( work_dir );
+        all_stages->set_output_base( output_dir );
+        all_stages->set_share_base( share_dir );
+        all_stages->set_load_dirs( load_dirs );
+        all_stages->set_useUKGrid( useUKgrid );
+        all_stages->set_write_shared_edges( writeSharedEdges );
+        all_stages->set_use_own_shared_edges( useOwnSharedEdges );
+        all_stages->set_ignore_landmass( ignoreLandmass );
+        all_stages->set_nudge( nudge );
+        all_stages->set_bucket( b );
+        all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
-        c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+        all_stages->ConstructBucketStage1();
+        all_stages->ConstructBucketStage2();
+        all_stages->ConstructBucketStage3();
 
-        c->ConstructBucketStage1();
-        delete c;
+        delete all_stages;
     }
 
     SG_LOG(SG_GENERAL, SG_ALERT, "[Finished successfully]");

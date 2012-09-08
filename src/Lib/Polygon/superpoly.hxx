@@ -119,6 +119,10 @@ public:
     {
         poly[contour][i] = n;
     }
+
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGPolyNodes& );
+    friend std::ostream& operator<< ( std::ostream&, const TGPolyNodes& );
 };
 // END TODO
 
@@ -128,118 +132,121 @@ class TGSuperPoly {
 
 private:
 
-std::string material;       // material/texture name
-TGPolygon   poly;           // master polygon
-TGPolygon   normals;        // corresponding normals
-TGPolygon   texcoords;      // corresponding texture coordinates
+    std::string material;       // material/texture name
+    TGPolygon   poly;           // master polygon
+    TGPolygon   normals;        // corresponding normals
+    TGPolygon   texcoords;      // corresponding texture coordinates
 
-TGPolygon   tris;           // triangulation
-TGPolyNodes tri_idxs;       // triangle node indexes
+    TGPolygon   tris;           // triangulation
+    TGPolyNodes tri_idxs;       // triangle node indexes
 
-point_list  face_normals;   // triangle normals
-double_list face_areas;     // triangle areas
-std::string flag;           // For various potential record keeping needs
+    point_list  face_normals;   // triangle normals
+    double_list face_areas;     // triangle areas
+    std::string flag;           // For various potential record keeping needs
 
 public:
 
-// Constructor and destructor
-TGSuperPoly( void );
-~TGSuperPoly( void );
+    // Constructor and destructor
+    TGSuperPoly( void );
+    ~TGSuperPoly( void );
 
-inline std::string get_material() const
-{
-    return material;
-}
-inline void set_material( const std::string &m )
-{
-    material = m;
-}
+    inline std::string get_material() const
+    {
+        return material;
+    }
+    inline void set_material( const std::string &m )
+    {
+        material = m;
+    }
 
-inline TGPolygon get_poly() const
-{
-    return poly;
-}
-inline void set_poly( const TGPolygon &p )
-{
-    poly = p;
-}
+    inline TGPolygon get_poly() const
+    {
+        return poly;
+    }
+    inline void set_poly( const TGPolygon &p )
+    {
+        poly = p;
+    }
 
-inline TGPolygon get_normals() const
-{
-    return normals;
-}
-inline void set_normals( const TGPolygon &p )
-{
-    normals = p;
-}
+    inline TGPolygon get_normals() const
+    {
+        return normals;
+    }
+    inline void set_normals( const TGPolygon &p )
+    {
+        normals = p;
+    }
 
-inline TGPolygon get_texcoords() const
-{
-    return texcoords;
-}
-inline void set_texcoords( const TGPolygon &p )
-{
-    texcoords = p;
-}
+    inline TGPolygon get_texcoords() const
+    {
+        return texcoords;
+    }
+    inline void set_texcoords( const TGPolygon &p )
+    {
+        texcoords = p;
+    }
 
-inline TGPolygon get_tris() const
-{
-    return tris;
-}
-inline void set_tris( const TGPolygon &p )
-{
-    tris = p;
-}
+    inline TGPolygon get_tris() const
+    {
+        return tris;
+    }
+    inline void set_tris( const TGPolygon &p )
+    {
+        tris = p;
+    }
 
-inline TGPolyNodes get_tri_idxs() const
-{
-    return tri_idxs;
-}
-inline void set_tri_idxs( const TGPolyNodes &p )
-{
-    tri_idxs = p;
-}
+    inline TGPolyNodes get_tri_idxs() const
+    {
+        return tri_idxs;
+    }
+    inline void set_tri_idxs( const TGPolyNodes &p )
+    {
+        tri_idxs = p;
+    }
 
-inline Point3D get_face_normal( int tri ) const
-{
-    return face_normals[tri];
-}
+    inline Point3D get_face_normal( int tri ) const
+    {
+        return face_normals[tri];
+    }
 
-inline point_list get_face_normals() const
-{
-    return face_normals;
-}
-inline void set_face_normals( const point_list &fns )
-{
-    face_normals = fns;
-}
+    inline point_list get_face_normals() const
+    {
+        return face_normals;
+    }
+    inline void set_face_normals( const point_list &fns )
+    {
+        face_normals = fns;
+    }
 
-inline double get_face_area( int tri ) const
-{
-    return face_areas[tri];
-}
+    inline double get_face_area( int tri ) const
+    {
+        return face_areas[tri];
+    }
 
-inline double_list get_face_areas() const
-{
-    return face_areas;
-}
-inline void set_face_areas( const double_list &fas )
-{
-    face_areas = fas;
-}
+    inline double_list get_face_areas() const
+    {
+        return face_areas;
+    }
+    inline void set_face_areas( const double_list &fas )
+    {
+        face_areas = fas;
+    }
 
-inline std::string get_flag() const
-{
-    return flag;
-}
-inline void set_flag( const std::string f )
-{
-    flag = f;
-}
+    inline std::string get_flag() const
+    {
+        return flag;
+    }
+    inline void set_flag( const std::string f )
+    {
+        flag = f;
+    }
 
-// erase the polygon
-void erase();
+    // erase the polygon
+    void erase();
 
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGSuperPoly& );
+    friend std::ostream& operator<< ( std::ostream&, const TGSuperPoly& );
 };
 
 

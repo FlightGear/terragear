@@ -35,6 +35,7 @@
 
 #include <string>
 #include <vector>
+#include <iomanip>
 
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
@@ -54,6 +55,9 @@
 #define FIND_SLIVERS    (1)
 #define USE_ACCUMULATOR (1)
 
+
+
+
 class TGShape
 {
 public:
@@ -64,17 +68,17 @@ public:
     AreaType        area;
     unsigned int    id;
 
-    void    GetName( char* name ) const
+    void GetName( char* name ) const
     {
         sprintf( name, "%s_%d", get_area_name( (AreaType)area ).c_str(), id );
     }
 
-    void    SetMask( TGPolygon mask )
+    void SetMask( TGPolygon mask )
     {
         clip_mask = mask;
     }
 
-    void    BuildMask( void )
+    void BuildMask( void )
     {
         TGPolygon poly;
         clip_mask.erase();
@@ -86,7 +90,7 @@ public:
         }
     }
 
-    void    IntersectPolys( void )
+    void IntersectPolys( void )
     {
         if ( sps.size() > 1 ) {
             TGPolygon original, intersect;
@@ -103,11 +107,89 @@ public:
             sps[0].set_poly( clip_mask );
         }
     }
+
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGShape& );
+    friend std::ostream& operator<< ( std::ostream&, const TGShape& );
 };
+
+// input from stream
+inline std::istream& operator >> ( std::istream& in, TGShape& p)
+{
+    int i, count;
+    TGSuperPoly sp;
+    TGTexParams tp;
+
+    // First, load the clipmask
+    SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: clipmask" );
+    in >> p.clip_mask;
+
+    // Then load superpolys
+    in >> count;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: superpoly count " << count );
+    for (i=0; i<count; i++) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: load superpoly " << i );
+        in >> sp;
+        p.sps.push_back( sp );
+    }
+
+    // Then load texparams
+    in >> count;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: texparams count " << count );
+    for (i=0; i<count; i++) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: load texparam " << i );
+        in >> tp;
+        p.tps.push_back( tp );
+    }
+
+    // Load the id, area type and textured flag
+    in >> p.id;
+    in >> p.area;
+    in >> p.textured;
+
+    return in;
+}
+
+inline std::ostream& operator<< ( std::ostream& out, const TGShape& p )
+{
+    int i, count;
+    TGSuperPoly sp;
+    TGTexParams tp;
+
+    // First, save the clipmask
+    out << p.clip_mask;
+
+    // Then save superpolys
+    count = p.sps.size(); 
+    out << count << "\n";
+    for (i=0; i<count; i++) {
+        out << p.sps[i];
+    }
+
+    // Then save texparams
+    count = p.tps.size(); 
+    out << count << "\n";
+    for (i=0; i<count; i++) {
+        out << p.tps[i];
+    }
+
+    // Save the id, area type and textured flag
+    out << p.id << " ";
+    out << p.area << " ";
+    out << p.textured << "\n";
+
+    return out;
+}
 
 typedef std::vector < TGShape > shape_list;
 typedef shape_list::iterator shape_list_iterator;
 typedef shape_list::const_iterator const_shape_list_iterator;
+
+
+
+
+
+
 
 class TGLandclass
 {
@@ -228,9 +310,62 @@ public:
         return shapes[area][shape].sps[segment].set_tri_idxs( tis );
     }
 
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGLandclass& );
+    friend std::ostream& operator<< ( std::ostream&, const TGLandclass& );
+
 private:
     shape_list     shapes[TG_MAX_AREA_TYPES];
 };
+
+// input from stream
+inline std::istream& operator >> ( std::istream& in, TGLandclass& lc)
+{
+    int i, j, count;
+
+    // Load all landclass shapes
+    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+        in >> count;
+        SG_LOG(SG_GENERAL, SG_ALERT, "Loading Landclass: area " << i << " size is " << count );
+
+        for (j=0; j<count; j++) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Loading Landclass: load shape " << j << " of " << count );
+            TGShape shape;
+
+            in >> shape;
+            lc.shapes[i].push_back( shape );
+        }
+    }
+    
+    return in;
+}
+
+inline std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
+{
+    int i, j, count;
+    TGShape shape;
+
+    // first, set the precision
+    out << std::setprecision(12);
+    out << std::fixed;
+
+    // Save all landclass shapes
+    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+        count = lc.shapes[i].size();
+        out << count << "\n";
+        for (j=0; j<count; j++) {
+            out << lc.shapes[i][j] << " ";
+        }
+        out << "\n";
+    }
+
+    return out;
+}
+
+
+
+
+
 
 // forward declaration
 class TGMatch;
@@ -315,7 +450,7 @@ private:
 
     // Shared edge Matching
     void LoadSharedEdgeData( void );
-    void SaveSharedEdgeData( void );    
+    void SaveSharedEdgeData( void );
 
     // Polygon Cleaning
     void CleanClippedPolys( void );
@@ -361,10 +496,15 @@ public:
     ~TGConstruct();
 
     void set_bucket( SGBucket b ) { bucket = b; }
-    
+
+    // New shared edge matching
+    void SaveToIntermediateFiles( int stage );
+    void LoadFromIntermediateFiles( int stage );
+
+    // Three stage construct
     void ConstructBucketStage1();
     void ConstructBucketStage2();
-    
+    void ConstructBucketStage3();
 
     void calc_gc_course_dist( const Point3D& start, const Point3D& dest, 
                               double *course, double *dist );

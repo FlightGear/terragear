@@ -13,6 +13,8 @@ add_library(Polygon STATIC
     polygon.hxx
     simple_clip.hxx
     superpoly.hxx
+    texparams.cxx
+    texparams.hxx
     clipper.cpp
     clipper.hpp
 )

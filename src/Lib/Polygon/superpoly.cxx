@@ -22,6 +22,7 @@
 
 
 #include "superpoly.hxx"
+#include <simgear/debug/logstream.hxx>
 
 
 // Constructor
@@ -45,4 +46,131 @@ void TGSuperPoly::erase()
     texcoords.erase();
     tris.erase();
     face_normals.clear();
+}
+
+// Friends for serialization
+std::ostream& operator<< ( std::ostream& output, const TGSuperPoly& sp )
+{
+    int     nFaceNormals;
+    int     nFaceAreas;
+
+    // Save the data
+    output << sp.material << "\n";
+    output << sp.poly;
+    output << sp.normals;
+    output << sp.texcoords;
+
+    output << sp.tris;
+    output << sp.tri_idxs;
+
+    nFaceNormals = sp.face_normals.size();
+    output << nFaceNormals << "\n";
+    for ( int i = 0; i < nFaceNormals; i++ ) {
+        output << sp.face_normals[i];
+    }
+
+    nFaceAreas = sp.face_areas.size();
+    output << nFaceAreas;
+    for ( int i = 0; i < nFaceAreas; i++ ) {
+        output << sp.face_areas[i] << " ";
+    }
+    output << "\n";
+
+    if ( sp.flag.empty() ) {
+        output << "none\n";
+    } else {
+        output << sp.flag << "\n";
+    }
+    
+    return output;
+}
+
+std::istream& operator>> ( std::istream& input, TGSuperPoly& sp )
+{
+    int     nFaceNormals;
+    int     nFaceAreas;
+    Point3D normal;
+    double  area;
+
+    // Load the data
+    input >> sp.material;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: material " << sp.material );
+
+    input >> sp.poly;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: poly " << sp.poly );
+
+    input >> sp.normals;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: normals " << sp.normals );
+
+    input >> sp.texcoords;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: texcoords " << sp.texcoords );
+
+    input >> sp.tris;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: tris " << sp.tris );
+
+    input >> sp.tri_idxs;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: tri_idxs " << sp.tri_idxs );
+
+    input >> nFaceNormals;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: nFaceNormals " << nFaceNormals );
+
+    for ( int i = 0; i < nFaceNormals; i++ ) {
+        input >> normal;
+        sp.face_normals.push_back(normal);
+    }
+
+    input >> nFaceAreas;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: nFaceAreas " << nFaceAreas );
+    for ( int i = 0; i < nFaceAreas; i++ ) {
+        input >> area;
+        sp.face_areas.push_back(area);
+    }
+
+    input >> sp.flag;
+    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: flag " << sp.flag );
+
+    return input;
+}
+
+std::ostream& operator<< ( std::ostream& output, const TGPolyNodes& pn )
+{
+    int     nContours;
+    int     nPoints;
+
+    // Save the data
+    nContours = pn.poly.size();
+    output << nContours << "\n";
+    for(int i=0; i<nContours; i++) {
+        nPoints = pn.poly[i].size();
+        output << nPoints << "\n";
+        for (int j=0; j<nPoints; j++) {
+            output << pn.poly[i][j] << " ";
+        }
+        output << "\n";
+    }
+
+    return output;
+}
+
+
+std::istream& operator>> ( std::istream& input, TGPolyNodes& pn )
+{
+    int     nContours;
+    int     nPoints;
+    int     point;
+
+    // Load the data
+    input >> nContours;
+    for(int i=0; i<nContours; i++) {
+        int_list    points;
+
+        input >> nPoints;
+        for (int j=0; j<nPoints; j++) {
+            input >> point;
+            points.push_back( point );
+        }
+        pn.poly.push_back( points );
+    }
+
+    return input;
 }

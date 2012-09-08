@@ -34,120 +34,123 @@
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 
+#include <Geometry/point3d.hxx>
+
 #include <vector>
 
 class TGTexParams {
 
 private:
 
-Point3D ref;
-double width;
-double length;
-double heading;
+    Point3D ref;
+    double width;
+    double length;
+    double heading;
 
-double minu;
-double maxu;
-double minv;
-double maxv;
+    double minu;
+    double maxu;
+    double minv;
+    double maxv;
 
 public:
 
-// Constructor and destructor
-inline TGTexParams( void )
-{
-}
-inline TGTexParams( const Point3D &r, const double w, const double l,
-                    const double h )
-{
-    ref = r;
-    width = w;
-    length = l;
-    heading = h;
+    // Constructor and destructor
+    inline TGTexParams( void )
+    {
+    }
+    inline TGTexParams( const Point3D &r, const double w, const double l, const double h )
+    {
+        ref = r;
+        width = w;
+        length = l;
+        heading = h;
 
-    minu = minv = 0.0;
-    maxu = maxv = 1.0;
-}
-inline ~TGTexParams( void )
-{
-}
+        minu = minv = 0.0;
+        maxu = maxv = 1.0;
+    }
+    inline ~TGTexParams( void )
+    {
+    }
 
-inline Point3D get_ref() const
-{
-    return ref;
-}
-inline void set_ref( const Point3D &r )
-{
-    ref = r;
-}
+    inline Point3D get_ref() const
+    {
+        return ref;
+    }
+    inline void set_ref( const Point3D &r )
+    {
+        ref = r;
+    }
 
-inline double get_width() const
-{
-    return width;
-}
-inline void set_width( const double w )
-{
-    width = w;
-}
+    inline double get_width() const
+    {
+        return width;
+    }
+    inline void set_width( const double w )
+    {
+        width = w;
+    }
 
-inline double get_length() const
-{
-    return length;
-}
-inline void set_length( const double l )
-{
-    length = l;
-}
+    inline double get_length() const
+    {
+        return length;
+    }
+    inline void set_length( const double l )
+    {
+        length = l;
+    }
 
-inline double get_heading() const
-{
-    return heading;
-}
-inline void set_heading( const double h )
-{
-    heading = h;
-}
+    inline double get_heading() const
+    {
+        return heading;
+    }
+    inline void set_heading( const double h )
+    {
+        heading = h;
+    }
 
-inline double get_minu() const
-{
-    return minu;
-}
-inline void set_minu( const double x )
-{
-    minu = x;
-}
+    inline double get_minu() const
+    {
+        return minu;
+    }
+    inline void set_minu( const double x )
+    {
+        minu = x;
+    }
 
-inline double get_maxu() const
-{
-    return maxu;
-}
-inline void set_maxu( const double x )
-{
-    maxu = x;
-}
+    inline double get_maxu() const
+    {
+        return maxu;
+    }
+    inline void set_maxu( const double x )
+    {
+        maxu = x;
+    }
 
-inline double get_minv() const
-{
-    return minv;
-}
-inline void set_minv( const double x )
-{
-    minv = x;
-}
+    inline double get_minv() const
+    {
+        return minv;
+    }
+    inline void set_minv( const double x )
+    {
+        minv = x;
+    }
 
-inline double get_maxv() const
-{
-    return maxv;
-}
-inline void set_maxv( const double x )
-{
-    maxv = x;
-}
+    inline double get_maxv() const
+    {
+        return maxv;
+    }
+    inline void set_maxv( const double x )
+    {
+        maxv = x;
+    }
+
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGTexParams& );
+    friend std::ostream& operator<< ( std::ostream&, const TGTexParams& );
 };
-
 
 typedef std::vector < TGTexParams > texparams_list;
 typedef texparams_list::iterator texparams_list_iterator;
 typedef texparams_list::const_iterator const_texparams_list_iterator;
-
 
 #endif // _TEXPARAMS_HXX
