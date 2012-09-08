@@ -26,10 +26,22 @@ public:
     Helipad(char* def);
     void BuildBtg( superpoly_list* heli_polys, texparams_list* texparams, superpoly_list* heli_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
-	Point3D GetLoc()
-	{
-		return Point3D( heli.lon, heli.lat, 0.0f );
-	}
+    Point3D GetLoc()
+    {
+        return Point3D( heli.lon, heli.lat, 0.0f );
+    }
+
+    bool GetsShoulder()
+    {
+        return (heli.surface < 3) ? true : false;
+    }
+
+    void BuildShoulder( superpoly_list *rwy_polys,
+                        texparams_list *texparams,
+                        ClipPolyType *accum,
+                        poly_list& slivers,
+                        TGPolygon* apt_base,
+                        TGPolygon* apt_clearing );
 
 private:
     struct TGRunway {
@@ -58,6 +70,11 @@ private:
     }
 
     superpoly_list gen_helipad_lights(double maxsize);
+
+    // storage for Shoulders - The superpolys are generated during
+    // helipad construction, but not clipped until shoulder construction.
+    superpoly_list  shoulder_polys;
+    texparams_list  shoulder_tps;
 
     void WriteGeom( TGPolygon polygon, string material,
                         superpoly_list *rwy_polys,

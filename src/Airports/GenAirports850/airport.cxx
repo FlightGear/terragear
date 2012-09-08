@@ -797,6 +797,30 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
+    // Build helipad shoulders here
+    for ( unsigned int i=0; i<helipads.size(); i++ )
+    {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build Helipad shoulder " << i + 1 << " of " << helipads.size());
+
+        if ( helipads[i]->GetsShoulder() )
+        {
+            slivers.clear();
+
+            if (boundary)
+            {
+                helipads[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, NULL, NULL );
+            }
+            else
+            {
+                helipads[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, &apt_base, &apt_clearing );
+            }
+
+            // Now try to merge any slivers we found
+            merge_slivers( rwy_polys, slivers );
+            merge_slivers( pvmt_polys, slivers );
+        }
+    }
+
     // build the base and clearing if there's a boundary
     if (boundary)
     {
