@@ -620,29 +620,26 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << ctime(&log_time) );
 
     // Build runways next
-    for ( unsigned int i=0; i<runways.size(); i++ ) 
+    for ( unsigned int i=0; i<runways.size(); i++ )
     {
         SG_LOG(SG_GENERAL, SG_INFO, "Build Runway " << i + 1 << " of " << runways.size());
         slivers.clear();
 
-        if ( runways[i]->IsPrecision() ) 
+        if ( (dbg_rwy_poly > 0) && (i == (unsigned int)dbg_rwy_poly-1) ) {
+            SG_LOG(SG_GENERAL, SG_INFO, "Problem runway poly (" << i << ")");
+
+            make_shapefiles = true;
+        } else {
+            make_shapefiles = false;
+        }
+
+        if (boundary.size())
         {
-            if ( (dbg_rwy_poly > 0) && (i == (unsigned int)dbg_rwy_poly-1) ) {
-                SG_LOG(SG_GENERAL, SG_INFO, "Problem runway poly (" << i << ")");
-
-                make_shapefiles = true;
-            } else {
-                make_shapefiles = false;
-            }
-
-            if (boundary.size())
-            {
-                runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
-            }
-            else
-            {
-                runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing, make_shapefiles );
-            }
+            runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
+        }
+        else
+        {
+            runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing, make_shapefiles );
         }
 
         // Now try to merge any slivers we found

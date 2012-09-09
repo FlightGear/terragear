@@ -19,11 +19,6 @@ public:
 
     Runway(char* def);
 
-    bool IsPrecision()
-    {
-        return true;
-    }
-
     Point3D GetStart(void)
     {
         return ( Point3D( rwy.lon[0], rwy.lat[0], 0.0f ));
