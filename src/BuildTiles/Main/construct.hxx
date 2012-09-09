@@ -351,13 +351,19 @@ inline std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
     return out;
 }
 
+// Stage2 shared edge data
+struct TGNeighborFaces {
+public:
+    Point3D node;
 
+    double_list elevations;     // we'll take the average
+    double_list face_areas;
+    point_list  face_normals;
+};
+typedef std::vector < TGNeighborFaces > neighbor_face_list;
+typedef neighbor_face_list::iterator neighbor_face_list_iterator;
+typedef neighbor_face_list::const_iterator const_neighbor_face_list_iterator;
 
-
-
-
-// forward declaration
-class TGMatch;
 
 class TGConstruct {
 
@@ -413,8 +419,8 @@ private:
     // All Nodes
     TGNodes nodes;
 
-    // SHared Edges match data
-    // TGMatch match;
+    // Neighbor Faces
+    neighbor_face_list  neighbor_faces;
 
 private:
     // Load Data
@@ -432,13 +438,18 @@ private:
     void merge_slivers( TGLandclass& clipped, poly_list& slivers_list );
 
     // Shared edge Matching
-    void LoadSharedEdgeData( void );
-    void SaveSharedEdgeData( void );
-
+    void SaveSharedEdgeDataStage2( void );
+    void LoadSharedEdgeDataStage2( void );
+    void WriteSharedEdgeNeighboorFaces( std::ofstream& ofs_e, Point3D pt );
     void LoadSharedEdgeData( int stage );
     void LoadNeighboorEdgeDataStage1( SGBucket& b, point_list& north, point_list& south, point_list& east, point_list& west );
 
     void SaveSharedEdgeData( int stage );
+
+    void ReadNeighborFaces( std::ifstream& ifs_e );
+    void WriteNeighborFaces( std::ofstream& ofs_e, Point3D pt );
+    TGNeighborFaces* AddNeighborFaces( Point3D node );
+    TGNeighborFaces* FindNeighborFaces( Point3D node );
 
     // Polygon Cleaning
     void CleanClippedPolys( void );
@@ -449,6 +460,7 @@ private:
 
     // Elevation and Flattening
     void CalcElevations( void );
+    void AverageEdgeElevations( void );
 
     // Normals and texture coords
     void LookupNodesPerVertex( void );

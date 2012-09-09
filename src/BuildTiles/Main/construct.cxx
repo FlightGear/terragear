@@ -617,15 +617,15 @@ int TGConstruct::LoadLandclassPolys( void ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, "directory not found: " << poly_path);
             continue;
         }
-    
+
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
         SG_LOG( SG_CLIPPER, SG_ALERT, files.size() << " Polys in " << d.path() );
-        
+
         BOOST_FOREACH(const SGPath& p, files) {
             if (p.file_base() != tile_str) {
                 continue;
             }
-        
+
             string lext = p.complete_lower_extension();
             if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
                 (lext == "fit") || (lext == "fit.gz") || (lext == "ind")) 
@@ -794,7 +794,7 @@ int TGConstruct::load_landcover()
         while ( x1 < max_lon ) {
             while ( y1 < max_lat ) {
                 make_area( cover, polys, x1, y1, x2, y2, half_cover_size, half_cover_size );
-                
+
                 y1 = y2;
                 y2 += cover_size;
             }
@@ -1702,9 +1702,50 @@ double TGConstruct::calc_tri_area( int_list& triangle_nodes ) {
     return triangle_area( p1, p2, p3 );
 }
 
+static SGVec3d calc_normal( double area, Point3D p1, Point3D p2, Point3D p3 ) {
+    SGVec3d v1, v2, normal;
+
+    // do some sanity checking.  With the introduction of landuse
+    // areas, we can get some long skinny triangles that blow up our
+    // "normal" calculations here.  Let's check for really small
+    // triangle areas and check if one dimension of the triangle
+    // coordinates is nearly coincident.  If so, assign the "default"
+    // normal of straight up.
+
+    bool degenerate = false;
+    const double area_eps = 1.0e-12;
+    if ( area < area_eps ) {
+        degenerate = true;
+    }
+
+    if ( fabs(p1.x() - p2.x()) < SG_EPSILON && fabs(p1.x() - p3.x()) < SG_EPSILON ) {
+        degenerate = true;
+    }
+    if ( fabs(p1.y() - p2.y()) < SG_EPSILON && fabs(p1.y() - p3.y()) < SG_EPSILON ) {
+        degenerate = true;
+    }
+    if ( fabs(p1.z() - p2.z()) < SG_EPSILON && fabs(p1.z() - p3.z()) < SG_EPSILON ) {
+        degenerate = true;
+    }
+
+    if ( degenerate ) {
+        normal = normalize(SGVec3d(p1.x(), p1.y(), p1.z()));
+    } else {
+        v1[0] = p2.x() - p1.x();
+        v1[1] = p2.y() - p1.y();
+        v1[2] = p2.z() - p1.z();
+        v2[0] = p3.x() - p1.x();
+        v2[1] = p3.y() - p1.y();
+        v2[2] = p3.z() - p1.z();
+        normal = normalize(cross(v1, v2));
+    }
+
+    return normal;
+}
+
 void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
     // for each face in the superpoly, calculate a face normal
-    SGVec3d v1, v2, normal;
+    SGVec3d     normal;
     TGPolyNodes tri_nodes = sp.get_tri_idxs();
     int_list    face_nodes;
     double_list face_areas;
@@ -1723,41 +1764,8 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
 
         area  = calc_tri_area( face_nodes );
 
-        // do some sanity checking.  With the introduction of landuse
-        // areas, we can get some long skinny triangles that blow up our
-        // "normal" calculations here.  Let's check for really small
-        // triangle areas and check if one dimension of the triangle
-        // coordinates is nearly coincident.  If so, assign the "default"
-        // normal of straight up.
+        normal = calc_normal( area, p1, p2, p3 );
 
-        bool degenerate = false;
-        const double area_eps = 1.0e-12;
-        if ( area < area_eps ) {
-            degenerate = true;
-        }
-
-        if ( fabs(p1.x() - p2.x()) < SG_EPSILON && fabs(p1.x() - p3.x()) < SG_EPSILON ) {
-            degenerate = true;
-        }
-        if ( fabs(p1.y() - p2.y()) < SG_EPSILON && fabs(p1.y() - p3.y()) < SG_EPSILON ) {
-            degenerate = true;
-        }
-        if ( fabs(p1.z() - p2.z()) < SG_EPSILON && fabs(p1.z() - p3.z()) < SG_EPSILON ) {
-            degenerate = true;
-        }
-
-        if ( degenerate ) {
-            normal = normalize(SGVec3d(p1.x(), p1.y(), p1.z()));
-        } else {
-        	v1[0] = p2.x() - p1.x();
-        	v1[1] = p2.y() - p1.y();
-        	v1[2] = p2.z() - p1.z();
-        	v2[0] = p3.x() - p1.x();
-        	v2[1] = p3.y() - p1.y();
-        	v2[2] = p3.z() - p1.z();
-        	normal = normalize(cross(v1, v2));
-        }
-        
         face_normals.push_back( Point3D::fromSGVec3( normal ) );
         face_areas.push_back( area );
     }
@@ -1787,13 +1795,16 @@ void TGConstruct::CalcPointNormals( void )
     SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals: 0%");
 
     Point3D normal;
+    double  face_area;
+
     point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
     unsigned int ten_percent = nodes.size() / 10;
     unsigned int cur_percent = 10;
-    
+
     for ( unsigned int i = 0; i<nodes.size(); i++ ) {
         TGNode node       = nodes.get_node( i );
         TGFaceList faces  = node.GetFaces();
+        TGNeighborFaces* neighbor_faces = NULL;
         double total_area = 0.0;
 
         Point3D average( 0.0 );
@@ -1803,7 +1814,7 @@ void TGConstruct::CalcPointNormals( void )
             ten_percent += nodes.size() / 10;
             cur_percent += 10;
         }
-        
+
         // for each triangle that shares this node
         for ( unsigned int j = 0; j < faces.size(); ++j ) {
             unsigned int at      = faces[j].area;
@@ -1811,7 +1822,6 @@ void TGConstruct::CalcPointNormals( void )
             unsigned int segment = faces[j].seg;
             unsigned int tri     = faces[j].tri;
             int_list     face_nodes;
-            double       face_area;
 
             normal     = polys_clipped.get_face_normal( at, shape, segment, tri );
             face_nodes = polys_clipped.get_tri_idxs( at, shape, segment ).get_contour( tri ) ;
@@ -1821,6 +1831,22 @@ void TGConstruct::CalcPointNormals( void )
             total_area += face_area;
             average += normal;
         }
+
+        // if this node exists in the shared edge db, add the faces from the neighbooring tile
+        neighbor_faces = FindNeighborFaces( node.GetPosition() );
+        if ( neighbor_faces ) {
+            int num_faces = neighbor_faces->face_areas.size();
+            for ( int j = 0; j < num_faces; j++ ) {
+                normal    = neighbor_faces->face_normals[j];
+                face_area = neighbor_faces->face_areas[j];
+                SG_LOG(SG_GENERAL, SG_ALERT, "\tAdding face area " << face_area << " and normal " << normal << " to node " << node.GetPosition() );
+
+                normal *= face_area;
+                total_area += face_area;
+                average += normal;
+            }
+        }
+
         average /= total_area;
         nodes.SetNormal( i, average );
     }
@@ -1856,7 +1882,6 @@ void TGConstruct::TesselatePolys( void )
                     SG_LOG( SG_CLIPPER, SG_INFO, std::setprecision(12) << std::fixed << poly );
                 }
 
-//              TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
                 TGPolygon tri = polygon_tesselate_alt_with_extra_cgal( poly, poly_extra, false );
 
                 // ensure all added nodes are accounted for
@@ -2094,6 +2119,30 @@ void TGConstruct::CleanClippedPolys() {
     }
 }
 
+void TGConstruct::AverageEdgeElevations( void )
+{
+    for ( unsigned int i = 0; i < neighbor_faces.size(); i++ ) {
+        TGNeighborFaces faces = neighbor_faces[i];
+        double elevation = 0.0;
+        unsigned int num_elevations = faces.elevations.size();
+
+        for ( unsigned int j = 0; j < num_elevations; j++ ) {
+            elevation += faces.elevations[j];
+        }
+
+        elevation = elevation / num_elevations;
+
+        /* Find this node, and update it's elevation */
+        int idx = nodes.find( faces.node );
+        TGNode node = nodes.get_node( idx );
+
+        if ( !node.GetFixedPosition() ) {
+            // set elevation as the average between all tiles that have it
+            nodes.SetElevation( idx, elevation );
+        }
+    }
+}
+
 void TGConstruct::CalcTextureCoordinates( void )
 {
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
@@ -2176,8 +2225,259 @@ void TGConstruct::SaveSharedEdgeData( int stage )
             ofs_e.close();
         }
         break;
+
+        case 2:
+        {
+            // for stage 2, we need enough info on a node to average out elevation and
+            // generate a correct normal
+            // we will use the Point3D, as stage1 above, then a point list per node
+            // to store the neighboors.
+            // 
+            // NOTE: Some neighboors (likely 2) are on the shared border.
+            // Before calculating face normals for the node, all elevation data for
+            // neighboors needs to be completed.  So after all border nodes' elevations
+            // are updated, we'll need to traverse all of these point lists, and update
+            // any border nodes elevation as well
+            SaveSharedEdgeDataStage2();
+        }
+        break;
     }
 }
+
+void TGConstruct::WriteNeighborFaces( std::ofstream& ofs_e, Point3D pt )
+{
+    // find all neighboors of this point
+    int    n    = nodes.find( pt );
+    TGNode node = nodes.get_node( n );
+    TGFaceList faces  = node.GetFaces();
+
+    // write the number of neighboor faces
+    ofs_e << faces.size() << "\n";
+
+    // write out each face normal and size
+    for (unsigned int j=0; j<faces.size(); j++) {
+        // for each connected face, get the nodes
+        unsigned int at      = faces[j].area;
+        unsigned int shape   = faces[j].shape;
+        unsigned int segment = faces[j].seg;
+        unsigned int tri     = faces[j].tri;
+
+        int_list face_nodes = polys_clipped.get_tri_idxs( at, shape, segment ).get_contour( tri ) ;
+        {
+            Point3D p1 = nodes.get_node( face_nodes[0] ).GetPosition();
+            Point3D p2 = nodes.get_node( face_nodes[1] ).GetPosition();
+            Point3D p3 = nodes.get_node( face_nodes[2] ).GetPosition();
+
+            Point3D wgs_p1 = nodes.get_node( face_nodes[0] ).GetWgs84AsPoint3D();
+            Point3D wgs_p2 = nodes.get_node( face_nodes[1] ).GetWgs84AsPoint3D();
+            Point3D wgs_p3 = nodes.get_node( face_nodes[2] ).GetWgs84AsPoint3D();
+
+            double  face_area   = triangle_area( p1, p2, p3 );
+            Point3D face_normal = Point3D::fromSGVec3( calc_normal( face_area, wgs_p1, wgs_p2, wgs_p3 ) );
+
+            ofs_e << face_area << " ";
+            ofs_e << face_normal;
+        }
+    }
+    ofs_e << "\n";
+}
+
+TGNeighborFaces* TGConstruct::FindNeighborFaces( Point3D node )
+{
+    TGNeighborFaces* faces = NULL;
+
+    for (unsigned int i=0; i<neighbor_faces.size(); i++) {
+        if ( node == neighbor_faces[i].node ) {
+            faces = &neighbor_faces[i];
+            break;
+        }
+    }
+
+    return faces;
+}
+
+TGNeighborFaces* TGConstruct::AddNeighborFaces( Point3D node )
+{
+    TGNeighborFaces faces;
+    faces.node = node;
+
+    neighbor_faces.push_back( faces );
+
+    return &neighbor_faces[neighbor_faces.size()-1];
+}
+
+void TGConstruct::ReadNeighborFaces( std::ifstream& in )
+{
+    int count;
+
+    // read the count
+    in >> count;
+
+    for (int i=0; i<count; i++) {
+        TGNeighborFaces* pFaces;
+        Point3D          node;
+        int              num_faces;
+
+        in >> node;
+
+        // look to see if we already have this node
+        // If we do, (it's a corner) add more faces to it.
+        // otherwise, initialize it with our elevation data
+        pFaces = FindNeighborFaces( node );
+        if ( !pFaces ) {
+            pFaces = AddNeighborFaces( node );
+
+            // new face - let's add our elevation first
+            int idx = nodes.find( node );
+            if (idx >= 0) {
+                TGNode local = nodes.get_node( idx );
+                pFaces->elevations.push_back( local.GetPosition().z() );
+            }
+        }
+
+        // remember all of the elevation data for the node, so we can average
+        pFaces->elevations.push_back( node.z() );
+
+        in >> num_faces;
+        for (int j=0; j<num_faces; j++)
+        {
+            double  area;
+            Point3D normal;
+
+            in >> area;
+            pFaces->face_areas.push_back( area );
+
+            in >> normal;
+            pFaces->face_normals.push_back( normal );
+        }
+    }
+}
+
+void TGConstruct::SaveSharedEdgeDataStage2( void )
+{
+    string dir;
+    string file;
+    point_list north, south, east, west;
+    std::ofstream ofs_e;
+    int nCount;
+
+    nodes.get_geod_edge( bucket, north, south, east, west );
+
+    dir  = share_base + "/stage2/" + bucket.gen_base_path();
+
+    SGPath sgp( dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
+
+
+    // north edge
+    file = dir + "/" + bucket.gen_index_str() + "_north_edge";
+    ofs_e.open( file.c_str() );
+    ofs_e << std::setprecision(12);
+    ofs_e << std::fixed;
+
+    nCount = north.size();
+    ofs_e << nCount << "\n";
+    for (int i=0; i<nCount; i++) {
+        // write the 3d point
+        ofs_e << north[i];
+        WriteNeighborFaces( ofs_e, north[i] );
+    }
+    ofs_e.close();
+
+    // south edge
+    file = dir + "/" + bucket.gen_index_str() + "_south_edge";
+    ofs_e.open( file.c_str() );
+    ofs_e << std::setprecision(12);
+    ofs_e << std::fixed;
+
+    nCount = south.size();
+    ofs_e << nCount << "\n";
+    for (int i=0; i<nCount; i++) {
+        ofs_e << south[i];
+        WriteNeighborFaces( ofs_e, south[i] );
+    }
+    ofs_e.close();
+    
+    // east edge
+    file = dir + "/" + bucket.gen_index_str() + "_east_edge";
+    ofs_e.open( file.c_str() );
+    ofs_e << std::setprecision(12);
+    ofs_e << std::fixed;
+
+    nCount = east.size();
+    ofs_e << nCount << "\n";
+    for (int i=0; i<nCount; i++) {
+        ofs_e << east[i];
+        WriteNeighborFaces( ofs_e, east[i] );
+    }
+    ofs_e.close();
+
+    // west egde
+    file = dir + "/" + bucket.gen_index_str() + "_west_edge";
+    ofs_e.open( file.c_str() );
+    ofs_e << std::setprecision(12);
+    ofs_e << std::fixed;
+
+    nCount = west.size();
+    ofs_e << nCount << "\n";
+    for (int i=0; i<nCount; i++) {
+        ofs_e << west[i];
+        WriteNeighborFaces( ofs_e, west[i] );
+    }
+    ofs_e.close();
+}
+
+void TGConstruct::LoadSharedEdgeDataStage2( void )
+{
+    string dir;
+    string file;
+    std::ifstream ifs_edge;
+    double     clon = bucket.get_center_lon();
+    double     clat = bucket.get_center_lat();
+    SGBucket   b;
+
+    // Read Northern tile and add its southern node faces
+    b    = sgBucketOffset(clon, clat, 0, 1);
+    dir  = share_base + "/stage2/" + b.gen_base_path();
+    file = dir + "/" + b.gen_index_str() + "_south_edge";
+    ifs_edge.open( file.c_str() );
+    if ( ifs_edge.is_open() ) {
+        ReadNeighborFaces( ifs_edge );
+    }
+    ifs_edge.close();
+
+    // Read Southern tile and add its northern node faces
+    b    = sgBucketOffset(clon, clat, 0, -1);
+    dir  = share_base + "/stage2/" + b.gen_base_path();
+    file = dir + "/" + b.gen_index_str() + "_north_edge";
+    ifs_edge.open( file.c_str() );
+    if ( ifs_edge.is_open() ) {
+        ReadNeighborFaces( ifs_edge );
+    }
+    ifs_edge.close();
+
+    // Read Eastern tile and add its western node faces
+    b    = sgBucketOffset(clon, clat, 1, 0);
+    dir  = share_base + "/stage2/" + b.gen_base_path();
+    file = dir + "/" + b.gen_index_str() + "_west_edge";
+    ifs_edge.open( file.c_str() );
+    if ( ifs_edge.is_open() ) {
+        ReadNeighborFaces( ifs_edge );
+    }
+    ifs_edge.close();
+
+    // Read Western tile and add its eastern node faces
+    b    = sgBucketOffset(clon, clat, -1, 0);
+    dir  = share_base + "/stage2/" + b.gen_base_path();
+    file = dir + "/" + b.gen_index_str() + "_east_edge";
+    ifs_edge.open( file.c_str() );
+    if ( ifs_edge.is_open() ) {
+        ReadNeighborFaces( ifs_edge );
+    }
+    ifs_edge.close();
+}
+
 
 void TGConstruct::SaveToIntermediateFiles( int stage )
 {
@@ -2473,6 +2773,10 @@ void TGConstruct::ConstructBucketStage2() {
     CalcElevations();
 
     // STEP 11)
+    // Generate face_connected list
+    LookupFacesPerNode();
+
+    // STEP 12)
     // Save the tile boundary info for stage 3
     // includes elevation info, and a list of connected triangles
     SaveSharedEdgeData( 2 );
@@ -2490,9 +2794,12 @@ void TGConstruct::ConstructBucketStage3() {
         strcpy( ds_name, "" );
     }
 
+    // Load in the neighbor faces and elevation data
+    LoadSharedEdgeDataStage2();
+
     // STEP 12)
-    // Generate face_connected list
-    LookupFacesPerNode();
+    // Average out the elevation for nodes on tile boundaries
+    AverageEdgeElevations();
 
     // STEP 12)
     // Calculate Face Normals
