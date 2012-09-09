@@ -52,9 +52,6 @@
 #include <Geometry/poly_support.hxx>
 #include <landcover/landcover.hxx>
 
-// TODO : Get rid of match...
-#include <Match/match.hxx>
-
 #include "construct.hxx"
 #include "usgs.hxx"
 
@@ -147,8 +144,6 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "  --priorities=<filename>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --usgs-map=<filename>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --useUKgrid");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --no-write-shared-edges");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --use-own-shared-edges");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --ignore-landmass");
     SG_LOG(SG_GENERAL, SG_ALERT, " ] <load directory...>");
     exit(-1);
@@ -174,17 +169,9 @@ int main(int argc, char **argv) {
     // flag indicating whether UK grid should be used for in-UK
     // texture coordinate generation
     bool useUKgrid = false;
-    
-    // flag indicating whether this is a rebuild and Shared edge
-    // data should only be used for fitting, but not rewritten
-    bool writeSharedEdges = true;
-    
-    // flag indicating whether the shared edge data of the
-    // tile to be built should be used in addition to neighbour data
-    bool useOwnSharedEdges = false;
-    
+
     bool ignoreLandmass = false;
-    
+
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
     // Initialize shapefile support (for debugging)
@@ -223,10 +210,6 @@ int main(int argc, char **argv) {
             usgs_map_file = arg.substr(11);
         } else if (arg.find("--useUKgrid") == 0) {
             useUKgrid = true;
-        } else if (arg.find("--no-write-shared-edges") == 0) {
-            writeSharedEdges = false;
-        } else if (arg.find("--use-own-shared-edges") == 0) {
-            useOwnSharedEdges = true;
         } else if (arg.find("--ignore-landmass") == 0) {
             ignoreLandmass = true;
         } else if (arg.find("--debug-dir=") == 0) {
@@ -283,15 +266,8 @@ int main(int argc, char **argv) {
 
             all_stages = new TGConstruct();
             all_stages->set_cover( cover );
-            all_stages->set_work_base( work_dir );
-            all_stages->set_output_base( output_dir );
-            all_stages->set_share_base( share_dir );
-            all_stages->set_load_dirs( load_dirs );
-            all_stages->set_useUKGrid( useUKgrid );
-            all_stages->set_write_shared_edges( writeSharedEdges );
-            all_stages->set_use_own_shared_edges( useOwnSharedEdges );
-            all_stages->set_ignore_landmass( ignoreLandmass );
-            all_stages->set_nudge( nudge );
+            all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
+            all_stages->set_options( useUKgrid, ignoreLandmass, nudge );
             all_stages->set_bucket( b );
             all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -316,15 +292,8 @@ int main(int argc, char **argv) {
 
                 all_stages = new TGConstruct();
                 all_stages->set_cover( cover );
-                all_stages->set_work_base( work_dir );
-                all_stages->set_output_base( output_dir );
-                all_stages->set_share_base( share_dir );
-                all_stages->set_load_dirs( load_dirs );
-                all_stages->set_useUKGrid( useUKgrid );
-                all_stages->set_write_shared_edges( writeSharedEdges );
-                all_stages->set_use_own_shared_edges( useOwnSharedEdges );
-                all_stages->set_ignore_landmass( ignoreLandmass );
-                all_stages->set_nudge( nudge );
+                all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
+                all_stages->set_options( useUKgrid, ignoreLandmass, nudge );
                 all_stages->set_bucket( b_min );
                 all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -341,7 +310,6 @@ int main(int argc, char **argv) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
                 SG_LOG(SG_GENERAL, SG_ALERT, "  dx = " << dx << "  dy = " << dy);
 
-
                 // construct stage 1
                 for ( j = 0; j <= dy; j++ ) {
                     for ( i = 0; i <= dx; i++ ) {
@@ -356,15 +324,8 @@ int main(int argc, char **argv) {
                             
                             stage1 = new TGConstruct();
                             stage1->set_cover( cover );
-                            stage1->set_work_base( work_dir );
-                            stage1->set_output_base( output_dir );
-                            stage1->set_share_base( share_dir );
-                            stage1->set_load_dirs( load_dirs );
-                            stage1->set_useUKGrid( useUKgrid );
-                            stage1->set_write_shared_edges( writeSharedEdges );
-                            stage1->set_use_own_shared_edges( useOwnSharedEdges );
-                            stage1->set_ignore_landmass( ignoreLandmass );
-                            stage1->set_nudge( nudge );
+                            stage1->set_paths( work_dir, share_dir, output_dir, load_dirs );
+                            stage1->set_options( useUKgrid, ignoreLandmass, nudge );
                             stage1->set_bucket( b_cur );
                             stage1->set_debug( debug_dir, debug_defs );
 
@@ -392,15 +353,8 @@ int main(int argc, char **argv) {
 
                             stage2 = new TGConstruct();
                             stage2->set_cover( cover );
-                            stage2->set_work_base( work_dir );
-                            stage2->set_output_base( output_dir );
-                            stage2->set_share_base( share_dir );
-                            stage2->set_load_dirs( load_dirs );
-                            stage2->set_useUKGrid( useUKgrid );
-                            stage2->set_write_shared_edges( writeSharedEdges );
-                            stage2->set_use_own_shared_edges( useOwnSharedEdges );
-                            stage2->set_ignore_landmass( ignoreLandmass );
-                            stage2->set_nudge( nudge );
+                            stage2->set_paths( work_dir, share_dir, output_dir, load_dirs );
+                            stage2->set_options( useUKgrid, ignoreLandmass, nudge );
                             stage2->set_bucket( b_cur );
                             stage2->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -429,15 +383,8 @@ int main(int argc, char **argv) {
 
                             stage3 = new TGConstruct();
                             stage3->set_cover( cover );
-                            stage3->set_work_base( work_dir );
-                            stage3->set_output_base( output_dir );
-                            stage3->set_share_base( share_dir );
-                            stage3->set_load_dirs( load_dirs );
-                            stage3->set_useUKGrid( useUKgrid );
-                            stage3->set_write_shared_edges( writeSharedEdges );
-                            stage3->set_use_own_shared_edges( useOwnSharedEdges );
-                            stage3->set_ignore_landmass( ignoreLandmass );
-                            stage3->set_nudge( nudge );
+                            stage3->set_paths( work_dir, share_dir, output_dir, load_dirs );
+                            stage3->set_options( useUKgrid, ignoreLandmass, nudge );
                             stage3->set_bucket( b_cur );
                             stage3->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -460,15 +407,8 @@ int main(int argc, char **argv) {
 
         all_stages = new TGConstruct();
         all_stages->set_cover( cover );
-        all_stages->set_work_base( work_dir );
-        all_stages->set_output_base( output_dir );
-        all_stages->set_share_base( share_dir );
-        all_stages->set_load_dirs( load_dirs );
-        all_stages->set_useUKGrid( useUKgrid );
-        all_stages->set_write_shared_edges( writeSharedEdges );
-        all_stages->set_use_own_shared_edges( useOwnSharedEdges );
-        all_stages->set_ignore_landmass( ignoreLandmass );
-        all_stages->set_nudge( nudge );
+        all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
+        all_stages->set_options( useUKgrid, ignoreLandmass, nudge );
         all_stages->set_bucket( b );
         all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 

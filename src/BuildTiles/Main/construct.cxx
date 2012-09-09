@@ -40,11 +40,11 @@
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <CGAL/Plane_3.h>
 
 #include <Geometry/poly_support.hxx>
 #include <Geometry/poly_extra.hxx>
 
-#include <Match/match.hxx>
 #include <Osgb36/osgb36.hxx>
 
 #include "construct.hxx"
@@ -72,8 +72,6 @@ static const double quarter_cover_size = cover_size * 0.25;
 // Constructor
 TGConstruct::TGConstruct():
         useUKGrid(false),
-        writeSharedEdges(true),
-        useOwnSharedEdges(false),
         ignoreLandmass(false),
         debug_all(false),
         ds_id((void*)-1)
@@ -90,6 +88,20 @@ TGConstruct::~TGConstruct() {
 
     // All Nodes
     nodes.clear();
+}
+
+// paths
+void TGConstruct::set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load ) {
+    work_base   = work;
+    share_base  = share;
+    output_base = output;
+    load_dirs   = load;
+}
+
+void TGConstruct::set_options( bool uk_grid, bool ignore_lm, double n ) {
+    useUKGrid      = uk_grid;
+    ignoreLandmass = ignore_lm;
+    nudge          = n;
 }
 
 void TGConstruct::set_debug( std::string path, std::vector<string> area_defs, std::vector<string> shape_defs )
@@ -195,13 +207,20 @@ bool TGConstruct::IsDebugArea( unsigned int area )
 void TGConstruct::WriteDebugShape( const char* layer_name, const TGShape& shape )
 {
     char name[64];
+    char feature_name[128];
     shape.GetName( name );
 
     ds_id = tgShapefileOpenDatasource( ds_name );
     l_id  = tgShapefileOpenLayer( ds_id, layer_name );
 
-    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, name );
+    sprintf( feature_name, "%s_clipmask", name );
+    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, feature_name );
 
+    for (unsigned int i=0; i<shape.sps.size(); i++) {
+        sprintf( feature_name, "%s_%d", name, i );
+        tgShapefileCreateFeature( ds_id, l_id, shape.sps[i].get_poly(), feature_name );
+    }
+    
     // close after each write
     ds_id = tgShapefileCloseDatasource( ds_id );
 }
@@ -239,7 +258,7 @@ void TGConstruct::LoadElevationArray( void ) {
     int i;
 
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
-        string array_path = get_work_base() + "/" + load_dirs[i] + "/" + base + "/" + bucket.gen_index_str();
+        string array_path = work_base + "/" + load_dirs[i] + "/" + base + "/" + bucket.gen_index_str();
 
         if ( array.open(array_path) ) {
             break;
@@ -590,7 +609,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
 
     // load 2D polygons from all directories provided
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
-        poly_path = get_work_base() + "/" + load_dirs[i] + '/' + base;
+        poly_path = work_base + "/" + load_dirs[i] + '/' + base;
 
         string tile_str = bucket.gen_index_str();
         simgear::Dir d(poly_path);
@@ -1158,7 +1177,7 @@ TGPolygon TGConstruct::linear_tex_coords( const TGPolygon& tri, const TGTexParam
 // collect custom objects and move to scenery area
 void TGConstruct::AddCustomObjects( void ) {
     // Create/open the output .stg file for writing
-    SGPath dest_d(get_output_base().c_str());
+    SGPath dest_d(output_base.c_str());
     dest_d.append(bucket.gen_base_path().c_str());
     string dest_dir = dest_d.str_native();
     SGPath dest_i(dest_d);
@@ -1180,7 +1199,7 @@ void TGConstruct::AddCustomObjects( void ) {
     char name[256];
 
     for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
-        SGPath base(get_work_base().c_str());
+        SGPath base(work_base.c_str());
         base.append(load_dirs[i]);
         base.append( bucket.gen_base_path() );
         SGPath index(base);
@@ -1807,27 +1826,6 @@ void TGConstruct::CalcPointNormals( void )
     }
 }
 
-void TGConstruct::LoadSharedEdgeData( void )
-{
-    match.load_neighbor_shared( bucket, share_base );
-    if ( useOwnSharedEdges ) {
-        match.load_missing_shared( bucket, share_base );
-    }
-    match.add_shared_nodes( this );
-}
-
-void TGConstruct::SaveSharedEdgeData( void )
-{
-    match.split_tile( bucket, this );
-    SG_LOG(SG_GENERAL, SG_ALERT, "Tile Split");
-
-    if ( writeSharedEdges ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "write shared edges");
-
-        match.write_shared( bucket, share_base );
-    }
-}
-
 void TGConstruct::TesselatePolys( void )
 {
     // tesselate the polygons and prepair them for final output
@@ -1853,6 +1851,10 @@ void TGConstruct::TesselatePolys( void )
                 SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " << 
                         shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) << 
                         ": id = " << id );
+
+                if ( IsDebugShape( id ) ) {
+                    SG_LOG( SG_CLIPPER, SG_INFO, std::setprecision(12) << std::fixed << poly );
+                }
 
 //              TGPolygon tri = polygon_tesselate_alt_with_extra( poly, poly_extra, false );
                 TGPolygon tri = polygon_tesselate_alt_with_extra_cgal( poly, poly_extra, false );
@@ -1980,7 +1982,7 @@ void TGConstruct::WriteBtgFile( void )
     group_list fans_tc; fans_tc.clear();
     string_list fan_materials; fan_materials.clear();
 
-    string base = get_output_base();
+    string base = output_base;
     string binname = bucket.gen_index_str();
     binname += ".btg";
     string txtname = bucket.gen_index_str();
@@ -2117,6 +2119,66 @@ void TGConstruct::CalcTextureCoordinates( void )
     }
 }
 
+void TGConstruct::SaveSharedEdgeData( int stage )
+{
+    string dir;
+    string file;
+
+    switch( stage ) {
+        case 1:
+        {
+            point_list north, south, east, west;
+            int nCount;
+
+            nodes.get_geod_edge( bucket, north, south, east, west );
+
+            dir  = share_base + "/stage1/" + bucket.gen_base_path();
+
+            SGPath sgp( dir );
+            sgp.append( "dummy" );
+            sgp.create_dir( 0755 );
+
+            file = dir + "/" + bucket.gen_index_str() + "_edges";
+            std::ofstream ofs_e( file.c_str() );
+
+            // first, set the precision
+            ofs_e << std::setprecision(12);
+            ofs_e << std::fixed;
+
+            // north
+            nCount = north.size();
+            ofs_e << nCount << "\n";
+            for (int i=0; i<nCount; i++) {
+                ofs_e << north[i];
+            }
+
+            // south
+            nCount = south.size();
+            ofs_e << nCount << "\n";
+            for (int i=0; i<nCount; i++) {
+                ofs_e << south[i];
+            }
+
+            // east
+            nCount = east.size();
+            ofs_e << nCount << "\n";
+            for (int i=0; i<nCount; i++) {
+                ofs_e << east[i];
+            }
+
+            // west
+            nCount = west.size();
+            ofs_e << nCount << "\n";
+            for (int i=0; i<nCount; i++) {
+                ofs_e << west[i];
+            }
+
+            ofs_e.close();
+        }
+        break;
+    }
+}
+
 void TGConstruct::SaveToIntermediateFiles( int stage )
 {
     string dir;
@@ -2126,19 +2188,27 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
         case 1:     // Save the clipped polys and node list
         {
             dir  = share_base + "/stage1/" + bucket.gen_base_path();
-            file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
 
             SGPath sgp( dir );
             sgp.append( "dummy" );
             sgp.create_dir( 0755 );
 
+            file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
             std::ofstream ofs_cp( file.c_str() );
+
+            // first, set the precision
+            ofs_cp << std::setprecision(15);
+            ofs_cp << std::fixed;
             ofs_cp << polys_clipped;
             ofs_cp.close();
 
-            file = dir + "/" + bucket.gen_index_str() + "_nodes";
 
+            file = dir + "/" + bucket.gen_index_str() + "_nodes";
             std::ofstream ofs_n( file.c_str() );
+
+            // first, set the precision
+            ofs_n << std::setprecision(15);
+            ofs_n << std::fixed;
             ofs_n << nodes;
             ofs_n.close();
             break;
@@ -2147,23 +2217,127 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
         case 2:     // Save the clipped polys and node list
         {
             dir  = share_base + "/stage2/" + bucket.gen_base_path();
-            file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
 
             SGPath sgp( dir );
             sgp.append( "dummy" );
             sgp.create_dir( 0755 );
 
+            file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
             std::ofstream ofs_cp( file.c_str() );
+
+            // first, set the precision
+            ofs_cp << std::setprecision(15);
+            ofs_cp << std::fixed;
             ofs_cp << polys_clipped;
             ofs_cp.close();
 
             file = dir + "/" + bucket.gen_index_str() + "_nodes";
-
             std::ofstream ofs_n( file.c_str() );
+
+            // first, set the precision
+            ofs_n << std::setprecision(15);
+            ofs_n << std::fixed;
             ofs_n << nodes;
             ofs_n.close();
             break;
         }
+    }
+}
+
+void TGConstruct::LoadNeighboorEdgeDataStage1( SGBucket& b, point_list& north, point_list& south, point_list& east, point_list& west )
+{
+    string dir;
+    string file;
+    Point3D pt;
+    int nCount;
+
+    dir  = share_base + "/stage1/" + b.gen_base_path();
+    file = dir + "/" + b.gen_index_str() + "_edges";
+    std::ifstream ifs_edges( file.c_str() );
+
+    north.clear();
+    south.clear();
+    east.clear();
+    west.clear();
+
+    if ( ifs_edges.is_open() ) {
+        // North
+        ifs_edges >> nCount;
+        SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " north boundary");
+        for (int i=0; i<nCount; i++) {
+            ifs_edges >> pt;
+            north.push_back(pt);
+        }
+
+        // South
+        ifs_edges >> nCount;
+        SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " south boundary");
+        for (int i=0; i<nCount; i++) {
+            ifs_edges >> pt;
+            south.push_back(pt);
+        }
+
+        // East
+        ifs_edges >> nCount;
+        SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " east boundary");
+        for (int i=0; i<nCount; i++) {
+            ifs_edges >> pt;
+            east.push_back(pt);
+        }
+
+        // West
+        ifs_edges >> nCount;
+        SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " west boundary");
+        for (int i=0; i<nCount; i++) {
+            ifs_edges >> pt;
+            west.push_back(pt);
+        }
+
+        ifs_edges.close();
+    }
+}
+
+void TGConstruct::LoadSharedEdgeData( int stage )
+{
+    switch( stage ) {
+        case 1:
+        {
+            // we need to read just 4 buckets for stage 1 - 1 for each edge
+            point_list north, south, east, west;
+            SGBucket   nb, sb, eb, wb;
+            double     clon = bucket.get_center_lon();
+            double     clat = bucket.get_center_lat();
+
+            // Read North tile and add its southern nodes
+            nb = sgBucketOffset(clon, clat, 0, 1);
+            LoadNeighboorEdgeDataStage1( nb, north, south, east, west );
+            // Add southern nodes from northern tile
+            for (unsigned int i=0; i<south.size(); i++) {
+                nodes.unique_add( south[i] );
+            }
+
+            // Read South Tile and add its northern nodes
+            sb = sgBucketOffset(clon, clat, 0, -1);
+            LoadNeighboorEdgeDataStage1( sb, north, south, east, west );
+            for (unsigned  int i=0; i<north.size(); i++) {
+                nodes.unique_add( north[i] );
+            }
+
+            // Read East Tile and add its western nodes
+            eb = sgBucketOffset(clon, clat, 1, 0);
+            LoadNeighboorEdgeDataStage1( eb, north, south, east, west );
+            for (unsigned  int i=0; i<west.size(); i++) {
+                nodes.unique_add( west[i] );
+            }
+
+            // Read West Tile and add its eastern nodes
+            wb = sgBucketOffset(clon, clat, -1, 0);
+            LoadNeighboorEdgeDataStage1( wb, north, south, east, west );
+            for (unsigned  int i=0; i<east.size(); i++) {
+                nodes.unique_add( east[i] );
+            }
+        }
+        break;
     }
 }
 
@@ -2253,6 +2427,10 @@ void TGConstruct::ConstructBucketStage1() {
     // Clean the polys - after this, we shouldn't change their shape (other than slightly for
     // fix T-Junctions - as This is the end of the first pass for multicore design
     CleanClippedPolys();
+
+    // STEP 6)
+    // Save the tile boundary info for stage 2 (just x,y coords of points on the boundary)
+    SaveSharedEdgeData( 1 );
 }
 
 void TGConstruct::ConstructBucketStage2() {
@@ -2267,16 +2445,13 @@ void TGConstruct::ConstructBucketStage2() {
         strcpy( ds_name, "" );
     }
 
-    // TEMP TEMP TEMP - save in intermediate file...)
-    // Load grid of elevation data (Array)
+    // STEP 7) 
+    // Need the array of elevation data for stage 2
     LoadElevationArray();
-
-    // restore construct from stage1 intermediate files
-    LoadFromIntermediateFiles( 1 );
 
     // STEP 6)
     // Merge in Shared data - should just be x,y nodes on the borders from stage1
-    LoadSharedEdgeData();
+    LoadSharedEdgeData( 1 );
 
     // STEP 7) 
     // Fix T-Junctions by finding nodes that lie close to polygon edges, and
@@ -2296,6 +2471,11 @@ void TGConstruct::ConstructBucketStage2() {
     // STEP 10)
     // Interpolate elevations, and flatten stuff
     CalcElevations();
+
+    // STEP 11)
+    // Save the tile boundary info for stage 3
+    // includes elevation info, and a list of connected triangles
+    SaveSharedEdgeData( 2 );
 }
 
 void TGConstruct::ConstructBucketStage3() {
@@ -2309,15 +2489,6 @@ void TGConstruct::ConstructBucketStage3() {
     } else {
         strcpy( ds_name, "" );
     }
-
-    // TEMP TEMP TEMP )
-    // Load grid of elevation data (Array)
-    LoadElevationArray();
-
-    // STEP 11)
-    // Merge in Shared data - nodes on the shared edge should have x,y,z - we'll average the z
-    // shared edge data nodes also have 1 or 2 connected nodes so we can see their connected faces
-    //LoadSharedEdgeData();
 
     // STEP 12)
     // Generate face_connected list
@@ -2343,10 +2514,6 @@ void TGConstruct::ConstructBucketStage3() {
     // STEP 14)
     // Calculate Texture Coordinates
     CalcTextureCoordinates();
-
-    // STEP 15)         // only if not stages...
-    // Write out the shared edge data
-    SaveSharedEdgeData();
 
     // STEP 16)
     // Generate the btg file

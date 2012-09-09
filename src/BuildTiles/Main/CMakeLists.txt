@@ -12,7 +12,6 @@ set_target_properties(tg-construct PROPERTIES
 
 target_link_libraries(tg-construct
     Osgb36  
-    Match
     Polygon Geometry
     Array landcover poly2tri
     ${GDAL_LIBRARY}

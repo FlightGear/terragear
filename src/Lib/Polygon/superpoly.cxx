@@ -94,40 +94,25 @@ std::istream& operator>> ( std::istream& input, TGSuperPoly& sp )
 
     // Load the data
     input >> sp.material;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: material " << sp.material );
-
     input >> sp.poly;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: poly " << sp.poly );
-
     input >> sp.normals;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: normals " << sp.normals );
-
     input >> sp.texcoords;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: texcoords " << sp.texcoords );
-
     input >> sp.tris;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: tris " << sp.tris );
-
     input >> sp.tri_idxs;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: tri_idxs " << sp.tri_idxs );
 
     input >> nFaceNormals;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: nFaceNormals " << nFaceNormals );
-
     for ( int i = 0; i < nFaceNormals; i++ ) {
         input >> normal;
         sp.face_normals.push_back(normal);
     }
 
     input >> nFaceAreas;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: nFaceAreas " << nFaceAreas );
     for ( int i = 0; i < nFaceAreas; i++ ) {
         input >> area;
         sp.face_areas.push_back(area);
     }
 
     input >> sp.flag;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\t\tsp: flag " << sp.flag );
 
     return input;
 }

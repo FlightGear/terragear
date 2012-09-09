@@ -970,7 +970,6 @@ TGPolygon tgPolygonSimplify(const TGPolygon &poly)
 // Send a polygon to standard output.
 std::ostream& operator << (std::ostream &output, const TGPolygon &poly)
 {
-    char buff[128];
     int  nContours = poly.contours();
 
     // Save the number of contours

@@ -1,4 +1,5 @@
 #include <simgear/debug/logstream.hxx>
+#include <CGAL/Plane_3.h>
 
 #include "tg_nodes.hxx"
 
@@ -119,6 +120,36 @@ point_list TGNodes::get_geod_inside( Point3D min, Point3D max ) const {
     return points;
 }
 
+void TGNodes::get_geod_edge( SGBucket b, point_list& north, point_list& south, point_list& east, point_list& west ) const {
+    const_node_list_iterator current, last;
+    double north_compare = b.get_center_lat() + 0.5 * b.get_height();
+    double south_compare = b.get_center_lat() - 0.5 * b.get_height();
+    double east_compare  = b.get_center_lon() + 0.5 * b.get_width();
+    double west_compare  = b.get_center_lon() - 0.5 * b.get_width();
+
+    // find all points on the edges
+    current = tg_node_list.begin();
+    last    = tg_node_list.end();
+
+    for ( ; current != last; ++current ) {
+        Point3D pt = (*current).GetPosition();
+
+        // may save the same point twice - so we get all the corners
+        if ( fabs(pt.y() - north_compare) < SG_EPSILON) {
+            north.push_back( pt );
+        }
+        if ( fabs(pt.y() - south_compare) < SG_EPSILON) {
+            south.push_back( pt );
+        }
+        if ( fabs(pt.x() - east_compare) < SG_EPSILON) {
+            east.push_back( pt );
+        }
+        if ( fabs(pt.x() - west_compare) < SG_EPSILON) {
+            west.push_back( pt );
+        }
+    }
+}
+
 std::vector< SGVec3d > TGNodes::get_wgs84_nodes_as_SGVec3d( void ) const {
     const_node_list_iterator current, last;
     std::vector< SGVec3d > points;
@@ -200,6 +231,90 @@ void TGNodes::Dump( void ) {
         }
     }
 }
+
+// input from stream
+std::istream& operator >> ( std::istream& in, TGNode& n )
+{
+    int i, nCount;
+
+    // Load a tgnode
+    in >> n.position;
+    n.CalcWgs84();
+
+    in >> n.normal;
+    in >> n.fixed_position;
+    in >> n.fixed_normal;
+
+    in >> nCount;
+    for (i=0; i<nCount; i++) {
+        TGFaceLookup face;
+
+        in >> face.area;
+        in >> face.shape;
+        in >> face.seg;
+        in >> face.tri;
+
+        n.faces.push_back( face );
+    }
+
+    return in;
+}
+
+std::ostream& operator<< ( std::ostream& out, const TGNode& n )
+{
+    int i, nCount;
+
+    // Save a tgnode
+    out << n.position;
+    out << n.normal;
+    out << n.fixed_position << " ";
+    out << n.fixed_normal << "\n";
+
+    nCount = n.faces.size();
+    out << nCount << "\n";
+    for (i=0; i<nCount; i++) {
+        out << n.faces[i].area << " ";
+        out << n.faces[i].shape << " ";
+        out << n.faces[i].seg << " ";
+        out << n.faces[i].tri << "\n";
+    }
+
+    return out;
+}
+
+// input from stream
+std::istream& operator >> ( std::istream& in, TGNodes& ns )
+{
+    int i, nCount;
+
+    // Load all tgnodes
+    in >> nCount;
+    
+    for (i=0; i<nCount; i++) {
+        TGNode node;
+        in >> node;
+
+        ns.tg_node_list.push_back( node );
+    }
+
+    return in;
+}
+
+std::ostream& operator<< ( std::ostream& out, const TGNodes& ns )
+{
+    int i, nCount;
+
+    // Save all tgnodes
+    nCount = ns.tg_node_list.size();
+    out << nCount << "\n";
+
+    for (i=0; i<nCount; i++) {
+        out << ns.tg_node_list[i];
+    }
+
+    return out;
+}
+
 
 #if 0
 bool TGNodes::LookupFixedElevation( Point3D p, double* z )

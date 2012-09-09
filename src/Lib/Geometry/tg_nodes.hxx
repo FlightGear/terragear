@@ -7,6 +7,7 @@
 #endif                                   
 
 #include <simgear/compiler.h>
+#include <simgear/bucket/newbucket.hxx>
 #include <Geometry/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
 
@@ -26,6 +27,10 @@ typedef std::vector < TGFaceLookup > TGFaceList;
 
 class TGNode {
 public:
+    TGNode() {
+        // constructor for serialization only
+    }
+    
     TGNode( Point3D p ) {
         position    = p;
         normal      = Point3D();
@@ -87,6 +92,10 @@ public:
     inline Point3D GetPosition( void ) const        { return position; }
     inline void    SetNormal( const Point3D& n )    { normal = n; }
     inline Point3D GetNormal( void ) const          { return normal; }
+
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGNode& );
+    friend std::ostream& operator<< ( std::ostream&, const TGNode& );
 
 private:
     Point3D     position;
@@ -152,7 +161,10 @@ public:
 
     // Find all the nodes within a bounding box
     point_list get_geod_inside( Point3D min, Point3D max ) const;
-        
+
+    // Find a;; the nodes on the tile edges
+    void get_geod_edge( SGBucket b, point_list& north, point_list& south, point_list& east, point_list& west ) const;
+
     // return a point list of wgs84 nodes
     std::vector< SGVec3d > get_wgs84_nodes_as_SGVec3d() const;
     point_list get_wgs84_nodes_as_Point3d() const;
@@ -172,6 +184,10 @@ public:
     inline size_t size() const { return tg_node_list.size(); }
 
     void Dump( void );
+
+    // Friends for serialization
+    friend std::istream& operator>> ( std::istream&, TGNodes& );
+    friend std::ostream& operator<< ( std::ostream&, const TGNodes& );
 
 private:
     node_list tg_node_list;

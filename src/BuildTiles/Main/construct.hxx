@@ -117,27 +117,22 @@ public:
 inline std::istream& operator >> ( std::istream& in, TGShape& p)
 {
     int i, count;
-    TGSuperPoly sp;
-    TGTexParams tp;
 
     // First, load the clipmask
-    SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: clipmask" );
     in >> p.clip_mask;
 
     // Then load superpolys
     in >> count;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: superpoly count " << count );
     for (i=0; i<count; i++) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: load superpoly " << i );
+        TGSuperPoly sp;
         in >> sp;
         p.sps.push_back( sp );
     }
 
     // Then load texparams
     in >> count;
-    SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: texparams count " << count );
     for (i=0; i<count; i++) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "\tshape: load texparam " << i );
+        TGTexParams tp;
         in >> tp;
         p.tps.push_back( tp );
     }
@@ -326,10 +321,8 @@ inline std::istream& operator >> ( std::istream& in, TGLandclass& lc)
     // Load all landclass shapes
     for (i=0; i<TG_MAX_AREA_TYPES; i++) {
         in >> count;
-        SG_LOG(SG_GENERAL, SG_ALERT, "Loading Landclass: area " << i << " size is " << count );
 
         for (j=0; j<count; j++) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Loading Landclass: load shape " << j << " of " << count );
             TGShape shape;
 
             in >> shape;
@@ -344,10 +337,6 @@ inline std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 {
     int i, j, count;
     TGShape shape;
-
-    // first, set the precision
-    out << std::setprecision(12);
-    out << std::fixed;
 
     // Save all landclass shapes
     for (i=0; i<TG_MAX_AREA_TYPES; i++) {
@@ -388,17 +377,11 @@ private:
     // with the UK grid
     bool useUKGrid;
 
-    double nudge;
-
-    // flag indicating whether this is a rebuild and Shared edge
-    // data should only be used for fitting, but not rewritten
-    bool writeSharedEdges;
-    // flag indicating whether the shared edge data of the
-    // tile to be built should be used in addition to neighbour data
-    bool useOwnSharedEdges;
-
     // flag indicating whether to ignore the landmass
     bool ignoreLandmass;
+
+    // I think we should remove this
+    double nudge;
 
     // path to the debug shapes
     std::string debug_path;
@@ -431,7 +414,7 @@ private:
     TGNodes nodes;
 
     // SHared Edges match data
-    TGMatch match;
+    // TGMatch match;
 
 private:
     // Load Data
@@ -451,6 +434,11 @@ private:
     // Shared edge Matching
     void LoadSharedEdgeData( void );
     void SaveSharedEdgeData( void );
+
+    void LoadSharedEdgeData( int stage );
+    void LoadNeighboorEdgeDataStage1( SGBucket& b, point_list& north, point_list& south, point_list& east, point_list& west );
+
+    void SaveSharedEdgeData( int stage );
 
     // Polygon Cleaning
     void CleanClippedPolys( void );
@@ -523,6 +511,9 @@ public:
     inline void set_cover (const std::string &s) { cover = s; }
 
     // paths
+    void set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load_dirs );
+
+#if 0
     inline std::string get_work_base() const { return work_base; }
     inline void set_work_base( const std::string s ) { work_base = s; }
     inline std::string get_output_base() const { return output_base; }
@@ -530,22 +521,21 @@ public:
     inline std::string get_share_base() const { return share_base; }
     inline void set_share_base( const std::string s ) { share_base = s; }
     inline void set_load_dirs( const std::vector<std::string> ld ) { load_dirs = ld; }
+#endif
 
+    void set_options( bool uk_grid, bool ignore_lm, double n );
+
+#if 0
     // UK grid flag
     inline bool get_useUKGrid() const { return useUKGrid; }
     inline void set_useUKGrid( const bool b ) { useUKGrid = b; }
-    
+
     // Nudge
     inline void set_nudge( double n ) { nudge = n; }
 
-    // shared edge write flag
-    inline void set_write_shared_edges( const bool b ) { writeSharedEdges = b; }
-    
-    // own shared edge use flag
-    inline void set_use_own_shared_edges( const bool b ) { useOwnSharedEdges = b; }
-    
     // ignore landmass flag
     inline void set_ignore_landmass( const bool b) { ignoreLandmass = b; }
+#endif
 
     // TODO : REMOVE
     inline TGNodes* get_nodes() { return &nodes; }
