@@ -100,7 +100,7 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     point_list y_normals; y_normals.clear();
 
     int i;
-    double dist = rwy.length;
+    double dist = rwy.length - rwy.threshold[0] - rwy.threshold[1];
     int divs = (int)(dist / 60.0) + 1;
     double step = dist / divs;
 
@@ -129,7 +129,7 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     //front threshold
     if (rwy.threshold[get_thresh0(recip)] > step )
     {
-        tstep = (int)(rwy.threshold[get_thresh0(recip)] / step) + 1;
+        tstep = (int)(rwy.threshold[get_thresh0(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
             thresh1 -= inc1;
             thresh2 -= inc2;
@@ -161,7 +161,7 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     //back threshold
     if (rwy.threshold[get_thresh1(recip)] > step )
     {
-        tstep = (int)(rwy.threshold[get_thresh1(recip)] / step) + 2;
+        tstep = (int)(rwy.threshold[get_thresh1(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
             y_lights.push_back( pt1 );
             y_normals.push_back( normal );
