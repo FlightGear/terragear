@@ -71,7 +71,14 @@ find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 find_package(SimGear 2.5.0 REQUIRED)
+
 find_package(CGAL COMPONENTS Core REQUIRED)
+if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
+        message(FATAL_ERROR "CGAL >= 4.0 is required. Found ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
+else(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
+        message(STATUS "Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
+endif(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
+
 find_package(TIFF) # needed for SRTM
 if (CMAKE_CL_64)
 	find_package(JPEG) # needed for SRTM
