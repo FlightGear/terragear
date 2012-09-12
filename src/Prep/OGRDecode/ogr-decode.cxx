@@ -477,6 +477,8 @@ void usage(char* progname) {
     SG_LOG( SG_GENERAL, SG_ALERT, "        Use an attribute query (like SQL WHERE)" );
     SG_LOG( SG_GENERAL, SG_ALERT, "--spat xmin ymin xmax ymax" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        spatial query extents" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--texture-lines" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Enable textured lines" );
     SG_LOG( SG_GENERAL, SG_ALERT, "" );
     SG_LOG( SG_GENERAL, SG_ALERT, "<work_dir>" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        Directory to put the polygon files in" );
