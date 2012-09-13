@@ -42,44 +42,52 @@ Helipad::Helipad(char* definition)
 
 superpoly_list Helipad::gen_helipad_lights(double maxsize){
 
-    point_list g_lights; g_lights.clear();
-    point_list g_normals; g_normals.clear();
+    point_list y_lights; y_lights.clear();
+    point_list y_normals; y_normals.clear();
 
-    //vector calculation
+    // Vector calculation
     Point3D vec = sgGeodToCart( GetLoc() * SG_DEGREES_TO_RADIANS );
     double length = vec.distance3D( Point3D(0.0) );
     vec = vec / length;
 
-    // Create green edge lights
+    // Create green edge lights, 5m spacing
+    int divs = (int)(maxsize / 5.0);
     TGPolygon area = gen_runway_area_w_extend(0.0, 0.0, 0.0, 0.0, 0.0);
+    Point3D pt, inc;
+
     for ( int i = 0; i < area.contour_size( 0 ); ++i ) {
-        g_lights.push_back( area.get_pt( 0, i ) );
-        g_normals.push_back( vec );
+        pt = area.get_pt( 0, i );
+        inc = (area.get_pt(0, i==3 ? 0 : i+1) - area.get_pt(0,i)) / divs;
+        for ( int j = 0; j < divs; ++j) {
+            y_lights.push_back( pt);
+            y_normals.push_back( vec );
+            pt += inc;
+        }
     }
 
     // Create a circle of lights approx. where the white texture circle is
-    double lat = heli.lat, lon = heli.lon, az;
-    for (int deg = 0; deg < 360; deg += 10){
+    double lat = 0, lon = 0, az;
+    for (int deg = 0; deg < 360; deg += 45){
         geo_direct_wgs_84(0, heli.lat, heli.lon, deg ,
                           maxsize * 0.46 , &lat, &lon, &az );
 
-        g_lights.push_back( Point3D( lon, lat, 0.0 ) );
-        g_normals.push_back( vec );
+        y_lights.push_back( Point3D( lon, lat, 0.0 ) );
+        y_normals.push_back( vec );
     }
 
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( g_lights, false );
-    normals_poly.add_contour( g_normals, false );
+    lights_poly.add_contour( y_lights, false );
+    normals_poly.add_contour( y_normals, false );
 
-    TGSuperPoly green;
-    green.set_poly( lights_poly );
-    green.set_normals( normals_poly );
-    green.set_material( "RWY_GREEN_LIGHTS" );
+    TGSuperPoly yellow;
+    yellow.set_poly( lights_poly );
+    yellow.set_normals( normals_poly );
+    yellow.set_material( "RWY_YELLOW_LIGHTS" );
 
     superpoly_list result; result.clear();
 
-    result.push_back( green );
+    result.push_back( yellow );
 
     return result;
 }
