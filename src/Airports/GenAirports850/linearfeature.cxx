@@ -759,6 +759,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     {
         prev_outer = Point3D(0.0f, 0.0f, 0.0f);
         cur_light_dist = 0.0f;
+        bool directional_light = lights[i]->IsDirectional();
 
         // which material for this light
         switch( lights[i]->type )
@@ -839,10 +840,28 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                                     
                     poly.add_node(0, tmp);
 
-                    // calculate the normal
-                    Point3D vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
-                    double length = vec.distance3D( Point3D(0.0) );
-                    vec = vec / length;
+                    double length;
+                    Point3D vec;
+
+                    if ( !directional_light )
+                    {
+                        // calculate the omnidirectional normal
+                        vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
+                        length = vec.distance3D( Point3D(0.0) );
+                        vec = vec / length;
+                    } else
+                    {
+                        // calculate the directional normal
+                        double heading_vec = heading + 90.0;
+                        if (heading_vec > 360.0) { heading_vec -= 360.0; }
+                        geo_direct_wgs_84( tmp.y(), tmp.x(), heading_vec, 10, &pt_y, &pt_x, &az2 );
+                        Point3D cart1 = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
+                        Point3D cart2 = sgGeodToCart( Point3D(pt_x, pt_y, 0.0) * SG_DEGREES_TO_RADIANS );
+
+                        vec = cart2 - cart1;
+                        length = vec.distance3D( Point3D(0.0) );
+                        vec = vec / length;
+                    }
 
                     normals_poly.add_node(0, vec );
 

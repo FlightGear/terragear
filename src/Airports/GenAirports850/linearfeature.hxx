@@ -57,6 +57,11 @@ public:
     unsigned int type;
     unsigned int start_idx;
     unsigned int end_idx;
+
+    bool IsDirectional()
+    {
+        return (type == 103 || type == 104) ? true : false;
+    }
 };
 typedef std::vector <Lighting*> LightingList;
 
