@@ -787,7 +787,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         {
             slivers.clear();
 
-            if (boundary)
+            if (boundary.size())
             {
                 helipads[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, NULL, NULL );
             }
