@@ -555,8 +555,8 @@ Point3D midpoint( Point3D p0, Point3D p1 )
 
 int LinearFeature::Finish( bool closed, unsigned int idx )
 {
-    TGPolygon   poly;
-    TGPolygon   normals_poly;
+    TGPolygon   poly, poly2;
+    TGPolygon   normals_poly, normals_poly2;
     TGSuperPoly sp;
     TGTexParams tp;
     Point3D     prev_inner, prev_outer;
@@ -754,12 +754,13 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
         }
     }
 
-    // now generate the supoerpoly list for lights with constant distance between lights (depending on feature type)
+    // now generate the superpoly list for lights with constant distance between lights (depending on feature type)
     for (unsigned int i=0; i<lights.size(); i++)
     {
         prev_outer = Point3D(0.0f, 0.0f, 0.0f);
         cur_light_dist = 0.0f;
         bool directional_light = lights[i]->IsDirectional();
+        bool alternate = false;
 
         // which material for this light
         switch( lights[i]->type )
@@ -787,6 +788,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             case LF_BIDIR_GREEN_AMBER:
                 material = "RWY_GREEN_TAXIWAY_LIGHTS";
                 light_delta = 10.0f;
+                alternate = true;
                 break;
 
             case LF_OMNIDIR_RED:
@@ -796,7 +798,9 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
         }
 
         poly.erase();
+        poly2.erase();
         normals_poly.erase();
+        normals_poly2.erase();
         sp.erase();
 
         for (unsigned int j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
@@ -821,6 +825,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             if ( (prev_outer.x() != 0.0f) && (prev_outer.y() != 0.0f) )
             {
                 Point3D tmp;
+                bool switch_poly = true;
 
                 // calculate the heading and distance from prev to cur
                 geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
@@ -837,8 +842,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                         geo_direct_wgs_84( prev_outer.y(), prev_outer.x(), heading, cur_light_dist, &pt_y, &pt_x, &az2 );
                         tmp = Point3D( pt_x, pt_y, 0.0 );
                     }
-                                    
-                    poly.add_node(0, tmp);
 
                     double length;
                     Point3D vec;
@@ -863,7 +866,26 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                         vec = vec / length;
                     }
 
-                    normals_poly.add_node(0, vec );
+                    if (!alternate)
+                    {
+                        poly.add_node(0, tmp);
+                        normals_poly.add_node(0, vec );
+                    }
+                    else
+                    {
+                        if (switch_poly)
+                        {
+                            poly.add_node(0, tmp);
+                            normals_poly.add_node(0, vec );
+                            switch_poly = !switch_poly;
+                        }
+                        else
+                        {
+                            poly2.add_node(0, tmp);
+                            normals_poly2.add_node(0, vec );
+                            switch_poly = !switch_poly;
+                        }
+                    }
 
                     // update current light distance
                     cur_light_dist += light_delta;
@@ -886,6 +908,17 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             sp.set_material( material );
             sp.set_flag("");
             lighting_polys.push_back(sp);
+
+            // create the superpoly for the alternating light color
+            if (poly2.total_size())
+            {
+                sp.erase();
+                sp.set_poly( poly2 );
+                sp.set_normals( normals_poly2 );
+                sp.set_material( "RWY_YELLOW_LIGHTS" );
+                sp.set_flag("");
+                lighting_polys.push_back(sp);
+            }
         }
         else
         {
