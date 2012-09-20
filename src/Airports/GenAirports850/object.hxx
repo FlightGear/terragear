@@ -6,7 +6,6 @@
 
 #include <Polygon/polygon.hxx>
 #include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
 #include <Geometry/point3d.hxx>
 
 using std::string;
@@ -24,7 +23,7 @@ public:
     char assoc_rw;
 
 
-void BuildBtg( int alt_m, superpoly_list* lights );
+void BuildBtg( superpoly_list* lights );
 
 };
 typedef std::vector <LightingObj *> LightingObjList;

@@ -9,57 +9,30 @@ LightingObj::LightingObj( char* definition )
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read lighting object: (" << lon << "," << lat << ") heading: " << heading << " type: " << type  );
 }
 
-void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
+void LightingObj::BuildBtg( superpoly_list* lights )
 {
     point_list lightobj; lightobj.clear();
     point_list normals; normals.clear();
 
-    Point3D ref;
-    double lon2 = 0, lat2 = 0, r;
     double left_hdg = heading - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
-    ref.setlat( lat );
-    ref.setlon( lon );
+    Point3D ref(lon, lat, 0.0);
 
-    if ( glideslope < 0.5 ) {
-        glideslope = 3.0;
-    }
-
-    // Calculate the normal once for all object parts.
-    // SG takes care of the angle.
+    // Calculate the normal direction once for all objects.
+    // SimGear takes care of the glideslope angle calculation from the normal
 
     // calculate a second point in the object heading direction
+    double lon2 = 0, lat2 = 0, r;
     geo_direct_wgs_84 ( lat, lon, heading,
-                        100, &lat2, &lon2, &r);
+                        10, &lat2, &lon2, &r);
 
-    Point3D end1, end2;
+    Point3D cart1 = sgGeodToCart( Point3D(lon2, lat2, 0.0) * SG_DEGREES_TO_RADIANS );
+    Point3D cart2 = sgGeodToCart( ref * SG_DEGREES_TO_RADIANS );
 
-    end1.setlat( lat2 );
-    end1.setlon( lon2 );
-
-    end2.setlat( lat);
-    end2.setlon( lon);
-
-    Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
-    Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
-
-    Point3D up = cart1;
-    double length = up.distance3D( Point3D(0.0) );
-    up = up / length;
-
-    Point3D obj_vec = cart2 - cart1;
-
-    // angle up specified amount
-    length = obj_vec.distance3D( Point3D(0.0) );
-    double up_length = length * tan( glideslope * SG_DEGREES_TO_RADIANS);
-    Point3D light_vec = obj_vec + (up * up_length);
-
-    length = light_vec.distance3D( Point3D(0.0) );
-    Point3D normal = light_vec / length;
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "obj_normal = " << normal);
-
+    Point3D normal = cart2 - cart1;
+    double length = normal.distance3D( Point3D(0.0) );
+    normal = normal / length;
 
     // We know our normal, now create the lights
     Point3D pt1;
@@ -69,127 +42,106 @@ void LightingObj::BuildBtg( int alt_m, superpoly_list* lights )
         SG_LOG(SG_GENERAL, SG_DEBUG, "Generating VASI = " << assoc_rw);
 
         // VASI coordinates describe the center between the two bars.
-        // Space between the bars is 700 ft
+        // Space between the bars is 200m
 
         // Go to downwind bar
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading,
-                            -350 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), heading,
+                            -100, &lat2, &lon2, &r );
         pt1 = Point3D( lon2, lat2, 0.0 );
 
         // unit1
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            -16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
+                            -5, &lat2, &lon2, &r );
         pt1 = Point3D( lon2, lat2, 0.0 );
         lightobj.push_back( pt1 );
         normals.push_back( normal );
 
-        // unit2
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
-
-        // unit3
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
+        // unit2+3
+        for (int i = 0; i < 2; ++i)
+        {
+            geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
+                                5, &lat2, &lon2, &r );
+            pt1 = Point3D( lon2, lat2, 0.0 );
+            lightobj.push_back( pt1 );
+            normals.push_back( normal );
+        }
 
         // Go to upwind bar
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), heading,
-                            350 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), heading,
+                            100, &lat2, &lon2, &r );
         pt1 = Point3D( lon2, lat2, 0.0 );
 
         // unit4
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            -16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
+                            -5, &lat2, &lon2, &r );
         pt1 = Point3D( lon2, lat2, 0.0 );
         lightobj.push_back( pt1 );
         normals.push_back( normal );
 
-        // unit5
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
-
-        // unit6
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            16 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
+        // unit5+6
+        for (int i = 0; i < 2; ++i)
+        {
+            geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
+                                5, &lat2, &lon2, &r );
+            pt1 = Point3D( lon2, lat2, 0.0 );
+            lightobj.push_back( pt1 );
+            normals.push_back( normal );
+        }
     }
-
     else if (type == 2)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4L = " << assoc_rw);
 
         // unit1
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
-                            -45 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
+                            -12, &lat2, &lon2, &r );
         pt1 = Point3D( lon2, lat2, 0.0 );
         lightobj.push_back( pt1 );
         normals.push_back( normal );
 
-        // unit2
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
-
-        // unit3
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
-
-        // unit4
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
+        // unit2-4
+        for (int i = 0; i < 3; ++i)
+        {
+            geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
+                                8, &lat2, &lon2, &r );
+            pt1 = Point3D( lon2, lat2, 0.0 );
+            lightobj.push_back( pt1 );
+            normals.push_back( normal );
+        }
     }
-
     else if (type == 3)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4R = " << assoc_rw);
 
         // unit1
-        geo_direct_wgs_84 ( alt_m, ref.lat(), ref.lon(), left_hdg,
-                            45 * SG_FEET_TO_METER, &lat2, &lon2, &r );
+        geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
+                            12, &lat2, &lon2, &r );
         pt1 = Point3D( lon2, lat2, 0.0 );
         lightobj.push_back( pt1 );
         normals.push_back( normal );
 
-        // unit2
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            -30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
+        // unit2-4
+        for (int i = 0; i < 3; ++i)
+        {
+            geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
+                                -8, &lat2, &lon2, &r );
+            pt1 = Point3D( lon2, lat2, 0.0 );
+            lightobj.push_back( pt1 );
+            normals.push_back( normal );
+        }
+    }
+    else if (type == 4)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Space Shuttle PAPI is deprecated. Use the normal PAPI and set the glideslope accordingly");
+    }
+    else if (type == 5)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating tri-colour VASI = " << assoc_rw);
 
-        // unit3
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            -30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
-        normals.push_back( normal );
-
-        // unit4
-        geo_direct_wgs_84 ( alt_m, pt1.lat(), pt1.lon(), left_hdg,
-                            -30 * SG_FEET_TO_METER, &lat2, &lon2, &r );
-        pt1 = Point3D( lon2, lat2, 0.0 );
-        lightobj.push_back( pt1 );
+        // only one light here
+        lightobj.push_back( ref );
         normals.push_back( normal );
     }
-
     else
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "Unknown lighting object (PAPI/VASI...) code: " << type);

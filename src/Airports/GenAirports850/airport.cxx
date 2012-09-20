@@ -94,7 +94,7 @@ Airport::Airport( int c, char* def)
     dbg_taxi_poly = 0;
 
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Created airport with icao " << icao << ", control tower " << ct << ", and description " << description );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", control tower " << ct << ", and description " << description );
 }
 
 Airport::~Airport()
@@ -673,7 +673,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         for ( unsigned int i=0; i<lightobjects.size(); i++ )
         {
             SG_LOG(SG_GENERAL, SG_INFO, "Build runway light " << i + 1 << " of " << lightobjects.size());
-            lightobjects[i]->BuildBtg( altitude, &rwy_lights );
+            lightobjects[i]->BuildBtg( &rwy_lights );
         }
     }
 
