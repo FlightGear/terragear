@@ -891,12 +891,12 @@ static void do_custom_objects( const TGConstruct& c ) {
         string index_file = index.str_native();
         //cout << "collecting custom objects from " << index_file << endl;
 
-	sg_gzifstream in( index_file );
+        sg_gzifstream in( index_file );
 
-	if ( ! in.is_open() ) {
-	    //cout << "No custom objects" << endl;
-	} else {
-	    while ( ! in.eof() ) {
+        if ( ! in.is_open() ) {
+            //cout << "No custom objects" << endl;
+        } else {
+            while ( ! in.eof() ) {
                 cout << "Collecting custom objects from " << index_file << endl;
                 in.getline(line, 2048);
                 cout << "line = " << line << endl;
@@ -908,15 +908,16 @@ static void do_custom_objects( const TGConstruct& c ) {
                     cout << "token = " << token << " name = " << name << endl;
 
                     if ( strcmp( token, "OBJECT" ) == 0 ) {
-                        base.append(name);
-                        base.concat(".gz");
-                        string basecom = base.str_native();
+                        SGPath srcbase(base);
+                        srcbase.append(name);
+                        srcbase.concat(".gz");
+                        string basecom = srcbase.str_native();
 #ifdef _MSC_VER
                         string command = "copy " + basecom + " " + dest_dir;
 #else
                         string command = "cp " + basecom + " " + dest_dir;
 #endif
-                        cout << "running " << command << endl;
+                        SG_LOG( SG_GENERAL, SG_INFO, "running " << command );
                         system( command.c_str() );
 
                         fprintf(fp, "OBJECT %s\n", name);
@@ -924,8 +925,8 @@ static void do_custom_objects( const TGConstruct& c ) {
                         fprintf(fp, "%s\n", line);
                     }
                 }
-	    }
-	}
+            }
+        }
     }
 
     fclose(fp);
