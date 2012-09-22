@@ -444,6 +444,9 @@ void processLayer(OGRLayer* poLayer,
             int width=point_width;
             if (point_width_field!=-1) {
                 width=poFeature->GetFieldAsInteger(point_width_field);
+                if (width == 0) {
+                    width=point_width;
+                }
             }
             processPoint((OGRPoint*)poGeometry,work_dir,area_type_name,width);
             break;
@@ -453,6 +456,9 @@ void processLayer(OGRLayer* poLayer,
             int width=point_width;
             if (point_width_field!=-1) {
                 width=poFeature->GetFieldAsInteger(point_width_field);
+                if (width == 0) {
+                    width=point_width;
+                }
             }
             OGRMultiPoint* multipt=(OGRMultiPoint*)poGeometry;
             for (int i=0;i<multipt->getNumGeometries();i++) {
@@ -465,7 +471,11 @@ void processLayer(OGRLayer* poLayer,
             int width=line_width;
             if (line_width_field!=-1) {
                 width=poFeature->GetFieldAsInteger(line_width_field);
+                if (width == 0) {
+                    width=line_width;
+                }
             }
+
             if (texture_lines) {
                 processLineStringWithTextureInfo((OGRLineString*)poGeometry,work_dir,area_type_name,width);
             } else if (seperate_segments) {
@@ -480,7 +490,11 @@ void processLayer(OGRLayer* poLayer,
             int width=line_width;
             if (line_width_field!=-1) {
                 width=poFeature->GetFieldAsInteger(line_width_field);
+                if (width == 0) {
+                    width=line_width;
+                }
             }
+
             OGRMultiLineString* multils=(OGRMultiLineString*)poGeometry;
             for (int i=0;i<multils->getNumGeometries();i++) {
                 if (texture_lines) {
