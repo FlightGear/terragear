@@ -91,15 +91,42 @@ TGConstruct::~TGConstruct() {
     nodes.clear();
 }
 
-void TGConstruct::set_debug( std::string path, std::vector<string> defs )
+void TGConstruct::set_debug( std::string path, std::vector<string> area_defs, std::vector<string> shape_defs )
 {
     SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
     
     debug_path = path;
 
     /* Find any ids for our tile */
-    for (unsigned int i=0; i< defs.size(); i++) {
-        string dsd     = defs[i];
+    for (unsigned int i=0; i< area_defs.size(); i++) {
+        string dsd     = area_defs[i];
+        size_t d_pos   = dsd.find(":");
+        string tile    = dsd.substr(0, d_pos);
+
+        if( tile == bucket.gen_index_str() ) {
+            dsd.erase(0, d_pos+1);
+
+            if ( dsd == "all" ) {
+                debug_all = true;
+            } else {
+                std::stringstream ss(dsd);
+                int i;
+
+                while (ss >> i)
+                {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug file " << i);
+
+                    debug_areas.push_back(i);
+
+                    if (ss.peek() == ',')
+                        ss.ignore();
+                }
+            }
+        }
+    }
+
+    for (unsigned int i=0; i< shape_defs.size(); i++) {
+        string dsd     = shape_defs[i];
         size_t d_pos   = dsd.find(":");
         string tile    = dsd.substr(0, d_pos);
 
@@ -145,6 +172,25 @@ bool TGConstruct::IsDebugShape( unsigned int id )
     return is_debug;
 }
 
+bool TGConstruct::IsDebugArea( unsigned int area )
+{
+    bool is_debug = false;
+
+    /* Check global flag */
+    if ( debug_all ) {
+        is_debug = true;
+    } else {
+        for (unsigned int i=0; i<debug_areas.size(); i++) {
+            if ( debug_areas[i] == area ) {
+                is_debug = true;
+                break;
+            }
+        }
+    }
+
+    return is_debug;
+}
+
 void TGConstruct::WriteDebugShape( const char* layer_name, const TGShape& shape )
 {
     char name[64];
@@ -153,7 +199,7 @@ void TGConstruct::WriteDebugShape( const char* layer_name, const TGShape& shape 
     ds_id = tgShapefileOpenDatasource( ds_name );
     l_id  = tgShapefileOpenLayer( ds_id, layer_name );
 
-    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, "test" );
+    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, name );
 
     // close after each write
     ds_id = tgShapefileCloseDatasource( ds_id );
@@ -243,7 +289,7 @@ bool TGConstruct::load_poly(const string& path) {
     int hole_flag;
     int num_polys;
     double startx, starty, startz, x, y, z, lastx, lasty, lastz;
-
+    
     sg_gzifstream in( path );
 
     if ( !in ) {
@@ -293,23 +339,8 @@ bool TGConstruct::load_poly(const string& path) {
         poly_type = get_area_type( poly_name );
 
         int area = (int)poly_type;
-        string material; 
+        string material = get_area_name( area );
 
-        // only allow 1000 shapes per material
-        int extension = polys_in.area_size( area ) / 1000;
-
-        if (extension)
-        {
-            char buff[32];
-            sprintf( buff, "%s_%d", get_area_name( area ).c_str(), extension );
-            material = buff;
-        }
-        else
-        {
-            material = get_area_name( area );
-        }
-        
-        
         // Generate a new Shape for the poly
         TGShape     shape;
         TGSuperPoly sp;
@@ -1275,6 +1306,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     int i, j;
     Point3D p;
     point2d min, max;
+    bool debug_area, debug_shape;
+    static int accum_idx = 0;
 
 #if !USE_ACCUMULATOR
     TGPolygon accum;
@@ -1342,7 +1375,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     }
 
     // Dump the masks
-    if ( debug_all || debug_shapes.size() ) {
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
         WriteDebugPoly( "land_mask", "", land_mask );
         WriteDebugPoly( "water_mask", "", water_mask );
         WriteDebugPoly( "island_mask", "", island_mask );
@@ -1350,10 +1383,13 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // process polygons in priority order
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
+        debug_area = IsDebugArea( i );
+
         for( j = 0; j < (int)polys_in.area_size(i); ++j ) {
             TGPolygon current = polys_in.get_mask(i, j);
+            debug_shape = IsDebugShape( polys_in.get_shape( i, j ).id );
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << polys_in.area_size(i) );                       
+            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << polys_in.area_size(i) << " accum_idx: " << accum_idx );
 
             tmp = current;
 
@@ -1368,18 +1404,39 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 tmp = tgPolygonDiffClipper( tmp, island_mask );
             }
 
-            if ( IsDebugShape( polys_in.get_shape( i, j ).id ) ) {
+            if ( debug_area || debug_shape ) {
+                char layer[32];
                 char name[32];
+                sprintf(layer, "pre_clip_%d", polys_in.get_shape( i, j ).id );
                 sprintf(name, "shape %d,%d", i,j);
-                WriteDebugPoly( "pre-clip", name, tmp );
+                WriteDebugPoly( layer, name, tmp );
+
+                sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
+                sprintf(name, "shape_accum %d,%d", i,j);
+
+#if USE_ACCUMULATOR
+                tgPolygonDumpAccumulator( ds_name, layer, name );
+#else
+                WriteDebugPoly( layer, name, accum );
+#endif
             }
+
+            // simplify polygon before clipping
+            tmp = tgPolygonSimplify( tmp );
 
 #if USE_ACCUMULATOR
             clipped = tgPolygonDiffClipperWithAccumulator( tmp );
 #else
-            clipped = tgPolygonDiffClipper( tmp, accum );
+            clipped = tgPolygonDiff( tmp, accum );
 #endif
 
+            if ( debug_area || debug_shape ) {
+                char layer[32];
+                char name[32];
+                sprintf(layer, "post_clip_%d", polys_in.get_shape( i, j ).id );
+                sprintf(name, "shape %d,%d", i,j);
+                WriteDebugPoly( layer, name, clipped );
+            }
 
             // only add to output list if the clip left us with a polygon
             if ( clipped.contours() > 0 ) {
@@ -1405,22 +1462,39 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                     // shape.sps.push_back( sp );
                     polys_clipped.add_shape( i, shape );
 
-                    if ( IsDebugShape( shape.id ) ) {
+                    if ( debug_area || debug_shape ) {
                         WriteDebugShape( "clipped", shape );
                     }
                 }
             }
 
 #if USE_ACCUMULATOR
-            tgPolygonAddToClipperAccumulator( tmp );
+            if ( debug_shape ) {
+                tgPolygonAddToClipperAccumulator( tmp, true );
+            } else {
+                tgPolygonAddToClipperAccumulator( tmp, false );
+            }
 #else
             accum   = tgPolygonUnionClipper( tmp, accum );
 #endif
-            
+
+            if ( debug_area || debug_shape ) {
+                char layer[32];
+                char name[32];
+                sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
+                sprintf(name, "shape_accum %d,%d", i,j);
+#if USE_ACCUMULATOR
+                tgPolygonDumpAccumulator( ds_name, layer, name );
+#else
+                WriteDebugPoly( layer, name, accum );
+#endif
+            }
+
+            accum_idx++;
         }
     }
 
-    if ( debug_all || debug_shapes.size() ) {
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
         // Dump the sliver list
         WriteDebugPolys( "poly_slivers", slivers );
     }
@@ -1455,7 +1529,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         // neighboring polygons
         if ( slivers.size() > 0 ) {
 
-            if ( debug_all || debug_shapes.size() ) {
+            if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
                 // Dump the sliver list
                 WriteDebugPolys( "remains_slivers", slivers );
             }
@@ -1764,7 +1838,9 @@ void TGConstruct::TesselatePolys( void )
             unsigned int id = polys_clipped.get_shape( area, shape ).id;
 
             if ( IsDebugShape( id ) ) {
-                WriteDebugShape( "preteselate", polys_clipped.get_shape(area, shape) );
+                char layer[32];
+                sprintf( layer, " pretess-%d", id );
+                WriteDebugShape( layer, polys_clipped.get_shape(area, shape) );
             }
 
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
@@ -1821,8 +1897,12 @@ void TGConstruct::WriteBtgFile( void )
     int_list tri_tc, strip_tc;
 
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+        unsigned int area_tris;
+        
         // only tesselate non holes
         if ( !is_hole_area( area ) ) {
+            area_tris = 0;
+            
             for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
                 for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                     SG_LOG( SG_CLIPPER, SG_INFO, "Ouput nodes for " << get_area_name( (AreaType)area ) << ":" << 
@@ -1830,7 +1910,7 @@ void TGConstruct::WriteBtgFile( void )
 
             	    TGPolyNodes tri_nodes = polys_clipped.get_tri_idxs(area, shape, segment);
             	    TGPolygon   tri_txs   = polys_clipped.get_texcoords(area, shape, segment);
-            	    string      material  = polys_clipped.get_material(area, shape, segment);
+                    string      material;
 
             	    for (int k = 0; k < tri_nodes.contours(); ++k) {
             	        tri_v.clear();
@@ -1851,7 +1931,28 @@ void TGConstruct::WriteBtgFile( void )
                 	    tris_v.push_back( tri_v );
             	        tris_n.push_back( tri_n );
             	        tris_tc.push_back( tri_tc );
-            	        tri_materials.push_back( material );
+
+                        switch ( area_tris / 32768 ) {
+                            case 0:
+                                material  = polys_clipped.get_material(area, shape, segment);
+                                break;
+
+                            case 1:
+                                material  = polys_clipped.get_material(area, shape, segment) + "_1";
+                                break;
+
+                            case 2:
+                                material  = polys_clipped.get_material(area, shape, segment) + "_2";
+                                break;
+
+                            case 3:
+                                material  = polys_clipped.get_material(area, shape, segment) + "_3";
+                                break;
+                        }
+
+                        tri_materials.push_back( material );
+
+                        area_tris++;
             	    }
                 }    
             }
@@ -1927,7 +2028,7 @@ void TGConstruct::WriteBtgFile( void )
     {
         throw sg_exception("error writing file. :-(");
     }
-    if (debug_all || debug_shapes.size())
+    if (debug_all || debug_shapes.size() || debug_areas.size() )
     {
         result = obj.write_ascii( base, txtname, bucket );
         if ( !result )
@@ -2026,7 +2127,7 @@ void TGConstruct::ConstructBucketStage1() {
     SG_LOG(SG_GENERAL, SG_ALERT, "\nConstructing tile ID " << bucket.gen_index_str() << " in " << bucket.gen_base_path() );
 
     /* If we have some debug IDs, create a datasource */
-    if ( debug_shapes.size() || debug_all ) {
+    if ( debug_shapes.size() || debug_all || debug_areas.size() ) {
         sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
         SG_LOG(SG_GENERAL, SG_ALERT, "Debug_string: " << ds_name );
     } else {

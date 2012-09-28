@@ -16,6 +16,16 @@
 
 #include <stdlib.h>
 
+// use cgal for intersection, old implementation returns true, even when line SEGMENTS don't intersect
+// CGAL intersection can do that with lines, but we want to use segments (end at the first and last point)
+
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/intersections.h>
+
+typedef CGAL::Exact_predicates_exact_constructions_kernel Kernel;
+typedef Kernel::Point_2                                   Point_2;
+typedef CGAL::Segment_2<Kernel>                           Segment_2;
+
 #define MP_STRETCH  (0.000001)
 
 using std::string;
@@ -57,6 +67,34 @@ getIntersection (const Point3D &p0, const Point3D &p1,
     }
 }
 
+// use CGAL
+
+bool getIntersection_cgal(const Point3D &p0, const Point3D &p1,
+                     const Point3D &p2, const Point3D &p3,
+                     Point3D &intersection)
+{
+    Point_2 a1( p0.x(), p0.y() );
+    Point_2 b1( p1.x(), p1.y() );
+    Point_2 a2( p2.x(), p2.y() );
+    Point_2 b2( p3.x(), p3.y() );
+
+    Segment_2 seg1( a1, b1 );
+    Segment_2 seg2( a2, b2 );
+
+    CGAL::Object result = CGAL::intersection(seg1, seg2);
+    if (const CGAL::Point_2<Kernel> *ipoint = CGAL::object_cast<CGAL::Point_2<Kernel> >(&result)) {
+        // handle the point intersection case with *ipoint.
+        return true;
+    } else {
+        if (const CGAL::Segment_2<Kernel> *iseg = CGAL::object_cast<CGAL::Segment_2<Kernel> >(&result)) {
+            // handle the segment intersection case with *iseg.
+            return false;
+        } else {
+            // handle the no intersection case.
+            return false;
+        }
+    }
+}
 
 /**
  * Create a polygon out of a point.
@@ -503,6 +541,7 @@ makePolygons (const Line &line, double width, poly_list& polys)
     }
 }
 
+#if 0
 void
 makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list &tps)
 {
@@ -599,6 +638,147 @@ makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list
         prev_outer = cur_outer;
         prev_inner = cur_inner;
     }
+}
+#endif
+
+void
+makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list &tps)
+{
+    int nPoints = line.getPointCount();
+    int i;
+    int turn_dir;
+
+    Point3D cur_inner;
+    Point3D cur_outer;
+    Point3D prev_inner = Point3D(0.0f, 0.0f, 0.0f);
+    Point3D prev_outer = Point3D(0.0f, 0.0f, 0.0f);
+    Point3D calc_inner;
+    Point3D calc_outer;
+
+    double last_end_v = 0.0f;
+    double heading = 0.0f;
+    double az2 = 0.0f;
+    double dist = 0.0f;
+
+    TGPolygon   poly;
+    TGPolygon   accum;
+    TGTexParams tp;
+
+    // generate poly and texparam lists for each line segment
+    for (i=0; i<nPoints; i++)
+    {
+        last_end_v   = 0.0f;
+        turn_dir = 0;
+
+        sglog().setLogLevels( SG_ALL, SG_INFO );
+
+        SG_LOG(SG_GENERAL, SG_DEBUG, "makePolygonsTP: calculating offsets for segment " << i);
+
+        // for each point on the PointsList, generate a quad from
+        // start to next, offset by 1/2 width from the edge
+        if (i == 0)
+        {
+            // first point on the list - offset heading is 90deg
+            cur_outer = OffsetPointFirst( line.getPoint(i), line.getPoint(i+1), -width/2.0f );
+            cur_inner = OffsetPointFirst( line.getPoint(i), line.getPoint(i+1),  width/2.0f );
+        }
+        else if (i == nPoints-1)
+        {
+            // last point on the list - offset heading is 90deg
+            cur_outer = OffsetPointLast( line.getPoint(i-1), line.getPoint(i), -width/2.0f );
+            cur_inner = OffsetPointLast( line.getPoint(i-1), line.getPoint(i),  width/2.0f );
+        }
+        else
+        {
+            // middle section
+            cur_outer = OffsetPointMiddle( line.getPoint(i-1), line.getPoint(i), line.getPoint(i+1), -width/2.0f, turn_dir );
+            cur_inner = OffsetPointMiddle( line.getPoint(i-1), line.getPoint(i), line.getPoint(i+1),  width/2.0f, turn_dir );
+        }
+
+        if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
+        {
+            // draw the poly in simplified arrow format
+            TGPolygon ref_trap;
+
+            ref_trap.add_node( 0, prev_inner );
+            ref_trap.add_node( 0, prev_outer );
+            ref_trap.add_node( 0, cur_outer );
+            ref_trap.add_node( 0, cur_inner );
+        }
+
+        if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
+        {
+            Point3D prev_mp = midpoint( prev_outer, prev_inner );
+            Point3D cur_mp  = midpoint( cur_outer,  cur_inner  );
+            Point3D intersect;
+
+            geo_inverse_wgs_84( prev_mp.y(), prev_mp.x(), cur_mp.y(), cur_mp.x(), &heading, &az2, &dist);
+
+            poly.erase();
+
+            poly.add_node( 0, prev_inner );
+            poly.add_node( 0, prev_outer );
+
+            // we need to extend one of the points so we're sure we don't create adjacent edges
+            if (turn_dir == 0)
+            {
+                // turned right - offset outer
+                geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
+
+                // CHECK for self inersecting poly - angle too steep for this width
+                if ( getIntersection_cgal( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
+                {
+                    // yes - make a triangle with inner edge = 0
+                    poly.add_node( 0, cur_outer );
+                    cur_inner = prev_inner;
+                }
+                else
+                {
+                    poly.add_node( 0, cur_outer );
+                    poly.add_node( 0, cur_inner );
+                }
+            }
+            else
+            {
+                // turned left - offset inner
+                geo_inverse_wgs_84( prev_inner.y(), prev_inner.x(), cur_inner.y(), cur_inner.x(), &heading, &az2, &dist);
+
+                if ( getIntersection_cgal( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
+                {
+                    // yes - make a triangle with outer edge = 0
+                    poly.add_node( 0, cur_inner );
+                    cur_outer = prev_outer;
+                }
+                else
+                {
+                    poly.add_node( 0, cur_outer );
+                    poly.add_node( 0, cur_inner );
+                }
+            }
+
+            // draw the poly in simplified arrow format
+            TGPolygon ref_tri;
+
+            ref_tri.add_node( 0, prev_inner );
+            ref_tri.add_node( 0, prev_outer );
+
+            Point3D mp = midpoint( cur_inner, cur_outer );
+            ref_tri.add_node( 0, mp );
+
+            polys.push_back(poly);
+
+            tp = TGTexParams( prev_inner, width, 20.0f, heading );
+            tp.set_minv(last_end_v);
+            tps.push_back(tp);
+
+            last_end_v = 1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
+        }
+
+        prev_outer = cur_outer;
+        prev_inner = cur_inner;
+    }
+
+    sglog().setLogLevels( SG_ALL, SG_INFO );
 }
 
 

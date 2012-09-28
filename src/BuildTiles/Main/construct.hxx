@@ -271,6 +271,7 @@ private:
     bool debug_all;
 
     // list of shapes to dump during debug
+    std::vector<unsigned int> debug_areas;
     std::vector<unsigned int> debug_shapes;
 
     // OGR encode variables
@@ -346,6 +347,8 @@ private:
 
     // debug
     bool IsDebugShape( unsigned int id );
+    bool IsDebugArea( unsigned int area );
+
     void WriteDebugShape( const char* layer_name, const TGShape& shape );
     void WriteDebugPoly( const char* layer_name, const char* name, const TGPolygon& poly );
     void WriteDebugPolys( const char* layer_name, const poly_list& polys );
@@ -415,7 +418,7 @@ public:
     inline point_list get_point_normals() const { return nodes.get_normals(); }
 
     // Debug
-    void set_debug( std::string path, std::vector<std::string> defs );
+    void set_debug( std::string path, std::vector<std::string> area_defs, std::vector<std::string> shape_defs );
 };
 
 

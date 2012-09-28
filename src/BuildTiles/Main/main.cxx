@@ -168,7 +168,8 @@ int main(int argc, char **argv) {
     long tile_id = -1;
 
     string debug_dir = ".";
-    vector<string> debug_defs;
+    vector<string> debug_shape_defs;
+    vector<string> debug_area_defs;
 
     // flag indicating whether UK grid should be used for in-UK
     // texture coordinate generation
@@ -230,8 +231,10 @@ int main(int argc, char **argv) {
             ignoreLandmass = true;
         } else if (arg.find("--debug-dir=") == 0) {
             debug_dir = arg.substr(12);
+        } else if (arg.find("--debug-areas=") == 0) {
+            debug_area_defs.push_back( arg.substr(14) );
         } else if (arg.find("--debug-shapes=") == 0) {
-            debug_defs.push_back( arg.substr(15) );
+            debug_shape_defs.push_back( arg.substr(15) );
         } else if (arg.find("--") == 0) {
             usage(argv[0]);
         } else {
@@ -292,7 +295,7 @@ int main(int argc, char **argv) {
             c->set_nudge( nudge );
             c->set_bucket( b );
 
-            c->set_debug( debug_dir, debug_defs );
+            c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
             c->ConstructBucketStage1();
             delete c;
@@ -321,7 +324,7 @@ int main(int argc, char **argv) {
                 c->set_nudge( nudge );
                 c->set_bucket( b_min );
 
-                c->set_debug( debug_dir, debug_defs );
+                c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
                 c->ConstructBucketStage1();
                 delete c;
@@ -355,7 +358,7 @@ int main(int argc, char **argv) {
                             c->set_nudge( nudge );
                             c->set_bucket( b_cur );
 
-                            c->set_debug( debug_dir, debug_defs );
+                            c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
                             c->ConstructBucketStage1();
                             delete c;
@@ -384,7 +387,7 @@ int main(int argc, char **argv) {
         c->set_nudge( nudge );
         c->set_bucket( b );
 
-        c->set_debug( debug_dir, debug_defs );
+        c->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
         c->ConstructBucketStage1();
         delete c;

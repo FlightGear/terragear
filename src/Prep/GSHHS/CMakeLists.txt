@@ -6,8 +6,9 @@ add_executable(gshhs
 
 target_link_libraries(gshhs 
     Polygon Geometry Output poly2tri
-	${SIMGEAR_CORE_LIBRARIES}
-	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+    ${GDAL_LIBRARY}
+    ${SIMGEAR_CORE_LIBRARIES}
+    ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 
 install(TARGETS gshhs RUNTIME DESTINATION bin)
@@ -17,8 +18,9 @@ add_executable(gshhs_debug
 
 target_link_libraries(gshhs_debug 
     Polygon Geometry Output poly2tri
-	${SIMGEAR_CORE_LIBRARIES}
-	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+    ${GDAL_LIBRARY}
+    ${SIMGEAR_CORE_LIBRARIES}
+    ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 
 install(TARGETS gshhs_debug RUNTIME DESTINATION bin)

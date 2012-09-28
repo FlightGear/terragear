@@ -26,10 +26,13 @@
 //    http://www.cs.man.ac.uk/aig/staff/alan/software/
 //
 
+#include <iostream>
+#include <fstream>
 
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <Geometry/point3d.hxx>
+#include <Geometry/poly_support.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/structure/exception.hxx>
 
@@ -40,6 +43,7 @@
 #include "point2d.hxx"
 
 using std::endl;
+using std::cout;
 
 // Constructor 
 TGPolygon::TGPolygon( void )
@@ -395,9 +399,9 @@ typedef enum {
 } clip_op;
 
 
-//#define FIXEDPT (10000000000000)
 #define FIXEDPT (10000000000000000)
 #define FIXED1M (            90090)
+
 
 static ClipperLib::IntPoint MakeClipperPoint( Point3D pt )
 {
@@ -451,19 +455,20 @@ void make_clipper_poly( const TGPolygon& in, ClipperLib::Polygons *out )
             // holes need to be orientation: false 
             if ( Orientation( contour ) ) {
                 //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper poly - hole contour needs to be reversed" );
-                ReversePoints( contour );
+                ReversePolygon( contour );
             }
         } else {
             // boundaries need to be orientation: true
             if ( !Orientation( contour ) ) {
                 //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper poly - boundary contour needs to be reversed" );
-                ReversePoints( contour );
+                ReversePolygon( contour );
             }
         }
         out->push_back(contour);
     }
 }
 
+#if 0
 void make_tg_poly_from_clipper_ex( const ClipperLib::ExPolygons& in, TGPolygon *out )
 {
 	int res_contour = 0;
@@ -496,6 +501,7 @@ void make_tg_poly_from_clipper_ex( const ClipperLib::ExPolygons& in, TGPolygon *
         }
     }
 }
+#endif
 
 void make_tg_poly_from_clipper( const ClipperLib::Polygons& in, TGPolygon *out )
 {
@@ -523,6 +529,7 @@ void make_tg_poly_from_clipper( const ClipperLib::Polygons& in, TGPolygon *out )
     }
 }
 
+#if 0
 ClipperLib::Polygons clipper_simplify( ClipperLib::ExPolygons &in )
 {
     ClipperLib::Polygons out;
@@ -535,16 +542,16 @@ ClipperLib::Polygons clipper_simplify( ClipperLib::ExPolygons &in )
         // first the boundary
         contour = pg->outer;
         if ( !Orientation( contour ) ) {
-            ReversePoints( contour );
+            ReversePolygon( contour );
         }
         out.push_back( contour );
-        
+
         // then the holes
         for (unsigned int j = 0; j < pg->holes.size(); j++)
         {
             contour = pg->holes[j];
             if ( Orientation( contour ) ) {
-                ReversePoints( contour );
+                ReversePolygon( contour );
             }
             out.push_back( contour );
         }
@@ -555,6 +562,7 @@ ClipperLib::Polygons clipper_simplify( ClipperLib::ExPolygons &in )
 
     return out;
 }
+#endif
 
 TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
 {
@@ -566,15 +574,15 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
     ClipperLib::Polygons clipper_clip;
     make_clipper_poly( clip, &clipper_clip );
 
-    ClipperLib::ExPolygons clipper_result;
+    ClipperLib::Polygons clipper_result;
 
     ClipperLib::ClipType op;
     if ( poly_op == POLY_DIFF ) {
-	    op = ClipperLib::ctDifference;
+        op = ClipperLib::ctDifference;
     } else if ( poly_op == POLY_INT ) {
-	    op = ClipperLib::ctIntersection;
+        op = ClipperLib::ctIntersection;
     } else if ( poly_op == POLY_XOR ) {
-	    op = ClipperLib::ctXor;
+        op = ClipperLib::ctXor;
     } else if ( poly_op == POLY_UNION ) {
     	op = ClipperLib::ctUnion;
     } else {
@@ -582,16 +590,13 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
     }
 
     ClipperLib::Clipper c;
-	c.Clear();
-	c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-	c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.Clear();
+    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
 
-	c.Execute(op, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.Execute(op, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
-    // verify each result is simple
-    ClipperLib::Polygons simple_result = clipper_simplify( clipper_result );
-    
-	make_tg_poly_from_clipper( simple_result, &result );
+    make_tg_poly_from_clipper( clipper_result, &result );
 
 	return result;
 }
@@ -633,26 +638,80 @@ void tgPolygonFreeClipperAccumulator( void )
     clipper_accumulator.clear();
 }
 
-
-void tgPolygonAddToClipperAccumulator( const TGPolygon& subject )
+void tgPolygonDumpAccumulator( char* ds, char* layer, char* name )
 {
+    void* ds_id = tgShapefileOpenDatasource( ds );
+    void* l_id  = tgShapefileOpenLayer( ds_id, layer );
+    TGPolygon accum;
+
+    make_tg_poly_from_clipper( clipper_accumulator, &accum );
+    tgShapefileCreateFeature( ds_id, l_id, accum, name );
+
+    // close after each write
+    ds_id = tgShapefileCloseDatasource( ds_id );
+}
+
+void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump )
+{
+    std::ofstream subjectFile, clipFile, resultFile;
+    
     ClipperLib::Polygons clipper_subject;
     make_clipper_poly( subject, &clipper_subject );
-
-    ClipperLib::ExPolygons clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
     c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
     c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
 
-    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    if (dump) {
+        subjectFile.open ("subject.txt");
+        subjectFile << clipper_subject;
+        subjectFile.close();
 
-    // verify each result is simple
-    ClipperLib::Polygons simple_result = clipper_simplify( clipper_result );
+        clipFile.open ("clip.txt");
+        clipFile << clipper_accumulator;
+        clipFile.close();
+    }
 
-    clipper_accumulator.clear();
-    clipper_accumulator = simple_result;
+    if ( !c.Execute(ClipperLib::ctUnion, clipper_accumulator, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Add to Accumulator returned FALSE" );
+        exit(-1);
+    }
+
+    if (dump) {
+        resultFile.open ("result.txt");
+        resultFile << clipper_accumulator;
+        resultFile.close();
+    }
+}
+
+void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
+{
+    ClipperLib::Polygons contour;
+    TGPolygon tgcontour;
+    char layer[32];
+
+    void*       ds_id = tgShapefileOpenDatasource( ds );
+
+    for (unsigned int i = 0; i < polys.size(); ++i) {
+        if  ( Orientation( polys[i] ) ) {
+            sprintf( layer, "%04d_hole", i );
+        } else {
+            sprintf( layer, "%04d_boundary", i );
+        }
+
+        void* l_id  = tgShapefileOpenLayer( ds_id, layer );
+        contour.clear();
+        contour.push_back( polys[i] );
+
+        tgcontour.erase();
+        make_tg_poly_from_clipper( contour, &tgcontour );
+
+        tgShapefileCreateFeature( ds_id, l_id, tgcontour, "contour" );
+    }
+
+    // close after each write
+    ds_id = tgShapefileCloseDatasource( ds_id );
 }
 
 TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
@@ -662,19 +721,20 @@ TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
     ClipperLib::Polygons clipper_subject;
     make_clipper_poly( subject, &clipper_subject );
     
-    ClipperLib::ExPolygons clipper_result;
+    ClipperLib::Polygons clipper_result;
     
     ClipperLib::Clipper c;
     c.Clear();
     c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
     c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
 
-    c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) )
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
+        exit(-1);
+    }
 
-    // verify each result is simple
-    ClipperLib::Polygons simple_result = clipper_simplify( clipper_result );
-
-    make_tg_poly_from_clipper( simple_result, &result );
+    make_tg_poly_from_clipper( clipper_result, &result );
 
     return result;
 }
@@ -693,6 +753,16 @@ TGPolygon tgPolygonIntClipper( const TGPolygon& subject, const TGPolygon& clip )
 
 TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip_clipper( POLY_UNION, subject, clip );
+}
+
+void tgPolygonDumpClipper(const TGPolygon &poly, char* file)
+{
+    ClipperLib::Polygons clipper_subject;
+    make_clipper_poly( poly, &clipper_subject );
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "DUMP POLY" );
+    SG_LOG(SG_GENERAL, SG_ALERT, clipper_subject );
+    SG_LOG(SG_GENERAL, SG_ALERT, "\n" );
 }
 
 // canonify the polygon winding, outer contour must be anti-clockwise,

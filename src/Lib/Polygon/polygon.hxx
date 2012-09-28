@@ -258,8 +258,12 @@ TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
 
 void tgPolygonInitClipperAccumulator( void );
 void tgPolygonFreeClipperAccumulator( void );
-void tgPolygonAddToClipperAccumulator( const TGPolygon& subject );
+void tgPolygonDumpAccumulator( char* ds, char* layer, char*name ); 
+void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump );
 TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject );
+
+// Save clipper to shapefile
+void clipper_to_shapefile( ClipperLib::Polygons polys, char* datasource );
 
 // Difference
 TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip );
@@ -275,6 +279,8 @@ TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta);
 
 // Simplify
 TGPolygon tgPolygonSimplify(const TGPolygon &poly);
+
+void tgPolygonDumpClipper(const TGPolygon &poly);
 
 // Output
 std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);

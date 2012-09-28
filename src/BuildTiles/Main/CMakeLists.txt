@@ -22,5 +22,21 @@ target_link_libraries(tg-construct
 
 install(TARGETS tg-construct RUNTIME DESTINATION bin)
 
+
+
+add_executable(cliptst
+    cliptst.cxx)
+
+target_link_libraries(cliptst
+    Polygon Geometry
+    ${GDAL_LIBRARY}
+    ${SIMGEAR_CORE_LIBRARIES}
+    ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+)
+
+
+
+install(TARGETS tg-construct RUNTIME DESTINATION bin)
+
 INSTALL(FILES usgsmap.txt DESTINATION ${PKGDATADIR} )
 INSTALL(FILES default_priorities.txt DESTINATION ${PKGDATADIR} )
