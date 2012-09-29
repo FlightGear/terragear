@@ -3,6 +3,10 @@
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/math/SGVec3.hxx>
 #include <simgear/math/SGMisc.hxx>
+#include <simgear/math/SGMath.hxx>
+#include <simgear/math/SGGeometryFwd.hxx>
+#include <simgear/math/SGBox.hxx>
+#include <simgear/math/SGIntersect.hxx>
 
 #include <Geometry/poly_support.hxx>
 
@@ -929,12 +933,12 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     return 1;
 }
 
-int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights, bool make_shapefiles )
+int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* lines, superpoly_list* lights, bool make_shapefiles )
 {
-    TGPolygon poly; 
-    TGPolygon clipped;
+    TGPolygon poly, tmp;
     void*     ds_id = NULL;        // If we are going to build shapefiles
     void*     l_id  = NULL;        // datasource and layer IDs
+    SGVec3d min, max, minp, maxp;
 
     if ( make_shapefiles ) {
         char ds_name[128];
@@ -946,16 +950,23 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
         poly = marking_polys[i].get_poly();
-        //poly = tgPolygonSimplify( poly );
-        //poly = remove_tiny_contours( poly );
+        poly.get_bounding_box(minp, maxp);
+        SGBoxd box1(minp, maxp);
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: clipping poly " << i << " of " << marking_polys.size() << " with CLIPPER ");
-        clipped = tgPolygonDiffClipper( poly, *line_accum );
+        for (int j= 0; j < lines->contours(); ++j)
+        {
+            tmp.erase();
+            tmp.add_contour(lines->get_contour(j), 0);
+            tmp.get_bounding_box(min, max);
+            SGBoxd box2(min, max);
 
-        // clean the poly before union with accum
-        clipped = reduce_degeneracy( clipped );
+            if ( intersects(box2, box1 ) )
+            {
+                poly = tgPolygonDiffClipper( poly, tmp );
+            }
+        }
 
-        marking_polys[i].set_poly( clipped );
+        marking_polys[i].set_poly( poly );
         line_polys->push_back( marking_polys[i] );
 
         /* If debugging this lf, write the poly, and the accum buffer at each step into their own layers */
@@ -972,11 +983,10 @@ int LinearFeature::BuildBtg(float alt_m, superpoly_list* line_polys, texparams_l
             l_id = tgShapefileOpenLayer( ds_id, layer_name );
 
             sprintf( feature_name, "accum_%d", i );
-            tgShapefileCreateFeature( ds_id, l_id, *line_accum, feature_name );
+            tgShapefileCreateFeature( ds_id, l_id, *lines, feature_name );
         }
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: union poly " << i << " of " << marking_polys.size() << " with CLIPPER " );
-        *line_accum = tgPolygonUnionClipper( poly, *line_accum );
+        lines->add_contour(poly.get_contour(0), 0);
 
         line_tps->push_back( marking_tps[i] );
     }

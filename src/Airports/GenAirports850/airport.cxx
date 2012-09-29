@@ -517,11 +517,11 @@ void Airport::merge_slivers( superpoly_list& polys, poly_list& slivers_list ) {
 
 void Airport::BuildBtg(const string& root, const string_list& elev_src )
 {
-	ClipPolyType accum;
+    ClipPolyType accum;
     poly_list    slivers;
 
     // try to keep line accumulator in clipper format for speed...
-	ClipPolyType line_accum;
+    ClipPolyType lines;
     poly_list    line_slivers;
 
     TGPolygon apt_base;
@@ -608,7 +608,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                 make_shapefiles = false;
             }
 
-            features[i]->BuildBtg( altitude, &line_polys, &line_tps, &line_accum, &rwy_lights, make_shapefiles );
+            features[i]->BuildBtg( &line_polys, &line_tps, &lines, &rwy_lights, make_shapefiles );
         }
     }
     else
