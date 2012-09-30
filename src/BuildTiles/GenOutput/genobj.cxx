@@ -46,13 +46,16 @@ using std::string;
 // tile and zero elevation
 void TGGenOutput::calc_gbs( TGConstruct& c ) {
     point_list wgs84_nodes = c.get_wgs84_nodes();
-    SGSphered d;
+    gbs_center = SGVec3d::fromGeod( c.get_bucket().get_center() );
+
+    double dist_squared, radius_squared = 0;
     for ( int i = 0; i < wgs84_nodes.size(); ++i ) {
-        d.expandBy(wgs84_nodes[ i ].toSGVec3d());
+        dist_squared = distSqr(gbs_center, wgs84_nodes[i].toSGVec3d());
+        if ( dist_squared > radius_squared ) {
+            radius_squared = dist_squared;
+        }
     }
-    
-    gbs_center = d.getCenter();
-    gbs_radius = d.getRadius();
+    gbs_radius = sqrt(radius_squared);
 }
 
 
