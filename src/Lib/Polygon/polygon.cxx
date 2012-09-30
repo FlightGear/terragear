@@ -654,14 +654,9 @@ void tgPolygonDumpAccumulator( char* ds, char* layer, char* name )
 void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump )
 {
     std::ofstream subjectFile, clipFile, resultFile;
-    
+
     ClipperLib::Polygons clipper_subject;
     make_clipper_poly( subject, &clipper_subject );
-
-    ClipperLib::Clipper c;
-    c.Clear();
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
 
     if (dump) {
         subjectFile.open ("subject.txt");
@@ -673,7 +668,12 @@ void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump )
         clipFile.close();
     }
 
-    if ( !c.Execute(ClipperLib::ctUnion, clipper_accumulator, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
+
+    if ( !c.Execute(ClipperLib::ctUnion, clipper_accumulator, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd) ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Add to Accumulator returned FALSE" );
         exit(-1);
     }
