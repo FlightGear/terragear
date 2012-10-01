@@ -1,5 +1,3 @@
-include_directories(${GPC_INCLUDE_DIR})
-
 add_executable(tg-construct
     tgconstruct.hxx
     tgconstruct.cxx
@@ -51,9 +49,7 @@ target_link_libraries(cliptst
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 
-
-
-install(TARGETS tg-construct RUNTIME DESTINATION bin)
+install(TARGETS cliptst  RUNTIME DESTINATION bin)
 
 INSTALL(FILES usgsmap.txt DESTINATION ${PKGDATADIR} )
 INSTALL(FILES default_priorities.txt DESTINATION ${PKGDATADIR} )
