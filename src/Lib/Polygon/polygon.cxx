@@ -55,7 +55,7 @@ TGPolygon::TGPolygon( void )
 TGPolygon::~TGPolygon( void ) {
 }
 
-void TGPolygon::get_bounding_box( Point3D& min, Point3D& max ) const
+void TGPolygon::get_bounding_box( SGVec3d& min, SGVec3d& max ) const
 {
     double minx = std::numeric_limits<double>::infinity();
     double miny = std::numeric_limits<double>::infinity();
@@ -64,7 +64,7 @@ void TGPolygon::get_bounding_box( Point3D& min, Point3D& max ) const
 
     for ( int i = 0; i < contours(); i++ ) {
         for (unsigned int j = 0; j < poly[i].size(); j++) {
-            Point3D pt = poly[i][j];
+            SGVec3d pt = poly[i][j].toSGVec3d();
             if ( pt.x() < minx ) { minx = pt.x(); }
             if ( pt.x() > maxx ) { maxx = pt.x(); }
             if ( pt.y() < miny ) { miny = pt.y(); }
@@ -72,8 +72,8 @@ void TGPolygon::get_bounding_box( Point3D& min, Point3D& max ) const
         }
     }
 
-    min = Point3D( minx, miny, 0.0 );
-    max = Point3D( maxx, maxy, 0.0 );
+    min = SGVec3d( minx, miny, 0.0 );
+    max = SGVec3d( maxx, maxy, 0.0 );
 }
 
 

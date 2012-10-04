@@ -39,7 +39,7 @@ void TGConstruct::TesselatePolys( void )
 {
     // tesselate the polygons and prepair them for final output
     point_list poly_extra;
-    Point3D min, max;
+    SGVec3d min, max;
 
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
@@ -53,7 +53,7 @@ void TGConstruct::TesselatePolys( void )
                 TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
 
                 poly.get_bounding_box(min, max);
-                poly_extra = nodes.get_geod_inside( min, max );
+                poly_extra = nodes.get_geod_inside( Point3D::fromSGVec3(min), Point3D::fromSGVec3(max) );
 
                 SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " <<
                         shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) <<
