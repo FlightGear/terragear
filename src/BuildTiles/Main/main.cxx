@@ -29,36 +29,36 @@
 #  include <config.h>
 #endif
 
-#include <simgear/compiler.h>
+//#include <simgear/compiler.h>
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <algorithm>
+//#include <iostream>
+//#include <string>
+//#include <vector>
+//#include <algorithm>
 
-#include <simgear/constants.h>
-#include <simgear/bucket/newbucket.hxx>
+//#include <simgear/constants.h>
+//#include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/sg_dir.hxx>
-#include <simgear/misc/sg_path.hxx>
-#include <simgear/math/sg_types.hxx>
+//#include <simgear/misc/sg_dir.hxx>
+//#include <simgear/misc/sg_path.hxx>
+//#include <simgear/math/sg_types.hxx>
 
-#include <simgear/math/SGMath.hxx>
-#include <simgear/misc/sgstream.hxx>
+//#include <simgear/math/SGMath.hxx>
+//#include <simgear/misc/sgstream.hxx>
 
 
-#include <boost/foreach.hpp>
+//#include <boost/foreach.hpp>
 
 #include <Geometry/poly_support.hxx>
-#include <landcover/landcover.hxx>
+//#include <landcover/landcover.hxx>
 
-#include "construct.hxx"
+#include "tgconstruct.hxx"
 #include "usgs.hxx"
 
 using std::string;
 using std::vector;
 
-using namespace std;
+//using namespace std;
 
 vector<string> load_dirs;
 double nudge=0.0;
@@ -327,7 +327,7 @@ int main(int argc, char **argv) {
                             stage1->set_paths( work_dir, share_dir, output_dir, load_dirs );
                             stage1->set_options( useUKgrid, ignoreLandmass, nudge );
                             stage1->set_bucket( b_cur );
-                            stage1->set_debug( debug_dir, debug_defs );
+                            stage1->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
                             stage1->ConstructBucketStage1();
                             stage1->SaveToIntermediateFiles(1);

@@ -1,6 +1,24 @@
+include_directories(${GPC_INCLUDE_DIR})
+
 add_executable(tg-construct
-    construct.cxx 
-    construct.hxx
+    tgconstruct.hxx
+    tgconstruct.cxx
+    tgconstruct_cleanup.cxx
+    tgconstruct_clip.cxx
+    tgconstruct_debug.cxx
+    tgconstruct_elevation.cxx
+    tgconstruct_landclass.cxx
+    tgconstruct_lookup.cxx
+    tgconstruct_math.cxx
+    tgconstruct_output.cxx
+    tgconstruct_poly.cxx
+    tgconstruct_shared.cxx
+    tgconstruct_tesselate.cxx
+    tgconstruct_texture.cxx
+    tglandclass.cxx
+    tglandclass.hxx
+    tgshape.cxx
+    tgshape.hxx
     priorities.cxx
     priorities.hxx
     usgs.cxx 
