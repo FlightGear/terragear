@@ -71,26 +71,24 @@ find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 find_package(SimGear 2.5.0 REQUIRED)
+find_package(GDAL REQUIRED)
+find_package(TIFF REQUIRED) # needed for SRTM
+find_package(NewMat11 REQUIRED)
+find_library(POCO_FOUNDATION PocoFoundation REQUIRED)
+find_library(POCO_NET PocoNet REQUIRED)
 
 find_package(CGAL COMPONENTS Core REQUIRED)
-if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
+if (CGAL_FOUND)
+  if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
         message(FATAL_ERROR "CGAL >= 4.0 is required. Found ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-else(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
+  else(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
         message(STATUS "Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-endif(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
+  endif(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.0)
+endif (CGAL_FOUND)
 
-find_package(TIFF) # needed for SRTM
 if (CMAKE_CL_64)
 	find_package(JPEG) # needed for SRTM
 endif (CMAKE_CL_64)
-find_package(NewMat11)
-
-if(ENABLE_GDAL)
-    find_package(GDAL) # build OGRDecode
-endif(ENABLE_GDAL)
-
-find_library(POCO_FOUNDATION PocoFoundation REQUIRED)
-find_library(POCO_NET PocoNet REQUIRED)
 
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)

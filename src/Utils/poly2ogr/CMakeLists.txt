@@ -1,6 +1,3 @@
-
-if (GDAL_FOUND)
-
 include_directories(${GDAL_INCLUDE_DIR})
 add_executable(poly2ogr poly2ogr.cxx)
 
@@ -16,4 +13,3 @@ target_link_libraries(poly2ogr
 )
 
 install(TARGETS poly2ogr RUNTIME DESTINATION bin)
-endif(GDAL_FOUND)

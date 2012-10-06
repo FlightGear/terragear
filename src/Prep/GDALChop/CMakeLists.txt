@@ -1,6 +1,3 @@
-
-if (GDAL_FOUND)
-
 include_directories(${GDAL_INCLUDE_DIR})
 add_executable(gdalchop gdalchop.cxx)
 
@@ -10,4 +7,3 @@ target_link_libraries(gdalchop
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 install(TARGETS gdalchop RUNTIME DESTINATION bin)
-endif(GDAL_FOUND)
