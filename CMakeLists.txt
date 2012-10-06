@@ -64,8 +64,6 @@ if (MSVC AND MSVC_3RDPARTY_ROOT)
   set (OPENAL_LIBRARY_DIR ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/lib)
 endif (MSVC AND MSVC_3RDPARTY_ROOT)
 
-option(ENABLE_GDAL "Set to ON to build TerraGear with GDAL support" ON)
-
 # check required dependencies
 find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
