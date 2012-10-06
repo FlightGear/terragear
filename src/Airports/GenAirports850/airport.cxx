@@ -566,8 +566,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
     for (unsigned int i=0; i<helipads.size(); i++)
     {
-        apt_lon += helipads[i]->GetLoc().x();
-        apt_lat += helipads[i]->GetLoc().y();
+        apt_lon += helipads[i]->GetLoc().getLongitudeDeg();
+        apt_lat += helipads[i]->GetLoc().getLatitudeDeg();
         num_samples++;
     }
     apt_lon = apt_lon / (double)num_samples;

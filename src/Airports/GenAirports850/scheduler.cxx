@@ -722,7 +722,7 @@ bool Scheduler::AddAirports( long start_pos, float min_lat, float min_lon, float
 					// a winner
 					{ 
 						Helipad* helipad = new Helipad(def);
-						Point3D  loc = helipad->GetLoc();
+						Point3D  loc = Point3D::fromSGGeod(helipad->GetLoc()) ;
 						if ( (loc.x() >= min_lon ) && 
 						     (loc.y() >= min_lat ) &&
 							 (loc.x() <= max_lon ) &&

@@ -46,9 +46,7 @@ superpoly_list Helipad::gen_helipad_lights(double maxsize){
     point_list y_normals; y_normals.clear();
 
     // Vector calculation
-    Point3D vec = sgGeodToCart( GetLoc() * SG_DEGREES_TO_RADIANS );
-    double length = vec.distance3D( Point3D(0.0) );
-    vec = vec / length;
+    SGVec3d vec = normalize(SGVec3d::fromGeod(GetLoc()));
 
     // Create yellow edge lights, 5m spacing
     int divs = (int)(maxsize / 5.0);
@@ -60,19 +58,15 @@ superpoly_list Helipad::gen_helipad_lights(double maxsize){
         inc = (area.get_pt(0, i==3 ? 0 : i+1) - area.get_pt(0,i)) / divs;
         for ( int j = 0; j < divs; ++j) {
             y_lights.push_back( pt);
-            y_normals.push_back( vec );
+            y_normals.push_back(Point3D::fromSGVec3(vec));
             pt += inc;
         }
     }
 
     // Create a circle of yellow lights where the white texture circle is
-    double lat = 0, lon = 0, az;
     for (int deg = 0; deg < 360; deg += 45){
-        geo_direct_wgs_84(0, heli.lat, heli.lon, deg ,
-                          maxsize * 0.46 , &lat, &lon, &az );
-
-        y_lights.push_back( Point3D( lon, lat, 0.0 ) );
-        y_normals.push_back( vec );
+        y_lights.push_back( Point3D::fromSGGeod( SGGeodesy::direct(GetLoc(), deg, maxsize * 0.46)) );
+        y_normals.push_back( Point3D::fromSGVec3(vec) );
     }
 
     TGPolygon lights_poly; lights_poly.erase();
@@ -141,7 +135,7 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
         area_side = true;
     }
 
-    TGPolygon helipad = gen_wgs84_area( GetLoc(), maxsize, 0, 0, maxsize, heli.heading, false);
+    TGPolygon helipad = gen_wgs84_area( Point3D::fromSGGeod(GetLoc()), maxsize, 0, 0, maxsize, heli.heading, false);
     helipad = snap( helipad, gSnap );
     string material, shoulder_mat;
     if (heli.surface == 1)
