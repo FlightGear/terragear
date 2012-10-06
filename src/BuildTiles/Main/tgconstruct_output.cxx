@@ -173,15 +173,17 @@ void TGConstruct::WriteBtgFile( void )
     }
 
     std::vector< SGVec3d > wgs84_nodes = nodes.get_wgs84_nodes_as_SGVec3d();
-    SGSphered d;
-
+    SGVec3d gbs_center = SGVec3d::fromGeod( bucket.get_center() );
+    double dist_squared, radius_squared = 0;
     for (int i = 0; i < (int)wgs84_nodes.size(); ++i)
     {
-        d.expandBy(wgs84_nodes[ i ]);
+        dist_squared = distSqr(gbs_center, wgs84_nodes[i]);
+        if ( dist_squared > radius_squared ) {
+            radius_squared = dist_squared;
+        }
     }
+    double gbs_radius = sqrt(radius_squared);
 
-    SGVec3d gbs_center = d.getCenter();
-    double gbs_radius = d.getRadius();
     SG_LOG(SG_GENERAL, SG_DEBUG, "gbs center = " << gbs_center);
     SG_LOG(SG_GENERAL, SG_DEBUG, "Done with wgs84 node mapping");
     SG_LOG(SG_GENERAL, SG_DEBUG, "  center = " << gbs_center << " radius = " << gbs_radius );
