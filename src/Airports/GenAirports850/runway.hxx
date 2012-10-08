@@ -185,14 +185,14 @@ public:
 
     point_list GetNodes();
 
-    Point3D GetStart(void)
+    SGGeod GetStart(void)
     {
-        return ( Point3D( lon[0], lat[0], 0.0f ));
+        return SGGeod::fromDeg( lon[0], lat[0] );
     }
 
-    Point3D GetEnd(void)
+    SGGeod GetEnd(void)
     {
-        return ( Point3D( lon[1], lat[1], 0.0f ));
+        return SGGeod::fromDeg( lon[1], lat[1] );
     }
 
 private:

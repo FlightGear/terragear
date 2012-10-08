@@ -127,11 +127,12 @@ ostream os(&ssb);
 
 int main(int argc, char **argv)
 {
-    float min_lon = -180;
-    float max_lon = 180;
-    float min_lat = -90;
-    float max_lat = 90;
     long  position = 0;
+    SGGeod max, min;
+    max.setLongitudeDeg(180);
+    max.setLatitudeDeg(90);
+    min.setLongitudeDeg(-180);
+    min.setLatitudeDeg(-90);
 
     // Setup elevation directories
     string_list elev_src;
@@ -159,73 +160,69 @@ int main(int argc, char **argv)
     int    redirect_port  = -1;
 
     int arg_pos;
-    for (arg_pos = 1; arg_pos < argc; arg_pos++) 
+    for (arg_pos = 1; arg_pos < argc; arg_pos++)
     {
         string arg = argv[arg_pos];
-        if ( arg.find("--work=") == 0 ) 
+        if ( arg.find("--work=") == 0 )
         {
             work_dir = arg.substr(7);
-    	} 
-        else if ( arg.find("--input=") == 0 ) 
-        {
-	        input_file = arg.substr(8);
         }
-        else if ( arg.find("--start-id=") == 0 ) 
+        else if ( arg.find("--input=") == 0 )
         {
-    	    start_id = arg.substr(11);
-     	}
+            input_file = arg.substr(8);
+        }
+        else if ( arg.find("--start-id=") == 0 )
+        {
+            start_id = arg.substr(11);
+        }
         else if ( arg.find("--airport-pos=") == 0 )
         {
             airport_pos = atol( arg.substr(14).c_str() );
         }
-        else if ( arg.find("--restart-id=") == 0 ) 
+        else if ( arg.find("--restart-id=") == 0 )
         {
-    	    restart_id = arg.substr(13);
-     	} 
-        else if ( arg.find("--nudge=") == 0 ) 
+            restart_id = arg.substr(13);
+        }
+        else if ( arg.find("--nudge=") == 0 )
         {
-    	    nudge = atoi( arg.substr(8).c_str() );
-    	}
-        else if ( arg.find("--snap=") == 0 ) 
+            nudge = atoi( arg.substr(8).c_str() );
+        }
+        else if ( arg.find("--snap=") == 0 )
         {
-    	    gSnap = atof( arg.substr(7).c_str() );
-    	} 
-        else if ( arg.find("--last_apt_file=") == 0 ) 
+            gSnap = atof( arg.substr(7).c_str() );
+        }
+        else if ( arg.find("--last_apt_file=") == 0 )
         {
-    	    last_apt_file = arg.substr(16);
-     	} 
-        else if ( arg.find("--min-lon=") == 0 ) 
+            last_apt_file = arg.substr(16);
+        }
+        else if ( arg.find("--min-lon=") == 0 )
         {
-    	    min_lon = atof( arg.substr(10).c_str() );
-    	} 
-        else if ( arg.find("--max-lon=") == 0 ) 
+            min.setLongitudeDeg(atof( arg.substr(10).c_str() ));
+        }
+        else if ( arg.find("--max-lon=") == 0 )
         {
-    	    max_lon = atof( arg.substr(10).c_str() );
-    	} 
-        else if ( arg.find("--min-lat=") == 0 ) 
+            max.setLongitudeDeg(atof( arg.substr(10).c_str() ));
+        }
+        else if ( arg.find("--min-lat=") == 0 )
         {
-    	    min_lat = atof( arg.substr(10).c_str() );
-    	} 
-        else if ( arg.find("--max-lat=") == 0 ) 
+            min.setLatitudeDeg(atof( arg.substr(10).c_str() ));
+        }
+        else if ( arg.find("--max-lat=") == 0 )
         {
-    	    max_lat = atof( arg.substr(10).c_str() );
-        } 
-        else if ( arg.find("--chunk=") == 0 ) 
+            max.setLatitudeDeg(atof( arg.substr(10).c_str() ));
+        }
+        else if ( arg.find("--chunk=") == 0 )
         {
             tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(), 10.0);
-            min_lon = rectangle.getMin().getLongitudeDeg();
-            min_lat = rectangle.getMin().getLatitudeDeg();
-            max_lon = rectangle.getMax().getLongitudeDeg();
-            max_lat = rectangle.getMax().getLatitudeDeg();
-        } 
-        else if ( arg.find("--tile=") == 0 ) 
+            min = rectangle.getMin();
+            max = rectangle.getMax();
+        }
+        else if ( arg.find("--tile=") == 0 )
         {
             tg::Rectangle rectangle = tg::parseTile(arg.substr(7).c_str());
-            min_lon = rectangle.getMin().getLongitudeDeg();
-            min_lat = rectangle.getMin().getLatitudeDeg();
-            max_lon = rectangle.getMax().getLongitudeDeg();
-            max_lat = rectangle.getMax().getLatitudeDeg();
-    	} 
+            min = rectangle.getMin();
+            max = rectangle.getMax();
+        }
         else if ( arg.find("--airport=") == 0 ) 
         {
     	    airport_id = arg.substr(10).c_str();
@@ -299,16 +296,17 @@ int main(int argc, char **argv)
     }
     SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
     SG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
-    SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min_lon << ':' << max_lon);
-    SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min_lat << ':' << max_lat);
+    SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
+    SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
 
-    if (max_lon < min_lon || max_lat < min_lat ||
-	    min_lat < -90 || max_lat > 90 ||
-	    min_lon < -180 || max_lon > 180) 
+    if (!max.isValid() || !min.isValid())
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
     	exit(1);
     }
+
+    tg::Rectangle boundingBox(min, max);
+    boundingBox.sanify();
 
     if ( work_dir == "" ) 
     {
@@ -397,7 +395,7 @@ int main(int argc, char **argv)
         position = scheduler->FindAirport( start_id );
 
         // add remaining airports within boundary
-        if ( scheduler->AddAirports( position, min_lat, min_lon, max_lat, max_lon ) )
+        if ( scheduler->AddAirports( position, &boundingBox ) )
         {
             // parse all the airports that were found
             scheduler->Schedule( num_threads, summary_file );
@@ -406,7 +404,7 @@ int main(int argc, char **argv)
     else
     {
         // find all airports within given boundary
-        if ( scheduler->AddAirports( 0, min_lat, min_lon, max_lat, max_lon ) )
+        if ( scheduler->AddAirports( 0, &boundingBox ) )
         {
             // and parse them
             scheduler->Schedule( num_threads, summary_file );

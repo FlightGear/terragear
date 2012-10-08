@@ -590,7 +590,7 @@ void Scheduler::RetryAirport( AirportInfo* pai )
     retryList.push_back( *pai );        
 }
 
-bool Scheduler::AddAirports( long start_pos, float min_lat, float min_lon, float max_lat, float max_lon )
+bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )
 {
     char 	 line[2048];
     char*	 def;
@@ -605,170 +605,150 @@ bool Scheduler::AddAirports( long start_pos, float min_lat, float min_lon, float
     done  = false;
     match = false;
 
-	// start from current position, and push all airports where a runway start or end 
-	// lies within the given min/max coordinates
+    // start from current position, and push all airports where a runway start or end
+    // lies within the given min/max coordinates
 
     ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
+    if ( !in.is_open() )
     {
         SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-	if (start_pos)
-	{
+    if (start_pos)
+    {
         in.seekg(start_pos, ios::beg);
-	}
+    }
 
-	while (!done)
-	{
-	  	// remember the position of this line
-	   	cur_pos = in.tellg();
+    while (!done)
+    {
+        // remember the position of this line
+        cur_pos = in.tellg();
 
-	   	// get a line
-	   	in.getline(line, 2048);
-		def = &line[0];
+        // get a line
+        in.getline(line, 2048);
+        def = &line[0];
 
-    	// Get the number code
-    	tok = strtok(def, " \t\r\n");
+        // Get the number code
+        tok = strtok(def, " \t\r\n");
 
-	    if (tok)
-    	{
-    	    def += strlen(tok)+1;
-    	    code = atoi(tok);
+        if (tok)
+        {
+            def += strlen(tok)+1;
+            code = atoi(tok);
 
-	        switch(code)
-    	    {
-    	        case LAND_AIRPORT_CODE: 
-    	        case SEA_AIRPORT_CODE:
-    	        case HELIPORT_CODE:
-					{
-						Airport* airport = new Airport( code, def );
-						if (match)
-						{
-                            // Start off with given snap value
-                            AirportInfo* pInfo = new AirportInfo( cur_apt_name, cur_apt_pos, gSnap );   
-                            originalList.push_back( *pInfo );
-                            delete pInfo;
-						}
-						// remember this new apt pos and name, and clear match
-						cur_apt_pos  = cur_pos;
-						cur_apt_name = airport->GetIcao();
-						delete airport;
-
-						match = false;
-					}
-    	            break;
-
-				case END_OF_FILE:
-					if (match)
-					{
+            switch(code)
+            {
+                case LAND_AIRPORT_CODE:
+                case SEA_AIRPORT_CODE:
+                case HELIPORT_CODE:
+                {
+                    Airport* airport = new Airport( code, def );
+                    if (match)
+                    {
                         // Start off with given snap value
-                        AirportInfo* pInfo = new AirportInfo( cur_apt_name, cur_apt_pos, gSnap );   
+                        AirportInfo* pInfo = new AirportInfo( cur_apt_name, cur_apt_pos, gSnap );
                         originalList.push_back( *pInfo );
                         delete pInfo;
-					}
-					done = true;
-					break;
+                    }
+                    // remember this new apt pos and name, and clear match
+                    cur_apt_pos  = cur_pos;
+                    cur_apt_name = airport->GetIcao();
+                    delete airport;
 
-	            case LAND_RUNWAY_CODE:
-					// if the the runway start / end  coords are within the rect, 
-					// we have a winner
-					{ 
-						Runway* runway = new Runway(def);
-						Point3D start = Point3D::fromSGGeod(runway->GetStart());
-                                                Point3D end   = Point3D::fromSGGeod(runway->GetEnd());
-						if ( (start.x() >= min_lon ) && 
-						     (start.y() >= min_lat ) &&
-							 (start.x() <= max_lon ) &&
-							 (start.y() <= max_lat ) ) {
-							match = true;
-						}
-						else if ( (end.x() >= min_lon ) && 
-						     (end.y() >= min_lat ) &&
-							 (end.x() <= max_lon ) &&
-							 (end.y() <= max_lat ) ) {
-							match = true;
-						}
-						delete runway;
-					}
-					break;
+                    match = false;
+                }
+                break;
 
-    	        case WATER_RUNWAY_CODE:
-					// if the the runway start / end  coords are within the rect, 
-					// we have a winner
-					{ 
-						WaterRunway* runway = new WaterRunway(def);
-						Point3D start = runway->GetStart();
-						Point3D end   = runway->GetEnd();
-						if ( (start.x() >= min_lon ) && 
-						     (start.y() >= min_lat ) &&
-							 (start.x() <= max_lon ) &&
-							 (start.y() <= max_lat ) ) {
-							match = true;
-						}
-						else if ( (end.x() >= min_lon ) && 
-						     (end.y() >= min_lat ) &&
-							 (end.x() <= max_lon ) &&
-							 (end.y() <= max_lat ) ) {
-							match = true;
-						}
-						delete runway;
-					}
-					break;
+                case END_OF_FILE:
+                    if (match)
+                    {
+                        // Start off with given snap value
+                        AirportInfo* pInfo = new AirportInfo( cur_apt_name, cur_apt_pos, gSnap );
+                        originalList.push_back( *pInfo );
+                        delete pInfo;
+                    }
+                    done = true;
+                    break;
 
-    	        case HELIPAD_CODE:
-					// if the heliport coords are within the rect, we have
-					// a winner
-					{ 
-						Helipad* helipad = new Helipad(def);
-						Point3D  loc = Point3D::fromSGGeod(helipad->GetLoc()) ;
-						if ( (loc.x() >= min_lon ) && 
-						     (loc.y() >= min_lat ) &&
-							 (loc.x() <= max_lon ) &&
-							 (loc.y() <= max_lat ) ) {
-							match = true;
-						}
-						delete helipad;
-					}
-					break;
+                case LAND_RUNWAY_CODE:
+                    // if the the runway start / end  coords are within the rect,
+                    // we have a winner
+                    {
+                        Runway* runway = new Runway(def);
+                        if ( boundingBox->isInside(runway->GetStart()) ) {
+                            match = true;
+                        }
+                        else if ( boundingBox->isInside(runway->GetEnd()) ) {
+                            match = true;
+                        }
+                        delete runway;
+                    }
+                    break;
+
+                case WATER_RUNWAY_CODE:
+                    // if the the runway start / end  coords are within the rect,
+                    // we have a winner
+                    {
+                        WaterRunway* runway = new WaterRunway(def);
+                        if ( boundingBox->isInside(runway->GetStart()) ) {
+                            match = true;
+                        }
+                        else if ( boundingBox->isInside(runway->GetEnd()) ) {
+                            match = true;
+                        }
+                        delete runway;
+                    }
+                    break;
+
+                case HELIPAD_CODE:
+                    // if the heliport coords are within the rect, we have
+                    // a winner
+                    {
+                        Helipad* helipad = new Helipad(def);
+                        if ( boundingBox->isInside(helipad->GetLoc()) ) {
+                            match = true;
+                        }
+                        delete helipad;
+                    }
+                    break;
 
                 case TAXIWAY_CODE:
-    	        case PAVEMENT_CODE:
-	            case LINEAR_FEATURE_CODE:
-    	        case BOUNDRY_CODE:
-    	        case NODE_CODE:
-    	        case BEZIER_NODE_CODE:
-    	        case CLOSE_NODE_CODE:
-    	        case CLOSE_BEZIER_NODE_CODE:
-    	        case TERM_NODE_CODE:
-    	        case TERM_BEZIER_NODE_CODE:
-    	        case AIRPORT_VIEWPOINT_CODE:
-    	        case AIRPLANE_STARTUP_LOCATION_CODE:
-    	        case LIGHT_BEACON_CODE:
-    	        case WINDSOCK_CODE:
-    	        case TAXIWAY_SIGN:
-    	        case LIGHTING_OBJECT:
-    	        case COMM_FREQ1_CODE:
-    	        case COMM_FREQ2_CODE:
-    	        case COMM_FREQ3_CODE:
-    	        case COMM_FREQ4_CODE:
-    	        case COMM_FREQ5_CODE:
-    	        case COMM_FREQ6_CODE:
-    	        case COMM_FREQ7_CODE:
-    	            break;
-    	    }
-    	}
-	}
-
-	// did we add airports to the parse list?
-        if ( originalList.size() )
-        {
-            return true;
-        } else
-        {
-            return false;
+                case PAVEMENT_CODE:
+                case LINEAR_FEATURE_CODE:
+                case BOUNDRY_CODE:
+                case NODE_CODE:
+                case BEZIER_NODE_CODE:
+                case CLOSE_NODE_CODE:
+                case CLOSE_BEZIER_NODE_CODE:
+                case TERM_NODE_CODE:
+                case TERM_BEZIER_NODE_CODE:
+                case AIRPORT_VIEWPOINT_CODE:
+                case AIRPLANE_STARTUP_LOCATION_CODE:
+                case LIGHT_BEACON_CODE:
+                case WINDSOCK_CODE:
+                case TAXIWAY_SIGN:
+                case LIGHTING_OBJECT:
+                case COMM_FREQ1_CODE:
+                case COMM_FREQ2_CODE:
+                case COMM_FREQ3_CODE:
+                case COMM_FREQ4_CODE:
+                case COMM_FREQ5_CODE:
+                case COMM_FREQ6_CODE:
+                case COMM_FREQ7_CODE:
+                    break;
+            }
         }
+    }
+
+    // did we add airports to the parse list?
+    if ( originalList.size() )
+    {
+        return true;
+    } else
+    {
+        return false;
+    }
 }
 
 Scheduler::Scheduler(string& cmd, string& datafile, const string& root, const string_list& elev_src)
