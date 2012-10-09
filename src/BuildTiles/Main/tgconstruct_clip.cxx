@@ -38,6 +38,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     int i, j;
     Point3D p;
     point2d min, max;
+    bool debug_area, debug_shape;
+    static int accum_idx = 0;
 
 #if !USE_ACCUMULATOR
     TGPolygon accum;
@@ -104,7 +106,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     }
 
     // Dump the masks
-    if ( debug_all || debug_shapes.size() ) {
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
         WriteDebugPoly( "land_mask", "", land_mask );
         WriteDebugPoly( "water_mask", "", water_mask );
         WriteDebugPoly( "island_mask", "", island_mask );
@@ -112,35 +114,19 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // process polygons in priority order
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
+        debug_area = IsDebugArea( i );
         for( j = 0; j < (int)polys_in.area_size(i); ++j ) {
             TGPolygon current = polys_in.get_mask(i, j);
-            TGPolygon before;
-            char layer_name[64];
+            debug_shape = IsDebugShape( polys_in.get_shape( i, j ).id );
 
             SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << "(" << i << "):" << j+1 << " of " << polys_in.area_size(i) << " id " << polys_in.get_shape( i, j ).id );
 
             tmp = current;
 
-            if ( IsDebugShape( polys_in.get_shape( i, j ).id ) ) {
-                char name[32];
-                sprintf(name, "shape %d,%d", i,j);
-                sprintf(layer_name, "premask_%d_%d_%d", i, j, polys_in.get_shape( i, j ).id);
-                WriteDebugPoly( layer_name, name, tmp );
-
-                //sprintf(name, "accum %d,%d", i,j);
-                //WriteDebugPoly( layer_name, name, accum );
-            }
 
             // if not a hole, clip the area to the land_mask
             if ( !ignoreLandmass && !is_hole_area( i ) ) {
-                before = tmp;
-
                 tmp = tgPolygonInt( tmp, land_mask );
-
-                if (tmp.total_size() != before.total_size()) {
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Clip w/land mask gave odd result" );
-                    // exit(0);
-                }
             }
 
             // if a water area, cut out potential islands
@@ -148,29 +134,25 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 // clip against island mask
                 tmp = tgPolygonDiff( tmp, island_mask );
 
-                if (tmp.total_size() != before.total_size()) {
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Clip w/island mask gave odd result" );
-                    // exit(0);
-                }
             }
 
-            if ( IsDebugShape( polys_in.get_shape( i, j ).id ) ) {
+            if ( debug_area || debug_shape ) {
+                char layer[32];
                 char name[32];
+                sprintf(layer, "pre_clip_%d", polys_in.get_shape( i, j ).id );
                 sprintf(name, "shape %d,%d", i,j);
-                sprintf(layer_name, "preclip_shape_%d_%d_%d", i, j, polys_in.get_shape( i, j ).id);
-                WriteDebugPoly( layer_name, name, tmp );
+                WriteDebugPoly( layer, name, tmp );
 
-#if !USE_ACCUMULATOR
-                sprintf(name, "accum %d,%d", i,j);
-                sprintf(layer_name, "preclip_accum_%d_%d", i, j);
-                WriteDebugPoly( layer_name, name, accum );
+                sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
+                sprintf(name, "shape_accum %d,%d", i,j);
+
+#if USE_ACCUMULATOR
+                tgPolygonDumpAccumulator( ds_name, layer, name );
+#else
+                WriteDebugPoly( layer, name, accum );
 #endif
             }
 
-            // set debug for this clip
-            if ( (i == 14) && ( j == 0 ) ) {
-                sglog().setLogLevels( SG_ALL, SG_DEBUG );
-            } 
 
 #if USE_ACCUMULATOR
             clipped = tgPolygonDiffClipperWithAccumulator( tmp );
@@ -178,8 +160,14 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             clipped = tgPolygonDiff( tmp, accum );
 #endif
 
-            sglog().setLogLevels( SG_ALL, SG_INFO );
 
+            if ( debug_area || debug_shape ) {
+                char layer[32];
+                char name[32];
+                sprintf(layer, "post_clip_%d", polys_in.get_shape( i, j ).id );
+                sprintf(name, "shape %d,%d", i,j);
+                WriteDebugPoly( layer, name, clipped );
+            }
             
             // only add to output list if the clip left us with a polygon
             if ( clipped.contours() > 0 ) {
@@ -205,34 +193,38 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                     // shape.sps.push_back( sp );
                     polys_clipped.add_shape( i, shape );
 
-                    if ( IsDebugShape( shape.id ) ) {
+                    if ( debug_area || debug_shape ) {
                         WriteDebugShape( "clipped", shape );
                     }
                 }
             }
 
 #if USE_ACCUMULATOR
+            if ( debug_shape ) {
+                tgPolygonAddToClipperAccumulator( tmp, true );
+            } else {
             tgPolygonAddToClipperAccumulator( tmp, false );
+            }
 #else
             accum   = tgPolygonUnion( tmp, accum );
 #endif
 
-            if ( IsDebugShape( polys_in.get_shape( i, j ).id ) ) {
+            if ( debug_area || debug_shape ) {
+                char layer[32];
                 char name[32];
-                sprintf(name, "shape %d,%d", i,j);
-                sprintf(layer_name, "postclip_shape_%d_%d_%d", i, j, polys_in.get_shape( i, j ).id );
-                WriteDebugPoly( layer_name, name, tmp );
-
-#if !USE_ACCUMULATOR
-                sprintf(name, "accum %d,%d", i,j);
-                sprintf(layer_name, "postclip_accum_%d_%d", i, j);
-                WriteDebugPoly( layer_name, name, accum );
+                sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
+                sprintf(name, "shape_accum %d,%d", i,j);
+#if USE_ACCUMULATOR
+                tgPolygonDumpAccumulator( ds_name, layer, name );
+#else
+                WriteDebugPoly( layer, name, accum );
 #endif
             }
+            accum_idx++;
         }
     }
 
-    if ( debug_all || debug_shapes.size() ) {
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
         // Dump the sliver list
         WriteDebugPolys( "poly_slivers", slivers );
     }
@@ -267,7 +259,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         // neighboring polygons
         if ( slivers.size() > 0 ) {
 
-            if ( debug_all || debug_shapes.size() ) {
+            if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
                 // Dump the sliver list
                 WriteDebugPolys( "remains_slivers", slivers );
             }

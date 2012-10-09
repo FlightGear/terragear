@@ -115,21 +115,7 @@ bool TGConstruct::load_poly(const string& path) {
         poly_type = get_area_type( poly_name );
 
         int area = (int)poly_type;
-        string material;
-
-        // only allow 1000 shapes per material
-        int extension = polys_in.area_size( area ) / 1000;
-
-        if (extension)
-        {
-            char buff[32];
-            sprintf( buff, "%s_%d", get_area_name( area ).c_str(), extension );
-            material = buff;
-        }
-        else
-        {
-            material = get_area_name( area );
-        }
+        string material = get_area_name( area );
 
 
         // Generate a new Shape for the poly

@@ -695,9 +695,9 @@ void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
 
     for (unsigned int i = 0; i < polys.size(); ++i) {
         if  ( Orientation( polys[i] ) ) {
-            sprintf( layer, "%04d_hole", i );
-        } else {
             sprintf( layer, "%04d_boundary", i );
+        } else {
+            sprintf( layer, "%04d_hole", i );
         }
 
         void* l_id  = tgShapefileOpenLayer( ds_id, layer );
