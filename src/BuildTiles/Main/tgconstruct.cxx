@@ -50,7 +50,6 @@
 
 // Constructor
 TGConstruct::TGConstruct():
-        useUKGrid(false),
         ignoreLandmass(false),
         debug_all(false),
         ds_id((void*)-1)
@@ -77,8 +76,7 @@ void TGConstruct::set_paths( const std::string work, const std::string share, co
     load_dirs   = load;
 }
 
-void TGConstruct::set_options( bool uk_grid, bool ignore_lm, double n ) {
-    useUKGrid      = uk_grid;
+void TGConstruct::set_options( bool ignore_lm, double n ) {
     ignoreLandmass = ignore_lm;
     nudge          = n;
 }

@@ -87,10 +87,6 @@ private:
 
     const static double gSnap = 0.00000001;      // approx 1 mm
 
-    // flag indicating whether to align texture coords within the UK
-    // with the UK grid
-    bool useUKGrid;
-
     // flag indicating whether to ignore the landmass
     bool ignoreLandmass;
 
@@ -136,7 +132,6 @@ private:
     int  LoadLandclassPolys( void );
     // Load Data Helpers
     bool load_poly(const std::string& path);
-    bool load_osgb36_poly(const std::string& path);
     void add_poly(int area, const TGPolygon &poly, std::string material);
 
     // Clip Data
@@ -239,7 +234,7 @@ public:
     inline void set_load_dirs( const std::vector<std::string> ld ) { load_dirs = ld; }
 #endif
 
-    void set_options( bool uk_grid, bool ignore_lm, double n );
+    void set_options( bool ignore_lm, double n );
 
 #if 0
     // UK grid flag

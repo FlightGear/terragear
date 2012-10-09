@@ -143,7 +143,6 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "  --nudge=<float>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --priorities=<filename>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --usgs-map=<filename>");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --useUKgrid");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --ignore-landmass");
     SG_LOG(SG_GENERAL, SG_ALERT, " ] <load directory...>");
     exit(-1);
@@ -165,10 +164,6 @@ int main(int argc, char **argv) {
     string debug_dir = ".";
     vector<string> debug_shape_defs;
     vector<string> debug_area_defs;
-
-    // flag indicating whether UK grid should be used for in-UK
-    // texture coordinate generation
-    bool useUKgrid = false;
 
     bool ignoreLandmass = false;
 
@@ -208,8 +203,6 @@ int main(int argc, char **argv) {
             priorities_file = arg.substr(13);
         } else if (arg.find("--usgs-map=") == 0) {
             usgs_map_file = arg.substr(11);
-        } else if (arg.find("--useUKgrid") == 0) {
-            useUKgrid = true;
         } else if (arg.find("--ignore-landmass") == 0) {
             ignoreLandmass = true;
         } else if (arg.find("--debug-dir=") == 0) {
@@ -267,7 +260,7 @@ int main(int argc, char **argv) {
             all_stages = new TGConstruct();
             all_stages->set_cover( cover );
             all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
-            all_stages->set_options( useUKgrid, ignoreLandmass, nudge );
+            all_stages->set_options( ignoreLandmass, nudge );
             all_stages->set_bucket( b );
             all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -293,7 +286,7 @@ int main(int argc, char **argv) {
                 all_stages = new TGConstruct();
                 all_stages->set_cover( cover );
                 all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                all_stages->set_options( useUKgrid, ignoreLandmass, nudge );
+                all_stages->set_options( ignoreLandmass, nudge );
                 all_stages->set_bucket( b_min );
                 all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -325,7 +318,7 @@ int main(int argc, char **argv) {
                             stage1 = new TGConstruct();
                             stage1->set_cover( cover );
                             stage1->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                            stage1->set_options( useUKgrid, ignoreLandmass, nudge );
+                            stage1->set_options( ignoreLandmass, nudge );
                             stage1->set_bucket( b_cur );
                             stage1->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -354,7 +347,7 @@ int main(int argc, char **argv) {
                             stage2 = new TGConstruct();
                             stage2->set_cover( cover );
                             stage2->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                            stage2->set_options( useUKgrid, ignoreLandmass, nudge );
+                            stage2->set_options( ignoreLandmass, nudge );
                             stage2->set_bucket( b_cur );
                             stage2->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -384,7 +377,7 @@ int main(int argc, char **argv) {
                             stage3 = new TGConstruct();
                             stage3->set_cover( cover );
                             stage3->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                            stage3->set_options( useUKgrid, ignoreLandmass, nudge );
+                            stage3->set_options( ignoreLandmass, nudge );
                             stage3->set_bucket( b_cur );
                             stage3->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
@@ -408,7 +401,7 @@ int main(int argc, char **argv) {
         all_stages = new TGConstruct();
         all_stages->set_cover( cover );
         all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
-        all_stages->set_options( useUKgrid, ignoreLandmass, nudge );
+        all_stages->set_options( ignoreLandmass, nudge );
         all_stages->set_bucket( b );
         all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 

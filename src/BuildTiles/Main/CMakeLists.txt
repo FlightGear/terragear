@@ -27,7 +27,6 @@ set_target_properties(tg-construct PROPERTIES
         "DEFAULT_USGS_MAPFILE=\"${PKGDATADIR}/usgsmap.txt\";DEFAULT_PRIORITIES_FILE=\"${PKGDATADIR}/default_priorities.txt\"" )
 
 target_link_libraries(tg-construct
-    Osgb36  
     Polygon Geometry
     Array landcover poly2tri
     ${GDAL_LIBRARY}

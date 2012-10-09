@@ -30,7 +30,6 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <Geometry/poly_support.hxx>
-#include <Osgb36/osgb36.hxx>
 
 #include "tgconstruct.hxx"
 
@@ -272,102 +271,6 @@ bool TGConstruct::load_poly(const string& path) {
     return true;
 }
 
-
-// Load a polygon definition file containing osgb36 Eastings and Northings
-// and convert them to WGS84 Latitude and Longitude
-bool TGConstruct::load_osgb36_poly(const string& path) {
-    string poly_name;
-    AreaType poly_type;
-    int contours, count, i, j;
-    int hole_flag;
-    double startx, starty, x, y, lastx, lasty;
-
-    SG_LOG( SG_CLIPPER, SG_INFO, "Loading " << path << " ..." );
-
-    sg_gzifstream in( path );
-
-    if ( !in ) {
-        SG_LOG( SG_CLIPPER, SG_ALERT, "Cannot open file: " << path );
-        exit(-1);
-    }
-
-    TGPolygon poly;
-
-    Point3D p;
-    Point3D OSRef;
-    in >> skipcomment;
-    while ( !in.eof() ) {
-        in >> poly_name;
-        SG_LOG( SG_CLIPPER, SG_INFO, "poly name = " << poly_name);
-        poly_type = get_area_type( poly_name );
-        SG_LOG( SG_CLIPPER, SG_INFO, "poly type (int) = " << (int)poly_type);
-        in >> contours;
-        SG_LOG( SG_CLIPPER, SG_INFO, "num contours = " << contours);
-
-        poly.erase();
-
-        for ( i = 0; i < contours; ++i ) {
-            in >> count;
-
-            if ( count < 3 ) {
-                SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon with less than 3 data points." );
-                exit(-1);
-            }
-
-            in >> hole_flag;
-
-            in >> startx;
-            in >> starty;
-            OSRef = Point3D(startx, starty, -9999.0);
-
-            //Convert from OSGB36 Eastings/Northings to WGS84 Lat/Lon
-            //Note that startx and starty themselves must not be altered since we compare them with unaltered lastx and lasty later
-            p = OSGB36ToWGS84(OSRef);
-
-            poly.add_node( i, p );
-            nodes.unique_add( p );
-
-            SG_LOG( SG_CLIPPER, SG_BULK, "0 = " << startx << ", " << starty );
-
-            for ( j = 1; j < count - 1; ++j ) {
-                in >> x;
-                in >> y;
-                OSRef = Point3D( x, y, -9999.0 );
-                p = OSGB36ToWGS84(OSRef);
-
-                poly.add_node( i, p );
-                nodes.unique_add( p );
-                SG_LOG( SG_CLIPPER, SG_BULK, j << " = " << x << ", " << y );
-            }
-
-            in >> lastx;
-            in >> lasty;
-
-            if ( (fabs(startx - lastx) < SG_EPSILON) &&
-                 (fabs(starty - lasty) < SG_EPSILON) ) {
-                // last point same as first, discard
-            } else {
-                OSRef = Point3D( lastx, lasty, -9999.0 );
-                p = OSGB36ToWGS84(OSRef);
-
-                poly.add_node( i, p );
-                nodes.unique_add( p );
-                SG_LOG( SG_CLIPPER, SG_BULK, count - 1 << " = " << lastx << ", " << lasty );
-            }
-        }
-
-        // TODO : Make like OGR
-        int area = (int)poly_type;
-        string material = get_area_name( area );
-        add_poly(area, poly, material);
-        // END TODO
-
-        in >> skipcomment;
-    }
-
-    return true;
-}
-
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
 int TGConstruct::LoadLandclassPolys( void ) {
@@ -403,10 +306,6 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 (lext == "fit") || (lext == "fit.gz") || (lext == "ind"))
             {
                 // skipped!
-            } else if (lext == "osgb36") {
-                SG_LOG(SG_GENERAL, SG_ALERT, " Loading osgb36 poly definition file " << p.file());
-                load_osgb36_poly( p.str() );
-                ++count;
             } else {
                 load_poly( p.str() );
                 SG_LOG(SG_GENERAL, SG_ALERT, " Loaded " << p.file());
