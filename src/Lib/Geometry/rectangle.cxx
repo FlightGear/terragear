@@ -18,7 +18,7 @@ Rectangle::Rectangle (const Rectangle &r)
 {
 }
 
-Rectangle::Rectangle (const Point3D &min, const Point3D &max)
+Rectangle::Rectangle (const SGGeod &min, const SGGeod &max)
   : _min(min),
     _max(max)
 {
@@ -29,13 +29,13 @@ Rectangle::~Rectangle ()
 }
 
 void
-Rectangle::setMin (const Point3D &p)
+Rectangle::setMin (const SGGeod &p)
 {
   _min = p;
 }
 
 void
-Rectangle::setMax (const Point3D &p)
+Rectangle::setMax (const SGGeod &p)
 {
   _max = p;
 }
@@ -44,35 +44,35 @@ void
 Rectangle::sanify ()
 {
   double tmp;
-  if (_min.x() > _max.x()) {
-    tmp = _min.x();
-    _min.setx(_max.x());
-    _max.setx(tmp);
+  if (_min.getLongitudeDeg() > _max.getLongitudeDeg()) {
+    tmp = _min.getLongitudeDeg();
+    _min.setLongitudeDeg(_max.getLongitudeDeg());
+    _max.setLongitudeDeg(tmp);
   }
-  if (_min.y() > _max.y()) {
-    tmp = _min.y();
-    _min.sety(_max.y());
-    _max.sety(tmp);
+  if (_min.getLatitudeDeg() > _max.getLatitudeDeg()) {
+    tmp = _min.getLatitudeDeg();
+    _min.setLatitudeDeg(_max.getLatitudeDeg());
+    _max.setLatitudeDeg(tmp);
   }
 }
 
 bool
-Rectangle::isInside (const Point3D &p) const
+Rectangle::isInside (const SGGeod &p) const
 {
-  return ((p.x() >= _min.x() && p.x() <= _max.x()) &&
-	  (p.y() >= _min.y() && p.y() <= _max.y()));
+    return ((p.getLongitudeDeg() >= _min.getLongitudeDeg() && p.getLongitudeDeg() <= _max.getLongitudeDeg()) &&
+    (p.getLatitudeDeg() >= _min.getLatitudeDeg() && p.getLatitudeDeg() <= _max.getLatitudeDeg()));
 }
 
 bool
 Rectangle::isOverlapping (const Rectangle &r) const
 {
-  const Point3D &min = r.getMin();
-  const Point3D &max = r.getMax();
-  return ((max.x() >= _min.x()) && (min.x() <= _max.x()) &&
-	  (max.y() >= _min.y()) && (min.y() <= _max.y()));
+  const SGGeod &min = r.getMin();
+  const SGGeod &max = r.getMax();
+  return ((max.getLongitudeDeg() >= _min.getLongitudeDeg()) && (min.getLongitudeDeg() <= _max.getLongitudeDeg()) &&
+  (max.getLatitudeDeg() >= _min.getLatitudeDeg()) && (min.getLatitudeDeg() <= _max.getLatitudeDeg()));
 }
 
-const TGPolygon
+/*const TGPolygon
 Rectangle::toPoly () const
 {
   TGPolygon poly;
@@ -81,7 +81,7 @@ Rectangle::toPoly () const
   poly.add_node(0, _max);
   poly.add_node(0, Point3D(_min.x(), _max.y(), 0));
   return poly;
-}
+}*/
 
 };
 

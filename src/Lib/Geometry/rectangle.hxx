@@ -12,7 +12,6 @@
 #endif  
 
 #include <simgear/compiler.h>
-#include <Geometry/point3d.hxx>
 
 #include <Polygon/polygon.hxx>
 
@@ -45,7 +44,7 @@ public:
   /**
    * Convenience constructor.
    */
-  Rectangle (const Point3D &min, const Point3D &max);
+  Rectangle (const SGGeod& min, const SGGeod& max);
 
   /**
    * Destructor.
@@ -57,42 +56,42 @@ public:
    *
    * @return The top-left vertex.
    */
-  virtual const Point3D &getMin () const { return _min; }
+  virtual const SGGeod &getMin () const { return _min; }
 
   /**
    * Get the maximum (bottom right) corner of the rectangle.
    *
    * @return The bottom-right vertex.
    */
-  virtual const Point3D &getMax () const { return _max; }
+  virtual const SGGeod &getMax () const { return _max; }
 
   /**
    * Get the minimum (top left) corner of the rectangle.
    *
    * @return The top-left vertex.
    */
-  virtual Point3D &getMin () { return _min; }
+  virtual SGGeod &getMin () { return _min; }
 
   /**
    * Get the maximum (bottom right) corner of the rectangle.
    *
    * @return The bottom-right vertex.
    */
-  virtual Point3D &getMax () { return _max; }
+  virtual SGGeod &getMax () { return _max; }
 
   /**
    * Set the minimum (top-left) corner of the rectangle.
    *
    * @param p The top-left vertex.
    */
-  virtual void setMin (const Point3D &p);
+  virtual void setMin (const SGGeod& p);
 
   /**
    * Set the maximum (bottom-right) corner of the rectangle.
    *
    * @param p The bottom-right vertex.
    */
-  virtual void setMax (const Point3D &p);
+  virtual void setMax (const SGGeod& p);
 
   /**
    * Make the rectangle sane.
@@ -110,7 +109,7 @@ public:
    * @return true if the point is inside or on the boundary of the
    * rectangle, false if it is outside.
    */
-  virtual bool isInside (const Point3D &p) const;
+  virtual bool isInside (const SGGeod& p) const;
 
   /**
    * Test whether this rectangle overlaps with another one.
@@ -126,11 +125,11 @@ public:
    *
    * @return A four-vertex polygon representing this rectangle.
    */
-  virtual const TGPolygon toPoly () const;
+//  virtual const TGPolygon toPoly () const;
 
 private:
-  Point3D _min;
-  Point3D _max;
+  SGGeod _min;
+  SGGeod _max;
 };
 
 };

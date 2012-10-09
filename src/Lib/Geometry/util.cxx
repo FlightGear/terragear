@@ -804,7 +804,7 @@ makeBounds (const TGPolygon &polygon)
             }
         }
     }
-    return Rectangle(Point3D(min_x, min_y, 0), Point3D(max_x, max_y, 0));
+    return Rectangle(SGGeod::fromDeg(min_x, min_y), SGGeod::fromDeg(max_x, max_y));
 }
 
 
@@ -836,8 +836,8 @@ parseChunk (const string &s, double delta)
   
   double x = atoi(s.substr(1,3).c_str()) * x_factor;
   double y = atoi(s.substr(5).c_str()) * y_factor;
-  bounds.setMin(Point3D(x, y, 0));
-  bounds.setMax(Point3D(x + delta, y + delta, 0));
+  bounds.setMin(SGGeod::fromDeg(x, y));
+  bounds.setMax(SGGeod::fromDeg(x + delta, y + delta));
 
   return bounds;
 }

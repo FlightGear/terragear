@@ -51,22 +51,22 @@ Line::addPoint (const Point3D &point)
 Rectangle
 Line::getBounds () const
 {
-  Point3D min;
-  Point3D max;
+  SGGeod min;
+  SGGeod max;
 
   int nPoints = _points.size();
   for (int i = 0; i < nPoints; i++) {
     if (i == 0) {
-      min = max = _points[i];
+      min = max = _points[i].toSGGeod();
     } else {
-      if (_points[i].x() < min.x())
-	min.setx(_points[i].x());
-      if (_points[i].x() > max.x())
-	max.setx(_points[i].x());
-      if (_points[i].y() < min.y())
-	min.sety(_points[i].y());
-      if (_points[i].y() > max.y())
-	max.sety(_points[i].y());
+      if (_points[i].x() < min.getLongitudeDeg())
+	min.setLongitudeDeg(_points[i].x());
+      if (_points[i].x() > max.getLongitudeDeg())
+	max.setLongitudeDeg(_points[i].x());
+      if (_points[i].y() < min.getLatitudeDeg())
+	min.setLatitudeDeg(_points[i].y());
+      if (_points[i].y() > max.getLatitudeDeg())
+	max.setLatitudeDeg(_points[i].y());
     }
   }
 

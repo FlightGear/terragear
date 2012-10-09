@@ -213,18 +213,18 @@ int main(int argc, char **argv)
         else if ( arg.find("--chunk=") == 0 ) 
         {
             tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(), 10.0);
-            min_lon = rectangle.getMin().x();
-            min_lat = rectangle.getMin().y();
-            max_lon = rectangle.getMax().x();
-            max_lat = rectangle.getMax().y();
+            min_lon = rectangle.getMin().getLongitudeDeg();
+            min_lat = rectangle.getMin().getLatitudeDeg();
+            max_lon = rectangle.getMax().getLongitudeDeg();
+            max_lat = rectangle.getMax().getLatitudeDeg();
         } 
         else if ( arg.find("--tile=") == 0 ) 
         {
             tg::Rectangle rectangle = tg::parseTile(arg.substr(7).c_str());
-            min_lon = rectangle.getMin().x();
-            min_lat = rectangle.getMin().y();
-            max_lon = rectangle.getMax().x();
-            max_lat = rectangle.getMax().y();
+            min_lon = rectangle.getMin().getLongitudeDeg();
+            min_lat = rectangle.getMin().getLatitudeDeg();
+            max_lon = rectangle.getMax().getLongitudeDeg();
+            max_lat = rectangle.getMax().getLatitudeDeg();
     	} 
         else if ( arg.find("--airport=") == 0 ) 
         {
