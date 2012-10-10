@@ -1,8 +1,8 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  4.8.9                                                           *
-* Date      :  25 September 2012                                               *
+* Version   :  4.9.1                                                           *
+* Date      :  9 October 2012                                                  *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2012                                         *
 *                                                                              *
@@ -98,6 +98,8 @@ struct TEdge {
   long64 xtop;
   long64 ytop;
   double dx;
+  long64 deltaX;
+  long64 deltaY;
   long64 tmpX;
   PolyType polyType;
   EdgeSide side;
@@ -276,8 +278,6 @@ private:
   void FixupOutPolygon(OutRec &outRec);
   bool IsHole(TEdge *e);
   void FixHoleLinkage(OutRec *outRec);
-  void CheckHoleLinkages1(OutRec *outRec1, OutRec *outRec2);
-  void CheckHoleLinkages2(OutRec *outRec1, OutRec *outRec2);
   void AddJoin(TEdge *e1, TEdge *e2, int e1OutIdx = -1, int e2OutIdx = -1);
   void ClearJoins();
   void AddHorzJoin(TEdge *e, int idx);

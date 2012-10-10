@@ -146,6 +146,71 @@ AreaType TGConstruct::get_landcover_type (const LandCover &cover, double xpos, d
     return get_default_area_type();
 }
 
+#if 0
+// For each triangle assigned to the "default" area type, see if we
+// can lookup a better land cover type from the 1km data structure.
+static void fix_land_cover_assignments( TGConstruct& c ) {
+    SG_LOG(SG_GENERAL, SG_ALERT, "Fixing up default land cover types");
+    // the list of node locations
+    TGTriNodes trinodes = c.get_tri_nodes();
+    point_list geod_nodes = trinodes.get_node_list();
+
+    // the list of triangles (with area type attribute)
+    triele_list tri_elements = c.get_tri_elements();
+
+    // traverse the triangle element groups
+    SG_LOG(SG_GENERAL, SG_ALERT, "  Total Nodes = " << geod_nodes.size());
+    SG_LOG(SG_GENERAL, SG_ALERT, "  Total triangles = " << tri_elements.size());
+    for ( unsigned int i = 0; i < tri_elements.size(); ++i ) {
+        TGTriEle t = tri_elements[i];
+        if ( t.get_attribute() == get_default_area_type() ) {
+            Point3D p1 = geod_nodes[t.get_n1()];
+            Point3D p2 = geod_nodes[t.get_n2()];
+            Point3D p3 = geod_nodes[t.get_n3()];
+
+            // offset by -quarter_cover_size because that is what we
+            // do for the coverage squares
+            AreaType a1 = get_area_type( c.get_cover(),
+                                         p1.x() - quarter_cover_size,
+                                         p1.y() - quarter_cover_size,
+                                         cover_size, cover_size );
+            AreaType a2 = get_area_type( c.get_cover(),
+                                         p2.x() - quarter_cover_size,
+                                         p2.y() - quarter_cover_size,
+                                         cover_size, cover_size );
+            AreaType a3 = get_area_type( c.get_cover(),
+                                         p3.x() - quarter_cover_size,
+                                         p3.y() - quarter_cover_size,
+                                         cover_size, cover_size );
+
+            // update the original triangle element attribute
+            AreaType new_area;
+
+            // majority rules
+            if ( a1 == a2 ) {
+                new_area = a1;
+            } else if ( a1 == a3 ) {
+                new_area = a1;
+            } else if ( a2 == a3 ) {
+                new_area = a2;
+            } else {
+                // a different coverage for each vertex, just pick
+                // from the middle/average
+                Point3D average = ( p1 + p2 + p3 ) / 3.0;
+                //cout << "    average triangle center = " << average;
+                new_area = get_area_type( c.get_cover(),
+                                          average.x() - quarter_cover_size,
+                                          average.y() - quarter_cover_size,
+                                          cover_size, cover_size );
+            }
+
+            //cout << "  new attrib = " << get_area_name( new_area ) << endl;
+            c.set_tri_attribute( i, new_area );
+        }
+    }
+}
+#endif
+
 
 // Generate polygons from land-cover raster.  Horizontally- or
 // vertically-adjacent polygons will be merged automatically.
