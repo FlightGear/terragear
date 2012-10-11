@@ -44,7 +44,6 @@
 #include <simgear/structure/exception.hxx>
 
 #include <Geometry/trinodes.hxx>
-#include <poly2tri/interface.h>
 
 #include "polygon.hxx"
 
