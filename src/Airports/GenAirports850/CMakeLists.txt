@@ -15,7 +15,6 @@ add_executable(genapts850
 	main.cxx
 	object.hxx object.cxx
 	parser.hxx parser.cxx
-	point2d.cxx point2d.hxx 
 	runway.cxx runway.hxx
 	rwy_simple.cxx
 	rwy_gen.cxx
