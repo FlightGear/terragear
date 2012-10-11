@@ -123,10 +123,17 @@ private:
     // All Nodes
     TGNodes nodes;
 
+    // ocean tile?
+    bool isOcean;
+
     // Neighbor Faces
     neighbor_face_list  neighbor_faces;
 
 private:
+    // Ocean tile or not
+    void SetOceanTile() { isOcean = true; }
+    bool IsOceanTile()  { return isOcean; }
+    
     // Load Data
     void LoadElevationArray( void );
     int  LoadLandclassPolys( void );

@@ -354,58 +354,63 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
     switch( stage ) {
         case 1:     // Save the clipped polys and node list
         {
-            dir  = share_base + "/stage1/" + bucket.gen_base_path();
+            /* Only create the file this isn't an ocean tile */
+            if ( !IsOceanTile() ) {
+                dir  = share_base + "/stage1/" + bucket.gen_base_path();
 
-            SGPath sgp( dir );
-            sgp.append( "dummy" );
-            sgp.create_dir( 0755 );
+                SGPath sgp( dir );
+                sgp.append( "dummy" );
+                sgp.create_dir( 0755 );
 
-            file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
-            std::ofstream ofs_cp( file.c_str() );
+                file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
+                std::ofstream ofs_cp( file.c_str() );
 
-            // first, set the precision
-            ofs_cp << std::setprecision(15);
-            ofs_cp << std::fixed;
-            ofs_cp << polys_clipped;
-            ofs_cp.close();
+                // first, set the precision
+                ofs_cp << std::setprecision(15);
+                ofs_cp << std::fixed;
+                ofs_cp << polys_clipped;
+                ofs_cp.close();
 
+                file = dir + "/" + bucket.gen_index_str() + "_nodes";
+                std::ofstream ofs_n( file.c_str() );
 
-            file = dir + "/" + bucket.gen_index_str() + "_nodes";
-            std::ofstream ofs_n( file.c_str() );
+                // first, set the precision
+                ofs_n << std::setprecision(15);
+                ofs_n << std::fixed;
+                ofs_n << nodes;
+                ofs_n.close();
+            }
 
-            // first, set the precision
-            ofs_n << std::setprecision(15);
-            ofs_n << std::fixed;
-            ofs_n << nodes;
-            ofs_n.close();
             break;
         }
 
         case 2:     // Save the clipped polys and node list
         {
-            dir  = share_base + "/stage2/" + bucket.gen_base_path();
+            if ( !IsOceanTile() ) {
+                dir  = share_base + "/stage2/" + bucket.gen_base_path();
 
-            SGPath sgp( dir );
-            sgp.append( "dummy" );
-            sgp.create_dir( 0755 );
+                SGPath sgp( dir );
+                sgp.append( "dummy" );
+                sgp.create_dir( 0755 );
 
-            file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
-            std::ofstream ofs_cp( file.c_str() );
+                file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
+                std::ofstream ofs_cp( file.c_str() );
 
-            // first, set the precision
-            ofs_cp << std::setprecision(15);
-            ofs_cp << std::fixed;
-            ofs_cp << polys_clipped;
-            ofs_cp.close();
+                // first, set the precision
+                ofs_cp << std::setprecision(15);
+                ofs_cp << std::fixed;
+                ofs_cp << polys_clipped;
+                ofs_cp.close();
 
-            file = dir + "/" + bucket.gen_index_str() + "_nodes";
-            std::ofstream ofs_n( file.c_str() );
+                file = dir + "/" + bucket.gen_index_str() + "_nodes";
+                std::ofstream ofs_n( file.c_str() );
 
-            // first, set the precision
-            ofs_n << std::setprecision(15);
-            ofs_n << std::fixed;
-            ofs_n << nodes;
-            ofs_n.close();
+                // first, set the precision
+                ofs_n << std::setprecision(15);
+                ofs_n << std::fixed;
+                ofs_n << nodes;
+                ofs_n.close();
+            }
             break;
         }
     }
@@ -512,6 +517,7 @@ void TGConstruct::LoadFromIntermediateFiles( int stage )
 {
     string dir;
     string file;
+    bool   read_ok = false;
 
     switch( stage ) {
         case 1:     // Load the clipped polys and node list
@@ -520,14 +526,21 @@ void TGConstruct::LoadFromIntermediateFiles( int stage )
             file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
 
             std::ifstream ifs_cp( file.c_str() );
-            ifs_cp >> polys_clipped;
-            ifs_cp.close();
+            if ( ifs_cp.good() ) {
+                ifs_cp >> polys_clipped;
+                ifs_cp.close();
 
-            file = dir + "/" + bucket.gen_index_str() + "_nodes";
+                file = dir + "/" + bucket.gen_index_str() + "_nodes";
 
-            std::ifstream ifs_n( file.c_str() );
-            ifs_n >> nodes;
-            ifs_n.close();
+                std::ifstream ifs_n( file.c_str() );
+                if ( ifs_n.good() ) {
+                    ifs_n >> nodes;
+                    ifs_n.close();
+
+                    read_ok = true;
+                }
+            }
+
             break;
         }
 
@@ -537,15 +550,26 @@ void TGConstruct::LoadFromIntermediateFiles( int stage )
             file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
 
             std::ifstream ifs_cp( file.c_str() );
-            ifs_cp >> polys_clipped;
-            ifs_cp.close();
+            if ( ifs_cp.good() ) {
+                ifs_cp >> polys_clipped;
+                ifs_cp.close();
 
-            file = dir + "/" + bucket.gen_index_str() + "_nodes";
+                file = dir + "/" + bucket.gen_index_str() + "_nodes";
 
-            std::ifstream ifs_n( file.c_str() );
-            ifs_n >> nodes;
-            ifs_n.close();
+                std::ifstream ifs_n( file.c_str() );
+                if ( ifs_n.good() ) {
+                    ifs_n >> nodes;
+                    ifs_n.close();
+
+                    read_ok = true;
+                }
+            }
+
             break;
         }
+    }
+
+    if ( !read_ok ) {
+        SetOceanTile();
     }
 }
