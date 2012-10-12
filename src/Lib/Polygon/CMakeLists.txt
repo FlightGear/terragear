@@ -9,7 +9,6 @@ add_library(Polygon STATIC
     chop.hxx
     index.hxx
     names.hxx
-    point2d.hxx
     polygon.hxx
     simple_clip.hxx
     superpoly.hxx
