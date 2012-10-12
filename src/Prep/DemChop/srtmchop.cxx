@@ -43,13 +43,8 @@
 #include <simgear/misc/sg_dir.hxx>
 
 #include <boost/foreach.hpp>
-
 #include <tiffio.h>
-
-#include <Polygon/point2d.hxx>
-
 #include <zlib.h>
-
 #include <Lib/HGT/srtmbase.hxx>
 
 using std::cout;
@@ -351,16 +346,14 @@ int main(int argc, char **argv) {
     hgt.load();
     hgt.close();
 
-    point2d min, max;
-    min.x = hgt.get_originx() / 3600.0 + SG_HALF_BUCKET_SPAN;
-    min.y = hgt.get_originy() / 3600.0 + SG_HALF_BUCKET_SPAN;
-    SGBucket b_min( min.x, min.y );
+    SGVec2d min, max;
+    min.x() = hgt.get_originx() / 3600.0 + SG_HALF_BUCKET_SPAN;
+    min.y() = hgt.get_originy() / 3600.0 + SG_HALF_BUCKET_SPAN;
+    SGBucket b_min( min.x(), min.y() );
 
-    max.x = (hgt.get_originx() + hgt.get_cols() * hgt.get_col_step()) / 3600.0 
-        - SG_HALF_BUCKET_SPAN;
-    max.y = (hgt.get_originy() + hgt.get_rows() * hgt.get_row_step()) / 3600.0 
-        - SG_HALF_BUCKET_SPAN;
-    SGBucket b_max( max.x, max.y );
+    max.x() = (hgt.get_originx() + hgt.get_cols() * hgt.get_col_step()) / 3600.0 - SG_HALF_BUCKET_SPAN;
+    max.y() = (hgt.get_originy() + hgt.get_rows() * hgt.get_row_step()) / 3600.0 - SG_HALF_BUCKET_SPAN;
+    SGBucket b_max( max.x(), max.y() );
 
     if ( b_min == b_max ) {
         hgt.write_area( work_dir, b_min );
@@ -379,7 +372,7 @@ int main(int argc, char **argv) {
 
         for ( j = 0; j <= dy; j++ ) {
             for ( i = 0; i <= dx; i++ ) {
-                b_cur = sgBucketOffset(min.x, min.y, i, j);
+                b_cur = sgBucketOffset(min.x(), min.y(), i, j);
                 hgt.write_area( work_dir, b_cur );
             }
         }

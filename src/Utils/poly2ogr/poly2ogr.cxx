@@ -45,7 +45,6 @@
 #include <simgear/misc/sg_dir.hxx>
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/point2d.hxx>
 
 #include <ogrsf_frmts.h>
 

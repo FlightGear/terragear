@@ -40,7 +40,6 @@
 #include <poly2tri/interface.h>
 
 #include "polygon.hxx"
-#include "point2d.hxx"
 
 using std::endl;
 using std::cout;
@@ -153,33 +152,23 @@ void TGPolygon::set_elevations( double elev ) {
     }
 }
 
-
 // Calculate theta of angle (a, b, c)
-double tgPolygonCalcAngle(point2d a, point2d b, point2d c) {
-    point2d u, v;
-    double udist, vdist, uv_dot, tmp;
+double tgPolygonCalcAngle(SGVec2d a, SGVec2d b, SGVec2d c) {
+    SGVec2d u, v;
+    double udist, vdist, uv_dot;
 
     // u . v = ||u|| * ||v|| * cos(theta)
 
-    u.x = b.x - a.x;
-    u.y = b.y - a.y;
-    udist = sqrt( u.x * u.x + u.y * u.y );
-    // printf("udist = %.6f\n", udist);
+    u = b-a;
+    udist = dist(a,b);
 
-    v.x = b.x - c.x;
-    v.y = b.y - c.y;
-    vdist = sqrt( v.x * v.x + v.y * v.y );
-    // printf("vdist = %.6f\n", vdist);
+    v = b-c;
+    vdist = dist(b,c);
 
-    uv_dot = u.x * v.x + u.y * v.y;
-    // printf("uv_dot = %.6f\n", uv_dot);
+    uv_dot = dot(u,v);
 
-    tmp = uv_dot / (udist * vdist);
-    // printf("tmp = %.6f\n", tmp);
-
-    return acos(tmp);
+    return acos(uv_dot / (udist * vdist));
 }
-
 
 // return the perimeter of a contour (assumes simple polygons,
 // i.e. non-self intersecting.)
@@ -208,42 +197,41 @@ double TGPolygon::minangle_contour( const int contour ) {
     point_list c = poly[contour];
     int size = c.size();
     int p1_index, p2_index, p3_index;
-    point2d p1, p2, p3;
+    SGVec2d p1, p2, p3;
     double angle;
     double min_angle = 2.0 * SGD_PI;
 
     for ( int i = 0; i < size; ++i ) {
-	p1_index = i - 1;
-	if ( p1_index < 0 ) {
-	    p1_index += size;
-	}
+        p1_index = i - 1;
+        if ( p1_index < 0 ) {
+            p1_index += size;
+        }
 
-	p2_index = i;
+        p2_index = i;
 
-	p3_index = i + 1;
-	if ( p3_index >= size ) {
-	    p3_index -= size;
-	}
+        p3_index = i + 1;
+        if ( p3_index >= size ) {
+            p3_index -= size;
+        }
 
-	p1.x = c[p1_index].x();
-	p1.y = c[p1_index].y();
+        p1.x() = c[p1_index].x();
+        p1.y() = c[p1_index].y();
 
-	p2.x = c[p2_index].x();
-	p2.y = c[p2_index].y();
+        p2.x() = c[p2_index].x();
+        p2.y() = c[p2_index].y();
 
-	p3.x = c[p3_index].x();
-	p3.y = c[p3_index].y();
+        p3.x() = c[p3_index].x();
+        p3.y() = c[p3_index].y();
 
-	angle = tgPolygonCalcAngle( p1, p2, p3 );
+        angle = tgPolygonCalcAngle( p1, p2, p3 );
 
-	if ( angle < min_angle ) {
-	    min_angle = angle;
-	}
+        if ( angle < min_angle ) {
+            min_angle = angle;
+        }
     }
 
     return min_angle;
 }
-
 
 // return true if contour A is inside countour B
 bool TGPolygon::is_inside( int a, int b ) const {
@@ -284,10 +272,10 @@ bool TGPolygon::is_inside( int a, int b ) const {
 // shift every point in the polygon by lon, lat
 void TGPolygon::shift( double lon, double lat ) {
     for ( int i = 0; i < (int)poly.size(); ++i ) {
-	for ( int j = 0; j < (int)poly[i].size(); ++j ) {
-	    poly[i][j].setx( poly[i][j].x() + lon );
-	    poly[i][j].sety( poly[i][j].y() + lat );
-	}
+        for ( int j = 0; j < (int)poly[i].size(); ++j ) {
+            poly[i][j].setx( poly[i][j].x() + lon );
+            poly[i][j].sety( poly[i][j].y() + lat );
+        }
     }
 }
 
@@ -299,10 +287,10 @@ void TGPolygon::write( const std::string& file ) const {
     fprintf(fp, "%ld\n", poly.size());
     for ( int i = 0; i < (int)poly.size(); ++i ) {
         fprintf(fp, "%ld\n", poly[i].size());
-	for ( int j = 0; j < (int)poly[i].size(); ++j ) {
-	    fprintf(fp, "%.6f %.6f\n", poly[i][j].x(), poly[i][j].y());
-	}
-	fprintf(fp, "%.6f %.6f\n", poly[i][0].x(), poly[i][0].y());
+        for ( int j = 0; j < (int)poly[i].size(); ++j ) {
+            fprintf(fp, "%.6f %.6f\n", poly[i][j].x(), poly[i][j].y());
+        }
+        fprintf(fp, "%.6f %.6f\n", poly[i][0].x(), poly[i][0].y());
     }
 
     fclose(fp);

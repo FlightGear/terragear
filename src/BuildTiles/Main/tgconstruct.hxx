@@ -33,26 +33,13 @@
 
 #define TG_MAX_AREA_TYPES       128
 
-//#include <string>
-//#include <vector>
-
-//#include <simgear/compiler.h>
-//#include <simgear/bucket/newbucket.hxx>
-//#include <simgear/misc/sg_path.hxx>
-//#include <simgear/debug/logstream.hxx>
-
 #include <Array/array.hxx>
-
-//#include <Polygon/superpoly.hxx>
-//#include <Polygon/texparams.hxx>
 #include <Geometry/tg_nodes.hxx>
-
 #include <landcover/landcover.hxx>
 
 #include "tglandclass.hxx"
-//#include "priorities.hxx"
 
-#define FIND_SLIVERS    (0)
+#define FIND_SLIVERS    (1)
 #define USE_ACCUMULATOR (1)
 
 

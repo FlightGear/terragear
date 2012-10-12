@@ -38,8 +38,6 @@
 #include <string>
 #include <vector>
 
-#include "point2d.hxx"
-
 // forward declaration
 class TGPolygon;
 
@@ -220,7 +218,7 @@ typedef poly_list::const_iterator const_poly_list_iterator;
 
 
 // Calculate theta of angle (a, b, c)
-double tgPolygonCalcAngle(point2d a, point2d b, point2d c);
+double tgPolygonCalcAngle(SGVec2d a, SGVec2d b, SGVec2d c);
 
 
 // canonify the polygon winding, outer contour must be anti-clockwise,

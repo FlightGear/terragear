@@ -37,7 +37,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     poly_list slivers;
     int i, j;
     Point3D p;
-    point2d min, max;
+    SGVec2d min, max;
     bool debug_area, debug_shape;
     static int accum_idx = 0;
 
@@ -46,10 +46,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
 
     // Get clip bounds
-    min.x = bucket.get_center_lon() - 0.5 * bucket.get_width();
-    min.y = bucket.get_center_lat() - 0.5 * bucket.get_height();
-    max.x = bucket.get_center_lon() + 0.5 * bucket.get_width();
-    max.y = bucket.get_center_lat() + 0.5 * bucket.get_height();
+    min.x() = bucket.get_center_lon() - 0.5 * bucket.get_width();
+    min.y() = bucket.get_center_lat() - 0.5 * bucket.get_height();
+    max.x() = bucket.get_center_lon() + 0.5 * bucket.get_width();
+    max.y() = bucket.get_center_lat() + 0.5 * bucket.get_height();
 
 #if USE_ACCUMULATOR
 
@@ -62,19 +62,19 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     // set up clipping tile : and remember to add the nodes!
     safety_base.erase();
 
-    p = Point3D(min.x, min.y, -9999.0);
+    p = Point3D(min.x(), min.y(), -9999.0);
     safety_base.add_node( 0, p );
     nodes.unique_add( p );
 
-    p = Point3D(max.x, min.y, -9999.0);
+    p = Point3D(max.x(), min.y(), -9999.0);
     safety_base.add_node( 0, p );
     nodes.unique_add( p );
 
-    p = Point3D(max.x, max.y, -9999.0);
+    p = Point3D(max.x(), max.y(), -9999.0);
     safety_base.add_node( 0, p );
     nodes.unique_add( p );
 
-    p = Point3D(min.x, max.y, -9999.0);
+    p = Point3D(min.x(), max.y(), -9999.0);
     safety_base.add_node( 0, p );
     nodes.unique_add( p );
 

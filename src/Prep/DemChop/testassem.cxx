@@ -34,8 +34,6 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <Array/array.hxx>
-#include <Polygon/point2d.hxx>
-
 #include <stdlib.h>
 
 using std::cout;
@@ -62,14 +60,14 @@ int main(int argc, char **argv) {
     int lat_arcsec = (int)(lat_deg * 3600.0);
     int res = 1;
 
-    point2d min, max;
-    min.x = lon_deg + SG_HALF_BUCKET_SPAN;
-    min.y = lat_deg + SG_HALF_BUCKET_SPAN;
-    SGBucket b_min( min.x, min.y );
+    SGVec2d min, max;
+    min.x() = lon_deg + SG_HALF_BUCKET_SPAN;
+    min.y() = lat_deg + SG_HALF_BUCKET_SPAN;
+    SGBucket b_min( min.x(), min.y() );
 
-    max.x = lon_deg + 1 - SG_HALF_BUCKET_SPAN;
-    max.y = lat_deg + 1 - SG_HALF_BUCKET_SPAN;
-    SGBucket b_max( max.x, max.y );
+    max.x() = lon_deg + 1 - SG_HALF_BUCKET_SPAN;
+    max.y() = lat_deg + 1 - SG_HALF_BUCKET_SPAN;
+    SGBucket b_max( max.x(), max.y() );
 
     SGBucket b_cur;
     int dx, dy, i, j;
@@ -84,7 +82,7 @@ int main(int argc, char **argv) {
 
     for ( j = 0; j <= dy; j++ ) {
         for ( i = 0; i <= dx; i++ ) {
-            b_cur = sgBucketOffset(min.x, min.y, i, j);
+            b_cur = sgBucketOffset(min.x(), min.y(), i, j);
             string file = work_dir + "/";
             file += b_cur.gen_base_path() + "/";
             file += b_cur.gen_index_str();
@@ -112,8 +110,8 @@ int main(int argc, char **argv) {
 
     gzFile fp;
     if ( (fp = gzopen( out_file.c_str(), "wb9" )) == NULL ) {
-	cout << "ERROR:  cannot open " << out_file << " for writing!" << endl;
-	exit(-1);
+        cout << "ERROR:  cannot open " << out_file << " for writing!" << endl;
+        exit(-1);
     }
 
     gzprintf( fp, "%d\n", (int)(3600 / res) + 1);
@@ -127,5 +125,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-
