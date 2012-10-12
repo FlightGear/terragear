@@ -39,7 +39,7 @@
 
 #include "tglandclass.hxx"
 
-#define FIND_SLIVERS    (1)
+#define FIND_SLIVERS    (0)
 #define USE_ACCUMULATOR (1)
 
 
