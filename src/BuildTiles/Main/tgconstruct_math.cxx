@@ -176,7 +176,6 @@ void TGConstruct::CalcPointNormals( void )
             for ( int j = 0; j < num_faces; j++ ) {
                 normal    = neighbor_faces->face_normals[j];
                 face_area = neighbor_faces->face_areas[j];
-                SG_LOG(SG_GENERAL, SG_ALERT, "\tAdding face area " << face_area << " and normal " << normal << " to node " << node.GetPosition() );
 
                 normal *= face_area;
                 total_area += face_area;

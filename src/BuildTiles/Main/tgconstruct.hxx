@@ -40,8 +40,6 @@
 #include "tglandclass.hxx"
 
 #define FIND_SLIVERS    (0)
-#define USE_ACCUMULATOR (1)
-
 
 // Stage2 shared edge data
 struct TGNeighborFaces {

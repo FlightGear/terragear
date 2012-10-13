@@ -193,8 +193,8 @@ void processLineStringWithTextureInfo(OGRLineString* poGeometry,
     double pt_x = 0.0f, pt_y = 0.0f;
     int i, j, numPoints, numSegs;
     double max_dist;
-    double min_dist;
-    double cur_dist;
+//    double min_dist;
+//    double cur_dist;
 
     numPoints = poGeometry->getNumPoints();
     if (numPoints < 2) {
@@ -203,8 +203,8 @@ void processLineStringWithTextureInfo(OGRLineString* poGeometry,
     }
 
     max_dist = (double)width * 10.0f;
-    min_dist = (double)width *  1.5f;
-    cur_dist = 0.0f;
+//  min_dist = (double)width *  1.5f;
+//  cur_dist = 0.0f;
 
     // because vector data can generate adjacent polys, lets stretch the two enpoints by a little bit
     p0 = Point3D(poGeometry->getX(0),poGeometry->getY(0),0);
@@ -230,16 +230,16 @@ void processLineStringWithTextureInfo(OGRLineString* poGeometry,
                 geo_direct_wgs_84( p0.y(), p0.x(), heading, dist*(j+1), &pt_y, &pt_x, &az2 );
                 line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
             }
-            cur_dist = 0.0f;
+//          cur_dist = 0.0f;
         }
-        else if (dist + cur_dist < max_dist)
-        {
-            cur_dist += dist;
-        }
+//      else if (dist + cur_dist < max_dist)
+//      {
+//          cur_dist += dist;
+//      }
         else
         {
             line.addPoint( p1 );
-            cur_dist = 0;
+//          cur_dist = 0;
         }
     }
 

@@ -41,23 +41,13 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     bool debug_area, debug_shape;
     static int accum_idx = 0;
 
-#if !USE_ACCUMULATOR
-    TGPolygon accum;
-#endif
-
     // Get clip bounds
     min.x() = bucket.get_center_lon() - 0.5 * bucket.get_width();
     min.y() = bucket.get_center_lat() - 0.5 * bucket.get_height();
     max.x() = bucket.get_center_lon() + 0.5 * bucket.get_width();
     max.y() = bucket.get_center_lat() + 0.5 * bucket.get_height();
 
-#if USE_ACCUMULATOR
-
     tgPolygonInitClipperAccumulator();
-
-#else
-    accum.erase();
-#endif
 
     // set up clipping tile : and remember to add the nodes!
     safety_base.erase();
@@ -146,20 +136,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
                 sprintf(name, "shape_accum %d,%d", i,j);
 
-#if USE_ACCUMULATOR
                 tgPolygonDumpAccumulator( ds_name, layer, name );
-#else
-                WriteDebugPoly( layer, name, accum );
-#endif
             }
 
-
-#if USE_ACCUMULATOR
             clipped = tgPolygonDiffClipperWithAccumulator( tmp );
-#else            
-            clipped = tgPolygonDiff( tmp, accum );
-#endif
-
 
             if ( debug_area || debug_shape ) {
                 char layer[32];
@@ -199,26 +179,19 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 }
             }
 
-#if USE_ACCUMULATOR
             if ( debug_shape ) {
                 tgPolygonAddToClipperAccumulator( tmp, true );
             } else {
-            tgPolygonAddToClipperAccumulator( tmp, false );
+                tgPolygonAddToClipperAccumulator( tmp, false );
             }
-#else
-            accum   = tgPolygonUnion( tmp, accum );
-#endif
 
             if ( debug_area || debug_shape ) {
                 char layer[32];
                 char name[32];
                 sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
                 sprintf(name, "shape_accum %d,%d", i,j);
-#if USE_ACCUMULATOR
+
                 tgPolygonDumpAccumulator( ds_name, layer, name );
-#else
-                WriteDebugPoly( layer, name, accum );
-#endif
             }
             accum_idx++;
         }
@@ -237,11 +210,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     slivers.clear();
 
     // finally, what ever is left over goes to ocean
-#if USE_ACCUMULATOR
     remains = tgPolygonDiffClipperWithAccumulator( safety_base );
-#else
-    remains = tgPolygonDiff( safety_base, accum );
-#endif
 
     if ( remains.contours() > 0 ) {
         // cout << "remains contours = " << remains.contours() << endl;
@@ -284,11 +253,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         }
     }
 
-#if USE_ACCUMULATOR
-
     tgPolygonFreeClipperAccumulator();
-
-#endif
 
     // Once clipping is complete, intersect the individual segments with their clip masks
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {

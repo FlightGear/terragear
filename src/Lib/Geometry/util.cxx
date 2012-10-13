@@ -639,7 +639,7 @@ makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list
         prev_inner = cur_inner;
     }
 }
-#endif
+#else
 
 void
 makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list &tps)
@@ -780,7 +780,7 @@ makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
 }
-
+#endif
 
 Rectangle
 makeBounds (const TGPolygon &polygon)

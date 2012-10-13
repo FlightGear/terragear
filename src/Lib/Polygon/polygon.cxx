@@ -28,12 +28,19 @@
 
 #include <iostream>
 #include <fstream>
+#include <limits.h>
 
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <Geometry/point3d.hxx>
 #include <Geometry/poly_support.hxx>
 #include <simgear/math/sg_geodesy.hxx>
+#include <simgear/math/SGVec3.hxx>
+#include <simgear/math/SGMisc.hxx>
+#include <simgear/math/SGMath.hxx>
+#include <simgear/math/SGGeometryFwd.hxx>
+#include <simgear/math/SGBox.hxx>
+#include <simgear/math/SGIntersect.hxx>
 #include <simgear/structure/exception.hxx>
 
 #include <Geometry/trinodes.hxx>
@@ -414,6 +421,19 @@ static Point3D MakeTGPoint( ClipperLib::IntPoint pt )
 	return tg_pt;
 }
 
+static SGVec3d MakeSGVec3D( ClipperLib::IntPoint pt )
+{
+    SGVec3d sgvec;
+    double x, y;
+
+    x = (double)( ((double)pt.X) / (double)FIXEDPT );
+    y = (double)( ((double)pt.Y) / (double)FIXEDPT );
+
+    sgvec = SGVec3d( x, y, 0.0f);
+
+    return sgvec;
+}
+
 double MakeClipperDelta( double mDelta )
 {
     double cDelta = mDelta * ( FIXEDPT / FIXED1M );
@@ -423,7 +443,7 @@ double MakeClipperDelta( double mDelta )
     return( cDelta );
 }
 
-void make_clipper_poly( const TGPolygon& in, ClipperLib::Polygons *out ) 
+static void make_clipper_poly( const TGPolygon& in, ClipperLib::Polygons *out ) 
 {
     ClipperLib::Polygon contour;
     Point3D  p;
@@ -456,41 +476,6 @@ void make_clipper_poly( const TGPolygon& in, ClipperLib::Polygons *out )
     }
 }
 
-#if 0
-void make_tg_poly_from_clipper_ex( const ClipperLib::ExPolygons& in, TGPolygon *out )
-{
-	int res_contour = 0;
-	out->erase();
-
-  	for (unsigned int i=0; i<in.size(); i++)
-    {
-      	const struct ClipperLib::ExPolygon* pg = &in[i];
-		ClipperLib::IntPoint ip;
-
-		// Get the boundary contour
-        for (unsigned int j = 0; j < pg->outer.size(); j++)
-        {
-			ip = ClipperLib::IntPoint( pg->outer[j].X, pg->outer[j].Y );
-       	    out->add_node(res_contour, MakeTGPoint(ip));
-        }
-        out->set_hole_flag(res_contour, 0);
-        res_contour++;
-
-        // then the holes
-        for (unsigned int j = 0; j < pg->holes.size(); j++)
-        {
-            for (unsigned int k = 0; k < pg->holes[j].size(); k++)
-            {
-				ip = ClipperLib::IntPoint( pg->holes[j].at(k).X, pg->holes[j].at(k).Y );
-               	out->add_node(res_contour, MakeTGPoint(ip));
-            }
-            out->set_hole_flag(res_contour, 1);
-            res_contour++;
-        }
-    }
-}
-#endif
-
 void make_tg_poly_from_clipper( const ClipperLib::Polygons& in, TGPolygon *out )
 {
 	out->erase();
@@ -517,40 +502,67 @@ void make_tg_poly_from_clipper( const ClipperLib::Polygons& in, TGPolygon *out )
     }
 }
 
-#if 0
-ClipperLib::Polygons clipper_simplify( ClipperLib::ExPolygons &in )
+
+void get_Clipper_bounding_box( const ClipperLib::Polygons& in, SGVec3d& min, SGVec3d& max )
 {
-    ClipperLib::Polygons out;
-    ClipperLib::Polygon  contour;
+    ClipperLib::IntPoint min_pt, max_pt;
 
-  	for (unsigned int i=0; i<in.size(); i++)
+    min_pt.X = min_pt.Y = LONG_LONG_MAX;
+    max_pt.X = max_pt.Y = LONG_LONG_MIN;
+
+    // for each polygon, we need to check the orientation, to set the hole flag...
+    for (unsigned int i=0; i<in.size(); i++)
     {
-      	const struct ClipperLib::ExPolygon* pg = &in[i];
-
-        // first the boundary
-        contour = pg->outer;
-        if ( !Orientation( contour ) ) {
-            ReversePolygon( contour );
-        }
-        out.push_back( contour );
-
-        // then the holes
-        for (unsigned int j = 0; j < pg->holes.size(); j++)
+        for (unsigned int j = 0; j < in[i].size(); j++)
         {
-            contour = pg->holes[j];
-            if ( Orientation( contour ) ) {
-                ReversePolygon( contour );
+            if ( in[i][j].X < min_pt.X ) {
+                min_pt.X = in[i][j].X;
             }
-            out.push_back( contour );
+            if ( in[i][j].Y < min_pt.Y ) {
+                min_pt.Y = in[i][j].Y;
+            }
+
+            if ( in[i][j].X > max_pt.X ) {
+                max_pt.X = in[i][j].X;
+            }
+            if ( in[i][j].Y > max_pt.Y ) {
+                max_pt.Y = in[i][j].Y;
+            }
         }
     }
 
-    // Now simplify
-    SimplifyPolygons(out);
-
-    return out;
+    min = MakeSGVec3D( min_pt );
+    max = MakeSGVec3D( max_pt );
 }
-#endif
+
+void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
+{
+    ClipperLib::Polygons contour;
+    TGPolygon tgcontour;
+    char layer[32];
+
+    void*       ds_id = tgShapefileOpenDatasource( ds );
+
+    for (unsigned int i = 0; i < polys.size(); ++i) {
+        if  ( Orientation( polys[i] ) ) {
+            sprintf( layer, "%04d_boundary", i );
+        } else {
+            sprintf( layer, "%04d_hole", i );
+        }
+
+        void* l_id  = tgShapefileOpenLayer( ds_id, layer );
+        contour.clear();
+        contour.push_back( polys[i] );
+
+        tgcontour.erase();
+        make_tg_poly_from_clipper( contour, &tgcontour );
+
+        tgShapefileCreateFeature( ds_id, l_id, tgcontour, "contour" );
+    }
+
+    // close after each write
+    ds_id = tgShapefileCloseDatasource( ds_id );
+}
 
 TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
 {
@@ -614,7 +626,10 @@ TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
 
 
 // Accumulator optimization ( to keep from massive data copies and format changes
-ClipperLib::Polygons clipper_accumulator;
+// Start out the accumulator as a list of Polygons - so we can bounding box check
+// new additions
+typedef std::vector < ClipperLib::Polygons > ClipperPolysList;
+ClipperPolysList clipper_accumulator;
 
 void tgPolygonInitClipperAccumulator( void )
 {
@@ -632,8 +647,10 @@ void tgPolygonDumpAccumulator( char* ds, char* layer, char* name )
     void* l_id  = tgShapefileOpenLayer( ds_id, layer );
     TGPolygon accum;
 
-    make_tg_poly_from_clipper( clipper_accumulator, &accum );
-    tgShapefileCreateFeature( ds_id, l_id, accum, name );
+    for (unsigned int i=0; i<clipper_accumulator.size(); i++) {
+        make_tg_poly_from_clipper( clipper_accumulator[i], &accum );
+        tgShapefileCreateFeature( ds_id, l_id, accum, name );
+    }
 
     // close after each write
     ds_id = tgShapefileCloseDatasource( ds_id );
@@ -641,94 +658,56 @@ void tgPolygonDumpAccumulator( char* ds, char* layer, char* name )
 
 void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump )
 {
-    std::ofstream subjectFile, clipFile, resultFile;
-
     ClipperLib::Polygons clipper_subject;
     make_clipper_poly( subject, &clipper_subject );
 
-    if (dump) {
-        subjectFile.open ("subject.txt");
-        subjectFile << clipper_subject;
-        subjectFile.close();
-
-        clipFile.open ("clip.txt");
-        clipFile << clipper_accumulator;
-        clipFile.close();
-    }
-
-    ClipperLib::Clipper c;
-    c.Clear();
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
-
-    if ( !c.Execute(ClipperLib::ctUnion, clipper_accumulator, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd) ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Add to Accumulator returned FALSE" );
-        exit(-1);
-    }
-
-    if (dump) {
-        resultFile.open ("result.txt");
-        resultFile << clipper_accumulator;
-        resultFile.close();
-    }
-}
-
-void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
-{
-    ClipperLib::Polygons contour;
-    TGPolygon tgcontour;
-    char layer[32];
-
-    void*       ds_id = tgShapefileOpenDatasource( ds );
-
-    for (unsigned int i = 0; i < polys.size(); ++i) {
-        if  ( Orientation( polys[i] ) ) {
-            sprintf( layer, "%04d_boundary", i );
-        } else {
-            sprintf( layer, "%04d_hole", i );
-        }
-
-        void* l_id  = tgShapefileOpenLayer( ds_id, layer );
-        contour.clear();
-        contour.push_back( polys[i] );
-
-        tgcontour.erase();
-        make_tg_poly_from_clipper( contour, &tgcontour );
-
-        tgShapefileCreateFeature( ds_id, l_id, tgcontour, "contour" );
-    }
-
-    // close after each write
-    ds_id = tgShapefileCloseDatasource( ds_id );
+    clipper_accumulator.push_back( clipper_subject );
 }
 
 TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
 {
     TGPolygon result;
+    SGVec3d min, max, minp, maxp;
+    unsigned int num_hits = 0;
 
     ClipperLib::Polygons clipper_subject;
     make_clipper_poly( subject, &clipper_subject );
-    
-    ClipperLib::Polygons clipper_result;
-    
+
+    // Start with full poly
+    result = subject;
+    result.get_bounding_box(minp, maxp);
+    SGBoxd box1(minp, maxp);
+
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_accumulator, ClipperLib::ptClip);
 
-    if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) )
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-        exit(-1);
+    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+
+    // clip result against all polygons in the accum that intersect our bb
+    for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
+        get_Clipper_bounding_box( clipper_accumulator[i], min, max);
+        SGBoxd box2(min, max);
+
+        if ( intersects( box2, box1 ) )
+        {
+            c.AddPolygons(clipper_accumulator[i], ClipperLib::ptClip);
+            num_hits++;
+        }
     }
 
-    make_tg_poly_from_clipper( clipper_result, &result );
+    if (num_hits) {
+        ClipperLib::Polygons clipper_result;
+        
+        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
+            exit(-1);
+        }
+
+        make_tg_poly_from_clipper( clipper_result, &result );
+    }
 
     return result;
 }
-
-
-
 
 // CLIPPER
 TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip ) {
