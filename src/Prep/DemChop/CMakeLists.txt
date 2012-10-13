@@ -1,5 +1,5 @@
 
-add_executable(demchop demchop.cxx point2d.hxx)
+add_executable(demchop demchop.cxx)
 
 target_link_libraries(demchop 
     DEM
@@ -8,7 +8,7 @@ target_link_libraries(demchop
 
 install(TARGETS demchop RUNTIME DESTINATION bin)
 
-add_executable(hgtchop hgtchop.cxx point2d.hxx)
+add_executable(hgtchop hgtchop.cxx)
 
 target_link_libraries(hgtchop 
     HGT
@@ -21,7 +21,7 @@ if(TIFF_FOUND)
 if(MSVC AND CMAKE_CL_64)
 	set( SRTMCHOP_LIBRARIES ${JPEG_LIBRARY} )
 endif(MSVC AND CMAKE_CL_64)
-add_executable(srtmchop srtmchop.cxx point2d.hxx)
+add_executable(srtmchop srtmchop.cxx)
 target_link_libraries(srtmchop 
     HGT
     ${TIFF_LIBRARIES}

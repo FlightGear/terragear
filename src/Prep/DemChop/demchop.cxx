@@ -38,8 +38,6 @@
 
 #include <DEM/dem.hxx>
 
-#include "point2d.hxx"
-
 using std::endl;
 using std::cout;
 using std::string;
@@ -65,16 +63,16 @@ int main(int argc, char **argv) {
     dem.parse();
     dem.close();
 
-    point2d min, max;
-    min.x = dem.get_originx() / 3600.0 + SG_HALF_BUCKET_SPAN;
-    min.y = dem.get_originy() / 3600.0 + SG_HALF_BUCKET_SPAN;
-    SGBucket b_min( min.x, min.y );
+    SGVec2d min, max;
+    min.x() = dem.get_originx() / 3600.0 + SG_HALF_BUCKET_SPAN;
+    min.y() = dem.get_originy() / 3600.0 + SG_HALF_BUCKET_SPAN;
+    SGBucket b_min( min.x(), min.y() );
 
-    max.x = (dem.get_originx() + dem.get_cols() * dem.get_col_step()) / 3600.0 
+    max.x() = (dem.get_originx() + dem.get_cols() * dem.get_col_step()) / 3600.0
 	- SG_HALF_BUCKET_SPAN;
-    max.y = (dem.get_originy() + dem.get_rows() * dem.get_row_step()) / 3600.0 
+    max.y() = (dem.get_originy() + dem.get_rows() * dem.get_row_step()) / 3600.0
 	- SG_HALF_BUCKET_SPAN;
-    SGBucket b_max( max.x, max.y );
+    SGBucket b_max( max.x(), max.y() );
 
     if ( b_min == b_max ) {
 	dem.write_area( work_dir, b_min, true );
@@ -93,7 +91,7 @@ int main(int argc, char **argv) {
 
 	for ( j = 0; j <= dy; j++ ) {
 	    for ( i = 0; i <= dx; i++ ) {
-		b_cur = sgBucketOffset(min.x, min.y, i, j);
+		b_cur = sgBucketOffset(min.x(), min.y(), i, j);
 		dem.write_area( work_dir, b_cur, true );
 	    }
 	}
