@@ -152,15 +152,10 @@ int main(int argc, char **argv) {
         load_dirs.push_back(argv[i]);
         SG_LOG(SG_GENERAL, SG_ALERT, "Load directory: " << argv[i]);
     }
-    SG_LOG(SG_GENERAL, SG_ALERT, "Priorities file is " << priorities_file);
-    if ( ! load_area_types( priorities_file ) ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to load priorities file " << priorities_file);
+
+    if ( !load_area_types( priorities_file )
+        || (!cover.empty() && !load_usgs_map( usgs_map_file)) ) {
         exit(-1);
-    }
-    SG_LOG(SG_GENERAL, SG_ALERT, "USGS Map file is " << usgs_map_file);
-    if ( ! load_usgs_map( usgs_map_file ) ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to load USGS map file " << usgs_map_file);
-	    exit(-1);
     }
 
     // main construction data management class : Stage 1

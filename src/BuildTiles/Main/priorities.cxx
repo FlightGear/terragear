@@ -64,9 +64,10 @@ int load_area_types( const std::string& filename ) {
     ifstream in ( filename.c_str() );
     
     if ( ! in ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open file " << filename);
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open priorities file " << filename);
         return 0;
     }
+    SG_LOG(SG_GENERAL, SG_ALERT, "Priorities file is " << filename);
     
     in >> skipcomment;
     string sliver_area_name, default_area_name;

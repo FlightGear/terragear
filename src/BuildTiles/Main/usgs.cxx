@@ -38,9 +38,10 @@ int load_usgs_map( const std::string& filename ) {
     ifstream in ( filename.c_str() );
     
     if ( ! in ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open file " << filename);
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open USGS map file " << filename);
         return 0;
     }
+    SG_LOG(SG_GENERAL, SG_ALERT, "USGS Map file is " << filename);
     
     in >> skipcomment;
     while ( !in.eof() ) {
