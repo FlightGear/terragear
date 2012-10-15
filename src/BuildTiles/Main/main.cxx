@@ -18,7 +18,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: main.cxx,v 1.58 2005-09-28 16:40:32 curt Exp $
 
 
 // TODO TODO TODO : Get rid of construct - data hiding is moretrouble than it's worth right now.
@@ -47,10 +46,10 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "  --share-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --cover=<path to land-cover raster>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --tile-id=<id>");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --lon=<degrees>");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --lat=<degrees>");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --xdist=<degrees>");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --ydist=<degrees>");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --min-lon=<degrees>");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --max-lon=<degrees>");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --min-lat=<degrees>");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --max-lat=<degrees>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --nudge=<float>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --priorities=<filename>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --usgs-map=<filename>");
@@ -66,10 +65,7 @@ int main(int argc, char **argv) {
     string cover = "";
     string priorities_file = DEFAULT_PRIORITIES_FILE;
     string usgs_map_file = DEFAULT_USGS_MAPFILE;
-    double lon = -110.664244;	// P13
-    double lat = 33.352890;
-    double xdist = -1;		// 1/2 degree in each direction
-    double ydist = -1;
+    SGGeod min, max;
     long tile_id = -1;
 
     vector<string> load_dirs;
@@ -100,14 +96,14 @@ int main(int argc, char **argv) {
             share_dir = arg.substr(12);
         } else if (arg.find("--tile-id=") == 0) {
             tile_id = atol(arg.substr(10).c_str());
-        } else if (arg.find("--lon=") == 0) {
-            lon = atof(arg.substr(6).c_str());
-        } else if (arg.find("--lat=") == 0) {
-            lat = atof(arg.substr(6).c_str());
-        } else if (arg.find("--xdist=") == 0) {
-            xdist = atof(arg.substr(8).c_str());
-        } else if (arg.find("--ydist=") == 0) {
-            ydist = atof(arg.substr(8).c_str());
+        } else if ( arg.find("--min-lon=") == 0 ) {
+            min.setLongitudeDeg(atof( arg.substr(10).c_str() ));
+        } else if ( arg.find("--max-lon=") == 0 ) {
+            max.setLongitudeDeg(atof( arg.substr(10).c_str() ));
+        } else if ( arg.find("--min-lat=") == 0 ) {
+            min.setLatitudeDeg(atof( arg.substr(10).c_str() ));
+        } else if ( arg.find("--max-lat=") == 0 ) {
+            max.setLatitudeDeg(atof( arg.substr(10).c_str() ));
         } else if (arg.find("--nudge=") == 0) {
             nudge = atof(arg.substr(8).c_str())*SG_EPSILON;
         } else if (arg.find("--cover=") == 0) {
@@ -141,10 +137,15 @@ int main(int argc, char **argv) {
     if ( tile_id > 0 ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Tile id is " << tile_id);
     } else {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Center longitude is " << lon);
-        SG_LOG(SG_GENERAL, SG_ALERT, "Center latitude is " << lat);
-        SG_LOG(SG_GENERAL, SG_ALERT, "X distance is " << xdist);
-        SG_LOG(SG_GENERAL, SG_ALERT, "Y distance is " << ydist);
+        if (min.isValid() && max.isValid() && (min != max))
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
+            SG_LOG(SG_GENERAL, SG_ALERT, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
+        } else
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Lon/Lat unset or wrong");
+            exit(1);
+        }
     }
     SG_LOG(SG_GENERAL, SG_ALERT, "Nudge is " << nudge);
     for (int i = arg_pos; i < argc; i++) {
@@ -164,17 +165,19 @@ int main(int argc, char **argv) {
 
     // main construction data management class : Stage 1
     if (tile_id == -1) {
-        if (xdist == -1 || ydist == -1) {
-            // construct the tile around the specified location
-            SG_LOG(SG_GENERAL, SG_ALERT, "Building single tile at " << lat << ',' << lon);
-            SGBucket b( lon, lat );
+        // build all the tiles in an area
+        SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) within given bounding box");
+        SGBucket b_min( min );
+        SGBucket b_max( max );
+
+        if ( b_min == b_max ) {
             TGConstruct* all_stages;
 
             all_stages = new TGConstruct();
             all_stages->set_cover( cover );
             all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
             all_stages->set_options( ignoreLandmass, nudge );
-            all_stages->set_bucket( b );
+            all_stages->set_bucket( b_min );
             all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
             all_stages->ConstructBucketStage1();
@@ -183,125 +186,71 @@ int main(int argc, char **argv) {
 
             delete all_stages;
         } else {
-            // build all the tiles in an area
-            SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) at " << lat << ',' << lon << " with x distance " << xdist << " and y distance " << ydist);
-            double min_x = lon - xdist;
-            double min_y = lat - ydist;
-            SGBucket b_min( min_x, min_y );
-            SGBucket b_max( lon + xdist, lat + ydist );
+            SGBucket b_cur;
+            int dx, dy, i, j;
 
-            SGBucket b_start(550401L);
-            bool do_tile = true;
+            sgBucketDiff(b_min, b_max, &dx, &dy);
+            SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
+            SG_LOG(SG_GENERAL, SG_ALERT, "  dx = " << dx << "  dy = " << dy);
 
-            if ( b_min == b_max ) {
-                TGConstruct* all_stages;
+            // construct stage 1
+            for ( j = 0; j <= dy; j++ ) {
+                for ( i = 0; i <= dx; i++ ) {
+                    b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
 
-                all_stages = new TGConstruct();
-                all_stages->set_cover( cover );
-                all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                all_stages->set_options( ignoreLandmass, nudge );
-                all_stages->set_bucket( b_min );
-                all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+                    TGConstruct* stage1;
+                    stage1 = new TGConstruct();
+                    stage1->set_cover( cover );
+                    stage1->set_paths( work_dir, share_dir, output_dir, load_dirs );
+                    stage1->set_options( ignoreLandmass, nudge );
+                    stage1->set_bucket( b_cur );
+                    stage1->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
-                all_stages->ConstructBucketStage1();
-                all_stages->ConstructBucketStage2();
-                all_stages->ConstructBucketStage3();
+                    stage1->ConstructBucketStage1();
+                    stage1->SaveToIntermediateFiles(1);
 
-                delete all_stages;
-            } else {
-                SGBucket b_cur;
-                int dx, dy, i, j;
-
-                sgBucketDiff(b_min, b_max, &dx, &dy);
-                SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
-                SG_LOG(SG_GENERAL, SG_ALERT, "  dx = " << dx << "  dy = " << dy);
-
-                // construct stage 1
-                for ( j = 0; j <= dy; j++ ) {
-                    for ( i = 0; i <= dx; i++ ) {
-                        b_cur = sgBucketOffset(min_x, min_y, i, j);
-
-                        if ( b_cur == b_start ) {
-                            do_tile = true;
-                        }
-
-                        if ( do_tile ) {
-                            TGConstruct* stage1;
-                            
-                            stage1 = new TGConstruct();
-                            stage1->set_cover( cover );
-                            stage1->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                            stage1->set_options( ignoreLandmass, nudge );
-                            stage1->set_bucket( b_cur );
-                            stage1->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-                            stage1->ConstructBucketStage1();
-                            stage1->SaveToIntermediateFiles(1);
-                            
-                            delete stage1;
-                        } else {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
-                        }
-                    }
+                    delete stage1;
                 }
+            }
 
-                // construct stage 2
-                for ( j = 0; j <= dy; j++ ) {
-                    for ( i = 0; i <= dx; i++ ) {
-                        b_cur = sgBucketOffset(min_x, min_y, i, j);
+            // construct stage 2
+            for ( j = 0; j <= dy; j++ ) {
+                for ( i = 0; i <= dx; i++ ) {
+                    b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
 
-                        if ( b_cur == b_start ) {
-                            do_tile = true;
-                        }
+                    TGConstruct* stage2;
+                    stage2 = new TGConstruct();
+                    stage2->set_cover( cover );
+                    stage2->set_paths( work_dir, share_dir, output_dir, load_dirs );
+                    stage2->set_options( ignoreLandmass, nudge );
+                    stage2->set_bucket( b_cur );
+                    stage2->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
-                        if ( do_tile ) {
-                            TGConstruct* stage2;
+                    stage2->LoadFromIntermediateFiles(1);
+                    stage2->ConstructBucketStage2();
+                    stage2->SaveToIntermediateFiles(2);
 
-                            stage2 = new TGConstruct();
-                            stage2->set_cover( cover );
-                            stage2->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                            stage2->set_options( ignoreLandmass, nudge );
-                            stage2->set_bucket( b_cur );
-                            stage2->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-                            stage2->LoadFromIntermediateFiles(1);
-                            stage2->ConstructBucketStage2();
-                            stage2->SaveToIntermediateFiles(2);
-                            
-                            delete stage2;
-                        } else {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
-                        }
-                    }
+                    delete stage2;
                 }
+            }
 
-                // construct stage 3
-                for ( j = 0; j <= dy; j++ ) {
-                    for ( i = 0; i <= dx; i++ ) {
-                        b_cur = sgBucketOffset(min_x, min_y, i, j);
+            // construct stage 3
+            for ( j = 0; j <= dy; j++ ) {
+                for ( i = 0; i <= dx; i++ ) {
+                    b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
 
-                        if ( b_cur == b_start ) {
-                            do_tile = true;
-                        }
+                    TGConstruct* stage3;
+                    stage3 = new TGConstruct();
+                    stage3->set_cover( cover );
+                    stage3->set_paths( work_dir, share_dir, output_dir, load_dirs );
+                    stage3->set_options( ignoreLandmass, nudge );
+                    stage3->set_bucket( b_cur );
+                    stage3->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
-                        if ( do_tile ) {
-                            TGConstruct* stage3;
+                    stage3->LoadFromIntermediateFiles(2);
+                    stage3->ConstructBucketStage3();
 
-                            stage3 = new TGConstruct();
-                            stage3->set_cover( cover );
-                            stage3->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                            stage3->set_options( ignoreLandmass, nudge );
-                            stage3->set_bucket( b_cur );
-                            stage3->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-                            stage3->LoadFromIntermediateFiles(2);
-                            stage3->ConstructBucketStage3();
-
-                            delete stage3;
-                        } else {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "skipping " << b_cur);
-                        }
-                    }
+                    delete stage3;
                 }
             }
         }
