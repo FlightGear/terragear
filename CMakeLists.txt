@@ -68,7 +68,7 @@ endif (MSVC AND MSVC_3RDPARTY_ROOT)
 find_package(Boost REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
-find_package(SimGear 2.5.0 REQUIRED)
+find_package(SimGear 2.9.0 REQUIRED)
 find_package(GDAL REQUIRED)
 find_package(TIFF REQUIRED) # needed for SRTM
 find_package(NewMat11 REQUIRED)

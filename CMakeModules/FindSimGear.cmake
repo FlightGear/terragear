@@ -114,14 +114,14 @@ if(NOT SIMGEAR_VERSION)
             "to select the SimGear library location to be used.")
 endif()
 
-message(STATUS "found SimGear version: ${SIMGEAR_VERSION} (needed ${SimGear_FIND_VERSION})")
+message(STATUS "found SimGear version: ${SIMGEAR_VERSION} (needed ${SimGear_FIND_VERSION} or higher)")
 
-if(NOT ${SIMGEAR_VERSION} GREATER ${SimGear_FIND_VERSION})
+if(${SIMGEAR_VERSION} VERSION_LESS ${SimGear_FIND_VERSION})
     message(FATAL_ERROR "You have installed a mismatching SimGear version ${SIMGEAR_VERSION} "
-            "instead of ${SimGear_FIND_VERSION} as required by TerraGear. "
+            "instead of ${SimGear_FIND_VERSION} or higher as required by TerraGear. "
             "When using multiple SimGear installations, please use 'SIMGEAR_DIR' "
             "to select the SimGear library location to be used.")
-endif()
+endif(${SIMGEAR_VERSION} VERSION_LESS ${SimGear_FIND_VERSION})
 
 # dependent packages
 find_package(ZLIB REQUIRED)
