@@ -205,8 +205,8 @@ inline Point3D::Point3D(const Point3D& p)
 inline Point3D Point3D::fromSGGeod(const SGGeod& geod)
 {
   Point3D pt;
-  pt.setlon(geod.getLongitudeRad());
-  pt.setlat(geod.getLatitudeRad());
+  pt.setlon(geod.getLongitudeDeg());
+  pt.setlat(geod.getLatitudeDeg());
   pt.setelev(geod.getElevationM());
 
   return pt;
@@ -376,8 +376,8 @@ inline double Point3D::elev() const { return n[PZ]; }
 inline SGGeod Point3D::toSGGeod(void) const
 {
   SGGeod geod;
-  geod.setLongitudeRad(lon());
-  geod.setLatitudeRad(lat());
+  geod.setLongitudeDeg(lon());
+  geod.setLatitudeDeg(lat());
   geod.setElevationM(elev());
   return geod;
 }
