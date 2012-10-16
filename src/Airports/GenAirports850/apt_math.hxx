@@ -12,18 +12,17 @@
 
 using std::string;
 
-
-TGPolygon gen_wgs84_area( Point3D origin, 
-                          double length_m, 
-                          double displ1, 
-                          double displ2, 
-                          double width_m, 
-                          double heading_deg, 
+TGPolygon gen_wgs84_area( SGGeod origin,
+                          double length_m,
+                          double displ1,
+                          double displ2,
+                          double width_m,
+                          double heading_deg,
                           bool   add_mid );
 
 // This function uses the 2 runway end points for calculation, which
 // yields a higher precision
-TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
+TGPolygon gen_wgs84_area( SGGeod end1, SGGeod end2,
                           double length_m,
                           double displ1, double displ2,
                           double width_m,

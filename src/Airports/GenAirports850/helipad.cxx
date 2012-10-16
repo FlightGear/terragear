@@ -135,7 +135,7 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
         area_side = true;
     }
 
-    TGPolygon helipad = gen_wgs84_area( Point3D::fromSGGeod(GetLoc()), maxsize, 0, 0, maxsize, heli.heading, false);
+    TGPolygon helipad = gen_wgs84_area( GetLoc(), maxsize, 0, 0, maxsize, heli.heading, false);
     helipad = snap( helipad, gSnap );
     string material, shoulder_mat;
     if (heli.surface == 1)

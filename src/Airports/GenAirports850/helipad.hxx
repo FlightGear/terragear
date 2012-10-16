@@ -66,7 +66,7 @@ private:
     // (return result points in degrees)
     TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
     {
-        return ( gen_wgs84_area( Point3D::fromSGGeod(GetLoc()), heli.length + 2.0*length_extend, displ1, displ2, heli.width + 2.0*width_extend, heli.heading, false) );
+        return ( gen_wgs84_area( GetLoc(), heli.length + 2.0*length_extend, displ1, displ2, heli.width + 2.0*width_extend, heli.heading, false) );
     }
 
     superpoly_list gen_helipad_lights(double maxsize);

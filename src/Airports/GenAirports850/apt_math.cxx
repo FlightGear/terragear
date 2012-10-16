@@ -27,12 +27,12 @@
 
 using std::string;
 
-TGPolygon gen_wgs84_area( Point3D origin,
-                                    double length_m,
-                                    double displ1, double displ2,
-                                    double width_m,
-                                    double heading_deg,
-                                    bool   add_mid )
+TGPolygon gen_wgs84_area( SGGeod origin,
+                          double length_m,
+                          double displ1, double displ2,
+                          double width_m,
+                          double heading_deg,
+                          bool   add_mid )
 {
     TGPolygon result_list;
     double length_hdg = heading_deg;
@@ -40,66 +40,44 @@ TGPolygon gen_wgs84_area( Point3D origin,
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
     // move to the +l end/center of the runway
-    Point3D ref = origin;
-    double lon = 0, lat = 0, r = 0;
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg,
-                        length_m / 2.0 - displ2, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
+    SGGeod ref = SGGeodesy::direct( origin, length_hdg, length_m / 2.0 - displ2 );
 
     // move to the l,-w corner (then we add points in a clockwise direction)
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        -width_m / 2.0, &lat, &lon, &r );
-    Point3D p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    SGGeod p = SGGeodesy::direct( ref, left_hdg, -width_m / 2.0) ;
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     // move to the l,w corner
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    p = SGGeodesy::direct( ref, left_hdg, width_m / 2.0 );
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     if ( add_mid ) {
         // move to the 0,w point (then we add points in a clockwise direction)
-
-        ref = origin;
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                            width_m / 2.0, &lat, &lon, &r );
-        p = Point3D( lon, lat, 0.0 );
-        result_list.add_node( 0, p );
+        p = SGGeodesy::direct( origin, left_hdg, width_m / 2.0 );
+        result_list.add_node( 0, Point3D::fromSGGeod(p) );
     }
 
     // move to the -l end/center of the runway
-    ref = origin;
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg,
-                        displ1 - length_m/2.0, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
+    ref = SGGeodesy::direct( origin, length_hdg, displ1 - length_m/2.0);
 
     // move to the -l,w corner (then we add points in a clockwise direction)
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    p = SGGeodesy::direct( ref, left_hdg, width_m / 2.0 );
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     // move to the -l,-w corner
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        -width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    p = SGGeodesy::direct( ref, left_hdg, -width_m / 2.0 );
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     if ( add_mid ) {
         // move to the 0,-w point (then we add points in a clockwise direction)
-
-        ref = origin;
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                            -width_m / 2.0, &lat, &lon, &r );
-        p = Point3D( lon, lat, 0.0 );
-        result_list.add_node( 0, p );
+        p = SGGeodesy::direct( origin, left_hdg, -width_m / 2.0 );
+        result_list.add_node( 0, Point3D::fromSGGeod(p) );
     }
 
     return result_list;
 }
 
-TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
+
+TGPolygon gen_wgs84_area( SGGeod end1, SGGeod end2,
                           double length_m,
                           double displ1, double displ2,
                           double width_m,
@@ -110,61 +88,42 @@ TGPolygon gen_wgs84_area( Point3D end1, Point3D end2,
     double left_hdg = heading_deg - 90.0;
     if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
-    // move from end2 to the displaced threshold
-    Point3D ref = end2;
-    double lon = 0, lat = 0, r = 0;
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), heading_deg,
-                        length_m / 2.0 - displ2, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
+    double course1, course2, distance;
+    SGGeodesy::inverse(end1, end2, course1, course2, distance);
+    SGGeod center = SGGeodesy::direct(end1, course1, distance/2 );
 
-    // move to the l,-w corner (then we add points in a clockwise direction)
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        -width_m / 2.0, &lat, &lon, &r );
-    Point3D p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    // move from end2 to the displaced threshold
+    SGGeod ref = SGGeodesy::direct( end2, heading_deg, length_m / 2.0 - displ2);
+
+    // move to the l,-w corner
+    SGGeod p = SGGeodesy::direct(ref, left_hdg, -width_m / 2.0);
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     // move to the l,w corner
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    p = SGGeodesy::direct(ref, left_hdg, width_m / 2.0);
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     if ( add_mid ) {
-        // move to the 0,w point (then we add points in a clockwise direction)
-
-        ref = Point3D( (end1.lon()+end2.lon())/2.0f, (end1.lat()+end2.lat())/2.0f, 0.0f);
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                            width_m / 2.0, &lat, &lon, &r );
-        p = Point3D( lon, lat, 0.0 );
-        result_list.add_node( 0, p );
+        // move to the 0,w point
+        p =  SGGeodesy::direct( center, left_hdg, width_m / 2.0 );
+        result_list.add_node( 0, Point3D::fromSGGeod(p) );
     }
 
     // move to the end1 center to the displ. threshold
-    ref = end1;
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), heading_deg,
-                        displ1 - length_m / 2.0, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
+    ref = SGGeodesy::direct( end1, heading_deg, displ1 - length_m / 2.0 );
 
-    // move to the -l,w corner (then we add points in a clockwise direction)
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    // move to the -l,w corner
+    p = SGGeodesy::direct( ref, left_hdg, width_m / 2.0 );
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     // move to the -l,-w corner
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                        -width_m / 2.0, &lat, &lon, &r );
-    p = Point3D( lon, lat, 0.0 );
-    result_list.add_node( 0, p );
+    p = SGGeodesy::direct( ref, left_hdg, -width_m / 2.0 );
+    result_list.add_node( 0, Point3D::fromSGGeod(p) );
 
     if ( add_mid ) {
-        // move to the 0,-w point (then we add points in a clockwise direction)
-
-        ref = Point3D( (end1.lon()+end2.lon())/2.0f, (end1.lat()+end2.lat())/2.0f, 0.0f);
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), left_hdg,
-                            -width_m / 2.0, &lat, &lon, &r );
-        p = Point3D( lon, lat, 0.0 );
-        result_list.add_node( 0, p );
+        // move to the 0,-w point
+        p = SGGeodesy::direct( center, left_hdg, -width_m / 2.0 );
+        result_list.add_node( 0, Point3D::fromSGGeod(p) );
     }
 
     return result_list;

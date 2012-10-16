@@ -68,11 +68,11 @@ point_list WaterRunway::GetNodes()
     if (buoys){
         double heading, az2, length;
         // calculate runway heading and length
-        geo_inverse_wgs_84( lat[0], lon[0], lat[1], lon[1], &heading, &az2, &length );
+        SGGeodesy::inverse(GetStart().toSGGeod(), GetEnd().toSGGeod(), heading, az2, length);
 
         // create a polygon for the outline and use it to calculate the point list
         int divs = (int)(length / 100.0);
-        TGPolygon area = gen_wgs84_area(Point3D( (lon[0] + lon[1]) / 2 , (lat[0] + lat[1]) / 2, 0),
+        TGPolygon area = gen_wgs84_area(GetStart().toSGGeod(), GetEnd().toSGGeod(),
                                         length, 0, 0, width, heading, false);
         Point3D pt, inc;
 

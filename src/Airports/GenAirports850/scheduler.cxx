@@ -676,8 +676,8 @@ bool Scheduler::AddAirports( long start_pos, float min_lat, float min_lon, float
 					// we have a winner
 					{ 
 						Runway* runway = new Runway(def);
-						Point3D start = runway->GetStart();
-						Point3D end   = runway->GetEnd();
+						Point3D start = Point3D::fromSGGeod(runway->GetStart());
+                                                Point3D end   = Point3D::fromSGGeod(runway->GetEnd());
 						if ( (start.x() >= min_lon ) && 
 						     (start.y() >= min_lat ) &&
 							 (start.x() <= max_lon ) &&

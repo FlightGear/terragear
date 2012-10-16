@@ -447,21 +447,16 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
     Point3D inc;
     Point3D pt1, pt2;
     double length_hdg;
-    double lon, lat, r;
 
     if ( recip ) {
         length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        geo_direct_wgs_84 ( GetEnd().lat(), GetEnd().lon(), length_hdg,
-                            rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        pt2 = GetStart();
+        pt1 = Point3D::fromSGGeod( SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]) );
+        pt2 = Point3D::fromSGGeod( GetStart() );
     } else {
         length_hdg = rwy.heading;
-        geo_direct_wgs_84 ( GetStart().lat(), GetStart().lon(), length_hdg,
-                            rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        pt2 = GetEnd();
+        pt1 = Point3D::fromSGGeod( SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]) );
+        pt2 = Point3D::fromSGGeod( GetEnd() );
     }
     inc = (pt2 - pt1) / divs;
 

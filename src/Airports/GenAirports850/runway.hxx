@@ -19,14 +19,14 @@ public:
 
     Runway(char* def);
 
-    Point3D GetStart(void)
+    SGGeod GetStart()
     {
-        return ( Point3D( rwy.lon[0], rwy.lat[0], 0.0f ));
+        return SGGeod::fromDeg(rwy.lon[0], rwy.lat[0]);
     }
 
-    Point3D GetEnd(void)
+    SGGeod GetEnd()
     {
-        return ( Point3D( rwy.lon[1], rwy.lat[1], 0.0f ));
+        return SGGeod::fromDeg(rwy.lon[1], rwy.lat[1]);
     }
 
     Point3D GetMidpoint(void)
