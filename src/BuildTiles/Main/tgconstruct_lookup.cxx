@@ -34,7 +34,7 @@
 // indexes into the node array (cast as unsigned long)
 void TGConstruct::LookupNodesPerVertex( void )
 {
-    SG_LOG(SG_GENERAL, SG_ALERT, "LookupNodexPerVertex");
+    SG_LOG(SG_GENERAL, SG_ALERT, "LookupNodesPerVertex");
 
     // for each node, traverse all the triangles - and create face lists
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
@@ -50,6 +50,7 @@ void TGConstruct::LookupNodesPerVertex( void )
                         if (idx >= 0) {
                             tri_nodes.add_node( tri, idx );
                         } else {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "didn't find vertex! " << tris.get_pt( tri, vertex ) );
                             exit(0);
                         }
                     }

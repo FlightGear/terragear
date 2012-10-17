@@ -32,7 +32,7 @@ using std::string;
 
 // Load elevation data from an Array file (a regular grid of elevation data)
 // and return list of fitted nodes.
-void TGConstruct::LoadElevationArray( void ) {
+void TGConstruct::LoadElevationArray( bool add_nodes ) {
     string base = bucket.gen_base_path();
     int i;
 
@@ -49,6 +49,7 @@ void TGConstruct::LoadElevationArray( void ) {
     array.parse( bucket );
     array.remove_voids( );
 
+    if ( add_nodes ) {
     point_list corner_list = array.get_corner_list();
     for (unsigned int i=0; i<corner_list.size(); i++) {
         nodes.unique_add(corner_list[i]);
@@ -58,6 +59,7 @@ void TGConstruct::LoadElevationArray( void ) {
     for (unsigned int i=0; i<fit_list.size(); i++) {
         nodes.unique_add(fit_list[i]);
     }
+}
 }
 
 static void calc_gc_course_dist( const Point3D& start, const Point3D& dest,
@@ -92,6 +94,7 @@ void TGConstruct::CalcElevations( void )
     TGPolyNodes tri_nodes;
     double e1, e2, e3, min;
     int    n1, n2, n3;
+    point_list  raw_nodes;
     Point3D p;
 
     SG_LOG(SG_GENERAL, SG_ALERT, "fixing node heights");
@@ -106,6 +109,7 @@ void TGConstruct::CalcElevations( void )
         }
     }
 
+    raw_nodes = nodes.get_geod_nodes();
     // now flatten some stuff
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         if ( is_lake_area( (AreaType)area ) ) {
@@ -153,7 +157,6 @@ void TGConstruct::CalcElevations( void )
                             exit(0);
                         }
 
-                        point_list raw_nodes = nodes.get_geod_nodes();
 
                         n1 = tri_nodes.get_pt( tri, 0 );
                         e1 = nodes.get_node(n1).GetPosition().z();
@@ -197,7 +200,6 @@ void TGConstruct::CalcElevations( void )
                             exit(0);
                         }
 
-                        point_list raw_nodes = nodes.get_geod_nodes();
 
                         n1 = tri_nodes.get_pt( tri, 0 );
                         e1 = nodes.get_node(n1).GetPosition().z();

@@ -103,11 +103,39 @@ std::istream& operator >> ( std::istream& in, TGShape& p)
     return in;
 }
 
+void TGShape::LoadFromGzFile(gzFile& fp)
+{
+    int i, count;
+    // First, load the clipmask
+    clip_mask.LoadFromGzFile( fp );
+
+    // Then load superpolys
+    sgReadInt( fp, &count );
+    for (i=0; i<count; i++) {
+    TGSuperPoly sp;
+        sp.LoadFromGzFile( fp );
+        sps.push_back( sp );
+    }
+
+    // Then load texparams
+    sgReadInt( fp, &count );
+    for (i=0; i<count; i++) {
+    TGTexParams tp;
+        tp.LoadFromGzFile( fp );
+        tps.push_back( tp );
+    }
+
+    // Load the id, area type and textured flag
+    sgReadUInt( fp, &id );
+    sgReadInt( fp, (int*)&area );
+    sgReadInt( fp, (int*)&textured );
+}
+
 std::ostream& operator<< ( std::ostream& out, const TGShape& p )
 {
     int i, count;
-    TGSuperPoly sp;
-    TGTexParams tp;
+//    TGSuperPoly sp;
+//    TGTexParams tp;
 
     // First, save the clipmask
     out << p.clip_mask;
@@ -132,4 +160,31 @@ std::ostream& operator<< ( std::ostream& out, const TGShape& p )
     out << p.textured << "\n";
 
     return out;
+}
+
+void TGShape::SaveToGzFile(gzFile& fp)
+{
+    int i, count;
+
+    // First, load the clipmask
+    clip_mask.SaveToGzFile( fp );
+
+    // Then save superpolys
+    count = sps.size();
+    sgWriteInt( fp, count );
+    for (i=0; i<count; i++) {
+        sps[i].SaveToGzFile( fp );
+    }
+
+    // Then save texparams
+    count = tps.size();
+    sgWriteInt( fp, count );
+    for (i=0; i<count; i++) {
+        tps[i].SaveToGzFile( fp );
+    }
+
+    // Save the id, area type and textured flag
+    sgWriteUInt( fp, id );
+    sgWriteInt( fp, (int)area );
+    sgWriteInt( fp, (int)textured );
 }

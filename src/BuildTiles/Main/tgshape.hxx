@@ -33,11 +33,9 @@
 
 #define TG_MAX_AREA_TYPES       128
 
-//#include <string>
-//#include <vector>
-
-//#include <simgear/compiler.h>
-//#include <simgear/debug/logstream.hxx>
+#include <simgear/compiler.h>
+#include <simgear/debug/logstream.hxx>
+#include <simgear/io/lowlevel.hxx>
 
 #include <Polygon/superpoly.hxx>
 #include <Polygon/texparams.hxx>
@@ -58,6 +56,8 @@ public:
     void SetMask( TGPolygon mask );
     void BuildMask( void );
     void IntersectPolys( void );
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
 
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGShape& );

@@ -31,6 +31,7 @@
 #endif
 
 #include "tglandclass.hxx"
+#include <simgear/io/lowlevel.hxx>
 
 void TGLandclass::clear(void)
 {
@@ -61,6 +62,22 @@ std::istream& operator >> ( std::istream& in, TGLandclass& lc)
     return in;
 }
 
+void TGLandclass::LoadFromGzFile(gzFile& fp)
+{
+    int i, j, count;
+
+    // Load all landclass shapes
+    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+        sgReadInt( fp, &count );
+
+        for (j=0; j<count; j++) {
+            TGShape shape;
+
+            shape.LoadFromGzFile( fp );
+            shapes[i].push_back( shape );
+        }
+    }
+}
 std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 {
     int i, j, count;
@@ -77,4 +94,19 @@ std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
     }
 
     return out;
+}
+void TGLandclass::SaveToGzFile(gzFile& fp)
+{
+    int i, j, count;
+    TGShape shape;
+
+    // Save all landclass shapes
+    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+        count = shapes[i].size();
+        sgWriteInt( fp, count );
+
+        for (j=0; j<count; j++) {
+            shapes[i][j].SaveToGzFile( fp );
+        }
+    }
 }

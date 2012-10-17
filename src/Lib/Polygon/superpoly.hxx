@@ -120,6 +120,9 @@ public:
         poly[contour][i] = n;
     }
 
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
+
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGPolyNodes& );
     friend std::ostream& operator<< ( std::ostream&, const TGPolyNodes& );
@@ -243,6 +246,9 @@ public:
 
     // erase the polygon
     void erase();
+
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
 
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGSuperPoly& );

@@ -33,6 +33,8 @@
 # error This library requires C++
 #endif
 
+#include <simgear/math/sg_types.hxx>
+#include <simgear/io/lowlevel.hxx>
 #define TG_MAX_AREA_TYPES       128
 
 #include "tgshape.hxx"
@@ -147,6 +149,8 @@ public:
     {
         return shapes[area][shape].sps[segment].set_tri_idxs( tis );
     }
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
 
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGLandclass& );

@@ -17,6 +17,19 @@ std::ostream& operator << (std::ostream &output, const TGTexParams &tp)
     return output;
 }
 
+void TGTexParams::SaveToGzFile(gzFile& fp)
+{
+    sgWritePoint3D( fp, ref );
+    sgWriteDouble( fp, width );
+    sgWriteDouble( fp, length );
+    sgWriteDouble( fp, heading );
+
+    sgWriteDouble( fp, minu );
+    sgWriteDouble( fp, maxu );
+    sgWriteDouble( fp, minv );
+    sgWriteDouble( fp, maxv );
+}
+
 // Read a polygon from input buffer.
 std::istream& operator >> (std::istream &input, TGTexParams &tp)
 {
@@ -32,4 +45,17 @@ std::istream& operator >> (std::istream &input, TGTexParams &tp)
     input >> tp.maxv;
 
     return input;
+}
+
+void TGTexParams::LoadFromGzFile(gzFile& fp)
+{
+    sgReadPoint3D( fp, ref );
+    sgReadDouble( fp, &width );
+    sgReadDouble( fp, &length );
+    sgReadDouble( fp, &heading );
+
+    sgReadDouble( fp, &minu );
+    sgReadDouble( fp, &maxu );
+    sgReadDouble( fp, &minv );
+    sgReadDouble( fp, &maxv );
 }

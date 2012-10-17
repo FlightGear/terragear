@@ -144,6 +144,9 @@ public:
         maxv = x;
     }
 
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
+    
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGTexParams& );
     friend std::ostream& operator<< ( std::ostream&, const TGTexParams& );

@@ -3,9 +3,60 @@
 
 #include "tg_nodes.hxx"
 
+// compare node's positions (x, then y)
+int compare_position(const TGNode& n1, const TGNode& n2)
+{
+    Point3D pos1 = n1.GetPosition();
+    Point3D pos2 = n2.GetPosition();
+
+    if ( pos1.x() == pos2.x() ) {
+        return ( pos1.y() < pos2.y() );
+    } else {
+        return ( pos1.x() < pos2.x() );
+    }
+}
+
+int fuzzy_compare_xposition(const TGNode& n1, const TGNode& n2)
+{
+    Point3D pos1 = n1.GetPosition();
+    Point3D pos2 = n2.GetPosition();
+
+    if ( fabs(pos1.x() - pos2.x()) < FG_PROXIMITY_EPSILON ) {
+        /* if x coords are within vacinity, then pos1 < pos2 */
+        return 1; 
+    } else {
+        return compare_position( n1, n2 );
+    }
+}
+
+void TGNodes::SortNodes( void )
+{
+    std::sort(tg_node_list.begin(), tg_node_list.end(), compare_position);
+    sorted = true;
+}
 // Find the index of the specified point (compair to the same
 // tolerance as unique_add().  Returns -1 if not found.
-int TGNodes::find( const Point3D& p ) const {
+int TGNodes::sorted_find( const Point3D& p ) const {
+    TGNode node( p );
+    const_node_list_iterator lb, ub;
+
+    // first, find the range to search
+    ub=lower_bound( tg_node_list.begin(), tg_node_list.end(), node, fuzzy_compare_xposition );
+    lb=upper_bound( tg_node_list.begin(), tg_node_list.end(), node, fuzzy_compare_xposition );
+
+    // then do a normal linear search in the range
+    if ( lb != tg_node_list.end() ) {
+        for ( ; lb != ub; ++lb ) {
+            if ( close_enough_2d(p, lb->GetPosition()) ) {
+                return std::distance( tg_node_list.begin(), lb );
+            }
+        }
+    }
+
+    return -1;
+}
+
+int TGNodes::linear_find( const Point3D& p ) const {
     const_node_list_iterator current, last;
     Point3D pos;
     int counter = 0;
@@ -25,9 +76,45 @@ int TGNodes::find( const Point3D& p ) const {
     return -1;
 }
 
-int TGNodes::unique_add( const Point3D& p ) {
+#if 0
+void TGNodes::sorted_unique_add( const Point3D& p ) {
+# if 0
+    TGNode node( p );
+    node.SetFixedPosition( false );
+
+    node_list_iterator idx = std::lower_bound( tg_node_list.begin(), tg_node_list.end(), node, compare_position );
+    tg_node_list.insert( idx, node );
+#else
+    TGNode node( p );
+    node.SetFixedPosition( false );
+
+    node_list_iterator lb, ub, idx;
+
+    // first, find the range to search
+    ub=lower_bound( tg_node_list.begin(), tg_node_list.end(), node, fuzzy_compare_xposition );
+    lb=upper_bound( tg_node_list.begin(), tg_node_list.end(), node, fuzzy_compare_xposition );
+
+    // then do a normal linear search in the range
+    if ( lb != tg_node_list.end() ) {
+        for ( ; lb != ub; ++lb ) {
+            if ( close_enough_2d(p, lb->GetPosition()) ) {
+//              return std::distance( tg_node_list.begin(), lb );
+                return;
+            }
+        }
+    }
+
+    // we didn't find an existing node - insert new one in correct order
+    idx = std::lower_bound( lb, ub, node, compare_position );
+    tg_node_list.insert( idx, node );
+
+//  return std::distance( tg_node_list.begin(), idx );
+#endif
+}
+#endif
+
+void TGNodes::linear_unique_add( const Point3D& p ) {
     node_list_iterator current, last;
-    int     counter = 0;
 
     // see if point already exists
     current = tg_node_list.begin();
@@ -35,11 +122,9 @@ int TGNodes::unique_add( const Point3D& p ) {
 
     for ( ; current != last; ++current ) {
         if ( close_enough_2d(p, (*current).GetPosition() ) ) {
-            // cout << "found an existing match!" << endl;
-            return counter;
+            return;
         }
 
-        ++counter;
     }
 
     TGNode node( p );
@@ -47,13 +132,59 @@ int TGNodes::unique_add( const Point3D& p ) {
 
     // add to list
     tg_node_list.push_back( node );
-
-    return counter;
 }
 
-int TGNodes::unique_add_fixed_elevation( const Point3D& p ) {
+#if 0
+void TGNodes::sorted_unique_add_fixed_elevation( const Point3D& p ) {
+# if 0
+    TGNode node( p );
+    node.SetFixedPosition(true);
+
+    node_list_iterator idx = std::lower_bound( tg_node_list.begin(), tg_node_list.end(), node, compare_position );
+
+    if ( idx != tg_node_list.end() ) {
+        if ( close_enough_2d( p, idx->GetPosition() ) ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "AddFixedLocation: node " << p << " exists at " << std::distance(tg_node_list.begin(), idx) );
+            idx->SetPosition( p );
+            idx->SetFixedPosition( true );
+        } else {
+            tg_node_list.insert( idx, node );
+}
+    }
+#else
+    TGNode node( p );
+    node.SetFixedPosition(true);
+
+    node_list_iterator lb, ub, idx;
+
+    // first, find the range to search
+    ub=lower_bound( tg_node_list.begin(), tg_node_list.end(), node, fuzzy_compare_xposition );
+    lb=upper_bound( tg_node_list.begin(), tg_node_list.end(), node, fuzzy_compare_xposition );
+
+    // then do a normal linear search in the range
+    if ( lb != tg_node_list.end() ) {
+        for ( ; lb != ub; ++lb ) {
+            if ( close_enough_2d(p, lb->GetPosition()) ) {
+                lb->SetPosition( p );
+                lb->SetFixedPosition( true );
+
+//              return std::distance( tg_node_list.begin(), lb );
+                return;
+            }
+        }
+    }
+
+    // we didn't find an existing node - insert new one in correct order
+    idx = std::lower_bound( lb, ub, node, compare_position );
+    tg_node_list.insert( idx, node );
+
+//  return std::distance( tg_node_list.begin(), idx );
+#endif
+}
+#endif
+
+void TGNodes::linear_unique_add_fixed_elevation( const Point3D& p ) {
     node_list_iterator current, last;
-    int     counter = 0;
 
     // see if point already exists
     current = tg_node_list.begin();
@@ -61,16 +192,14 @@ int TGNodes::unique_add_fixed_elevation( const Point3D& p ) {
 
     for ( ; current != last; ++current ) {
         if ( close_enough_2d(p, (*current).GetPosition() ) ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Adding fixed elev node : node already exists at " << counter << " old position is " << (*current).GetPosition() << " new position is " << p );
 
             // Force the match to our position, and mark as fixed
             (*current).SetPosition( p );
             (*current).SetFixedPosition( true );
 
-            return counter;
+            return;
         }
 
-        ++counter;
     }
 
     TGNode node( p );
@@ -79,7 +208,6 @@ int TGNodes::unique_add_fixed_elevation( const Point3D& p ) {
     // add to list
     tg_node_list.push_back( node );
 
-    return counter;
 }
 
 point_list TGNodes::get_geod_nodes( void ) const {
@@ -97,6 +225,9 @@ point_list TGNodes::get_geod_nodes( void ) const {
     return points;
 }
 
+// TODO: if the list is sorted, we should be able to get the range from x=min to x=max,
+// then within that range, add each point where y is within ymin, max
+// still linear search, but should be less points
 point_list TGNodes::get_geod_inside( Point3D min, Point3D max ) const {
     point_list points;
     const_node_list_iterator current, last;
@@ -260,6 +391,30 @@ std::istream& operator >> ( std::istream& in, TGNode& n )
     return in;
 }
 
+void TGNode::LoadFromGzFile(gzFile& fp)
+{
+    int i, nCount;
+
+    // Load a tgnode
+    sgReadPoint3D( fp, position);
+    CalcWgs84();
+
+    sgReadPoint3D( fp, normal );
+    sgReadInt( fp, (int*)&fixed_position );
+    sgReadInt( fp, (int*)&fixed_normal );
+
+    sgReadInt( fp, &nCount );
+    for (i=0; i<nCount; i++) {
+        TGFaceLookup face;
+
+        sgReadUInt( fp, &face.area );
+        sgReadUInt( fp, &face.shape );
+        sgReadUInt( fp, &face.seg );
+        sgReadUInt( fp, &face.tri );
+
+        faces.push_back( face );
+    }
+}
 std::ostream& operator<< ( std::ostream& out, const TGNode& n )
 {
     int i, nCount;
@@ -282,11 +437,33 @@ std::ostream& operator<< ( std::ostream& out, const TGNode& n )
     return out;
 }
 
+void TGNode::SaveToGzFile(gzFile& fp)
+{
+    int  i, nCount;
+
+    // Save a tgnode
+    sgWritePoint3D( fp, position );
+    sgWritePoint3D( fp, normal );
+    sgWriteInt( fp, (int)fixed_position );
+    sgWriteInt( fp, (int)fixed_normal );
+
+    nCount = faces.size();
+    sgWriteInt( fp, nCount );
+    for (i=0; i<nCount; i++) {
+        sgWriteUInt( fp, faces[i].area );
+        sgWriteUInt( fp, faces[i].shape );
+        sgWriteUInt( fp, faces[i].seg );
+        sgWriteUInt( fp, faces[i].tri );
+    }
+}
+
 // input from stream
 std::istream& operator >> ( std::istream& in, TGNodes& ns )
 {
     int i, nCount;
 
+    // Load sorted flag
+    in >> ns.sorted;
     // Load all tgnodes
     in >> nCount;
     
@@ -300,10 +477,30 @@ std::istream& operator >> ( std::istream& in, TGNodes& ns )
     return in;
 }
 
+void TGNodes::LoadFromGzFile(gzFile& fp)
+{
+    int i, nCount;
+
+    // Load sorted flag
+    sgReadInt( fp, (int*)&sorted );
+
+    // Load all tgnodes
+    sgReadInt( fp, &nCount );
+
+    for (i=0; i<nCount; i++) {
+        TGNode node;
+        node.LoadFromGzFile( fp );
+
+        tg_node_list.push_back( node );
+    }
+}
+
 std::ostream& operator<< ( std::ostream& out, const TGNodes& ns )
 {
     int i, nCount;
 
+    // Save sorted flag
+    out << ns.sorted << "\n";
     // Save all tgnodes
     nCount = ns.tg_node_list.size();
     out << nCount << "\n";
@@ -315,6 +512,21 @@ std::ostream& operator<< ( std::ostream& out, const TGNodes& ns )
     return out;
 }
 
+void TGNodes::SaveToGzFile(gzFile& fp)
+{
+    int i, nCount;
+
+    // Save sorted flag
+    sgWriteInt( fp, (int)sorted );
+
+    // Save all tgnodes
+    nCount = tg_node_list.size();
+    sgWriteInt( fp, nCount );
+
+    for (i=0; i<nCount; i++) {
+        tg_node_list[i].SaveToGzFile( fp );
+    }
+}
 
 #if 0
 bool TGNodes::LookupFixedElevation( Point3D p, double* z )

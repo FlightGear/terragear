@@ -81,10 +81,39 @@ std::ostream& operator<< ( std::ostream& output, const TGSuperPoly& sp )
     } else {
         output << sp.flag << "\n";
     }
-    
+
     return output;
 }
 
+void TGSuperPoly::SaveToGzFile(gzFile& fp)
+{
+    int     nFaceNormals;
+    int     nFaceAreas;
+
+    // Save the data
+    sgWriteString( fp, material.c_str() );
+
+    poly.SaveToGzFile( fp );
+    normals.SaveToGzFile( fp );
+    texcoords.SaveToGzFile( fp );
+
+    tris.SaveToGzFile( fp );
+    tri_idxs.SaveToGzFile( fp );
+
+    nFaceNormals = face_normals.size();
+    sgWriteInt( fp, nFaceNormals );
+    for ( int i = 0; i < nFaceNormals; i++ ) {
+        sgWritePoint3D( fp, face_normals[i] );
+    }
+
+    nFaceAreas = face_areas.size();
+    sgWriteInt( fp, nFaceAreas );
+    for ( int i = 0; i < nFaceAreas; i++ ) {
+        sgWriteDouble( fp, face_areas[i] );
+    }
+
+    sgWriteString( fp, flag.c_str() );
+}
 std::istream& operator>> ( std::istream& input, TGSuperPoly& sp )
 {
     int     nFaceNormals;
@@ -117,6 +146,47 @@ std::istream& operator>> ( std::istream& input, TGSuperPoly& sp )
     return input;
 }
 
+void TGSuperPoly::LoadFromGzFile(gzFile& fp)
+{
+    int     nFaceNormals;
+    int     nFaceAreas;
+    Point3D normal;
+    double  area;
+    char*   strbuf;
+
+    // Load the data
+    sgReadString( fp, &strbuf );
+    if ( strbuf ) {
+        material = strbuf;
+        delete strbuf;
+    }
+
+    poly.LoadFromGzFile( fp );
+    normals.LoadFromGzFile( fp );
+    texcoords.LoadFromGzFile( fp );
+
+    tris.LoadFromGzFile( fp );
+    tri_idxs.LoadFromGzFile( fp );
+
+    sgReadInt( fp, &nFaceNormals );
+    for ( int i = 0; i < nFaceNormals; i++ ) {
+        sgReadPoint3D( fp, normal );
+        face_normals.push_back( normal );
+    }
+
+    sgReadInt( fp, &nFaceAreas );
+    for ( int i = 0; i < nFaceAreas; i++ ) {
+        sgReadDouble( fp, &area );
+        face_areas.push_back( area );
+    }
+
+    sgReadString( fp, &strbuf );
+    if ( strbuf ) {
+        flag = strbuf;
+        delete strbuf;
+    }
+}
+
 std::ostream& operator<< ( std::ostream& output, const TGPolyNodes& pn )
 {
     int     nContours;
@@ -137,6 +207,22 @@ std::ostream& operator<< ( std::ostream& output, const TGPolyNodes& pn )
     return output;
 }
 
+void TGPolyNodes::SaveToGzFile(gzFile& fp)
+{
+    int     nContours;
+    int     nPoints;
+
+    // Save the data
+    nContours = poly.size();
+    sgWriteInt( fp, nContours );
+    for(int i=0; i<nContours; i++) {
+        nPoints = poly[i].size();
+        sgWriteInt( fp, nPoints );
+        for (int j=0; j<nPoints; j++) {
+            sgWriteInt( fp, poly[i][j] );
+        }
+    }
+}
 
 std::istream& operator>> ( std::istream& input, TGPolyNodes& pn )
 {
@@ -158,4 +244,24 @@ std::istream& operator>> ( std::istream& input, TGPolyNodes& pn )
     }
 
     return input;
+}
+
+void TGPolyNodes::LoadFromGzFile(gzFile& fp)
+{
+    int     nContours;
+    int     nPoints;
+    int     point;
+
+    // Load the data
+    sgReadInt( fp, &nContours );
+    for( int i=0; i<nContours; i++ ) {
+        int_list    points;
+
+        sgReadInt( fp, &nPoints );
+        for (int j=0; j<nPoints; j++) {
+            sgReadInt( fp, &point );
+            points.push_back( point );
+        }
+        poly.push_back( points );
+    }
 }

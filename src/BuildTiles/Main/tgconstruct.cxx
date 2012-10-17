@@ -84,8 +84,8 @@ void TGConstruct::ConstructBucketStage1() {
     }
 
     // STEP 1) 
-    // Load grid of elevation data (Array)
-    LoadElevationArray();
+    // Load grid of elevation data (Array), and add the nodes
+    LoadElevationArray( true );
 
     // STEP 2) 
     // Clip 2D polygons against one another
@@ -131,37 +131,42 @@ void TGConstruct::ConstructBucketStage2() {
         }
 
         // STEP 7) 
-        // Need the array of elevation data for stage 2
-        LoadElevationArray();
+        // Need the array of elevation data for stage 2, but don't add the nodes - we already have them
+        LoadElevationArray( false );
 
-        // STEP 6)
+        // STEP 8)
         // Merge in Shared data - should just be x,y nodes on the borders from stage1
         LoadSharedEdgeData( 1 );
 
-        // STEP 7) 
+        // STEP 9) 
         // Fix T-Junctions by finding nodes that lie close to polygon edges, and
         // inserting them into the edge
         FixTJunctions();
 
-        // STEP 8)
+        // STEP 10)
         // Generate triangles - we can't generate the node-face lookup table
         // until all polys are tesselated, as extra nodes can still be generated
         TesselatePolys();
 
-        // STEP 9)
+        // STEP 11)
+        // Optimize the node list now since linear add is faster than sorted add.
+        // no more nodes can be added from this point on
+        nodes.SortNodes();
+
+        // STEP 12)
         // Generate triangle vertex coordinates to node index lists
         // NOTE: After this point, no new nodes can be added
         LookupNodesPerVertex();
 
-        // STEP 10)
+        // STEP 13)
         // Interpolate elevations, and flatten stuff
         CalcElevations();
 
-        // STEP 11)
+        // STEP 14)
         // Generate face_connected list
         LookupFacesPerNode();
 
-        // STEP 12)
+        // STEP 15)
         // Save the tile boundary info for stage 3
         // includes elevation info, and a list of connected triangles
         SaveSharedEdgeData( 2 );
@@ -182,22 +187,24 @@ void TGConstruct::ConstructBucketStage3() {
             strcpy( ds_name, "" );
         }
 
+        // STEP 16)
         // Load in the neighbor faces and elevation data
         LoadSharedEdgeDataStage2();
 
-        // STEP 12)
+        // STEP 17)
         // Average out the elevation for nodes on tile boundaries
         AverageEdgeElevations();
 
-        // STEP 12)
+        // STEP 18)
         // Calculate Face Normals
         CalcFaceNormals();
 
-        // STEP 13)
+        // STEP 19)
         // Calculate Point Normals
         CalcPointNormals();
 
 #if 0
+        // STEP 20)
         if ( c.get_cover().size() > 0 ) {
             // Now for all the remaining "default" land cover polygons, assign
             // each one it's proper type from the land use/land cover
@@ -206,15 +213,15 @@ void TGConstruct::ConstructBucketStage3() {
         }
 #endif
 
-        // STEP 14)
+        // STEP 21)
         // Calculate Texture Coordinates
         CalcTextureCoordinates();
 
-        // STEP 16)
+        // STEP 22)
         // Generate the btg file
         WriteBtgFile();
 
-        // STEP 17) 
+        // STEP 23) 
         // Write Custom objects to .stg file 
         AddCustomObjects();
     }

@@ -1,15 +1,21 @@
 #ifndef _TG_NODES_HXX
 #define _TG_NODES_HXX
 
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
 
 #ifndef __cplusplus                                                          
 # error This library requires C++
 #endif                                   
 
+#include <cstdlib>
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
-#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/io/lowlevel.hxx>
+
+#include <Geometry/point3d.hxx>
 
 #define FG_PROXIMITY_EPSILON 0.000001
 #define FG_COURSE_EPSILON 0.0001
@@ -93,6 +99,8 @@ public:
     inline void    SetNormal( const Point3D& n )    { normal = n; }
     inline Point3D GetNormal( void ) const          { return normal; }
 
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGNode& );
     friend std::ostream& operator<< ( std::ostream&, const TGNode& );
@@ -118,35 +126,53 @@ class TGNodes {
 public:
 
     // Constructor and destructor
-    TGNodes( void )     {}
+    TGNodes( void ) {
+        sorted = false;
+    }
     ~TGNodes( void )    {}
 
     // delete all the data out of node_list
-    inline void clear() { tg_node_list.clear(); }
+    inline void clear() {
+        tg_node_list.clear();
+        sorted = false;
+    }
 
     // Add a point to the point list if it doesn't already exist.
     // Returns the index (starting at zero) of the point in the list.
-    int unique_add( const Point3D& p );
+    void unique_add( const Point3D& p ) {
+        if ( !sorted ) {
+            linear_unique_add( p );
+        } else {
+             SG_LOG(SG_GENERAL, SG_ALERT, "ADDING NODE AFTER SORT!");
+             exit(0);
+        }
+    }
 
     // Add a point to the point list if it doesn't already exist
     // (checking all three dimensions.)  Returns the index (starting
     // at zero) of the point in the list.
-    int unique_add_fixed_elevation( const Point3D& p );
-    node_list get_fixed_elevation_nodes( void ) const;
-
-    // Add the point with no uniqueness checking
-    int simple_add( const Point3D& p );
-
-    // Add a point to the point list if it doesn't already exist.
-    // Returns the index (starting at zero) of the point in the list.
-    // Use a course proximity check
-    int course_add( const Point3D& p );
+    void unique_add_fixed_elevation( const Point3D& p ) {
+        if ( !sorted ) {
+            linear_unique_add_fixed_elevation( p );
+        } else {
+             SG_LOG(SG_GENERAL, SG_ALERT, "ADDING NODE AFTER SORT!");
+             exit(0);
+        }
+    }
 
     // Find the index of the specified point (compair to the same
     // tolerance as unique_add().  Returns -1 if not found.
-    int find( const Point3D& p ) const;
+    int find(  const Point3D& p ) const {
+        if ( sorted ) {
+            return sorted_find( p );
+        } else {
+            return linear_find( p );
+        }
+    }
 
-//    bool LookupFixedElevation( Point3D p, double* z );
+    node_list get_fixed_elevation_nodes( void ) const;
+
+    void SortNodes( void );
     void SetElevation( int idx, double z )  { tg_node_list[idx].SetElevation( z ); }
 
     Point3D GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
@@ -184,13 +210,21 @@ public:
     inline size_t size() const { return tg_node_list.size(); }
 
     void Dump( void );
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
 
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGNodes& );
     friend std::ostream& operator<< ( std::ostream&, const TGNodes& );
 
 private:
+    void linear_unique_add( const Point3D& p );
+    void linear_unique_add_fixed_elevation( const Point3D& p );
+
+    int sorted_find( const Point3D& p ) const;
+    int linear_find( const Point3D& p ) const;
     node_list tg_node_list;
+    bool sorted;
 
     // return true of the two points are "close enough" as defined by
     // FG_PROXIMITY_EPSILON

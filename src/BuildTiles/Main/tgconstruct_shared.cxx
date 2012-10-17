@@ -28,6 +28,7 @@
 
 #include <simgear/misc/sg_dir.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/io/lowlevel.hxx>
 
 #include <Geometry/poly_support.hxx>
 
@@ -37,8 +38,7 @@ using std::string;
 
 void TGConstruct::SaveSharedEdgeData( int stage )
 {
-    string dir;
-    string file;
+    string filepath;
 
     switch( stage ) {
         case 1:
@@ -48,48 +48,47 @@ void TGConstruct::SaveSharedEdgeData( int stage )
 
             nodes.get_geod_edge( bucket, north, south, east, west );
 
-            dir  = share_base + "/stage1/" + bucket.gen_base_path();
+            filepath = share_base + "/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str() + "_edges";
+            SGPath file(filepath);
+            file.create_dir( 0755 );
 
-            SGPath sgp( dir );
-            sgp.append( "dummy" );
-            sgp.create_dir( 0755 );
+            gzFile fp;
+            if ( (fp = gzopen( filepath.c_str(), "wb9" )) == NULL ) {
+                SG_LOG( SG_GENERAL, SG_INFO, "ERROR: opening " << file.str() << " for writing!" );
+                return;
+            }
 
-            file = dir + "/" + bucket.gen_index_str() + "_edges";
-            std::ofstream ofs_e( file.c_str() );
-
-            // first, set the precision
-            ofs_e << std::setprecision(12);
-            ofs_e << std::fixed;
+            sgClearWriteError();
 
             // north
             nCount = north.size();
-            ofs_e << nCount << "\n";
+            sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                ofs_e << north[i];
+                sgWritePoint3D( fp, north[i] );
             }
 
             // south
             nCount = south.size();
-            ofs_e << nCount << "\n";
+            sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                ofs_e << south[i];
+                sgWritePoint3D( fp, south[i] );
             }
 
             // east
             nCount = east.size();
-            ofs_e << nCount << "\n";
+            sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                ofs_e << east[i];
+                sgWritePoint3D( fp, east[i] );
             }
 
             // west
             nCount = west.size();
-            ofs_e << nCount << "\n";
+            sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                ofs_e << west[i];
+                sgWritePoint3D( fp, west[i] );
             }
 
-            ofs_e.close();
+            gzclose(fp);
         }
         break;
 
@@ -111,7 +110,7 @@ void TGConstruct::SaveSharedEdgeData( int stage )
     }
 }
 
-void TGConstruct::WriteNeighborFaces( std::ofstream& ofs_e, Point3D pt )
+void TGConstruct::WriteNeighborFaces( gzFile& fp, Point3D pt )
 {
     // find all neighboors of this point
     int    n    = nodes.find( pt );
@@ -119,7 +118,7 @@ void TGConstruct::WriteNeighborFaces( std::ofstream& ofs_e, Point3D pt )
     TGFaceList faces  = node.GetFaces();
 
     // write the number of neighboor faces
-    ofs_e << faces.size() << "\n";
+    sgWriteInt( fp, faces.size() );
 
     // write out each face normal and size
     for (unsigned int j=0; j<faces.size(); j++) {
@@ -142,11 +141,10 @@ void TGConstruct::WriteNeighborFaces( std::ofstream& ofs_e, Point3D pt )
             double  face_area   = triangle_area( p1, p2, p3 );
             Point3D face_normal = Point3D::fromSGVec3( calc_normal( face_area, wgs_p1, wgs_p2, wgs_p3 ) );
 
-            ofs_e << face_area << " ";
-            ofs_e << face_normal;
+            sgWriteDouble( fp, face_area );
+            sgWritePoint3D( fp, face_normal );
         }
     }
-    ofs_e << "\n";
 }
 
 TGNeighborFaces* TGConstruct::FindNeighborFaces( Point3D node )
@@ -173,19 +171,19 @@ TGNeighborFaces* TGConstruct::AddNeighborFaces( Point3D node )
     return &neighbor_faces[neighbor_faces.size()-1];
 }
 
-void TGConstruct::ReadNeighborFaces( std::ifstream& in )
+void TGConstruct::ReadNeighborFaces( gzFile& fp )
 {
     int count;
 
     // read the count
-    in >> count;
+    sgReadInt( fp, &count );
 
     for (int i=0; i<count; i++) {
         TGNeighborFaces* pFaces;
         Point3D          node;
         int              num_faces;
 
-        in >> node;
+        sgReadPoint3D( fp, node );
 
         // look to see if we already have this node
         // If we do, (it's a corner) add more faces to it.
@@ -205,16 +203,16 @@ void TGConstruct::ReadNeighborFaces( std::ifstream& in )
         // remember all of the elevation data for the node, so we can average
         pFaces->elevations.push_back( node.z() );
 
-        in >> num_faces;
+        sgReadInt( fp, &num_faces );
         for (int j=0; j<num_faces; j++)
         {
             double  area;
             Point3D normal;
 
-            in >> area;
+            sgReadDouble( fp, &area );
             pFaces->face_areas.push_back( area );
 
-            in >> normal;
+            sgReadPoint3D( fp, normal );
             pFaces->face_normals.push_back( normal );
         }
     }
@@ -225,7 +223,6 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
     string dir;
     string file;
     point_list north, south, east, west;
-    std::ofstream ofs_e;
     int nCount;
 
     nodes.get_geod_edge( bucket, north, south, east, west );
@@ -239,110 +236,123 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
 
     // north edge
     file = dir + "/" + bucket.gen_index_str() + "_north_edge";
-    ofs_e.open( file.c_str() );
-    ofs_e << std::setprecision(12);
-    ofs_e << std::fixed;
+    gzFile fp;
+    if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+        SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+        return;
+    }
+    sgClearWriteError();
 
     nCount = north.size();
-    ofs_e << nCount << "\n";
+    sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
         // write the 3d point
-        ofs_e << north[i];
-        WriteNeighborFaces( ofs_e, north[i] );
+        sgWritePoint3D( fp, north[i] );
+        WriteNeighborFaces( fp, north[i] );
     }
-    ofs_e.close();
+    gzclose(fp);
 
     // south edge
     file = dir + "/" + bucket.gen_index_str() + "_south_edge";
-    ofs_e.open( file.c_str() );
-    ofs_e << std::setprecision(12);
-    ofs_e << std::fixed;
+    if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+        SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+        return;
+    }
+    sgClearWriteError();
 
     nCount = south.size();
-    ofs_e << nCount << "\n";
+    sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
-        ofs_e << south[i];
-        WriteNeighborFaces( ofs_e, south[i] );
+        sgWritePoint3D( fp, south[i] );
+        WriteNeighborFaces( fp, south[i] );
     }
-    ofs_e.close();
+    gzclose(fp);
 
     // east edge
     file = dir + "/" + bucket.gen_index_str() + "_east_edge";
-    ofs_e.open( file.c_str() );
-    ofs_e << std::setprecision(12);
-    ofs_e << std::fixed;
+    if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+        SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+        return;
+    }
+    sgClearWriteError();
 
     nCount = east.size();
-    ofs_e << nCount << "\n";
+    sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
-        ofs_e << east[i];
-        WriteNeighborFaces( ofs_e, east[i] );
+        sgWritePoint3D( fp, east[i] );
+        WriteNeighborFaces( fp, east[i] );
     }
-    ofs_e.close();
+    gzclose(fp);
 
     // west egde
     file = dir + "/" + bucket.gen_index_str() + "_west_edge";
-    ofs_e.open( file.c_str() );
-    ofs_e << std::setprecision(12);
-    ofs_e << std::fixed;
+    if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+        SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+        return;
+    }
+    sgClearWriteError();
 
     nCount = west.size();
-    ofs_e << nCount << "\n";
+    sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
-        ofs_e << west[i];
-        WriteNeighborFaces( ofs_e, west[i] );
+        sgWritePoint3D( fp, west[i] );
+        WriteNeighborFaces( fp, west[i] );
     }
-    ofs_e.close();
+    gzclose(fp);
 }
 
 void TGConstruct::LoadSharedEdgeDataStage2( void )
 {
     string dir;
     string file;
-    std::ifstream ifs_edge;
     double     clon = bucket.get_center_lon();
     double     clat = bucket.get_center_lat();
+    gzFile     fp;
     SGBucket   b;
 
     // Read Northern tile and add its southern node faces
     b    = sgBucketOffset(clon, clat, 0, 1);
     dir  = share_base + "/stage2/" + b.gen_base_path();
     file = dir + "/" + b.gen_index_str() + "_south_edge";
-    ifs_edge.open( file.c_str() );
-    if ( ifs_edge.is_open() ) {
-        ReadNeighborFaces( ifs_edge );
+    fp = gzopen( file.c_str(), "rb" );
+    if (fp) {
+        sgClearReadError();
+        ReadNeighborFaces( fp );
+        gzclose( fp );
     }
-    ifs_edge.close();
 
     // Read Southern tile and add its northern node faces
     b    = sgBucketOffset(clon, clat, 0, -1);
     dir  = share_base + "/stage2/" + b.gen_base_path();
     file = dir + "/" + b.gen_index_str() + "_north_edge";
-    ifs_edge.open( file.c_str() );
-    if ( ifs_edge.is_open() ) {
-        ReadNeighborFaces( ifs_edge );
+    fp = gzopen( file.c_str(), "rb" );
+    if (fp) {
+        sgClearReadError();
+        ReadNeighborFaces( fp );
+        gzclose( fp );
     }
-    ifs_edge.close();
 
     // Read Eastern tile and add its western node faces
     b    = sgBucketOffset(clon, clat, 1, 0);
     dir  = share_base + "/stage2/" + b.gen_base_path();
     file = dir + "/" + b.gen_index_str() + "_west_edge";
-    ifs_edge.open( file.c_str() );
-    if ( ifs_edge.is_open() ) {
-        ReadNeighborFaces( ifs_edge );
+    fp = gzopen( file.c_str(), "rb" );
+    if (fp) {
+        sgClearReadError();
+        ReadNeighborFaces( fp );
+        gzclose( fp );
     }
-    ifs_edge.close();
 
     // Read Western tile and add its eastern node faces
     b    = sgBucketOffset(clon, clat, -1, 0);
     dir  = share_base + "/stage2/" + b.gen_base_path();
     file = dir + "/" + b.gen_index_str() + "_east_edge";
-    ifs_edge.open( file.c_str() );
-    if ( ifs_edge.is_open() ) {
-        ReadNeighborFaces( ifs_edge );
+    fp = gzopen( file.c_str(), "rb" );
+    if (fp) {
+        sgClearReadError();
+        ReadNeighborFaces( fp );
+        gzclose( fp );
     }
-    ifs_edge.close();
 }
 
 
@@ -350,6 +360,7 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
 {
     string dir;
     string file;
+    gzFile fp;
 
     switch( stage ) {
         case 1:     // Save the clipped polys and node list
@@ -363,22 +374,22 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
                 sgp.create_dir( 0755 );
 
                 file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
-                std::ofstream ofs_cp( file.c_str() );
-
-                // first, set the precision
-                ofs_cp << std::setprecision(15);
-                ofs_cp << std::fixed;
-                ofs_cp << polys_clipped;
-                ofs_cp.close();
+                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                    return;
+                }
+                sgClearWriteError();
+                polys_clipped.SaveToGzFile( fp );
+                gzclose( fp );
 
                 file = dir + "/" + bucket.gen_index_str() + "_nodes";
-                std::ofstream ofs_n( file.c_str() );
-
-                // first, set the precision
-                ofs_n << std::setprecision(15);
-                ofs_n << std::fixed;
-                ofs_n << nodes;
-                ofs_n.close();
+                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                    return;
+                }
+                sgClearWriteError();
+                nodes.SaveToGzFile( fp );
+                gzclose( fp );
             }
 
             break;
@@ -394,22 +405,22 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
                 sgp.create_dir( 0755 );
 
                 file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
-                std::ofstream ofs_cp( file.c_str() );
-
-                // first, set the precision
-                ofs_cp << std::setprecision(15);
-                ofs_cp << std::fixed;
-                ofs_cp << polys_clipped;
-                ofs_cp.close();
+                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                    return;
+                }
+                sgClearWriteError();
+                polys_clipped.SaveToGzFile( fp );
+                gzclose( fp );
 
                 file = dir + "/" + bucket.gen_index_str() + "_nodes";
-                std::ofstream ofs_n( file.c_str() );
-
-                // first, set the precision
-                ofs_n << std::setprecision(15);
-                ofs_n << std::fixed;
-                ofs_n << nodes;
-                ofs_n.close();
+                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                    return;
+                }
+                sgClearWriteError();
+                nodes.SaveToGzFile( fp );
+                gzclose( fp );
             }
             break;
         }
@@ -420,52 +431,53 @@ void TGConstruct::LoadNeighboorEdgeDataStage1( SGBucket& b, point_list& north, p
 {
     string dir;
     string file;
+    gzFile fp;
     Point3D pt;
     int nCount;
 
     dir  = share_base + "/stage1/" + b.gen_base_path();
     file = dir + "/" + b.gen_index_str() + "_edges";
-    std::ifstream ifs_edges( file.c_str() );
+    fp = gzopen( file.c_str(), "rb" );
 
     north.clear();
     south.clear();
     east.clear();
     west.clear();
 
-    if ( ifs_edges.is_open() ) {
+    if (fp) {
         // North
-        ifs_edges >> nCount;
+        sgReadInt( fp, &nCount );
         SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " north boundary");
         for (int i=0; i<nCount; i++) {
-            ifs_edges >> pt;
+            sgReadPoint3D( fp, pt );
             north.push_back(pt);
         }
 
         // South
-        ifs_edges >> nCount;
+        sgReadInt( fp, &nCount );
         SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " south boundary");
         for (int i=0; i<nCount; i++) {
-            ifs_edges >> pt;
+            sgReadPoint3D( fp, pt );
             south.push_back(pt);
         }
 
         // East
-        ifs_edges >> nCount;
+        sgReadInt( fp, &nCount );
         SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " east boundary");
         for (int i=0; i<nCount; i++) {
-            ifs_edges >> pt;
+            sgReadPoint3D( fp, pt );
             east.push_back(pt);
         }
 
         // West
-        ifs_edges >> nCount;
+        sgReadInt( fp, &nCount );
         SG_LOG( SG_CLIPPER, SG_INFO, "loading " << nCount << "Points on " << b.gen_index_str() << " west boundary");
         for (int i=0; i<nCount; i++) {
-            ifs_edges >> pt;
+            sgReadPoint3D( fp, pt );
             west.push_back(pt);
         }
 
-        ifs_edges.close();
+        gzclose( fp );
     }
 }
 
@@ -517,6 +529,7 @@ void TGConstruct::LoadFromIntermediateFiles( int stage )
 {
     string dir;
     string file;
+    gzFile fp;
     bool   read_ok = false;
 
     switch( stage ) {
@@ -524,18 +537,18 @@ void TGConstruct::LoadFromIntermediateFiles( int stage )
         {
             dir  = share_base + "/stage1/" + bucket.gen_base_path();
             file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
+            fp = gzopen( file.c_str(), "rb" );
 
-            std::ifstream ifs_cp( file.c_str() );
-            if ( ifs_cp.good() ) {
-                ifs_cp >> polys_clipped;
-                ifs_cp.close();
+            if ( fp ) {
+                polys_clipped.LoadFromGzFile( fp );
+                gzclose( fp );
 
                 file = dir + "/" + bucket.gen_index_str() + "_nodes";
+                fp = gzopen( file.c_str(), "rb" );
 
-                std::ifstream ifs_n( file.c_str() );
-                if ( ifs_n.good() ) {
-                    ifs_n >> nodes;
-                    ifs_n.close();
+                if ( fp ) {
+                    nodes.LoadFromGzFile( fp );
+                    gzclose( fp );
 
                     read_ok = true;
                 }
@@ -548,18 +561,18 @@ void TGConstruct::LoadFromIntermediateFiles( int stage )
         {
             dir  = share_base + "/stage2/" + bucket.gen_base_path();
             file = dir        + "/"        + bucket.gen_index_str() + "_clipped_polys";
+            fp = gzopen( file.c_str(), "rb" );
 
-            std::ifstream ifs_cp( file.c_str() );
-            if ( ifs_cp.good() ) {
-                ifs_cp >> polys_clipped;
-                ifs_cp.close();
+            if ( fp ) {
+                polys_clipped.LoadFromGzFile( fp );
+                gzclose( fp );
 
                 file = dir + "/" + bucket.gen_index_str() + "_nodes";
+                fp = gzopen( file.c_str(), "rb" );
 
-                std::ifstream ifs_n( file.c_str() );
-                if ( ifs_n.good() ) {
-                    ifs_n >> nodes;
-                    ifs_n.close();
+                if ( fp ) {
+                    nodes.LoadFromGzFile( fp );
+                    gzclose( fp );
 
                     read_ok = true;
                 }

@@ -960,10 +960,30 @@ std::ostream& operator << (std::ostream &output, const TGPolygon &poly)
     return output;
 }
 
+void TGPolygon::SaveToGzFile(gzFile& fp)
+{
+    int  nContours = poly.size();
+
+    // Save the number of contours
+    sgWriteInt( fp, nContours );
+    for (int i = 0; i < nContours; i++) {
+        int nPoints = poly[i].size();
+
+        // Save number of points in the contour
+        sgWriteInt( fp, nPoints );
+
+        // Then save the points
+        for ( int j = 0; j < nPoints; j++ ) {
+            sgWritePoint3D( fp, poly[i][j] );
+        }
+
+        sgWriteInt( fp, hole_list[i] );
+    }
+}
 // Read a polygon from input buffer.
 std::istream& operator >> (std::istream &input, TGPolygon &poly)
 {
-    int    nContours = poly.contours();
+    int    nContours;
     double x, y, z;
 
     // Read the number of contours
@@ -990,4 +1010,27 @@ std::istream& operator >> (std::istream &input, TGPolygon &poly)
     }
 
     return input;
+}
+
+void TGPolygon::LoadFromGzFile(gzFile& fp)
+{
+    int nContours;
+    int nPoints;
+    int hole;
+    Point3D pt;
+
+    // Save the number of contours
+    sgReadInt( fp, &nContours );
+    for (int i = 0; i < nContours; i++) {
+        sgReadInt( fp, &nPoints );
+
+        // Then read the points
+        for ( int j = 0; j < nPoints; j++ ) {
+            sgReadPoint3D( fp, pt );
+            add_node( i, pt );
+        }
+
+        sgReadInt( fp, &hole );
+        set_hole_flag( i, hole );
+    }
 }

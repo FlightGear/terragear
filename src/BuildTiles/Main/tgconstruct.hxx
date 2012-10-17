@@ -120,7 +120,7 @@ private:
     bool IsOceanTile()  { return isOcean; }
     
     // Load Data
-    void LoadElevationArray( void );
+    void LoadElevationArray( bool add_nodes );
     int  LoadLandclassPolys( void );
     // Load Data Helpers
     bool load_poly(const std::string& path);
@@ -135,14 +135,14 @@ private:
     // Shared edge Matching
     void SaveSharedEdgeDataStage2( void );
     void LoadSharedEdgeDataStage2( void );
-    void WriteSharedEdgeNeighboorFaces( std::ofstream& ofs_e, Point3D pt );
+    void WriteSharedEdgeNeighboorFaces( gzFile& fp, Point3D pt );
     void LoadSharedEdgeData( int stage );
     void LoadNeighboorEdgeDataStage1( SGBucket& b, point_list& north, point_list& south, point_list& east, point_list& west );
 
     void SaveSharedEdgeData( int stage );
 
-    void ReadNeighborFaces( std::ifstream& ifs_e );
-    void WriteNeighborFaces( std::ofstream& ofs_e, Point3D pt );
+    void ReadNeighborFaces( gzFile& fp );
+    void WriteNeighborFaces( gzFile& fp, Point3D pt );
     TGNeighborFaces* AddNeighborFaces( Point3D node );
     TGNeighborFaces* FindNeighborFaces( Point3D node );
 

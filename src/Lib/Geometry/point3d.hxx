@@ -46,6 +46,7 @@
 
 #include <simgear/math/SGMath.hxx>
 
+#include <simgear/io/lowlevel.hxx>
 
 //const double fgPoint3_Epsilon = 0.0000001;
 const double fgPoint3_Epsilon = 0.000001;
@@ -171,6 +172,16 @@ inline std::ostream& operator<< ( std::ostream& out, const Point3D& p )
     out << p.n[PZ] << "\n";
 
     return out;
+}
+
+inline void sgWritePoint3D ( gzFile fd, const Point3D& var ) {
+    sgWriteDouble ( fd, 3, var.get_n() ) ;
+}
+
+inline void sgReadPoint3D ( gzFile fd, Point3D& var ) {
+    double data[3];
+    sgReadDouble ( fd, 3, data );
+    var = Point3D(data[0], data[1], data[2]);
 }
 
 ///////////////////////////

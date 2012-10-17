@@ -206,6 +206,9 @@ public:
     // output
     void write_contour( const int contour, const std::string& file ) const;
 
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
+
     // Friends for serialization
     friend std::istream& operator>> ( std::istream&, TGPolygon& );
     friend std::ostream& operator<< ( std::ostream&, const TGPolygon& );
