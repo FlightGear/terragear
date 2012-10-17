@@ -138,7 +138,7 @@ public:
         poly[contour][i] = p;
     }
 
-    void get_bounding_box( SGVec3d& min, SGVec3d& max ) const;
+    void get_bounding_box( SGGeod& min, SGGeod& max ) const;
 
     // get and set an arbitrary point inside the specified polygon contour
     inline Point3D get_point_inside( const int contour ) const

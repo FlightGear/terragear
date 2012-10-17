@@ -64,7 +64,7 @@ Rectangle::isInside (const SGGeod &p) const
 }
 
 bool
-Rectangle::isOverlapping (const Rectangle &r) const
+Rectangle::intersects (const Rectangle &r) const
 {
   const SGGeod &min = r.getMin();
   const SGGeod &max = r.getMax();

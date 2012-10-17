@@ -18,13 +18,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: polygon.cxx,v 1.30 2007-11-05 14:02:21 curt Exp $
-
-
-// include Generic Polygon Clipping Library
-//
-//    http://www.cs.man.ac.uk/aig/staff/alan/software/
-//
 
 #include <iostream>
 #include <fstream>
@@ -35,13 +28,8 @@
 #include <Geometry/point3d.hxx>
 #include <Geometry/poly_support.hxx>
 #include <simgear/math/sg_geodesy.hxx>
-#include <simgear/math/SGVec3.hxx>
-#include <simgear/math/SGMisc.hxx>
-#include <simgear/math/SGMath.hxx>
-#include <simgear/math/SGGeometryFwd.hxx>
-#include <simgear/math/SGBox.hxx>
-#include <simgear/math/SGIntersect.hxx>
 #include <simgear/structure/exception.hxx>
+#include <Geometry/util.hxx>
 
 #include <Geometry/trinodes.hxx>
 
@@ -60,7 +48,7 @@ TGPolygon::TGPolygon( void )
 TGPolygon::~TGPolygon( void ) {
 }
 
-void TGPolygon::get_bounding_box( SGVec3d& min, SGVec3d& max ) const
+void TGPolygon::get_bounding_box( SGGeod& min, SGGeod& max ) const
 {
     double minx = std::numeric_limits<double>::infinity();
     double miny = std::numeric_limits<double>::infinity();
@@ -69,16 +57,16 @@ void TGPolygon::get_bounding_box( SGVec3d& min, SGVec3d& max ) const
 
     for ( int i = 0; i < contours(); i++ ) {
         for (unsigned int j = 0; j < poly[i].size(); j++) {
-            SGVec3d pt = poly[i][j].toSGVec3d();
-            if ( pt.x() < minx ) { minx = pt.x(); }
-            if ( pt.x() > maxx ) { maxx = pt.x(); }
-            if ( pt.y() < miny ) { miny = pt.y(); }
-            if ( pt.y() > maxy ) { maxy = pt.y(); }
+            SGGeod pt = poly[i][j].toSGGeod();
+            if ( pt.getLongitudeDeg() < minx ) { minx = pt.getLongitudeDeg(); }
+            if ( pt.getLongitudeDeg() > maxx ) { maxx = pt.getLongitudeDeg(); }
+            if ( pt.getLatitudeDeg() < miny ) { miny = pt.getLatitudeDeg(); }
+            if ( pt.getLatitudeDeg() > maxy ) { maxy = pt.getLatitudeDeg(); }
         }
     }
 
-    min = SGVec3d( minx, miny, 0.0 );
-    max = SGVec3d( maxx, maxy, 0.0 );
+    min = SGGeod::fromDeg( minx, miny );
+    max = SGGeod::fromDeg( maxx, maxy );
 }
 
 
@@ -420,17 +408,13 @@ static Point3D MakeTGPoint( ClipperLib::IntPoint pt )
 	return tg_pt;
 }
 
-static SGVec3d MakeSGVec3D( ClipperLib::IntPoint pt )
+static SGGeod MakeSGGeod( ClipperLib::IntPoint pt )
 {
-    SGVec3d sgvec;
     double x, y;
-
     x = (double)( ((double)pt.X) / (double)FIXEDPT );
     y = (double)( ((double)pt.Y) / (double)FIXEDPT );
 
-    sgvec = SGVec3d( x, y, 0.0f);
-
-    return sgvec;
+    return SGGeod::fromDeg(x, y);
 }
 
 double MakeClipperDelta( double mDelta )
@@ -502,7 +486,7 @@ void make_tg_poly_from_clipper( const ClipperLib::Polygons& in, TGPolygon *out )
 }
 
 
-void get_Clipper_bounding_box( const ClipperLib::Polygons& in, SGVec3d& min, SGVec3d& max )
+void get_Clipper_bounding_box( const ClipperLib::Polygons& in, SGGeod& min, SGGeod& max )
 {
     ClipperLib::IntPoint min_pt, max_pt;
 
@@ -530,8 +514,8 @@ void get_Clipper_bounding_box( const ClipperLib::Polygons& in, SGVec3d& min, SGV
         }
     }
 
-    min = MakeSGVec3D( min_pt );
-    max = MakeSGVec3D( max_pt );
+    min = MakeSGGeod( min_pt );
+    max = MakeSGGeod( max_pt );
 }
 
 void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
@@ -666,7 +650,7 @@ void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump )
 TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
 {
     TGPolygon result;
-    SGVec3d min, max, minp, maxp;
+    SGGeod min, max, minp, maxp;
     unsigned int num_hits = 0;
 
     ClipperLib::Polygons clipper_subject;
@@ -675,7 +659,7 @@ TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
     // Start with full poly
     result = subject;
     result.get_bounding_box(minp, maxp);
-    SGBoxd box1(minp, maxp);
+    tg::Rectangle box1(minp, maxp);
 
     ClipperLib::Clipper c;
     c.Clear();
@@ -685,9 +669,9 @@ TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
     // clip result against all polygons in the accum that intersect our bb
     for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
         get_Clipper_bounding_box( clipper_accumulator[i], min, max);
-        SGBoxd box2(min, max);
+        tg::Rectangle box2(min, max);
 
-        if ( intersects( box2, box1 ) )
+        if ( box2.intersects(box1) )
         {
             c.AddPolygons(clipper_accumulator[i], ClipperLib::ptClip);
             num_hits++;

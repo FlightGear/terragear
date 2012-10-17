@@ -111,14 +111,14 @@ TGPolygon add_nodes_to_poly( const TGPolygon& poly,
 TGPolygon add_tgnodes_to_poly( const TGPolygon& poly, 
                                const TGNodes* nodes ) {
     TGPolygon result; result.erase();
-    SGVec3d min, max;
+    SGGeod min, max;
     Point3D p0, p1;
     point_list poly_points;
 
     poly.get_bounding_box(min, max);
     SG_LOG(SG_GENERAL, SG_DEBUG, "add_tgnodes_to_poly : min " << min << " max " << max );
 
-    poly_points = nodes->get_geod_inside( Point3D::fromSGVec3(min), Point3D::fromSGVec3(max) );
+    poly_points = nodes->get_geod_inside( Point3D::fromSGGeod(min), Point3D::fromSGGeod(max) );
 
     for ( int i = 0; i < poly.contours(); ++i ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);

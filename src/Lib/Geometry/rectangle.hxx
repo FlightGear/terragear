@@ -118,7 +118,7 @@ public:
    * @return true if the rectangle is touching or overlapping, false
    * otherwise.
    */
-  virtual bool isOverlapping (const Rectangle &r) const;
+  virtual bool intersects (const Rectangle &r) const;
 
   /**
    * Create a polygon representation of this rectangle.

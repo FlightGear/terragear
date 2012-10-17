@@ -1,14 +1,9 @@
 #include <stdlib.h>
 
 #include <simgear/math/sg_geodesy.hxx>
-#include <simgear/math/SGVec3.hxx>
-#include <simgear/math/SGMisc.hxx>
-#include <simgear/math/SGMath.hxx>
-#include <simgear/math/SGGeometryFwd.hxx>
-#include <simgear/math/SGBox.hxx>
-#include <simgear/math/SGIntersect.hxx>
 
 #include <Geometry/poly_support.hxx>
+#include <Geometry/util.hxx>
 
 // for debugging clipping errors
 #include <Polygon/chop.hxx>
@@ -931,7 +926,7 @@ int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps
     TGPolygon poly, tmp;
     void*     ds_id = NULL;        // If we are going to build shapefiles
     void*     l_id  = NULL;        // datasource and layer IDs
-    SGVec3d min, max, minp, maxp;
+    SGGeod min, max, minp, maxp;
 
     if ( make_shapefiles ) {
         char ds_name[128];
@@ -944,16 +939,16 @@ int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps
     {
         poly = marking_polys[i].get_poly();
         poly.get_bounding_box(minp, maxp);
-        SGBoxd box1(minp, maxp);
+        tg::Rectangle box1(minp, maxp);
 
         for (int j= 0; j < lines->contours(); ++j)
         {
             tmp.erase();
             tmp.add_contour(lines->get_contour(j), 0);
             tmp.get_bounding_box(min, max);
-            SGBoxd box2(min, max);
+            tg::Rectangle box2(min, max);
 
-            if ( intersects(box2, box1 ) )
+            if ( box2.intersects(box1) )
             {
                 poly = tgPolygonDiffClipper( poly, tmp );
             }
