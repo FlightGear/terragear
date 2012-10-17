@@ -847,46 +847,39 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                         tmp = Point3D( pt_x, pt_y, 0.0 );
                     }
 
-                    double length;
-                    Point3D vec;
+                    SGVec3d vec;
 
                     if ( !directional_light )
                     {
                         // calculate the omnidirectional normal
-                        vec = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
-                        length = vec.distance3D( Point3D(0.0) );
-                        vec = vec / length;
+                        vec = normalize(SGVec3d::fromGeod(tmp.toSGGeod()));
                     } else
                     {
                         // calculate the directional normal
                         double heading_vec = heading + 90.0;
                         if (heading_vec > 360.0) { heading_vec -= 360.0; }
-                        geo_direct_wgs_84( tmp.y(), tmp.x(), heading_vec, 10, &pt_y, &pt_x, &az2 );
-                        Point3D cart1 = sgGeodToCart( tmp * SG_DEGREES_TO_RADIANS );
-                        Point3D cart2 = sgGeodToCart( Point3D(pt_x, pt_y, 0.0) * SG_DEGREES_TO_RADIANS );
-
-                        vec = cart2 - cart1;
-                        length = vec.distance3D( Point3D(0.0) );
-                        vec = vec / length;
+                        SGVec3d cart1 = SGVec3d::fromGeod(tmp.toSGGeod());
+                        SGVec3d cart2 = SGVec3d::fromGeod( SGGeodesy::direct( tmp.toSGGeod(), heading_vec, 10 ) );
+                        vec = normalize(cart2 - cart1);
                     }
 
                     if (!alternate)
                     {
                         poly.add_node(0, tmp);
-                        normals_poly.add_node(0, vec );
+                        normals_poly.add_node(0, Point3D::fromSGVec3(vec) );
                     }
                     else
                     {
                         if (switch_poly)
                         {
                             poly.add_node(0, tmp);
-                            normals_poly.add_node(0, vec );
+                            normals_poly.add_node(0, Point3D::fromSGVec3(vec) );
                             switch_poly = !switch_poly;
                         }
                         else
                         {
                             poly2.add_node(0, tmp);
-                            normals_poly2.add_node(0, vec );
+                            normals_poly2.add_node(0, Point3D::fromSGVec3(vec) );
                             switch_poly = !switch_poly;
                         }
                     }
