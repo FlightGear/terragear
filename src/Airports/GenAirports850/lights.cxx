@@ -49,43 +49,24 @@ point_list Runway::gen_corners(double l_ext, double disp1, double disp2, double 
     return corner;
 }
 
-// calculate the runway light direction vector.  We take the center of
-// one runway end - the center of the other end to get the direction
-// of the runway.  Combine this with an appropriate portion of the
-// local 'up' vector based on the provide 'angle' gives the light
-// direction vector for the runway.
-Point3D Runway::gen_runway_light_vector( double angle, bool recip ) {
-    double length;
-
-    point_list corner = gen_corners(0.0, 0.0, 0.0, 0.0);
-    Point3D end1, end2;
+// calculate the runway light direction vector.  We take both runway
+// ends to get the direction of the runway.
+Point3D Runway::gen_runway_light_vector( float angle, bool recip ) {
+    SGVec3f cart1, cart2;
     if ( !recip ) {
-        end1 = (corner[0] + corner[1]) / 2.0;
-        end2 = (corner[2] + corner[3]) / 2.0;
+        cart1 = normalize(SGVec3f::fromGeod(GetStart()));
+        cart2 = normalize(SGVec3f::fromGeod(GetEnd()));
     } else {
-        end2 = (corner[0] + corner[1]) / 2.0;
-        end1 = (corner[2] + corner[3]) / 2.0;
+        cart2 = normalize(SGVec3f::fromGeod(GetStart()));
+        cart1 = normalize(SGVec3f::fromGeod(GetEnd()));
     }
-    Point3D cart1 = sgGeodToCart( end1 * SG_DEGREES_TO_RADIANS );
-    Point3D cart2 = sgGeodToCart( end2 * SG_DEGREES_TO_RADIANS );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "cart1 = " << cart1 << " cart2 = " << cart2);
 
-    Point3D up = cart1;
-    length = up.distance3D( Point3D(0.0) );
-    up = up / length;
+    SGVec3f runway_vec = normalize(cart1 - cart2);
+    SGVec3f horizontal(normalize(cross(cart1, runway_vec)));
+    SGQuatf rotation = SGQuatf::fromAngleAxisDeg(angle, horizontal);
+    SGVec3f light_vec = rotation.transform(runway_vec);
 
-    Point3D rwy_vec = cart2 - cart1;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "rwy_vec = " << rwy_vec);
-
-    // angle up specified amount
-    length = rwy_vec.distance3D( Point3D(0.0) );
-    double up_length = length * tan(angle * SG_DEGREES_TO_RADIANS);
-    Point3D light_vec = rwy_vec + (up * up_length);
-
-    length = light_vec.distance3D( Point3D(0.0) );
-    light_vec = light_vec / length;
-
-    return light_vec;
+    return Point3D::fromSGVec3(light_vec);
 }
 
 // generate runway edge lighting
