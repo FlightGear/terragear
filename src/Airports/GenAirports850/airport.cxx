@@ -1135,24 +1135,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     int_list pt_n, tri_n, strip_n;
     int_list tri_tc, strip_tc;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Calculating airport normal" );
-
     // calculate "the" normal for this airport
-    p.setx( base_tris.get_pt(0, 0).x() * SGD_DEGREES_TO_RADIANS );
-    p.sety( base_tris.get_pt(0, 0).y() * SGD_DEGREES_TO_RADIANS );
-    p.setz( 0 );
-    Point3D vnt = sgGeodToCart( p );
-    
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Calculating airport normal - done");
-
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "geod = " << p);
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "cart = " << tmp);
-
-    SGVec3d tmp( vnt.x(), vnt.y(), vnt.z() );
-    tmp = normalize(tmp);
-    Point3D vn( tmp.x(), tmp.y(), tmp.z() );
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "found normal for this airport = " << tmp);
+    SGVec3d vnt = SGVec3d::fromGeod( base_tris.get_pt(0, 0).toSGGeod() );
+    vnt = normalize(vnt);
+    Point3D vn = Point3D::fromSGVec3(vnt);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "found normal for this airport = " << vn);
 
     SG_LOG(SG_GENERAL, SG_INFO, "Adding runway nodes and normals");
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
