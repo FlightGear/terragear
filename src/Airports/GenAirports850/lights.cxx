@@ -571,82 +571,60 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
-    int i;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "gen touchdown zone lights " << rwy.rwnum[0] );
-
-    Point3D normal;
-    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
+    Point3D normal = gen_runway_light_vector( 3.0, recip );
 
     // determine the start point.
-    Point3D ref;
+    SGGeod ref;
     double length_hdg, left_hdg;
-    double lon = 0.0f, lat = 0.0f, r;
     if ( recip ) {
-        ref = (corner[0] + corner[1]) / 2;
         length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { 
-            length_hdg -= 360.0; 
-        }
+        if ( length_hdg > 360.0 ) {length_hdg -= 360.0;}
+        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
     } else {
-        ref = (corner[2] + corner[3]) / 2;
         length_hdg = rwy.heading;
+        ref = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
     }
     left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { 
-        left_hdg += 360.0; 
-    }
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
+    // calculate amount of touchdown light rows.
+    // They should cover a distance of 900m max. from the threshold or
+    // half the runway length, whichever is shorter.
+    int rows = (int)(rwy.length * 0.5) / 60;
+    if (rows > 15) rows = 15;
 
-    normal = gen_runway_light_vector( 3.0, recip );
-
-    for ( i = 0; i < 30; ++i ) {
-        // offset 100' upwind
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                            100 * SG_FEET_TO_METER, &lat, &lon, &r );
-        ref = Point3D( lon, lat, 0.0 );
-
-        Point3D pt1 = ref;
+    for ( int i = 0; i < rows; ++i ) {
+        // offset 60m upwind
+        ref = SGGeodesy::direct( ref, length_hdg, 60 );
+        SGGeod pt1 = ref;
 
         // left side bar
-        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
-                            36 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        lights.push_back( pt1 );
+        pt1 = SGGeodesy::direct( pt1, left_hdg, 9 );
+        lights.push_back( Point3D::fromSGGeod(pt1) );
         normals.push_back( normal );
     
-        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
-                            5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        lights.push_back( pt1 );
+        pt1 = SGGeodesy::direct( pt1, left_hdg, 1.5 );
+        lights.push_back( Point3D::fromSGGeod(pt1) );
         normals.push_back( normal );
 
-        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
-                            5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        lights.push_back( pt1 );
+        pt1 = SGGeodesy::direct( pt1, left_hdg, 1.5 );
+        lights.push_back( Point3D::fromSGGeod(pt1) );
         normals.push_back( normal );
 
         pt1 = ref;
 
         // right side bar
-        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
-                            -36 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        lights.push_back( pt1 );
-        normals.push_back( normal );
-    
-        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
-                            -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        lights.push_back( pt1 );
+        pt1 = SGGeodesy::direct( pt1, left_hdg, -9 );
+        lights.push_back( Point3D::fromSGGeod(pt1) );
         normals.push_back( normal );
 
-        geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg, 
-                            -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt1 = Point3D( lon, lat, 0.0 );
-        lights.push_back( pt1 );
+        pt1 = SGGeodesy::direct( pt1, left_hdg, -1.5 );
+        lights.push_back( Point3D::fromSGGeod(pt1) );
+        normals.push_back( normal );
+
+        pt1 = SGGeodesy::direct( pt1, left_hdg, -1.5 );
+        lights.push_back( Point3D::fromSGGeod(pt1) );
         normals.push_back( normal );
     }
 
