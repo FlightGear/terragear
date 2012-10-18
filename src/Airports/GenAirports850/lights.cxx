@@ -420,56 +420,52 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
     point_list w_normals; w_normals.clear();
     point_list r_normals; r_normals.clear();
 
-    double dist = rwy.length;
-    int divs = (int)(dist / 15.0) + 1;
-
     Point3D normal = gen_runway_light_vector( 3.0, recip );
 
-    Point3D inc;
-    Point3D pt1, pt2;
+    SGGeod pt1, pt2;
     double length_hdg;
 
     if ( recip ) {
         length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        pt1 = Point3D::fromSGGeod( SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]) );
-        pt2 = Point3D::fromSGGeod( GetStart() );
+        pt1 = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        pt2 = GetStart();
     } else {
         length_hdg = rwy.heading;
-        pt1 = Point3D::fromSGGeod( SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]) );
-        pt2 = Point3D::fromSGGeod( GetEnd() );
+        pt1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        pt2 = GetEnd();
     }
-    inc = (pt2 - pt1) / divs;
 
+    double dist = SGGeodesy::distanceM(pt1, pt2);
+    int divs = (int)(dist / 15.0) + 1;
     double step = dist / divs;
-    pt1 += inc;
-    dist -= step;
     bool use_white = true;
 
     while ( dist > 0.0 ) {
         if ( dist > 900.0 ) {
-            w_lights.push_back( pt1 );
+            w_lights.push_back( Point3D::fromSGGeod(pt1) );
             w_normals.push_back( normal );
         } else if ( dist > 300.0 ) {
             if ( use_white ) {
-                w_lights.push_back( pt1 );
+                w_lights.push_back( Point3D::fromSGGeod(pt1) );
                 w_normals.push_back( normal );
             } else {
-                r_lights.push_back( pt1 );
+                r_lights.push_back( Point3D::fromSGGeod(pt1) );
                 r_normals.push_back( normal );
             }
             use_white = !use_white;
         } else {
-            r_lights.push_back( pt1 );
+            r_lights.push_back( Point3D::fromSGGeod(pt1) );
             r_normals.push_back( normal );
         }
-        pt1 += inc;
+        length_hdg = SGGeodesy::courseDeg(pt1, pt2);
+        pt1 = SGGeodesy::direct(pt1, length_hdg, step);
         dist -= step;
     }
 
     superpoly_list result; result.clear();
 
-    if ( w_lights.size() > 0 ) {
+    if ( w_lights.size() ) {
         TGPolygon lights_poly; lights_poly.erase();
         TGPolygon normals_poly; normals_poly.erase();
         lights_poly.add_contour( w_lights, false );
@@ -483,7 +479,7 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
         result.push_back( white );
     }
 
-    if ( r_lights.size() > 0 ) {
+    if ( r_lights.size() ) {
         TGPolygon lights_poly; lights_poly.erase();
         TGPolygon normals_poly; normals_poly.erase();
         lights_poly.add_contour( r_lights, false );
