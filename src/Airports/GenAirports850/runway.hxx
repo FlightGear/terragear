@@ -29,9 +29,9 @@ public:
         return SGGeod::fromDeg(rwy.lon[1], rwy.lat[1]);
     }
 
-    Point3D GetMidpoint(void)
+    SGGeod GetMidpoint()
     {
-        return ( Point3D( (rwy.lon[0]+rwy.lon[1])/2.0f, (rwy.lat[0]+rwy.lat[1])/2.0f, 0.0f) );
+        return SGGeod::fromDeg( (rwy.lon[0]+rwy.lon[1])/2.0f, (rwy.lat[0]+rwy.lat[1])/2.0f);
     }
 
     bool GetsShoulder()
