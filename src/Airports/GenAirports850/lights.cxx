@@ -647,59 +647,37 @@ TGSuperPoly Runway::gen_reil( bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
-    string flag;
+    string flag = rwy.rwnum[get_thresh0(recip)];
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "gen reil " << rwy.rwnum[0] );
-
-    Point3D normal;
-    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
+    Point3D normal = gen_runway_light_vector( 10, recip );;
 
     // determine the start point.
-    Point3D ref1, ref2;
+    SGGeod ref;
     double length_hdg, left_hdg;
-    double lon, lat, r;
     if ( recip ) {
-        ref1 = corner[0];
-        ref2 = corner[1];
         length_hdg = rwy.heading + 180.0;
         if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        flag = rwy.rwnum[1];
+        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
     } else {
-        ref1 = corner[2];
-        ref2 = corner[3];
         length_hdg = rwy.heading;
-        flag = rwy.rwnum[0];
+        ref = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
     }
+
     left_hdg = length_hdg - 90.0;
     if ( left_hdg < 0 ) { 
         left_hdg += 360.0; 
     }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
 
-    // offset 40' downwind
-    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
-                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref1 = Point3D( lon, lat, 0.0 );
-    // offset 40' left
-    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg, 
-                        40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref1 = Point3D( lon, lat, 0.0 );
+    // offset 1m downwind
+    ref = SGGeodesy::direct( ref, length_hdg, -1 );
 
-    lights.push_back( ref1 );
-    normal = gen_runway_light_vector( 10, recip );
+    double offset = rwy.width * 0.5 + 12;
+    // left light
+    lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct( ref, left_hdg, offset )) );
     normals.push_back( normal );
     
-    // offset 40' downwind
-    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg, 
-                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref2 = Point3D( lon, lat, 0.0 );
-    // offset 40' left
-    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg, 
-                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref2 = Point3D( lon, lat, 0.0 );
-
-    lights.push_back( ref2 );
-    normal = gen_runway_light_vector( 10, recip );
+    // right light
+    lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct( ref, left_hdg, -offset )) );
     normals.push_back( normal );
 
     TGPolygon lights_poly; lights_poly.erase();
@@ -711,7 +689,6 @@ TGSuperPoly Runway::gen_reil( bool recip )
     result.set_poly( lights_poly );
     result.set_normals( normals_poly );
     result.set_material( "RWY_REIL_LIGHTS" );
-
     result.set_flag( flag );
 
     return result;
