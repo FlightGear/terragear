@@ -200,11 +200,14 @@ void TGConstruct::AverageEdgeElevations( void )
 
         /* Find this node, and update it's elevation */
         int idx = nodes.find( faces.node );
-        TGNode node = nodes.get_node( idx );
 
-        if ( !node.GetFixedPosition() ) {
-            // set elevation as the average between all tiles that have it
-            nodes.SetElevation( idx, elevation );
+        if (idx != -1) {
+            TGNode node = nodes.get_node( idx );
+
+            if ( !node.GetFixedPosition() ) {
+                // set elevation as the average between all tiles that have it
+                nodes.SetElevation( idx, elevation );
+            }
         }
     }
 }
