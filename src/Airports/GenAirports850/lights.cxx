@@ -81,62 +81,58 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     point_list y_normals; y_normals.clear();
 
     int i;
+    double length_hdg;
     double dist = rwy.length - rwy.threshold[0] - rwy.threshold[1];
     int divs = (int)(dist / 60.0) + 1;
     double step = dist / divs;
+    SGGeod pt1, pt2;
 
     Point3D normal = gen_runway_light_vector( 3.0, recip );
-    point_list corner = gen_corners(2.0, rwy.threshold[0], rwy.threshold[1], 2.0);
-
-    Point3D inc1, inc2;
-    Point3D pt1, pt2;
 
     if ( recip ) {
-        inc1 = (corner[3] - corner[0]) / divs;
-        inc2 = (corner[2] - corner[1]) / divs;
-        pt1 = corner[0];
-        pt2 = corner[1];
+        length_hdg = rwy.heading + 180.0;
+        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        pt1 = SGGeodesy::direct(GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        pt2 = GetStart();
     } else {
-        inc1 = (corner[0] - corner[3]) / divs;
-        inc2 = (corner[1] - corner[2]) / divs;
-        pt1 = corner[3];
-        pt2 = corner[2];
+        length_hdg = rwy.heading;
+        pt1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        pt2 = GetEnd();
     }
+    double left_hdg = length_hdg - 90.0;
+    if ( left_hdg < 0 ) { left_hdg += 360.0; }
 
-    Point3D thresh1 = pt1;
-    Point3D thresh2 = pt2;
     int tstep;
+    double offset = 2 + rwy.width * 0.5;
 
     //front threshold
     if (rwy.threshold[get_thresh0(recip)] > step )
     {
+        SGGeod pt0 = pt1;
         tstep = (int)(rwy.threshold[get_thresh0(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
-            thresh1 -= inc1;
-            thresh2 -= inc2;
-            r_lights.push_back( thresh1 );
+            pt0 = SGGeodesy::direct(pt0, length_hdg, -step);
+            r_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt0, left_hdg, offset)) );
             r_normals.push_back( normal );
-            r_lights.push_back( thresh2 );
+            r_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt0, left_hdg, -offset)) );
             r_normals.push_back( normal );
         }
     }
-    dist -= step;
 
     for ( i = 0; i < divs; ++i ) {
-	pt1 += inc1;
-	pt2 += inc2;
+        pt1 = SGGeodesy::direct(pt1, SGGeodesy::courseDeg(pt1, pt2), step);
+        dist -= step;
         if ( dist > 610.0 || dist > rwy.length / 2 ) {
-            w_lights.push_back( pt1 );
+            w_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, offset)) );
             w_normals.push_back( normal );
-            w_lights.push_back( pt2 );
+            w_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, -offset)) );
             w_normals.push_back( normal );
-        } else if (dist > 5) {
-            y_lights.push_back( pt1 );
+        } else if (dist > 5.0) {
+            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, offset)) );
             y_normals.push_back( normal );
-            y_lights.push_back( pt2 );
+            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, -offset)) );
             y_normals.push_back( normal );
         }
-        dist -= step;
     }
 
     //back threshold
@@ -144,12 +140,11 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     {
         tstep = (int)(rwy.threshold[get_thresh1(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
-            y_lights.push_back( pt1 );
+            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, offset)) );
             y_normals.push_back( normal );
-            y_lights.push_back( pt2 );
+            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, -offset)) );
             y_normals.push_back( normal );
-            pt1 += inc1;
-            pt2 += inc2;
+            pt1 = SGGeodesy::direct(pt1, length_hdg, step);
         }
     }
 
