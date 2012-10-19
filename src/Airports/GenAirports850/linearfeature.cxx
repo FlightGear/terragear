@@ -741,7 +741,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 sp.set_flag("lf");
                 marking_polys.push_back(sp);
 
-                tp = TGTexParams( prev_inner, width, 1.0f, heading );
+                tp = TGTexParams( prev_inner.toSGGeod(), width, 1.0f, heading );
                 tp.set_minv(last_end_v);
                 marking_tps.push_back(tp);
 

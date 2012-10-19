@@ -70,39 +70,6 @@ void TGShape::IntersectPolys( void )
     }
 }
 
-// Serialization
-// input from stream
-std::istream& operator >> ( std::istream& in, TGShape& p)
-{
-    int i, count;
-
-    // First, load the clipmask
-    in >> p.clip_mask;
-
-    // Then load superpolys
-    in >> count;
-    for (i=0; i<count; i++) {
-        TGSuperPoly sp;
-        in >> sp;
-        p.sps.push_back( sp );
-    }
-
-    // Then load texparams
-    in >> count;
-    for (i=0; i<count; i++) {
-        TGTexParams tp;
-        in >> tp;
-        p.tps.push_back( tp );
-    }
-
-    // Load the id, area type and textured flag
-    in >> p.id;
-    in >> p.area;
-    in >> p.textured;
-
-    return in;
-}
-
 void TGShape::LoadFromGzFile(gzFile& fp)
 {
     int i, count;

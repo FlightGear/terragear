@@ -767,7 +767,7 @@ makePolygonsTP (const Line &line, double width, poly_list& polys, texparams_list
 
             polys.push_back(poly);
 
-            tp = TGTexParams( prev_inner, width, 20.0f, heading );
+            tp = TGTexParams( prev_inner.Point3D::toSGGeod(), width, 20.0f, heading );
             tp.set_minv(last_end_v);
             tps.push_back(tp);
 

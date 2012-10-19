@@ -140,7 +140,7 @@ bool TGConstruct::load_poly(const string& path) {
                 in >> minv;
                 in >> maxv;
 
-                tp.set_ref( Point3D(x, y, 0.0f) );
+                tp.set_ref( SGGeod::fromDeg(x,y) );
                 tp.set_width( width );
                 tp.set_length( length );
                 tp.set_heading( heading );

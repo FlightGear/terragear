@@ -30,19 +30,21 @@
 # error This library requires C++
 #endif
 
+#include <istream>
+#include <ostream>
+#include <vector>
 
 #include <simgear/compiler.h>
-#include <simgear/math/sg_types.hxx>
+#include <simgear/math/SGMath.hxx>
 
-#include <Geometry/point3d.hxx>
+#include <zlib.h>   /* for gzFile */
 
-#include <vector>
 
 class TGTexParams {
 
 private:
 
-    Point3D ref;
+    SGGeod ref;
     double width;
     double length;
     double heading;
@@ -58,7 +60,7 @@ public:
     inline TGTexParams( void )
     {
     }
-    inline TGTexParams( const Point3D &r, const double w, const double l, const double h )
+    inline TGTexParams( const SGGeod &r, const double w, const double l, const double h )
     {
         ref = r;
         width = w;
@@ -72,11 +74,11 @@ public:
     {
     }
 
-    inline Point3D get_ref() const
+    inline SGGeod get_ref() const
     {
         return ref;
     }
-    inline void set_ref( const Point3D &r )
+    inline void set_ref( const SGGeod &r )
     {
         ref = r;
     }
@@ -146,9 +148,8 @@ public:
 
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
-    
-    // Friends for serialization
-    friend std::istream& operator>> ( std::istream&, TGTexParams& );
+
+    // Friend for output
     friend std::ostream& operator<< ( std::ostream&, const TGTexParams& );
 };
 

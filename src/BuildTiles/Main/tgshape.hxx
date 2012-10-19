@@ -59,8 +59,7 @@ public:
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
 
-    // Friends for serialization
-    friend std::istream& operator>> ( std::istream&, TGShape& );
+    // Friend for output to stream
     friend std::ostream& operator<< ( std::ostream&, const TGShape& );
 };
 

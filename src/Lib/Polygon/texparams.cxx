@@ -1,3 +1,5 @@
+#include <simgear/io/lowlevel.hxx>
+
 #include "texparams.hxx"
 
 // Send a TexParam to standard output.
@@ -19,7 +21,7 @@ std::ostream& operator << (std::ostream &output, const TGTexParams &tp)
 
 void TGTexParams::SaveToGzFile(gzFile& fp)
 {
-    sgWritePoint3D( fp, ref );
+    sgWriteSGGeod( fp, ref );
     sgWriteDouble( fp, width );
     sgWriteDouble( fp, length );
     sgWriteDouble( fp, heading );
@@ -30,26 +32,9 @@ void TGTexParams::SaveToGzFile(gzFile& fp)
     sgWriteDouble( fp, maxv );
 }
 
-// Read a polygon from input buffer.
-std::istream& operator >> (std::istream &input, TGTexParams &tp)
-{
-    // Load the data
-    input >> tp.ref;
-    input >> tp.width;
-    input >> tp.length;
-    input >> tp.heading;
-
-    input >> tp.minu;
-    input >> tp.maxu;
-    input >> tp.minv;
-    input >> tp.maxv;
-
-    return input;
-}
-
 void TGTexParams::LoadFromGzFile(gzFile& fp)
 {
-    sgReadPoint3D( fp, ref );
+    sgReadSGGeod( fp, ref );
     sgReadDouble( fp, &width );
     sgReadDouble( fp, &length );
     sgReadDouble( fp, &heading );

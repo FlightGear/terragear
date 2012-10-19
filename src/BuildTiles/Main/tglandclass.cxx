@@ -42,26 +42,6 @@ void TGLandclass::clear(void)
     }
 }
 
-// input from stream
-std::istream& operator >> ( std::istream& in, TGLandclass& lc)
-{
-    int i, j, count;
-
-    // Load all landclass shapes
-    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-        in >> count;
-
-        for (j=0; j<count; j++) {
-            TGShape shape;
-
-            in >> shape;
-            lc.shapes[i].push_back( shape );
-        }
-    }
-
-    return in;
-}
-
 void TGLandclass::LoadFromGzFile(gzFile& fp)
 {
     int i, j, count;

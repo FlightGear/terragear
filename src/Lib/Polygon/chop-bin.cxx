@@ -371,7 +371,8 @@ static void clip_and_write_polys_with_tps( string root, long int p_index,
         tp    = clipped_tps[s];
 
         fprintf( rfp, "%.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f\n",
-                 tp.get_ref().x(), tp.get_ref().y(), tp.get_width(), tp.get_length(),
+                 tp.get_ref().getLongitudeDeg(), tp.get_ref().getLatitudeDeg(),
+                 tp.get_width(), tp.get_length(),
                  tp.get_heading(),
                  tp.get_minu(), tp.get_maxu(), tp.get_minu(), tp.get_maxu());
         
@@ -474,7 +475,8 @@ static void clip_and_write_poly_tp( string root, long int p_index,
         fprintf( rfp, "%s\n", poly_type.c_str() );
 
         fprintf( rfp, "%.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f\n",
-                 tp.get_ref().x(), tp.get_ref().y(), tp.get_width(), tp.get_length(),
+                 tp.get_ref().getLongitudeDeg(), tp.get_ref().getLatitudeDeg(),
+                 tp.get_width(), tp.get_length(),
                  tp.get_heading(),
                  tp.get_minu(), tp.get_maxu(), tp.get_minu(), tp.get_maxu());
 

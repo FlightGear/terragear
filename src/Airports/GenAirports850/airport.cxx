@@ -175,7 +175,7 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly, const TGTexPa
     TGPolygon result;
     result.erase();
 
-    Point3D ref = tp.get_ref();
+    SGGeod ref = tp.get_ref();
     double width = tp.get_width();
     double length = tp.get_length();
     double heading = tp.get_heading();
@@ -204,7 +204,7 @@ static TGPolygon rwy_section_tex_coords( const TGPolygon& in_poly, const TGTexPa
     	    // and ending az1, az2 and distance (s).  Lat, lon, and
     	    // azimuth are in degrees.  distance in meters
     	    double az1, az2, dist;
-    	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
+    	    geo_inverse_wgs_84( 0, ref.getLatitudeDeg(), ref.getLongitudeDeg(), p.y(), p.x(),
     				&az1, &az2, &dist );
     	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course = " << az2);
 
@@ -267,7 +267,7 @@ static TGPolygon shoulder_tex_coords( const TGPolygon& in_poly, const TGTexParam
     TGPolygon result;
     result.erase();
 
-    Point3D ref = tp.get_ref();
+    SGGeod ref = tp.get_ref();
     double width = tp.get_width();
     double length = tp.get_length();
     double heading = tp.get_heading();
@@ -302,7 +302,7 @@ static TGPolygon shoulder_tex_coords( const TGPolygon& in_poly, const TGTexParam
     	    // and ending az1, az2 and distance (s).  Lat, lon, and
     	    // azimuth are in degrees.  distance in meters
     	    double az1, az2, dist;
-    	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
+    	    geo_inverse_wgs_84( 0, ref.getLatitudeDeg(), ref.getLongitudeDeg(), p.y(), p.x(),
     				&az1, &az2, &dist );
     	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course from ref = " << az2);
 
@@ -358,7 +358,7 @@ static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTe
     TGPolygon result;
     result.erase();
 
-    Point3D ref = tp.get_ref();
+    SGGeod ref = tp.get_ref();
     double width = tp.get_width();
     double length = tp.get_length();
     double heading = tp.get_heading();
@@ -393,7 +393,7 @@ static TGPolygon linear_feature_tex_coords( const TGPolygon& in_poly, const TGTe
     	    // and ending az1, az2 and distance (s).  Lat, lon, and
     	    // azimuth are in degrees.  distance in meters
     	    double az1, az2, dist;
-    	    geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
+    	    geo_inverse_wgs_84( 0, ref.getLatitudeDeg(), ref.getLongitudeDeg(), p.y(), p.x(),
     				&az1, &az2, &dist );
     	    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course from ref = " << az2);
 

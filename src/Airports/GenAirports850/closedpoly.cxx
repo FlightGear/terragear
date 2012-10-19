@@ -492,7 +492,7 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
 
             SG_LOG(SG_GENERAL, SG_DEBUG, "tp construct");
 
-            tp = TGTexParams( pre_tess.get_pt(0,0), 5.0, 5.0, texture_heading );
+            tp = TGTexParams( pre_tess.get_pt(0,0).toSGGeod(), 5.0, 5.0, texture_heading );
             texparams->push_back( tp );
 
             if ( apt_base )

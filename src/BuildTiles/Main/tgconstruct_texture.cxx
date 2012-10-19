@@ -77,7 +77,7 @@ TGPolygon TGConstruct::linear_tex_coords( const TGPolygon& tri, const TGTexParam
 
     result.erase();
 
-    Point3D ref = tp.get_ref();
+    SGGeod ref = tp.get_ref();
     double width = tp.get_width();
     double length = tp.get_length();
     double heading = tp.get_heading();
@@ -112,7 +112,7 @@ TGPolygon TGConstruct::linear_tex_coords( const TGPolygon& tri, const TGTexParam
             // and ending az1, az2 and distance (s).  Lat, lon, and
             // azimuth are in degrees.  distance in meters
             double az1, az2, dist;
-            geo_inverse_wgs_84( 0, ref.y(), ref.x(), p.y(), p.x(),
+            geo_inverse_wgs_84( 0, ref.getLatitudeDeg(), ref.getLongitudeDeg(), p.y(), p.x(),
                     &az1, &az2, &dist );
             SG_LOG(SG_GENERAL, SG_DEBUG, "basic course from ref = " << az2);
 

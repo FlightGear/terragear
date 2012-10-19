@@ -146,7 +146,7 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
     WriteGeom( helipad, material + "heli", rwy_polys, accum, slivers);
 
     TGTexParams tp;
-    tp = TGTexParams( helipad.get_pt(0,0), maxsize, maxsize, heli.heading );
+    tp = TGTexParams( helipad.get_pt(0,0).toSGGeod(), maxsize, maxsize, heli.heading );
     tp.set_minu( 1 );
     tp.set_maxu( 0 );
     tp.set_minv( 1 );
@@ -187,7 +187,7 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
             area_geom.add_contour(area_poly.get_contour(i), false);
             WriteGeom( area_geom, material + "tiedown", rwy_polys, accum, slivers);
 
-            tp = TGTexParams( area_poly.get_pt(i,0), maxsize, areahight, heading );
+            tp = TGTexParams( area_poly.get_pt(i,0).toSGGeod(), maxsize, areahight, heading );
             tp.set_minu( 1 );
             tp.set_maxu( 0 );
             tp.set_minv( 1 );
@@ -239,7 +239,7 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
         sp.set_flag( "heli-shoulder" );
         shoulder_polys.push_back( sp );
 
-        tp = TGTexParams( area_poly.get_pt(0,1), areahight, shoulder_width, heading );
+        tp = TGTexParams( area_poly.get_pt(0,1).toSGGeod(), areahight, shoulder_width, heading );
         tp.set_minu( 1 );
         tp.set_maxu( 0 );
         tp.set_minv( 1 );

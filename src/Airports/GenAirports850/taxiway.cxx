@@ -174,7 +174,7 @@ int Taxiway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, sup
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "tp construct");
 
-    tp = TGTexParams( taxi.get_pt(0,0), width, 250*SG_FEET_TO_METER, heading );
+    tp = TGTexParams( taxi.get_pt(0,0).toSGGeod(), width, 250*SG_FEET_TO_METER, heading );
     texparams->push_back( tp );
 
     if ( apt_base )

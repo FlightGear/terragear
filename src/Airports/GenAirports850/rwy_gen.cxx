@@ -132,11 +132,11 @@ void Runway::gen_shoulder_section( Point3D p0, Point3D p1, Point3D t0, Point3D t
     sp.set_flag( "shoulder" );
 
     if (side == 0) {
-        tp = TGTexParams( poly.get_pt(0,2), width, dist, heading );
+        tp = TGTexParams( poly.get_pt(0,2).toSGGeod(), width, dist, heading );
         tp.set_minu(0);
         tp.set_maxu(1);
     } else {
-        tp = TGTexParams( poly.get_pt(0,1), width, dist, heading );
+        tp = TGTexParams( poly.get_pt(0,1).toSGGeod(), width, dist, heading );
         tp.set_minu(1);
         tp.set_maxu(0);
     }
@@ -391,7 +391,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
     double sect_wid = width * ( endw_pct - startw_pct );
 
     TGTexParams tp;
-    tp = TGTexParams( p0,
+    tp = TGTexParams( p0.toSGGeod(),
                       sect_wid,
                       sect_len,
                       heading );
