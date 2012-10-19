@@ -27,6 +27,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,11 +83,11 @@ public:
                 }
                 depth=32;
         }
-        
+
         virtual Terra::real eval(int i, int j) {
                 return (Terra::real)array.get_array_elev(i,j);
         }
-        
+
         /* No direct reading of .arr.gz files */
         virtual void rawRead(istream&) {
         }
@@ -108,14 +109,15 @@ Terra::ImportMask *MASK=&default_mask;
 Terra::real error_threshold=40.0;
 unsigned int min_points=50;
 unsigned int point_limit=1000;
+bool force=false;
 
 inline int goal_not_met(Terra::GreedySubdivision* mesh)
 {
     return
         ( mesh->maxError() > error_threshold &&
           mesh->pointCount() < point_limit ) ||
-        mesh->pointCount() < min_points;
-        
+          mesh->pointCount() < min_points;
+
 }
 
 static void announce_goal(Terra::GreedySubdivision* mesh)
@@ -130,69 +132,78 @@ void greedy_insertion(Terra::GreedySubdivision* mesh)
 
     while( goal_not_met(mesh) )
     {
-	if( !mesh->greedyInsert() )
-	    break;
+        if( !mesh->greedyInsert() )
+            break;
     }
 
     announce_goal(mesh);
 }
 
 bool endswith(const std::string& s1, const std::string& suffix) {
-        size_t s1len=s1.size();
-        size_t sufflen=suffix.size();
-        if (s1len<sufflen)
-                return false;
-        return s1.compare(s1len-sufflen,sufflen,suffix)==0;
+    size_t s1len=s1.size();
+    size_t sufflen=suffix.size();
+
+    if (s1len<sufflen) {
+        return false;
+    }
+
+    return s1.compare(s1len-sufflen,sufflen,suffix)==0;
 }
 
 void fit_file(const SGPath& path) {
-    
-        SG_LOG(SG_GENERAL, SG_INFO,"Working on file '" << path << "'");
-        
-        SGPath outPath(path.dir());
-        outPath.append(path.file_base() + ".fit.gz");
-                
+    SG_LOG(SG_GENERAL, SG_INFO,"Working on file '" << path << "'");
+
+    SGPath outPath(path.dir());
+    outPath.append(path.file_base() + ".fit.gz");
+
+    if (!force) {
         if (outPath.exists() && (path.modTime() < outPath.modTime())) {
             SG_LOG(SG_GENERAL, SG_INFO ,"Skipping " << outPath << ", source " << path << " is older");
             return;
         }
-        
-        SGBucket bucket(0,0); // dummy bucket
-        TGArray inarray(path.dir() + "/" + path.file_base());
-        inarray.parse(bucket);
-        inarray.close();
-        
-        ArrayMap *DEM=new ArrayMap(inarray);
-        
-        Terra::GreedySubdivision *mesh;
-        
-        mesh=new Terra::GreedySubdivision(DEM);
-        
-        greedy_insertion(mesh);
-        
-        gzFile fp;
-        if ( (fp = gzopen( outPath.c_str(), "wb9" )) == NULL ) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "ERROR: opening " << outPath << " for writing!");
-                return;
+    } else {
+        if ( outPath.exists() ) {
+            unlink( outPath.c_str() );
         }
-        
-        gzprintf(fp,"%d\n",mesh->pointCount());
-        
-        for (int x=0;x<DEM->width;x++) {
-                for (int y=0;y<DEM->height;y++) {
-                        if (mesh->is_used(x,y) != DATA_POINT_USED)
-                                continue;
-                        double vx,vy,vz;
-                        vx=(inarray.get_originx()+x*inarray.get_col_step())/3600.0;
-                        vy=(inarray.get_originy()+y*inarray.get_row_step())/3600.0;
-                        vz=DEM->eval(x,y);
-                        gzprintf(fp,"%+03.8f %+02.8f %0.2f\n",vx,vy,vz);
-                }
+    }
+
+    SGBucket bucket(0,0); // dummy bucket
+    TGArray inarray(path.dir() + "/" + path.file_base());
+    inarray.parse(bucket);
+    inarray.close();
+
+    ArrayMap *DEM=new ArrayMap(inarray);
+
+    Terra::GreedySubdivision *mesh;
+
+    mesh=new Terra::GreedySubdivision(DEM);
+
+    greedy_insertion(mesh);
+
+    gzFile fp;
+    if ( (fp = gzopen( outPath.c_str(), "wb9" )) == NULL ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "ERROR: opening " << outPath << " for writing!");
+        return;
+    }
+
+    gzprintf(fp,"%d\n",mesh->pointCount());
+
+    for (int x=0;x<DEM->width;x++) {
+        for (int y=0;y<DEM->height;y++) {
+            if (mesh->is_used(x,y) != DATA_POINT_USED)
+                continue;
+            double vx,vy,vz;
+            vx=(inarray.get_originx()+x*inarray.get_col_step())/3600.0;
+            vy=(inarray.get_originy()+y*inarray.get_row_step())/3600.0;
+            vz=DEM->eval(x,y);
+            gzprintf(fp,"%+03.8f %+02.8f %0.2f\n",vx,vy,vz);
         }
-        delete mesh;
-        delete DEM;
-        
-        gzclose(fp);
+    }
+    
+    delete mesh;
+    delete DEM;
+
+    gzclose(fp);
 }
 
 void walk_path(const SGPath& path) {
@@ -214,80 +225,91 @@ void walk_path(const SGPath& path) {
 }
 
 void usage(char* progname, const std::string& msg) {
-        if (msg.size()!=0)
-                SG_LOG(SG_GENERAL,SG_ALERT, msg);
-        SG_LOG(SG_GENERAL,SG_INFO, "Usage: " << progname << " [options] <file | path to walk>");
-        SG_LOG(SG_GENERAL,SG_INFO, "\t -h | --help ");
-        SG_LOG(SG_GENERAL,SG_INFO, "\t -m | --minnodes 50");
-        SG_LOG(SG_GENERAL,SG_INFO, "\t -x | --maxnodes 1000");
-        SG_LOG(SG_GENERAL,SG_INFO, "\t -e | --maxerror 40");
-        SG_LOG(SG_GENERAL,SG_INFO, "\t -v | --version");
-        SG_LOG(SG_GENERAL,SG_INFO, "");
-        SG_LOG(SG_GENERAL,SG_INFO, "Algorithm will produce at least <minnodes> fitted nodes, but no");
-        SG_LOG(SG_GENERAL,SG_INFO, "more than <maxnodes>.  Within that range, the algorithm will stop");
-        SG_LOG(SG_GENERAL,SG_INFO, "if the maximum elevation error for any remaining point");
-        SG_LOG(SG_GENERAL,SG_INFO, "drops below <maxerror> meters.");
-        SG_LOG(SG_GENERAL,SG_INFO, "");
-        SG_LOG(SG_GENERAL,SG_INFO, "Increasing the maxnodes value and/or decreasing maxerror");
-        SG_LOG(SG_GENERAL,SG_INFO, "will produce a better surface approximation.");
-        SG_LOG(SG_GENERAL,SG_INFO, "");
-        SG_LOG(SG_GENERAL,SG_INFO, "The input file must be a .arr.gz file such as that produced");
-        SG_LOG(SG_GENERAL,SG_INFO, "by demchop or hgtchop utils.");
-        SG_LOG(SG_GENERAL,SG_INFO, "");
-        SG_LOG(SG_GENERAL,SG_INFO, "**** NOTE ****:");
-        SG_LOG(SG_GENERAL,SG_INFO, "If a directory is input all .arr.gz files in directory will be");
-        SG_LOG(SG_GENERAL,SG_INFO, "processed recursively.");
-        SG_LOG(SG_GENERAL,SG_INFO, "");
-        SG_LOG(SG_GENERAL,SG_INFO, "The output file(s) is/are called .fit.gz and is simply a list of");
-        SG_LOG(SG_GENERAL,SG_INFO, "from the resulting fitted surface nodes.  The user of the");
-        SG_LOG(SG_GENERAL,SG_INFO, ".fit.gz file will need to retriangulate the surface.");
+    if (msg.size()!=0) {
+        SG_LOG(SG_GENERAL,SG_ALERT, msg);
+    }
+
+    SG_LOG(SG_GENERAL,SG_INFO, "Usage: " << progname << " [options] <file | path to walk>");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -h | --help ");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -m | --minnodes 50");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -x | --maxnodes 1000");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -e | --maxerror 40");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -f | --force");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -v | --version");
+    SG_LOG(SG_GENERAL,SG_INFO, "");
+    SG_LOG(SG_GENERAL,SG_INFO, "Algorithm will produce at least <minnodes> fitted nodes, but no");
+    SG_LOG(SG_GENERAL,SG_INFO, "more than <maxnodes>.  Within that range, the algorithm will stop");
+    SG_LOG(SG_GENERAL,SG_INFO, "if the maximum elevation error for any remaining point");
+    SG_LOG(SG_GENERAL,SG_INFO, "drops below <maxerror> meters.");
+    SG_LOG(SG_GENERAL,SG_INFO, "");
+    SG_LOG(SG_GENERAL,SG_INFO, "Increasing the maxnodes value and/or decreasing maxerror");
+    SG_LOG(SG_GENERAL,SG_INFO, "will produce a better surface approximation.");
+    SG_LOG(SG_GENERAL,SG_INFO, "");
+    SG_LOG(SG_GENERAL,SG_INFO, "The input file must be a .arr.gz file such as that produced");
+    SG_LOG(SG_GENERAL,SG_INFO, "by demchop or hgtchop utils.");
+    SG_LOG(SG_GENERAL,SG_INFO, "");
+    SG_LOG(SG_GENERAL,SG_INFO, "Force will overwrite existing .arr.gz files, even if the input is older");
+    SG_LOG(SG_GENERAL,SG_INFO, "");
+    SG_LOG(SG_GENERAL,SG_INFO, "**** NOTE ****:");
+    SG_LOG(SG_GENERAL,SG_INFO, "If a directory is input all .arr.gz files in directory will be");
+    SG_LOG(SG_GENERAL,SG_INFO, "processed recursively.");
+    SG_LOG(SG_GENERAL,SG_INFO, "");
+    SG_LOG(SG_GENERAL,SG_INFO, "The output file(s) is/are called .fit.gz and is simply a list of");
+    SG_LOG(SG_GENERAL,SG_INFO, "from the resulting fitted surface nodes.  The user of the");
+    SG_LOG(SG_GENERAL,SG_INFO, ".fit.gz file will need to retriangulate the surface.");
 }
 
 struct option options[]={
-        {"help",no_argument,NULL,'h'},
-        {"minnodes",required_argument,NULL,'m'},
-        {"maxnodes",required_argument,NULL,'x'},
-        {"maxerror",required_argument,NULL,'e'},
-        {"version",no_argument,NULL,'v'},
-        {NULL,0,NULL,0}
+    {"help",no_argument,NULL,'h'},
+    {"minnodes",required_argument,NULL,'m'},
+    {"maxnodes",required_argument,NULL,'x'},
+    {"maxerror",required_argument,NULL,'e'},
+    {"force",no_argument,NULL,'f'},
+    {"version",no_argument,NULL,'v'},
+    {NULL,0,NULL,0}
 };
 
 int main(int argc, char** argv) {
-        sglog().setLogLevels( SG_ALL, SG_DEBUG );
-        int option;
-        
-        while ((option=getopt_long(argc,argv,"hm:x:e:v",options,NULL))!=-1) {
-                switch (option) {
-                case 'h':
-                        usage(argv[0],"");
-                        break;
-                case 'm':
-                        min_points=atoi(optarg);
-                        break;
-                case 'x':
-                        point_limit=atoi(optarg);
-                        break;
-                case 'e':
-                        error_threshold=atof(optarg);
-                        break;
-                case 'v':
-                        SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " Version 1.0");
-                        exit(0);
-                        break;
-                case '?':
-                        usage(argv[0],std::string("Unknown option:")+(char)optopt);
-                        exit(1);
-                }
-        }
-        SG_LOG(SG_GENERAL, SG_INFO, "Min points = " << min_points);
-        SG_LOG(SG_GENERAL, SG_INFO, "Max points = " << point_limit);
-        SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);
-        if (optind<argc) {
-                while (optind<argc) {
-                        walk_path(SGPath(argv[optind++]));
-                }
-        } else {
-                SG_LOG(SG_GENERAL, SG_INFO, "Use 'terrafit --help' for commands");
+    sglog().setLogLevels( SG_ALL, SG_DEBUG );
+    int option;
+
+    while ((option=getopt_long(argc,argv,"hm:x:e:v",options,NULL))!=-1) {
+        switch (option) {
+            case 'h':
+                usage(argv[0],"");
+                break;
+            case 'm':
+                min_points=atoi(optarg);
+                break;
+            case 'x':
+                point_limit=atoi(optarg);
+                break;
+            case 'e':
+                error_threshold=atof(optarg);
+                break;
+            case 'f':
+                force=true;
+                break;
+            case 'v':
+                SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " Version 1.0");
+                exit(0);
+                break;
+            case '?':
+                usage(argv[0],std::string("Unknown option:")+(char)optopt);
                 exit(1);
         }
+    }
+    
+    SG_LOG(SG_GENERAL, SG_INFO, "Min points = " << min_points);
+    SG_LOG(SG_GENERAL, SG_INFO, "Max points = " << point_limit);
+    SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);
+
+    if (optind<argc) {
+        while (optind<argc) {
+            walk_path(SGPath(argv[optind++]));
+        }
+    } else {
+        SG_LOG(SG_GENERAL, SG_INFO, "Use 'terrafit --help' for commands");
+        exit(1);
+    }
 }
