@@ -102,8 +102,9 @@ public:
 
 private:
     Point3D OffsetPointFirst(  const Point3D& cur,  const Point3D& next, double offset_by );
-    Point3D OffsetPointMiddle( const Point3D& prev, const Point3D& cur,  const Point3D& next, double offset_by );
+    Point3D OffsetPointMiddle( const SGGeod& prev, const SGGeod& cur,  const SGGeod& next, double offset_by );
     Point3D OffsetPointLast(   const Point3D& prev, const Point3D& cur,  double offset_by );
+
 
     double      offset;
     double      width;

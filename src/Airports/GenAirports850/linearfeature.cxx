@@ -374,124 +374,63 @@ LinearFeature::~LinearFeature()
     }
 }
 
-Point3D LinearFeature::OffsetPointMiddle( const Point3D& prev, const Point3D& cur, const Point3D& next, double offset_by )
-{
-    double offset_dir;
-    double next_dir;
-    double az2;
-    double dist;
-    double theta;
-    double pt_x = 0, pt_y = 0;
 
-    SGGeod gPrev = prev.toSGGeod();
-    SGGeod gCur  = cur.toSGGeod();
-    SGGeod gNext = next.toSGGeod();
+Point3D LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by )
+{
+    double  courseCur, courseNext, courseAvg, theta;
+    SGVec3d dirCur, dirNext, dirAvg, cp;
+    double  courseOffset, distOffset;
+    SGGeod  pt;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << gPrev << "), "
                                                                   "cur (" << gCur  << "), "
                                                                  "next (" << gNext << ")" );
 
- 
-   // first, find if the line turns left or right ar src
+    // first, find if the line turns left or right ar src
     // for this, take the cross product of the vectors from prev to src, and src to next.
     // if the cross product is negetive, we've turned to the left
     // if the cross product is positive, we've turned to the right
-    // if the cross product is 0, then we need to use the direction passed in
-    SGVec3d dir1 = prev.toSGVec3d() - cur.toSGVec3d();
-    dir1 = normalize(dir1);
+    courseCur = SGGeodesy::courseDeg( gCur, gPrev );
+    dirCur = SGVec3d( sin( courseCur*SGD_DEGREES_TO_RADIANS ), cos( courseCur*SGD_DEGREES_TO_RADIANS ), 0.0f );
 
-    SGVec3d dir2 = next.toSGVec3d() - cur.toSGVec3d();
-    dir2 = normalize(dir2);
+    courseNext = SGGeodesy::courseDeg( gCur, gNext );
+    dirNext = SGVec3d( sin( courseNext*SGD_DEGREES_TO_RADIANS ), cos( courseNext*SGD_DEGREES_TO_RADIANS ), 0.0f );
 
     // Now find the average
-    SGVec3d avg = dir1 + dir2;
-    avg = normalize(avg);
+    dirAvg = normalize( dirCur + dirNext );
+    courseAvg = SGMiscd::rad2deg( atan( dirAvg.x()/dirAvg.y() ) );
+    if (courseAvg < 0) {
+        courseAvg += 180.0f;
+    }
 
     // check the turn direction
-    SGVec3d cp = cross( dir1, dir2 );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\tcross product of dir1: " << dir1 << " and dir2: " << dir2 << " is " << cp );
+    cp    = cross( dirCur, dirNext );
+    theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext, cp ) );
 
-    // calculate the angle between cur->prev and cur->next
-    theta = SGMiscd::rad2deg(CalculateTheta(prev.toSGGeod(), cur.toSGGeod(), next.toSGGeod()));
+    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (degenerate case) " << description << ": theta is " << theta );
 
-    if ( abs(theta - 180.0) < 0.1 )
-    {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta close to 180) " << description << ": theta is " << theta );
-
-        // find the direction to the next point
-        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
-
-        offset_dir = next_dir - 90.0;
-        while (offset_dir < 0.0)
-        {
-            offset_dir += 360.0;
-        }
-
-        // straight line blows up math - dist should be exactly as given
-        dist = offset_by;        
+        // straight line blows up math - offset 90 degree and dist is as given
+        courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
+        distOffset   = offset_by;
     }
-    else if ( abs(theta) < 0.1 )
-    {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta close to 0) " << description << ": theta is " << theta );
-
-        // find the direction to the next point
-        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
-
-        offset_dir = next_dir - 90;
-        while (offset_dir < 0.0)
-        {
-            offset_dir += 360.0;
-        }
-
-        // straight line blows up math - dist should be exactly as given
-        dist = offset_by;        
-    }
-    else if ( isnan(theta) ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta is NAN) " << description );
-        // find the direction to the next point
-        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
-
-        offset_dir = next_dir - 90.0;
-        while (offset_dir < 0.0)
-        {
-            offset_dir += 360.0;
-        }
-
-        // straight line blows up math - dist should be exactly as given
-        dist = offset_by;                
-    }
-    else
-    {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta NOT close to 180) " << description << ": theta is " << theta );
-
-        // find the offset angle
-        geo_inverse_wgs_84( avg.y(), avg.x(), 0.0f, 0.0f, &offset_dir, &az2, &dist);
-
-        // if we turned right, reverse the heading 
-        if (cp.z() < 0.0f)
-        {
-            offset_dir += 180.0;
-        }
-        while (offset_dir >= 360.0)
-        {
-            offset_dir -= 360.0;
-        }
-
-        // find the direction to the next point
-        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
+    else  {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (normal case) " << description << ": theta is " << theta );
 
         // calculate correct distance for the offset point
-        dist = (offset_by)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
+        if (cp.z() < 0.0f) {
+            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg+180);
+        } else {
+            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg);
+        }
+        distOffset = (offset_by)/sin(SGMiscd::deg2rad(courseNext-courseOffset));
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << dist );
-
     // calculate the point from cur
-    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, dist, &pt_y, &pt_x, &az2 );
+    pt = SGGeodesy::direct(gCur, courseOffset, distOffset);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << distOffset << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
-
-    return Point3D(pt_x, pt_y, 0.0f);
+    return Point3D::fromSGGeod(pt);
 }
 
 Point3D LinearFeature::OffsetPointFirst( const Point3D& cur, const Point3D& next, double offset_by )
@@ -722,8 +661,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             }
             else
             {
-                cur_outer = OffsetPointMiddle( points[j-1], points[j], points[j+1], offset-width/2.0f );
-                cur_inner = OffsetPointMiddle( points[j-1], points[j], points[j+1], offset+width/2.0f );
+                cur_outer = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset-width/2.0f );
+                cur_inner = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset+width/2.0f );
             }
 
             if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
@@ -822,7 +761,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             }
             else
             {
-                cur_outer = OffsetPointMiddle( points[j-1], points[j], points[j+1], offset );
+                cur_outer = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset );
             }
     
             if ( (prev_outer.x() != 0.0f) && (prev_outer.y() != 0.0f) )

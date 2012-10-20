@@ -85,6 +85,16 @@ inline double CalculateTheta( const SGGeod& p0, const SGGeod& p1, const SGGeod& 
     return acos( uv_dot / (udist * vdist) );
 }
 
+/* cal theta when we have unit vectors */
+/* TODO : Use cp to determine right or left turn */
+inline double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, const SGVec3d& cp )
+{
+    double dp = dot( dirCur, dirNext );
+
+    return acos( dp );
+}
+
+
 #define BEZIER_DETAIL   (8)
 #define LINE_WIDTH      (0.75)
 #define WIREFRAME       (1)
