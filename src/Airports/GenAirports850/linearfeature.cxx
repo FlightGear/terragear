@@ -137,8 +137,8 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 cp1 = curNode->GetNextCp();
                 cp2 = nextNode->GetPrevCp();
                 total_dist = CubicDistance( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc() );
-                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
-                theta2 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp2, nextNode->GetLoc()) );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp1.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
+                theta2 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp2.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
             }
             else
             {
@@ -146,7 +146,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 curve_type = CURVE_QUADRATIC;
                 cp1 = curNode->GetNextCp();
                 total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
-                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp1.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
             }
         }
         else
@@ -158,7 +158,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 curve_type = CURVE_QUADRATIC;
                 cp1 = nextNode->GetPrevCp();
                 total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
-                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp1.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
             }
             else
             {
@@ -374,7 +374,7 @@ LinearFeature::~LinearFeature()
     }
 }
 
-Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *next, double offset_by )
+Point3D LinearFeature::OffsetPointMiddle( const Point3D& prev, const Point3D& cur, const Point3D& next, double offset_by )
 {
     double offset_dir;
     double next_dir;
@@ -383,9 +383,13 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
     double theta;
     double pt_x = 0, pt_y = 0;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << *prev << "), "
-                                                                  "cur (" << *cur  << "), "
-                                                                 "next (" << *next << ")" );
+    SGGeod gPrev = prev.toSGGeod();
+    SGGeod gCur  = cur.toSGGeod();
+    SGGeod gNext = next.toSGGeod();
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << gPrev << "), "
+                                                                  "cur (" << gCur  << "), "
+                                                                 "next (" << gNext << ")" );
 
  
    // first, find if the line turns left or right ar src
@@ -393,10 +397,10 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
     // if the cross product is negetive, we've turned to the left
     // if the cross product is positive, we've turned to the right
     // if the cross product is 0, then we need to use the direction passed in
-    SGVec3d dir1 = prev->toSGVec3d() - cur->toSGVec3d();
+    SGVec3d dir1 = prev.toSGVec3d() - cur.toSGVec3d();
     dir1 = normalize(dir1);
 
-    SGVec3d dir2 = next->toSGVec3d() - cur->toSGVec3d();
+    SGVec3d dir2 = next.toSGVec3d() - cur.toSGVec3d();
     dir2 = normalize(dir2);
 
     // Now find the average
@@ -408,14 +412,14 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
     SG_LOG(SG_GENERAL, SG_DEBUG, "\tcross product of dir1: " << dir1 << " and dir2: " << dir2 << " is " << cp );
 
     // calculate the angle between cur->prev and cur->next
-    theta = SGMiscd::rad2deg(CalculateTheta(*prev, *cur, *next));
+    theta = SGMiscd::rad2deg(CalculateTheta(prev.toSGGeod(), cur.toSGGeod(), next.toSGGeod()));
 
     if ( abs(theta - 180.0) < 0.1 )
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta close to 180) " << description << ": theta is " << theta );
 
         // find the direction to the next point
-        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
 
         offset_dir = next_dir - 90.0;
         while (offset_dir < 0.0)
@@ -431,7 +435,7 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
         SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta close to 0) " << description << ": theta is " << theta );
 
         // find the direction to the next point
-        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
 
         offset_dir = next_dir - 90;
         while (offset_dir < 0.0)
@@ -445,7 +449,7 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
     else if ( isnan(theta) ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (theta is NAN) " << description );
         // find the direction to the next point
-        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
 
         offset_dir = next_dir - 90.0;
         while (offset_dir < 0.0)
@@ -474,7 +478,7 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
         }
 
         // find the direction to the next point
-        geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &next_dir, &az2, &dist);
+        geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &next_dir, &az2, &dist);
 
         // calculate correct distance for the offset point
         dist = (offset_by)/sin(SGMiscd::deg2rad(next_dir-offset_dir));
@@ -483,25 +487,25 @@ Point3D LinearFeature::OffsetPointMiddle( Point3D *prev, Point3D *cur, Point3D *
     SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << dist );
 
     // calculate the point from cur
-    geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, dist, &pt_y, &pt_x, &az2 );
+    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, dist, &pt_y, &pt_x, &az2 );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
 
     return Point3D(pt_x, pt_y, 0.0f);
 }
 
-Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double offset_by )
+Point3D LinearFeature::OffsetPointFirst( const Point3D& cur, const Point3D& next, double offset_by )
 {
     double offset_dir;
     double az2;
     double dist;
     double pt_x = 0, pt_y = 0;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << *cur  << "), "
-                                                            "next (" << *next << ")" );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << cur  << "), "
+                                                            "next (" << next << ")" );
 
     // find the offset angle
-    geo_inverse_wgs_84( cur->y(), cur->x(), next->y(), next->x(), &offset_dir, &az2, &dist);
+    geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &offset_dir, &az2, &dist);
     offset_dir -= 90;
     if (offset_dir < 0)
     {
@@ -511,7 +515,7 @@ Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double off
     SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
 
     // calculate the point from cur
-    geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
+    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
 
@@ -519,18 +523,18 @@ Point3D LinearFeature::OffsetPointFirst( Point3D *cur, Point3D *next, double off
 }
 
 // TODO: Should Be AddEndMarkingVerticies - and handle offset (used in LinearFeature::Finish only)
-Point3D LinearFeature::OffsetPointLast( Point3D *prev, Point3D *cur, double offset_by )
+Point3D LinearFeature::OffsetPointLast( const Point3D& prev, const Point3D& cur, double offset_by )
 {
     double offset_dir;
     double az2;
     double dist;
     double pt_x = 0, pt_y = 0;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << *prev  << "), "
-                                                              "cur (" << *cur << ")" );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << prev  << "), "
+                                                              "cur (" << cur << ")" );
 
     // find the offset angle
-    geo_inverse_wgs_84( prev->y(), prev->x(), cur->y(), cur->x(), &offset_dir, &az2, &dist);
+    geo_inverse_wgs_84( prev.y(), prev.x(), cur.y(), cur.x(), &offset_dir, &az2, &dist);
     offset_dir -= 90;
     if (offset_dir < 0)
     {
@@ -540,7 +544,7 @@ Point3D LinearFeature::OffsetPointLast( Point3D *prev, Point3D *cur, double offs
     SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
 
     // calculate the point from cur
-    geo_direct_wgs_84( cur->y(), cur->x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
+    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
 
@@ -707,19 +711,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             if (j == marks[i]->start_idx)
             {
                 // first point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointFirst( &points[j], &points[j+1], offset-width/2.0f );
-                cur_inner = OffsetPointFirst( &points[j], &points[j+1], offset+width/2.0f );
+                cur_outer = OffsetPointFirst( points[j], points[j+1], offset-width/2.0f );
+                cur_inner = OffsetPointFirst( points[j], points[j+1], offset+width/2.0f );
             }
             else if (j == marks[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointLast( &points[j-1], &points[j], offset-width/2.0f );
-                cur_inner = OffsetPointLast( &points[j-1], &points[j], offset+width/2.0f );
+                cur_outer = OffsetPointLast( points[j-1], points[j], offset-width/2.0f );
+                cur_inner = OffsetPointLast( points[j-1], points[j], offset+width/2.0f );
             }
             else
             {
-                cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset-width/2.0f );
-                cur_inner = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset+width/2.0f );
+                cur_outer = OffsetPointMiddle( points[j-1], points[j], points[j+1], offset-width/2.0f );
+                cur_inner = OffsetPointMiddle( points[j-1], points[j], points[j+1], offset+width/2.0f );
             }
 
             if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
@@ -809,16 +813,16 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             if (j == lights[i]->start_idx)
             {
                 // first point on the light - offset heading is 90deg 
-                cur_outer = OffsetPointFirst( &points[j], &points[j+1], offset );
+                cur_outer = OffsetPointFirst( points[j], points[j+1], offset );
             }
             else if (j == lights[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointLast( &points[j-1], &points[j], offset );
+                cur_outer = OffsetPointLast( points[j-1], points[j], offset );
             }
             else
             {
-                cur_outer = OffsetPointMiddle( &points[j-1], &points[j], &points[j+1], offset );
+                cur_outer = OffsetPointMiddle( points[j-1], points[j], points[j+1], offset );
             }
     
             if ( (prev_outer.x() != 0.0f) && (prev_outer.y() != 0.0f) )

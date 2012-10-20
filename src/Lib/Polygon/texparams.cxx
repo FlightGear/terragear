@@ -21,7 +21,7 @@ std::ostream& operator << (std::ostream &output, const TGTexParams &tp)
 
 void TGTexParams::SaveToGzFile(gzFile& fp)
 {
-    sgWriteSGGeod( fp, ref );
+    sgWriteGeod( fp, ref );
     sgWriteDouble( fp, width );
     sgWriteDouble( fp, length );
     sgWriteDouble( fp, heading );
@@ -34,7 +34,7 @@ void TGTexParams::SaveToGzFile(gzFile& fp)
 
 void TGTexParams::LoadFromGzFile(gzFile& fp)
 {
-    sgReadSGGeod( fp, ref );
+    sgReadGeod( fp, ref );
     sgReadDouble( fp, &width );
     sgReadDouble( fp, &length );
     sgReadDouble( fp, &heading );

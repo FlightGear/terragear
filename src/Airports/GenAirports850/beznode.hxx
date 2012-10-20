@@ -64,28 +64,25 @@ inline Point3D CalculateCubicLocation( Point3D p0, Point3D cp0, Point3D cp1, Poi
     return result;
 }
 
-inline double CalculateTheta( Point3D p0, Point3D p1, Point3D p2 )
+inline double CalculateTheta( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2 )
 {
-    Point3D u, v;
-    double  udist, vdist, uv_dot, tmp;
+    SGVec2d v0, v1, v2;
+    SGVec2d u, v;
+    double  udist, vdist, uv_dot;
 
-    // u . v = ||u|| * ||v|| * cos(theta)
+    v0 = SGVec2d( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    v1 = SGVec2d( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    v2 = SGVec2d( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
 
-    u = p1 - p0;
-    udist = sqrt( u.x() * u.x() + u.y() * u.y() );
-    // printf("udist = %.6f\n", udist);
+    u  = v1 - v0;
+    udist = norm(u);
 
-    v = p1 - p2;
-    vdist = sqrt( v.x() * v.x() + v.y() * v.y() );
-    // printf("vdist = %.6f\n", vdist);
+    v = v1 - v2;
+    vdist = norm(v);
 
-    uv_dot = u.x() * v.x() + u.y() * v.y();
-    // printf("uv_dot = %.6f\n", uv_dot);
+    uv_dot = dot(u, v);
 
-    tmp = uv_dot / (udist * vdist);
-    // printf("tmp = %.6f\n", tmp);
-
-    return acos(tmp);
+    return acos( uv_dot / (udist * vdist) );
 }
 
 #define BEZIER_DETAIL   (8)
