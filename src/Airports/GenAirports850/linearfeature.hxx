@@ -101,9 +101,9 @@ public:
 //    int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights ); 
 
 private:
-    Point3D OffsetPointFirst(  const Point3D& cur,  const Point3D& next, double offset_by );
-    Point3D OffsetPointMiddle( const SGGeod& prev, const SGGeod& cur,  const SGGeod& next, double offset_by );
-    Point3D OffsetPointLast(   const Point3D& prev, const Point3D& cur,  double offset_by );
+    SGGeod OffsetPointFirst(  const SGGeod& cur,  const SGGeod& next, double offset_by );
+    SGGeod OffsetPointMiddle( const SGGeod& prev, const SGGeod& cur,  const SGGeod& next, double offset_by );
+    SGGeod OffsetPointLast(   const SGGeod& prev, const SGGeod& cur,  double offset_by );
 
 
     double      offset;
@@ -133,9 +133,6 @@ private:
 };
 
 typedef std::vector <LinearFeature *> FeatureList;
-
-// add this to the class
-extern double CalcMarkingVerticies( Point3D *prev, Point3D *cur, Point3D *next, double *dist1, double *dist2 );
 
 #endif
 

@@ -17,21 +17,19 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 {
     BezNode*  curNode;
     BezNode*  nextNode;
-        
-    Point3D   curLoc;
-    Point3D   nextLoc;
-    Point3D   cp1;
-    Point3D   cp2;         
+
+    SGGeod    curLoc;
+    SGGeod    nextLoc;
+    SGGeod    cp1;
+    SGGeod    cp2;
 
     int       curve_type = CURVE_LINEAR;
     double    total_dist;
-    double    meter_dist = 1.0f/96560.64f;
     double    theta1, theta2;
     int       num_segs = BEZIER_DETAIL;
 
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
-
 
     SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
@@ -137,8 +135,8 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 cp1 = curNode->GetNextCp();
                 cp2 = nextNode->GetPrevCp();
                 total_dist = CubicDistance( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc() );
-                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp1.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
-                theta2 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp2.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
+                theta2 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp2, nextNode->GetLoc()) );
             }
             else
             {
@@ -146,7 +144,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 curve_type = CURVE_QUADRATIC;
                 cp1 = curNode->GetNextCp();
                 total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
-                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp1.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
             }
         }
         else
@@ -158,7 +156,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 curve_type = CURVE_QUADRATIC;
                 cp1 = nextNode->GetPrevCp();
                 total_dist = QuadraticDistance( curNode->GetLoc(), cp1, nextNode->GetLoc() );
-                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc().toSGGeod(), cp1.toSGGeod(), nextNode->GetLoc().toSGGeod()) );
+                theta1 = SGMiscd::rad2deg( CalculateTheta( curNode->GetLoc(), cp1, nextNode->GetLoc()) );
             }
             else
             {
@@ -218,35 +216,34 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             }
         }
 
-        double num_meters = total_dist / meter_dist;
-        if (num_meters < 4.0f)
+        if (total_dist < 4.0f)
         {
             if (curve_type != CURVE_LINEAR)
             {
                 // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 1/2 meter
-                num_segs = ((int)num_meters + 1) * 2;
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( < 4.0) so num_segs is " << num_segs );
+                num_segs = ((int)total_dist + 1) * 2;
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( < 4.0) so num_segs is " << num_segs );
             }
             else
             {
                 num_segs = 1;
             }
         }
-        else if (num_meters > 800.0f)
+        else if (total_dist > 800.0f)
         {
             // If total distance is > 800 meters, then we need to modify num Segments so that each segment <= 100 meters
-            num_segs = num_meters / 100.0f + 1;
-            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( > 100.0) so num_segs is " << num_segs );
+            num_segs = total_dist / 100.0f + 1;
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( > 100.0) so num_segs is " << num_segs );
         }
         else
         {
             if (curve_type != CURVE_LINEAR)
             {            
                 num_segs = 8;
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " (OK) so num_segs is " << num_segs );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
             }
             else
             {
@@ -277,15 +274,15 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 }
 
                 // add the feature vertex
-                points.push_back( curLoc );
+                points.push_back( Point3D::fromSGGeod(curLoc) );
 
                 if (p==0)
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
                 }
                 else
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at " << curLoc );
                 }
 
                 // now set set prev and cur locations for the next iteration
@@ -303,15 +300,15 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
 
                     // add the feature vertex
-                    points.push_back( curLoc );
+                    points.push_back( Point3D::fromSGGeod(curLoc) );
 
                     if (p==0)
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
                     }
                     else
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at " << curLoc );
                     }
 
                     // now set set prev and cur locations for the next iteration
@@ -323,9 +320,9 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 nextLoc = nextNode->GetLoc();
 
                 // just add the one vertex - dist is small
-                points.push_back( curLoc );
+                points.push_back( Point3D::fromSGGeod(curLoc) );
 
-                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
                 curLoc = nextLoc;
             }
@@ -334,10 +331,10 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 
     if (closed)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at (" << curLoc.x() << "," << curLoc.y() << ")");
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at " << curLoc );
 
         // need to add the markings for last segment
-        points.push_back( curLoc );
+        points.push_back( Point3D::fromSGGeod(curLoc) );
     }
 
     // check for marking that goes all the way to the end...
@@ -375,7 +372,7 @@ LinearFeature::~LinearFeature()
 }
 
 
-Point3D LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by )
+SGGeod LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by )
 {
     double  courseCur, courseNext, courseAvg, theta;
     SGVec3d dirCur, dirNext, dirAvg, cp;
@@ -430,69 +427,52 @@ Point3D LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCu
     pt = SGGeodesy::direct(gCur, courseOffset, distOffset);
     SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << distOffset << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
 
-    return Point3D::fromSGGeod(pt);
+    return pt;
 }
 
-Point3D LinearFeature::OffsetPointFirst( const Point3D& cur, const Point3D& next, double offset_by )
+SGGeod LinearFeature::OffsetPointFirst( const SGGeod& cur, const SGGeod& next, double offset_by )
 {
-    double offset_dir;
-    double az2;
-    double dist;
-    double pt_x = 0, pt_y = 0;
-
+    double courseOffset;
+    SGGeod pt;
+    
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << cur  << "), "
                                                             "next (" << next << ")" );
 
     // find the offset angle
-    geo_inverse_wgs_84( cur.y(), cur.x(), next.y(), next.x(), &offset_dir, &az2, &dist);
-    offset_dir -= 90;
-    if (offset_dir < 0)
-    {
-        offset_dir += 360;
-    }
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
+    courseOffset = SGGeodesy::courseDeg( cur, next ) - 90;
+    courseOffset = SGMiscd::normalizePeriodic(0, 360, courseOffset);
 
     // calculate the point from cur
-    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
+    pt = SGGeodesy::direct( cur, courseOffset, offset_by );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
-
-    return Point3D(pt_x, pt_y, 0.0f);
+    return pt;
 }
 
-// TODO: Should Be AddEndMarkingVerticies - and handle offset (used in LinearFeature::Finish only)
-Point3D LinearFeature::OffsetPointLast( const Point3D& prev, const Point3D& cur, double offset_by )
+SGGeod LinearFeature::OffsetPointLast( const SGGeod& prev, const SGGeod& cur, double offset_by )
 {
-    double offset_dir;
-    double az2;
-    double dist;
-    double pt_x = 0, pt_y = 0;
-
+    double courseOffset;
+    SGGeod pt;
+    
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << prev  << "), "
                                                               "cur (" << cur << ")" );
 
     // find the offset angle
-    geo_inverse_wgs_84( prev.y(), prev.x(), cur.y(), cur.x(), &offset_dir, &az2, &dist);
-    offset_dir -= 90;
-    if (offset_dir < 0)
-    {
-        offset_dir += 360;
-    }
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << offset_dir << " distance is " << offset_by );
+    courseOffset = SGGeodesy::courseDeg( prev, cur ) - 90;
+    courseOffset = SGMiscd::normalizePeriodic(0, 360, courseOffset);
 
     // calculate the point from cur
-    geo_direct_wgs_84( cur.y(), cur.x(), offset_dir, offset_by, &pt_y, &pt_x, &az2 );
+    pt = SGGeodesy::direct( cur, courseOffset, offset_by );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\tpoint is (" << pt_x << "," << pt_y << ")" );
-
-    return Point3D(pt_x, pt_y, 0.0f);
+    return pt;
 }
 
-Point3D midpoint( Point3D p0, Point3D p1 )
+SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 )
 {
-    return Point3D( (p0.x() + p1.x()) / 2, (p0.y() + p1.y()) / 2, (p0.z() + p1.z()) / 2 );
+    return SGGeod::fromDegM( (p0.getLongitudeDeg() + p1.getLongitudeDeg()) / 2,
+                             (p0.getLatitudeDeg()  + p1.getLatitudeDeg()) / 2,
+                             (p0.getElevationM()   + p1.getElevationM()) / 2 );
 }
 
 int LinearFeature::Finish( bool closed, unsigned int idx )
@@ -501,8 +481,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     TGPolygon   normals_poly, normals_poly2;
     TGSuperPoly sp;
     TGTexParams tp;
-    Point3D     prev_inner, prev_outer;
-    Point3D     cur_inner,  cur_outer;
+    SGGeod      prev_inner, prev_outer;
+    SGGeod      cur_inner,  cur_outer;
     double      heading;
     double      dist;
     double      az2;
@@ -511,8 +491,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     string      material;
     double      cur_light_dist = 0.0f;
     double      light_delta = 0;
-    double      pt_x = 0, pt_y = 0;
-
+    bool        markStarted;
+    
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers 
     // the start stop points for markings and lights
@@ -521,8 +501,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     // now generate the supoerpoly and texparams lists for markings
     for (unsigned int i=0; i<marks.size(); i++)
     {
-        prev_inner = Point3D(0.0f, 0.0f, 0.0f);
-        prev_outer = Point3D(0.0f, 0.0f, 0.0f);
+        markStarted = false;
+        last_end_v   = 0.0f;
 
         // which material for this mark?
         switch( marks[i]->type )
@@ -640,7 +620,6 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 exit(1);
         }
 
-        last_end_v   = 0.0f;
         for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
@@ -650,14 +629,14 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             if (j == marks[i]->start_idx)
             {
                 // first point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointFirst( points[j], points[j+1], offset-width/2.0f );
-                cur_inner = OffsetPointFirst( points[j], points[j+1], offset+width/2.0f );
+                cur_outer = OffsetPointFirst( points[j].toSGGeod(), points[j+1].toSGGeod(), offset-width/2.0f );
+                cur_inner = OffsetPointFirst( points[j].toSGGeod(), points[j+1].toSGGeod(), offset+width/2.0f );
             }
             else if (j == marks[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointLast( points[j-1], points[j], offset-width/2.0f );
-                cur_inner = OffsetPointLast( points[j-1], points[j], offset+width/2.0f );
+                cur_outer = OffsetPointLast( points[j-1].toSGGeod(), points[j].toSGGeod(), offset-width/2.0f );
+                cur_inner = OffsetPointLast( points[j-1].toSGGeod(), points[j].toSGGeod(), offset+width/2.0f );
             }
             else
             {
@@ -665,17 +644,17 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 cur_inner = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset+width/2.0f );
             }
 
-            if ( (prev_inner.x() != 0.0f) && (prev_inner.y() != 0.0f) )
+            if ( markStarted )
             {
-                Point3D prev_mp = midpoint( prev_outer, prev_inner );
-                Point3D cur_mp  = midpoint( cur_outer,  cur_inner  );
-                geo_inverse_wgs_84( prev_mp.y(), prev_mp.x(), cur_mp.y(), cur_mp.x(), &heading, &az2, &dist);
+                SGGeod prev_mp = midpoint( prev_outer, prev_inner );
+                SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
+                SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
 
                 poly.erase();
-                poly.add_node( 0, prev_inner );
-                poly.add_node( 0, prev_outer );
-                poly.add_node( 0, cur_outer );
-                poly.add_node( 0, cur_inner );
+                poly.add_node( 0, Point3D::fromSGGeod( prev_inner ) );
+                poly.add_node( 0, Point3D::fromSGGeod( prev_outer ) );
+                poly.add_node( 0, Point3D::fromSGGeod( cur_outer ) );
+                poly.add_node( 0, Point3D::fromSGGeod( cur_inner ) );
                 poly = snap( poly, gSnap );
 
                 sp.erase();
@@ -684,11 +663,13 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 sp.set_flag("lf");
                 marking_polys.push_back(sp);
 
-                tp = TGTexParams( prev_inner.toSGGeod(), width, 1.0f, heading );
+                tp = TGTexParams( prev_inner, width, 1.0f, heading );
                 tp.set_minv(last_end_v);
                 marking_tps.push_back(tp);
 
                 last_end_v = (double)1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
+            } else {
+                markStarted = true;
             }
 
             prev_outer = cur_outer;
@@ -699,7 +680,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     // now generate the superpoly list for lights with constant distance between lights (depending on feature type)
     for (unsigned int i=0; i<lights.size(); i++)
     {
-        prev_outer = Point3D(0.0f, 0.0f, 0.0f);
+        markStarted = false;
         cur_light_dist = 0.0f;
         bool directional_light = lights[i]->IsDirectional();
         bool alternate = false;
@@ -752,26 +733,26 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             if (j == lights[i]->start_idx)
             {
                 // first point on the light - offset heading is 90deg 
-                cur_outer = OffsetPointFirst( points[j], points[j+1], offset );
+                cur_outer = OffsetPointFirst( points[j].toSGGeod(), points[j+1].toSGGeod(), offset );
             }
             else if (j == lights[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointLast( points[j-1], points[j], offset );
+                cur_outer = OffsetPointLast( points[j-1].toSGGeod(), points[j].toSGGeod(), offset );
             }
             else
             {
                 cur_outer = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset );
             }
     
-            if ( (prev_outer.x() != 0.0f) && (prev_outer.y() != 0.0f) )
+            if ( markStarted )
             {
-                Point3D tmp;
-                bool switch_poly = true;
+                SGGeod tmp;
+                bool   switch_poly = true;
 
                 // calculate the heading and distance from prev to cur
-                geo_inverse_wgs_84( prev_outer.y(), prev_outer.x(), cur_outer.y(), cur_outer.x(), &heading, &az2, &dist);
-                
+                SGGeodesy::inverse( prev_outer, cur_outer, heading, az2, dist );
+
                 while (cur_light_dist < dist)
                 {
                     if (cur_light_dist == 0.0f)
@@ -781,42 +762,39 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                     else
                     {
                         // calculate the position of the next light
-                        geo_direct_wgs_84( prev_outer.y(), prev_outer.x(), heading, cur_light_dist, &pt_y, &pt_x, &az2 );
-                        tmp = Point3D( pt_x, pt_y, 0.0 );
+                        tmp = SGGeodesy::direct( prev_outer, heading, cur_light_dist );
                     }
 
                     SGVec3d vec;
-
                     if ( !directional_light )
                     {
                         // calculate the omnidirectional normal
-                        vec = normalize(SGVec3d::fromGeod(tmp.toSGGeod()));
+                        vec = normalize(SGVec3d::fromGeod(tmp));
                     } else
                     {
                         // calculate the directional normal
-                        double heading_vec = heading + 90.0;
-                        if (heading_vec > 360.0) { heading_vec -= 360.0; }
-                        SGVec3d cart1 = SGVec3d::fromGeod(tmp.toSGGeod());
-                        SGVec3d cart2 = SGVec3d::fromGeod( SGGeodesy::direct( tmp.toSGGeod(), heading_vec, 10 ) );
+                        double heading_vec = SGMiscd::normalizePeriodic( 0, 360, heading + 90.0 );
+                        SGVec3d cart1 = SGVec3d::fromGeod(tmp);
+                        SGVec3d cart2 = SGVec3d::fromGeod( SGGeodesy::direct( tmp, heading_vec, 10 ) );
                         vec = normalize(cart2 - cart1);
                     }
 
                     if (!alternate)
                     {
-                        poly.add_node(0, tmp);
+                        poly.add_node(0, Point3D::fromSGGeod(tmp));
                         normals_poly.add_node(0, Point3D::fromSGVec3(vec) );
                     }
                     else
                     {
                         if (switch_poly)
                         {
-                            poly.add_node(0, tmp);
+                            poly.add_node(0, Point3D::fromSGGeod(tmp));
                             normals_poly.add_node(0, Point3D::fromSGVec3(vec) );
                             switch_poly = !switch_poly;
                         }
                         else
                         {
-                            poly2.add_node(0, tmp);
+                            poly2.add_node(0, Point3D::fromSGGeod(tmp));
                             normals_poly2.add_node(0, Point3D::fromSGVec3(vec) );
                             switch_poly = !switch_poly;
                         }
@@ -828,6 +806,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
                 // start next segment at the correct distance
                 cur_light_dist = cur_light_dist - dist;
+            } else {
+                markStarted = true;
             }
 
             prev_outer = cur_outer;

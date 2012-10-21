@@ -78,7 +78,7 @@ void ClosedPoly::AddNode( BezNode* node )
     }
     cur_contour->push_back( node );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : (" << node->GetLoc().x() << "," << node->GetLoc().y() << ")");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : " << node->GetLoc() );
 
     // For pavement polys, add a linear feature for each contour
     if (is_pavement)
@@ -95,7 +95,7 @@ void ClosedPoly::AddNode( BezNode* node )
                 feature_desc += "boundary";
             }
 
-            SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node (" << node->GetLoc().x() << "," << node->GetLoc().y() << ") to current linear feature " << cur_feature);
+            SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node " << node->GetLoc() << " to current linear feature " << cur_feature);
             cur_feature = new LinearFeature(feature_desc, 1.0f );
         } 
         cur_feature->AddNode( node );
@@ -139,15 +139,14 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
 {
     BezNode*    curNode;
     BezNode*    nextNode;
-        
-    Point3D curLoc;
-    Point3D nextLoc;
-    Point3D cp1;
-    Point3D cp2;    
 
-    int curve_type = CURVE_LINEAR;
+    SGGeod curLoc;
+    SGGeod nextLoc;
+    SGGeod cp1;
+    SGGeod cp2;
+
+    int       curve_type = CURVE_LINEAR;
     double    total_dist;
-    double    meter_dist = 1.0f/96560.64f;
     int       num_segs = BEZIER_DETAIL;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
@@ -209,43 +208,40 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
             }
         }
 
-        double num_meters = total_dist / meter_dist;
-        if (num_meters < 8.0f)
+        if (total_dist < 8.0f)
         {
             if (curve_type != CURVE_LINEAR)
             {
                 // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 2 meters
-                num_segs = ((int)num_meters + 1);
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( < 16.0) so num_segs is " << num_segs );
+                num_segs = ((int)total_dist + 1);
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( < 16.0) so num_segs is " << num_segs );
             }
             else
             {
                 num_segs = 1;
             }
         }
-        else if (num_meters > 800.0f)
+        else if (total_dist > 800.0f)
         {
             // If total distance is > 800 meters, then we need to modify num Segments so that each segment <= 100 meters
-            num_segs = num_meters / 100.0f + 1;
-            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " ( > 100.0) so num_segs is " << num_segs );
+            num_segs = total_dist / 100.0f + 1;
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( > 100.0) so num_segs is " << num_segs );
         }
         else
         {
             if (curve_type != CURVE_LINEAR)
             {            
                 num_segs = 8;
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from (" << curNode->GetLoc().x() << "," << curNode->GetLoc().y() << ") to (" << nextNode->GetLoc().x() << "," << nextNode->GetLoc().y() << ")" );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << num_meters << " (OK) so num_segs is " << num_segs );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
             }
             else
             {
                 // make sure linear segments don't got over 100m
-                num_segs = num_meters / 100.0f + 1;
+                num_segs = total_dist / 100.0f + 1;
             }
-
-//          num_segs = 1;
         }
 
 #if NO_BEZIER
@@ -258,7 +254,6 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
             curve_type = CURVE_LINEAR;
         }
 
-
         // initialize current location
         curLoc = curNode->GetLoc();
         if (curve_type != CURVE_LINEAR)
@@ -268,25 +263,25 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 // calculate next location
                 if (curve_type == CURVE_QUADRATIC)
                 {
-                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
                 }
                 else
                 {
-                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
                 }
 
                 // add the pavement vertex
                 // convert from lat/lon to geo
                 // (maybe later) - check some simgear objects...
-                dst->push_back( curLoc );
+                dst->push_back( Point3D::fromSGGeod(curLoc) );
 
                 if (p==0)
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
                 }
                 else
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at (" << curLoc.x() << "," << curLoc.y() << ")");
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at " << curLoc );
                 }
 
                 // now set set cur location for the next iteration
@@ -303,15 +298,15 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
 
                     // add the feature vertex
-                    dst->push_back( curLoc );
+                    dst->push_back( Point3D::fromSGGeod(curLoc) );
 
                     if (p==0)
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
                     }
                     else
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at " << curLoc );
                     }
 
                     // now set set prev and cur locations for the next iteration
@@ -323,9 +318,9 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 nextLoc = nextNode->GetLoc();
 
                 // just add the one vertex - dist is small
-                dst->push_back( curLoc );
+                dst->push_back( Point3D::fromSGGeod(curLoc) );
 
-                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at (" << curLoc.x() << "," << curLoc.y() << ")");
+                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
                 curLoc = nextLoc;
             }

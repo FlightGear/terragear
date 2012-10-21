@@ -1,67 +1,76 @@
 #ifndef _BEZNODE_H_
 #define _BEZNODE_H_
 
+#include <vector>
 #include <string.h>
 #include <float.h>
-#include <iostream>
 
-#include <Geometry/point3d.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/SGMath.hxx>
 
-// TEMP...
-inline double LinearDistance( Point3D p0, Point3D p1 )
+inline double LinearDistance( const SGGeod& p0, const SGGeod& p1 )
 {
-    return sqrt( pow( fabs( p1.x()-p0.x() ), 2 ) + 
-                 pow( fabs( p1.y()-p0.y() ), 2 ) );
+    return SGGeodesy::distanceM( p0, p1 );
 }
 
-inline Point3D CalculateLinearLocation( Point3D p0, Point3D p1, double t )
+inline SGGeod CalculateLinearLocation( const SGGeod& p0, const SGGeod& p1, double t )
 {
-    Point3D result;
+    // these are 2d approximations using lon, and lat as x,y cartesion coords
+    // how expensive would this be to do in Geodetic math?
+    SGVec2d v0 = SGVec2d( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    SGVec2d v1 = SGVec2d( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    SGVec2d result;
 
     double term1 = (1.0f - t);
     double term2 = t;
 
-    result = (p0 * term1) + (p1 * term2);
+    result = (v0 * term1) + (v1 * term2);
 
-    return result;
+    return SGGeod::fromDeg( result.x(), result.y() );
 }
 
-inline double QuadraticDistance( Point3D p0, Point3D cp, Point3D p1 )
+inline double QuadraticDistance( const SGGeod& p0, const SGGeod& cp, const SGGeod& p1 )
 {
     return LinearDistance( p0, cp ) + LinearDistance( cp, p1 );
 }
 
-inline Point3D CalculateQuadraticLocation( Point3D p0, Point3D cp, Point3D p1, double t )
+inline SGGeod CalculateQuadraticLocation( const SGGeod& p0, const SGGeod& cp, const SGGeod& p1, double t )
 {
-    Point3D result;
+    SGVec2d v0  = SGVec2d( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    SGVec2d v1  = SGVec2d( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    SGVec2d vcp = SGVec2d( cp.getLongitudeDeg(), cp.getLatitudeDeg() );
+    SGVec2d result;
 
     double term1 = (1.0f - t) * (1.0f - t);
     double term2 = 2 * (1.0f - t) * t;
     double term3 = t * t; 
 
-    result = (p0 * term1) + (cp * term2) + (p1 * term3);
+    result = (v0 * term1) + (vcp * term2) + (v1 * term3);
 
-    return result;
+    return SGGeod::fromDeg( result.x(), result.y() );
 }
 
-inline double CubicDistance( Point3D p0, Point3D cp0, Point3D cp1, Point3D p1 )
+inline double CubicDistance( const SGGeod& p0, const SGGeod& cp0, const SGGeod& cp1, const SGGeod& p1 )
 {
     return LinearDistance( p0, cp0 ) + LinearDistance( cp0, cp1 ) + LinearDistance( cp1, p1 );
 }
 
-inline Point3D CalculateCubicLocation( Point3D p0, Point3D cp0, Point3D cp1, Point3D p1, double t )
+inline SGGeod CalculateCubicLocation( const SGGeod& p0, const SGGeod& cp0, const SGGeod& cp1, const SGGeod& p1, double t )
 {
-    Point3D result;
+    SGVec2d v0   = SGVec2d( p0.getLongitudeDeg(),  p0.getLatitudeDeg() );
+    SGVec2d v1   = SGVec2d( p1.getLongitudeDeg(),  p1.getLatitudeDeg() );
+    SGVec2d vcp0 = SGVec2d( cp0.getLongitudeDeg(), cp0.getLatitudeDeg() );
+    SGVec2d vcp1 = SGVec2d( cp1.getLongitudeDeg(), cp1.getLatitudeDeg() );
+    SGVec2d result;
 
     double term1 = (1.0f - t) * (1.0f - t) * (1.0f - t);
     double term2 = 3 * (1.0f - t) * (1.0f - t) * t;
     double term3 = 3 * (1.0f - t) * t * t;
     double term4 = t * t * t;
 
-    result = (p0 * term1) + (cp0 * term2) + (cp1 * term3) + (p1 * term4);
+    result = (v0 * term1) + (vcp0 * term2) + (vcp1 * term3) + (v1 * term4);
 
-    return result;
+    return SGGeod::fromDeg( result.x(), result.y() );
 }
 
 inline double CalculateTheta( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2 )
@@ -108,29 +117,42 @@ inline double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, con
 class BezNode 
 {
 public:
-    BezNode( Point3D l ) : prev_cp(0.0f, 0.0f, 0.0f), next_cp(0.0f, 0.0f, 0.0f)
+    BezNode( SGGeod l )
     {
         loc   = l;
+
+        has_prev_cp = false;
+        has_next_cp = false;
+
         mark  = 0;
         light = 0;
         term  = false;
         close = false;
     }
 
-    BezNode( double lat, double lon ) : prev_cp(0.0f, 0.0f, 0.0f), next_cp(0.0f, 0.0f, 0.0f)
+    BezNode( double lat, double lon )
     {
-        loc   = Point3D( lon, lat, 0.0f );
+        loc   = SGGeod::fromDeg( lon, lat );
+
+        has_prev_cp = false;
+        has_next_cp = false;
+
         mark  = 0;
         light = 0;
         term  = false;
         close = false;
     }
 
-    BezNode( Point3D l, Point3D cp )
+    BezNode( SGGeod l, SGGeod cp )
     {
         loc     = l;
+
         next_cp = cp;
+        has_next_cp = true;
+
         prev_cp = Mirror(cp);
+        has_prev_cp = true;
+
         mark    = 0;
         light   = 0;
         term    = false;
@@ -139,19 +161,29 @@ public:
 
     BezNode( double lat, double lon, double cp_lat, double cp_lon )
     {
-        loc     = Point3D( lon, lat, 0.0f );
-        next_cp = Point3D( cp_lon, cp_lat, 0.0f );
+        loc     = SGGeod::fromDeg( lon, lat );
+
+        next_cp = SGGeod::fromDeg( cp_lon, cp_lat );
+        has_next_cp = true;
+
         prev_cp = Mirror( next_cp );
+        has_prev_cp = true;
+
         mark    = 0;
         light   = 0;
         term    = false;
         close   = false;
     }
 
-    Point3D Mirror( Point3D pt )
+    SGGeod Mirror( const SGGeod& pt )
     {
+        double heading, az2, dist;
+
         // mirror given point about our location
-        return (loc - (pt - loc));
+        SGGeodesy::inverse( loc, pt, heading, az2, dist );
+        heading = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+
+        return SGGeodesy::direct(loc, heading, dist);
     }
 
     void SetMarking( unsigned int m )
@@ -186,57 +218,60 @@ public:
 
     bool IsAt( double lat, double lon )
     {
-        return ( (loc.lat() == lat) && (loc.lon() == lon) );
+        return ( (loc.getLatitudeDeg() == lat) && (loc.getLongitudeDeg() == lon) );
     }
 
     bool HasPrevCp()
     {
-        return ( (prev_cp.x() != 0.0f) && (prev_cp.y() != 0.0f) );
+        return has_prev_cp;
     }
 
     bool HasNextCp()
     {
-        return ( (next_cp.x() != 0.0f) && (next_cp.y() != 0.0f) );
+        return has_next_cp;
     }
 
-    Point3D GetLoc()
+    SGGeod GetLoc()
     {
         return loc;
     }
 
-    Point3D GetPrevCp()
+    SGGeod GetPrevCp()
     {
         return prev_cp;
     }
 
-    Point3D GetNextCp()
+    SGGeod GetNextCp()
     {
         return next_cp;
     }
 
     void ClearNextCp(void)
     {
-        next_cp = Point3D(0.0f,0.0f, 0.0f);
+        has_next_cp = false;
     }
 
     void SetNextCp( double lat, double lon )
     {
-        next_cp = Point3D(lon, lat, 0.0f);
+        next_cp = SGGeod::fromDeg(lon, lat);
+        has_next_cp = true;
     }
 
-    // TODO: log levels and macros (does terragear have them?)
     void Print()
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, 
-            "\tLoc(" << loc.x() << "," << loc.y() << ")" <<
-            "\tprev_cp(" << prev_cp.x() << "," << prev_cp.y() << ")" <<
-            "\tnext_cp(" << next_cp.x() << "," << next_cp.y() << ")" );
+            "\tLoc:     " << loc     << "\n" <<
+            "\tprev_cp: " << prev_cp << "\n" <<
+            "\tnext_cp: " << next_cp << "\n" );
     }
 
 private:
-    Point3D         loc;
-    Point3D         prev_cp;
-    Point3D         next_cp;
+    SGGeod          loc;
+    SGGeod          prev_cp;
+    bool            has_prev_cp;
+    SGGeod          next_cp;
+    bool            has_next_cp;
+
     unsigned int    mark;
     unsigned int    light;
     bool            term;
