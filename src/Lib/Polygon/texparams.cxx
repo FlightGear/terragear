@@ -2,6 +2,21 @@
 
 #include "texparams.hxx"
 
+// TEMP TEMP TEMP : Need to get my merge request into simgear
+
+inline void sgReadGeod  ( gzFile fd, SGGeod& var ) {
+    double data[3];
+    sgReadDouble ( fd, 3, data );
+    var = SGGeod::fromDegM( data[0], data[1], data[2] );
+}
+inline void sgWriteGeod ( gzFile fd, const SGGeod& var ) {
+    sgWriteDouble( fd, var.getLongitudeDeg() );
+    sgWriteDouble( fd, var.getLatitudeDeg() );
+    sgWriteDouble( fd, var.getElevationM() );
+}
+
+// TEMP TEMP TEMP
+
 // Send a TexParam to standard output.
 std::ostream& operator << (std::ostream &output, const TGTexParams &tp)
 {
