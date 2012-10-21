@@ -844,7 +844,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     return 1;
 }
 
-int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* lines, superpoly_list* lights, bool make_shapefiles )
+int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps, superpoly_list* lights, bool make_shapefiles )
 {
     TGPolygon poly, tmp;
     void*     ds_id = NULL;        // If we are going to build shapefiles
@@ -860,27 +860,12 @@ int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps
     SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
-        poly = marking_polys[i].get_poly();
-        poly.get_bounding_box(minp, maxp);
-        tg::Rectangle box1(minp, maxp);
-
-        for (int j= 0; j < lines->contours(); ++j)
-        {
-            tmp.erase();
-            tmp.add_contour(lines->get_contour(j), 0);
-            tmp.get_bounding_box(min, max);
-            tg::Rectangle box2(min, max);
-
-            if ( box2.intersects(box1) )
-            {
-                poly = tgPolygonDiffClipper( poly, tmp );
-            }
-        }
+        poly = tgPolygonDiffClipperWithAccumulator( marking_polys[i].get_poly() );
 
         marking_polys[i].set_poly( poly );
         line_polys->push_back( marking_polys[i] );
 
-        /* If debugging this lf, write the poly, and the accum buffer at each step into their own layers */
+        /* If debugging this lf, write the polys into their own layers */
         if (ds_id) {
             char layer_name[128];
             sprintf( layer_name, "poly_%d", i );
@@ -889,15 +874,9 @@ int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps
             char feature_name[128];
             sprintf( feature_name, "poly_%d", i);
             tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
-
-            sprintf( layer_name, "accum_%d", i );
-            l_id = tgShapefileOpenLayer( ds_id, layer_name );
-
-            sprintf( feature_name, "accum_%d", i );
-            tgShapefileCreateFeature( ds_id, l_id, *lines, feature_name );
         }
 
-        lines->add_contour(poly.get_contour(0), 0);
+        tgPolygonAddToClipperAccumulator(poly, false);
 
         line_tps->push_back( marking_tps[i] );
     }

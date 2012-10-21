@@ -42,7 +42,6 @@ public:
     int BuildBtg( superpoly_list* rwy_polys, 
                   texparams_list* texparams, 
                   superpoly_list* rwy_lights, 
-                  ClipPolyType* accum, 
                   poly_list& slivers, 
                   TGPolygon* apt_base, 
                   TGPolygon* apt_clearing,
@@ -50,7 +49,6 @@ public:
 
     void BuildShoulder( superpoly_list *rwy_polys,
                         texparams_list *texparams,
-                        ClipPolyType *accum,
                         poly_list& slivers, 
                         TGPolygon* apt_base, 
                         TGPolygon* apt_clearing );
@@ -108,7 +106,6 @@ private:
                              double &start_pct, double &end_pct,
                              superpoly_list* rwy_polys,
                              texparams_list* texparams,
-                             ClipPolyType* accum,
                              poly_list& slivers,
                              bool make_shapefiles );
 
@@ -123,7 +120,6 @@ private:
                       texparams_list *texparams,
                       superpoly_list *shoulder_polys,
                       texparams_list *shoulder_tps,
-                      ClipPolyType *accum,
                       poly_list& slivers,
                       bool make_shapefiles );
 
@@ -136,11 +132,10 @@ private:
                                std::string surface, 
                                TGSuperPoly& sp, TGTexParams& tp );
 
-    void gen_simple_rwy( superpoly_list *rwy_polys, texparams_list *texparams, ClipPolyType *accum, poly_list& slivers );
+    void gen_simple_rwy( superpoly_list *rwy_polys, texparams_list *texparams, poly_list& slivers );
     
     void gen_rwy( superpoly_list* rwy_polys,
                   texparams_list* texparams,
-                  ClipPolyType* accum,
                   poly_list& slivers,
                   bool make_shapefiles );
 

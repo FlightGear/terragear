@@ -88,11 +88,10 @@ superpoly_list Helipad::gen_helipad_lights(double maxsize){
 
 void Helipad::WriteGeom( TGPolygon polygon, string material,
                         superpoly_list *rwy_polys,
-                        ClipPolyType *accum,
                         poly_list& slivers )
 {
     // Clip the new polygon against what ever has already been created.
-    TGPolygon clipped = tgPolygonDiffClipper( polygon, *accum );
+    TGPolygon clipped = tgPolygonDiffClipperWithAccumulator( polygon );
     tgPolygonFindSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
@@ -107,13 +106,12 @@ void Helipad::WriteGeom( TGPolygon polygon, string material,
     sp.set_material( material );
     rwy_polys->push_back( sp );
 
-    *accum = tgPolygonUnionClipper( polygon, *accum );
+    tgPolygonAddToClipperAccumulator( polygon, false );
 }
 
 void Helipad::BuildBtg( superpoly_list *rwy_polys,
                         texparams_list *texparams,
                         superpoly_list *rwy_lights,
-                        ClipPolyType *accum, 
                         poly_list& slivers, 
                         TGPolygon* apt_base, 
                         TGPolygon* apt_clearing )
@@ -143,7 +141,7 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
     else
         material = "pc_";
     // write out
-    WriteGeom( helipad, material + "heli", rwy_polys, accum, slivers);
+    WriteGeom( helipad, material + "heli", rwy_polys, slivers);
 
     TGTexParams tp;
     tp = TGTexParams( helipad.get_pt(0,0).toSGGeod(), maxsize, maxsize, heli.heading );
@@ -185,7 +183,7 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
         TGPolygon area_geom;
         for (i = 0; i < 2; ++i) {
             area_geom.add_contour(area_poly.get_contour(i), false);
-            WriteGeom( area_geom, material + "tiedown", rwy_polys, accum, slivers);
+            WriteGeom( area_geom, material + "tiedown", rwy_polys, slivers);
 
             tp = TGTexParams( area_poly.get_pt(i,0).toSGGeod(), maxsize, areahight, heading );
             tp.set_minu( 1 );
@@ -277,7 +275,6 @@ void Helipad::BuildBtg( superpoly_list *rwy_polys,
 
 void Helipad::BuildShoulder( superpoly_list *rwy_polys,
                              texparams_list *texparams,
-                             ClipPolyType *accum,
                              poly_list& slivers,
                              TGPolygon* apt_base,
                              TGPolygon* apt_clearing )
@@ -289,7 +286,7 @@ void Helipad::BuildShoulder( superpoly_list *rwy_polys,
         shoulder = shoulder_polys[i].get_poly();
 
         // Clip the new polygon against what ever has already been created.
-        TGPolygon clipped = tgPolygonDiffClipper( shoulder, *accum );
+        TGPolygon clipped = tgPolygonDiffClipperWithAccumulator( shoulder );
         tgPolygonFindSlivers( clipped, slivers );
 
         // Split long edges to create an object that can better flow with
@@ -300,7 +297,7 @@ void Helipad::BuildShoulder( superpoly_list *rwy_polys,
         rwy_polys->push_back( shoulder_polys[i] );
         texparams->push_back( shoulder_tps[i] );
 
-        *accum = tgPolygonUnionClipper( shoulder, *accum );
+        tgPolygonAddToClipperAccumulator( shoulder, false );
 
         if (apt_base)
         {

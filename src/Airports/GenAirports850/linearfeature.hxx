@@ -97,7 +97,7 @@ public:
     }
 
     int Finish( bool closed, unsigned int idx );
-    int BuildBtg( superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* lines, superpoly_list* lights, bool debug );
+    int BuildBtg( superpoly_list* line_polys, texparams_list* line_tps, superpoly_list* lights, bool debug );
 //    int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights ); 
 
 private:

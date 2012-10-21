@@ -22,7 +22,6 @@ public:
     int BuildBtg( superpoly_list* taxi_polys, 
                   texparams_list* texparams, 
                   superpoly_list* taxi_lights, 
-                  ClipPolyType* accum, 
                   poly_list& slivers, 
                   TGPolygon* apt_base, 
                   TGPolygon* apt_clearing,

@@ -24,7 +24,7 @@ class Helipad
 {
 public:
     Helipad(char* def);
-    void BuildBtg( superpoly_list* heli_polys, texparams_list* texparams, superpoly_list* heli_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
+    void BuildBtg( superpoly_list* heli_polys, texparams_list* texparams, superpoly_list* heli_lights, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
 
     SGGeod GetLoc()
     {
@@ -38,7 +38,6 @@ public:
 
     void BuildShoulder( superpoly_list *rwy_polys,
                         texparams_list *texparams,
-                        ClipPolyType *accum,
                         poly_list& slivers,
                         TGPolygon* apt_base,
                         TGPolygon* apt_clearing );
@@ -78,7 +77,6 @@ private:
 
     void WriteGeom( TGPolygon polygon, string material,
                         superpoly_list *rwy_polys,
-                        ClipPolyType *accum,
                         poly_list& slivers );
 
 };

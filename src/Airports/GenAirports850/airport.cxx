@@ -517,15 +517,11 @@ void Airport::merge_slivers( superpoly_list& polys, poly_list& slivers_list ) {
 
 void Airport::BuildBtg(const string& root, const string_list& elev_src )
 {
-    ClipPolyType accum;
-    poly_list    slivers;
+    poly_list      slivers;
+    poly_list      line_slivers;
 
-    // try to keep line accumulator in clipper format for speed...
-    ClipPolyType lines;
-    poly_list    line_slivers;
-
-    TGPolygon apt_base;
-    TGPolygon apt_clearing;
+    TGPolygon      apt_base;
+    TGPolygon      apt_clearing;
 
     // runways
     superpoly_list rwy_polys;
@@ -539,7 +535,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     superpoly_list line_polys;
     texparams_list line_tps;
 
-    // int i, j, k;
     Point3D p;
 
     bool verbose_triangulation = false;
@@ -594,6 +589,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     build_start.stamp();
 
     // Add the linear features
+
+
+    tgPolygonInitClipperAccumulator();
+
     if (features.size())
     {
         for ( unsigned int i=0; i<features.size(); i++ )
@@ -608,7 +607,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
                 make_shapefiles = false;
             }
 
-            features[i]->BuildBtg( &line_polys, &line_tps, &lines, &rwy_lights, make_shapefiles );
+            features[i]->BuildBtg( &line_polys, &line_tps, &rwy_lights, make_shapefiles );
         }
     }
     else
@@ -616,8 +615,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         SG_LOG(SG_GENERAL, SG_DEBUG, "no markings");
     }
 
+    /* DOne with the linear features accumulator */
+    tgPolygonFreeClipperAccumulator();
+
     log_time = time(0);
     SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << ctime(&log_time) );
+
+    // Initialize a new accumulator for the other objects
+    tgPolygonInitClipperAccumulator();
 
     // Build runways next
     for ( unsigned int i=0; i<runways.size(); i++ )
@@ -635,11 +640,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
         if (boundary.size())
         {
-            runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
+            runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, slivers, NULL, NULL, make_shapefiles );
         }
         else
         {
-            runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing, make_shapefiles );
+            runways[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, slivers, &apt_base, &apt_clearing, make_shapefiles );
         }
 
         // Now try to merge any slivers we found
@@ -668,11 +673,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
             if (boundary.size())
             {
-                helipads[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, NULL, NULL );
+                helipads[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, slivers, NULL, NULL );
             }
             else
             {
-                helipads[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing );
+                helipads[i]->BuildBtg( &rwy_polys, &rwy_tps, &rwy_lights, slivers, &apt_base, &apt_clearing );
             }
 
             // Now try to merge any slivers we found
@@ -698,11 +703,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
             if (boundary.size())
             {
-                pavements[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &accum, slivers, NULL, NULL, make_shapefiles );
+                pavements[i]->BuildBtg( &pvmt_polys, &pvmt_tps, slivers, NULL, NULL, make_shapefiles );
             }
             else
             {
-                pavements[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &accum, slivers, &apt_base, &apt_clearing, make_shapefiles );
+                pavements[i]->BuildBtg( &pvmt_polys, &pvmt_tps, slivers, &apt_base, &apt_clearing, make_shapefiles );
             }
 
             // Now try to merge any slivers we found
@@ -736,11 +741,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
             if (boundary.size())
             {
-                taxiways[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &rwy_lights, &accum, slivers, NULL, NULL, make_shapefiles );
+                taxiways[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &rwy_lights, slivers, NULL, NULL, make_shapefiles );
             }
             else
             {
-                taxiways[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &rwy_lights, &accum, slivers, &apt_base, &apt_clearing, make_shapefiles );
+                taxiways[i]->BuildBtg( &pvmt_polys, &pvmt_tps, &rwy_lights, slivers, &apt_base, &apt_clearing, make_shapefiles );
             }
 
             // Now try to merge any slivers we found
@@ -765,11 +770,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
             if (boundary.size())
             {
-                runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, NULL, NULL );
+                runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, slivers, NULL, NULL );
             }
             else
             {
-                runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, &apt_base, &apt_clearing );
+                runways[i]->BuildShoulder( &rwy_polys, &rwy_tps, slivers, &apt_base, &apt_clearing );
             }
 
             // Now try to merge any slivers we found
@@ -789,11 +794,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
             if (boundary.size())
             {
-                helipads[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, NULL, NULL );
+                helipads[i]->BuildShoulder( &rwy_polys, &rwy_tps, slivers, NULL, NULL );
             }
             else
             {
-                helipads[i]->BuildShoulder( &rwy_polys, &rwy_tps, &accum, slivers, &apt_base, &apt_clearing );
+                helipads[i]->BuildShoulder( &rwy_polys, &rwy_tps, slivers, &apt_base, &apt_clearing );
             }
 
             // Now try to merge any slivers we found
@@ -821,7 +826,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     TGPolygon filled_base  = tgPolygonStripHoles( apt_base );
     TGPolygon divided_base = tgPolygonSplitLongEdges( filled_base, 200.0 );
-    TGPolygon base_poly    = tgPolygonDiffClipper( divided_base, accum );
+    TGPolygon base_poly    = tgPolygonDiffClipperWithAccumulator( divided_base );
 
     build_end.stamp();
     build_time = build_end - build_start;

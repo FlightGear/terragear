@@ -89,7 +89,7 @@ point_list WaterRunway::GetNodes()
 }
 
 
-int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
+int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
 
@@ -137,7 +137,7 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         case 1: // asphalt:
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete " << rwy.surface);
-            gen_rwy( rwy_polys, texparams, accum, slivers, make_shapefiles );
+            gen_rwy( rwy_polys, texparams, slivers, make_shapefiles );
             gen_runway_lights( rwy_lights );
             break;
     
@@ -146,7 +146,7 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         case 5: // Gravel
         case 12: // dry lakebed
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Grass, Dirt, Gravel or Dry Lakebed " << rwy.surface );
-            gen_simple_rwy( rwy_polys, texparams, accum, slivers );
+            gen_simple_rwy( rwy_polys, texparams, slivers );
             gen_runway_lights( rwy_lights );
             break;
 

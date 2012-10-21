@@ -34,7 +34,6 @@ using std::string;
 // texparams, and accum
 void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                              texparams_list *texparams,
-                             ClipPolyType *accum,
                              poly_list& slivers )
 {
     TGPolygon runway = gen_runway_w_mid( 0.0, 0.0 );
@@ -91,7 +90,7 @@ void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                                         "",
                                         rwy_polys, texparams, 
                                         NULL, NULL,
-                                        accum, slivers,
+                                        slivers,
                                         false );
         }
         
@@ -104,7 +103,7 @@ void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                                     "",
                                     rwy_polys, texparams, 
                                     NULL, NULL,
-                                    accum, slivers,
+                                    slivers,
                                     false );
     }
 }

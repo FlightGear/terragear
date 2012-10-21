@@ -156,7 +156,6 @@ void Runway::gen_runway_section( const TGPolygon& runway,
                                  texparams_list *texparams,
                                  superpoly_list *shoulder_polys,
                                  texparams_list *shoulder_tps,
-                                 ClipPolyType *accum,
                                  poly_list& slivers,
                                  bool make_shapefiles ) 
 {
@@ -360,7 +359,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
     }
 
     // Clip the new polygon against what ever has already been created.
-    TGPolygon clipped = tgPolygonDiffClipper( section, *accum );
+    TGPolygon clipped = tgPolygonDiffClipperWithAccumulator( section );
     tgPolygonFindSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
@@ -377,7 +376,7 @@ void Runway::gen_runway_section( const TGPolygon& runway,
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "section = " << clipped.contours());
 
-    *accum = tgPolygonUnionClipper( section, *accum );
+    tgPolygonAddToClipperAccumulator( section, false );
 
     // Store away what we need to know for texture coordinate
     // calculation.  (CLO 10/20/02: why can't we calculate texture
@@ -419,7 +418,6 @@ void Runway::gen_rw_designation( TGPolygon poly, double heading, string rwname,
                                  double &start_pct, double &end_pct,
                                  superpoly_list *rwy_polys,
                                  texparams_list *texparams,
-                                 ClipPolyType *accum,
                                  poly_list& slivers,
                                  bool make_shapefiles )
 {
@@ -447,7 +445,7 @@ void Runway::gen_rw_designation( TGPolygon poly, double heading, string rwname,
                                 letter,
                                 rwy_polys, texparams, 
                                 &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
+                                slivers,
                                 make_shapefiles );
         }
 
@@ -477,7 +475,7 @@ void Runway::gen_rw_designation( TGPolygon poly, double heading, string rwname,
                                 tex1,
                                 rwy_polys, texparams, 
                                 &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
+                                slivers,
                                 make_shapefiles );
             gen_runway_section( poly,
                                 start_pct, end_pct,
@@ -487,7 +485,7 @@ void Runway::gen_rw_designation( TGPolygon poly, double heading, string rwname,
                                 tex2,
                                 rwy_polys, texparams, 
                                 &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
+                                slivers,
                                 make_shapefiles );
 
         } else if (rwname.length() == 1) {
@@ -501,7 +499,7 @@ void Runway::gen_rw_designation( TGPolygon poly, double heading, string rwname,
                                 tex1,
                                 rwy_polys, texparams, 
                                 &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
+                                slivers,
                                 make_shapefiles );
         }
     }
@@ -513,7 +511,6 @@ void Runway::gen_rw_designation( TGPolygon poly, double heading, string rwname,
 // document AC 150/5340-1H
 void Runway::gen_rwy( superpoly_list *rwy_polys,
                       texparams_list *texparams,
-                      ClipPolyType *accum,
                       poly_list& slivers,
                       bool make_shapefiles )
 {
@@ -619,7 +616,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                     "dspl_thresh",
                                     rwy_polys, texparams,
                                     &shoulder_polys, &shoulder_tps,
-                                    accum, slivers,
+                                    slivers,
                                     make_shapefiles );
 
                 // main chunks
@@ -634,7 +631,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                         "dspl_thresh",
                                         rwy_polys, texparams,
                                         &shoulder_polys, &shoulder_tps,
-                                        accum, slivers,
+                                        slivers,
                                         make_shapefiles );
                 }
             }
@@ -650,7 +647,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                             "dspl_arrows",
                             rwy_polys, texparams, 
                             &shoulder_polys, &shoulder_tps,
-                            accum, slivers,
+                            slivers,
                             make_shapefiles );
         }
 
@@ -666,7 +663,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                 "no_threshold",
                                 rwy_polys, texparams, 
                                 &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
+                                slivers,
                                 make_shapefiles );
         } else {
             // Thresholds for all others
@@ -680,14 +677,14 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                 "threshold",
                                 rwy_polys, texparams, 
                                 &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
+                                slivers,
                                 make_shapefiles );
         }
 
         // Runway designation block
         gen_rw_designation( runway_half, heading,
                             rwname, start1_pct, end1_pct, 
-                            rwy_polys, texparams, accum, slivers,
+                            rwy_polys, texparams, slivers,
                             make_shapefiles );
 
         // Generate remaining markings depending on type of runway
@@ -728,7 +725,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                         rw_marking_list[i].tex,
                                         rwy_polys, texparams, 
                                         &shoulder_polys, &shoulder_tps,
-                                        accum, slivers,
+                                        slivers,
                                         make_shapefiles );
                 }
             }
@@ -757,7 +754,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                 "rest",
                                 rwy_polys, texparams, 
                                 &shoulder_polys, &shoulder_tps,
-                                accum, slivers,
+                                slivers,
                                 make_shapefiles );
         }
 
@@ -787,7 +784,7 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
                                     "stopway",
                                     rwy_polys, texparams,
                                     &shoulder_polys, &shoulder_tps,
-                                    accum, slivers,
+                                    slivers,
                                     make_shapefiles );
             }
         }
@@ -796,7 +793,6 @@ void Runway::gen_rwy( superpoly_list *rwy_polys,
 
 void Runway::BuildShoulder( superpoly_list *rwy_polys,
                             texparams_list *texparams,
-                            ClipPolyType *accum,
                             poly_list& slivers, 
                             TGPolygon* apt_base, 
                             TGPolygon* apt_clearing )
@@ -808,7 +804,7 @@ void Runway::BuildShoulder( superpoly_list *rwy_polys,
         shoulder = shoulder_polys[i].get_poly();
 
         // Clip the new polygon against what ever has already been created.
-        TGPolygon clipped = tgPolygonDiffClipper( shoulder, *accum );
+        TGPolygon clipped = tgPolygonDiffClipperWithAccumulator( shoulder );
         tgPolygonFindSlivers( clipped, slivers );
 
         // Split long edges to create an object that can better flow with
@@ -819,7 +815,7 @@ void Runway::BuildShoulder( superpoly_list *rwy_polys,
         rwy_polys->push_back( shoulder_polys[i] );
         texparams->push_back( shoulder_tps[i] );
 
-        *accum = tgPolygonUnionClipper( shoulder, *accum );
+        tgPolygonAddToClipperAccumulator( shoulder, false );
 
         if (apt_base)
         {

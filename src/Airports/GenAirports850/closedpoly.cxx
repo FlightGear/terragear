@@ -380,10 +380,9 @@ void ClosedPoly::Finish()
     holes.clear();
 }
 
-int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
+int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
 {
     TGPolygon base, safe_base;
-    TGPolygon pre_accum;
 
     string    material;
     void*     ds_id = NULL;        // If we are going to build shapefiles
@@ -446,11 +445,9 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
                 l_id = tgShapefileOpenLayer( ds_id, layer_name );
                 sprintf( feature_name, "original" );
                 tgShapefileCreateFeature( ds_id, l_id, pre_tess, feature_name );
-
-                pre_accum = *accum;
             }
     
-            TGPolygon clipped = tgPolygonDiffClipper( pre_tess, *accum );
+            TGPolygon clipped = tgPolygonDiffClipperWithAccumulator( pre_tess );
             tgPolygonFindSlivers( clipped, slivers );
 
             SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
@@ -462,7 +459,7 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
 
             rwy_polys->push_back( sp );
 
-            *accum = tgPolygonUnionClipper( pre_tess, *accum );
+            tgPolygonAddToClipperAccumulator( pre_tess, false );
 
             /* If debugging this poly, write the poly, and clipped poly and the accum buffer into their own layers */
             if ( make_shapefiles ) {
@@ -473,16 +470,6 @@ int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, 
                 l_id = tgShapefileOpenLayer( ds_id, layer_name );
                 sprintf( feature_name, "clipped" );
                 tgShapefileCreateFeature( ds_id, l_id, clipped, feature_name );
-
-                sprintf( layer_name, "pre_accum" );
-                l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "pre_accum" );
-                tgShapefileCreateFeature( ds_id, l_id, pre_accum, feature_name );
-
-                sprintf( layer_name, "post_accum" );
-                l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "post_accum" );
-                tgShapefileCreateFeature( ds_id, l_id, *accum, feature_name );
             }
 
             SG_LOG(SG_GENERAL, SG_DEBUG, "tp construct");

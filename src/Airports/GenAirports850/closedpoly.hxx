@@ -28,7 +28,7 @@ public:
     int  BuildBtg( TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles );
 
     // Build BTG for pavements for airports with no boundary
-    int  BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, ClipPolyType* accum, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles );
+    int  BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles );
 
     FeatureList* GetFeatures()
     {
