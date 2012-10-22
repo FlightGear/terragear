@@ -567,7 +567,7 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
     } else if ( poly_op == POLY_XOR ) {
         op = ClipperLib::ctXor;
     } else if ( poly_op == POLY_UNION ) {
-    	op = ClipperLib::ctUnion;
+        op = ClipperLib::ctUnion;
     } else {
         throw sg_exception("Unknown polygon op, exiting.");
     }
@@ -581,7 +581,7 @@ TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const
 
     make_tg_poly_from_clipper( clipper_result, &result );
 
-	return result;
+    return result;
 }
 
 
@@ -605,6 +605,24 @@ TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
     return polygon_clip_clipper( POLY_UNION, subject, clip );
 }
 
+TGPolygon tgPolygonUnion( const poly_list& clips )
+{
+    ClipperLib::Polygons clipper_result;
+    ClipperLib::Clipper c;
+    TGPolygon result;
+
+    c.Clear();
+    for (unsigned int i=0; i<clips.size(); i++) {
+        ClipperLib::Polygons clipper_clip;
+        make_clipper_poly( clips[i], &clipper_clip );
+        c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    }
+    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    make_tg_poly_from_clipper( clipper_result, &result );
+
+    return result;
+}
 
 
 

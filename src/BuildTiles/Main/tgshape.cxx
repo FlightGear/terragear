@@ -43,13 +43,15 @@ void TGShape::SetMask( TGPolygon mask )
 void TGShape::BuildMask( void )
 {
     TGPolygon poly;
+    poly_list polys;
     clip_mask.erase();
 
     for (unsigned int i=0; i<sps.size(); i++)
     {
-        poly = sps[i].get_poly();
-        clip_mask = tgPolygonUnion( clip_mask, poly );
+        polys.push_back( sps[i].get_poly() );
     }
+
+    clip_mask = tgPolygonUnion( polys );
 }
 
 void TGShape::IntersectPolys( void )

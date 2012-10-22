@@ -258,6 +258,7 @@ TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip );
 
 // Union
 TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip );
+TGPolygon tgPolygonUnion( const poly_list& clips );
 
 // wrapper for clipper clip routines
 

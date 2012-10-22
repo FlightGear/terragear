@@ -53,15 +53,11 @@ SGVec3d TGConstruct::calc_normal( double area, Point3D p1, Point3D p2, Point3D p
     const double area_eps = 1.0e-12;
     if ( area < area_eps ) {
         degenerate = true;
-    }
-
-    if ( fabs(p1.x() - p2.x()) < SG_EPSILON && fabs(p1.x() - p3.x()) < SG_EPSILON ) {
+    } else if ( fabs(p1.x() - p2.x()) < SG_EPSILON && fabs(p1.x() - p3.x()) < SG_EPSILON ) {
         degenerate = true;
-    }
-    if ( fabs(p1.y() - p2.y()) < SG_EPSILON && fabs(p1.y() - p3.y()) < SG_EPSILON ) {
+    } else if ( fabs(p1.y() - p2.y()) < SG_EPSILON && fabs(p1.y() - p3.y()) < SG_EPSILON ) {
         degenerate = true;
-    }
-    if ( fabs(p1.z() - p2.z()) < SG_EPSILON && fabs(p1.z() - p3.z()) < SG_EPSILON ) {
+    } else if ( fabs(p1.z() - p2.z()) < SG_EPSILON && fabs(p1.z() - p3.z()) < SG_EPSILON ) {
         degenerate = true;
     }
 
