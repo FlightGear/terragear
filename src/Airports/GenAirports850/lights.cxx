@@ -205,7 +205,7 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     return result;
 }
 
-// generate threshold lights for a 3 degree approach 
+// generate threshold lights for displaced/normal runways and with/without light bars
 superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
 {
     point_list g_lights; g_lights.clear();
@@ -214,158 +214,93 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
     point_list r_normals; r_normals.clear();
     int i;
 
-    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
-
     // determine the start point.
-    Point3D ref1, ref2;
-    double length_hdg, left_hdg;
-    double lon, lat, r;
+    SGGeod ref1, ref2;
+    double length_hdg;
+
     if ( recip ) {
-        ref1 = corner[0];
-        ref2 = corner[1];
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
+        ref1 = SGGeodesy::direct(GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
+        ref2 = GetEnd();
     } else {
-        ref1 = corner[2];
-        ref2 = corner[3];
         length_hdg = rwy.heading;
+        ref1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
+        ref2 = GetStart();
     }
-    left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
-    // offset 1m downwind
-    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
-                        -1.0, &lat, &lon, &r );
-    ref1 = Point3D( lon, lat, 0.0 );
-    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg, 
-                        -1.0, &lat, &lon, &r );
-    ref2 = Point3D( lon, lat, 0.0 );
+    int divs = (int)(rwy.width + 4) / 3.0;
+    double step = (rwy.width + 4) / divs;
+    SGGeod pt1, pt2;
+    double offset = 2 + rwy.width * 0.5;
 
-    int divs = (int)(rwy.width / 3.0) + 1;
-    Point3D inc;
-    Point3D pt1 = ref1;
-    Point3D pt2 = ref2;
-
-// We're at the threshold:
-    if ( GetsThreshold(recip) )
-    {
+    if ( GetsThreshold(recip) ) {
+        SGGeod thresh1 = pt1 = SGGeodesy::direct(ref1, left_hdg, offset);
+        SGGeod thresh2 = SGGeodesy::direct(ref1, left_hdg, -offset);
         // four lights for each side
         for ( i = 0; i < 4; ++i ) {
-            g_lights.push_back( pt1 );
+            g_lights.push_back( Point3D::fromSGGeod(thresh1) );
             g_normals.push_back( normal1 );
 
-            g_lights.push_back( pt2 );
+            g_lights.push_back( Point3D::fromSGGeod(thresh2) );
             g_normals.push_back( normal1 );
 
             // offset 3m towards outside
-            geo_direct_wgs_84 ( pt1.lat(), pt1.lon(), left_hdg,
-                                3, &lat, &lon, &r );
-            pt1 = Point3D( lon, lat, 0.0 );
-            geo_direct_wgs_84 ( pt2.lat(), pt2.lon(), left_hdg,
-                                -3, &lat, &lon, &r );
-            pt2 = Point3D( lon, lat, 0.0 );
+            thresh1 = SGGeodesy::direct(thresh1, left_hdg, 3);
+            thresh2 = SGGeodesy::direct(thresh2, left_hdg, -3);
         }
-        if ( kind )
-        {
-            // Add a green threshold lights bar in between the four lights
-            Point3D pt1 = ref1;
-            inc = (ref2 - ref1) / divs;
-            pt1 += inc;
-            g_lights.push_back( pt1 );
+    } else {
+        pt1 = SGGeodesy::direct(ref2, left_hdg, offset);
+    }
+
+    if ( kind ) {
+        // Add a green and red threshold lights bar
+        SGGeod redbar = SGGeodesy::direct(ref2, left_hdg, offset);
+        for ( i = 0; i < divs + 1; ++i ) {
+            g_lights.push_back( Point3D::fromSGGeod(pt1) );
             g_normals.push_back( normal1 );
-            for ( i = 0; i < divs-2; ++i ) {
-                pt1 += inc;
-                g_lights.push_back( pt1 );
-                g_normals.push_back( normal1 );
-            }
+            r_lights.push_back( Point3D::fromSGGeod(redbar) );
+            r_normals.push_back( normal2 );
+            pt1 = SGGeodesy::direct(pt1, left_hdg, -step);
+            redbar = SGGeodesy::direct(redbar, left_hdg, -step);
         }
     }
 
+    // Now create the lights at the front of the runway
+    pt1 = SGGeodesy::direct(ref2, left_hdg, offset);
+    pt2 = SGGeodesy::direct(ref2, left_hdg, -offset);
 
-    // Now step to the front of the runway
-    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg,
-                        -rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
-    ref1 = Point3D( lon, lat, 0.0 );
-    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg,
-                        -rwy.threshold[get_thresh0(recip)], &lat, &lon, &r );
-    ref2 = Point3D( lon, lat, 0.0 );
-    Point3D front1 = ref1;
-    Point3D front2 = ref2;
+    point_list tmp; tmp.clear();
+    point_list tmp_norm; tmp_norm.clear();
 
-    if ( !kind )// Create groups of four lights in front of the displaced threshold
-    {
-        for ( i = 0; i < 4; ++i ) {
-            if (GetsThreshold(recip))
-            {
-                r_lights.push_back( front1 );
-                r_normals.push_back( normal1 );
+    // Create groups of four lights in front of the displaced threshold
+    for ( i = 0; i < 4; ++i ) {
+        tmp.push_back( Point3D::fromSGGeod(pt1) );
+        tmp_norm.push_back( normal1 );
+        tmp.push_back( Point3D::fromSGGeod(pt2) );
+        tmp_norm.push_back( normal1 );
 
-                r_lights.push_back( front2 );
-                r_normals.push_back( normal1 );
-            } else {
-                g_lights.push_back( front1 );
-                g_normals.push_back( normal1 );
-
-                g_lights.push_back( front2 );
-                g_normals.push_back( normal1 );
-            }
-            r_lights.push_back( front1 );
+        if (!kind) {
+            r_lights.push_back( Point3D::fromSGGeod(pt1) );
             r_normals.push_back( normal2 );
-
-            r_lights.push_back( front2 );
+            r_lights.push_back( Point3D::fromSGGeod(pt2) );
             r_normals.push_back( normal2 );
-            // offset 3m towards center
-            geo_direct_wgs_84 ( front1.lat(), front1.lon(), left_hdg,
-                                -3, &lat, &lon, &r );
-            front1 = Point3D( lon, lat, 0.0 );
-            geo_direct_wgs_84 ( front2.lat(), front2.lon(), left_hdg,
-                                3, &lat, &lon, &r );
-            front2 = Point3D( lon, lat, 0.0 );
-        }
-    } else {
-        // Create the red (green) threshold lights bar
-        Point3D pt1 = ref1;
-        inc = (ref2 - ref1) / divs;
-        if (!GetsThreshold(recip))
-        {
-            g_lights.push_back( pt1 );
-            g_normals.push_back( normal1 );
-        }
-        r_lights.push_back( pt1 );
-        r_normals.push_back( normal2 );
-
-        for ( i = 0; i < divs; ++i ) {
-            pt1 += inc;
-            r_lights.push_back( pt1 );
-            r_normals.push_back( normal2 );
-            if (!GetsThreshold(recip))
-            {
-                g_lights.push_back( pt1 );
-                g_normals.push_back( normal1 );
-            }
-        }
-        if (GetsThreshold(recip))
-        { // In case of a threshold there is no bar at the front of the runway
-        for ( i = 0; i < 4; ++i ) {
-            r_lights.push_back( ref1 );
-            r_normals.push_back( normal1 );
-
-            r_lights.push_back( ref2 );
-            r_normals.push_back( normal1 );
-            // offset 3m towards center
-            geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg,
-                                -3, &lat, &lon, &r );
-            ref1 = Point3D( lon, lat, 0.0 );
-            geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg,
-                                3, &lat, &lon, &r );
-            ref2 = Point3D( lon, lat, 0.0 );
-
         }
 
-        }
+        // offset 3m towards center
+        pt1 = SGGeodesy::direct(pt1, left_hdg, -3);
+        pt2 = SGGeodesy::direct(pt2, left_hdg, 3);
+    }
+
+    if (GetsThreshold(recip) ) {
+        r_lights.insert(r_lights.end(), tmp.begin(), tmp.end());
+        r_normals.insert(r_normals.end(), tmp_norm.begin(), tmp_norm.end());
+    } else if (!kind) {
+        g_lights.insert(g_lights.end(), tmp.begin(), tmp.end());
+        g_normals.insert(g_normals.end(), tmp_norm.begin(), tmp_norm.end());
     }
 
     TGPolygon lights_poly; lights_poly.erase();
