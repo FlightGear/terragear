@@ -227,11 +227,11 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
         ref1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
         ref2 = GetStart();
     }
-    double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
     Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
 
+    double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
     int divs = (int)(rwy.width + 4) / 3.0;
     double step = (rwy.width + 4) / divs;
     SGGeod pt1, pt2;
@@ -356,8 +356,7 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
     double length_hdg;
 
     if ( recip ) {
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
         pt1 = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
         pt2 = GetStart();
     } else {
@@ -508,29 +507,27 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
     SGGeod ref;
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) {length_hdg -= 360.0;}
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
         ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
     } else {
         length_hdg = rwy.heading;
         ref = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
     }
-    left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
     // calculate amount of touchdown light rows.
-    // They should cover a distance of 900m max. from the threshold or
-    // half the runway length, whichever is shorter.
-    int rows = (int)(rwy.length * 0.5) / 60;
-    if (rows > 15) rows = 15;
+    // They should cover a distance of 900m or
+    // half the runway length, whichever comes first. Spacing is 30m.
+    int rows = (int)(rwy.length * 0.5) / 30;
+    if (rows > 30) rows = 30;
 
     for ( int i = 0; i < rows; ++i ) {
-        // offset 60m upwind
-        ref = SGGeodesy::direct( ref, length_hdg, 60 );
+        // offset 30m upwind
+        ref = SGGeodesy::direct( ref, length_hdg, 30 );
         SGGeod pt1 = ref;
 
         // left side bar
-        pt1 = SGGeodesy::direct( pt1, left_hdg, 9 );
+        pt1 = SGGeodesy::direct( pt1, left_hdg, 11 );
         lights.push_back( Point3D::fromSGGeod(pt1) );
         normals.push_back( normal );
     
@@ -545,7 +542,7 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
         pt1 = ref;
 
         // right side bar
-        pt1 = SGGeodesy::direct( pt1, left_hdg, -9 );
+        pt1 = SGGeodesy::direct( pt1, left_hdg, -11 );
         lights.push_back( Point3D::fromSGGeod(pt1) );
         normals.push_back( normal );
 
@@ -579,29 +576,22 @@ TGSuperPoly Runway::gen_reil( bool recip )
     point_list normals; normals.clear();
     string flag = rwy.rwnum[get_thresh0(recip)];
 
-    Point3D normal = gen_runway_light_vector( 10, recip );;
+    Point3D normal = gen_runway_light_vector( 10, recip );
 
     // determine the start point.
     SGGeod ref;
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
-        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
+        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
     } else {
         length_hdg = rwy.heading;
-        ref = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        ref = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
     }
 
-    left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { 
-        left_hdg += 360.0; 
-    }
-
-    // offset 1m downwind
-    ref = SGGeodesy::direct( ref, length_hdg, -1 );
-
+    left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
     double offset = rwy.width * 0.5 + 12;
+
     // left light
     lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct( ref, left_hdg, offset )) );
     normals.push_back( normal );
