@@ -1508,68 +1508,40 @@ TGSuperPoly Runway::gen_odals( bool recip )
     int i;
     string flag;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "gen odals " << rwy.rwnum[0] );
-
     // ODALS lighting is omni-directional, but we generate a normal as
     // a placeholder to keep everything happy.
     Point3D normal( 0.0, 0.0, 0.0 );
 
-    point_list corner = gen_corners( 0.0, rwy.threshold[0], rwy.threshold[1], 0.0 );
-
     // determine the start point.
-    Point3D ref1, ref2;
+    SGGeod ref, pt;
     double length_hdg, left_hdg;
-    double lon, lat, r;
+
     if ( recip ) {
-        ref1 = corner[0];
-        ref2 = corner[1];
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
+        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
         flag = rwy.rwnum[1];
     } else {
-        ref1 = corner[2];
-        ref2 = corner[3];
         length_hdg = rwy.heading;
+        ref = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
         flag = rwy.rwnum[0];
     }
-    left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { 
-        left_hdg += 360.0; 
-    }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
+    left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
+    double offset = rwy.width / 2 + 14;
 
-    Point3D ref = ( ref1 + ref2 ) / 2.0;
-
-    // offset 40' downwind
-    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), length_hdg, 
-                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref1 = Point3D( lon, lat, 0.0 );
-    // offset 40' left
-    geo_direct_wgs_84 ( ref1.lat(), ref1.lon(), left_hdg, 
-                        40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref1 = Point3D( lon, lat, 0.0 );
-
-    lights.push_back( ref1 );
+    // offset 14m left of runway
+    pt = SGGeodesy::direct(ref, left_hdg, offset);
+    lights.push_back( Point3D::fromSGGeod(pt) );
     normals.push_back( normal );
     
-    // offset 40' downwind
-    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), length_hdg, 
-                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref2 = Point3D( lon, lat, 0.0 );
-    // offset 40' left
-    geo_direct_wgs_84 ( ref2.lat(), ref2.lon(), left_hdg, 
-                        -40 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref2 = Point3D( lon, lat, 0.0 );
-
-    lights.push_back( ref2 );
+    // offset 14m right of runway
+    pt = SGGeodesy::direct(ref, left_hdg, -offset);
+    lights.push_back( Point3D::fromSGGeod(pt) );
     normals.push_back( normal );
 
     for ( i = 0; i < 5; ++i ) {
-        // offset 100m downwind
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                            -100, &lat, &lon, &r );
-        ref = Point3D( lon, lat, 0.0 );
-        lights.push_back( ref );
+        // offset 90m downwind
+        ref = SGGeodesy::direct( ref, length_hdg, -90 );
+        lights.push_back( Point3D::fromSGGeod(ref) );
         normals.push_back( normal );
     }
 
