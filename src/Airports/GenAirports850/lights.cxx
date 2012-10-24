@@ -25,29 +25,12 @@
 
 #include <cstdlib>
 
-#include <simgear/math/sg_geodesy.hxx>
-
-#include <simgear/constants.h>
+#include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
 #include "runway.hxx"
 
 using std::string;
-
-point_list Runway::gen_corners(double l_ext, double disp1, double disp2, double w_ext)
-{
-    // using TGPolygon is a bit innefficient, but that's what the
-    // routine returns.
-    TGPolygon poly_corners = gen_runway_area_w_extend( l_ext,
-                                                       disp1,
-                                                       disp2,
-                                                       w_ext );
-    point_list corner;
-    for ( int i = 0; i < poly_corners.contour_size( 0 ); ++i ) {
-        corner.push_back( poly_corners.get_pt( 0, i ) );
-    }
-    return corner;
-}
 
 // calculate the runway light direction vector.  We take both runway
 // ends to get the direction of the runway.
@@ -618,301 +601,199 @@ TGSuperPoly Runway::gen_reil( bool recip )
 // generate Calvert-I/II approach lighting schemes
 superpoly_list Runway::gen_calvert( const string &kind, bool recip )
 {
-    point_list g_lights; g_lights.clear();
     point_list w_lights; w_lights.clear();
     point_list r_lights; r_lights.clear();
-    point_list s_lights; s_lights.clear();
-    point_list g_normals; g_normals.clear();
     point_list w_normals; w_normals.clear();
     point_list r_normals; r_normals.clear();
-    point_list s_normals; s_normals.clear();
     int i, j;
     string flag;
-    if ( kind == "1" ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "gen Calvert lights " << rwy.rwnum[0] );
-    } else if ( kind == "2" ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "gen Calvert/II lights " << rwy.rwnum[0] );
-    } else {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "gen unknown Calvert lights " << rwy.rwnum[0] );
-    }
 
-    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
-    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
-    Point3D pt;
+    Point3D normal = gen_runway_light_vector( 3.0, recip );
 
     // Generate long center bar of lights
     // determine the start point.
-    Point3D ref_save;
+    SGGeod ref_save, pt;
     double length_hdg, left_hdg;
-    double lon, lat, r;
     if ( recip ) {
-        ref_save = (corner[0] + corner[1]) / 2;
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
+        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
     } else {
-        ref_save = (corner[2] + corner[3]) / 2;
         length_hdg = rwy.heading;
+        ref_save = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
     }
-    left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { 
-        left_hdg += 360.0; 
-    }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
+    left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
-    Point3D ref = ref_save;
+    SGGeod ref = ref_save;
     //
-    // Centre row of lights 1xlights out to 300m
+    // Centre row of lights:
+    // 1 x lights out to 300m
     // 2 x lights from 300m to 600m
     // 3 x lights from 600m to 900m
     // light spacing is 30m
-    // 
-    // calvert2 has reds instead of whites out to 300m
-#define CALVERT_HORIZ_SPACING	30
-#define CALVERT_VERT_SPACING	10
-#define CALVERT2_VERT_SPACING	2
+    //
 
-    int count;
-    //if ( kind == "1" || kind == "2" ) {
-    //    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-    //                        -100 * SG_FEET_TO_METER, &lat, &lon, &r );
-    //    ref = Point3D( lon, lat, 0.0 );
-    //    count = 10;
-    //}
-    count=30;
+    double vert_space = 30;
+    double horiz_space = 10;
+    int count=30;
 
-    Point3D saved;
-    Point3D crossbar[5];
-    Point3D pair;
+    SGGeod crossbar[5];
+    SGGeod pair;
+
     // first set of single lights
+    pt = ref;
     for ( i = 0; i < count; ++i ) {
-        pt = ref;
+
 
         // centre lights
-        geo_direct_wgs_84 ( pt.lat(), pt.lon(), length_hdg, 
-                            -1 * CALVERT_HORIZ_SPACING, &lat, &lon, &r );
-        pt = Point3D( lon, lat, 0.0 );
+        pt = SGGeodesy::direct(pt, length_hdg, -vert_space);
 
-	if (kind == "1" ) {
-            if ( i >= 10 && i < 20 ) {
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                    CALVERT_VERT_SPACING/2, &lat, &lon, &r );
-                pair = Point3D( lon, lat, 0.0 );
-                w_lights.push_back( pair );
-                w_normals.push_back( normal1 );
+        if ( i >= 10 && i < 20 ) {
+            pair = SGGeodesy::direct(pt, left_hdg, horiz_space/2);
+            w_lights.push_back( Point3D::fromSGGeod(pair) );
+            w_normals.push_back( normal );
 
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                    -1 * CALVERT_VERT_SPACING/2, &lat, &lon,
-                                    &r );
-                pair = Point3D( lon, lat, 0.0 );
-                w_lights.push_back( pair );
-                w_normals.push_back( normal1 );
-            } else if (i >= 20)	{
-                w_lights.push_back( pt );
-                w_normals.push_back( normal1 );
+            pair = SGGeodesy::direct(pt, left_hdg, -horiz_space/2);
+            w_lights.push_back( Point3D::fromSGGeod(pair) );
+            w_normals.push_back( normal );
+        } else if (i >= 20) {
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
 
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                    CALVERT_VERT_SPACING, &lat, &lon, &r );
-                pair = Point3D( lon, lat, 0.0 );
-                w_lights.push_back( pair );
-                w_normals.push_back( normal1 );
+            pair = SGGeodesy::direct(pt, left_hdg, horiz_space);
+            w_lights.push_back( Point3D::fromSGGeod(pair) );
+            w_normals.push_back( normal );
 
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                    -1 * CALVERT_VERT_SPACING, &lat, &lon, &r );
-                pair = Point3D( lon, lat, 0.0 );
-                w_lights.push_back( pair );
-                w_normals.push_back( normal1 );
-            } else {
-                w_lights.push_back( pt );
-                w_normals.push_back( normal1 );
-            }
-	} else {
-	    if ( i < 10 ) {
-		// cal2 has red centre lights
-        	r_lights.push_back( pt );
-        	r_normals.push_back( normal1 );
-	    } else {
-		// cal2 has red centre lights
-        	w_lights.push_back( pt );
-        	w_normals.push_back( normal1 );
-	    }
-	}
+            pair = SGGeodesy::direct(pt, left_hdg, -horiz_space);
+            w_lights.push_back( Point3D::fromSGGeod(pair) );
+            w_normals.push_back( normal );
+        } else if (i < 10 && kind == "1" ) {
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
+        } else {
+            // cal2 has red centre lights
+            r_lights.push_back( Point3D::fromSGGeod(pt) );
+            r_normals.push_back( normal );
+        }
 
-	switch ( i ) {
-	case 4:
-            crossbar[0] = pt;
-            break;
-	case 9:
-            crossbar[1] = pt;
-            break;
-	case 14:
-            crossbar[2] = pt;
-            break;
-	case 19:
-            crossbar[3] = pt;
-            break;
-	case 24:
-            crossbar[4] = pt;
-            break;
-	}
-			
-	// add 2 more rows if CAL/II (white)
-	//
-	
-	if ( kind == "2" ) {
-            saved = pt;
-            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                CALVERT2_VERT_SPACING, &lat, &lon, &r );
-            pt = Point3D( lon, lat, 0.0 );
-            w_lights.push_back( pt );
-            w_normals.push_back( normal1 );
+        switch ( i ) {
+            case 4:
+                crossbar[0] = pt;
+                break;
+            case 9:
+                crossbar[1] = pt;
+                break;
+            case 14:
+                crossbar[2] = pt;
+                break;
+            case 19:
+                crossbar[3] = pt;
+                break;
+            case 24:
+                crossbar[4] = pt;
+                break;
+        }
 
-            // five rows < 300m
-            if ( i < 10 ) {
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                    CALVERT2_VERT_SPACING, &lat, &lon, &r );
-                pt = Point3D( lon, lat, 0.0 );
-                w_lights.push_back( pt );
-                w_normals.push_back( normal1 );
+    }
 
-                // outer strip of lights
-                for (j=0;j<9;j++) {
-                    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
-                                        CALVERT2_VERT_SPACING, &lat, &lon, &r );
-                    pt = Point3D( lon, lat, 0.0 );
-                    if ( i == 0 || j > 3 ) {
-                        w_lights.push_back( pt );
-                        w_normals.push_back( normal1 );
-                    }
-                }
-            }
+    if ( kind == "2" ) {
+        // add some red and white bars in the 300m area
+        // in front of the threshold
+        ref = ref_save;
+        for ( int i = 0; i < 9; ++i ) {
+            // offset upwind
+            ref = SGGeodesy::direct( ref, length_hdg, -vert_space );
+            pt = ref;
 
-            pt = saved;
-            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                -1 * CALVERT2_VERT_SPACING, &lat, &lon, &r );
-            pt = Point3D( lon, lat, 0.0 );
-            w_lights.push_back( pt );
-            w_normals.push_back( normal1 );
+            // left side bar
+            pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
 
-            // five rows < 300m
-            if ( i < 10 ) {
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                    -1 * CALVERT2_VERT_SPACING, &lat, &lon,
-                                    &r );
-                pt = Point3D( lon, lat, 0.0 );
-                w_lights.push_back( pt );
-                w_normals.push_back( normal1 );
-                // outer strip of lights
-                for ( j = 0; j < 9; j++ ) {
-                    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
-                                        -1 * CALVERT2_VERT_SPACING, &lat, &lon,
-                                        &r );
-                    pt = Point3D( lon, lat, 0.0 );
-                    if ( i == 0 || j > 3 ) {
-                        w_lights.push_back( pt );
-                        w_normals.push_back( normal1 );
-                    }
-                }
-            }
+            pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
 
-            pt = saved;	
+            pt = ref;
+            pt = SGGeodesy::direct( pt, left_hdg, 11 );
+            r_lights.push_back( Point3D::fromSGGeod(pt) );
+            r_normals.push_back( normal );
 
-	}
-	ref = pt;
-    
+            pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
+            r_lights.push_back( Point3D::fromSGGeod(pt) );
+            r_normals.push_back( normal );
+
+            pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
+            r_lights.push_back( Point3D::fromSGGeod(pt) );
+            r_normals.push_back( normal );
+
+            pt = ref;
+
+            // right side bar
+            pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
+
+            pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
+
+            pt = ref;
+            pt = SGGeodesy::direct( pt, left_hdg, -11 );
+            r_lights.push_back( Point3D::fromSGGeod(pt) );
+            r_normals.push_back( normal );
+
+            pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
+            r_lights.push_back( Point3D::fromSGGeod(pt) );
+            r_normals.push_back( normal );
+
+            pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
+            r_lights.push_back( Point3D::fromSGGeod(pt) );
+            r_normals.push_back( normal );
+        }
     }
 
     ref = ref_save;
-
-    int spacing;
     int num_lights = 0;
 
     // draw nice crossbars
     for ( i = 0; i < 5; i++ ) {
-	if (kind == "1") {
-            spacing = CALVERT_VERT_SPACING;
-	} else {
-            spacing = CALVERT2_VERT_SPACING;
-	}
-	switch ( i ) {
-	case 0:
-            num_lights = 4;
-            break;
-	case 1:
-            num_lights = 5;
-            break;
-	case 2:
-            num_lights = 6;
-            break;
-	case 3:
-            num_lights = 7;
-            break;
-	case 4:
-            num_lights = 8;
-            break;
-	}
+        switch ( i ) {
+            case 0:
+                num_lights = 4;
+                break;
+            case 1:
+                num_lights = 5;
+                break;
+            case 2:
+                num_lights = 6;
+                break;
+            case 3:
+                num_lights = 7;
+                break;
+            case 4:
+                num_lights = 8;
+                break;
+        }
 
-	pt = crossbar[i];
-	for ( j = 0 ; j < num_lights; j++ ) {	
+        pt = crossbar[i];
+        for ( j = 0 ; j < num_lights; j++ ) {
             // left side lights
+            pt = SGGeodesy::direct(pt, left_hdg, horiz_space);
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
+        }
 
-            // space out from centre lights
-            if ( j == 0 ) {
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
-                                    CALVERT_VERT_SPACING * j, &lat, &lon, &r );
-                pt = Point3D( lon, lat, 0.0 );
-            }
-
-            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                spacing, &lat, &lon, &r );
-            pt = Point3D( lon, lat, 0.0 );
-
-            if ( kind == "1" || i >= 2 ) {
-                w_lights.push_back( pt );
-                w_normals.push_back( normal1 );
-            } else {
-                r_lights.push_back( pt );
-                r_normals.push_back( normal1 );
-            }
-	}
-
-	pt = crossbar[i];
-	for ( j = 0; j < num_lights; j++ ) {
+        pt = crossbar[i];
+        for ( j = 0; j < num_lights; j++ ) {
             // right side lights
-            // space out from centre lights
-            if ( j == 0 ) {
-                geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg,
-                                    -1 * CALVERT_VERT_SPACING * j, &lat, &lon,
-                                    &r );
-                pt = Point3D( lon, lat, 0.0 );
-            }
-
-            geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                                -1 * spacing, &lat, &lon, &r );
-            pt = Point3D( lon, lat, 0.0 );
-
-            if ( kind == "1" || i >= 2 ) {
-                w_lights.push_back( pt );
-                w_normals.push_back( normal1 );
-            } else {
-                r_lights.push_back( pt );
-                r_normals.push_back( normal1 );
-            }
+            pt = SGGeodesy::direct(pt, left_hdg, -horiz_space);
+            w_lights.push_back( Point3D::fromSGGeod(pt) );
+            w_normals.push_back( normal );
         }
     }
-    
+
     TGPolygon lights_poly; lights_poly.erase();
     TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( g_lights, false );
-    normals_poly.add_contour( g_normals, false );
-
-    TGSuperPoly green;
-    green.set_poly( lights_poly );
-    green.set_normals( normals_poly );
-    green.set_material( "RWY_GREEN_LIGHTS" );
-    green.set_flag( flag );
-
-    lights_poly.erase();
-    normals_poly.erase();
     lights_poly.add_contour( r_lights, false );
     normals_poly.add_contour( r_normals, false );
 
@@ -935,25 +816,9 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
 
     superpoly_list result; result.clear();
 
-    result.push_back( green );
     result.push_back( red );
     result.push_back( white );
 
-    if ( s_lights.size() ) {
-        lights_poly.erase();
-        normals_poly.erase();
-        lights_poly.add_contour( s_lights, false );
-        normals_poly.add_contour( s_normals, false );
-
-        TGSuperPoly sequenced;
-        sequenced.set_poly( lights_poly );
-        sequenced.set_normals( normals_poly );
-        sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
-        sequenced.set_flag( flag );
-
-        result.push_back( sequenced );
-    }
- 
     return result;
 }
 
