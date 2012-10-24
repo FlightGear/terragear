@@ -1370,154 +1370,103 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
     point_list w_normals; w_normals.clear();
     point_list r_normals; r_normals.clear();
     point_list s_normals; s_normals.clear();
-    int i, j;
+    int i;
     string flag;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "gen SSALx lights " << rwy.rwnum[0] );
-
     Point3D normal1 = gen_runway_light_vector( 3.0, recip );
-    point_list corner = gen_corners( 2.0, rwy.threshold[0], rwy.threshold[1], 2.0 );
-    Point3D pt;
+    SGGeod ref_save, pt;
 
     // Generate long center bar of lights (every 200')
     // determine the start point.
-    Point3D ref_save;
     double length_hdg, left_hdg;
-    double lon, lat, r;
     if ( recip ) {
-        ref_save = (corner[0] + corner[1]) / 2;
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
+        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
     } else {
-        ref_save = (corner[2] + corner[3]) / 2;
         length_hdg = rwy.heading;
+        ref_save = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
     }
-    left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { 
-        left_hdg += 360.0; 
-    }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "length hdg = " << length_hdg << " left heading = " << left_hdg );
+    left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
-    Point3D ref = ref_save;
+    SGGeod ref = ref_save;
 
     for ( i = 0; i < 7; ++i ) {
-        // offset 200' downwind
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                            -200 * SG_FEET_TO_METER, &lat, &lon, &r );
-        ref = Point3D( lon, lat, 0.0 );
+        // offset 60m downwind
+        ref = SGGeodesy::direct(ref, length_hdg, -60);
 
         pt = ref;
-        w_lights.push_back( pt );
+        w_lights.push_back( Point3D::fromSGGeod(pt) );
         w_normals.push_back( normal1 );
 
         // left 2 side lights
-        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                            3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt );
+        pt = SGGeodesy::direct(pt, left_hdg, 1.0);
+        w_lights.push_back( Point3D::fromSGGeod(pt) );
         w_normals.push_back( normal1 );
-    
-        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                            3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt );
+
+        pt = SGGeodesy::direct(pt, left_hdg, 1.0);
+        w_lights.push_back( Point3D::fromSGGeod(pt) );
         w_normals.push_back( normal1 );
 
         pt = ref;
 
         // right 2 side lights
-        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                            -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt );
+        pt = SGGeodesy::direct(pt, left_hdg, -1.0);
+        w_lights.push_back( Point3D::fromSGGeod(pt) );
         w_normals.push_back( normal1 );
-    
-        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                            -3.5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt );
+
+        pt = SGGeodesy::direct(pt, left_hdg, -1.0);
+        w_lights.push_back( Point3D::fromSGGeod(pt) );
         w_normals.push_back( normal1 );
     }
 
-    // Generate -1000' extra horizontal row of lights
-
-    ref = ref_save;
-
-    // offset 1000' downwind
-    geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                        -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
-    ref = Point3D( lon, lat, 0.0 );
-    
+    // Generate -300m extra horizontal row of lights
+    ref = SGGeodesy::direct(ref_save, length_hdg, -300);
     pt = ref;
- 
+
     // left 5 side lights
-    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                        15 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt );
-    w_normals.push_back( normal1 );
-
-    for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                            5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt );
+    pt = SGGeodesy::direct(pt, left_hdg, 4.5);
+    for ( i = 0; i < 5; ++i ) {
+        w_lights.push_back( Point3D::fromSGGeod(pt) );
         w_normals.push_back( normal1 );
+        pt = SGGeodesy::direct(pt, left_hdg, 1.5);
     }
 
     pt = ref;
- 
     // right 5 side lights
-    geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                        -15 * SG_FEET_TO_METER, &lat, &lon, &r );
-    pt = Point3D( lon, lat, 0.0 );
-    w_lights.push_back( pt );
-    w_normals.push_back( normal1 );
-
-    for ( j = 0; j < 4; ++j ) {
-        geo_direct_wgs_84 ( pt.lat(), pt.lon(), left_hdg, 
-                            -5 * SG_FEET_TO_METER, &lat, &lon, &r );
-        pt = Point3D( lon, lat, 0.0 );
-        w_lights.push_back( pt );
+    pt = SGGeodesy::direct(pt, left_hdg, -4.5);
+    for ( i = 0; i < 5; ++i ) {
+        w_lights.push_back( Point3D::fromSGGeod(pt) );
         w_normals.push_back( normal1 );
+        pt = SGGeodesy::direct(pt, left_hdg, -1.5);
     }
 
     if ( kind == "R" ) {
         // generate 8 rabbit lights
-
         ref = ref_save;
 
-        // start 1600' downwind
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                            -1600 * SG_FEET_TO_METER, &lat, &lon, &r );
-        ref = Point3D( lon, lat, 0.0 );
+        // start 480m downwind
+        ref = SGGeodesy::direct(ref, length_hdg, -480);
 
         for ( i = 0; i < 8; ++i ) {
-            s_lights.push_back( ref );
+            s_lights.push_back( Point3D::fromSGGeod(ref) );
             s_normals.push_back( normal1 );
 
-            // offset 200' downwind
-            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                                -200 * SG_FEET_TO_METER, &lat, &lon, &r );
-            ref = Point3D( lon, lat, 0.0 );
+            // offset 60m downwind
+            ref = SGGeodesy::direct(ref, length_hdg, -60);
         }
     } else if ( kind == "F" ) {
         // generate 3 sequenced lights aligned with last 3 light bars
         ref = ref_save;
 
-        // start 1000' downwind
-        geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                            -1000 * SG_FEET_TO_METER, &lat, &lon, &r );
-        ref = Point3D( lon, lat, 0.0 );
+        // start 300m downwind
+        ref = SGGeodesy::direct(ref, length_hdg, -300);
 
         for ( i = 0; i < 3; ++i ) {
-            s_lights.push_back( ref );
+            s_lights.push_back( Point3D::fromSGGeod(ref) );
             s_normals.push_back( normal1 );
-             
-            // offset 200' downwind
-            geo_direct_wgs_84 ( ref.lat(), ref.lon(), length_hdg, 
-                                -200 * SG_FEET_TO_METER, &lat, &lon, &r );
-            ref = Point3D( lon, lat, 0.0 );
+
+            // offset 60m downwind
+            ref = SGGeodesy::direct(ref, length_hdg, -60);
         }
     }
 
@@ -1574,7 +1523,7 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
 
         result.push_back( sequenced );
     }
- 
+
     return result;
 }
 
