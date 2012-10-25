@@ -135,7 +135,7 @@ void ClosedPoly::CloseCurContour()
     }
 }
 
-void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
+void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
 {
     BezNode*    curNode;
     BezNode*    nextNode;
@@ -152,7 +152,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
     SG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
 
     // clear anything in this point list
-    dst->empty();
+    dst.Erase();
 
     // iterate through each bezier node in the contour
     for (unsigned int i = 0; i <= src->size()-1; i++)
@@ -273,7 +273,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 // add the pavement vertex
                 // convert from lat/lon to geo
                 // (maybe later) - check some simgear objects...
-                dst->push_back( Point3D::fromSGGeod(curLoc) );
+                dst.AddNode( curLoc );
 
                 if (p==0)
                 {
@@ -298,7 +298,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
 
                     // add the feature vertex
-                    dst->push_back( Point3D::fromSGGeod(curLoc) );
+                    dst.AddNode( curLoc );
 
                     if (p==0)
                     {
@@ -318,7 +318,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
                 nextLoc = nextNode->GetLoc();
 
                 // just add the one vertex - dist is small
-                dst->push_back( Point3D::fromSGGeod(curLoc) );
+                dst.AddNode( curLoc );
 
                 SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
@@ -331,7 +331,7 @@ void ClosedPoly::ConvertContour( BezContour* src, point_list *dst )
 // finish the poly - convert to TGPolygon, and tesselate
 void ClosedPoly::Finish()
 {
-    point_list          dst_contour;
+    tgContour          dst_contour;
 
     // error handling
     if (boundary == NULL)
@@ -340,25 +340,27 @@ void ClosedPoly::Finish()
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Converting a poly with " << holes.size() << " holes");
-    
+
     if (boundary != NULL)
     {
         // create the boundary
-        ConvertContour( boundary, &dst_contour );
-    
+        ConvertContour( boundary, dst_contour );
+        dst_contour.SetHole( false );
+
         // and add it to the geometry 
-        pre_tess.add_contour( dst_contour, 0 );
+        pre_tess.AddContour( dst_contour );
 
         // Then convert the hole contours
         for (unsigned int i=0; i<holes.size(); i++)
         {
-            dst_contour.clear();
-            ConvertContour( holes[i], &dst_contour );
-            pre_tess.add_contour( dst_contour, 1 );
+            ConvertContour( holes[i], dst_contour );
+            dst_contour.SetHole( true );
+
+            pre_tess.AddContour( dst_contour );
         }
 
-        pre_tess = snap( pre_tess, gSnap );
-        pre_tess = remove_dups( pre_tess );
+        pre_tess = tgPolygon::Snap( pre_tess, gSnap );
+        pre_tess = tgPolygon::RemoveDups( pre_tess );
     }
 
     // save memory by deleting unneeded resources
@@ -377,169 +379,110 @@ void ClosedPoly::Finish()
             delete holes[i]->at(j);
         }
     }
+
     holes.clear();
 }
 
-int ClosedPoly::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
+std::string ClosedPoly::GetMaterial( int surface )
 {
-    TGPolygon base, safe_base;
+    std::string material;
+    
+    switch( surface ) {
+        case 1:
+            material = "pa_tiedown";
+            break;
 
-    string    material;
-    void*     ds_id = NULL;        // If we are going to build shapefiles
-    void*     l_id  = NULL;        // datasource and layer IDs
+        case 2:
+            material = "pc_tiedown";
+            break;
 
-    if ( make_shapefiles ) {
-        char ds_name[128];
-        sprintf(ds_name, "./cp_debug");
-        ds_id = tgShapefileOpenDatasource( ds_name );
+        case 3:
+            material = "grass_rwy";
+            break;
+
+        // TODO Differentiate more here:
+        case 4:
+        case 5:
+        case 12:
+        case 13:
+        case 14:
+        case 15:
+            material = "grass_rwy";
+            break;
+
+        default:
+            SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown surface type " << surface_type );
+            exit(1);
     }
 
-    if (is_pavement)
+    return material;
+}
+
+int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, bool make_shapefiles )
+{
+    if (is_pavement && pre_tess.Contours() )
     {
-        switch( surface_type )
-        {
-            case 1:
-                material = "pa_tiedown";
-                break;
+        tgPolygon base, safe_base;
 
-            case 2:
-                material = "pc_tiedown";
-                break;
+        BuildBtg( rwy_polys, slivers, make_shapefiles );
 
-            case 3:
-                material = "grass_rwy";
-                break;
-            
-            // TODO Differentiate more here:
-            case 4:
-            case 5:
-            case 12:
-            case 13:
-            case 14:
-            case 15:
-                material = "grass_rwy";
-                break;
+        base = tgPolygon::Expand( pre_tess, 20.0 );
+        safe_base = tgPolygon::Expand( pre_tess, 50.0);
 
-            default:
-                SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown surface type " << surface_type );
-                exit(1);
-        }
+        // add this to the airport clearing
+        apt_clearing = tgPolygon::Union( safe_base, apt_clearing);
 
-        // verify the poly has been generated
-        if ( pre_tess.contours() )    
-        {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours" << " and " << pre_tess.total_size() << " points" );
-
-            // do this before clipping and generating the base
-            // pre_tess = tgPolygonSimplify( pre_tess );
-            // pre_tess = reduce_degeneracy( pre_tess );
-    
-            TGSuperPoly sp;
-            TGTexParams tp;
-
-            if ( make_shapefiles ) {
-                char layer_name[128];
-                char feature_name[128];
-
-                sprintf( layer_name, "original" );
-                l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "original" );
-                tgShapefileCreateFeature( ds_id, l_id, pre_tess, feature_name );
-            }
-    
-            TGPolygon clipped = tgPolygonDiffClipperWithAccumulator( pre_tess );
-            tgPolygonFindSlivers( clipped, slivers );
-
-            SG_LOG(SG_GENERAL, SG_DEBUG, "clipped = " << clipped.contours());
-
-            sp.erase();
-            sp.set_poly( clipped );
-            sp.set_material( material );
-            //sp.set_flag("taxi");
-
-            rwy_polys->push_back( sp );
-
-            tgPolygonAddToClipperAccumulator( pre_tess, false );
-
-            /* If debugging this poly, write the poly, and clipped poly and the accum buffer into their own layers */
-            if ( make_shapefiles ) {
-                char layer_name[128];
-                char feature_name[128];
-
-                sprintf( layer_name, "clipped" );
-                l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                sprintf( feature_name, "clipped" );
-                tgShapefileCreateFeature( ds_id, l_id, clipped, feature_name );
-            }
-
-            SG_LOG(SG_GENERAL, SG_DEBUG, "tp construct");
-
-            tp = TGTexParams( pre_tess.get_pt(0,0).toSGGeod(), 5.0, 5.0, texture_heading );
-            texparams->push_back( tp );
-
-            if ( apt_base )
-            {           
-                base = tgPolygonExpand( pre_tess, 20.0); 
-                if ( make_shapefiles ) {
-                    char layer_name[128];
-                    char feature_name[128];
-
-                    sprintf( layer_name, "exp_base" );
-                    l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                    sprintf( feature_name, "exp_base" );
-                    tgShapefileCreateFeature( ds_id, l_id, base, feature_name );
-                }
-
-                safe_base = tgPolygonExpand( pre_tess, 50.0);        
-                if ( make_shapefiles ) {
-                    char layer_name[128];
-                    char feature_name[128];
-
-                    SG_LOG(SG_GENERAL, SG_INFO, "expanded safe poly: " << safe_base);
-
-                    sprintf( layer_name, "exp_safe_base" );
-                    l_id = tgShapefileOpenLayer( ds_id, layer_name );
-                    sprintf( feature_name, "exp_safe_base" );
-                    tgShapefileCreateFeature( ds_id, l_id, safe_base, feature_name );
-                }                
-    
-                // add this to the airport clearing
-                *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing);
-
-                // and add the clearing to the base
-                *apt_base = tgPolygonUnionClipper( base, *apt_base );
-            }
-
-            if ( make_shapefiles )
-            {
-                tgShapefileCloseDatasource( ds_id );
-            }
-        }
+        // and add the clearing to the base
+        apt_base = tgPolygon::Union( base, apt_base );
     }
 
     // clean up to save ram : we're done here...
     return 1;
 }
 
+int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, bool make_shapefiles )
+{
+    if ( is_pavement && pre_tess.Contours() )
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.Contours() << " contours" << " and " << pre_tess.TotalNodes() << " points" );
+
+        tgPolygon clipped = tgPolygon::DiffWithAccumulator( pre_tess );
+        tgPolygon::RemoveSlivers( clipped, slivers );
+
+        clipped.SetMaterial( GetMaterial( surface_type ) );
+        clipped.SetTexParams( clipped.GetNode(0,0), 5.0, 5.0, texture_heading );
+        clipped.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
+        clipped.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+
+        rwy_polys.push_back( clipped );
+
+        tgPolygon::AddToAccumulator( pre_tess );
+    }
+
+    // clean up to save ram : we're done here...
+    return 1;
+}
+
+
 // Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges 
 // - resulting in no base, which we can't handle
-int ClosedPoly::BuildBtg( TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
+int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, bool make_shapefiles )
 {
-    TGPolygon base, safe_base;
+    tgPolygon base, safe_base;
 
-    // verify the poly has been generated
-    if ( pre_tess.contours() )
+    // verify the poly has been generated, and the contour isn't a pavement
+    if ( !is_pavement && pre_tess.Contours() )
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.contours() << " contours");
-    
-        base = tgPolygonExpand( pre_tess, 2.0); 
-        safe_base = tgPolygonExpand( pre_tess, 5.0);        
-        
+        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.Contours() << " contours");
+
+        base = tgPolygon::Expand( pre_tess, 2.0); 
+        safe_base = tgPolygon::Expand( pre_tess, 5.0);        
+
         // add this to the airport clearing
-        *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing);
+        apt_clearing = tgPolygon::Union( safe_base, apt_clearing);
 
         // and add the clearing to the base
-        *apt_base = tgPolygonUnionClipper( base, *apt_base );
+        apt_base = tgPolygon::Union( base, apt_base );
     }
 
     return 1;

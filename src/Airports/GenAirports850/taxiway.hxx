@@ -19,12 +19,16 @@ public:
 
     Taxiway(char* def);
 
-    int BuildBtg( superpoly_list* taxi_polys, 
-                  texparams_list* texparams, 
-                  superpoly_list* taxi_lights, 
-                  poly_list& slivers, 
-                  TGPolygon* apt_base, 
-                  TGPolygon* apt_clearing,
+    int BuildBtg( tgpolygon_list& taxi_polys,
+                  tglightcontour_list& taxi_lights,
+                  tgcontour_list& slivers,
+                  bool make_shapefiles );
+
+    int BuildBtg( tgpolygon_list& taxi_polys,
+                  tglightcontour_list& taxi_lights,
+                  tgcontour_list& slivers,
+                  tgPolygon& apt_base,
+                  tgPolygon& apt_clearing,
                   bool make_shapefiles );
     
 private:

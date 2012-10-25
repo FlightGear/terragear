@@ -120,6 +120,9 @@ int nudge = 10;
 double slope_max = 0.02;
 double gSnap = 0.00000001;      // approx 1 mm
 
+//TODO : new polygon chop API
+extern bool tgPolygon_index_init( const std::string& path );
+
 // For creating a buffered stream to write to the socket
 Net::StreamSocket  ss;
 Net::SocketStreamBuf ssb( ss );
@@ -328,13 +331,13 @@ int main(int argc, char **argv)
     SGPath sgp( airportareadir );
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
-    
+
     string command = argv[0];
     string lastaptfile = work_dir+"/last_apt";
 
     // initialize persistant polygon counter
     string counter_file = airportareadir+"/poly_counter";
-    poly_index_init( counter_file );
+    tgPolygon_index_init( counter_file );
 
     // Initialize shapefile support (for debugging)
     tgShapefileInit();

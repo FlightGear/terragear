@@ -36,7 +36,7 @@
 #include <string>
 #include <vector>
 
-#include "polygon.hxx"
+#include <Polygon/polygon.hxx>
 
 // TODO : Needs to be its own class
 typedef std::vector < int > int_list;

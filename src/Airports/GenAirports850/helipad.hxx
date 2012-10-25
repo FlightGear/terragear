@@ -24,7 +24,16 @@ class Helipad
 {
 public:
     Helipad(char* def);
-    void BuildBtg( superpoly_list* heli_polys, texparams_list* texparams, superpoly_list* heli_lights, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing );
+
+    void BuildBtg( tgpolygon_list& heli_polys,
+                   tglightcontour_list& heli_lights,
+                   tgcontour_list& slivers );
+
+    void BuildBtg( tgpolygon_list& heli_polys,
+                   tglightcontour_list& heli_lights,
+                   tgcontour_list& slivers,
+                   tgPolygon& apt_base,
+                   tgPolygon& apt_clearing );
 
     SGGeod GetLoc()
     {
@@ -36,11 +45,13 @@ public:
         return (heli.surface < 3) ? true : false;
     }
 
-    void BuildShoulder( superpoly_list *rwy_polys,
-                        texparams_list *texparams,
-                        poly_list& slivers,
-                        TGPolygon* apt_base,
-                        TGPolygon* apt_clearing );
+    void BuildShoulder( tgpolygon_list& rwy_polys,
+                        tgcontour_list& slivers );
+
+    void BuildShoulder( tgpolygon_list& rwy_polys,
+                        tgcontour_list& slivers,
+                        tgPolygon& apt_base,
+                        tgPolygon& apt_clearing );
 
 private:
     struct TGRunway {
@@ -63,21 +74,21 @@ private:
 
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
-    TGPolygon gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
+    tgContour gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
     {
         return ( gen_wgs84_area( GetLoc(), heli.length + 2.0*length_extend, displ1, displ2, heli.width + 2.0*width_extend, heli.heading, false) );
     }
 
-    superpoly_list gen_helipad_lights(double maxsize);
+    tglightcontour_list gen_helipad_lights(double maxsize);
 
     // storage for Shoulders - The superpolys are generated during
     // helipad construction, but not clipped until shoulder construction.
-    superpoly_list  shoulder_polys;
-    texparams_list  shoulder_tps;
+    tgpolygon_list  shoulder_polys;
 
-    void WriteGeom( TGPolygon polygon, string material,
-                        superpoly_list *rwy_polys,
-                        poly_list& slivers );
+    tgPolygon WriteGeom( const tgContour& area,
+                         string material,
+                         tgpolygon_list& rwy_polys,
+                         tgcontour_list& slivers );
 
 };
 

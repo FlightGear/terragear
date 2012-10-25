@@ -1,4 +1,6 @@
+include_directories(${GDAL_INCLUDE_DIR})
 
+include( ${CGAL_USE_FILE} )
 
 add_library(Polygon STATIC 
     chop-bin.cxx

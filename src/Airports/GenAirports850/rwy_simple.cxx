@@ -32,34 +32,32 @@ using std::string;
 
 // generate a simple runway.  The routine modifies rwy_polys,
 // texparams, and accum
-void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
-                             texparams_list *texparams,
-                             poly_list& slivers )
+void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
+                             tgcontour_list& slivers )
 {
-    TGPolygon runway = gen_runway_w_mid( 0.0, 0.0 );
-
-    TGPolygon runway_half;
+    tgContour runway = gen_runway_w_mid( 0.0, 0.0 );
+    tgPolygon runway_half;
 
     for ( int rwhalf=0; rwhalf<2; ++rwhalf ) {
 
         if (rwhalf == 0) {
 
             //Create the first half of the runway (first entry in apt.dat)
-            runway_half.erase();
-            runway_half.add_node( 0, runway.get_pt(0, 3) );
-            runway_half.add_node( 0, runway.get_pt(0, 4) );
-            runway_half.add_node( 0, runway.get_pt(0, 5) );
-            runway_half.add_node( 0, runway.get_pt(0, 2) );
+            runway_half.Erase();
+            runway_half.AddNode( 0, runway.GetNode(3) );
+            runway_half.AddNode( 0, runway.GetNode(4) );
+            runway_half.AddNode( 0, runway.GetNode(5) );
+            runway_half.AddNode( 0, runway.GetNode(2) );
         }
 
         else if (rwhalf == 1) {
 
             //Create the second runway half from apt.dat
-            runway_half.erase();
-            runway_half.add_node( 0, runway.get_pt(0, 0) );
-            runway_half.add_node( 0, runway.get_pt(0, 1) );
-            runway_half.add_node( 0, runway.get_pt(0, 2) );
-            runway_half.add_node( 0, runway.get_pt(0, 5) );
+            runway_half.Erase();
+            runway_half.AddNode( 0, runway.GetNode(0) );
+            runway_half.AddNode( 0, runway.GetNode(1) );
+            runway_half.AddNode( 0, runway.GetNode(2) );
+            runway_half.AddNode( 0, runway.GetNode(5) );
         }
 
         double length = rwy.length / 2.0;
@@ -68,7 +66,7 @@ void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
         double heading = 0.0;
 
         if (rwhalf == 0) {
-            heading = rwy.heading + 180.0;
+            heading = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180.0);
         }
         else if (rwhalf == 1) {
             heading = rwy.heading;
@@ -88,8 +86,7 @@ void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                                         0.0, 1.0, 0.0, 1.0,
                                         heading,
                                         "",
-                                        rwy_polys, texparams, 
-                                        NULL, NULL,
+                                        rwy_polys, 
                                         slivers,
                                         false );
         }
@@ -101,8 +98,7 @@ void Runway::gen_simple_rwy( superpoly_list *rwy_polys,
                                     0.0, 0.28, 0.0, 1.0,
                                     heading,
                                     "",
-                                    rwy_polys, texparams, 
-                                    NULL, NULL,
+                                    rwy_polys, 
                                     slivers,
                                     false );
     }

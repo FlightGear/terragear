@@ -23,7 +23,7 @@ public:
     char assoc_rw;
 
 
-void BuildBtg( superpoly_list* lights );
+void BuildBtg( tglightcontour_list& lights );
 
 };
 typedef std::vector <LightingObj *> LightingObjList;

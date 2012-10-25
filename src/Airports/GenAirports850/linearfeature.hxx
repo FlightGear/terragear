@@ -97,17 +97,15 @@ public:
     }
 
     int Finish( bool closed, unsigned int idx );
-    int BuildBtg( superpoly_list* line_polys, texparams_list* line_tps, superpoly_list* lights, bool debug );
-//    int BuildBtg( float alt_m, superpoly_list* line_polys, texparams_list* line_tps, ClipPolyType* line_accum, superpoly_list* lights ); 
+    int BuildBtg( tgpolygon_list& line_polys, tglightcontour_list& lights, bool debug );
 
 private:
     SGGeod OffsetPointFirst(  const SGGeod& cur,  const SGGeod& next, double offset_by );
     SGGeod OffsetPointMiddle( const SGGeod& prev, const SGGeod& cur,  const SGGeod& next, double offset_by );
     SGGeod OffsetPointLast(   const SGGeod& prev, const SGGeod& cur,  double offset_by );
 
-
-    double      offset;
-    double      width;
+    double          offset;
+    double          width;
 
     MarkingList     marks;
     Marking*        cur_mark;
@@ -119,17 +117,15 @@ private:
 
     // text description
     string description;
-    
+
     // contour definition (each beznode has marking type)
     BezContour  contour;
 
     // contour definition after bezier interpolation
     point_list  points;
-    
-    superpoly_list marking_polys;
-    texparams_list marking_tps;
 
-    superpoly_list lighting_polys;
+    tgpolygon_list      marking_polys;
+    tglightcontour_list lighting_polys;
 };
 
 typedef std::vector <LinearFeature *> FeatureList;

@@ -60,10 +60,9 @@ WaterRunway::WaterRunway(char* definition)
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
 }
 
-point_list WaterRunway::GetNodes()
+tgContour WaterRunway::GetNodes()
 {
-    point_list buoys_nodes;
-    buoys_nodes.clear();
+    tgContour buoys_nodes;
 
     if (buoys){
         double heading, az2, length;
@@ -72,15 +71,17 @@ point_list WaterRunway::GetNodes()
 
         // create a polygon for the outline and use it to calculate the point list
         int divs = (int)(length / 100.0);
-        TGPolygon area = gen_wgs84_area(GetStart(), GetEnd(),
+        tgContour area = gen_wgs84_area(GetStart(), GetEnd(),
                                         0, 0, 0, width, heading, false);
-        Point3D pt, inc;
+        Point3D  pt, inc;
 
-        for ( int i = 0; i < area.contour_size( 0 ); ++i ) {
-            pt = area.get_pt( 0, i );
-            inc = (area.get_pt(0, i==3 ? 0 : i+1) - area.get_pt(0,i)) / divs;
+        for ( unsigned int i = 0; i < area.GetSize(); ++i ) {
+            pt  = Point3D::fromSGGeod( area.GetNode(i) );
+            inc = ( Point3D::fromSGGeod( area.GetNode(i==3 ? 0 : i+1) )  -
+                    Point3D::fromSGGeod( area.GetNode(i)) ) / divs;
+                    
             for ( int j = 0; j < divs; ++j) {
-                buoys_nodes.push_back( pt);
+                buoys_nodes.AddNode( pt.toSGGeod() );
                 pt += inc;
             }
         }
@@ -88,31 +89,56 @@ point_list WaterRunway::GetNodes()
     return buoys_nodes;
 }
 
-
-int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, superpoly_list* rwy_lights, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles )
+point_list WaterRunway::TempGetAsPointList()
 {
-    TGPolygon base, safe_base;
+    point_list buoys_nodes;
 
+    if (buoys){
+        double heading, az2, length;
+        // calculate runway heading and length
+        SGGeodesy::inverse(GetStart(), GetEnd(), heading, az2, length);
+
+        // create a polygon for the outline and use it to calculate the point list
+        int divs = (int)(length / 100.0);
+        tgContour area = gen_wgs84_area(GetStart(), GetEnd(),
+                                        0, 0, 0, width, heading, false);
+        Point3D  pt, inc;
+
+        for ( unsigned int i = 0; i < area.GetSize(); ++i ) {
+            pt  = Point3D::fromSGGeod( area.GetNode( i ) );
+            inc = ( Point3D::fromSGGeod( area.GetNode(i==3 ? 0 : i+1) )  -
+                    Point3D::fromSGGeod( area.GetNode(i)) ) / divs;
+            for ( int j = 0; j < divs; ++j) {
+                buoys_nodes.push_back( pt );
+                pt += inc;
+            }
+        }
+    }
+    return buoys_nodes;
+}
+
+int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, bool make_shapefiles )
+{
     if ( rwy.surface == 1 /* Asphalt */ )
     {
         material_prefix = "pa_";
-    } 
+    }
     else if ( rwy.surface == 2 /* Concrete */ )
     {
         material_prefix = "pc_";
-    } 
+    }
     else if ( rwy.surface == 3 /* Turf/Grass */ )
     {
         material_prefix = "grass_rwy";
-    } 
+    }
     else if ( rwy.surface == 4 /* Dirt */ || rwy.surface == 5 /* Gravel */ )
     {
         material_prefix = "dirt_rwy";
-    } 
+    }
     else if ( rwy.surface == 12 /* Dry Lakebed */ )
     {
         material_prefix = "lakebed_taxiway";
-    } 
+    }
     else if ( rwy.surface == 13 /* Water runway (buoys) */ )
     {
         // water
@@ -125,10 +151,10 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
     {
         //Transparent texture
     }
-    else 
+    else
     {
         SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
-    	throw sg_exception("unknown runway type!");
+        throw sg_exception("unknown runway type!");
     }
 
     // first, check the surface type - anything but concrete and asphalt are easy
@@ -137,16 +163,16 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         case 1: // asphalt:
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete " << rwy.surface);
-            gen_rwy( rwy_polys, texparams, slivers, make_shapefiles );
+            gen_rwy( rwy_polys, slivers, make_shapefiles );
             gen_runway_lights( rwy_lights );
             break;
-    
+
         case 3: // Grass
         case 4: // Dirt
         case 5: // Gravel
         case 12: // dry lakebed
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Grass, Dirt, Gravel or Dry Lakebed " << rwy.surface );
-            gen_simple_rwy( rwy_polys, texparams, slivers );
+            gen_simple_rwy( rwy_polys, slivers );
             gen_runway_lights( rwy_lights );
             break;
 
@@ -165,24 +191,30 @@ int Runway::BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, supe
         default: // unknown
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: unknown: " << rwy.surface);
             break;
-    }    
-
-    if (apt_base)
-    {
-        // generate area around runways
-        base      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );
-        base      = snap( base, gSnap );
-
-        // also clear a safe area around the runway
-        safe_base = gen_runway_area_w_extend( 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
-        safe_base = snap( safe_base, gSnap );
-
-        // add this to the airport clearing
-        *apt_clearing = tgPolygonUnionClipper( safe_base, *apt_clearing );
-
-        // and add the clearing to the base
-        *apt_base = tgPolygonUnionClipper( base, *apt_base );
     }
+
+    return 0;
+}
+
+int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, bool make_shapefiles )
+{
+    tgContour base, safe_base;
+
+    BuildBtg( rwy_polys, rwy_lights, slivers, make_shapefiles );
+
+    // generate area around runways
+    base      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );
+    base      = tgContour::Snap( base, gSnap );
+
+    // also clear a safe area around the runway
+    safe_base = gen_runway_area_w_extend( 180.0, -rwy.overrun[0], -rwy.overrun[1], 50.0 );
+    safe_base = tgContour::Snap( safe_base, gSnap );
+
+    // add this to the airport clearing
+    apt_clearing = tgPolygon::Union( safe_base, apt_clearing );
+
+    // and add the clearing to the base
+    apt_base = tgPolygon::Union( base, apt_base );
 
     return 0;
 }

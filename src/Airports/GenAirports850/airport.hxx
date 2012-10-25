@@ -110,7 +110,7 @@ public:
         tm = cleanup_time;
     }
 
-    void merge_slivers( superpoly_list& polys, poly_list& slivers );
+    void merge_slivers( tgpolygon_list& polys, tgcontour_list& slivers );
     void BuildBtg( const string& root, const string_list& elev_src );
 
     void SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base );

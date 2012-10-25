@@ -455,16 +455,19 @@ int Parser::ParseLine(char* line)
     
                 case PAVEMENT_CODE:
                     SetState( STATE_PARSE_PAVEMENT );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing pavement: " << line);
                     cur_pavement  = ParsePavement( line );
                     break;
     
                 case LINEAR_FEATURE_CODE:
                     SetState( STATE_PARSE_FEATURE );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Linear Feature: " << line);
                     cur_feat = ParseFeature( line );
                     break;
     
                 case BOUNDRY_CODE:
                     SetState( STATE_PARSE_BOUNDARY );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing Boundary: " << line);
                     cur_boundary = ParseBoundary( line ); 
                     break;
     

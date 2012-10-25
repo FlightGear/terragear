@@ -5,9 +5,6 @@
 #include <Geometry/poly_support.hxx>
 #include <Geometry/util.hxx>
 
-// for debugging clipping errors
-#include <Polygon/chop.hxx>
-
 #include "global.hxx"
 #include "beznode.hxx"
 #include "linearfeature.hxx"
@@ -410,8 +407,7 @@ SGGeod LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur
         // straight line blows up math - offset 90 degree and dist is as given
         courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
         distOffset   = offset_by;
-    }
-    else  {
+    }  else  {
         SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (normal case) " << description << ": theta is " << theta );
 
         // calculate correct distance for the offset point
@@ -477,10 +473,7 @@ SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 )
 
 int LinearFeature::Finish( bool closed, unsigned int idx )
 {
-    TGPolygon   poly, poly2;
-    TGPolygon   normals_poly, normals_poly2;
-    TGSuperPoly sp;
-    TGTexParams tp;
+    tgPolygon   poly;
     SGGeod      prev_inner, prev_outer;
     SGGeod      cur_inner,  cur_outer;
     double      heading;
@@ -650,22 +643,18 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
                 SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
 
-                poly.erase();
-                poly.add_node( 0, Point3D::fromSGGeod( prev_inner ) );
-                poly.add_node( 0, Point3D::fromSGGeod( prev_outer ) );
-                poly.add_node( 0, Point3D::fromSGGeod( cur_outer ) );
-                poly.add_node( 0, Point3D::fromSGGeod( cur_inner ) );
-                poly = snap( poly, gSnap );
+                poly.Erase();
+                poly.AddNode( 0, prev_inner );
+                poly.AddNode( 0, prev_outer );
+                poly.AddNode( 0, cur_outer  );
+                poly.AddNode( 0, cur_inner  );
+                poly = tgPolygon::Snap( poly, gSnap );
 
-                sp.erase();
-                sp.set_poly( poly );
-                sp.set_material( material );
-                sp.set_flag("lf");
-                marking_polys.push_back(sp);
-
-                tp = TGTexParams( prev_inner, width, 1.0f, heading );
-                tp.set_minv(last_end_v);
-                marking_tps.push_back(tp);
+                poly.SetMaterial( material );
+                poly.SetTexParams( prev_inner, width, 1.0f, heading );
+                poly.SetTexLimits( 0, last_end_v, 1, 1 );
+                poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+                marking_polys.push_back(poly);
 
                 last_end_v = (double)1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
             } else {
@@ -678,6 +667,10 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     }
 
     // now generate the superpoly list for lights with constant distance between lights (depending on feature type)
+    tglightcontour_list light_contours;
+    tgLightContour      cur_light_contour;
+    tgLightContour      alt_light_contour;
+
     for (unsigned int i=0; i<lights.size(); i++)
     {
         markStarted = false;
@@ -689,42 +682,37 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
         switch( lights[i]->type )
         {
             case LF_BIDIR_GREEN:
-                material = "RWY_GREEN_TAXIWAY_LIGHTS";
+                cur_light_contour.SetType( "RWY_GREEN_TAXIWAY_LIGHTS" );
                 light_delta = 10.0f;
                 break;
 
             case LF_OMNIDIR_BLUE:
-                material = "RWY_BLUE_TAXIWAY_LIGHTS";
+                cur_light_contour.SetType( "RWY_BLUE_TAXIWAY_LIGHTS" );
                 light_delta = 10.0f;
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER:
-                material = "RWY_YELLOW_LIGHTS";
+                cur_light_contour.SetType( "RWY_YELLOW_LIGHTS" );
                 light_delta = 2.0f;
                 break;
 
             case LF_UNIDIR_CLOSE_AMBER_PULSE:
-                material = "RWY_YELLOW_PULSE_LIGHTS";
+                cur_light_contour.SetType( "RWY_YELLOW_PULSE_LIGHTS" );
                 light_delta = 2.0f;
                 break;
 
             case LF_BIDIR_GREEN_AMBER:
-                material = "RWY_GREEN_TAXIWAY_LIGHTS";
+                cur_light_contour.SetType( "RWY_GREEN_TAXIWAY_LIGHTS" );
+                alt_light_contour.SetType( "RWY_YELLOW_LIGHTS" );
                 light_delta = 10.0f;
                 alternate = true;
                 break;
 
             case LF_OMNIDIR_RED:
-                material = "RWY_RED_LIGHTS";
+                cur_light_contour.SetType( "RWY_RED_LIGHTS" );
                 light_delta = 10.0f;
                 break;
         }
-
-        poly.erase();
-        poly2.erase();
-        normals_poly.erase();
-        normals_poly2.erase();
-        sp.erase();
 
         for (unsigned int j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
         {
@@ -781,23 +769,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
                     if (!alternate)
                     {
-                        poly.add_node(0, Point3D::fromSGGeod(tmp));
-                        normals_poly.add_node(0, Point3D::fromSGVec3(vec) );
+                        cur_light_contour.AddLight( tmp, vec );
                     }
                     else
                     {
                         if (switch_poly)
                         {
-                            poly.add_node(0, Point3D::fromSGGeod(tmp));
-                            normals_poly.add_node(0, Point3D::fromSGVec3(vec) );
-                            switch_poly = !switch_poly;
+                            cur_light_contour.AddLight( tmp, vec );
                         }
                         else
                         {
-                            poly2.add_node(0, Point3D::fromSGGeod(tmp));
-                            normals_poly2.add_node(0, Point3D::fromSGVec3(vec) );
-                            switch_poly = !switch_poly;
+                            alt_light_contour.AddLight( tmp, vec );
                         }
+                        switch_poly = !switch_poly;
                     }
 
                     // update current light distance
@@ -814,26 +798,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
         }
 
         // if there were lights generated - create the superpoly
-        if (poly.total_size())
+        if (cur_light_contour.ContourSize())
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding superpoly with " << poly.total_size() << " lights" );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding light contour with " << cur_light_contour.ContourSize() << " lights" );
+            cur_light_contour.SetFlag("");
+            lighting_polys.push_back(cur_light_contour);
+        }
 
-            sp.set_poly( poly );
-            sp.set_normals( normals_poly );
-            sp.set_material( material );
-            sp.set_flag("");
-            lighting_polys.push_back(sp);
-
-            // create the superpoly for the alternating light color
-            if (poly2.total_size())
-            {
-                sp.erase();
-                sp.set_poly( poly2 );
-                sp.set_normals( normals_poly2 );
-                sp.set_material( "RWY_YELLOW_LIGHTS" );
-                sp.set_flag("");
-                lighting_polys.push_back(sp);
-            }
+        // create the superpoly for the alternating light color
+        if (alt_light_contour.ContourSize())
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding light contour with " << cur_light_contour.ContourSize() << " lights" );
+            alt_light_contour.SetFlag("");
+            lighting_polys.push_back(cur_light_contour);
         }
         else
         {
@@ -844,52 +821,25 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     return 1;
 }
 
-int LinearFeature::BuildBtg(superpoly_list* line_polys, texparams_list* line_tps, superpoly_list* lights, bool make_shapefiles )
+int LinearFeature::BuildBtg(tgpolygon_list& line_polys, tglightcontour_list& lights, bool make_shapefiles )
 {
-    TGPolygon poly, tmp;
-    void*     ds_id = NULL;        // If we are going to build shapefiles
-    void*     l_id  = NULL;        // datasource and layer IDs
-    SGGeod min, max, minp, maxp;
-
-    if ( make_shapefiles ) {
-        char ds_name[128];
-        sprintf(ds_name, "./lf_debug");
-        ds_id = tgShapefileOpenDatasource( ds_name );
-    }
+    tgPolygon poly;
+    SGGeod    min, max, minp, maxp;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
-        poly = tgPolygonDiffClipperWithAccumulator( marking_polys[i].get_poly() );
+        // Clipping and triangulation need to copy texparams, and material info...
+        marking_polys[i] = tgPolygon::DiffWithAccumulator( marking_polys[i] );
+        line_polys.push_back( marking_polys[i] );
 
-        marking_polys[i].set_poly( poly );
-        line_polys->push_back( marking_polys[i] );
-
-        /* If debugging this lf, write the polys into their own layers */
-        if (ds_id) {
-            char layer_name[128];
-            sprintf( layer_name, "poly_%d", i );
-            l_id = tgShapefileOpenLayer( ds_id, layer_name );
-
-            char feature_name[128];
-            sprintf( feature_name, "poly_%d", i);
-            tgShapefileCreateFeature( ds_id, l_id, poly, feature_name );
-        }
-
-        tgPolygonAddToClipperAccumulator(poly, false);
-
-        line_tps->push_back( marking_tps[i] );
-    }
-
-    if (ds_id) {
-        tgShapefileCloseDatasource( ds_id );        
+        tgPolygon::AddToAccumulator( marking_polys[i] );
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: add " << lighting_polys.size() << " light defs");
     for ( unsigned i = 0; i < lighting_polys.size(); i++)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: adding light " << i );
-        lights->push_back( lighting_polys[i] );
+        lights.push_back( lighting_polys[i] );
     }
 
     return 1;

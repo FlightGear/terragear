@@ -34,7 +34,7 @@ using std::string;
 
 // calculate the runway light direction vector.  We take both runway
 // ends to get the direction of the runway.
-Point3D Runway::gen_runway_light_vector( float angle, bool recip ) {
+SGVec3d Runway::gen_runway_light_vector( float angle, bool recip ) {
     SGVec3f cart1, cart2;
     if ( !recip ) {
         cart1 = normalize(SGVec3f::fromGeod(GetStart()));
@@ -49,19 +49,17 @@ Point3D Runway::gen_runway_light_vector( float angle, bool recip ) {
     SGQuatf rotation = SGQuatf::fromAngleAxisDeg(angle, horizontal);
     SGVec3f light_vec = rotation.transform(runway_vec);
 
-    return Point3D::fromSGVec3(light_vec);
+    return (SGVec3d)light_vec;
 }
 
 // generate runway edge lighting
 // 60 meters spacing or the next number down that divides evenly.
-superpoly_list Runway::gen_runway_edge_lights( bool recip )
+tglightcontour_list Runway::gen_runway_edge_lights( bool recip )
 {
-    point_list r_lights; r_lights.clear();
-    point_list w_lights; w_lights.clear();
-    point_list y_lights; y_lights.clear();
-    point_list r_normals; r_normals.clear();
-    point_list w_normals; w_normals.clear();
-    point_list y_normals; y_normals.clear();
+    tgLightContour r_lights;
+    tgLightContour w_lights;
+    tgLightContour y_lights;
+    tglightcontour_list result;
 
     int i;
     double length_hdg;
@@ -70,11 +68,10 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     double step = dist / divs;
     SGGeod pt1, pt2;
 
-    Point3D normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
 
     if ( recip ) {
-        length_hdg = rwy.heading + 180.0;
-        if ( length_hdg > 360.0 ) { length_hdg -= 360.0; }
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180.0);
         pt1 = SGGeodesy::direct(GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
         pt2 = GetStart();
     } else {
@@ -82,8 +79,7 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
         pt1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
         pt2 = GetEnd();
     }
-    double left_hdg = length_hdg - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
+    double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0 );
 
     int tstep;
     double offset = 2 + rwy.width * 0.5;
@@ -95,10 +91,8 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
         tstep = (int)(rwy.threshold[get_thresh0(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
             pt0 = SGGeodesy::direct(pt0, length_hdg, -step);
-            r_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt0, left_hdg, offset)) );
-            r_normals.push_back( normal );
-            r_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt0, left_hdg, -offset)) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( SGGeodesy::direct(pt0, left_hdg,  offset), normal );
+            r_lights.AddLight( SGGeodesy::direct(pt0, left_hdg, -offset), normal );
         }
     }
 
@@ -106,15 +100,11 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
         pt1 = SGGeodesy::direct(pt1, SGGeodesy::courseDeg(pt1, pt2), step);
         dist -= step;
         if ( dist > 610.0 || dist > rwy.length / 2 ) {
-            w_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, offset)) );
-            w_normals.push_back( normal );
-            w_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, -offset)) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( SGGeodesy::direct(pt1, left_hdg,  offset), normal );
+            w_lights.AddLight( SGGeodesy::direct(pt1, left_hdg, -offset), normal );
         } else if (dist > 5.0) {
-            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, offset)) );
-            y_normals.push_back( normal );
-            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, -offset)) );
-            y_normals.push_back( normal );
+            y_lights.AddLight( SGGeodesy::direct(pt1, left_hdg,  offset), normal );
+            y_lights.AddLight( SGGeodesy::direct(pt1, left_hdg, -offset), normal );
         }
     }
 
@@ -123,78 +113,42 @@ superpoly_list Runway::gen_runway_edge_lights( bool recip )
     {
         tstep = (int)(rwy.threshold[get_thresh1(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
-            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, offset)) );
-            y_normals.push_back( normal );
-            y_lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct(pt1, left_hdg, -offset)) );
-            y_normals.push_back( normal );
+            y_lights.AddLight( SGGeodesy::direct(pt1, left_hdg,  offset), normal );
+            y_lights.AddLight( SGGeodesy::direct(pt1, left_hdg, -offset), normal );
             pt1 = SGGeodesy::direct(pt1, length_hdg, step);
         }
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( w_lights, false );
-    normals_poly.add_contour( w_normals, false );
-
-    TGSuperPoly white;
-    white.set_poly( lights_poly );
-    white.set_normals( normals_poly );
     //Different intensities
-    if (rwy.edge_lights == 3)
-        white.set_material( "RWY_WHITE_LIGHTS" );
-    else if (rwy.edge_lights == 2)
-        white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
-    else if (rwy.edge_lights == 1)
-        white.set_material( "RWY_WHITE_LOW_LIGHTS" );
+    if (rwy.edge_lights == 3) {
+        w_lights.SetType( "RWY_WHITE_LIGHTS" );
+        y_lights.SetType( "RWY_YELLOW_LIGHTS" );
+        r_lights.SetType( "RWY_RED_LIGHTS" );
+    }
+    else if (rwy.edge_lights == 2) {
+        w_lights.SetType( "RWY_WHITE_MEDIUM_LIGHTS" );
+        y_lights.SetType( "RWY_YELLOW_MEDIUM_LIGHTS" );
+        r_lights.SetType( "RWY_RED_MEDIUM_LIGHTS" );
+    }
+    else if (rwy.edge_lights == 1) {
+        w_lights.SetType( "RWY_WHITE_LOW_LIGHTS" );
+        y_lights.SetType( "RWY_YELLOW_LOW_LIGHTS" );
+        r_lights.SetType( "RWY_RED_LOW_LIGHTS" );
+    }
 
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( y_lights, false );
-    normals_poly.add_contour( y_normals, false );
-
-    TGSuperPoly yellow;
-    yellow.set_poly( lights_poly );
-    yellow.set_normals( normals_poly );
-    //Different intensities
-    if (rwy.edge_lights == 3)
-        yellow.set_material( "RWY_YELLOW_LIGHTS" );
-    else if (rwy.edge_lights == 2)
-        yellow.set_material( "RWY_YELLOW_MEDIUM_LIGHTS" );
-    else if (rwy.edge_lights == 1)
-        yellow.set_material( "RWY_YELLOW_LOW_LIGHTS" );
-
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( r_lights, false );
-    normals_poly.add_contour( r_normals, false );
-
-    TGSuperPoly red;
-    red.set_poly( lights_poly );
-    red.set_normals( normals_poly );
-    //Different intensities
-    if (rwy.edge_lights == 3)
-        red.set_material( "RWY_RED_LIGHTS" );
-    else if (rwy.edge_lights == 2)
-        red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
-    else if (rwy.edge_lights == 1)
-        red.set_material( "RWY_RED_LOW_LIGHTS" );
-
-    superpoly_list result; result.clear();
-
-    result.push_back( white );
-    result.push_back( yellow );
-    result.push_back( red );
+    result.push_back( w_lights );
+    result.push_back( y_lights );
+    result.push_back( r_lights );
 
     return result;
 }
 
 // generate threshold lights for displaced/normal runways and with/without light bars
-superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
+tglightcontour_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
 {
-    point_list g_lights; g_lights.clear();
-    point_list g_normals; g_normals.clear();
-    point_list r_lights; r_lights.clear();
-    point_list r_normals; r_normals.clear();
+    tgLightContour r_lights;
+    tgLightContour g_lights;
+    tglightcontour_list result;
     int i;
 
     // determine the start point.
@@ -211,8 +165,8 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
         ref2 = GetStart();
     }
 
-    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
-    Point3D normal2 = gen_runway_light_vector( 3.0, !recip );
+    SGVec3d normal1 = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal2 = gen_runway_light_vector( 3.0, !recip );
 
     double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
     int divs = (int)(rwy.width + 4) / 3.0;
@@ -225,11 +179,8 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
         SGGeod thresh2 = SGGeodesy::direct(ref1, left_hdg, -offset);
         // four lights for each side
         for ( i = 0; i < 4; ++i ) {
-            g_lights.push_back( Point3D::fromSGGeod(thresh1) );
-            g_normals.push_back( normal1 );
-
-            g_lights.push_back( Point3D::fromSGGeod(thresh2) );
-            g_normals.push_back( normal1 );
+            g_lights.AddLight( thresh1, normal1 );
+            g_lights.AddLight( thresh2, normal1 );
 
             // offset 3m towards outside
             thresh1 = SGGeodesy::direct(thresh1, left_hdg, 3);
@@ -243,10 +194,9 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
         // Add a green and red threshold lights bar
         SGGeod redbar = SGGeodesy::direct(ref2, left_hdg, offset);
         for ( i = 0; i < divs + 1; ++i ) {
-            g_lights.push_back( Point3D::fromSGGeod(pt1) );
-            g_normals.push_back( normal1 );
-            r_lights.push_back( Point3D::fromSGGeod(redbar) );
-            r_normals.push_back( normal2 );
+            g_lights.AddLight( pt1, normal1 );
+            r_lights.AddLight( redbar, normal2 );
+
             pt1 = SGGeodesy::direct(pt1, left_hdg, -step);
             redbar = SGGeodesy::direct(redbar, left_hdg, -step);
         }
@@ -256,84 +206,45 @@ superpoly_list Runway::gen_runway_threshold_lights( const int kind, bool recip )
     pt1 = SGGeodesy::direct(ref2, left_hdg, offset);
     pt2 = SGGeodesy::direct(ref2, left_hdg, -offset);
 
-    point_list tmp; tmp.clear();
-    point_list tmp_norm; tmp_norm.clear();
-
     // Create groups of four lights in front of the displaced threshold
     for ( i = 0; i < 4; ++i ) {
-        tmp.push_back( Point3D::fromSGGeod(pt1) );
-        tmp_norm.push_back( normal1 );
-        tmp.push_back( Point3D::fromSGGeod(pt2) );
-        tmp_norm.push_back( normal1 );
+
+        if (GetsThreshold(recip) ) {
+            r_lights.AddLight( pt1, normal1);
+            r_lights.AddLight( pt2, normal1);
+        } else if (!kind) {
+            g_lights.AddLight( pt1, normal1);
+            g_lights.AddLight( pt2, normal1);
+        }
 
         if (!kind) {
-            r_lights.push_back( Point3D::fromSGGeod(pt1) );
-            r_normals.push_back( normal2 );
-            r_lights.push_back( Point3D::fromSGGeod(pt2) );
-            r_normals.push_back( normal2 );
+            r_lights.AddLight( pt1, normal2 );
+            r_lights.AddLight( pt2, normal2 );
         }
 
         // offset 3m towards center
         pt1 = SGGeodesy::direct(pt1, left_hdg, -3);
-        pt2 = SGGeodesy::direct(pt2, left_hdg, 3);
+        pt2 = SGGeodesy::direct(pt2, left_hdg,  3);
     }
 
-    if (GetsThreshold(recip) ) {
-        r_lights.insert(r_lights.end(), tmp.begin(), tmp.end());
-        r_normals.insert(r_normals.end(), tmp_norm.begin(), tmp_norm.end());
-    } else if (!kind) {
-        g_lights.insert(g_lights.end(), tmp.begin(), tmp.end());
-        g_normals.insert(g_normals.end(), tmp_norm.begin(), tmp_norm.end());
-    }
+    g_lights.SetType( "RWY_GREEN_LIGHTS" );
+    r_lights.SetType( "RWY_RED_LIGHTS" );
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( g_lights, false );
-    normals_poly.add_contour( g_normals, false );
-
-    TGSuperPoly green;
-    green.set_poly( lights_poly );
-    green.set_normals( normals_poly );
-    green.set_material( "RWY_GREEN_LIGHTS" );
-    /* other intensities for when the data file supports it
-     *
-     * green.set_material( "RWY_GREEN_MEDIUM_LIGHTS" );
-     * green.set_material( "RWY_GREEN_LOW_LIGHTS" );
-     */
-
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( r_lights, false );
-    normals_poly.add_contour( r_normals, false );
-
-    TGSuperPoly red;
-    red.set_poly( lights_poly );
-    red.set_normals( normals_poly );
-    red.set_material( "RWY_RED_LIGHTS" );
-    /* other intensities for when the data file supports it
-     *
-     * red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
-     * red.set_material( "RWY_RED_LOW_LIGHTS" );
-     */
-
-    superpoly_list result; result.clear();
-
-    result.push_back( green );
-    result.push_back( red );
+    result.push_back( g_lights );
+    result.push_back( r_lights );
 
     return result;
 }
 
 
 // generate runway center line lighting, 15m spacing.
-superpoly_list Runway::gen_runway_center_line_lights( bool recip )
+tglightcontour_list Runway::gen_runway_center_line_lights( bool recip )
 {
-    point_list w_lights; w_lights.clear();
-    point_list r_lights; r_lights.clear();
-    point_list w_normals; w_normals.clear();
-    point_list r_normals; r_normals.clear();
+    tgLightContour w_lights;
+    tgLightContour r_lights;
+    tglightcontour_list result;
 
-    Point3D normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
 
     SGGeod pt1, pt2;
     double length_hdg;
@@ -355,54 +266,30 @@ superpoly_list Runway::gen_runway_center_line_lights( bool recip )
 
     while ( dist > 0.0 ) {
         if ( dist > 900.0 ) {
-            w_lights.push_back( Point3D::fromSGGeod(pt1) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( pt1, normal );
         } else if ( dist > 300.0 ) {
             if ( use_white ) {
-                w_lights.push_back( Point3D::fromSGGeod(pt1) );
-                w_normals.push_back( normal );
+                w_lights.AddLight( pt1, normal );
             } else {
-                r_lights.push_back( Point3D::fromSGGeod(pt1) );
-                r_normals.push_back( normal );
+                r_lights.AddLight( pt1, normal );
             }
             use_white = !use_white;
         } else {
-            r_lights.push_back( Point3D::fromSGGeod(pt1) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt1, normal );
         }
         length_hdg = SGGeodesy::courseDeg(pt1, pt2);
         pt1 = SGGeodesy::direct(pt1, length_hdg, step);
         dist -= step;
     }
 
-    superpoly_list result; result.clear();
-
-    if ( w_lights.size() ) {
-        TGPolygon lights_poly; lights_poly.erase();
-        TGPolygon normals_poly; normals_poly.erase();
-        lights_poly.add_contour( w_lights, false );
-        normals_poly.add_contour( w_normals, false );
-
-        TGSuperPoly white;
-        white.set_poly( lights_poly );
-        white.set_normals( normals_poly );
-        white.set_material( "RWY_WHITE_MEDIUM_LIGHTS" );
-
-        result.push_back( white );
+    if ( w_lights.ContourSize() ) {
+        w_lights.SetType( "RWY_WHITE_MEDIUM_LIGHTS" );
+        result.push_back( w_lights );
     }
 
-    if ( r_lights.size() ) {
-        TGPolygon lights_poly; lights_poly.erase();
-        TGPolygon normals_poly; normals_poly.erase();
-        lights_poly.add_contour( r_lights, false );
-        normals_poly.add_contour( r_normals, false );
-
-        TGSuperPoly red;
-        red.set_poly( lights_poly );
-        red.set_normals( normals_poly );
-        red.set_material( "RWY_RED_MEDIUM_LIGHTS" );
-
-        result.push_back( red );
+    if ( r_lights.ContourSize() ) {
+        r_lights.SetType( "RWY_RED_MEDIUM_LIGHTS" );
+        result.push_back( r_lights );
     }
 
     return result;
@@ -479,12 +366,11 @@ static superpoly_list gen_taxiway_center_line_lights( bool recip )
 */
 
 // generate touch down zone lights
-TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
+tgLightContour Runway::gen_touchdown_zone_lights( bool recip )
 {
-    point_list lights; lights.clear();
-    point_list normals; normals.clear();
+    tgLightContour lights;
 
-    Point3D normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
 
     // determine the start point.
     SGGeod ref;
@@ -511,58 +397,43 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
 
         // left side bar
         pt1 = SGGeodesy::direct( pt1, left_hdg, 11 );
-        lights.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
-    
-        pt1 = SGGeodesy::direct( pt1, left_hdg, 1.5 );
-        lights.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        lights.AddLight( pt1, normal );
 
         pt1 = SGGeodesy::direct( pt1, left_hdg, 1.5 );
-        lights.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        lights.AddLight( pt1, normal );
+
+        pt1 = SGGeodesy::direct( pt1, left_hdg, 1.5 );
+        lights.AddLight( pt1, normal );
 
         pt1 = ref;
 
         // right side bar
         pt1 = SGGeodesy::direct( pt1, left_hdg, -11 );
-        lights.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        lights.AddLight( pt1, normal );
 
         pt1 = SGGeodesy::direct( pt1, left_hdg, -1.5 );
-        lights.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        lights.AddLight( pt1, normal );
 
         pt1 = SGGeodesy::direct( pt1, left_hdg, -1.5 );
-        lights.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        lights.AddLight( pt1, normal );
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( lights, false );
-    normals_poly.add_contour( normals, false );
+    lights.SetType( "RWY_WHITE_LIGHTS" );
 
-    TGSuperPoly result;
-    result.set_poly( lights_poly );
-    result.set_normals( normals_poly );
-    result.set_material( "RWY_WHITE_LIGHTS" );
-
-    return result;
+    return lights;;
 }
 
 
 // generate REIL lights
-TGSuperPoly Runway::gen_reil( const int kind, bool recip )
+tgLightContour Runway::gen_reil( const int kind, bool recip )
 {
-    point_list lights; lights.clear();
-    point_list normals; normals.clear();
+    tgLightContour lights;
     string flag = rwy.rwnum[get_thresh0(recip)];
-    Point3D normal;
+    SGVec3d normal;
 
     if (kind == 1) {
         // omnidirectional lights
-        normal = Point3D::fromSGVec3( normalize(SGVec3d::fromGeod(GetStart())) );
+        normal = normalize(SGVec3d::fromGeod(GetStart()));
     } else {
         // unidirectional lights
         normal = gen_runway_light_vector( 10, recip );
@@ -583,39 +454,27 @@ TGSuperPoly Runway::gen_reil( const int kind, bool recip )
     double offset = rwy.width * 0.5 + 12;
 
     // left light
-    lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct( ref, left_hdg, offset )) );
-    normals.push_back( normal );
-    
+    lights.AddLight( SGGeodesy::direct( ref, left_hdg,  offset ), normal );
+
     // right light
-    lights.push_back( Point3D::fromSGGeod(SGGeodesy::direct( ref, left_hdg, -offset )) );
-    normals.push_back( normal );
+    lights.AddLight( SGGeodesy::direct( ref, left_hdg, -offset ), normal );
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( lights, false );
-    normals_poly.add_contour( normals, false );
+    lights.SetType( "RWY_REIL_LIGHTS" );
+    lights.SetFlag( flag );
 
-    TGSuperPoly result;
-    result.set_poly( lights_poly );
-    result.set_normals( normals_poly );
-    result.set_material( "RWY_REIL_LIGHTS" );
-    result.set_flag( flag );
-
-    return result;
+    return lights;
 }
 
 
 // generate Calvert-I/II approach lighting schemes
-superpoly_list Runway::gen_calvert( const string &kind, bool recip )
+tglightcontour_list Runway::gen_calvert( const string &kind, bool recip )
 {
-    point_list w_lights; w_lights.clear();
-    point_list r_lights; r_lights.clear();
-    point_list w_normals; w_normals.clear();
-    point_list r_normals; r_normals.clear();
+    tgLightContour w_lights;
+    tgLightContour r_lights;
     int i, j;
     string flag;
 
-    Point3D normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
 
     // Generate long center bar of lights
     // determine the start point.
@@ -639,9 +498,9 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
     // light spacing is 30m
     //
 
-    double vert_space = 30;
-    double horiz_space = 10;
-    int count=30;
+    const double vert_space = 30;
+    const double horiz_space = 10;
+    const int count=30;
 
     SGGeod crossbar[5];
     SGGeod pair;
@@ -655,31 +514,17 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
         pt = SGGeodesy::direct(pt, length_hdg, -vert_space);
 
         if ( i >= 10 && i < 20 ) {
-            pair = SGGeodesy::direct(pt, left_hdg, horiz_space/2);
-            w_lights.push_back( Point3D::fromSGGeod(pair) );
-            w_normals.push_back( normal );
-
-            pair = SGGeodesy::direct(pt, left_hdg, -horiz_space/2);
-            w_lights.push_back( Point3D::fromSGGeod(pair) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( SGGeodesy::direct(pt, left_hdg, horiz_space/2), normal );
+            w_lights.AddLight( SGGeodesy::direct(pt, left_hdg, -horiz_space/2), normal );
         } else if (i >= 20) {
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
-
-            pair = SGGeodesy::direct(pt, left_hdg, horiz_space);
-            w_lights.push_back( Point3D::fromSGGeod(pair) );
-            w_normals.push_back( normal );
-
-            pair = SGGeodesy::direct(pt, left_hdg, -horiz_space);
-            w_lights.push_back( Point3D::fromSGGeod(pair) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( pt, normal);
+            w_lights.AddLight( SGGeodesy::direct(pt, left_hdg, horiz_space), normal );
+            w_lights.AddLight( SGGeodesy::direct(pt, left_hdg, -horiz_space), normal );
         } else if (i < 10 && kind == "1" ) {
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( pt, normal);
         } else {
             // cal2 has red centre lights
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt, normal);
         }
 
         switch ( i ) {
@@ -713,49 +558,39 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
 
             // left side bar
             pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( pt, normal);
 
             pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( pt, normal);
 
             pt = ref;
             pt = SGGeodesy::direct( pt, left_hdg, 11 );
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt, normal);
 
             pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt, normal);
 
             pt = SGGeodesy::direct( pt, left_hdg, 1.5 );
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt, normal);
 
             pt = ref;
 
             // right side bar
             pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( pt, normal);
 
             pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
+            w_lights.AddLight( pt, normal);
 
             pt = ref;
             pt = SGGeodesy::direct( pt, left_hdg, -11 );
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt, normal);
 
             pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt, normal);
 
             pt = SGGeodesy::direct( pt, left_hdg, -1.5 );
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal );
+            r_lights.AddLight( pt, normal);
         }
     }
 
@@ -786,64 +621,38 @@ superpoly_list Runway::gen_calvert( const string &kind, bool recip )
         for ( j = 0 ; j < num_lights; j++ ) {
             // left side lights
             pt = SGGeodesy::direct(pt, left_hdg, horiz_space);
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
+            w_lights.AddLight(pt, normal);
         }
 
         pt = crossbar[i];
         for ( j = 0; j < num_lights; j++ ) {
             // right side lights
             pt = SGGeodesy::direct(pt, left_hdg, -horiz_space);
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal );
+            w_lights.AddLight(pt, normal);
         }
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( r_lights, false );
-    normals_poly.add_contour( r_normals, false );
+    tglightcontour_list result;
+    r_lights.SetType( "RWY_RED_LIGHTS" );
+    w_lights.SetType( "RWY_WHITE_LIGHTS" );
 
-    TGSuperPoly red;
-    red.set_poly( lights_poly );
-    red.set_normals( normals_poly );
-    red.set_material( "RWY_RED_LIGHTS" );
-    red.set_flag( flag );
-
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( w_lights, false );
-    normals_poly.add_contour( w_normals, false );
-
-    TGSuperPoly white;
-    white.set_poly( lights_poly );
-    white.set_normals( normals_poly );
-    white.set_material( "RWY_WHITE_LIGHTS" );
-    white.set_flag( flag );
-
-    superpoly_list result; result.clear();
-
-    result.push_back( red );
-    result.push_back( white );
+    result.push_back( r_lights );
+    result.push_back( w_lights );
 
     return result;
 }
 
 // generate ALSF-I/II and SALS/SALSF approach lighting schemes
-superpoly_list Runway::gen_alsf( const string &kind, bool recip )
+tglightcontour_list Runway::gen_alsf( const string &kind, bool recip )
 {
-    point_list g_lights; g_lights.clear();
-    point_list w_lights; w_lights.clear();
-    point_list r_lights; r_lights.clear();
-    point_list s_lights; s_lights.clear();
-    point_list g_normals; g_normals.clear();
-    point_list w_normals; w_normals.clear();
-    point_list r_normals; r_normals.clear();
-    point_list s_normals; s_normals.clear();
+    tgLightContour g_lights;
+    tgLightContour w_lights;
+    tgLightContour r_lights;
+    tgLightContour s_lights;
     int i;
     string flag;
 
-    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
 
     // Generate long center bar of lights
     // determine the start point.
@@ -873,28 +682,23 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
 
     for ( i = 0; i < count; ++i ) {
         pt = ref;
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         // left 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, 1);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, 1);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = ref;
 
         // right 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, -1);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, -1);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         ref = SGGeodesy::direct(ref, length_hdg, -30);
     }
@@ -911,31 +715,25 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
 
         // left 3 side lights
         pt = SGGeodesy::direct(pt, left_hdg, 4.5);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, 1.5);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, 1.5);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = ref;
 
         // right 3 side lights
         pt = SGGeodesy::direct(pt, left_hdg, -4.5);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, -1.5);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, -1.5);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
     } else if ( kind == "2" ) {
         // Generate red side row lights
 
@@ -947,31 +745,25 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
 
             // left 3 side lights
             pt = SGGeodesy::direct(pt, left_hdg, 11);
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
 
             pt = SGGeodesy::direct(pt, left_hdg, 1.5);
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
 
             pt = SGGeodesy::direct(pt, left_hdg, 1.5);
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
 
             pt = ref;
 
             // right 3 side lights
             pt = SGGeodesy::direct(pt, left_hdg, -11);
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
 
             pt = SGGeodesy::direct(pt, left_hdg, -1.5);
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
 
             pt = SGGeodesy::direct(pt, left_hdg, -1.5);
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
         }
     }
 
@@ -986,8 +778,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         // left 5 side lights
         pt = SGGeodesy::direct(pt, left_hdg, 22.5);
         for ( i = 0; i < 5; ++i ) {
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
             pt = SGGeodesy::direct(pt, left_hdg, 1.0);
         }
         pt = ref;
@@ -995,8 +786,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         // right 5 side lights
         pt = SGGeodesy::direct(pt, left_hdg, -22.5);
         for ( i = 0; i < 5; ++i ) {
-            r_lights.push_back( Point3D::fromSGGeod(pt) );
-            r_normals.push_back( normal1 );
+            r_lights.AddLight(pt, normal);
             pt = SGGeodesy::direct(pt, left_hdg, -1.0);
         }
     } else if ( kind == "2" ) {
@@ -1011,8 +801,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         pt = SGGeodesy::direct(pt, left_hdg, 4.25);
 
         for ( i = 0; i < 4; ++i ) {
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal1 );
+            w_lights.AddLight(pt, normal);
             pt = SGGeodesy::direct(pt, left_hdg, 1.5);
         }
         pt = ref;
@@ -1021,8 +810,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         pt = SGGeodesy::direct(pt, left_hdg, -4.25);
 
         for ( i = 0; i < 4; ++i ) {
-            w_lights.push_back( Point3D::fromSGGeod(pt) );
-            w_normals.push_back( normal1 );
+            w_lights.AddLight(pt, normal);
             pt = SGGeodesy::direct(pt, left_hdg, -1.5);
         }
     }
@@ -1034,28 +822,23 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         ref = SGGeodesy::direct(ref, length_hdg, -60);
 
         pt = ref;
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         // left 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, 1.0);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, 1.0);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = ref;
 
         // right 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, -1.0);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, -1.0);
-        r_lights.push_back( Point3D::fromSGGeod(pt) );
-        r_normals.push_back( normal1 );
+        r_lights.AddLight(pt, normal);
     }
 
     // Generate -300m horizontal crossbar
@@ -1068,8 +851,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
     // left 8 side lights
     pt = SGGeodesy::direct(pt, left_hdg, 4.5);
     for ( i = 0; i < 8; ++i ) {
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
         pt = SGGeodesy::direct(pt, left_hdg, 1.5);
     }
 
@@ -1078,8 +860,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
     // right 8 side lights
     pt = SGGeodesy::direct(pt, left_hdg, -4.5);
     for ( i = 0; i < 8; ++i ) {
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
         pt = SGGeodesy::direct(pt, left_hdg, -1.5);
     }
 
@@ -1091,8 +872,7 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         ref = SGGeodesy::direct(ref, length_hdg, -300);
 
         for ( i = 0; i < 21; ++i ) {
-            s_lights.push_back( Point3D::fromSGGeod(ref) );
-            s_normals.push_back( normal1 );
+            s_lights.AddLight(ref, normal);
 
             // offset 30m downwind
             ref = SGGeodesy::direct(ref, length_hdg, -30);
@@ -1103,87 +883,46 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
         ref = SGGeodesy::direct(ref, length_hdg, -390);
 
         for ( i = 0; i < 3; ++i ) {
-            s_lights.push_back( Point3D::fromSGGeod(ref) );
-            s_normals.push_back( normal1 );
+            s_lights.AddLight(ref, normal);
 
             // offset 30m downwind
             ref = SGGeodesy::direct(ref, length_hdg, -30);
         }
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( g_lights, false );
-    normals_poly.add_contour( g_normals, false );
+    tglightcontour_list result;
 
-    TGSuperPoly green;
-    green.set_poly( lights_poly );
-    green.set_normals( normals_poly );
-    green.set_material( "RWY_GREEN_LIGHTS" );
-    green.set_flag( flag );
+    g_lights.SetType( "RWY_GREEN_LIGHTS" );
+    w_lights.SetType( "RWY_WHITE_LIGHTS" );
+    r_lights.SetType( "RWY_RED_LIGHTS" );
 
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( r_lights, false );
-    normals_poly.add_contour( r_normals, false );
+    result.push_back( g_lights );
+    result.push_back( w_lights );
+    result.push_back( r_lights );
 
-    TGSuperPoly red;
-    red.set_poly( lights_poly );
-    red.set_normals( normals_poly );
-    red.set_material( "RWY_RED_LIGHTS" );
-    red.set_flag( flag );
-
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( w_lights, false );
-    normals_poly.add_contour( w_normals, false );
-
-    TGSuperPoly white;
-    white.set_poly( lights_poly );
-    white.set_normals( normals_poly );
-    white.set_material( "RWY_WHITE_LIGHTS" );
-    white.set_flag( flag );
-
-    superpoly_list result; result.clear();
-
-    result.push_back( green );
-    result.push_back( red );
-    result.push_back( white );
-
-    if ( s_lights.size() ) {
-        lights_poly.erase();
-        normals_poly.erase();
-        lights_poly.add_contour( s_lights, false );
-        normals_poly.add_contour( s_normals, false );
-
-        TGSuperPoly sequenced;
-        sequenced.set_poly( lights_poly );
-        sequenced.set_normals( normals_poly );
-        sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
-        sequenced.set_flag( flag );
-
-        result.push_back( sequenced );
+    if ( s_lights.ContourSize() ) {
+        s_lights.SetType( "RWY_SEQUENCED_LIGHTS");
+        result.push_back( s_lights );
     }
 
     return result;
 }
 
 
-// generate ODALS or REIL lights. Main differende between the two:
-// ODALS is omnidirectional, REIL is unidirectional
-TGSuperPoly Runway::gen_odals( const int kind, bool recip )
+// generate ODALS or RAIL lights. Main differende between the two:
+// ODALS is omnidirectional, RAIL is unidirectional
+tgLightContour Runway::gen_odals( const int kind, bool recip )
 {
-    point_list lights; lights.clear();
-    point_list normals; normals.clear();
+    tgLightContour lights;
 
     int i;
-    string flag, material;
-    Point3D normal;
+    string material;
+    SGVec3d normal;
 
     if (kind == 0) {
         // ODALS lighting is omni-directional, but we generate a normal as
         // a placeholder to keep everything happy.
-        normal = Point3D::fromSGVec3( normalize(SGVec3d::fromGeod(GetStart())) );
+        normal = normalize(SGVec3d::fromGeod(GetStart()));
         material = "RWY_ODALS_LIGHTS";
     } else {
         // RAIL lights are directional
@@ -1192,72 +931,51 @@ TGSuperPoly Runway::gen_odals( const int kind, bool recip )
     }
 
     // determine the start point.
-    SGGeod ref, pt;
+    SGGeod ref;
     double length_hdg, left_hdg;
 
     if ( recip ) {
         length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
         ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
-        flag = rwy.rwnum[1];
     } else {
         length_hdg = rwy.heading;
         ref = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
-        flag = rwy.rwnum[0];
     }
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
     double offset = rwy.width / 2 + 14;
 
     if (kind == 0) {
         // offset 14m left of runway
-        pt = SGGeodesy::direct(ref, left_hdg, offset);
-        lights.push_back( Point3D::fromSGGeod(pt) );
-        normals.push_back( normal );
+        lights.AddLight( SGGeodesy::direct(ref, left_hdg, offset), normal);
 
         // offset 14m right of runway
-        pt = SGGeodesy::direct(ref, left_hdg, -offset);
-        lights.push_back( Point3D::fromSGGeod(pt) );
-        normals.push_back( normal );
+        lights.AddLight( SGGeodesy::direct(ref, left_hdg, -offset), normal);
     }
 
     for ( i = 0; i < 5; ++i ) {
         // offset 90m downwind
         ref = SGGeodesy::direct( ref, length_hdg, -90 );
-        lights.push_back( Point3D::fromSGGeod(ref) );
-        normals.push_back( normal );
+        lights.AddLight(ref, normal);
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( lights, false );
-    normals_poly.add_contour( normals, false );
+    lights.SetType( material );
 
-    TGSuperPoly result;
-    result.set_poly( lights_poly );
-    result.set_normals( normals_poly );
-    result.set_material( material );
-
-    result.set_flag( flag );
-
-    return result;
+    return lights;
 }
 
 
 // generate SSALS, SSALF, and SSALR approach lighting scheme (kind =
 // S, F, or R)
-superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
+tglightcontour_list Runway::gen_ssalx( const string& kind, bool recip )
 {
-    point_list g_lights; g_lights.clear();
-    point_list w_lights; w_lights.clear();
-    point_list r_lights; r_lights.clear();
-    point_list s_lights; s_lights.clear();
-    point_list g_normals; g_normals.clear();
-    point_list w_normals; w_normals.clear();
-    point_list r_normals; r_normals.clear();
-    point_list s_normals; s_normals.clear();
+    tgLightContour g_lights;
+    tgLightContour w_lights;
+    tgLightContour r_lights;
+    tgLightContour s_lights;
     int i;
     string flag;
 
-    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
     SGGeod ref_save, pt;
 
     // Generate long center bar of lights (every 200')
@@ -1279,28 +997,23 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
         ref = SGGeodesy::direct(ref, length_hdg, -60);
 
         pt = ref;
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         // left 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, 1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, 1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = ref;
 
         // right 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, -1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, -1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
     }
 
     // Generate -300m extra horizontal row of lights
@@ -1310,8 +1023,7 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
     // left 5 side lights
     pt = SGGeodesy::direct(pt, left_hdg, 4.5);
     for ( i = 0; i < 5; ++i ) {
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
         pt = SGGeodesy::direct(pt, left_hdg, 1.5);
     }
 
@@ -1319,8 +1031,7 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
     // right 5 side lights
     pt = SGGeodesy::direct(pt, left_hdg, -4.5);
     for ( i = 0; i < 5; ++i ) {
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
         pt = SGGeodesy::direct(pt, left_hdg, -1.5);
     }
 
@@ -1332,8 +1043,7 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
         ref = SGGeodesy::direct(ref, length_hdg, -480);
 
         for ( i = 0; i < 8; ++i ) {
-            s_lights.push_back( Point3D::fromSGGeod(ref) );
-            s_normals.push_back( normal1 );
+            s_lights.AddLight(ref, normal);
 
             // offset 60m downwind
             ref = SGGeodesy::direct(ref, length_hdg, -60);
@@ -1346,66 +1056,25 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
         ref = SGGeodesy::direct(ref, length_hdg, -300);
 
         for ( i = 0; i < 3; ++i ) {
-            s_lights.push_back( Point3D::fromSGGeod(ref) );
-            s_normals.push_back( normal1 );
+            s_lights.AddLight(ref, normal);
 
             // offset 60m downwind
             ref = SGGeodesy::direct(ref, length_hdg, -60);
         }
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( g_lights, false );
-    normals_poly.add_contour( g_normals, false );
+    tglightcontour_list result;
+    g_lights.SetType( "RWY_GREEN_LIGHTS" );
+    w_lights.SetType( "RWY_WHITE_LIGHTS" );
+    r_lights.SetType( "RWY_RED_LIGHTS" );
 
-    TGSuperPoly green;
-    green.set_poly( lights_poly );
-    green.set_normals( normals_poly );
-    green.set_material( "RWY_GREEN_LIGHTS" );
-    green.set_flag( flag );
+    result.push_back( g_lights );
+    result.push_back( w_lights );
+    result.push_back( r_lights );
 
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( r_lights, false );
-    normals_poly.add_contour( r_normals, false );
-
-    TGSuperPoly red;
-    red.set_poly( lights_poly );
-    red.set_normals( normals_poly );
-    red.set_material( "RWY_RED_LIGHTS" );
-    red.set_flag( flag );
-
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( w_lights, false );
-    normals_poly.add_contour( w_normals, false );
-
-    TGSuperPoly white;
-    white.set_poly( lights_poly );
-    white.set_normals( normals_poly );
-    white.set_material( "RWY_WHITE_LIGHTS" );
-    white.set_flag( flag );
-
-    superpoly_list result; result.clear();
-
-    result.push_back( green );
-    result.push_back( red );
-    result.push_back( white );
-
-    if ( s_lights.size() > 0 ) {
-        lights_poly.erase();
-        normals_poly.erase();
-        lights_poly.add_contour( s_lights, false );
-        normals_poly.add_contour( s_normals, false );
-
-        TGSuperPoly sequenced;
-        sequenced.set_poly( lights_poly );
-        sequenced.set_normals( normals_poly );
-        sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
-        sequenced.set_flag( flag );
-
-        result.push_back( sequenced );
+    if ( s_lights.ContourSize() ) {
+        s_lights.SetType( "RWY_SEQUENCED_LIGHTS" );
+        result.push_back( s_lights );
     }
 
     return result;
@@ -1414,22 +1083,18 @@ superpoly_list Runway::gen_ssalx( const string& kind, bool recip )
 
 // generate MALS, MALSF, and MALSR approach lighting scheme (kind =
 // ' ', F, or R)
-superpoly_list Runway::gen_malsx( const string& kind, bool recip )
+tglightcontour_list Runway::gen_malsx( const string& kind, bool recip )
 {
-    point_list g_lights; g_lights.clear();
-    point_list w_lights; w_lights.clear();
-    point_list r_lights; r_lights.clear();
-    point_list s_lights; s_lights.clear();
-    point_list g_normals; g_normals.clear();
-    point_list w_normals; w_normals.clear();
-    point_list r_normals; r_normals.clear();
-    point_list s_normals; s_normals.clear();
+    tgLightContour g_lights;
+    tgLightContour w_lights;
+    tgLightContour r_lights;
+    tgLightContour s_lights;
     int i;
     string flag;
 
-    Point3D normal1 = gen_runway_light_vector( 3.0, recip );
+    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
 
-    // Generate long center bar of lights (every 200')
+    // Generate long center bar of lights (every 60m)
     // determine the start point.
     SGGeod ref_save, pt;
     double length_hdg, left_hdg;
@@ -1448,28 +1113,23 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
         ref = SGGeodesy::direct(ref, length_hdg, -60);
 
         pt = ref;
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         // left 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, 1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, 1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = ref;
 
         // right 2 side lights
         pt = SGGeodesy::direct(pt, left_hdg, -1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
 
         pt = SGGeodesy::direct(pt, left_hdg, -1.0);
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
     }
 
     // Generate -300m extra horizontal row of lights
@@ -1479,8 +1139,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
     // left 5 side lights
     pt = SGGeodesy::direct(pt, left_hdg, 6.5);
     for ( i = 0; i < 5; ++i ) {
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
         pt = SGGeodesy::direct(pt, left_hdg, 0.75);
     }
 
@@ -1488,8 +1147,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
     // right 5 side lights
     pt = SGGeodesy::direct(pt, left_hdg, -6.5);
     for ( i = 0; i < 5; ++i ) {
-        w_lights.push_back( Point3D::fromSGGeod(pt) );
-        w_normals.push_back( normal1 );
+        w_lights.AddLight(pt, normal);
         pt = SGGeodesy::direct(pt, left_hdg, -0.75);
     }
 
@@ -1500,8 +1158,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
         // start 480m downwind
         ref = SGGeodesy::direct(ref, length_hdg, -480);
         for ( i = 0; i < 5; ++i ) {
-            s_lights.push_back( Point3D::fromSGGeod(ref) );
-            s_normals.push_back( normal1 );
+            s_lights.AddLight(ref, normal);
 
             // offset 60m downwind
             ref = SGGeodesy::direct(ref, length_hdg, -60);
@@ -1513,66 +1170,25 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
         // start 300m downwind
         ref = SGGeodesy::direct(ref, length_hdg, -300);
         for ( i = 0; i < 3; ++i ) {
-            s_lights.push_back( Point3D::fromSGGeod(ref) );
-            s_normals.push_back( normal1 );
+            s_lights.AddLight(ref, normal);
 
             // offset 60m downwind
             ref = SGGeodesy::direct(ref, length_hdg, -60);
         }
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( g_lights, false );
-    normals_poly.add_contour( g_normals, false );
+    tglightcontour_list result;
+    g_lights.SetType( "RWY_GREEN_LIGHTS" );
+    w_lights.SetType( "RWY_WHITE_LIGHTS" );
+    r_lights.SetType( "RWY_RED_LIGHTS" );
 
-    TGSuperPoly green;
-    green.set_poly( lights_poly );
-    green.set_normals( normals_poly );
-    green.set_material( "RWY_GREEN_LIGHTS" );
-    green.set_flag( flag );
+    result.push_back( g_lights );
+    result.push_back( w_lights );
+    result.push_back( r_lights );
 
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( r_lights, false );
-    normals_poly.add_contour( r_normals, false );
-
-    TGSuperPoly red;
-    red.set_poly( lights_poly );
-    red.set_normals( normals_poly );
-    red.set_material( "RWY_RED_LIGHTS" );
-    red.set_flag( flag );
-
-    lights_poly.erase();
-    normals_poly.erase();
-    lights_poly.add_contour( w_lights, false );
-    normals_poly.add_contour( w_normals, false );
-
-    TGSuperPoly white;
-    white.set_poly( lights_poly );
-    white.set_normals( normals_poly );
-    white.set_material( "RWY_WHITE_LIGHTS" );
-    white.set_flag( flag );
-
-    superpoly_list result; result.clear();
-
-    result.push_back( green );
-    result.push_back( red );
-    result.push_back( white );
-
-    if ( s_lights.size() > 0 ) {
-        lights_poly.erase();
-        normals_poly.erase();
-        lights_poly.add_contour( s_lights, false );
-        normals_poly.add_contour( s_normals, false );
-
-        TGSuperPoly sequenced;
-        sequenced.set_poly( lights_poly );
-        sequenced.set_normals( normals_poly );
-        sequenced.set_material( "RWY_SEQUENCED_LIGHTS" );
-        sequenced.set_flag( flag );
-
-        result.push_back( sequenced );
+    if ( s_lights.ContourSize() ) {
+        s_lights.SetType( "RWY_SEQUENCED_LIGHTS" );
+        result.push_back( s_lights );
     }
 
     return result;
@@ -1580,7 +1196,7 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
 
 
 // top level runway light generator
-void Runway::gen_runway_lights( superpoly_list *lights ) {
+void Runway::gen_runway_lights( tglightcontour_list& lights ) {
 
     unsigned int i, side;
     bool recip;
@@ -1594,114 +1210,114 @@ void Runway::gen_runway_lights( superpoly_list *lights ) {
 
         // Make edge lighting
         if ( rwy.edge_lights ) {
-            superpoly_list s = gen_runway_edge_lights( recip );
+            tglightcontour_list s = gen_runway_edge_lights( recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         // Centerline lighting
         if ( rwy.centerline_lights ) {
-            superpoly_list s = gen_runway_center_line_lights( recip );
+            tglightcontour_list s = gen_runway_center_line_lights( recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         // Touchdown zone lighting
         if ( rwy.tz_lights[side] ) {
-            TGSuperPoly s = gen_touchdown_zone_lights( recip );
-            lights->push_back( s );
+            tgLightContour s = gen_touchdown_zone_lights( recip );
+            lights.push_back( s );
         }
 
         // REIL lighting
         if ( rwy.reil[side] ) {
-            TGSuperPoly s = gen_reil( rwy.reil[side], recip );
-            lights->push_back( s );
+            tgLightContour s = gen_reil( rwy.reil[side], recip );
+            lights.push_back( s );
         }
 
         // Approach lighting
         if ( rwy.approach_lights[side] == 1 /* ALSF-I */ ) {
-            superpoly_list s = gen_alsf( "1", recip );
+            tglightcontour_list s = gen_alsf( "1", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 2 /* ALSF-II */ ) {
-            superpoly_list s = gen_alsf( "2", recip );
+            tglightcontour_list s = gen_alsf( "2", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 3  /* Calvert I */ ) {
-            superpoly_list s = gen_calvert( "1", recip );
+            tglightcontour_list s = gen_calvert( "1", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 4  /* Calvert II */ ) {
-            superpoly_list s = gen_calvert( "2", recip );
+            tglightcontour_list s = gen_calvert( "2", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 5 /* SSALR */ ) {
-            superpoly_list s = gen_ssalx( "R", recip );
+            tglightcontour_list s = gen_ssalx( "R", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 6 /* SSALF */ ) {
-            superpoly_list s = gen_ssalx( "F", recip );
+            tglightcontour_list s = gen_ssalx( "F", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
         // a shorter center bar)
         else if ( rwy.approach_lights[side] == 7 /* SALS */ ) {
-            superpoly_list s = gen_alsf( "O", recip );
+            tglightcontour_list s = gen_alsf( "O", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 8 /* MALSR */ ) {
-            superpoly_list s = gen_malsx( "R", recip );
+            tglightcontour_list s = gen_malsx( "R", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 9 /* MALSF */ ) {
-            superpoly_list s = gen_malsx( "F", recip );
+            tglightcontour_list s = gen_malsx( "F", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 10 /* MALSX */ ) {
-            superpoly_list s = gen_malsx( "x", recip );
+            tglightcontour_list s = gen_malsx( "x", recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
         else if ( rwy.approach_lights[side] == 11 /* ODALS Omni-directional approach light system */ ) {
-            TGSuperPoly s = gen_odals( 0, recip );
-            lights->push_back( s );
+            tgLightContour s = gen_odals( 0, recip );
+            lights.push_back( s );
         }
 
         // RAIL: Sequenced strobes with no other approach lights
         else if ( rwy.approach_lights[side] == 12 /* RAIL Runway alignment indicator lights */ ) {
-            TGSuperPoly s = gen_odals( 1, recip );
-            lights->push_back( s );
+            tgLightContour s = gen_odals( 1, recip );
+            lights.push_back( s );
         }
 
 #if 0
@@ -1724,9 +1340,9 @@ void Runway::gen_runway_lights( superpoly_list *lights ) {
         // use a central routine for its creation
         if ( rwy.approach_lights[side] > 0 && rwy.approach_lights[side] < 11)
         {
-            superpoly_list s = gen_runway_threshold_lights( 1, recip );
+            tglightcontour_list s = gen_runway_threshold_lights( 1, recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
 
@@ -1735,9 +1351,9 @@ void Runway::gen_runway_lights( superpoly_list *lights ) {
         // create a simple threshold lighting
         if ( rwy.edge_lights && (rwy.approach_lights[side] == 0 || rwy.approach_lights[side] > 10))
         {
-            superpoly_list s = gen_runway_threshold_lights( 0, recip );
+            tglightcontour_list s = gen_runway_threshold_lights( 0, recip );
             for ( i = 0; i < s.size(); ++i ) {
-                lights->push_back( s[i] );
+                lights.push_back( s[i] );
             }
         }
     }

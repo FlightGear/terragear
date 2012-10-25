@@ -9,23 +9,20 @@ LightingObj::LightingObj( char* definition )
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read lighting object: (" << lon << "," << lat << ") heading: " << heading << " type: " << type  );
 }
 
-void LightingObj::BuildBtg( superpoly_list* lights )
+void LightingObj::BuildBtg( tglightcontour_list& lights )
 {
-    point_list lightobj; lightobj.clear();
-    point_list normals; normals.clear();
+    tgLightContour light_contour;
+    light_contour.SetType( "RWY_VASI_LIGHTS" );
 
-    double left_hdg = heading - 90.0;
-    if ( left_hdg < 0 ) { left_hdg += 360.0; }
-
-    SGGeod ref = SGGeod::fromDeg(lon, lat);
+    double left_hdg = SGMiscd::normalizePeriodic(0, 360, heading - 90.0 );
+    SGGeod ref      = SGGeod::fromDeg(lon, lat);
 
     // Calculate the light normal with the help of a second point
     // in the object heading direction.
     // SimGear takes care of the glideslope angle calculation from the normal
     SGVec3d cart1 = SGVec3d::fromGeod(SGGeodesy::direct( ref, heading, 10));
     SGVec3d cart2 = SGVec3d::fromGeod(ref);
-
-    Point3D normal = Point3D::fromSGVec3(normalize(cart2 - cart1));
+    SGVec3d normal = normalize(cart2 - cart1);
 
     // We know our normal, now create the lights
     SGGeod pt1;
@@ -42,15 +39,13 @@ void LightingObj::BuildBtg( superpoly_list* lights )
 
         // unit1
         pt1 = SGGeodesy::direct( pt1, left_hdg, -5 );
-        lightobj.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        light_contour.AddLight( pt1, normal );
 
         // unit2+3
         for (int i = 0; i < 2; ++i)
         {
             pt1 = SGGeodesy::direct( pt1, left_hdg, 5 );
-            lightobj.push_back( Point3D::fromSGGeod(pt1) );
-            normals.push_back( normal );
+            light_contour.AddLight( pt1, normal );
         }
 
         // Go to upwind bar
@@ -58,15 +53,13 @@ void LightingObj::BuildBtg( superpoly_list* lights )
 
         // unit4
         pt1 = SGGeodesy::direct( pt1, left_hdg, -5 );
-        lightobj.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        light_contour.AddLight( pt1, normal );
 
         // unit5+6
         for (int i = 0; i < 2; ++i)
         {
             pt1 = SGGeodesy::direct( pt1, left_hdg,5 );
-            lightobj.push_back( Point3D::fromSGGeod(pt1) );
-            normals.push_back( normal );
+            light_contour.AddLight( pt1, normal );
         }
     }
     else if (type == 2)
@@ -75,15 +68,13 @@ void LightingObj::BuildBtg( superpoly_list* lights )
 
         // unit1
         pt1 = SGGeodesy::direct( ref, left_hdg, -12 );
-        lightobj.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        light_contour.AddLight( pt1, normal );
 
         // unit2-4
         for (int i = 0; i < 3; ++i)
         {
             pt1 = SGGeodesy::direct( pt1, left_hdg, 8 );
-            lightobj.push_back( Point3D::fromSGGeod(pt1) );
-            normals.push_back( normal );
+            light_contour.AddLight( pt1, normal );
         }
     }
     else if (type == 3)
@@ -92,15 +83,13 @@ void LightingObj::BuildBtg( superpoly_list* lights )
 
         // unit1
         pt1 = SGGeodesy::direct( ref, left_hdg, 12 );
-        lightobj.push_back( Point3D::fromSGGeod(pt1) );
-        normals.push_back( normal );
+        light_contour.AddLight( pt1, normal );
 
         // unit2-4
         for (int i = 0; i < 3; ++i)
         {
             pt1 = SGGeodesy::direct( pt1, left_hdg, -8 );
-            lightobj.push_back( Point3D::fromSGGeod(pt1) );
-            normals.push_back( normal );
+            light_contour.AddLight( pt1, normal );
         }
     }
     else if (type == 4)
@@ -113,8 +102,7 @@ void LightingObj::BuildBtg( superpoly_list* lights )
         SG_LOG(SG_GENERAL, SG_DEBUG, "Generating tri-colour VASI = " << assoc_rw);
 
         // only one light here
-        lightobj.push_back(  Point3D::fromSGGeod(ref) );
-        normals.push_back( normal );
+        light_contour.AddLight( ref, normal );
     }
     else
     {
@@ -122,15 +110,5 @@ void LightingObj::BuildBtg( superpoly_list* lights )
         return;
     }
 
-    TGPolygon lights_poly; lights_poly.erase();
-    TGPolygon normals_poly; normals_poly.erase();
-    lights_poly.add_contour( lightobj, false );
-    normals_poly.add_contour( normals, false );
-
-    TGSuperPoly result;
-    result.set_poly( lights_poly );
-    result.set_normals( normals_poly );
-    result.set_material( "RWY_VASI_LIGHTS" );
-
-    lights->push_back( result);
+    lights.push_back( light_contour);
 }

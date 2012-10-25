@@ -12,8 +12,8 @@
 #endif  
 
 #include <simgear/compiler.h>
+#include <simgear/math/SGMath.hxx>
 
-#include <Polygon/polygon.hxx>
 
 namespace tg {
 

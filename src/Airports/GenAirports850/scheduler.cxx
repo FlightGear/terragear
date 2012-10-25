@@ -215,7 +215,7 @@ void ProcessList::Launch( string command, string work_dir, string file, AirportI
 
     sprintf( arg, "--redirect-port=%d", GENAPT_PORT );
     args.push_back(arg);
-        
+
     // Launch the child process
     ProcessHandle ph = Process::launch(command, args, 0, &outPipe, &outPipe);
 
@@ -587,7 +587,7 @@ long Scheduler::FindAirport( string icao )
 
 void Scheduler::RetryAirport( AirportInfo* pai )
 {
-    retryList.push_back( *pai );        
+    // retryList.push_back( *pai );        
 }
 
 bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )

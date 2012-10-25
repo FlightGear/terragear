@@ -25,10 +25,20 @@ public:
     void Finish();
 
     // Build BTG for airport base for airports with boundary
-    int  BuildBtg( TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles );
+    int  BuildBtg( tgPolygon& apt_base,
+                   tgPolygon& apt_clearing,
+                   bool make_shapefiles );
 
     // Build BTG for pavements for airports with no boundary
-    int  BuildBtg( superpoly_list* rwy_polys, texparams_list* texparams, poly_list& slivers, TGPolygon* apt_base, TGPolygon* apt_clearing, bool make_shapefiles );
+    int  BuildBtg( tgpolygon_list& rwy_polys,
+                   tgcontour_list& slivers,
+                   bool make_shapefiles );
+
+    int  BuildBtg( tgpolygon_list& rwy_polys,
+                   tgcontour_list& slivers,
+                   tgPolygon& apt_base,
+                   tgPolygon& apt_clearing,
+                   bool make_shapefiles );
 
     FeatureList* GetFeatures()
     {
@@ -38,13 +48,15 @@ public:
 private:
     // convert the BezierPoly to a normal Poly (adding nodes for the curves)
     void CreateConvexHull( void );
-    void ConvertContour( BezContour* src, point_list *dst );
+    void ConvertContour( BezContour* src, tgContour& dst );
     void ExpandContour( point_list& src, TGPolygon& dst, double dist );
+    std::string GetMaterial( int surface );
+
 
     bool   is_pavement;
     int    surface_type;
     float  smoothness;
-    float  texture_heading;
+    double texture_heading;
     string description;
     
     // outer boundary definition as bezier nodes
@@ -60,7 +72,7 @@ private:
     point_list hull;
 
     // Converted polygon after parsing complete
-    TGPolygon pre_tess;
+    tgPolygon pre_tess;
 
     // pavement definitions have multiple linear features (markings and lights for each contour)
     LinearFeature* cur_feature;
