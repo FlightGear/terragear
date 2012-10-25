@@ -1563,271 +1563,164 @@ superpoly_list Runway::gen_malsx( const string& kind, bool recip )
 // top level runway light generator
 void Runway::gen_runway_lights( superpoly_list *lights ) {
 
-    unsigned int i;
+    unsigned int i, side;
+    bool recip;
 
-    // Make edge lighting
-    if ( rwy.edge_lights > 0 /* Has edge lighting */ ) {
-        // forward direction
-        superpoly_list s = gen_runway_edge_lights( false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-
-        // reverse direction
-        s = gen_runway_edge_lights( true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
-
-    // Centerline lighting
-    if ( rwy.centerline_lights == 1 /* Has centerline lighting */ ) {
-        // forward direction
-        superpoly_list s = gen_runway_center_line_lights( false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+    for (side = 0; side < 2; ++side) {
+        if (side == 0) {
+            recip = false;
+        } else {
+            recip = true;
         }
 
-	s = gen_runway_center_line_lights( true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        // Make edge lighting
+        if ( rwy.edge_lights ) {
+            superpoly_list s = gen_runway_edge_lights( recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
 
-    // Touchdown zone lighting
-    if ( rwy.tz_lights[0] == 1 /* Has touchdown zone lighting */ ) {
-        TGSuperPoly s = gen_touchdown_zone_lights( false );
-        lights->push_back( s );
-    }
-    if ( rwy.tz_lights[1] == 1 /* Has touchdown zone lighting */ ) {
-        TGSuperPoly s = gen_touchdown_zone_lights( true );
-        lights->push_back( s );
-    }
+        // Centerline lighting
+        if ( rwy.centerline_lights ) {
+            superpoly_list s = gen_runway_center_line_lights( recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
+        }
 
-    // REIL lighting
-    if ( rwy.reil[0] > 0 /* Has REIL lighting */ ) {
-        TGSuperPoly s = gen_reil( false );
-        lights->push_back( s );
-    }
-    if ( rwy.reil[1] > 0 /* Has REIL lighting */ ) {
-        TGSuperPoly s = gen_reil( true );
-        lights->push_back( s );
-    }
+        // Touchdown zone lighting
+        if ( rwy.tz_lights[side] ) {
+            TGSuperPoly s = gen_touchdown_zone_lights( recip );
+            lights->push_back( s );
+        }
 
+        // REIL lighting
+        if ( rwy.reil[side] ) {
+            TGSuperPoly s = gen_reil( recip );
+            lights->push_back( s );
+        }
 
-    // Approach lighting
-    if ( rwy.approach_lights[0] == 1 /* ALSF-I */ ) {
-        superpoly_list s = gen_alsf( "1", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        // Approach lighting
+        if ( rwy.approach_lights[side] == 1 /* ALSF-I */ ) {
+            superpoly_list s = gen_alsf( "1", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 1 /* ALSF-I */ ) {
-        superpoly_list s = gen_alsf( "1", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 2 /* ALSF-II */ ) {
-        superpoly_list s = gen_alsf( "2", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 2 /* ALSF-II */ ) {
+            superpoly_list s = gen_alsf( "2", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if (rwy.approach_lights[1]  == 2 /* ALSF-II */ ) {
-        superpoly_list s = gen_alsf( "2", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 3  /* Calvert I */ ) {
-        superpoly_list s = gen_calvert( "1", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 3  /* Calvert I */ ) {
+            superpoly_list s = gen_calvert( "1", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 3  /* Calvert I */ ) {
-        superpoly_list s = gen_calvert( "1", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 4  /* Calvert II */ ) {
-        superpoly_list s = gen_calvert( "2", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 4  /* Calvert II */ ) {
+            superpoly_list s = gen_calvert( "2", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 4  /* Calvert II */ ) {
-        superpoly_list s = gen_calvert( "2", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 5 /* SSALR */ ) {
-        superpoly_list s = gen_ssalx( "R", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 5 /* SSALR */ ) {
+            superpoly_list s = gen_ssalx( "R", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 5 /* SSALR */ ) {
-        superpoly_list s = gen_ssalx( "R", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 6 /* SSALF */ ) {
-        superpoly_list s = gen_ssalx( "F", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 6 /* SSALF */ ) {
+            superpoly_list s = gen_ssalx( "F", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 6 /* SSALF */ ) {
-        superpoly_list s = gen_ssalx( "F", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
-    // a shorter center bar)
-    if ( rwy.approach_lights[0] == 7 /* SALS */ ) {
-        superpoly_list s = gen_alsf( "O", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
+        // a shorter center bar)
+        else if ( rwy.approach_lights[side] == 7 /* SALS */ ) {
+            superpoly_list s = gen_alsf( "O", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 7 /* SALS */ ) {
-        superpoly_list s = gen_alsf( "O", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 8 /* MALSR */ ) {
-        superpoly_list s = gen_malsx( "R", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 8 /* MALSR */ ) {
+            superpoly_list s = gen_malsx( "R", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 8 /* MALSR */ ) {
-        superpoly_list s = gen_malsx( "R", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 9 /* MALSF */ ) {
-        superpoly_list s = gen_malsx( "F", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 9 /* MALSF */ ) {
+            superpoly_list s = gen_malsx( "F", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 9 /* MALSF */ ) {
-        superpoly_list s = gen_malsx( "F", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 10 /* MALSX */ ) {
-        superpoly_list s = gen_malsx( "x", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == 10 /* MALSX */ ) {
+            superpoly_list s = gen_malsx( "x", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == 10 /* MALSX */ ) {
-        superpoly_list s = gen_malsx( "x", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == 11 /* ODALS Omni-directional approach light system */ ) {
-        TGSuperPoly s = gen_odals( false );
-        lights->push_back( s );
-    }
-    if ( rwy.approach_lights[1] == 11 /* ODALS Omni-directional approach light system */ ) {
-        TGSuperPoly s = gen_odals( true );
-        lights->push_back( s );
-    }
+        else if ( rwy.approach_lights[side] == 11 /* ODALS Omni-directional approach light system */ ) {
+            TGSuperPoly s = gen_odals( recip );
+            lights->push_back( s );
+        }
 
 #if 0
-    ////////////////////////////////////////////////////////////
-    // NOT IMPLIMENTED:
-    //
-    // code: 12 - RAIL Runway alignment indicator lights (icw other systems)
-    //
-    ////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////
+        // NOT IMPLIMENTED:
+        //
+        // code: 12 - RAIL Runway alignment indicator lights (icw other systems)
+        //
+        ////////////////////////////////////////////////////////////
 
-    if ( rwy.approach_lights[0] == -1 /* SALSF not supported by database */ ) {
-        superpoly_list s = gen_alsf( "P", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == -1 /* SALSF not supported by database */ ) {
+            superpoly_list s = gen_alsf( "P", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == -1 /* SALSF not supported by database */ ) {
-        superpoly_list s = gen_alsf( "P", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    if ( rwy.approach_lights[0] == -1 /* SSALS not supported by database */ ) {
-        superpoly_list s = gen_ssalx( "S", false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        else if ( rwy.approach_lights[side] == -1 /* SSALS not supported by database */ ) {
+            superpoly_list s = gen_ssalx( "S", recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] == -1 /* SSALS not supported by database */ ) {
-        superpoly_list s = gen_ssalx( "S", true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 #endif
 
-    // Approach light systems that have a threshold light bar
-    // use a central routine for its creation
-    if ( rwy.approach_lights[0] > 0 && rwy.approach_lights[0] < 11)
-    {
-        // forward direction
-        superpoly_list s = gen_runway_threshold_lights( 1, false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        // Approach light systems that have a threshold light bar
+        // use a central routine for its creation
+        if ( rwy.approach_lights[side] > 0 && rwy.approach_lights[side] < 11)
+        {
+            superpoly_list s = gen_runway_threshold_lights( 1, recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
-    }
-    if ( rwy.approach_lights[1] > 0 && rwy.approach_lights[1] < 11)
-    {
-        // reverse direction
-        superpoly_list s = gen_runway_threshold_lights( 1, true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
 
-    // If the runway has edge lights but no approach lights,
-    // or approach lights without a lights bar,
-    // create a simple threshold lighting
-    if ( rwy.edge_lights > 0  && (rwy.approach_lights[0] == 0 || rwy.approach_lights[0] > 10))
-    {
-        // forward direction
-        superpoly_list s = gen_runway_threshold_lights( 0, false );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
-        }
-    }
-    if ( rwy.edge_lights > 0  && (rwy.approach_lights[1] == 0 || rwy.approach_lights[1] > 10))
-    {
-        // reverse direction
-        superpoly_list s = gen_runway_threshold_lights( 0, true );
-        for ( i = 0; i < s.size(); ++i ) {
-            lights->push_back( s[i] );
+        // If the runway has edge lights but no approach lights,
+        // or approach lights without a lights bar,
+        // create a simple threshold lighting
+        if ( rwy.edge_lights && (rwy.approach_lights[side] == 0 || rwy.approach_lights[side] > 10))
+        {
+            superpoly_list s = gen_runway_threshold_lights( 0, recip );
+            for ( i = 0; i < s.size(); ++i ) {
+                lights->push_back( s[i] );
+            }
         }
     }
 }
