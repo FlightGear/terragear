@@ -553,13 +553,20 @@ TGSuperPoly Runway::gen_touchdown_zone_lights( bool recip )
 
 
 // generate REIL lights
-TGSuperPoly Runway::gen_reil( bool recip )
+TGSuperPoly Runway::gen_reil( const int kind, bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
     string flag = rwy.rwnum[get_thresh0(recip)];
+    Point3D normal;
 
-    Point3D normal = gen_runway_light_vector( 10, recip );
+    if (kind == 1) {
+        // omnidirectional lights
+        normal = Point3D::fromSGVec3( normalize(SGVec3d::fromGeod(GetStart())) );
+    } else {
+        // unidirectional lights
+        normal = gen_runway_light_vector( 10, recip );
+    }
 
     // determine the start point.
     SGGeod ref;
@@ -1597,7 +1604,7 @@ void Runway::gen_runway_lights( superpoly_list *lights ) {
 
         // REIL lighting
         if ( rwy.reil[side] ) {
-            TGSuperPoly s = gen_reil( recip );
+            TGSuperPoly s = gen_reil( rwy.reil[side], recip );
             lights->push_back( s );
         }
 

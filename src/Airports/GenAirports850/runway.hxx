@@ -161,7 +161,7 @@ private:
     superpoly_list gen_runway_threshold_lights( const int kind, bool recip );
     superpoly_list gen_runway_center_line_lights( bool recip );
     TGSuperPoly gen_touchdown_zone_lights( bool recip );
-    TGSuperPoly gen_reil( bool recip );
+    TGSuperPoly gen_reil( const int kind, bool recip );
     superpoly_list gen_calvert( const string &kind, bool recip );
     superpoly_list gen_alsf( const string &kind, bool recip );
     TGSuperPoly gen_odals( bool recip );
