@@ -164,7 +164,7 @@ private:
     TGSuperPoly gen_reil( const int kind, bool recip );
     superpoly_list gen_calvert( const string &kind, bool recip );
     superpoly_list gen_alsf( const string &kind, bool recip );
-    TGSuperPoly gen_odals( bool recip );
+    TGSuperPoly gen_odals( const int kind, bool recip );
     superpoly_list gen_ssalx( const string& kind, bool recip );
     superpoly_list gen_malsx( const string& kind, bool recip );
 };

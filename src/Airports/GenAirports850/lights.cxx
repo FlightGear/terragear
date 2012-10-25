@@ -1169,17 +1169,27 @@ superpoly_list Runway::gen_alsf( const string &kind, bool recip )
 }
 
 
-// generate ODALS lights
-TGSuperPoly Runway::gen_odals( bool recip )
+// generate ODALS or REIL lights. Main differende between the two:
+// ODALS is omnidirectional, REIL is unidirectional
+TGSuperPoly Runway::gen_odals( const int kind, bool recip )
 {
     point_list lights; lights.clear();
     point_list normals; normals.clear();
-    int i;
-    string flag;
 
-    // ODALS lighting is omni-directional, but we generate a normal as
-    // a placeholder to keep everything happy.
-    Point3D normal( 0.0, 0.0, 0.0 );
+    int i;
+    string flag, material;
+    Point3D normal;
+
+    if (kind == 0) {
+        // ODALS lighting is omni-directional, but we generate a normal as
+        // a placeholder to keep everything happy.
+        normal = Point3D::fromSGVec3( normalize(SGVec3d::fromGeod(GetStart())) );
+        material = "RWY_ODALS_LIGHTS";
+    } else {
+        // RAIL lights are directional
+        normal = gen_runway_light_vector( 3.0, recip );
+        material = "RWY_SEQUENCED_LIGHTS";
+    }
 
     // determine the start point.
     SGGeod ref, pt;
@@ -1197,15 +1207,17 @@ TGSuperPoly Runway::gen_odals( bool recip )
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
     double offset = rwy.width / 2 + 14;
 
-    // offset 14m left of runway
-    pt = SGGeodesy::direct(ref, left_hdg, offset);
-    lights.push_back( Point3D::fromSGGeod(pt) );
-    normals.push_back( normal );
-    
-    // offset 14m right of runway
-    pt = SGGeodesy::direct(ref, left_hdg, -offset);
-    lights.push_back( Point3D::fromSGGeod(pt) );
-    normals.push_back( normal );
+    if (kind == 0) {
+        // offset 14m left of runway
+        pt = SGGeodesy::direct(ref, left_hdg, offset);
+        lights.push_back( Point3D::fromSGGeod(pt) );
+        normals.push_back( normal );
+
+        // offset 14m right of runway
+        pt = SGGeodesy::direct(ref, left_hdg, -offset);
+        lights.push_back( Point3D::fromSGGeod(pt) );
+        normals.push_back( normal );
+    }
 
     for ( i = 0; i < 5; ++i ) {
         // offset 90m downwind
@@ -1222,7 +1234,7 @@ TGSuperPoly Runway::gen_odals( bool recip )
     TGSuperPoly result;
     result.set_poly( lights_poly );
     result.set_normals( normals_poly );
-    result.set_material( "RWY_ODALS_LIGHTS" );
+    result.set_material( material );
 
     result.set_flag( flag );
 
@@ -1682,18 +1694,17 @@ void Runway::gen_runway_lights( superpoly_list *lights ) {
         }
 
         else if ( rwy.approach_lights[side] == 11 /* ODALS Omni-directional approach light system */ ) {
-            TGSuperPoly s = gen_odals( recip );
+            TGSuperPoly s = gen_odals( 0, recip );
+            lights->push_back( s );
+        }
+
+        // RAIL: Sequenced strobes with no other approach lights
+        else if ( rwy.approach_lights[side] == 12 /* RAIL Runway alignment indicator lights */ ) {
+            TGSuperPoly s = gen_odals( 1, recip );
             lights->push_back( s );
         }
 
 #if 0
-        ////////////////////////////////////////////////////////////
-        // NOT IMPLIMENTED:
-        //
-        // code: 12 - RAIL Runway alignment indicator lights (icw other systems)
-        //
-        ////////////////////////////////////////////////////////////
-
         else if ( rwy.approach_lights[side] == -1 /* SALSF not supported by database */ ) {
             superpoly_list s = gen_alsf( "P", recip );
             for ( i = 0; i < s.size(); ++i ) {
