@@ -106,6 +106,7 @@ void LightingObj::BuildBtg( superpoly_list* lights )
     else if (type == 4)
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Space Shuttle PAPI is deprecated. Use the normal PAPI and set the glideslope accordingly");
+        return;
     }
     else if (type == 5)
     {
@@ -118,6 +119,7 @@ void LightingObj::BuildBtg( superpoly_list* lights )
     else
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "Unknown lighting object (PAPI/VASI...) code: " << type);
+        return;
     }
 
     TGPolygon lights_poly; lights_poly.erase();
