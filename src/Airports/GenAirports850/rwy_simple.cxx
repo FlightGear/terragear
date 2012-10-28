@@ -20,18 +20,13 @@
 //
 
 
-
 #include <simgear/compiler.h>
-#include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
-#include <Polygon/superpoly.hxx>
 #include "runway.hxx"
 
 using std::string;
 
-
-// generate a simple runway.  The routine modifies rwy_polys,
-// texparams, and accum
+// generate a simple runway
 void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
                              tgcontour_list& slivers )
 {
@@ -40,7 +35,13 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
 
     for ( int rwhalf=0; rwhalf<2; ++rwhalf ) {
 
+        double length = rwy.length / 2.0;
+        double start_pct = 0.0;
+        double end_pct = 0.0;
+        double heading = 0.0;
+
         if (rwhalf == 0) {
+            heading = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180.0);
 
             //Create the first half of the runway (first entry in apt.dat)
             runway_half.Erase();
@@ -50,7 +51,8 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
             runway_half.AddNode( 0, runway.GetNode(2) );
         }
 
-        else if (rwhalf == 1) {
+        else {
+            heading = rwy.heading;
 
             //Create the second runway half from apt.dat
             runway_half.Erase();
@@ -60,45 +62,34 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
             runway_half.AddNode( 0, runway.GetNode(5) );
         }
 
-        double length = rwy.length / 2.0;
-        double start1_pct = 0.0;
-        double end1_pct = 0.0;
-        double heading = 0.0;
-
-        if (rwhalf == 0) {
-            heading = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180.0);
-        }
-        else if (rwhalf == 1) {
-            heading = rwy.heading;
-        }
         SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
 
         // Displaced threshold if it exists
         if ( rwy.threshold[rwhalf] > 0.0 ) {
             SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
-                                           << rwy.threshold[rwhalf] );
+            << rwy.threshold[rwhalf] );
 
-            start1_pct = end1_pct;
-            end1_pct = start1_pct + ( rwy.threshold[rwhalf] / length );
+            start_pct = end_pct;
+            end_pct = start_pct + ( rwy.threshold[rwhalf] / length );
             Runway::gen_runway_section( runway_half,
-                                        start1_pct, end1_pct,
+                                        start_pct, end_pct,
                                         0.0, 1.0,
                                         0.0, 1.0, 0.0, 1.0,
                                         heading,
                                         "",
-                                        rwy_polys, 
+                                        rwy_polys,
                                         slivers,
                                         false );
         }
-        
+
         // Generate runway
         Runway::gen_runway_section( runway_half,
-                                    0, 1,
+                                    end_pct, 1.0,
                                     0.0, 1.0,
                                     0.0, 0.28, 0.0, 1.0,
                                     heading,
                                     "",
-                                    rwy_polys, 
+                                    rwy_polys,
                                     slivers,
                                     false );
     }

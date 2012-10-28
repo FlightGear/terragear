@@ -149,12 +149,12 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     double lshoulder_width = 0.0f;
     double rshoulder_width = 0.0f;
     std::string shoulder_surface = "";
-
+#if 0
     static int runway_idx  = 0;
     static int section_idx = 0;
     static int clipped_idx = 0;
     char layer[64];
-
+#endif
     SGVec2d a0 = SGVec2d( runway.GetNode(0, 1).getLongitudeDeg(), runway.GetNode(0, 1).getLatitudeDeg() );
     SGVec2d a1 = SGVec2d( runway.GetNode(0, 2).getLongitudeDeg(), runway.GetNode(0, 2).getLatitudeDeg() );
     SGVec2d a2 = SGVec2d( runway.GetNode(0, 0).getLongitudeDeg(), runway.GetNode(0, 0).getLatitudeDeg() );
@@ -345,9 +345,9 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     double length = rwy.length;
 
     SGVec2d a0 = SGVec2d( runway.GetNode(0, 1).getLongitudeDeg(), runway.GetNode(0, 1).getLatitudeDeg() );
-    SGVec2d a1 = SGVec2d( runway.GetNode(0, 1).getLongitudeDeg(), runway.GetNode(0, 2).getLatitudeDeg() );
-    SGVec2d a2 = SGVec2d( runway.GetNode(0, 1).getLongitudeDeg(), runway.GetNode(0, 0).getLatitudeDeg() );
-    SGVec2d a3 = SGVec2d( runway.GetNode(0, 1).getLongitudeDeg(), runway.GetNode(0, 3).getLatitudeDeg() );
+    SGVec2d a1 = SGVec2d( runway.GetNode(0, 2).getLongitudeDeg(), runway.GetNode(0, 2).getLatitudeDeg() );
+    SGVec2d a2 = SGVec2d( runway.GetNode(0, 0).getLongitudeDeg(), runway.GetNode(0, 0).getLatitudeDeg() );
+    SGVec2d a3 = SGVec2d( runway.GetNode(0, 3).getLongitudeDeg(), runway.GetNode(0, 3).getLatitudeDeg() );
 
     if ( startl_pct > 0.0 ) {
         startl_pct -= nudge * SG_EPSILON;
@@ -573,9 +573,15 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
     tgContour runway = gen_runway_w_mid( 0, 0 );
     tgPolygon runway_half;
 
-    for ( int rwhalf=0; rwhalf<2; ++rwhalf ){
+    for ( int rwhalf = 0; rwhalf < 2; ++rwhalf ) {
+
+        double start1_pct = 0.0;
+        double end1_pct = 0.0;
+        double heading = 0.0;
+        double length = rwy.length / 2.0;
 
         if (rwhalf == 0) {
+            heading = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
 
             //Create the first half of the runway (first entry in apt.dat)
             runway_half.Erase();
@@ -585,7 +591,8 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
             runway_half.AddNode( 0, runway.GetNode(2) );
         }
     
-        else if (rwhalf == 1) {
+        else {
+            heading = rwy.heading;
 
             //Create the second runway half from apt.dat
             runway_half.Erase();
@@ -594,15 +601,6 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
             runway_half.AddNode( 0, runway.GetNode(2) );
             runway_half.AddNode( 0, runway.GetNode(5) );
         }
-
-        SGGeod p;
-        SG_LOG(SG_GENERAL, SG_DEBUG, "raw runway half pts (run " << rwhalf << ")");
-        for ( unsigned int i = 0; i < runway_half.ContourSize( 0 ); ++i ) {
-	        p = runway_half.GetNode( 0, i );
-	        SG_LOG(SG_GENERAL, SG_DEBUG, " point = " << p);
-        }
-
-        double length = rwy.length / 2.0;
 
         // Make sure our runway is long enough for the desired marking variant
         if ( (rwy.marking[rwhalf]==2 || rwy.marking[rwhalf]==4) && length < 1150 * SG_FEET_TO_METER ) {
@@ -617,25 +615,12 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                 << rwy.length << "m) for precision markings!  Setting runway markings to visual!");
             rwy.marking[rwhalf]=1;
         }
+        SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
 
-        double start1_pct = 0.0;
-        double end1_pct = 0.0;
-        double heading = 0.0;
-        string rwname;
 
         //
         // Displaced threshold if it exists
         //
-        if (rwhalf == 0) {
-            heading = SGMiscd::normalizePeriodic( 0,360, rwy.heading + 180.0 );
-            rwname = rwy.rwnum[0];
-        }
-        else if (rwhalf == 1) {
-            heading = rwy.heading;
-            rwname = rwy.rwnum[1];
-        }
-
-        SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
         if ( rwy.threshold[rwhalf] > 0.0 ) {
             SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
@@ -734,7 +719,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
 
         // Runway designation block
         gen_rw_designation( runway_half, heading,
-                            rwname, start1_pct, end1_pct, 
+                            rwy.rwnum[rwhalf], start1_pct, end1_pct,
                             rwy_polys, slivers,
                             make_shapefiles );
 

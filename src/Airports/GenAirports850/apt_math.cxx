@@ -111,16 +111,15 @@ tgContour gen_wgs84_area( SGGeod end1, SGGeod end2,
     return result;
 }
 
-tgContour gen_wgs84_rect( double lat, double lon, double heading, double length, double width )
+tgContour gen_wgs84_rect( SGGeod origin, double heading, double length, double width )
 {
     tgContour result;
-    SGGeod    ref = SGGeod::fromDeg(lon, lat);
     SGGeod    p;
 
     // starting point is in the middle of the rectangle width, at the beginning - stretch to heading
     // Point 1 is -90deg, 1/2 width away
     double left_hdg = SGMiscd::normalizePeriodic(0, 360, heading -90 );
-    p = SGGeodesy::direct( ref, left_hdg, width / 2.0 );
+    p = SGGeodesy::direct( origin, left_hdg, width / 2.0 );
     result.AddNode( p );
 
     // Point 2 is heading, length away from point 1

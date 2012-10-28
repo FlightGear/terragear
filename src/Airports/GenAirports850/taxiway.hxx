@@ -5,9 +5,6 @@
 #include <stdlib.h>
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-#include <Geometry/point3d.hxx>
 
 #include "apt_math.hxx"
 
@@ -32,8 +29,7 @@ public:
                   bool make_shapefiles );
     
 private:
-    double  lat;
-    double  lon;
+    SGGeod  origin;
     double  heading;
     double  length;
     double  width;

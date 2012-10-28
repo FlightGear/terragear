@@ -2297,7 +2297,7 @@ void tgPolygon::InheritElevations( const tgPolygon& source )
 
         // go back ways
         last = -9999.0;
-        for ( unsigned int j = contours[i].GetSize()-1; j >= 0; --j ) {
+        for ( unsigned int j = contours[i].GetSize()-1; j > 0; --j ) {
             Point3D p = Point3D::fromSGGeod( GetNode(i,j) );
             if ( p.z() > -9000 ) {
                 last = p.z();
