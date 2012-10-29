@@ -5,9 +5,6 @@
 #include <stdlib.h>
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-#include <Geometry/point3d.hxx>
 
 #include "apt_math.hxx"
 
@@ -188,8 +185,7 @@ class WaterRunway
 public:
     WaterRunway(char* def);
 
-    tgContour GetNodes();
-    point_list TempGetAsPointList();
+    tgContour GetBuoys();
 
     SGGeod GetStart(void)
     {

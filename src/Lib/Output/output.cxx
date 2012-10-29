@@ -92,7 +92,7 @@ void write_index( const string& base, const SGBucket& b, const string& name )
 // update index file (list of shared objects to be included in final
 // scenery build)
 void write_index_shared( const string &base, const SGBucket &b,
-                         const Point3D &p, const string& name,
+                         const SGGeod &p, const string& name,
                          const double &heading )
 {
     string dir = base + "/" + b.gen_base_path();
@@ -111,12 +111,12 @@ void write_index_shared( const string &base, const SGBucket &b,
     }
 
     fprintf( fp, "OBJECT_SHARED %s %.6f %.6f %.1f %.2f\n", name.c_str(),
-             p.lon(), p.lat(), p.elev(), heading );
+             p.getLongitudeDeg(), p.getLatitudeDeg(), p.getElevationM(), heading );
     fclose( fp );
 }
 
 void write_object_sign( const string &base, const SGBucket &b,
-                         const Point3D &p, const string& sign,
+                         const SGGeod &p, const string& sign,
                          const double &heading, const int &size)
 {
     string dir = base + "/" + b.gen_base_path();
@@ -135,7 +135,7 @@ void write_object_sign( const string &base, const SGBucket &b,
     }
 
     fprintf( fp, "OBJECT_SIGN %s %.6f %.6f %.1f %.2f %u\n", sign.c_str(),
-             p.lon(), p.lat(), p.elev(), heading, size );
+             p.getLongitudeDeg(), p.getLatitudeDeg(), p.getElevationM(), heading, size );
     fclose( fp );
 }
 

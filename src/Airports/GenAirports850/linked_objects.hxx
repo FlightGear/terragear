@@ -5,10 +5,6 @@
 #include <stdlib.h>
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-
-#include <Geometry/point3d.hxx>
 
 using std::string;
 
@@ -21,9 +17,9 @@ public:
     double lon;
     int lit;
 
-    Point3D GetLoc()
+    SGGeod GetLoc()
     {
-        return Point3D( lon, lat, 0.0f );
+        return SGGeod::fromDeg(lon, lat);
     }
 
     bool IsLit()
@@ -44,9 +40,9 @@ public:
     double lon;
     int code;
 
-    Point3D GetLoc()
+    SGGeod GetLoc()
     {
-        return Point3D( lon, lat, 0.0f );
+        return SGGeod::fromDeg(lon, lat);
     }
 
     int GetCode()
@@ -69,9 +65,9 @@ public:
     int    size;
     string sgn_def;
 
-    Point3D GetLoc()
+    SGGeod GetLoc()
     {
-        return Point3D( lon, lat, 0.0f );
+        return SGGeod::fromDeg(lon, lat);
     }
 
     double GetHeading()

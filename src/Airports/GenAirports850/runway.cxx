@@ -60,7 +60,7 @@ WaterRunway::WaterRunway(char* definition)
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
 }
 
-tgContour WaterRunway::GetNodes()
+tgContour WaterRunway::GetBuoys()
 {
     tgContour buoys_nodes;
 
@@ -69,48 +69,18 @@ tgContour WaterRunway::GetNodes()
         // calculate runway heading and length
         SGGeodesy::inverse(GetStart(), GetEnd(), heading, az2, length);
 
-        // create a polygon for the outline and use it to calculate the point list
-        int divs = (int)(length / 100.0);
+        // create a contour with points every 100m
         tgContour area = gen_wgs84_area(GetStart(), GetEnd(),
                                         0, 0, 0, width, heading, false);
-        Point3D  pt, inc;
-
         for ( unsigned int i = 0; i < area.GetSize(); ++i ) {
-            pt  = Point3D::fromSGGeod( area.GetNode(i) );
-            inc = ( Point3D::fromSGGeod( area.GetNode(i==3 ? 0 : i+1) )  -
-                    Point3D::fromSGGeod( area.GetNode(i)) ) / divs;
-                    
-            for ( int j = 0; j < divs; ++j) {
-                buoys_nodes.AddNode( pt.toSGGeod() );
-                pt += inc;
-            }
-        }
-    }
-    return buoys_nodes;
-}
-
-point_list WaterRunway::TempGetAsPointList()
-{
-    point_list buoys_nodes;
-
-    if (buoys){
-        double heading, az2, length;
-        // calculate runway heading and length
-        SGGeodesy::inverse(GetStart(), GetEnd(), heading, az2, length);
-
-        // create a polygon for the outline and use it to calculate the point list
-        int divs = (int)(length / 100.0);
-        tgContour area = gen_wgs84_area(GetStart(), GetEnd(),
-                                        0, 0, 0, width, heading, false);
-        Point3D  pt, inc;
-
-        for ( unsigned int i = 0; i < area.GetSize(); ++i ) {
-            pt  = Point3D::fromSGGeod( area.GetNode( i ) );
-            inc = ( Point3D::fromSGGeod( area.GetNode(i==3 ? 0 : i+1) )  -
-                    Point3D::fromSGGeod( area.GetNode(i)) ) / divs;
-            for ( int j = 0; j < divs; ++j) {
-                buoys_nodes.push_back( pt );
-                pt += inc;
+            double dist, course, cs;
+            SGGeodesy::inverse(area.GetNode(i), area.GetNode(i==3 ? 0 : i+1), course, cs, dist );
+            int divs = (int)(dist / 100.0);
+            double step = dist/divs;
+            SGGeod pt = area.GetNode(i);
+            for (int j = 0; j < divs; ++j) {
+                pt = SGGeodesy::direct(pt, course, step );
+                buoys_nodes.AddNode( pt );
             }
         }
     }
