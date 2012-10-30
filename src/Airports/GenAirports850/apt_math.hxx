@@ -21,7 +21,7 @@ tgContour gen_wgs84_area( SGGeod origin,
                           bool   add_mid );
 
 tgContour gen_wgs84_area( SGGeod end1, SGGeod end2,
-                          double length_m,
+                          double length_ext,
                           double displ1, double displ2,
                           double width_m,
                           double heading_deg,

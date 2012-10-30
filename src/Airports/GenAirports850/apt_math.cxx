@@ -64,7 +64,7 @@ tgContour gen_wgs84_area( SGGeod origin,
 }
 
 tgContour gen_wgs84_area( SGGeod end1, SGGeod end2,
-                          double length_m,
+                          double length_ext,
                           double displ1, double displ2,
                           double width_m,
                           double heading_deg,
@@ -80,7 +80,7 @@ tgContour gen_wgs84_area( SGGeod end1, SGGeod end2,
     SGGeod center = SGGeodesy::direct(end1, course1, distance/2 );
 
     // move from end2 to the displaced threshold
-    SGGeod ref = SGGeodesy::direct( end2, heading_deg, length_m / 2.0 - displ2);
+    SGGeod ref = SGGeodesy::direct( end2, heading_deg, length_ext / 2.0 - displ2);
 
     
     // move to the l,-w corner
@@ -95,7 +95,7 @@ tgContour gen_wgs84_area( SGGeod end1, SGGeod end2,
     }
 
     // move to the end1 center to the displ. threshold
-    ref = SGGeodesy::direct( end1, heading_deg, displ1 - length_m / 2.0 );
+    ref = SGGeodesy::direct( end1, heading_deg, displ1 - length_ext / 2.0 );
 
     // move to the -l,w corner
     result.AddNode( SGGeodesy::direct( ref, left_hdg, width_m / 2.0 ) );
