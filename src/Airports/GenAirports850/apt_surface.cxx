@@ -19,28 +19,18 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: apt_surface.cxx,v 1.31 2005-12-19 16:51:25 curt Exp $
-//
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
+#include <Lib/Geometry/TNT/jama_qr.h>
+
 #include <simgear/compiler.h>
-
-// libnewmat includes and defines
-#define WANT_STREAM		// include.h will get stream fns
-#define WANT_MATH		// include.h will get math fns
-				// newmatap.h will get include.h
-#include <newmat/newmatap.h>	// need matrix applications
-#include <newmat/newmatio.h>	// need matrix output routines
-
 #include <simgear/constants.h>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/debug/logstream.hxx>
-
-#include <Array/array.hxx>
 
 #include "elevations.hxx"
 #include "global.hxx"
@@ -103,7 +93,7 @@ static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
 
 // Constructor, specify min and max coordinates of desired area in
 // lon/lat degrees
-TGAptSurface::TGAptSurface( const string& path,
+TGAptSurface::TGAptSurface( const std::string& path,
                             const string_list& elev_src,
                             Point3D _min_deg, Point3D _max_deg,
                             double _average_elev_m )
@@ -300,145 +290,60 @@ TGAptSurface::~TGAptSurface() {
 }
 
 
-static ColumnVector qr_method( Real* y,
-			       Real* t1, Real* t2, Real* t3, Real* t4,
-			       Real* t5, Real* t6, Real* t7, Real* t8,
-			       Real* t9, Real* t10, Real* t11, Real* t12,
-			       Real* t13, Real* t14, Real* t15,
-			       int nobs, int npred )
-{
-  SG_LOG(SG_GENERAL, SG_DEBUG, "QR triangularisation" );
-
-  // QR triangularisation method
- 
-  // load data - 1s into col 1 of matrix
-  int npred1 = npred+1;
-  SG_LOG(SG_GENERAL, SG_DEBUG, "nobs = " << nobs << " npred1 = " << npred1 );
-
-  Matrix X(nobs,npred1); ColumnVector Y(nobs);
-  X.column(1) = 1.0;
-  X.column(2) << t1;
-  X.column(3) << t2;
-  X.column(4) << t3;
-  X.column(5) << t4;
-  X.column(6) << t5;
-  X.column(7) << t6;
-  X.column(8) << t7;
-  X.column(9) << t8;
-  X.column(10) << t9;
-  X.column(11) << t10;
-  X.column(12) << t11;
-  X.column(13) << t12;
-  X.column(14) << t13;
-  X.column(15) << t14;
-  X.column(16) << t15;
-  Y << y;
-
-  // do Householder triangularisation
-  // no need to deal with constant term separately
-  Matrix X1 = X;                 // Want copy of matrix
-  ColumnVector Y1 = Y;
-  UpperTriangularMatrix U; ColumnVector M;
-  QRZ(X1, U); QRZ(X1, Y1, M);    // Y1 now contains resids
-  ColumnVector A = U.i() * M;
-  ColumnVector Fitted = X * A;
-
-  // get variances of estimates
-  U = U.i(); DiagonalMatrix D; D << U * U.t();
-
-  // Get diagonals of Hat matrix
-  DiagonalMatrix Hat;  Hat << X1 * X1.t();
-
-#ifdef DEBUG
-  cout << "A vector = " << A << endl;
-  cout << "A rows = " << A.nrows() << endl;
-
-  // print out answers
-  cout << "\nEstimates and their standard errors\n\n";
-  ColumnVector SE(npred1);
-  for (int i=1; i<=npred1; i++) SE(i) = sqrt(D(i)*ResVar);
-  cout << setw(11) << setprecision(5) << (A | SE) << endl;
-  cout << "\nObservations, fitted value, residual value, hat value\n";
-  cout << setw(9) << setprecision(3) << 
-    (X.columns(2,4) | Y | Fitted | Y1 | Hat.as_column());
-  cout << "\n\n";
-#endif
-
-  return A;
-}
-
-
 // Use a linear least squares method to fit a 3d polynomial to the
 // sampled surface data
 void TGAptSurface::fit() {
 
-  // the fit function is:
-  // f(x,y) = A1*x + A2*x*y + A3*y +
-  //          A4*x*x + A5+x*x*y + A6*x*x*y*y + A7*y*y + A8*x*y*y +
-  //          A9*x*x*x + A10*x*x*x*y + A11*x*x*x*y*y + A12*x*x*x*y*y*y +
-  //            A13*y*y*y + A14*x*y*y*y + A15*x*x*y*y*y
+    // the fit function is:
+    // f(x,y) = A1*x + A2*x*y + A3*y +
+    //          A4*x*x + A5+x*x*y + A6*x*x*y*y + A7*y*y + A8*x*y*y +
+    //          A9*x*x*x + A10*x*x*x*y + A11*x*x*x*y*y + A12*x*x*x*y*y*y +
+    //            A13*y*y*y + A14*x*y*y*y + A15*x*x*y*y*y
 
-  int nobs = Pts->cols() * Pts->rows();	// number of observations
-  int npred = 15;		        // number of predictor values A[n]
+    int nobs = Pts->cols() * Pts->rows();	// number of observations
 
-  vector<Real> tz(nobs);
-  vector<Real> t1(nobs);
-  vector<Real> t2(nobs);
-  vector<Real> t3(nobs);
-  vector<Real> t4(nobs);
-  vector<Real> t5(nobs);
-  vector<Real> t6(nobs);
-  vector<Real> t7(nobs);
-  vector<Real> t8(nobs);
-  vector<Real> t9(nobs);
-  vector<Real> t10(nobs);
-  vector<Real> t11(nobs);
-  vector<Real> t12(nobs);
-  vector<Real> t13(nobs);
-  vector<Real> t14(nobs);
-  vector<Real> t15(nobs);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "QR triangularisation" );
 
-  // generate the required fit data
-  for ( int j = 0; j < Pts->rows(); j++ ) {
-    for ( int i = 0; i < Pts->cols(); i++ ) {
-      Point3D p = Pts->element( i, j );
-      int index = ( j * Pts->cols() ) + i;
-      Real x = p.x() - offset.x();
-      Real y = p.y() - offset.y();
-      Real z = p.z() - offset.z();
-      //cout << "pt = " << x << "," << y << "," << z << endl;
-      tz[index] = z;
-      t1[index] = x;
-      t2[index] = x*y;
-      t3[index] = y;
-      t4[index] = x*x;
-      t5[index] = x*x*y;
-      t6[index] = x*x*y*y;
-      t7[index] = y*y;
-      t8[index] = x*y*y;
-      t9[index] = x*x*x;
-      t10[index] = x*x*x*y;
-      t11[index] = x*x*x*y*y;
-      t12[index] = x*x*x*y*y*y;
-      t13[index] = y*y*y;
-      t14[index] = x*y*y*y;
-      t15[index] = x*x*y*y*y;
+    // Create an array (matrix) with 16 columns (predictor values) A[n]
+    TNT::Array2D<double> mat(nobs,16);
+
+    // put all elevation values into a second array
+    TNT::Array1D<double> zmat(nobs);
+
+    // generate the required fit data
+    for ( int j = 0; j < Pts->rows(); j++ ) {
+        for ( int i = 0; i < Pts->cols(); i++ ) {
+            Point3D p = Pts->element( i, j );
+            int index = ( j * Pts->cols() ) + i;
+            double x = p.x() - offset.x();
+            double y = p.y() - offset.y();
+            double z = p.z() - offset.z();
+
+            zmat[index] = z;
+
+            mat[index][0] = 1.0;
+            mat[index][1] = x;
+            mat[index][2] = x*y;
+            mat[index][3] = y;
+            mat[index][4] = x*x;
+            mat[index][5] = x*x*y;
+            mat[index][6] = x*x*y*y;
+            mat[index][7] = y*y;
+            mat[index][8] = x*y*y;
+            mat[index][9] = x*x*x;
+            mat[index][10] = x*x*x*y;
+            mat[index][11] = x*x*x*y*y;
+            mat[index][12] = x*x*x*y*y*y;
+            mat[index][13] = y*y*y;
+            mat[index][14] = x*y*y*y;
+            mat[index][15] = x*x*y*y*y;
+        }
     }
-  }
 
-  // we want to find the values of a,b,c to give the best
-  // fit
-
-  Try {
-    surface_coefficients
-      = qr_method( &tz[0],
-		   &t1[0], &t2[0], &t3[0], &t4[0], &t5[0], &t6[0], &t7[0], &t8[0],
-		   &t9[0], &t10[0], &t11[0], &t12[0], &t13[0], &t14[0], &t15[0],
-		   nobs, npred
-		  );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "surface_coefficients size = " << surface_coefficients.nrows() );
-  }
-  CatchAll { cout << BaseException::what(); }
+    // Do QR decompostion
+    JAMA::QR<double> qr( mat );
+    // find the least squares solution using the QR factors
+    surface_coefficients = qr.solve(zmat);
 }
 
 
@@ -463,15 +368,13 @@ double TGAptSurface::query( double lon_deg, double lat_deg ) {
 
     double x = lon_deg - offset.x();
     double y = lat_deg - offset.y();
-    ColumnVector A = surface_coefficients;
+    TNT::Array1D<double> A = surface_coefficients;
 
-    double result = A(1) + A(2)*x + A(3)*x*y + A(4)*y + A(5)*x*x + A(6)*x*x*y
-      + A(7)*x*x*y*y + A(8)*y*y + A(9)*x*y*y + A(10)*x*x*x + A(11)*x*x*x*y
-      + A(12)*x*x*x*y*y + A(13)*x*x*x*y*y*y + A(14)*y*y*y + A(15)*x*y*y*y
-      + A(16)*x*x*y*y*y;
+    double result = A[0] + A[1]*x + A[2]*x*y + A[3]*y + A[4]*x*x + A[5]*x*x*y
+    + A[6]*x*x*y*y + A[7]*y*y + A[8]*x*y*y + A[9]*x*x*x + A[10]*x*x*x*y
+    + A[11]*x*x*x*y*y + A[12]*x*x*x*y*y*y + A[13]*y*y*y + A[14]*x*y*y*y
+    + A[15]*x*x*y*y*y;
     result += offset.z();
-
-    // printf("result = %.6f %.6f %.2f\n", lon_deg, lat_deg, result);
 
     return result;
 }

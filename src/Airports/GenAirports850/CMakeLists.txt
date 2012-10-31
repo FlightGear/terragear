@@ -1,5 +1,3 @@
-include_directories(${NEWMAT_INCLUDE_DIR})
-
 add_executable(genapts850
 	airport.hxx airport.cxx
 	apt_math.hxx apt_math.cxx
@@ -30,7 +28,6 @@ target_link_libraries(genapts850
     ${GDAL_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
-	${NEWMAT_LIBRARY}
 	${RT_LIBRARY})
 
 install(TARGETS genapts850 RUNTIME DESTINATION bin)

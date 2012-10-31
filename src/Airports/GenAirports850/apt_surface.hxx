@@ -19,8 +19,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: apt_surface.hxx,v 1.9 2005-09-09 20:47:04 curt Exp $
-//
 
 
 #ifndef _APT_SURFACE_HXX
@@ -28,15 +26,10 @@
 
 
 #include <string>
+#include <Lib/Geometry/TNT/tnt_array2d.h>
 
-// libnewmat includes and defines
-#define WANT_STREAM		// include.h will get stream fns
-#define WANT_MATH		// include.h will get math fns
-				// newmatap.h will get include.h
-#include <newmat/newmatap.h>	// need matrix applications
-#include <newmat/newmatio.h>	// need matrix output routines
-
-#include <Geometry/point3d.hxx>
+#include <simgear/debug/logstream.hxx>
+#include <Lib/Geometry/point3d.hxx>
 
 
 /***
@@ -62,12 +55,10 @@ public:
   inline Point3D element( int col, int row ) {
     int index = ( row * _cols ) + col;
     if ( col < 0 || col >= _cols ) {
-      cout << "column out of bounds on read (" << col << " >= " << _cols << ")"
-	   << endl;
+        SG_LOG(SG_GENERAL, SG_WARN, "column out of bounds on read (" << col << " >= " << _cols << ")");
       int *p = 0; *p = 1; // force crash
     } else if ( row < 0 || row >= _rows ) {
-      cout << "row out of bounds on read (" << row << " >= " << _rows << ")"
-	   << endl;
+        SG_LOG(SG_GENERAL, SG_WARN, "row out of bounds on read (" << row << " >= " << _rows << ")");
       int *p = 0; *p = 1; // force crash
     }
     return m[index];
@@ -76,12 +67,10 @@ public:
   inline void set( int col, int row, Point3D p ) {
     int index = ( row * _cols ) + col;
     if ( col < 0 || col >= _cols ) {
-      cout << "column out of bounds on set (" << col << " >= " << _cols << ")"
-	   << endl;
+        SG_LOG(SG_GENERAL, SG_WARN,"column out of bounds on set (" << col << " >= " << _cols << ")");
       int *p = 0; *p = 1; // force crash
     } else if ( row < 0 || row >= _rows ) {
-      cout << "row out of bounds on set (" << row << " >= " << _rows << ")"
-	   << endl;
+        SG_LOG(SG_GENERAL, SG_WARN,"row out of bounds on set (" << row << " >= " << _rows << ")");
       int *p = 0; *p = 1; // force crash
     }
     m[index] = p;
@@ -111,7 +100,7 @@ private:
 
     // The actual nurbs surface approximation for the airport
     SimpleMatrix *Pts;
-    ColumnVector surface_coefficients;
+    TNT::Array1D<double> surface_coefficients;
 
     Point3D min_deg, max_deg;
 
@@ -127,7 +116,7 @@ public:
     // Constructor, specify min and max coordinates of desired area in
     // lon/lat degrees, also please specify an "average" airport
     // elevations in meters.
-    TGAptSurface( const string &path, const string_list& elev_src,
+    TGAptSurface( const std::string &path, const string_list& elev_src,
                   Point3D _min_deg, Point3D _max_deg, double _average_elev_m );
 
     // Destructor

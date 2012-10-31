@@ -71,7 +71,6 @@ find_package(Threads REQUIRED)
 find_package(SimGear 2.9.0 REQUIRED)
 find_package(GDAL REQUIRED)
 find_package(TIFF REQUIRED) # needed for SRTM
-find_package(NewMat11 REQUIRED)
 find_library(POCO_FOUNDATION PocoFoundation REQUIRED)
 find_library(POCO_NET PocoNet REQUIRED)
 

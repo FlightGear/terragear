@@ -19,19 +19,10 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: elevations.cxx,v 1.8 2005-12-19 16:51:25 curt Exp $
-//
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
-
-// libnewmat includes and defines
-#define WANT_STREAM	            // include.h will get stream fns
-#define WANT_MATH               // include.h will get math fns
-                                // newmatap.h will get include.h
-#include <newmat/newmatap.h>	// need matrix applications
-#include <newmat/newmatio.h>	// need matrix output routines
 
 #include <simgear/constants.h>
 #include <simgear/math/sg_geodesy.hxx>
@@ -47,7 +38,7 @@
 // lookup node elevations for each point in the point_list.  Returns
 // average of all points.  Doesn't modify the original list.
 
-double tgAverageElevation( const string &root, const string_list elev_src,
+double tgAverageElevation( const std::string &root, const string_list elev_src,
                            const point_list points_source )
 {
     bool done = false;
@@ -82,13 +73,13 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 
         if ( found_one ) {
             SGBucket b( first.x(), first.y() );
-            string base = b.gen_base_path();
+            std::string base = b.gen_base_path();
 
             // try the various elevation sources
             i = 0;
             bool found_file = false;
             while ( !found_file && i < elev_src.size() ) {
-                string array_path = root + "/" + elev_src[i] + "/" + base + "/" + b.gen_index_str();
+                std::string array_path = root + "/" + elev_src[i] + "/" + base + "/" + b.gen_index_str();
 
                 if ( array.open(array_path) ) {
                     found_file = true;
@@ -145,7 +136,7 @@ double tgAverageElevation( const string &root, const string_list elev_src,
 
 // lookup node elevations for each point in the specified simple
 // matrix.  Returns average of all points.
-void tgCalcElevations( const string &root, const string_list elev_src,
+void tgCalcElevations( const std::string &root, const string_list elev_src,
                        SimpleMatrix &Pts, const double average )
 {
     bool done = false;
@@ -182,13 +173,13 @@ void tgCalcElevations( const string &root, const string_list elev_src,
 
         if ( found_one ) {
             SGBucket b( first.x(), first.y() );
-            string base = b.gen_base_path();
+            std::string base = b.gen_base_path();
 
             // try the various elevation sources
             j = 0;
             bool found_file = false;
             while ( !found_file && j < (int)elev_src.size() ) {
-                string array_path = root + "/" + elev_src[j] + "/" + base + "/" + b.gen_index_str();
+                std::string array_path = root + "/" + elev_src[j] + "/" + base + "/" + b.gen_index_str();
 
                 if ( array.open(array_path) ) {
                     found_file = true;

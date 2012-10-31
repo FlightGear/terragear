@@ -1586,7 +1586,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // add light points
     superpoly_list tmp_light_list; 
     tmp_light_list.clear();
-    typedef map < string, double, less<string> > elev_map_type;
+    typedef std::map < string, double, std::less<string> > elev_map_type;
     typedef elev_map_type::const_iterator const_elev_map_iterator;
     elev_map_type elevation_map;
 
