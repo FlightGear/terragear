@@ -73,7 +73,7 @@ point_list WaterRunway::GetNodes()
         // create a polygon for the outline and use it to calculate the point list
         int divs = (int)(length / 100.0);
         TGPolygon area = gen_wgs84_area(GetStart(), GetEnd(),
-                                        length, 0, 0, width, heading, false);
+                                        0, 0, 0, width, heading, false);
         Point3D pt, inc;
 
         for ( int i = 0; i < area.contour_size( 0 ); ++i ) {
