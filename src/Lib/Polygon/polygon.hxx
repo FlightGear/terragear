@@ -340,6 +340,10 @@ public:
         return node_list.size();
     }
 
+    void Resize( int size ) {
+        node_list.resize( size );
+    }
+
     void AddNode( SGGeod n ) {
         node_list.push_back( n );
     }

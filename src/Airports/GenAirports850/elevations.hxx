@@ -20,14 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
 
-#include <simgear/constants.h>
-#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/math/sg_types.hxx>
-#include <simgear/debug/logstream.hxx>
-
-#include <Array/array.hxx>
-
-#include "global.hxx"
 #include "apt_surface.hxx"
 
 

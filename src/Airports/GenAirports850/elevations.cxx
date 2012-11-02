@@ -25,8 +25,7 @@
 #endif
 
 #include <simgear/constants.h>
-#include <simgear/math/sg_geodesy.hxx>
-#include <simgear/math/sg_types.hxx>
+#include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
 #include <Array/array.hxx>
@@ -60,11 +59,11 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
 
     while ( !done ) {
         // find first node with -9999 elevation
-        Point3D first(0.0);
+        SGGeod first = SGGeod();
         bool found_one = false;
         for ( i = 0; i < points.size(); ++i ) {
             if ( points[i].z() < -9000.0 && !found_one ) {
-                first = points[i];
+                first = points[i].toSGGeod();
                 SG_LOG( SG_GENERAL, SG_DEBUG, "found first = " << first );
 
                 found_one = true;
@@ -72,7 +71,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
         }
 
         if ( found_one ) {
-            SGBucket b( first.x(), first.y() );
+            SGBucket b( first );
             std::string base = b.gen_base_path();
 
             // try the various elevation sources
@@ -107,9 +106,6 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
                                                      points[i].lat() * 3600.0 );
                     if ( elev > -9000 ) {
                         points[i].setz( elev );
-                        // cout << "interpolating for " << p << endl;
-                        // cout << p.x() << " " << p.y() << " " << p.z()
-                        //      << endl;
                     }
                 }
             }
@@ -151,20 +147,20 @@ void tgCalcElevations( const std::string &root, const string_list elev_src,
     // set all elevations to -9999
     for ( j = 0; j < Pts.rows(); ++j ) {
         for ( i = 0; i < Pts.cols(); ++i ) {
-            Point3D p = Pts.element(i, j);
-            p.setz( -9999.0 );
+            SGGeod p = Pts.element(i, j);
+            p.setElevationM(-9999.0);
             Pts.set(i, j, p);
         }
     }
 
     while ( !done ) {
         // find first node with -9999 elevation
-        Point3D first(0.0);
+        SGGeod first = SGGeod();
         bool found_one = false;
         for ( j = 0; j < Pts.rows(); ++j ) {
             for ( i = 0; i < Pts.cols(); ++i ) {
-                Point3D p = Pts.element(i,j);
-                if ( p.z() < -9000.0 && !found_one ) {
+                SGGeod p = Pts.element(i,j);
+                if ( p.getElevationM() < -9000.0 && !found_one ) {
                     first = p;
                     found_one = true;
                 }
@@ -172,7 +168,7 @@ void tgCalcElevations( const std::string &root, const string_list elev_src,
         }
 
         if ( found_one ) {
-            SGBucket b( first.x(), first.y() );
+            SGBucket b( first );
             std::string base = b.gen_base_path();
 
             // try the various elevation sources
@@ -202,13 +198,13 @@ void tgCalcElevations( const std::string &root, const string_list elev_src,
             done = true;
             for ( j = 0; j < Pts.rows(); ++j ) {
                 for ( i = 0; i < Pts.cols(); ++i ) {
-                    Point3D p = Pts.element(i,j);
-                    if ( p.z() < -9000.0 ) {
+                    SGGeod p = Pts.element(i,j);
+                    if ( p.getElevationM() < -9000.0 ) {
                         done = false;
-                        elev = array.altitude_from_grid( p.x() * 3600.0,
-                                                         p.y() * 3600.0 );
+                        elev = array.altitude_from_grid( p.getLongitudeDeg() * 3600.0,
+                                                         p.getLatitudeDeg() * 3600.0 );
                         if ( elev > -9000 ) {
-                            p.setz( elev );
+                            p.setElevationM( elev );
                             Pts.set(i, j, p);
                         }
                     }
@@ -229,8 +225,8 @@ void tgCalcElevations( const std::string &root, const string_list elev_src,
     int count = 0;
     for ( j = 0; j < Pts.rows(); ++j ) {
         for ( i = 0; i < Pts.cols(); ++i ) {
-            Point3D p = Pts.element(i,j);
-            total += p.z();
+            SGGeod p = Pts.element(i,j);
+            total += p.getElevationM();
             count++;
         }
     }
@@ -249,17 +245,17 @@ void tgClampElevations( SimpleMatrix &Pts,
     // +/-max_m of the center_m elevation.
     for ( j = 0; j < Pts.rows(); ++j ) {
         for ( i = 0; i < Pts.cols(); ++i ) {
-            Point3D p = Pts.element(i,j);
-            if ( p.z() < center_m - max_clamp_m ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
+            SGGeod p = Pts.element(i,j);
+            if ( p.getElevationM() < center_m - max_clamp_m ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM()
                        << " to " << center_m - max_clamp_m );
-                p.setz( center_m - max_clamp_m );
+                p.setElevationM( center_m - max_clamp_m );
                 Pts.set(i, j, p);
             }
-            if ( p.z() > center_m + max_clamp_m ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.z()
+            if ( p.getElevationM() > center_m + max_clamp_m ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM()
                        << " to " << center_m + max_clamp_m );
-                p.setz( center_m + max_clamp_m );
+                p.setElevationM( center_m + max_clamp_m );
                 Pts.set(i, j, p);
             }
         }

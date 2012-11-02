@@ -172,7 +172,7 @@ static point_list calc_elevations( TGAptSurface &surf,
 {
     point_list result = geod_nodes;
     for ( unsigned int i = 0; i < result.size(); ++i ) {
-        double elev = surf.query( result[i].lon(), result[i].lat() );
+        double elev = surf.query( SGGeod::fromDeg( result[i].lon(), result[i].lat()) );
         result[i].setelev( elev + offset );
     }
 
@@ -186,7 +186,7 @@ static tgContour calc_elevations( TGAptSurface &surf,
     tgContour result = geod_nodes;
     for ( unsigned int i = 0; i < result.GetSize(); ++i ) {
         SGGeod node = result.GetNode(i);
-        double elev = surf.query( node.getLongitudeDeg(), node.getLatitudeDeg() );
+        double elev = surf.query( node );
         node.setElevationM( elev + offset );
         result.SetNode( i, node );
     }
@@ -198,7 +198,7 @@ static double calc_elevation( TGAptSurface &surf,
                                const SGGeod& node,
                                double offset )
 {
-    double elev = surf.query( node.getLongitudeDeg(), node.getLatitudeDeg() );
+    double elev = surf.query( node );
     elev += offset;
 
     return elev;
@@ -916,29 +916,30 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // calculation min/max coordinates of airport area
     SG_LOG(SG_GENERAL, SG_DEBUG, " calculation min/max coordinates of airport area");
 
-    Point3D min_deg(9999.0, 9999.0, 0), max_deg(-9999.0, -9999.0, 0);
+    SGGeod min_deg = SGGeod::fromDeg(9999.0, 9999.0);
+    SGGeod max_deg = SGGeod::fromDeg(-9999.0, -9999.0);
     for ( unsigned int j = 0; j < nodes.get_node_list().size(); ++j ) 
     {
         Point3D p = nodes.get_node_list()[j];
-        if ( p.lon() < min_deg.lon() ) 
+        if ( p.lon() < min_deg.getLongitudeDeg() )
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "new min lon from node " << j << " is " << p.lon() );
-            min_deg.setlon( p.lon() );
+            min_deg.setLongitudeDeg( p.lon() );
         }
-        if ( p.lon() > max_deg.lon() ) 
+        if ( p.lon() > max_deg.getLongitudeDeg() )
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "new max lon from node " << j << " is " << p.lon() );
-            max_deg.setlon( p.lon() );
+            max_deg.setLongitudeDeg( p.lon() );
         }
-        if ( p.lat() < min_deg.lat() ) 
+        if ( p.lat() < min_deg.getLatitudeDeg() )
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "new min lat from node " << j << " is " << p.lat() );
-            min_deg.setlat( p.lat() );
+            min_deg.setLatitudeDeg( p.lat() );
         }
-        if ( p.lat() > max_deg.lat() ) 
+        if ( p.lat() > max_deg.getLatitudeDeg() )
         {
             SG_LOG(SG_GENERAL, SG_DEBUG, "new max lat from node " << j << " is " << p.lat() );
-            max_deg.setlat( p.lat() );
+            max_deg.setLatitudeDeg( p.lat() );
         }
     }
 
@@ -954,33 +955,33 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
         for ( unsigned int j = 0; j < rwy_lights[i].ContourSize(); ++j )
         {
-            Point3D p = Point3D::fromSGGeod( rwy_lights[i].GetNode(j) );
-            if ( p.lon() < min_deg.lon() ) 
+            SGGeod p = rwy_lights[i].GetNode(j);
+            if ( p.getLongitudeDeg() < min_deg.getLongitudeDeg() )
             {
-                min_deg.setlon( p.lon() );
+                min_deg.setLongitudeDeg( p.getLongitudeDeg() );
             }
-            if ( p.lon() > max_deg.lon() ) 
+            if ( p.getLongitudeDeg() > max_deg.getLongitudeDeg() )
             {
-                max_deg.setlon( p.lon() );
+                max_deg.setLongitudeDeg( p.getLongitudeDeg() );
             }
-            if ( p.lat() < min_deg.lat() ) 
+            if ( p.getLatitudeDeg() < min_deg.getLatitudeDeg() )
             {
-                min_deg.setlat( p.lat() );
+                min_deg.setLatitudeDeg( p.getLatitudeDeg() );
             }
-            if ( p.lat() > max_deg.lat() ) 
+            if ( p.getLatitudeDeg() > max_deg.getLatitudeDeg() )
             {
-                max_deg.setlat( p.lat() );
+                max_deg.setLatitudeDeg( p.getLatitudeDeg() );
             }
         }
     }
 
     // Extend the area a bit so we don't have wierd things on the edges
-    double dlon = max_deg.lon() - min_deg.lon();
-    double dlat = max_deg.lat() - min_deg.lat();
-    min_deg.setlon( min_deg.lon() - 0.01 * dlon );
-    max_deg.setlon( max_deg.lon() + 0.01 * dlon );
-    min_deg.setlat( min_deg.lat() - 0.01 * dlat );
-    max_deg.setlat( max_deg.lat() + 0.01 * dlat );
+    double dlon = max_deg.getLongitudeDeg() - min_deg.getLongitudeDeg();
+    double dlat = max_deg.getLatitudeDeg() - min_deg.getLatitudeDeg();
+    min_deg.setLongitudeDeg( min_deg.getLongitudeDeg() - 0.01 * dlon );
+    max_deg.setLongitudeDeg( max_deg.getLongitudeDeg() + 0.01 * dlon );
+    min_deg.setLatitudeDeg( min_deg.getLatitudeDeg() - 0.01 * dlat );
+    max_deg.setLatitudeDeg( max_deg.getLatitudeDeg() + 0.01 * dlat );
     SG_LOG(SG_GENERAL, SG_INFO, "min = " << min_deg << " max = " << max_deg );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Create Apt surface:" );
@@ -990,7 +991,9 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG(SG_GENERAL, SG_DEBUG, " max: " << max_deg );
     SG_LOG(SG_GENERAL, SG_DEBUG, " average: " << average );
     
-    TGAptSurface apt_surf( root, elev_src, min_deg, max_deg, average );
+    tg::Rectangle aptBounds(min_deg, max_deg);
+
+    TGAptSurface apt_surf( root, elev_src, aptBounds, average );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
 
     // calculate node elevations
