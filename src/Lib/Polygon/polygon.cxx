@@ -1740,9 +1740,7 @@ tgPolygon tgContour::DiffWithAccumulator( const tgContour& subject )
             exit(-1);
         }
         result = tgPolygon::FromClipper( clipper_result );
-        SG_LOG(SG_GENERAL, SG_ALERT, "Diff contour With Accumulator got " << num_hits << " hits - result has " << result.Contours() << " contours ");
     } else {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Diff contour With Accumulator - no hits, return original" );
         result.AddContour( subject );
     }
 
@@ -2128,10 +2126,7 @@ tgPolygon tgPolygon::DiffWithAccumulator( const tgPolygon& subject )
         // Make sure we keep texturing info
         result.SetMaterial( subject.GetMaterial() );
         result.SetTexParams( subject.GetTexParams() );
-
-        SG_LOG(SG_GENERAL, SG_ALERT, "Diff polygon With Accumulator got " << num_hits << " hits - result has " << result.Contours() << " contours - copied material name " << result.GetMaterial() );
     } else {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Diff polygon With Accumulator no hits - return original" );
         result = subject;
     }
 
@@ -2317,7 +2312,7 @@ void tgPolygon::Texture( void )
     double  x, y;
     double  tx, ty;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Texture Poly with material " << material << " method " << tp.method );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Texture Poly with material " << material << " method " << tp.method << " tpref " << tp.ref << " heading " << tp.heading );
 
     switch( tp.method ) {
         case TG_TEX_BY_GEODE:

@@ -40,14 +40,14 @@ Helipad::Helipad(char* definition)
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read helipad: (" << heli.lon << "," << heli.lat << ") heading: " << heli.heading << " length: " << heli.length << " width: " << heli.width );
 }
 
-tglightcontour_list Helipad::gen_helipad_lights(double maxsize){
+tglightcontour_list Helipad::gen_helipad_lights(double maxsize) {
     tglightcontour_list result;
 
     // Vector calculation
     SGVec3d vec = normalize(SGVec3d::fromGeod(GetLoc()));
 
     // Create yellow edge lights, 5m spacing
-    tgContour area = gen_runway_area_w_extend(0.0, 0.0, 0.0, 0.0, 0.0);
+    tgContour area = gen_helipad_area_w_extend(0.0, 0.0);
     tgLightContour yellow;
 
     yellow.SetType( "RWY_YELLOW_LIGHTS" );
@@ -88,7 +88,6 @@ tgPolygon Helipad::WriteGeom( const tgContour& area, string material,
     // Create the final output and push on to the runway super_polygon
     // list
     split.SetMaterial( material );
-    rwy_polys.push_back( split );
 
     tgContour::AddToAccumulator( area );
 
@@ -126,15 +125,16 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
 
     // write out
     tgPolygon result = WriteGeom( helipad, material + "heli", rwy_polys, slivers);
+    result.SetMaterial( material + "heli" );
     result.SetTexParams( helipad.GetNode(0), maxsize, maxsize, heli.heading );
-    result.SetTexLimits( 1,1,0,0 );
-    result.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
+    result.SetTexLimits( 0,0,1,1 );
+    result.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, -1.0, -1.0, 1.0, 1.0 );
 
     rwy_polys.push_back( result );
 
     int i = 0;
     double heading = 0, areahight = 0;
-    tgContour heli_area = gen_runway_area_w_extend(0.0, 0.0, 0.0, 0.0, 0.0);
+    tgContour heli_area = gen_helipad_area_w_extend(0.0, 0.0);
     heli_area = tgContour::Snap( heli_area, gSnap );
 
     tgcontour_list  area_contours;
@@ -192,7 +192,7 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
         shoulder_width = heli.width;
     }
 
-    tgContour shoulder = gen_runway_area_w_extend(0.0, areahight, 0.0, 0.0, areahight);
+    tgContour shoulder = gen_helipad_area_w_extend(areahight, areahight);
     shoulder = tgContour::Snap( shoulder, gSnap );
 
     for (i = 0; i < 4; ++i) {
@@ -232,12 +232,24 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
     BuildBtg( rwy_polys, rwy_lights, slivers );
 
     // generate area around helipad
+    double    length, width;
     tgContour base, safe_base;
-    base      = gen_runway_area_w_extend( 0.0, heli.length * 0.25 , 0.0, 0.0, heli.width * 0.25 );
+
+    length = heli.length;
+    width  = heli.width;
+    if ( (heli.shoulder == 1) || (heli.shoulder == 2 ) ) {
+        length += 12.0;
+        width += 12.0;
+    } else {
+        length += 2.0;
+        width += 2.0;
+    }
+
+    base      = gen_helipad_area_w_extend(length * 0.25 , width * 0.25 );
     base      = tgContour::Snap( base, gSnap );
 
     // also clear a safe area around the pad
-    safe_base = gen_runway_area_w_extend( 0.0, heli.length * 0.5, 0.0, 0.0, heli.width * 0.5 );
+    safe_base = gen_helipad_area_w_extend( length * 0.5, width * 0.5 );
     safe_base = tgContour::Snap( safe_base, gSnap );
 
     // add this to the airport clearing
@@ -252,7 +264,6 @@ void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
                              tgPolygon& apt_base,
                              tgPolygon& apt_clearing )
 {
-    tgPolygon base, safe_base;
     tgPolygon shoulder;
 
     for (unsigned int i=0; i<shoulder_polys.size(); i++) {
@@ -270,17 +281,9 @@ void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
         rwy_polys.push_back( shoulder_polys[i] );
 
         tgPolygon::AddToAccumulator( shoulder );
-
-        // also clear a safe area around the runway
-        base      = tgPolygon::Expand( shoulder, 20.0);
-        safe_base = tgPolygon::Expand( shoulder, 50.0);
-
-        // add this to the airport clearing
-        apt_clearing = tgPolygon::Union( safe_base, apt_clearing );
-
-        // and add the clearing to the base
-        apt_base = tgPolygon::Union( base, apt_base );
     }
+
+    // base and clearing calculated when generating the shoulders
 }
 
 void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,

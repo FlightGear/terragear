@@ -74,9 +74,9 @@ private:
 
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
-    tgContour gen_runway_area_w_extend( double alt_m, double length_extend, double displ1, double displ2, double width_extend )
+    tgContour gen_helipad_area_w_extend( double length_extend, double width_extend )
     {
-        return ( gen_wgs84_area( GetLoc(), heli.length + 2.0*length_extend, displ1, displ2, heli.width + 2.0*width_extend, heli.heading, false) );
+        return ( gen_wgs84_area( GetLoc(), heli.length + 2.0*length_extend, 0.0, 0.0, heli.width + 2.0*width_extend, heli.heading, false) );
     }
 
     tglightcontour_list gen_helipad_lights(double maxsize);
