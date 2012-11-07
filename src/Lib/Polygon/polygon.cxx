@@ -2087,6 +2087,21 @@ tg::Rectangle tgPolygon::GetBoundingBox( void ) const
     return tg::Rectangle( min, max );
 }
 
+void clipperToShapefile( ClipperLib::Polygons polys, const std::string& path, const std::string&layer, const std::string& name )
+{
+    tgPolygon poly = tgPolygon::FromClipper(polys);
+    tgPolygon::ToShapefile( poly, path, layer, name);
+}
+
+void tgPolygon::AccumulatorToShapefiles( const std::string& path, const std::string& layer )
+{
+    char shapefile[16];
+    for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
+        sprintf( shapefile, "accum_%d", i );
+        clipperToShapefile( clipper_accumulator[i], path, layer, std::string(shapefile) );
+    }
+}
+
 tgPolygon tgPolygon::DiffWithAccumulator( const tgPolygon& subject )
 {
     tgPolygon result;
@@ -2106,9 +2121,6 @@ tgPolygon tgPolygon::DiffWithAccumulator( const tgPolygon& subject )
     for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
         tg::Rectangle box2 = BoundingBox_FromClipper( clipper_accumulator[i] );
 
-        //get_Clipper_bounding_box( clipper_accumulator[i], min, max);
-        //tg::Rectangle box2 = (min, max);
-
         if ( box2.intersects(box1) )
         {
             c.AddPolygons(clipper_accumulator[i], ClipperLib::ptClip);
@@ -2121,6 +2133,9 @@ tgPolygon tgPolygon::DiffWithAccumulator( const tgPolygon& subject )
             SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
             exit(-1);
         }
+        SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator had " << num_hits << " hits " );
+        SG_LOG(SG_GENERAL, SG_ALERT, "  cklipper_result has " << clipper_result.size() << " contours " );
+        
         result = tgPolygon::FromClipper( clipper_result );
 
         // Make sure we keep texturing info

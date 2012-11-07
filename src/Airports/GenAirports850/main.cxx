@@ -142,6 +142,11 @@ int main(int argc, char **argv)
     elev_src.clear();
     setup_default_elevation_sources(elev_src);
 
+    string debug_dir = ".";
+    vector<string> debug_runway_defs;
+    vector<string> debug_pavement_defs;
+    vector<string> debug_feature_defs;
+
     // Set Normal logging
     sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
@@ -154,11 +159,6 @@ int main(int argc, char **argv)
     string airport_id = "";
     long   airport_pos = -1;
     string last_apt_file = "./last_apt.txt";
-    int    dump_rwy_poly  = -1;
-    int    dump_taxi_poly = -1;
-    int    dump_pvmt_poly = -1;
-    int    dump_feat_poly = -1;
-    int    dump_base_poly = -1;
     int    num_threads    =  1;
     int    redirect_port  = -1;
 
@@ -250,35 +250,31 @@ int main(int argc, char **argv)
         {
     	    slope_max = atof( arg.substr(12).c_str() );
         }
-	else if ( (arg.find("--threads=") == 0) )
+        else if ( (arg.find("--threads=") == 0) )
         {
             num_threads = atoi( arg.substr(10).c_str() );
         }
-	else if ( (arg.find("--threads") == 0) )
+        else if ( (arg.find("--threads") == 0) )
         {
             num_threads = Poco::Environment::processorCount();
         }
-        else if ( arg.find("--dump-rwy=") == 0 ) 
+        else if (arg.find("--debug-dir=") == 0)
         {
-    	    dump_rwy_poly = atoi( arg.substr(11).c_str() );
-    	}
-        else if ( arg.find("--dump-taxi=") == 0 ) 
+            debug_dir = arg.substr(12);
+        }
+        else if (arg.find("--debug-runways=") == 0)
         {
-    	    dump_taxi_poly = atoi( arg.substr(12).c_str() );
-    	} 
-        else if ( arg.find("--dump-pvmt=") == 0 ) 
+            debug_runway_defs.push_back( arg.substr(16) );
+        }
+        else if (arg.find("--debug-pavements=") == 0)
         {
-    	    dump_pvmt_poly = atoi( arg.substr(12).c_str() );
-    	} 
-        else if ( arg.find("--dump-feat=") == 0 ) 
+            debug_pavement_defs.push_back( arg.substr(18) );
+        }
+        else if (arg.find("--debug-features=") == 0)
         {
-    	    dump_feat_poly = atoi( arg.substr(12).c_str() );
-    	} 
-        else if ( arg.find("--dump-base=") == 0 ) 
-        {
-    	    dump_base_poly = atoi( arg.substr(12).c_str() );
-    	} 
-        else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) ) 
+            debug_feature_defs.push_back( arg.substr(17) );
+        }
+        else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) )
         {
     	    help( argc, argv, elev_src );
     	    exit(-1);
@@ -288,6 +284,23 @@ int main(int argc, char **argv)
     	    usage( argc, argv );
     	    exit(-1);
     	}
+    }
+
+    // check for output redirect
+    if ( redirect_port >= 0 ) {
+
+        // create a stream socket back to the main process
+        Net::SocketAddress sa( "localhost", redirect_port );
+        ss.connect(sa);
+
+        // then a buffered stream to write to the socket
+        os.rdbuf(&ssb);
+
+        // then hook up SG_LOG to the stream buf
+        sglog().set_output( os );
+    } else {
+        // this is the main program -
+        SG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
     }
 
     SG_LOG(SG_GENERAL, SG_INFO, "Run genapts with " << num_threads << " threads" );
@@ -353,24 +366,7 @@ int main(int argc, char **argv)
     Scheduler* scheduler = new Scheduler(command, input_file, work_dir, elev_src);
 
     // Add any debug 
-    // TODO : parser->SetDebugPolys( dump_rwy_poly, dump_taxi_poly, dump_pvmt_poly, dump_feat_poly, dump_base_poly );
-
-    // check for output redirect
-    if ( redirect_port >= 0 ) {
-
-        // create a stream socket back to the main process
-        Net::SocketAddress sa( "localhost", redirect_port );
-        ss.connect(sa);
-
-        // then a buffered stream to write to the socket
-        os.rdbuf(&ssb);
-
-        // then hook up SG_LOG to the stream buf
-        sglog().set_output( os );  
-    } else {
-        // this is the main program - 
-        SG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
-    }
+    scheduler->set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_feature_defs );
 
     // just one airport 
     if ( airport_id != "" )
@@ -388,7 +384,8 @@ int main(int argc, char **argv)
     {
         // create and start the real parser
         Parser parser(input_file, work_dir, elev_src);
-        parser.Parse( airport_pos );        
+        parser.set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_feature_defs );
+        parser.Parse( airport_pos );
     }
     else if ( start_id != "" )
     {

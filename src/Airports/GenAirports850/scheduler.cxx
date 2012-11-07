@@ -194,7 +194,8 @@ ProcessList::ProcessList( int n, string& summaryfile, Scheduler* pScheduler ) : 
     
 // When a slot is available, the main thread calls launch to instantiate a 
 // new pareser process 
-void ProcessList::Launch( string command, string work_dir, string file, AirportInfo* pai, bool last ) 
+void ProcessList::Launch( string command, string work_dir, string file, AirportInfo* pai, bool last, string debug_path, 
+                          const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_features )
 {
     Process::Args args;
     char arg[512];
@@ -215,6 +216,79 @@ void ProcessList::Launch( string command, string work_dir, string file, AirportI
 
     sprintf( arg, "--redirect-port=%d", GENAPT_PORT );
     args.push_back(arg);
+
+    // check if we have any debug defs
+    debug_map_const_iterator it = debug_runways.find( pai->GetIcao() );
+    std::string runway_def;
+    if ( it != debug_runways.end() ) {
+        runway_def = "--debug-runways=";
+        runway_def.append( pai->GetIcao() );
+        runway_def.append( ":" );
+        for ( unsigned int i=0; i < it->second.size(); i++ ) {
+            char int_str[16];
+            sprintf( int_str, "%d", it->second[i] );
+            runway_def.append( int_str );
+
+            if ( i < it->second.size()-1 ) {
+                runway_def.append( "," );
+            }
+        }
+    }
+
+    it = debug_pavements.find( pai->GetIcao() );
+    std::string pavement_def;
+    if ( it != debug_pavements.end() ) {
+        pavement_def = "--debug-pavements=";
+        pavement_def.append( pai->GetIcao() );
+        pavement_def.append( ":" );
+        for ( unsigned int i=0; i < it->second.size(); i++ ) {
+            char int_str[16];
+            sprintf( int_str, "%d", it->second[i] );
+            pavement_def.append( int_str );
+
+            if ( i < it->second.size()-1 ) {
+                pavement_def.append( "," );
+            }
+        }
+    }
+
+    it = debug_features.find( pai->GetIcao() );
+    std::string feature_def;
+    if ( it != debug_features.end() ) {
+        feature_def = "--debug-features=";
+        feature_def.append( pai->GetIcao() );
+        feature_def.append( ":" );
+        for ( unsigned int i=0; i < it->second.size(); i++ ) {
+            char int_str[16];
+            sprintf( int_str, "%d", it->second[i] );
+            pavement_def.append( int_str );
+
+            if ( i < it->second.size()-1 ) {
+                feature_def.append( "," );
+            }
+        }
+    }
+
+    if ( runway_def.size() || pavement_def.size() || feature_def.size() ) {
+//        sprintf( arg, "--debug-path=%s", debug_path.c_str() );
+//        SG_LOG( SG_GENERAL, SG_INFO, "Created debug path arg " << arg );
+//        args.push_back(arg);
+
+        if ( runway_def.size() ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "Created runway arg " << runway_def );
+            args.push_back( runway_def.c_str() );
+        }
+
+        if ( pavement_def.size() ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "Created pavement arg " << pavement_def );
+            args.push_back( pavement_def.c_str() );
+        }
+
+        if ( feature_def.size() ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "Created feature arg " << feature_def );
+            args.push_back( feature_def.c_str() );
+        }
+    }
 
     // Launch the child process
     ProcessHandle ph = Process::launch(command, args, 0, &outPipe, &outPipe);
@@ -448,6 +522,103 @@ void ProcessMonitor::run()
 }
 
 /*** SCEDULER ***/
+void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
+                                             std::vector<string> pavement_defs,
+                                             std::vector<string> feature_defs )
+{
+    SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
+
+    debug_path = path;
+
+    /* Find any ids for our tile */
+    for (unsigned int i=0; i< runway_defs.size(); i++) {
+        string dsd     = runway_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_runways[icao] = shapes;
+    }
+
+    for (unsigned int i=0; i< pavement_defs.size(); i++) {
+        string dsd     = pavement_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_pavements[icao] = shapes;
+    }
+
+    for (unsigned int i=0; i< feature_defs.size(); i++) {
+        string dsd     = feature_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_features[icao] = shapes;
+    }
+}
+
 bool Scheduler::IsAirportDefinition( char* line, string icao )
 {
     char*    tok;
@@ -808,7 +979,7 @@ void Scheduler::Schedule( int num_threads, string& summaryfile )
             }
 
             // Launch a new parser
-            procList->Launch( command, work_dir, filename, &originalList[i], last );
+            procList->Launch( command, work_dir, filename, &originalList[i], last, debug_path, debug_runways, debug_pavements, debug_features );
         }
 
         // Sync up before relaunching

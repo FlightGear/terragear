@@ -418,13 +418,13 @@ std::string ClosedPoly::GetMaterial( int surface )
     return material;
 }
 
-int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, bool make_shapefiles )
+int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, std::string shapefile_name )
 {
     if (is_pavement && pre_tess.Contours() )
     {
         tgPolygon base, safe_base;
 
-        BuildBtg( rwy_polys, slivers, make_shapefiles );
+        BuildBtg( rwy_polys, slivers, shapefile_name );
 
         base = tgPolygon::Expand( pre_tess, 20.0 );
         safe_base = tgPolygon::Expand( pre_tess, 50.0);
@@ -440,13 +440,25 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
     return 1;
 }
 
-int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, bool make_shapefiles )
+int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, std::string shapefile_name )
 {
     if ( is_pavement && pre_tess.Contours() )
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.Contours() << " contours" << " and " << pre_tess.TotalNodes() << " points" );
+        SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: original poly has " << pre_tess.Contours() << " contours" << " and " << pre_tess.TotalNodes() << " points : shapefile_name is " << shapefile_name );
+
+        if(  shapefile_name.size() ) {
+            tgPolygon::ToShapefile( pre_tess, "./airport_dbg", std::string("preclip"), shapefile_name );
+            tgPolygon::AccumulatorToShapefiles( "./airport_dbg", "accum" );
+        }
 
         tgPolygon clipped = tgPolygon::DiffWithAccumulator( pre_tess );
+
+        SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: clipped poly has " << clipped.Contours() << " contours" << " and " << clipped.TotalNodes() << " points : shapefile_name is " << shapefile_name );
+
+        if(  shapefile_name.size() ) {
+            tgPolygon::ToShapefile( pre_tess, "./airport_dbg", std::string("postclip"), shapefile_name );
+        }
+
         tgPolygon::RemoveSlivers( clipped, slivers );
 
         clipped.SetMaterial( GetMaterial( surface_type ) );
@@ -466,7 +478,7 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, bo
 
 // Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges 
 // - resulting in no base, which we can't handle
-int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, bool make_shapefiles )
+int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::string shapefile_name )
 {
     tgPolygon base, safe_base;
 

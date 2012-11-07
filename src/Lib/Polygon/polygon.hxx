@@ -594,6 +594,7 @@ public:
 
     static tgPolygon DiffWithAccumulator( const tgPolygon& subject );
     static void      AddToAccumulator( const tgPolygon& subject );
+    static void      AccumulatorToShapefiles( const std::string& path, const std::string& layer );
 
     // Conversions
     static ClipperLib::Polygons ToClipper( const tgPolygon& subject );

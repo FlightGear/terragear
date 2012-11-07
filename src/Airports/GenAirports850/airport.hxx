@@ -16,6 +16,10 @@
 
 using std::string;
 
+typedef std::map<std::string, std::vector<int>, std::less<std::string> > debug_map;
+typedef debug_map::iterator debug_map_iterator;
+typedef debug_map::const_iterator debug_map_const_iterator;
+
 class Airport
 {
 public:
@@ -113,8 +117,21 @@ public:
     void merge_slivers( tgpolygon_list& polys, tgcontour_list& slivers );
     void BuildBtg( const string& root, const string_list& elev_src );
 
-    void SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base );
     void DumpStats( void );
+
+    void set_debug( std::string& path,
+                    debug_map& dbg_runways, 
+                    debug_map& dbg_pavements,
+                    debug_map& dbg_features ) {
+        debug_path      = path;
+        debug_runways   = dbg_runways;
+        debug_pavements = dbg_pavements;
+        debug_features  = dbg_features;
+    };
+
+    bool isDebugRunway  ( int i );
+    bool isDebugPavement( int i );
+    bool isDebugFeature ( int i );
 
 private:
     int     code;               // airport, heliport or sea port
@@ -140,11 +157,10 @@ private:
     SGTimeStamp triangulation_time;
 
     // debug
-    int dbg_rwy_poly;
-    int dbg_taxi_poly;
-    int dbg_pvmt_poly;
-    int dbg_feat_poly;
-    int dbg_base_poly;
+    string          debug_path;
+    debug_map       debug_runways;
+    debug_map       debug_pavements;
+    debug_map       debug_features;
 };
 
 typedef std::vector <Airport *> AirportList;

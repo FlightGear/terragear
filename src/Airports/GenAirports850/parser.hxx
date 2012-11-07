@@ -81,16 +81,14 @@ public:
         cur_sign        = NULL;
         prev_node       = NULL;
         cur_state       = STATE_NONE;
-
-        // Debug
-        rwy_poly  = -1;
-        pvmt_poly = -1;
-        feat_poly = -1;
-        base_poly = -1;
     }
     
-    void            SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base );
     void            Parse( long pos );
+
+    // Debug
+    void            set_debug( std::string path, std::vector<std::string> runway_defs,
+                                                 std::vector<std::string> pavement_defs,
+                                                 std::vector<std::string> feature_defs );
 
 private:
     bool            IsAirportDefinition( char* line, string icao );
@@ -127,11 +125,10 @@ private:
     Sign*           cur_sign;
 
     // debug
-    int rwy_poly;
-    int taxi_poly;
-    int pvmt_poly;
-    int feat_poly;
-    int base_poly;
+    string          debug_path;
+    debug_map       debug_runways;
+    debug_map       debug_pavements;
+    debug_map       debug_features;
 };
 
 #endif

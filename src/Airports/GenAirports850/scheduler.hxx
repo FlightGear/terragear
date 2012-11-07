@@ -19,6 +19,7 @@
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/timing/timestamp.hxx>
+#include <CGAL/Plane_3.h>
 #include <Geometry/rectangle.hxx>
 
 #define P_STATE_INIT        (0)
@@ -140,8 +141,9 @@ public:
     inline void WaitForSlot(void);
     
     // When a slot is available, the main thread calls launch to instantiate a 
-    // new pareser process 
-    void Launch( string command, string work_dir, string file, AirportInfo* pai, bool last );
+    // new pareser process
+    void Launch( string command, string work_dir, string file, AirportInfo* pai, bool last, string debug_path,
+                 const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_features );
     Timespan GetNextTimeout();
     void HandleReceivedMessages( Net::Socket::SocketList& slr );
     void HandleTimeouts();
@@ -182,6 +184,12 @@ public:
 
     void            Schedule( int num_threads, string& summaryfile );
 
+    // Debug
+    void            set_debug( std::string path, std::vector<std::string> runway_defs,
+                                                 std::vector<std::string> pavement_defs,
+                                                 std::vector<std::string> feature_defs );
+
+
     Net::ServerSocket*  GetServerSocket( void ) { return &ss; }
 
 private:
@@ -197,5 +205,11 @@ private:
     // List of positions in database file to parse
     parseList       originalList;
     parseList       retryList;
+
+    // debug
+    string          debug_path;
+    debug_map       debug_runways;
+    debug_map       debug_pavements;
+    debug_map       debug_features;
 };
 

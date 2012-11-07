@@ -53,13 +53,101 @@ bool Parser::GetAirportDefinition( char* line, string& icao )
     return match;
 }
 
-void Parser::SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base )
+void Parser::set_debug( std::string path, std::vector<string> runway_defs,
+                                          std::vector<string> pavement_defs,
+                                          std::vector<string> feature_defs )
 {
-    rwy_poly  = rwy;
-    taxi_poly = taxi;
-    pvmt_poly = pvmt;
-    feat_poly = feat;
-    base_poly = base;
+    SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
+
+    debug_path = path;
+
+    /* Find any ids for our tile */
+    for (unsigned int i=0; i< runway_defs.size(); i++) {
+        string dsd     = runway_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i);
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_runways[icao] = shapes;
+    }
+
+    for (unsigned int i=0; i< pavement_defs.size(); i++) {
+        string dsd     = pavement_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i);
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_pavements[icao] = shapes;
+    }
+
+    for (unsigned int i=0; i< feature_defs.size(); i++) {
+        string dsd     = feature_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i);
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_features[icao] = shapes;
+    }
 }
 
 void Parser::Parse( long pos )
@@ -110,10 +198,11 @@ void Parser::Parse( long pos )
 
         parse_end.stamp();
         parse_time = parse_end - parse_start;
-        
+
         // write the airport BTG
         if (cur_airport)
         {
+            cur_airport->set_debug( debug_path, debug_runways, debug_pavements, debug_features );
             cur_airport->BuildBtg( work_dir, elevation );
 
             cur_airport->GetBuildTime( build_time );
@@ -393,7 +482,6 @@ int Parser::ParseLine(char* line)
                         SetState( STATE_PARSE_SIMPLE );
                         SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
                         cur_airport = new Airport( code, line );
-                        cur_airport->SetDebugPolys( rwy_poly, taxi_poly, pvmt_poly, feat_poly, base_poly );
                     }
                     else
                     {
@@ -406,7 +494,6 @@ int Parser::ParseLine(char* line)
                         SetState( STATE_PARSE_SIMPLE );
                         SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
                         cur_airport = new Airport( code, line );
-                        cur_airport->SetDebugPolys( rwy_poly, taxi_poly, pvmt_poly, feat_poly, base_poly );
                     }
                     else
                     {

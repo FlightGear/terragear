@@ -86,13 +86,6 @@ Airport::Airport( int c, char* def)
 
     altitude *= SG_FEET_TO_METER;
 
-    dbg_rwy_poly  = 0;
-    dbg_pvmt_poly = 0;
-    dbg_feat_poly = 0;
-    dbg_base_poly = 0;
-    dbg_taxi_poly = 0;
-
-
     SG_LOG( SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", control tower " << ct << ", and description " << description );
 }
 
@@ -154,14 +147,60 @@ Airport::~Airport()
     }
 }
 
-void Airport::SetDebugPolys( int rwy, int taxi, int pvmt, int feat, int base )
+bool Airport::isDebugRunway( int rwy )
 {
-    dbg_rwy_poly  = rwy;
-    dbg_taxi_poly = taxi;
-    dbg_pvmt_poly = pvmt;
-    dbg_feat_poly = feat;
-    dbg_base_poly = base;
+    bool dbg = false;
+
+    debug_map_const_iterator it = debug_runways.find(icao);
+    if ( it != debug_runways.end() ) {
+        for ( unsigned int i=0; i<it->second.size() && !dbg; i++ ) {
+            if( it->second[i] == std::numeric_limits<int>::max() ) {
+                dbg = true;
+            } else if ( it->second[i] == rwy+1 ) {
+                dbg = true;
+            }
+        }
+    }
+
+    return dbg;
 }
+
+bool Airport::isDebugPavement( int pvmt )
+{
+    bool dbg = false;
+
+    debug_map_const_iterator it = debug_pavements.find(icao);
+    if ( it != debug_pavements.end() ) {
+        for ( unsigned int i=0; i<it->second.size() && !dbg; i++ ) {
+            if( it->second[i] == std::numeric_limits<int>::max() ) {
+                dbg = true;
+            } else if ( it->second[i] == pvmt+1 ) {
+                dbg = true;
+            }
+        }
+    }
+
+    return dbg;
+}
+
+bool Airport::isDebugFeature( int feat )
+{
+    bool dbg = false;
+
+    debug_map_const_iterator it = debug_features.find(icao);
+    if ( it != debug_features.end() ) {
+        for ( unsigned int i=0; i<it->second.size() && !dbg; i++ ) {
+            if( it->second[i] == std::numeric_limits<int>::max() ) {
+                dbg = true;
+            } else if ( it->second[i] == feat+1 ) {
+                dbg = true;
+            }
+        }
+    }
+
+    return dbg;
+}
+
 
 // TODO : Add somewhere
 // Determine node elevations of a point_list based on the provided
@@ -256,6 +295,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SGTimeStamp triangulation_start;
     SGTimeStamp triangulation_end;
     time_t      log_time;
+
+    char shapefile_name[64];
 
     // Find the average of all the runway and heliport long / lats
     int num_samples = 0;
@@ -374,13 +415,19 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             SG_LOG(SG_GENERAL, SG_INFO, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
             slivers.clear();
 
+            if ( isDebugPavement(i) ) {
+                sprintf( shapefile_name, "pvmnt_%d", i );
+            } else {
+                strcpy( shapefile_name, "" );
+            }
+            
             if (boundary.size())
             {
-                pavements[i]->BuildBtg( pvmt_polys, slivers, make_shapefiles );
+                pavements[i]->BuildBtg( pvmt_polys, slivers, std::string(shapefile_name) );
             }
             else
             {
-                pavements[i]->BuildBtg( pvmt_polys, slivers, apt_base, apt_clearing, make_shapefiles );
+                pavements[i]->BuildBtg( pvmt_polys, slivers, apt_base, apt_clearing, std::string(shapefile_name) );
             }
 
             // Now try to merge any slivers we found
@@ -469,7 +516,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         for ( unsigned int i=0; i<boundary.size(); i++ )
         {
             SG_LOG(SG_GENERAL, SG_INFO, "Build Userdefined boundary " << i + 1 << " of " << boundary.size());
-            boundary[i]->BuildBtg( apt_base, apt_clearing, false );
+            boundary[i]->BuildBtg( apt_base, apt_clearing, NULL );
         }
     }
 
