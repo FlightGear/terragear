@@ -2093,10 +2093,13 @@ void clipperToShapefile( ClipperLib::Polygons polys, const std::string& path, co
     tgPolygon::ToShapefile( poly, path, layer, name);
 }
 
-void tgPolygon::AccumulatorToShapefiles( const std::string& path, const std::string& layer )
+void tgPolygon::AccumulatorToShapefiles( const std::string& path, const std::string& layer_prefix )
 {
     char shapefile[16];
+    char layer[16];
+
     for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
+        sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
         sprintf( shapefile, "accum_%d", i );
         clipperToShapefile( clipper_accumulator[i], path, layer, std::string(shapefile) );
     }

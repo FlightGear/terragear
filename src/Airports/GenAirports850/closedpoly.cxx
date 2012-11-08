@@ -453,25 +453,24 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, st
 
         tgPolygon clipped = tgPolygon::DiffWithAccumulator( pre_tess );
 
-        SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: clipped poly has " << clipped.Contours() << " contours" << " and " << clipped.TotalNodes() << " points : shapefile_name is " << shapefile_name );
+        if ( clipped.Contours() ) {
+            if(  shapefile_name.size() ) {
+                tgPolygon::ToShapefile( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
+            }
 
-        if(  shapefile_name.size() ) {
-            tgPolygon::ToShapefile( pre_tess, "./airport_dbg", std::string("postclip"), shapefile_name );
+            tgPolygon::RemoveSlivers( clipped, slivers );
+
+            clipped.SetMaterial( GetMaterial( surface_type ) );
+            clipped.SetTexParams( clipped.GetNode(0,0), 5.0, 5.0, texture_heading );
+            clipped.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
+            clipped.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+
+            rwy_polys.push_back( clipped );
+
+            tgPolygon::AddToAccumulator( pre_tess );
         }
-
-        tgPolygon::RemoveSlivers( clipped, slivers );
-
-        clipped.SetMaterial( GetMaterial( surface_type ) );
-        clipped.SetTexParams( clipped.GetNode(0,0), 5.0, 5.0, texture_heading );
-        clipped.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
-        clipped.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
-
-        rwy_polys.push_back( clipped );
-
-        tgPolygon::AddToAccumulator( pre_tess );
     }
 
-    // clean up to save ram : we're done here...
     return 1;
 }
 
