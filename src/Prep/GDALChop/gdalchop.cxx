@@ -40,9 +40,6 @@
 
 #include <boost/scoped_array.hpp>
 
-using std::cout;
-using std::string;
-
 /*
  * A simple benchmark using a 5x5 degree package
  * has shown that gdalchop takes only 80% of the time
@@ -288,7 +285,7 @@ void ImageInfo::GetDataChunk(int *buffer,
     GDALDestroyWarpOptions( psWarpOptions );
 }
 
-void write_bucket(const string& work_dir, SGBucket bucket,
+void write_bucket(const std::string& work_dir, SGBucket bucket,
                   int* buffer,
                   int min_x, int min_y,
                   int span_x, int span_y,
@@ -299,7 +296,7 @@ void write_bucket(const string& work_dir, SGBucket bucket,
     path.append(bucket.gen_base_path());
     path.create_dir( 0755 );
 
-    string array_file = path.str() + "/" + bucket.gen_index_str() + ".arr.gz";
+    std::string array_file = path.str() + "/" + bucket.gen_index_str() + ".arr.gz";
 
     gzFile fp;
     if ( (fp = gzopen(array_file.c_str(), "wb9")) == NULL ) {
@@ -320,7 +317,7 @@ void write_bucket(const string& work_dir, SGBucket bucket,
     gzclose(fp);
 }
 
-void process_bucket(const string& work_dir, SGBucket bucket,
+void process_bucket(const std::string& work_dir, SGBucket bucket,
                     ImageInfo* images[], int imagecount,
                     bool forceWrite = false)
 {
