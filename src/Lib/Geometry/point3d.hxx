@@ -144,6 +144,8 @@ public:
 
     bool   IsWithin( Point3D min, Point3D max ) const;
     bool   IsWithin( double xmin, double xmax, double ymin, double ymax ) const;
+    bool   IsAlmostWithin( Point3D min, Point3D max ) const;
+    bool   IsAlmostWithin( double xmin, double xmax, double ymin, double ymax ) const;
     
 #ifdef _MSC_VER
     double round(double d)
@@ -431,13 +433,6 @@ inline bool Point3D::HasElevation() const
 
 inline bool Point3D::IsWithin( Point3D min, Point3D max ) const
 {
-    // make sure we take epsilon into account
-    min.n[PX] -= fgPoint3_Epsilon;
-    min.n[PY] -= fgPoint3_Epsilon;
-
-    max.n[PX] += fgPoint3_Epsilon;
-    max.n[PY] += fgPoint3_Epsilon;
-
     return ( (min.n[PX] <= n[PX]) && (min.n[PY] <= n[PY]) &&
              (max.n[PX] >= n[PX]) && (max.n[PY] >= n[PY]) );
 }
@@ -453,6 +448,30 @@ inline bool Point3D::IsWithin( double xmin, double xmax, double ymin, double yma
     
     return ( (xmin <= n[PX]) && (ymin <= n[PY]) &&
              (xmax >= n[PX]) && (ymax >= n[PY]) );
+}
+
+inline bool Point3D::IsAlmostWithin( Point3D min, Point3D max ) const
+{
+    // make sure we take epsilon into account
+    min.n[PX] -= fgPoint3_Epsilon;
+    min.n[PY] -= fgPoint3_Epsilon;
+
+    max.n[PX] += fgPoint3_Epsilon;
+    max.n[PY] += fgPoint3_Epsilon;
+
+    return ( IsWithin(min, max) );
+}
+
+inline bool Point3D::IsAlmostWithin( double xmin, double xmax, double ymin, double ymax ) const
+{
+    // make sure we take epsilon into account
+    xmin -= fgPoint3_Epsilon;
+    ymin -= fgPoint3_Epsilon;
+
+    xmax += fgPoint3_Epsilon;
+    ymax += fgPoint3_Epsilon;
+
+    return ( IsWithin( xmin, xmax, ymin,ymax ) );
 }
 
 // FRIENDS

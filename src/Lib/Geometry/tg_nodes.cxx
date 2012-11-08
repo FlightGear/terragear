@@ -239,11 +239,11 @@ point_list TGNodes::get_geod_inside( Point3D min, Point3D max ) const {
     for ( ; current != last; ++current ) {
         Point3D pt = (*current).GetPosition();
 
-        if ( pt.IsWithin( min, max ) ) {
+        if ( pt.IsAlmostWithin( min, max ) ) {
             points.push_back( pt );
         } else {
             if ( (pt < max) && (pt > min) ) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "pt " << pt << " failes IsWithin, but sholdn't have: min " << min << " max " << max );
+                SG_LOG(SG_GENERAL, SG_ALERT, "pt " << pt << " fails IsAlmostWithin, but sholdn't have: min " << min << " max " << max );
             }
         }
     }
