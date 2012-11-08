@@ -21,17 +21,12 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id$
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
 #include <simgear/compiler.h>
-
-#include <algorithm>
-#include <iostream>
-#include <string>
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
@@ -297,38 +292,32 @@ void write_bucket(const string& work_dir, SGBucket bucket,
                   int* buffer,
                   int min_x, int min_y,
                   int span_x, int span_y,
-                  int col_step, int row_step,
-                  bool compress = true)
+                  int col_step, int row_step)
 {
     SGPath path(work_dir);
 
     path.append(bucket.gen_base_path());
     path.create_dir( 0755 );
 
-    string array_file = path.str() + "/" + bucket.gen_index_str() + ".arr";
+    string array_file = path.str() + "/" + bucket.gen_index_str() + ".arr.gz";
 
-    FILE *fp;
-    if ( (fp = fopen(array_file.c_str(), "w")) == NULL ) {
+    gzFile fp;
+    if ( (fp = gzopen(array_file.c_str(), "wb9")) == NULL ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "cannot open " << array_file << " for writing!");
         exit(-1);
     }
 
-    fprintf( fp, "%d %d\n", min_x, min_y );
-    fprintf( fp, "%d %d %d %d\n",
+    gzprintf( fp, "%d %d\n", min_x, min_y );
+    gzprintf( fp, "%d %d %d %d\n",
              span_x + 1, col_step,
              span_y + 1, row_step );
 
     for ( int x = 0; x <= span_x; ++x ) {
         for ( int y = 0; y <= span_y; ++y )
-            fprintf( fp, "%d ", buffer[ y * span_x + x ] );
-        fprintf( fp, "\n" );
+            gzprintf( fp, "%d ", buffer[ y * span_x + x ] );
+        gzprintf( fp, "\n" );
     }
-    fclose(fp);
-
-    if ( compress ) {
-        string command = "gzip --best -f " + array_file;
-        system( command.c_str() );
-    }
+    gzclose(fp);
 }
 
 void process_bucket(const string& work_dir, SGBucket bucket,

@@ -18,41 +18,17 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: dem.cxx,v 1.20 2004-11-19 22:25:50 curt Exp $
 
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
-#include <simgear/compiler.h>
-
-#include <ctype.h>    // isspace()
-#include <stdlib.h>   // atoi()
-#include <math.h>     // rint()
-#include <stdio.h>
-#include <string.h>
-
 #include <iostream>
 
-#ifdef HAVE_SYS_STAT_H
-#  include <sys/stat.h> // stat()
-#endif
-
-#ifdef SG_HAVE_STD_INCLUDES
-#  include <cerrno>
-#else
-#  include <errno.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>   // stat()
-#endif
-
-#include <simgear/constants.h>
-#include <simgear/misc/sgstream.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/strutils.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include "dem.hxx"
 
@@ -84,18 +60,18 @@ bool
 TGDem::open ( const string& file ) {
     // open input file (or read from stdin)
     if ( file ==  "-" ) {
-	printf("Loading DEM data file: stdin\n");
+        SG_LOG(SG_GENERAL, SG_INFO, "Loading DEM data file: stdin");
 	// fd = stdin;
 	// fd = gzdopen(STDIN_FILENO, "r");
-	printf("Not yet ported ...\n");
+        SG_LOG(SG_GENERAL, SG_INFO, "Not yet ported ...");
 	return false;
     } else {
 	in = new sg_gzifstream( file );
 	if ( !(*in) ) {
-	    cout << "Cannot open " << file << endl;
+            SG_LOG(SG_GENERAL, SG_ALERT, "Cannot open " << file );
 	    return false;
 	}
-	cout << "Loading DEM data file: " << file << endl;
+	SG_LOG(SG_GENERAL, SG_INFO, "Loading DEM data file: " << file );
     }
 
     return true;
@@ -105,9 +81,8 @@ TGDem::open ( const string& file ) {
 // close a DEM file
 bool
 TGDem::close () {
-    // the sg_gzifstream doesn't seem to have a close()
 
-    delete in;
+    in->close();
 
     return true;
 }
@@ -130,7 +105,7 @@ TGDem::next_token() {
 int
 TGDem::next_int() {
     int result;
-    
+
     *in >> result;
 
     return result;
@@ -158,7 +133,7 @@ TGDem::next_exp() {
     const char* p = token.c_str();
     char buf[64];
     char* bp = buf;
-    
+
     for ( ; *p != 0; ++p )
     {
 	if ( *p == 'D' )
@@ -184,7 +159,7 @@ TGDem::read_a_record() {
 	in->get(c);
 	name += c;
     }
-  
+
     // clean off the trailing whitespace
     name = simgear::strutils::rstrip(name);
     cout << "    Quad name field: " << name << endl;
@@ -309,7 +284,7 @@ TGDem::read_a_record() {
 	name += c;
     }
     cout << "    Accuracy code = " << inum << "\n";
-    cout << "    column step = " << col_step << 
+    cout << "    column step = " << col_step <<
 	"  row step = " << row_step << "\n";
 
     // dimension of arrays to follow (1)
@@ -373,7 +348,7 @@ TGDem::read_b_record( ) {
 	if ( prof_data > 10000 ) { // meters
 	    prof_data = last;
 	}
-	    
+
 	dem_data[cur_col][i] = (float)prof_data;
 	last = prof_data;
     }
@@ -408,12 +383,11 @@ TGDem::parse( ) {
     return true;
 }
 
-
 // write out the area of data covered by the specified bucket.  Data
 // is written out column by column starting at the lower left hand
 // corner.
 bool
-TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
+TGDem::write_area( const string& root, SGBucket& b ) {
     // calculate some boundaries
     double min_x = ( b.get_center_lon() - 0.5 * b.get_width() ) * 3600.0;
     double max_x = ( b.get_center_lon() + 0.5 * b.get_width() ) * 3600.0;
@@ -422,9 +396,10 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     double max_y = ( b.get_center_lat() + 0.5 * b.get_height() ) * 3600.0;
 
     cout << b << endl;
-    cout << "width = " << b.get_width() << " height = " << b.get_height() 
-	 << endl;
-
+    cout << "width = " << b.get_width() << " height = " << b.get_height()
+         << endl;
+    cout << "min = " << min_x << "," << min_y
+         << "  max = " << max_x << "," << max_y << endl;
     int start_x = (int)((min_x - originx) / col_step);
     int span_x = (int)(b.get_width() * 3600.0 / col_step);
 
@@ -438,17 +413,17 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     // this write_area() routine and feed it buckets that coincide
     // well with the underlying grid structure and spacing.
 
-    if ( ( min_x < (originx - 0.001) )
-	 || ( max_x > (originx + cols * col_step + 0.001) )
-	 || ( min_y < (originy - 0.001) )
-	 || ( max_y > (originy + rows * row_step + 0.001) ) ) {
-	cout << "  ERROR: bucket at least partially outside DEM data range!" <<
-	    endl;
-	return false;
+    if ( ( min_x < originx )
+         || ( max_x > originx + cols * col_step )
+         || ( min_y < originy )
+         || ( max_y > originy + rows * row_step ) ) {
+        cout << "  ERROR: bucket at least partially outside DEM data range!" <<
+            endl;
+        return false;
     }
 
     // If the area is all ocean, skip it.
-    if (!has_non_zero_elev(start_x, span_x, start_y, span_y)) {
+    if ( !has_non_zero_elev(start_x, span_x, start_y, span_y) ) {
         cout << "Tile is all zero elevation: skipping" << endl;
         return false;
     }
@@ -460,35 +435,29 @@ TGDem::write_area( const string& root, SGBucket& b, bool compress ) {
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
 
-    string array_file = path + "/" + b.gen_index_str() + ".arr";
+    string array_file = path + "/" + b.gen_index_str() + ".arr.gz";
     cout << "array_file = " << array_file << endl;
 
     // write the file
-    FILE *fp;
-    if ( (fp = fopen(array_file.c_str(), "w")) == NULL ) {
-	cout << "cannot open " << array_file << " for writing!" << endl;
-	exit(-1);
+    gzFile fp;
+    if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
+        cout << "ERROR:  cannot open " << array_file << " for writing!" << endl;
+        exit(-1);
     }
 
-    fprintf( fp, "%d %d\n", (int)min_x, (int)min_y );
-    fprintf( fp, "%d %f %d %f\n", span_x + 1, col_step, 
-	     span_y + 1, row_step );
+    gzprintf( fp, "%d %d\n", (int)min_x, (int)min_y );
+    gzprintf( fp, "%d %f %d %f\n", span_x + 1, (int)col_step,
+              span_y + 1, (int)row_step );
     for ( int i = start_x; i <= start_x + span_x; ++i ) {
-	for ( int j = start_y; j <= start_y + span_y; ++j ) {
-	    fprintf( fp, "%d ", (int)dem_data[i][j] );
-	}
-	fprintf( fp, "\n" );
+        for ( int j = start_y; j <= start_y + span_y; ++j ) {
+            gzprintf( fp, "%d ", (int)dem_data[i][j] );
+        }
+        gzprintf( fp, "\n" );
     }
-    fclose(fp);
-
-    if ( compress ) {
-	string command = "gzip --best -f " + array_file;
-	system( command.c_str() );
-    }
+    gzclose(fp);
 
     return true;
 }
-
 
 TGDem::~TGDem() {
     // printf("class TGDem DEstructor called.\n");

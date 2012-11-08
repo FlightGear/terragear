@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
     SGBucket b_max( max.x(), max.y() );
 
     if ( b_min == b_max ) {
-	dem.write_area( work_dir, b_min, true );
+	dem.write_area( work_dir, b_min );
     } else {
 	SGBucket b_cur;
 	int dx, dy, i, j;
@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
 	for ( j = 0; j <= dy; j++ ) {
 	    for ( i = 0; i <= dx; i++ ) {
 		b_cur = sgBucketOffset(min.x(), min.y(), i, j);
-		dem.write_area( work_dir, b_cur, true );
+		dem.write_area( work_dir, b_cur );
 	    }
 	}
     }

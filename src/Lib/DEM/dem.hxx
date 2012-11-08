@@ -18,16 +18,14 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: dem.hxx,v 1.11 2004-11-19 22:25:50 curt Exp $
-
 
 #ifndef _DEM_HXX
 #define _DEM_HXX
 
 
-#ifndef __cplusplus                                                          
+#ifndef __cplusplus
 # error This library requires C++
-#endif                                   
+#endif
 
 
 #ifdef HAVE_CONFIG_H
@@ -37,8 +35,6 @@
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sgstream.hxx>
-
-#include <string>
 
 #define DEM_SIZE 1200
 #define DEM_SIZE_1 1201
@@ -54,13 +50,13 @@ private:
 
     // coordinates (in arc seconds) of south west corner
     double originx, originy;
-    
+
     // number of columns and rows
     int cols, rows;
-    
+
     // Distance between column and row data points (in arc seconds)
     double col_step, row_step;
-    
+
     // pointers to the actual grid data allocated here
     float (*dem_data)[DEM_SIZE_1];
     float (*output_data)[DEM_SIZE_1];
@@ -70,7 +66,7 @@ private:
     double dem_x1, dem_y1, dem_x2, dem_y2, dem_x3, dem_y3, dem_x4, dem_y4;
     double dem_z1, dem_z2;
     int dem_resolution, dem_num_profiles;
-  
+
     // Current "B" Record Information
     int prof_col, prof_row;
     int prof_num_cols, prof_num_rows;
@@ -122,7 +118,7 @@ public:
     // write out the area of data covered by the specified bucket.
     // Data is written out column by column starting at the lower left
     // hand corner.
-    bool write_area( const std::string& root, SGBucket& b, bool compress );
+    bool write_area( const std::string& root, SGBucket& b );
 
     // Informational methods
     inline double get_originx() const { return originx; }
