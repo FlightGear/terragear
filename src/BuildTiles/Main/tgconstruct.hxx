@@ -70,7 +70,7 @@ private:
 
     std::vector<std::string> load_dirs;
 
-    const static double gSnap = 0.00000001;      // approx 1 mm
+    const static double gSnap;      // approx 1 mm
 
     // flag indicating whether to ignore the landmass
     bool ignoreLandmass;
