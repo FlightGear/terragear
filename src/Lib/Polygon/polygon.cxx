@@ -35,6 +35,10 @@
 
 #include "polygon.hxx"
 
+#ifdef _MSC_VER
+#   define LONG_LONG_MAX LLONG_MAX
+#endif
+
 using std::endl;
 using std::cout;
 
