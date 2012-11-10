@@ -37,6 +37,7 @@
 
 #ifdef _MSC_VER
 #   define LONG_LONG_MAX LLONG_MAX
+#   define LONG_LONG_MIN LLONG_MIN
 #endif
 
 using std::endl;
