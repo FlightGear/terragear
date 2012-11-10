@@ -30,7 +30,7 @@
 #include <simgear/debug/logstream.hxx>
 #include "tgconstruct.hxx"
 
-const static double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
+const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
 
 // Constructor
 TGConstruct::TGConstruct():
