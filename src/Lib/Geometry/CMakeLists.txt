@@ -1,8 +1,6 @@
 include_directories(${GDAL_INCLUDE_DIR})
 
-include( ${CGAL_USE_FILE} )
-
-add_library(Geometry STATIC 
+add_library(Geometry STATIC
     contour_tree.cxx
     line.cxx
     poly_support.cxx
