@@ -66,14 +66,14 @@ int make_socket (unsigned short int* port) {
     int sock;
     struct sockaddr_in name;
     socklen_t length;
-     
+
     // Create the socket.
     sock = socket (PF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
 	perror ("socket");
 	exit (EXIT_FAILURE);
     }
-     
+
     // Give the socket a name.
     name.sin_family = AF_INET;
     name.sin_addr.s_addr = INADDR_ANY;
@@ -83,7 +83,7 @@ int make_socket (unsigned short int* port) {
 	perror ("bind");
 	exit (EXIT_FAILURE);
     }
-     
+
     // Find the assigned port number
     length = sizeof(struct sockaddr_in);
     if ( getsockname(sock, (struct sockaddr *) &name, &length) ) {
@@ -154,7 +154,7 @@ void init_tile_count( const string& chunk ) {
     start_lat = atof( lats.substr(1,2).c_str() );
     if ( vert == "s" ) { start_lat *= -1; }
 
-    cout << "start_lon = " << start_lon << "  start_lat = " << start_lat 
+    cout << "start_lon = " << start_lon << "  start_lat = " << start_lat
 	 << endl;
 }
 
@@ -219,7 +219,7 @@ long int get_next_tile() {
 	// lon = -82 + (shift_over*dx) + (dx*0.5);
 	lon = start_lon + (shift_over*dx) + (dx*0.5);
 
-	cout << "starting pass = " << pass 
+	cout << "starting pass = " << pass
 	     << " with lat = " << lat << " lon = " << lon << endl;
     }
 
@@ -250,7 +250,7 @@ long int get_next_tile() {
 	     << (double)global_counter / (double)(seconds - start_seconds)
 	     << endl;
 	cout << "Overall tile per hour rate = "
-	     <<  (double)global_counter * 3600.0 / 
+	     <<  (double)global_counter * 3600.0 /
 	           (double)(seconds - start_seconds)
 	     << endl;
 	counter = 0;
@@ -298,7 +298,7 @@ void log_failed_tile( const string& path, long int tile ) {
 void usage( const string name ) {
     cout << "Usage: " << name
 	 << "[--width=<width> --height=<height>] "
-	 << " <work_base> <output_base> chunk1 chunk2 ..." 
+	 << " <work_base> <output_base> chunk1 chunk2 ..."
 	 << endl;
     cout << "\twhere chunk represents the south west corner of the area"
 	 << endl;
@@ -363,7 +363,7 @@ DWORD WINAPI
 ThreadProc(void* p)
 {
     DWORD pN1;
-    ULONG_PTR pN2; 
+    ULONG_PTR pN2;
     OVERLAPPED*	pOverLapped;
 
     while( GetQueuedCompletionStatus(gIoPort, &pN1, &pN2, &pOverLapped, INFINITE)) {
@@ -386,7 +386,7 @@ ThreadProc(void* p)
 int main( int argc, char **argv ) {
     int arg_counter;
     long int next_tile;
-    int sock, msgsock, length, pid;
+    int sock, msgsock;
     fd_set ready;
     short unsigned int port;
 
@@ -457,7 +457,7 @@ int main( int argc, char **argv ) {
     for ( ;; ) {
 	FD_ZERO(&ready);
 	FD_SET(sock, &ready);
-	
+
 	// block until we get some input on sock
 	select(sock+1, &ready, 0, 0, NULL);
 
@@ -476,9 +476,9 @@ int main( int argc, char **argv ) {
 		}
 	    }
 
-	    cout << "Bucket = " << SGBucket(next_tile) 
+	    cout << "Bucket = " << SGBucket(next_tile)
 		 << " (" << pass << ")" << endl;
-    
+
 	    log_pending_tile( status_dir, next_tile );
 	    // cout << "next tile = " << next_tile << endl;;
 
@@ -487,7 +487,7 @@ int main( int argc, char **argv ) {
 
 #ifndef _MSC_VER
 	    // spawn a child
-	    pid = fork();
+	    int pid = fork();
 
 	    if ( pid < 0 ) {
 		// error
@@ -500,7 +500,7 @@ int main( int argc, char **argv ) {
 		// clean up all of our zombie children
 		int status;
 		while ( (pid = waitpid( WAIT_ANY, &status, WNOHANG )) > 0 ) {
-		    // cout << "waitpid(): pid = " << pid 
+		    // cout << "waitpid(): pid = " << pid
 		    //      << " status = " << status << endl;
 		}
 	    } else {

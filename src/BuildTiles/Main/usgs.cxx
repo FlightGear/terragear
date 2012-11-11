@@ -36,13 +36,13 @@ static vector<AreaType> usgs_map;
 
 int load_usgs_map( const std::string& filename ) {
     ifstream in ( filename.c_str() );
-    
+
     if ( ! in ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open USGS map file " << filename);
         return 0;
     }
     SG_LOG(SG_GENERAL, SG_ALERT, "USGS Map file is " << filename);
-    
+
     in >> skipcomment;
     while ( !in.eof() ) {
     	string name;
@@ -50,14 +50,14 @@ int load_usgs_map( const std::string& filename ) {
     	usgs_map.push_back( get_area_type( name ) );
         in >> skipcomment;
     }
-    
+
     in.close();
-    
+
     return 1;
 }
 
 // Translate USGS land cover values into TerraGear area types.
-AreaType translateUSGSCover (int usgs_value)
+AreaType translateUSGSCover (unsigned int usgs_value)
 {
     if ( 0<usgs_value && usgs_value<usgs_map.size() ) {
         return usgs_map[usgs_value-1];

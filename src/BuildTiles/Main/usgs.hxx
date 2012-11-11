@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
- 
+
 
 #ifndef _USGS_HXX
 #define _USGS_HXX
@@ -29,7 +29,6 @@
 #include "priorities.hxx"
 
 int load_usgs_map( const std::string& filename );
-AreaType translateUSGSCover( int usgs_value );
+AreaType translateUSGSCover( unsigned int usgs_value );
 
 #endif // _USGS_HXX
-
