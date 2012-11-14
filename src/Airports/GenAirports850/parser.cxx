@@ -55,6 +55,7 @@ bool Parser::GetAirportDefinition( char* line, string& icao )
 
 void Parser::set_debug( std::string path, std::vector<string> runway_defs,
                                           std::vector<string> pavement_defs,
+                                          std::vector<string> taxiway_defs,
                                           std::vector<string> feature_defs )
 {
     SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
@@ -118,6 +119,35 @@ void Parser::set_debug( std::string path, std::vector<string> runway_defs,
             }
         }
         debug_pavements[icao] = shapes;
+    }
+
+    for (unsigned int i=0; i< taxiway_defs.size(); i++) {
+        string dsd     = taxiway_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i);
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_taxiways[icao] = shapes;
     }
 
     for (unsigned int i=0; i< feature_defs.size(); i++) {
@@ -202,7 +232,7 @@ void Parser::Parse( long pos )
         // write the airport BTG
         if (cur_airport)
         {
-            cur_airport->set_debug( debug_path, debug_runways, debug_pavements, debug_features );
+            cur_airport->set_debug( debug_path, debug_runways, debug_pavements, debug_taxiways, debug_features );
             cur_airport->BuildBtg( work_dir, elevation );
 
             cur_airport->GetBuildTime( build_time );

@@ -183,6 +183,24 @@ bool Airport::isDebugPavement( int pvmt )
     return dbg;
 }
 
+bool Airport::isDebugTaxiway( int taxi )
+{
+    bool dbg = false;
+
+    debug_map_const_iterator it = debug_taxiways.find(icao);
+    if ( it != debug_taxiways.end() ) {
+        for ( unsigned int i=0; i<it->second.size() && !dbg; i++ ) {
+            if( it->second[i] == std::numeric_limits<int>::max() ) {
+                dbg = true;
+            } else if ( it->second[i] == taxi+1 ) {
+                dbg = true;
+            }
+        }
+    }
+
+    return dbg;
+}
+
 bool Airport::isDebugFeature( int feat )
 {
     bool dbg = false;
@@ -297,7 +315,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     time_t      log_time;
 
     char shapefile_name[64];
-
+    std::string shapefile;
+    
     // Find the average of all the runway and heliport long / lats
     int num_samples = 0;
     for (unsigned int i=0; i<runways.size(); i++)
@@ -420,14 +439,15 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             } else {
                 strcpy( shapefile_name, "" );
             }
-            
+            shapefile = shapefile_name;
+
             if (boundary.size())
             {
-                pavements[i]->BuildBtg( pvmt_polys, slivers, std::string(shapefile_name) );
+                pavements[i]->BuildBtg( pvmt_polys, slivers, shapefile );
             }
             else
             {
-                pavements[i]->BuildBtg( pvmt_polys, slivers, apt_base, apt_clearing, std::string(shapefile_name) );
+                pavements[i]->BuildBtg( pvmt_polys, slivers, apt_base, apt_clearing, shapefile );
             }
 
             // Now try to merge any slivers we found
@@ -447,13 +467,20 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             SG_LOG(SG_GENERAL, SG_INFO, "Build Taxiway " << i + 1 << " of " << taxiways.size());
             slivers.clear();
 
+            if ( isDebugTaxiway(i) ) {
+                sprintf( shapefile_name, "taxiway_%d", i );
+            } else {
+                strcpy( shapefile_name, "" );
+            }
+            shapefile = shapefile_name;
+
             if (boundary.size())
             {
-                taxiways[i]->BuildBtg( pvmt_polys, rwy_lights, slivers, make_shapefiles );
+                taxiways[i]->BuildBtg( pvmt_polys, rwy_lights, slivers, shapefile );
             }
             else
             {
-                taxiways[i]->BuildBtg( pvmt_polys, rwy_lights, slivers, apt_base, apt_clearing, make_shapefiles );
+                taxiways[i]->BuildBtg( pvmt_polys, rwy_lights, slivers, apt_base, apt_clearing, shapefile );
             }
 
             // Now try to merge any slivers we found
@@ -513,10 +540,12 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // build the base and clearing if there's a boundary
     if (boundary.size())
     {
+        shapefile = "";
+
         for ( unsigned int i=0; i<boundary.size(); i++ )
         {
             SG_LOG(SG_GENERAL, SG_INFO, "Build Userdefined boundary " << i + 1 << " of " << boundary.size());
-            boundary[i]->BuildBtg( apt_base, apt_clearing, NULL );
+            boundary[i]->BuildBtg( apt_base, apt_clearing, shapefile );
         }
     }
 

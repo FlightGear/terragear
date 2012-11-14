@@ -48,33 +48,12 @@ Taxiway::Taxiway(char* definition)
 
     // adjust lat / lon to the start of the taxiway, not the middle
     origin = SGGeodesy::direct( SGGeod::fromDeg(lon, lat), heading, -length/2 );
+
+    taxi_contour = gen_wgs84_rect( origin, heading, length, width );
 } 
 
-int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, bool make_shapefiles )
+int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, std::string& shapefile_name )
 {
-    tgContour taxi;
-    tgContour base, safe_base;
-    BuildBtg( rwy_polys, rwy_lights, slivers, make_shapefiles );
-
-    // generate a poly for this segment
-    taxi = gen_wgs84_rect( origin, heading, length, width );
-
-    base = tgContour::Expand( taxi, 20.0);
-
-    safe_base = tgContour::Expand( taxi, 50.0);
-
-    // add this to the airport clearing
-    apt_clearing = tgPolygon::Union( safe_base, apt_clearing);
-
-    // and add the clearing to the base
-    apt_base = tgPolygon::Union( base, apt_base );
-
-    return 0;
-}
-
-int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, bool make_shapefiles )
-{
-    tgContour taxi;
     std::string material;
 
     if ( surface == 1 /* Asphalt */ )
@@ -123,20 +102,49 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
         throw sg_exception("unknown runway type!");
     }
 
-    // generate a poly for this segment
-    taxi = gen_wgs84_rect( origin, heading, length, width );
+    if(  shapefile_name.size() ) {
+        tgPolygon taxi_poly;
+        taxi_poly.AddContour( taxi_contour );
 
-    tgPolygon clipped = tgContour::DiffWithAccumulator( taxi );
-    tgPolygon::RemoveSlivers( clipped, slivers );
+        tgPolygon::ToShapefile( taxi_poly, "./airport_dbg", std::string("preclip"), shapefile_name );
+        tgPolygon::AccumulatorToShapefiles( "./airport_dbg", "accum" );
+    }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tw2 clipped = " << clipped.Contours());
+    tgPolygon clipped = tgContour::DiffWithAccumulator( taxi_contour );
+    tgPolygon split   = tgPolygon::SplitLongEdges( clipped, 100 );
+    
+    tgPolygon::RemoveSlivers( split, slivers );
 
-    clipped.SetMaterial( material );
-    clipped.SetTexParams( taxi.GetNode(0), width, 250*SG_FEET_TO_METER, heading );
-    clipped.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
-    rwy_polys.push_back( clipped );
+    split.SetMaterial( material );
+    split.SetTexParams( taxi_contour.GetNode(0), width, 25*SG_FEET_TO_METER, heading );
+    split.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
+    split.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, -1.0, 1.0, 1.0 );
+    rwy_polys.push_back( split );
 
-    tgContour::AddToAccumulator( taxi );
+    if(  shapefile_name.size() ) {
+        tgPolygon::ToShapefile( split, "./airport_dbg", std::string("postclip"), shapefile_name );
+    }
+
+    tgContour::AddToAccumulator( taxi_contour );
+
+    return 0;
+}
+
+int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
+{
+    tgContour base, safe_base;
+
+    BuildBtg( rwy_polys, rwy_lights, slivers, shapefile_name );
+
+    base = tgContour::Expand( taxi_contour, 20.0);
+
+    safe_base = tgContour::Expand( taxi_contour, 50.0);
+
+    // add this to the airport clearing
+    apt_clearing = tgPolygon::Union( safe_base, apt_clearing);
+
+    // and add the clearing to the base
+    apt_base = tgPolygon::Union( base, apt_base );
 
     return 0;
 }

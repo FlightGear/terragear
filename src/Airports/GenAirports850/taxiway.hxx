@@ -19,14 +19,14 @@ public:
     int BuildBtg( tgpolygon_list& taxi_polys,
                   tglightcontour_list& taxi_lights,
                   tgcontour_list& slivers,
-                  bool make_shapefiles );
+                  std::string& shapefile_name );
 
     int BuildBtg( tgpolygon_list& taxi_polys,
                   tglightcontour_list& taxi_lights,
                   tgcontour_list& slivers,
                   tgPolygon& apt_base,
                   tgPolygon& apt_clearing,
-                  bool make_shapefiles );
+                  std::string& shapefile_name );
     
 private:
     SGGeod  origin;
@@ -35,6 +35,8 @@ private:
     double  width;
     int     surface;
     char    lighting[8];
+
+    tgContour taxi_contour;
 };
 
 typedef std::vector <Taxiway *> TaxiwayList;

@@ -1123,7 +1123,7 @@ bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
         }
 
         m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
-        b = p_max.getLongitudeDeg() - m * p_max.getLatitudeDeg();
+        b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
 
         for ( int i = 0; i < (int)nodes.size(); ++i ) {
             // cout << i << endl;

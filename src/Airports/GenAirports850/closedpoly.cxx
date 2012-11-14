@@ -418,7 +418,7 @@ std::string ClosedPoly::GetMaterial( int surface )
     return material;
 }
 
-int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, std::string shapefile_name )
+int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
 {
     if (is_pavement && pre_tess.Contours() )
     {
@@ -440,7 +440,7 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
     return 1;
 }
 
-int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, std::string shapefile_name )
+int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, std::string& shapefile_name )
 {
     if ( is_pavement && pre_tess.Contours() )
     {
@@ -477,7 +477,7 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, st
 
 // Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges 
 // - resulting in no base, which we can't handle
-int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::string shapefile_name )
+int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
 {
     tgPolygon base, safe_base;
 

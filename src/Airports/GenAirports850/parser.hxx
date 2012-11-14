@@ -88,6 +88,7 @@ public:
     // Debug
     void            set_debug( std::string path, std::vector<std::string> runway_defs,
                                                  std::vector<std::string> pavement_defs,
+                                                 std::vector<std::string> taxiway_defs,
                                                  std::vector<std::string> feature_defs );
 
 private:
@@ -128,6 +129,7 @@ private:
     string          debug_path;
     debug_map       debug_runways;
     debug_map       debug_pavements;
+    debug_map       debug_taxiways;
     debug_map       debug_features;
 };
 

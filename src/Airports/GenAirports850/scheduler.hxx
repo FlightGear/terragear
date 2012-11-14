@@ -143,7 +143,7 @@ public:
     // When a slot is available, the main thread calls launch to instantiate a 
     // new pareser process
     void Launch( string command, string work_dir, string file, AirportInfo* pai, bool last, string debug_path,
-                 const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_features );
+                 const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_taxiways,  const debug_map& debug_features );
     Timespan GetNextTimeout();
     void HandleReceivedMessages( Net::Socket::SocketList& slr );
     void HandleTimeouts();
@@ -187,6 +187,7 @@ public:
     // Debug
     void            set_debug( std::string path, std::vector<std::string> runway_defs,
                                                  std::vector<std::string> pavement_defs,
+                                                 std::vector<std::string> taxiway_defs,
                                                  std::vector<std::string> feature_defs );
 
 
@@ -210,6 +211,6 @@ private:
     string          debug_path;
     debug_map       debug_runways;
     debug_map       debug_pavements;
+    debug_map       debug_taxiways;
     debug_map       debug_features;
 };
-

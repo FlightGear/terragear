@@ -145,6 +145,7 @@ int main(int argc, char **argv)
     string debug_dir = ".";
     vector<string> debug_runway_defs;
     vector<string> debug_pavement_defs;
+    vector<string> debug_taxiway_defs;
     vector<string> debug_feature_defs;
 
     // Set Normal logging
@@ -270,6 +271,11 @@ int main(int argc, char **argv)
         {
             debug_pavement_defs.push_back( arg.substr(18) );
         }
+        else if (arg.find("--debug-taxiways=") == 0)
+        {
+            SG_LOG(SG_GENERAL, SG_INFO, "add debug taxiway " << arg.substr(17) );
+            debug_taxiway_defs.push_back( arg.substr(17) );
+        }
         else if (arg.find("--debug-features=") == 0)
         {
             debug_feature_defs.push_back( arg.substr(17) );
@@ -366,7 +372,7 @@ int main(int argc, char **argv)
     Scheduler* scheduler = new Scheduler(command, input_file, work_dir, elev_src);
 
     // Add any debug 
-    scheduler->set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_feature_defs );
+    scheduler->set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_taxiway_defs, debug_feature_defs );
 
     // just one airport 
     if ( airport_id != "" )
@@ -384,7 +390,7 @@ int main(int argc, char **argv)
     {
         // create and start the real parser
         Parser parser(input_file, work_dir, elev_src);
-        parser.set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_feature_defs );
+        parser.set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_taxiway_defs, debug_feature_defs );
         parser.Parse( airport_pos );
     }
     else if ( start_id != "" )

@@ -122,15 +122,18 @@ public:
     void set_debug( std::string& path,
                     debug_map& dbg_runways, 
                     debug_map& dbg_pavements,
+                    debug_map& dbg_taxiways,
                     debug_map& dbg_features ) {
         debug_path      = path;
         debug_runways   = dbg_runways;
         debug_pavements = dbg_pavements;
+        debug_taxiways  = dbg_taxiways;
         debug_features  = dbg_features;
     };
 
     bool isDebugRunway  ( int i );
     bool isDebugPavement( int i );
+    bool isDebugTaxiway ( int i );
     bool isDebugFeature ( int i );
 
 private:
@@ -160,6 +163,7 @@ private:
     string          debug_path;
     debug_map       debug_runways;
     debug_map       debug_pavements;
+    debug_map       debug_taxiways;
     debug_map       debug_features;
 };
 

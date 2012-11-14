@@ -195,7 +195,7 @@ ProcessList::ProcessList( int n, string& summaryfile, Scheduler* pScheduler ) : 
 // When a slot is available, the main thread calls launch to instantiate a 
 // new pareser process 
 void ProcessList::Launch( string command, string work_dir, string file, AirportInfo* pai, bool last, string debug_path, 
-                          const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_features )
+                          const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_taxiways,  const debug_map& debug_features )
 {
     Process::Args args;
     char arg[512];
@@ -252,6 +252,23 @@ void ProcessList::Launch( string command, string work_dir, string file, AirportI
         }
     }
 
+    it = debug_taxiways.find( pai->GetIcao() );
+    std::string taxiway_def;
+    if ( it != debug_taxiways.end() ) {
+        taxiway_def = "--debug-taxiways=";
+        taxiway_def.append( pai->GetIcao() );
+        taxiway_def.append( ":" );
+        for ( unsigned int i=0; i < it->second.size(); i++ ) {
+            char int_str[16];
+            sprintf( int_str, "%d", it->second[i] );
+            taxiway_def.append( int_str );
+
+            if ( i < it->second.size()-1 ) {
+                taxiway_def.append( "," );
+            }
+        }
+    }
+    
     it = debug_features.find( pai->GetIcao() );
     std::string feature_def;
     if ( it != debug_features.end() ) {
@@ -269,7 +286,7 @@ void ProcessList::Launch( string command, string work_dir, string file, AirportI
         }
     }
 
-    if ( runway_def.size() || pavement_def.size() || feature_def.size() ) {
+    if ( runway_def.size() || pavement_def.size() || taxiway_def.size() || feature_def.size() ) {
 //        sprintf( arg, "--debug-path=%s", debug_path.c_str() );
 //        SG_LOG( SG_GENERAL, SG_INFO, "Created debug path arg " << arg );
 //        args.push_back(arg);
@@ -282,6 +299,11 @@ void ProcessList::Launch( string command, string work_dir, string file, AirportI
         if ( pavement_def.size() ) {
             SG_LOG( SG_GENERAL, SG_INFO, "Created pavement arg " << pavement_def );
             args.push_back( pavement_def.c_str() );
+        }
+
+        if ( taxiway_def.size() ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "Created taxiway arg " << runway_def );
+            args.push_back( taxiway_def.c_str() );
         }
 
         if ( feature_def.size() ) {
@@ -524,6 +546,7 @@ void ProcessMonitor::run()
 /*** SCEDULER ***/
 void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
                                              std::vector<string> pavement_defs,
+                                             std::vector<string> taxiway_defs,
                                              std::vector<string> feature_defs )
 {
     SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
@@ -587,6 +610,35 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
             }
         }
         debug_pavements[icao] = shapes;
+    }
+
+    for (unsigned int i=0; i< taxiway_defs.size(); i++) {
+        string dsd     = taxiway_defs[i];
+        size_t d_pos   = dsd.find(":");
+
+        string icao    = dsd.substr(0, d_pos);
+        std::vector<int> shapes;
+        shapes.clear();
+
+        dsd.erase(0, d_pos+1);
+
+        if ( dsd == "all" ) {
+            shapes.push_back( std::numeric_limits<int>::max() );
+        } else {
+            std::stringstream ss(dsd);
+            int i;
+
+            while (ss >> i)
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
+
+                shapes.push_back(i);
+
+                if (ss.peek() == ',')
+                    ss.ignore();
+            }
+        }
+        debug_taxiways[icao] = shapes;
     }
 
     for (unsigned int i=0; i< feature_defs.size(); i++) {
@@ -979,7 +1031,7 @@ void Scheduler::Schedule( int num_threads, string& summaryfile )
             }
 
             // Launch a new parser
-            procList->Launch( command, work_dir, filename, &originalList[i], last, debug_path, debug_runways, debug_pavements, debug_features );
+            procList->Launch( command, work_dir, filename, &originalList[i], last, debug_path, debug_runways, debug_pavements, debug_taxiways, debug_features );
         }
 
         // Sync up before relaunching
