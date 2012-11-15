@@ -146,13 +146,6 @@ public:
     bool   IsWithin( double xmin, double xmax, double ymin, double ymax ) const;
     bool   IsAlmostWithin( Point3D min, Point3D max ) const;
     bool   IsAlmostWithin( double xmin, double xmax, double ymin, double ymax ) const;
-    
-#ifdef _MSC_VER
-    double round(double d)
-    {
-        return floor(d + 0.5);
-    }
-#endif
 
 };
 
@@ -353,9 +346,9 @@ inline void Point3D::setelev(const double z) {
 
 inline void Point3D::snap( double grid )
 {
-    n[PX] =  grid * round( n[PX]/grid );
-    n[PY] =  grid * round( n[PY]/grid );
-    n[PZ] =  grid * round( n[PZ]/grid );
+    n[PX] =  grid * SGMisc<double>::round( n[PX]/grid );
+    n[PY] =  grid * SGMisc<double>::round( n[PY]/grid );
+    n[PZ] =  grid * SGMisc<double>::round( n[PZ]/grid );
 }
 
 // QUERIES
