@@ -1058,9 +1058,9 @@ const double isEqual2D_Epsilon = 0.000001;
 
 static SGGeod SGGeod_snap( const SGGeod& in, double grid )
 {
-    return SGGeod::fromDegM( grid * round( in.getLongitudeDeg()/grid ),
-                             grid * round( in.getLatitudeDeg() /grid ),
-                             grid * round( in.getElevationM()  /grid ) );
+    return SGGeod::fromDegM( grid * SGMisc<double>::round( in.getLongitudeDeg()/grid ),
+                             grid * SGMisc<double>::round( in.getLatitudeDeg() /grid ),
+                             grid * SGMisc<double>::round( in.getElevationM()  /grid ) );
 }
 
 static bool SGGeod_isEqual2D( const SGGeod& g0, const SGGeod& g1 )
