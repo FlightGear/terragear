@@ -590,6 +590,7 @@ public:
     // init_accumulator should return a handle...
     static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Union( const tgPolygon& subject, tgPolygon& clip );
+    static tgPolygon Diff( const tgPolygon& subject, tgPolygon& clip );
     static tgPolygon Intersect( const tgPolygon& subject, const tgPolygon& clip );
 
     static tgPolygon DiffWithAccumulator( const tgPolygon& subject );

@@ -2041,6 +2041,23 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
     return tgPolygon::FromClipper( clipper_result );
 }
 
+tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
+{
+    tgPolygon result;
+
+    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
+    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
+    ClipperLib::Polygons clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    return tgPolygon::FromClipper( clipper_result );
+}
+
 tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip )
 {
     tgPolygon result;
