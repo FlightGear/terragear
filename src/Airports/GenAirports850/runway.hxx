@@ -39,14 +39,14 @@ public:
     int BuildBtg( tgpolygon_list& rwy_polys,
                   tglightcontour_list& rwy_lights,
                   tgcontour_list& slivers,
-                  bool make_shapefiles );
+                  std::string& shapefile_name );
 
     int BuildBtg( tgpolygon_list& rwy_polys,
                   tglightcontour_list& rwy_lights,
                   tgcontour_list& slivers,
                   tgPolygon& apt_base,
                   tgPolygon& apt_clearing,
-                  bool make_shapefiles );
+                  std::string& shapefile_name );
 
     void BuildShoulder( tgpolygon_list& rwy_polys,
                         tgcontour_list& slivers );
@@ -108,7 +108,7 @@ private:
                              double &start_pct, double &end_pct,
                              tgpolygon_list& rwy_polys,
                              tgcontour_list& slivers,
-                             bool make_shapefiles );
+                             std::string& shapefile_name );
 
     // generate a section of runway with shoulders
     void gen_runway_section( const tgPolygon& runway,
@@ -120,7 +120,7 @@ private:
                       tgpolygon_list& rwy_polys,
                       tgpolygon_list& shoulder_polys,
                       tgcontour_list& slivers,
-                      bool make_shapefiles );
+                      std::string& shapefile_name );
 
     // generate a section of runway without shoulders
     void gen_runway_section( const tgPolygon& runway,
@@ -131,7 +131,7 @@ private:
                       const string& material,
                       tgpolygon_list& rwy_polys,
                       tgcontour_list& slivers,
-                      bool make_shapefiles );
+                      std::string& shapefile_name );
 
     // generate a section of shoulder
     tgPolygon gen_shoulder_section( SGGeod& p0, SGGeod& p1,
@@ -145,7 +145,7 @@ private:
     
     void gen_rwy( tgpolygon_list& rwy_polys,
                   tgcontour_list& slivers,
-                  bool make_shapefiles );
+                  std::string& shapefile_name );
 
     void gen_runway_lights( tglightcontour_list& lights );
 

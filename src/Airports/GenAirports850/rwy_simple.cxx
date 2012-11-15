@@ -32,6 +32,7 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
 {
     tgContour runway = gen_runway_w_mid( 0.0, 0.0 );
     tgPolygon runway_half;
+    std::string empty = "";
 
     for ( int rwhalf=0; rwhalf<2; ++rwhalf ) {
 
@@ -66,8 +67,7 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
 
         // Displaced threshold if it exists
         if ( rwy.threshold[rwhalf] > 0.0 ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is "
-            << rwy.threshold[rwhalf] );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
             start_pct = end_pct;
             end_pct = start_pct + ( rwy.threshold[rwhalf] / length );
@@ -79,7 +79,7 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
                                         "",
                                         rwy_polys,
                                         slivers,
-                                        false );
+                                        empty );
         }
 
         // Generate runway
@@ -91,6 +91,6 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
                                     "",
                                     rwy_polys,
                                     slivers,
-                                    false );
+                                    empty );
     }
 }

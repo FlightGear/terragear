@@ -87,7 +87,7 @@ tgContour WaterRunway::GetBuoys()
     return buoys_nodes;
 }
 
-int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, bool make_shapefiles )
+int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, std::string& shapefile_name )
 {
     if ( rwy.surface == 1 /* Asphalt */ )
     {
@@ -133,7 +133,7 @@ int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights
         case 1: // asphalt:
         case 2: // concrete
             SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete " << rwy.surface);
-            gen_rwy( rwy_polys, slivers, make_shapefiles );
+            gen_rwy( rwy_polys, slivers, shapefile_name );
             gen_runway_lights( rwy_lights );
             break;
 
@@ -166,11 +166,11 @@ int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights
     return 0;
 }
 
-int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, bool make_shapefiles )
+int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
 {
     tgContour base, safe_base;
 
-    BuildBtg( rwy_polys, rwy_lights, slivers, make_shapefiles );
+    BuildBtg( rwy_polys, rwy_lights, slivers, shapefile_name );
 
     // generate area around runways
     base      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], 20.0 );

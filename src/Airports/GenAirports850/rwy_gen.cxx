@@ -24,6 +24,8 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
+#include <boost/lexical_cast.hpp>
+
 #include <Geometry/poly_support.hxx>
 
 #include "global.hxx"
@@ -142,13 +144,14 @@ void Runway::gen_runway_section( const tgPolygon& runway,
                                  tgpolygon_list& rwy_polys,
                                  tgpolygon_list& shoulder_polys,
                                  tgcontour_list& slivers,
-                                 bool make_shapefiles ) 
+                                 std::string& shapefile_name )
 {
     double width = rwy.width;
     double length = rwy.length;
     double lshoulder_width = 0.0f;
     double rshoulder_width = 0.0f;
     std::string shoulder_surface = "";
+
 #if 0
     static int runway_idx  = 0;
     static int section_idx = 0;
@@ -298,8 +301,16 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
     SG_LOG(SG_GENERAL, SG_DEBUG, section );
 
+    if(  shapefile_name.size() ) {
+        tgPolygon::ToShapefile( section, "./airport_dbg", std::string("preclip"), shapefile_name );
+    }
+
     // Clip the new polygon against what ever has already been created.
     tgPolygon clipped = tgPolygon::DiffWithAccumulator( section );
+
+    if(  shapefile_name.size() ) {
+        tgPolygon::ToShapefile( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
+    }
 
     tgPolygon::RemoveSlivers( clipped, slivers );
 
@@ -339,7 +350,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
                                  const string& material,
                                  tgpolygon_list& rwy_polys,
                                  tgcontour_list& slivers,
-                                 bool make_shapefiles )
+                                 std::string& shapefile_name )
 {
     double width = rwy.width;
     double length = rwy.length;
@@ -471,7 +482,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                  double &start_pct, double &end_pct,
                                  tgpolygon_list& rwy_polys,
                                  tgcontour_list& slivers,
-                                 bool make_shapefiles )
+                                 std::string& shapefile_name )
 {
     if (rwname != "XX") { /* Do not create a designation block if the runway name is set to none */
         string letter = "";
@@ -498,7 +509,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 rwy_polys,
                                 shoulder_polys,
                                 slivers,
-                                make_shapefiles );
+                                shapefile_name );
         }
 
 
@@ -528,7 +539,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 rwy_polys, 
                                 shoulder_polys,
                                 slivers,
-                                make_shapefiles );
+                                shapefile_name );
             gen_runway_section( poly,
                                 start_pct, end_pct,
                                 0.5, 1.0,
@@ -538,7 +549,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 rwy_polys,
                                 shoulder_polys,
                                 slivers,
-                                make_shapefiles );
+                                shapefile_name );
 
         } else if (rwname.length() == 1) {
             sprintf( tex1, "%c%c", rwname[0], 'c');
@@ -552,7 +563,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 rwy_polys,
                                 shoulder_polys,
                                 slivers,
-                                make_shapefiles );
+                                shapefile_name );
         }
     }
 }
@@ -563,9 +574,11 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
 // document AC 150/5340-1H
 void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                       tgcontour_list& slivers,
-                      bool make_shapefiles )
+                      std::string& shapefile_name )
 {
     SG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
+    std::string section_name = "";
+    bool debug = shapefile_name.size() != 0;
 
     //
     // Generate the basic runway outlines
@@ -644,6 +657,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                 // starting (possibly partial chunk)
                 start1_pct = end1_pct;
                 end1_pct = start1_pct + ( part_len / length );
+                if ( debug ) { section_name = shapefile_name + "_disp_start"; }
                 gen_runway_section( runway_half,
                                     start1_pct, end1_pct,
                                     0.0, 1.0,
@@ -653,12 +667,13 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                     rwy_polys,
                                     shoulder_polys,
                                     slivers,
-                                    make_shapefiles );
+                                    section_name );
 
                 // main chunks
                 for ( int i = 0; i < count; ++i ) {
                     start1_pct = end1_pct;
                     end1_pct = start1_pct + ( 60.0 / length );
+                    if ( debug ) { section_name = shapefile_name + "_disp_" + boost::lexical_cast<std::string>(i); }
                     gen_runway_section( runway_half,
                                         start1_pct, end1_pct,
                                         0.0, 1.0,
@@ -668,13 +683,14 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                         rwy_polys,
                                         shoulder_polys,
                                         slivers,
-                                        make_shapefiles );
+                                        section_name );
                 }
             }
 
             // final arrows
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( final_arrow / length );
+            if ( debug ) { section_name = shapefile_name + "_disp_end"; }
             gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
@@ -684,13 +700,14 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                             rwy_polys,
                             shoulder_polys,
                             slivers,
-                            make_shapefiles );
+                            section_name );
         }
 
         if (rwy.marking[rwhalf] == 0) {
             // No marking
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( 10 / length );
+            if ( debug ) { section_name = shapefile_name + "_nothresh"; }
             gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -700,11 +717,12 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                 rwy_polys,
                                 shoulder_polys,
                                 slivers,
-                                make_shapefiles );
+                                section_name );
         } else {
             // Thresholds for all others
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( 202.0 * SG_FEET_TO_METER / length );
+            if ( debug ) { section_name = shapefile_name + "thresh"; }
             gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -714,14 +732,14 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                 rwy_polys,
                                 shoulder_polys,
                                 slivers,
-                                make_shapefiles );
+                                shapefile_name );
         }
 
         // Runway designation block
         gen_rw_designation( runway_half, heading,
                             rwy.rwnum[rwhalf], start1_pct, end1_pct,
                             rwy_polys, slivers,
-                            make_shapefiles );
+                            shapefile_name );
 
         // Generate remaining markings depending on type of runway
         if (rwy.marking[rwhalf] > 1) {
@@ -753,6 +771,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                 if ( end1_pct < 1.0 ) {
                     start1_pct = end1_pct;
                     end1_pct = start1_pct + ( rw_marking_list[i].size / length );
+                    if ( debug ) { section_name = shapefile_name + "_" + rw_marking_list[i].tex; }
                     gen_runway_section( runway_half,
                                         start1_pct, end1_pct,
                                         0.0, 1.0,
@@ -762,7 +781,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                         rwy_polys,
                                         shoulder_polys,
                                         slivers,
-                                        make_shapefiles );
+                                        section_name );
                 }
             }
         }
@@ -781,7 +800,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
         while ( end1_pct < 1.0 ) {
             start1_pct = end1_pct;
             end1_pct = start1_pct + rest1_inc;
-
+            if ( debug ) { section_name = shapefile_name + "rest_" + boost::lexical_cast<std::string>(end1_pct); }
             gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -791,7 +810,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                 rwy_polys,
                                 shoulder_polys,
                                 slivers,
-                                make_shapefiles );
+                                section_name );
         }
 
         start1_pct = 0.0;
@@ -811,7 +830,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
             for(int i=0; i<count; i++) {
                 start1_pct=end1_pct;
                 end1_pct = start1_pct + ( part_len / length );
-            
+                if ( debug ) { section_name = shapefile_name + "stopway"; }
                 gen_runway_section( runway_half,
                                     -end1_pct, -start1_pct,
                                     0.0, 1.0,
@@ -821,7 +840,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                     rwy_polys,
                                     shoulder_polys,
                                     slivers,
-                                    make_shapefiles );
+                                    section_name );
             }
         }
     }

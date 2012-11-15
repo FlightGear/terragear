@@ -379,13 +379,20 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         SG_LOG(SG_GENERAL, SG_INFO, "Build Runway " << i + 1 << " of " << runways.size());
         slivers.clear();
 
+        if ( isDebugRunway(i) ) {
+            sprintf( shapefile_name, "runway_%d", i );
+        } else {
+            strcpy( shapefile_name, "" );
+        }
+        shapefile = shapefile_name;
+
         if (boundary.size())
         {
-            runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, make_shapefiles );
+            runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, shapefile );
         }
         else
         {
-            runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base, apt_clearing, make_shapefiles );
+            runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base, apt_clearing, shapefile );
         }
 
         // Now try to merge any slivers we found

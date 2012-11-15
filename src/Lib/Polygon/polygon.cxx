@@ -1160,7 +1160,7 @@ bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
 
             if ( (current.getLatitudeDeg() > (p_min.getLatitudeDeg() + (bbEpsilon))) && (current.getLatitudeDeg() < (p_max.getLatitudeDeg() - (bbEpsilon))) ) {
 
-                x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLongitudeDeg() + b1));
+                x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
 
                 if ( x_err < errEpsilon ) {
                     found_node = true;
