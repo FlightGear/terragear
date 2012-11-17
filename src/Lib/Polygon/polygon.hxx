@@ -588,6 +588,7 @@ public:
     // TODO : Both should be constant
     // what we really need is multiple accumulators
     // init_accumulator should return a handle...
+    static void      SetDump( bool dmp );
     static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Union( const tgPolygon& subject, tgPolygon& clip );
     static tgPolygon Diff( const tgPolygon& subject, tgPolygon& clip );

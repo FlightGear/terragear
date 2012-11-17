@@ -1711,6 +1711,12 @@ tg::Rectangle tgContour::GetBoundingBox( void ) const
 tgPolygon tgContour::DiffWithAccumulator( const tgContour& subject )
 {
     tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
+        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ));
+    }
 
     unsigned int  num_hits = 0;
     tg::Rectangle box1 = subject.GetBoundingBox();
@@ -1740,6 +1746,7 @@ tgPolygon tgContour::DiffWithAccumulator( const tgContour& subject )
             exit(-1);
         }
         result = tgPolygon::FromClipper( clipper_result );
+        result = tgPolygon::AddColinearNodes( result, all_nodes );
     } else {
         result.AddContour( subject );
     }
@@ -1759,6 +1766,12 @@ void tgContour::AddToAccumulator( const tgContour& subject )
 tgPolygon tgPolygon::Union( const tgContour& subject, tgPolygon& clip )
 {
     tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
+        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ));
+    }
 
     ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
     ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
@@ -1770,7 +1783,10 @@ tgPolygon tgPolygon::Union( const tgContour& subject, tgPolygon& clip )
     c.AddPolygons(clipper_clip, ClipperLib::ptClip);
     c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
-    return tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    return result;
 }
 
 tgContour tgContour::AddColinearNodes( const tgContour& subject, TGTriNodes nodes )
@@ -1912,6 +1928,14 @@ tgPolygon tgPolygon::SplitLongEdges( const tgPolygon& subject, double dist )
 tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
 {
     tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+        }
+    }
 
     ClipperLib::Polygons clipper_result;
     ClipperLib::Clipper c;
@@ -1926,6 +1950,8 @@ tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
     c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
 
@@ -1935,11 +1961,21 @@ tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
 tgPolygon tgPolygon::Simplify( const tgPolygon& subject )
 {
     tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+        }
+    }
 
     ClipperLib::Polygons clipper_poly = tgPolygon::ToClipper( subject );
     SimplifyPolygons( clipper_poly );
 
     result = tgPolygon::FromClipper( clipper_poly );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
 
@@ -2007,6 +2043,12 @@ tgPolygon tgPolygon::FromClipper( const ClipperLib::Polygons& subject )
     return result;
 }
 
+bool clipper_dump = false;
+void tgPolygon::SetDump( bool dmp )
+{
+    clipper_dump = dmp;
+}
+
 tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
 {
     ClipperLib::Polygons clipper_src, clipper_dst;
@@ -2026,11 +2068,30 @@ tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
 
 tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 {
-    tgPolygon result;
+    tgPolygon     result;
+    TGTriNodes    all_nodes;
+    std::ofstream dmpfile;
+
+    /* before union - gather all nodes */
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+        }
+    }
 
     ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
     ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
     ClipperLib::Polygons clipper_result;
+
+    if ( clipper_dump ) {
+        dmpfile.open ("subject.txt");
+        dmpfile << clipper_subject;
+        dmpfile.close();
+
+        dmpfile.open ("clip.txt");
+        dmpfile << clipper_clip;
+        dmpfile.close();
+    }
 
     ClipperLib::Clipper c;
     c.Clear();
@@ -2038,12 +2099,29 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
     c.AddPolygons(clipper_clip, ClipperLib::ptClip);
     c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
-    return tgPolygon::FromClipper( clipper_result );
+    if ( clipper_dump ) {
+        dmpfile.open ("result.txt");
+        dmpfile << clipper_result;
+        dmpfile.close();
+    }
+
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    return result;
 }
 
 tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 {
     tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+        }
+    }
 
     ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
     ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
@@ -2055,12 +2133,23 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
     c.AddPolygons(clipper_clip, ClipperLib::ptClip);
     c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
-    return tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    return result;
 }
 
 tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip )
 {
     tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before intersect - gather all nodes */
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+        }
+    }
 
     ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
     ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
@@ -2073,6 +2162,8 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
     c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
 
@@ -2125,6 +2216,14 @@ void tgPolygon::AccumulatorToShapefiles( const std::string& path, const std::str
 tgPolygon tgPolygon::DiffWithAccumulator( const tgPolygon& subject )
 {
     tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+        }
+    }
 
     unsigned int  num_hits = 0;
     tg::Rectangle box1 = subject.GetBoundingBox();
@@ -2153,10 +2252,9 @@ tgPolygon tgPolygon::DiffWithAccumulator( const tgPolygon& subject )
             SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
             exit(-1);
         }
-        SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator had " << num_hits << " hits " );
-        SG_LOG(SG_GENERAL, SG_ALERT, "  cklipper_result has " << clipper_result.size() << " contours " );
-        
+
         result = tgPolygon::FromClipper( clipper_result );
+        result = tgPolygon::AddColinearNodes( result, all_nodes );
 
         // Make sure we keep texturing info
         result.SetMaterial( subject.GetMaterial() );
@@ -2222,7 +2320,7 @@ void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
             // And add it to the slive list if it isn't a hole
             if ( !contour.GetHole() ) {
                 // move sliver contour to sliver list
-                SG_LOG(SG_GENERAL, SG_INFO, "      Found SLIVER!");
+                SG_LOG(SG_GENERAL, SG_DEBUG, "      Found SLIVER!");
 
                 slivers.push_back( contour );
             }
@@ -2567,7 +2665,7 @@ static void ClipToFile( const tgPolygon& subject, std::string root,
         SG_LOG(SG_GENERAL, SG_DEBUG, "   hole = " << subject.GetContour(ii).GetHole() );
     }
 
-    result = tgPolygon::Intersect( base, subject );
+    result = tgPolygon::Intersect( subject, base );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "result contours = " << result.Contours() );
     for ( unsigned int ii = 0; ii < result.Contours(); ii++ ) {

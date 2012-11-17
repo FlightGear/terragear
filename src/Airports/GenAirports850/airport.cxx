@@ -37,6 +37,15 @@
 string SGLOG_GREEN  = "\033[0;32m";
 string SGLOG_NORMAL = "\033[0m";
 
+static std::string my_ctime(time_t& tt)
+{
+    char buf[256];
+
+    strcpy(buf,ctime(&tt));
+    buf[strlen(buf)-1]='\0';
+    return std::string( buf );
+}
+
 Airport::Airport( int c, char* def)
 {
     int   numParams;
@@ -356,57 +365,63 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     if (features.size())
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << features.size() << " Linear Feature Polys");
         for ( unsigned int i=0; i<features.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build Feature Poly " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Feature Poly " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
 
             features[i]->BuildBtg( line_polys, rwy_lights, make_shapefiles );
         }
+
+        log_time = time(0);
+        SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << my_ctime(log_time) );
     }
 
     /* Done with the linear features accumulator */
     tgPolygonFreeClipperAccumulator();
 
-    log_time = time(0);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << ctime(&log_time) );
-
-    // Initialize a new accumulator for the other objects
+    /* Initialize a new accumulator for the other objects */
     tgPolygonInitClipperAccumulator();
 
     // Build runways next
-    for ( unsigned int i=0; i<runways.size(); i++ )
+    if (runways.size())
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Build Runway " << i + 1 << " of " << runways.size());
-        slivers.clear();
-
-        if ( isDebugRunway(i) ) {
-            sprintf( shapefile_name, "runway_%d", i );
-        } else {
-            strcpy( shapefile_name, "" );
-        }
-        shapefile = shapefile_name;
-
-        if (boundary.size())
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << runways.size() << " Runway Polys");
+        for ( unsigned int i=0; i<runways.size(); i++ )
         {
-            runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, shapefile );
-        }
-        else
-        {
-            runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base, apt_clearing, shapefile );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Runway " << i + 1 << " of " << runways.size());
+            slivers.clear();
+
+            if ( isDebugRunway(i) ) {
+                sprintf( shapefile_name, "runway_%d", i );
+            } else {
+                strcpy( shapefile_name, "" );
+            }
+            shapefile = shapefile_name;
+
+            if (boundary.size())
+            {
+                runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, shapefile );
+            }
+            else
+            {
+                runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base, apt_clearing, shapefile );
+            }
+
+            // Now try to merge any slivers we found
+            tgPolygon::MergeSlivers( rwy_polys, slivers );
         }
 
-        // Now try to merge any slivers we found
-        tgPolygon::MergeSlivers( rwy_polys, slivers );
+        log_time = time(0);
+        SG_LOG( SG_GENERAL, SG_ALERT, "Finished building runways for " << icao << " at " << my_ctime(log_time) );
     }
-
-    log_time = time(0);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building runways for " << icao << " at " << ctime(&log_time) );
 
     if (lightobjects.size())
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << lightobjects.size() << " Light Objects ");
         for ( unsigned int i=0; i<lightobjects.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build runway light " << i + 1 << " of " << lightobjects.size());
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build runway light " << i + 1 << " of " << lightobjects.size());
             lightobjects[i]->BuildBtg( rwy_lights );
         }
     }
@@ -414,9 +429,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // Build helipads (use runway poly- and texture list for this)
     if (helipads.size())
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << helipads.size() << " Helipad Polys ");
         for ( unsigned int i=0; i<helipads.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build helipad " << i + 1 << " of " << helipads.size());
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build helipad " << i + 1 << " of " << helipads.size());
             slivers.clear();
 
             if (boundary.size())
@@ -436,9 +452,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // Build the pavements
     if (pavements.size())
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << pavements.size() << " Pavement Polys ");
         for ( unsigned int i=0; i<pavements.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
             slivers.clear();
 
             if ( isDebugPavement(i) ) {
@@ -461,17 +478,18 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             tgPolygon::MergeSlivers( rwy_polys, slivers );
             tgPolygon::MergeSlivers( pvmt_polys, slivers );
         }
-    }
 
-    log_time = time(0);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Pavements for " << icao << " at " << ctime(&log_time) );
+        log_time = time(0);
+        SG_LOG( SG_GENERAL, SG_ALERT, "Finished building Pavements for " << icao << " at " << my_ctime(log_time) );
+    }
 
     // Build the legacy taxiways
     if (taxiways.size())
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << taxiways.size() << " Taxiway Polys ");
         for ( unsigned int i=0; i<taxiways.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build Taxiway " << i + 1 << " of " << taxiways.size());
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Taxiway " << i + 1 << " of " << taxiways.size());
             slivers.clear();
 
             if ( isDebugTaxiway(i) ) {
@@ -497,61 +515,70 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     // Build runway shoulders here
-    for ( unsigned int i=0; i<runways.size(); i++ )
+    if ( runways.size() )
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Build Runway shoulder " << i + 1 << " of " << runways.size());
-
-        if ( runways[i]->GetsShoulder() )
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << runways.size() << " Runway Shoulder Polys ");
+        for ( unsigned int i=0; i<runways.size(); i++ )
         {
-            slivers.clear();
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Runway shoulder " << i + 1 << " of " << runways.size());
 
-            if (boundary.size())
+            if ( runways[i]->GetsShoulder() )
             {
-                runways[i]->BuildShoulder( rwy_polys, slivers );
-            }
-            else
-            {
-                runways[i]->BuildShoulder( rwy_polys, slivers, apt_base, apt_clearing );
-            }
+                slivers.clear();
 
-            // Now try to merge any slivers we found
-            tgPolygon::MergeSlivers( rwy_polys, slivers );
-            tgPolygon::MergeSlivers( pvmt_polys, slivers );
+                if (boundary.size())
+                {
+                    runways[i]->BuildShoulder( rwy_polys, slivers );
+                }
+                else
+                {
+                    runways[i]->BuildShoulder( rwy_polys, slivers, apt_base, apt_clearing );
+                }
+
+                // Now try to merge any slivers we found
+                tgPolygon::MergeSlivers( rwy_polys, slivers );
+                tgPolygon::MergeSlivers( pvmt_polys, slivers );
+            }
         }
     }
 
     // Build helipad shoulders here
-    for ( unsigned int i=0; i<helipads.size(); i++ )
+    if ( helipads.size() )
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Build Helipad shoulder " << i + 1 << " of " << helipads.size());
-
-        if ( helipads[i]->GetsShoulder() )
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << runways.size() << " Helipad Shoulder Polys ");
+        for ( unsigned int i=0; i<helipads.size(); i++ )
         {
-            slivers.clear();
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Helipad shoulder " << i + 1 << " of " << helipads.size());
 
-            if (boundary.size())
+            if ( helipads[i]->GetsShoulder() )
             {
-                helipads[i]->BuildShoulder( rwy_polys, slivers );
-            }
-            else
-            {
-                helipads[i]->BuildShoulder( rwy_polys, slivers, apt_base, apt_clearing );
-            }
+                slivers.clear();
 
-            // Now try to merge any slivers we found
-            tgPolygon::MergeSlivers( rwy_polys, slivers );
-            tgPolygon::MergeSlivers( pvmt_polys, slivers );
+                if (boundary.size())
+                {
+                    helipads[i]->BuildShoulder( rwy_polys, slivers );
+                }
+                else
+                {
+                    helipads[i]->BuildShoulder( rwy_polys, slivers, apt_base, apt_clearing );
+                }
+
+                // Now try to merge any slivers we found
+                tgPolygon::MergeSlivers( rwy_polys, slivers );
+                tgPolygon::MergeSlivers( pvmt_polys, slivers );
+            }
         }
     }
 
     // build the base and clearing if there's a boundary
     if (boundary.size())
     {
+        SG_LOG(SG_GENERAL, SG_INFO, "Build " << boundary.size() << " Boundary Polys ");
         shapefile = "";
 
         for ( unsigned int i=0; i<boundary.size(); i++ )
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "Build Userdefined boundary " << i + 1 << " of " << boundary.size());
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Build Userdefined boundary " << i + 1 << " of " << boundary.size());
             boundary[i]->BuildBtg( apt_base, apt_clearing, shapefile );
         }
     }
@@ -578,7 +605,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     // build temporary node list from runways...
     SG_LOG(SG_GENERAL, SG_INFO, "Build Node List " );
-
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
     {
     	tgPolygon poly = rwy_polys[k];
@@ -637,7 +663,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     log_time = time(0);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished collecting nodes for " << icao << " at " << ctime(&log_time) );
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished collecting nodes for " << icao << " at " << my_ctime(log_time) );
 
     // second pass : runways
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
@@ -667,7 +693,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     log_time = time(0);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished adding intermediate nodes for " << icao << " at " << ctime(&log_time) );
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished adding intermediate nodes for " << icao << " at " << my_ctime(log_time) );
 
     for ( unsigned int k = 0; k < line_polys.size(); ++k )
     {
@@ -687,16 +713,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     log_time = time(0);
-    SG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << ctime(&log_time) );
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "add nodes base ");
-    SG_LOG(SG_GENERAL, SG_DEBUG, " before: " << base_poly);
-    SG_LOG(SG_GENERAL, SG_DEBUG, " tmp_pvmt_nodes size = " << tmp_pvmt_nodes.get_node_list().size());
-    SG_LOG(SG_GENERAL, SG_DEBUG, " tmp_feat_nodes size = " << tmp_feat_nodes.get_node_list().size());
+    SG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << my_ctime(log_time) );
 
     base_poly = tgPolygon::AddColinearNodes( base_poly, tmp_pvmt_nodes );
     base_poly = tgPolygon::Snap( base_poly, gSnap );
-    SG_LOG(SG_GENERAL, SG_DEBUG, " after adding tmp_nodes: " << base_poly);
 
     // Finally find slivers in base
     slivers.clear();
@@ -728,36 +748,48 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     triangulation_start.stamp();
 
     // tesselate the polygons and prepair them for final output
-    for ( unsigned int i = 0; i < rwy_polys.size(); ++i ) 
+    if ( rwy_polys.size() )
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating runway poly = " << i + 1 << " of " << rwy_polys.size() );
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating " << rwy_polys.size() << " Runway Polys " );
+        for ( unsigned int i = 0; i < rwy_polys.size(); ++i )
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating runway poly = " << i + 1 << " of " << rwy_polys.size() );
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << rwy_polys[i].Contours() << " total points before = " << rwy_polys[i].TotalNodes());
-        rwy_polys[i].Tesselate();
-        SG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << rwy_polys[i].Triangles());
-        rwy_polys[i].Texture();
-    }
-    
-    // tesselate the polygons and prepair them for final output
-    for ( unsigned int i = 0; i < pvmt_polys.size(); ++i ) 
-    {
-        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating pavement poly = " << i + 1 << " of " << pvmt_polys.size() );
-
-        SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << pvmt_polys[i].Contours() << " total points before = " << pvmt_polys[i].TotalNodes());
-        pvmt_polys[i].Tesselate();
-        SG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << pvmt_polys[i].Triangles());
-        pvmt_polys[i].Texture();
+            SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << rwy_polys[i].Contours() << " total points before = " << rwy_polys[i].TotalNodes());
+            rwy_polys[i].Tesselate();
+            SG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << rwy_polys[i].Triangles());
+            rwy_polys[i].Texture();
+        }
     }
 
-    // tesselate the polygons and prepair them for final output
-    for ( unsigned int i = 0; i < line_polys.size(); ++i ) 
+    if ( pvmt_polys.size() )
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating line poly = " << i + 1 << " of " << line_polys.size() );
+        // tesselate the polygons and prepair them for final output
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating " << pvmt_polys.size() << " Pavement Polys " );
+        for ( unsigned int i = 0; i < pvmt_polys.size(); ++i )
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating pavement poly = " << i + 1 << " of " << pvmt_polys.size() );
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << line_polys[i].Contours() << " total points before = " << line_polys[i].TotalNodes());
-        line_polys[i].Tesselate();
-        SG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << line_polys[i].Triangles());
-        line_polys[i].Texture();
+            SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << pvmt_polys[i].Contours() << " total points before = " << pvmt_polys[i].TotalNodes());
+            pvmt_polys[i].Tesselate();
+            SG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << pvmt_polys[i].Triangles());
+            pvmt_polys[i].Texture();
+        }
+    }
+
+    if ( line_polys.size() )
+    {
+        // tesselate the polygons and prepair them for final output
+        SG_LOG(SG_GENERAL, SG_INFO, "Tesselating " << line_polys.size() << " Linear Feature Polys " );
+        for ( unsigned int i = 0; i < line_polys.size(); ++i )
+        {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating line poly = " << i + 1 << " of " << line_polys.size() );
+
+            SG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << line_polys[i].Contours() << " total points before = " << line_polys[i].TotalNodes());
+            line_polys[i].Tesselate();
+            SG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << line_polys[i].Triangles());
+            line_polys[i].Texture();
+        }
     }
 
     /* before tessellating the base, make sure there are no
@@ -812,7 +844,6 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SGVec3d vnt = SGVec3d::fromGeod( base_poly.GetNode(0, 0) );
     vnt = normalize(vnt);
     Point3D vn = Point3D::fromSGVec3(vnt);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "found normal for this airport = " << vn);
 
     SG_LOG(SG_GENERAL, SG_INFO, "Adding runway nodes and normals");
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
@@ -1065,7 +1096,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     max_deg.setLongitudeDeg( max_deg.getLongitudeDeg() + 0.01 * dlon );
     min_deg.setLatitudeDeg( min_deg.getLatitudeDeg() - 0.01 * dlat );
     max_deg.setLatitudeDeg( max_deg.getLatitudeDeg() + 0.01 * dlat );
-    SG_LOG(SG_GENERAL, SG_INFO, "min = " << min_deg << " max = " << max_deg );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "min = " << min_deg << " max = " << max_deg );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Create Apt surface:" );
     SG_LOG(SG_GENERAL, SG_DEBUG, " root: " << root );
@@ -1428,6 +1459,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     }
 
     string holepath = root + "/AirportArea";
+
     tgPolygon::Chop( divided_base, holepath, "Hole", false, true );
     tgPolygon::Chop( apt_clearing, holepath, "Airport", false, false );
 

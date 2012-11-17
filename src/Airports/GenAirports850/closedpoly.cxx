@@ -444,8 +444,6 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, st
 {
     if ( is_pavement && pre_tess.Contours() )
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "BuildBtg: original poly has " << pre_tess.Contours() << " contours" << " and " << pre_tess.TotalNodes() << " points : shapefile_name is " << shapefile_name );
-
         if(  shapefile_name.size() ) {
             tgPolygon::ToShapefile( pre_tess, "./airport_dbg", std::string("preclip"), shapefile_name );
             tgPolygon::AccumulatorToShapefiles( "./airport_dbg", "accum" );
@@ -484,8 +482,6 @@ int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::str
     // verify the poly has been generated, and the contour isn't a pavement
     if ( !is_pavement && pre_tess.Contours() )
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "BuildBtg: original poly has " << pre_tess.Contours() << " contours");
-
         base = tgPolygon::Expand( pre_tess, 2.0); 
         safe_base = tgPolygon::Expand( pre_tess, 5.0);        
 
