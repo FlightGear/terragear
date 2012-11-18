@@ -2,10 +2,6 @@
 #define _LINEARFEATURE_H_
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-
-#include <Geometry/point3d.hxx>
 
 using std::string;
 
@@ -122,7 +118,7 @@ private:
     BezContour  contour;
 
     // contour definition after bezier interpolation
-    point_list  points;
+    tgContour  points;
 
     tgpolygon_list      marking_polys;
     tglightcontour_list lighting_polys;

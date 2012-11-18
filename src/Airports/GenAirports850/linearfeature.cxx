@@ -1,14 +1,11 @@
 #include <stdlib.h>
 
-#include <simgear/math/sg_geodesy.hxx>
-
 #include <Geometry/poly_support.hxx>
 #include <Geometry/util.hxx>
 
 #include "global.hxx"
 #include "beznode.hxx"
 #include "linearfeature.hxx"
-#include "math.h"
 
 void LinearFeature::ConvertContour( BezContour* src, bool closed )
 {
@@ -31,7 +28,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
     // clear anything in the point list
-    points.empty();
+    points.Erase();
 
     // iterate through each bezier node in the contour
     for (unsigned int i=0; i <= src->size()-1; i++)
@@ -56,10 +53,10 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if (curNode->GetMarking() != cur_mark->type)
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.size() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.GetSize() );
 
                 // marking has ended, or changed
-                cur_mark->end_idx = points.size();
+                cur_mark->end_idx = points.GetSize();
                 marks.push_back(cur_mark);
                 cur_mark = NULL;
             }
@@ -68,18 +65,18 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->start_idx << " with type " << cur_mark->type );
             }
         }
-        
+
         // should we start a new mark?
         if (cur_mark == NULL)
         {
             if (curNode->GetMarking())
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Marking from " << points.size() << " with type " << curNode->GetMarking() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
 
                 // we aren't watching a mark, and this node has one
                 cur_mark = new Marking;
                 cur_mark->type = curNode->GetMarking();
-                cur_mark->start_idx = points.size();
+                cur_mark->start_idx = points.GetSize();
             }
         }
         ////////////////////////////////////////////////////////////////////////////////////
@@ -93,10 +90,10 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if (curNode->GetLighting() != cur_light->type)
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting has changed from " << cur_light->type << " to " << curNode->GetLighting() << " save light from " << cur_light->start_idx << " to " << points.size() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting has changed from " << cur_light->type << " to " << curNode->GetLighting() << " save light from " << cur_light->start_idx << " to " << points.GetSize() );
 
                 // lighting has ended, or changed : add final light
-                cur_light->end_idx = points.size();
+                cur_light->end_idx = points.GetSize();
                 lights.push_back(cur_light);
                 cur_light = NULL;
             }
@@ -105,23 +102,23 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Lighting from " << cur_light->start_idx << " with type " << cur_light->type );
             }
         }
-        
+
         // should we start a new light?
         if (cur_light == NULL)
         {
             if (curNode->GetLighting())
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Lighting from " << points.size() << " with type " << curNode->GetLighting() );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Lighting from " << points.GetSize() << " with type " << curNode->GetLighting() );
 
                 // we aren't watching a mark, and this node has one
                 cur_light = new Lighting;
                 cur_light->type = curNode->GetLighting();
-                cur_light->start_idx = points.size();
+                cur_light->start_idx = points.GetSize();
             }
         }
         ////////////////////////////////////////////////////////////////////////////////////
 
-        // now determine how we will iterate from current node to next node 
+        // now determine how we will iterate from current node to next node
         if( curNode->HasNextCp() )
         {
             // next curve is cubic or quadratic
@@ -163,7 +160,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             }
         }
 
-        // One more test - some people are using bezier curves to draw straight lines - this can cause a bit of havoc...  
+        // One more test - some people are using bezier curves to draw straight lines - this can cause a bit of havoc...
         // Sometimes, the control point lies just beyond the final point.  We try to make a 'hook' at the end, which makes some really bad polys
         // Just convert the entire segment to linear
         // this can be detected in quadratic curves (current issue in LFKJ) when the contol point lies within the line generated from point 1 to point 2
@@ -237,7 +234,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         else
         {
             if (curve_type != CURVE_LINEAR)
-            {            
+            {
                 num_segs = 8;
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
@@ -263,15 +260,15 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 // calculate next location
                 if (curve_type == CURVE_QUADRATIC)
                 {
-                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+                    nextLoc = CalculateQuadraticLocation( curNode->GetLoc(), cp1, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
                 }
                 else
                 {
-                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+                    nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
                 }
 
                 // add the feature vertex
-                points.push_back( Point3D::fromSGGeod(curLoc) );
+                points.AddNode(curLoc);
 
                 if (p==0)
                 {
@@ -294,10 +291,10 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 for (int p=0; p<num_segs; p++)
                 {
                     // calculate next location
-                    nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+                    nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
 
                     // add the feature vertex
-                    points.push_back( Point3D::fromSGGeod(curLoc) );
+                    points.AddNode(curLoc);
 
                     if (p==0)
                     {
@@ -317,7 +314,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 nextLoc = nextNode->GetLoc();
 
                 // just add the one vertex - dist is small
-                points.push_back( Point3D::fromSGGeod(curLoc) );
+                points.AddNode(curLoc);
 
                 SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
@@ -331,27 +328,27 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         SG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at " << curLoc );
 
         // need to add the markings for last segment
-        points.push_back( Point3D::fromSGGeod(curLoc) );
+        points.AddNode(curLoc);
     }
 
     // check for marking that goes all the way to the end...
     if (cur_mark)
     {
-       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.size() );
+       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.GetSize() );
 
-       cur_mark->end_idx = points.size()-1;
+       cur_mark->end_idx = points.GetSize()-1;
        marks.push_back(cur_mark);
-       cur_mark = NULL;                    
+       cur_mark = NULL;
     }
 
     // check for lighting that goes all the way to the end...
     if (cur_light)
     {
-       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting from " << cur_light->start_idx << " with type " << cur_light->type << " ends at the end of the contour: " << points.size() );
+       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting from " << cur_light->start_idx << " with type " << cur_light->type << " ends at the end of the contour: " << points.GetSize() );
 
-       cur_light->end_idx = points.size()-1;
+       cur_light->end_idx = points.GetSize()-1;
        lights.push_back(cur_light);
-       cur_light = NULL;                    
+       cur_light = NULL;
     }
 }
 
@@ -430,7 +427,7 @@ SGGeod LinearFeature::OffsetPointFirst( const SGGeod& cur, const SGGeod& next, d
 {
     double courseOffset;
     SGGeod pt;
-    
+
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << cur  << "), "
                                                             "next (" << next << ")" );
 
@@ -449,7 +446,7 @@ SGGeod LinearFeature::OffsetPointLast( const SGGeod& prev, const SGGeod& cur, do
 {
     double courseOffset;
     SGGeod pt;
-    
+
     SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << prev  << "), "
                                                               "cur (" << cur << ")" );
 
@@ -485,9 +482,9 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     double      cur_light_dist = 0.0f;
     double      light_delta = 0;
     bool        markStarted;
-    
+
     // create the inner and outer boundaries to generate polys
-    // this generates 2 point lists for the contours, and remembers 
+    // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
     ConvertContour( &contour, closed );
 
@@ -607,7 +604,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 material = "lf_broken_white";
                 width = 0.25f;
                 break;
-    
+
             default:
                 SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << marks[i]->type );
                 exit(1);
@@ -621,20 +618,20 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
             if (j == marks[i]->start_idx)
             {
-                // first point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointFirst( points[j].toSGGeod(), points[j+1].toSGGeod(), offset-width/2.0f );
-                cur_inner = OffsetPointFirst( points[j].toSGGeod(), points[j+1].toSGGeod(), offset+width/2.0f );
+                // first point on the mark - offset heading is 90deg
+                cur_outer = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
+                cur_inner = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
             }
             else if (j == marks[i]->end_idx)
             {
-                // last point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointLast( points[j-1].toSGGeod(), points[j].toSGGeod(), offset-width/2.0f );
-                cur_inner = OffsetPointLast( points[j-1].toSGGeod(), points[j].toSGGeod(), offset+width/2.0f );
+                // last point on the mark - offset heading is 90deg
+                cur_outer = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset-width/2.0f );
+                cur_inner = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset+width/2.0f );
             }
             else
             {
-                cur_outer = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset-width/2.0f );
-                cur_inner = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset+width/2.0f );
+                cur_outer = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
+                cur_inner = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
             }
 
             if ( markStarted )
@@ -720,19 +717,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             // for each point on the PointsList, offset by 2 distnaces from the edge, and add a point to the superpoly contour
             if (j == lights[i]->start_idx)
             {
-                // first point on the light - offset heading is 90deg 
-                cur_outer = OffsetPointFirst( points[j].toSGGeod(), points[j+1].toSGGeod(), offset );
+                // first point on the light - offset heading is 90deg
+                cur_outer = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset );
             }
             else if (j == lights[i]->end_idx)
             {
-                // last point on the mark - offset heading is 90deg 
-                cur_outer = OffsetPointLast( points[j-1].toSGGeod(), points[j].toSGGeod(), offset );
+                // last point on the mark - offset heading is 90deg
+                cur_outer = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset );
             }
             else
             {
-                cur_outer = OffsetPointMiddle( points[j-1].toSGGeod(), points[j].toSGGeod(), points[j+1].toSGGeod(), offset );
+                cur_outer = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset );
             }
-    
+
             if ( markStarted )
             {
                 SGGeod tmp;
