@@ -13,7 +13,7 @@ extern int nudge;
 
 Taxiway::Taxiway(char* definition)
 {
-    // variables for sdjusting 810 rwy format to 850 rwy format 
+    // variables for adjusting 810 rwy format to 850 rwy format
     double lon = 0, lat = 0;
 
     // variables to store unused parameters
@@ -28,7 +28,7 @@ Taxiway::Taxiway(char* definition)
     // format:
     // taxiway  lat         lon           designation  heading  length      threshold   overrun
     // 10       44.38085600 -074.20606200 xxx          79.29    3384        0.0         0.0
-    //     
+    //
     // width    lighting    surface       shoulder     markings smoothness  dist remain
     // 60       161161      1             0            0        0.35        0
 
@@ -36,8 +36,8 @@ Taxiway::Taxiway(char* definition)
     // 44.38085600 -074.20606200 xxx  79.29  3384 0.0 0.0    60 161161  1 0 0 0.35 0
 
     // int fscanf(FILE *stream, const char *format, ...);
-    sscanf(definition, "%lf %lf %s %lf %lf %lf %lf %lf %s %d %d %d %lf %d", 
-        &lat, &lon, designation, &heading, &length, &threshold, &overrun, 
+    sscanf(definition, "%lf %lf %s %lf %lf %lf %lf %lf %s %d %d %d %lf %d",
+        &lat, &lon, designation, &heading, &length, &threshold, &overrun,
         &width, lighting, &surface, &shoulder, &markings, &smoothness, &signs);
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Read taxiway: (" << lon << "," << lat << ") heading: " << heading << " length: " << length << " width: " << width );
@@ -50,7 +50,34 @@ Taxiway::Taxiway(char* definition)
     origin = SGGeodesy::direct( SGGeod::fromDeg(lon, lat), heading, -length/2 );
 
     taxi_contour = gen_wgs84_rect( origin, heading, length, width );
-} 
+}
+
+void Taxiway::GenLights(tglightcontour_list& rwy_lights)
+{
+    // Create blue taxiway edge lights along the long sides of the taxiway
+    // Spacing is 10m
+
+    // Vector calculation
+    SGVec3d vec = normalize(SGVec3d::fromGeod(taxi_contour.GetNode(0)));
+
+    tgLightContour blue;
+    blue.SetType( "RWY_BLUE_TAXIWAY_LIGHTS" );
+
+    for ( unsigned int i = 0; i < taxi_contour.GetSize(); ++i ) {
+        double dist, course, cs;
+        SGGeodesy::inverse(taxi_contour.GetNode(i), taxi_contour.GetNode(i+1), course, cs, dist );
+        int divs = (int)(dist / 10.0);
+        double step = dist/divs;
+        SGGeod pt = taxi_contour.GetNode(i);
+        for (int j = 0; j < divs; ++j) {
+            pt = SGGeodesy::direct(pt, course, step );
+            blue.AddLight( pt, vec );
+        }
+        i++;
+    }
+    rwy_lights.push_back( blue );
+
+}
 
 int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, std::string& shapefile_name )
 {
@@ -60,6 +87,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
     {
         if ( (width <= 50) && (lighting[1] == '6') ) {
             material = "pa_taxiway";
+            GenLights(rwy_lights);
         } else {
             material = "pa_tiedown";
         }
@@ -68,6 +96,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
     {
         if ( (width <= 50) && (lighting[1] == '6') ) {
             material = "pc_taxiway";
+            GenLights(rwy_lights);
         } else {
             material = "pc_tiedown";
         }
@@ -112,7 +141,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
 
     tgPolygon clipped = tgContour::DiffWithAccumulator( taxi_contour );
     tgPolygon split   = tgPolygon::SplitLongEdges( clipped, 100 );
-    
+
     tgPolygon::RemoveSlivers( split, slivers );
 
     split.SetMaterial( material );

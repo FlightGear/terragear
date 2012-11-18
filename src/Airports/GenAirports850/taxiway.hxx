@@ -27,16 +27,17 @@ public:
                   tgPolygon& apt_base,
                   tgPolygon& apt_clearing,
                   std::string& shapefile_name );
-    
+
 private:
     SGGeod  origin;
     double  heading;
     double  length;
     double  width;
     int     surface;
-    char    lighting[8];
+    char    lighting[6];
 
     tgContour taxi_contour;
+    void GenLights(tglightcontour_list& rwy_lights);
 };
 
 typedef std::vector <Taxiway *> TaxiwayList;
