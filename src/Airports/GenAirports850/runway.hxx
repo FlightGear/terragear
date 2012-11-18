@@ -164,7 +164,7 @@ private:
         return (rwy.threshold[get_thresh0(recip)] > 60.0) ? true : false;
     }
 
-    SGVec3d             gen_runway_light_vector( float angle, bool recip );
+    SGVec3f             gen_runway_light_vector( float angle, bool recip );
     tglightcontour_list gen_runway_edge_lights( bool recip );
     tglightcontour_list gen_runway_threshold_lights( const int kind, bool recip );
     tglightcontour_list gen_runway_center_line_lights( bool recip );

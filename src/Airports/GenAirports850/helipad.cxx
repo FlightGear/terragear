@@ -44,7 +44,7 @@ tglightcontour_list Helipad::gen_helipad_lights(double maxsize) {
     tglightcontour_list result;
 
     // Vector calculation
-    SGVec3d vec = normalize(SGVec3d::fromGeod(GetLoc()));
+    SGVec3f vec = normalize(SGVec3f::fromGeod(GetLoc()));
 
     // Create yellow edge lights, 5m spacing
     tgContour area = gen_helipad_area_w_extend(0.0, 0.0);

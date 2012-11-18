@@ -750,17 +750,17 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                         tmp = SGGeodesy::direct( prev_outer, heading, cur_light_dist );
                     }
 
-                    SGVec3d vec;
+                    SGVec3f vec;
                     if ( !directional_light )
                     {
                         // calculate the omnidirectional normal
-                        vec = normalize(SGVec3d::fromGeod(tmp));
+                        vec = normalize(SGVec3f::fromGeod(tmp));
                     } else
                     {
                         // calculate the directional normal
                         double heading_vec = SGMiscd::normalizePeriodic( 0, 360, heading + 90.0 );
-                        SGVec3d cart1 = SGVec3d::fromGeod(tmp);
-                        SGVec3d cart2 = SGVec3d::fromGeod( SGGeodesy::direct( tmp, heading_vec, 10 ) );
+                        SGVec3f cart1 = SGVec3f::fromGeod(tmp);
+                        SGVec3f cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading_vec, 10 ) );
                         vec = normalize(cart2 - cart1);
                     }
 

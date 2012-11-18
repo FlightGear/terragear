@@ -1176,6 +1176,87 @@ bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
     return found_node;
 }
 
+bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
+                           const std::vector<SGGeod>& nodes, SGGeod& result,
+                           double bbEpsilon, double errEpsilon )
+{
+    bool found_node = false;
+    double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
+
+    SGGeod p0 = start;
+    SGGeod p1 = end;
+
+    double xdist = fabs(p0.getLongitudeDeg() - p1.getLongitudeDeg());
+    double ydist = fabs(p0.getLatitudeDeg()  - p1.getLatitudeDeg());
+
+    x_err_min = xdist + 1.0;
+    y_err_min = ydist + 1.0;
+
+    if ( xdist > ydist ) {
+        // sort these in a sensible order
+        SGGeod p_min, p_max;
+        if ( p0.getLongitudeDeg() < p1.getLongitudeDeg() ) {
+            p_min = p0;
+            p_max = p1;
+        } else {
+            p_min = p1;
+            p_max = p0;
+        }
+
+        m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
+        b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
+
+        for ( int i = 0; i < (int)nodes.size(); ++i ) {
+            // cout << i << endl;
+            SGGeod current = nodes[i];
+
+            if ( (current.getLongitudeDeg() > (p_min.getLongitudeDeg() + (bbEpsilon))) && (current.getLongitudeDeg() < (p_max.getLongitudeDeg() - (bbEpsilon))) ) {
+                y_err = fabs(current.getLatitudeDeg() - (m * current.getLongitudeDeg() + b));
+
+                if ( y_err < errEpsilon ) {
+                    found_node = true;
+                    if ( y_err < y_err_min ) {
+                        result = current;
+                        y_err_min = y_err;
+                    }
+                }
+            }
+        }
+    } else {
+        // sort these in a sensible order
+        SGGeod p_min, p_max;
+        if ( p0.getLatitudeDeg() < p1.getLatitudeDeg() ) {
+            p_min = p0;
+            p_max = p1;
+        } else {
+            p_min = p1;
+            p_max = p0;
+        }
+
+        m1 = (p_min.getLongitudeDeg() - p_max.getLongitudeDeg()) / (p_min.getLatitudeDeg() - p_max.getLatitudeDeg());
+        b1 = p_max.getLongitudeDeg() - m1 * p_max.getLatitudeDeg();
+
+        for ( int i = 0; i < (int)nodes.size(); ++i ) {
+            SGGeod current = nodes[i];
+
+            if ( (current.getLatitudeDeg() > (p_min.getLatitudeDeg() + (bbEpsilon))) && (current.getLatitudeDeg() < (p_max.getLatitudeDeg() - (bbEpsilon))) ) {
+
+                x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
+
+                if ( x_err < errEpsilon ) {
+                    found_node = true;
+                    if ( x_err < x_err_min ) {
+                        result = current;
+                        x_err_min = x_err;
+                    }
+                }
+            }
+        }
+    }
+
+    return found_node;
+}
+
 void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, point_list& tmp_nodes, tgContour& result, double bbEpsilon, double errEpsilon )
 {
     SGGeod new_pt;
@@ -1191,6 +1272,24 @@ void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, point_list& tmp_n
         SG_LOG(SG_GENERAL, SG_BULK, "    adding = " << new_pt);
 
         AddIntermediateNodes( new_pt, p1, tmp_nodes, result, bbEpsilon, errEpsilon  );
+    }
+}
+
+void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, std::vector<SGGeod>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
+{
+    SGGeod new_pt;
+
+    SG_LOG(SG_GENERAL, SG_BULK, "   " << p0 << " <==> " << p1 );
+
+    bool found_extra = FindIntermediateNode( p0, p1, nodes, new_pt, bbEpsilon, errEpsilon );
+
+    if ( found_extra ) {
+        AddIntermediateNodes( p0, new_pt, nodes, result, bbEpsilon, errEpsilon  );
+
+        result.AddNode( new_pt );
+        SG_LOG(SG_GENERAL, SG_BULK, "    adding = " << new_pt);
+
+        AddIntermediateNodes( new_pt, p1, nodes, result, bbEpsilon, errEpsilon  );
     }
 }
 
@@ -1821,6 +1920,37 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, TGTriNodes node
     return result;
 }
 
+tgContour tgContour::AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes )
+{
+    SGGeod p0, p1;
+    tgContour result;
+
+    for ( unsigned int n = 0; n < subject.GetSize()-1; n++ ) {
+        p0 = subject.GetNode( n );
+        p1 = subject.GetNode( n+1 );
+
+        // add start of segment
+        result.AddNode( p0 );
+
+        // add intermediate points
+        AddIntermediateNodes( p0, p1, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
+    }
+
+    p0 = subject.GetNode( subject.GetSize() - 1 );
+    p1 = subject.GetNode( 0 );
+
+    // add start of segment
+    result.AddNode( p0 );
+
+    // add intermediate points
+    AddIntermediateNodes( p0, p1, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
+
+    // maintain original hole flag setting
+    result.SetHole( subject.GetHole() );
+
+    return result;
+}
+
 std::ostream& operator<< ( std::ostream& output, const tgContour& subject )
 {
     // Save the data
@@ -2379,6 +2509,20 @@ tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, TGTriNodes& nod
     return result;
 }
 
+tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<SGGeod>& nodes )
+{
+    tgPolygon result;
+
+    result.SetMaterial( subject.GetMaterial() );
+    result.SetTexParams( subject.GetTexParams() );
+
+    for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
+        result.AddContour( tgContour::AddColinearNodes( subject.GetContour(c), nodes ) );
+    }
+
+    return result;
+}
+
 void tgPolygon::InheritElevations( const tgPolygon& source )
 {
     TGTriNodes nodes;
@@ -2441,9 +2585,9 @@ void tgPolygon::InheritElevations( const tgPolygon& source )
 void tgPolygon::Texture( void )
 {
     SGGeod  p;
-    SGVec2d t;
+    SGVec2f t;
     double  x, y;
-    double  tx, ty;
+    float   tx, ty;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Texture Poly with material " << material << " method " << tp.method << " tpref " << tp.ref << " heading " << tp.heading );
 
@@ -2491,29 +2635,29 @@ void tgPolygon::Texture( void )
                     //
                     // 4. Map x, y point into texture coordinates
                     //
-                    double tmp;
+                    float tmp;
 
-                    tmp = x / tp.width;
-                    tx = tmp * (tp.maxu - tp.minu) + tp.minu;
+                    tmp = (float)x / (float)tp.width;
+                    tx = tmp * (float)(tp.maxu - tp.minu) + (float)tp.minu;
                     SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
 
                     // clip u?
                     if ( (tp.method == TG_TEX_BY_TPS_CLIPU) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
-                        if ( tx < tp.min_clipu ) { tx = tp.min_clipu; }
-                        if ( tx > tp.max_clipu ) { tx = tp.max_clipu; }
+                        if ( tx < (float)tp.min_clipu ) { tx = (float)tp.min_clipu; }
+                        if ( tx > (float)tp.max_clipu ) { tx = (float)tp.max_clipu; }
                     }
 
-                    tmp = y / tp.length;
-                    ty = tmp * (tp.maxv - tp.minv) + tp.minv;
+                    tmp = (float)y / (float)tp.length;
+                    ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
                     SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
 
                     // clip v?
                     if ( (tp.method == TG_TEX_BY_TPS_CLIPV) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
-                        if ( ty < tp.min_clipv ) { ty = tp.min_clipv; }
-                        if ( ty > tp.max_clipv ) { ty = tp.max_clipv; }
+                        if ( ty < (float)tp.min_clipv ) { ty = (float)tp.min_clipv; }
+                        if ( ty > (float)tp.max_clipv ) { ty = (float)tp.max_clipv; }
                     }
 
-                    t = SGVec2d( tx, ty );
+                    t = SGVec2f( tx, ty );
                     SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ", " << ty << ")");
 
                     triangles[i].SetTexCoord( j, t );

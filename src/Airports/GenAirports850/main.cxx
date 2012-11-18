@@ -292,6 +292,8 @@ int main(int argc, char **argv)
     	}
     }
 
+    string airportareadir=work_dir+"/AirportArea";
+
     // check for output redirect
     if ( redirect_port >= 0 ) {
 
@@ -307,25 +309,37 @@ int main(int argc, char **argv)
     } else {
         // this is the main program -
         SG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
+        SG_LOG(SG_GENERAL, SG_INFO, "Run genapts with " << num_threads << " threads" );
+        SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
+        SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
+        for ( unsigned int i = 0; i < elev_src.size(); ++i ) {
+            SG_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
+        }
+        SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
+        SG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
+        SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
+        SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
+
+        if (!max.isValid() || !min.isValid())
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
+            exit(1);
+        }
+
+        // make work directory
+        SG_LOG(SG_GENERAL, SG_INFO, "Creating AirportArea directory");
+
+        SGPath sgp( airportareadir );
+        sgp.append( "dummy" );
+        sgp.create_dir( 0755 );
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Run genapts with " << num_threads << " threads" );
-    SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
-    SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
-    for ( unsigned int i = 0; i < elev_src.size(); ++i ) 
-    {
-        SG_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
-    }
-    SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
-    SG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
-    SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
-    SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
+    string command = argv[0];
+    string lastaptfile = work_dir+"/last_apt";
 
-    if (!max.isValid() || !min.isValid())
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
-    	exit(1);
-    }
+    // initialize persistant polygon counter
+    string counter_file = airportareadir+"/poly_counter";
+    tgPolygon_index_init( counter_file );
 
     tg::Rectangle boundingBox(min, max);
     boundingBox.sanify();
@@ -342,21 +356,6 @@ int main(int argc, char **argv)
     	SG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
     	exit(-1);
     }
-
-    // make work directory
-    SG_LOG(SG_GENERAL, SG_INFO, "Creating AirportArea directory");
-
-    string airportareadir=work_dir+"/AirportArea";
-    SGPath sgp( airportareadir );
-    sgp.append( "dummy" );
-    sgp.create_dir( 0755 );
-
-    string command = argv[0];
-    string lastaptfile = work_dir+"/last_apt";
-
-    // initialize persistant polygon counter
-    string counter_file = airportareadir+"/poly_counter";
-    tgPolygon_index_init( counter_file );
 
     // Initialize shapefile support (for debugging)
     tgShapefileInit();

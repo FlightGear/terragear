@@ -379,6 +379,7 @@ public:
     static void      AddToAccumulator( const tgContour& subject );
 
     static tgContour AddColinearNodes( const tgContour& subject, TGTriNodes nodes );
+    static tgContour AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes );
 
     // conversions
     static ClipperLib::Polygon ToClipper( const tgContour& subject );
@@ -406,7 +407,7 @@ public:
         node_list.push_back( p1 );
         node_list.push_back( p2 );
 
-        tc_list.resize(   3, SGVec2d(0.0, 0.0) );
+        tc_list.resize(   3, SGVec2f(0.0, 0.0) );
         norm_list.resize( 3, SGVec3d(0.0, 0.0, 0.0) );
         idx_list.resize(  3, -1 );
     }
@@ -414,10 +415,10 @@ public:
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }
-    SGVec2d GetTexCoord( unsigned int i ) const {
+    SGVec2f GetTexCoord( unsigned int i ) const {
         return tc_list[i];
     }
-    void SetTexCoord( unsigned int i, const SGVec2d tc ) {
+    void SetTexCoord( unsigned int i, const SGVec2f tc ) {
         tc_list[i] = tc;
     }
 
@@ -426,7 +427,7 @@ public:
 
 private:
     std::vector<SGGeod>  node_list;
-    std::vector<SGVec2d> tc_list;
+    std::vector<SGVec2f> tc_list;
     std::vector<SGVec3d> norm_list;
     std::vector<int>     idx_list;
 
@@ -512,7 +513,7 @@ public:
     void SetNode( unsigned int c, unsigned int i, const SGGeod& n ) {
         contours[c].SetNode( i, n );
     }
-    
+
     void AddNode( unsigned int c, const SGGeod& n ) {
         // Make sure we have contour c.  If we don't add it
         while( contours.size() < c+1 ) {
@@ -538,7 +539,7 @@ public:
     SGGeod GetTriNode( unsigned int c, unsigned int i ) const {
         return triangles[c].GetNode( i );
     }
-    SGVec2d GetTriTexCoord( unsigned int c, unsigned int i ) const {
+    SGVec2f GetTriTexCoord( unsigned int c, unsigned int i ) const {
         return triangles[c].GetTexCoord( i );
     }
 
@@ -622,6 +623,7 @@ public:
     static void Tesselate( const tgPolygon& subject );
 
     static tgPolygon AddColinearNodes( const tgPolygon& subject, TGTriNodes& nodes );
+    static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<SGGeod>& nodes );
 
     static void RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers );
     static void MergeSlivers( tgpolygon_list& subjects, tgcontour_list& slivers );
@@ -645,7 +647,7 @@ class tgLight
 {
 public:
     SGGeod      pos;
-    SGVec3d     norm;
+    SGVec3f     norm;
 };
 
 typedef std::vector <tgLight>  tglight_list;
@@ -659,15 +661,27 @@ public:
         return lights.size();
     }
 
-    void AddLight( SGGeod p, SGVec3d n ) {
+    void AddLight( SGGeod p, SGVec3f n ) {
         tgLight light;
         light.pos  = p;
         light.norm = n;
         lights.push_back(light);
     }
 
+    void SetElevation( unsigned int i, double elev ) {
+        lights[i].pos.setElevationM( elev );
+    }
+
     SGGeod GetNode( unsigned int i ) const {
         return lights[i].pos;
+    }
+
+    SGGeod GetPosition( unsigned int i ) const {
+        return lights[i].pos;
+    }
+
+    SGVec3f GetNormal( unsigned int i ) const {
+        return lights[i].norm;
     }
 
     std::string GetFlag( void ) const {
@@ -695,6 +709,16 @@ public:
         return p3dlist;
     }
 
+    std::vector<SGGeod> GetPositionList( void ) {
+        std::vector<SGGeod> positions;
+
+        for (unsigned int i=0; i<lights.size(); i++) {
+            positions.push_back( lights[i].pos );
+        }
+
+        return positions;
+    }
+
     point_list TempGetNormalListAsPoint3D( void ) {
         point_list p3dlist;
 
@@ -704,6 +728,17 @@ public:
 
         return p3dlist;
     }
+
+    std::vector<SGVec3f> GetNormalList( void ) {
+        std::vector<SGVec3f> normals;
+
+        for (unsigned int i=0; i<lights.size(); i++) {
+            normals.push_back( lights[i].norm );
+        }
+
+        return normals;
+    }
+
     // END TEMP TEMP TEMP
 
     // Friend for output

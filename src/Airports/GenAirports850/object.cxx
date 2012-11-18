@@ -20,9 +20,9 @@ void LightingObj::BuildBtg( tglightcontour_list& lights )
     // Calculate the light normal with the help of a second point
     // in the object heading direction.
     // SimGear takes care of the glideslope angle calculation from the normal
-    SGVec3d cart1 = SGVec3d::fromGeod(SGGeodesy::direct( ref, heading, 10));
-    SGVec3d cart2 = SGVec3d::fromGeod(ref);
-    SGVec3d normal = normalize(cart2 - cart1);
+    SGVec3f cart1 = SGVec3f::fromGeod(SGGeodesy::direct( ref, heading, 10));
+    SGVec3f cart2 = SGVec3f::fromGeod(ref);
+    SGVec3f normal = normalize(cart2 - cart1);
 
     // We know our normal, now create the lights
     SGGeod pt1;

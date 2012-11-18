@@ -810,7 +810,7 @@ long Scheduler::FindAirport( string icao )
 
 void Scheduler::RetryAirport( AirportInfo* pai )
 {
-    retryList.push_back( *pai );
+    // retryList.push_back( *pai );
 }
 
 bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )

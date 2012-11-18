@@ -29,6 +29,10 @@
 double tgAverageElevation( const std::string &root, const string_list elev_src,
                            const point_list points_source );
 
+// same - with a geod list
+double tgAverageElevationGeod( const std::string &root, const string_list elev_src,
+                           const std::vector<SGGeod> points_source );
+
 // lookup node elevations for each point in the specified nurbs++
 // matrix.
 void tgCalcElevations( const std::string &root, const string_list elev_src, SimpleMatrix &Pts, double average );

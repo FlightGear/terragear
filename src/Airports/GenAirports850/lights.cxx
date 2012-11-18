@@ -34,7 +34,7 @@ using std::string;
 
 // calculate the runway light direction vector.  We take both runway
 // ends to get the direction of the runway.
-SGVec3d Runway::gen_runway_light_vector( float angle, bool recip ) {
+SGVec3f Runway::gen_runway_light_vector( float angle, bool recip ) {
     SGVec3f cart1, cart2;
     if ( !recip ) {
         cart1 = normalize(SGVec3f::fromGeod(GetStart()));
@@ -49,7 +49,7 @@ SGVec3d Runway::gen_runway_light_vector( float angle, bool recip ) {
     SGQuatf rotation = SGQuatf::fromAngleAxisDeg(angle, horizontal);
     SGVec3f light_vec = rotation.transform(runway_vec);
 
-    return (SGVec3d)light_vec;
+    return light_vec;
 }
 
 // generate runway edge lighting
@@ -68,7 +68,7 @@ tglightcontour_list Runway::gen_runway_edge_lights( bool recip )
     double step = dist / divs;
     SGGeod pt1, pt2;
 
-    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal = gen_runway_light_vector( 3.0, recip );
 
     if ( recip ) {
         length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180.0);
@@ -165,8 +165,8 @@ tglightcontour_list Runway::gen_runway_threshold_lights( const int kind, bool re
         ref2 = GetStart();
     }
 
-    SGVec3d normal1 = gen_runway_light_vector( 3.0, recip );
-    SGVec3d normal2 = gen_runway_light_vector( 3.0, !recip );
+    SGVec3f normal1 = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal2 = gen_runway_light_vector( 3.0, !recip );
 
     double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
     int divs = (int)(rwy.width + 4) / 3.0;
@@ -244,7 +244,7 @@ tglightcontour_list Runway::gen_runway_center_line_lights( bool recip )
     tgLightContour r_lights;
     tglightcontour_list result;
 
-    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal = gen_runway_light_vector( 3.0, recip );
 
     SGGeod pt1, pt2;
     double length_hdg;
@@ -301,7 +301,7 @@ tgLightContour Runway::gen_touchdown_zone_lights( bool recip )
 {
     tgLightContour lights;
 
-    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal = gen_runway_light_vector( 3.0, recip );
 
     // determine the start point.
     SGGeod ref;
@@ -360,11 +360,11 @@ tgLightContour Runway::gen_reil( const int kind, bool recip )
 {
     tgLightContour lights;
     string flag = rwy.rwnum[get_thresh0(recip)];
-    SGVec3d normal;
+    SGVec3f normal;
 
     if (kind == 1) {
         // omnidirectional lights
-        normal = normalize(SGVec3d::fromGeod(GetStart()));
+        normal = normalize(SGVec3f::fromGeod(GetStart()));
     } else {
         // unidirectional lights
         normal = gen_runway_light_vector( 10, recip );
@@ -405,7 +405,7 @@ tglightcontour_list Runway::gen_calvert( const string &kind, bool recip )
     int i, j;
     string flag;
 
-    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal = gen_runway_light_vector( 3.0, recip );
 
     // Generate long center bar of lights
     // determine the start point.
@@ -583,7 +583,7 @@ tglightcontour_list Runway::gen_alsf( const string &kind, bool recip )
     int i;
     string flag;
 
-    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal = gen_runway_light_vector( 3.0, recip );
 
     // Generate long center bar of lights
     // determine the start point.
@@ -848,12 +848,12 @@ tgLightContour Runway::gen_odals( const int kind, bool recip )
 
     int i;
     string material;
-    SGVec3d normal;
+    SGVec3f normal;
 
     if (kind == 0) {
         // ODALS lighting is omni-directional, but we generate a normal as
         // a placeholder to keep everything happy.
-        normal = normalize(SGVec3d::fromGeod(GetStart()));
+        normal = normalize(SGVec3f::fromGeod(GetStart()));
         material = "RWY_ODALS_LIGHTS";
     } else {
         // RAIL lights are directional
@@ -906,7 +906,7 @@ tglightcontour_list Runway::gen_ssalx( const string& kind, bool recip )
     int i;
     string flag;
 
-    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal = gen_runway_light_vector( 3.0, recip );
     SGGeod ref_save, pt;
 
     // Generate long center bar of lights (every 200')
@@ -1023,7 +1023,7 @@ tglightcontour_list Runway::gen_malsx( const string& kind, bool recip )
     int i;
     string flag;
 
-    SGVec3d normal = gen_runway_light_vector( 3.0, recip );
+    SGVec3f normal = gen_runway_light_vector( 3.0, recip );
 
     // Generate long center bar of lights (every 60m)
     // determine the start point.

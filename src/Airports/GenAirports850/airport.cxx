@@ -8,6 +8,8 @@
 #include <string>
 #include <ctime>
 
+#include <stdio.h>
+
 #include <simgear/compiler.h>
 #include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
@@ -18,21 +20,14 @@
 #include <simgear/misc/texcoord.hxx>
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/texparams.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-#include <Polygon/chop.hxx>
-
-#include <Geometry/poly_support.hxx>
-#include <Geometry/poly_extra.hxx>
+#include <Polygon/tg_unique_geod.hxx>
+#include <Polygon/tg_unique_vec3f.hxx>
+#include <Polygon/tg_unique_vec2f.hxx>
 
 #include <Output/output.hxx>
 
 #include "global.hxx"
 #include "elevations.hxx"
-
-
-#include <stdio.h>
 
 string SGLOG_GREEN  = "\033[0;32m";
 string SGLOG_NORMAL = "\033[0m";
@@ -57,7 +52,7 @@ Airport::Airport( int c, char* def)
     // we need to tokenize airports, since we can't scanf two strings next to each other...
     numParams = 0;
     bool done = false;
-    
+
     while (!done)
     {
         // trim leading whitespace
@@ -232,18 +227,29 @@ bool Airport::isDebugFeature( int feat )
 // TODO : Add somewhere
 // Determine node elevations of a point_list based on the provided
 // TGAptSurface.  Offset is added to the final elevation
-static point_list calc_elevations( TGAptSurface &surf,
-                                   const point_list& geod_nodes,
-                                   double offset )
+static std::vector<SGGeod> calc_elevations( TGAptSurface &surf, const std::vector<SGGeod>& geod_nodes, double offset )
+{
+    std::vector<SGGeod> result = geod_nodes;
+    for ( unsigned int i = 0; i < result.size(); ++i ) {
+        double elev = surf.query( result[i] );
+        result[i].setElevationM( elev + offset );
+    }
+
+    return result;
+}
+
+#if 1 // unused
+static point_list calc_elevations( TGAptSurface &surf, const point_list& geod_nodes, double offset )
 {
     point_list result = geod_nodes;
     for ( unsigned int i = 0; i < result.size(); ++i ) {
-        double elev = surf.query( SGGeod::fromDeg( result[i].lon(), result[i].lat()) );
+        double elev = surf.query( SGGeod::fromDeg( result[i].x(), result[i].y() ) );
         result[i].setelev( elev + offset );
     }
 
     return result;
 }
+#endif
 
 static tgContour calc_elevations( TGAptSurface &surf,
                                   const tgContour& geod_nodes,
@@ -308,7 +314,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     // runway lights
     tglightcontour_list rwy_lights;
 
-    Point3D p;
+    //Point3D p;
 
     bool make_shapefiles = false;
 
@@ -600,8 +606,11 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     // add segments to polygons to remove any possible "T"
     // intersections
-    TGTriNodes tmp_pvmt_nodes;
-    TGTriNodes tmp_feat_nodes;
+    //TGTriNodes tmp_pvmt_nodes;
+    //TGTriNodes tmp_feat_nodes;
+
+    UniqueSGGeodSet tmp_pvmt_nodes;
+    UniqueSGGeodSet tmp_feat_nodes;
 
     // build temporary node list from runways...
     SG_LOG(SG_GENERAL, SG_INFO, "Build Node List " );
@@ -612,7 +621,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         {
     	    for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
             {
-                tmp_pvmt_nodes.unique_add( Point3D::fromSGGeod( poly.GetNode(i, j) ) );
+                tmp_pvmt_nodes.add( poly.GetNode(i, j) );
     	    }
     	}
     }
@@ -625,7 +634,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         {
     	    for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
             {
-        		tmp_pvmt_nodes.unique_add( Point3D::fromSGGeod( poly.GetNode(i, j) ) );
+        		tmp_pvmt_nodes.add( poly.GetNode(i, j) );
     	    }
     	}
     }
@@ -638,7 +647,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         {
     	    for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
             {
-        		tmp_feat_nodes.unique_add( Point3D::fromSGGeod( poly.GetNode(i, j) ) );
+        		tmp_feat_nodes.add( poly.GetNode(i, j) );
     	    }
     	}
     }
@@ -648,7 +657,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
     	for ( unsigned int j = 0; j < base_poly.ContourSize( i ); ++j )
         {
-    	    tmp_pvmt_nodes.unique_add( Point3D::fromSGGeod( base_poly.GetNode(i, j) ) );
+    	    tmp_pvmt_nodes.add( base_poly.GetNode(i, j) );
     	}
     }
 
@@ -658,7 +667,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
         for ( unsigned int j = 0; j < divided_base.ContourSize( i ); ++j )
         {
-            tmp_pvmt_nodes.unique_add( Point3D::fromSGGeod( divided_base.GetNode(i, j) ) );
+            tmp_pvmt_nodes.add( divided_base.GetNode(i, j) );
         }
     }
 
@@ -669,7 +678,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
     {
         tgPolygon poly = rwy_polys[k];
-        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes );
+        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes.get_list() );
         SG_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
         rwy_polys[k] = poly;
     }
@@ -678,7 +687,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
     {
         tgPolygon poly = pvmt_polys[k];
-        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes );
+        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes.get_list() );
         SG_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
         pvmt_polys[k] = poly;
     }
@@ -687,7 +696,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < line_polys.size(); ++k ) 
     {
         tgPolygon poly = line_polys[k];
-        poly = tgPolygon::AddColinearNodes( poly, tmp_feat_nodes );
+        poly = tgPolygon::AddColinearNodes( poly, tmp_feat_nodes.get_list() );
         SG_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
         line_polys[k] = poly;
     }
@@ -715,7 +724,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     log_time = time(0);
     SG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << my_ctime(log_time) );
 
-    base_poly = tgPolygon::AddColinearNodes( base_poly, tmp_pvmt_nodes );
+    base_poly = tgPolygon::AddColinearNodes( base_poly, tmp_pvmt_nodes.get_list() );
     base_poly = tgPolygon::Snap( base_poly, gSnap );
 
     // Finally find slivers in base
@@ -815,11 +824,10 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     // traverse the tri list and create ordered node and texture
     // coordinate lists
-
-    TGTriNodes nodes, normals, texcoords;
-    nodes.clear();
-    normals.clear();
-    texcoords.clear();
+    // start with just nodes
+    UniqueSGGeodSet  nodes;
+    UniqueSGVec3fSet normals;
+    UniqueSGVec2fSet texcoords;
 
     group_list pts_v; pts_v.clear();
     group_list pts_n; pts_n.clear();
@@ -841,9 +849,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     int_list tri_tc, strip_tc;
 
     // calculate "the" normal for this airport
-    SGVec3d vnt = SGVec3d::fromGeod( base_poly.GetNode(0, 0) );
+    SGVec3f vnt = SGVec3f::fromGeod( base_poly.GetNode(0, 0) );
     vnt = normalize(vnt);
-    Point3D vn = Point3D::fromSGVec3(vnt);
 
     SG_LOG(SG_GENERAL, SG_INFO, "Adding runway nodes and normals");
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
@@ -860,17 +867,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
             // let's go out on a limb, and assume triangles have 3 points..
             for ( int j = 0; j < 3; ++j )
             {
-                p = Point3D::fromSGGeod( rwy_polys[k].GetTriNode( i, j ) );
-                index = nodes.unique_add( p );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "added rwy point " << p << " at " << index );
+                index = nodes.add( rwy_polys[k].GetTriNode( i, j ) );
                 tri_v.push_back( index );
 
         		// use 'the' normal
-        		index = normals.unique_add( vn );
+        		index = normals.add( vnt );
         		tri_n.push_back( index );
 
-        		Point3D tc = Point3D::fromSGVec2( rwy_polys[k].GetTriTexCoord( i, j ) );
-        		index = texcoords.unique_add( tc );
+        		index = texcoords.add( rwy_polys[k].GetTriTexCoord(i,j) );
         		tri_tc.push_back( index );
     	    }
     	    tris_v.push_back( tri_v );
@@ -894,17 +898,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	    tri_tc.clear();
     	    for ( int j = 0; j < 3; ++j )
             {
-                p = Point3D::fromSGGeod( pvmt_polys[k].GetTriNode( i, j ) );
-                index = nodes.unique_add( p );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "added pvmt point " << p << " at " << index );
+                index = nodes.add( pvmt_polys[k].GetTriNode( i, j ) );
                 tri_v.push_back( index );
 
                 // use 'the' normal
-                index = normals.unique_add( vn );
+                index = normals.add( vnt );
                 tri_n.push_back( index );
 
-                Point3D tc = Point3D::fromSGVec2( pvmt_polys[k].GetTriTexCoord( i, j ) );
-                index = texcoords.unique_add( tc );
+                index = texcoords.add( pvmt_polys[k].GetTriTexCoord(i,j) );
                 tri_tc.push_back( index );
     	    }
     	    tris_v.push_back( tri_v );
@@ -928,17 +929,14 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	    tri_tc.clear();
     	    for ( int j = 0; j < 3; ++j )
             {
-                p = Point3D::fromSGGeod( line_polys[k].GetTriNode( i, j ) );
-                index = nodes.unique_add( p );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "added line point " << p << " at " << index );
+                index = nodes.add( line_polys[k].GetTriNode( i, j ) );
                 tri_v.push_back( index );
 
                 // use 'the' normal
-                index = normals.unique_add( vn );
+                index = normals.add( vnt );
                 tri_n.push_back( index );
 
-                Point3D tc = Point3D::fromSGVec2( line_polys[k].GetTriTexCoord( i, j ) );
-                index = texcoords.unique_add( tc );
+                index = texcoords.add( line_polys[k].GetTriTexCoord(i,j) );
                 tri_tc.push_back( index );
     	    }
     	    tris_v.push_back( tri_v );
@@ -960,33 +958,25 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     	tri_tc.clear();
     	for ( int j = 0; j < 3; ++j )
         {
-    	    p = Point3D::fromSGGeod( base_poly.GetTriNode( i, j ) );
-    	    index = nodes.unique_add( p );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "added base point " << p << " at " << index );
+    	    index = nodes.add( base_poly.GetTriNode( i, j ) );
     	    tri_v.push_back( index );
 
-    	    index = normals.unique_add( vn );
+    	    index = normals.add( vnt );
     	    tri_n.push_back( index);
     	}
     	tris_v.push_back( tri_v );
     	tris_n.push_back( tri_n );
     	tri_materials.push_back( "Grass" );
 
-    	std::vector < SGGeod > geodNodes;
-    	for ( unsigned int j = 0; j < nodes.get_node_list().size(); j++ ) 
-        {
-    	    Point3D node = nodes.get_node_list()[j];
-    	    geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
-    	}
-	    base_txs.clear();
+    	std::vector < SGGeod > geodNodes = nodes.get_list();
+
+        base_txs.clear();
     	base_txs = sgCalcTexCoords( b, geodNodes, tri_v );
 
     	base_tc.clear();
     	for ( unsigned int j = 0; j < base_txs.size(); ++j ) 
         {
-    	    SGVec2f tc = base_txs[j];
-    	    // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
-    	    index = texcoords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
+    	    index = texcoords.add(  base_txs[j] );
     	    base_tc.push_back( index );
     	}
     	tris_tc.push_back( base_tc );
@@ -999,7 +989,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     {
     	for ( unsigned int j = 0; j < divided_base.ContourSize( i ); ++j )
         {
-    	    index = nodes.unique_add( Point3D::fromSGGeod( divided_base.GetNode(i, j) ) );
+    	    index = nodes.add( divided_base.GetNode(i, j) );
             SG_LOG(SG_GENERAL, SG_DEBUG, "added base point " << divided_base.GetNode(i, j) << " at " << index );
     	}
     }
@@ -1013,7 +1003,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     SG_LOG(SG_GENERAL, SG_DEBUG, " calc average elevation");
     {
-        point_list dbg = nodes.get_node_list();
+        std::vector < SGGeod > dbg = nodes.get_list();
 
         // dump the node list
         SG_LOG(SG_GENERAL, SG_DEBUG, " node list size is " << dbg.size() );
@@ -1023,7 +1013,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
-    double average = tgAverageElevation( root, elev_src, nodes.get_node_list() );
+    double average = tgAverageElevationGeod( root, elev_src, nodes.get_list() );
 
     // Now build the fitted airport surface ...
 
@@ -1032,28 +1022,28 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
 
     SGGeod min_deg = SGGeod::fromDeg(9999.0, 9999.0);
     SGGeod max_deg = SGGeod::fromDeg(-9999.0, -9999.0);
-    for ( unsigned int j = 0; j < nodes.get_node_list().size(); ++j ) 
+    for ( unsigned int j = 0; j < nodes.get_list().size(); ++j )
     {
-        Point3D p = nodes.get_node_list()[j];
-        if ( p.lon() < min_deg.getLongitudeDeg() )
+        SGGeod p = nodes.get_list()[j];
+        if ( p.getLongitudeDeg() < min_deg.getLongitudeDeg() )
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "new min lon from node " << j << " is " << p.lon() );
-            min_deg.setLongitudeDeg( p.lon() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "new min lon from node " << j << " is " << p.getLongitudeDeg() );
+            min_deg.setLongitudeDeg( p.getLongitudeDeg() );
         }
-        if ( p.lon() > max_deg.getLongitudeDeg() )
+        if ( p.getLongitudeDeg() > max_deg.getLongitudeDeg() )
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "new max lon from node " << j << " is " << p.lon() );
-            max_deg.setLongitudeDeg( p.lon() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "new max lon from node " << j << " is " << p.getLongitudeDeg() );
+            max_deg.setLongitudeDeg( p.getLongitudeDeg() );
         }
-        if ( p.lat() < min_deg.getLatitudeDeg() )
+        if ( p.getLatitudeDeg() < min_deg.getLatitudeDeg() )
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "new min lat from node " << j << " is " << p.lat() );
-            min_deg.setLatitudeDeg( p.lat() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "new min lat from node " << j << " is " << p.getLatitudeDeg() );
+            min_deg.setLatitudeDeg( p.getLatitudeDeg() );
         }
-        if ( p.lat() > max_deg.getLatitudeDeg() )
+        if ( p.getLatitudeDeg() > max_deg.getLatitudeDeg() )
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "new max lat from node " << j << " is " << p.lat() );
-            max_deg.setLatitudeDeg( p.lat() );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "new max lat from node " << j << " is " << p.getLatitudeDeg() );
+            max_deg.setLatitudeDeg( p.getLatitudeDeg() );
         }
     }
 
@@ -1104,28 +1094,18 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     SG_LOG(SG_GENERAL, SG_DEBUG, " min: " << min_deg );
     SG_LOG(SG_GENERAL, SG_DEBUG, " max: " << max_deg );
     SG_LOG(SG_GENERAL, SG_DEBUG, " average: " << average );
-    
+
     tg::Rectangle aptBounds(min_deg, max_deg);
 
     TGAptSurface apt_surf( root, elev_src, aptBounds, average );
     SG_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
 
-    // calculate node elevations
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing airport node elevations");
-    point_list geod_nodes = calc_elevations( apt_surf,
-                                             nodes.get_node_list(),
-                                             0.0 );
-    divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with base calc_elevations()");
-
-
     // add base skirt (to hide potential cracks)
     // this has to happen after we've calculated the node elevations
     // but before we convert to wgs84 coordinates
 
+#if 0 // do we still need a skirt?
     int uindex, lindex;
-
     for ( unsigned int i = 0; i < divided_base.Contours(); ++i )
     {
         strip_v.clear();
@@ -1133,8 +1113,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         strip_tc.clear();
 
         // prime the pump ...
-        p = Point3D::fromSGGeod( divided_base.GetNode( i, 0 ) );
-        uindex = nodes.find( p );
+        uindex = nodes.find( divided_base.GetNode( i, 0 ) );
         if ( uindex >= 0 )
         {
             Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
@@ -1222,89 +1201,59 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         base_tc.clear();
         for ( unsigned int j = 0; j < base_txs.size(); ++j )
         {
-            SGVec2f tc = base_txs[j];
-            // SG_LOG(SG_GENERAL, SG_DEBUG, "base_tc = " << tc);
-            index = texcoords.simple_add( Point3D( tc.x(), tc.y(), 0 ) );
+            index = texcoords.simple_add( base_txs[j] );
             base_tc.push_back( index );
         }
         strips_tc.push_back( base_tc );
     }
+#endif
 
     // add light points
-    superpoly_list tmp_light_list; 
-    tmp_light_list.clear();
-    typedef std::map < string, double, std::less<string> > elev_map_type;
-    typedef elev_map_type::const_iterator const_elev_map_iterator;
-    elev_map_type elevation_map;
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing runway/approach lighting elevations");
-
     // pass one, calculate raw elevations from Array
-    for ( unsigned int i = 0; i < rwy_lights.size(); ++i ) 
-    {
-        TGTriNodes light_nodes;
-        light_nodes.clear();
-        point_list lights_v = rwy_lights[i].TempGetPosListAsPoint3D();
-        for ( unsigned int j = 0; j < lights_v.size(); ++j ) 
-        {
-            p = lights_v[j];
-            index = light_nodes.simple_add( p );
+    for ( unsigned int i = 0; i < rwy_lights.size(); ++i ) {
+        for ( unsigned int j = 0; j < rwy_lights[i].ContourSize(); j++ ) {
+            double light_elevation = calc_elevation( apt_surf, rwy_lights[i].GetNode(j), 0.0 );
+            rwy_lights[i].SetElevation(j, light_elevation);
         }
 
-        // calculate light node elevations
-        point_list geod_light_nodes = calc_elevations( apt_surf, light_nodes.get_node_list(), 0.0 );
-        TGPolygon p;
-        p.add_contour( geod_light_nodes, 0 );
-        TGSuperPoly s;
-        s.set_poly( p );
-        tmp_light_list.push_back( s );
-
-        string flag = rwy_lights[i].GetFlag();
-        if ( flag != (string)"" ) 
-        {
-            double max = -9999;
-            const_elev_map_iterator it = elevation_map.find( flag );
-            if ( it != elevation_map.end() ) 
-            {
-                max = elevation_map[flag];
-            }
-            for ( unsigned int j = 0; j < geod_light_nodes.size(); ++j ) 
-            {
-                if ( geod_light_nodes[j].z() > max ) 
-                {
-                    max = geod_light_nodes[j].z();
-                }
-            }
-            elevation_map[flag] = max;
-            SG_LOG( SG_GENERAL, SG_DEBUG, flag << " max = " << max );
-        }
+        // TODO : It doesn't look like this does anything... got back in history and make sure...
+        //string flag = rwy_lights[i].GetFlag();
+        //if ( flag != (string)"" ) 
+        //{
+        //    SG_LOG(SG_GENERAL, SG_INFO, "    flag " << flag);
+        //    double max = -9999;
+        //    const_elev_map_iterator it = elevation_map.find( flag );
+        //    if ( it != elevation_map.end() ) 
+        //    {
+        //       max = elevation_map[flag];
+        //    }
+        //    for ( unsigned int j = 0; j < geod_light_nodes.size(); ++j ) 
+        //    {
+        //        if ( geod_light_nodes[j].z() > max ) 
+        //        {
+        //            max = geod_light_nodes[j].z();
+        //        }
+        //    }
+        //    elevation_map[flag] = max;
+        //    SG_LOG( SG_GENERAL, SG_INFO, "      " << flag << " max = " << max );
+        //}
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Done with lighting calc_elevations() num light polys is " << rwy_lights.size() );
+    SG_LOG(SG_GENERAL, SG_INFO, "Done with lighting calc_elevations() num light polys is " << rwy_lights.size() );
 
     // pass two, for each light group check if we need to lift (based
     // on flag) and do so, then output next structures.
-    for ( unsigned int i = 0; i < rwy_lights.size(); ++i ) 
+    // for ( unsigned int i = 0; i < rwy_lights.size(); ++i )
+    for ( unsigned int i = 0; i < rwy_lights.size(); ++i )
     {
-        // tmp_light_list is a parallel structure to rwy_lights
-        point_list geod_light_nodes = tmp_light_list[i].get_poly().get_contour(0);
-        
-        // this is a little round about, but what we want to calculate the
-        // light node elevations as ground + an offset so we do them
-        // seperately, then we add them back into nodes to get the index
-        // out, but also add them to geod_nodes to maintain consistancy
-        // between these two lists.
-        point_list light_normals = rwy_lights[i].TempGetNormalListAsPoint3D();
         pt_v.clear();
         pt_n.clear();
-        for ( unsigned int j = 0; j < geod_light_nodes.size(); ++j ) 
+        for ( unsigned int j = 0; j < rwy_lights[i].ContourSize(); ++j )
         {
-            p = geod_light_nodes[j];
-            index = nodes.simple_add( p );
+            index = nodes.add( rwy_lights[i].GetPosition(j) );
             pt_v.push_back( index );
-            geod_nodes.push_back( p );
 
-            index = normals.unique_add( light_normals[j] );
+            index = normals.add( rwy_lights[i].GetNormal(j) );
             pt_n.push_back( index );
         }
         pts_v.push_back( pt_v );
@@ -1312,22 +1261,25 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         pt_materials.push_back( rwy_lights[i].GetType() );
     }
 
+    // calculate node elevations
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Computing airport node elevations");
+
+    std::vector<SGGeod> geod_nodes = calc_elevations( apt_surf, nodes.get_list(), 0.0 );
+    divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
+
     // calculate wgs84 mapping of nodes
-    std::vector< SGVec3d > wgs84_nodes;
+    std::vector<SGVec3d> wgs84_nodes;
     for ( unsigned int i = 0; i < geod_nodes.size(); ++i ) 
     {
-        SGGeod geod = SGGeod::fromDegM( geod_nodes[i].x(), geod_nodes[i].y(), geod_nodes[i].z() );
-    	SG_LOG(SG_GENERAL, SG_DEBUG, "geod pt = " << geod_nodes[i] );
-        SGVec3d cart = SGVec3d::fromGeod(geod);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  cart pt = " << cart );
-    	wgs84_nodes.push_back( cart );
+        wgs84_nodes.push_back( SGVec3d::fromGeod(geod_nodes[i]) );
     }
+
     SGSphered d;
     for ( unsigned int i = 0; i < wgs84_nodes.size(); ++i ) 
     {
         d.expandBy(wgs84_nodes[ i ]);
     }
-    
+
     SGVec3d gbs_center = d.getCenter();
     double gbs_radius = d.getRadius();
     SG_LOG(SG_GENERAL, SG_DEBUG, "gbs center = " << gbs_center);
@@ -1343,27 +1295,12 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     string objpath = root + "/AirportObj";
     string name = icao + ".btg";
 
-    std::vector< SGVec3f > normals_3f;
-    for ( unsigned int i = 0; i < normals.get_node_list().size(); i++ ) 
-    {
-        Point3D node = normals.get_node_list()[i];
-        normals_3f.push_back( node.toSGVec3f() );
-    }
-
-    std::vector< SGVec2f > texcoords_2f;
-    for ( unsigned int i = 0; i < texcoords.get_node_list().size(); i++ ) 
-    {
-        Point3D node = texcoords.get_node_list()[i];
-        texcoords_2f.push_back( node.toSGVec2f() );
-    }
-
     SGBinObject obj;
-
     obj.set_gbs_center( gbs_center );
     obj.set_gbs_radius( gbs_radius );
     obj.set_wgs84_nodes( wgs84_nodes );
-    obj.set_normals( normals_3f );
-    obj.set_texcoords( texcoords_2f );
+    obj.set_normals( normals.get_list() );
+    obj.set_texcoords( texcoords.get_list() );
     obj.set_pts_v( pts_v );
     obj.set_pts_n( pts_n );
     obj.set_pt_materials( pt_materials );
