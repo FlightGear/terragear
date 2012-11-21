@@ -238,18 +238,6 @@ static std::vector<SGGeod> calc_elevations( TGAptSurface &surf, const std::vecto
     return result;
 }
 
-#if 1 // unused
-static point_list calc_elevations( TGAptSurface &surf, const point_list& geod_nodes, double offset )
-{
-    point_list result = geod_nodes;
-    for ( unsigned int i = 0; i < result.size(); ++i ) {
-        double elev = surf.query( SGGeod::fromDeg( result[i].x(), result[i].y() ) );
-        result[i].setelev( elev + offset );
-    }
-
-    return result;
-}
-#endif
 
 static tgContour calc_elevations( TGAptSurface &surf,
                                   const tgContour& geod_nodes,

@@ -58,7 +58,7 @@ void Taxiway::GenLights(tglightcontour_list& rwy_lights)
     // Spacing is 10m
 
     // Vector calculation
-    SGVec3d vec = normalize(SGVec3d::fromGeod(taxi_contour.GetNode(0)));
+    SGVec3f vec = normalize(SGVec3f::fromGeod(taxi_contour.GetNode(0)));
 
     tgLightContour blue;
     blue.SetType( "RWY_BLUE_TAXIWAY_LIGHTS" );

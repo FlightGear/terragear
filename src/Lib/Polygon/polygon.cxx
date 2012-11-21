@@ -33,6 +33,7 @@
 #include <Geometry/trinodes.hxx>
 
 #include "polygon.hxx"
+#include "tg_unique_geod.hxx"
 
 #ifdef _MSC_VER
 #   define LONG_LONG_MAX LLONG_MAX
@@ -1951,6 +1952,43 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, std::vector<SGG
     return result;
 }
 
+// this is the opposite of FindColinearNodes - it takes a single SGGeode,
+// and tries to find the line segment the point is colinear with
+bool tgContour::FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end )
+{
+    SGGeod p0, p1;
+    SGGeod new_pt;
+    std::vector<SGGeod> tmp_nodes;
+
+    tmp_nodes.push_back( node );
+    for ( unsigned int n = 0; n < subject.GetSize()-1; n++ ) {
+        p0 = subject.GetNode( n );
+        p1 = subject.GetNode( n+1 );
+
+        // add intermediate points
+        bool found_extra = FindIntermediateNode( p0, p1, tmp_nodes, new_pt, SG_EPSILON*10, SG_EPSILON*4 );
+        if ( found_extra ) {
+            start = p0;
+            end   = p1;
+            return true;
+        }
+    }
+
+    // check last segment
+    p0 = subject.GetNode( subject.GetSize() - 1 );
+    p1 = subject.GetNode( 0 );
+
+    // add intermediate points
+    bool found_extra = FindIntermediateNode( p0, p1, tmp_nodes, new_pt, SG_EPSILON*10, SG_EPSILON*4 );
+    if ( found_extra ) {
+        start = p0;
+        end   = p1;
+        return true;
+    }
+
+    return false;
+}
+
 std::ostream& operator<< ( std::ostream& output, const tgContour& subject )
 {
     // Save the data
@@ -2405,6 +2443,7 @@ void tgPolygon::AddToAccumulator( const tgPolygon& subject )
 // Move slivers from in polygon to out polygon.
 void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
 {
+#if 0
     // traverse each contour of the polygon and attempt to identify
     // likely slivers
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygon::RemoveSlivers()");
@@ -2456,6 +2495,7 @@ void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
             }
         }
     }
+#endif
 }
 
 void tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& sliver_list ) {
@@ -2523,16 +2563,39 @@ tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<SGG
     return result;
 }
 
+// this is the opposite of FindColinearNodes - it takes a single SGGeode,
+// and tries to find the line segment the point is colinear with
+bool tgPolygon::FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod& start, SGGeod& end )
+{
+    bool found = false;
+
+    for ( unsigned int c = 0; c < subject.Contours() && !found; c++ ) {
+        found = tgContour::FindColinearLine( subject.GetContour(c), node, start, end );
+    }
+
+    return found;
+}
+
+SGGeod InterpolateElevation( const SGGeod& dst_node, const SGGeod& start, const SGGeod& end )
+{
+    double total_dist = SGGeodesy::distanceM( start, end );
+    double inter_dist = SGGeodesy::distanceM( start, dst_node );
+    double delta = inter_dist/total_dist;
+
+    double dest_elevation = start.getElevationM() + (delta * ( end.getElevationM() - start.getElevationM() ));
+
+    return SGGeod::fromDegM( dst_node.getLongitudeDeg(), dst_node.getLatitudeDeg(), dest_elevation );
+}
+
+
 void tgPolygon::InheritElevations( const tgPolygon& source )
 {
-    TGTriNodes nodes;
-    nodes.clear();
+    UniqueSGGeodSet     src_nodes;
 
-    // build a list of points from the source and dest polygons
+    // build a list of points from the source polygon
     for ( unsigned int i = 0; i < source.Contours(); ++i ) {
         for ( unsigned int j = 0; j < source.ContourSize(i); ++j ) {
-            Point3D p = Point3D::fromSGGeod( source.GetNode( i, j ) );
-            nodes.unique_add( p );
+            src_nodes.add( source.GetNode( i, j ) );
         }
     }
 
@@ -2540,42 +2603,16 @@ void tgPolygon::InheritElevations( const tgPolygon& source )
     // elevations from the source polygon
     for ( unsigned int i = 0; i < contours.size(); ++i ) {
         for ( unsigned int j = 0; j < contours[i].GetSize(); ++j ) {
-            Point3D p = Point3D::fromSGGeod( GetNode(i,j) );
-            int index = nodes.find( p );
+            SGGeod dst_node = GetNode(i,j);
+            int index = src_nodes.find( dst_node );
             if ( index >= 0 ) {
-                Point3D ref = nodes.get_node( index );
-                SetNode( i, j, SGGeod::fromDegM( p.x(), p.y(), ref.z() ) );
-            }
-        }
-    }
-
-    // now post process result to catch any nodes that weren't updated
-    // (because the clipping process may have added points which
-    // weren't in the original.)
-    double last = -9999.0;
-    for ( unsigned int i = 0; i < contours.size(); ++i ) {
-        // go front ways
-        last = -9999.0;
-        for ( unsigned int j = 0; j < contours[i].GetSize(); ++j ) {
-            Point3D p = Point3D::fromSGGeod( GetNode(i,j) );
-            if ( p.z() > -9000 ) {
-                last = p.z();
+                SetNode( i, j, src_nodes.get_list()[index] );
             } else {
-                if ( last > -9000 ) {
-                    GetContour(i).SetNode( j, SGGeod::fromDegM( p.x(), p.y(), last ) );
-                }
-            }
-        }
-
-        // go back ways
-        last = -9999.0;
-        for ( unsigned int j = contours[i].GetSize()-1; j > 0; --j ) {
-            Point3D p = Point3D::fromSGGeod( GetNode(i,j) );
-            if ( p.z() > -9000 ) {
-                last = p.z();
-            } else {
-                if ( last > -9000 ) {
-                    GetContour(i).SetNode( j, SGGeod::fromDegM( p.x(), p.y(), last ) );
+                /* node not is source - we need to find the two points to interpolate from */
+                SGGeod start, end, result;
+                if ( FindColinearLine( source, dst_node, start, end ) ) {
+                    dst_node = InterpolateElevation( dst_node, start, end );
+                    SetNode( i, j, dst_node );
                 }
             }
         }
@@ -2817,12 +2854,7 @@ static void ClipToFile( const tgPolygon& subject, std::string root,
     }
 
     if ( preserve3d ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "preserve3d" );
         result.InheritElevations( subject );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "preserve3d  - done" );
-
-        SG_LOG(SG_GENERAL, SG_DEBUG, subject );
-        SG_LOG(SG_GENERAL, SG_DEBUG, result );
     }
 
     tgTexParams tp = subject.GetTexParams();

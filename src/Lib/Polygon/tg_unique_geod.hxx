@@ -86,8 +86,36 @@ class UniqueSGGeodSet {
 public:
     UniqueSGGeodSet() {}
 
-    unsigned int add( const SGGeod& g );
-    int          find( const SGGeod& g ) const;
+    unsigned int add( const SGGeod& g ) {
+        unique_geod_set_iterator it;
+        SGGeodIndex lookup( g );
+
+        it = index_list.find( lookup );
+        if ( it == index_list.end() ) {
+            lookup.SetOrderedIndex( geod_list.size() );
+            index_list.insert( lookup );
+
+            geod_list.push_back(g);
+        } else {
+            lookup = *it;
+        }
+
+        return lookup.GetOrderedIndex();
+    }
+
+    int find( const SGGeod& g ) const {
+        unique_geod_set_iterator it;
+        SGGeodIndex lookup( g );
+        int index = -1;
+
+        it = index_list.find( lookup );
+        if ( it != index_list.end() ) {
+            index = it->GetOrderedIndex();
+        }
+
+        return index;
+    }
+
     std::vector<SGGeod>& get_list( void ) { return geod_list; }
     void get_node_list();
 
@@ -95,34 +123,3 @@ private:
     unique_geod_set         index_list;
     std::vector<SGGeod>     geod_list;
 };
-
-unsigned int UniqueSGGeodSet::add( const SGGeod& g ) {
-    unique_geod_set_iterator it;
-    SGGeodIndex lookup( g );
-
-    it = index_list.find( lookup );
-    if ( it == index_list.end() ) {
-        lookup.SetOrderedIndex( geod_list.size() );
-        index_list.insert( lookup );
-
-        geod_list.push_back(g);
-    } else {
-        lookup = *it;
-    }
-
-    return lookup.GetOrderedIndex();
-}
-
-
-int UniqueSGGeodSet::find( const SGGeod& g ) const {
-    unique_geod_set_iterator it;
-    SGGeodIndex lookup( g );
-    int index = -1;
-
-    it = index_list.find( lookup );
-    if ( it != index_list.end() ) {
-        index = it->GetOrderedIndex();
-    }
-
-    return index;
-}

@@ -380,6 +380,7 @@ public:
 
     static tgContour AddColinearNodes( const tgContour& subject, TGTriNodes nodes );
     static tgContour AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes );
+    static bool      FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end );
 
     // conversions
     static ClipperLib::Polygon ToClipper( const tgContour& subject );
@@ -624,6 +625,7 @@ public:
 
     static tgPolygon AddColinearNodes( const tgPolygon& subject, TGTriNodes& nodes );
     static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<SGGeod>& nodes );
+    static bool      FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod& start, SGGeod& end );
 
     static void RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers );
     static void MergeSlivers( tgpolygon_list& subjects, tgcontour_list& slivers );

@@ -135,10 +135,8 @@ void TGConstruct::WriteBtgFile( void )
     int_list tri_tc, strip_tc;
 
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
-        unsigned int area_tris;
         // only tesselate non holes
         if ( !is_hole_area( area ) ) {
-            area_tris = 0;
             for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
                 for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                     SG_LOG( SG_CLIPPER, SG_INFO, "Ouput nodes for " << get_area_name( (AreaType)area ) << ":" <<
@@ -167,21 +165,9 @@ void TGConstruct::WriteBtgFile( void )
                         tris_v.push_back( tri_v );
                         tris_n.push_back( tri_n );
                         tris_tc.push_back( tri_tc );
-                        switch ( area_tris / 32768 ) {
-                            case 0:
-                                material  = polys_clipped.get_material(area, shape, segment);
-                                break;
 
-                            default:
-                            {
-                                char mat_name[64];
-                                sprintf(mat_name, "%s_%d", polys_clipped.get_material(area, shape, segment).c_str(), area_tris / 32768 );
-                                material = mat_name;
-                                break;
-                            }
-                        }
+                        material  = polys_clipped.get_material(area, shape, segment);
                         tri_materials.push_back( material );
-						area_tris++;
                     }
                 }
             }

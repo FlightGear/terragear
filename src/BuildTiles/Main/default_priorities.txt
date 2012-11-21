@@ -13,6 +13,10 @@ Road-Residential	road
 Road-Primary	    road
 Road-Secondary	    road
 Road-Tertiary	    road
+Road-Service	    road
+Road-Pedestrian	    road
+Road-Steps          road
+Road-Unclassified   road
 
 Railroad		road
 Asphalt			road
@@ -22,6 +26,7 @@ DryLake			lake
 Reservoir		lake
 IntermittentLake	lake
 Stream			stream
+River			stream
 IntermittentStream	stream
 Watercourse		stream
 Canal			stream
