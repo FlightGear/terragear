@@ -1,12 +1,7 @@
 #ifndef _LINKED_OBJECTS_H_
 #define _LINKED_OBJECTS_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <Polygon/polygon.hxx>
-
-using std::string;
 
 class Windsock
 {
@@ -63,7 +58,7 @@ public:
     double heading;
     int    reserved;
     int    size;
-    string sgn_def;
+    std::string sgn_def;
 
     SGGeod GetLoc()
     {
@@ -75,7 +70,7 @@ public:
         return heading;
     }
 
-    string GetDefinition()
+    std::string GetDefinition()
     {
         return sgn_def;
     }

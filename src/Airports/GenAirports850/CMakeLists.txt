@@ -1,3 +1,5 @@
+include_directories(${PROJECT_SOURCE_DIR}/src/Lib)
+
 add_executable(genapts850
 	airport.hxx airport.cxx
 	apt_math.hxx apt_math.cxx

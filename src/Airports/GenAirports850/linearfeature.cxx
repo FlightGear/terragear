@@ -478,7 +478,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     double      az2;
     double      last_end_v;
     double      width = 0;
-    string      material;
+    std::string material;
     double      cur_light_dist = 0.0f;
     double      light_delta = 0;
     bool        markStarted;

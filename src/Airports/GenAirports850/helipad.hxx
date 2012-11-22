@@ -17,8 +17,6 @@
 #define _HELIPAD_HXX
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
 
 class Helipad
 {
@@ -86,7 +84,7 @@ private:
     tgpolygon_list  shoulder_polys;
 
     tgPolygon WriteGeom( const tgContour& area,
-                         string material,
+                         std::string material,
                          tgpolygon_list& rwy_polys,
                          tgcontour_list& slivers );
 

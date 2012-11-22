@@ -1,14 +1,9 @@
 #ifndef _RUNWAY_H_
 #define _RUNWAY_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <Polygon/polygon.hxx>
 
 #include "apt_math.hxx"
-
-using std::string;
 
 class Runway
 {
@@ -104,7 +99,7 @@ private:
         return ( gen_wgs84_area( GetStart(), GetEnd(), 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, false) );
     }
 
-    void gen_rw_designation( tgPolygon poly, double heading, string rwname,
+    void gen_rw_designation( tgPolygon poly, double heading, std::string rwname,
                              double &start_pct, double &end_pct,
                              tgpolygon_list& rwy_polys,
                              tgcontour_list& slivers,
@@ -116,7 +111,7 @@ private:
                       double startw_pct, double endw_pct,
                       double minu, double maxu, double minv, double maxv,
                       double heading,
-                      const string& material,
+                      const std::string& material,
                       tgpolygon_list& rwy_polys,
                       tgpolygon_list& shoulder_polys,
                       tgcontour_list& slivers,
@@ -128,7 +123,7 @@ private:
                       double startw_pct, double endw_pct,
                       double minu, double maxu, double minv, double maxv,
                       double heading,
-                      const string& material,
+                      const std::string& material,
                       tgpolygon_list& rwy_polys,
                       tgcontour_list& slivers,
                       std::string& shapefile_name );
@@ -170,11 +165,11 @@ private:
     tglightcontour_list gen_runway_center_line_lights( bool recip );
     tgLightContour      gen_touchdown_zone_lights( bool recip );
     tgLightContour      gen_reil( const int kind, bool recip );
-    tglightcontour_list gen_calvert( const string &kind, bool recip );
-    tglightcontour_list gen_alsf( const string &kind, bool recip );
+    tglightcontour_list gen_calvert( const std::string &kind, bool recip );
+    tglightcontour_list gen_alsf( const std::string &kind, bool recip );
     tgLightContour      gen_odals( const int kind, bool recip );
-    tglightcontour_list gen_ssalx( const string& kind, bool recip );
-    tglightcontour_list gen_malsx( const string& kind, bool recip );
+    tglightcontour_list gen_ssalx( const std::string& kind, bool recip );
+    tglightcontour_list gen_malsx( const std::string& kind, bool recip );
 };
 
 typedef std::vector <Runway *> RunwayList;

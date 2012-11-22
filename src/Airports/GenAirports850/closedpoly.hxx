@@ -1,16 +1,10 @@
 #ifndef _BEZPOLY_H_
 #define _BEZPOLY_H_
 
+#include <Polygon/polygon.hxx>
+
 #include "beznode.hxx"
 #include "linearfeature.hxx"
-
-#include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-
-#include <Geometry/point3d.hxx>
-
-using std::string;
 
 class ClosedPoly
 {
@@ -18,8 +12,8 @@ public:
     ClosedPoly( char* desc );
     ClosedPoly( int st, float s, float th, char* desc );
 	~ClosedPoly();
-    
-    inline string GetDescription() { return description; }
+
+    inline std::string GetDescription() { return description; }
     void AddNode( BezNode* node );
     void CloseCurContour();
     void Finish();
@@ -57,8 +51,8 @@ private:
     int    surface_type;
     float  smoothness;
     double texture_heading;
-    string description;
-    
+    std::string description;
+
     // outer boundary definition as bezier nodes
     BezContour* boundary;
 

@@ -29,8 +29,6 @@
 #include "global.hxx"
 #include "elevations.hxx"
 
-string SGLOG_GREEN  = "\033[0;32m";
-string SGLOG_NORMAL = "\033[0m";
 
 static std::string my_ctime(time_t& tt)
 {
@@ -282,7 +280,7 @@ static tgPolygon calc_elevations( TGAptSurface &surf,
     return result;
 }
 
-void Airport::BuildBtg(const string& root, const string_list& elev_src )
+void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 {
     tgcontour_list slivers;
     tgcontour_list line_slivers;
@@ -844,7 +842,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
-        string material = rwy_polys[k].GetMaterial();
+        std::string material = rwy_polys[k].GetMaterial();
         SG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
         SG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << rwy_polys[k].Triangles());
         for ( unsigned int i = 0; i < rwy_polys[k].Triangles(); ++i )
@@ -876,7 +874,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
     {
         SG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
-        string material = pvmt_polys[k].GetMaterial();
+        std::string material = pvmt_polys[k].GetMaterial();
         SG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
         SG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << pvmt_polys[k].Triangles());
     	for ( unsigned int i = 0; i < pvmt_polys[k].Triangles(); ++i ) 
@@ -907,7 +905,7 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < line_polys.size(); ++k ) 
     {
     	SG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
-    	string material = line_polys[k].GetMaterial();
+        std::string material = line_polys[k].GetMaterial();
     	SG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
     	SG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << line_polys[k].Triangles());
     	for ( unsigned int i = 0; i < line_polys[k].Triangles(); ++i ) 
@@ -1280,8 +1278,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
     group_list fans_tc; fans_tc.clear();
     string_list fan_materials; fan_materials.clear();
 
-    string objpath = root + "/AirportObj";
-    string name = icao + ".btg";
+    std::string objpath = root + "/AirportObj";
+    std::string name = icao + ".btg";
 
     SGBinObject obj;
     obj.set_gbs_center( gbs_center );
@@ -1383,10 +1381,8 @@ void Airport::BuildBtg(const string& root, const string_list& elev_src )
         }
     }
 
-    string holepath = root + "/AirportArea";
+    std::string holepath = root + "/AirportArea";
 
     tgPolygon::Chop( divided_base, holepath, "Hole", false, true );
     tgPolygon::Chop( apt_clearing, holepath, "Airport", false, false );
-
-    //SG_LOG( SG_GENERAL, SG_ALERT, SGLOG_GREEN << "\nSUCCESS generating " << icao << SGLOG_NORMAL << "\n" );
 }

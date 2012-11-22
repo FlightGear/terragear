@@ -73,7 +73,7 @@ tglightcontour_list Helipad::gen_helipad_lights(double maxsize) {
     return result;
 }
 
-tgPolygon Helipad::WriteGeom( const tgContour& area, string material,
+tgPolygon Helipad::WriteGeom( const tgContour& area, std::string material,
                               tgpolygon_list& rwy_polys,
                               tgcontour_list& slivers )
 {
@@ -117,7 +117,7 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
 
     tgContour helipad = gen_wgs84_area( GetLoc(), maxsize, 0, 0, maxsize, heli.heading, false);
     helipad = tgContour::Snap( helipad, gSnap );
-    string material, shoulder_mat;
+    std::string material, shoulder_mat;
     if (heli.surface == 1)
         material = "pa_";
     else

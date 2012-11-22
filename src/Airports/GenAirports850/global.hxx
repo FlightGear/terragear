@@ -42,7 +42,4 @@ const double max_clamp = 100.0;
 extern double slope_max; // = 0.02; 
 const double slope_eps = 0.00001;
 
-// nurbs query/search epsilon
-const double nurbs_eps = 0.0000001;
-
-#endif // _GEN_AIRPORT_GLOBAL_HXX
+#endif

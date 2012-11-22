@@ -1,14 +1,9 @@
 #ifndef _TAXIWAY_H_
 #define _TAXIWAY_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <Polygon/polygon.hxx>
 
 #include "apt_math.hxx"
-
-using std::string;
 
 class Taxiway
 {

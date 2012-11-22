@@ -1,14 +1,7 @@
 #ifndef _OBJECT_H_
 #define _OBJECT_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Geometry/point3d.hxx>
-
-using std::string;
 
 class LightingObj
 {
@@ -27,4 +20,5 @@ void BuildBtg( tglightcontour_list& lights );
 
 };
 typedef std::vector <LightingObj *> LightingObjList;
+
 #endif

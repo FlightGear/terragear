@@ -14,10 +14,6 @@
 //
 
 #include <simgear/compiler.h>
-#include <simgear/constants.h>
-#include <simgear/debug/logstream.hxx>
-#include <simgear/math/sg_geodesy.hxx>
-
 #include "apt_math.hxx"
 
 tgContour gen_wgs84_area( SGGeod origin,
@@ -82,7 +78,7 @@ tgContour gen_wgs84_area( SGGeod end1, SGGeod end2,
     // move from end2 to the displaced threshold
     SGGeod ref = SGGeodesy::direct( end2, heading_deg, length_ext / 2.0 - displ2);
 
-    
+
     // move to the l,-w corner
     result.AddNode( SGGeodesy::direct(ref, left_hdg, -width_m / 2.0) );
 

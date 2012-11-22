@@ -1,4 +1,3 @@
-#include <simgear/math/sg_geodesy.hxx>
 #include <simgear/debug/logstream.hxx>
 #include "linked_objects.hxx"
 

@@ -1,10 +1,8 @@
 #ifndef _AIRPORT_H_
 #define _AIRPORT_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <simgear/timing/timestamp.hxx>
+#include <simgear/math/sg_types.hxx>
 
 #include "runway.hxx"
 #include "object.hxx"
@@ -13,8 +11,6 @@
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
 #include "linked_objects.hxx"
-
-using std::string;
 
 typedef std::map<std::string, std::vector<int>, std::less<std::string> > debug_map;
 typedef debug_map::iterator debug_map_iterator;
@@ -94,7 +90,7 @@ public:
         signs.push_back( sign );
     }
 
-    string GetIcao( )
+    std::string GetIcao( )
     {
         return icao;
     }
@@ -115,7 +111,7 @@ public:
     }
 
     void merge_slivers( tgpolygon_list& polys, tgcontour_list& slivers );
-    void BuildBtg( const string& root, const string_list& elev_src );
+    void BuildBtg( const std::string& root, const string_list& elev_src );
 
     void DumpStats( void );
 
@@ -137,10 +133,10 @@ public:
     bool isDebugFeature ( int i );
 
 private:
-    int     code;               // airport, heliport or sea port
-    int     altitude;           // in meters
-    string  icao;               // airport code
-    string  description;        // description
+    int          code;               // airport, heliport or sea port
+    int          altitude;           // in meters
+    std::string  icao;               // airport code
+    std::string  description;        // description
 
     PavementList    pavements;
     FeatureList     features;
@@ -160,7 +156,7 @@ private:
     SGTimeStamp triangulation_time;
 
     // debug
-    string          debug_path;
+    std::string          debug_path;
     debug_map       debug_runways;
     debug_map       debug_pavements;
     debug_map       debug_taxiways;

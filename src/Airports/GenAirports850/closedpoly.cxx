@@ -1,11 +1,8 @@
 #include <stdlib.h>
-#include <list>
 
 #include <simgear/debug/logstream.hxx>
-#include <simgear/math/sg_geodesy.hxx>
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/chop.hxx>
 #include <Geometry/poly_support.hxx>
 
 #include "global.hxx"
@@ -14,9 +11,9 @@
 
 #define NO_BEZIER       (0)
 
-static void stringPurifier( string& s )
+static void stringPurifier( std::string& s )
 {
-    for ( string::iterator it = s.begin(), itEnd = s.end(); it!=itEnd; ++it) {
+    for ( std::string::iterator it = s.begin(), itEnd = s.end(); it!=itEnd; ++it) {
         if ( static_cast<unsigned int>(*it) < 32 || static_cast<unsigned int>(*it) > 127 ) {
             (*it) = ' ';
         }
@@ -36,7 +33,7 @@ ClosedPoly::ClosedPoly( char* desc )
     {
         description = "none";
     }
-        
+
     boundary = NULL;
     cur_contour = NULL;
     cur_feature = NULL;
@@ -58,7 +55,7 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
     {
         description = "none";
     }
-        
+
     boundary = NULL;
     cur_contour = NULL;
     cur_feature = NULL;
@@ -85,7 +82,7 @@ void ClosedPoly::AddNode( BezNode* node )
     {
         if (!cur_feature)
         {
-            string feature_desc = description + " - ";
+            std::string feature_desc = description + " - ";
             if (boundary)
             {
                 feature_desc += "hole";
@@ -97,7 +94,7 @@ void ClosedPoly::AddNode( BezNode* node )
 
             SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node " << node->GetLoc() << " to current linear feature " << cur_feature);
             cur_feature = new LinearFeature(feature_desc, 1.0f );
-        } 
+        }
         cur_feature->AddNode( node );
     }
 }
@@ -106,7 +103,7 @@ void ClosedPoly::CloseCurContour()
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "Close Contour");
 
-    // if we are recording a pavement marking - it must be closed - 
+    // if we are recording a pavement marking - it must be closed -
     // add the first node of the poly
     if (cur_feature)
     {
@@ -114,7 +111,7 @@ void ClosedPoly::CloseCurContour()
         cur_feature->Finish(true, features.size() );
 
         features.push_back(cur_feature);
-        cur_feature = NULL;        
+        cur_feature = NULL;
     }
 
     // add the contour to the poly - first one is the outer boundary
@@ -170,7 +167,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
             nextNode = src->at(0);
         }
 
-        // now determine how we will iterate from current node to next node 
+        // now determine how we will iterate from current node to next node
         if( curNode->HasNextCp() )
         {
             // next curve is cubic or quadratic
@@ -232,7 +229,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
         else
         {
             if (curve_type != CURVE_LINEAR)
-            {            
+            {
                 num_segs = 8;
                 SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
                 SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
@@ -295,7 +292,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
                 for (int p=0; p<num_segs; p++)
                 {
                     // calculate next location
-                    nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );                    
+                    nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
 
                     // add the feature vertex
                     dst.AddNode( curLoc );
@@ -347,7 +344,7 @@ void ClosedPoly::Finish()
         ConvertContour( boundary, dst_contour );
         dst_contour.SetHole( false );
 
-        // and add it to the geometry 
+        // and add it to the geometry
         pre_tess.AddContour( dst_contour );
 
         // Then convert the hole contours
@@ -386,7 +383,7 @@ void ClosedPoly::Finish()
 std::string ClosedPoly::GetMaterial( int surface )
 {
     std::string material;
-    
+
     switch( surface ) {
         case 1:
             material = "pa_tiedown";
@@ -473,7 +470,7 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, st
 }
 
 
-// Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges 
+// Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges
 // - resulting in no base, which we can't handle
 int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
 {
@@ -482,8 +479,8 @@ int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::str
     // verify the poly has been generated, and the contour isn't a pavement
     if ( !is_pavement && pre_tess.Contours() )
     {
-        base = tgPolygon::Expand( pre_tess, 2.0); 
-        safe_base = tgPolygon::Expand( pre_tess, 5.0);        
+        base = tgPolygon::Expand( pre_tess, 2.0);
+        safe_base = tgPolygon::Expand( pre_tess, 5.0);
 
         // add this to the airport clearing
         apt_clearing = tgPolygon::Union( safe_base, apt_clearing);

@@ -1,16 +1,7 @@
 #ifndef _APT_MATH_HXX_
 #define _APT_MATH_HXX_
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-#include <Geometry/point3d.hxx>
-
-
-using std::string;
 
 tgContour gen_wgs84_area( SGGeod origin,
                           double length_m,

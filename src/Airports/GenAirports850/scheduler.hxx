@@ -43,7 +43,6 @@
 #define PL_STATE_ALL_LAUNCHED       (3)
 #define PL_STATE_DONE               (10)
 
-using namespace std;
 using namespace Poco;
 
 // Forward declaration

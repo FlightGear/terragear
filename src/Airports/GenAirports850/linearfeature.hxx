@@ -3,9 +3,6 @@
 
 #include <Polygon/polygon.hxx>
 
-using std::string;
-
-
 #define LF_NONE                     (0)
 #define LF_SOLID_YELLOW             (1)
 #define LF_BROKEN_YELLOW            (2)
@@ -77,7 +74,7 @@ public:
         offset = o;
     }
 
-    LinearFeature( string desc, double o )
+    LinearFeature( std::string desc, double o )
     {
         description = desc;
         offset = o;
@@ -85,7 +82,7 @@ public:
 
     ~LinearFeature();
 
-    inline string GetDescription() { return description; }
+    inline std::string GetDescription() { return description; }
 
     void AddNode( BezNode* b )
     {
@@ -112,7 +109,7 @@ private:
     void ConvertContour( BezContour* src, bool closed );
 
     // text description
-    string description;
+    std::string description;
 
     // contour definition (each beznode has marking type)
     BezContour  contour;
