@@ -104,44 +104,43 @@ int SimpleRasterTransformer(void *pTransformerArg,
 
 class ImageInfo {
 public:
-ImageInfo(GDALDataset *dataset);
+    ImageInfo(GDALDataset *dataset);
 
-void GetBounds(double &n, double &s, double &e, double &w) const
-{
-    n = north;
-    s = south;
-    e = east;
-    w = west;
-}
+    void GetBounds(double &n, double &s, double &e, double &w) const {
+        n = north;
+        s = south;
+        e = east;
+        w = west;
+    }
 
-const char* GetDescription() const
-{
-    return dataset->GetDescription();
-}
+    const char* GetDescription() const {
+        return dataset->GetDescription();
+    }
 
-void GetDataChunk(int *buffer,
-                  double x, double y,
-                  double colstep, double rowstep,
-                  int w, int h,
-                  int srcband = 1, int nodata = -32768);
+    void GetDataChunk(int *buffer,
+                      double x, double y,
+                      double colstep, double rowstep,
+                      int w, int h,
+                      int srcband = 1, int nodata = -32768);
+
 protected:
-/* The dataset */
-GDALDataset *dataset;
+    /* The dataset */
+    GDALDataset *dataset;
 
-/* Source spatial reference system */
-OGRSpatialReference srs;
+    /* Source spatial reference system */
+    OGRSpatialReference srs;
 
-/* Coordinate transformation pixel -> geographic */
-double geoXfrm[6];
+    /* Coordinate transformation pixel -> geographic */
+    double geoXfrm[6];
 
-/* Coordinate transformation to WGS84 */
-OGRCoordinateTransformation *wgs84xform;
+    /* Coordinate transformation to WGS84 */
+    OGRCoordinateTransformation *wgs84xform;
 
-/* geographical edge coordinates in CCW order, WGS84 */
-double geoX[4], geoY[4];
+    /* geographical edge coordinates in CCW order, WGS84 */
+    double geoX[4], geoY[4];
 
-/* bounding box in WGS84 */
-double north, south, east, west;
+    /* bounding box in WGS84 */
+    double north, south, east, west;
 };
 
 ImageInfo::ImageInfo(GDALDataset *dataset) :
@@ -150,8 +149,12 @@ ImageInfo::ImageInfo(GDALDataset *dataset) :
 {
     OGRSpatialReference wgs84SRS;
 
+    // NOTE : This is equivelent to WGS84 - just using th formal EPSG db.
+    // GDAL knows this well known projection already
+    // wgs84SRS.SetWellKnownGeogCS( "WGS84" );
     wgs84SRS.SetWellKnownGeogCS( "EPSG:4326" );
 
+    wgs84SRS.SetWellKnownGeogCS( "EPSG:4326" );
 
     /* Determine the bounds of the input file in WGS84 */
     int w = dataset->GetRasterXSize();
@@ -216,7 +219,6 @@ void ImageInfo::GetDataChunk(int *buffer,
     wgs84SRS.SetWellKnownGeogCS( "EPSG:4326" );
 
     char* wgs84WKT;
-
     wgs84SRS.exportToWkt(&wgs84WKT);
 
     /* Setup a raster transformation from WGS84 to raster coordinates of the array files */
@@ -227,6 +229,7 @@ void ImageInfo::GetDataChunk(int *buffer,
         FALSE,
         0.0,
         1);
+
     xformData.pfnTransformer = GDALGenImgProjTransform;
     xformData.x0 = x;
     xformData.y0 = y;
@@ -240,12 +243,13 @@ void ImageInfo::GetDataChunk(int *buffer,
 
     int srcBandNumbers[] = { srcband };
     int dstBandNumbers[] = { 1 };
-    double dstNodata[] = { nodata };
-    double srcNodataReal[1];
-    double srcNodataImag[] = { 0.0 };
-    int srcHasNodataValue;
 
-    srcNodataReal[0] = dataset->GetRasterBand(srcband)->GetNoDataValue(&srcHasNodataValue);
+    double dstNodata       = (double)nodata;
+    double srcNodataReal;
+    double srcNodataImag   =  0.0;
+    int    srcHasNodataValue;
+
+    srcNodataReal = dataset->GetRasterBand(srcband)->GetNoDataValue(&srcHasNodataValue);
 
     psWarpOptions->hSrcDS = dataset;
     psWarpOptions->hDstDS = NULL;
@@ -254,9 +258,10 @@ void ImageInfo::GetDataChunk(int *buffer,
     psWarpOptions->panDstBands = dstBandNumbers;
     psWarpOptions->nSrcAlphaBand = 0;
     psWarpOptions->nDstAlphaBand = 0;
-    psWarpOptions->padfSrcNoDataReal = (srcHasNodataValue ? srcNodataReal : NULL);
-    psWarpOptions->padfSrcNoDataImag = (srcHasNodataValue ? srcNodataImag : NULL);
-    psWarpOptions->padfDstNoDataReal = dstNodata;
+    psWarpOptions->padfSrcNoDataReal = (srcHasNodataValue ? &srcNodataReal : NULL);
+    psWarpOptions->padfSrcNoDataImag = (srcHasNodataValue ? &srcNodataImag : NULL);
+    psWarpOptions->padfDstNoDataReal = &dstNodata;
+    psWarpOptions->padfDstNoDataReal = NULL;
     psWarpOptions->eResampleAlg = GRA_Bilinear;
     psWarpOptions->eWorkingDataType = GDT_Int32;
 
@@ -264,7 +269,6 @@ void ImageInfo::GetDataChunk(int *buffer,
     psWarpOptions->pTransformerArg = &xformData;
 
     GDALWarpOperation oOperation;
-
     oOperation.Initialize( psWarpOptions );
 
     /* do the warp */
@@ -291,12 +295,14 @@ void write_bucket(const std::string& work_dir, SGBucket bucket,
                   int span_x, int span_y,
                   int col_step, int row_step)
 {
-    SGPath path(work_dir);
+    // generate output file name
+    std::string base = bucket.gen_base_path();
+    std::string path = work_dir + "/" + base;
+    SGPath sgp( path );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
-    path.append(bucket.gen_base_path());
-    path.create_dir( 0755 );
-
-    std::string array_file = path.str() + "/" + bucket.gen_index_str() + ".arr.gz";
+    std::string array_file = path + "/" + bucket.gen_index_str() + ".arr.gz";
 
     gzFile fp;
     if ( (fp = gzopen(array_file.c_str(), "wb9")) == NULL ) {
@@ -370,8 +376,10 @@ void process_bucket(const std::string& work_dir, SGBucket bucket,
     const double nodataPercLimit = 5.0;
     double nodataPerc = 100.0 * nodataCellCount / cellcount;
 
-    if (nodataCellCount > 0)
+    if (nodataCellCount > 0) {
         SG_LOG(SG_GENERAL, SG_INFO, "    " << nodataCellCount << " cells are not covered with data (" << nodataPerc << "% of cells)");
+    }
+
     if (nodataPerc > nodataPercLimit) {
         SG_LOG(SG_GENERAL, SG_INFO, "    there is not enough data available to cover this cell (limit for non-covered cells is " << nodataPercLimit << "%)");
         /* don't write out if not forced to */
