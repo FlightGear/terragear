@@ -42,8 +42,8 @@ public:
 
         /* only hash lon, lat - we want to detect dups in 2d only */
         unsigned long long raw_pt[2];
-        raw_pt[0] = (unsigned long long)( SGMisc::round(geod.getLongitudeDeg() * PROXIMITY_MULTIPLIER) );
-        raw_pt[1] = (unsigned long long)( SGMisc::round(geod.getLatitudeDeg() * PROXIMITY_MULTIPLIER) );
+        raw_pt[0] = (unsigned long long)( SGMisc<double>::round(geod.getLongitudeDeg() * PROXIMITY_MULTIPLIER) );
+        raw_pt[1] = (unsigned long long)( SGMisc<double>::round(geod.getLatitudeDeg() * PROXIMITY_MULTIPLIER) );
 
         unsigned char* it = (unsigned char*)raw_pt;
         for ( unsigned i=0; i<sizeof( raw_pt ); i++ ) {
