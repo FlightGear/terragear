@@ -104,6 +104,18 @@ void LightingObj::BuildBtg( tglightcontour_list& lights )
         // only one light here
         light_contour.AddLight( ref, normal );
     }
+    else if (type == 6)
+    {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating runway guard light = " << assoc_rw);
+
+        light_contour.SetType( "RWY_GUARD_LIGHTS" );
+
+        // unit 1
+        light_contour.AddLight( SGGeodesy::direct( ref, left_hdg, 0.2 ), normal );
+
+        // unit 2
+        light_contour.AddLight( SGGeodesy::direct( ref, left_hdg, -0.2 ), normal );
+    }
     else
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "Unknown lighting object (PAPI/VASI...) code: " << type);
