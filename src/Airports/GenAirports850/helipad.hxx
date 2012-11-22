@@ -69,7 +69,6 @@ private:
 
     TGRunway heli;
 
-
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
     tgContour gen_helipad_area_w_extend( double length_extend, double width_extend )
@@ -78,6 +77,7 @@ private:
     }
 
     tglightcontour_list gen_helipad_lights(double maxsize);
+    void                build_helipad_shoulders( const tgContour& outer_area );
 
     // storage for Shoulders - The superpolys are generated during
     // helipad construction, but not clipped until shoulder construction.
