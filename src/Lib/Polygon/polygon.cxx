@@ -1808,6 +1808,32 @@ tg::Rectangle tgContour::GetBoundingBox( void ) const
     return tg::Rectangle( min, max );
 }
 
+tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
+{
+    tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
+        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ) );
+    }
+
+    ClipperLib::Polygon clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
+    ClipperLib::Polygons clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    return result;
+}
+
 tgPolygon tgContour::DiffWithAccumulator( const tgContour& subject )
 {
     tgPolygon result;

@@ -101,21 +101,18 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
     //
     // Generate the basic helipad outlines
     //
+    double heli_size;
 
-    double maxsize = heli.width - heli.length;
-    bool area_top = false;
-    bool area_side = false;
-    if (maxsize == 0) {
-        maxsize = heli.width;
-    } else if (maxsize < 0) {
-        maxsize = heli.width;
-        area_top = true;
+    // helipad constructed as a square with width or length added around it
+    if ( heli.width == heli.length ) {
+        heli_size = heli.length;
+    } else if ( heli.width > heli.length ) {
+        heli_size = heli.length;
     } else {
-        maxsize = heli.length;
-        area_side = true;
+        heli_size = heli.width;
     }
 
-    tgContour helipad = gen_wgs84_area( GetLoc(), maxsize, 0, 0, maxsize, heli.heading, false);
+    tgContour helipad = gen_wgs84_area( GetLoc(), heli_size, 0, 0, heli_size, heli.heading, false);
     helipad = tgContour::Snap( helipad, gSnap );
     std::string material, shoulder_mat;
     if (heli.surface == 1)
@@ -124,99 +121,89 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
         material = "pc_";
 
     // write out
-    tgPolygon result = WriteGeom( helipad, material + "heli", rwy_polys, slivers);
-    result.SetMaterial( material + "heli" );
-    result.SetTexParams( helipad.GetNode(0), maxsize, maxsize, heli.heading );
-    result.SetTexLimits( 0,0,1,1 );
-    result.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, -1.0, -1.0, 1.0, 1.0 );
+    tgPolygon heli_poly = WriteGeom( helipad, material + "heli", rwy_polys, slivers);
+    heli_poly.SetMaterial( material + "heli" );
+    heli_poly.SetTexParams( helipad.GetNode(0), heli_size, heli_size, heli.heading );
+    heli_poly.SetTexLimits( 0,0,1,1 );
+    heli_poly.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, -1.0, -1.0, 1.0, 1.0 );
+    rwy_polys.push_back( heli_poly );
 
-    rwy_polys.push_back( result );
+    // Now generate the actual rectangle, and clip it with the square
+    // need areference point at the origin of the direction, in the middle of width
+    SGGeod ref = SGGeodesy::direct( SGGeod::fromDeg(heli.lon, heli.lat),
+                                    SGMiscd::normalizePeriodic(0, 360, heli.heading + 180 ),
+                                    heli.length/2 );
 
-    int i = 0;
-    double heading = 0, areahight = 0;
-    tgContour heli_area = gen_helipad_area_w_extend(0.0, 0.0);
-    heli_area = tgContour::Snap( heli_area, gSnap );
+    tgContour outer_area = gen_wgs84_rect( ref, heli.heading, heli.length, heli.width );
+    outer_area = tgContour::Snap( outer_area, gSnap );
 
-    tgcontour_list  area_contours;
-    tgContour       area;
+    tgPolygon outer_poly = tgContour::Diff( outer_area, heli_poly );
+    tgPolygon clipped = tgPolygon::DiffWithAccumulator( outer_poly );
+    tgPolygon::RemoveSlivers( clipped, slivers );
 
-    if (area_top || area_side) {
+    // Split long edges to create an object that can better flow with
+    // the surface terrain
+    tgPolygon split = tgPolygon::SplitLongEdges( clipped, 400.0 );
 
-        if (area_top) {
-            areahight = (heli.length - maxsize) /2;
-            heading = SGMiscd::normalizePeriodic( 0, 360, heli.heading-90 );
-            i = 0;
-        } else {
-            areahight = (heli.width - maxsize) /2;
-            heading = SGMiscd::normalizePeriodic( 0, 360, heli.heading-90 );
-            i = 1;
-        }
+    // Create the final output and push on to the runway super_polygon
+    // list
+    split.SetMaterial( material + "tiedown" );
+    split.SetTexParams( outer_area.GetNode(0), 5.0, 5.0, heli.heading );
+    split.SetTexLimits( 1,1,0,0 );
+    split.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+    rwy_polys.push_back( split );
+    tgPolygon::AddToAccumulator( split );
 
-        for (;i<4; ++i) {
-            area.Erase();
-            area.AddNode( heli_area.GetNode( i ) );
-            area.AddNode( heli_area.GetNode( i == 3 ? 0 : i+1 ) );
-            area.AddNode( helipad.GetNode( i == 3 ? 0 : i+1) );
-            area.AddNode( helipad.GetNode( i ) );
-            area.SetHole( false );
-            area_contours.push_back( area );
-            i++;
-        }
+    double shoulder_width, shoulder_length, shoulder_heading;
 
-        tgPolygon result;
-        for (i = 0; i < 2; ++i) {
-            result = WriteGeom( area_contours[i], material + "tiedown", rwy_polys, slivers);
-            result.SetTexParams( area_contours[i].GetNode(0), maxsize, areahight, heading );
-            result.SetTexLimits( 1,1,0,0 );
-            result.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
-            rwy_polys.push_back( result );
-            heading = SGMiscd::normalizePeriodic(0, 360, heading + 180 );
-        }
-    }
-
+    // Now build the shoulders
     if (heli.shoulder == 1) {
         shoulder_mat = "pa_shoulder";
-        areahight = 6; // shoulder size in m
+        shoulder_width = 6; // shoulder size in m
     } else if (heli.shoulder == 2) {
         shoulder_mat = "pc_shoulder";
-        areahight = 6; // shoulder size in m
+        shoulder_width = 6; // shoulder size in m
     } else {
         shoulder_mat = material + "shoulder_f";
-        areahight = 1; // fake shoulder size in m
+        shoulder_width = 1; // fake shoulder size in m
     }
 
-    double shoulder_width = heli.length;
-    heading = heli.heading;
+    shoulder_length  = heli.length;
+    shoulder_heading = heli.heading;
 
-    if (area_side) {
-        shoulder_width = heli.width;
+    if (heli.width > heli.length) {
+        shoulder_length = heli.width;
     }
 
-    tgContour shoulder = gen_helipad_area_w_extend(areahight, areahight);
+    tgContour shoulder = gen_helipad_area_w_extend(shoulder_width, shoulder_width);
+    tgContour area;
+    tgPolygon shoulder_poly;
+
     shoulder = tgContour::Snap( shoulder, gSnap );
 
-    for (i = 0; i < 4; ++i) {
-        heading = SGMiscd::normalizePeriodic(0,360,heading-90);
+    for (int i = 0; i < 4; ++i) {
+        shoulder_heading = SGMiscd::normalizePeriodic(0,360,shoulder_heading-90);
         area.Erase();
         area.AddNode( shoulder.GetNode( i ) );
         area.AddNode( shoulder.GetNode( i == 3 ? 0 : i+1 ) );
-        area.AddNode( heli_area.GetNode( i == 3 ? 0 : i+1 ) );
-        area.AddNode( heli_area.GetNode( i ) );
+        area.AddNode( outer_area.GetNode( i == 3 ? 0 : i+1 ) );
+        area.AddNode( outer_area.GetNode( i ) );
         area.SetHole(false);
 
-        result.Erase();
-        result.AddContour( area );
-        result.SetMaterial( shoulder_mat );
-        result.SetTexParams( area.GetNode(1), areahight, shoulder_width, heading );
-        result.SetTexLimits( 1,1,0,0 );
-        result.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
-        shoulder_polys.push_back( result );
+        shoulder_poly.Erase();
+        shoulder_poly.AddContour( area );
+        shoulder_poly.SetMaterial( shoulder_mat );
+        shoulder_poly.SetTexParams( area.GetNode(1), shoulder_width, shoulder_length, shoulder_heading );
+        shoulder_poly.SetTexLimits( 1,1,0,0 );
+        shoulder_poly.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
+        shoulder_poly = tgPolygon::Snap( shoulder_poly, gSnap );
+        shoulder_polys.push_back( shoulder_poly );
     }
 
     if (heli.edge_lights)
     {
         // Now generate the helipad lights
-        tglightcontour_list s = gen_helipad_lights(maxsize);
+        tglightcontour_list s = gen_helipad_lights(heli_size);
         for ( unsigned int i = 0; i < s.size(); ++i ) {
             rwy_lights.push_back( s[i] );
         }

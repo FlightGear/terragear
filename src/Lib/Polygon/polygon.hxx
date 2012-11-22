@@ -375,6 +375,7 @@ public:
     static tgContour SplitLongEdges( const tgContour& subject, double dist );
     static tgContour RemoveSpikes( const tgContour& subject );
 
+    static tgPolygon Diff( const tgContour& subject, tgPolygon& clip );
     static tgPolygon DiffWithAccumulator( const tgContour& subject );
     static void      AddToAccumulator( const tgContour& subject );
 
