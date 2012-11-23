@@ -18,16 +18,15 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: array.hxx,v 1.18 2005-11-10 16:26:59 curt Exp $
 
 
 #ifndef _ARRAY_HXX
 #define _ARRAY_HXX
 
 
-#ifndef __cplusplus                                                          
+#ifndef __cplusplus
 # error This library requires C++
-#endif                                   
+#endif
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -55,15 +54,15 @@ private:
 
     // coordinates (in arc seconds) of south west corner
     double originx, originy;
-    
+
     // number of columns and rows
     int cols, rows;
-    
+
     // Distance between column and row data points (in arc seconds)
     double col_step, row_step;
-    
+
     // pointers to the actual grid data allocated here
-    int **in_data;
+    int *in_data;
     // float (*out_data)[ARRAY_SIZE_1];
 
     // output nodes
@@ -83,7 +82,7 @@ public:
     bool open ( const std::string& file_base );
 
     // return if array was successfully opened or not
-    inline bool is_open() { 
+    inline bool is_open() {
       if ( array_in != NULL ) {
 	return array_in->is_open();
       } else {
@@ -129,12 +128,10 @@ public:
     inline point_list get_corner_list() const { return corner_list; }
     inline point_list get_fitted_list() const { return fitted_list; }
 
-    inline int get_array_elev( int col, int row ) {
-        return in_data[col][row];
-    }
-    inline void set_array_elev( int col, int row, int val ) {
-        in_data[col][row] = val;
-    }
+    int get_array_elev( int col, int row ) const;
+    void set_array_elev( int col, int row, int val );
+
+
     inline Point3D get_fitted_pt( int i ) {
         return fitted_list[i];
     }

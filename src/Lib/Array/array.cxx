@@ -17,25 +17,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
-//
-// $Id: array.cxx,v 1.24 2005-11-10 16:26:59 curt Exp $
 
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
+#include <cstring>
+
 #include <simgear/compiler.h>
-
-#include <iostream>
-#include <string>
-
-#include <simgear/constants.h>
 #include <simgear/misc/sgstream.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/strutils.hxx>
 #include <simgear/misc/sg_path.hxx>
-#include <simgear/math/leastsqs.hxx>
 
 #include "array.hxx"
 
@@ -47,10 +41,7 @@ TGArray::TGArray( void ):
   fitted_in(NULL)
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "class TGArray CONstructor called." );
-    in_data = new int*[ARRAY_SIZE_1];
-    for (int i = 0; i < ARRAY_SIZE_1; i++) {
-        in_data[i] = new int[ARRAY_SIZE_1]; 
-    }
+    in_data = new int[ARRAY_SIZE_1 * ARRAY_SIZE_1];
 }
 
 
@@ -59,9 +50,7 @@ TGArray::TGArray( const string &file ):
   fitted_in(NULL)
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "class TGArray CONstructor called." );
-    in_data = new int* [ARRAY_SIZE_1];
-    for (int i = 0; i < ARRAY_SIZE_1; i++)
-        in_data[i] = new int[ARRAY_SIZE_1];
+    in_data = new int[ARRAY_SIZE_1 * ARRAY_SIZE_1];
 
     SG_LOG(SG_GENERAL, SG_ALERT, "ps TGArray CONstructor called." );
 
@@ -137,7 +126,7 @@ TGArray::parse( SGBucket& b ) {
 
         for ( int i = 0; i < cols; i++ ) {
             for ( int j = 0; j < rows; j++ ) {
-        	*array_in >> in_data[i][j];
+                *array_in >> in_data[(i * ARRAY_SIZE_1) + j];
             }
         }
 
@@ -160,12 +149,7 @@ TGArray::parse( SGBucket& b ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
         SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
-        for ( int i = 0; i < cols; i++ ) {
-            for ( int j = 0; j < rows; j++ ) {
-                in_data[i][j] = 0;
-            }
-        }
-
+        memset(in_data, 0, sizeof(int) * ARRAY_SIZE_1 * ARRAY_SIZE_1);
         SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
     }
 
@@ -209,7 +193,7 @@ bool TGArray::write( const string root_dir, SGBucket& b ) {
     gzprintf( fp, "%d %d %d %d\n", cols, (int)col_step, rows, (int)row_step );
     for ( int i = 0; i < cols; ++i ) {
 	for ( int j = 0; j < rows; ++j ) {
-	    gzprintf( fp, "%d ", (int)in_data[i][j] );
+	    gzprintf( fp, "%d ", get_array_elev(i, j) );
 	}
 	gzprintf( fp, "\n" );
     }
@@ -225,7 +209,7 @@ void TGArray::remove_voids( ) {
     // array is a void.)
     bool have_void = true;
     int last_elev = -32768;
-    for ( int pass = 0; pass < 2 && have_void; ++pass ) { 
+    for ( int pass = 0; pass < 2 && have_void; ++pass ) {
         // attempt to fill in any void data horizontally
         for ( int i = 0; i < cols; i++ ) {
             int j;
@@ -234,10 +218,10 @@ void TGArray::remove_voids( ) {
             last_elev = -32768;
             have_void = false;
             for ( j = 0; j < rows; j++ ) {
-                if ( in_data[i][j] > -9000 ) {
-                    last_elev = in_data[i][j];
+                if ( get_array_elev(i,j) > -9000 ) {
+                    last_elev = get_array_elev(i,j) ;
                 } else if ( last_elev > -9000 ) {
-                    in_data[i][j] = last_elev;
+                    set_array_elev(i, j, last_elev);
                 } else {
                     have_void = true;
                 }
@@ -246,10 +230,10 @@ void TGArray::remove_voids( ) {
             last_elev = -32768;
             have_void = false;
             for ( j = rows - 1; j >= 0; j-- ) {
-                if ( in_data[i][j] > -9000 ) {
-                    last_elev = in_data[i][j];
+                if ( get_array_elev(i,j) > -9000 ) {
+                    last_elev = get_array_elev(i,j);
                 } else if ( last_elev > -9000 ) {
-                    in_data[i][j] = last_elev;
+                    set_array_elev(i, j, last_elev);
                 } else {
                     have_void = true;
                 }
@@ -264,10 +248,10 @@ void TGArray::remove_voids( ) {
             last_elev = -32768;
             have_void = false;
             for ( i = 0; i < cols; i++ ) {
-                if ( in_data[i][j] > -9999 ) {
-                    last_elev = in_data[i][j];
+                if ( get_array_elev(i,j) > -9999 ) {
+                    last_elev = get_array_elev(i,j);
                 } else if ( last_elev > -9999 ) {
-                    in_data[i][j] = last_elev;
+                    set_array_elev(i, j, last_elev);
                 } else {
                     have_void = true;
                 }
@@ -277,10 +261,10 @@ void TGArray::remove_voids( ) {
             last_elev = -32768;
             have_void = false;
             for ( i = cols - 1; i >= 0; i-- ) {
-                if ( in_data[i][j] > -9999 ) {
-                    last_elev = in_data[i][j];
+                if ( get_array_elev(i,j) > -9999 ) {
+                    last_elev = get_array_elev(i,j);
                 } else if ( last_elev > -9999 ) {
-                    in_data[i][j] = last_elev;
+                    set_array_elev(i, j, last_elev);
                 } else {
                     have_void = true;
                 }
@@ -294,8 +278,8 @@ void TGArray::remove_voids( ) {
         // as a panic fall back.
         for ( int i = 0; i < cols; i++ ) {
             for ( int j = 0; j < rows; j++ ) {
-                if ( in_data[i][j] <= -9999 ) {
-                    in_data[i][j] = 0;
+                if ( get_array_elev(i,j) <= -9999 ) {
+                    set_array_elev(i, j, 0);
                 }
             }
         }
@@ -305,7 +289,7 @@ void TGArray::remove_voids( ) {
 
 // add a node to the output corner node list
 void TGArray::add_corner_node( int i, int j, double val ) {
-    
+
     double x = (originx + i * col_step) / 3600.0;
     double y = (originy + j * row_step) / 3600.0;
     SG_LOG(SG_GENERAL, SG_DEBUG, "originx = " << originx << "  originy = " << originy );
@@ -355,9 +339,9 @@ int TGArray::fit( double error ) {
     colmax = cols;
     rowmin = 0;
     rowmax = rows;
-    cout << "  Fitting region = " << colmin << "," << rowmin << " to " 
+    cout << "  Fitting region = " << colmin << "," << rowmin << " to "
 	 << colmax << "," << rowmax << endl;;
-    
+
     // generate corners list
     add_corner_node( colmin, rowmin, in_data[colmin][rowmin] );
     add_corner_node( colmin, rowmax-1, in_data[colmin][rowmax] );
@@ -402,16 +386,16 @@ int TGArray::fit( double error ) {
 		max_error = least_squares_max_error(x, y, n, m, b);
 
 		/*
-		printf("%d - %d  ave error = %.2f  max error = %.2f  y = %.2f*x + %.2f\n", 
+		printf("%d - %d  ave error = %.2f  max error = %.2f  y = %.2f*x + %.2f\n",
 		start, end, ave_error, max_error, m, b);
-		
+
 		f = fopen("gnuplot.dat", "w");
 		for ( j = 0; j <= end; j++) {
-		    fprintf(f, "%.2f %.2f\n", 0.0 + ( j * col_step ), 
+		    fprintf(f, "%.2f %.2f\n", 0.0 + ( j * col_step ),
 			    in_data[row][j]);
 		}
 		for ( j = start; j <= end; j++) {
-		    fprintf(f, "%.2f %.2f\n", 0.0 + ( j * col_step ), 
+		    fprintf(f, "%.2f %.2f\n", 0.0 + ( j * col_step ),
 			    in_data[row][j]);
 		}
 		fclose(f);
@@ -422,7 +406,7 @@ int TGArray::fit( double error ) {
 		if ( max_error > error_sq ) {
 		    good_fit = false;
 		}
-		
+
 		end++;
 	    }
 
@@ -436,14 +420,14 @@ int TGArray::fit( double error ) {
 		// the data set
 		end--;
 	    }
-	    
+
 	    least_squares(x, y, n, &m, &b);
 	    // ave_error = least_squares_error(x, y, n, m, b);
 	    max_error = least_squares_max_error(x, y, n, m, b);
 
 	    /*
 	    printf("\n");
-	    printf("%d - %d  ave error = %.2f  max error = %.2f  y = %.2f*x + %.2f\n", 
+	    printf("%d - %d  ave error = %.2f  max error = %.2f  y = %.2f*x + %.2f\n",
 		   start, end, ave_error, max_error, m, b);
 	    printf("\n");
 
@@ -468,9 +452,9 @@ int TGArray::fit( double error ) {
 
 	dem = fopen("gnuplot.dat", "w");
 	for ( j = 0; j < ARRAY_SIZE_1; j++) {
-	    fprintf(dem, "%.2f %.2f\n", 0.0 + ( j * col_step ), 
+	    fprintf(dem, "%.2f %.2f\n", 0.0 + ( j * col_step ),
 		    in_data[j][row]);
-	} 
+	}
 	fclose(dem);
 	*/
 
@@ -499,7 +483,7 @@ double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
         for ( int col = 0; col < cols; col++ ) {
             Point3D p1(originx + col * col_step, originy + row * row_step, 0.0);
             double dist = p0.distance3D( p1 );
-            double elev = in_data[col][row];
+            double elev = get_array_elev(col, row);
             if ( dist < mindist && elev > -9000 ) {
                 mindist = dist;
                 minelev = elev;
@@ -526,8 +510,8 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     int x1, x2, x3, y1, y2, y3;
     float z1, z2, z3;
     int xindex, yindex;
- 
-    /* determine if we are in the lower triangle or the upper triangle 
+
+    /* determine if we are in the lower triangle or the upper triangle
        ______
        |   /|
        |  / |
@@ -566,17 +550,17 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     if ( dx > dy ) {
 	// lower triangle
 
-	x1 = xindex; 
-	y1 = yindex; 
-	z1 = in_data[x1][y1];
+	x1 = xindex;
+	y1 = yindex;
+	z1 = get_array_elev(x1, y1);
 
-	x2 = xindex + 1; 
-	y2 = yindex; 
-	z2 = in_data[x2][y2];
-				  
-	x3 = xindex + 1; 
-	y3 = yindex + 1; 
-	z3 = in_data[x3][y3];
+	x2 = xindex + 1;
+	y2 = yindex;
+	z2 = get_array_elev(x2, y2);
+
+	x3 = xindex + 1;
+	y3 = yindex + 1;
+	z3 = get_array_elev(x3, y3);
 
         if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
             // don't interpolate off a void
@@ -585,7 +569,7 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 
 	zA = dx * (z2 - z1) + z1;
 	zB = dx * (z3 - z1) + z1;
-	
+
 	if ( dx > SG_EPSILON ) {
 	    elev = dy * (zB - zA) / dx + zA;
 	} else {
@@ -594,18 +578,18 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     } else {
 	// upper triangle
 
-	x1 = xindex; 
-	y1 = yindex; 
-	z1 = in_data[x1][y1];
+	x1 = xindex;
+	y1 = yindex;
+	z1 = get_array_elev(x1, y1);
 
-	x2 = xindex; 
-	y2 = yindex + 1; 
-	z2 = in_data[x2][y2];
-				  
-	x3 = xindex + 1; 
-	y3 = yindex + 1; 
-	z3 = in_data[x3][y3];
- 
+	x2 = xindex;
+	y2 = yindex + 1;
+	z2 = get_array_elev(x2, y2);
+
+	x3 = xindex + 1;
+	y3 = yindex + 1;
+	z3 = get_array_elev(x3, y3);
+
         if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
             // don't interpolate off a void
             return closest_nonvoid_elev( lon, lat );
@@ -613,7 +597,7 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 
 	zA = dy * (z2 - z1) + z1;
 	zB = dy * (z3 - z1) + z1;
-	
+
 	if ( dy > SG_EPSILON ) {
 	    elev = dx * (zB - zA) / dy    + zA;
 	} else {
@@ -657,7 +641,7 @@ void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
     cout << "  fg_root = " << fg_root << "  Base Path = " << base_path << endl;
     dir = fg_root + "/" + base_path;
     cout << "  Dir = " << dir << endl;
-    
+
     // stat() directory and create if needed
     errno = 0;
     result = stat(dir.c_str(), &stat_buf);
@@ -695,9 +679,9 @@ void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 	}
 
 	for ( i = 1; i <= excount; i++ ) {
-	    fscanf(fd, "%d %lf %lf %lf\n", &junki, 
+	    fscanf(fd, "%d %lf %lf %lf\n", &junki,
 		   &exnodes[i][0], &exnodes[i][1], &exnodes[i][2]);
-	    printf("(extra) %d %.2f %.2f %.2f\n", 
+	    printf("(extra) %d %.2f %.2f %.2f\n",
 		    i, exnodes[i][0], exnodes[i][1], exnodes[i][2]);
 	}
 	fclose(fd);
@@ -720,7 +704,7 @@ void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 
     // now write out extra node data
     for ( i = 1; i <= excount; i++ ) {
-	fprintf(fd, "%d %.2f %.2f %.2f\n", 
+	fprintf(fd, "%d %.2f %.2f %.2f\n",
 		i, exnodes[i][0], exnodes[i][1], exnodes[i][2]);
     }
 
@@ -729,9 +713,9 @@ void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
     for ( j = rowmin; j <= rowmax; j++ ) {
 	for ( i = colmin; i <= colmax; i++ ) {
 	    if ( out_data[i][j] > -9000.0 ) {
-		fprintf(fd, "%d %.2f %.2f %.2f\n", 
-			count++, 
-			originx + (double)i * col_step, 
+		fprintf(fd, "%d %.2f %.2f %.2f\n",
+			count++,
+			originx + (double)i * col_step,
 			originy + (double)j * row_step,
 			out_data[i][j]);
 	    }
@@ -744,10 +728,17 @@ void TGArray::outputmesh_output_nodes( const string& fg_root, SGBucket& p )
 #endif
 
 
-TGArray::~TGArray( void ) {
-    for (int i = 0; i < ARRAY_SIZE_1; i++)
-        delete [] in_data[i];
-    delete [] in_data;
+TGArray::~TGArray( void )
+{
+    delete in_data;
 }
 
+int TGArray::get_array_elev( int col, int row ) const
+{
+    return in_data[(col * ARRAY_SIZE_1) + row];
+}
 
+void TGArray::set_array_elev( int col, int row, int val )
+{
+    in_data[(col * ARRAY_SIZE_1) + row] = val;
+}
