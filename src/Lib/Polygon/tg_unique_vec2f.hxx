@@ -1,4 +1,5 @@
 #include <boost/unordered_set.hpp>
+#include <simgear/math/SGMisc.hxx>
 
 // Implement Unique SGVec2f list
 
@@ -41,8 +42,8 @@ public:
 
         /* only hash lon, lat - we want to detect dups in 2d only */
         unsigned long long raw_pt[2];
-        raw_pt[0] = (unsigned long long)( round(vec.x() * PROXIMITY_MULTIPLIER) );
-        raw_pt[1] = (unsigned long long)( round(vec.y() * PROXIMITY_MULTIPLIER) );
+        raw_pt[0] = (unsigned long long)( SGMisc<float>::round(vec.x() * PROXIMITY_MULTIPLIER) );
+        raw_pt[1] = (unsigned long long)( SGMisc<float>::round(vec.y() * PROXIMITY_MULTIPLIER) );
 
         unsigned char* it = (unsigned char*)raw_pt;
         for ( unsigned i=0; i<sizeof( raw_pt ); i++ ) {
