@@ -8,6 +8,11 @@ include (CPack)
 
 project(TerraGear)
 
+# read 'version' file into a variable (stripping any newlines or spaces)
+file(READ version versionFile)
+string(STRIP ${versionFile} TERRAGEAR_VERSION)
+file(WRITE ${PROJECT_BINARY_DIR}/src/Include/version.h "#define TERRAGEAR_VERSION ${TERRAGEAR_VERSION}")
+
 set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "add a postfix, usually d on windows")
 set(CMAKE_RELEASE_POSTFIX "" CACHE STRING "add a postfix, usually empty on windows")
 set(CMAKE_RELWITHDEBINFO_POSTFIX "" CACHE STRING "add a postfix, usually empty on windows")
