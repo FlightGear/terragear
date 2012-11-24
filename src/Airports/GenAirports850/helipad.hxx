@@ -30,8 +30,8 @@ public:
     void BuildBtg( tgpolygon_list& heli_polys,
                    tglightcontour_list& heli_lights,
                    tgcontour_list& slivers,
-                   tgPolygon& apt_base,
-                   tgPolygon& apt_clearing );
+                   tgpolygon_list& apt_base_polys,
+                   tgpolygon_list& apt_clearing_polys );
 
     SGGeod GetLoc()
     {
@@ -45,11 +45,6 @@ public:
 
     void BuildShoulder( tgpolygon_list& rwy_polys,
                         tgcontour_list& slivers );
-
-    void BuildShoulder( tgpolygon_list& rwy_polys,
-                        tgcontour_list& slivers,
-                        tgPolygon& apt_base,
-                        tgPolygon& apt_clearing );
 
 private:
     struct TGRunway {

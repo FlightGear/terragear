@@ -200,14 +200,15 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
 void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
                         tglightcontour_list& rwy_lights,
                         tgcontour_list& slivers,
-                        tgPolygon& apt_base,
-                        tgPolygon& apt_clearing )
+                        tgpolygon_list& apt_base_polys,
+                        tgpolygon_list& apt_clearing_polys )
 {
     BuildBtg( rwy_polys, rwy_lights, slivers );
 
     // generate area around helipad
     double    length, width;
-    tgContour base, safe_base;
+    tgContour base_contour, safe_base_contour;
+    tgPolygon base, safe_base;
 
     length = heli.length;
     width  = heli.width;
@@ -219,45 +220,20 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
         width += 2.0;
     }
 
-    base      = gen_helipad_area_w_extend(length * 0.25 , width * 0.25 );
-    base      = tgContour::Snap( base, gSnap );
+    base_contour = gen_helipad_area_w_extend(length * 0.25 , width * 0.25 );
+    base_contour = tgContour::Snap( base_contour, gSnap );
+    base.AddContour( base_contour );
 
     // also clear a safe area around the pad
-    safe_base = gen_helipad_area_w_extend( length * 0.5, width * 0.5 );
-    safe_base = tgContour::Snap( safe_base, gSnap );
+    safe_base_contour = gen_helipad_area_w_extend( length * 0.5, width * 0.5 );
+    safe_base_contour = tgContour::Snap( safe_base_contour, gSnap );
+    safe_base.AddContour( safe_base_contour );
 
     // add this to the airport clearing
-    apt_clearing = tgPolygon::Union(safe_base, apt_clearing);
+    apt_clearing_polys.push_back( safe_base );
 
     // and add the clearing to the base
-    apt_base = tgPolygon::Union( base, apt_base );
-}
-
-void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
-                             tgcontour_list& slivers,
-                             tgPolygon& apt_base,
-                             tgPolygon& apt_clearing )
-{
-    tgPolygon shoulder;
-
-    for (unsigned int i=0; i<shoulder_polys.size(); i++) {
-        shoulder = shoulder_polys[i];
-
-        // Clip the new polygon against what ever has already been created.
-        tgPolygon clipped = tgPolygon::DiffWithAccumulator( shoulder );
-        tgPolygon::RemoveSlivers( clipped, slivers );
-
-        // Split long edges to create an object that can better flow with
-        // the surface terrain
-        tgPolygon split = tgPolygon::SplitLongEdges( clipped, 400.0 );
-        shoulder_polys[i] = split;
-
-        rwy_polys.push_back( shoulder_polys[i] );
-
-        tgPolygon::AddToAccumulator( shoulder );
-    }
-
-    // base and clearing calculated when generating the shoulders
+    apt_base_polys.push_back( base );
 }
 
 void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,

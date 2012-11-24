@@ -30,8 +30,8 @@ public:
 
     int  BuildBtg( tgpolygon_list& rwy_polys,
                    tgcontour_list& slivers,
-                   tgPolygon& apt_base,
-                   tgPolygon& apt_clearing,
+                   tgpolygon_list& apt_base_polys,
+                   tgpolygon_list& apt_clearing_polys,
                    std::string& shapefile_name );
 
     FeatureList* GetFeatures()
@@ -63,10 +63,13 @@ private:
     BezContour* cur_contour;
 
     // outer boundary as convex hull
-    point_list hull;
+    // point_list hull;
 
     // Converted polygon after parsing complete
     tgPolygon pre_tess;
+
+    // shoulders after BTG built
+    tgpolygon_list shoulder_polys;
 
     // pavement definitions have multiple linear features (markings and lights for each contour)
     LinearFeature* cur_feature;

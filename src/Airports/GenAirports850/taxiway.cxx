@@ -159,21 +159,24 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
     return 0;
 }
 
-int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
+int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, std::string& shapefile_name )
 {
-    tgContour base, safe_base;
+    tgContour base_contour, safe_base_contour;
+    tgPolygon base, safe_base;
 
     BuildBtg( rwy_polys, rwy_lights, slivers, shapefile_name );
 
-    base = tgContour::Expand( taxi_contour, 20.0);
+    base_contour = tgContour::Expand( taxi_contour, 20.0);
+    base.AddContour( base_contour );
 
-    safe_base = tgContour::Expand( taxi_contour, 50.0);
-
+    safe_base_contour = tgContour::Expand( taxi_contour, 50.0);
+    safe_base.AddContour( safe_base_contour );
+    
     // add this to the airport clearing
-    apt_clearing = tgPolygon::Union( safe_base, apt_clearing);
+    apt_clearing_polys.push_back( safe_base );
 
     // and add the clearing to the base
-    apt_base = tgPolygon::Union( base, apt_base );
+    apt_base_polys.push_back( base );
 
     return 0;
 }

@@ -2305,6 +2305,35 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
     return result;
 }
 
+tgPolygon tgPolygon::Union( const tgpolygon_list& polys )
+{
+    ClipperLib::Polygons clipper_result;
+    ClipperLib::Clipper c;
+    TGTriNodes all_nodes;
+    tgPolygon  result;
+
+    /* before union - gather all nodes */
+    for ( unsigned int i=0; i<polys.size(); i++ ) {
+        for ( unsigned int j = 0; j < polys[i].Contours(); ++j ) {
+            for ( unsigned int k = 0; k < polys[i].ContourSize( j ); ++k ) {
+                all_nodes.unique_add( Point3D::fromSGGeod( polys[i].GetNode(j, k) ) );
+            }
+        }
+    }
+
+    c.Clear();
+    for (unsigned int i=0; i<polys.size(); i++) {
+        ClipperLib::Polygons clipper_clip = tgPolygon::ToClipper( polys[i] );
+        c.AddPolygons(clipper_clip, ClipperLib::ptSubject);
+    }
+    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    return result;
+}
+
 tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 {
     tgPolygon result;

@@ -285,8 +285,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     tgcontour_list slivers;
     tgcontour_list line_slivers;
 
-    tgPolygon      apt_base;
-    tgPolygon      apt_clearing;
+    tgpolygon_list apt_base_polys;
+    tgpolygon_list apt_clearing_polys;
 
     // runways
     tgpolygon_list rwy_polys;
@@ -397,7 +397,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
             else
             {
-                runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base, apt_clearing, shapefile );
+                runways[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base_polys, apt_clearing_polys, shapefile );
             }
 
             // Now try to merge any slivers we found
@@ -433,7 +433,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
             else
             {
-                helipads[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base, apt_clearing );
+                helipads[i]->BuildBtg( rwy_polys, rwy_lights, slivers, apt_base_polys, apt_clearing_polys );
             }
 
             // Now try to merge any slivers we found
@@ -463,7 +463,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
             else
             {
-                pavements[i]->BuildBtg( pvmt_polys, slivers, apt_base, apt_clearing, shapefile );
+                pavements[i]->BuildBtg( pvmt_polys, slivers, apt_base_polys, apt_clearing_polys, shapefile );
             }
 
             // Now try to merge any slivers we found
@@ -497,7 +497,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
             else
             {
-                taxiways[i]->BuildBtg( pvmt_polys, rwy_lights, slivers, apt_base, apt_clearing, shapefile );
+                taxiways[i]->BuildBtg( pvmt_polys, rwy_lights, slivers, apt_base_polys, apt_clearing_polys, shapefile );
             }
 
             // Now try to merge any slivers we found
@@ -517,15 +517,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             if ( runways[i]->GetsShoulder() )
             {
                 slivers.clear();
-
-                if (boundary.size())
-                {
-                    runways[i]->BuildShoulder( rwy_polys, slivers );
-                }
-                else
-                {
-                    runways[i]->BuildShoulder( rwy_polys, slivers, apt_base, apt_clearing );
-                }
+                runways[i]->BuildShoulder( rwy_polys, slivers );
 
                 // Now try to merge any slivers we found
                 tgPolygon::MergeSlivers( rwy_polys, slivers );
@@ -545,15 +537,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             if ( helipads[i]->GetsShoulder() )
             {
                 slivers.clear();
-
-                if (boundary.size())
-                {
-                    helipads[i]->BuildShoulder( rwy_polys, slivers );
-                }
-                else
-                {
-                    helipads[i]->BuildShoulder( rwy_polys, slivers, apt_base, apt_clearing );
-                }
+                helipads[i]->BuildShoulder( rwy_polys, slivers );
 
                 // Now try to merge any slivers we found
                 tgPolygon::MergeSlivers( rwy_polys, slivers );
@@ -563,6 +547,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     }
 
     // build the base and clearing if there's a boundary
+    tgPolygon apt_base, apt_clearing;
     if (boundary.size())
     {
         SG_LOG(SG_GENERAL, SG_INFO, "Build " << boundary.size() << " Boundary Polys ");
@@ -573,6 +558,9 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             SG_LOG(SG_GENERAL, SG_DEBUG, "Build Userdefined boundary " << i + 1 << " of " << boundary.size());
             boundary[i]->BuildBtg( apt_base, apt_clearing, shapefile );
         }
+    } else {
+        apt_base     = tgPolygon::Union( apt_base_polys );
+        apt_clearing = tgPolygon::Union( apt_clearing_polys );
     }
 
     if ( apt_base.TotalNodes() == 0 )
@@ -592,9 +580,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
     // add segments to polygons to remove any possible "T"
     // intersections
-    //TGTriNodes tmp_pvmt_nodes;
-    //TGTriNodes tmp_feat_nodes;
-
     UniqueSGGeodSet tmp_pvmt_nodes;
     UniqueSGGeodSet tmp_feat_nodes;
 
@@ -791,7 +776,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
        intersecting contours */
     base_poly = tgPolygon::Simplify( base_poly );
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly ");
+    SG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly : " << base_poly.Contours() << " contours " );
     base_poly.Tesselate();
     SG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly - done : Triangles = " << base_poly.Triangles());
     // should we texture base here?

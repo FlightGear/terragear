@@ -415,7 +415,7 @@ std::string ClosedPoly::GetMaterial( int surface )
     return material;
 }
 
-int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
+int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, std::string& shapefile_name )
 {
     if (is_pavement && pre_tess.Contours() )
     {
@@ -427,10 +427,10 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
         safe_base = tgPolygon::Expand( pre_tess, 50.0);
 
         // add this to the airport clearing
-        apt_clearing = tgPolygon::Union( safe_base, apt_clearing);
+        apt_clearing_polys.push_back( safe_base );
 
         // and add the clearing to the base
-        apt_base = tgPolygon::Union( base, apt_base );
+        apt_base_polys.push_back( base );
     }
 
     // clean up to save ram : we're done here...

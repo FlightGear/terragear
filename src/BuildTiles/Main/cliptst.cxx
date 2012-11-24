@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
   if (argc > 5 && strcasecmp(argv[5], "EVENODD") == 0)
       clip_pft = pftEvenOdd;
 
-  cout << "\nclipping ... ";
+  cout << "\nclipping ... \n";
 
   Clipper c;
   c.AddPolygons(subject, ptSubject);
@@ -301,6 +301,15 @@ int main(int argc, char* argv[])
 //    elapsed = double(qpc2.QuadPart - qpc1.QuadPart) / qpf.QuadPart;
 //    cout << "\nEllapsed: " << elapsed;
 //  }
+
+  for ( int i=0; i<solution.size(); i++ ) {
+      Polygon contour = solution[i];
+      if ( Orientation( contour ) ) {
+          cout << "solution contour " << i << " is true \n";
+      } else {
+          cout << "solution contour " << i << " is false \n";
+      }
+  }
 
   if (succeeded) {
       SaveToFile("solution.txt", solution, precision);

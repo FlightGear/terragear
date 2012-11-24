@@ -847,9 +847,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
 }
 
 void Runway::BuildShoulder( tgpolygon_list& rwy_polys,
-                            tgcontour_list& slivers,
-                            tgPolygon& apt_base,
-                            tgPolygon& apt_clearing )
+                            tgcontour_list& slivers )
 {
     tgPolygon base, safe_base;
     tgPolygon shoulder;
@@ -867,40 +865,6 @@ void Runway::BuildShoulder( tgpolygon_list& rwy_polys,
         shoulder_polys[i] = split;
 
         rwy_polys.push_back( shoulder_polys[i] );
-
-        tgPolygon::AddToAccumulator( shoulder );
-
-        // also clear a safe area around the runway
-        base      = tgPolygon::Expand( shoulder, 20.0);
-        safe_base = tgPolygon::Expand( shoulder, 50.0);
-
-        // add this to the airport clearing
-        apt_clearing = tgPolygon::Union( safe_base, apt_clearing );
-
-        // and add the clearing to the base
-        apt_base = tgPolygon::Union( base, apt_base );
-    }
-}
-
-void Runway::BuildShoulder( tgpolygon_list& rwy_polys,
-                            tgcontour_list& slivers )
-{
-    tgPolygon shoulder;
-
-    for (unsigned int i=0; i<shoulder_polys.size(); i++) {
-        shoulder = shoulder_polys[i];
-
-        // Clip the new polygon against what ever has already been created.
-        tgPolygon clipped = tgPolygon::DiffWithAccumulator( shoulder );
-        tgPolygon::RemoveSlivers( clipped, slivers );
-
-        // Split long edges to create an object that can better flow with
-        // the surface terrain
-        tgPolygon split = tgPolygon::SplitLongEdges( clipped, 400.0 );
-        shoulder_polys[i] = split;
-
-        rwy_polys.push_back( shoulder_polys[i] );
-
         tgPolygon::AddToAccumulator( shoulder );
     }
 }

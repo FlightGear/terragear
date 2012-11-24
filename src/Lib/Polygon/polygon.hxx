@@ -594,6 +594,7 @@ public:
     static void      SetDump( bool dmp );
     static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Union( const tgPolygon& subject, tgPolygon& clip );
+    static tgPolygon Union( const tgpolygon_list& polys );
     static tgPolygon Diff( const tgPolygon& subject, tgPolygon& clip );
     static tgPolygon Intersect( const tgPolygon& subject, const tgPolygon& clip );
 
