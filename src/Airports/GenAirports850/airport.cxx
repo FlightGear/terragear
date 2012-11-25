@@ -984,7 +984,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         }
     }
 
-    double average = tgAverageElevationGeod( root, elev_src, nodes.get_list() );
+    double average = tgAverageElevation( root, elev_src, nodes.get_list() );
 
     // Now build the fitted airport surface ...
 

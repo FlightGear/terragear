@@ -23,13 +23,9 @@
 #include "apt_surface.hxx"
 
 
-// lookup node elevations for each point in the point_list.  Returns
+// lookup node elevations for each point in the SGGeod list.  Returns
 // average of all points.  Doesn't modify the original list.
 double tgAverageElevation( const std::string &root, const string_list elev_src,
-                           const point_list points_source );
-
-// same - with a geod list
-double tgAverageElevationGeod( const std::string &root, const string_list elev_src,
                            const std::vector<SGGeod> points_source );
 
 // lookup node elevations for each point in the specified nurbs++
