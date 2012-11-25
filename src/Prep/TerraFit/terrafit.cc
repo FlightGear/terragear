@@ -31,13 +31,19 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+     
 #ifndef _MSC_VER
 #  include <unistd.h>
-#  include <getopt.h>
+#  ifdef __APPLE__
+#    include <Prep/Terra/getopt.h>
+#  else
+#    include <getopt.h>
+#  endif
 #else
 #  define S_ISDIR(a)	((a)&_S_IFDIR)
 #  include <Prep/Terra/getopt.h>
 #endif
+     
 #include <zlib.h>
 
 #include <simgear/debug/logstream.hxx>
