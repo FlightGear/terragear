@@ -51,10 +51,13 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sg_dir.hxx>
 #include <simgear/structure/exception.hxx>
-
+#include <simgear/threads/SGQueue.hxx>
+#include <simgear/threads/SGThread.hxx>
+     
 #include <boost/foreach.hpp>
 
 #include <Array/array.hxx>
+
 
 #include <Prep/Terra/GreedyInsert.h>
 #include <Prep/Terra/Map.h>
@@ -63,6 +66,9 @@
 using std::istream;
 using simgear::Dir;
 using simgear::PathList;
+
+SGLockedQueue<SGPath> global_workQueue;
+
 
 /*
  * Benchmark: Processing 800 individual buckets:
@@ -116,6 +122,7 @@ Terra::real error_threshold=40.0;
 unsigned int min_points=50;
 unsigned int point_limit=1000;
 bool force=false;
+unsigned int num_threads = 1;
 
 inline int goal_not_met(Terra::GreedySubdivision* mesh)
 {
@@ -161,18 +168,10 @@ void fit_file(const SGPath& path) {
 
     SGPath outPath(path.dir());
     outPath.append(path.file_base() + ".fit.gz");
-
-    if (!force) {
-        if (outPath.exists() && (path.modTime() < outPath.modTime())) {
-            SG_LOG(SG_GENERAL, SG_INFO ,"Skipping " << outPath << ", source " << path << " is older");
-            return;
-        }
-    } else {
-        if ( outPath.exists() ) {
-            unlink( outPath.c_str() );
-        }
+    if ( outPath.exists() ) {
+        unlink( outPath.c_str() );
     }
-
+    
     SGBucket bucket(0,0); // dummy bucket
     TGArray inarray(path.dir() + "/" + path.file_base());
     inarray.parse(bucket);
@@ -212,6 +211,35 @@ void fit_file(const SGPath& path) {
     gzclose(fp);
 }
 
+void queue_fit_file(const SGPath& path)
+{
+    SGPath outPath(path.dir());
+    outPath.append(path.file_base() + ".fit.gz");
+
+    if (!force) {
+        if (outPath.exists() && (path.modTime() < outPath.modTime())) {
+            SG_LOG(SG_GENERAL, SG_INFO ,"Skipping " << outPath << ", source " << path << " is older");
+            return;
+        }
+    }
+    
+    global_workQueue.push(path);
+}
+
+class FitThread : public SGThread
+{
+public:
+    virtual void run()
+    {
+        while (!global_workQueue.empty()) {
+            SGPath path = global_workQueue.pop();
+            if (path.exists()) {
+                fit_file(path);
+            }
+        }
+    }
+};
+
 void walk_path(const SGPath& path) {
     
     if (!path.exists()) {
@@ -220,7 +248,8 @@ void walk_path(const SGPath& path) {
     }
     
     if ((path.lower_extension() == "arr") || (path.complete_lower_extension() == "arr.gz")) {
-        fit_file(path.str());
+        SG_LOG(SG_GENERAL, SG_INFO, "will queue " << path);
+        queue_fit_file(path);
     } else if (path.isDir()) {
         Dir d(path);
         int flags = Dir::TYPE_DIR | Dir::TYPE_FILE | Dir::NO_DOT_OR_DOTDOT;
@@ -279,7 +308,7 @@ int main(int argc, char** argv) {
     sglog().setLogLevels( SG_ALL, SG_DEBUG );
     int option;
 
-    while ((option=getopt_long(argc,argv,"hm:x:e:v",options,NULL))!=-1) {
+    while ((option=getopt_long(argc,argv,"hm:x:e:v:j:",options,NULL))!=-1) {
         switch (option) {
             case 'h':
                 usage(argv[0],"");
@@ -300,6 +329,9 @@ int main(int argc, char** argv) {
                 SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " Version 1.0");
                 exit(0);
                 break;
+            case 'j':
+                num_threads = atoi(optarg);
+                break;
             case '?':
                 usage(argv[0],std::string("Unknown option:")+(char)optopt);
                 exit(1);
@@ -312,10 +344,28 @@ int main(int argc, char** argv) {
 
     if (optind<argc) {
         while (optind<argc) {
+            SG_LOG(SG_GENERAL, SG_INFO, "walking " << SGPath(argv[optind]));
             walk_path(SGPath(argv[optind++]));
         }
     } else {
         SG_LOG(SG_GENERAL, SG_INFO, "Use 'terrafit --help' for commands");
         exit(1);
     }
+    
+    std::vector<FitThread*> threads;
+    for (int t=0; t<num_threads; ++t) {
+        FitThread* thread = new FitThread;
+        thread->start();
+        threads.push_back(thread);
+    }
+    
+    while (!global_workQueue.empty()) {
+        sleep(1);
+    }
+    
+    for (int t=0; t<num_threads; ++t) {
+        threads[t]->join();
+    }
+    
+    printf("Work queue is empty\n");
 }
