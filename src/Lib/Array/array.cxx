@@ -149,7 +149,7 @@ TGArray::parse( SGBucket& b ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
         SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
-        memset(in_data, 0, sizeof(int) * ARRAY_SIZE_1 * ARRAY_SIZE_1);
+        memset(in_data, 0, sizeof(int) * cols * rows);
         SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
     }
 
