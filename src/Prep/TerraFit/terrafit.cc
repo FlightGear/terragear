@@ -41,7 +41,9 @@
 #  endif
 #else
 #  define S_ISDIR(a)	((a)&_S_IFDIR)
+#  include <windows.h>
 #  include <Prep/Terra/getopt.h>
+#  define sleep(x) Sleep(x*1000)
 #endif
      
 #include <zlib.h>
@@ -353,7 +355,7 @@ int main(int argc, char** argv) {
     }
     
     std::vector<FitThread*> threads;
-    for (int t=0; t<num_threads; ++t) {
+    for (unsigned int t=0; t<num_threads; ++t) {
         FitThread* thread = new FitThread;
         thread->start();
         threads.push_back(thread);
@@ -363,7 +365,7 @@ int main(int argc, char** argv) {
         sleep(1);
     }
     
-    for (int t=0; t<num_threads; ++t) {
+    for (unsigned int t=0; t<num_threads; ++t) {
         threads[t]->join();
     }
     
