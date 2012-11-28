@@ -45,7 +45,6 @@ private:
     // convert the BezierPoly to a normal Poly (adding nodes for the curves)
     void CreateConvexHull( void );
     void ConvertContour( BezContour* src, tgContour& dst );
-    void ExpandContour( point_list& src, TGPolygon& dst, double dist );
     std::string GetMaterial( int surface );
 
 
@@ -63,9 +62,6 @@ private:
 
     // contour that nodes will be added until done
     BezContour* cur_contour;
-
-    // outer boundary as convex hull
-    // point_list hull;
 
     // Converted polygon after parsing complete
     tgPolygon pre_tess;

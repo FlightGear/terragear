@@ -1,3 +1,8 @@
+#ifdef _MSC_VER
+#  include <windows.h>
+#  define sleep(x) Sleep(x*1000)
+#endif
+
 #include <cstring>
 
 #include <simgear/debug/logstream.hxx>

@@ -1,3 +1,4 @@
+#include <ctime>
 #include "debug.hxx"
 
 std::map<long, std::string> thread_prefix_map;
