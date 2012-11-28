@@ -63,7 +63,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
         for ( i = 0; i < points.size(); ++i ) {
             if ( points[i].getElevationM() < -9000.0 && !found_one ) {
                 first = points[i];
-                SG_LOG( SG_GENERAL, SG_DEBUG, "found first = " << first );
+                GENAPT_LOG( SG_GENERAL, SG_DEBUG, "found first = " << first );
 
                 found_one = true;
             }
@@ -81,7 +81,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
 
                 if ( array.open(array_path) ) {
                     found_file = true;
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
+                    GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
                 }
                 i++;
             }
@@ -123,7 +123,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
         count++;
     }
     double average = total / (double) count;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of point list = " << average);
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of point list = " << average);
 
     return average;
 }
@@ -178,7 +178,7 @@ void tgCalcElevations( const std::string &root, const string_list elev_src,
 
                 if ( array.open(array_path) ) {
                     found_file = true;
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
+                    GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
                 }
                 j++;
             }
@@ -230,7 +230,7 @@ void tgCalcElevations( const std::string &root, const string_list elev_src,
         }
     }
     double grid_average = total / (double) count;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of matrix = " << grid_average);
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of matrix = " << grid_average);
 #endif
 }
 
@@ -247,13 +247,13 @@ void tgClampElevations( SimpleMatrix &Pts,
         for ( i = 0; i < Pts.cols(); ++i ) {
             SGGeod p = Pts.element(i,j);
             if ( p.getElevationM() < center_m - max_clamp_m ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM()
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM()
                        << " to " << center_m - max_clamp_m );
                 p.setElevationM( center_m - max_clamp_m );
                 Pts.set(i, j, p);
             }
             if ( p.getElevationM() > center_m + max_clamp_m ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM()
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM()
                        << " to " << center_m + max_clamp_m );
                 p.setElevationM( center_m + max_clamp_m );
                 Pts.set(i, j, p);

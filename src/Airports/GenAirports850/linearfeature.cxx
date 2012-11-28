@@ -25,7 +25,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
     // clear anything in the point list
     points.Erase();
@@ -53,7 +53,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if (curNode->GetMarking() != cur_mark->type)
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.GetSize() );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.GetSize() );
 
                 // marking has ended, or changed
                 cur_mark->end_idx = points.GetSize();
@@ -62,7 +62,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             }
             else
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->start_idx << " with type " << cur_mark->type );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->start_idx << " with type " << cur_mark->type );
             }
         }
 
@@ -71,7 +71,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if (curNode->GetMarking())
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
 
                 // we aren't watching a mark, and this node has one
                 cur_mark = new Marking;
@@ -90,7 +90,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if (curNode->GetLighting() != cur_light->type)
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting has changed from " << cur_light->type << " to " << curNode->GetLighting() << " save light from " << cur_light->start_idx << " to " << points.GetSize() );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting has changed from " << cur_light->type << " to " << curNode->GetLighting() << " save light from " << cur_light->start_idx << " to " << points.GetSize() );
 
                 // lighting has ended, or changed : add final light
                 cur_light->end_idx = points.GetSize();
@@ -99,7 +99,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             }
             else
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Lighting from " << cur_light->start_idx << " with type " << cur_light->type );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Lighting from " << cur_light->start_idx << " with type " << cur_light->type );
             }
         }
 
@@ -108,7 +108,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if (curNode->GetLighting())
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Lighting from " << points.GetSize() << " with type " << curNode->GetLighting() );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Lighting from " << points.GetSize() << " with type " << curNode->GetLighting() );
 
                 // we aren't watching a mark, and this node has one
                 cur_light = new Lighting;
@@ -169,12 +169,12 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve with cp in line : convert to linear: " << description << ": theta is " << theta1 );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve with cp in line : convert to linear: " << description << ": theta is " << theta1 );
                 curve_type = CURVE_LINEAR;
             }
             else
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve withOUT cp in line : keep quadtratic: " << description << ": theta is " << theta1 );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve withOUT cp in line : keep quadtratic: " << description << ": theta is " << theta1 );
             }
         }
 
@@ -182,30 +182,30 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve with cp1 in line : " << description << ": theta is " << theta1 );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve with cp1 in line : " << description << ": theta is " << theta1 );
 
                 if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               and cp2 in line : " << description << ": theta is " << theta2 << " CONVERTING TO LINEAR" );
+                    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\n               and cp2 in line : " << description << ": theta is " << theta2 << " CONVERTING TO LINEAR" );
 
                     curve_type = CURVE_LINEAR;
                 }
                 else
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 NOT in line : " << description << ": theta is " << theta2 );
+                    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 NOT in line : " << description << ": theta is " << theta2 );
                 }
             }
             else
             {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve withOUT cp1 in line : keep quadtratic: " << description << ": theta is " << theta1 );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve withOUT cp1 in line : keep quadtratic: " << description << ": theta is " << theta1 );
 
                 if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 IS in line : " << description << ": theta is " << theta2 );
+                    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 IS in line : " << description << ": theta is " << theta2 );
                 }
                 else
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "\n               AND cp2 NOT in line : " << description << ": theta is " << theta2 );
+                    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\n               AND cp2 NOT in line : " << description << ": theta is " << theta2 );
                 }
             }
         }
@@ -216,8 +216,8 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             {
                 // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 1/2 meter
                 num_segs = ((int)total_dist + 1) * 2;
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( < 4.0) so num_segs is " << num_segs );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( < 4.0) so num_segs is " << num_segs );
             }
             else
             {
@@ -228,16 +228,16 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         {
             // If total distance is > 800 meters, then we need to modify num Segments so that each segment <= 100 meters
             num_segs = total_dist / 100.0f + 1;
-            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( > 100.0) so num_segs is " << num_segs );
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( > 100.0) so num_segs is " << num_segs );
         }
         else
         {
             if (curve_type != CURVE_LINEAR)
             {
                 num_segs = 8;
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
             }
             else
             {
@@ -272,11 +272,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 
                 if (p==0)
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
+                    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
                 }
                 else
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at " << curLoc );
+                    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at " << curLoc );
                 }
 
                 // now set set prev and cur locations for the next iteration
@@ -298,11 +298,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 
                     if (p==0)
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
+                        GENAPT_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
                     }
                     else
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at " << curLoc );
+                        GENAPT_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at " << curLoc );
                     }
 
                     // now set set prev and cur locations for the next iteration
@@ -316,7 +316,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 // just add the one vertex - dist is small
                 points.AddNode(curLoc);
 
-                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
+                GENAPT_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
                 curLoc = nextLoc;
             }
@@ -325,7 +325,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 
     if (closed)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at " << curLoc );
+        GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at " << curLoc );
 
         // need to add the markings for last segment
         points.AddNode(curLoc);
@@ -334,7 +334,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     // check for marking that goes all the way to the end...
     if (cur_mark)
     {
-       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.GetSize() );
+       GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.GetSize() );
 
        cur_mark->end_idx = points.GetSize()-1;
        marks.push_back(cur_mark);
@@ -344,7 +344,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     // check for lighting that goes all the way to the end...
     if (cur_light)
     {
-       SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting from " << cur_light->start_idx << " with type " << cur_light->type << " ends at the end of the contour: " << points.GetSize() );
+       GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Lighting from " << cur_light->start_idx << " with type " << cur_light->type << " ends at the end of the contour: " << points.GetSize() );
 
        cur_light->end_idx = points.GetSize()-1;
        lights.push_back(cur_light);
@@ -373,7 +373,7 @@ SGGeod LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur
     double  courseOffset, distOffset;
     SGGeod  pt;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << gPrev << "), "
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << gPrev << "), "
                                                                   "cur (" << gCur  << "), "
                                                                  "next (" << gNext << ")" );
 
@@ -399,13 +399,13 @@ SGGeod LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur
     theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext, cp ) );
 
     if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (degenerate case) " << description << ": theta is " << theta );
+        GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (degenerate case) " << description << ": theta is " << theta );
 
         // straight line blows up math - offset 90 degree and dist is as given
         courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
         distOffset   = offset_by;
     }  else  {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (normal case) " << description << ": theta is " << theta );
+        GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: (normal case) " << description << ": theta is " << theta );
 
         // calculate correct distance for the offset point
         if (cp.z() < 0.0f) {
@@ -418,7 +418,7 @@ SGGeod LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur
 
     // calculate the point from cur
     pt = SGGeodesy::direct(gCur, courseOffset, distOffset);
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << distOffset << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << distOffset << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
 
     return pt;
 }
@@ -428,7 +428,7 @@ SGGeod LinearFeature::OffsetPointFirst( const SGGeod& cur, const SGGeod& next, d
     double courseOffset;
     SGGeod pt;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << cur  << "), "
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << cur  << "), "
                                                             "next (" << next << ")" );
 
     // find the offset angle
@@ -437,7 +437,7 @@ SGGeod LinearFeature::OffsetPointFirst( const SGGeod& cur, const SGGeod& next, d
 
     // calculate the point from cur
     pt = SGGeodesy::direct( cur, courseOffset, offset_by );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
 
     return pt;
 }
@@ -447,7 +447,7 @@ SGGeod LinearFeature::OffsetPointLast( const SGGeod& prev, const SGGeod& cur, do
     double courseOffset;
     SGGeod pt;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << prev  << "), "
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << prev  << "), "
                                                               "cur (" << cur << ")" );
 
     // find the offset angle
@@ -456,7 +456,7 @@ SGGeod LinearFeature::OffsetPointLast( const SGGeod& prev, const SGGeod& cur, do
 
     // calculate the point from cur
     pt = SGGeodesy::direct( cur, courseOffset, offset_by );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
 
     return pt;
 }
@@ -606,13 +606,13 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 break;
 
             default:
-                SG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << marks[i]->type );
+                GENAPT_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << marks[i]->type );
                 exit(1);
         }
 
         for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
             // for each point on the PointsList, generate a quad from
             // start to next, offset by 2 distnaces from the edge
 
@@ -713,7 +713,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
         for (unsigned int j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for light " << i << " whose start idx is " << lights[i]->start_idx << " and end idx is " << lights[i]->end_idx << " cur idx is " << j );
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for light " << i << " whose start idx is " << lights[i]->start_idx << " and end idx is " << lights[i]->end_idx << " cur idx is " << j );
             // for each point on the PointsList, offset by 2 distnaces from the edge, and add a point to the superpoly contour
             if (j == lights[i]->start_idx)
             {
@@ -797,7 +797,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
         // if there were lights generated - create the superpoly
         if (cur_light_contour.ContourSize())
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding light contour with " << cur_light_contour.ContourSize() << " lights" );
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding light contour with " << cur_light_contour.ContourSize() << " lights" );
             cur_light_contour.SetFlag("");
             lighting_polys.push_back(cur_light_contour);
         }
@@ -805,35 +805,35 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
         // create the superpoly for the alternating light color
         if (alt_light_contour.ContourSize())
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding light contour with " << cur_light_contour.ContourSize() << " lights" );
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: Adding light contour with " << cur_light_contour.ContourSize() << " lights" );
             alt_light_contour.SetFlag("");
             lighting_polys.push_back(cur_light_contour);
         }
         else
         {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: No points for linear feature " << description << " light index " << i );
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::Finish: No points for linear feature " << description << " light index " << i );
         }
     }
 
     return 1;
 }
 
-int LinearFeature::BuildBtg(tgpolygon_list& line_polys, tglightcontour_list& lights, bool make_shapefiles )
+int LinearFeature::BuildBtg(tgpolygon_list& line_polys, tglightcontour_list& lights, tgAccumulator& accum, bool make_shapefiles )
 {
     tgPolygon poly;
     SGGeod    min, max, minp, maxp;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
         // Clipping and triangulation need to copy texparams, and material info...
-        marking_polys[i] = tgPolygon::DiffWithAccumulator( marking_polys[i] );
+        marking_polys[i] = accum.Diff( marking_polys[i] );
         line_polys.push_back( marking_polys[i] );
 
-        tgPolygon::AddToAccumulator( marking_polys[i] );
+        accum.Add( marking_polys[i] );
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: add " << lighting_polys.size() << " light defs");
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: add " << lighting_polys.size() << " light defs");
     for ( unsigned i = 0; i < lighting_polys.size(); i++)
     {
         lights.push_back( lighting_polys[i] );

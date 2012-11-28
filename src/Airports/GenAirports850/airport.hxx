@@ -3,6 +3,7 @@
 
 #include <simgear/timing/timestamp.hxx>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/threads/SGThread.hxx>
 
 #include "runway.hxx"
 #include "object.hxx"
@@ -11,10 +12,7 @@
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
 #include "linked_objects.hxx"
-
-typedef std::map<std::string, std::vector<int>, std::less<std::string> > debug_map;
-typedef debug_map::iterator debug_map_iterator;
-typedef debug_map::const_iterator debug_map_const_iterator;
+#include "debug.hxx"
 
 class Airport
 {

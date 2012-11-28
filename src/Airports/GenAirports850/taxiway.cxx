@@ -40,7 +40,7 @@ Taxiway::Taxiway(char* definition)
         &lat, &lon, designation, &heading, &length, &threshold, &overrun,
         &width, lighting, &surface, &shoulder, &markings, &smoothness, &signs);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Read taxiway: (" << lon << "," << lat << ") heading: " << heading << " length: " << length << " width: " << width );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read taxiway: (" << lon << "," << lat << ") heading: " << heading << " length: " << length << " width: " << width );
 
     // adjust length and width from feet to meters
     length *= SG_FEET_TO_METER;
@@ -79,7 +79,7 @@ void Taxiway::GenLights(tglightcontour_list& rwy_lights)
 
 }
 
-int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, std::string& shapefile_name )
+int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
 {
     std::string material;
 
@@ -127,7 +127,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface);
+        GENAPT_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface);
         throw sg_exception("unknown runway type!");
     }
 
@@ -136,10 +136,10 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
         taxi_poly.AddContour( taxi_contour );
 
         tgPolygon::ToShapefile( taxi_poly, "./airport_dbg", std::string("preclip"), shapefile_name );
-        tgPolygon::AccumulatorToShapefiles( "./airport_dbg", "accum" );
+        accum.ToShapefiles( "./airport_dbg", "accum" );
     }
 
-    tgPolygon clipped = tgContour::DiffWithAccumulator( taxi_contour );
+    tgPolygon clipped = accum.Diff( taxi_contour );
     tgPolygon split   = tgPolygon::SplitLongEdges( clipped, 100 );
 
     tgPolygon::RemoveSlivers( split, slivers );
@@ -154,17 +154,17 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
         tgPolygon::ToShapefile( split, "./airport_dbg", std::string("postclip"), shapefile_name );
     }
 
-    tgContour::AddToAccumulator( taxi_contour );
+    accum.Add( taxi_contour );
 
     return 0;
 }
 
-int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, std::string& shapefile_name )
+int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, tgAccumulator& accum, std::string& shapefile_name )
 {
     tgContour base_contour, safe_base_contour;
     tgPolygon base, safe_base;
 
-    BuildBtg( rwy_polys, rwy_lights, slivers, shapefile_name );
+    BuildBtg( rwy_polys, rwy_lights, slivers, accum, shapefile_name );
 
     base_contour = tgContour::Expand( taxi_contour, 20.0);
     base.AddContour( base_contour );

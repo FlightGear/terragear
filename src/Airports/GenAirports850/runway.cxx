@@ -48,7 +48,7 @@ Runway::Runway(char* definition)
     // calculate runway heading and length (used a lot)
     SGGeodesy::inverse( GetStart(), GetEnd(), rwy.heading, az2, rwy.length );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << rwy.lon[0] << "," << rwy.lat[0] << ") to (" << rwy.lon[1] << "," << rwy.lat[1] << ") heading: " << rwy.heading << " length: " << rwy.length << " width: " << rwy.width );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << rwy.lon[0] << "," << rwy.lat[0] << ") to (" << rwy.lon[1] << "," << rwy.lat[1] << ") heading: " << rwy.heading << " length: " << rwy.length << " width: " << rwy.width );
 
 } 
 
@@ -57,7 +57,7 @@ WaterRunway::WaterRunway(char* definition)
 {
     sscanf(definition, "%lf %d %s %lf %lf %s %lf %lf", &width, &buoys, rwnum[0], &lat[0], &lon[0], rwnum[1], &lat[1], &lon[1]);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
 }
 
 tgContour WaterRunway::GetBuoys()
@@ -87,7 +87,7 @@ tgContour WaterRunway::GetBuoys()
     return buoys_nodes;
 }
 
-int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, std::string& shapefile_name )
+int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
 {
     if ( rwy.surface == 1 /* Asphalt */ )
     {
@@ -123,7 +123,7 @@ int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
+        GENAPT_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
         throw sg_exception("unknown runway type!");
     }
 
@@ -132,8 +132,8 @@ int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights
     {
         case 1: // asphalt:
         case 2: // concrete
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete " << rwy.surface);
-            gen_rwy( rwy_polys, slivers, shapefile_name );
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete " << rwy.surface);
+            gen_rwy( rwy_polys, slivers, accum, shapefile_name );
             gen_runway_lights( rwy_lights );
             break;
 
@@ -141,38 +141,38 @@ int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights
         case 4: // Dirt
         case 5: // Gravel
         case 12: // dry lakebed
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Grass, Dirt, Gravel or Dry Lakebed " << rwy.surface );
-            gen_simple_rwy( rwy_polys, slivers );
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Grass, Dirt, Gravel or Dry Lakebed " << rwy.surface );
+            gen_simple_rwy( rwy_polys, slivers, accum );
             gen_runway_lights( rwy_lights );
             break;
 
         case 13: // water
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Water");
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Water");
             break;
 
         case 14: // snow
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Snow");
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Snow");
             break;
 
         case 15: // transparent
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: transparent");
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: transparent");
             break;
 
         default: // unknown
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: unknown: " << rwy.surface);
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: unknown: " << rwy.surface);
             break;
     }
 
     return 0;
 }
 
-int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, std::string& shapefile_name )
+int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, tgAccumulator& accum, std::string& shapefile_name )
 {
     tgContour base_contour, safe_base_contour;
     tgPolygon base, safe_base;
     double shoulder_width = 0.0;
 
-    BuildBtg( rwy_polys, rwy_lights, slivers, shapefile_name );
+    BuildBtg( rwy_polys, rwy_lights, slivers, accum, shapefile_name );
 
     // generate area around runways
     if ( (rwy.shoulder > 0) && (rwy.surface < 3) ) {

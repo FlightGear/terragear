@@ -1,26 +1,17 @@
+#ifndef __SCHEDULER_HXX__
+#define __SCHEDULER_HXX__
+
 #include <string>
 #include <iostream>
 #include <fstream>
 
-#include <Poco/Mutex.h>
-#include <Poco/Pipe.h>
-#include <Poco/PipeStream.h>
-#include <Poco/Process.h>
-#include <Poco/Runnable.h>
-#include <Poco/Semaphore.h>
-#include <Poco/Thread.h>
-#include <Poco/Timespan.h>
-#include <Poco/Net/ServerSocket.h>
-#include <Poco/Net/SocketAddress.h>
-#include <Poco/Net/SocketStream.h>
-#include <Poco/Net/Socket.h>
-#include <Poco/Net/StreamSocket.h>
-
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/timing/timestamp.hxx>
-#include <CGAL/Plane_3.h>
+#include <simgear/threads/SGThread.hxx>
+#include <simgear/threads/SGQueue.hxx>
 #include <Geometry/rectangle.hxx>
+#include "airport.hxx"
 
 #define P_STATE_INIT        (0)
 #define P_STATE_PARSE       (1)
@@ -43,27 +34,29 @@
 #define PL_STATE_ALL_LAUNCHED       (3)
 #define PL_STATE_DONE               (10)
 
-using namespace Poco;
-
 // Forward declaration
 class Scheduler;
 
 class AirportInfo
 {
 public:
-    AirportInfo( string id, long p, double s )
+    AirportInfo()
+    {
+    }
+
+    AirportInfo( std::string id, long p, double s )
     {
         icao = id;
         pos  = p;
         snap = s;
-        
+
         numRunways = -1;
         numPavements = -1;
         numFeats = -1;
         numTaxiways = -1;
     }
 
-    string  GetIcao( void )                         { return icao; }
+    std::string GetIcao( void )                     { return icao; }
     long    GetPos( void )                          { return pos; }
     double  GetSnap( void )                         { return snap; }
 
@@ -82,106 +75,36 @@ public:
     friend ostream& operator<<(ostream& output, const AirportInfo& ai);
 
 private:
-    string      icao;
+    std::string icao;
     long        pos;
 
     int         numRunways;
     int         numPavements;
     int         numFeats;
     int         numTaxiways;
-    
+
     SGTimeStamp parseTime;
     SGTimeStamp buildTime;
     SGTimeStamp cleanTime;
     SGTimeStamp tessTime;
 
     double      snap;
-    string      errString;
-};
-typedef std::vector <AirportInfo> parseList;
-
-class ProcessInfo
-{
-public:
-    ProcessInfo( AirportInfo* pai, const ProcessHandle ph, Net::StreamSocket s );
-
-    void                SetTimeout( void );
-    SGTimeStamp         GetTimeout( void )    { return timeout; }
-    string              GetIcao( void )       { return pInfo->GetIcao(); }
-    Net::StreamSocket   GetSocket( void )     { return sock; }
-    int                 GetState( void )      { return state; }
-    AirportInfo         GetInfo( void )       { return *pInfo; }
-    AirportInfo*        GetInfoPtr( void )    { return pInfo; }
-
-    void                SetErrorString( char *e )   { pInfo->SetErrorString( e ); }
-
-    int                 HandleLine( void );
-    void                Kill( void );
-    void                CloseSock( void )     { sock.close(); }
-
-private:
-    AirportInfo*         pInfo;
-    ProcessHandle        procHandle;
-    Net::StreamSocket    sock;
-    Net::SocketStreamBuf *pssb;
-    istream              *pin;
-    int                  state;
-    SGTimeStamp          timeout;
-};
-typedef std::vector <ProcessInfo> ProcessInfoList;
-
-class ProcessList
-{
-public:
-    ProcessList( int n, string& summaryfile, Scheduler* pScheduler );
-
-    // The main thread needs to wait until a slot is ready for creating a new
-    // Parser child process
-    inline void WaitForSlot(void);
-    
-    // When a slot is available, the main thread calls launch to instantiate a 
-    // new pareser process
-    void Launch( string command, string work_dir, string file, AirportInfo* pai, bool last, string debug_path,
-                 const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_taxiways,  const debug_map& debug_features );
-    Timespan GetNextTimeout();
-    void HandleReceivedMessages( Net::Socket::SocketList& slr );
-    void HandleTimeouts();
-    void HandleFinished( void );
-    void Monitor();
-    
-private:
-    Semaphore           available;
-    Semaphore           ready;
-    Mutex               lock;
-    ProcessInfoList     plist;
-    Net::ServerSocket*  pss;
-    int                 state;
-    unsigned int        threads;
-    ofstream            csvfile;
-    Scheduler*          scheduler;
+    std::string errString;
 };
 
-class ProcessMonitor : public Runnable
-{
-public:
-    ProcessMonitor(ProcessList* pl);
-    virtual void run();
-
-private:
-    ProcessList*    plist;    
-};
+extern SGLockedQueue<AirportInfo> global_workQueue;
 
 class Scheduler
 {
 public:
-    Scheduler(string& cmd, string& datafile, const string& root, const string_list& elev_src);
+    Scheduler(std::string& datafile, const std::string& root, const string_list& elev_src);
 
-    long            FindAirport( string icao );
-    void            AddAirport(  string icao );
+    long            FindAirport( std::string icao );
+    void            AddAirport(  std::string icao );
     bool            AddAirports( long start_pos, tg::Rectangle* boundingBox );
     void            RetryAirport( AirportInfo* pInfo );
 
-    void            Schedule( int num_threads, string& summaryfile );
+    void            Schedule( int num_threads, std::string& summaryfile );
 
     // Debug
     void            set_debug( std::string path, std::vector<std::string> runway_defs,
@@ -189,27 +112,19 @@ public:
                                                  std::vector<std::string> taxiway_defs,
                                                  std::vector<std::string> feature_defs );
 
-
-    Net::ServerSocket*  GetServerSocket( void ) { return &ss; }
-
 private:
-    bool            IsAirportDefinition( char* line, string icao );
+    bool            IsAirportDefinition( char* line, std::string icao );
 
-    string          command;
-    string          filename;
+    std::string     filename;
     string_list     elevation;
-    string          work_dir;
-
-    Net::ServerSocket  ss;
-
-    // List of positions in database file to parse
-    parseList       originalList;
-    parseList       retryList;
+    std::string     work_dir;
 
     // debug
-    string          debug_path;
+    std::string     debug_path;
     debug_map       debug_runways;
     debug_map       debug_pavements;
     debug_map       debug_taxiways;
     debug_map       debug_features;
 };
+
+#endif

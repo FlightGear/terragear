@@ -14,6 +14,7 @@ public:
     int BuildBtg( tgpolygon_list& taxi_polys,
                   tglightcontour_list& taxi_lights,
                   tgcontour_list& slivers,
+                  tgAccumulator& accum,
                   std::string& shapefile_name );
 
     int BuildBtg( tgpolygon_list& taxi_polys,
@@ -21,6 +22,7 @@ public:
                   tgcontour_list& slivers,
                   tgpolygon_list& apt_base_polys,
                   tgpolygon_list& apt_clearing_polys,
+                  tgAccumulator& accum,
                   std::string& shapefile_name );
 
 private:

@@ -26,12 +26,14 @@ public:
     // Build BTG for pavements for airports with no boundary
     int  BuildBtg( tgpolygon_list& rwy_polys,
                    tgcontour_list& slivers,
+                   tgAccumulator& accum,
                    std::string& shapefile_name );
 
     int  BuildBtg( tgpolygon_list& rwy_polys,
                    tgcontour_list& slivers,
                    tgpolygon_list& apt_base_polys,
                    tgpolygon_list& apt_clearing_polys,
+                   tgAccumulator& accum,
                    std::string& shapefile_name );
 
     FeatureList* GetFeatures()

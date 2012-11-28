@@ -23,6 +23,8 @@
 #include <fstream>
 #include <limits.h>
 
+#include <simgear/threads/SGThread.hxx>
+#include <simgear/threads/SGGuard.hxx>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
 #include <Geometry/point3d.hxx>
@@ -1834,61 +1836,6 @@ tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
     return result;
 }
 
-tgPolygon tgContour::DiffWithAccumulator( const tgContour& subject )
-{
-    tgPolygon result;
-    TGTriNodes all_nodes;
-
-    /* before diff - gather all nodes */
-    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
-        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ));
-    }
-
-    unsigned int  num_hits = 0;
-    tg::Rectangle box1 = subject.GetBoundingBox();
-
-    ClipperLib::Polygon clipper_subject = tgContour::ToClipper( subject );
-    ClipperLib::Polygons clipper_result;
-
-    ClipperLib::Clipper c;
-    c.Clear();
-
-    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
-
-    // clip result against all polygons in the accum that intersect our bb
-    for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
-        tg::Rectangle box2 = BoundingBox_FromClipper( clipper_accumulator[i] );
-
-        if ( box2.intersects(box1) )
-        {
-            c.AddPolygons(clipper_accumulator[i], ClipperLib::ptClip);
-            num_hits++;
-        }
-    }
-
-    if (num_hits) {
-        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-            exit(-1);
-        }
-        result = tgPolygon::FromClipper( clipper_result );
-        result = tgPolygon::AddColinearNodes( result, all_nodes );
-    } else {
-        result.AddContour( subject );
-    }
-
-    return result;
-}
-
-void tgContour::AddToAccumulator( const tgContour& subject )
-{
-    tgPolygon poly;
-    poly.AddContour( subject );
-
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( poly );
-    clipper_accumulator.push_back( clipper_subject );
-}
-
 tgPolygon tgPolygon::Union( const tgContour& subject, tgPolygon& clip )
 {
     tgPolygon result;
@@ -2424,77 +2371,6 @@ void clipperToShapefile( ClipperLib::Polygons polys, const std::string& path, co
     tgPolygon::ToShapefile( poly, path, layer, name);
 }
 
-void tgPolygon::AccumulatorToShapefiles( const std::string& path, const std::string& layer_prefix )
-{
-    char shapefile[16];
-    char layer[16];
-
-    for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
-        sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
-        sprintf( shapefile, "accum_%d", i );
-        clipperToShapefile( clipper_accumulator[i], path, layer, std::string(shapefile) );
-    }
-}
-
-tgPolygon tgPolygon::DiffWithAccumulator( const tgPolygon& subject )
-{
-    tgPolygon result;
-    TGTriNodes all_nodes;
-
-    /* before diff - gather all nodes */
-    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
-        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
-        }
-    }
-
-    unsigned int  num_hits = 0;
-    tg::Rectangle box1 = subject.GetBoundingBox();
-
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
-    ClipperLib::Polygons clipper_result;
-
-    ClipperLib::Clipper c;
-    c.Clear();
-
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-
-    // clip result against all polygons in the accum that intersect our bb
-    for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
-        tg::Rectangle box2 = BoundingBox_FromClipper( clipper_accumulator[i] );
-
-        if ( box2.intersects(box1) )
-        {
-            c.AddPolygons(clipper_accumulator[i], ClipperLib::ptClip);
-            num_hits++;
-        }
-    }
-
-    if (num_hits) {
-        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-            exit(-1);
-        }
-
-        result = tgPolygon::FromClipper( clipper_result );
-        result = tgPolygon::AddColinearNodes( result, all_nodes );
-
-        // Make sure we keep texturing info
-        result.SetMaterial( subject.GetMaterial() );
-        result.SetTexParams( subject.GetTexParams() );
-    } else {
-        result = subject;
-    }
-
-    return result;
-}
-
-void tgPolygon::AddToAccumulator( const tgPolygon& subject )
-{
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
-    clipper_accumulator.push_back( clipper_subject );
-}
-
 // Move slivers from in polygon to out polygon.
 void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
 {
@@ -2841,8 +2717,11 @@ bool tgPolygon_index_init( const std::string& path )
     return true;
 }
 
+SGMutex index_next_mutex;
 static long int tgPolygon_index_next()
 {
+    SGGuard<SGMutex> g(index_next_mutex);
+
     ++poly_index;
 
     FILE *fp = fopen( poly_path.c_str(), "w" );
@@ -3349,4 +3228,130 @@ std::ostream& operator<< ( std::ostream& output, const tgTexParams& subject )
     output << "method: " << subject.method;
     
     return output;
+}
+
+tgPolygon tgAccumulator::Diff( const tgContour& subject )
+{
+    tgPolygon  result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
+        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ));
+    }
+
+    unsigned int  num_hits = 0;
+    tg::Rectangle box1 = subject.GetBoundingBox();
+
+    ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Polygons clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+
+    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
+
+    // clip result against all polygons in the accum that intersect our bb
+    for (unsigned int i=0; i < accum.size(); i++) {
+        tg::Rectangle box2 = BoundingBox_FromClipper( accum[i] );
+
+        if ( box2.intersects(box1) )
+        {
+            c.AddPolygons(accum[i], ClipperLib::ptClip);
+            num_hits++;
+        }
+    }
+
+    if (num_hits) {
+        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
+            exit(-1);
+        }
+        result = tgPolygon::FromClipper( clipper_result );
+        result = tgPolygon::AddColinearNodes( result, all_nodes );
+    } else {
+        result.AddContour( subject );
+    }
+
+    return result;
+}
+
+void tgAccumulator::Add( const tgContour& subject )
+{
+    tgPolygon poly;
+    poly.AddContour( subject );
+
+    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( poly );
+    accum.push_back( clipper_subject );
+}
+
+void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix )
+{
+    char shapefile[16];
+    char layer[16];
+
+    for (unsigned int i=0; i < accum.size(); i++) {
+        sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
+        sprintf( shapefile, "accum_%d", i );
+        clipperToShapefile( accum[i], path, layer, std::string(shapefile) );
+    }
+}
+
+tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
+{
+    tgPolygon result;
+    TGTriNodes all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+        }
+    }
+
+    unsigned int  num_hits = 0;
+    tg::Rectangle box1 = subject.GetBoundingBox();
+
+    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
+    ClipperLib::Polygons clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+
+    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+
+    // clip result against all polygons in the accum that intersect our bb
+    for (unsigned int i=0; i < accum.size(); i++) {
+        tg::Rectangle box2 = BoundingBox_FromClipper( accum[i] );
+
+        if ( box2.intersects(box1) )
+        {
+            c.AddPolygons(accum[i], ClipperLib::ptClip);
+            num_hits++;
+        }
+    }
+
+    if (num_hits) {
+        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
+            exit(-1);
+        }
+
+        result = tgPolygon::FromClipper( clipper_result );
+        result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+        // Make sure we keep texturing info
+        result.SetMaterial( subject.GetMaterial() );
+        result.SetTexParams( subject.GetTexParams() );
+    } else {
+        result = subject;
+    }
+
+    return result;
+}
+
+void tgAccumulator::Add( const tgPolygon& subject )
+{
+    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
+    accum.push_back( clipper_subject );
 }

@@ -2,6 +2,8 @@
 #define _LINEARFEATURE_H_
 
 #include <Polygon/polygon.hxx>
+#include "beznode.hxx"
+
 
 #define LF_NONE                     (0)
 #define LF_SOLID_YELLOW             (1)
@@ -90,7 +92,7 @@ public:
     }
 
     int Finish( bool closed, unsigned int idx );
-    int BuildBtg( tgpolygon_list& line_polys, tglightcontour_list& lights, bool debug );
+    int BuildBtg( tgpolygon_list& line_polys, tglightcontour_list& lights, tgAccumulator& accum, bool debug );
 
 private:
     SGGeod OffsetPointFirst(  const SGGeod& cur,  const SGGeod& next, double offset_by );

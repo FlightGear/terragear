@@ -31,7 +31,7 @@
 #include <simgear/debug/logstream.hxx>
 #include <Lib/Polygon/polygon.hxx>
 
-
+#include "debug.hxx"
 
 /***
  * A dirt simple matrix class for our convenience based on top of SGGeod
@@ -56,10 +56,10 @@ public:
   inline SGGeod element( int col, int row ) {
     int index = ( row * _cols ) + col;
     if ( col < 0 || col >= _cols ) {
-        SG_LOG(SG_GENERAL, SG_WARN, "column out of bounds on read (" << col << " >= " << _cols << ")");
+        GENAPT_LOG(SG_GENERAL, SG_WARN, "column out of bounds on read (" << col << " >= " << _cols << ")");
       int *p = 0; *p = 1; // force crash
     } else if ( row < 0 || row >= _rows ) {
-        SG_LOG(SG_GENERAL, SG_WARN, "row out of bounds on read (" << row << " >= " << _rows << ")");
+        GENAPT_LOG(SG_GENERAL, SG_WARN, "row out of bounds on read (" << row << " >= " << _rows << ")");
       int *p = 0; *p = 1; // force crash
     }
     return m.GetNode(index);
@@ -68,10 +68,10 @@ public:
   inline void set( int col, int row, SGGeod p ) {
     int index = ( row * _cols ) + col;
     if ( col < 0 || col >= _cols ) {
-        SG_LOG(SG_GENERAL, SG_WARN,"column out of bounds on set (" << col << " >= " << _cols << ")");
+        GENAPT_LOG(SG_GENERAL, SG_WARN,"column out of bounds on set (" << col << " >= " << _cols << ")");
       int *p = 0; *p = 1; // force crash
     } else if ( row < 0 || row >= _rows ) {
-        SG_LOG(SG_GENERAL, SG_WARN,"row out of bounds on set (" << row << " >= " << _rows << ")");
+        GENAPT_LOG(SG_GENERAL, SG_WARN,"row out of bounds on set (" << row << " >= " << _rows << ")");
       int *p = 0; *p = 1; // force crash
     }
     m.SetNode(index, p);

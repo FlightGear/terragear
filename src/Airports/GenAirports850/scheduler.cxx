@@ -1,7 +1,5 @@
 #include <cstring>
 
-#include <Poco/Environment.h>
-
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sgstream.hxx>
 
@@ -11,135 +9,7 @@
 
 extern double gSnap;
 
-/*** PROCESS INFO ***/
-ProcessInfo::ProcessInfo( AirportInfo* pai, const ProcessHandle ph, Net::StreamSocket s ) : procHandle(ph)
-{
-    pInfo       = pai;
-    sock        = s;
-    pssb        = new Net::SocketStreamBuf( s );
-    pin         = new istream( pssb );
-    state       = P_STATE_INIT;
-    SetTimeout();
-}
-
-void ProcessInfo::SetTimeout( void )
-{
-    SGTimeStamp now;
-    SGTimeStamp to;
-
-    now.stamp();
-    switch( state ) {
-        case P_STATE_INIT:
-            to.setTime(P_STATE_INIT_TIME, 0);
-            break;
-
-        case P_STATE_PARSE:
-            to.setTime(P_STATE_PARSE_TIME, 0);
-            break;
-
-        case P_STATE_BUILD:
-            to.setTime(P_STATE_BUILD_TIME, 0);
-            break;
-
-        case P_STATE_TRIANGULATE:
-            to.setTime(P_STATE_TRIANGULATE_TIME, 0);
-            break;
-
-        case P_STATE_OUTPUT:
-            to.setTime(P_STATE_OUTPUT_TIME, 0);
-            break;
-    }
-
-    timeout = (now + to);
-}
-
-void ProcessInfo::Kill( void )
-{
-    SGTimeStamp now;
-    now.stamp();
-
-    // kill the process
-    Process::kill( procHandle.id() );
-
-    // wait for the zombie
-    procHandle.wait();
-
-    // mark process info - so we can reclaim it
-    state = P_STATE_KILLED;
-}
-
-int ProcessInfo::HandleLine( void )
-{
-    char line[256];
-    
-    pin->getline( line, 256 );
-    if ( pin->rdstate() != ifstream::goodbit ) {
-        SG_LOG( SG_GENERAL, SG_INFO, pInfo->GetIcao() << ": ProcessInfo::HandleLine read from socket error " << pin->rdstate() );
-
-        state = P_STATE_KILLED;
-    } else {
-        pInfo->SetErrorString( line );
-
-        // Print the line
-        SG_LOG( SG_GENERAL, SG_INFO, pInfo->GetIcao() << ": " << line);
-
-        // Update state
-        if ( strstr( line, "Parse Complete " ) != NULL ) {
-            // Grab the stats
-            int rwys, pvmnts, feats, twys;
-
-            sscanf(line, "Parse Complete - Runways: %d Pavements: %d Features: %d Taxiways: %d", &rwys, &pvmnts, &feats, &twys);
-
-            pInfo->SetRunways( rwys );
-            pInfo->SetPavements( pvmnts );
-            pInfo->SetFeats( feats );
-            pInfo->SetTaxiways( twys );
-
-        } else if ( strstr( line, "Finished airport " ) != NULL ) {
-            // Grab the stats
-            int         parse_sec, parse_nsec;
-            int         build_sec, build_nsec;
-            int         clean_sec, clean_nsec;
-            int         tess_sec,  tess_nsec;
-            SGTimeStamp parse_ts;
-            SGTimeStamp build_ts;
-            SGTimeStamp clean_ts;
-            SGTimeStamp tess_ts;
-
-            state = P_STATE_DONE;
-
-            sscanf(line, "Finished airport %*s : parse %d.%d : build %d.%d : clean %d.%d : tesselate %d.%d", 
-                &parse_sec, &parse_nsec, &build_sec, &build_nsec, &clean_sec, &clean_nsec, &tess_sec, &tess_nsec );
-         
-            parse_ts.setTime( parse_sec, parse_nsec );
-            build_ts.setTime( build_sec, build_nsec );
-            clean_ts.setTime( clean_sec, clean_nsec );
-            tess_ts.setTime( tess_sec, tess_nsec );
-
-            pInfo->SetParseTime( parse_ts );
-            pInfo->SetBuildTime( build_ts );
-            pInfo->SetCleanTime( clean_ts );
-            pInfo->SetTessTime( tess_ts );
-
-            procHandle.wait();        
-        } else if ( strstr( line, "Build Feature Poly " ) != NULL ) {
-            state = P_STATE_BUILD;
-        } else if ( strstr( line, "Build Pavement " ) != NULL ) {
-            state = P_STATE_BUILD;
-        } else if ( strstr( line, "Build Runway " ) != NULL ) {
-            state = P_STATE_BUILD;
-        } else if ( strstr( line, "Tesselating " ) != NULL ) {
-            state = P_STATE_TRIANGULATE;
-        } else if ( strstr( line, "Adding runway nodes and normals " ) != NULL ) {
-            state = P_STATE_OUTPUT;
-        }
- 
-    }
-
-    SetTimeout();
-    return state;
-}
-
+SGLockedQueue<AirportInfo> global_workQueue;
 
 ostream& operator<< (ostream &out, const AirportInfo &ai)
 {
@@ -173,392 +43,21 @@ ostream& operator<< (ostream &out, const AirportInfo &ai)
     return out;  // MSVC
 }
 
-
-/*** PROCESS LIST CLASS ***/
-ProcessList::ProcessList( int n, string& summaryfile, Scheduler* pScheduler ) : available(n), ready(1), state( PL_STATE_WAIT_FOR_LAUNCH )
+void Scheduler::set_debug( std::string path, std::vector<std::string> runway_defs,
+                                             std::vector<std::string> pavement_defs,
+                                             std::vector<std::string> taxiway_defs,
+                                             std::vector<std::string> feature_defs )
 {
-    // The process List is responsible for creating new processes (Launch)
-    // and monitoring the status of the launched parsers (Monitor)  These 
-    // functions are called from different threads.  
-    pss = pScheduler->GetServerSocket();
-
-    // remember the output file 
-    csvfile.open( summaryfile.c_str(), ios_base::out | ios_base::app );
-
-    // remember the scheduler so we can add retries
-    scheduler = pScheduler;
-
-    // remember the number of available helper procs so we know when we're full
-    threads = n;
-}
-    
-// When a slot is available, the main thread calls launch to instantiate a 
-// new pareser process 
-void ProcessList::Launch( string command, string work_dir, string file, AirportInfo* pai, bool last, string debug_path, 
-                          const debug_map& debug_runways, const debug_map& debug_pavements, const debug_map& debug_taxiways,  const debug_map& debug_features )
-{
-    Process::Args args;
-    char arg[512];
-    Pipe outPipe;
-
-    // generate correct command line arguments
-    sprintf( arg, "--work=%s", work_dir.c_str() );
-    args.push_back(arg);
-
-    sprintf( arg, "--input=%s", file.c_str() );
-    args.push_back(arg);
-
-    sprintf( arg, "--airport-pos=%ld", pai->GetPos() );
-    args.push_back(arg);
-
-    sprintf( arg, "--snap=%1.8lf", pai->GetSnap() );
-    args.push_back(arg);
-
-    sprintf( arg, "--redirect-port=%d", GENAPT_PORT );
-    args.push_back(arg);
-
-    // check if we have any debug defs
-    debug_map_const_iterator it = debug_runways.find( pai->GetIcao() );
-    std::string runway_def;
-    if ( it != debug_runways.end() ) {
-        runway_def = "--debug-runways=";
-        runway_def.append( pai->GetIcao() );
-        runway_def.append( ":" );
-        for ( unsigned int i=0; i < it->second.size(); i++ ) {
-            char int_str[16];
-            sprintf( int_str, "%d", it->second[i] );
-            runway_def.append( int_str );
-
-            if ( i < it->second.size()-1 ) {
-                runway_def.append( "," );
-            }
-        }
-    }
-
-    it = debug_pavements.find( pai->GetIcao() );
-    std::string pavement_def;
-    if ( it != debug_pavements.end() ) {
-        pavement_def = "--debug-pavements=";
-        pavement_def.append( pai->GetIcao() );
-        pavement_def.append( ":" );
-        for ( unsigned int i=0; i < it->second.size(); i++ ) {
-            char int_str[16];
-            sprintf( int_str, "%d", it->second[i] );
-            pavement_def.append( int_str );
-
-            if ( i < it->second.size()-1 ) {
-                pavement_def.append( "," );
-            }
-        }
-    }
-
-    it = debug_taxiways.find( pai->GetIcao() );
-    std::string taxiway_def;
-    if ( it != debug_taxiways.end() ) {
-        taxiway_def = "--debug-taxiways=";
-        taxiway_def.append( pai->GetIcao() );
-        taxiway_def.append( ":" );
-        for ( unsigned int i=0; i < it->second.size(); i++ ) {
-            char int_str[16];
-            sprintf( int_str, "%d", it->second[i] );
-            taxiway_def.append( int_str );
-
-            if ( i < it->second.size()-1 ) {
-                taxiway_def.append( "," );
-            }
-        }
-    }
-    
-    it = debug_features.find( pai->GetIcao() );
-    std::string feature_def;
-    if ( it != debug_features.end() ) {
-        feature_def = "--debug-features=";
-        feature_def.append( pai->GetIcao() );
-        feature_def.append( ":" );
-        for ( unsigned int i=0; i < it->second.size(); i++ ) {
-            char int_str[16];
-            sprintf( int_str, "%d", it->second[i] );
-            pavement_def.append( int_str );
-
-            if ( i < it->second.size()-1 ) {
-                feature_def.append( "," );
-            }
-        }
-    }
-
-    if ( runway_def.size() || pavement_def.size() || taxiway_def.size() || feature_def.size() ) {
-//        sprintf( arg, "--debug-path=%s", debug_path.c_str() );
-//        SG_LOG( SG_GENERAL, SG_INFO, "Created debug path arg " << arg );
-//        args.push_back(arg);
-
-        if ( runway_def.size() ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "Created runway arg " << runway_def );
-            args.push_back( runway_def.c_str() );
-        }
-
-        if ( pavement_def.size() ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "Created pavement arg " << pavement_def );
-            args.push_back( pavement_def.c_str() );
-        }
-
-        if ( taxiway_def.size() ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "Created taxiway arg " << runway_def );
-            args.push_back( taxiway_def.c_str() );
-        }
-
-        if ( feature_def.size() ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "Created feature arg " << feature_def );
-            args.push_back( feature_def.c_str() );
-        }
-    }
-
-    // Launch the child process
-    ProcessHandle ph = Process::launch(command, args, 0, &outPipe, &outPipe);
-
-    // Wait 10 seconds for connection
-    Timespan timeout( 10, 0 );
-    bool retVal = pss->poll( timeout, Net::Socket::SELECT_READ );
-
-    // If we connected - create a new entry
-    if ( retVal ) {
-        Net::SocketAddress sockaddr;
-        Net::StreamSocket sock = pss->acceptConnection( sockaddr );
-
-        // Make sure the list can't be modified while adding a member
-        lock.lock();
-        ProcessInfo pi( pai, ph, sock );
-        plist.push_back( pi );
-        lock.unlock();        
-
-        // If we have all of the airports in our list, we are done
-        // when the list is empty - set the transition state
-        if ( last ) {
-            // The launch list is empty - we're ready to monitor
-            state = PL_STATE_ALL_LAUNCHED;
-            ready.set();
-        } else if ( plist.size() == threads ) {
-            // The resource list is full - we're ready to monitor
-            state = PL_STATE_LIST_FULL;
-            ready.set();
-        } else {
-            // resource list has space, and launch list is not empty - hold off monitoring
-            state = PL_STATE_WAIT_FOR_LAUNCH;
-        }
-    }
-}
-
-Timespan ProcessList::GetNextTimeout() 
-{
-    SGTimeStamp now, min, timeout;
-
-    min.setTime( UINT_MAX, 0 );
-    timeout.setTime( 0, 0 );
-        
-    for ( unsigned int i=0; i< plist.size(); i++ ) {
-        if ( plist[i].GetTimeout() < min ) {
-            min = plist[i].GetTimeout();
-        }
-    }
-
-    now.stamp();
-    if ( min > now ) {
-        timeout = min - now;
-    }
-
-    return Timespan( timeout.get_seconds(), timeout.get_usec() );
-}
-
-void ProcessList::HandleReceivedMessages( Net::Socket::SocketList& slr ) 
-{
-    // for each socket that has data - find the corresponding icao
-    for (unsigned int i=0; i<slr.size(); i++) {
-        Net::StreamSocket ss = (Net::StreamSocket)slr[i];
-
-        // find the index handling this socket, and let it deal with the line
-        for ( unsigned int j=0; j < plist.size(); j++ ) {
-            if ( plist[j].GetSocket() == ss ) {
-                plist[j].HandleLine( );
-                break;
-            }
-        }
-    }
-}
-
-void ProcessList::HandleFinished( void )
-{
-    AirportInfo* pInfo = NULL;
-    int          num_deleted = 0;        
-    bool         done = false;
-
-    while (!done) {
-        done = true;
-
-        lock.lock();
-        for ( unsigned int i=0; i< plist.size(); i++ ) {
-            switch ( plist[i].GetState() ) {
-                case P_STATE_DONE:
-                    plist[i].SetErrorString( (char *)"success" );
-
-                    // holding the list lock - only one thread can write to the csvfile at a time
-                    csvfile << plist[i].GetInfo() << "\n";
-                    csvfile.flush();
-
-                    // remove this airport from the list - it's complete
-                    plist[i].CloseSock();
-                    plist.erase( plist.begin()+i );
-
-                    // keep track of the number of deleted entries
-                    num_deleted++;
-
-                    // let's iterate again to look for more timeouts...
-                    done = false;
-                    break;
-
-                case P_STATE_KILLED:
-                    // holding the list lock - only one thread can write to the csvfile at a time
-                    csvfile << plist[i].GetInfo() << "\n";
-                    csvfile.flush();
-
-                    // Schedule a retry
-                    pInfo = plist[i].GetInfoPtr();
-                    pInfo->IncreaseSnap();
-                    scheduler->RetryAirport( pInfo );
-
-                    // remove the airport from the monitor list - it's complete
-                    plist[i].CloseSock();
-                    plist.erase( plist.begin()+i );
-
-                    // keep track of the number of deleted entries
-                    num_deleted++;
-
-                    // let's iterate again to look for more timeouts...
-                    done = false;
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
-        lock.unlock();
-    }
-
-
-    // Let launcher thread know we have opening(s)
-    while ( num_deleted-- ) {
-        // make sure we don't start waiting on output before a new apt is launched...
-        if (state != PL_STATE_ALL_LAUNCHED) {
-            state = PL_STATE_WAIT_FOR_LAUNCH;
-        }
-
-        // free each resource that is no longer used
-        available.set();
-    }
-}
-
-void ProcessList::WaitForSlot( void )
-{ 
-    available.wait(); 
-}
-
-// list lock is held
-void ProcessList::HandleTimeouts() 
-{
-    SGTimeStamp now;
-
-    now.stamp();
-    for ( unsigned int i=0; i< plist.size(); i++ ) {
-        if ( plist[i].GetTimeout() < now ) {
-            plist[i].Kill();
-        }
-    }
-}
-
-void ProcessList::Monitor() 
-{
-    // Wait until process list has a connection, then continue until we are done
-    while( state != PL_STATE_DONE ) {
-        Net::Socket::SocketList     slr, slw, sle;
-        Timespan                    timeout;
-        int                         retVal;
-
-        // if we aren't ready to start - wait on ready
-        if ( state == PL_STATE_WAIT_FOR_LAUNCH ) {
-            ready.wait();       
-        }
-
-        // then lock the list when calculating the timeouts 
-        lock.lock();
-
-        // calculate the shortest timeout
-        timeout = GetNextTimeout();
-
-        // Add currently connected sockets
-        for ( unsigned int i=0; i< plist.size(); i++ ) {
-            slr.push_back( plist[i].GetSocket() );
-        }
-
-        // unlock before waiting on i/o
-        lock.unlock();
-
-        // this needs to be interrupted when new airports are added to the list
-        retVal =  Net::Socket::select( slr, slw, sle, timeout );
-
-        if ( retVal > 0 ) {
-            HandleReceivedMessages( slr );
-        } else {
-            HandleTimeouts();
-        }
-
-        // remove finished or dead processes, and notify launcher 
-        //
-        HandleFinished();
-
-        slr.clear();
-        slw.clear();
-        sle.clear();
-
-        // if we have launched all airports, we are done
-        if ( ( state == PL_STATE_ALL_LAUNCHED ) && ( plist.size() == 0 ) ) {
-            state = PL_STATE_DONE;
-        }
-    }
-
-    csvfile.close();
-}
-
-/*** PROCESS MONITOR ***/
-ProcessMonitor::ProcessMonitor(ProcessList* pl) : Runnable()
-{
-    plist = pl;
-}
-
-void ProcessMonitor::run()
-{
-    SG_LOG( SG_GENERAL, SG_INFO, "ProcessMonitor Started " );
-
-    // Run the monitoring function in this thread
-    plist->Monitor();
-
-    SG_LOG( SG_GENERAL, SG_INFO, "ProcessMonitor Exited " );
-}
-
-/*** SCEDULER ***/
-void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
-                                             std::vector<string> pavement_defs,
-                                             std::vector<string> taxiway_defs,
-                                             std::vector<string> feature_defs )
-{
-    SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
+    GENAPT_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
 
     debug_path = path;
 
     /* Find any ids for our tile */
     for (unsigned int i=0; i< runway_defs.size(); i++) {
-        string dsd     = runway_defs[i];
+        std::string dsd     = runway_defs[i];
         size_t d_pos   = dsd.find(":");
 
-        string icao    = dsd.substr(0, d_pos);
+        std::string icao    = dsd.substr(0, d_pos);
         std::vector<int> shapes;
         shapes.clear();
 
@@ -572,7 +71,7 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
+                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -584,10 +83,10 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
     }
 
     for (unsigned int i=0; i< pavement_defs.size(); i++) {
-        string dsd     = pavement_defs[i];
+        std::string dsd     = pavement_defs[i];
         size_t d_pos   = dsd.find(":");
 
-        string icao    = dsd.substr(0, d_pos);
+        std::string icao    = dsd.substr(0, d_pos);
         std::vector<int> shapes;
         shapes.clear();
 
@@ -601,7 +100,7 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
+                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -613,10 +112,10 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
     }
 
     for (unsigned int i=0; i< taxiway_defs.size(); i++) {
-        string dsd     = taxiway_defs[i];
+        std::string dsd     = taxiway_defs[i];
         size_t d_pos   = dsd.find(":");
 
-        string icao    = dsd.substr(0, d_pos);
+        std::string icao    = dsd.substr(0, d_pos);
         std::vector<int> shapes;
         shapes.clear();
 
@@ -630,7 +129,7 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
+                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -642,10 +141,10 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
     }
 
     for (unsigned int i=0; i< feature_defs.size(); i++) {
-        string dsd     = feature_defs[i];
+        std::string dsd     = feature_defs[i];
         size_t d_pos   = dsd.find(":");
 
-        string icao    = dsd.substr(0, d_pos);
+        std::string icao    = dsd.substr(0, d_pos);
         std::vector<int> shapes;
         shapes.clear();
 
@@ -659,7 +158,7 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
+                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -671,7 +170,7 @@ void Scheduler::set_debug( std::string path, std::vector<string> runway_defs,
     }
 }
 
-bool Scheduler::IsAirportDefinition( char* line, string icao )
+bool Scheduler::IsAirportDefinition( char* line, std::string icao )
 {
     char*    tok;
     int      code;
@@ -731,21 +230,21 @@ bool Scheduler::IsAirportDefinition( char* line, string icao )
     return match;
 }
 
-void Scheduler::AddAirport( string icao )
+void Scheduler::AddAirport( std::string icao )
 {
     char            line[2048];
     long            cur_pos;
     bool            found = false;
-    AirportInfo*    pInfo;
+    AirportInfo     ai;
 
-    ifstream in( filename.c_str() );
+    std::ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-    SG_LOG( SG_GENERAL, SG_INFO, "Adding airport " << icao << " to parse list");
+    GENAPT_LOG( SG_GENERAL, SG_INFO, "Adding airport " << icao << " to parse list");
     while ( !in.eof() && !found ) 
     {
         // remember the position of this line
@@ -757,31 +256,30 @@ void Scheduler::AddAirport( string icao )
         // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
          
-            pInfo = new AirportInfo( icao, cur_pos, gSnap );   
-            originalList.push_back( *pInfo );
-            delete pInfo;
+            ai = AirportInfo( icao, cur_pos, gSnap );
+            global_workQueue.push( ai );
 
             found = true;
         }
     }    
 }
 
-long Scheduler::FindAirport( string icao )
+long Scheduler::FindAirport( std::string icao )
 {
     char line[2048];
     long cur_pos = 0;
     bool found = false;
 
-    ifstream in( filename.c_str() );
+    std::ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
+    GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
     while ( !in.eof() && !found ) 
     {
         // remember the position of this line
@@ -793,7 +291,7 @@ long Scheduler::FindAirport( string icao )
         // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
             found = true;
         }
     }    
@@ -819,7 +317,7 @@ bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )
     char*	 def;
     long 	 cur_pos;
     long	 cur_apt_pos = 0;
-    string   cur_apt_name;
+    std::string  cur_apt_name;
     char*    tok;
     int      code;
     bool 	 match;
@@ -831,16 +329,16 @@ bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )
     // start from current position, and push all airports where a runway start or end
     // lies within the given min/max coordinates
 
-    ifstream in( filename.c_str() );
+    std::ifstream in( filename.c_str() );
     if ( !in.is_open() )
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
     if (start_pos)
     {
-        in.seekg(start_pos, ios::beg);
+        in.seekg(start_pos, std::ios::beg);
     }
 
     while (!done)
@@ -870,9 +368,8 @@ bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )
                     if (match)
                     {
                         // Start off with given snap value
-                        AirportInfo* pInfo = new AirportInfo( cur_apt_name, cur_apt_pos, gSnap );
-                        originalList.push_back( *pInfo );
-                        delete pInfo;
+                        AirportInfo ai = AirportInfo( cur_apt_name, cur_apt_pos, gSnap );
+                        global_workQueue.push( ai );
                     }
                     // remember this new apt pos and name, and clear match
                     cur_apt_pos  = cur_pos;
@@ -887,9 +384,8 @@ bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )
                     if (match)
                     {
                         // Start off with given snap value
-                        AirportInfo* pInfo = new AirportInfo( cur_apt_name, cur_apt_pos, gSnap );
-                        originalList.push_back( *pInfo );
-                        delete pInfo;
+                        AirportInfo ai = AirportInfo( cur_apt_name, cur_apt_pos, gSnap );
+                        global_workQueue.push( ai );
                     }
                     done = true;
                     break;
@@ -965,103 +461,49 @@ bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )
     }
 
     // did we add airports to the parse list?
-    if ( originalList.size() )
-    {
+    if ( global_workQueue.size() ) {
         return true;
-    } else
-    {
+    } else {
         return false;
     }
 }
 
-Scheduler::Scheduler(string& cmd, string& datafile, const string& root, const string_list& elev_src)
+Scheduler::Scheduler(std::string& datafile, const std::string& root, const string_list& elev_src)
 {
-    command         = cmd;
     filename        = datafile;
     work_dir        = root;
     elevation       = elev_src;
 
-    ifstream in( filename.c_str() );
+    std::ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 }
 
-void Scheduler::Schedule( int num_threads, string& summaryfile )
+void Scheduler::Schedule( int num_threads, std::string& summaryfile )
 {
-    ProcessList     *procList = NULL;
-    Thread          *monThread = NULL;
-    ProcessMonitor  *procMon = NULL;
-    bool            done = false;
-    bool            last = false;
-    ofstream        csvfile;
+//    std::ofstream   csvfile;
 
     // open and truncate the summary file : monitor only appends 
-    csvfile.open( summaryfile.c_str(), ios_base::out | ios_base::trunc );
-    csvfile.close();
+//    csvfile.open( summaryfile.c_str(), std::ios_base::out | std::ios_base::trunc );
+//    csvfile.close();
 
-    SG_LOG( SG_GENERAL, SG_INFO, "Scheduler: Bind to socket" );
+    std::vector<Parser *> parsers;
+    for (int i=0; i<num_threads; i++) {
+        Parser* parser = new Parser( filename, work_dir, elevation );
+        // parser->set_debug();
+        parser->start();
+        parsers.push_back( parser );
+    }
 
-    // Bind the parent listener socket for children to connect to
-    ss.bind(GENAPT_PORT);
-    ss.listen();
+    while (!global_workQueue.empty()) {
+        sleep(1);
+    }
 
-    SG_LOG( SG_GENERAL, SG_INFO, "Scheduler: Bound" );
-    
-    while (!done) {
-        procList  = new ProcessList(num_threads, summaryfile, this);
-        monThread = new Thread;
-        procMon   = new ProcessMonitor(procList);
-
-        // Launch monitor thread
-        monThread->start(*procMon);
-
-        // now try to launch child processes to parse individual airports
-        for ( unsigned int i=0; i<originalList.size(); i++ ) {
-            // Wait for an available process slot
-            procList->WaitForSlot();
-
-            SG_LOG( SG_GENERAL, SG_INFO, "Scheduler: Processing layout " << i+1 << " of " << originalList.size() << "."  );
-
-            // let the process list know if more airports are coming
-            if ( i == originalList.size()-1 ) {
-                last = true;
-            }
-
-            // Launch a new parser
-            procList->Launch( command, work_dir, filename, &originalList[i], last, debug_path, debug_runways, debug_pavements, debug_taxiways, debug_features );
-        }
-
-        // Sync up before relaunching
-        monThread->join();
-
-        // Delete the old monitor
-        delete procMon;
-        delete monThread;
-        delete procList;
-
-        SG_LOG( SG_GENERAL, SG_INFO, "Scheduler: originalList has " << originalList.size() << ", retry list has " << retryList.size() << " entries" );
-
-        // delete original, and copy retry to it
-        if ( retryList.size() ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "Scheduler: clear original list " );            
-            originalList.clear();
-
-            SG_LOG( SG_GENERAL, SG_INFO, "Scheduler - cleared original: originalList has " << originalList.size() << ", retry list has " << retryList.size() << " entries" );
-
-            for ( unsigned int i=0; i<retryList.size(); i++ ) {
-                originalList.push_back( retryList[i] );
-            }
-
-            SG_LOG( SG_GENERAL, SG_INFO, "Scheduler - copied retryList: originalList has " << originalList.size() << ", retry list has " << retryList.size() << " entries" );
-
-            retryList.clear();
-
-            SG_LOG( SG_GENERAL, SG_INFO, "Scheduler - cleared retry: originalList has " << originalList.size() << ", retry list has " << retryList.size() << " entries" );
-        } else {
-            done = true;
-        }
+    // Then wait until they are finished
+    for (unsigned int i=0; i<parsers.size(); i++) {
+        parsers[i]->join();
     }
 }

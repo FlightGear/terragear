@@ -34,6 +34,7 @@
 #include "elevations.hxx"
 #include "global.hxx"
 #include "apt_surface.hxx"
+#include "debug.hxx"
 
 
 static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
@@ -54,7 +55,7 @@ static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
 
         slope_error = true;
 
-        SG_LOG( SG_GENERAL, SG_DEBUG, " (a) detected slope of " << slope << " dist = " << dist );
+        GENAPT_LOG( SG_GENERAL, SG_DEBUG, " (a) detected slope of " << slope << " dist = " << dist );
 
         double e1 = fabs(average_elev_m - p1.getElevationM());
         double e2 = fabs(average_elev_m - p2.getElevationM());
@@ -109,7 +110,7 @@ TGAptSurface::TGAptSurface( const std::string& path,
     double x_nm = x_rad * SG_RAD_TO_NM * xfact;
     double x_m = x_nm * SG_NM_TO_METER;
 
-    SG_LOG( SG_GENERAL, SG_DEBUG,
+    GENAPT_LOG( SG_GENERAL, SG_DEBUG,
             "Area size = " << y_m << " x " << x_m << " (m)" );
 
     int xdivs = (int)(x_m / coarse_grid) + 1;
@@ -119,7 +120,7 @@ TGAptSurface::TGAptSurface( const std::string& path,
     // interesting
     if ( xdivs < 8 ) { xdivs = 8; }
     if ( ydivs < 8 ) { ydivs = 8; }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
 
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
@@ -154,14 +155,14 @@ TGAptSurface::TGAptSurface( const std::string& path,
     double ave_divider = (mult+1) * (mult+1);
     for ( int j = 0; j < Pts->rows(); ++j ) {
         for ( int i = 0; i < Pts->cols(); ++i ) {
-            SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
+            GENAPT_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
             double lon_accum = 0.0;
             double lat_accum = 0.0;
             for ( int jj = 0; jj <= mult; ++jj ) {
                 for ( int ii = 0; ii <= mult; ++ii ) {
                     double value = dPts.element(mult*i + ii, mult*j + jj).getElevationM();
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
+                    GENAPT_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
                     accum += value;
                     lon_accum += dPts.element(mult*i + ii, mult*j + jj).getLongitudeDeg();
                     lat_accum += dPts.element(mult*i + ii, mult*j + jj).getLatitudeDeg();
@@ -169,7 +170,7 @@ TGAptSurface::TGAptSurface( const std::string& path,
             }
             double val_ave = accum / ave_divider;
 
-            SG_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
+            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
             Pts->set(i, j, SGGeod::fromDegM( _min_deg.getLongitudeDeg() + i * dlon,
 				    _min_deg.getLatitudeDeg() + j * dlat,
 				    val_ave )
@@ -179,7 +180,7 @@ TGAptSurface::TGAptSurface( const std::string& path,
 
     bool slope_error = true;
     while ( slope_error ) {
-        SG_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
+        GENAPT_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
         slope_error = false;
         // Add some "slope" sanity to the resulting surface grid points
         for ( int j = 0; j < Pts->rows() - 1; ++j ) {
@@ -201,12 +202,12 @@ TGAptSurface::TGAptSurface( const std::string& path,
     double clon = (_min_deg.getLongitudeDeg() + _max_deg.getLongitudeDeg()) / 2.0;
     double clat = (_min_deg.getLatitudeDeg() + _max_deg.getLatitudeDeg()) / 2.0;
     area_center = SGGeod::fromDegM( clon, clat, _average_elev_m );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Central offset point = " << area_center);
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Central offset point = " << area_center);
 
     // Create the fitted surface
-    SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
     fit();
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  fit process successful.");
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "  fit process successful.");
 }
 
 
@@ -227,7 +228,7 @@ void TGAptSurface::fit() {
 
     int nobs = Pts->cols() * Pts->rows();	// number of observations
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "QR triangularisation" );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "QR triangularisation" );
 
     // Create an array (matrix) with 16 columns (predictor values) A[n]
     TNT::Array2D<double> mat(nobs,16);
@@ -278,7 +279,7 @@ double TGAptSurface::query( SGGeod query ) {
     // sanity check
     if ( !_aptBounds.isInside(query) )
     {
-        SG_LOG(SG_GENERAL, SG_WARN,
+        GENAPT_LOG(SG_GENERAL, SG_WARN,
 	       "Warning: query out of bounds for fitted surface!");
         return -9999.0;
     }

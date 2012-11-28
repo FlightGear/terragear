@@ -23,6 +23,7 @@
 #include "apt_math.hxx"
 #include "helipad.hxx"
 #include "runway.hxx"
+#include "debug.hxx"
 
 #include <stdlib.h>
 
@@ -37,7 +38,7 @@ Helipad::Helipad(char* definition)
         heli.designator, &heli.lat, &heli.lon, &heli.heading, &heli.length, &heli.width, &heli.surface,
         &heli.marking, &heli.shoulder, &heli.smoothness, &heli.edge_lights);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Read helipad: (" << heli.lon << "," << heli.lat << ") heading: " << heli.heading << " length: " << heli.length << " width: " << heli.width );
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read helipad: (" << heli.lon << "," << heli.lat << ") heading: " << heli.heading << " length: " << heli.length << " width: " << heli.width );
 }
 
 tglightcontour_list Helipad::gen_helipad_lights(double maxsize) {
@@ -115,7 +116,8 @@ void Helipad::build_helipad_shoulders( const tgContour& outer_area )
 
 void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
                         tglightcontour_list& rwy_lights,
-                        tgcontour_list& slivers )
+                        tgcontour_list& slivers,
+                        tgAccumulator& accum )
 {
     //
     // Generate the basic helipad outlines
@@ -144,14 +146,14 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
     }
 
     // Clip the new polygon against what ever has already been created.
-    tgPolygon clipped = tgContour::DiffWithAccumulator( helipad );
+    tgPolygon clipped = accum.Diff( helipad );
     tgPolygon::RemoveSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
     tgPolygon heli_poly = tgPolygon::SplitLongEdges( clipped, 400.0 );
 
-    tgContour::AddToAccumulator( helipad );
+    accum.Add( helipad );
 
     heli_poly.SetMaterial( heli_mat );
     heli_poly.SetTexParams( helipad.GetNode(0), heli_size, heli_size, heli.heading );
@@ -169,7 +171,7 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
     outer_area = tgContour::Snap( outer_area, gSnap );
 
     tgPolygon outer_poly = tgContour::Diff( outer_area, heli_poly );
-    clipped = tgPolygon::DiffWithAccumulator( outer_poly );
+    clipped = accum.Diff( outer_poly );
     tgPolygon::RemoveSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
@@ -183,7 +185,7 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
     extra_heli.SetTexLimits( 1,1,0,0 );
     extra_heli.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
     rwy_polys.push_back( extra_heli );
-    tgPolygon::AddToAccumulator( extra_heli );
+    accum.Add( extra_heli );
 
     build_helipad_shoulders( outer_area );
 
@@ -201,9 +203,10 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
                         tglightcontour_list& rwy_lights,
                         tgcontour_list& slivers,
                         tgpolygon_list& apt_base_polys,
-                        tgpolygon_list& apt_clearing_polys )
+                        tgpolygon_list& apt_clearing_polys,
+                        tgAccumulator& accum )
 {
-    BuildBtg( rwy_polys, rwy_lights, slivers );
+    BuildBtg( rwy_polys, rwy_lights, slivers, accum );
 
     // generate area around helipad
     double    length, width;
@@ -237,7 +240,8 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
 }
 
 void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
-                             tgcontour_list& slivers )
+                             tgcontour_list& slivers,
+                             tgAccumulator& accum )
 {
     tgPolygon shoulder;
 
@@ -245,7 +249,7 @@ void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
         shoulder = shoulder_polys[i];
 
         // Clip the new polygon against what ever has already been created.
-        tgPolygon clipped = tgPolygon::DiffWithAccumulator( shoulder );
+        tgPolygon clipped = accum.Diff( shoulder );
         tgPolygon::RemoveSlivers( clipped, slivers );
 
         // Split long edges to create an object that can better flow with
@@ -255,6 +259,6 @@ void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
 
         rwy_polys.push_back( shoulder_polys[i] );
 
-        tgPolygon::AddToAccumulator( shoulder );
+        accum.Add( shoulder );
     }
 }

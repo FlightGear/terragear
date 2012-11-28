@@ -317,14 +317,13 @@ std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);
 // forward declaration
 class tgPolygon;
 
-
 class tgContour
 {
 public:
     tgContour() {
         hole = false;
     }
-    
+
     void Erase() {
         node_list.clear();
     }
@@ -376,8 +375,6 @@ public:
     static tgContour RemoveSpikes( const tgContour& subject );
 
     static tgPolygon Diff( const tgContour& subject, tgPolygon& clip );
-    static tgPolygon DiffWithAccumulator( const tgContour& subject );
-    static void      AddToAccumulator( const tgContour& subject );
 
     static tgContour AddColinearNodes( const tgContour& subject, TGTriNodes nodes );
     static tgContour AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes );
@@ -598,10 +595,6 @@ public:
     static tgPolygon Diff( const tgPolygon& subject, tgPolygon& clip );
     static tgPolygon Intersect( const tgPolygon& subject, const tgPolygon& clip );
 
-    static tgPolygon DiffWithAccumulator( const tgPolygon& subject );
-    static void      AddToAccumulator( const tgPolygon& subject );
-    static void      AccumulatorToShapefiles( const std::string& path, const std::string& layer );
-
     // Conversions
     static ClipperLib::Polygons ToClipper( const tgPolygon& subject );
     static tgPolygon FromClipper( const ClipperLib::Polygons& subject );
@@ -756,6 +749,24 @@ public:
 typedef std::vector <tgLightContour>  tglightcontour_list;
 typedef tglightcontour_list::iterator tglightcontour_list_iterator;
 typedef tglightcontour_list::const_iterator const_tglightcontour_list_iterator;
+
+typedef std::vector < ClipperLib::Polygons > clipper_polygons_list;
+
+class tgAccumulator
+{
+public:
+    tgPolygon Diff( const tgContour& subject );
+    tgPolygon Diff( const tgPolygon& subject );
+
+    void      Add( const tgContour& subject );
+    void      Add( const tgPolygon& subject );
+
+    void      ToShapefiles( const std::string& path, const std::string& layer );
+
+private:
+    clipper_polygons_list   accum;
+};
+
 
 #endif // _POLYGON_HXX
 

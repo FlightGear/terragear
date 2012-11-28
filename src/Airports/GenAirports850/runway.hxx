@@ -34,6 +34,7 @@ public:
     int BuildBtg( tgpolygon_list& rwy_polys,
                   tglightcontour_list& rwy_lights,
                   tgcontour_list& slivers,
+                  tgAccumulator& accum,
                   std::string& shapefile_name );
 
     int BuildBtg( tgpolygon_list& rwy_polys,
@@ -41,10 +42,12 @@ public:
                   tgcontour_list& slivers,
                   tgpolygon_list& apt_base_polys,
                   tgpolygon_list& apt_clearing_polys,
+                  tgAccumulator& accum,
                   std::string& shapefile_name );
 
     void BuildShoulder( tgpolygon_list& rwy_polys,
-                        tgcontour_list& slivers );
+                        tgcontour_list& slivers,
+                        tgAccumulator& accum );
 
 private:
     struct TGRunway {
@@ -98,6 +101,7 @@ private:
                              double &start_pct, double &end_pct,
                              tgpolygon_list& rwy_polys,
                              tgcontour_list& slivers,
+                             tgAccumulator& accum,
                              std::string& shapefile_name );
 
     // generate a section of runway with shoulders
@@ -110,6 +114,7 @@ private:
                       tgpolygon_list& rwy_polys,
                       tgpolygon_list& shoulder_polys,
                       tgcontour_list& slivers,
+                      tgAccumulator& accum,
                       std::string& shapefile_name );
 
     // generate a section of runway without shoulders
@@ -121,6 +126,7 @@ private:
                       const std::string& material,
                       tgpolygon_list& rwy_polys,
                       tgcontour_list& slivers,
+                      tgAccumulator& accum,
                       std::string& shapefile_name );
 
     // generate a section of shoulder
@@ -131,10 +137,11 @@ private:
                                     double width,
                                     std::string surface );
 
-    void gen_simple_rwy( tgpolygon_list& rwy_polys, tgcontour_list& slivers );
+    void gen_simple_rwy( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgAccumulator& accum );
     
     void gen_rwy( tgpolygon_list& rwy_polys,
                   tgcontour_list& slivers,
+                  tgAccumulator& accum,
                   std::string& shapefile_name );
 
     void gen_runway_lights( tglightcontour_list& lights );

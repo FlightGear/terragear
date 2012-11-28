@@ -13,14 +13,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 
 
-#include <string.h>
+#include <string>
 #include <iostream>
 
-#include <Poco/Environment.h>
-#include <Poco/Net/SocketAddress.h>
-#include <Poco/Net/Socket.h>
-#include <Poco/Net/StreamSocket.h>
-#include <Poco/Net/SocketStream.h>
+#include <boost/thread.hpp>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>
@@ -30,6 +26,7 @@
 #include <Geometry/util.hxx>
 #include <Geometry/poly_support.hxx>
 
+#include "scheduler.hxx"
 #include "beznode.hxx"
 #include "closedpoly.hxx"
 #include "linearfeature.hxx"
@@ -37,24 +34,10 @@
 #include "scheduler.hxx"
 
 using namespace std;
-using namespace Poco;
-
-
-// TODO : Modularize this function
-// IDEAS 
-// 1) Start / Stop MarkStyle
-// 2) Start / Stop LightStyle
-// 3) holes
-// 4) CreatePavementSS(pavement type)
-// 5) CreateMarkingSS(marking type)
-// 6) CalcStripeOffsets should be AddMarkingVerticies, and take the 2 distances from pavement edge...
-// SCRAP ALL IDEAS - Markings are encapsulated in LinearFeature class. 
-// Start creates a new object
-// End closes the object (and should add it to a list - either in the parser, or ClosedPoly)
 
 // Display usage
 static void usage( int argc, char **argv ) {
-    SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << argv[0] << "\n--input=<apt_file>"
+    GENAPT_LOG(SG_GENERAL, SG_ALERT, "Usage: " << argv[0] << "\n--input=<apt_file>"
     << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
     << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
     << "[ --airport=abcd ] [--max-slope=<decimal>] [--tile=<tile>] [--threads] [--threads=x]"
@@ -123,45 +106,35 @@ double gSnap = 0.00000001;      // approx 1 mm
 //TODO : new polygon chop API
 extern bool tgPolygon_index_init( const std::string& path );
 
-// For creating a buffered stream to write to the socket
-Net::StreamSocket  ss;
-Net::SocketStreamBuf ssb( ss );
-ostream os(&ssb);
-
 int main(int argc, char **argv)
 {
+    SGGeod min = SGGeod::fromDeg( -180, -90 );
+    SGGeod max = SGGeod::fromDeg( 180, 90 );
     long  position = 0;
-    SGGeod max, min;
-    max.setLongitudeDeg(180);
-    max.setLatitudeDeg(90);
-    min.setLongitudeDeg(-180);
-    min.setLatitudeDeg(-90);
 
     // Setup elevation directories
     string_list elev_src;
     elev_src.clear();
     setup_default_elevation_sources(elev_src);
 
-    string debug_dir = ".";
-    vector<string> debug_runway_defs;
-    vector<string> debug_pavement_defs;
-    vector<string> debug_taxiway_defs;
-    vector<string> debug_feature_defs;
+    std::string debug_dir = ".";
+    vector<std::string> debug_runway_defs;
+    vector<std::string> debug_pavement_defs;
+    vector<std::string> debug_taxiway_defs;
+    vector<std::string> debug_feature_defs;
 
     // Set Normal logging
     sglog().setLogLevels( SG_GENERAL, SG_INFO );
 
     // parse arguments
-    string work_dir = "";
-    string input_file = "";
-    string summary_file = "./genapt850.csv";
-    string start_id = "";
-    string restart_id = "";
-    string airport_id = "";
-    long   airport_pos = -1;
-    string last_apt_file = "./last_apt.txt";
-    int    num_threads    =  1;
-    int    redirect_port  = -1;
+    std::string work_dir = "";
+    std::string input_file = "";
+    std::string summary_file = "./genapt850.csv";
+    std::string start_id = "";
+    std::string restart_id = "";
+    std::string airport_id = "";
+    std::string last_apt_file = "./last_apt.txt";
+    int         num_threads    =  1;
 
     int arg_pos;
     for (arg_pos = 1; arg_pos < argc; arg_pos++)
@@ -178,10 +151,6 @@ int main(int argc, char **argv)
         else if ( arg.find("--start-id=") == 0 )
         {
             start_id = arg.substr(11);
-        }
-        else if ( arg.find("--airport-pos=") == 0 )
-        {
-            airport_pos = atol( arg.substr(14).c_str() );
         }
         else if ( arg.find("--restart-id=") == 0 )
         {
@@ -242,10 +211,6 @@ int main(int argc, char **argv)
         else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) 
         {
     	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
-    	} 
-        else if ( arg.find("--redirect-port=") == 0 )  
-        {
-            redirect_port = atoi( arg.substr(16).c_str() );
     	}
         else if ( (arg.find("--max-slope=") == 0) ) 
         {
@@ -257,7 +222,7 @@ int main(int argc, char **argv)
         }
         else if ( (arg.find("--threads") == 0) )
         {
-            num_threads = Poco::Environment::processorCount();
+            num_threads = boost::thread::hardware_concurrency();
         }
         else if (arg.find("--debug-dir=") == 0)
         {
@@ -273,7 +238,7 @@ int main(int argc, char **argv)
         }
         else if (arg.find("--debug-taxiways=") == 0)
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "add debug taxiway " << arg.substr(17) );
+            GENAPT_LOG(SG_GENERAL, SG_INFO, "add debug taxiway " << arg.substr(17) );
             debug_taxiway_defs.push_back( arg.substr(17) );
         }
         else if (arg.find("--debug-features=") == 0)
@@ -292,53 +257,38 @@ int main(int argc, char **argv)
     	}
     }
 
-    string airportareadir=work_dir+"/AirportArea";
+    std::string airportareadir=work_dir+"/AirportArea";
 
-    // check for output redirect
-    if ( redirect_port >= 0 ) {
+    // this is the main program -
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Run genapts with " << num_threads << " threads" );
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
+    for ( unsigned int i = 0; i < elev_src.size(); ++i ) {
+        GENAPT_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
+    }
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
 
-        // create a stream socket back to the main process
-        Net::SocketAddress sa( "localhost", redirect_port );
-        ss.connect(sa);
-
-        // then a buffered stream to write to the socket
-        os.rdbuf(&ssb);
-
-        // then hook up SG_LOG to the stream buf
-        sglog().set_output( os );
-    } else {
-        // this is the main program -
-        SG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
-        SG_LOG(SG_GENERAL, SG_INFO, "Run genapts with " << num_threads << " threads" );
-        SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
-        SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
-        for ( unsigned int i = 0; i < elev_src.size(); ++i ) {
-            SG_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
-        }
-        SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
-        SG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
-        SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
-        SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
-
-        if (!max.isValid() || !min.isValid())
-        {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
-            exit(1);
-        }
-
-        // make work directory
-        SG_LOG(SG_GENERAL, SG_INFO, "Creating AirportArea directory");
-
-        SGPath sgp( airportareadir );
-        sgp.append( "dummy" );
-        sgp.create_dir( 0755 );
+    if (!max.isValid() || !min.isValid())
+    {
+        GENAPT_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
+        exit(1);
     }
 
-    string command = argv[0];
-    string lastaptfile = work_dir+"/last_apt";
+    // make work directory
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Creating AirportArea directory");
+
+    SGPath sgp( airportareadir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
+
+    std::string lastaptfile = work_dir+"/last_apt";
 
     // initialize persistant polygon counter
-    string counter_file = airportareadir+"/poly_counter";
+    std::string counter_file = airportareadir+"/poly_counter";
     tgPolygon_index_init( counter_file );
 
     tg::Rectangle boundingBox(min, max);
@@ -346,14 +296,14 @@ int main(int argc, char **argv)
 
     if ( work_dir == "" ) 
     {
-    	SG_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
+    	GENAPT_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
     	usage( argc, argv );
 	    exit(-1);
     }
 
     if ( input_file == "" ) 
     {
-    	SG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
+    	GENAPT_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
     	exit(-1);
     }
 
@@ -363,12 +313,12 @@ int main(int argc, char **argv)
     sg_gzifstream in( input_file );
     if ( !in.is_open() ) 
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
+        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
         exit(-1);
     }
 
     // Create the scheduler
-    Scheduler* scheduler = new Scheduler(command, input_file, work_dir, elev_src);
+    Scheduler* scheduler = new Scheduler(input_file, work_dir, elev_src);
 
     // Add any debug 
     scheduler->set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_taxiway_defs, debug_feature_defs );
@@ -379,22 +329,15 @@ int main(int argc, char **argv)
         // just find and add the one airport
         scheduler->AddAirport( airport_id );
 
-        SG_LOG(SG_GENERAL, SG_INFO, "Finished Adding airport - now parse");
+        GENAPT_LOG(SG_GENERAL, SG_INFO, "Finished Adding airport - now parse");
         
         // and schedule parsers
         scheduler->Schedule( num_threads, summary_file );
     }
-    // We are given an airport position from a main scheduler - parse this
-    else if ( airport_pos != -1 )
-    {
-        // create and start the real parser
-        Parser parser(input_file, work_dir, elev_src);
-        parser.set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_taxiway_defs, debug_feature_defs );
-        parser.Parse( airport_pos );
-    }
+
     else if ( start_id != "" )
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
+        GENAPT_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
 
         // scroll forward in datafile
         position = scheduler->FindAirport( start_id );
@@ -416,9 +359,8 @@ int main(int argc, char **argv)
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Done");
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Done");
     exit(0);
 
     return 0;
 }
-
