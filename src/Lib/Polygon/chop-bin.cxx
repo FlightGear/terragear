@@ -37,8 +37,6 @@
 #include <simgear/structure/exception.hxx>
 #include <simgear/misc/sg_path.hxx>
 
-#include <Output/output.hxx>
-
 #include "index.hxx"
 #include "simple_clip.hxx"
 #include "chop.hxx"

@@ -20,8 +20,8 @@
 //
 
 
-#ifndef _TG_OUTPUT_HXX
-#define _TG_OUTPUT_HXX
+#ifndef _OUTPUT_HXX
+#define _OUTPUT_HXX
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

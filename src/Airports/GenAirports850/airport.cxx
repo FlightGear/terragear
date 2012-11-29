@@ -17,15 +17,15 @@
 #include <Polygon/tg_unique_vec3f.hxx>
 #include <Polygon/tg_unique_vec2f.hxx>
 
-#include <Output/output.hxx>
-
-#include "beznode.hxx"
-#include "runway.hxx"
-#include "helipad.hxx"
 #include "airport.hxx"
-#include "global.hxx"
-#include "elevations.hxx"
+#include "beznode.hxx"
 #include "debug.hxx"
+#include "elevations.hxx"
+#include "global.hxx"
+#include "helipad.hxx"
+#include "runway.hxx"
+#include "output.hxx"
+
 
 Airport::Airport( int c, char* def)
 {
