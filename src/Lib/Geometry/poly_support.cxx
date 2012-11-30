@@ -730,6 +730,126 @@ bool find_intermediate_node( const Point3D& start, const Point3D& end,
     return found_node;
 }
 
+// temp
+bool find_intermediate_node( const Point3D& start, const Point3D& end,
+                             const std::vector<SGGeod>& nodes, Point3D *result,
+                             double bbEpsilon, double errEpsilon
+                           )
+{
+    bool found_node = false;
+    double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
+
+    Point3D p0 = start;
+    Point3D p1 = end;
+
+    // cout << "  find_intermediate_nodes() " << p0 << " <=> " << p1 << endl;
+
+    double xdist = fabs(p0.x() - p1.x());
+    double ydist = fabs(p0.y() - p1.y());
+    // cout << "xdist = " << xdist << "  ydist = " << ydist << endl;
+    x_err_min = xdist + 1.0;
+    y_err_min = ydist + 1.0;
+
+    if ( xdist > ydist ) {
+    // cout << "use y = mx + b" << endl;
+
+    // sort these in a sensible order
+    Point3D p_min, p_max;
+    if ( p0.x() < p1.x() ) {
+        p_min = p0;
+        p_max = p1;
+    } else {
+        p_min = p1;
+        p_max = p0;
+    }
+
+    m = (p_min.y() - p_max.y()) / (p_min.x() - p_max.x());
+    b = p_max.y() - m * p_max.x();
+
+    // cout << "m = " << m << " b = " << b << endl;
+
+    for ( int i = 0; i < (int)nodes.size(); ++i ) {
+        // cout << i << endl;
+        Point3D current = Point3D::fromSGGeod( nodes[i] );
+
+        if ( (current.x() > (p_min.x() + (bbEpsilon)))
+            && (current.x() < (p_max.x() - (bbEpsilon))) ) {
+
+        // printf( "found a potential candidate %.7f %.7f %.7f\n",
+        //         current.x(), current.y(), current.z() );
+
+        y_err = fabs(current.y() - (m * current.x() + b));
+        // cout << "y_err = " << y_err << endl;
+
+        if ( y_err < errEpsilon ) {
+            // cout << "FOUND EXTRA SEGMENT NODE (Y)" << endl;
+            // cout << p_min << " < " << current << " < "
+            //      << p_max << endl;
+            found_node = true;
+            if ( y_err < y_err_min ) {
+            *result = current;
+            y_err_min = y_err;
+            }
+        }
+        }
+    }
+    } else {
+    // cout << "use x = m1 * y + b1" << endl;
+
+    // sort these in a sensible order
+    Point3D p_min, p_max;
+    if ( p0.y() < p1.y() ) {
+        p_min = p0;
+        p_max = p1;
+    } else {
+        p_min = p1;
+        p_max = p0;
+    }
+
+    m1 = (p_min.x() - p_max.x()) / (p_min.y() - p_max.y());
+    b1 = p_max.x() - m1 * p_max.y();
+
+    // cout << "  m1 = " << m1 << " b1 = " << b1 << endl;
+    // printf( "  m = %.8f  b = %.8f\n", 1/m1, -b1/m1);
+
+    // cout << "  should = 0 = "
+    //      << fabs(p_min.x() - (m1 * p_min.y() + b1)) << endl;
+    // cout << "  should = 0 = "
+    //      << fabs(p_max.x() - (m1 * p_max.y() + b1)) << endl;
+
+    for ( int i = 0; i < (int)nodes.size(); ++i ) {
+        Point3D current = Point3D::fromSGGeod( nodes[i] );
+
+        if ( (current.y() > (p_min.y() + (bbEpsilon)))
+            && (current.y() < (p_max.y() - (bbEpsilon))) ) {
+
+        // printf( "found a potential candidate %.7f %.7f %.7f\n",
+        //         current.x(), current.y(), current.z() );
+
+        x_err = fabs(current.x() - (m1 * current.y() + b1));
+        // cout << "x_err = " << x_err << endl;
+
+        // if ( temp ) {
+        // cout << "  (" << counter << ") x_err = " << x_err << endl;
+        // }
+
+        if ( x_err < errEpsilon ) {
+            // cout << "FOUND EXTRA SEGMENT NODE (X)" << endl;
+            // cout << p_min << " < " << current << " < "
+            //      << p_max << endl;
+            found_node = true;
+            if ( x_err < x_err_min ) {
+            *result = current;
+            x_err_min = x_err;
+            }
+        }
+        }
+    }
+    }
+
+    return found_node;
+}
+
 
 // Attempt to reduce degeneracies where a subsequent point of a
 // polygon lies *on* a previous line segment.

@@ -54,19 +54,19 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     p = Point3D(min.x(), min.y(), -9999.0);
     safety_base.add_node( 0, p );
-    nodes.unique_add( p );
+    nodes.unique_add( p.toSGGeod() );
 
     p = Point3D(max.x(), min.y(), -9999.0);
     safety_base.add_node( 0, p );
-    nodes.unique_add( p );
+    nodes.unique_add( p.toSGGeod() );
 
     p = Point3D(max.x(), max.y(), -9999.0);
     safety_base.add_node( 0, p );
-    nodes.unique_add( p );
+    nodes.unique_add( p.toSGGeod() );
 
     p = Point3D(min.x(), max.y(), -9999.0);
     safety_base.add_node( 0, p );
-    nodes.unique_add( p );
+    nodes.unique_add( p.toSGGeod() );
 
     // set up land mask, we clip most things to this since it is our
     // best representation of land vs. ocean.  If we have other less
@@ -274,7 +274,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 for (int con=0; con < poly.contours(); con++) {
                     for (int node = 0; node < poly.contour_size( con ); node++) {
                         // ensure we have all nodes...
-                        nodes.unique_add( poly.get_pt( con, node ) );
+                        nodes.unique_add( poly.get_pt( con, node ).toSGGeod() );
                     }
                 }
             }

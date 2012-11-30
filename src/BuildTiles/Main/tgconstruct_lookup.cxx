@@ -46,7 +46,7 @@ void TGConstruct::LookupNodesPerVertex( void )
 
                 for (int tri=0; tri < tris.contours(); tri++) {
                     for (int vertex = 0; vertex < tris.contour_size(tri); vertex++) {
-                        idx = nodes.find( tris.get_pt( tri, vertex ) );
+                        idx = nodes.find( tris.get_pt( tri, vertex ).toSGGeod() );
                         if (idx >= 0) {
                             tri_nodes.add_node( tri, idx );
                         } else {
@@ -73,7 +73,7 @@ void TGConstruct::LookupFacesPerNode( void )
 
                 for (int tri=0; tri < tris.contours(); tri++) {
                     for (int sub = 0; sub < tris.contour_size(tri); sub++) {
-                        int n = nodes.find( tris.get_pt( tri, sub ) );
+                        int n = nodes.find( tris.get_pt( tri, sub ).toSGGeod() );
                         nodes.AddFace( n, area, shape, segment, tri );
                     }
                 }

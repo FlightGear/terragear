@@ -5,17 +5,15 @@
 #  include <config.h>
 #endif
 
-#ifndef __cplusplus                                                          
+#ifndef __cplusplus
 # error This library requires C++
-#endif                                   
+#endif
 
 #include <cstdlib>
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/math/sg_types.hxx>
+//#include <simgear/math/sg_types.hxx>
 #include <simgear/io/lowlevel.hxx>
-
-#include <Geometry/point3d.hxx>
 
 #define FG_PROXIMITY_EPSILON 0.000001
 #define FG_COURSE_EPSILON 0.0001
@@ -36,12 +34,11 @@ public:
     TGNode() {
         // constructor for serialization only
     }
-    
-    TGNode( Point3D p ) {
+
+    TGNode( SGGeod p ) {
         position    = p;
-        normal      = Point3D();
         CalcWgs84();
-        
+
         fixed_position  = false;        // no matter what - don't move x, y, or z (likely a hole around an airport generated ny genapts)
         fixed_normal    = false;        // no matter what - don't modify the normal - likely on a normal generated on a shared edge 
 
@@ -57,8 +54,7 @@ public:
 
     inline void CalcWgs84()
     {
-        SGGeod  geod = SGGeod::fromDegM( position.x(), position.y(), position.z() );
-        wgs84 = SGVec3d::fromGeod(geod);
+        wgs84 = SGVec3d::fromGeod(position);
     }
 
     inline void AddFace( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
@@ -76,10 +72,9 @@ public:
     inline bool GetFixedPosition( void ) const      { return fixed_position; }
     inline void SetFixedNormal( bool fix )          { fixed_normal = fix; }
     inline bool GetFixedNormal( void ) const        { return fixed_normal; }
-    inline SGVec3d GetWgs84AsSGVec3d( void ) const  { return wgs84; }
-    inline Point3D GetWgs84AsPoint3D( void ) const  { return Point3D::fromSGVec3( wgs84 ); }
+    inline SGVec3d GetWgs84( void ) const           { return wgs84; }
 
-    inline void    SetPosition( const Point3D& p )  
+    inline void    SetPosition( const SGGeod& p )
     { 
         if (!fixed_position) {
             position = p; 
@@ -90,24 +85,23 @@ public:
     inline void    SetElevation( double z )
     { 
         if (!fixed_position) {
-            position.setelev( z );
+            position.setElevationM( z );
             CalcWgs84();
         }
     }
 
-    inline Point3D GetPosition( void ) const        { return position; }
-    inline void    SetNormal( const Point3D& n )    { normal = n; }
-    inline Point3D GetNormal( void ) const          { return normal; }
+    inline SGGeod  GetPosition( void ) const        { return position; }
+    inline void    SetNormal( const SGVec3f& n )    { normal = n; }
+    inline SGVec3f GetNormal( void ) const          { return normal; }
 
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
     // Friends for serialization
-    friend std::istream& operator>> ( std::istream&, TGNode& );
     friend std::ostream& operator<< ( std::ostream&, const TGNode& );
 
 private:
-    Point3D     position;
-    Point3D     normal;
+    SGGeod      position;
+    SGVec3f     normal;
     SGVec3d     wgs84;
 
     bool        fixed_position;
@@ -119,9 +113,7 @@ typedef std::vector < TGNode > node_list;
 typedef node_list::iterator node_list_iterator;
 typedef node_list::const_iterator const_node_list_iterator;
 
-
 /* This class handles ALL of the nodes in a tile : 3d nodes in elevation data, 2d nodes generated from landclass, etc) */
-
 class TGNodes {
 public:
 
@@ -139,7 +131,7 @@ public:
 
     // Add a point to the point list if it doesn't already exist.
     // Returns the index (starting at zero) of the point in the list.
-    void unique_add( const Point3D& p ) {
+    void unique_add( const SGGeod& p ) {
         if ( !sorted ) {
             linear_unique_add( p );
         } else {
@@ -151,7 +143,7 @@ public:
     // Add a point to the point list if it doesn't already exist
     // (checking all three dimensions.)  Returns the index (starting
     // at zero) of the point in the list.
-    void unique_add_fixed_elevation( const Point3D& p ) {
+    void unique_add_fixed_elevation( const SGGeod& p ) {
         if ( !sorted ) {
             linear_unique_add_fixed_elevation( p );
         } else {
@@ -162,7 +154,7 @@ public:
 
     // Find the index of the specified point (compair to the same
     // tolerance as unique_add().  Returns -1 if not found.
-    int find(  const Point3D& p ) const {
+    int find(  const SGGeod& p ) const {
         if ( sorted ) {
             return sorted_find( p );
         } else {
@@ -170,33 +162,30 @@ public:
         }
     }
 
-    node_list get_fixed_elevation_nodes( void ) const;
-
     void SortNodes( void );
     void SetElevation( int idx, double z )  { tg_node_list[idx].SetElevation( z ); }
 
-    Point3D GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
-    void SetNormal( int idx, Point3D n )    { tg_node_list[idx].SetNormal( n ); }
+    SGVec3f GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
+    void SetNormal( int idx, SGVec3f n )    { tg_node_list[idx].SetNormal( n ); }
 
      // return the master node list
     inline node_list& get_node_list() { return tg_node_list; }
     inline const node_list& get_node_list() const { return tg_node_list; }
 
     // return a point list of geodetic nodes
-    point_list get_geod_nodes() const;
+    void get_geod_nodes( std::vector<SGGeod>& points ) const;
 
     // Find all the nodes within a bounding box
-    point_list get_geod_inside( Point3D min, Point3D max ) const;
+    void get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector<SGGeod>& points ) const;
 
     // Find a;; the nodes on the tile edges
-    void get_geod_edge( SGBucket b, point_list& north, point_list& south, point_list& east, point_list& west ) const;
+    void get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west ) const;
 
     // return a point list of wgs84 nodes
-    std::vector< SGVec3d > get_wgs84_nodes_as_SGVec3d() const;
-    point_list get_wgs84_nodes_as_Point3d() const;
+    void get_wgs84_nodes( std::vector<SGVec3d>& points ) const;
 
     // return a point list of normals
-    point_list get_normals() const;
+    void get_normals( std::vector<SGVec3f>& normals ) const;
 
     // return the ith point
     inline TGNode get_node( int i ) const { return tg_node_list[i]; }
@@ -214,67 +203,64 @@ public:
     void LoadFromGzFile( gzFile& fp );
 
     // Friends for serialization
-    friend std::istream& operator>> ( std::istream&, TGNodes& );
     friend std::ostream& operator<< ( std::ostream&, const TGNodes& );
 
 private:
-    void linear_unique_add( const Point3D& p );
-    void linear_unique_add_fixed_elevation( const Point3D& p );
+    void linear_unique_add( const SGGeod& p );
+    void linear_unique_add_fixed_elevation( const SGGeod& p );
 
-    int sorted_find( const Point3D& p ) const;
-    int linear_find( const Point3D& p ) const;
+    int sorted_find( const SGGeod& p ) const;
+    int linear_find( const SGGeod& p ) const;
     node_list tg_node_list;
     bool sorted;
 
     // return true of the two points are "close enough" as defined by
     // FG_PROXIMITY_EPSILON
-    bool close_enough_2d( const Point3D& p1, const Point3D& p2 ) const;
+    bool close_enough_2d( const SGGeod& p1, const SGGeod& p2 ) const;
 
     // return true of the two points are "close enough" as defined by
     // FG_PROXIMITY_EPSILON
-    bool close_enough_3d( const Point3D& p1, const Point3D& p2 ) const;
+    bool close_enough_3d( const SGGeod& p1, const SGGeod& p2 ) const;
 
     // return true of the two points are "close enough" as defined by
     // FG_COURSE_EPSILON
-    bool course_close_enough( const Point3D& p1, const Point3D& p2 );
+    bool course_close_enough( const SGGeod& p1, const SGGeod& p2 );
 };
 
 
 // return true of the two points are "close enough" as defined by
 // FG_PROXIMITY_EPSILON checking just x and y dimensions
-inline bool TGNodes::close_enough_2d( const Point3D& p1, const Point3D& p2 )
+inline bool TGNodes::close_enough_2d( const SGGeod& p1, const SGGeod& p2 )
     const
 {
-    if ( ( fabs(p1.x() - p2.x()) < FG_PROXIMITY_EPSILON ) && 
-         ( fabs(p1.y() - p2.y()) < FG_PROXIMITY_EPSILON ) ) {
+    if ( ( fabs(p1.getLongitudeDeg() - p2.getLongitudeDeg()) < FG_PROXIMITY_EPSILON ) &&
+         ( fabs(p1.getLatitudeDeg()  - p2.getLatitudeDeg()) < FG_PROXIMITY_EPSILON ) ) {
         return true;
     } else {
         return false;
     }
 }
-
 
 // return true of the two points are "close enough" as defined by
 // FG_PROXIMITY_EPSILON check all three dimensions
-inline bool TGNodes::close_enough_3d( const Point3D& p1, const Point3D& p2 )
+inline bool TGNodes::close_enough_3d( const SGGeod& p1, const SGGeod& p2 )
     const
 {
-    if ( ( fabs(p1.x() - p2.x()) < FG_PROXIMITY_EPSILON ) &&
-         ( fabs(p1.y() - p2.y()) < FG_PROXIMITY_EPSILON ) &&
-         ( fabs(p1.z() - p2.z()) < FG_PROXIMITY_EPSILON ) ) {
+    if ( ( fabs(p1.getLongitudeDeg() - p2.getLongitudeDeg()) < FG_PROXIMITY_EPSILON ) &&
+         ( fabs(p1.getLatitudeDeg()  - p2.getLatitudeDeg()) < FG_PROXIMITY_EPSILON ) &&
+         ( fabs(p1.getElevationM()   - p2.getElevationM()) < FG_PROXIMITY_EPSILON ) ) {
         return true;
     } else {
         return false;
     }
 }
 
-
 // return true of the two points are "close enough" as defined by
 // FG_COURSE_EPSILON
-inline bool TGNodes::course_close_enough( const Point3D& p1, const Point3D& p2 )
+inline bool TGNodes::course_close_enough( const SGGeod& p1, const SGGeod& p2 )
 {
-    if ( ( fabs(p1.x() - p2.x()) < FG_COURSE_EPSILON ) &&
-         ( fabs(p1.y() - p2.y()) < FG_COURSE_EPSILON ) ) {
+    if ( ( fabs(p1.getLongitudeDeg() - p2.getLongitudeDeg()) < FG_COURSE_EPSILON ) &&
+         ( fabs(p1.getLatitudeDeg()  - p2.getLatitudeDeg()) < FG_COURSE_EPSILON ) ) {
         return true;
     } else {
         return false;

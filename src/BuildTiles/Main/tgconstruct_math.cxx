@@ -32,14 +32,14 @@
 //using std::string;
 
 double TGConstruct::calc_tri_area( int_list& triangle_nodes ) {
-    Point3D p1 = nodes.get_node( triangle_nodes[0] ).GetPosition();
-    Point3D p2 = nodes.get_node( triangle_nodes[1] ).GetPosition();
-    Point3D p3 = nodes.get_node( triangle_nodes[2] ).GetPosition();
+    SGGeod p1 = nodes.get_node( triangle_nodes[0] ).GetPosition();
+    SGGeod p2 = nodes.get_node( triangle_nodes[1] ).GetPosition();
+    SGGeod p3 = nodes.get_node( triangle_nodes[2] ).GetPosition();
 
     return triangle_area( p1, p2, p3 );
 }
 
-SGVec3d TGConstruct::calc_normal( double area, Point3D p1, Point3D p2, Point3D p3 ) {
+SGVec3d TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) {
     SGVec3d v1, v2, normal;
 
     // do some sanity checking.  With the introduction of landuse
@@ -76,7 +76,7 @@ SGVec3d TGConstruct::calc_normal( double area, Point3D p1, Point3D p2, Point3D p
     return normal;
 }
 
-void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
+void TGConstruct::calc_normals( std::vector<SGVec3d>& wgs84_nodes, TGSuperPoly& sp ) {
     // for each face in the superpoly, calculate a face normal
     SGVec3d     normal;
     TGPolyNodes tri_nodes = sp.get_tri_idxs();
@@ -91,12 +91,11 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
     for (int i=0; i<tri_nodes.contours(); i++) {
         face_nodes = tri_nodes.get_contour(i);
 
-        Point3D p1 = wgs84_nodes[ face_nodes[0] ];
-        Point3D p2 = wgs84_nodes[ face_nodes[1] ];
-        Point3D p3 = wgs84_nodes[ face_nodes[2] ];
+        SGVec3d p1 = wgs84_nodes[ face_nodes[0] ];
+        SGVec3d p2 = wgs84_nodes[ face_nodes[1] ];
+        SGVec3d p3 = wgs84_nodes[ face_nodes[2] ];
 
         area  = calc_tri_area( face_nodes );
-
         normal = calc_normal( area, p1, p2, p3 );
 
         face_normals.push_back( Point3D::fromSGVec3( normal ) );
@@ -110,7 +109,8 @@ void TGConstruct::calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp ) {
 void TGConstruct::CalcFaceNormals( void )
 {
     // traverse the superpols, and calc normals for each tri within
-    point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
+    std::vector<SGVec3d> wgs84_nodes;
+    nodes.get_wgs84_nodes( wgs84_nodes );
 
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
@@ -127,10 +127,12 @@ void TGConstruct::CalcPointNormals( void )
     // traverse triangle structure building the face normal table
     SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals: 0%");
 
-    Point3D normal;
+    SGVec3d normal;
     double  face_area;
 
-    point_list wgs84_nodes = nodes.get_wgs84_nodes_as_Point3d();
+    std::vector<SGVec3d> wgs84_nodes;
+    nodes.get_wgs84_nodes( wgs84_nodes );
+
     unsigned int one_percent = nodes.size() / 100;
     unsigned int cur_percent = 1;
 
@@ -140,7 +142,7 @@ void TGConstruct::CalcPointNormals( void )
         TGNeighborFaces* neighbor_faces = NULL;
         double total_area = 0.0;
 
-        Point3D average( 0.0 );
+        SGVec3d average( 0.0, 0.0, 0.0 );
 
         if ( i == one_percent ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals: " << cur_percent << "%" );
@@ -156,7 +158,7 @@ void TGConstruct::CalcPointNormals( void )
             unsigned int tri     = faces[j].tri;
             int_list     face_nodes;
 
-            normal     = polys_clipped.get_face_normal( at, shape, segment, tri );
+            normal     = polys_clipped.get_face_normal( at, shape, segment, tri ).toSGVec3d();
             face_nodes = polys_clipped.get_tri_idxs( at, shape, segment ).get_contour( tri ) ;
             face_area  = polys_clipped.get_face_area( at, shape, segment, tri );
 
@@ -166,11 +168,11 @@ void TGConstruct::CalcPointNormals( void )
         }
 
         // if this node exists in the shared edge db, add the faces from the neighbooring tile
-        neighbor_faces = FindNeighborFaces( node.GetPosition() );
+        neighbor_faces = FindNeighborFaces( Point3D::fromSGGeod( node.GetPosition() ) );
         if ( neighbor_faces ) {
             int num_faces = neighbor_faces->face_areas.size();
             for ( int j = 0; j < num_faces; j++ ) {
-                normal    = neighbor_faces->face_normals[j];
+                normal    = neighbor_faces->face_normals[j].toSGVec3d();
                 face_area = neighbor_faces->face_areas[j];
 
                 normal *= face_area;
@@ -180,6 +182,7 @@ void TGConstruct::CalcPointNormals( void )
         }
 
         average /= total_area;
-        nodes.SetNormal( i, average );
+        SGVec3f n = SGVec3f( average.x(), average.y(), average.z() );
+        nodes.SetNormal( i, n );
     }
 }

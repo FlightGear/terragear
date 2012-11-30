@@ -52,12 +52,12 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
     if ( add_nodes ) {
     point_list corner_list = array.get_corner_list();
     for (unsigned int i=0; i<corner_list.size(); i++) {
-        nodes.unique_add(corner_list[i]);
+        nodes.unique_add( corner_list[i].toSGGeod() );
     }
 
     point_list fit_list = array.get_fitted_list();
     for (unsigned int i=0; i<fit_list.size(); i++) {
-        nodes.unique_add(fit_list[i]);
+        nodes.unique_add( fit_list[i].toSGGeod() );
     }
 }
 }
@@ -72,13 +72,13 @@ static void calc_gc_course_dist( const Point3D& start, const Point3D& dest,
 
 // calculate spherical distance between two points (lon, lat specified
 // in degrees, result returned in meters)
-static double distanceSphere( const Point3D p1, const Point3D p2 ) {
-    Point3D r1( p1.x() * SG_DEGREES_TO_RADIANS,
-                p1.y() * SG_DEGREES_TO_RADIANS,
-                p1.z() );
-    Point3D r2( p2.x() * SG_DEGREES_TO_RADIANS,
-                p2.y() * SG_DEGREES_TO_RADIANS,
-                p2.z() );
+static double distanceSphere( const SGGeoc& p1, const SGGeod& p2 ) {
+    Point3D r1( p1.getLongitudeRad(),
+                p1.getLatitudeRad(),
+                p1.getRadiusM() );
+    Point3D r2( p2.getLongitudeRad(),
+                p2.getLatitudeRad(),
+                p2.getElevationM() );
 
     double course, dist_m;
     calc_gc_course_dist( r1, r2, &course, &dist_m );
@@ -94,22 +94,22 @@ void TGConstruct::CalcElevations( void )
     TGPolyNodes tri_nodes;
     double e1, e2, e3, min;
     int    n1, n2, n3;
-    point_list  raw_nodes;
-    Point3D p;
+    std::vector<SGGeod> raw_nodes;
+    SGGeoc p;
 
     SG_LOG(SG_GENERAL, SG_ALERT, "fixing node heights");
 
     for (int i = 0; i < (int)nodes.size(); ++i) {
         TGNode node = nodes.get_node( i );
-        Point3D pos = node.GetPosition();
+        SGGeod pos = node.GetPosition();
 
         if ( !node.GetFixedPosition() ) {
             // set elevation as interpolated point from DEM data.
-            nodes.SetElevation( i, array.altitude_from_grid(pos.x() * 3600.0, pos.y() * 3600.0) );
+            nodes.SetElevation( i, array.altitude_from_grid(pos.getLongitudeDeg() * 3600.0, pos.getLatitudeDeg() * 3600.0) );
         }
     }
 
-    raw_nodes = nodes.get_geod_nodes();
+    nodes.get_geod_nodes(raw_nodes);
     // now flatten some stuff
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         if ( is_lake_area( (AreaType)area ) ) {
@@ -126,11 +126,11 @@ void TGConstruct::CalcElevations( void )
                         }
 
                         n1 = tri_nodes.get_pt( tri, 0 );
-                        e1 = nodes.get_node(n1).GetPosition().z();
+                        e1 = nodes.get_node(n1).GetPosition().getElevationM();
                         n2 = tri_nodes.get_pt( tri, 1 );
-                        e2 = nodes.get_node(n2).GetPosition().z();
+                        e2 = nodes.get_node(n2).GetPosition().getElevationM();
                         n3 = tri_nodes.get_pt( tri, 2 );
-                        e3 = nodes.get_node(n3).GetPosition().z();
+                        e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
                         min = e1;
                         if ( e2 < min ) { min = e2; }
@@ -159,17 +159,17 @@ void TGConstruct::CalcElevations( void )
 
 
                         n1 = tri_nodes.get_pt( tri, 0 );
-                        e1 = nodes.get_node(n1).GetPosition().z();
+                        e1 = nodes.get_node(n1).GetPosition().getElevationM();
                         n2 = tri_nodes.get_pt( tri, 1 );
-                        e2 = nodes.get_node(n2).GetPosition().z();
+                        e2 = nodes.get_node(n2).GetPosition().getElevationM();
                         n3 = tri_nodes.get_pt( tri, 2 );
-                        e3 = nodes.get_node(n3).GetPosition().z();
+                        e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
                         min = e1;
-                        p   = raw_nodes[n1];
+                        p   = SGGeoc::fromGeod( raw_nodes[n1] );
 
-                        if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }
-                        if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }
+                        if ( e2 < min ) { min = e2; p = SGGeoc::fromGeod( raw_nodes[n2] ); }
+                        if ( e3 < min ) { min = e3; p = SGGeoc::fromGeod( raw_nodes[n3] ); }
 
                         double d1 = distanceSphere( p, raw_nodes[n1] );
                         double d2 = distanceSphere( p, raw_nodes[n2] );
@@ -202,17 +202,17 @@ void TGConstruct::CalcElevations( void )
 
 
                         n1 = tri_nodes.get_pt( tri, 0 );
-                        e1 = nodes.get_node(n1).GetPosition().z();
+                        e1 = nodes.get_node(n1).GetPosition().getElevationM();
                         n2 = tri_nodes.get_pt( tri, 1 );
-                        e2 = nodes.get_node(n2).GetPosition().z();
+                        e2 = nodes.get_node(n2).GetPosition().getElevationM();
                         n3 = tri_nodes.get_pt( tri, 2 );
-                        e3 = nodes.get_node(n3).GetPosition().z();
+                        e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
                         min = e1;
-                        p   = raw_nodes[n1];
+                        p   = SGGeoc::fromGeod( raw_nodes[n1] );
 
-                        if ( e2 < min ) { min = e2; p = raw_nodes[n2]; }
-                        if ( e3 < min ) { min = e3; p = raw_nodes[n3]; }
+                        if ( e2 < min ) { min = e2; p = SGGeoc::fromGeod( raw_nodes[n2] ); }
+                        if ( e3 < min ) { min = e3; p = SGGeoc::fromGeod( raw_nodes[n3] ); }
 
                         double d1 = distanceSphere( p, raw_nodes[n1] );
                         double d2 = distanceSphere( p, raw_nodes[n2] );

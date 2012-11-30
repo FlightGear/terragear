@@ -155,7 +155,7 @@ void TGConstruct::WriteBtgFile( void )
                             tri_v.push_back( index );
 
                             // add the node's normal
-                            index = normals.unique_add( nodes.GetNormal( index ) );
+                            index = normals.unique_add( Point3D::fromSGVec3( nodes.GetNormal( index ) ) );
                             tri_n.push_back( index );
 
                             Point3D tc = tri_txs.get_pt( k, l );
@@ -174,7 +174,8 @@ void TGConstruct::WriteBtgFile( void )
         }
     }
 
-    std::vector< SGVec3d > wgs84_nodes = nodes.get_wgs84_nodes_as_SGVec3d();
+    std::vector< SGVec3d > wgs84_nodes;
+    nodes.get_wgs84_nodes( wgs84_nodes );
     SGVec3d gbs_center = SGVec3d::fromGeod( bucket.get_center() );
     double dist_squared, radius_squared = 0;
     for (int i = 0; i < (int)wgs84_nodes.size(); ++i)

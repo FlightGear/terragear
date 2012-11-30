@@ -177,9 +177,9 @@ bool TGConstruct::load_poly(const string& path) {
                 poly.add_node( i, p );
 
                 if ( poly3d ) {
-                    nodes.unique_add_fixed_elevation( p );
+                    nodes.unique_add_fixed_elevation( p.toSGGeod() );
                 } else {
-                    nodes.unique_add( p );
+                    nodes.unique_add( p.toSGGeod() );
                 }
 
                 for ( j = 1; j < count - 1; ++j ) {
@@ -194,9 +194,9 @@ bool TGConstruct::load_poly(const string& path) {
                     p.snap( gSnap );
                     poly.add_node( i, p );
                     if ( poly3d ) {
-                        nodes.unique_add_fixed_elevation( p );
+                        nodes.unique_add_fixed_elevation( p.toSGGeod() );
                     } else {
-                        nodes.unique_add( p );
+                        nodes.unique_add( p.toSGGeod() );
                     }
                 }
 
@@ -217,9 +217,9 @@ bool TGConstruct::load_poly(const string& path) {
                     p.snap( gSnap );
                     poly.add_node( i, p );
                     if ( poly3d ) {
-                        nodes.unique_add_fixed_elevation( p );
+                        nodes.unique_add_fixed_elevation( p.toSGGeod() );
                     } else {
-                        nodes.unique_add( p );
+                        nodes.unique_add( p.toSGGeod() );
                     }
                 }
             }

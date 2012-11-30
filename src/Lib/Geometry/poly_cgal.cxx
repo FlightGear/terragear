@@ -103,7 +103,7 @@ void insert_polygon(CDT& cdt,const Polygon_2& polygon)
     }
 }
 
-TGPolygon polygon_tesselate_alt_with_extra_cgal( TGPolygon &p, const point_list& extra_nodes, bool verbose ) {
+TGPolygon polygon_tesselate_alt_with_extra_cgal( TGPolygon &p, const std::vector<SGGeod>& extra_nodes, bool verbose ) {
     TGPolygon result;
     CDT       cdt;
 
@@ -118,10 +118,10 @@ TGPolygon polygon_tesselate_alt_with_extra_cgal( TGPolygon &p, const point_list&
     std::vector<Point> points;
     points.reserve(extra_nodes.size());
     for (unsigned int n = 0; n < extra_nodes.size(); n++) {
-        points.push_back( Point(extra_nodes[n].x(), extra_nodes[n].y()) );     
+        points.push_back( Point(extra_nodes[n].getLongitudeDeg(), extra_nodes[n].getLatitudeDeg()) );
     }
     cdt.insert(points.begin(), points.end());
-    
+
     // then insert each polygon as a constraint into the triangulation
     for (int c = 0; c < p.contours(); c++) {
         point_list contour = p.get_contour( c );
@@ -160,6 +160,6 @@ TGPolygon polygon_tesselate_alt_with_extra_cgal( TGPolygon &p, const point_list&
 
 TGPolygon polygon_tesselate_alt_cgal( TGPolygon &p, bool verbose ) {
 
-    point_list pl; pl.clear();
+    std::vector<SGGeod> pl; pl.clear();
     return ( polygon_tesselate_alt_with_extra_cgal(p, pl, verbose) );
 }

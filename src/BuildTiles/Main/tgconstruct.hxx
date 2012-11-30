@@ -164,7 +164,7 @@ private:
     void CalcPointNormals( void );
     void CalcTextureCoordinates( void );
     // Helpers
-    SGVec3d   calc_normal( double area, Point3D p1, Point3D p2, Point3D p3 );
+    SGVec3d   calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 );
     TGPolygon linear_tex_coords( const TGPolygon& tri, const TGTexParams& tp );
     TGPolygon area_tex_coords( const TGPolygon& tri );
 
@@ -173,7 +173,7 @@ private:
     void AddCustomObjects( void );
 
     // Misc
-    void calc_normals( point_list& wgs84_nodes, TGSuperPoly& sp );
+    void calc_normals( std::vector<SGVec3d>& wgs84_nodes, TGSuperPoly& sp );
     double calc_tri_area( int_list& triangle_nodes );
 
     // debug
@@ -244,11 +244,11 @@ public:
     inline TGNodes* get_nodes() { return &nodes; }
 
     // node list in geodetic coords (with fixed elevation)
-    inline point_list get_geod_nodes() const { return nodes.get_geod_nodes(); }
+    inline void get_geod_nodes( std::vector<SGGeod>& points ) const { nodes.get_geod_nodes( points ); }
 
     // normal list (for each point) in cart coords (for smooth
     // shading)
-    inline point_list get_point_normals() const { return nodes.get_normals(); }
+    inline void get_point_normals( std::vector<SGVec3f>& normals ) const { nodes.get_normals( normals ); }
 
     // Debug
     void set_debug( std::string path, std::vector<std::string> area_defs, std::vector<std::string> shape_defs );

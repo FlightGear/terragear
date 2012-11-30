@@ -44,6 +44,14 @@ void add_intermediate_nodes( int contour, const Point3D& start,
                            );
 
 
+// TEMP - converting tgnodes to SGGeod/SGVec3d
+void add_intermediate_nodes( int contour, const Point3D& start,
+                             const Point3D& end, const std::vector<SGGeod>& tmp_nodes,
+                             TGPolygon *result,
+                             const double bbEpsilon = SG_EPSILON*10,
+                             const double errEpsilon = SG_EPSILON*4
+                           );
+
 // Search each segment for additional vertex points that may have been
 // created elsewhere that lie on the segment and split it there to
 // avoid "T" intersections.

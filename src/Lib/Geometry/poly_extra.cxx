@@ -59,6 +59,32 @@ void add_intermediate_nodes( int contour, const Point3D& start,
     }
 }
 
+void add_intermediate_nodes( int contour, const Point3D& start,
+                             const Point3D& end, std::vector<SGGeod>&tmp_nodes,
+                             TGPolygon *result,
+                             const double bbEpsilon,
+                             const double errEpsilon
+                           )
+{
+    Point3D new_pt;
+
+    SG_LOG(SG_GENERAL, SG_BULK, "   " << start << " <==> " << end );
+
+    bool found_extra = find_intermediate_node( start, end, tmp_nodes, &new_pt, bbEpsilon, errEpsilon );
+
+    if ( found_extra ) {
+        // recurse with two sub segments
+        // SG_LOG(SG_GENERAL, SG_DEBUG, "dividing " << p0 << " " << nodes[extra_index]
+        //      << " " << p1);
+        add_intermediate_nodes( contour, start, new_pt, tmp_nodes, result, bbEpsilon, errEpsilon  );
+
+        result->add_node( contour, new_pt );
+        SG_LOG(SG_GENERAL, SG_BULK, "    adding = " << new_pt);
+
+        add_intermediate_nodes( contour, new_pt, end, tmp_nodes, result, bbEpsilon, errEpsilon  );
+    }
+}
+
 
 // Search each segment for additional vertex points that may have been
 // created elsewhere that lie on the segment and split it there to
@@ -113,12 +139,12 @@ TGPolygon add_tgnodes_to_poly( const TGPolygon& poly,
     TGPolygon result; result.erase();
     SGGeod min, max;
     Point3D p0, p1;
-    point_list poly_points;
+    std::vector<SGGeod> poly_points;
 
     poly.get_bounding_box(min, max);
     SG_LOG(SG_GENERAL, SG_DEBUG, "add_tgnodes_to_poly : min " << min << " max " << max );
 
-    poly_points = nodes->get_geod_inside( Point3D::fromSGGeod(min), Point3D::fromSGGeod(max) );
+    nodes->get_geod_inside( min, max, poly_points );
 
     for ( int i = 0; i < poly.contours(); ++i ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);

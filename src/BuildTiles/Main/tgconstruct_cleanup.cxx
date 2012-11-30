@@ -199,7 +199,7 @@ void TGConstruct::AverageEdgeElevations( void )
         elevation = elevation / num_elevations;
 
         /* Find this node, and update it's elevation */
-        int idx = nodes.find( faces.node );
+        int idx = nodes.find( faces.node.toSGGeod() );
 
         if (idx != -1) {
             TGNode node = nodes.get_node( idx );

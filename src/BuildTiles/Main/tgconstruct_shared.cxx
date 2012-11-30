@@ -43,7 +43,7 @@ void TGConstruct::SaveSharedEdgeData( int stage )
     switch( stage ) {
         case 1:
         {
-            point_list north, south, east, west;
+            std::vector<SGGeod> north, south, east, west;
             int nCount;
 
             nodes.get_geod_edge( bucket, north, south, east, west );
@@ -64,28 +64,28 @@ void TGConstruct::SaveSharedEdgeData( int stage )
             nCount = north.size();
             sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                sgWritePoint3D( fp, north[i] );
+                sgWriteGeod( fp, north[i] );
             }
 
             // south
             nCount = south.size();
             sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                sgWritePoint3D( fp, south[i] );
+                sgWriteGeod( fp, south[i] );
             }
 
             // east
             nCount = east.size();
             sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                sgWritePoint3D( fp, east[i] );
+                sgWriteGeod( fp, east[i] );
             }
 
             // west
             nCount = west.size();
             sgWriteInt( fp, nCount );
             for (int i=0; i<nCount; i++) {
-                sgWritePoint3D( fp, west[i] );
+                sgWriteGeod( fp, west[i] );
             }
 
             gzclose(fp);
@@ -113,7 +113,7 @@ void TGConstruct::SaveSharedEdgeData( int stage )
 void TGConstruct::WriteNeighborFaces( gzFile& fp, Point3D pt )
 {
     // find all neighboors of this point
-    int    n    = nodes.find( pt );
+    int    n    = nodes.find( pt.toSGGeod() );
     TGNode node = nodes.get_node( n );
     TGFaceList faces  = node.GetFaces();
 
@@ -130,19 +130,19 @@ void TGConstruct::WriteNeighborFaces( gzFile& fp, Point3D pt )
 
         int_list face_nodes = polys_clipped.get_tri_idxs( at, shape, segment ).get_contour( tri ) ;
         {
-            Point3D p1 = nodes.get_node( face_nodes[0] ).GetPosition();
-            Point3D p2 = nodes.get_node( face_nodes[1] ).GetPosition();
-            Point3D p3 = nodes.get_node( face_nodes[2] ).GetPosition();
+            SGGeod p1 = nodes.get_node( face_nodes[0] ).GetPosition();
+            SGGeod p2 = nodes.get_node( face_nodes[1] ).GetPosition();
+            SGGeod p3 = nodes.get_node( face_nodes[2] ).GetPosition();
 
-            Point3D wgs_p1 = nodes.get_node( face_nodes[0] ).GetWgs84AsPoint3D();
-            Point3D wgs_p2 = nodes.get_node( face_nodes[1] ).GetWgs84AsPoint3D();
-            Point3D wgs_p3 = nodes.get_node( face_nodes[2] ).GetWgs84AsPoint3D();
+            SGVec3d wgs_p1 = nodes.get_node( face_nodes[0] ).GetWgs84();
+            SGVec3d wgs_p2 = nodes.get_node( face_nodes[1] ).GetWgs84();
+            SGVec3d wgs_p3 = nodes.get_node( face_nodes[2] ).GetWgs84();
 
             double  face_area   = triangle_area( p1, p2, p3 );
-            Point3D face_normal = Point3D::fromSGVec3( calc_normal( face_area, wgs_p1, wgs_p2, wgs_p3 ) );
+            SGVec3d face_normal = calc_normal( face_area, wgs_p1, wgs_p2, wgs_p3 );
 
             sgWriteDouble( fp, face_area );
-            sgWritePoint3D( fp, face_normal );
+            sgWritedVec3( fp, face_normal );
         }
     }
 }
@@ -193,10 +193,10 @@ void TGConstruct::ReadNeighborFaces( gzFile& fp )
             pFaces = AddNeighborFaces( node );
 
             // new face - let's add our elevation first
-            int idx = nodes.find( node );
+            int idx = nodes.find( node.toSGGeod() );
             if (idx >= 0) {
                 TGNode local = nodes.get_node( idx );
-                pFaces->elevations.push_back( local.GetPosition().z() );
+                pFaces->elevations.push_back( local.GetPosition().getElevationM() );
             }
         }
 
@@ -222,7 +222,7 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
 {
     string dir;
     string file;
-    point_list north, south, east, west;
+    std::vector<SGGeod> north, south, east, west;
     int nCount;
 
     nodes.get_geod_edge( bucket, north, south, east, west );
@@ -232,7 +232,6 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
     SGPath sgp( dir );
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
-
 
     // north edge
     file = dir + "/" + bucket.gen_index_str() + "_north_edge";
@@ -247,8 +246,8 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
     sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
         // write the 3d point
-        sgWritePoint3D( fp, north[i] );
-        WriteNeighborFaces( fp, north[i] );
+        sgWriteGeod( fp, north[i] );
+        WriteNeighborFaces( fp, Point3D::fromSGGeod( north[i] ) );
     }
     gzclose(fp);
 
@@ -263,8 +262,8 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
     nCount = south.size();
     sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
-        sgWritePoint3D( fp, south[i] );
-        WriteNeighborFaces( fp, south[i] );
+        sgWriteGeod( fp, south[i] );
+        WriteNeighborFaces( fp, Point3D::fromSGGeod( south[i] ) );
     }
     gzclose(fp);
 
@@ -279,8 +278,8 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
     nCount = east.size();
     sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
-        sgWritePoint3D( fp, east[i] );
-        WriteNeighborFaces( fp, east[i] );
+        sgWriteGeod( fp, east[i] );
+        WriteNeighborFaces( fp, Point3D::fromSGGeod( east[i] ) );
     }
     gzclose(fp);
 
@@ -295,8 +294,8 @@ void TGConstruct::SaveSharedEdgeDataStage2( void )
     nCount = west.size();
     sgWriteInt( fp, nCount );
     for (int i=0; i<nCount; i++) {
-        sgWritePoint3D( fp, west[i] );
-        WriteNeighborFaces( fp, west[i] );
+        sgWriteGeod( fp, west[i] );
+        WriteNeighborFaces( fp, Point3D::fromSGGeod( west[i] ) );
     }
     gzclose(fp);
 }
@@ -497,28 +496,28 @@ void TGConstruct::LoadSharedEdgeData( int stage )
             LoadNeighboorEdgeDataStage1( nb, north, south, east, west );
             // Add southern nodes from northern tile
             for (unsigned int i=0; i<south.size(); i++) {
-                nodes.unique_add( south[i] );
+                nodes.unique_add( south[i].toSGGeod() );
             }
 
             // Read South Tile and add its northern nodes
             sb = sgBucketOffset(clon, clat, 0, -1);
             LoadNeighboorEdgeDataStage1( sb, north, south, east, west );
             for (unsigned  int i=0; i<north.size(); i++) {
-                nodes.unique_add( north[i] );
+                nodes.unique_add( north[i].toSGGeod() );
             }
 
             // Read East Tile and add its western nodes
             eb = sgBucketOffset(clon, clat, 1, 0);
             LoadNeighboorEdgeDataStage1( eb, north, south, east, west );
             for (unsigned  int i=0; i<west.size(); i++) {
-                nodes.unique_add( west[i] );
+                nodes.unique_add( west[i].toSGGeod() );
             }
 
             // Read West Tile and add its eastern nodes
             wb = sgBucketOffset(clon, clat, -1, 0);
             LoadNeighboorEdgeDataStage1( wb, north, south, east, west );
             for (unsigned  int i=0; i<east.size(); i++) {
-                nodes.unique_add( east[i] );
+                nodes.unique_add( east[i].toSGGeod() );
             }
         }
         break;

@@ -41,11 +41,11 @@
 
 
 // Calculate the area of a triangle
-inline double triangle_area( const Point3D& p1, const Point3D& p2, const Point3D& p3 )
+inline double triangle_area( const SGGeod& p1, const SGGeod& p2, const SGGeod& p3 )
 {
-    return fabs(0.5 * ( p1.x() * p2.y() - p2.x() * p1.y() +
-                        p2.x() * p3.y() - p3.x() * p2.y() +
-                        p3.x() * p1.y() - p1.x() * p3.y() ));
+    return fabs(0.5 * ( p1.getLongitudeDeg() * p2.getLatitudeDeg() - p2.getLongitudeDeg() * p1.getLatitudeDeg() +
+                        p2.getLongitudeDeg() * p3.getLatitudeDeg() - p3.getLongitudeDeg() * p2.getLatitudeDeg() +
+                        p3.getLongitudeDeg() * p1.getLatitudeDeg() - p1.getLongitudeDeg() * p3.getLatitudeDeg() ));
 }
 
 
@@ -53,7 +53,7 @@ inline double triangle_area( const Point3D& p1, const Point3D& p2, const Point3D
 // or splitting edges and without regard for holes.  Returns a polygon
 // with one contour per tesselated triangle.
 TGPolygon polygon_tesselate_alt_with_extra_cgal( TGPolygon &p,
-            const point_list &extra_nodes, bool verbose );
+            const std::vector<SGGeod>& extra_nodes, bool verbose );
 
 TGPolygon polygon_tesselate_alt_cgal( TGPolygon &p, bool verbose );
 
@@ -89,6 +89,13 @@ TGPolygon remove_spikes( const TGPolygon& poly );
 // end, return true if something found, false if nothing found.
 bool find_intermediate_node( const Point3D& start, const Point3D& end,
                              const point_list& nodes, Point3D *result,
+                             const double bbEpsilon = SG_EPSILON*10,
+                             const double errEpsilon = SG_EPSILON*4
+                           );
+
+// TEMP
+bool find_intermediate_node( const Point3D& start, const Point3D& end,
+                             const std::vector<SGGeod>& nodes, Point3D *result,
                              const double bbEpsilon = SG_EPSILON*10,
                              const double errEpsilon = SG_EPSILON*4
                            );
