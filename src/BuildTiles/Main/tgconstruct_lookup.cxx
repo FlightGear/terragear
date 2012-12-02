@@ -34,27 +34,21 @@
 // indexes into the node array (cast as unsigned long)
 void TGConstruct::LookupNodesPerVertex( void )
 {
-    SG_LOG(SG_GENERAL, SG_ALERT, "LookupNodesPerVertex");
-
     // for each node, traverse all the triangles - and create face lists
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
-        for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
-            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                tgPolygon   poly = polys_clipped.get_poly( area, shape, segment );
+        for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+            tgPolygon& poly = polys_clipped.get_poly( area, p );
 
-                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
-                    for (unsigned int vertex = 0; vertex < 3; vertex++) {
-                        int idx = nodes.find( poly.GetTriNode( tri, vertex ) );
-                        if (idx >= 0) {
-                            poly.SetTriIdx( tri, vertex, idx );
-                        } else {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "didn't find vertex! " << poly.GetTriNode( tri, vertex ) );
-                            exit(0);
-                        }
+            for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                for (unsigned int vertex = 0; vertex < 3; vertex++) {
+                    int idx = nodes.find( poly.GetTriNode( tri, vertex ) );
+                    if (idx >= 0) {
+                        poly.SetTriIdx( tri, vertex, idx );
+                    } else {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "didn't find vertex! " << poly.GetTriNode( tri, vertex ) );
+                        exit(0);
                     }
                 }
-
-                polys_clipped.set_poly( area, shape, segment, poly );
             }
         }
     }
@@ -62,19 +56,15 @@ void TGConstruct::LookupNodesPerVertex( void )
 
 void TGConstruct::LookupFacesPerNode( void )
 {
-    SG_LOG(SG_GENERAL, SG_ALERT, "LookupFacesPerNode");
-
     // Add each face that includes a node to the node's face list
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
-        for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
-            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                tgPolygon poly = polys_clipped.get_poly(area, shape, segment);
+        for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+            tgPolygon const& poly = polys_clipped.get_poly(area, p );
 
-                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
-                    for (int v = 0; v < 3; v++) {
-                        int i = poly.GetTriIdx( tri, v );
-                        nodes.AddFace( i, area, shape, segment, tri );
-                    }
+            for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                for (int v = 0; v < 3; v++) {
+                    int i = poly.GetTriIdx( tri, v );
+                    nodes.AddFace( i, area, p, tri );
                 }
             }
         }

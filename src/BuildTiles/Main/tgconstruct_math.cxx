@@ -29,19 +29,7 @@
 
 #include "tgconstruct.hxx"
 
-//using std::string;
-
-#if 0
-double TGConstruct::calc_tri_area( int_list& triangle_nodes ) {
-    SGGeod p1 = nodes.get_node( triangle_nodes[0] ).GetPosition();
-    SGGeod p2 = nodes.get_node( triangle_nodes[1] ).GetPosition();
-    SGGeod p3 = nodes.get_node( triangle_nodes[2] ).GetPosition();
-
-    return triangle_area( p1, p2, p3 );
-}
-#endif
-
-SGVec3f TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) {
+SGVec3f TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) const {
     SGVec3f v1, v2;
     SGVec3f normal;
 
@@ -111,11 +99,9 @@ void TGConstruct::CalcFaceNormals( void )
     nodes.get_geod_nodes( geod_nodes );
 
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
-        for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
-            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Calculating face normals for " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << polys_in.area_size(area) );
-                calc_normals( geod_nodes, wgs84_nodes, polys_clipped.get_poly( area, shape, segment ) );
-            }
+        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Calculating face normals for " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << polys_in.area_size(area) );
+            calc_normals( geod_nodes, wgs84_nodes, polys_clipped.get_poly( area, p ) );
         }
     }
 }
@@ -123,9 +109,7 @@ void TGConstruct::CalcFaceNormals( void )
 void TGConstruct::CalcPointNormals( void )
 {
     // traverse triangle structure building the face normal table
-    SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals: 0%");
-
-    SGVec3d normal;
+    SGVec3f normal;
     double  face_area;
 
     std::vector<SGVec3d> wgs84_nodes;
@@ -135,15 +119,15 @@ void TGConstruct::CalcPointNormals( void )
     unsigned int cur_percent = 1;
 
     for ( unsigned int i = 0; i<nodes.size(); i++ ) {
-        TGNode node       = nodes.get_node( i );
-        TGFaceList faces  = node.GetFaces();
-        TGNeighborFaces* neighbor_faces = NULL;
+        TGNode const& node = nodes.get_node( i );
+        TGFaceList const& faces  = node.GetFaces();
+        TGNeighborFaces const* neighbor_faces = NULL;
         double total_area = 0.0;
 
-        SGVec3d average( 0.0, 0.0, 0.0 );
+        SGVec3f average( 0.0, 0.0, 0.0 );
 
         if ( i == one_percent ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Calculating point normals: " << cur_percent << "%" );
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Calculating point normals: " << cur_percent << "%" );
             one_percent += nodes.size() / 100;
             cur_percent += 1;
         }
@@ -151,12 +135,11 @@ void TGConstruct::CalcPointNormals( void )
         // for each triangle that shares this node
         for ( unsigned int j = 0; j < faces.size(); ++j ) {
             unsigned int at      = faces[j].area;
-            unsigned int shape   = faces[j].shape;
-            unsigned int segment = faces[j].seg;
+            unsigned int poly    = faces[j].poly;
             unsigned int tri     = faces[j].tri;
 
-            normal     = polys_clipped.get_face_normal( at, shape, segment, tri ).toSGVec3d();
-            face_area  = polys_clipped.get_face_area( at, shape, segment, tri );
+            normal     = polys_clipped.get_face_normal( at, poly, tri );
+            face_area  = polys_clipped.get_face_area( at, poly, tri );
 
             normal *= face_area;    // scale normal weight relative to area
             total_area += face_area;
@@ -164,11 +147,11 @@ void TGConstruct::CalcPointNormals( void )
         }
 
         // if this node exists in the shared edge db, add the faces from the neighbooring tile
-        neighbor_faces = FindNeighborFaces( Point3D::fromSGGeod( node.GetPosition() ) );
+        neighbor_faces = FindNeighborFaces( node.GetPosition() );
         if ( neighbor_faces ) {
             int num_faces = neighbor_faces->face_areas.size();
             for ( int j = 0; j < num_faces; j++ ) {
-                normal    = neighbor_faces->face_normals[j].toSGVec3d();
+                normal    = neighbor_faces->face_normals[j];
                 face_area = neighbor_faces->face_areas[j];
 
                 normal *= face_area;
@@ -178,7 +161,6 @@ void TGConstruct::CalcPointNormals( void )
         }
 
         average /= total_area;
-        SGVec3f n = SGVec3f( average.x(), average.y(), average.z() );
-        nodes.SetNormal( i, n );
+        nodes.SetNormal( i, average );
     }
 }

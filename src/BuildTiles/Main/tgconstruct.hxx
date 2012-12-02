@@ -38,23 +38,23 @@
 #include <landcover/landcover.hxx>
 
 #include "tglandclass.hxx"
+#include "priorities.hxx"
 
 #define FIND_SLIVERS    (0)
 
 // Stage2 shared edge data
 struct TGNeighborFaces {
 public:
-    Point3D node;
+    SGGeod      node;
 
     double_list elevations;     // we'll take the average
     double_list face_areas;
-    point_list  face_normals;
+    std::vector<SGVec3f> face_normals;
 };
 
 typedef std::vector < TGNeighborFaces > neighbor_face_list;
 typedef neighbor_face_list::iterator neighbor_face_list_iterator;
 typedef neighbor_face_list::const_iterator const_neighbor_face_list_iterator;
-
 
 class TGConstruct {
 
@@ -135,16 +135,15 @@ private:
     // Shared edge Matching
     void SaveSharedEdgeDataStage2( void );
     void LoadSharedEdgeDataStage2( void );
-    void WriteSharedEdgeNeighboorFaces( gzFile& fp, Point3D pt );
     void LoadSharedEdgeData( int stage );
-    void LoadNeighboorEdgeDataStage1( SGBucket& b, point_list& north, point_list& south, point_list& east, point_list& west );
+    void LoadNeighboorEdgeDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west );
 
     void SaveSharedEdgeData( int stage );
 
     void ReadNeighborFaces( gzFile& fp );
-    void WriteNeighborFaces( gzFile& fp, Point3D pt );
-    TGNeighborFaces* AddNeighborFaces( Point3D node );
-    TGNeighborFaces* FindNeighborFaces( Point3D node );
+    void WriteNeighborFaces( gzFile& fp, const SGGeod& pt ) const;
+    TGNeighborFaces* AddNeighborFaces( const SGGeod& node );
+    TGNeighborFaces* FindNeighborFaces( const SGGeod& node );
 
     // Polygon Cleaning
     void CleanClippedPolys( void );
@@ -164,9 +163,7 @@ private:
     void CalcPointNormals( void );
     void CalcTextureCoordinates( void );
     // Helpers
-    SGVec3f   calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 );
-    TGPolygon linear_tex_coords( const TGPolygon& tri, const TGTexParams& tp );
-    TGPolygon area_tex_coords( const TGPolygon& tri );
+    SGVec3f calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) const;
 
     // Output
     void WriteBtgFile( void );
@@ -178,10 +175,6 @@ private:
     // debug
     bool IsDebugShape( unsigned int id );
     bool IsDebugArea( unsigned int area );
-
-    void WriteDebugShape( const char* layer_name, const TGShape& shape );
-    void WriteDebugPoly( const char* layer_name, const char* name, const TGPolygon& poly );
-    void WriteDebugPolys( const char* layer_name, const poly_list& polys );
 
 public:
     // Constructor

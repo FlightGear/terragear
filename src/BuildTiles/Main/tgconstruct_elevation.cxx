@@ -50,40 +50,16 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
     array.remove_voids( );
 
     if ( add_nodes ) {
-    point_list corner_list = array.get_corner_list();
-    for (unsigned int i=0; i<corner_list.size(); i++) {
-        nodes.unique_add( corner_list[i].toSGGeod() );
+        point_list corner_list = array.get_corner_list();
+        for (unsigned int i=0; i<corner_list.size(); i++) {
+            nodes.unique_add( corner_list[i].toSGGeod() );
+        }
+
+        point_list fit_list = array.get_fitted_list();
+        for (unsigned int i=0; i<fit_list.size(); i++) {
+            nodes.unique_add( fit_list[i].toSGGeod() );
+        }
     }
-
-    point_list fit_list = array.get_fitted_list();
-    for (unsigned int i=0; i<fit_list.size(); i++) {
-        nodes.unique_add( fit_list[i].toSGGeod() );
-    }
-}
-}
-
-static void calc_gc_course_dist( const Point3D& start, const Point3D& dest,
-                                       double *course, double *dist ) {
-    SGGeoc gs = start.toSGGeoc();
-    SGGeoc gd = dest.toSGGeoc();
-    *course = SGGeoc::courseRad(gs, gd);
-    *dist = SGGeoc::distanceM(gs, gd);
-}
-
-// calculate spherical distance between two points (lon, lat specified
-// in degrees, result returned in meters)
-static double distanceSphere( const SGGeoc& p1, const SGGeod& p2 ) {
-    Point3D r1( p1.getLongitudeRad(),
-                p1.getLatitudeRad(),
-                p1.getRadiusM() );
-    Point3D r2( p2.getLongitudeRad(),
-                p2.getLatitudeRad(),
-                p2.getElevationM() );
-
-    double course, dist_m;
-    calc_gc_course_dist( r1, r2, &course, &dist_m );
-
-    return dist_m;
 }
 
 // fix the elevations of the geodetic nodes
@@ -92,14 +68,11 @@ static double distanceSphere( const SGGeoc& p1, const SGGeod& p2 ) {
 void TGConstruct::CalcElevations( void )
 {
     std::vector<SGGeod> raw_nodes;
-    SGGeoc p;
     double e1, e2, e3, min;
     int    n1, n2, n3;
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "fixing node heights");
-
     for (int i = 0; i < (int)nodes.size(); ++i) {
-        TGNode node = nodes.get_node( i );
+        TGNode const& node = nodes.get_node( i );
         SGGeod pos = node.GetPosition();
 
         if ( !node.GetFixedPosition() ) {
@@ -113,122 +86,136 @@ void TGConstruct::CalcElevations( void )
     // now flatten some stuff
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         if ( is_lake_area( (AreaType)area ) ) {
-            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
-                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
+            for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+                tgPolygon poly = polys_clipped.get_poly( area, p );
 
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
+                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                    n1 = poly.GetTriIdx( tri, 0 );
+                    e1 = nodes.get_node(n1).GetPosition().getElevationM();
+                    n2 = poly.GetTriIdx( tri, 1 );
+                    e2 = nodes.get_node(n2).GetPosition().getElevationM();
+                    n3 = poly.GetTriIdx( tri, 2 );
+                    e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
-                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
-                        n1 = poly.GetTriIdx( tri, 0 );
-                        e1 = nodes.get_node(n1).GetPosition().getElevationM();
-                        n2 = poly.GetTriIdx( tri, 1 );
-                        e2 = nodes.get_node(n2).GetPosition().getElevationM();
-                        n3 = poly.GetTriIdx( tri, 2 );
-                        e3 = nodes.get_node(n3).GetPosition().getElevationM();
+                    min = e1;
+                    if ( e2 < min ) { min = e2; }
+                    if ( e3 < min ) { min = e3; }
 
-                        min = e1;
-                        if ( e2 < min ) { min = e2; }
-                        if ( e3 < min ) { min = e3; }
-
-                        nodes.SetElevation( n1, min );
-                        nodes.SetElevation( n2, min );
-                        nodes.SetElevation( n3, min );
-                    }
+                    nodes.SetElevation( n1, min );
+                    nodes.SetElevation( n2, min );
+                    nodes.SetElevation( n3, min );
                 }
             }
         }
 
         if ( is_stream_area( (AreaType)area ) ) {
-            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
-                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
+            for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+                tgPolygon poly = polys_clipped.get_poly( area, p );
 
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
+                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                    n1 = poly.GetTriIdx( tri, 0 );
+                    e1 = nodes.get_node(n1).GetPosition().getElevationM();
+                    n2 = poly.GetTriIdx( tri, 1 );
+                    e2 = nodes.get_node(n2).GetPosition().getElevationM();
+                    n3 = poly.GetTriIdx( tri, 2 );
+                    e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
-                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
-                        n1 = poly.GetTriIdx( tri, 0 );
-                        e1 = nodes.get_node(n1).GetPosition().getElevationM();
-                        n2 = poly.GetTriIdx( tri, 1 );
-                        e2 = nodes.get_node(n2).GetPosition().getElevationM();
-                        n3 = poly.GetTriIdx( tri, 2 );
-                        e3 = nodes.get_node(n3).GetPosition().getElevationM();
+                    min = e1;
+                    SGGeod src = raw_nodes[n1];
 
-                        min = e1;
-                        p   = SGGeoc::fromGeod( raw_nodes[n1] );
+                    if ( e2 < min ) { min = e2; src = raw_nodes[n2]; }
+                    if ( e3 < min ) { min = e3; src = raw_nodes[n3]; }
 
-                        if ( e2 < min ) { min = e2; p = SGGeoc::fromGeod( raw_nodes[n2] ); }
-                        if ( e3 < min ) { min = e3; p = SGGeoc::fromGeod( raw_nodes[n3] ); }
-
-                        double d1 = distanceSphere( p, raw_nodes[n1] );
-                        double d2 = distanceSphere( p, raw_nodes[n2] );
-                        double d3 = distanceSphere( p, raw_nodes[n3] );
-
-                        double max1 = d1 * 0.20 + min;
-                        double max2 = d2 * 0.20 + min;
-                        double max3 = d3 * 0.20 + min;
-
-                        if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
-                        if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
-                        if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
+                    double d1, d2, d3;
+                    if ( min == e1 ) {
+                        d1 = 0.0f;
+                    } else {
+                        d1 = SGGeodesy::distanceM( src, raw_nodes[n1] );
                     }
+                    if ( min == e2 ) {
+                        d2 = 0.0f;
+                    } else {
+                        d2 = SGGeodesy::distanceM( src, raw_nodes[n2] );
+                    }
+                    if ( min == e3 ) {
+                        d3 = 0.0f;
+                    } else {
+                        d3 = SGGeodesy::distanceM( src, raw_nodes[n3] );
+                    }
+
+                    double max1 = d1 * 0.20 + min;
+                    double max2 = d2 * 0.20 + min;
+                    double max3 = d3 * 0.20 + min;
+
+                    if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
+                    if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
+                    if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
                 }
             }
         }
 
         if ( is_road_area( (AreaType)area ) ) {
-            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
-                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
+            for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+                tgPolygon poly = polys_clipped.get_poly( area, p );
 
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
+                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                    n1 = poly.GetTriIdx( tri, 0 );
+                    e1 = nodes.get_node(n1).GetPosition().getElevationM();
+                    n2 = poly.GetTriIdx( tri, 1 );
+                    e2 = nodes.get_node(n2).GetPosition().getElevationM();
+                    n3 = poly.GetTriIdx( tri, 2 );
+                    e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
-                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
-                        n1 = poly.GetTriIdx( tri, 0 );
-                        e1 = nodes.get_node(n1).GetPosition().getElevationM();
-                        n2 = poly.GetTriIdx( tri, 1 );
-                        e2 = nodes.get_node(n2).GetPosition().getElevationM();
-                        n3 = poly.GetTriIdx( tri, 2 );
-                        e3 = nodes.get_node(n3).GetPosition().getElevationM();
+                    min = e1;
+                    SGGeod src = raw_nodes[n1];
 
-                        min = e1;
-                        p   = SGGeoc::fromGeod( raw_nodes[n1] );
+                    if ( e2 < min ) { min = e2; src = raw_nodes[n2]; }
+                    if ( e3 < min ) { min = e3; src = raw_nodes[n3]; }
 
-                        if ( e2 < min ) { min = e2; p = SGGeoc::fromGeod( raw_nodes[n2] ); }
-                        if ( e3 < min ) { min = e3; p = SGGeoc::fromGeod( raw_nodes[n3] ); }
-
-                        double d1 = distanceSphere( p, raw_nodes[n1] );
-                        double d2 = distanceSphere( p, raw_nodes[n2] );
-                        double d3 = distanceSphere( p, raw_nodes[n3] );
-
-                        double max1 = d1 * 0.30 + min;
-                        double max2 = d2 * 0.30 + min;
-                        double max3 = d3 * 0.30 + min;
-
-                        if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
-                        if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
-                        if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
+                    double d1, d2, d3;
+                    if ( min == e1 ) {
+                        d1 = 0.0f;
+                    } else {
+                        d1 = SGGeodesy::distanceM( src, raw_nodes[n1] );
                     }
+                    if ( min == e2 ) {
+                        d2 = 0.0f;
+                    } else {
+                        d2 = SGGeodesy::distanceM( src, raw_nodes[n2] );
+                    }
+                    if ( min == e3 ) {
+                        d3 = 0.0f;
+                    } else {
+                        d3 = SGGeodesy::distanceM( src, raw_nodes[n3] );
+                    }
+
+                    double max1 = d1 * 0.30 + min;
+                    double max2 = d2 * 0.30 + min;
+                    double max3 = d3 * 0.30 + min;
+
+                    if ( max1 < e1 ) { nodes.SetElevation( n1, max1 ); }
+                    if ( max2 < e2 ) { nodes.SetElevation( n2, max2 ); }
+                    if ( max3 < e3 ) { nodes.SetElevation( n3, max3 ); }
                 }
             }
         }
 
         if ( is_ocean_area( (AreaType)area ) ) {
-            for (int shape = 0; shape < (int)polys_clipped.area_size(area); ++shape ) {
-                for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
+            for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+                tgPolygon poly = polys_clipped.get_poly( area, p );
 
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
+                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                    n1 = poly.GetTriIdx( tri, 0 );
+                    n2 = poly.GetTriIdx( tri, 1 );
+                    n3 = poly.GetTriIdx( tri, 2 );
 
-                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
-                        n1 = poly.GetTriIdx( tri, 0 );
-                        n2 = poly.GetTriIdx( tri, 1 );
-                        n3 = poly.GetTriIdx( tri, 2 );
-
-                        nodes.SetElevation( n1, 0.0 );
-                        nodes.SetElevation( n2, 0.0 );
-                        nodes.SetElevation( n3, 0.0 );
-                    }
+                    nodes.SetElevation( n1, 0.0 );
+                    nodes.SetElevation( n2, 0.0 );
+                    nodes.SetElevation( n3, 0.0 );
                 }
             }
         }

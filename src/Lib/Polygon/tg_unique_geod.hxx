@@ -1,3 +1,6 @@
+#ifndef _TG_UNIQUE_SGGEOD_HXX
+#define _TG_UNIQUE_SGGEOD_HXX
+
 #include <boost/unordered_set.hpp>
 #include <simgear/math/SGMisc.hxx>
 
@@ -117,6 +120,18 @@ public:
         return index;
     }
 
+    SGGeod const& operator[]( int index ) const {
+        return geod_list[index];
+    }
+
+    SGGeod& operator[]( int index ) {
+        return geod_list[index];
+    }
+
+    size_t size( void ) const {
+        return geod_list.size();
+    }
+
     std::vector<SGGeod>& get_list( void ) { return geod_list; }
     void get_node_list();
 
@@ -124,3 +139,5 @@ private:
     unique_geod_set         index_list;
     std::vector<SGGeod>     geod_list;
 };
+
+#endif /* _TG_UNIQUE_SGGEOD_HXX */

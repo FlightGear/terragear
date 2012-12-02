@@ -37,20 +37,6 @@ using std::string;
 
 static unsigned int cur_poly_id = 0;
 
-// Add a polygon to the clipper. - only used by load_osgb36_poly - make that function more like ogr load
-void TGConstruct::add_poly( int area, tgPolygon &poly, string material ) {
-    TGShape shape;
-
-    if ( area < TG_MAX_AREA_TYPES ) {
-        poly.SetMaterial( material );
-        shape.polys.push_back( poly );
-        polys_in.add_shape( area, shape );
-    } else {
-        SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = " << area);
-        exit(-1);
-    }
-}
-
 bool TGConstruct::load_poly(const string& path) {
     bool poly3d = false;
     bool with_tp = false;
@@ -114,11 +100,11 @@ bool TGConstruct::load_poly(const string& path) {
 
 
         // Generate a new Shape for the poly
-        TGShape     shape;
         tgPolygon   poly;
         SGGeod      p;
-        
+
         for (k=0; k<num_polys;k++) {
+            poly.Erase();
 
             if ( with_tp ) {
                 in >> x;
@@ -213,24 +199,19 @@ bool TGConstruct::load_poly(const string& path) {
             poly.SetMaterial( material );
 
             if ( with_tp ) {
-                shape.textured = true;
+                poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1, 0, 1, 0 );
             } else {
-                shape.textured = false;
+                poly.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
             }
-            shape.polys.push_back( poly );
 
             in >> skipcomment;
-        }
 
-        // Once the full poly is loaded, build the clip mask
-        shape.BuildMask();
-        shape.area = area;
-        shape.id = cur_poly_id++;
+            poly.SetId( cur_poly_id++ );
+            polys_in.add_poly( area, poly );
 
-        polys_in.add_shape( area, shape );
-
-        if ( IsDebugShape( shape.id ) ) {
-            tgPolygon::ToShapefile( shape.mask, ds_name, "loaded", "" );
+            if ( IsDebugShape( poly.GetId() ) ) {
+                tgPolygon::ToShapefile( poly, ds_name, "loaded", "" );
+            }
         }
     }
 
@@ -260,7 +241,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
         }
 
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
-        SG_LOG( SG_CLIPPER, SG_ALERT, files.size() << " Polys in " << d.path() );
+        SG_LOG( SG_CLIPPER, SG_DEBUG, files.size() << " Polys in " << d.path() );
 
         BOOST_FOREACH(const SGPath& p, files) {
             if (p.file_base() != tile_str) {
@@ -274,7 +255,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 // skipped!
             } else {
                 load_poly( p.str() );
-                SG_LOG(SG_GENERAL, SG_ALERT, " Loaded " << p.file());
+                SG_LOG(SG_GENERAL, SG_DEBUG, " Loaded " << p.file());
                 ++count;
             }
         } // of directory file children

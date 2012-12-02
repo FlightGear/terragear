@@ -18,12 +18,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-
-
-// TODO TODO TODO : Get rid of construct - data hiding is moretrouble than it's worth right now.
-// constantly needing to call set after every operation....
-
-
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
@@ -184,12 +178,15 @@ int main(int argc, char **argv) {
         } else {
             SGBucket b_cur;
             int dx, dy, i, j;
+            int total_buckets, cur_bucket;
 
             sgBucketDiff(b_min, b_max, &dx, &dy);
             SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
             SG_LOG(SG_GENERAL, SG_ALERT, "  dx = " << dx << "  dy = " << dy);
 
             // construct stage 1
+            total_buckets = (dx+1) * (dy + 1);
+            cur_bucket = 0;
             for ( j = 0; j <= dy; j++ ) {
                 for ( i = 0; i <= dx; i++ ) {
                     b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
@@ -202,14 +199,23 @@ int main(int argc, char **argv) {
                     stage1->set_bucket( b_cur );
                     stage1->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
+                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 1: Construct bucket " << cur_bucket++ << " of " << total_buckets );
+                    SGTimeStamp build_start;
+                    build_start.stamp();
+
                     stage1->ConstructBucketStage1();
                     stage1->SaveToIntermediateFiles(1);
 
+                    SGTimeStamp build_end;
+                    build_end.stamp();
+
+                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 1: finshed in " << build_end - build_start );
                     delete stage1;
                 }
             }
 
             // construct stage 2
+            cur_bucket = 0;
             for ( j = 0; j <= dy; j++ ) {
                 for ( i = 0; i <= dx; i++ ) {
                     b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
@@ -222,6 +228,7 @@ int main(int argc, char **argv) {
                     stage2->set_bucket( b_cur );
                     stage2->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
+                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 2: Construct bucket " << cur_bucket++ << " of " << total_buckets );
                     stage2->LoadFromIntermediateFiles(1);
                     stage2->ConstructBucketStage2();
                     stage2->SaveToIntermediateFiles(2);
@@ -231,6 +238,7 @@ int main(int argc, char **argv) {
             }
 
             // construct stage 3
+            cur_bucket = 0;
             for ( j = 0; j <= dy; j++ ) {
                 for ( i = 0; i <= dx; i++ ) {
                     b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
@@ -243,6 +251,7 @@ int main(int argc, char **argv) {
                     stage3->set_bucket( b_cur );
                     stage3->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
+                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 3: Construct bucket " << cur_bucket++ << " of " << total_buckets );
                     stage3->LoadFromIntermediateFiles(2);
                     stage3->ConstructBucketStage3();
 

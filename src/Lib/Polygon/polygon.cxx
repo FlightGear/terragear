@@ -36,7 +36,6 @@
 #include <Geometry/trinodes.hxx>
 
 #include "polygon.hxx"
-#include "tg_unique_geod.hxx"
 
 #ifdef _MSC_VER
 #   define LONG_LONG_MAX LLONG_MAX
@@ -2235,6 +2234,9 @@ tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
 
+    result.SetMaterial( subject.GetMaterial() );
+    result.SetTexParams( subject.GetTexParams() );
+
     return result;
 }
 
@@ -2279,6 +2281,9 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    result.SetMaterial( subject.GetMaterial() );
+    result.SetTexParams( subject.GetTexParams() );
 
     return result;
 }
@@ -2336,6 +2341,9 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    result.SetMaterial( subject.GetMaterial() );
+    result.SetTexParams( subject.GetTexParams() );
 
     return result;
 }
@@ -2794,21 +2802,15 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
 
     // load the triangles
     sgReadUInt( fp, &count );
-    SG_LOG(SG_GENERAL, SG_INFO, " load " << count << " triangles" );
-
     for (unsigned int i = 0; i < count; i++) {
         triangle.LoadFromGzFile( fp );
         AddTriangle(triangle);
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, " load texparams" );
-
     // Load the tex params
     tp.LoadFromGzFile( fp );
 
     // and the rest
-    SG_LOG(SG_GENERAL, SG_INFO, " load material" );
-
     sgReadString( fp, &strbuff );
     if ( strbuff ) {
         material = strbuff;
@@ -3486,28 +3488,19 @@ void tgAccumulator::Add( const tgPolygon& subject )
     accum.push_back( clipper_subject );
 }
 
-    std::vector<SGGeod>  node_list;
-    std::vector<SGVec2f> tc_list;
-    std::vector<SGVec3d> norm_list;
-    std::vector<int>     idx_list;
-
-    SGVec3f face_normal;
-    double  face_area;
-
-
 void tgTriangle::SaveToGzFile( gzFile& fp )
 {
     // Save the three nodes, and their attributes
     for (unsigned int i = 0; i < 3; i++) {
         sgWriteGeod( fp, node_list[i] );
-        sgWriteVec2( fp, tc_list[i] );
-        sgWritedVec3( fp, norm_list[i] );
+        // sgWriteVec2( fp, tc_list[i] );
+        // sgWritedVec3( fp, norm_list[i] ); // not calculated until stage 3
         sgWriteInt( fp, idx_list[i] );
     }
 
     // and the area, and face normal
-    sgWriteVec3( fp, face_normal );
-    sgWriteDouble( fp, face_area );
+    // sgWriteVec3( fp, face_normal ); // not calculated until stage3
+    // sgWriteDouble( fp, face_area ); // not calculated until stage3
 }
 
 void tgTriangle::LoadFromGzFile( gzFile& fp )
@@ -3515,57 +3508,76 @@ void tgTriangle::LoadFromGzFile( gzFile& fp )
     // Load the nodelist
     for (unsigned int i = 0; i < 3; i++) {
         sgReadGeod( fp, node_list[i] );
-        sgReadVec2( fp, tc_list[i] );
-        sgReaddVec3( fp, norm_list[i] );
+        // sgReadVec2( fp, tc_list[i] );
+        // sgReaddVec3( fp, norm_list[i] );
         sgReadInt( fp, &idx_list[i] );
     }
 
     // and the area, and face normal
-    sgReadVec3( fp, face_normal );
-    sgReadDouble( fp, &face_area );
+    // sgReadVec3( fp, face_normal );
+    // sgReadDouble( fp, &face_area );
 }
 
 void tgTexParams::SaveToGzFile( gzFile& fp )
 {
     // Save the parameters
-    sgWriteGeod( fp, ref );
-
-    sgWriteDouble( fp, width );
-    sgWriteDouble( fp, length );
-    sgWriteDouble( fp, heading );
-
-    sgWriteDouble( fp, minu );
-    sgWriteDouble( fp, maxu );
-    sgWriteDouble( fp, minv );
-    sgWriteDouble( fp, maxv );
-
-    sgWriteDouble( fp, min_clipu );
-    sgWriteDouble( fp, max_clipu );
-    sgWriteDouble( fp, min_clipv );
-    sgWriteDouble( fp, max_clipv );
-
     sgWriteInt( fp, (int)method );
+
+    if ( method == TG_TEX_BY_GEODE ) {
+        sgWriteDouble( fp, center_lat );
+    } else {
+        sgWriteGeod( fp, ref );
+        sgWriteDouble( fp, width );
+        sgWriteDouble( fp, length );
+        sgWriteDouble( fp, heading );
+
+        sgWriteDouble( fp, minu );
+        sgWriteDouble( fp, maxu );
+        sgWriteDouble( fp, minv );
+        sgWriteDouble( fp, maxv );
+
+        if ( (method == TG_TEX_BY_TPS_CLIPU) ||
+             (method == TG_TEX_BY_TPS_CLIPUV) ) {
+            sgWriteDouble( fp, min_clipu );
+            sgWriteDouble( fp, max_clipu );
+        }
+
+        if ( (method == TG_TEX_BY_TPS_CLIPV) ||
+             (method == TG_TEX_BY_TPS_CLIPUV) ) {
+            sgWriteDouble( fp, min_clipv );
+            sgWriteDouble( fp, max_clipv );
+        }
+    }
 }
 
 void tgTexParams::LoadFromGzFile( gzFile& fp )
 {
     // Load the parameters
-    sgReadGeod( fp, ref );
-
-    sgReadDouble( fp, &width );
-    sgReadDouble( fp, &length );
-    sgReadDouble( fp, &heading );
-
-    sgReadDouble( fp, &minu );
-    sgReadDouble( fp, &maxu );
-    sgReadDouble( fp, &minv );
-    sgReadDouble( fp, &maxv );
-
-    sgReadDouble( fp, &min_clipu );
-    sgReadDouble( fp, &max_clipu );
-    sgReadDouble( fp, &min_clipv );
-    sgReadDouble( fp, &max_clipv );
-
     sgReadInt( fp, (int*)&method );
-}
 
+    if ( method == TG_TEX_BY_GEODE ) {
+        sgReadDouble( fp, &center_lat );
+    } else {
+        sgReadGeod( fp, ref );
+        sgReadDouble( fp, &width );
+        sgReadDouble( fp, &length );
+        sgReadDouble( fp, &heading );
+
+        sgReadDouble( fp, &minu );
+        sgReadDouble( fp, &maxu );
+        sgReadDouble( fp, &minv );
+        sgReadDouble( fp, &maxv );
+
+        if ( (method == TG_TEX_BY_TPS_CLIPU) ||
+             (method == TG_TEX_BY_TPS_CLIPUV) ) {
+            sgReadDouble( fp, &min_clipu );
+            sgReadDouble( fp, &max_clipu );
+        }
+
+        if ( (method == TG_TEX_BY_TPS_CLIPV) ||
+             (method == TG_TEX_BY_TPS_CLIPUV) ) {
+            sgReadDouble( fp, &min_clipv );
+            sgReadDouble( fp, &max_clipv );
+        }
+    }
+}

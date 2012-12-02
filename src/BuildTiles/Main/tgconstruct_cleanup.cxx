@@ -40,25 +40,25 @@ using std::string;
 void TGConstruct::FixTJunctions( void ) {
     int before, after;
     std::vector<SGGeod> points;
-    nodes.get_geod_nodes( points );
+    tg::Rectangle bb;
 
     // traverse each poly, and add intermediate nodes
     for ( unsigned int i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
         for( unsigned int j = 0; j < polys_clipped.area_size(i); ++j ) {
-            for( unsigned int k = 0; k < polys_clipped.shape_size(i, j); ++k ) {
-                tgPolygon current = polys_clipped.get_poly(i, j, k);
+            tgPolygon current = polys_clipped.get_poly(i, j);
+            bb = current.GetBoundingBox();
+            nodes.get_geod_inside( bb.getMin(), bb.getMax(), points );
 
-                before  = current.TotalNodes();
-                current = tgPolygon::AddColinearNodes( current, points );
-                after   = current.TotalNodes();
+            before  = current.TotalNodes();
+            current = tgPolygon::AddColinearNodes( current, points );
+            after   = current.TotalNodes();
 
-                if (before != after) {
-                   SG_LOG( SG_CLIPPER, SG_INFO, "Fixed T-Junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << "-" << k << " of " << (int)polys_clipped.area_size(i) << " nodes increased from " << before << " to " << after );
-                }
-
-                /* Save it back */
-                polys_clipped.set_poly( i, j, k, current );
+            if (before != after) {
+               SG_LOG( SG_CLIPPER, SG_DEBUG, "Fixed T-Junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.area_size(i) << " nodes increased from " << before << " to " << after );
             }
+
+            /* Save it back */
+            polys_clipped.set_poly( i, j, current );
         }
     }
 }
@@ -76,23 +76,7 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  tgcontour_list& sliver_l
             continue;
         }
 
-        for ( unsigned int s = 0; s < clipped.area_size(area) && sliver_list.size(); ++s ) {
-            TGShape shape = clipped.get_shape( area, s );
-
-            unsigned int before = sliver_list.size();
-            sliver_list = tgPolygon::MergeSlivers( shape.polys, sliver_list );
-            unsigned int after = sliver_list.size();
-
-            if (before != after) {
-                shape.BuildMask();
-
-#if 0
-                if ( IsDebugShape( shape.id ) ) {
-                    WriteDebugShape( "with_slivers", shape );
-                }
-#endif
-            }
-        }
+        sliver_list = tgPolygon::MergeSlivers( polys_clipped.get_polys(area), sliver_list );
     }
 
     SG_LOG(SG_GENERAL, SG_INFO, " UNMERGED SLIVERS: " << sliver_list.size() );
@@ -101,54 +85,32 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  tgcontour_list& sliver_l
 }
 
 void TGConstruct::CleanClippedPolys() {
-
     // Clean the polys
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
-        for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
-            unsigned int id = polys_clipped.get_shape( area, shape ).id;
-
+        for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             // step 1 : snap
-            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                tgPolygon poly = polys_clipped.get_poly(area, shape, segment);
-                poly = tgPolygon::Snap(poly, gSnap);
-                polys_clipped.set_poly( area, shape, segment, poly );
-            }
+            tgPolygon poly = polys_clipped.get_poly(area, p);
+            poly = tgPolygon::Snap(poly, gSnap);
 
-            if ( IsDebugShape( id ) ) {
-                tgPolygon::ToShapefile( polys_clipped.get_shape( area, shape ).mask, ds_name, "snapped", "" );
+            if ( IsDebugShape( poly.GetId() ) ) {
+                tgPolygon::ToShapefile( poly, ds_name, "snapped", "" );
             }
 
             // step 2 : remove_dups
-            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                tgPolygon poly = polys_clipped.get_poly(area, shape, segment);
-                poly = tgPolygon::RemoveDups( poly );
-                polys_clipped.set_poly( area, shape, segment, poly );
-            }
+            poly = tgPolygon::RemoveDups( poly );
 
-            if ( IsDebugShape( id ) ) {
-                tgPolygon::ToShapefile( polys_clipped.get_shape( area, shape ).mask, ds_name, "rem_dups", "" );
+            if ( IsDebugShape( poly.GetId() ) ) {
+                tgPolygon::ToShapefile( poly, ds_name, "rem_dups", "" );
             }
 
             // step 3 : remove_bad_contours
-            for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                tgPolygon poly = polys_clipped.get_poly(area, shape, segment);
-                poly = tgPolygon::RemoveBadContours( poly );
-                polys_clipped.set_poly( area, shape, segment, poly );
+            poly = tgPolygon::RemoveBadContours( poly );
+
+            if ( IsDebugShape( poly.GetId() ) ) {
+                tgPolygon::ToShapefile( poly, ds_name, "rem_bcs", "" );
             }
 
-            if ( IsDebugShape( id ) ) {
-                tgPolygon::ToShapefile( polys_clipped.get_shape( area, shape ).mask, ds_name, "rem_bcs", "" );
-            }
-
-// todo - add up all segments in a shape for printout
-#if 0
-            after = poly.total_size();
-            if (before != after) {
-                SG_LOG( SG_CLIPPER, SG_INFO, "Cleanined poly " << get_area_name( (AreaType)area ) <<
-                                                                                ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) << " before: " << before << " after: " << after );
-            }
-#endif
-
+            polys_clipped.set_poly(area, p, poly);
         }
     }
 }
@@ -167,10 +129,10 @@ void TGConstruct::AverageEdgeElevations( void )
         elevation = elevation / num_elevations;
 
         /* Find this node, and update it's elevation */
-        int idx = nodes.find( faces.node.toSGGeod() );
+        int idx = nodes.find( faces.node );
 
         if (idx != -1) {
-            TGNode node = nodes.get_node( idx );
+            TGNode const& node = nodes.get_node( idx );
 
             if ( !node.GetFixedPosition() ) {
                 // set elevation as the average between all tiles that have it

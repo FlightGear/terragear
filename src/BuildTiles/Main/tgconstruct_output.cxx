@@ -135,45 +135,35 @@ void TGConstruct::WriteBtgFile( void )
     int_list pt_n, tri_n, strip_n;
     int_list tri_tc, strip_tc;
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Output triangles" );
-
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         // only tesselate non holes
         if ( !is_hole_area( area ) ) {
-            for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
-                for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                    SG_LOG( SG_CLIPPER, SG_INFO, "Ouput nodes for " << get_area_name( (AreaType)area ) << ":" <<
-                            shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );
+            for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Ouput nodes for " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
 
-                    tgPolygon   poly      = polys_clipped.get_poly(area, shape, segment);
-                    string      material  = polys_clipped.get_material(area, shape, segment);
+                tgPolygon   poly      = polys_clipped.get_poly(area, p);
+                string      material  = poly.GetMaterial();
 
-                    SG_LOG(SG_GENERAL, SG_INFO, "  num tris " << poly.Triangles() );
+                for (unsigned int k = 0; k < poly.Triangles(); ++k) {
+                    tri_v.clear();
+                    tri_n.clear();
+                    tri_tc.clear();
+                    for (int l = 0; l < 3; ++l) {
+                        index = poly.GetTriIdx( k, l );
+                        tri_v.push_back( index );
 
-                    for (unsigned int k = 0; k < poly.Triangles(); ++k) {
-                        tri_v.clear();
-                        tri_n.clear();
-                        tri_tc.clear();
-                        for (int l = 0; l < 3; ++l) {
-                            index = poly.GetTriIdx( k, l );
-                            tri_v.push_back( index );
+                        // add the node's normal
+                        index = normals.add( nodes.GetNormal( index ) );
+                        tri_n.push_back( index );
 
-                            // add the node's normal
-                            index = normals.add( nodes.GetNormal( index ) );
-                            tri_n.push_back( index );
-
-                            index = texcoords.add( poly.GetTriTexCoord( k, l ) );
-                            tri_tc.push_back( index );
-                        }
-                        tris_v.push_back( tri_v );
-                        tris_n.push_back( tri_n );
-                        tris_tc.push_back( tri_tc );
-
-                        material  = polys_clipped.get_material(area, shape, segment);
-                        SG_LOG(SG_GENERAL, SG_INFO, "Add tri material " << material);
-
-                        tri_materials.push_back( material );
+                        index = texcoords.add( poly.GetTriTexCoord( k, l ) );
+                        tri_tc.push_back( index );
                     }
+                    tris_v.push_back( tri_v );
+                    tris_n.push_back( tri_n );
+                    tris_tc.push_back( tri_tc );
+
+                    tri_materials.push_back( material );
                 }
             }
         }

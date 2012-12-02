@@ -15,8 +15,6 @@ add_executable(tg-construct
     tgconstruct_texture.cxx
     tglandclass.cxx
     tglandclass.hxx
-    tgshape.cxx
-    tgshape.hxx
     priorities.cxx
     priorities.hxx
     usgs.cxx 

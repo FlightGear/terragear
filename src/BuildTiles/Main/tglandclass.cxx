@@ -38,7 +38,7 @@ void TGLandclass::clear(void)
     int i;
 
     for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-        shapes[i].clear();
+        polys[i].clear();
     }
 }
 
@@ -51,24 +51,24 @@ void TGLandclass::LoadFromGzFile(gzFile& fp)
         sgReadInt( fp, &count );
 
         for (j=0; j<count; j++) {
-            TGShape shape;
+            tgPolygon poly;
 
-            shape.LoadFromGzFile( fp );
-            shapes[i].push_back( shape );
+            poly.LoadFromGzFile( fp );
+            polys[i].push_back( poly );
         }
     }
 }
 std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 {
     int i, j, count;
-    TGShape shape;
+    tgPolygon poly;
 
     // Save all landclass shapes
     for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-        count = lc.shapes[i].size();
+        count = lc.polys[i].size();
         out << count << "\n";
         for (j=0; j<count; j++) {
-            out << lc.shapes[i][j] << " ";
+            out << lc.polys[i][j] << " ";
         }
         out << "\n";
     }
@@ -78,15 +78,15 @@ std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 void TGLandclass::SaveToGzFile(gzFile& fp)
 {
     int i, j, count;
-    TGShape shape;
+    tgPolygon shape;
 
     // Save all landclass shapes
     for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-        count = shapes[i].size();
+        count = polys[i].size();
         sgWriteInt( fp, count );
 
         for (j=0; j<count; j++) {
-            shapes[i][j].SaveToGzFile( fp );
+            polys[i][j].SaveToGzFile( fp );
         }
     }
 }

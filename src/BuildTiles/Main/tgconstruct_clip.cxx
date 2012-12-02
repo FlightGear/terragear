@@ -77,16 +77,16 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     for ( i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
         if ( is_landmass_area( i ) && !ignoreLandmass ) {
             for ( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
-                land_list.push_back( polys_in.get_mask(i, j) );
+                land_list.push_back( polys_in.get_poly(i, j) );
             }
 
         } else if ( is_water_area( i ) ) {
             for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
-                water_list.push_back( polys_in.get_mask(i, j) );
+                water_list.push_back( polys_in.get_poly(i, j) );
             }
         } else if ( is_island_area( i ) ) {
             for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
-                island_list.push_back( polys_in.get_mask(i, j) );
+                island_list.push_back( polys_in.get_poly(i, j) );
             }
         }
     }
@@ -106,10 +106,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
         debug_area = IsDebugArea( i );
         for( j = 0; j < (int)polys_in.area_size(i); ++j ) {
-            tgPolygon current = polys_in.get_mask(i, j);
-            debug_shape = IsDebugShape( polys_in.get_shape( i, j ).id );
+            tgPolygon& current = polys_in.get_poly(i, j);
+            debug_shape = IsDebugShape( polys_in.get_poly( i, j ).GetId() );
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << get_area_name( (AreaType)i ) << "(" << i << "):" << j+1 << " of " << polys_in.area_size(i) << " id " << polys_in.get_shape( i, j ).id );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Clipping " << get_area_name( (AreaType)i ) << "(" << i << "):" << j+1 << " of " << polys_in.area_size(i) << " id " << polys_in.get_poly( i, j ).GetId() );
 
             tmp = current;
 
@@ -122,18 +122,17 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             if ( is_water_area( i ) ) {
                 // clip against island mask
                 tmp = tgPolygon::Diff( tmp, island_mask );
-
             }
 
             if ( debug_area || debug_shape ) {
                 char layer[32];
                 char name[32];
 
-                sprintf(layer, "pre_clip_%d", polys_in.get_shape( i, j ).id );
+                sprintf(layer, "pre_clip_%d", polys_in.get_poly( i, j ).GetId() );
                 sprintf(name, "shape %d,%d", i,j);
                 tgPolygon::ToShapefile( tmp, ds_name, layer, name );
 
-                sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
+                sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
                 accum.ToShapefiles( ds_name, layer );
             }
 
@@ -143,7 +142,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 char layer[32];
                 char name[32];
 
-                sprintf(layer, "post_clip_%d", polys_in.get_shape( i, j ).id );
+                sprintf(layer, "post_clip_%d", polys_in.get_poly( i, j ).GetId() );
                 sprintf(name, "shape %d,%d", i,j);
 
                 tgPolygon::ToShapefile( clipped, ds_name, layer, name );
@@ -159,18 +158,11 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
                 // add the sliverless result polygon to the clipped polys list
                 if ( clipped.Contours() > 0  ) {
-                    TGShape shape;
-
                     // copy all of the superpolys and texparams
-                    shape.SetMask( clipped );
-                    shape.textured = polys_in.get_textured( i, j );
-                    shape.id  = polys_in.get_shape( i, j ).id;
-
-                    shape.area  = polys_in.get_shape( i, j ).area;
-                    shape.polys = polys_in.get_shape( i, j ).polys;
+                    clipped.SetId( polys_in.get_poly( i, j ).GetId() );
 
                     // shape.sps.push_back( sp );
-                    polys_clipped.add_shape( i, shape );
+                    polys_clipped.add_poly( i, clipped );
 
 #if 0
                     if ( debug_area || debug_shape ) {
@@ -183,7 +175,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             accum.Add( tmp );
             if ( debug_area || debug_shape ) {
                 char layer[32];
-                sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_shape( i, j ).id );
+                sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
 
                 accum.ToShapefiles( ds_name, layer );
             }
@@ -192,6 +184,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         }
     }
 
+#if 0
     if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
         // Dump the sliver list
         char name[32];
@@ -200,6 +193,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             tgContour::ToShapefile( slivers[i], ds_name, "slivers", name );
         }
     }
+#endif
 
 #if FIND_SLIVERS
     // Now, merge any slivers with clipped polys
@@ -234,40 +228,23 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
 
         if ( remains.Contours() > 0 ) {
-            TGShape shape;
-
-            string material = get_area_name(get_sliver_target_area_type());
-            remains.SetMaterial( material );
-
-            shape.SetMask( remains );
-            shape.textured = false;
-            shape.polys.push_back( remains );
-
-            polys_clipped.add_shape( (int)get_sliver_target_area_type(), shape );
-        }
-    }
-
-    // Once clipping is complete, intersect the individual segments with their clip masks
-    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
-        for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
-            SG_LOG( SG_CLIPPER, SG_INFO, "Seperating segments from clip mask for " << get_area_name( (AreaType)area ) << ":" << shape+1 << " of " << polys_clipped.area_size(area) );
-            polys_clipped.get_shape(area, shape).IntersectPolys();
+            remains.SetMaterial( get_area_name(get_sliver_target_area_type()) );
+            polys_clipped.add_poly( (int)get_sliver_target_area_type(), remains );
         }
     }
 
     // Now make sure any newly added intersection nodes are added to the tgnodes
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
-        for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
-            for (unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++) {
-                tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
+        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+            tgPolygon& poly = polys_clipped.get_poly( area, p );
 
-                SG_LOG( SG_CLIPPER, SG_INFO, "Collecting nodes for " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
 
-                for (unsigned int con=0; con < poly.Contours(); con++) {
-                    for (unsigned int node = 0; node < poly.ContourSize( con ); node++) {
-                        // ensure we have all nodes...
-                        nodes.unique_add( poly.GetNode( con, node ) );
-                    }
+            for (unsigned int con=0; con < poly.Contours(); con++) {
+                for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
+                    // ensure we have all nodes...
+                    TGNode const& node = poly.GetNode( con, n );
+                    nodes.unique_add( node );
                 }
             }
         }

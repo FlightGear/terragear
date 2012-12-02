@@ -314,6 +314,9 @@ std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);
 #include <Geometry/trinodes.hxx>
 #include <Geometry/rectangle.hxx>
 
+#include "tg_unique_geod.hxx"
+
+
 // forward declaration
 class tgPolygon;
 
@@ -352,6 +355,10 @@ public:
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }
+    SGGeod const& operator[]( int index ) const {
+        return node_list[index];
+    }
+
     void RemoveNodeAt( unsigned int idx ) {
         if ( idx < node_list.size() ) {
             node_list.erase( node_list.begin() + idx );
@@ -423,7 +430,7 @@ public:
         idx_list.resize(  3, -1 );
     }
 
-    SGGeod GetNode( unsigned int i ) const {
+    SGGeod const& GetNode( unsigned int i ) const {
         return node_list[i];
     }
     std::vector<SGGeod>& GetNodeList( void ) {
@@ -449,7 +456,7 @@ public:
     void    SetFaceNormal( const SGVec3f& n ) {
         face_normal = n;
     };
-    SGVec3f GetFaceNormal( void ) const {
+    SGVec3f const& GetFaceNormal( void ) const {
         return face_normal;
     }
 
@@ -527,7 +534,6 @@ typedef void (*tgpolygon_texfunc)(void);
 class tgPolygon
 {
 public:
-
     void Erase( void ) {
         contours.clear();
         triangles.clear();
@@ -539,7 +545,7 @@ public:
     unsigned int ContourSize( unsigned int c ) const {
         return contours[c].GetSize();
     }
-    void AddContour( tgContour contour ) {
+    void AddContour( tgContour const& contour ) {
         contours.push_back(contour);
     }
     tgContour GetContour( unsigned int c ) const {
@@ -551,10 +557,10 @@ public:
         }
     }
 
-
     unsigned int TotalNodes( void ) const;
-    SGGeod GetNode( unsigned int c, unsigned int i ) const {
-        return contours[c].GetNode( i );
+
+    SGGeod const& GetNode( unsigned int c, unsigned int i ) const {
+        return contours[c][i];
     }
     void SetNode( unsigned int c, unsigned int i, const SGGeod& n ) {
         contours[c].SetNode( i, n );
@@ -600,7 +606,7 @@ public:
     void SetTriFaceNormal( unsigned int c, const SGVec3f& n ) {
         triangles[c].SetFaceNormal( n );
     }
-    SGVec3f GetTriFaceNormal( unsigned int c ) const {
+    SGVec3f const& GetTriFaceNormal( unsigned int c ) const {
         return triangles[c].GetFaceNormal();
     }
     void SetTriFaceArea( unsigned int c, double a ) {
@@ -610,12 +616,20 @@ public:
         return triangles[c].GetFaceArea();
     }
 
-    std::string GetMaterial( void ) const {
+    std::string const& GetMaterial( void ) const {
         return material;
     }
-    void SetMaterial( const std::string m ) {
+    void SetMaterial( const std::string& m ) {
         material = m;
     }
+
+    unsigned int GetId( void ) const {
+        return id;
+    }
+    void SetId( unsigned int i ) {
+        id = i;
+    }
+
     void SetTexParams( const SGGeod& ref, double width, double length, double heading ) {
         tp.ref     = ref;
         tp.width   = width;
@@ -650,7 +664,6 @@ public:
         tp.center_lat = cl;
     }
 
-    
     void Tesselate( void );
     void Tesselate( const std::vector<SGGeod>& extra );
 
@@ -708,9 +721,10 @@ private:
     tgcontour_list  contours;
     tgtriangle_list triangles;
 
-    std::string material;
-    std::string flag;       // let's get rid of this....
-    tgTexParams tp;
+    std::string     material;
+    std::string     flag;       // let's get rid of this....
+    unsigned int    id;         // unique polygon id for debug
+    tgTexParams     tp;
 };
 
 class tgLight

@@ -35,9 +35,10 @@
 
 #include <simgear/math/sg_types.hxx>
 #include <simgear/io/lowlevel.hxx>
-#define TG_MAX_AREA_TYPES       128
 
-#include "tgshape.hxx"
+#include <Polygon/polygon.hxx>
+
+#define TG_MAX_AREA_TYPES       128
 
 class TGLandclass
 {
@@ -46,107 +47,49 @@ public:
 
     inline unsigned int area_size( unsigned int area )
     {
-        return shapes[area].size();
-    }
-    inline unsigned int shape_size( unsigned int area, unsigned int shape )
-    {
-        return shapes[area][shape].polys.size();
+        return polys[area].size();
     }
 
-    inline void add_shape( unsigned int area, TGShape shape )
+    inline tgPolygon const& get_poly( unsigned int area, unsigned int poly ) const
     {
-        shapes[area].push_back( shape );
+        return polys[area][poly];
     }
-    inline TGShape& get_shape( unsigned int area, unsigned int shape )
+    inline tgPolygon & get_poly( unsigned int area, unsigned int poly )
     {
-        return shapes[area][shape];
+        return polys[area][poly];
     }
-
-    inline tgPolygon get_mask( unsigned int area, unsigned int shape )
+    inline void add_poly( unsigned int area, const tgPolygon& p )
     {
-        return shapes[area][shape].mask;
+        polys[area].push_back( p );
     }
-    inline void set_mask( unsigned int area, unsigned int shape, tgPolygon mask )
+    inline void set_poly( unsigned int area, unsigned int poly, const tgPolygon& p )
     {
-        shapes[area][shape].mask = mask;
-    }
-
-    inline bool get_textured( unsigned int area, unsigned int shape )
-    {
-        return shapes[area][shape].textured;
-    }
-    inline void set_textured( unsigned int area, unsigned int shape, bool t )
-    {
-        shapes[area][shape].textured = t;
+        polys[area][poly] = p;
     }
 
-    inline tgPolygon& get_poly( unsigned int area, unsigned int shape, unsigned int segment )
+    inline tgpolygon_list& get_polys( unsigned int area )
     {
-        return shapes[area][shape].polys[segment];
+        return polys[area];
     }
-    inline void set_poly( unsigned int area, unsigned int shape, unsigned int segment, const tgPolygon& sp )
+    
+    inline const SGVec3f& get_face_normal( unsigned int area, unsigned int poly, unsigned int tri ) const
     {
-        shapes[area][shape].polys[segment] = sp;
-    }
-
-#if 0
-    inline TGPolygon get_tris( unsigned int area, unsigned int shape, unsigned int segment )
-    {
-        return shapes[area][shape].sps[segment].get_tris();
-    }
-    inline void set_tris( unsigned int area, unsigned int shape, unsigned int segment, TGPolygon tris )
-    {
-        shapes[area][shape].sps[segment].set_tris( tris );
-    }
-#endif
-
-    inline Point3D get_face_normal( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
-    {
-        return Point3D::fromSGVec3( shapes[area][shape].polys[segment].GetTriFaceNormal( tri ) );
+        return polys[area][poly].GetTriFaceNormal( tri );
     }
 
-    inline double get_face_area( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
+    inline double get_face_area( unsigned int area, unsigned int poly, unsigned int tri )
     {
-        return shapes[area][shape].polys[segment].GetTriFaceArea( tri );
+        return polys[area][poly].GetTriFaceArea( tri );
     }
 
-#if 0
-    inline std::string get_flag( unsigned int area, unsigned int shape, unsigned int segment )
+    inline std::string get_material( unsigned int area, unsigned int poly )
     {
-        return shapes[area][shape].sps[segment].get_flag();
+        return polys[area][poly].GetMaterial();
     }
-#endif
-
-    inline std::string get_material( unsigned int area, unsigned int shape, unsigned int segment )
+    inline const tgTexParams& get_texparams( unsigned int area, unsigned int poly )
     {
-        return shapes[area][shape].polys[segment].GetMaterial();
+        return polys[area][poly].GetTexParams();
     }
-    inline const tgTexParams& get_texparams( unsigned int area, unsigned int shape, unsigned int segment )
-    {
-        return shapes[area][shape].polys[segment].GetTexParams();
-    }
-
-/*
-    inline TGPolygon get_texcoords( unsigned int area, unsigned int shape, unsigned int segment )
-    {
-        return shapes[area][shape].sps[segment].get_texcoords();
-    }
-    inline void set_texcoords( unsigned int area, unsigned int shape, unsigned int segment, TGPolygon tcs )
-    {
-        return shapes[area][shape].sps[segment].set_texcoords( tcs );
-    }
-*/
-
-/*
-    inline TGPolyNodes get_tri_idxs( unsigned int area, unsigned int shape, unsigned int segment )
-    {
-        return shapes[area][shape].sps[segment].get_tri_idxs();
-    }
-    inline void set_tri_idxs( unsigned int area, unsigned int shape, unsigned int segment, TGPolyNodes tis )
-    {
-        return shapes[area][shape].sps[segment].set_tri_idxs( tis );
-    }
-*/
 
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
@@ -155,7 +98,7 @@ public:
     friend std::ostream& operator<< ( std::ostream&, const TGLandclass& );
 
 private:
-    shape_list     shapes[TG_MAX_AREA_TYPES];
+    tgpolygon_list polys[TG_MAX_AREA_TYPES];
 };
 
 #endif // _TGLANDCLASS_HXX
