@@ -46,14 +46,14 @@ void TGConstruct::TesselatePolys( void )
             unsigned int id = polys_clipped.get_shape( area, shape ).id;
 
             if ( IsDebugShape( id ) ) {
-                WriteDebugShape( "preteselate", polys_clipped.get_shape(area, shape) );
+                tgPolygon::ToShapefile( polys_clipped.get_shape( area, shape ).mask, ds_name, "preteselate", "" );
             }
 
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+                tgPolygon poly = polys_clipped.get_poly(area, shape, segment);
 
-                poly.get_bounding_box(min, max);
-                nodes.get_geod_inside( min, max, poly_extra );
+                tg::Rectangle rect = poly.GetBoundingBox();
+                nodes.get_geod_inside( rect.getMin(), rect.getMax(), poly_extra );
 
                 SG_LOG( SG_CLIPPER, SG_INFO, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " <<
                         shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) <<
@@ -63,18 +63,17 @@ void TGConstruct::TesselatePolys( void )
                     SG_LOG( SG_CLIPPER, SG_INFO, poly );
                 }
 
-                TGPolygon tri = polygon_tesselate_alt_with_extra_cgal( poly, poly_extra, false );
+                poly.Tesselate( poly_extra );
 
                 // ensure all added nodes are accounted for
-                for (int k=0; k< tri.contours(); k++) {
-                    for (int l = 0; l < tri.contour_size(k); l++) {
+                for (unsigned int k=0; k < poly.Triangles(); k++) {
+                    for (int l = 0; l < 3; l++) {
                         // ensure we have all nodes...
-                        nodes.unique_add( tri.get_pt( k, l ).toSGGeod() );
+                        nodes.unique_add( poly.GetTriNode( k, l ) );
                     }
                 }
 
-                // Save the triangulation
-                polys_clipped.set_tris( area, shape, segment, tri );
+                polys_clipped.set_poly( area, shape, segment, poly );
             }
         }
     }

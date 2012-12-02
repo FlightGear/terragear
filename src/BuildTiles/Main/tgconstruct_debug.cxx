@@ -133,6 +133,7 @@ bool TGConstruct::IsDebugArea( unsigned int area )
     return is_debug;
 }
 
+#if 0
 void TGConstruct::WriteDebugShape( const char* layer_name, const TGShape& shape )
 {
     char name[64];
@@ -141,7 +142,7 @@ void TGConstruct::WriteDebugShape( const char* layer_name, const TGShape& shape 
     ds_id = tgShapefileOpenDatasource( ds_name );
     l_id  = tgShapefileOpenLayer( ds_id, layer_name );
 
-    tgShapefileCreateFeature( ds_id, l_id, shape.clip_mask, name );
+    tgShapefileCreateFeature( ds_id, l_id, shape.mask, name );
 
     // close after each write
     ds_id = tgShapefileCloseDatasource( ds_id );
@@ -171,6 +172,7 @@ void TGConstruct::WriteDebugPolys( const char* layer_name, const poly_list& poly
     // close after each write
     ds_id = tgShapefileCloseDatasource( ds_id );
 }
+#endif
 
 // TODO : Add to TGNodes class
 #if 0

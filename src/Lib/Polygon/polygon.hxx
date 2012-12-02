@@ -386,6 +386,11 @@ public:
 
     static tgContour Expand( const tgContour& subject, double offset );
 
+    static void ToShapefile( const tgContour& subject, const std::string& datasource, const std::string& layer, const std::string& feature );
+
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
+
     // Friend for output
     friend std::ostream& operator<< ( std::ostream&, const tgContour& );
 
@@ -401,6 +406,13 @@ typedef tgcontour_list::const_iterator const_tgcontour_list_iterator;
 class tgTriangle
 {
 public:
+    tgTriangle() {
+        node_list.resize( 3, SGGeod::fromDegM(0.0, 0.0, 0.0) );
+        tc_list.resize(   3, SGVec2f(0.0, 0.0) );
+        norm_list.resize( 3, SGVec3d(0.0, 0.0, 0.0) );
+        idx_list.resize(  3, -1 );
+    }
+
     tgTriangle( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2 ) {
         node_list.push_back( p0 );
         node_list.push_back( p1 );
@@ -414,12 +426,42 @@ public:
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }
+    std::vector<SGGeod>& GetNodeList( void ) {
+        return node_list;
+    }
+
     SGVec2f GetTexCoord( unsigned int i ) const {
         return tc_list[i];
     }
     void SetTexCoord( unsigned int i, const SGVec2f tc ) {
         tc_list[i] = tc;
     }
+    void SetTexCoordList( const std::vector<SGVec2f>& tcs ) {
+        tc_list = tcs;
+    }
+    int GetIndex( unsigned int i ) const {
+        return idx_list[i];
+    }
+    void SetIndex( unsigned int i, int idx ) {
+        idx_list[i] = idx;
+    }
+
+    void    SetFaceNormal( const SGVec3f& n ) {
+        face_normal = n;
+    };
+    SGVec3f GetFaceNormal( void ) const {
+        return face_normal;
+    }
+
+    void    SetFaceArea( double a ) {
+        face_area = a;
+    }
+    double  GetFaceArea( void ) const {
+        return face_area;
+    }
+
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
 
     // Friend for output
     friend std::ostream& operator<< ( std::ostream&, const tgTriangle& );
@@ -430,7 +472,7 @@ private:
     std::vector<SGVec3d> norm_list;
     std::vector<int>     idx_list;
 
-    SGVec3d face_normal;
+    SGVec3f face_normal;
     double  face_area;
 };
 
@@ -465,6 +507,11 @@ public:
     double max_clipv;
 
     tgTexMethod method;
+
+    double center_lat;
+
+    void SaveToGzFile( gzFile& fp );
+    void LoadFromGzFile( gzFile& fp );
 
     // Friend for output
     friend std::ostream& operator<< ( std::ostream&, const tgTexParams& );
@@ -531,6 +578,9 @@ public:
     unsigned int Triangles( void ) const {
         return triangles.size();
     }
+    void AddTriangle( const tgTriangle& triangle ) {
+        triangles.push_back( triangle );
+    }
     void AddTriangle( const SGGeod& p1, const SGGeod p2, const SGGeod p3 ) {
         triangles.push_back( tgTriangle( p1, p2, p3 ) );
     }
@@ -540,6 +590,24 @@ public:
     }
     SGVec2f GetTriTexCoord( unsigned int c, unsigned int i ) const {
         return triangles[c].GetTexCoord( i );
+    }
+    void SetTriIdx( unsigned int c, unsigned int i, int idx ) {
+        triangles[c].SetIndex( i, idx );
+    }
+    int GetTriIdx( unsigned int c, unsigned int i ) const {
+        return triangles[c].GetIndex( i );
+    }
+    void SetTriFaceNormal( unsigned int c, const SGVec3f& n ) {
+        triangles[c].SetFaceNormal( n );
+    }
+    SGVec3f GetTriFaceNormal( unsigned int c ) const {
+        return triangles[c].GetFaceNormal();
+    }
+    void SetTriFaceArea( unsigned int c, double a ) {
+        triangles[c].SetFaceArea( a );
+    }
+    double GetTriFaceArea( unsigned int c ) const {
+        return triangles[c].GetFaceArea();
     }
 
     std::string GetMaterial( void ) const {
@@ -560,7 +628,7 @@ public:
     const tgTexParams& GetTexParams( void ) const {
         return tp;
     }
-    
+
     void SetTexLimits( double minu, double minv, double maxu, double maxv ) {
         tp.minu = minu;
         tp.minv = minv;
@@ -577,9 +645,14 @@ public:
         tp.max_clipu = max_cu;
         tp.max_clipv = max_cv;
     }
+    void SetTexMethod( tgTexMethod m, double cl ) {
+        tp.method = m;
+        tp.center_lat = cl;
+    }
 
+    
     void Tesselate( void );
-    void Tesselate( std::vector<SGGeod> extra );
+    void Tesselate( const std::vector<SGGeod>& extra );
 
     void Texture( void );
 
@@ -623,7 +696,7 @@ public:
     static bool      FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod& start, SGGeod& end );
 
     static void RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers );
-    static void MergeSlivers( tgpolygon_list& subjects, tgcontour_list& slivers );
+    static tgcontour_list MergeSlivers( tgpolygon_list& subjects, tgcontour_list& slivers );
 
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );

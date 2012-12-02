@@ -31,6 +31,7 @@
 
 //using std::string;
 
+#if 0
 double TGConstruct::calc_tri_area( int_list& triangle_nodes ) {
     SGGeod p1 = nodes.get_node( triangle_nodes[0] ).GetPosition();
     SGGeod p2 = nodes.get_node( triangle_nodes[1] ).GetPosition();
@@ -38,9 +39,11 @@ double TGConstruct::calc_tri_area( int_list& triangle_nodes ) {
 
     return triangle_area( p1, p2, p3 );
 }
+#endif
 
-SGVec3d TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) {
-    SGVec3d v1, v2, normal;
+SGVec3f TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) {
+    SGVec3f v1, v2;
+    SGVec3f normal;
 
     // do some sanity checking.  With the introduction of landuse
     // areas, we can get some long skinny triangles that blow up our
@@ -62,7 +65,7 @@ SGVec3d TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d&
     }
 
     if ( degenerate ) {
-        normal = normalize(SGVec3d(p1.x(), p1.y(), p1.z()));
+        normal = normalize(SGVec3f(p1.x(), p1.y(), p1.z()));
     } else {
         v1[0] = p2.x() - p1.x();
         v1[1] = p2.y() - p1.y();
@@ -76,34 +79,26 @@ SGVec3d TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d&
     return normal;
 }
 
-void TGConstruct::calc_normals( std::vector<SGVec3d>& wgs84_nodes, TGSuperPoly& sp ) {
+void TGConstruct::calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGVec3d>& wgs84_nodes, tgPolygon& poly ) {
     // for each face in the superpoly, calculate a face normal
-    SGVec3d     normal;
-    TGPolyNodes tri_nodes = sp.get_tri_idxs();
-    int_list    face_nodes;
-    double_list face_areas;
-    point_list  face_normals;
+    SGVec3f     normal;
     double      area;
 
-    face_normals.clear();
-    face_areas.clear();
+    for (unsigned int tri = 0; tri < poly.Triangles(); tri++) {
+        SGGeod g1 = geod_nodes[ poly.GetTriIdx( tri, 0 ) ];
+        SGGeod g2 = geod_nodes[ poly.GetTriIdx( tri, 1 ) ];
+        SGGeod g3 = geod_nodes[ poly.GetTriIdx( tri, 2 ) ];
 
-    for (int i=0; i<tri_nodes.contours(); i++) {
-        face_nodes = tri_nodes.get_contour(i);
+        SGVec3d v1 = wgs84_nodes[ poly.GetTriIdx( tri, 0 ) ];
+        SGVec3d v2 = wgs84_nodes[ poly.GetTriIdx( tri, 1 ) ];
+        SGVec3d v3 = wgs84_nodes[ poly.GetTriIdx( tri, 2 ) ];
 
-        SGVec3d p1 = wgs84_nodes[ face_nodes[0] ];
-        SGVec3d p2 = wgs84_nodes[ face_nodes[1] ];
-        SGVec3d p3 = wgs84_nodes[ face_nodes[2] ];
+        area   = triangle_area( g1, g2, g3 );
+        normal = calc_normal( area, v1, v2, v3 );
 
-        area  = calc_tri_area( face_nodes );
-        normal = calc_normal( area, p1, p2, p3 );
-
-        face_normals.push_back( Point3D::fromSGVec3( normal ) );
-        face_areas.push_back( area );
+        poly.SetTriFaceArea( tri, area );
+        poly.SetTriFaceNormal( tri, normal );
     }
-
-    sp.set_face_normals( face_normals );
-    sp.set_face_areas( face_areas );
 }
 
 void TGConstruct::CalcFaceNormals( void )
@@ -112,11 +107,14 @@ void TGConstruct::CalcFaceNormals( void )
     std::vector<SGVec3d> wgs84_nodes;
     nodes.get_wgs84_nodes( wgs84_nodes );
 
+    std::vector<SGGeod>  geod_nodes;
+    nodes.get_geod_nodes( geod_nodes );
+
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         for (unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, "Calculating face normals for " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << polys_in.area_size(area) );
-                calc_normals( wgs84_nodes, polys_clipped.get_superpoly( area, shape, segment ) );
+                calc_normals( geod_nodes, wgs84_nodes, polys_clipped.get_poly( area, shape, segment ) );
             }
         }
     }
@@ -156,10 +154,8 @@ void TGConstruct::CalcPointNormals( void )
             unsigned int shape   = faces[j].shape;
             unsigned int segment = faces[j].seg;
             unsigned int tri     = faces[j].tri;
-            int_list     face_nodes;
 
             normal     = polys_clipped.get_face_normal( at, shape, segment, tri ).toSGVec3d();
-            face_nodes = polys_clipped.get_tri_idxs( at, shape, segment ).get_contour( tri ) ;
             face_area  = polys_clipped.get_face_area( at, shape, segment, tri );
 
             normal *= face_area;    // scale normal weight relative to area

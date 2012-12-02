@@ -50,7 +50,7 @@ public:
     }
     inline unsigned int shape_size( unsigned int area, unsigned int shape )
     {
-        return shapes[area][shape].sps.size();
+        return shapes[area][shape].polys.size();
     }
 
     inline void add_shape( unsigned int area, TGShape shape )
@@ -62,13 +62,13 @@ public:
         return shapes[area][shape];
     }
 
-    inline TGPolygon get_mask( unsigned int area, unsigned int shape )
+    inline tgPolygon get_mask( unsigned int area, unsigned int shape )
     {
-        return shapes[area][shape].clip_mask;
+        return shapes[area][shape].mask;
     }
-    inline void set_mask( unsigned int area, unsigned int shape, TGPolygon mask )
+    inline void set_mask( unsigned int area, unsigned int shape, tgPolygon mask )
     {
-        shapes[area][shape].clip_mask = mask;
+        shapes[area][shape].mask = mask;
     }
 
     inline bool get_textured( unsigned int area, unsigned int shape )
@@ -80,24 +80,16 @@ public:
         shapes[area][shape].textured = t;
     }
 
-    inline TGSuperPoly& get_superpoly( unsigned int area, unsigned int shape, unsigned int segment )
+    inline tgPolygon& get_poly( unsigned int area, unsigned int shape, unsigned int segment )
     {
-        return shapes[area][shape].sps[segment];
+        return shapes[area][shape].polys[segment];
     }
-    inline void set_superpoly( unsigned int area, unsigned int shape, unsigned int segment, TGSuperPoly sp )
+    inline void set_poly( unsigned int area, unsigned int shape, unsigned int segment, const tgPolygon& sp )
     {
-        shapes[area][shape].sps[segment] = sp;
-    }
-
-    inline TGPolygon get_poly( unsigned int area, unsigned int shape, unsigned int segment )
-    {
-        return shapes[area][shape].sps[segment].get_poly();
-    }
-    inline void set_poly( unsigned int area, unsigned int shape, unsigned int segment, TGPolygon poly )
-    {
-        return shapes[area][shape].sps[segment].set_poly( poly );
+        shapes[area][shape].polys[segment] = sp;
     }
 
+#if 0
     inline TGPolygon get_tris( unsigned int area, unsigned int shape, unsigned int segment )
     {
         return shapes[area][shape].sps[segment].get_tris();
@@ -106,32 +98,35 @@ public:
     {
         shapes[area][shape].sps[segment].set_tris( tris );
     }
+#endif
 
     inline Point3D get_face_normal( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
     {
-        return shapes[area][shape].sps[segment].get_face_normal( tri );
+        return Point3D::fromSGVec3( shapes[area][shape].polys[segment].GetTriFaceNormal( tri ) );
     }
 
     inline double get_face_area( unsigned int area, unsigned int shape, unsigned int segment, unsigned int tri )
     {
-        return shapes[area][shape].sps[segment].get_face_area( tri );
+        return shapes[area][shape].polys[segment].GetTriFaceArea( tri );
     }
 
+#if 0
     inline std::string get_flag( unsigned int area, unsigned int shape, unsigned int segment )
     {
         return shapes[area][shape].sps[segment].get_flag();
     }
+#endif
 
     inline std::string get_material( unsigned int area, unsigned int shape, unsigned int segment )
     {
-        return shapes[area][shape].sps[segment].get_material();
+        return shapes[area][shape].polys[segment].GetMaterial();
     }
-    inline TGTexParams& get_texparams( unsigned int area, unsigned int shape, unsigned int segment )
+    inline const tgTexParams& get_texparams( unsigned int area, unsigned int shape, unsigned int segment )
     {
-        return shapes[area][shape].tps[segment];
+        return shapes[area][shape].polys[segment].GetTexParams();
     }
 
-
+/*
     inline TGPolygon get_texcoords( unsigned int area, unsigned int shape, unsigned int segment )
     {
         return shapes[area][shape].sps[segment].get_texcoords();
@@ -140,7 +135,9 @@ public:
     {
         return shapes[area][shape].sps[segment].set_texcoords( tcs );
     }
+*/
 
+/*
     inline TGPolyNodes get_tri_idxs( unsigned int area, unsigned int shape, unsigned int segment )
     {
         return shapes[area][shape].sps[segment].get_tri_idxs();
@@ -149,6 +146,8 @@ public:
     {
         return shapes[area][shape].sps[segment].set_tri_idxs( tis );
     }
+*/
+
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
 

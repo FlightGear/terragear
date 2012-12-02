@@ -124,13 +124,13 @@ private:
     int  LoadLandclassPolys( void );
     // Load Data Helpers
     bool load_poly(const std::string& path);
-    void add_poly(int area, const TGPolygon &poly, std::string material);
+    void add_poly(int area, tgPolygon& poly, std::string material);
 
     // Clip Data
     bool ClipLandclassPolys( void );
     // Clip Helpers
     void move_slivers( TGPolygon& in, TGPolygon& out );
-    void merge_slivers( TGLandclass& clipped, poly_list& slivers_list );
+    void merge_slivers( TGLandclass& clipped, tgcontour_list& sliver_list );
 
     // Shared edge Matching
     void SaveSharedEdgeDataStage2( void );
@@ -164,7 +164,7 @@ private:
     void CalcPointNormals( void );
     void CalcTextureCoordinates( void );
     // Helpers
-    SGVec3d   calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 );
+    SGVec3f   calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 );
     TGPolygon linear_tex_coords( const TGPolygon& tri, const TGTexParams& tp );
     TGPolygon area_tex_coords( const TGPolygon& tri );
 
@@ -173,8 +173,7 @@ private:
     void AddCustomObjects( void );
 
     // Misc
-    void calc_normals( std::vector<SGVec3d>& wgs84_nodes, TGSuperPoly& sp );
-    double calc_tri_area( int_list& triangle_nodes );
+    void calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGVec3d>& wgs84_nodes, tgPolygon& sp );
 
     // debug
     bool IsDebugShape( unsigned int id );

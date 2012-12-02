@@ -45,15 +45,14 @@
 class TGShape
 {
 public:
-    TGPolygon       clip_mask;
+    tgpolygon_list  polys;
+    tgPolygon       mask;
     bool            textured;
-    superpoly_list  sps;
-    texparams_list  tps;
     AreaType        area;
     unsigned int    id;
 
     void GetName( char* name ) const;
-    void SetMask( TGPolygon mask );
+    void SetMask( const tgPolygon& mask );
     void BuildMask( void );
     void IntersectPolys( void );
     void SaveToGzFile( gzFile& fp );

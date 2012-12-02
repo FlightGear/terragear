@@ -91,11 +91,10 @@ static double distanceSphere( const SGGeoc& p1, const SGGeod& p2 ) {
 // hopefully, this will get better when we have the area lookup via superpoly...
 void TGConstruct::CalcElevations( void )
 {
-    TGPolyNodes tri_nodes;
-    double e1, e2, e3, min;
-    int    n1, n2, n3;
     std::vector<SGGeod> raw_nodes;
     SGGeoc p;
+    double e1, e2, e3, min;
+    int    n1, n2, n3;
 
     SG_LOG(SG_GENERAL, SG_ALERT, "fixing node heights");
 
@@ -110,6 +109,7 @@ void TGConstruct::CalcElevations( void )
     }
 
     nodes.get_geod_nodes(raw_nodes);
+
     // now flatten some stuff
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         if ( is_lake_area( (AreaType)area ) ) {
@@ -117,19 +117,14 @@ void TGConstruct::CalcElevations( void )
                 for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
                     SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
+                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
 
-                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
-                        if (tri_nodes.contour_size( tri ) != 3) {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
-                            exit(0);
-                        }
-
-                        n1 = tri_nodes.get_pt( tri, 0 );
+                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                        n1 = poly.GetTriIdx( tri, 0 );
                         e1 = nodes.get_node(n1).GetPosition().getElevationM();
-                        n2 = tri_nodes.get_pt( tri, 1 );
+                        n2 = poly.GetTriIdx( tri, 1 );
                         e2 = nodes.get_node(n2).GetPosition().getElevationM();
-                        n3 = tri_nodes.get_pt( tri, 2 );
+                        n3 = poly.GetTriIdx( tri, 2 );
                         e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
                         min = e1;
@@ -149,20 +144,14 @@ void TGConstruct::CalcElevations( void )
                 for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
                     SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
+                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
 
-                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
-                        if (tri_nodes.contour_size( tri ) != 3) {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
-                            exit(0);
-                        }
-
-
-                        n1 = tri_nodes.get_pt( tri, 0 );
+                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                        n1 = poly.GetTriIdx( tri, 0 );
                         e1 = nodes.get_node(n1).GetPosition().getElevationM();
-                        n2 = tri_nodes.get_pt( tri, 1 );
+                        n2 = poly.GetTriIdx( tri, 1 );
                         e2 = nodes.get_node(n2).GetPosition().getElevationM();
-                        n3 = tri_nodes.get_pt( tri, 2 );
+                        n3 = poly.GetTriIdx( tri, 2 );
                         e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
                         min = e1;
@@ -192,20 +181,14 @@ void TGConstruct::CalcElevations( void )
                 for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
                     SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
+                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
 
-                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
-                        if (tri_nodes.contour_size( tri ) != 3) {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
-                            exit(0);
-                        }
-
-
-                        n1 = tri_nodes.get_pt( tri, 0 );
+                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                        n1 = poly.GetTriIdx( tri, 0 );
                         e1 = nodes.get_node(n1).GetPosition().getElevationM();
-                        n2 = tri_nodes.get_pt( tri, 1 );
+                        n2 = poly.GetTriIdx( tri, 1 );
                         e2 = nodes.get_node(n2).GetPosition().getElevationM();
-                        n3 = tri_nodes.get_pt( tri, 2 );
+                        n3 = poly.GetTriIdx( tri, 2 );
                         e3 = nodes.get_node(n3).GetPosition().getElevationM();
 
                         min = e1;
@@ -235,17 +218,12 @@ void TGConstruct::CalcElevations( void )
                 for (int segment = 0; segment < (int)polys_clipped.shape_size(area, shape); ++segment ) {
 
                     SG_LOG( SG_CLIPPER, SG_INFO, "Flattening " << get_area_name( (AreaType)area ) << ":" << shape+1 << "-" << segment << " of " << (int)polys_clipped.area_size(area) );
-                    tri_nodes = polys_clipped.get_tri_idxs( area, shape, segment );
+                    tgPolygon poly = polys_clipped.get_poly( area, shape, segment );
 
-                    for (int tri=0; tri < tri_nodes.contours(); tri++) {
-                        if (tri_nodes.contour_size( tri ) != 3) {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "triangle doesnt have 3 nodes" << tri_nodes.contour_size( tri ) );
-                            exit(0);
-                        }
-
-                        n1 = tri_nodes.get_pt( tri, 0 );
-                        n2 = tri_nodes.get_pt( tri, 1 );
-                        n3 = tri_nodes.get_pt( tri, 2 );
+                    for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                        n1 = poly.GetTriIdx( tri, 0 );
+                        n2 = poly.GetTriIdx( tri, 1 );
+                        n3 = poly.GetTriIdx( tri, 2 );
 
                         nodes.SetElevation( n1, 0.0 );
                         nodes.SetElevation( n2, 0.0 );

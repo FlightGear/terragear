@@ -35,92 +35,69 @@ void TGShape::GetName( char* name ) const
     sprintf( name, "%s_%d", get_area_name( (AreaType)area ).c_str(), id );
 }
 
-void TGShape::SetMask( TGPolygon mask )
+void TGShape::SetMask( const tgPolygon& m )
 {
-    clip_mask = mask;
+    mask = m;
 }
 
 void TGShape::BuildMask( void )
 {
-    TGPolygon poly;
-    poly_list polys;
-    clip_mask.erase();
-
-    for (unsigned int i=0; i<sps.size(); i++)
-    {
-        polys.push_back( sps[i].get_poly() );
-    }
-
-    clip_mask = tgPolygonUnion( polys );
+    mask = tgPolygon::Union( polys );
 }
 
 void TGShape::IntersectPolys( void )
 {
-    if ( sps.size() > 1 ) {
-        TGPolygon original, intersect;
-
-        for (unsigned int i=0; i<sps.size(); i++)
+    if ( polys.size() > 1 ) {
+        for (unsigned int i=0; i<polys.size(); i++)
         {
-            original  = sps[i].get_poly();
-
-            intersect = tgPolygonInt( clip_mask, original );
-
-            sps[i].set_poly( intersect );
+            SG_LOG(SG_GENERAL, SG_INFO, " before is " << polys[i].GetMaterial() );
+            polys[i] = tgPolygon::Intersect( polys[i], mask );
+            SG_LOG(SG_GENERAL, SG_INFO, " after is " << polys[i].GetMaterial() );
         }
     } else {
-        sps[0].set_poly( clip_mask );
+        std::string material = polys[0].GetMaterial();
+        tgTexParams tp = polys[0].GetTexParams();
+        polys[0] = mask;
+        polys[0].SetMaterial( material );
+        polys[0].SetTexParams( tp );
     }
 }
 
 void TGShape::LoadFromGzFile(gzFile& fp)
 {
     int i, count;
+
     // First, load the clipmask
-    clip_mask.LoadFromGzFile( fp );
+    SG_LOG(SG_GENERAL, SG_INFO, " load mask" );
+    mask.LoadFromGzFile( fp );
+    SG_LOG(SG_GENERAL, SG_INFO, " done" );
 
-    // Then load superpolys
+    // Then load individual polys
     sgReadInt( fp, &count );
     for (i=0; i<count; i++) {
-    TGSuperPoly sp;
-        sp.LoadFromGzFile( fp );
-        sps.push_back( sp );
-    }
-
-    // Then load texparams
-    sgReadInt( fp, &count );
-    for (i=0; i<count; i++) {
-    TGTexParams tp;
-        tp.LoadFromGzFile( fp );
-        tps.push_back( tp );
+        tgPolygon poly;
+        poly.LoadFromGzFile( fp );
+        polys.push_back( poly );
     }
 
     // Load the id, area type and textured flag
     sgReadUInt( fp, &id );
-    sgReadInt( fp, (int*)&area );
-    sgReadInt( fp, (int*)&textured );
+    sgReadInt(  fp, (int*)&area );
+    sgReadInt(  fp, (int*)&textured );
 }
 
 std::ostream& operator<< ( std::ostream& out, const TGShape& p )
 {
     int i, count;
-//    TGSuperPoly sp;
-//    TGTexParams tp;
 
     // First, save the clipmask
-    out << p.clip_mask;
+    out << p.mask;
 
     // Then save superpolys
-    count = p.sps.size();
+    count = p.polys.size();
     out << count << "\n";
     for (i=0; i<count; i++) {
-        out << p.sps[i];
-    }
-
-    // Then save texparams
-    count = p.tps.size();
-    out << count << "\n";
-    for (i=0; i<count; i++) {
-        out << p.tps[i];
+        out << p.polys[i];
     }
 
     // Save the id, area type and textured flag
@@ -135,21 +112,14 @@ void TGShape::SaveToGzFile(gzFile& fp)
 {
     int i, count;
 
-    // First, load the clipmask
-    clip_mask.SaveToGzFile( fp );
+    // First, save the clipmask
+    mask.SaveToGzFile( fp );
 
     // Then save superpolys
-    count = sps.size();
+    count = polys.size();
     sgWriteInt( fp, count );
     for (i=0; i<count; i++) {
-        sps[i].SaveToGzFile( fp );
-    }
-
-    // Then save texparams
-    count = tps.size();
-    sgWriteInt( fp, count );
-    for (i=0; i<count; i++) {
-        tps[i].SaveToGzFile( fp );
+        polys[i].SaveToGzFile( fp );
     }
 
     // Save the id, area type and textured flag

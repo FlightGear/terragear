@@ -29,7 +29,9 @@
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <Geometry/trinodes.hxx>
+
+#include <Polygon/tg_unique_vec3f.hxx>
+#include <Polygon/tg_unique_vec2f.hxx>
 
 #include "tgconstruct.hxx"
 
@@ -111,9 +113,8 @@ void TGConstruct::AddCustomObjects( void ) {
 
 void TGConstruct::WriteBtgFile( void )
 {
-    TGTriNodes normals, texcoords;
-    normals.clear();
-    texcoords.clear();
+    UniqueSGVec3fSet normals;
+    UniqueSGVec2fSet texcoords;
 
     group_list pts_v; pts_v.clear();
     group_list pts_n; pts_n.clear();
@@ -134,6 +135,8 @@ void TGConstruct::WriteBtgFile( void )
     int_list pt_n, tri_n, strip_n;
     int_list tri_tc, strip_tc;
 
+    SG_LOG(SG_GENERAL, SG_INFO, "Output triangles" );
+
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         // only tesselate non holes
         if ( !is_hole_area( area ) ) {
@@ -142,24 +145,24 @@ void TGConstruct::WriteBtgFile( void )
                     SG_LOG( SG_CLIPPER, SG_INFO, "Ouput nodes for " << get_area_name( (AreaType)area ) << ":" <<
                             shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );
 
-                    TGPolyNodes tri_nodes = polys_clipped.get_tri_idxs(area, shape, segment);
-                    TGPolygon   tri_txs   = polys_clipped.get_texcoords(area, shape, segment);
+                    tgPolygon   poly      = polys_clipped.get_poly(area, shape, segment);
                     string      material  = polys_clipped.get_material(area, shape, segment);
 
-                    for (int k = 0; k < tri_nodes.contours(); ++k) {
+                    SG_LOG(SG_GENERAL, SG_INFO, "  num tris " << poly.Triangles() );
+
+                    for (unsigned int k = 0; k < poly.Triangles(); ++k) {
                         tri_v.clear();
                         tri_n.clear();
                         tri_tc.clear();
-                        for (int l = 0; l < tri_nodes.contour_size(k); ++l) {
-                            index = tri_nodes.get_pt( k, l );
+                        for (int l = 0; l < 3; ++l) {
+                            index = poly.GetTriIdx( k, l );
                             tri_v.push_back( index );
 
                             // add the node's normal
-                            index = normals.unique_add( Point3D::fromSGVec3( nodes.GetNormal( index ) ) );
+                            index = normals.add( nodes.GetNormal( index ) );
                             tri_n.push_back( index );
 
-                            Point3D tc = tri_txs.get_pt( k, l );
-                            index = texcoords.unique_add( tc );
+                            index = texcoords.add( poly.GetTriTexCoord( k, l ) );
                             tri_tc.push_back( index );
                         }
                         tris_v.push_back( tri_v );
@@ -167,6 +170,8 @@ void TGConstruct::WriteBtgFile( void )
                         tris_tc.push_back( tri_tc );
 
                         material  = polys_clipped.get_material(area, shape, segment);
+                        SG_LOG(SG_GENERAL, SG_INFO, "Add tri material " << material);
+
                         tri_materials.push_back( material );
                     }
                 }
@@ -203,27 +208,13 @@ void TGConstruct::WriteBtgFile( void )
     string txtname = bucket.gen_index_str();
     txtname += ".txt";
 
-    std::vector< SGVec3f > normals_3f;
-    for (int i=0; i < (int)normals.get_node_list().size(); i++ )
-    {
-        Point3D node = normals.get_node_list()[i];
-        normals_3f.push_back( node.toSGVec3f() );
-    }
-
-    std::vector< SGVec2f > texcoords_2f;
-    for (int i=0; i < (int)texcoords.get_node_list().size(); i++ )
-    {
-        Point3D node = texcoords.get_node_list()[i];
-        texcoords_2f.push_back( node.toSGVec2f() );
-    }
-
     SGBinObject obj;
 
     obj.set_gbs_center( gbs_center );
     obj.set_gbs_radius( gbs_radius );
     obj.set_wgs84_nodes( wgs84_nodes );
-    obj.set_normals( normals_3f );
-    obj.set_texcoords( texcoords_2f );
+    obj.set_normals( normals.get_list() );
+    obj.set_texcoords( texcoords.get_list() );
     obj.set_pts_v( pts_v );
     obj.set_pts_n( pts_n );
     obj.set_pt_materials( pt_materials );

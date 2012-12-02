@@ -40,22 +40,21 @@ void TGConstruct::LookupNodesPerVertex( void )
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
         for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                TGPolygon   tris = polys_clipped.get_tris( area, shape, segment );
-                TGPolyNodes tri_nodes;
-                int         idx;
+                tgPolygon   poly = polys_clipped.get_poly( area, shape, segment );
 
-                for (int tri=0; tri < tris.contours(); tri++) {
-                    for (int vertex = 0; vertex < tris.contour_size(tri); vertex++) {
-                        idx = nodes.find( tris.get_pt( tri, vertex ).toSGGeod() );
+                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                    for (unsigned int vertex = 0; vertex < 3; vertex++) {
+                        int idx = nodes.find( poly.GetTriNode( tri, vertex ) );
                         if (idx >= 0) {
-                            tri_nodes.add_node( tri, idx );
+                            poly.SetTriIdx( tri, vertex, idx );
                         } else {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "didn't find vertex! " << tris.get_pt( tri, vertex ) );
+                            SG_LOG(SG_GENERAL, SG_ALERT, "didn't find vertex! " << poly.GetTriNode( tri, vertex ) );
                             exit(0);
                         }
                     }
                 }
-                polys_clipped.set_tri_idxs(area, shape, segment, tri_nodes);
+
+                polys_clipped.set_poly( area, shape, segment, poly );
             }
         }
     }
@@ -69,12 +68,12 @@ void TGConstruct::LookupFacesPerNode( void )
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
         for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                TGPolygon   tris = polys_clipped.get_tris(area, shape, segment);
+                tgPolygon poly = polys_clipped.get_poly(area, shape, segment);
 
-                for (int tri=0; tri < tris.contours(); tri++) {
-                    for (int sub = 0; sub < tris.contour_size(tri); sub++) {
-                        int n = nodes.find( tris.get_pt( tri, sub ).toSGGeod() );
-                        nodes.AddFace( n, area, shape, segment, tri );
+                for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                    for (int v = 0; v < 3; v++) {
+                        int i = poly.GetTriIdx( tri, v );
+                        nodes.AddFace( i, area, shape, segment, tri );
                     }
                 }
             }

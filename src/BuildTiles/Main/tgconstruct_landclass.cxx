@@ -217,12 +217,13 @@ static void fix_land_cover_assignments( TGConstruct& c ) {
 int TGConstruct::load_landcover()
 {
     int count = 0;
+#if 0
 
     try {
 
         LandCover cover(get_cover());
-        TGPolygon polys[TG_MAX_AREA_TYPES];
-        TGPolygon poly;     // working polygon
+        tgPolygon polys[TG_MAX_AREA_TYPES];
+        tgPolygon poly;     // working polygon
 
         // Get the lower left (SW) corner of the tile
         double base_lon = bucket.get_center_lon()
@@ -275,6 +276,7 @@ int TGConstruct::load_landcover()
         exit(-1);
     }
 
+#endif
     // Return the number of polygons actually read.
     return count;
 }

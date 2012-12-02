@@ -23,14 +23,15 @@
 #include <fstream>
 #include <limits.h>
 
+#include <simgear/constants.h>
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGGuard.hxx>
-#include <simgear/constants.h>
+#include <simgear/math/sg_geodesy.hxx>
+#include <simgear/misc/texcoord.hxx>
+#include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <Geometry/point3d.hxx>
 #include <Geometry/poly_support.hxx>
-#include <simgear/math/sg_geodesy.hxx>
-#include <simgear/structure/exception.hxx>
 
 #include <Geometry/trinodes.hxx>
 
@@ -1962,6 +1963,36 @@ bool tgContour::FindColinearLine( const tgContour& subject, const SGGeod& node, 
     return false;
 }
 
+void tgContour::SaveToGzFile( gzFile& fp )
+{
+    // Save the nodelist
+    sgWriteUInt( fp, node_list.size() );
+    for (unsigned int i = 0; i < node_list.size(); i++) {
+        sgWriteGeod( fp, node_list[i] );
+    }
+
+    // and the hole flag
+    sgWriteInt( fp, (int)hole );
+}
+
+void tgContour::LoadFromGzFile( gzFile& fp )
+{
+    unsigned int count;
+    SGGeod node;
+
+    // Start Clean
+    Erase();
+
+    // Load the nodelist
+    sgReadUInt( fp, &count );
+    for (unsigned int i = 0; i < count; i++) {
+        sgReadGeod( fp, node );
+        node_list.push_back( node );
+    }
+
+    sgReadInt( fp, (int *)&hole );
+}
+
 std::ostream& operator<< ( std::ostream& output, const tgContour& subject )
 {
     // Save the data
@@ -2429,10 +2460,11 @@ void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
 #endif
 }
 
-void tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& sliver_list ) {
+tgcontour_list tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& sliver_list ) {
     tgPolygon poly, result;
     tgContour sliver;
     tgContour contour;
+    tgcontour_list unmerged;
     unsigned int original_contours, result_contours;
     bool done;
 
@@ -2462,8 +2494,11 @@ void tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& sliver_list
 
         if ( !done ) {
             SG_LOG(SG_GENERAL, SG_DEBUG, "couldn't merge sliver " << i );
+            unmerged.push_back( sliver );
         }
     }
+
+    return unmerged;
 }
 
 tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, TGTriNodes& nodes )
@@ -2561,12 +2596,31 @@ void tgPolygon::Texture( void )
 
     switch( tp.method ) {
         case TG_TEX_BY_GEODE:
-            break;
+        {
+            // The Simgear General texture coordinate routine takes a fan.
+            // Simgear could probably use a new function that just takes a Geod vector
+            // For now, just create an identity fan...
+            std::vector< int > node_idxs;
+            for (int i = 0; i < 3; i++) {
+                node_idxs.push_back(i);
+            }
+
+            for ( unsigned int i = 0; i < triangles.size(); i++ ) {
+                std::vector< SGVec2f > tc_list;
+                std::vector< SGGeod > nodes;
+
+                nodes = triangles[i].GetNodeList();
+                tc_list = sgCalcTexCoords( tp.center_lat, nodes, node_idxs );
+                triangles[i].SetTexCoordList( tc_list );
+            }
+        }
+        break;
 
         case TG_TEX_BY_TPS_NOCLIP:
         case TG_TEX_BY_TPS_CLIPU:
         case TG_TEX_BY_TPS_CLIPV:
         case TG_TEX_BY_TPS_CLIPUV:
+        {
             for ( unsigned int i = 0; i < triangles.size(); i++ ) {
                 for ( unsigned int j = 0; j < 3; j++ ) {
                     p = triangles[i].GetNode( j );
@@ -2631,8 +2685,8 @@ void tgPolygon::Texture( void )
                     triangles[i].SetTexCoord( j, t );
                 }
             }
-
-            break;
+        }
+        break;
     }
 }
 
@@ -2691,6 +2745,82 @@ void tgPolygon::ToShapefile( const tgPolygon& subject, const std::string& dataso
     ds_id = tgShapefileCloseDatasource( ds_id );
 }
 
+    tgcontour_list  contours;
+    tgtriangle_list triangles;
+
+    std::string material;
+    std::string flag;       // let's get rid of this....
+    tgTexParams tp;
+
+
+void tgPolygon::SaveToGzFile( gzFile& fp )
+{
+    // Save the contours
+    sgWriteUInt( fp, contours.size() );
+    for (unsigned int i = 0; i < contours.size(); i++) {
+        contours[i].SaveToGzFile( fp );
+    }
+
+    // Save the triangles
+    sgWriteUInt( fp, triangles.size() );
+    for (unsigned int i = 0; i < triangles.size(); i++) {
+        triangles[i].SaveToGzFile( fp );
+    }
+
+    // Save the tex params
+    tp.SaveToGzFile( fp );
+
+    // and the rest
+    sgWriteString( fp, material.c_str() );
+    sgWriteString( fp, flag.c_str() );
+}
+
+void tgPolygon::LoadFromGzFile( gzFile& fp )
+{
+    unsigned int count;
+    tgContour contour;
+    tgTriangle triangle;
+    char *strbuff;
+
+    // Start clean
+    Erase();
+
+    // Load the contours
+    sgReadUInt( fp, &count );
+    for (unsigned int i = 0; i < count; i++) {
+        contour.LoadFromGzFile( fp );
+        AddContour(contour);
+    }
+
+    // load the triangles
+    sgReadUInt( fp, &count );
+    SG_LOG(SG_GENERAL, SG_INFO, " load " << count << " triangles" );
+
+    for (unsigned int i = 0; i < count; i++) {
+        triangle.LoadFromGzFile( fp );
+        AddTriangle(triangle);
+    }
+
+    SG_LOG(SG_GENERAL, SG_INFO, " load texparams" );
+
+    // Load the tex params
+    tp.LoadFromGzFile( fp );
+
+    // and the rest
+    SG_LOG(SG_GENERAL, SG_INFO, " load material" );
+
+    sgReadString( fp, &strbuff );
+    if ( strbuff ) {
+        material = strbuff;
+        delete strbuff;
+    }
+
+    sgReadString( fp, &strbuff );
+    if ( strbuff ) {
+        flag = strbuff;
+        delete strbuff;
+    }
+}
 
 ////////////////////////////// CHOP ////////////////////////////////
 #include <simgear/bucket/newbucket.hxx>
@@ -3058,7 +3188,7 @@ void tg_insert_polygon(CDT& cdt,const Polygon_2& polygon)
     }
 }
 
-void tgPolygon::Tesselate( std::vector<SGGeod> extra )
+void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
 {
     CDT       cdt;
 
@@ -3355,3 +3485,87 @@ void tgAccumulator::Add( const tgPolygon& subject )
     ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
     accum.push_back( clipper_subject );
 }
+
+    std::vector<SGGeod>  node_list;
+    std::vector<SGVec2f> tc_list;
+    std::vector<SGVec3d> norm_list;
+    std::vector<int>     idx_list;
+
+    SGVec3f face_normal;
+    double  face_area;
+
+
+void tgTriangle::SaveToGzFile( gzFile& fp )
+{
+    // Save the three nodes, and their attributes
+    for (unsigned int i = 0; i < 3; i++) {
+        sgWriteGeod( fp, node_list[i] );
+        sgWriteVec2( fp, tc_list[i] );
+        sgWritedVec3( fp, norm_list[i] );
+        sgWriteInt( fp, idx_list[i] );
+    }
+
+    // and the area, and face normal
+    sgWriteVec3( fp, face_normal );
+    sgWriteDouble( fp, face_area );
+}
+
+void tgTriangle::LoadFromGzFile( gzFile& fp )
+{
+    // Load the nodelist
+    for (unsigned int i = 0; i < 3; i++) {
+        sgReadGeod( fp, node_list[i] );
+        sgReadVec2( fp, tc_list[i] );
+        sgReaddVec3( fp, norm_list[i] );
+        sgReadInt( fp, &idx_list[i] );
+    }
+
+    // and the area, and face normal
+    sgReadVec3( fp, face_normal );
+    sgReadDouble( fp, &face_area );
+}
+
+void tgTexParams::SaveToGzFile( gzFile& fp )
+{
+    // Save the parameters
+    sgWriteGeod( fp, ref );
+
+    sgWriteDouble( fp, width );
+    sgWriteDouble( fp, length );
+    sgWriteDouble( fp, heading );
+
+    sgWriteDouble( fp, minu );
+    sgWriteDouble( fp, maxu );
+    sgWriteDouble( fp, minv );
+    sgWriteDouble( fp, maxv );
+
+    sgWriteDouble( fp, min_clipu );
+    sgWriteDouble( fp, max_clipu );
+    sgWriteDouble( fp, min_clipv );
+    sgWriteDouble( fp, max_clipv );
+
+    sgWriteInt( fp, (int)method );
+}
+
+void tgTexParams::LoadFromGzFile( gzFile& fp )
+{
+    // Load the parameters
+    sgReadGeod( fp, ref );
+
+    sgReadDouble( fp, &width );
+    sgReadDouble( fp, &length );
+    sgReadDouble( fp, &heading );
+
+    sgReadDouble( fp, &minu );
+    sgReadDouble( fp, &maxu );
+    sgReadDouble( fp, &minv );
+    sgReadDouble( fp, &maxv );
+
+    sgReadDouble( fp, &min_clipu );
+    sgReadDouble( fp, &max_clipu );
+    sgReadDouble( fp, &min_clipv );
+    sgReadDouble( fp, &max_clipv );
+
+    sgReadInt( fp, (int*)&method );
+}
+

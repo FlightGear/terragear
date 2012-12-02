@@ -38,16 +38,12 @@ using std::string;
 static unsigned int cur_poly_id = 0;
 
 // Add a polygon to the clipper. - only used by load_osgb36_poly - make that function more like ogr load
-void TGConstruct::add_poly( int area, const TGPolygon &poly, string material ) {
+void TGConstruct::add_poly( int area, tgPolygon &poly, string material ) {
     TGShape shape;
-    TGSuperPoly sp;
 
     if ( area < TG_MAX_AREA_TYPES ) {
-        sp.set_poly( poly );
-        sp.set_material( material );
-
-        shape.sps.push_back( sp );
-
+        poly.SetMaterial( material );
+        shape.polys.push_back( poly );
         polys_in.add_shape( area, shape );
     } else {
         SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon type out of range = " << area);
@@ -73,9 +69,8 @@ bool TGConstruct::load_poly(const string& path) {
         exit(-1);
     }
 
-    TGPolygon   poly;
-    TGTexParams tp;
-    Point3D     p;
+    tgPolygon   poly;
+    tgTexParams tp;
 
     // (this could break things, why is it here) in >> skipcomment;
     while ( !in.eof() ) {
@@ -120,40 +115,29 @@ bool TGConstruct::load_poly(const string& path) {
 
         // Generate a new Shape for the poly
         TGShape     shape;
-        TGSuperPoly sp;
-
+        tgPolygon   poly;
+        SGGeod      p;
+        
         for (k=0; k<num_polys;k++) {
 
             if ( with_tp ) {
-                double width, length;
-                double heading;
-                double minu, maxu;
-                double minv, maxv;
-
                 in >> x;
                 in >> y;
-                in >> width;
-                in >> length;
-                in >> heading;
-                in >> minu;
-                in >> maxu;
-                in >> minv;
-                in >> maxv;
+                tp.ref    = SGGeod::fromDeg(x,y);
 
-                tp.set_ref( SGGeod::fromDeg(x,y) );
-                tp.set_width( width );
-                tp.set_length( length );
-                tp.set_heading( heading );
-                tp.set_minu( minu );
-                tp.set_maxu( maxu );
-                tp.set_minv( minv );
-                tp.set_maxv( maxv );
+                in >> tp.width;
+                in >> tp.length;
+                in >> tp.heading;
+                in >> tp.minu;
+                in >> tp.maxu;
+                in >> tp.minv;
+                in >> tp.maxv;
+                poly.SetTexParams( tp );
             }
 
             in >> contours;
 
-            poly.erase();
-
+            poly.Erase();
             for ( i = 0; i < contours; ++i ) {
                 in >> count;
 
@@ -172,14 +156,13 @@ bool TGConstruct::load_poly(const string& path) {
                     startz = -9999.0;
                 }
 
-                p = Point3D(startx+nudge, starty+nudge, startz);
-                p.snap( gSnap );
-                poly.add_node( i, p );
+                p = SGGeod::fromDegM(startx+nudge, starty+nudge, startz );
+                poly.AddNode( i, p );
 
                 if ( poly3d ) {
-                    nodes.unique_add_fixed_elevation( p.toSGGeod() );
+                    nodes.unique_add_fixed_elevation( p );
                 } else {
-                    nodes.unique_add( p.toSGGeod() );
+                    nodes.unique_add( p );
                 }
 
                 for ( j = 1; j < count - 1; ++j ) {
@@ -190,13 +173,14 @@ bool TGConstruct::load_poly(const string& path) {
                     } else {
                         z = -9999.0;
                     }
-                    p = Point3D( x+nudge, y+nudge, z );
-                    p.snap( gSnap );
-                    poly.add_node( i, p );
+
+                    p = SGGeod::fromDegM( x+nudge, y+nudge, z );
+                    poly.AddNode( i, p );
+
                     if ( poly3d ) {
-                        nodes.unique_add_fixed_elevation( p.toSGGeod() );
+                        nodes.unique_add_fixed_elevation( p );
                     } else {
-                        nodes.unique_add( p.toSGGeod() );
+                        nodes.unique_add( p );
                     }
                 }
 
@@ -213,31 +197,27 @@ bool TGConstruct::load_poly(const string& path) {
                      (fabs(startz - lastz) < SG_EPSILON) ) {
                     // last point same as first, discard
                 } else {
-                    p = Point3D( lastx+nudge, lasty+nudge, lastz );
-                    p.snap( gSnap );
-                    poly.add_node( i, p );
+                    p = SGGeod::fromDegM( lastx+nudge, lasty+nudge, lastz );
+                    poly.AddNode( i, p );
+
                     if ( poly3d ) {
-                        nodes.unique_add_fixed_elevation( p.toSGGeod() );
+                        nodes.unique_add_fixed_elevation( p );
                     } else {
-                        nodes.unique_add( p.toSGGeod() );
+                        nodes.unique_add( p );
                     }
                 }
             }
 
-            poly = remove_dups( poly );
-
-            sp.set_poly( poly );
-            sp.set_material( material );
-            shape.sps.push_back( sp );
+            poly = tgPolygon::Snap( poly, gSnap );
+            poly = tgPolygon::RemoveDups( poly );
+            poly.SetMaterial( material );
 
             if ( with_tp ) {
                 shape.textured = true;
-                shape.tps.push_back( tp );
-            }
-            else
-            {
+            } else {
                 shape.textured = false;
             }
+            shape.polys.push_back( poly );
 
             in >> skipcomment;
         }
@@ -250,7 +230,7 @@ bool TGConstruct::load_poly(const string& path) {
         polys_in.add_shape( area, shape );
 
         if ( IsDebugShape( shape.id ) ) {
-            WriteDebugShape( "loaded", shape );
+            tgPolygon::ToShapefile( shape.mask, ds_name, "loaded", "" );
         }
     }
 

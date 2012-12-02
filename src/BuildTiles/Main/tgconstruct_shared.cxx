@@ -128,22 +128,21 @@ void TGConstruct::WriteNeighborFaces( gzFile& fp, Point3D pt )
         unsigned int segment = faces[j].seg;
         unsigned int tri     = faces[j].tri;
 
-        int_list face_nodes = polys_clipped.get_tri_idxs( at, shape, segment ).get_contour( tri ) ;
-        {
-            SGGeod p1 = nodes.get_node( face_nodes[0] ).GetPosition();
-            SGGeod p2 = nodes.get_node( face_nodes[1] ).GetPosition();
-            SGGeod p3 = nodes.get_node( face_nodes[2] ).GetPosition();
+        tgPolygon poly = polys_clipped.get_poly( at, shape, segment );
 
-            SGVec3d wgs_p1 = nodes.get_node( face_nodes[0] ).GetWgs84();
-            SGVec3d wgs_p2 = nodes.get_node( face_nodes[1] ).GetWgs84();
-            SGVec3d wgs_p3 = nodes.get_node( face_nodes[2] ).GetWgs84();
+        SGGeod p1 = nodes.get_node( poly.GetTriIdx( tri, 0) ).GetPosition();
+        SGGeod p2 = nodes.get_node( poly.GetTriIdx( tri, 1) ).GetPosition();
+        SGGeod p3 = nodes.get_node( poly.GetTriIdx( tri, 2) ).GetPosition();
 
-            double  face_area   = triangle_area( p1, p2, p3 );
-            SGVec3d face_normal = calc_normal( face_area, wgs_p1, wgs_p2, wgs_p3 );
+        SGVec3d wgs_p1 = nodes.get_node( poly.GetTriIdx( tri, 0) ).GetWgs84();
+        SGVec3d wgs_p2 = nodes.get_node( poly.GetTriIdx( tri, 0) ).GetWgs84();
+        SGVec3d wgs_p3 = nodes.get_node( poly.GetTriIdx( tri, 0) ).GetWgs84();
 
-            sgWriteDouble( fp, face_area );
-            sgWritedVec3( fp, face_normal );
-        }
+        double  face_area   = triangle_area( p1, p2, p3 );
+        SGVec3f face_normal = calc_normal( face_area, wgs_p1, wgs_p2, wgs_p3 );
+
+        sgWriteDouble( fp, face_area );
+        sgWriteVec3( fp, face_normal );
     }
 }
 
@@ -180,20 +179,20 @@ void TGConstruct::ReadNeighborFaces( gzFile& fp )
 
     for (int i=0; i<count; i++) {
         TGNeighborFaces* pFaces;
-        Point3D          node;
+        SGGeod           node;
         int              num_faces;
 
-        sgReadPoint3D( fp, node );
+        sgReadGeod( fp, node );
 
         // look to see if we already have this node
         // If we do, (it's a corner) add more faces to it.
         // otherwise, initialize it with our elevation data
-        pFaces = FindNeighborFaces( node );
+        pFaces = FindNeighborFaces( Point3D::fromSGGeod( node ) );
         if ( !pFaces ) {
-            pFaces = AddNeighborFaces( node );
+            pFaces = AddNeighborFaces( Point3D::fromSGGeod( node ) );
 
             // new face - let's add our elevation first
-            int idx = nodes.find( node.toSGGeod() );
+            int idx = nodes.find( node );
             if (idx >= 0) {
                 TGNode local = nodes.get_node( idx );
                 pFaces->elevations.push_back( local.GetPosition().getElevationM() );
@@ -201,19 +200,19 @@ void TGConstruct::ReadNeighborFaces( gzFile& fp )
         }
 
         // remember all of the elevation data for the node, so we can average
-        pFaces->elevations.push_back( node.z() );
+        pFaces->elevations.push_back( node.getElevationM() );
 
         sgReadInt( fp, &num_faces );
         for (int j=0; j<num_faces; j++)
         {
             double  area;
-            Point3D normal;
+            SGVec3f normal;
 
             sgReadDouble( fp, &area );
             pFaces->face_areas.push_back( area );
 
-            sgReadPoint3D( fp, normal );
-            pFaces->face_normals.push_back( normal );
+            sgReadVec3( fp, normal );
+            pFaces->face_normals.push_back( Point3D::fromSGVec3( normal ) );
         }
     }
 }

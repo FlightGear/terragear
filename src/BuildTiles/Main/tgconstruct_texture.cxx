@@ -166,21 +166,19 @@ void TGConstruct::CalcTextureCoordinates( void )
     for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
         for( unsigned int shape = 0; shape < polys_clipped.area_size(area); shape++ ) {
             for ( unsigned int segment = 0; segment < polys_clipped.shape_size(area, shape); segment++ ) {
-                TGPolygon poly = polys_clipped.get_poly(area, shape, segment);
+                tgPolygon poly = polys_clipped.get_poly(area, shape, segment);
                 SG_LOG( SG_CLIPPER, SG_INFO, "Texturing " << get_area_name( (AreaType)area ) << "(" << area << "): " <<
-                        shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) );
-
-                TGPolygon tri = polys_clipped.get_tris( area, shape, segment );
-                TGPolygon tc;
+                        shape+1 << "-" << segment << " of " << polys_clipped.area_size(area) << " with " << poly.GetMaterial() );
 
                 if ( polys_clipped.get_textured( area, shape ) ) {
                     SG_LOG(SG_GENERAL, SG_DEBUG, "USE TEXTURE PARAMS for tex coord calculations" );
-                    tc = linear_tex_coords( tri, polys_clipped.get_texparams(area, shape, segment) );
+                    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, -1, -1, 1, 1 );
                 } else {
                     SG_LOG(SG_GENERAL, SG_DEBUG, "USE SIMGEAR for tex coord calculations" );
-                    tc = area_tex_coords( tri );
+                    poly.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
                 }
-                polys_clipped.set_texcoords( area, shape, segment, tc );
+                poly.Texture( );
+                polys_clipped.set_poly(area, shape, segment, poly);
             }
         }
     }
