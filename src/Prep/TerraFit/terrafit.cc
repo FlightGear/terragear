@@ -22,15 +22,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
-#include <iostream>
-#include <string>
 
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <string>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <string.h>
      
 #ifndef _MSC_VER
 #  include <unistd.h>
@@ -47,7 +43,9 @@
 #endif
      
 #include <zlib.h>
+#include <boost/foreach.hpp>
 
+#include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
@@ -56,11 +54,8 @@
 #include <simgear/threads/SGQueue.hxx>
 #include <simgear/threads/SGThread.hxx>
      
-#include <boost/foreach.hpp>
-
 #include <Array/array.hxx>
-
-
+#include <Include/version.h>
 #include <Prep/Terra/GreedyInsert.h>
 #include <Prep/Terra/Map.h>
 #include <Prep/Terra/Mask.h>
@@ -272,6 +267,7 @@ void usage(char* progname, const std::string& msg) {
     SG_LOG(SG_GENERAL,SG_INFO, "\t -x | --maxnodes 1000");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -e | --maxerror 40");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -f | --force");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -j | --threads");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -v | --version");
     SG_LOG(SG_GENERAL,SG_INFO, "");
     SG_LOG(SG_GENERAL,SG_INFO, "Algorithm will produce at least <minnodes> fitted nodes, but no");
@@ -303,14 +299,16 @@ struct option options[]={
     {"maxerror",required_argument,NULL,'e'},
     {"force",no_argument,NULL,'f'},
     {"version",no_argument,NULL,'v'},
+    {"threads",required_argument,NULL,'j'},
     {NULL,0,NULL,0}
 };
 
 int main(int argc, char** argv) {
     sglog().setLogLevels( SG_ALL, SG_DEBUG );
     int option;
+    const std::string version = SG_STRINGIZE(TERRAGEAR_VERSION);
 
-    while ((option=getopt_long(argc,argv,"hm:x:e:v:j:",options,NULL))!=-1) {
+    while ((option=getopt_long(argc,argv,"h:m:x:e::f:v:j:",options,NULL))!=-1) {
         switch (option) {
             case 'h':
                 usage(argv[0],"");
@@ -328,7 +326,7 @@ int main(int argc, char** argv) {
                 force=true;
                 break;
             case 'v':
-                SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " Version 1.0");
+                SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " version " << version);
                 exit(0);
                 break;
             case 'j':
@@ -339,7 +337,8 @@ int main(int argc, char** argv) {
                 exit(1);
         }
     }
-    
+
+    SG_LOG(SG_GENERAL, SG_INFO, "TerraFit version " << version);
     SG_LOG(SG_GENERAL, SG_INFO, "Min points = " << min_points);
     SG_LOG(SG_GENERAL, SG_INFO, "Max points = " << point_limit);
     SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);
