@@ -30,6 +30,7 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/strutils.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/io/lowlevel.hxx>
 
 #include "array.hxx"
 
@@ -38,22 +39,18 @@ using std::string;
 
 TGArray::TGArray( void ):
   array_in(NULL),
-  fitted_in(NULL)
+  fitted_in(NULL),
+      in_data(NULL)
 {
-    SG_LOG(SG_GENERAL, SG_DEBUG, "class TGArray CONstructor called." );
-    in_data = new int[ARRAY_SIZE_1 * ARRAY_SIZE_1];
+
 }
 
 
 TGArray::TGArray( const string &file ):
   array_in(NULL),
-  fitted_in(NULL)
+  fitted_in(NULL),
+      in_data(NULL)
 {
-    SG_LOG(SG_GENERAL, SG_DEBUG, "class TGArray CONstructor called." );
-    in_data = new int[ARRAY_SIZE_1 * ARRAY_SIZE_1];
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "ps TGArray CONstructor called." );
-
     TGArray::open(file);
 }
 
@@ -62,13 +59,10 @@ TGArray::TGArray( const string &file ):
 bool TGArray::open( const string& file_base ) {
     // open array data file
     string array_name = file_base + ".arr.gz";
-    array_in = new sg_gzifstream( array_name );
-    if ( !array_in->is_open() ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  ps: Cannot open " << array_name );
-        delete array_in;
-        array_in = NULL;
-    } else {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening array data file: " << array_name );
+
+    array_in = gzopen( array_name.c_str(), "rb" );
+    if (array_in == NULL) {
+        return false;
     }
 
     // open fitted data file
@@ -79,7 +73,7 @@ bool TGArray::open( const string& file_base ) {
         // can do a really stupid/crude fit on the fly, but it will
         // not be nearly as nice as what the offline terrafit utility
         // would have produced.
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  ps: Cannot open " << fitted_name );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  Cannot open " << fitted_name );
         delete fitted_in;
         fitted_in = NULL;
     } else {
@@ -94,8 +88,7 @@ bool TGArray::open( const string& file_base ) {
 bool
 TGArray::close() {
     if (array_in) {
-        array_in->close();
-        delete array_in;
+        gzclose(array_in);
         array_in = NULL;
     }
 
@@ -114,23 +107,8 @@ TGArray::close() {
 bool
 TGArray::parse( SGBucket& b ) {
     // Parse/load the array data file
-    if ( array_in && array_in->is_open() ) {
-        // file open, parse
-        *array_in >> originx >> originy;
-        *array_in >> cols >> col_step;
-        *array_in >> rows >> row_step;
-
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
-
-        for ( int i = 0; i < cols; i++ ) {
-            for ( int j = 0; j < rows; j++ ) {
-                *array_in >> in_data[(i * ARRAY_SIZE_1) + j];
-            }
-        }
-
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    Done parsing" );
+    if ( array_in ) {
+        parse_bin();
     } else {
         // file not open (not found?), fill with zero'd data
 
@@ -149,7 +127,9 @@ TGArray::parse( SGBucket& b ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
         SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
-        memset(in_data, 0, sizeof(int) * cols * rows);
+
+        in_data = new short[cols * rows];
+        memset(in_data, 0, sizeof(short) * cols * rows);
         SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
     }
 
@@ -168,6 +148,33 @@ TGArray::parse( SGBucket& b ) {
     return true;
 }
 
+void TGArray::parse_bin()
+{
+    int32_t header;
+    sgReadLong(array_in, &header);
+    if (header != 0x54474152) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "\nThe .arr file is not in the correct binary format."
+        << "\nPlease rebuild it using the latest TerraGear HGT tools.");
+        exit(1);
+    }
+
+    int minX, minY, intColStep, intRowStep;
+    sgReadInt(array_in, &minX);
+    sgReadInt(array_in, &minY);
+    originx = minX;
+    originy = minY;
+
+    sgReadInt(array_in, &cols);
+    sgReadInt(array_in, &intColStep);
+    sgReadInt(array_in, &rows);
+    sgReadInt(array_in, &intRowStep);
+
+    col_step = intColStep;
+    row_step = intRowStep;
+
+    in_data = new short[cols * rows];
+    sgReadShort(array_in, cols * rows, in_data);
+}
 
 // write an Array file
 bool TGArray::write( const string root_dir, SGBucket& b ) {
@@ -287,26 +294,6 @@ void TGArray::remove_voids( ) {
 }
 
 
-// add a node to the output corner node list
-void TGArray::add_corner_node( int i, int j, double val ) {
-
-    double x = (originx + i * col_step) / 3600.0;
-    double y = (originy + j * row_step) / 3600.0;
-    SG_LOG(SG_GENERAL, SG_DEBUG, "originx = " << originx << "  originy = " << originy );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "corner = " << Point3D(x, y, val) );
-    corner_list.push_back( Point3D(x, y, val) );
-}
-
-
-// add a node to the output fitted node list
-void TGArray::add_fit_node( int i, int j, double val ) {
-    double x = (originx + i * col_step) / 3600.0;
-    double y = (originy + j * row_step) / 3600.0;
-    SG_LOG(SG_GENERAL, SG_DEBUG, Point3D(x, y, val) );
-    fitted_list.push_back( Point3D(x, y, val) );
-}
-
-
 // Return the elevation of the closest non-void grid point to lon, lat
 double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
     double mindist = 99999999999.9;
@@ -335,8 +322,8 @@ double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
 }
 
 
-// return the current altitude based on grid data.  We should rewrite
-// this to interpolate exact values, but for now this is good enough
+// return the current altitude based on grid data.
+// TODO: We should rewrite this to interpolate exact values, but for now this is good enough
 double TGArray::altitude_from_grid( double lon, double lat ) const {
     // we expect incoming (lon,lat) to be in arcsec for now
 
@@ -445,15 +432,24 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 
 TGArray::~TGArray( void )
 {
-    delete in_data;
+    delete[] in_data;
 }
 
 int TGArray::get_array_elev( int col, int row ) const
 {
-    return in_data[(col * ARRAY_SIZE_1) + row];
+    return in_data[(col * rows) + row];
 }
 
 void TGArray::set_array_elev( int col, int row, int val )
 {
-    in_data[(col * ARRAY_SIZE_1) + row] = val;
+    in_data[(col * rows) + row] = val;
+}
+
+bool TGArray::is_open() const
+{
+  if ( array_in != NULL ) {
+      return true;
+  } else {
+      return false;
+  }
 }

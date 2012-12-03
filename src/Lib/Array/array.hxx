@@ -23,31 +23,21 @@
 #ifndef _ARRAY_HXX
 #define _ARRAY_HXX
 
-
-#ifndef __cplusplus
-# error This library requires C++
-#endif
-
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
 #include <simgear/compiler.h>
-
 #include <simgear/bucket/newbucket.hxx>
-#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#define ARRAY_SIZE_1 20000
-
+#include <Lib/Geometry/point3d.hxx>
 
 class TGArray {
 
 private:
-
-    // array file pointer
-    sg_gzifstream *array_in;
+    gzFile array_in;
 
     // fitted file pointer
     sg_gzifstream *fitted_in;
@@ -62,13 +52,13 @@ private:
     double col_step, row_step;
 
     // pointers to the actual grid data allocated here
-    int *in_data;
-    // float (*out_data)[ARRAY_SIZE_1];
+    short *in_data;
 
     // output nodes
     point_list corner_list;
     point_list fitted_list;
 
+    void parse_bin();
 public:
 
     // Constructor
@@ -82,13 +72,7 @@ public:
     bool open ( const std::string& file_base );
 
     // return if array was successfully opened or not
-    inline bool is_open() {
-      if ( array_in != NULL ) {
-	return array_in->is_open();
-      } else {
-	return false;
-      }
-    }
+    bool is_open() const;
 
     // close a Array file
     bool close();
@@ -102,12 +86,6 @@ public:
     // do our best to remove voids by picking data from the nearest
     // neighbor.
     void remove_voids();
-
-    // add a node to the output corner node list
-    void add_corner_node( int i, int j, double val );
-
-    // add a node to the output fitted node list
-    void add_fit_node( int i, int j, double val );
 
     // Return the elevation of the closest non-void grid point to lon, lat
     double closest_nonvoid_elev( double lon, double lat ) const;
@@ -130,14 +108,7 @@ public:
 
     int get_array_elev( int col, int row ) const;
     void set_array_elev( int col, int row, int val );
-
-
-    inline Point3D get_fitted_pt( int i ) {
-        return fitted_list[i];
-    }
 };
 
 
 #endif // _ARRAY_HXX
-
-

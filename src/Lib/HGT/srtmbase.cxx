@@ -25,11 +25,12 @@
 #  include <config.h>
 #endif
 
-#include <simgear/compiler.h>
-
 #include <iostream>
 #include <stdlib.h>
 #include <zlib.h>
+
+#include <simgear/compiler.h>
+#include <simgear/io/lowlevel.hxx>
 
 #include "srtmbase.hxx"
 
@@ -57,7 +58,7 @@ TGSrtmBase::write_area( const string& root, SGBucket& b ) {
     double max_y = ( b.get_center_lat() + 0.5 * b.get_height() ) * 3600.0;
 
     cout << b << endl;
-    cout << "width = " << b.get_width() << " height = " << b.get_height() 
+    cout << "width = " << b.get_width() << " height = " << b.get_height()
 	 << endl;
     cout << "min = " << min_x << "," << min_y
          << "  max = " << max_x << "," << max_y << endl;
@@ -99,50 +100,37 @@ TGSrtmBase::write_area( const string& root, SGBucket& b ) {
     string array_file = path + "/" + b.gen_index_str() + ".arr.gz";
     cout << "array_file = " << array_file << endl;
 
-    // write the file
+    write_area_bin(array_file, start_x, start_y, min_x, min_y,
+        span_x, span_y, col_step, row_step);
+
+    return true;
+}
+
+bool TGSrtmBase::write_area_bin(const SGPath& aPath, int start_x, int start_y,
+    int min_x, int min_y,
+    int span_x, int span_y, int col_step, int row_step)
+{
     gzFile fp;
-    if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
-	cout << "ERROR:  cannot open " << array_file << " for writing!" << endl;
-	exit(-1);
+    if ( (fp = gzopen( aPath.c_str(), "wb9" )) == NULL ) {
+	    cout << "ERROR:  cannot open " << aPath.str() << " for writing!" << endl;
+	    return false;
     }
 
-    gzprintf( fp, "%d %d\n", (int)min_x, (int)min_y );
-    gzprintf( fp, "%d %d %d %d\n", span_x + 1, (int)col_step, 
-              span_y + 1, (int)row_step );
+    int32_t header = 0x54474152; // 'TGAR'
+    sgWriteLong(fp, header);
+    sgWriteInt(fp, min_x); sgWriteInt(fp, min_y);
+    sgWriteInt(fp, span_x + 1); sgWriteInt(fp, col_step);
+    sgWriteInt(fp, span_y + 1); sgWriteInt(fp, row_step);
+
     for ( int i = start_x; i <= start_x + span_x; ++i ) {
-	for ( int j = start_y; j <= start_y + span_y; ++j ) {
-	    gzprintf( fp, "%d ", (int)height(i,j) );
-	}
-	gzprintf( fp, "\n" );
+	    for ( int j = start_y; j <= start_y + span_y; ++j ) {
+            sgWriteShort(fp, height(i,j));
+	    }
     }
-    gzclose(fp);
 
+    gzclose(fp);
     return true;
 }
-
-
-// write the entire area out in a simple ascii format
-bool TGSrtmBase::write_whole_ascii( const string& file ) {
-    cout << "writing to " << file << endl;
-    // write the file
-    gzFile fp;
-    if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-	cout << "ERROR:  cannot open " << file << " for writing!" << endl;
-	exit(-1);
-    }
-
-    gzprintf( fp, "%d\n%d\n", rows, cols );
-    for ( int row = rows - 1; row >= 0; row-- ) {
-        for ( int col = 0; col < cols; col++ ) {
-            gzprintf( fp, "%d\n", (int)height(col,row) );
-        }
-    }
-    gzclose(fp);
-
-    return true;
-}
-
-
 
 bool
 TGSrtmBase::has_non_zero_elev (int start_x, int span_x,

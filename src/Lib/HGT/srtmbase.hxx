@@ -38,15 +38,15 @@ class TGSrtmBase {
 protected:
     TGSrtmBase() : remove_tmp_file(false)
     {}
-    
+
     ~TGSrtmBase();
 
     // coordinates (in arc seconds) of south west corner
     double originx, originy;
-    
+
     // number of columns and rows
     int cols, rows;
-    
+
     // Distance between column and row data points (in arc seconds)
     double col_step, row_step;
 
@@ -60,8 +60,9 @@ public:
     // hand corner.
     bool write_area( const std::string& root, SGBucket& b );
 
-    // write the entire area out in a simple ascii format
-    bool write_whole_ascii( const std::string& file );
+    bool write_area_bin(const SGPath& aPath,
+        int start_x, int start_y, int min_x, int min_y,
+    int span_x, int span_y, int col_step, int row_step);
 
     // Informational methods
     inline double get_originx() const { return originx; }

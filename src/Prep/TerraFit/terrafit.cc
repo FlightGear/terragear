@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
-     
+
 #ifndef _MSC_VER
 #  include <unistd.h>
 #  ifdef __APPLE__
@@ -41,7 +41,7 @@
 #  include <Prep/Terra/getopt.h>
 #  define sleep(x) Sleep(x*1000)
 #endif
-     
+
 #include <zlib.h>
 #include <boost/foreach.hpp>
 
@@ -52,7 +52,7 @@
 #include <simgear/structure/exception.hxx>
 #include <simgear/threads/SGQueue.hxx>
 #include <simgear/threads/SGThread.hxx>
-     
+
 #include <Array/array.hxx>
 #include <Include/version.h>
 #include <Prep/Terra/GreedyInsert.h>
@@ -81,7 +81,7 @@ public:
                 min=30000;
                 max=-30000;
                 for (int i=0;i<width;i++) {
-                        for (int j=0;j<width;j++) {
+                        for (int j=0;j<height;j++) {
                                 Terra::real v=eval(i,j);
                                 if (v<min)
                                         min=v;
@@ -167,7 +167,7 @@ void fit_file(const SGPath& path) {
     if ( outPath.exists() ) {
         unlink( outPath.c_str() );
     }
-    
+
     SGBucket bucket(0,0); // dummy bucket
     TGArray inarray(path.dir() + "/" + path.file_base());
     inarray.parse(bucket);
@@ -200,7 +200,7 @@ void fit_file(const SGPath& path) {
             gzprintf(fp,"%+03.8f %+02.8f %0.2f\n",vx,vy,vz);
         }
     }
-    
+
     delete mesh;
     delete DEM;
 
@@ -218,7 +218,7 @@ void queue_fit_file(const SGPath& path)
             return;
         }
     }
-    
+
     global_workQueue.push(path);
 }
 
@@ -237,14 +237,14 @@ public:
 };
 
 void walk_path(const SGPath& path) {
-    
+
     if (!path.exists()) {
         SG_LOG(SG_GENERAL, SG_ALERT ,"ERROR: Unable to stat '" << path.str() << "':" << strerror(errno));
         return;
     }
-    
+
     if ((path.lower_extension() == "arr") || (path.complete_lower_extension() == "arr.gz")) {
-        SG_LOG(SG_GENERAL, SG_INFO, "will queue " << path);
+        SG_LOG(SG_GENERAL, SG_DEBUG, "will queue " << path);
         queue_fit_file(path);
     } else if (path.isDir()) {
         Dir d(path);
@@ -261,12 +261,12 @@ void usage(char* progname, const std::string& msg) {
     }
 
     SG_LOG(SG_GENERAL,SG_INFO, "Usage: " << progname << " [options] <file | path to walk>");
-    SG_LOG(SG_GENERAL,SG_INFO, "\t -h | --help ");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -h | --help");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -m | --minnodes 50");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -x | --maxnodes 1000");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -e | --maxerror 40");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -f | --force");
-    SG_LOG(SG_GENERAL,SG_INFO, "\t -j | --threads");
+    SG_LOG(SG_GENERAL,SG_INFO, "\t -j | --threads <number>");
     SG_LOG(SG_GENERAL,SG_INFO, "\t -v | --version");
     SG_LOG(SG_GENERAL,SG_INFO, "");
     SG_LOG(SG_GENERAL,SG_INFO, "Algorithm will produce at least <minnodes> fitted nodes, but no");
@@ -303,10 +303,10 @@ struct option options[]={
 };
 
 int main(int argc, char** argv) {
-    sglog().setLogLevels( SG_ALL, SG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_INFO );
     int option;
 
-    while ((option=getopt_long(argc,argv,"h:m:x:e:f:v:j:",options,NULL))!=-1) {
+    while ((option=getopt_long(argc,argv,"hm:x:e:fvj:",options,NULL))!=-1) {
         switch (option) {
             case 'h':
                 usage(argv[0],"");
@@ -336,7 +336,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "TerraFit version " << getTGVersion());
+    SG_LOG(SG_GENERAL, SG_INFO, "TerraFit version " << getTGVersion() << " using " << num_threads << " threads");
     SG_LOG(SG_GENERAL, SG_INFO, "Min points = " << min_points);
     SG_LOG(SG_GENERAL, SG_INFO, "Max points = " << point_limit);
     SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);
@@ -350,21 +350,21 @@ int main(int argc, char** argv) {
         SG_LOG(SG_GENERAL, SG_INFO, "Use 'terrafit --help' for commands");
         exit(1);
     }
-    
+
     std::vector<FitThread*> threads;
     for (unsigned int t=0; t<num_threads; ++t) {
         FitThread* thread = new FitThread;
         thread->start();
         threads.push_back(thread);
     }
-    
+
     while (!global_workQueue.empty()) {
         sleep(1);
     }
-    
+
     for (unsigned int t=0; t<num_threads; ++t) {
         threads[t]->join();
     }
-    
+
     SG_LOG(SG_GENERAL, SG_INFO, "Work queue is empty\n");
 }
