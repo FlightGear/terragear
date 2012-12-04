@@ -11,7 +11,6 @@ project(TerraGear)
 # read 'version' file into a variable (stripping any newlines or spaces)
 file(READ version versionFile)
 string(STRIP ${versionFile} TERRAGEAR_VERSION)
-file(WRITE ${PROJECT_BINARY_DIR}/src/Include/version.h "#define TERRAGEAR_VERSION ${TERRAGEAR_VERSION}")
 
 set(CMAKE_DEBUG_POSTFIX "d" CACHE STRING "add a postfix, usually d on windows")
 set(CMAKE_RELEASE_POSTFIX "" CACHE STRING "add a postfix, usually empty on windows")
@@ -131,9 +130,6 @@ include_directories(
 	${SIMGEAR_INCLUDE_DIR}
 	)
 
-include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_BINARY_DIR}/src/Include)
-
 add_definitions(-DHAVE_CONFIG_H)
 
 # configure a header file to pass some of the CMake settings
@@ -142,6 +138,14 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/src/Include/config_cmake.h.in"
   "${PROJECT_BINARY_DIR}/src/Include/config.h"
   )
+# create a version.h file
+configure_file (
+  "${PROJECT_SOURCE_DIR}/src/Include/version.h.cmake-in"
+  "${PROJECT_BINARY_DIR}/src/Include/version.h"
+  )
+
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src/Include)
 
 add_subdirectory(src)
 #add_subdirectory(gismodules)

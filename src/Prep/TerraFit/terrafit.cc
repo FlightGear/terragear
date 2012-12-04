@@ -45,7 +45,6 @@
 #include <zlib.h>
 #include <boost/foreach.hpp>
 
-#include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
@@ -306,9 +305,8 @@ struct option options[]={
 int main(int argc, char** argv) {
     sglog().setLogLevels( SG_ALL, SG_DEBUG );
     int option;
-    const std::string version = SG_STRINGIZE(TERRAGEAR_VERSION);
 
-    while ((option=getopt_long(argc,argv,"h:m:x:e::f:v:j:",options,NULL))!=-1) {
+    while ((option=getopt_long(argc,argv,"h:m:x:e:f:v:j:",options,NULL))!=-1) {
         switch (option) {
             case 'h':
                 usage(argv[0],"");
@@ -326,7 +324,7 @@ int main(int argc, char** argv) {
                 force=true;
                 break;
             case 'v':
-                SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " version " << version);
+                SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " version " << getTGVersion());
                 exit(0);
                 break;
             case 'j':
@@ -338,7 +336,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "TerraFit version " << version);
+    SG_LOG(SG_GENERAL, SG_INFO, "TerraFit version " << getTGVersion());
     SG_LOG(SG_GENERAL, SG_INFO, "Min points = " << min_points);
     SG_LOG(SG_GENERAL, SG_INFO, "Max points = " << point_limit);
     SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);
@@ -368,5 +366,5 @@ int main(int argc, char** argv) {
         threads[t]->join();
     }
     
-    printf("Work queue is empty\n");
+    SG_LOG(SG_GENERAL, SG_INFO, "Work queue is empty\n");
 }
