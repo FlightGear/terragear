@@ -54,6 +54,7 @@
 #include <simgear/threads/SGThread.hxx>
      
 #include <Array/array.hxx>
+#include <Include/version.h>
 #include <Prep/Terra/GreedyInsert.h>
 #include <Prep/Terra/Map.h>
 #include <Prep/Terra/Mask.h>
@@ -323,7 +324,7 @@ int main(int argc, char** argv) {
                 force=true;
                 break;
             case 'v':
-                SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " version unknown");
+                SG_LOG(SG_GENERAL,SG_INFO,argv[0] << " version " << getTGVersion());
                 exit(0);
                 break;
             case 'j':
@@ -335,7 +336,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "TerraFit version unknown");
+    SG_LOG(SG_GENERAL, SG_INFO, "TerraFit version " << getTGVersion());
     SG_LOG(SG_GENERAL, SG_INFO, "Min points = " << min_points);
     SG_LOG(SG_GENERAL, SG_INFO, "Max points = " << point_limit);
     SG_LOG(SG_GENERAL, SG_INFO, "Max error  = " << error_threshold);

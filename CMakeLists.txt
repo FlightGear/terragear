@@ -132,6 +132,10 @@ include_directories(
 
 add_definitions(-DHAVE_CONFIG_H)
 
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src/Include)
+
 # configure a header file to pass some of the CMake settings
 # to the source code
 configure_file (
@@ -143,9 +147,6 @@ configure_file (
   "${PROJECT_SOURCE_DIR}/src/Include/version.h.cmake-in"
   "${PROJECT_BINARY_DIR}/src/Include/version.h"
   )
-
-include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_BINARY_DIR}/src/Include)
 
 add_subdirectory(src)
 #add_subdirectory(gismodules)
