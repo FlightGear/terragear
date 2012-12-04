@@ -25,6 +25,7 @@
 #include <Polygon/index.hxx>
 #include <Geometry/util.hxx>
 #include <Geometry/poly_support.hxx>
+#include <Include/version.h>
 
 #include "scheduler.hxx"
 #include "beznode.hxx"
@@ -260,17 +261,17 @@ int main(int argc, char **argv)
     std::string airportareadir=work_dir+"/AirportArea";
 
     // this is the main program -
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Genapts850 version " << getTGVersion() << " running with " << num_threads << " threads" );
     GENAPT_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
-    GENAPT_LOG(SG_GENERAL, SG_INFO, "Run genapts with " << num_threads << " threads" );
     GENAPT_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
+    GENAPT_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
     GENAPT_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
     for ( unsigned int i = 0; i < elev_src.size(); ++i ) {
         GENAPT_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
     }
-    GENAPT_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
     GENAPT_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
-    GENAPT_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
-    GENAPT_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
 
     if (!max.isValid() || !min.isValid())
     {
@@ -279,7 +280,7 @@ int main(int argc, char **argv)
     }
 
     // make work directory
-    GENAPT_LOG(SG_GENERAL, SG_INFO, "Creating AirportArea directory");
+    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Creating AirportArea directory");
 
     SGPath sgp( airportareadir );
     sgp.append( "dummy" );
