@@ -19,7 +19,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id: hgtchop.cxx,v 1.7 2007-08-15 14:35:36 curt Exp $
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -35,6 +34,7 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sg_dir.hxx>
 
+#include <Include/version.h>
 #include <HGT/hgt.hxx>
 
 #include <stdlib.h>
@@ -46,6 +46,7 @@ using std::string;
 
 int main(int argc, char **argv) {
     sglog().setLogLevels( SG_ALL, SG_WARN );
+    SG_LOG( SG_GENERAL, SG_ALERT, "hgtchop version " << getTGVersion() << "\n" );
 
     if ( argc != 4 ) {
 	cout << "Usage " << argv[0] << " <resolution> <hgt_file> <work_dir>"
