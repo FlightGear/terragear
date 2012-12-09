@@ -386,25 +386,39 @@ std::string ClosedPoly::GetMaterial( int surface )
 
     switch( surface ) {
         case 1:
-            material = "pa_tiedown";
+            material = "pa_tiedown"; // Asphalt
             break;
 
         case 2:
-            material = "pc_tiedown";
+            material = "pc_tiedown"; // Concrete
             break;
 
         case 3:
-            material = "grass_rwy";
+            material = "grass"; // Grass / Turf
             break;
 
-        // TODO Differentiate more here:
         case 4:
+            material = "dirt"; // Dirt
+            break;
+
         case 5:
+            material = "gravel"; // Gravel
+            break;
+
         case 12:
+            material = "lakebed_taxiway"; // Dry lakebed
+            break;
+
         case 13:
+            material = "Lake"; // Water
+            break;
+
         case 14:
+            material = "SnowCover"; // Snow
+            break;
+
         case 15:
-            material = "grass_rwy";
+            material = "grass";
             break;
 
         default:
