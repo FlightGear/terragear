@@ -200,16 +200,9 @@ int main(int argc, char **argv) {
                     stage1->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
 
                     SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 1: Construct bucket " << cur_bucket++ << " of " << total_buckets );
-                    SGTimeStamp build_start;
-                    build_start.stamp();
-
                     stage1->ConstructBucketStage1();
                     stage1->SaveToIntermediateFiles(1);
 
-                    SGTimeStamp build_end;
-                    build_end.stamp();
-
-                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 1: finshed in " << build_end - build_start );
                     delete stage1;
                 }
             }
