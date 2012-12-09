@@ -33,6 +33,7 @@
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sg_path.hxx>
 
+#include <Include/version.h>
 #include <Geometry/line.hxx>
 #include <Geometry/util.hxx>
 #include <Polygon/chop.hxx>
@@ -670,6 +671,8 @@ int main( int argc, char **argv ) {
 	} else
 		break;
     }
+
+    SG_LOG( SG_GENERAL, SG_ALERT, "ogr-decode version " << getTGVersion() << "\n" );
 
     if (argc<3)
 	usage(progname);

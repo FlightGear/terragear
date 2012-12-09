@@ -29,7 +29,7 @@
 #endif
 
 #include <simgear/debug/logstream.hxx>
-
+#include <Include/version.h>
 #include <Geometry/poly_support.hxx>
 
 #include "tgconstruct.hxx"
@@ -131,6 +131,7 @@ int main(int argc, char **argv) {
         share_dir = work_dir + "/Shared";
     }
 
+    SG_LOG(SG_GENERAL, SG_ALERT, "tg-construct version " << getTGVersion() << "\n");
     SG_LOG(SG_GENERAL, SG_ALERT, "Output directory is " << output_dir);
     SG_LOG(SG_GENERAL, SG_ALERT, "Working directory is " << work_dir);
     SG_LOG(SG_GENERAL, SG_ALERT, "Shared directory is " << share_dir);
