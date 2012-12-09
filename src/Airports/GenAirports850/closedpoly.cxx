@@ -394,15 +394,15 @@ std::string ClosedPoly::GetMaterial( int surface )
             break;
 
         case 3:
-            material = "grass"; // Grass / Turf
+            material = "Grass"; // Grass / Turf
             break;
 
         case 4:
-            material = "dirt"; // Dirt
+            material = "Dirt"; // Dirt
             break;
 
         case 5:
-            material = "gravel"; // Gravel
+            material = "Gravel"; // Gravel
             break;
 
         case 12:
@@ -418,7 +418,7 @@ std::string ClosedPoly::GetMaterial( int surface )
             break;
 
         case 15:
-            material = "grass";
+            material = "Grass";
             break;
 
         default:
