@@ -27,6 +27,7 @@ set_target_properties(tg-construct PROPERTIES
 target_link_libraries(tg-construct
     Polygon Geometry
     Array landcover
+    ${Boost_LIBRARIES}
     ${GDAL_LIBRARY}
     ${SIMGEAR_CORE_LIBRARIES}
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}

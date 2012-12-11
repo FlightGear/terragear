@@ -69,7 +69,7 @@ if (MSVC AND MSVC_3RDPARTY_ROOT)
 endif (MSVC AND MSVC_3RDPARTY_ROOT)
 
 # check required dependencies
-find_package(Boost REQUIRED)
+find_package(Boost COMPONENTS system thread REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 find_package(SimGear 2.9.0 REQUIRED)
