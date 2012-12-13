@@ -117,6 +117,14 @@ public:
         return dataset->GetDescription();
     }
 
+    int GetColStepArcsec() {
+        return (dataset->GetRasterXSize() >= 3600 ? 1 : 3) ;
+    }
+
+    int GetRowStepArcsec() {
+        return (dataset->GetRasterYSize() >= 3600 ? 1 : 3);
+    }
+
     void GetDataChunk(int *buffer,
                       double x, double y,
                       double colstep, double rowstep,
@@ -141,6 +149,9 @@ protected:
 
     /* bounding box in WGS84 */
     double north, south, east, west;
+
+    /* Pixel size in degs */
+    double pxSizeX, pxSizeY;
 };
 
 ImageInfo::ImageInfo(GDALDataset *dataset) :
@@ -151,9 +162,6 @@ ImageInfo::ImageInfo(GDALDataset *dataset) :
 
     // NOTE : This is equivelent to WGS84 - just using th formal EPSG db.
     // GDAL knows this well known projection already
-    // wgs84SRS.SetWellKnownGeogCS( "WGS84" );
-    wgs84SRS.SetWellKnownGeogCS( "EPSG:4326" );
-
     wgs84SRS.SetWellKnownGeogCS( "EPSG:4326" );
 
     /* Determine the bounds of the input file in WGS84 */
@@ -167,6 +175,10 @@ ImageInfo::ImageInfo(GDALDataset *dataset) :
                ":" << CPLGetLastErrorMsg());
         exit(1);
     }
+
+    /* calculate pixel size */
+    pxSizeX = std::abs(geoXfrm[1]*0.5);
+    pxSizeY = std::abs(geoXfrm[5]*0.5);
 
     /* create points in CCW order */
     geoX[0] = geoXfrm[0] + 0 * geoXfrm[1] + 0 * geoXfrm[2];
@@ -231,8 +243,8 @@ void ImageInfo::GetDataChunk(int *buffer,
         1);
 
     xformData.pfnTransformer = GDALGenImgProjTransform;
-    xformData.x0 = x;
-    xformData.y0 = y;
+    xformData.x0 = x - pxSizeX;
+    xformData.y0 = y - pxSizeY;
     xformData.col_step = colstep;
     xformData.row_step = rowstep;
 
@@ -244,7 +256,7 @@ void ImageInfo::GetDataChunk(int *buffer,
     int srcBandNumbers[] = { srcband };
     int dstBandNumbers[] = { 1 };
 
-    double dstNodata       = (double)nodata;
+    //double dstNodata       = (double)nodata;
     double srcNodataReal;
     double srcNodataImag   =  0.0;
     int    srcHasNodataValue;
@@ -260,9 +272,8 @@ void ImageInfo::GetDataChunk(int *buffer,
     psWarpOptions->nDstAlphaBand = 0;
     psWarpOptions->padfSrcNoDataReal = (srcHasNodataValue ? &srcNodataReal : NULL);
     psWarpOptions->padfSrcNoDataImag = (srcHasNodataValue ? &srcNodataImag : NULL);
-    psWarpOptions->padfDstNoDataReal = &dstNodata;
     psWarpOptions->padfDstNoDataReal = NULL;
-    psWarpOptions->eResampleAlg = GRA_Bilinear;
+    psWarpOptions->eResampleAlg = GRA_NearestNeighbour;
     psWarpOptions->eWorkingDataType = GDT_Int32;
 
     psWarpOptions->pfnTransformer = SimpleRasterTransformer;
@@ -310,16 +321,18 @@ void write_bucket(const std::string& work_dir, SGBucket bucket,
         exit(-1);
     }
 
-    gzprintf( fp, "%d %d\n", min_x, min_y );
-    gzprintf( fp, "%d %d %d %d\n",
-             span_x + 1, col_step,
-             span_y + 1, row_step );
+    int32_t header = 0x54474152; // 'TGAR'
+    sgWriteLong(fp, header);
+    sgWriteInt(fp, min_x); sgWriteInt(fp, min_y);
+    sgWriteInt(fp, span_x); sgWriteInt(fp, col_step);
+    sgWriteInt(fp, span_y); sgWriteInt(fp, row_step);
 
-    for ( int x = 0; x <= span_x; ++x ) {
-        for ( int y = 0; y <= span_y; ++y )
-            gzprintf( fp, "%d ", buffer[ y * span_x + x ] );
-        gzprintf( fp, "\n" );
+    for ( int x = 0; x < span_x; ++x ) {
+        for ( int y = 0; y < span_y; ++y ) {
+            sgWriteShort(fp, buffer[ y * span_x + x ]);
+        }
     }
+
     gzclose(fp);
 }
 
@@ -327,16 +340,12 @@ void process_bucket(const std::string& work_dir, SGBucket bucket,
                     ImageInfo* images[], int imagecount,
                     bool forceWrite = false)
 {
-    double clat, clon;
     double bnorth, bsouth, beast, bwest;
 
-    clat = bucket.get_center_lat();
-    clon = bucket.get_center_lon();
-
-    bnorth = clat + bucket.get_height() / 2.0;
-    bsouth = clat - bucket.get_height() / 2.0;
-    beast = clon + bucket.get_width() / 2.0;
-    bwest = clon - bucket.get_width() / 2.0;
+    bnorth = bucket.get_center_lat() + bucket.get_height() * 0.5;
+    bsouth = bucket.get_center_lat() - bucket.get_height() * 0.5;
+    beast = bucket.get_center_lon() + bucket.get_width() * 0.5;
+    bwest = bucket.get_center_lon() - bucket.get_width() * 0.5;
 
     SG_LOG(SG_GENERAL, SG_INFO, "processing bucket " << bucket << "(" << bucket.gen_index() << ") n=" << bnorth << " s=" << bsouth << " e=" << beast << " w=" << bwest);
 
@@ -348,22 +357,19 @@ void process_bucket(const std::string& work_dir, SGBucket bucket,
 
     // TODO: Make other resolutions possible as well
     int col_step = 3, row_step = 3;
-    span_x = bucket.get_width() * 3600 / col_step;
-    span_y = bucket.get_height() * 3600 / row_step;
+    span_x = (bucket.get_width() * 3600 / col_step) + 1;
+    span_y = (bucket.get_height() * 3600 / row_step) + 1;
 
-    int cellcount = (span_x + 1) * (span_y + 1);
+    int cellcount = span_x * span_y;
     boost::scoped_array<int> buffer(new int[cellcount]);
 
-    ::memset(buffer.get(), -1, (span_x + 1) * (span_y + 1) * sizeof(int));
+    ::memset(buffer.get(), 0, cellcount * sizeof(int));
 
     for (int i = 0; i < imagecount; i++) {
-        double inorth, isouth, ieast, iwest;
-        images[i]->GetBounds(inorth, isouth, ieast, iwest);
-
         images[i]->GetDataChunk(buffer.get(),
                                 bwest, bsouth,
                                 col_step / 3600.0, row_step / 3600.0,
-                                span_x + 1, span_y + 1);
+                                span_x, span_y );
     }
 
     /* ...check the amount of undefined cells... */
