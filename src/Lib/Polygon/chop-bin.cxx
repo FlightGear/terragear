@@ -261,6 +261,7 @@ static void clip_and_write_polys_with_mask( string root, long int p_index,
     fclose( rfp );
 }
 
+#if 0
 static void clip_and_write_polys_with_tps( string root, long int p_index,
                                            const string &poly_type,
                                            SGBucket b,
@@ -493,7 +494,7 @@ static void clip_and_write_poly_tp( string root, long int p_index,
         fclose( rfp );
     }
 }
-
+#endif
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
@@ -799,6 +800,7 @@ void tgChopNormalPolygonsWithMask(const std::string& path, const std::string& po
     }
 }
 
+#if 0
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file)
 void tgChopNormalPolygonTP( const string& path, const string& poly_type,
@@ -1106,6 +1108,7 @@ void tgChopNormalPolygonsWithTP(const std::string& path, const std::string& poly
         tgChopNormalPolygonsWithTP( path, poly_type, top_clip_list, top_tp_list, preserve3d );
     }
 }
+#endif
 
 // process polygon shape (chop up along tile boundaries and write each
 // polygon piece to a file) This has a front end to a crude clipper

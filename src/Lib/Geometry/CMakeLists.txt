@@ -10,7 +10,6 @@ add_library(Geometry STATIC
     tg_nodes.cxx
     trinodes.cxx
     trisegs.cxx
-    util.cxx
     contour_tree.hxx
     line.hxx
     point3d.hxx
@@ -20,5 +19,4 @@ add_library(Geometry STATIC
     tg_nodes.hxx
     trinodes.hxx
     trisegs.hxx
-    util.hxx
 )

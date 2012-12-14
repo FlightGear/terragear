@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include <Geometry/poly_support.hxx>
-#include <Geometry/util.hxx>
 
 #include "global.hxx"
 #include "beznode.hxx"
@@ -365,7 +364,7 @@ LinearFeature::~LinearFeature()
     }
 }
 
-
+#if 0
 SGGeod LinearFeature::OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by )
 {
     double  courseCur, courseNext, courseAvg, theta;
@@ -467,6 +466,7 @@ SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 )
                              (p0.getLatitudeDeg()  + p1.getLatitudeDeg()) / 2,
                              (p0.getElevationM()   + p1.getElevationM()) / 2 );
 }
+#endif
 
 int LinearFeature::Finish( bool closed, unsigned int idx )
 {

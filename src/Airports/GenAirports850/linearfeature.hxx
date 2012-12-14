@@ -95,9 +95,9 @@ public:
     int BuildBtg( tgpolygon_list& line_polys, tglightcontour_list& lights, tgAccumulator& accum, bool debug );
 
 private:
-    SGGeod OffsetPointFirst(  const SGGeod& cur,  const SGGeod& next, double offset_by );
-    SGGeod OffsetPointMiddle( const SGGeod& prev, const SGGeod& cur,  const SGGeod& next, double offset_by );
-    SGGeod OffsetPointLast(   const SGGeod& prev, const SGGeod& cur,  double offset_by );
+//    SGGeod OffsetPointFirst(  const SGGeod& cur,  const SGGeod& next, double offset_by );
+//    SGGeod OffsetPointMiddle( const SGGeod& prev, const SGGeod& cur,  const SGGeod& next, double offset_by );
+//    SGGeod OffsetPointLast(   const SGGeod& prev, const SGGeod& cur,  double offset_by );
 
     double          offset;
     double          width;

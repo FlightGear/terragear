@@ -37,187 +37,6 @@ using std::string;
 
 static unsigned int cur_poly_id = 0;
 
-bool TGConstruct::load_poly(const string& path) {
-    bool poly3d = false;
-    bool with_tp = false;
-    string first_line;
-    string poly_name;
-    AreaType poly_type;
-    int contours, count, i, j, k;
-    int hole_flag;
-    int num_polys;
-    double startx, starty, startz, x, y, z, lastx, lasty, lastz;
-
-    sg_gzifstream in( path );
-
-    if ( !in ) {
-        SG_LOG( SG_CLIPPER, SG_ALERT, "Cannot open file: " << path );
-        exit(-1);
-    }
-
-    tgPolygon   poly;
-    tgTexParams tp;
-
-    // (this could break things, why is it here) in >> skipcomment;
-    while ( !in.eof() ) {
-        in >> first_line;
-        if ( first_line == "#2D" ) {
-            poly3d = false;
-            with_tp = false;
-
-            in >> poly_name;
-            num_polys = 1;
-        } else if ( first_line == "#2D_WITH_MASK" ) {
-            poly3d = false;
-            with_tp = false;
-
-            in >> poly_name;
-            in >> num_polys;
-        } else if ( first_line == "#2D_WITH_TPS" ) {
-            poly3d = false;
-            with_tp = true;
-
-            in >> poly_name;
-            in >> num_polys;
-        } else if ( first_line == "#3D" ) {
-            poly3d = true;
-            with_tp = false;
-
-            in >> poly_name;
-            num_polys = 1;
-        } else {
-            // support old format (default to 2d)
-            poly3d = false;
-            with_tp = false;
-
-            poly_name = first_line;
-            num_polys = 1;
-        }
-        poly_type = get_area_type( poly_name );
-
-        int area = (int)poly_type;
-        string material = get_area_name( area );
-
-
-        // Generate a new Shape for the poly
-        tgPolygon   poly;
-        SGGeod      p;
-
-        for (k=0; k<num_polys;k++) {
-            poly.Erase();
-
-            if ( with_tp ) {
-                in >> x;
-                in >> y;
-                tp.ref    = SGGeod::fromDeg(x,y);
-
-                in >> tp.width;
-                in >> tp.length;
-                in >> tp.heading;
-                in >> tp.minu;
-                in >> tp.maxu;
-                in >> tp.minv;
-                in >> tp.maxv;
-                poly.SetTexParams( tp );
-            }
-
-            in >> contours;
-
-            poly.Erase();
-            for ( i = 0; i < contours; ++i ) {
-                in >> count;
-
-                if ( count < 3 ) {
-                    SG_LOG( SG_CLIPPER, SG_ALERT, "Polygon with less than 3 data points." );
-                    exit(-1);
-                }
-
-                in >> hole_flag;
-
-                in >> startx;
-                in >> starty;
-                if ( poly3d ) {
-                    in >> startz;
-                } else {
-                    startz = -9999.0;
-                }
-
-                p = SGGeod::fromDegM(startx+nudge, starty+nudge, startz );
-                poly.AddNode( i, p );
-
-                if ( poly3d ) {
-                    nodes.unique_add_fixed_elevation( p );
-                } else {
-                    nodes.unique_add( p );
-                }
-
-                for ( j = 1; j < count - 1; ++j ) {
-                    in >> x;
-                    in >> y;
-                    if ( poly3d ) {
-                        in >> z;
-                    } else {
-                        z = -9999.0;
-                    }
-
-                    p = SGGeod::fromDegM( x+nudge, y+nudge, z );
-                    poly.AddNode( i, p );
-
-                    if ( poly3d ) {
-                        nodes.unique_add_fixed_elevation( p );
-                    } else {
-                        nodes.unique_add( p );
-                    }
-                }
-
-                in >> lastx;
-                in >> lasty;
-                if ( poly3d ) {
-                    in >> lastz;
-                } else {
-                    lastz = -9999.0;
-                }
-
-                if ( (fabs(startx - lastx) < SG_EPSILON) &&
-                     (fabs(starty - lasty) < SG_EPSILON) &&
-                     (fabs(startz - lastz) < SG_EPSILON) ) {
-                    // last point same as first, discard
-                } else {
-                    p = SGGeod::fromDegM( lastx+nudge, lasty+nudge, lastz );
-                    poly.AddNode( i, p );
-
-                    if ( poly3d ) {
-                        nodes.unique_add_fixed_elevation( p );
-                    } else {
-                        nodes.unique_add( p );
-                    }
-                }
-            }
-
-            poly = tgPolygon::Snap( poly, gSnap );
-            poly = tgPolygon::RemoveDups( poly );
-            poly.SetMaterial( material );
-
-            if ( with_tp ) {
-                poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1, 0, 1, 0 );
-            } else {
-                poly.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
-            }
-
-            in >> skipcomment;
-
-            poly.SetId( cur_poly_id++ );
-            polys_in.add_poly( area, poly );
-
-            if ( IsDebugShape( poly.GetId() ) ) {
-                tgPolygon::ToShapefile( poly, ds_name, "loaded", "" );
-            }
-        }
-    }
-
-    return true;
-}
-
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
 int TGConstruct::LoadLandclassPolys( void ) {
@@ -225,7 +44,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
 
     string base = bucket.gen_base_path();
     string poly_path;
-    int count = 0;
+    int    total_polys_read = 0;
 
     polys_in.clear();
 
@@ -254,12 +73,49 @@ int TGConstruct::LoadLandclassPolys( void ) {
             {
                 // skipped!
             } else {
-                load_poly( p.str() );
+                int area;
+                std::string material;
+                gzFile fp =gzopen( p.c_str(), "rb" );
+                unsigned int count;
+
+                sgReadUInt( fp, &count );
+                SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
+
+                for ( unsigned int i=0; i<count; i++ ) {
+                    tgPolygon poly;
+                    poly.LoadFromGzFile( fp );
+                    area = get_area_type( poly.GetFlag() );
+                    material = get_area_name( area );
+                    poly.SetMaterial( material );
+                    poly.SetId( cur_poly_id++ );
+
+                    polys_in.add_poly( area, poly );
+                    total_polys_read++;
+
+                    // add the nodes
+                    for (unsigned int j=0; j<poly.Contours(); j++) {
+                        for (unsigned int k=0; k<poly.ContourSize(j); k++) {
+                            SGGeod const& node  = poly.GetNode( j, k );
+
+                            if ( poly.GetPreserve3D() ) {
+                                if ( node.getElevationM() < 2.0 ) {
+                                    SG_LOG(SG_GENERAL, SG_ALERT, "FIXED ELEVATION NODE in POLY " << poly.GetFlag() << " has elevation " << node.getElevationM() );
+                                }
+                                
+                                nodes.unique_add_fixed_elevation( node );
+                            } else {
+                                nodes.unique_add( node );
+                            }
+                        }
+                    }
+                }
+
                 SG_LOG(SG_GENERAL, SG_DEBUG, " Loaded " << p.file());
-                ++count;
             }
         } // of directory file children
     }
-    SG_LOG(SG_GENERAL, SG_ALERT, " Total polys used for this tile: " << count );
-    return count;
+    
+    SG_LOG(SG_GENERAL, SG_ALERT, " Total polys read in this tile: " <<  total_polys_read );
+
+    return total_polys_read;
 }

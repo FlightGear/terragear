@@ -23,10 +23,6 @@
 #ifndef _ARRAY_HXX
 #define _ARRAY_HXX
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/sg_types.hxx>

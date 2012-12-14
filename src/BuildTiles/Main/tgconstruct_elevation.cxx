@@ -81,6 +81,8 @@ void TGConstruct::CalcElevations( void )
         }
     }
 
+    return;
+    
     nodes.get_geod_nodes(raw_nodes);
 
     // now flatten some stuff

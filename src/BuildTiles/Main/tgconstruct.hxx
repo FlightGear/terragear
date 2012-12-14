@@ -122,9 +122,6 @@ private:
     // Load Data
     void LoadElevationArray( bool add_nodes );
     int  LoadLandclassPolys( void );
-    // Load Data Helpers
-    bool load_poly(const std::string& path);
-    void add_poly(int area, tgPolygon& poly, std::string material);
 
     // Clip Data
     bool ClipLandclassPolys( void );

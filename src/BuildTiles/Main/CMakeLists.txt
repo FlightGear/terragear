@@ -1,3 +1,5 @@
+include_directories(${GDAL_INCLUDE_DIR})
+
 add_executable(tg-construct
     tgconstruct.hxx
     tgconstruct.cxx

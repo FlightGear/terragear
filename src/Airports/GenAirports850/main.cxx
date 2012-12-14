@@ -22,8 +22,6 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#include <Polygon/index.hxx>
-#include <Geometry/util.hxx>
 #include <Geometry/poly_support.hxx>
 #include <Include/version.h>
 
@@ -104,9 +102,6 @@ int nudge = 10;
 double slope_max = 0.02;
 double gSnap = 0.00000001;      // approx 1 mm
 
-//TODO : new polygon chop API
-extern bool tgPolygon_index_init( const std::string& path );
-
 int main(int argc, char **argv)
 {
     SGGeod min = SGGeod::fromDeg( -180, -90 );
@@ -185,6 +180,7 @@ int main(int argc, char **argv)
         {
             max.setLatitudeDeg(atof( arg.substr(10).c_str() ));
         }
+#if 0 // relly? - do we need this?
         else if ( arg.find("--chunk=") == 0 )
         {
             tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(), 10.0);
@@ -197,6 +193,7 @@ int main(int argc, char **argv)
             min = rectangle.getMin();
             max = rectangle.getMax();
         }
+#endif
         else if ( arg.find("--airport=") == 0 ) 
         {
     	    airport_id = arg.substr(10).c_str();
@@ -290,7 +287,7 @@ int main(int argc, char **argv)
 
     // initialize persistant polygon counter
     std::string counter_file = airportareadir+"/poly_counter";
-    tgPolygon_index_init( counter_file );
+    tgPolygon::ChopIdxInit( counter_file );
 
     tg::Rectangle boundingBox(min, max);
     boundingBox.sanify();

@@ -1,10 +1,6 @@
 #ifndef _TG_NODES_HXX
 #define _TG_NODES_HXX
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #ifndef __cplusplus
 # error This library requires C++
 #endif

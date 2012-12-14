@@ -1,3 +1,4 @@
+include_directories(${GDAL_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/Lib)
 
 add_executable(genapts850

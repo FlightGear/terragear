@@ -32,7 +32,6 @@
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
-#include <CGAL/Plane_3.h>
 #include <Geometry/point3d.hxx>
 
 
@@ -206,7 +205,7 @@ public:
     // output
     void write_contour( const int contour, const std::string& file ) const;
 
-    void SaveToGzFile( gzFile& fp );
+    void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 
     // Friends for serialization
@@ -311,14 +310,33 @@ std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);
 // For the first attempt, I will just have TGPolygon with a list of contours.
 // the extra data are stored in paralell vectors.
 // This should also make TGSuperPoly obsolete
+#include <ogrsf_frmts.h>
+#include <boost/concept_check.hpp>
+
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/threads/SGThread.hxx>
+
 #include <Geometry/trinodes.hxx>
 #include <Geometry/rectangle.hxx>
 
 #include "tg_unique_geod.hxx"
 
+// utilities - belong is simgear?
+double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, const SGVec3d& cp );
+SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 );
+SGGeod OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by, int& turn_dir );
+SGGeod OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by );
+SGGeod OffsetPointFirst( const SGGeod& cur, const SGGeod& next, double offset_by );
+SGGeod OffsetPointLast( const SGGeod& prev, const SGGeod& cur, double offset_by );
 
 // forward declaration
+// Forward Declaration:
 class tgPolygon;
+class tgChoppedPolygons;
+
+typedef std::vector <tgPolygon>  tgpolygon_list;
+typedef tgpolygon_list::iterator tgpolygon_list_iterator;
+typedef tgpolygon_list::const_iterator const_tgpolygon_list_iterator;
 
 class tgContour
 {
@@ -392,10 +410,11 @@ public:
     static tgContour FromClipper( const ClipperLib::Polygon& subject );
 
     static tgContour Expand( const tgContour& subject, double offset );
+    static tgpolygon_list ExpandToPolygons( const tgContour& subject, double width );
 
     static void ToShapefile( const tgContour& subject, const std::string& datasource, const std::string& layer, const std::string& feature );
 
-    void SaveToGzFile( gzFile& fp );
+    void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 
     // Friend for output
@@ -467,7 +486,7 @@ public:
         return face_area;
     }
 
-    void SaveToGzFile( gzFile& fp );
+    void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 
     // Friend for output
@@ -517,23 +536,20 @@ public:
 
     double center_lat;
 
-    void SaveToGzFile( gzFile& fp );
+    void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 
     // Friend for output
     friend std::ostream& operator<< ( std::ostream&, const tgTexParams& );
 };
 
-// Forward Declaration:
-class tgPolygon;
-typedef std::vector <tgPolygon>  tgpolygon_list;
-typedef tgpolygon_list::iterator tgpolygon_list_iterator;
-typedef tgpolygon_list::const_iterator const_tgpolygon_list_iterator;
-typedef void (*tgpolygon_texfunc)(void);
-
 class tgPolygon
 {
 public:
+    tgPolygon() {
+        preserve3d = false;
+    }
+
     void Erase( void ) {
         contours.clear();
         triangles.clear();
@@ -623,6 +639,20 @@ public:
         material = m;
     }
 
+    std::string const& GetFlag( void ) const {
+        return flag;
+    }
+    void SetFlag( const std::string& f ) {
+        flag = f;
+    }
+
+    bool GetPreserve3D( void ) const {
+        return preserve3d;
+    }
+    void SetPreserve3D( bool p ) {
+        preserve3d = p;
+    }
+    
     unsigned int GetId( void ) const {
         return id;
     }
@@ -649,6 +679,7 @@ public:
         tp.maxu = maxu;
         tp.maxv = maxv;
     }
+    
     void SetTexMethod( tgTexMethod m ) {
         tp.method = m;
     }
@@ -663,6 +694,9 @@ public:
         tp.method = m;
         tp.center_lat = cl;
     }
+    tgTexMethod GetTexMethod( void ) const {
+        return tp.method;
+    }
 
     void Tesselate( void );
     void Tesselate( const std::vector<SGGeod>& extra );
@@ -674,6 +708,8 @@ public:
     // TODO : Both should be constant
     // what we really need is multiple accumulators
     // init_accumulator should return a handle...
+    static bool      ChopIdxInit( const std::string& path );
+
     static void      SetDump( bool dmp );
     static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Union( const tgPolygon& subject, tgPolygon& clip );
@@ -684,6 +720,8 @@ public:
     // Conversions
     static ClipperLib::Polygons ToClipper( const tgPolygon& subject );
     static tgPolygon FromClipper( const ClipperLib::Polygons& subject );
+
+    static tgPolygon FromOGR( const OGRPolygon* subject );
 
     // other operations
     static tgPolygon Snap( const tgPolygon& subject, double snap );
@@ -698,8 +736,8 @@ public:
     static tgPolygon RemoveSpikes( const tgPolygon& subject );
 
     static tgPolygon Expand( const tgPolygon& subject, double offset );
-
-    static void Chop( const tgPolygon& subject, const std::string& path, const std::string& type, bool withTexparams, bool preserve3d );
+    static tgPolygon Expand( const SGGeod& subject, double offset );
+    
     static void ToShapefile( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& feature );
 
     static void Tesselate( const tgPolygon& subject );
@@ -711,7 +749,7 @@ public:
     static void RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers );
     static tgcontour_list MergeSlivers( tgpolygon_list& subjects, tgcontour_list& slivers );
 
-    void SaveToGzFile( gzFile& fp );
+    void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 
     // Friend for output
@@ -723,8 +761,33 @@ private:
 
     std::string     material;
     std::string     flag;       // let's get rid of this....
+    bool            preserve3d;
     unsigned int    id;         // unique polygon id for debug
     tgTexParams     tp;
+};
+
+// for ogr-decode : generate a bunch of polygons, mapped by bucket id
+typedef std::map<long int, tgpolygon_list> bucket_polys_map;
+typedef bucket_polys_map::iterator bucket_polys_map_interator;
+
+class tgChopper
+{
+public:
+    tgChopper( const std::string& path ) {
+        root_path = path;
+    }
+
+    void Add( const tgPolygon& poly, const std::string& type ); 
+    void Save( void );
+
+private:
+    long int GenerateIndex( std::string path );
+    void Clip( const tgPolygon& subject, const std::string& type, SGBucket& b );
+    void Chop( const tgPolygon& subject, const std::string& type );
+
+    std::string      root_path;
+    bucket_polys_map bp_map;
+    SGMutex          lock;
 };
 
 class tgLight

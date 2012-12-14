@@ -23,34 +23,27 @@
 //
 // $Id$
 
-
-#include <simgear/compiler.h>
-
 #include <string>
 #include <map>
 
+#include <ogrsf_frmts.h>
+
+#include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sg_path.hxx>
 
 #include <Include/version.h>
-#include <Geometry/line.hxx>
-#include <Geometry/util.hxx>
 #include <Polygon/chop.hxx>
 #include <Polygon/index.hxx>
 #include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
-#include <Polygon/superpoly.hxx>
-#include <Polygon/texparams.hxx>
-
-#include <ogrsf_frmts.h>
 
 /* stretch endpoints to reduce slivers in linear data ~.1 meters */
 // #define EP_STRETCH  (0.000001)  
 #define EP_STRETCH  (0.1)
 
 using std::string;
-using std::map;
 
 int line_width=50;
 string line_width_col;
@@ -59,7 +52,7 @@ string point_width_col;
 string area_type="Default";
 string area_type_col;
 int continue_on_errors=0;
-int texture_lines = 0;
+bool texture_lines = false;
 int seperate_segments = 0;
 int max_segment_length=0; // ==0 => don't split
 int start_record=0;
@@ -68,62 +61,27 @@ string attribute_query;
 bool use_spatial_query=false;
 double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
 
-void processPoint(OGRPoint* poGeometry,
-                  const string& work_dir,
-                  const string& area_type,
-                  int width)
+void processPoint(OGRPoint* poGeometry, const string& area_type, int width, tgChopper& results )
 {
-    TGPolygon shape;
-
-    shape.erase();
-    tg::makePolygon(Point3D(poGeometry->getX(),poGeometry->getY(),0),
-                    width,
-                    shape);
+    SGGeod point = SGGeod::fromDeg( poGeometry->getX(),poGeometry->getY() );
+    tgPolygon shape = tgPolygon::Expand( point, width );
 
     if ( max_segment_length > 0  ) {
-        shape = tgPolygonSplitLongEdges( shape, max_segment_length );
+        shape = tgPolygon::SplitLongEdges( shape, max_segment_length );
     }
-    tgChopNormalPolygon(work_dir, area_type, shape, false);
+    shape.SetPreserve3D( false );
+    shape.SetTexMethod( TG_TEX_BY_GEODE );
+
+    results.Add( shape, area_type );
 }
 
-void processLineString(OGRLineString* poGeometry,
-                       const string& work_dir,
-                       const string& area_type,
-                       int width)
+void processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture, tgChopper& results )
 {
-    tg::Line line;
-    TGPolygon shape;
+    tgpolygon_list segments;
+    tgContour line;
 
-    if (poGeometry->getNumPoints()<2) {
-        SG_LOG( SG_GENERAL, SG_WARN, "Skipping line with less than two points" );
-        return;
-    }
-
-    shape.erase();
-    for (int i=0;i<poGeometry->getNumPoints();i++) {
-        line.addPoint(Point3D(poGeometry->getX(i),poGeometry->getY(i),0));
-    }
-
-    tg::makePolygon(line,width,shape);
-
-    if ( max_segment_length > 0 ) {
-        shape = tgPolygonSplitLongEdges( shape, max_segment_length );
-    }
-
-    tgChopNormalPolygon(work_dir, area_type, shape, false);
-}
-
-void processLineStringWithMask(OGRLineString* poGeometry,
-                               const string& work_dir,
-                               const string& area_type,
-                               int width)
-{
-    poly_list segments;
-    TGPolygon segment;
-    tg::Line line;
-    Point3D p0, p1;
+    SGGeod p0, p1;
     double heading, dist, az2;
-    double pt_x = 0.0f, pt_y = 0.0f;
     int i, j, numPoints, numSegs;
     double max_dist;
 
@@ -136,18 +94,17 @@ void processLineStringWithMask(OGRLineString* poGeometry,
     max_dist = (double)width * 10.0f;
 
     // because vector data can generate adjacent polys, lets stretch the two enpoints by a little bit
-    p0 = Point3D(poGeometry->getX(0),poGeometry->getY(0),0);
-    p1 = Point3D(poGeometry->getX(1),poGeometry->getY(1),0);
+    p0 = SGGeod::fromDeg( poGeometry->getX(0), poGeometry->getY(0) );
+    p1 = SGGeod::fromDeg( poGeometry->getX(1), poGeometry->getY(1) );
 
-    geo_inverse_wgs_84( p1.y(), p1.x(), p0.y(), p0.x(), &heading, &az2, &dist);
-    geo_direct_wgs_84( p0.y(), p0.x(), heading, EP_STRETCH, &pt_y, &pt_x, &az2 );
-    line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
+    heading = SGGeodesy::courseDeg( p1, p0 );
+    line.AddNode( SGGeodesy::direct( p0, heading, EP_STRETCH ) );
 
     // now add the middle points : if they are too far apart, add intermediate nodes
     for ( i=1;i<numPoints-1;i++) {
-        p0 = Point3D(poGeometry->getX(i-1),poGeometry->getY(i-1),0);
-        p1 = Point3D(poGeometry->getX(i  ),poGeometry->getY(i  ),0);
-        geo_inverse_wgs_84( p0.y(), p0.x(), p1.y(), p1.x(), &heading, &az2, &dist);
+        p0 = SGGeod::fromDeg( poGeometry->getX(i-1), poGeometry->getY(i-1) );
+        p1 = SGGeod::fromDeg( poGeometry->getX(i  ), poGeometry->getY(i  ) );
+        SGGeodesy::inverse( p0, p1, heading, az2, dist );
 
         if (dist > max_dist)
         {
@@ -156,151 +113,55 @@ void processLineStringWithMask(OGRLineString* poGeometry,
 
             for (j=0; j<numSegs; j++)
             {
-                geo_direct_wgs_84( p0.y(), p0.x(), heading, dist*(j+1), &pt_y, &pt_x, &az2 );
-                line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
-            }        
-        }
-        else
-        {
-            line.addPoint(p1);
-        }
-    }
-
-    // then stretch the last point
-    // because vector data can generate adjacent polys, lets stretch the two enpoints by a little bit
-    p0 = Point3D(poGeometry->getX(numPoints-2),poGeometry->getY(numPoints-2),0);
-    p1 = Point3D(poGeometry->getX(numPoints-1),poGeometry->getY(numPoints-1),0);
-
-    geo_inverse_wgs_84( p0.y(), p0.x(), p1.y(), p1.x(), &heading, &az2, &dist);
-    geo_direct_wgs_84( p1.y(), p1.x(), heading, EP_STRETCH, &pt_y, &pt_x, &az2 );
-    line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
-
-    // make a plygons from the line segments
-    tg::makePolygons(line,width,segments);
-
-    tgChopNormalPolygonsWithMask(work_dir, area_type, segments, false);
-}
-
-void processLineStringWithTextureInfo(OGRLineString* poGeometry,
-                                      const string& work_dir,
-                                      const string& area_type,
-                                      int width)
-{
-    poly_list segments;
-    texparams_list tps;
-    tg::Line line;
-    Point3D p0, p1;
-    double heading, dist, az2;
-    double pt_x = 0.0f, pt_y = 0.0f;
-    int i, j, numPoints, numSegs;
-    double max_dist;
-//    double min_dist;
-//    double cur_dist;
-
-    numPoints = poGeometry->getNumPoints();
-    if (numPoints < 2) {
-        SG_LOG( SG_GENERAL, SG_WARN, "Skipping line with less than two points" );
-        return;
-    }
-
-    max_dist = (double)width * 10.0f;
-//  min_dist = (double)width *  1.5f;
-//  cur_dist = 0.0f;
-
-    // because vector data can generate adjacent polys, lets stretch the two enpoints by a little bit
-    p0 = Point3D(poGeometry->getX(0),poGeometry->getY(0),0);
-    p1 = Point3D(poGeometry->getX(1),poGeometry->getY(1),0);
-
-    geo_inverse_wgs_84( p1.y(), p1.x(), p0.y(), p0.x(), &heading, &az2, &dist);
-    geo_direct_wgs_84( p0.y(), p0.x(), heading, EP_STRETCH, &pt_y, &pt_x, &az2 );
-    line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
-
-    // now add the middle points : if they are too far apart, add intermediate nodes
-    for ( i=1;i<numPoints-1;i++) {
-        p0 = Point3D(poGeometry->getX(i-1),poGeometry->getY(i-1),0);
-        p1 = Point3D(poGeometry->getX(i  ),poGeometry->getY(i  ),0);
-        geo_inverse_wgs_84( p0.y(), p0.x(), p1.y(), p1.x(), &heading, &az2, &dist);
-
-        if (dist > max_dist)
-        {
-            numSegs = (dist / max_dist) + 1;
-            dist = dist / (double)numSegs;
-
-            for (j=0; j<numSegs; j++)
-            {
-                geo_direct_wgs_84( p0.y(), p0.x(), heading, dist*(j+1), &pt_y, &pt_x, &az2 );
-                line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
+                line.AddNode( SGGeodesy::direct( p0, heading, dist*(j+1) ) );
             }
-//          cur_dist = 0.0f;
         }
-//      else if (dist + cur_dist < max_dist)
-//      {
-//          cur_dist += dist;
-//      }
         else
         {
-            line.addPoint( p1 );
-//          cur_dist = 0;
+            line.AddNode( p1 );
         }
     }
 
     // then stretch the last point
     // because vector data can generate adjacent polys, lets stretch the two enpoints by a little bit
-    p0 = Point3D(poGeometry->getX(numPoints-2),poGeometry->getY(numPoints-2),0);
-    p1 = Point3D(poGeometry->getX(numPoints-1),poGeometry->getY(numPoints-1),0);
+    p0 = SGGeod::fromDeg( poGeometry->getX(numPoints-2), poGeometry->getY(numPoints-2) );
+    p1 = SGGeod::fromDeg( poGeometry->getX(numPoints-1), poGeometry->getY(numPoints-1) );
 
-    geo_inverse_wgs_84( p0.y(), p0.x(), p1.y(), p1.x(), &heading, &az2, &dist);
-    geo_direct_wgs_84( p1.y(), p1.x(), heading, EP_STRETCH, &pt_y, &pt_x, &az2 );
-    line.addPoint( Point3D( pt_x, pt_y, 0.0f ) );
+    heading = SGGeodesy::courseDeg( p0, p1 );
+    line.AddNode( SGGeodesy::direct(p1, heading, EP_STRETCH) );
 
     // make a plygons from the line segments
-    tg::makePolygonsTP(line,width,segments,tps);
+    segments = tgContour::ExpandToPolygons( line, width );
+    for ( unsigned int i=0; i<segments.size(); i++ ) {
+        segments[i].SetPreserve3D( false );
+        if (with_texture) {
+            segments[i].SetTexMethod( TG_TEX_BY_GEODE );
+        } else {
+            segments[i].SetTexMethod( TG_TEX_BY_GEODE );
+        }
 
-    tgChopNormalPolygonsWithTP(work_dir, area_type, segments, tps, false);
+        results.Add( segments[i], area_type );
+    }
 }
 
-void processPolygon(OGRPolygon* poGeometry,
-                    const string& work_dir,
-                    const string& area_type)
+void processPolygon(OGRPolygon* poGeometry, const string& area_type, tgChopper& results )
 {
-    bool preserve3D = ((poGeometry->getGeometryType()&wkb25DBit)==wkb25DBit);
-    TGPolygon shape;
-
-    shape.erase();
-
-    OGRLinearRing *ring;
+    // bool preserve3D = ((poGeometry->getGeometryType()&wkb25DBit)==wkb25DBit);
 
     // first add the outer ring
-    ring=poGeometry->getExteriorRing();
-    for (int i=0;i<ring->getNumPoints();i++) {
-        shape.add_node(0,
-                       Point3D(ring->getX(i),
-                               ring->getY(i),
-                               ring->getZ(i)));
-    }
-    shape.set_hole_flag( 0, 0 );
-
-    // then add the inner rings
-    for ( int j = 0 ; j < poGeometry->getNumInteriorRings() ; j ++ ) {
-        ring=poGeometry->getInteriorRing( j );
-        for (int i=0;i<ring->getNumPoints();i++) {
-            shape.add_node(j+1,
-                           Point3D(ring->getX(i),
-                                   ring->getY(i),
-                                   ring->getZ(i)));
-        }
-        shape.set_hole_flag( j+1 , 1 );
-    }
+    tgPolygon shape = tgPolygon::FromOGR( poGeometry );
 
     if ( max_segment_length > 0 ) {
-        shape = tgPolygonSplitLongEdges( shape, max_segment_length );
+        shape = tgPolygon::SplitLongEdges( shape, max_segment_length );
     }
-    tgChopNormalPolygon(work_dir, area_type, shape, preserve3D);
+    // shape.SetPreserve3D( preserve3D );
+    shape.SetPreserve3D( false );
+
+    results.Add( shape, area_type  );
 }
 
-void processLayer(OGRLayer* poLayer,
-		  const string& work_dir) {
-
+void processLayer(OGRLayer* poLayer, tgChopper& results )
+{
     int feature_count=poLayer->GetFeatureCount();
 
     if (feature_count!=-1 && start_record>0 && start_record>=feature_count) {
@@ -388,9 +249,12 @@ void processLayer(OGRLayer* poLayer,
         }
     }
 
+    // PSADRO TODO : Generate the work queue for this layer
+    // Then process the workqueue with threads
     OGRFeature *poFeature;
-
     poLayer->SetNextByIndex(start_record);
+    int numFeatures = poLayer->GetFeatureCount();
+    int cur_feature = 1;
     for ( ; (poFeature = poLayer->GetNextFeature()) != NULL; OGRFeature::DestroyFeature( poFeature ) )
     {
         OGRGeometry *poGeometry;
@@ -423,29 +287,29 @@ void processLayer(OGRLayer* poLayer,
             area_type_name=poFeature->GetFieldAsString(area_type_field);
         }
 
-	if ( is_ocean_area(area_type_name) ) {
-	    // interior of polygon is ocean, holes are islands
+        if ( is_ocean_area(area_type_name) ) {
+            // interior of polygon is ocean, holes are islands
 
-	    SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
+            SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
 
-	    // Ocean data now comes from GSHHS so we want to ignore
-	    // all other ocean data
-	    continue;
-	} else if ( is_void_area(area_type_name) ) {
-	    // interior is ????
+            // Ocean data now comes from GSHHS so we want to ignore
+            // all other ocean data
+            continue;
+        } else if ( is_void_area(area_type_name) ) {
+            // interior is ????
 
-	    // skip for now
-	    SG_LOG(  SG_GENERAL, SG_ALERT, "Void area ... SKIPPING!" );
+            // skip for now
+            SG_LOG(  SG_GENERAL, SG_ALERT, "Void area ... SKIPPING!" );
 
-	    continue;
-	} else if ( is_null_area(area_type_name) ) {
-	    // interior is ????
+            continue;
+        } else if ( is_null_area(area_type_name) ) {
+            // interior is ????
 
-	    // skip for now
-	    SG_LOG(  SG_GENERAL, SG_ALERT, "Null area ... SKIPPING!" );
+            // skip for now
+            SG_LOG(  SG_GENERAL, SG_ALERT, "Null area ... SKIPPING!" );
 
-	    continue;
-	}
+            continue;
+        }
 
         poGeometry->transform( poCT );
 
@@ -459,7 +323,7 @@ void processLayer(OGRLayer* poLayer,
                     width=point_width;
                 }
             }
-            processPoint((OGRPoint*)poGeometry,work_dir,area_type_name,width);
+            processPoint((OGRPoint*)poGeometry, area_type_name, width, results);
             break;
         }
         case wkbMultiPoint: {
@@ -473,7 +337,7 @@ void processLayer(OGRLayer* poLayer,
             }
             OGRMultiPoint* multipt=(OGRMultiPoint*)poGeometry;
             for (int i=0;i<multipt->getNumGeometries();i++) {
-                processPoint((OGRPoint*)(multipt->getGeometryRef(i)),work_dir,area_type_name,width);
+                processPoint((OGRPoint*)(multipt->getGeometryRef(i)), area_type_name, width, results);
             }
             break;
         }
@@ -487,13 +351,7 @@ void processLayer(OGRLayer* poLayer,
                 }
             }
 
-            if (texture_lines) {
-                processLineStringWithTextureInfo((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-            } else if (seperate_segments) {
-                processLineStringWithMask((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-            } else {
-                processLineString((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-            }
+            processLineString((OGRLineString*)poGeometry, area_type_name, width, texture_lines, results);
             break;
         }
         case wkbMultiLineString: {
@@ -508,26 +366,20 @@ void processLayer(OGRLayer* poLayer,
 
             OGRMultiLineString* multils=(OGRMultiLineString*)poGeometry;
             for (int i=0;i<multils->getNumGeometries();i++) {
-                if (texture_lines) {
-                    processLineStringWithTextureInfo((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-                } else if (seperate_segments) {
-                    processLineStringWithMask((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-                } else {
-                    processLineString((OGRLineString*)poGeometry,work_dir,area_type_name,width);
-                }
+                processLineString((OGRLineString*)poGeometry, area_type_name, width, texture_lines, results);
             }
             break;
         }
         case wkbPolygon: {
             SG_LOG( SG_GENERAL, SG_DEBUG, "Polygon feature" );
-            processPolygon((OGRPolygon*)poGeometry,work_dir,area_type_name);
+            processPolygon((OGRPolygon*)poGeometry, area_type_name, results);
             break;
         }
         case wkbMultiPolygon: {
             SG_LOG( SG_GENERAL, SG_DEBUG, "MultiPolygon feature" );
             OGRMultiPolygon* multipoly=(OGRMultiPolygon*)poGeometry;
             for (int i=0;i<multipoly->getNumGeometries();i++) {
-                processPolygon((OGRPolygon*)(multipoly->getGeometryRef(i)),work_dir,area_type_name);
+                processPolygon((OGRPolygon*)(multipoly->getGeometryRef(i)), area_type_name, results);
             }
             break;
         }
@@ -589,94 +441,105 @@ int main( int argc, char **argv ) {
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
     while (argc>1) {
-	if (!strcmp(argv[1],"--line-width")) {
-	    if (argc<3)
-		usage(progname);
-	    line_width=atoi(argv[2]);
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--line-width-column")) {
-	    if (argc<3)
-		usage(progname);
-	    line_width_col=argv[2];
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--point-width")) {
-	    if (argc<3)
-		usage(progname);
-	    point_width=atoi(argv[2]);
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--point-width-column")) {
-	    if (argc<3)
-		usage(progname);
-	    point_width_col=argv[2];
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--area-type")) {
-	    if (argc<3)
-		usage(progname);
-	    area_type=argv[2];
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--area-type-column")) {
-	    if (argc<3)
-		usage(progname);
-	    area_type_col=argv[2];
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--texture-lines")) {
-        argv++;
-        argc--;
-	    texture_lines=1;
-	} else if (!strcmp(argv[1],"--seperate-segments")) {
-        argv++;
-        argc--;
-	    seperate_segments=1;
-    } else if (!strcmp(argv[1],"--continue-on-errors")) {
+        if (!strcmp(argv[1],"--line-width")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            line_width=atoi(argv[2]);
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--line-width-column")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            line_width_col=argv[2];
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--point-width")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            point_width=atoi(argv[2]);
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--point-width-column")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            point_width_col=argv[2];
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--area-type")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            area_type=argv[2];
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--area-type-column")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            area_type_col=argv[2];
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--texture-lines")) {
             argv++;
             argc--;
-	    continue_on_errors=1;
-	} else if (!strcmp(argv[1],"--max-segment")) {
-	    if (argc<3)
-		usage(progname);
-	    max_segment_length=atoi(argv[2]);
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--start-record")) {
-	    if (argc<3)
-		usage(progname);
-	    start_record=atoi(argv[2]);
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--where")) {
-	    if (argc<3)
-		usage(progname);
+            texture_lines=true;
+        } else if (!strcmp(argv[1],"--seperate-segments")) {
+            argv++;
+            argc--;
+            seperate_segments=1;
+        } else if (!strcmp(argv[1],"--continue-on-errors")) {
+            argv++;
+            argc--;
+            continue_on_errors=1;
+        } else if (!strcmp(argv[1],"--max-segment")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            max_segment_length=atoi(argv[2]);
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--start-record")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            start_record=atoi(argv[2]);
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--where")) {
+            if (argc<3) {
+                usage(progname);
+            }
             use_attribute_query=true;
-	    attribute_query=argv[2];
-	    argv+=2;
-	    argc-=2;
-	} else if (!strcmp(argv[1],"--spat")) {
-	    if (argc<6)
-		usage(progname);
+            attribute_query=argv[2];
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--spat")) {
+            if (argc<6) {
+                usage(progname);
+            }
             use_spatial_query=true;
             spat_min_x=atof(argv[2]);
             spat_min_y=atof(argv[3]);
             spat_max_x=atof(argv[4]);
             spat_max_y=atof(argv[5]);
-	    argv+=5;
-	    argc-=5;
-	} else if (!strcmp(argv[1],"--help")) {
-	    usage(progname);
-	} else
-		break;
+            argv+=5;
+            argc-=5;
+        } else if (!strcmp(argv[1],"--help")) {
+            usage(progname);
+        } else {
+            break;
+        }
     }
 
     SG_LOG( SG_GENERAL, SG_ALERT, "ogr-decode version " << getTGVersion() << "\n" );
 
-    if (argc<3)
-	usage(progname);
-
+    if (argc<3) {
+        usage(progname);
+    }
     work_dir=argv[1];
     datasource=argv[2];
 
@@ -684,14 +547,19 @@ int main( int argc, char **argv ) {
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
 
+    tgChopper results( work_dir );
+
     // initialize persistant polygon counter
-    string counter_file = work_dir + "/poly_counter";
-    poly_index_init( counter_file );
+    //string counter_file = work_dir + "/poly_counter";
+    //poly_index_init( counter_file );
+
+    // new chop api
+    //std::string counter_file2 = work_dir + "/poly_counter2";
+    //tgPolygon::ChopIdxInit( counter_file );
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
 
     OGRRegisterAll();
-
     OGRDataSource       *poDS;
 
     poDS = OGRSFDriverRegistrar::Open( datasource.c_str(), FALSE );
@@ -704,27 +572,28 @@ int main( int argc, char **argv ) {
     OGRLayer  *poLayer;
 
     if (argc>3) {
-	    for (int i=3;i<argc;i++) {
-		    poLayer = poDS->GetLayerByName( argv[i] );
+        for (int i=3;i<argc;i++) {
+            poLayer = poDS->GetLayerByName( argv[i] );
 
-		    if (poLayer == NULL )
-			    {
-				    SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
-				    exit( 1 );
-			    }
-
-		    processLayer(poLayer, work_dir);
-	    }
+            if (poLayer == NULL )
+            {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
+                exit( 1 );
+            }
+            processLayer(poLayer, results );
+        }
     } else {
-	    for (int i=0;i<poDS->GetLayerCount();i++) {
-		    poLayer = poDS->GetLayer(i);
+        for (int i=0;i<poDS->GetLayerCount();i++) {
+            poLayer = poDS->GetLayer(i);
 
-		    assert(poLayer != NULL);
+            assert(poLayer != NULL);
 
-		    processLayer(poLayer, work_dir);
-	    }
+            processLayer(poLayer, results );
+        }
     }
 
+    results.Save();
+    
     OGRDataSource::DestroyDataSource( poDS );
 
     return 0;

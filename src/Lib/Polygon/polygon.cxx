@@ -970,7 +970,7 @@ std::ostream& operator << (std::ostream &output, const TGPolygon &poly)
     return output;
 }
 
-void TGPolygon::SaveToGzFile(gzFile& fp)
+void TGPolygon::SaveToGzFile(gzFile& fp) const
 {
     int  nContours = poly.size();
 
@@ -1054,6 +1054,51 @@ void TGPolygon::LoadFromGzFile(gzFile& fp)
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // NEW IMPLEMENTATIONS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/intersections.h>
+
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Triangle_2.h>
+#include <iostream>
+
+
+
+
+// EXACT ( polygon list from contour )
+typedef CGAL::Exact_predicates_exact_constructions_kernel         Kernel;
+typedef Kernel::Point_2                                           Point_2;
+typedef CGAL::Segment_2<Kernel>                                   Segment_2;
+
+
+// INEXACT ( triangulate )
+
+/* determining if a face is within the reulting poly */
+struct FaceInfo2
+{
+  FaceInfo2() {}
+  int nesting_level;
+
+  bool in_domain(){
+    return nesting_level%2 == 1;
+  }
+};
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel       K;
+typedef CGAL::Triangulation_vertex_base_2<K>                      Vb;
+typedef CGAL::Triangulation_face_base_with_info_2<FaceInfo2,K>    Fbb;
+typedef CGAL::Constrained_triangulation_face_base_2<K,Fbb>        Fb;
+typedef CGAL::Triangulation_data_structure_2<Vb,Fb>               TDS;
+typedef CGAL::Exact_predicates_tag                                Itag;
+typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag>  CDT;
+typedef CDT::Point                                                Point;
+typedef CGAL::Polygon_2<K>                                        Polygon_2;
+typedef CGAL::Triangle_2<K>                                       Triangle_2;
+
 
 // GEOD HELPERS - maybe some math???
 
@@ -1962,7 +2007,7 @@ bool tgContour::FindColinearLine( const tgContour& subject, const SGGeod& node, 
     return false;
 }
 
-void tgContour::SaveToGzFile( gzFile& fp )
+void tgContour::SaveToGzFile( gzFile& fp ) const
 {
     // Save the nodelist
     sgWriteUInt( fp, node_list.size() );
@@ -2236,6 +2281,314 @@ tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
+
+    return result;
+}
+
+#if 0
+inline double CalculateTheta( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2 )
+{
+    SGVec2d v0, v1, v2;
+    SGVec2d u, v;
+    double  udist, vdist, uv_dot;
+
+    v0 = SGVec2d( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    v1 = SGVec2d( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    v2 = SGVec2d( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
+
+    u  = v1 - v0;
+    udist = norm(u);
+
+    v = v1 - v2;
+    vdist = norm(v);
+
+    uv_dot = dot(u, v);
+
+    return acos( uv_dot / (udist * vdist) );
+}
+#endif
+
+inline double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, const SGVec3d& cp )
+{
+    double dp = dot( dirCur, dirNext );
+
+    return acos( dp );
+}
+
+SGGeod OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by, int& turn_dir )
+{
+    double  courseCur, courseNext, courseAvg, theta;
+    SGVec3d dirCur, dirNext, dirAvg, cp;
+    double  courseOffset, distOffset;
+    SGGeod  pt;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find average angle for contour: prev (" << gPrev << "), "
+                                                                  "cur (" << gCur  << "), "
+                                                                 "next (" << gNext << ")" );
+
+    // first, find if the line turns left or right ar src
+    // for this, take the cross product of the vectors from prev to src, and src to next.
+    // if the cross product is negetive, we've turned to the left
+    // if the cross product is positive, we've turned to the right
+    courseCur = SGGeodesy::courseDeg( gCur, gPrev );
+    dirCur = SGVec3d( sin( courseCur*SGD_DEGREES_TO_RADIANS ), cos( courseCur*SGD_DEGREES_TO_RADIANS ), 0.0f );
+
+    courseNext = SGGeodesy::courseDeg( gCur, gNext );
+    dirNext = SGVec3d( sin( courseNext*SGD_DEGREES_TO_RADIANS ), cos( courseNext*SGD_DEGREES_TO_RADIANS ), 0.0f );
+
+    // Now find the average
+    dirAvg = normalize( dirCur + dirNext );
+    courseAvg = SGMiscd::rad2deg( atan( dirAvg.x()/dirAvg.y() ) );
+    if (courseAvg < 0) {
+        courseAvg += 180.0f;
+    }
+
+    // check the turn direction
+    cp    = cross( dirCur, dirNext );
+    theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext, cp ) );
+
+    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
+        // straight line blows up math - offset 90 degree and dist is as given
+        courseOffset = SGMiscd::normalizePeriodic(0, 360, courseNext-90.0);
+        distOffset   = offset_by;
+    }  else  {
+        // calculate correct distance for the offset point
+        if (cp.z() < 0.0f) {
+            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg+180);
+            turn_dir = 0;
+        } else {
+            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg);
+            turn_dir = 1;
+        }
+        distOffset = (offset_by)/sin(SGMiscd::deg2rad(courseNext-courseOffset));
+    }
+
+    // calculate the point from cur
+    pt = SGGeodesy::direct(gCur, courseOffset, distOffset);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << distOffset << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
+
+    return pt;
+}
+
+SGGeod OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by )
+{
+    int unused;
+    return OffsetPointMiddle( gPrev, gCur, gNext, offset_by, unused );
+}
+
+SGGeod OffsetPointFirst( const SGGeod& cur, const SGGeod& next, double offset_by )
+{
+    double courseOffset;
+    SGGeod pt;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at Start : cur (" << cur  << "), "
+                                                            "next (" << next << ")" );
+
+    // find the offset angle
+    courseOffset = SGGeodesy::courseDeg( cur, next ) - 90;
+    courseOffset = SGMiscd::normalizePeriodic(0, 360, courseOffset);
+
+    // calculate the point from cur
+    pt = SGGeodesy::direct( cur, courseOffset, offset_by );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
+
+    return pt;
+}
+
+SGGeod OffsetPointLast( const SGGeod& prev, const SGGeod& cur, double offset_by )
+{
+    double courseOffset;
+    SGGeod pt;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Find OffsetPoint at End   : prev (" << prev  << "), "
+                                                              "cur (" << cur << ")" );
+
+    // find the offset angle
+    courseOffset = SGGeodesy::courseDeg( prev, cur ) - 90;
+    courseOffset = SGMiscd::normalizePeriodic(0, 360, courseOffset);
+
+    // calculate the point from cur
+    pt = SGGeodesy::direct( cur, courseOffset, offset_by );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "\theading is " << courseOffset << " distance is " << offset_by << " point is (" << pt.getLatitudeDeg() << "," << pt.getLongitudeDeg() << ")" );
+
+    return pt;
+}
+
+SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 )
+{
+    return SGGeod::fromDegM( (p0.getLongitudeDeg() + p1.getLongitudeDeg()) / 2,
+                             (p0.getLatitudeDeg()  + p1.getLatitudeDeg()) / 2,
+                             (p0.getElevationM()   + p1.getElevationM()) / 2 );
+}
+
+bool getIntersection_cgal(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SGGeod& p3, SGGeod& intersection)
+{
+    Point_2 a1( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    Point_2 b1( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    Point_2 a2( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
+    Point_2 b2( p3.getLongitudeDeg(), p3.getLatitudeDeg() );
+
+    Segment_2 seg1( a1, b1 );
+    Segment_2 seg2( a2, b2 );
+
+    CGAL::Object result = CGAL::intersection(seg1, seg2);
+    if (const CGAL::Point_2<Kernel> *ipoint = CGAL::object_cast<CGAL::Point_2<Kernel> >(&result)) {
+        // handle the point intersection case with *ipoint.
+        return true;
+    } else {
+        if (const CGAL::Segment_2<Kernel> *iseg = CGAL::object_cast<CGAL::Segment_2<Kernel> >(&result)) {
+            // handle the segment intersection case with *iseg.
+            return false;
+        } else {
+            // handle the no intersection case.
+            return false;
+        }
+    }
+}
+
+#include <simgear/math/sg_geodesy.hxx>
+
+tgPolygon tgPolygon::Expand( const SGGeod& subject, double offset )
+{
+    tgPolygon result;
+    tgContour contour;
+    SGGeod    pt;
+
+    pt = SGGeodesy::direct( subject, 90, offset/2.0 );
+    double dlon = pt.getLongitudeDeg() - subject.getLongitudeDeg();
+
+    pt = SGGeodesy::direct( subject, 0, offset/2.0 );
+    double dlat = pt.getLatitudeDeg() - subject.getLatitudeDeg();
+
+    contour.AddNode( SGGeod::fromDeg( subject.getLongitudeDeg() - dlon, subject.getLatitudeDeg() - dlat ) );
+    contour.AddNode( SGGeod::fromDeg( subject.getLongitudeDeg() + dlon, subject.getLatitudeDeg() - dlat ) );
+    contour.AddNode( SGGeod::fromDeg( subject.getLongitudeDeg() + dlon, subject.getLatitudeDeg() + dlat ) );
+    contour.AddNode( SGGeod::fromDeg( subject.getLongitudeDeg() - dlon, subject.getLatitudeDeg() + dlat ) );
+    contour.SetHole(false);
+    
+    result.AddContour( contour );
+
+    return result;
+}
+
+tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double width )
+{
+    int turn_dir;
+
+    SGGeod cur_inner;
+    SGGeod cur_outer;
+    SGGeod prev_inner;
+    SGGeod prev_outer;
+    SGGeod calc_inner;
+    SGGeod calc_outer;
+
+    double last_end_v = 0.0f;
+//    double heading = 0.0f;
+//    double az2 = 0.0f;
+//    double dist = 0.0f;
+
+    tgContour      expanded;
+    tgPolygon      segment;
+    tgAccumulator  accum;
+    tgpolygon_list result;
+    
+    // generate poly and texparam lists for each line segment
+    for (unsigned int i = 0; i < subject.GetSize(); i++)
+    {
+        last_end_v = 0.0f;
+        turn_dir   = 0;
+
+        sglog().setLogLevels( SG_ALL, SG_INFO );
+
+        SG_LOG(SG_GENERAL, SG_DEBUG, "makePolygonsTP: calculating offsets for segment " << i);
+
+        // for each point on the PointsList, generate a quad from
+        // start to next, offset by 1/2 width from the edge
+        if (i == 0)
+        {
+            // first point on the list - offset heading is 90deg
+            cur_outer = OffsetPointFirst( subject.GetNode(i), subject.GetNode(i+1), -width/2.0f );
+            cur_inner = OffsetPointFirst( subject.GetNode(i), subject.GetNode(i+1),  width/2.0f );
+        }
+        else if (i == subject.GetSize()-1)
+        {
+            // last point on the list - offset heading is 90deg
+            cur_outer = OffsetPointLast( subject.GetNode(i-1), subject.GetNode(i), -width/2.0f );
+            cur_inner = OffsetPointLast( subject.GetNode(i-1), subject.GetNode(i),  width/2.0f );
+        }
+        else
+        {
+            // middle section
+            cur_outer = OffsetPointMiddle( subject.GetNode(i-1), subject.GetNode(i), subject.GetNode(i+1), -width/2.0f, turn_dir );
+            cur_inner = OffsetPointMiddle( subject.GetNode(i-1), subject.GetNode(i), subject.GetNode(i+1),  width/2.0f, turn_dir );
+        }
+
+        if ( i > 0 )
+        {
+            SGGeod prev_mp = midpoint( prev_outer, prev_inner );
+            SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
+            SGGeod intersect;
+            double heading;
+            double dist;
+            double az2;
+
+            SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
+
+            expanded.Erase();
+            segment.Erase();
+
+            expanded.AddNode( prev_inner );
+            expanded.AddNode( prev_outer );
+
+            // we need to extend one of the points so we're sure we don't create adjacent edges
+            if (turn_dir == 0)
+            {
+                // turned right - offset outer
+
+                if ( getIntersection_cgal( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
+                {
+                    // yes - make a triangle with inner edge = 0
+                    expanded.AddNode( cur_outer );
+                    cur_inner = prev_inner;
+                }
+                else
+                {
+                    expanded.AddNode( cur_outer );
+                    expanded.AddNode( cur_inner );
+                }
+            }
+            else
+            {
+                // turned left - offset inner
+
+                if ( getIntersection_cgal( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
+                {
+                    // yes - make a triangle with outer edge = 0
+                    expanded.AddNode( cur_inner );
+                    cur_outer = prev_outer;
+                }
+                else
+                {
+                    expanded.AddNode( cur_outer );
+                    expanded.AddNode( cur_inner );
+                }
+            }
+
+            expanded.SetHole(false);
+            segment.AddContour(expanded);
+            segment.SetTexParams( prev_inner, width, 20.0f, heading );
+            segment.SetTexLimits( 0, last_end_v, 1, 1 );
+            segment.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+            result.push_back( segment );
+
+            last_end_v = 1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
+        }
+
+        prev_outer = cur_outer;
+        prev_inner = cur_inner;
+    }
+
+    sglog().setLogLevels( SG_ALL, SG_INFO );
 
     return result;
 }
@@ -2698,7 +3051,6 @@ void tgPolygon::Texture( void )
     }
 }
 
-#include <ogrsf_frmts.h>
 void tgPolygon::ToShapefile( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefileOpenDatasource( datasource.c_str() );
@@ -2753,15 +3105,35 @@ void tgPolygon::ToShapefile( const tgPolygon& subject, const std::string& dataso
     ds_id = tgShapefileCloseDatasource( ds_id );
 }
 
-    tgcontour_list  contours;
-    tgtriangle_list triangles;
+tgPolygon tgPolygon::FromOGR( const OGRPolygon* subject )
+{
+    OGRLinearRing const *ring = subject->getExteriorRing();
+    tgContour contour;
+    tgPolygon result;
 
-    std::string material;
-    std::string flag;       // let's get rid of this....
-    tgTexParams tp;
+    for (int i = 0; i < ring->getNumPoints(); i++) {
+        contour.AddNode( SGGeod::fromDegM( ring->getX(i), ring->getY(i), ring->getZ(i)) );
+    }
+    contour.SetHole( false );
+    result.AddContour( contour );
 
+    // then add the inner rings
+    for ( int j = 0 ; j < subject->getNumInteriorRings(); j++ ) {
+        ring = subject->getInteriorRing( j );
+        contour.Erase();
 
-void tgPolygon::SaveToGzFile( gzFile& fp )
+        for (int i = 0; i < ring->getNumPoints(); i++) {
+            contour.AddNode( SGGeod::fromDegM( ring->getX(i), ring->getY(i), ring->getZ(i)) );
+        }
+        contour.SetHole( true );
+        result.AddContour( contour );
+    }
+    result.SetTexMethod( TG_TEX_BY_GEODE );
+    
+    return result;
+}
+
+void tgPolygon::SaveToGzFile( gzFile& fp ) const
 {
     // Save the contours
     sgWriteUInt( fp, contours.size() );
@@ -2781,6 +3153,7 @@ void tgPolygon::SaveToGzFile( gzFile& fp )
     // and the rest
     sgWriteString( fp, material.c_str() );
     sgWriteString( fp, flag.c_str() );
+    sgWriteInt( fp, (int)preserve3d );
 }
 
 void tgPolygon::LoadFromGzFile( gzFile& fp )
@@ -2822,6 +3195,8 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
         flag = strbuff;
         delete strbuff;
     }
+
+    sgReadInt( fp, (int *)&preserve3d );
 }
 
 ////////////////////////////// CHOP ////////////////////////////////
@@ -2832,7 +3207,7 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
 static long int poly_index = 0;
 static std::string poly_path;
 
-bool tgPolygon_index_init( const std::string& path )
+bool tgPolygon::ChopIdxInit( const std::string& path )
 {
     poly_path = path;
     FILE *fp = fopen( poly_path.c_str(), "r" );
@@ -2868,264 +3243,7 @@ static long int tgPolygon_index_next()
     return poly_index;
 }
 
-static void ClipToFile( const tgPolygon& subject, std::string root,
-                        long int p_index,
-                        const std::string& type,
-                        SGBucket& b,
-                        bool withTexparams,
-                        bool preserve3d )
-{
-    Point3D p;
-
-    SGGeod min, max;
-    SGGeod c    = b.get_center();
-    double span = b.get_width();
-
-    tgPolygon base, result;
-    char tile_name[256];
-    char poly_index[256];
-
-    // calculate bucket dimensions
-    if ( (c.getLatitudeDeg() >= -89.0) && (c.getLatitudeDeg() < 89.0) ) {
-        min = SGGeod::fromDeg( c.getLongitudeDeg() - span/2.0, c.getLatitudeDeg() - SG_HALF_BUCKET_SPAN );
-        max = SGGeod::fromDeg( c.getLongitudeDeg() + span/2.0, c.getLatitudeDeg() + SG_HALF_BUCKET_SPAN );
-    } else if ( c.getLatitudeDeg() < -89.0) {
-        min = SGGeod::fromDeg( -90.0, -180.0 );
-        max = SGGeod::fromDeg( -89.0,  180.0 );
-    } else if ( c.getLatitudeDeg() >= 89.0) {
-        min = SGGeod::fromDeg(  89.0, -180.0 );
-        max = SGGeod::fromDeg(  90.0,  180.0 );
-    } else {
-        SG_LOG( SG_GENERAL, SG_ALERT,  "Out of range latitude in clip_and_write_poly() = " << c.getLatitudeDeg() );
-    }
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  (" << min << ") (" << max << ")" );
-
-    // set up clipping tile
-    base.AddNode( 0, SGGeod::fromDeg( min.getLongitudeDeg(), min.getLatitudeDeg()) );
-    base.AddNode( 0, SGGeod::fromDeg( max.getLongitudeDeg(), min.getLatitudeDeg()) );
-    base.AddNode( 0, SGGeod::fromDeg( max.getLongitudeDeg(), max.getLatitudeDeg()) );
-    base.AddNode( 0, SGGeod::fromDeg( min.getLongitudeDeg(), max.getLatitudeDeg()) );
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "shape contours = " << subject.Contours() );
-    for ( unsigned int ii = 0; ii < subject.Contours(); ii++ ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "   hole = " << subject.GetContour(ii).GetHole() );
-    }
-
-    result = tgPolygon::Intersect( subject, base );
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "result contours = " << result.Contours() );
-    for ( unsigned int ii = 0; ii < result.Contours(); ii++ ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  hole = " << result.GetContour(ii).GetHole() );
-    }
-
-    if ( preserve3d ) {
-        result.InheritElevations( subject );
-    }
-
-    tgTexParams tp = subject.GetTexParams();
-
-    if ( result.Contours() > 0 ) {
-        long int t_index = b.gen_index();
-        std::string path = root + "/" + b.gen_base_path();
-
-        SGPath sgp( path );
-        sgp.append( "dummy" );
-        sgp.create_dir( 0755 );
-
-        sprintf( tile_name, "%ld", t_index );
-        std::string polyfile = path + "/" + tile_name;
-
-        sprintf( poly_index, "%ld", p_index );
-        polyfile += ".";
-        polyfile += poly_index;
-
-        FILE *rfp = fopen( polyfile.c_str(), "w" );
-        if ( preserve3d && withTexparams ) {
-            fprintf( rfp, "#3D_TP\n" );
-        } else if ( withTexparams ) {
-            fprintf( rfp, "#2D_TP\n" );
-        } else if ( preserve3d ) {
-            fprintf( rfp, "#3D\n" );
-        } else {
-            fprintf( rfp, "#2D\n" );
-        }
-
-        fprintf( rfp, "%s\n", type.c_str() );
-
-        if ( withTexparams ) {
-            fprintf( rfp, "%.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f\n",
-                     tp.ref.getLongitudeDeg(), tp.ref.getLatitudeDeg(),
-                     tp.width, tp.length,
-                     tp.heading,
-                     tp.minu, tp.maxu, tp.minu, tp.maxu);
-        }
-
-        fprintf( rfp, "%d\n", result.Contours() );
-        for ( unsigned int i = 0; i < result.Contours(); ++i ) {
-            fprintf( rfp, "%d\n", result.ContourSize(i) );
-            fprintf( rfp, "%d\n", result.GetContour(i).GetHole() );
-            for ( unsigned int j = 0; j < result.ContourSize(i); ++j ) {
-                p = Point3D::fromSGGeod( result.GetNode( i, j ) );
-                if ( preserve3d )
-                    fprintf( rfp, "%.15f  %.15f %.15f\n", p.x(), p.y(), p.z() );
-                else
-                    fprintf( rfp, "%.15f  %.15f\n", p.x(), p.y() );
-            }
-        }
-        fclose( rfp );
-    }
-}
-
-void tgPolygon::Chop( const tgPolygon& subject, const std::string& path, const std::string& type, bool withTexparams, bool preserve3d )
-{
-    tg::Rectangle bb;
-    SGGeod p;
-    long int index;
-
-    // bail out immediately if polygon is empty
-    if ( subject.Contours() == 0 )
-        return;
-
-    bb = subject.GetBoundingBox();
-
-    // get next polygon index
-    index = tgPolygon_index_next();
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  min = " << bb.getMin() << " max = " << bb.getMax() );
-
-    // find buckets for min, and max points of convex hull.
-    // note to self: self, you should think about checking for
-    // polygons that span the date line
-    SGBucket b_min( bb.getMin() );
-    SGBucket b_max( bb.getMax() );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket min = " << b_min );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket max = " << b_max );
-
-    if ( b_min == b_max ) {
-        // shape entirely contained in a single bucket, write and bail
-        ClipToFile( subject, path, index, type, b_min, withTexparams, preserve3d );
-        return;
-    }
-
-    SGBucket b_cur;
-    int dx, dy;
-
-    sgBucketDiff(b_min, b_max, &dx, &dy);
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  polygon spans tile boundaries" );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  dx = " << dx << "  dy = " << dy );
-
-    if ( (dx > 2880) || (dy > 1440) )
-        throw sg_exception("something is really wrong in split_polygon()!!!!");
-
-    if ( dy <= 1 ) {
-        // we are down to at most two rows, write each column and then bail
-        double min_center_lat = b_min.get_center_lat();
-        double min_center_lon = b_min.get_center_lon();
-        for ( int j = 0; j <= dy; ++j ) {
-            for ( int i = 0; i <= dx; ++i ) {
-                b_cur = sgBucketOffset(min_center_lon, min_center_lat, i, j);
-                ClipToFile( subject, path, index, type, b_cur, withTexparams, preserve3d );
-            }
-        }
-        return;
-    }
-
-    // we have two or more rows left, split in half (along a
-    // horizontal dividing line) and recurse with each half
-
-    // find mid point (integer math)
-    int mid = (dy + 1) / 2 - 1;
-
-    // determine horizontal clip line
-    SGBucket b_clip = sgBucketOffset( bb.getMin().getLongitudeDeg(), bb.getMin().getLongitudeDeg(), 0, mid);
-    double clip_line = b_clip.get_center_lat();
-    if ( (clip_line >= -90.0 + SG_HALF_BUCKET_SPAN)
-         && (clip_line < 90.0 - SG_HALF_BUCKET_SPAN) )
-        clip_line += SG_HALF_BUCKET_SPAN;
-    else if ( clip_line < -89.0 )
-        clip_line = -89.0;
-    else if ( clip_line >= 89.0 )
-        clip_line = 90.0;
-    else {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Out of range latitude in clip_and_write_poly() = " << clip_line );
-    }
-
-    {
-        //
-        // Crop bottom area (hopefully by putting this in it's own
-        // scope we can shorten the life of some really large data
-        // structures to reduce memory use)
-        //
-
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Generating bottom half (" << bb.getMin().getLatitudeDeg() << "-" << clip_line << ")" );
-
-        tgPolygon bottom, bottom_clip;
-
-        bottom.AddNode( 0, SGGeod::fromDeg(-180.0, bb.getMin().getLatitudeDeg()) );
-        bottom.AddNode( 0, SGGeod::fromDeg( 180.0, bb.getMin().getLatitudeDeg()) );
-        bottom.AddNode( 0, SGGeod::fromDeg( 180.0, clip_line) );
-        bottom.AddNode( 0, SGGeod::fromDeg(-180.0, clip_line) );
-
-        bottom_clip = tgPolygon::Intersect( bottom, subject );
-
-        // the texparam should be constant over each clipped poly.
-        // when they are reassembled, we want the texture map to
-        // be seamless
-        tgPolygon::Chop( bottom_clip, path, type, withTexparams, preserve3d );
-    }
-
-    {
-        //
-        // Crop top area (hopefully by putting this in it's own scope
-        // we can shorten the life of some really large data
-        // structures to reduce memory use)
-        //
-
-        SG_LOG( SG_GENERAL, SG_DEBUG, "Generating top half (" << clip_line << "-" << bb.getMax().getLatitudeDeg() << ")" );
-
-        tgPolygon top, top_clip;
-
-        top.AddNode( 0, SGGeod::fromDeg(-180.0, clip_line) );
-        top.AddNode( 0, SGGeod::fromDeg( 180.0, clip_line) );
-        top.AddNode( 0, SGGeod::fromDeg( 180.0, bb.getMax().getLatitudeDeg()) );
-        top.AddNode( 0, SGGeod::fromDeg(-180.0, bb.getMax().getLatitudeDeg()) );
-
-        top_clip = tgPolygon::Intersect( top, subject );
-
-        tgPolygon::Chop( top_clip, path, type, withTexparams, preserve3d );
-    }
-}
-
 /************************ TESSELATION ***********************************/
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_face_base_with_info_2.h>
-#include <CGAL/Polygon_2.h>
-#include <CGAL/Triangle_2.h>
-#include <iostream>
-
-/* determining if a face is within the reulting poly */
-struct FaceInfo2
-{
-  FaceInfo2() {}
-  int nesting_level;
-
-  bool in_domain(){
-    return nesting_level%2 == 1;
-  }
-};
-
-typedef CGAL::Exact_predicates_inexact_constructions_kernel       K;
-typedef CGAL::Triangulation_vertex_base_2<K>                      Vb;
-typedef CGAL::Triangulation_face_base_with_info_2<FaceInfo2,K>    Fbb;
-typedef CGAL::Constrained_triangulation_face_base_2<K,Fbb>        Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb,Fb>               TDS;
-typedef CGAL::Exact_predicates_tag                                Itag;
-typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag>  CDT;
-typedef CDT::Point                                                Point;
-typedef CGAL::Polygon_2<K>                                        Polygon_2;
-typedef CGAL::Triangle_2<K>                                       Triangle_2;
 
 void tg_mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border )
 {
@@ -3488,7 +3606,7 @@ void tgAccumulator::Add( const tgPolygon& subject )
     accum.push_back( clipper_subject );
 }
 
-void tgTriangle::SaveToGzFile( gzFile& fp )
+void tgTriangle::SaveToGzFile( gzFile& fp ) const
 {
     // Save the three nodes, and their attributes
     for (unsigned int i = 0; i < 3; i++) {
@@ -3518,7 +3636,7 @@ void tgTriangle::LoadFromGzFile( gzFile& fp )
     // sgReadDouble( fp, &face_area );
 }
 
-void tgTexParams::SaveToGzFile( gzFile& fp )
+void tgTexParams::SaveToGzFile( gzFile& fp ) const
 {
     // Save the parameters
     sgWriteInt( fp, (int)method );
@@ -3579,5 +3697,299 @@ void tgTexParams::LoadFromGzFile( gzFile& fp )
             sgReadDouble( fp, &min_clipv );
             sgReadDouble( fp, &max_clipv );
         }
+    }
+}
+
+// CHOPPER
+void tgChopper::Clip( const tgPolygon& subject,
+                      const std::string& type,
+                      SGBucket& b )
+{
+    Point3D p;
+
+    SGGeod min, max;
+    SGGeod c    = b.get_center();
+    double span = b.get_width();
+
+    tgPolygon base, result;
+//  char tile_name[256];
+
+    // calculate bucket dimensions
+    if ( (c.getLatitudeDeg() >= -89.0) && (c.getLatitudeDeg() < 89.0) ) {
+        min = SGGeod::fromDeg( c.getLongitudeDeg() - span/2.0, c.getLatitudeDeg() - SG_HALF_BUCKET_SPAN );
+        max = SGGeod::fromDeg( c.getLongitudeDeg() + span/2.0, c.getLatitudeDeg() + SG_HALF_BUCKET_SPAN );
+    } else if ( c.getLatitudeDeg() < -89.0) {
+        min = SGGeod::fromDeg( -90.0, -180.0 );
+        max = SGGeod::fromDeg( -89.0,  180.0 );
+    } else if ( c.getLatitudeDeg() >= 89.0) {
+        min = SGGeod::fromDeg(  89.0, -180.0 );
+        max = SGGeod::fromDeg(  90.0,  180.0 );
+    } else {
+        SG_LOG( SG_GENERAL, SG_ALERT,  "Out of range latitude in clip_and_write_poly() = " << c.getLatitudeDeg() );
+    }
+
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  (" << min << ") (" << max << ")" );
+
+    // set up clipping tile
+    base.AddNode( 0, SGGeod::fromDeg( min.getLongitudeDeg(), min.getLatitudeDeg()) );
+    base.AddNode( 0, SGGeod::fromDeg( max.getLongitudeDeg(), min.getLatitudeDeg()) );
+    base.AddNode( 0, SGGeod::fromDeg( max.getLongitudeDeg(), max.getLatitudeDeg()) );
+    base.AddNode( 0, SGGeod::fromDeg( min.getLongitudeDeg(), max.getLatitudeDeg()) );
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "shape contours = " << subject.Contours() );
+    for ( unsigned int ii = 0; ii < subject.Contours(); ii++ ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "   hole = " << subject.GetContour(ii).GetHole() );
+    }
+
+    result = tgPolygon::Intersect( subject, base );
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "result contours = " << result.Contours() );
+    for ( unsigned int ii = 0; ii < result.Contours(); ii++ ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "  hole = " << result.GetContour(ii).GetHole() );
+    }
+
+    if ( subject.GetPreserve3D() ) {
+        result.InheritElevations( subject );
+    }
+
+    if ( result.Contours() > 0 ) {
+        result.SetPreserve3D( subject.GetPreserve3D() );
+        result.SetTexParams( subject.GetTexParams() );
+        if ( subject.GetTexMethod() == TG_TEX_BY_GEODE ) {
+            // need to set center latitude for geodetic texturing
+            result.SetTexMethod( TG_TEX_BY_GEODE, b.get_center_lat() );
+        }
+        result.SetFlag(type);
+
+//        fprintf( rfp, "%s\n", type.c_str() );
+//
+//        if ( withTexparams ) {
+//            fprintf( rfp, "%.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f\n",
+//                     tp.ref.getLongitudeDeg(), tp.ref.getLatitudeDeg(),
+//                     tp.width, tp.length,
+//                     tp.heading,
+//                     tp.minu, tp.maxu, tp.minv, tp.maxv);
+//        }
+
+//        fprintf( rfp, "%d\n", result.Contours() );
+//        for ( unsigned int i = 0; i < result.Contours(); ++i ) {
+//            fprintf( rfp, "%d\n", result.ContourSize(i) );
+//            fprintf( rfp, "%d\n", result.GetContour(i).GetHole() );
+//            for ( unsigned int j = 0; j < result.ContourSize(i); ++j ) {
+//                p = Point3D::fromSGGeod( result.GetNode( i, j ) );
+//                if ( preserve3d )
+//                    fprintf( rfp, "%.15f  %.15f %.15f\n", p.x(), p.y(), p.z() );
+//                else
+//                    fprintf( rfp, "%.15f  %.15f\n", p.x(), p.y() );
+//            }
+//        }
+//        fclose( rfp );
+
+        lock.lock();
+        bp_map[b.gen_index()].push_back( result );
+        lock.unlock();
+    }
+}
+
+void tgChopper::Add( const tgPolygon& subject, const std::string& type )
+{
+    tg::Rectangle bb;
+    SGGeod p;
+
+    // bail out immediately if polygon is empty
+    if ( subject.Contours() == 0 )
+        return;
+
+    bb = subject.GetBoundingBox();
+
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  min = " << bb.getMin() << " max = " << bb.getMax() );
+
+    // find buckets for min, and max points of convex hull.
+    // note to self: self, you should think about checking for
+    // polygons that span the date line
+    SGBucket b_min( bb.getMin() );
+    SGBucket b_max( bb.getMax() );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket min = " << b_min );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket max = " << b_max );
+
+    if ( b_min == b_max ) {
+        // shape entirely contained in a single bucket, write and bail
+        Clip( subject, type, b_min );
+        return;
+    }
+
+    SGBucket b_cur;
+    int dx, dy;
+
+    sgBucketDiff(b_min, b_max, &dx, &dy);
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  polygon spans tile boundaries" );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  dx = " << dx << "  dy = " << dy );
+
+    if ( (dx > 2880) || (dy > 1440) )
+        throw sg_exception("something is really wrong in split_polygon()!!!!");
+
+    if ( dy <= 1 ) {
+        // we are down to at most two rows, write each column and then bail
+        double min_center_lat = b_min.get_center_lat();
+        double min_center_lon = b_min.get_center_lon();
+        for ( int j = 0; j <= dy; ++j ) {
+            for ( int i = 0; i <= dx; ++i ) {
+                b_cur = sgBucketOffset(min_center_lon, min_center_lat, i, j);
+                Clip( subject, type, b_cur );
+            }
+        }
+        return;
+    }
+
+    // we have two or more rows left, split in half (along a
+    // horizontal dividing line) and recurse with each half
+
+    // find mid point (integer math)
+    int mid = (dy + 1) / 2 - 1;
+
+    // determine horizontal clip line
+    SGBucket b_clip = sgBucketOffset( bb.getMin().getLongitudeDeg(), bb.getMin().getLatitudeDeg(), 0, mid);
+    double clip_line = b_clip.get_center_lat();
+    if ( (clip_line >= -90.0 + SG_HALF_BUCKET_SPAN)
+         && (clip_line < 90.0 - SG_HALF_BUCKET_SPAN) )
+        clip_line += SG_HALF_BUCKET_SPAN;
+    else if ( clip_line < -89.0 )
+        clip_line = -89.0;
+    else if ( clip_line >= 89.0 )
+        clip_line = 90.0;
+    else {
+        SG_LOG( SG_GENERAL, SG_ALERT, "Out of range latitude in clip_and_write_poly() = " << clip_line );
+    }
+
+    {
+        //
+        // Crop bottom area (hopefully by putting this in it's own
+        // scope we can shorten the life of some really large data
+        // structures to reduce memory use)
+        //
+
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Generating bottom half (" << bb.getMin().getLatitudeDeg() << "-" << clip_line << ")" );
+
+        tgPolygon bottom, bottom_clip;
+
+        bottom.AddNode( 0, SGGeod::fromDeg(-180.0, bb.getMin().getLatitudeDeg()) );
+        bottom.AddNode( 0, SGGeod::fromDeg( 180.0, bb.getMin().getLatitudeDeg()) );
+        bottom.AddNode( 0, SGGeod::fromDeg( 180.0, clip_line) );
+        bottom.AddNode( 0, SGGeod::fromDeg(-180.0, clip_line) );
+
+        bottom_clip = tgPolygon::Intersect( subject, bottom );
+
+        // the texparam should be constant over each clipped poly.
+        // when they are reassembled, we want the texture map to
+        // be seamless
+        Add( bottom_clip, type );
+    }
+
+    {
+        //
+        // Crop top area (hopefully by putting this in it's own scope
+        // we can shorten the life of some really large data
+        // structures to reduce memory use)
+        //
+
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Generating top half (" << clip_line << "-" << bb.getMax().getLatitudeDeg() << ")" );
+
+        tgPolygon top, top_clip;
+
+        top.AddNode( 0, SGGeod::fromDeg(-180.0, clip_line) );
+        top.AddNode( 0, SGGeod::fromDeg( 180.0, clip_line) );
+        top.AddNode( 0, SGGeod::fromDeg( 180.0, bb.getMax().getLatitudeDeg()) );
+        top.AddNode( 0, SGGeod::fromDeg(-180.0, bb.getMax().getLatitudeDeg()) );
+
+        top_clip = tgPolygon::Intersect( subject, top );
+
+        if ( top_clip.TotalNodes() == subject.TotalNodes() ) {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Generating top half - total nodes is the same after clip" << subject.TotalNodes() );
+            exit(0);
+        }
+
+        Add( top_clip, type );
+    }
+}
+
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+
+long int tgChopper::GenerateIndex( std::string path )
+{
+    std::string index_file = path + "/chop.idx";
+    long int index = 0;
+
+    //Open or create the named mutex
+    boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "tgChopper_index2");
+    {
+//        SG_LOG(SG_GENERAL, SG_ALERT, "getting lock");
+        boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex);
+//        SG_LOG(SG_GENERAL, SG_ALERT, " - got it");
+
+        /* first try to read the file */
+        FILE *fp = fopen( index_file.c_str(), "r+" );
+        if ( fp == NULL ) {
+            /* doesn't exist - create it */
+            fp = fopen( index_file.c_str(), "w" );
+            if ( fp == NULL ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Error cannot open Index file " << index_file << " for writing");
+                boost::interprocess::named_mutex::remove("tgChopper_index2");
+                exit( 0 );
+            }
+        } else {
+            fread( (void*)&index, sizeof(long int), 1, fp );
+//            SG_LOG(SG_GENERAL, SG_ALERT, " SUCCESS READING INDEX FILE - READ INDEX " << index );
+        }
+
+        index++;
+
+        rewind( fp );
+        fwrite( (void*)&index, sizeof(long int), 1, fp );
+        fclose( fp );
+    }
+
+    boost::interprocess::named_mutex::remove("tgChopper_index2");
+
+    return index;
+}
+
+void tgChopper::Save( void )
+{
+    // traverse the bucket list
+    bucket_polys_map_interator it;
+    char tile_name[16];
+    char poly_ext[16];
+
+    for (it=bp_map.begin(); it != bp_map.end(); it++) {
+        SGBucket b( (*it).first );
+        tgpolygon_list const& polys = (*it).second;
+
+        std::string path = root_path + "/" + b.gen_base_path();
+        sprintf( tile_name, "%ld", b.gen_index() );
+
+        std::string polyfile = path + "/" + tile_name;
+
+        SGPath sgp( polyfile );
+        sgp.create_dir( 0755 );
+
+        long int poly_index = GenerateIndex( path );
+
+        sprintf( poly_ext, "%ld", poly_index );
+        polyfile = polyfile + "." + poly_ext;
+
+        gzFile fp;
+        if ( (fp = gzopen( polyfile.c_str(), "wb9" )) == NULL ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "ERROR: opening " << polyfile.c_str() << " for writing!" );
+            return;
+        }
+
+        /* Write polys to the file */
+        sgWriteUInt( fp, polys.size() );
+        for ( unsigned int i=0; i<polys.size(); i++ ) {
+            polys[i].SaveToGzFile( fp );
+        }
+
+        gzclose( fp );
     }
 }

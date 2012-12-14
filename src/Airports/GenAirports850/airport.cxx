@@ -1360,7 +1360,11 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     }
 
     std::string holepath = root + "/AirportArea";
+    tgChopper chopper( holepath );
+    divided_base.SetPreserve3D( true );
 
-    tgPolygon::Chop( divided_base, holepath, "Hole", false, true );
-    tgPolygon::Chop( apt_clearing, holepath, "Airport", false, false );
+    chopper.Add( divided_base, "Hole" );
+    chopper.Add( apt_clearing, "Airport" );
+
+    chopper.Save();
 }
