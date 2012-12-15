@@ -24,7 +24,7 @@
 #  include <config.h>
 #endif
 
-#include <Lib/Geometry/TNT/jama_qr.h>
+#include <Lib/Polygon/TNT/jama_qr.h>
 
 #include <simgear/compiler.h>
 #include <simgear/constants.h>

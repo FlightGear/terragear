@@ -25,7 +25,6 @@
 #endif
 
 #include <simgear/debug/logstream.hxx>
-#include <Geometry/poly_support.hxx>
 
 #include "tgconstruct.hxx"
 
@@ -81,7 +80,7 @@ void TGConstruct::calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGV
         SGVec3d v2 = wgs84_nodes[ poly.GetTriIdx( tri, 1 ) ];
         SGVec3d v3 = wgs84_nodes[ poly.GetTriIdx( tri, 2 ) ];
 
-        area   = triangle_area( g1, g2, g3 );
+        area   = tgTriangle::area( g1, g2, g3 );
         normal = calc_normal( area, v1, v2, v3 );
 
         poly.SetTriFaceArea( tri, area );

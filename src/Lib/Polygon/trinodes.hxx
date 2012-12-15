@@ -31,9 +31,9 @@
 
 
 #include <simgear/compiler.h>
-#include <Geometry/point3d.hxx>
 #include <simgear/math/sg_types.hxx>
 
+#include <Polygon/point3d.hxx>
 
 #define FG_PROXIMITY_EPSILON 0.000001
 //#define FG_COURSE_EPSILON 0.0003

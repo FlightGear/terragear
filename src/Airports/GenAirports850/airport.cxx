@@ -288,8 +288,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // runway lights
     tglightcontour_list rwy_lights;
 
-    //Point3D p;
-
     bool make_shapefiles = false;
 
     // parse main airport information
@@ -1064,114 +1062,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TGAptSurface apt_surf( root, elev_src, aptBounds, average );
     GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
 
-    // add base skirt (to hide potential cracks)
-    // this has to happen after we've calculated the node elevations
-    // but before we convert to wgs84 coordinates
-
-#if 0 // do we still need a skirt?
-    int uindex, lindex;
-    for ( unsigned int i = 0; i < divided_base.Contours(); ++i )
-    {
-        strip_v.clear();
-        strip_n.clear();
-        strip_tc.clear();
-
-        // prime the pump ...
-        uindex = nodes.find( divided_base.GetNode( i, 0 ) );
-        if ( uindex >= 0 )
-        {
-            Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-            GENAPT_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
-            lindex = nodes.simple_add( lower );
-            geod_nodes.push_back( lower );
-            strip_v.push_back( uindex );
-            strip_v.push_back( lindex );
-
-            // use 'the' normal.  We are pushing on two nodes so we
-            // need to push on two normals.
-            index = normals.unique_add( vn );
-            strip_n.push_back( index );
-            strip_n.push_back( index );
-        }
-        else
-        {
-            string message = "Ooops missing node when building skirt (in init)";
-            GENAPT_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
-            throw sg_exception( message );
-        }
-
-        // loop through the list
-        for ( unsigned int j = 1; j < divided_base.ContourSize(i); ++j )
-        {
-            p = Point3D::fromSGGeod( divided_base.GetNode( i, j ) );
-            uindex = nodes.find( p );
-            if ( uindex >= 0 )
-            {
-                Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-                GENAPT_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
-                lindex = nodes.simple_add( lower );
-                geod_nodes.push_back( lower );
-                strip_v.push_back( uindex );
-                strip_v.push_back( lindex );
-
-                index = normals.unique_add( vn );
-                strip_n.push_back( index );
-                strip_n.push_back( index );
-            }
-            else
-            {
-                string message = "Ooops missing node when building skirt (in loop)";
-                GENAPT_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
-                throw sg_exception( message );
-            }
-        }
-
-        // close off the loop
-        p = Point3D::fromSGGeod( divided_base.GetNode( i, 0 ) );
-        uindex = nodes.find( p );
-        if ( uindex >= 0 )
-        {
-            Point3D lower = geod_nodes[uindex] - Point3D(0, 0, 20);
-            GENAPT_LOG(SG_GENERAL, SG_DEBUG, geod_nodes[uindex] << " <-> " << lower);
-            lindex = nodes.simple_add( lower );
-            geod_nodes.push_back( lower );
-            strip_v.push_back( uindex );
-            strip_v.push_back( lindex );
-
-            index = normals.unique_add( vn );
-            strip_n.push_back( index );
-            strip_n.push_back( index );
-        }
-        else
-        {
-            string message = "Ooops missing node when building skirt (at end)";
-            GENAPT_LOG( SG_GENERAL, SG_ALERT, message << " " << p );
-            throw sg_exception( message );
-        }
-
-        strips_v.push_back( strip_v );
-        strips_n.push_back( strip_n );
-        strip_materials.push_back( "Grass" );
-
-        std::vector < SGGeod > geodNodes;
-        for ( unsigned int j = 0; j < nodes.get_node_list().size(); j++ )
-        {
-            Point3D node = nodes.get_node_list()[j];
-            geodNodes.push_back( SGGeod::fromDegM( node.x(), node.y(), node.z() ) );
-        }
-        base_txs.clear();
-        base_txs = sgCalcTexCoords( b, geodNodes, strip_v );
-
-        base_tc.clear();
-        for ( unsigned int j = 0; j < base_txs.size(); ++j )
-        {
-            index = texcoords.simple_add( base_txs[j] );
-            base_tc.push_back( index );
-        }
-        strips_tc.push_back( base_tc );
-    }
-#endif
-
     // add light points
     // pass one, calculate raw elevations from Array
     for ( unsigned int i = 0; i < rwy_lights.size(); ++i ) {
@@ -1179,28 +1069,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             double light_elevation = calc_elevation( apt_surf, rwy_lights[i].GetNode(j), 0.0 );
             rwy_lights[i].SetElevation(j, light_elevation);
         }
-
-        // TODO : It doesn't look like this does anything... got back in history and make sure...
-        //string flag = rwy_lights[i].GetFlag();
-        //if ( flag != (string)"" ) 
-        //{
-        //    GENAPT_LOG(SG_GENERAL, SG_INFO, "    flag " << flag);
-        //    double max = -9999;
-        //    const_elev_map_iterator it = elevation_map.find( flag );
-        //    if ( it != elevation_map.end() ) 
-        //    {
-        //       max = elevation_map[flag];
-        //    }
-        //    for ( unsigned int j = 0; j < geod_light_nodes.size(); ++j ) 
-        //    {
-        //        if ( geod_light_nodes[j].z() > max ) 
-        //        {
-        //            max = geod_light_nodes[j].z();
-        //        }
-        //    }
-        //    elevation_map[flag] = max;
-        //    GENAPT_LOG( SG_GENERAL, SG_INFO, "      " << flag << " max = " << max );
-        //}
     }
 
     GENAPT_LOG(SG_GENERAL, SG_INFO, "Done with lighting calc_elevations() num light polys is " << rwy_lights.size() );

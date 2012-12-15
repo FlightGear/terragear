@@ -17,8 +17,6 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 
-#include <Geometry/poly_support.hxx>
-
 #include "global.hxx"
 #include "apt_math.hxx"
 #include "helipad.hxx"

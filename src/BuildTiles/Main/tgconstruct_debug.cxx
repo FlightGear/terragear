@@ -27,7 +27,6 @@
 #include <sstream>
 
 #include <simgear/debug/logstream.hxx>
-#include <Geometry/poly_support.hxx>
 
 #include "tgconstruct.hxx"
 

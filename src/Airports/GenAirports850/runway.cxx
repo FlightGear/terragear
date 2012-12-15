@@ -5,7 +5,6 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/SGGeodesy.hxx>
 
-#include <Geometry/poly_support.hxx>
 #include <Polygon/polygon.hxx>
 
 #include "global.hxx"

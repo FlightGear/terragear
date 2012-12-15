@@ -1,7 +1,5 @@
 #include <stdlib.h>
 
-#include <Geometry/poly_support.hxx>
-
 #include "global.hxx"
 #include "beznode.hxx"
 #include "linearfeature.hxx"

@@ -29,8 +29,6 @@
 #include <simgear/misc/sg_dir.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <Geometry/poly_support.hxx>
-
 #include "tgconstruct.hxx"
 
 using std::string;

@@ -10,7 +10,7 @@
 #include <simgear/timing/timestamp.hxx>
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGQueue.hxx>
-#include <Geometry/rectangle.hxx>
+#include <Polygon/rectangle.hxx>
 #include "airport.hxx"
 
 #define P_STATE_INIT        (0)

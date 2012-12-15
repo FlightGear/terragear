@@ -29,15 +29,14 @@
 # error This library requires C++
 #endif
 
-
-#include <simgear/compiler.h>
-#include <simgear/math/sg_types.hxx>
-#include <Geometry/point3d.hxx>
-
-
 #include <iostream>
 #include <string>
 #include <vector>
+
+#include <simgear/compiler.h>
+#include <simgear/math/sg_types.hxx>
+
+#include <Polygon/point3d.hxx>
 
 // forward declaration
 class TGPolygon;
@@ -316,8 +315,8 @@ std::ostream &operator<<(std::ostream &output, const TGPolygon &poly);
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/threads/SGThread.hxx>
 
-#include <Geometry/trinodes.hxx>
-#include <Geometry/rectangle.hxx>
+#include <Polygon/trinodes.hxx>
+#include <Polygon/rectangle.hxx>
 
 #include "tg_unique_geod.hxx"
 
@@ -484,6 +483,12 @@ public:
     }
     double  GetFaceArea( void ) const {
         return face_area;
+    }
+
+    static double area( const SGGeod& p1, const SGGeod& p2, const SGGeod& p3 ) {
+        return fabs(0.5 * ( p1.getLongitudeDeg() * p2.getLatitudeDeg() - p2.getLongitudeDeg() * p1.getLatitudeDeg() +
+                            p2.getLongitudeDeg() * p3.getLatitudeDeg() - p3.getLongitudeDeg() * p2.getLatitudeDeg() +
+                            p3.getLongitudeDeg() * p1.getLatitudeDeg() - p1.getLongitudeDeg() * p3.getLatitudeDeg() ));
     }
 
     void SaveToGzFile( gzFile& fp ) const;
@@ -915,6 +920,17 @@ public:
 
 private:
     clipper_polygons_list   accum;
+};
+
+class tgShapefile
+{
+public:
+    static void Init( void );
+    static void* OpenDatasource( const char* datasource_name );
+    static void* OpenLayer( void* ds_id, const char* layer_name );
+    static void  CreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description );
+    static void  CloseLayer( void* l_id );
+    static void* CloseDatasource( void* ds_id );
 };
 
 

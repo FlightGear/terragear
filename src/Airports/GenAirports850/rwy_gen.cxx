@@ -26,8 +26,6 @@
 
 #include <boost/lexical_cast.hpp>
 
-#include <Geometry/poly_support.hxx>
-
 #include "global.hxx"
 #include "beznode.hxx"
 #include "runway.hxx"

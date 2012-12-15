@@ -34,7 +34,7 @@
 #define TG_MAX_AREA_TYPES       128
 
 #include <Array/array.hxx>
-#include <Geometry/tg_nodes.hxx>
+#include <Polygon/tg_nodes.hxx>
 #include <landcover/landcover.hxx>
 
 #include "tglandclass.hxx"

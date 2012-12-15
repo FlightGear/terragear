@@ -38,9 +38,6 @@
 #include <simgear/misc/sg_path.hxx>
 
 #include <Include/version.h>
-#include <Polygon/chop.hxx>
-#include <Polygon/index.hxx>
-#include <Polygon/names.hxx>
 #include <Polygon/polygon.hxx>
 
 /* stretch endpoints to reduce slivers in linear data ~.1 meters */
@@ -67,6 +64,19 @@ double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
 int num_threads = 1;
 
 SGLockedQueue<OGRFeature *> global_workQueue;
+
+/* very GDAL specific here... */
+inline static bool is_ocean_area( const std::string &area ) {
+    return area == "Ocean" || area == "Bay  Estuary or Ocean";
+}
+
+inline static bool is_void_area( const std::string &area ) {
+    return area == "Void Area";
+}
+
+inline static bool is_null_area( const std::string& area ) {
+    return area == "Null";
+}
 
 class Decoder : public SGThread
 {

@@ -28,7 +28,7 @@
 #include <simgear/math/sg_types.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#include <Lib/Geometry/point3d.hxx>
+#include <Lib/Polygon/point3d.hxx>
 
 class TGArray {
 

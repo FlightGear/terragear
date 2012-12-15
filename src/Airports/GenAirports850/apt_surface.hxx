@@ -26,7 +26,7 @@
 
 
 #include <string>
-#include <Lib/Geometry/TNT/tnt_array2d.h>
+#include <Lib/Polygon/TNT/tnt_array2d.h>
 
 #include <simgear/debug/logstream.hxx>
 #include <Lib/Polygon/polygon.hxx>

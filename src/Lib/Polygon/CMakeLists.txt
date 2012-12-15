@@ -3,15 +3,25 @@ include_directories(${GDAL_INCLUDE_DIR})
 include( ${CGAL_USE_FILE} )
 
 add_library(Polygon STATIC 
-    chop-bin.cxx
-    index.cxx
-    polygon.cxx
-    simple_clip.cxx
-    chop.hxx
-    index.hxx
-    names.hxx
-    polygon.hxx
-    simple_clip.hxx
     clipper.cpp
     clipper.hpp
+    polygon.cxx
+    polygon.hxx
+    rectangle.cxx
+    rectangle.hxx
+    tg_nodes.cxx
+    tg_nodes.hxx
+    tg_unique_geod.hxx
+    tg_unique_tgnode.hxx
+    tg_unique_vec2f.hxx
+    tg_unique_vec3d.hxx
+    tg_unique_vec3f.hxx
+    trinodes.cxx
+    trinodes.hxx
+    TNT/jama_qr.h
+    TNT/tnt_array1d.h
+    TNT/tnt_array2d.h
+    TNT/tnt_i_refvec.h
+    TNT/tnt_math_utils.h
+    point3d.hxx
 )

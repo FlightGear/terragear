@@ -14,10 +14,6 @@
 
 #include <Polygon/clipper.hpp>
 #include <Polygon/polygon.hxx>
-#include <Geometry/poly_support.hxx>
-
-//#include "windows.h"
-//#include <conio.h>
 
 //---------------------------------------------------------------------------
 
@@ -263,7 +259,7 @@ int main(int argc, char* argv[])
   }
 
   if (show_svg) {
-    tgShapefileInit();
+    tgShapefile::Init();
     clipper_to_shapefile( subject, "./clptst_subject" );
     clipper_to_shapefile( clip, "./clptst_clip" );
   }

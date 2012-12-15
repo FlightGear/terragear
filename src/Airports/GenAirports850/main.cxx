@@ -22,7 +22,6 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#include <Geometry/poly_support.hxx>
 #include <Include/version.h>
 
 #include "scheduler.hxx"
@@ -306,7 +305,7 @@ int main(int argc, char **argv)
     }
 
     // Initialize shapefile support (for debugging)
-    tgShapefileInit();
+    tgShapefile::Init();
 
     sg_gzifstream in( input_file );
     if ( !in.is_open() ) 

@@ -30,9 +30,6 @@
 //#include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 
-#include <Geometry/poly_support.hxx>
-#include <Geometry/poly_extra.hxx>
-
 #include "tgconstruct.hxx"
 
 using std::string;

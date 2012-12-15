@@ -30,10 +30,9 @@
 #include <simgear/misc/texcoord.hxx>
 #include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <Geometry/point3d.hxx>
-#include <Geometry/poly_support.hxx>
 
-#include <Geometry/trinodes.hxx>
+#include <Polygon/point3d.hxx>
+#include <Polygon/trinodes.hxx>
 
 #include "polygon.hxx"
 
@@ -76,7 +75,7 @@ void TGPolygon::get_bounding_box( SGGeod& min, SGGeod& max ) const
     max = SGGeod::fromDeg( maxx, maxy );
 }
 
-
+#if 0
 // Set the elevations of points in the current polgyon based on the
 // elevations of points in source.  For points that are not found in
 // source, propogate the value from the nearest matching point.
@@ -142,7 +141,7 @@ void TGPolygon::inherit_elevations( const TGPolygon &source ) {
         }
     }
 }
-
+#endif
 
 // Set the elevations of all points to the specified values
 void TGPolygon::set_elevations( double elev ) {
@@ -532,7 +531,7 @@ void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
     TGPolygon tgcontour;
     char layer[32];
 
-    void*       ds_id = tgShapefileOpenDatasource( ds );
+    void*       ds_id = tgShapefile::OpenDatasource( ds );
 
     for (unsigned int i = 0; i < polys.size(); ++i) {
         if  ( Orientation( polys[i] ) ) {
@@ -541,18 +540,18 @@ void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
             sprintf( layer, "%04d_hole", i );
         }
 
-        void* l_id  = tgShapefileOpenLayer( ds_id, layer );
+        void* l_id  = tgShapefile::OpenLayer( ds_id, layer );
         contour.clear();
         contour.push_back( polys[i] );
 
         tgcontour.erase();
         make_tg_poly_from_clipper( contour, &tgcontour );
 
-        tgShapefileCreateFeature( ds_id, l_id, tgcontour, "contour" );
+        tgShapefile::CreateFeature( ds_id, l_id, tgcontour, "contour" );
     }
 
     // close after each write
-    ds_id = tgShapefileCloseDatasource( ds_id );
+    ds_id = tgShapefile::CloseDatasource( ds_id );
 }
 
 TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
@@ -652,17 +651,17 @@ void tgPolygonFreeClipperAccumulator( void )
 
 void tgPolygonDumpAccumulator( char* ds, char* layer, char* name )
 {
-    void* ds_id = tgShapefileOpenDatasource( ds );
-    void* l_id  = tgShapefileOpenLayer( ds_id, layer );
+    void* ds_id = tgShapefile::OpenDatasource( ds );
+    void* l_id  = tgShapefile::OpenLayer( ds_id, layer );
     TGPolygon accum;
 
     for (unsigned int i=0; i<clipper_accumulator.size(); i++) {
         make_tg_poly_from_clipper( clipper_accumulator[i], &accum );
-        tgShapefileCreateFeature( ds_id, l_id, accum, name );
+        tgShapefile::CreateFeature( ds_id, l_id, accum, name );
     }
 
     // close after each write
-    ds_id = tgShapefileCloseDatasource( ds_id );
+    ds_id = tgShapefile::CloseDatasource( ds_id );
 }
 
 void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump )
@@ -3053,11 +3052,11 @@ void tgPolygon::Texture( void )
 
 void tgPolygon::ToShapefile( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )
 {
-    void*          ds_id = tgShapefileOpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefileOpenDatasource returned " << (unsigned long)ds_id);
+    void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
     
-    OGRLayer*      l_id  = (OGRLayer *)tgShapefileOpenLayer( ds_id, layer.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefileOpenLayer returned " << (unsigned long)l_id);
+    OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
 
     OGRPolygon*    polygon = new OGRPolygon();
 
@@ -3102,7 +3101,7 @@ void tgPolygon::ToShapefile( const tgPolygon& subject, const std::string& dataso
     }
 
     // close after each write
-    ds_id = tgShapefileCloseDatasource( ds_id );
+    ds_id = tgShapefile::CloseDatasource( ds_id );
 }
 
 tgPolygon tgPolygon::FromOGR( const OGRPolygon* subject )
@@ -3222,25 +3221,6 @@ bool tgPolygon::ChopIdxInit( const std::string& path )
     fclose( fp );
 
     return true;
-}
-
-SGMutex index_next_mutex;
-static long int tgPolygon_index_next()
-{
-    SGGuard<SGMutex> g(index_next_mutex);
-
-    ++poly_index;
-
-    FILE *fp = fopen( poly_path.c_str(), "w" );
-
-    if ( fp == NULL ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Error cannot open BLAH BLAG BLAH " << poly_path << " for writing");
-    }
-
-    fprintf( fp, "%ld\n", poly_index );
-    fclose( fp );
-
-    return poly_index;
 }
 
 /************************ TESSELATION ***********************************/
@@ -3992,4 +3972,122 @@ void tgChopper::Save( void )
 
         gzclose( fp );
     }
+}
+
+const char* format_name="ESRI Shapefile";
+
+void tgShapefile::Init( void )
+{
+    OGRRegisterAll();
+}
+
+void* tgShapefile::OpenDatasource( const char* datasource_name )
+{
+    OGRDataSource *datasource;
+    OGRSFDriver   *ogrdriver;
+
+    ogrdriver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(format_name);
+    if (!ogrdriver) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unknown datasource format driver: " << format_name);
+        exit(1);
+    }
+
+    datasource = ogrdriver->Open(datasource_name, TRUE);
+
+    if (!datasource) {
+        datasource = ogrdriver->CreateDataSource(datasource_name, NULL);
+    }
+
+    if (!datasource) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open or create datasource: " << datasource_name);
+        exit(1);
+    }
+
+    return (void*)datasource;
+}
+
+void* tgShapefile::OpenLayer( void* ds_id, const char* layer_name ) {
+    OGRDataSource* datasource = (OGRDataSource *)ds_id;
+    OGRLayer* layer;
+
+    OGRSpatialReference srs;
+    srs.SetWellKnownGeogCS("WGS84");
+
+    layer = datasource->GetLayerByName(layer_name);
+
+    if (!layer) {
+        layer = datasource->CreateLayer( layer_name, &srs, wkbPolygon25D, NULL);
+
+        OGRFieldDefn descriptionField("ID", OFTString);
+        descriptionField.SetWidth(128);
+
+        if( layer->CreateField( &descriptionField ) != OGRERR_NONE ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Creation of field 'Description' failed");
+        }
+    }
+
+    if (!layer) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Creation of layer '" << layer_name << "' failed");
+        return NULL;
+    }
+
+    return (void*)layer;
+}
+
+void tgShapefile::CreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description  )
+{
+    OGRLayer*      layer      = (OGRLayer*)l_id;
+    OGRPolygon*    polygon    = new OGRPolygon();
+
+    for ( int i = 0; i < poly.contours(); i++ ) {
+        bool skip_ring=false;
+        point_list contour = poly.get_contour( i );
+
+        if (contour.size()<3) {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
+            skip_ring=true;
+        }
+
+        // FIXME: Current we ignore the hole-flag and instead assume
+        //        that the first ring is not a hole and the rest
+        //        are holes
+        OGRLinearRing *ring=new OGRLinearRing();
+        for (unsigned int pt = 0; pt < contour.size(); pt++) {
+            OGRPoint *point=new OGRPoint();
+
+            point->setX( contour[pt].x() );
+            point->setY( contour[pt].y() );
+            point->setZ( 0.0 );
+            ring->addPoint(point);
+        }
+        ring->closeRings();
+
+        if (!skip_ring) {
+            polygon->addRingDirectly(ring);
+        }
+
+        OGRFeature* feature = NULL;
+        feature = new OGRFeature( layer->GetLayerDefn() );
+        feature->SetField("ID", description);
+        feature->SetGeometry(polygon);
+        if( layer->CreateFeature( feature ) != OGRERR_NONE )
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+        }
+        OGRFeature::DestroyFeature(feature);
+    }
+}
+
+void tgShapefile::CloseLayer( void* l_id )
+{
+    //OGRLayer::DestroyLayer( layer );
+}
+
+void* tgShapefile::CloseDatasource( void* ds_id )
+{
+    OGRDataSource* datasource = (OGRDataSource *)ds_id;
+
+    OGRDataSource::DestroyDataSource( datasource );
+
+    return (void *)-1;
 }

@@ -27,7 +27,7 @@ set_target_properties(tg-construct PROPERTIES
         "DEFAULT_USGS_MAPFILE=\"${PKGDATADIR}/usgsmap.txt\";DEFAULT_PRIORITIES_FILE=\"${PKGDATADIR}/default_priorities.txt\"" )
 
 target_link_libraries(tg-construct
-    Polygon Geometry
+    Polygon
     Array landcover
     ${Boost_LIBRARIES}
     ${GDAL_LIBRARY}
@@ -43,7 +43,7 @@ add_executable(cliptst
     cliptst.cxx)
 
 target_link_libraries(cliptst
-    Polygon Geometry
+    Polygon
     ${GDAL_LIBRARY}
     ${SIMGEAR_CORE_LIBRARIES}
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}

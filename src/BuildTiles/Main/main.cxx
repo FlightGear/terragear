@@ -24,7 +24,6 @@
 
 #include <simgear/debug/logstream.hxx>
 #include <Include/version.h>
-#include <Geometry/poly_support.hxx>
 
 #include "tgconstruct.hxx"
 #include "usgs.hxx"
@@ -73,7 +72,7 @@ int main(int argc, char **argv) {
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
     // Initialize shapefile support (for debugging)
-    tgShapefileInit();
+    tgShapefile::Init();
 
     //
     // Parse the command-line arguments.

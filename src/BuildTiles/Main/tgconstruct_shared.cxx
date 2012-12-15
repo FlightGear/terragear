@@ -30,8 +30,6 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/lowlevel.hxx>
 
-#include <Geometry/poly_support.hxx>
-
 #include "tgconstruct.hxx"
 
 using std::string;
@@ -134,7 +132,7 @@ void TGConstruct::WriteNeighborFaces( gzFile& fp, const SGGeod& pt ) const
         SGVec3d const& wgs_p2 = nodes[ poly.GetTriIdx( tri, 0) ].GetWgs84();
         SGVec3d const& wgs_p3 = nodes[ poly.GetTriIdx( tri, 0) ].GetWgs84();
 
-        double  face_area   = triangle_area( p1, p2, p3 );
+        double  face_area   = tgTriangle::area( p1, p2, p3 );
         SGVec3f face_normal = calc_normal( face_area, wgs_p1, wgs_p2, wgs_p3 );
 
         sgWriteDouble( fp, face_area );

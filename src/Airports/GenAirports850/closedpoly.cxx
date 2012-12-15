@@ -3,7 +3,6 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <Polygon/polygon.hxx>
-#include <Geometry/poly_support.hxx>
 
 #include "global.hxx"
 #include "beznode.hxx"
