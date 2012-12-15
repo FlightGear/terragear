@@ -46,6 +46,7 @@ static const double quarter_cover_size  = cover_size * 0.25;
 
 // make the area specified area, look up the land cover type, and add
 // it to polys
+#if 0
 void TGConstruct::make_area( const LandCover &cover, TGPolygon *polys,
                        double x1, double y1, double x2, double y2,
                        double half_dx, double half_dy )
@@ -75,9 +76,11 @@ void TGConstruct::make_area( const LandCover &cover, TGPolygon *polys,
         }
     }
 }
+#endif
 
 // Come up with a "rough" metric for the roughness of the terrain
 // coverted by a polygon
+#if 0
 double TGConstruct::measure_roughness( TGPolygon &poly ) {
     int i;
     unsigned int j;
@@ -116,6 +119,7 @@ double TGConstruct::measure_roughness( TGPolygon &poly ) {
 
     return diff / 50.0;
 }
+#endif
 
 AreaType TGConstruct::get_landcover_type (const LandCover &cover, double xpos, double ypos, double dx, double dy)
 {

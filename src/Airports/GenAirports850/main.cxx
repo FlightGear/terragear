@@ -284,10 +284,6 @@ int main(int argc, char **argv)
 
     std::string lastaptfile = work_dir+"/last_apt";
 
-    // initialize persistant polygon counter
-    std::string counter_file = airportareadir+"/poly_counter";
-    tgPolygon::ChopIdxInit( counter_file );
-
     tg::Rectangle boundingBox(min, max);
     boundingBox.sanify();
 

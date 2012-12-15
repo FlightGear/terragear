@@ -23,6 +23,9 @@
 #include <fstream>
 #include <limits.h>
 
+#include <boost/interprocess/sync/scoped_lock.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+
 #include <simgear/constants.h>
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGGuard.hxx>
@@ -30,9 +33,10 @@
 #include <simgear/misc/texcoord.hxx>
 #include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/misc/sg_path.hxx>
 
 #include <Polygon/point3d.hxx>
-#include <Polygon/trinodes.hxx>
 
 #include "polygon.hxx"
 
@@ -41,117 +45,24 @@
 #   define LONG_LONG_MIN LLONG_MIN
 #endif
 
-using std::endl;
-using std::cout;
-
-// Constructor 
-TGPolygon::TGPolygon( void )
-{
-}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// NEW IMPLEMENTATIONS
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// Destructor
-TGPolygon::~TGPolygon( void ) {
-}
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/intersections.h>
 
-void TGPolygon::get_bounding_box( SGGeod& min, SGGeod& max ) const
-{
-    double minx = std::numeric_limits<double>::infinity();
-    double miny = std::numeric_limits<double>::infinity();
-    double maxx = -std::numeric_limits<double>::infinity();
-    double maxy = -std::numeric_limits<double>::infinity();
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Constrained_Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_face_base_with_info_2.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Triangle_2.h>
+#include <iostream>
 
-    for ( int i = 0; i < contours(); i++ ) {
-        for (unsigned int j = 0; j < poly[i].size(); j++) {
-            SGGeod pt = poly[i][j].toSGGeod();
-            if ( pt.getLongitudeDeg() < minx ) { minx = pt.getLongitudeDeg(); }
-            if ( pt.getLongitudeDeg() > maxx ) { maxx = pt.getLongitudeDeg(); }
-            if ( pt.getLatitudeDeg() < miny ) { miny = pt.getLatitudeDeg(); }
-            if ( pt.getLatitudeDeg() > maxy ) { maxy = pt.getLatitudeDeg(); }
-        }
-    }
 
-    min = SGGeod::fromDeg( minx, miny );
-    max = SGGeod::fromDeg( maxx, maxy );
-}
 
-#if 0
-// Set the elevations of points in the current polgyon based on the
-// elevations of points in source.  For points that are not found in
-// source, propogate the value from the nearest matching point.
-void TGPolygon::inherit_elevations( const TGPolygon &source ) {
-    TGTriNodes nodes;
-    nodes.clear();
-
-    int i, j;
-
-    // build a list of points from the source and dest polygons
-
-    for ( i = 0; i < source.contours(); ++i ) {
-        for ( j = 0; j < source.contour_size(i); ++j ) {
-            Point3D p = source.get_pt( i, j );
-            nodes.unique_add( p );
-        }
-    }
-
-    // traverse the dest polygon and build a mirror image but with
-    // elevations from the source polygon
-
-    for ( i = 0; i < (int)poly.size(); ++i ) {
-        for ( j = 0; j < (int)poly[i].size(); ++j ) {
-            Point3D p = poly[i][j];
-            int index = nodes.find( p );
-            if ( index >= 0 ) {
-                Point3D ref = nodes.get_node( index );
-                poly[i][j].setz( ref.z() );
-            }
-        }
-    }
-
-    // now post process result to catch any nodes that weren't updated
-    // (because the clipping process may have added points which
-    // weren't in the original.)
-
-    double last = -9999.0;
-    for ( i = 0; i < (int)poly.size(); ++i ) {
-        // go front ways
-        last = -9999.0;
-        for ( j = 0; j < (int)poly[i].size(); ++j ) {
-            Point3D p = poly[i][j];
-            if ( p.z() > -9000 ) {
-                last = p.z();
-            } else {
-               if ( last > -9000 ) {
-                   poly[i][j].setz( last );
-               }
-            }
-        }
-
-        // go back ways
-        last = -9999.0;
-        for ( j = poly[i].size() - 1; j >= 0; --j ) {
-            Point3D p = poly[i][j];
-            if ( p.z() > -9000 ) {
-                last = p.z();
-            } else {
-               if ( last > -9000 ) {
-                   poly[i][j].setz( last );
-               }
-            }
-        }
-    }
-}
-#endif
-
-// Set the elevations of all points to the specified values
-void TGPolygon::set_elevations( double elev ) {
-    for ( unsigned i = 0; i < poly.size(); ++i ) {
-        for ( unsigned int j = 0; j < poly[i].size(); ++j ) {
-            poly[i][j].setz( elev );
-        }
-    }
-}
-
+// TODO : Where does this belong
 // Calculate theta of angle (a, b, c)
 double tgPolygonCalcAngle(SGVec2d a, SGVec2d b, SGVec2d c) {
     SGVec2d u, v;
@@ -170,900 +81,6 @@ double tgPolygonCalcAngle(SGVec2d a, SGVec2d b, SGVec2d c) {
     return acos(uv_dot / (udist * vdist));
 }
 
-// return the perimeter of a contour (assumes simple polygons,
-// i.e. non-self intersecting.)
-//
-// negative areas indicate counter clockwise winding
-// positive areas indicate clockwise winding.
-
-double TGPolygon::area_contour( const int contour ) const {
-    point_list c = poly[contour];
-    double area = 0.0;
-    unsigned int i, j;
-
-    if (c.size()) {
-        j = c.size() - 1;
-        for (i=0; i<c.size(); i++) {
-            area += (c[j].x() + c[i].x()) * (c[j].y() - c[i].y()); 
-            j=i; 
-        }
-    }
-
-    return fabs(area * 0.5); 
-}
-
-// return the smallest interior angle of the contour
-double TGPolygon::minangle_contour( const int contour ) {
-    point_list c = poly[contour];
-    int size = c.size();
-    int p1_index, p2_index, p3_index;
-    SGVec2d p1, p2, p3;
-    double angle;
-    double min_angle = 2.0 * SGD_PI;
-
-    for ( int i = 0; i < size; ++i ) {
-        p1_index = i - 1;
-        if ( p1_index < 0 ) {
-            p1_index += size;
-        }
-
-        p2_index = i;
-
-        p3_index = i + 1;
-        if ( p3_index >= size ) {
-            p3_index -= size;
-        }
-
-        p1.x() = c[p1_index].x();
-        p1.y() = c[p1_index].y();
-
-        p2.x() = c[p2_index].x();
-        p2.y() = c[p2_index].y();
-
-        p3.x() = c[p3_index].x();
-        p3.y() = c[p3_index].y();
-
-        angle = tgPolygonCalcAngle( p1, p2, p3 );
-
-        if ( angle < min_angle ) {
-            min_angle = angle;
-        }
-    }
-
-    return min_angle;
-}
-
-// return true if contour A is inside countour B
-bool TGPolygon::is_inside( int a, int b ) const {
-    // make polygons from each specified contour
-    TGPolygon A, B;
-    point_list pl;
-    A.erase();
-    B.erase();
-
-    pl = get_contour( a );
-    A.add_contour( pl, 0 );
-
-    pl = get_contour( b );
-    B.add_contour( pl, 0 );
-
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "A size = " << A.total_size());
-    // A.write( "A" );
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "B size = " << B.total_size());
-    // B.write( "B" );
-
-    // A is "inside" B if the polygon_diff( A, B ) is null.
-    TGPolygon result = tgPolygonDiff( A, B );
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "result size = " << result.total_size());
-
-    // char junk;
-    // cin >> junk;
-
-    if ( result.contours() == 0 ) {
-	// SG_LOG(SG_GENERAL, SG_DEBUG, "  " << a << " is_inside() " << b);
-	return true;
-    }
-
-    // SG_LOG(SG_GENERAL, SG_DEBUG, "  " << a << " not is_inside() " << b);
-    return false;
-}
-
-
-// shift every point in the polygon by lon, lat
-void TGPolygon::shift( double lon, double lat ) {
-    for ( int i = 0; i < (int)poly.size(); ++i ) {
-        for ( int j = 0; j < (int)poly[i].size(); ++j ) {
-            poly[i][j].setx( poly[i][j].x() + lon );
-            poly[i][j].sety( poly[i][j].y() + lat );
-        }
-    }
-}
-
-
-// output
-void TGPolygon::write( const std::string& file ) const {
-    FILE *fp = fopen( file.c_str(), "w" );
-
-    fprintf(fp, "%ld\n", poly.size());
-    for ( int i = 0; i < (int)poly.size(); ++i ) {
-        fprintf(fp, "%ld\n", poly[i].size());
-        for ( int j = 0; j < (int)poly[i].size(); ++j ) {
-            fprintf(fp, "%.6f %.6f\n", poly[i][j].x(), poly[i][j].y());
-        }
-        fprintf(fp, "%.6f %.6f\n", poly[i][0].x(), poly[i][0].y());
-    }
-
-    fclose(fp);
-}
-
-
-// Move slivers from in polygon to out polygon.
-void tgPolygonFindSlivers( TGPolygon& in, poly_list& slivers ) 
-{
-    // traverse each contour of the polygon and attempt to identify
-    // likely slivers
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonFindSlivers()");
-
-    TGPolygon out;
-    int i;
-
-    out.erase();
-
-    double angle_cutoff = 10.0 * SGD_DEGREES_TO_RADIANS;
-    double area_cutoff = 0.000000001;
-    double min_angle;
-    double area;
-
-    point_list contour;
-    int hole_flag;
-
-    // process contours in reverse order so deleting a contour doesn't
-    // foul up our sequence
-    for ( i = in.contours() - 1; i >= 0; --i ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "contour " << i );
-
-        min_angle = in.minangle_contour( i );
-        area = in.area_contour( i );
-
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  min_angle (rad) = " << min_angle );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  min_angle (deg) = " << min_angle * 180.0 / SGD_PI );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "  area = " << area );
-
-        if ( ((min_angle < angle_cutoff) && (area < area_cutoff)) ||
-           ( area < area_cutoff / 10.0) )
-        {
-            if ((min_angle < angle_cutoff) && (area < area_cutoff))
-            {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "      WE THINK IT'S A SLIVER! - min angle < 10 deg, and area < 10 sq meters");
-            }
-            else
-            {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "      WE THINK IT'S A SLIVER! - min angle > 10 deg, but area < 1 sq meters");
-            }
-
-            // check if this is a hole
-            hole_flag = in.get_hole_flag( i );
-
-            if ( hole_flag ) {
-                // just delete/eliminate/remove sliver holes
-                // cout << "just deleting a sliver hole" << endl;
-                in.delete_contour( i );
-            } else {
-                // move sliver contour to out polygon
-                SG_LOG(SG_GENERAL, SG_INFO, "      Found SLIVER!");
-
-                contour = in.get_contour( i );
-                in.delete_contour( i );
-                out.add_contour( contour, hole_flag );
-            }
-        }
-    }
-
-    if ( out.contours() )
-    {
-        slivers.push_back( out );
-    }
-}
-
-
-
-// output
-void TGPolygon::write_contour( const int contour, const std::string& file ) const {
-    FILE *fp = fopen( file.c_str(), "w" );
-    
-    for ( int j = 0; j < (int)poly[contour].size(); ++j ) {
-	fprintf(fp, "%.6f %.6f\n", poly[contour][j].x(), poly[contour][j].y());
-    }
-
-    fclose(fp);
-}
-
-// Set operation type
-typedef enum {
-    POLY_DIFF,			// Difference
-    POLY_INT,			// Intersection
-    POLY_XOR,			// Exclusive or
-    POLY_UNION			// Union
-} clip_op;
-
-
-#define FIXEDPT (10000000000000000)
-#define FIXED1M (            90090)
-
-
-static ClipperLib::IntPoint MakeClipperPoint( Point3D pt )
-{
-	ClipperLib::long64 x, y;
-
-	x = (ClipperLib::long64)( pt.x() * FIXEDPT );
-	y = (ClipperLib::long64)( pt.y() * FIXEDPT );
-
-	return ClipperLib::IntPoint( x, y );
-}
-
-static Point3D MakeTGPoint( ClipperLib::IntPoint pt )
-{
-    Point3D tg_pt;
-	double x, y;
-
-	x = (double)( ((double)pt.X) / (double)FIXEDPT );
-	y = (double)( ((double)pt.Y) / (double)FIXEDPT );
-
-    tg_pt = Point3D( x, y, -9999.0f);
-
-	return tg_pt;
-}
-
-static SGGeod MakeSGGeod( ClipperLib::IntPoint pt )
-{
-    double x, y;
-    x = (double)( ((double)pt.X) / (double)FIXEDPT );
-    y = (double)( ((double)pt.Y) / (double)FIXEDPT );
-
-    return SGGeod::fromDeg(x, y);
-}
-
-double MakeClipperDelta( double mDelta )
-{
-    double cDelta = mDelta * ( FIXEDPT / FIXED1M );
-
-    // SG_LOG(SG_GENERAL, SG_INFO, "mdelta:" << mDelta << " is " << cDelta );
-    
-    return( cDelta );
-}
-
-static void make_clipper_poly( const TGPolygon& in, ClipperLib::Polygons *out ) 
-{
-    ClipperLib::Polygon contour;
-    Point3D  p;
-    int      i, j;	
-
-    for (i=0; i<in.contours(); i++) {
-        // create a clipper contour
-        contour.clear();
-	    for (j=0; j<in.contour_size(i); ++j) 
-        {
-            p = in.get_pt( i, j );
-            contour.push_back(MakeClipperPoint(p));
-        }
-
-        if ( in.get_hole_flag( i ) )
-        {
-            // holes need to be orientation: false 
-            if ( Orientation( contour ) ) {
-                //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper poly - hole contour needs to be reversed" );
-                ReversePolygon( contour );
-            }
-        } else {
-            // boundaries need to be orientation: true
-            if ( !Orientation( contour ) ) {
-                //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper poly - boundary contour needs to be reversed" );
-                ReversePolygon( contour );
-            }
-        }
-        out->push_back(contour);
-    }
-}
-
-void make_tg_poly_from_clipper( const ClipperLib::Polygons& in, TGPolygon *out )
-{
-	out->erase();
-
-    // for each polygon, we need to check the orientation, to set the hole flag...
-    for (unsigned int i=0; i<in.size(); i++)
-    {
-        ClipperLib::IntPoint ip;
-
-        for (unsigned int j = 0; j < in[i].size(); j++)
-        {
-            ip = ClipperLib::IntPoint( in[i][j].X, in[i][j].Y );
-            //SG_LOG(SG_GENERAL, SG_INFO, "Building TG Poly : Add point (" << ip.X << "," << ip.Y << ") to contour " << i );
-            out->add_node( i, MakeTGPoint(ip) );
-        }
-
-        if ( Orientation( in[i] ) ) {
-            //SG_LOG(SG_GENERAL, SG_INFO, "Building TG Poly : contour " << i << " is boundary " );
-            out->set_hole_flag(i, 0);
-        } else {
-            //SG_LOG(SG_GENERAL, SG_INFO, "Building TG Poly : contour " << i << " is hole " );
-            out->set_hole_flag(i, 1);
-        }
-    }
-}
-
-
-void get_Clipper_bounding_box( const ClipperLib::Polygons& in, SGGeod& min, SGGeod& max )
-{
-    ClipperLib::IntPoint min_pt, max_pt;
-
-    min_pt.X = min_pt.Y = LONG_LONG_MAX;
-    max_pt.X = max_pt.Y = LONG_LONG_MIN;
-
-    // for each polygon, we need to check the orientation, to set the hole flag...
-    for (unsigned int i=0; i<in.size(); i++)
-    {
-        for (unsigned int j = 0; j < in[i].size(); j++)
-        {
-            if ( in[i][j].X < min_pt.X ) {
-                min_pt.X = in[i][j].X;
-            }
-            if ( in[i][j].Y < min_pt.Y ) {
-                min_pt.Y = in[i][j].Y;
-            }
-
-            if ( in[i][j].X > max_pt.X ) {
-                max_pt.X = in[i][j].X;
-            }
-            if ( in[i][j].Y > max_pt.Y ) {
-                max_pt.Y = in[i][j].Y;
-            }
-        }
-    }
-
-    min = MakeSGGeod( min_pt );
-    max = MakeSGGeod( max_pt );
-}
-
-void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
-{
-    ClipperLib::Polygons contour;
-    TGPolygon tgcontour;
-    char layer[32];
-
-    void*       ds_id = tgShapefile::OpenDatasource( ds );
-
-    for (unsigned int i = 0; i < polys.size(); ++i) {
-        if  ( Orientation( polys[i] ) ) {
-            sprintf( layer, "%04d_boundary", i );
-        } else {
-            sprintf( layer, "%04d_hole", i );
-        }
-
-        void* l_id  = tgShapefile::OpenLayer( ds_id, layer );
-        contour.clear();
-        contour.push_back( polys[i] );
-
-        tgcontour.erase();
-        make_tg_poly_from_clipper( contour, &tgcontour );
-
-        tgShapefile::CreateFeature( ds_id, l_id, tgcontour, "contour" );
-    }
-
-    // close after each write
-    ds_id = tgShapefile::CloseDatasource( ds_id );
-}
-
-TGPolygon polygon_clip_clipper( clip_op poly_op, const TGPolygon& subject, const TGPolygon& clip )
-{
-    TGPolygon result;
-
-    ClipperLib::Polygons clipper_subject;
-    make_clipper_poly( subject, &clipper_subject );
-
-    ClipperLib::Polygons clipper_clip;
-    make_clipper_poly( clip, &clipper_clip );
-
-    ClipperLib::Polygons clipper_result;
-
-    ClipperLib::ClipType op;
-    if ( poly_op == POLY_DIFF ) {
-        op = ClipperLib::ctDifference;
-    } else if ( poly_op == POLY_INT ) {
-        op = ClipperLib::ctIntersection;
-    } else if ( poly_op == POLY_XOR ) {
-        op = ClipperLib::ctXor;
-    } else if ( poly_op == POLY_UNION ) {
-        op = ClipperLib::ctUnion;
-    } else {
-        throw sg_exception("Unknown polygon op, exiting.");
-    }
-
-    ClipperLib::Clipper c;
-    c.Clear();
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
-
-    c.Execute(op, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
-
-    make_tg_poly_from_clipper( clipper_result, &result );
-
-    return result;
-}
-
-
-// Difference
-TGPolygon tgPolygonDiff( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip_clipper( POLY_DIFF, subject, clip );
-}
-
-// Intersection
-TGPolygon tgPolygonInt( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip_clipper( POLY_INT, subject, clip );
-}
-
-// Exclusive or
-TGPolygon tgPolygonXor( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip_clipper( POLY_XOR, subject, clip );
-}
-
-// Union
-TGPolygon tgPolygonUnion( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip_clipper( POLY_UNION, subject, clip );
-}
-
-TGPolygon tgPolygonUnion( const poly_list& clips )
-{
-    ClipperLib::Polygons clipper_result;
-    ClipperLib::Clipper c;
-    TGPolygon result;
-
-    c.Clear();
-    for (unsigned int i=0; i<clips.size(); i++) {
-        ClipperLib::Polygons clipper_clip;
-        make_clipper_poly( clips[i], &clipper_clip );
-        c.AddPolygons(clipper_clip, ClipperLib::ptClip);
-    }
-    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
-
-    make_tg_poly_from_clipper( clipper_result, &result );
-
-    return result;
-}
-
-
-
-// Accumulator optimization ( to keep from massive data copies and format changes
-// Start out the accumulator as a list of Polygons - so we can bounding box check
-// new additions
-typedef std::vector < ClipperLib::Polygons > ClipperPolysList;
-ClipperPolysList clipper_accumulator;
-
-void tgPolygonInitClipperAccumulator( void )
-{
-    clipper_accumulator.clear();
-}
-
-void tgPolygonFreeClipperAccumulator( void )
-{
-    clipper_accumulator.clear();
-}
-
-void tgPolygonDumpAccumulator( char* ds, char* layer, char* name )
-{
-    void* ds_id = tgShapefile::OpenDatasource( ds );
-    void* l_id  = tgShapefile::OpenLayer( ds_id, layer );
-    TGPolygon accum;
-
-    for (unsigned int i=0; i<clipper_accumulator.size(); i++) {
-        make_tg_poly_from_clipper( clipper_accumulator[i], &accum );
-        tgShapefile::CreateFeature( ds_id, l_id, accum, name );
-    }
-
-    // close after each write
-    ds_id = tgShapefile::CloseDatasource( ds_id );
-}
-
-void tgPolygonAddToClipperAccumulator( const TGPolygon& subject, bool dump )
-{
-    ClipperLib::Polygons clipper_subject;
-    make_clipper_poly( subject, &clipper_subject );
-
-    clipper_accumulator.push_back( clipper_subject );
-}
-
-TGPolygon tgPolygonDiffClipperWithAccumulator( const TGPolygon& subject )
-{
-    TGPolygon result;
-    SGGeod min, max, minp, maxp;
-    unsigned int num_hits = 0;
-
-    ClipperLib::Polygons clipper_subject;
-    make_clipper_poly( subject, &clipper_subject );
-
-    // Start with full poly
-    result = subject;
-    result.get_bounding_box(minp, maxp);
-    tg::Rectangle box1(minp, maxp);
-
-    ClipperLib::Clipper c;
-    c.Clear();
-
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-
-    // clip result against all polygons in the accum that intersect our bb
-    for (unsigned int i=0; i < clipper_accumulator.size(); i++) {
-        get_Clipper_bounding_box( clipper_accumulator[i], min, max);
-        tg::Rectangle box2(min, max);
-
-        if ( box2.intersects(box1) )
-        {
-            c.AddPolygons(clipper_accumulator[i], ClipperLib::ptClip);
-            num_hits++;
-        }
-    }
-
-    if (num_hits) {
-        ClipperLib::Polygons clipper_result;
-        
-        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-            exit(-1);
-        }
-
-        make_tg_poly_from_clipper( clipper_result, &result );
-    }
-
-    return result;
-}
-
-// CLIPPER
-TGPolygon tgPolygonDiffClipper( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip_clipper( POLY_DIFF, subject, clip );
-}
-
-TGPolygon tgPolygonIntClipper( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip_clipper( POLY_INT, subject, clip );
-}
-
-TGPolygon tgPolygonUnionClipper( const TGPolygon& subject, const TGPolygon& clip ) {
-    return polygon_clip_clipper( POLY_UNION, subject, clip );
-}
-
-void tgPolygonDumpClipper(const TGPolygon &poly, char* file)
-{
-    ClipperLib::Polygons clipper_subject;
-    make_clipper_poly( poly, &clipper_subject );
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "DUMP POLY" );
-    SG_LOG(SG_GENERAL, SG_ALERT, clipper_subject );
-    SG_LOG(SG_GENERAL, SG_ALERT, "\n" );
-}
-
-// canonify the polygon winding, outer contour must be anti-clockwise,
-// all inner contours must be clockwise.
-TGPolygon polygon_canonify( const TGPolygon& in_poly ) {
-    TGPolygon result;
-    result.erase();
-
-    // Negative areas indicate counter clockwise winding.  Postitive
-    // areas indicate clockwise winding.
-
-    int non_hole_count = 0;
-
-    for ( int i = 0; i < in_poly.contours(); ++i ) {
-	point_list contour = in_poly.get_contour( i );
-	int hole_flag = in_poly.get_hole_flag( i );
-	if ( !hole_flag ) {
-	    non_hole_count++;
-	    if ( non_hole_count > 1 )
-	      throw sg_exception("ERROR: polygon with more than one enclosing contour");
-	}
-	double area = in_poly.area_contour( i );
-	if ( hole_flag && (area < 0) ) {
-	    // reverse contour
-	    point_list rcontour;
-	    rcontour.clear();
-	    for ( int j = (int)contour.size() - 1; j >= 0; --j ) {
-		rcontour.push_back( contour[j] );
-	    }
-	    result.add_contour( rcontour, hole_flag );
-	} else if ( !hole_flag && (area > 0) ) {
-	    // reverse contour
-	    point_list rcontour;
-	    rcontour.clear();
-	    for ( int j = (int)contour.size() - 1; j >= 0; --j ) {
-		rcontour.push_back( contour[j] );
-	    }
-	    result.add_contour( rcontour, hole_flag );
-	} else {
-	    result.add_contour( contour, hole_flag );
-	}
-    }
-
-    return result;
-}
-
-
-// Traverse a polygon and split edges until they are less than max_len
-// (specified in meters)
-TGPolygon tgPolygonSplitLongEdges( const TGPolygon &poly, double max_len ) {
-    TGPolygon result;
-    Point3D p0, p1;
-    int i, j, k;
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "split_long_edges()");
-
-    for ( i = 0; i < poly.contours(); ++i ) {
-	SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
-	for ( j = 0; j < poly.contour_size(i) - 1; ++j ) {
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "point = " << j);
-	    p0 = poly.get_pt( i, j );
-	    p1 = poly.get_pt( i, j + 1 );
-	    SG_LOG(SG_GENERAL, SG_DEBUG, " " << p0 << "  -  " << p1);
-
-	    if ( fabs(p0.y()) < (90.0 - SG_EPSILON) 
-		 || fabs(p1.y()) < (90.0 - SG_EPSILON) )
-	    {
-	      double az1, az2, s;
-	      geo_inverse_wgs_84( 0.0,
-				  p0.y(), p0.x(), p1.y(), p1.x(),
-				  &az1, &az2, &s );
-	      SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
-
-	      if ( s > max_len ) {
-		int segments = (int)(s / max_len) + 1;
-		SG_LOG(SG_GENERAL, SG_DEBUG, "segments = " << segments);
-
-		double dx = (p1.x() - p0.x()) / segments;
-		double dy = (p1.y() - p0.y()) / segments;
-
-		for ( k = 0; k < segments; ++k ) {
-		    Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
-		    SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
-		    result.add_node( i, tmp );
-		}
-	      } else {
-		SG_LOG(SG_GENERAL, SG_DEBUG, p0);
-		result.add_node( i, p0 );
-	      }
-	    } else {
-	      SG_LOG(SG_GENERAL, SG_DEBUG, p0);
-	      result.add_node( i, p0 );
-	    }
-		
-	    // end of segment is beginning of next segment
-	}
-	p0 = poly.get_pt( i, poly.contour_size(i) - 1 );
-	p1 = poly.get_pt( i, 0 );
-
-	double az1, az2, s;
-	geo_inverse_wgs_84( 0.0,
-			    p0.y(), p0.x(), p1.y(), p1.x(),
-			    &az1, &az2, &s );
-	SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << s);
-
-	if ( s > max_len ) {
-	    int segments = (int)(s / max_len) + 1;
-	    SG_LOG(SG_GENERAL, SG_DEBUG, "segments = " << segments);
-	    
-	    double dx = (p1.x() - p0.x()) / segments;
-	    double dy = (p1.y() - p0.y()) / segments;
-
-	    for ( k = 0; k < segments; ++k ) {
-		Point3D tmp( p0.x() + dx * k, p0.y() + dy * k, 0.0 );
-		SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
-		result.add_node( i, tmp );
-	    }
-	} else {
-	    SG_LOG(SG_GENERAL, SG_DEBUG, p0);
-	    result.add_node( i, p0 );
-	}
-
-	// maintain original hole flag setting
-	result.set_hole_flag( i, poly.get_hole_flag( i ) );
-    }
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "split_long_edges() complete");
-
-    return result;
-}
-
-
-// Traverse a polygon and return the union of all the non-hole contours
-TGPolygon tgPolygonStripHoles( const TGPolygon &poly ) {
-    TGPolygon result; result.erase();
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "strip_out_holes()");
-
-    for ( int i = 0; i < poly.contours(); ++i ) {
-	// SG_LOG(SG_GENERAL, SG_DEBUG, "contour = " << i);
-        point_list contour = poly.get_contour( i );
-        if ( ! poly.get_hole_flag(i) ) {
-            TGPolygon tmp;
-            tmp.add_contour( contour, poly.get_hole_flag(i) );
-            result = tgPolygonUnion( tmp, result );
-        }
-    }
-
-    return result;
-}
-
-void PrintClipperPoly( ClipperLib::Polygons polys )
-{
-    int nContours = polys.size();
-
-    SG_LOG(SG_GENERAL, SG_INFO, "CLIPPER POLY : contours " << nContours );
-
-    for (int i = 0; i < nContours; i++) {
-    	int nPoints = polys[i].size();
-        SG_LOG(SG_GENERAL, SG_INFO, nPoints );
-    	
-    	for (int j = 0; j < nPoints; j++) {
-            SG_LOG(SG_GENERAL, SG_INFO, "(" << polys[i][j].X << "," << polys[i][j].Y << ")" );
-	    }
-    }
-}
-
-TGPolygon tgPolygonExpand(const TGPolygon &poly, double delta)
-{
-    TGPolygon result;
-
-    ClipperLib::Polygons clipper_src, clipper_dst;
-    
-    make_clipper_poly( poly, &clipper_src );
-
-    //SG_LOG(SG_GENERAL, SG_INFO, "Clipper Source" );
-    //PrintClipperPoly( clipper_src );
-
-    // convert delta from meters to clipper units
-    OffsetPolygons( clipper_src, clipper_dst, MakeClipperDelta(delta) );
-
-    //SG_LOG(SG_GENERAL, SG_INFO, "Clipper Dest" );
-    //PrintClipperPoly( clipper_dst );
-
-	make_tg_poly_from_clipper( clipper_dst, &result );
-
-    return result;
-}
-
-TGPolygon tgPolygonSimplify(const TGPolygon &poly)
-{
-    TGPolygon result;
-    ClipperLib::Polygons clipper_poly;
-    
-    make_clipper_poly( poly, &clipper_poly );
-
-    SimplifyPolygons(clipper_poly);
-
-	make_tg_poly_from_clipper( clipper_poly, &result );
-
-    return result;
-}
-
-
-// Send a polygon to standard output.
-std::ostream& operator << (std::ostream &output, const TGPolygon &poly)
-{
-    int  nContours = poly.contours();
-
-    // Save the number of contours
-    output << nContours << "\n";
-    for (int i = 0; i < nContours; i++) {
-        int nPoints = poly.contour_size(i);
-
-        // Save number of points in the contour
-        output << nPoints << "\n";
-
-        // Then save the points
-        for ( int j = 0; j < nPoints; j++ ) {
-            output << poly.get_pt(i, j).x() << " ";
-            output << poly.get_pt(i, j).y() << " ";
-            output << poly.get_pt(i, j).z() << "\n";
-        }
-
-        // Then save contour hole flag
-        output << poly.get_hole_flag(i) << "\n";
-    }
-
-    return output;
-}
-
-void TGPolygon::SaveToGzFile(gzFile& fp) const
-{
-    int  nContours = poly.size();
-
-    // Save the number of contours
-    sgWriteInt( fp, nContours );
-    for (int i = 0; i < nContours; i++) {
-        int nPoints = poly[i].size();
-
-        // Save number of points in the contour
-        sgWriteInt( fp, nPoints );
-
-        // Then save the points
-        for ( int j = 0; j < nPoints; j++ ) {
-            sgWritePoint3D( fp, poly[i][j] );
-        }
-
-        sgWriteInt( fp, hole_list[i] );
-    }
-}
-// Read a polygon from input buffer.
-std::istream& operator >> (std::istream &input, TGPolygon &poly)
-{
-    int    nContours;
-    double x, y, z;
-
-    // Read the number of contours
-    input >> nContours;
-    for (int i = 0; i < nContours; i++) {
-        int nPoints;
-        int hole;
-
-        // Read number of points in the contour
-        input >> nPoints;
-
-        // Then read the points
-        for ( int j = 0; j < nPoints; j++ ) {
-            input >> x;
-            input >> y;
-            input >> z;
-
-            poly.add_node(i, Point3D(x,y,z));
-        }
-
-        // Then read contour hole flag
-        input >> hole;
-        poly.set_hole_flag(i, hole);
-    }
-
-    return input;
-}
-
-void TGPolygon::LoadFromGzFile(gzFile& fp)
-{
-    int nContours;
-    int nPoints;
-    int hole;
-    Point3D pt;
-
-    // Save the number of contours
-    sgReadInt( fp, &nContours );
-    for (int i = 0; i < nContours; i++) {
-        sgReadInt( fp, &nPoints );
-
-        // Then read the points
-        for ( int j = 0; j < nPoints; j++ ) {
-            sgReadPoint3D( fp, pt );
-            add_node( i, pt );
-        }
-
-        sgReadInt( fp, &hole );
-        set_hole_flag( i, hole );
-    }
-}
-
-
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// NEW IMPLEMENTATIONS
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
-#include <CGAL/intersections.h>
-
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Triangulation_face_base_with_info_2.h>
-#include <CGAL/Polygon_2.h>
-#include <CGAL/Triangle_2.h>
-#include <iostream>
 
 
 
@@ -1857,11 +874,11 @@ tg::Rectangle tgContour::GetBoundingBox( void ) const
 tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
 {
     tgPolygon result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
-        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ) );
+        all_nodes.add( subject.GetNode(i) );
     }
 
     ClipperLib::Polygon clipper_subject = tgContour::ToClipper( subject );
@@ -1883,11 +900,11 @@ tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
 tgPolygon tgPolygon::Union( const tgContour& subject, tgPolygon& clip )
 {
     tgPolygon result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
-        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ));
+        all_nodes.add( subject.GetNode(i) );
     }
 
     ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
@@ -1906,11 +923,11 @@ tgPolygon tgPolygon::Union( const tgContour& subject, tgPolygon& clip )
     return result;
 }
 
-tgContour tgContour::AddColinearNodes( const tgContour& subject, TGTriNodes nodes )
+tgContour tgContour::AddColinearNodes( const tgContour& subject, UniqueSGGeodSet& nodes )
 {
     SGGeod p0, p1;
     tgContour result;
-    point_list tmp_nodes = nodes.get_node_list();
+    std::vector<SGGeod>& tmp_nodes = nodes.get_list();
 
     for ( unsigned int n = 0; n < subject.GetSize()-1; n++ ) {
         p0 = subject.GetNode( n );
@@ -2143,12 +1160,12 @@ tgPolygon tgPolygon::SplitLongEdges( const tgPolygon& subject, double dist )
 tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
 {
     tgPolygon result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
         for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+            all_nodes.add( subject.GetNode(i, j) );
         }
     }
 
@@ -2176,12 +1193,12 @@ tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
 tgPolygon tgPolygon::Simplify( const tgPolygon& subject )
 {
     tgPolygon result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
         for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+            all_nodes.add( subject.GetNode(i, j) );
         }
     }
 
@@ -2213,7 +1230,7 @@ tgPolygon tgPolygon::RemoveTinyContours( const tgPolygon& subject )
             SG_LOG(SG_GENERAL, SG_DEBUG, "remove_tiny_contours NO - " << c << " area is " << area << " requirement is " << min_area);
             result.AddContour( contour );
         } else {
-            SG_LOG(SG_GENERAL, SG_INFO, "remove_tiny_contours " << c << " area is " << area << ": removing");
+            SG_LOG(SG_GENERAL, SG_DEBUG, "remove_tiny_contours " << c << " area is " << area << ": removing");
         }
     }
 
@@ -2283,29 +1300,6 @@ tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
 
     return result;
 }
-
-#if 0
-inline double CalculateTheta( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2 )
-{
-    SGVec2d v0, v1, v2;
-    SGVec2d u, v;
-    double  udist, vdist, uv_dot;
-
-    v0 = SGVec2d( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
-    v1 = SGVec2d( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
-    v2 = SGVec2d( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
-
-    u  = v1 - v0;
-    udist = norm(u);
-
-    v = v1 - v2;
-    vdist = norm(v);
-
-    uv_dot = dot(u, v);
-
-    return acos( uv_dot / (udist * vdist) );
-}
-#endif
 
 inline double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, const SGVec3d& cp )
 {
@@ -2445,8 +1439,6 @@ bool getIntersection_cgal(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, 
     }
 }
 
-#include <simgear/math/sg_geodesy.hxx>
-
 tgPolygon tgPolygon::Expand( const SGGeod& subject, double offset )
 {
     tgPolygon result;
@@ -2482,9 +1474,6 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
     SGGeod calc_outer;
 
     double last_end_v = 0.0f;
-//    double heading = 0.0f;
-//    double az2 = 0.0f;
-//    double dist = 0.0f;
 
     tgContour      expanded;
     tgPolygon      segment;
@@ -2594,14 +1583,14 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
 
 tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 {
-    tgPolygon     result;
-    TGTriNodes    all_nodes;
-    std::ofstream dmpfile;
+    tgPolygon       result;
+    UniqueSGGeodSet all_nodes;
+    std::ofstream   dmpfile;
 
     /* before union - gather all nodes */
     for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
         for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+            all_nodes.add( subject.GetNode(i, j) );
         }
     }
 
@@ -2644,14 +1633,14 @@ tgPolygon tgPolygon::Union( const tgpolygon_list& polys )
 {
     ClipperLib::Polygons clipper_result;
     ClipperLib::Clipper c;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
     tgPolygon  result;
 
     /* before union - gather all nodes */
     for ( unsigned int i=0; i<polys.size(); i++ ) {
         for ( unsigned int j = 0; j < polys[i].Contours(); ++j ) {
             for ( unsigned int k = 0; k < polys[i].ContourSize( j ); ++k ) {
-                all_nodes.unique_add( Point3D::fromSGGeod( polys[i].GetNode(j, k) ) );
+                all_nodes.add( polys[i].GetNode(j, k) );
             }
         }
     }
@@ -2672,12 +1661,12 @@ tgPolygon tgPolygon::Union( const tgpolygon_list& polys )
 tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 {
     tgPolygon result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
         for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+            all_nodes.add( subject.GetNode(i, j) );
         }
     }
 
@@ -2703,12 +1692,12 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip )
 {
     tgPolygon result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before intersect - gather all nodes */
     for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
         for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+            all_nodes.add( subject.GetNode(i, j) );
         }
     }
 
@@ -2861,7 +1850,7 @@ tgcontour_list tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& s
     return unmerged;
 }
 
-tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, TGTriNodes& nodes )
+tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, UniqueSGGeodSet& nodes )
 {
     tgPolygon result;
 
@@ -3198,9 +2187,8 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
     sgReadInt( fp, (int *)&preserve3d );
 }
 
+#if 0
 ////////////////////////////// CHOP ////////////////////////////////
-#include <simgear/bucket/newbucket.hxx>
-#include <simgear/misc/sg_path.hxx>
 
 // initialize the unique polygon index counter stored in path
 static long int poly_index = 0;
@@ -3222,6 +2210,7 @@ bool tgPolygon::ChopIdxInit( const std::string& path )
 
     return true;
 }
+#endif
 
 /************************ TESSELATION ***********************************/
 
@@ -3463,11 +2452,11 @@ std::ostream& operator<< ( std::ostream& output, const tgTexParams& subject )
 tgPolygon tgAccumulator::Diff( const tgContour& subject )
 {
     tgPolygon  result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
-        all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i) ));
+        all_nodes.add( subject.GetNode(i) );
     }
 
     unsigned int  num_hits = 0;
@@ -3530,12 +2519,12 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
 tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
 {
     tgPolygon result;
-    TGTriNodes all_nodes;
+    UniqueSGGeodSet all_nodes;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
         for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            all_nodes.unique_add( Point3D::fromSGGeod( subject.GetNode(i, j) ) );
+            all_nodes.add( subject.GetNode(i, j) );
         }
     }
 
@@ -3892,9 +2881,6 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
     }
 }
 
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/sync/named_mutex.hpp>
-
 long int tgChopper::GenerateIndex( std::string path )
 {
     std::string index_file = path + "/chop.idx";
@@ -4034,50 +3020,6 @@ void* tgShapefile::OpenLayer( void* ds_id, const char* layer_name ) {
     return (void*)layer;
 }
 
-void tgShapefile::CreateFeature( void* ds_id, void* l_id, const TGPolygon &poly, const char* description  )
-{
-    OGRLayer*      layer      = (OGRLayer*)l_id;
-    OGRPolygon*    polygon    = new OGRPolygon();
-
-    for ( int i = 0; i < poly.contours(); i++ ) {
-        bool skip_ring=false;
-        point_list contour = poly.get_contour( i );
-
-        if (contour.size()<3) {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
-            skip_ring=true;
-        }
-
-        // FIXME: Current we ignore the hole-flag and instead assume
-        //        that the first ring is not a hole and the rest
-        //        are holes
-        OGRLinearRing *ring=new OGRLinearRing();
-        for (unsigned int pt = 0; pt < contour.size(); pt++) {
-            OGRPoint *point=new OGRPoint();
-
-            point->setX( contour[pt].x() );
-            point->setY( contour[pt].y() );
-            point->setZ( 0.0 );
-            ring->addPoint(point);
-        }
-        ring->closeRings();
-
-        if (!skip_ring) {
-            polygon->addRingDirectly(ring);
-        }
-
-        OGRFeature* feature = NULL;
-        feature = new OGRFeature( layer->GetLayerDefn() );
-        feature->SetField("ID", description);
-        feature->SetGeometry(polygon);
-        if( layer->CreateFeature( feature ) != OGRERR_NONE )
-        {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-        }
-        OGRFeature::DestroyFeature(feature);
-    }
-}
-
 void tgShapefile::CloseLayer( void* l_id )
 {
     //OGRLayer::DestroyLayer( layer );
@@ -4090,4 +3032,35 @@ void* tgShapefile::CloseDatasource( void* ds_id )
     OGRDataSource::DestroyDataSource( datasource );
 
     return (void *)-1;
+}
+
+void clipper_to_shapefile( ClipperLib::Polygons polys, char* ds )
+{
+#if 0
+    ClipperLib::Polygons contour;
+    TGPolygon tgcontour;
+    char layer[32];
+
+    void*       ds_id = tgShapefile::OpenDatasource( ds );
+
+    for (unsigned int i = 0; i < polys.size(); ++i) {
+        if  ( Orientation( polys[i] ) ) {
+            sprintf( layer, "%04d_boundary", i );
+        } else {
+            sprintf( layer, "%04d_hole", i );
+        }
+
+        void* l_id  = tgShapefile::OpenLayer( ds_id, layer );
+        contour.clear();
+        contour.push_back( polys[i] );
+
+        tgcontour.erase();
+        make_tg_poly_from_clipper( contour, &tgcontour );
+
+        tgShapefile::CreateFeature( ds_id, l_id, tgcontour, "contour" );
+    }
+
+    // close after each write
+    ds_id = tgShapefile::CloseDatasource( ds_id );
+#endif
 }

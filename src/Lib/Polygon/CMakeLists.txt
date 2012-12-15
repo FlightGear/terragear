@@ -16,7 +16,5 @@ add_library(Polygon STATIC
     tg_unique_vec2f.hxx
     tg_unique_vec3d.hxx
     tg_unique_vec3f.hxx
-    trinodes.cxx
-    trinodes.hxx
     point3d.hxx
 )

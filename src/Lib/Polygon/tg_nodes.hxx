@@ -8,9 +8,6 @@
 #include <cstdlib>
 
 #include <CGAL/Simple_cartesian.h>
-//#include <CGAL/Cartesian.h>
-//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-
 #include <CGAL/Kd_tree.h>
 #include <CGAL/algorithm.h>
 #include <CGAL/Fuzzy_iso_box.h>
@@ -144,6 +141,7 @@ private:
     Tree            tg_kd_tree;
     bool            kd_tree_valid;
 
+#if 0
     // return true of the two points are "close enough" as defined by
     // FG_PROXIMITY_EPSILON
     bool close_enough_2d( const SGGeod& p1, const SGGeod& p2 ) const;
@@ -155,9 +153,10 @@ private:
     // return true of the two points are "close enough" as defined by
     // FG_COURSE_EPSILON
     bool course_close_enough( const SGGeod& p1, const SGGeod& p2 );
+#endif
 };
 
-
+#if 0
 // return true of the two points are "close enough" as defined by
 // FG_PROXIMITY_EPSILON checking just x and y dimensions
 inline bool TGNodes::close_enough_2d( const SGGeod& p1, const SGGeod& p2 )
@@ -196,5 +195,6 @@ inline bool TGNodes::course_close_enough( const SGGeod& p1, const SGGeod& p2 )
         return false;
     }
 }
+#endif
 
 #endif // _TG_NODES_HXX
