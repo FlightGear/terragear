@@ -18,10 +18,5 @@ add_library(Polygon STATIC
     tg_unique_vec3f.hxx
     trinodes.cxx
     trinodes.hxx
-    TNT/jama_qr.h
-    TNT/tnt_array1d.h
-    TNT/tnt_array2d.h
-    TNT/tnt_i_refvec.h
-    TNT/tnt_math_utils.h
     point3d.hxx
 )
