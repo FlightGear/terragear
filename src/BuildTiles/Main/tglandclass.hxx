@@ -36,7 +36,7 @@
 #include <simgear/math/sg_types.hxx>
 #include <simgear/io/lowlevel.hxx>
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_polygon.hxx>
 
 #define TG_MAX_AREA_TYPES       128
 

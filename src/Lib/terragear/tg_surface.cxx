@@ -32,7 +32,7 @@
 #include <Array/array.hxx>
 
 #include "TNT/jama_qr.h"
-#include "surface.hxx"
+#include "tg_surface.hxx"
 
 // Final grid size for surface (in meters)
 const double coarse_grid = 300.0;

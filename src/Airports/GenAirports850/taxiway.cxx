@@ -4,6 +4,8 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/SGMath.hxx>
 
+#include <terragear/tg_shapefile.hxx>
+
 #include "global.hxx"
 #include "apt_math.hxx"
 #include "beznode.hxx"
@@ -135,7 +137,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
         tgPolygon taxi_poly;
         taxi_poly.AddContour( taxi_contour );
 
-        tgPolygon::ToShapefile( taxi_poly, "./airport_dbg", std::string("preclip"), shapefile_name );
+        tgShapefile::FromPolygon( taxi_poly, "./airport_dbg", std::string("preclip"), shapefile_name );
         accum.ToShapefiles( "./airport_dbg", "accum" );
     }
 
@@ -151,7 +153,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
     rwy_polys.push_back( split );
 
     if(  shapefile_name.size() ) {
-        tgPolygon::ToShapefile( split, "./airport_dbg", std::string("postclip"), shapefile_name );
+        tgShapefile::FromPolygon( split, "./airport_dbg", std::string("postclip"), shapefile_name );
     }
 
     accum.Add( taxi_contour );

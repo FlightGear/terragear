@@ -19,6 +19,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
 
+#include <stdlib.h>
+
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/debug/logstream.hxx>
@@ -26,11 +28,11 @@
 
 #include <boost/lexical_cast.hpp>
 
+#include <terragear/tg_shapefile.hxx>
+
 #include "global.hxx"
 #include "beznode.hxx"
 #include "runway.hxx"
-
-#include <stdlib.h>
 
 using std::string;
 struct sections
@@ -301,14 +303,14 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     GENAPT_LOG(SG_GENERAL, SG_DEBUG, section );
 
     if(  shapefile_name.size() ) {
-        tgPolygon::ToShapefile( section, "./airport_dbg", std::string("preclip"), shapefile_name );
+        tgShapefile::FromPolygon( section, "./airport_dbg", std::string("preclip"), shapefile_name );
     }
 
     // Clip the new polygon against what ever has already been created.
     tgPolygon clipped = accum.Diff( section );
 
     if(  shapefile_name.size() ) {
-        tgPolygon::ToShapefile( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
+        tgShapefile::FromPolygon( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
     }
 
     tgPolygon::RemoveSlivers( clipped, slivers );

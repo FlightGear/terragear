@@ -71,9 +71,6 @@ int main(int argc, char **argv) {
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
-    // Initialize shapefile support (for debugging)
-    tgShapefile::Init();
-
     //
     // Parse the command-line arguments.
     //

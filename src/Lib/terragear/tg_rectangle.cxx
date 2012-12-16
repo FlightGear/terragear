@@ -4,7 +4,7 @@
 //
 // This file is in the Public Domain and comes with NO WARRANTY OF ANY KIND.
 
-#include "rectangle.hxx"
+#include "tg_rectangle.hxx"
 
 tgRectangle::tgRectangle()
 {

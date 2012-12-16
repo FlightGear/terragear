@@ -26,6 +26,9 @@
 
 #include <simgear/debug/logstream.hxx>
 
+#include <terragear/tg_accumulator.hxx>
+#include <terragear/tg_shapefile.hxx>
+
 #include "tgconstruct.hxx"
 
 using std::string;
@@ -97,9 +100,9 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // Dump the masks
     if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
-        tgPolygon::ToShapefile( land_mask, ds_name, "land_mask", "" );
-        tgPolygon::ToShapefile( water_mask, ds_name, "water_mask", "" );
-        tgPolygon::ToShapefile( island_mask, ds_name, "island_mask", "" );
+        tgShapefile::FromPolygon( land_mask, ds_name, "land_mask", "" );
+        tgShapefile::FromPolygon( water_mask, ds_name, "water_mask", "" );
+        tgShapefile::FromPolygon( island_mask, ds_name, "island_mask", "" );
     }
 
     // process polygons in priority order
@@ -130,7 +133,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
                 sprintf(layer, "pre_clip_%d", polys_in.get_poly( i, j ).GetId() );
                 sprintf(name, "shape %d,%d", i,j);
-                tgPolygon::ToShapefile( tmp, ds_name, layer, name );
+                tgShapefile::FromPolygon( tmp, ds_name, layer, name );
 
                 sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
                 accum.ToShapefiles( ds_name, layer );
@@ -145,7 +148,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 sprintf(layer, "post_clip_%d", polys_in.get_poly( i, j ).GetId() );
                 sprintf(name, "shape %d,%d", i,j);
 
-                tgPolygon::ToShapefile( clipped, ds_name, layer, name );
+                tgShapefile::FromPolygon( clipped, ds_name, layer, name );
             }
 
             // only add to output list if the clip left us with a polygon
@@ -190,7 +193,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         char name[32];
         for ( unsigned int i=0; i<slivers.size(); i++ ) {
             sprintf( name, "sliver %4d", i );
-            tgContour::ToShapefile( slivers[i], ds_name, "slivers", name );
+            tgShapefile::FromContour( slivers[i], ds_name, "slivers", name );
         }
     }
 #endif
@@ -219,7 +222,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 char name[32];
                 for ( unsigned int i=0; i<slivers.size(); i++ ) {
                     sprintf( name, "sliver %4d", i );
-                    tgContour::ToShapefile( slivers[i], ds_name, "remains slivers", name );
+                    tgShapefile::FromContour( slivers[i], ds_name, "remains slivers", name );
                 }
             }
 

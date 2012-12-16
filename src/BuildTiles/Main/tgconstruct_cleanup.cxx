@@ -28,6 +28,8 @@
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 
+#include <terragear/tg_shapefile.hxx>
+
 #include "tgconstruct.hxx"
 
 void TGConstruct::FixTJunctions( void ) {
@@ -86,21 +88,21 @@ void TGConstruct::CleanClippedPolys() {
             poly = tgPolygon::Snap(poly, gSnap);
 
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgPolygon::ToShapefile( poly, ds_name, "snapped", "" );
+                tgShapefile::FromPolygon( poly, ds_name, "snapped", "" );
             }
 
             // step 2 : remove_dups
             poly = tgPolygon::RemoveDups( poly );
 
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgPolygon::ToShapefile( poly, ds_name, "rem_dups", "" );
+                tgShapefile::FromPolygon( poly, ds_name, "rem_dups", "" );
             }
 
             // step 3 : remove_bad_contours
             poly = tgPolygon::RemoveBadContours( poly );
 
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgPolygon::ToShapefile( poly, ds_name, "rem_bcs", "" );
+                tgShapefile::FromPolygon( poly, ds_name, "rem_bcs", "" );
             }
 
             polys_clipped.set_poly(area, p, poly);

@@ -1,7 +1,7 @@
 #ifndef _BEZPOLY_H_
 #define _BEZPOLY_H_
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_polygon.hxx>
 
 #include "beznode.hxx"
 #include "linearfeature.hxx"

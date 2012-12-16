@@ -27,6 +27,8 @@
 
 #include <simgear/debug/logstream.hxx>
 
+#include <terragear/tg_shapefile.hxx>
+
 #include "tgconstruct.hxx"
 
 void TGConstruct::TesselatePolys( void )
@@ -40,7 +42,7 @@ void TGConstruct::TesselatePolys( void )
             tgPolygon poly = polys_clipped.get_poly(area, p );
 
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgPolygon::ToShapefile( poly, ds_name, "preteselate", "" );
+                tgShapefile::FromPolygon( poly, ds_name, "preteselate", "" );
             }
 
             tgRectangle rect = poly.GetBoundingBox();

@@ -32,13 +32,15 @@
 #include <simgear/compiler.h>
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGQueue.hxx>
-
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sg_path.hxx>
 
 #include <Include/version.h>
-#include <Polygon/polygon.hxx>
+
+#include <terragear/tg_polygon.hxx>
+#include <terragear/tg_chopper.hxx>
+#include <terragear/tg_shapefile.hxx>
 
 /* stretch endpoints to reduce slivers in linear data ~.1 meters */
 #define EP_STRETCH  (0.1)
@@ -195,7 +197,7 @@ void Decoder::processPolygon(OGRPolygon* poGeometry, const string& area_type )
     // bool preserve3D = ((poGeometry->getGeometryType()&wkb25DBit)==wkb25DBit);
 
     // first add the outer ring
-    tgPolygon shape = tgPolygon::FromOGR( poGeometry );
+    tgPolygon shape = tgShapefile::ToPolygon( poGeometry );
 
     if ( max_segment_length > 0 ) {
         shape = tgPolygon::SplitLongEdges( shape, max_segment_length );

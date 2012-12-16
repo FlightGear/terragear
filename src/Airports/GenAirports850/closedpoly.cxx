@@ -2,7 +2,8 @@
 
 #include <simgear/debug/logstream.hxx>
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_polygon.hxx>
+#include <terragear/tg_shapefile.hxx>
 
 #include "global.hxx"
 #include "beznode.hxx"
@@ -455,7 +456,7 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
     if ( is_pavement && pre_tess.Contours() )
     {
         if(  shapefile_name.size() ) {
-            tgPolygon::ToShapefile( pre_tess, "./airport_dbg", std::string("preclip"), shapefile_name );
+            tgShapefile::FromPolygon( pre_tess, "./airport_dbg", std::string("preclip"), shapefile_name );
             accum.ToShapefiles( "./airport_dbg", "accum" );
         }
 
@@ -463,7 +464,7 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
 
         if ( clipped.Contours() ) {
             if(  shapefile_name.size() ) {
-                tgPolygon::ToShapefile( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
+                tgShapefile::FromPolygon( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
             }
 
             tgPolygon::RemoveSlivers( clipped, slivers );

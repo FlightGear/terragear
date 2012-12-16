@@ -12,8 +12,9 @@
 #include <string>
 #include <string.h>
 
-#include <Polygon/clipper.hpp>
-#include <Polygon/polygon.hxx>
+#include <terragear/clipper.hpp>
+#include <terragear/tg_polygon.hxx>
+#include <terragear/tg_shapefile.hxx>
 
 //---------------------------------------------------------------------------
 
@@ -259,9 +260,8 @@ int main(int argc, char* argv[])
   }
 
   if (show_svg) {
-    tgShapefile::Init();
-    clipper_to_shapefile( subject, "./clptst_subject" );
-    clipper_to_shapefile( clip, "./clptst_clip" );
+    tgShapefile::FromClipper( subject, "./clptst_subject", "subject", "subject" );
+    tgShapefile::FromClipper( clip, "./clptst_clip", "clip", "clip" );
   }
   
   ClipType clipType;
@@ -315,7 +315,7 @@ int main(int argc, char* argv[])
 
       if( show_svg ) {
         cout << "Generating shapefile\n";
-        clipper_to_shapefile( solution, "./clptst_solution" );
+        tgShapefile::FromClipper( solution, "./clptst_solution", "solution", "solution" );
       }
   } else
       cout << "failed.\n\n";

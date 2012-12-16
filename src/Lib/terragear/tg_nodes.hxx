@@ -39,7 +39,7 @@ typedef CGAL::Kd_tree<Traits> Tree;
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/io/lowlevel.hxx>
 
-#include <Polygon/tg_unique_tgnode.hxx>
+#include "tg_unique_tgnode.hxx"
 
 #define FG_PROXIMITY_EPSILON 0.000001
 #define FG_COURSE_EPSILON 0.0001

@@ -20,7 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
 
-#include <Polygon/surface.hxx>
+#include <terragear/tg_surface.hxx>
 
 // lookup node elevations for each point in the SGGeod list.  Returns
 // average of all points.  Doesn't modify the original list.

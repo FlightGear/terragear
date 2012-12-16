@@ -16,7 +16,9 @@
 #ifndef _HELIPAD_HXX
 #define _HELIPAD_HXX
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_polygon.hxx>
+#include <terragear/tg_accumulator.hxx>
+#include <terragear/tg_light.hxx>
 
 class Helipad
 {

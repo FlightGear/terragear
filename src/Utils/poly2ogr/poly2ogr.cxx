@@ -45,7 +45,7 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sg_dir.hxx>
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_polygon.hxx>
 
 using std::string;
 

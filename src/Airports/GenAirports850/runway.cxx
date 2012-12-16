@@ -5,7 +5,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/SGGeodesy.hxx>
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_polygon.hxx>
 
 #include "global.hxx"
 #include "apt_math.hxx"

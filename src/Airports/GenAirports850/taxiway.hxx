@@ -1,7 +1,9 @@
 #ifndef _TAXIWAY_H_
 #define _TAXIWAY_H_
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_light.hxx>
+#include <terragear/tg_polygon.hxx>
+#include <terragear/tg_accumulator.hxx>
 
 #include "apt_math.hxx"
 

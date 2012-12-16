@@ -28,7 +28,7 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "TNT/tnt_array2d.h"
-#include "polygon.hxx"
+#include "tg_polygon.hxx"
 
 /***
  * A dirt simple matrix class for our convenience based on top of SGGeod

@@ -1,7 +1,7 @@
 #ifndef _LINKED_OBJECTS_H_
 #define _LINKED_OBJECTS_H_
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_polygon.hxx>
 
 class Windsock
 {

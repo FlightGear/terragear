@@ -1,7 +1,8 @@
 #ifndef _OBJECT_H_
 #define _OBJECT_H_
 
-#include <Polygon/polygon.hxx>
+#include <terragear/tg_light.hxx>
+#include <terragear/tg_polygon.hxx>
 
 class LightingObj
 {

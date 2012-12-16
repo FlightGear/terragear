@@ -12,10 +12,11 @@
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
-#include <Polygon/polygon.hxx>
-#include <Polygon/tg_unique_geod.hxx>
-#include <Polygon/tg_unique_vec3f.hxx>
-#include <Polygon/tg_unique_vec2f.hxx>
+#include <terragear/tg_polygon.hxx>
+#include <terragear/tg_chopper.hxx>
+#include <terragear/tg_unique_geod.hxx>
+#include <terragear/tg_unique_vec3f.hxx>
+#include <terragear/tg_unique_vec2f.hxx>
 
 #include "airport.hxx"
 #include "beznode.hxx"
@@ -627,7 +628,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) 
     {
         tgPolygon poly = rwy_polys[k];
-        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes.get_list() );
+        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes );
         GENAPT_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
         rwy_polys[k] = poly;
     }
@@ -636,7 +637,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) 
     {
         tgPolygon poly = pvmt_polys[k];
-        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes.get_list() );
+        poly = tgPolygon::AddColinearNodes( poly, tmp_pvmt_nodes );
         GENAPT_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
         pvmt_polys[k] = poly;
     }
@@ -645,7 +646,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     for ( unsigned int k = 0; k < line_polys.size(); ++k ) 
     {
         tgPolygon poly = line_polys[k];
-        poly = tgPolygon::AddColinearNodes( poly, tmp_feat_nodes.get_list() );
+        poly = tgPolygon::AddColinearNodes( poly, tmp_feat_nodes );
         GENAPT_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
         line_polys[k] = poly;
     }
@@ -673,7 +674,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     log_time = time(0);
     GENAPT_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << DebugTimeToString(log_time) );
 
-    base_poly = tgPolygon::AddColinearNodes( base_poly, tmp_pvmt_nodes.get_list() );
+    base_poly = tgPolygon::AddColinearNodes( base_poly, tmp_pvmt_nodes );
     base_poly = tgPolygon::Snap( base_poly, gSnap );
 
     // Finally find slivers in base

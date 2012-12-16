@@ -30,8 +30,8 @@
 #include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <Polygon/tg_unique_vec3f.hxx>
-#include <Polygon/tg_unique_vec2f.hxx>
+#include <terragear/tg_unique_vec3f.hxx>
+#include <terragear/tg_unique_vec2f.hxx>
 
 #include "tgconstruct.hxx"
 

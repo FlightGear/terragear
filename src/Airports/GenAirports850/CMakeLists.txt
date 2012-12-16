@@ -25,7 +25,7 @@ add_executable(genapts850
 )
 
 target_link_libraries(genapts850
-    Polygon
+    terragear
     Array
     ${GDAL_LIBRARY}
     ${SIMGEAR_CORE_LIBRARIES}

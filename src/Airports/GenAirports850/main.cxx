@@ -301,9 +301,6 @@ int main(int argc, char **argv)
     	exit(-1);
     }
 
-    // Initialize shapefile support (for debugging)
-    tgShapefile::Init();
-
     sg_gzifstream in( input_file );
     if ( !in.is_open() ) 
     {

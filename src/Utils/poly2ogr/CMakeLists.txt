@@ -7,7 +7,8 @@ endif(MSVC)
 
 target_link_libraries(poly2ogr
     ${GDAL_LIBRARY}
-    Polygon ${GETOPT_LIB}
+    terragear
+    ${GETOPT_LIB}
     ${SIMGEAR_CORE_LIBRARIES}
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
