@@ -30,13 +30,12 @@
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGGuard.hxx>
 #include <simgear/math/sg_geodesy.hxx>
+#include <simgear/io/lowlevel.hxx>
 #include <simgear/misc/texcoord.hxx>
 #include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
-
-#include <Polygon/point3d.hxx>
 
 #include "polygon.hxx"
 
@@ -160,87 +159,6 @@ double SGGeod_CalculateTheta( const SGGeod& p0, const SGGeod& p1, const SGGeod& 
 }
 
 bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
-                           const point_list& nodes, SGGeod& result,
-                           double bbEpsilon, double errEpsilon )
-{
-    bool found_node = false;
-    double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
-
-    SGGeod p0 = start;
-    SGGeod p1 = end;
-
-    double xdist = fabs(p0.getLongitudeDeg() - p1.getLongitudeDeg());
-    double ydist = fabs(p0.getLatitudeDeg()  - p1.getLatitudeDeg());
-
-    x_err_min = xdist + 1.0;
-    y_err_min = ydist + 1.0;
-
-    if ( xdist > ydist ) {
-        // sort these in a sensible order
-        SGGeod p_min, p_max;
-        if ( p0.getLongitudeDeg() < p1.getLongitudeDeg() ) {
-            p_min = p0;
-            p_max = p1;
-        } else {
-            p_min = p1;
-            p_max = p0;
-        }
-
-        m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
-        b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
-
-        for ( int i = 0; i < (int)nodes.size(); ++i ) {
-            // cout << i << endl;
-            SGGeod current = nodes[i].toSGGeod();
-
-            if ( (current.getLongitudeDeg() > (p_min.getLongitudeDeg() + (bbEpsilon))) && (current.getLongitudeDeg() < (p_max.getLongitudeDeg() - (bbEpsilon))) ) {
-                y_err = fabs(current.getLatitudeDeg() - (m * current.getLongitudeDeg() + b));
-
-                if ( y_err < errEpsilon ) {
-                    found_node = true;
-                    if ( y_err < y_err_min ) {
-                        result = current;
-                        y_err_min = y_err;
-                    }
-                }
-            }
-        }
-    } else {
-        // sort these in a sensible order
-        SGGeod p_min, p_max;
-        if ( p0.getLatitudeDeg() < p1.getLatitudeDeg() ) {
-            p_min = p0;
-            p_max = p1;
-        } else {
-            p_min = p1;
-            p_max = p0;
-        }
-
-        m1 = (p_min.getLongitudeDeg() - p_max.getLongitudeDeg()) / (p_min.getLatitudeDeg() - p_max.getLatitudeDeg());
-        b1 = p_max.getLongitudeDeg() - m1 * p_max.getLatitudeDeg();
-
-        for ( int i = 0; i < (int)nodes.size(); ++i ) {
-            SGGeod current = nodes[i].toSGGeod();
-
-            if ( (current.getLatitudeDeg() > (p_min.getLatitudeDeg() + (bbEpsilon))) && (current.getLatitudeDeg() < (p_max.getLatitudeDeg() - (bbEpsilon))) ) {
-
-                x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
-
-                if ( x_err < errEpsilon ) {
-                    found_node = true;
-                    if ( x_err < x_err_min ) {
-                        result = current;
-                        x_err_min = x_err;
-                    }
-                }
-            }
-        }
-    }
-
-    return found_node;
-}
-
-bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
                            const std::vector<SGGeod>& nodes, SGGeod& result,
                            double bbEpsilon, double errEpsilon )
 {
@@ -321,24 +239,6 @@ bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
     return found_node;
 }
 
-void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, point_list& tmp_nodes, tgContour& result, double bbEpsilon, double errEpsilon )
-{
-    SGGeod new_pt;
-
-    SG_LOG(SG_GENERAL, SG_BULK, "   " << p0 << " <==> " << p1 );
-
-    bool found_extra = FindIntermediateNode( p0, p1, tmp_nodes, new_pt, bbEpsilon, errEpsilon );
-
-    if ( found_extra ) {
-        AddIntermediateNodes( p0, new_pt, tmp_nodes, result, bbEpsilon, errEpsilon  );
-
-        result.AddNode( new_pt );
-        SG_LOG(SG_GENERAL, SG_BULK, "    adding = " << new_pt);
-
-        AddIntermediateNodes( new_pt, p1, tmp_nodes, result, bbEpsilon, errEpsilon  );
-    }
-}
-
 void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, std::vector<SGGeod>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
 {
     SGGeod new_pt;
@@ -385,7 +285,7 @@ static double Dist_ToClipper( double dist )
     return ( dist * ( CLIPPER_FIXEDPT / CLIPPER_FIXED1M ) );
 }
 
-static tg::Rectangle BoundingBox_FromClipper( const ClipperLib::Polygons& subject )
+static tgRectangle BoundingBox_FromClipper( const ClipperLib::Polygons& subject )
 {
     ClipperLib::IntPoint min_pt, max_pt;
     SGGeod min, max;
@@ -417,7 +317,7 @@ static tg::Rectangle BoundingBox_FromClipper( const ClipperLib::Polygons& subjec
     min = SGGeod_FromClipper( min_pt );
     max = SGGeod_FromClipper( max_pt );
 
-    return tg::Rectangle( min, max );
+    return tgRectangle( min, max );
 }
 
 
@@ -848,7 +748,7 @@ tgContour tgContour::Expand( const tgContour& subject, double offset )
     return result;
 }
 
-tg::Rectangle tgContour::GetBoundingBox( void ) const
+tgRectangle tgContour::GetBoundingBox( void ) const
 {
     SGGeod min, max;
 
@@ -868,7 +768,33 @@ tg::Rectangle tgContour::GetBoundingBox( void ) const
     min = SGGeod::fromDeg( minx, miny );
     max = SGGeod::fromDeg( maxx, maxy );
 
-    return tg::Rectangle( min, max );
+    return tgRectangle( min, max );
+}
+
+tgPolygon tgContour::Union( const tgContour& subject, tgPolygon& clip )
+{
+    tgPolygon result;
+    UniqueSGGeodSet all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
+        all_nodes.add( subject.GetNode(i) );
+    }
+
+    ClipperLib::Polygon clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
+    ClipperLib::Polygons clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    return result;
 }
 
 tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
@@ -1720,7 +1646,7 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
     return result;
 }
 
-tg::Rectangle tgPolygon::GetBoundingBox( void ) const
+tgRectangle tgPolygon::GetBoundingBox( void ) const
 {
     SGGeod min, max;
 
@@ -1742,7 +1668,7 @@ tg::Rectangle tgPolygon::GetBoundingBox( void ) const
     min = SGGeod::fromDeg( minx, miny );
     max = SGGeod::fromDeg( maxx, maxy );
 
-    return tg::Rectangle( min, max );
+    return tgRectangle( min, max );
 }
 
 void clipperToShapefile( ClipperLib::Polygons polys, const std::string& path, const std::string&layer, const std::string& name )
@@ -2460,7 +2386,7 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
     }
 
     unsigned int  num_hits = 0;
-    tg::Rectangle box1 = subject.GetBoundingBox();
+    tgRectangle box1 = subject.GetBoundingBox();
 
     ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
     ClipperLib::Polygons clipper_result;
@@ -2472,7 +2398,7 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
 
     // clip result against all polygons in the accum that intersect our bb
     for (unsigned int i=0; i < accum.size(); i++) {
-        tg::Rectangle box2 = BoundingBox_FromClipper( accum[i] );
+        tgRectangle box2 = BoundingBox_FromClipper( accum[i] );
 
         if ( box2.intersects(box1) )
         {
@@ -2529,7 +2455,7 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
     }
 
     unsigned int  num_hits = 0;
-    tg::Rectangle box1 = subject.GetBoundingBox();
+    tgRectangle box1 = subject.GetBoundingBox();
 
     ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
     ClipperLib::Polygons clipper_result;
@@ -2541,7 +2467,7 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
 
     // clip result against all polygons in the accum that intersect our bb
     for (unsigned int i=0; i < accum.size(); i++) {
-        tg::Rectangle box2 = BoundingBox_FromClipper( accum[i] );
+        tgRectangle box2 = BoundingBox_FromClipper( accum[i] );
 
         if ( box2.intersects(box1) )
         {
@@ -2674,14 +2600,12 @@ void tgChopper::Clip( const tgPolygon& subject,
                       const std::string& type,
                       SGBucket& b )
 {
-    Point3D p;
+    // p;
 
     SGGeod min, max;
     SGGeod c    = b.get_center();
     double span = b.get_width();
-
     tgPolygon base, result;
-//  char tile_name[256];
 
     // calculate bucket dimensions
     if ( (c.getLatitudeDeg() >= -89.0) && (c.getLatitudeDeg() < 89.0) ) {
@@ -2730,30 +2654,6 @@ void tgChopper::Clip( const tgPolygon& subject,
         }
         result.SetFlag(type);
 
-//        fprintf( rfp, "%s\n", type.c_str() );
-//
-//        if ( withTexparams ) {
-//            fprintf( rfp, "%.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f  %.15f\n",
-//                     tp.ref.getLongitudeDeg(), tp.ref.getLatitudeDeg(),
-//                     tp.width, tp.length,
-//                     tp.heading,
-//                     tp.minu, tp.maxu, tp.minv, tp.maxv);
-//        }
-
-//        fprintf( rfp, "%d\n", result.Contours() );
-//        for ( unsigned int i = 0; i < result.Contours(); ++i ) {
-//            fprintf( rfp, "%d\n", result.ContourSize(i) );
-//            fprintf( rfp, "%d\n", result.GetContour(i).GetHole() );
-//            for ( unsigned int j = 0; j < result.ContourSize(i); ++j ) {
-//                p = Point3D::fromSGGeod( result.GetNode( i, j ) );
-//                if ( preserve3d )
-//                    fprintf( rfp, "%.15f  %.15f %.15f\n", p.x(), p.y(), p.z() );
-//                else
-//                    fprintf( rfp, "%.15f  %.15f\n", p.x(), p.y() );
-//            }
-//        }
-//        fclose( rfp );
-
         lock.lock();
         bp_map[b.gen_index()].push_back( result );
         lock.unlock();
@@ -2762,7 +2662,7 @@ void tgChopper::Clip( const tgPolygon& subject,
 
 void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 {
-    tg::Rectangle bb;
+    tgRectangle bb;
     SGGeod p;
 
     // bail out immediately if polygon is empty

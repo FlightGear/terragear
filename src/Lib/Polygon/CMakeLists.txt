@@ -9,6 +9,8 @@ add_library(Polygon STATIC
     polygon.hxx
     rectangle.cxx
     rectangle.hxx
+    surface.cxx
+    surface.hxx
     tg_nodes.cxx
     tg_nodes.hxx
     tg_unique_geod.hxx
@@ -16,5 +18,4 @@ add_library(Polygon STATIC
     tg_unique_vec2f.hxx
     tg_unique_vec3d.hxx
     tg_unique_vec3f.hxx
-    point3d.hxx
 )

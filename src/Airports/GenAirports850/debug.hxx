@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <simgear/threads/SGThread.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #ifndef __DEBUG_HXX__
 #define __DEBUG_HXX__

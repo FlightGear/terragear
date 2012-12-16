@@ -20,8 +20,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
 
-#include "apt_surface.hxx"
-
+#include <Polygon/surface.hxx>
 
 // lookup node elevations for each point in the SGGeod list.  Returns
 // average of all points.  Doesn't modify the original list.
@@ -30,7 +29,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
 
 // lookup node elevations for each point in the specified nurbs++
 // matrix.
-void tgCalcElevations( const std::string &root, const string_list elev_src, SimpleMatrix &Pts, double average );
+void tgCalcElevations( const std::string &root, const string_list elev_src, tgMatrix& Pts, double average );
 
 // clamp all elevations to the specified range
-void tgClampElevations( SimpleMatrix &Pts, double center_m, double max_clamp_m );
+void tgClampElevations( tgMatrix& Pts, double center_m, double max_clamp_m );

@@ -139,7 +139,7 @@ public:
         }
     }
 
-    tg::Rectangle GetBoundingBox( void ) const;
+    tgRectangle GetBoundingBox( void ) const;
 
     double GetMinimumAngle( void ) const;
     double GetArea( void ) const;
@@ -150,6 +150,7 @@ public:
     static tgContour SplitLongEdges( const tgContour& subject, double dist );
     static tgContour RemoveSpikes( const tgContour& subject );
 
+    static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Diff( const tgContour& subject, tgPolygon& clip );
 
     static tgContour AddColinearNodes( const tgContour& subject, UniqueSGGeodSet& nodes );
@@ -350,7 +351,7 @@ public:
         contours[c].AddNode( n );
     }
 
-    tg::Rectangle GetBoundingBox( void ) const;
+    tgRectangle GetBoundingBox( void ) const;
 
     void InheritElevations( const tgPolygon& source );
 

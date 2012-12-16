@@ -50,14 +50,14 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
     array.remove_voids( );
 
     if ( add_nodes ) {
-        point_list corner_list = array.get_corner_list();
+        std::vector<SGGeod> const& corner_list = array.get_corner_list();
         for (unsigned int i=0; i<corner_list.size(); i++) {
-            nodes.unique_add( corner_list[i].toSGGeod() );
+            nodes.unique_add( corner_list[i] );
         }
 
-        point_list fit_list = array.get_fitted_list();
+        std::vector<SGGeod> const& fit_list = array.get_fitted_list();
         for (unsigned int i=0; i<fit_list.size(); i++) {
-            nodes.unique_add( fit_list[i].toSGGeod() );
+            nodes.unique_add( fit_list[i] );
         }
     }
 }

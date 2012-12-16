@@ -101,7 +101,7 @@ public:
 
     long            FindAirport( std::string icao );
     void            AddAirport(  std::string icao );
-    bool            AddAirports( long start_pos, tg::Rectangle* boundingBox );
+    bool            AddAirports( long start_pos, tgRectangle* boundingBox );
     void            RetryAirport( AirportInfo* pInfo );
 
     void            Schedule( int num_threads, std::string& summaryfile );

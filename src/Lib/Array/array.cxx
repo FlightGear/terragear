@@ -140,8 +140,8 @@ TGArray::parse( SGBucket& b ) {
         *fitted_in >> fitted_size;
         for ( int i = 0; i < fitted_size; ++i ) {
             *fitted_in >> x >> y >> z;
-            fitted_list.push_back( Point3D(x, y, z) );
-            SG_LOG(SG_GENERAL, SG_DEBUG, " loading fitted = " << Point3D(x, y, z) );
+            fitted_list.push_back( SGGeod::fromDegM(x, y, z) );
+            SG_LOG(SG_GENERAL, SG_DEBUG, " loading fitted = " << SGGeod::fromDegM(x, y, z) );
         }
     }
 
@@ -298,18 +298,16 @@ void TGArray::remove_voids( ) {
 double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
     double mindist = 99999999999.9;
     double minelev = -9999.0;
-    Point3D p0( lon, lat, 0.0 );
+    SGGeod p0 = SGGeod::fromDeg( lon, lat );
 
     for ( int row = 0; row < rows; row++ ) {
         for ( int col = 0; col < cols; col++ ) {
-            Point3D p1(originx + col * col_step, originy + row * row_step, 0.0);
-            double dist = p0.distance3D( p1 );
+            SGGeod p1 = SGGeod::fromDeg( originx + col * col_step, originy + row * row_step );
+            double dist = SGGeodesy::distanceM( p0, p1 );
             double elev = get_array_elev(col, row);
             if ( dist < mindist && elev > -9000 ) {
                 mindist = dist;
                 minelev = elev;
-                // cout << "dist = " << mindist;
-                // cout << "  elev = " << elev << endl;
             }
         }
     }

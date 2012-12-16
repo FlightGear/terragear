@@ -193,11 +193,11 @@ public:
     void ConstructBucketStage3();
 
     int      load_landcover ();
-//  double   measure_roughness( TGPolygon &poly );
+    double   measure_roughness( tgContour &contour );
     AreaType get_landcover_type (const LandCover &cover, double xpos, double ypos, double dx, double dy);
-//    void make_area( const LandCover &cover, TGPolygon *polys,
-//                    double x1, double y1, double x2, double y2,
-//                    double half_dx, double half_dy );
+    void make_area( const LandCover &cover, tgpolygon_list& polys,
+                    double x1, double y1, double x2, double y2,
+                    double half_dx, double half_dy );
 
     // land cover file
     inline std::string get_cover () const { return cover; }

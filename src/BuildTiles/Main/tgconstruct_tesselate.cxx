@@ -43,7 +43,7 @@ void TGConstruct::TesselatePolys( void )
                 tgPolygon::ToShapefile( poly, ds_name, "preteselate", "" );
             }
 
-            tg::Rectangle rect = poly.GetBoundingBox();
+            tgRectangle rect = poly.GetBoundingBox();
             nodes.get_geod_inside( rect.getMin(), rect.getMax(), poly_extra );
 
             SG_LOG( SG_CLIPPER, SG_DEBUG, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " <<
@@ -58,7 +58,6 @@ void TGConstruct::TesselatePolys( void )
             polys_clipped.set_poly( area, p, poly );
         }
     }
-
 
     for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {

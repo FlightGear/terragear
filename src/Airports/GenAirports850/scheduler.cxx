@@ -316,7 +316,7 @@ void Scheduler::RetryAirport( AirportInfo* pai )
     // retryList.push_back( *pai );
 }
 
-bool Scheduler::AddAirports( long start_pos, tg::Rectangle* boundingBox )
+bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
 {
     char 	 line[2048];
     char*	 def;

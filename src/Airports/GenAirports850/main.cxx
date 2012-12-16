@@ -98,8 +98,9 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
 
 // TODO: where do these belong
 int nudge = 10;
-double slope_max = 0.02;
 double gSnap = 0.00000001;      // approx 1 mm
+double slope_max = 0.02;
+double slope_eps = 0.00001;
 
 int main(int argc, char **argv)
 {
@@ -284,7 +285,7 @@ int main(int argc, char **argv)
 
     std::string lastaptfile = work_dir+"/last_apt";
 
-    tg::Rectangle boundingBox(min, max);
+    tgRectangle boundingBox(min, max);
     boundingBox.sanify();
 
     if ( work_dir == "" ) 

@@ -25,19 +25,15 @@
 #  include <config.h>
 #endif
 
-//#include <iostream>
-
-//#include <simgear/compiler.h>
+#include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
 
 #include "tgconstruct.hxx"
 
-using std::string;
-
 void TGConstruct::FixTJunctions( void ) {
     int before, after;
     std::vector<SGGeod> points;
-    tg::Rectangle bb;
+    tgRectangle bb;
 
     // traverse each poly, and add intermediate nodes
     for ( unsigned int i = 0; i < TG_MAX_AREA_TYPES; ++i ) {

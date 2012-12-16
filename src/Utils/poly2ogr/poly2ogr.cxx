@@ -36,6 +36,7 @@
 #endif
 
 #include <boost/foreach.hpp>
+#include <ogrsf_frmts.h>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/sg_binobj.hxx>
@@ -45,9 +46,6 @@
 #include <simgear/misc/sg_dir.hxx>
 
 #include <Polygon/polygon.hxx>
-#include <Polygon/point3d.hxx>
-
-#include <ogrsf_frmts.h>
 
 using std::string;
 
@@ -147,7 +145,7 @@ OGRLayer* get_layer_for_material(const std::string& material) {
         return layer;
 }
 
-OGRLinearRing* make_ring_from_fan(const int_list& fan, const std::vector<Point3D>& nodes) {
+OGRLinearRing* make_ring_from_fan(const int_list& fan, const std::vector<SGGeod>& nodes) {
         OGRLinearRing* ring = new OGRLinearRing();
         int_list::const_iterator vertex = fan.begin();
         if (fan[1]==fan[fan.size()-1]) {
@@ -156,10 +154,10 @@ OGRLinearRing* make_ring_from_fan(const int_list& fan, const std::vector<Point3D
         }
         for (;vertex!=fan.end();++vertex) {
                 OGRPoint *point=new OGRPoint();
-                const Point3D& node = nodes[*vertex];
-                point->setX(node.x());
-                point->setY(node.y());
-                point->setZ(node.z());
+                const SGGeod& node = nodes[*vertex];
+                point->setX(node.getLongitudeDeg());
+                point->setY(node.getLatitudeDeg());
+                point->setZ(node.getElevationM());
 
                 ring->addPoint(point);
         }
@@ -169,25 +167,25 @@ OGRLinearRing* make_ring_from_fan(const int_list& fan, const std::vector<Point3D
         return ring;
 }
 
-OGRLinearRing* make_ring_from_strip(const int_list& strip, const std::vector<Point3D>& nodes) {
+OGRLinearRing* make_ring_from_strip(const int_list& strip, const std::vector<SGGeod>& nodes) {
         OGRLinearRing* ring = new OGRLinearRing();
         const size_t vertex_count = strip.size();
         unsigned int i;
         for (i=0;i<vertex_count;i+=2) {
                 OGRPoint *point=new OGRPoint();
-                const Point3D& node = nodes[strip[i]];
-                point->setX(node.x());
-                point->setY(node.y());
-                point->setZ(node.z());
+                const SGGeod& node = nodes[strip[i]];
+                point->setX(node.getLongitudeDeg());
+                point->setY(node.getLatitudeDeg());
+                point->setZ(node.getElevationM());
 
                 ring->addPoint(point);
         }
         for (i--;i>0;i-=2) {
                 OGRPoint *point=new OGRPoint();
-                const Point3D& node = nodes[strip[i]];
-                point->setX(node.x());
-                point->setY(node.y());
-                point->setZ(node.z());
+                const SGGeod& node = nodes[strip[i]];
+                point->setX(node.getLongitudeDeg());
+                point->setY(node.getLatitudeDeg());
+                point->setZ(node.getElevationM());
 
                 ring->addPoint(point);
         }
@@ -221,7 +219,7 @@ void make_feature_from_ring(OGRLinearRing* ring, const std::string& material, co
         make_feature_from_polygon(polygon, material, path);
 }
 
-void convert_triangles(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<Point3D>& wgs84_nodes) {
+void convert_triangles(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<SGGeod>& wgs84_nodes) {
         const size_t groups_count = verts.size();
 
         for (unsigned int i=0;i<groups_count;i++) {
@@ -232,10 +230,10 @@ void convert_triangles(const std::string& path, const group_list& verts, const s
                         OGRLinearRing* ring = new OGRLinearRing();
                         for (int k=0;k<3;k++) {
                                 OGRPoint *point=new OGRPoint();
-                                const Point3D& node = wgs84_nodes[tri_verts[j+k]];
-                                point->setX(node.x());
-                                point->setY(node.y());
-                                point->setZ(node.z());
+                                const SGGeod& node = wgs84_nodes[tri_verts[j+k]];
+                                point->setX(node.getLongitudeDeg());
+                                point->setY(node.getLatitudeDeg());
+                                point->setZ(node.getElevationM());
 
                                 ring->addPoint(point);
                         }
@@ -245,7 +243,7 @@ void convert_triangles(const std::string& path, const group_list& verts, const s
         }
 }
 
-void convert_triangle_fans(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<Point3D>& wgs84_nodes) {
+void convert_triangle_fans(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<SGGeod>& wgs84_nodes) {
         const size_t groups_count = verts.size();
 
         for (unsigned int i=0;i<groups_count;i++) {
@@ -255,7 +253,7 @@ void convert_triangle_fans(const std::string& path, const group_list& verts, con
         }
 }
 
-void convert_triangle_strips(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<Point3D>& wgs84_nodes) {
+void convert_triangle_strips(const std::string& path, const group_list& verts, const string_list& materials, const std::vector<SGGeod>& wgs84_nodes) {
         const size_t groups_count = verts.size();
 
         for (unsigned int i=0;i<groups_count;i++) {
@@ -273,17 +271,14 @@ void process_scenery_file(const std::string& path) {
 
         SGVec3d gbs_center = binObject.get_gbs_center();
         const std::vector<SGVec3d>& wgs84_nodes = binObject.get_wgs84_nodes();
-        std::vector<Point3D> geod_nodes;
+        std::vector<SGGeod> geod_nodes;
         const size_t node_count = wgs84_nodes.size();
         for (unsigned int i=0;i<node_count;i++) {
                 SGVec3d wgs84 = wgs84_nodes[i];
-                Point3D raw = Point3D( gbs_center.x() + wgs84.x(),
+                SGVec3d raw = SGVec3d( gbs_center.x() + wgs84.x(),
                                        gbs_center.y() + wgs84.y(),
                                        gbs_center.z() + wgs84.z() );
-                Point3D radians = sgCartToGeod(raw);
-                Point3D geod = Point3D( radians.x() / SGD_DEGREES_TO_RADIANS,
-                                        radians.y() / SGD_DEGREES_TO_RADIANS,
-                                        radians.z() );
+                SGGeod geod = SGGeod::fromCart( raw );
                 geod_nodes.push_back(geod);
         }
 

@@ -26,6 +26,7 @@
 #endif
 
 #include <simgear/debug/logstream.hxx>
+#include <simgear/math/SGMath.hxx>
 
 #include "tgconstruct.hxx"
 #include "usgs.hxx"
@@ -46,66 +47,61 @@ static const double quarter_cover_size  = cover_size * 0.25;
 
 // make the area specified area, look up the land cover type, and add
 // it to polys
-#if 0
-void TGConstruct::make_area( const LandCover &cover, TGPolygon *polys,
-                       double x1, double y1, double x2, double y2,
-                       double half_dx, double half_dy )
+void TGConstruct::make_area( const LandCover &cover, tgpolygon_list& polys,
+                             double x1, double y1, double x2, double y2,
+                             double half_dx, double half_dy )
 {
     const double fudge = 0.0001;  // (0.0001 degrees =~ 10 meters)
 
     AreaType area = get_landcover_type( cover,
-                                   x1 + half_dx, y1 + half_dy,
-                                   x2 - x1, y2 - y1 );
+                                        x1 + half_dx, y1 + half_dy,
+                                        x2 - x1, y2 - y1 );
 
     if ( area != get_default_area_type() ) {
         // Create a square polygon and merge it into the list.
-        TGPolygon poly;
-        poly.erase();
-        poly.add_node(0, Point3D(x1 - fudge, y1 - fudge, 0.0));
-        poly.add_node(0, Point3D(x1 - fudge, y2 + fudge, 0.0));
-        poly.add_node(0, Point3D(x2 + fudge, y2 + fudge, 0.0));
-        poly.add_node(0, Point3D(x2 + fudge, y1 - fudge, 0.0));
+        tgContour contour;
 
-        if ( measure_roughness( poly ) < 1.0 ) {
-            // Add this poly to the area accumulator
-            if ( polys[area].contours() > 0 ) {
-                polys[area] = tgPolygonUnion( polys[area], poly );
+        contour.Erase();
+        contour.AddNode( SGGeod::fromDeg(x1 - fudge, y1 - fudge) );
+        contour.AddNode( SGGeod::fromDeg(x1 - fudge, y2 + fudge) );
+        contour.AddNode( SGGeod::fromDeg(x2 + fudge, y2 + fudge) );
+        contour.AddNode( SGGeod::fromDeg(x2 + fudge, y1 - fudge) );
+        contour.SetHole( false );
+
+        if ( measure_roughness( contour ) < 1.0 ) {
+            // Add this contour to the area accumulator
+            if ( polys[area].Contours() > 0 ) {
+                polys[area] = tgContour::Union( contour, polys[area] );
             } else {
+                tgPolygon poly;
+                poly.AddContour( contour );
                 polys[area] = poly;
             }
         }
     }
 }
-#endif
 
 // Come up with a "rough" metric for the roughness of the terrain
 // coverted by a polygon
-#if 0
-double TGConstruct::measure_roughness( TGPolygon &poly ) {
-    int i;
-    unsigned int j;
-
+double TGConstruct::measure_roughness( tgContour &contour ) {
     // find the elevation range
     double max_z = -9999.0;
-    double min_z = 9999.0;
+    double min_z =  9999.0;
 
-    for ( i = 0; i < poly.contours(); ++i ) {
-        point_list points = poly.get_contour( i );
-        for ( j = 0; j < points.size(); ++j ) {
-            double z;
-            z = array.altitude_from_grid( points[j].x() * 3600.0,
-                                          points[j].y() * 3600.0 );
-            if ( z < -9000 ) {
-                z = array.closest_nonvoid_elev( points[j].x() * 3600.0,
-                                                points[j].y() * 3600.0 );
-            }
+    for ( unsigned int i = 0; i < contour.GetSize(); i++ ) {
+        double z;
+        z = array.altitude_from_grid( contour[i].getLongitudeDeg() * 3600.0,
+                                      contour[i].getLatitudeDeg()  * 3600.0 );
+        if ( z < -9000 ) {
+            z = array.closest_nonvoid_elev( contour[i].getLongitudeDeg() * 3600.0,
+                                            contour[i].getLatitudeDeg()  * 3600.0 );
+        }
 
-            if ( z < min_z ) {
-                min_z = z;
-            }
-            if ( z > max_z ) {
-                max_z = z;
-            }
+        if ( z < min_z ) {
+            min_z = z;
+        }
+        if ( z > max_z ) {
+            max_z = z;
         }
     }
 
@@ -119,7 +115,6 @@ double TGConstruct::measure_roughness( TGPolygon &poly ) {
 
     return diff / 50.0;
 }
-#endif
 
 AreaType TGConstruct::get_landcover_type (const LandCover &cover, double xpos, double ypos, double dx, double dy)
 {

@@ -213,7 +213,7 @@ bool Airport::isDebugFeature( int feat )
 // TODO : Add somewhere
 // Determine node elevations of a point_list based on the provided
 // TGAptSurface.  Offset is added to the final elevation
-static std::vector<SGGeod> calc_elevations( TGAptSurface &surf, const std::vector<SGGeod>& geod_nodes, double offset )
+static std::vector<SGGeod> calc_elevations( const tgSurface& surf, const std::vector<SGGeod>& geod_nodes, double offset )
 {
     std::vector<SGGeod> result = geod_nodes;
     for ( unsigned int i = 0; i < result.size(); ++i ) {
@@ -225,9 +225,7 @@ static std::vector<SGGeod> calc_elevations( TGAptSurface &surf, const std::vecto
 }
 
 
-static tgContour calc_elevations( TGAptSurface &surf,
-                                  const tgContour& geod_nodes,
-                                  double offset )
+static tgContour calc_elevations( const tgSurface& surf, const tgContour& geod_nodes, double offset )
 {
     tgContour result = geod_nodes;
     for ( unsigned int i = 0; i < result.GetSize(); ++i ) {
@@ -240,9 +238,7 @@ static tgContour calc_elevations( TGAptSurface &surf,
     return result;
 }
 
-static double calc_elevation( TGAptSurface &surf,
-                               const SGGeod& node,
-                               double offset )
+static double calc_elevation( const tgSurface& surf, const SGGeod& node, double offset )
 {
     double elev = surf.query( node );
     elev += offset;
@@ -253,11 +249,10 @@ static double calc_elevation( TGAptSurface &surf,
 
 // Determine node elevations of each node of a TGPolygon based on the
 // provided TGAptSurface.  Offset is added to the final elevation
-static tgPolygon calc_elevations( TGAptSurface &surf,
-                                  const tgPolygon& poly,
-                                  double offset )
+static tgPolygon calc_elevations( const tgSurface& surf, const tgPolygon& poly, double offset )
 {
     tgPolygon result;
+
     for ( unsigned int i = 0; i < poly.Contours(); ++i ) {
         tgContour contour = poly.GetContour( i );
         tgContour elevated = calc_elevations( surf, contour, offset );
@@ -1057,9 +1052,9 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     GENAPT_LOG(SG_GENERAL, SG_DEBUG, " max: " << max_deg );
     GENAPT_LOG(SG_GENERAL, SG_DEBUG, " average: " << average );
 
-    tg::Rectangle aptBounds(min_deg, max_deg);
-
-    TGAptSurface apt_surf( root, elev_src, aptBounds, average );
+    // TODO elevation queries should be performed as member functions of surface
+    tgRectangle aptBounds(min_deg, max_deg);
+    tgSurface apt_surf( root, elev_src, aptBounds, average, slope_max, slope_eps );
     GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
 
     // add light points

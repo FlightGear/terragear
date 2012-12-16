@@ -24,21 +24,25 @@
 #  include <config.h>
 #endif
 
-#include <Lib/Polygon/TNT/jama_qr.h>
-
 #include <simgear/compiler.h>
 #include <simgear/constants.h>
 #include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include "elevations.hxx"
-#include "global.hxx"
-#include "apt_surface.hxx"
-#include "debug.hxx"
+#include <Array/array.hxx>
 
+#include "TNT/jama_qr.h"
+#include "surface.hxx"
 
-static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
-                         double average_elev_m )
+// Final grid size for surface (in meters)
+const double coarse_grid = 300.0;
+
+// compared to the average surface elevation, clamp all values within
+// this many meters of the average
+const double max_clamp = 100.0;
+
+static bool limit_slope( tgMatrix* Pts, int i1, int j1, int i2, int j2,
+                         double average_elev_m, double slope_max, double slope_eps )
 {
     bool slope_error = false;
 
@@ -55,7 +59,7 @@ static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
 
         slope_error = true;
 
-        GENAPT_LOG( SG_GENERAL, SG_DEBUG, " (a) detected slope of " << slope << " dist = " << dist );
+        SG_LOG( SG_GENERAL, SG_DEBUG, " (a) detected slope of " << slope << " dist = " << dist );
 
         double e1 = fabs(average_elev_m - p1.getElevationM());
         double e2 = fabs(average_elev_m - p2.getElevationM());
@@ -63,17 +67,17 @@ static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
         if ( e1 > e2 ) {
             // p1 error larger
             if ( slope > 0 ) {
-	      p1.setElevationM( p2.getElevationM() - (dist * slope_max) );
+                p1.setElevationM( p2.getElevationM() - (dist * slope_max) );
             } else {
-	      p1.setElevationM( p2.getElevationM() + (dist * slope_max) );
+                p1.setElevationM( p2.getElevationM() + (dist * slope_max) );
             }
             Pts->set(i1, j1, p1);
         } else {
             // p2 error larger
             if ( slope > 0 ) {
-	      p2.setElevationM( p1.getElevationM() + (dist * slope_max) );
+                p2.setElevationM( p1.getElevationM() + (dist * slope_max) );
             } else {
-	      p2.setElevationM( p1.getElevationM() - (dist * slope_max) );
+                p2.setElevationM( p1.getElevationM() - (dist * slope_max) );
             }
             Pts->set(i2, j2, p2);
         }
@@ -83,12 +87,146 @@ static bool limit_slope( SimpleMatrix *Pts, int i1, int j1, int i2, int j2,
 }
 
 
+// lookup node elevations for each point in the specified simple
+// matrix.  Returns average of all points.
+static void tgCalcElevations( const std::string &root, const string_list elev_src,
+                              tgMatrix &Pts, const double average )
+{
+    bool done = false;
+    int i, j;
+    TGArray array;
+
+    // just bail if no work to do
+    if ( Pts.rows() == 0 || Pts.cols() == 0 ) {
+        return;
+    }
+
+    // set all elevations to -9999
+    for ( j = 0; j < Pts.rows(); ++j ) {
+        for ( i = 0; i < Pts.cols(); ++i ) {
+            SGGeod p = Pts.element(i, j);
+            p.setElevationM(-9999.0);
+            Pts.set(i, j, p);
+        }
+    }
+
+    while ( !done ) {
+        // find first node with -9999 elevation
+        SGGeod first = SGGeod();
+        bool found_one = false;
+        for ( j = 0; j < Pts.rows(); ++j ) {
+            for ( i = 0; i < Pts.cols(); ++i ) {
+                SGGeod p = Pts.element(i,j);
+                if ( p.getElevationM() < -9000.0 && !found_one ) {
+                    first = p;
+                    found_one = true;
+                }
+            }
+        }
+
+        if ( found_one ) {
+            SGBucket b( first );
+            std::string base = b.gen_base_path();
+
+            // try the various elevation sources
+            j = 0;
+            bool found_file = false;
+            while ( !found_file && j < (int)elev_src.size() ) {
+                std::string array_path = root + "/" + elev_src[j] + "/" + base + "/" + b.gen_index_str();
+
+                if ( array.open(array_path) ) {
+                    found_file = true;
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
+                }
+                j++;
+            }
+
+            // this will fill in a zero structure if no array data
+            // found/opened
+            array.parse( b );
+
+            // this will do a hasty job of removing voids by inserting
+            // data from the nearest neighbor (sort of)
+            array.remove_voids();
+
+            // update all the non-updated elevations that are inside
+            // this array file
+            double elev;
+            done = true;
+            for ( j = 0; j < Pts.rows(); ++j ) {
+                for ( i = 0; i < Pts.cols(); ++i ) {
+                    SGGeod p = Pts.element(i,j);
+                    if ( p.getElevationM() < -9000.0 ) {
+                        done = false;
+                        elev = array.altitude_from_grid( p.getLongitudeDeg() * 3600.0,
+                                                         p.getLatitudeDeg() * 3600.0 );
+                        if ( elev > -9000 ) {
+                            p.setElevationM( elev );
+                            Pts.set(i, j, p);
+                        }
+                    }
+                }
+            }
+
+            array.close();
+
+        } else {
+            done = true;
+        }
+    }
+
+#ifdef DEBUG
+    // do some post processing for sanity's sake
+    // find the average height of the queried points
+    double total = 0.0;
+    int count = 0;
+    for ( j = 0; j < Pts.rows(); ++j ) {
+        for ( i = 0; i < Pts.cols(); ++i ) {
+            SGGeod p = Pts.element(i,j);
+            total += p.getElevationM();
+            count++;
+        }
+    }
+    double grid_average = total / (double) count;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of matrix = " << grid_average);
+#endif
+}
+
+// clamp all elevations to the specified range
+static void tgClampElevations( tgMatrix& Pts,
+                               double center_m,
+                               double max_clamp_m )
+{
+    int i, j;
+
+    // go through the elevations and clamp all elevations to within
+    // +/-max_m of the center_m elevation.
+    for ( j = 0; j < Pts.rows(); ++j ) {
+        for ( i = 0; i < Pts.cols(); ++i ) {
+            SGGeod p = Pts.element(i,j);
+            if ( p.getElevationM() < center_m - max_clamp_m ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM() << " to " << center_m - max_clamp_m );
+                p.setElevationM( center_m - max_clamp_m );
+                Pts.set(i, j, p);
+            }
+            if ( p.getElevationM() > center_m + max_clamp_m ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "   clamping " << p.getElevationM() << " to " << center_m + max_clamp_m );
+                p.setElevationM( center_m + max_clamp_m );
+                Pts.set(i, j, p);
+            }
+        }
+    }
+}
+
 // Constructor, specify min and max coordinates of desired area in
 // lon/lat degrees
-TGAptSurface::TGAptSurface( const std::string& path,
-                            const string_list& elev_src,
-                            tg::Rectangle aptBounds,
-                            double average_elev_m )
+tgSurface::tgSurface( const std::string& path,
+                      const string_list& elev_src,
+                      tgRectangle aptBounds,
+                      double average_elev_m,
+                      double slope_max,
+                      double slope_eps
+                    )
 {
     // Calculate desired size of grid
     _aptBounds = aptBounds;
@@ -110,8 +248,7 @@ TGAptSurface::TGAptSurface( const std::string& path,
     double x_nm = x_rad * SG_RAD_TO_NM * xfact;
     double x_m = x_nm * SG_NM_TO_METER;
 
-    GENAPT_LOG( SG_GENERAL, SG_DEBUG,
-            "Area size = " << y_m << " x " << x_m << " (m)" );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Area size = " << y_m << " x " << x_m << " (m)" );
 
     int xdivs = (int)(x_m / coarse_grid) + 1;
     int ydivs = (int)(y_m / coarse_grid) + 1;
@@ -120,7 +257,8 @@ TGAptSurface::TGAptSurface( const std::string& path,
     // interesting
     if ( xdivs < 8 ) { xdivs = 8; }
     if ( ydivs < 8 ) { ydivs = 8; }
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
 
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
@@ -131,15 +269,12 @@ TGAptSurface::TGAptSurface( const std::string& path,
     // Build the extra res input grid (shifted SW by half (dlon,dlat)
     // with an added major row column on the NE sides.)
     int mult = 10;
-    SimpleMatrix dPts( (xdivs + 1) * mult + 1, (ydivs + 1) * mult + 1 );
+    tgMatrix dPts( (xdivs + 1) * mult + 1, (ydivs + 1) * mult + 1 );
     for ( int j = 0; j < dPts.rows(); ++j ) {
-      for ( int i = 0; i < dPts.cols(); ++i ) {
-	  dPts.set(i, j, SGGeod::fromDegM( _min_deg.getLongitudeDeg() - dlon_h
-				    + i * (dlon / (double)mult),
-				   _min_deg.getLatitudeDeg() - dlat_h
-				    + j * (dlat / (double)mult),
-				   -9999 )
-		   );
+        for ( int i = 0; i < dPts.cols(); ++i ) {
+            dPts.set(i, j, SGGeod::fromDegM( _min_deg.getLongitudeDeg() - dlon_h + i * (dlon / (double)mult),
+                     _min_deg.getLatitudeDeg() - dlat_h + j * (dlat / (double)mult),
+                     -9999 ) );
         }
     }
 
@@ -151,18 +286,18 @@ TGAptSurface::TGAptSurface( const std::string& path,
     tgClampElevations( dPts, _average_elev_m, max_clamp );
 
     // Build the normal res input grid from the double res version
-    Pts = new SimpleMatrix(xdivs + 1, ydivs + 1 );
+    Pts = new tgMatrix(xdivs + 1, ydivs + 1 );
     double ave_divider = (mult+1) * (mult+1);
     for ( int j = 0; j < Pts->rows(); ++j ) {
         for ( int i = 0; i < Pts->cols(); ++i ) {
-            GENAPT_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
+            SG_LOG(SG_GENERAL, SG_DEBUG, i << "," << j);
             double accum = 0.0;
             double lon_accum = 0.0;
             double lat_accum = 0.0;
             for ( int jj = 0; jj <= mult; ++jj ) {
                 for ( int ii = 0; ii <= mult; ++ii ) {
                     double value = dPts.element(mult*i + ii, mult*j + jj).getElevationM();
-                    GENAPT_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "value = " << value );
                     accum += value;
                     lon_accum += dPts.element(mult*i + ii, mult*j + jj).getLongitudeDeg();
                     lat_accum += dPts.element(mult*i + ii, mult*j + jj).getLatitudeDeg();
@@ -170,7 +305,7 @@ TGAptSurface::TGAptSurface( const std::string& path,
             }
             double val_ave = accum / ave_divider;
 
-            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "  val_ave = " << val_ave );
             Pts->set(i, j, SGGeod::fromDegM( _min_deg.getLongitudeDeg() + i * dlon,
 				    _min_deg.getLatitudeDeg() + j * dlat,
 				    val_ave )
@@ -180,18 +315,18 @@ TGAptSurface::TGAptSurface( const std::string& path,
 
     bool slope_error = true;
     while ( slope_error ) {
-        GENAPT_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
+        SG_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
         slope_error = false;
         // Add some "slope" sanity to the resulting surface grid points
         for ( int j = 0; j < Pts->rows() - 1; ++j ) {
             for ( int i = 0; i < Pts->cols() - 1; ++i ) {
-                if ( limit_slope( Pts, i, j, i+1, j, _average_elev_m ) ) {
+                if ( limit_slope( Pts, i, j, i+1, j, _average_elev_m, slope_max, slope_eps ) ) {
                     slope_error = true;
                 }
-                if ( limit_slope( Pts, i, j, i, j+1, _average_elev_m ) ) {
+                if ( limit_slope( Pts, i, j, i, j+1, _average_elev_m, slope_max, slope_eps ) ) {
                     slope_error = true;
                 }
-                if ( limit_slope( Pts, i, j, i+1, j+1, _average_elev_m ) ) {
+                if ( limit_slope( Pts, i, j, i+1, j+1, _average_elev_m, slope_max, slope_eps ) ) {
                     slope_error = true;
                 }
             }
@@ -202,23 +337,23 @@ TGAptSurface::TGAptSurface( const std::string& path,
     double clon = (_min_deg.getLongitudeDeg() + _max_deg.getLongitudeDeg()) / 2.0;
     double clat = (_min_deg.getLatitudeDeg() + _max_deg.getLatitudeDeg()) / 2.0;
     area_center = SGGeod::fromDegM( clon, clat, _average_elev_m );
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Central offset point = " << area_center);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Central offset point = " << area_center);
 
     // Create the fitted surface
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
     fit();
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "  fit process successful.");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "  fit process successful.");
 }
 
 
-TGAptSurface::~TGAptSurface() {
+tgSurface::~tgSurface() {
     delete Pts;
 }
 
 
 // Use a linear least squares method to fit a 3d polynomial to the
 // sampled surface data
-void TGAptSurface::fit() {
+void tgSurface::fit() {
 
     // the fit function is:
     // f(x,y) = A1*x + A2*x*y + A3*y +
@@ -228,7 +363,7 @@ void TGAptSurface::fit() {
 
     int nobs = Pts->cols() * Pts->rows();	// number of observations
 
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "QR triangularisation" );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "QR triangularisation" );
 
     // Create an array (matrix) with 16 columns (predictor values) A[n]
     TNT::Array2D<double> mat(nobs,16);
@@ -274,13 +409,12 @@ void TGAptSurface::fit() {
 
 
 // Query the elevation of a point, return -9999 if out of range
-double TGAptSurface::query( SGGeod query ) {
+double tgSurface::query( SGGeod query ) const {
 
     // sanity check
     if ( !_aptBounds.isInside(query) )
     {
-        GENAPT_LOG(SG_GENERAL, SG_WARN,
-	       "Warning: query out of bounds for fitted surface!");
+        SG_LOG(SG_GENERAL, SG_WARN, "Warning: query out of bounds for fitted surface!");
         return -9999.0;
     }
 

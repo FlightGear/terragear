@@ -28,8 +28,6 @@
 #include <simgear/math/sg_types.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-#include <Lib/Polygon/point3d.hxx>
-
 class TGArray {
 
 private:
@@ -51,8 +49,8 @@ private:
     short *in_data;
 
     // output nodes
-    point_list corner_list;
-    point_list fitted_list;
+    std::vector<SGGeod> corner_list;
+    std::vector<SGGeod> fitted_list;
 
     void parse_bin();
 public:
@@ -99,12 +97,11 @@ public:
     inline double get_col_step() const { return col_step; }
     inline double get_row_step() const { return row_step; }
 
-    inline point_list get_corner_list() const { return corner_list; }
-    inline point_list get_fitted_list() const { return fitted_list; }
+    inline std::vector<SGGeod> const& get_corner_list() const { return corner_list; }
+    inline std::vector<SGGeod> const& get_fitted_list() const { return fitted_list; }
 
     int get_array_elev( int col, int row ) const;
     void set_array_elev( int col, int row, int val );
 };
-
 
 #endif // _ARRAY_HXX
