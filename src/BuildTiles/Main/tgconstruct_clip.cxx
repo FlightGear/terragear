@@ -232,6 +232,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
         if ( remains.Contours() > 0 ) {
             remains.SetMaterial( get_area_name(get_sliver_target_area_type()) );
+            remains.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
             polys_clipped.add_poly( (int)get_sliver_target_area_type(), remains );
         }
     }
