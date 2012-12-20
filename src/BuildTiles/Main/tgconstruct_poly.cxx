@@ -108,6 +108,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
                     }
                 }
 
+                gzclose( fp );
                 SG_LOG(SG_GENERAL, SG_DEBUG, " Loaded " << p.file());
             }
         } // of directory file children
