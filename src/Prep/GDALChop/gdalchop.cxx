@@ -27,7 +27,6 @@
 #endif
 
 #include <simgear/compiler.h>
-
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/lowlevel.hxx>
@@ -118,11 +117,11 @@ public:
     }
 
     int GetColStepArcsec() {
-        return (dataset->GetRasterXSize() >= 3600 ? 1 : 3) ;
+        return pxSizeX * 3600;
     }
 
     int GetRowStepArcsec() {
-        return (dataset->GetRasterYSize() >= 3600 ? 1 : 3);
+        return pxSizeY * 3600;
     }
 
     void GetDataChunk(int *buffer,
@@ -177,8 +176,8 @@ ImageInfo::ImageInfo(GDALDataset *dataset) :
     }
 
     /* calculate pixel size */
-    pxSizeX = std::abs(geoXfrm[1]*0.5);
-    pxSizeY = std::abs(geoXfrm[5]*0.5);
+    pxSizeX = fabs(geoXfrm[1]);
+    pxSizeY = fabs(geoXfrm[5]);
 
     /* create points in CCW order */
     geoX[0] = geoXfrm[0] + 0 * geoXfrm[1] + 0 * geoXfrm[2];
@@ -243,8 +242,8 @@ void ImageInfo::GetDataChunk(int *buffer,
         1);
 
     xformData.pfnTransformer = GDALGenImgProjTransform;
-    xformData.x0 = x - pxSizeX;
-    xformData.y0 = y - pxSizeY;
+    xformData.x0 = x - pxSizeX * 0.5;
+    xformData.y0 = y - pxSizeY * 0.5;
     xformData.col_step = colstep;
     xformData.row_step = rowstep;
 
@@ -355,8 +354,17 @@ void process_bucket(const std::string& work_dir, SGBucket bucket,
     min_x = (int)(bwest * 3600.0);
     min_y = (int)(bsouth * 3600.0);
 
-    // TODO: Make other resolutions possible as well
-    int col_step = 3, row_step = 3;
+    // Determine minimum common arcsec steps across images
+    int col_step = -1, row_step = -1;
+    for (int i = 0; i < imagecount; i++) {
+        if ( images[i]->GetColStepArcsec() > col_step ) {
+            col_step = images[i]->GetColStepArcsec();
+        }
+        if ( images[i]->GetRowStepArcsec() > row_step ) {
+            row_step = images[i]->GetRowStepArcsec();
+        }
+    }
+
     span_x = (bucket.get_width() * 3600 / col_step) + 1;
     span_y = (bucket.get_height() * 3600 / row_step) + 1;
 
