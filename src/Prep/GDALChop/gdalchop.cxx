@@ -247,6 +247,10 @@ void ImageInfo::GetDataChunk(int *buffer,
     xformData.col_step = colstep;
     xformData.row_step = rowstep;
 
+    // Interpolate nodata pixels in the source band
+    GDALRasterBand *mask = dataset->GetRasterBand(srcband)->GetMaskBand();
+    GDALFillNodata(dataset->GetRasterBand(srcband), mask, 100, 0, 0, NULL, NULL, NULL);
+
     // TODO: check if this image can actually cover part of the chunk
 
     /* establish the full source to target transformation */
@@ -255,7 +259,6 @@ void ImageInfo::GetDataChunk(int *buffer,
     int srcBandNumbers[] = { srcband };
     int dstBandNumbers[] = { 1 };
 
-    //double dstNodata       = (double)nodata;
     double srcNodataReal;
     double srcNodataImag   =  0.0;
     int    srcHasNodataValue;
@@ -476,7 +479,7 @@ int main(int argc, const char **argv)
         west = std::min(west, iwest );
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Complete bounds n=" << north << " s=" << south << " e=" << east << " w=" << west);
+    SG_LOG(SG_GENERAL, SG_INFO, "Bounds of all datasets: n=" << north << " s=" << south << " e=" << east << " w=" << west);
 
     /*
      * Step 2: If no tiles were specified, go through all tiles contained in
