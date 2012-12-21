@@ -33,6 +33,8 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sg_dir.hxx>
 
+#include <Lib/terragear/tg_rectangle.hxx>
+
 #include <gdal.h>
 #include <gdal_alg.h>
 #include <gdal_priv.h>
@@ -112,6 +114,12 @@ public:
         s = south;
         e = east;
         w = west;
+    }
+
+    tgRectangle GetBoundingBox() const {
+        tgRectangle box( SGGeod::fromDeg(east, south), SGGeod::fromDeg(west, north) );
+        box.sanify();
+        return box;
     }
 
     const char* GetDescription() const {
@@ -358,6 +366,9 @@ void process_bucket(const SGPath& work_dir, SGBucket bucket,
 {
     double bnorth, bsouth, beast, bwest;
 
+    tgRectangle BucketBounds(bucket.get_corner(0), bucket.get_corner(2));
+    BucketBounds.sanify();
+
     bnorth = bucket.get_center_lat() + bucket.get_height() * 0.5;
     bsouth = bucket.get_center_lat() - bucket.get_height() * 0.5;
     beast = bucket.get_center_lon() + bucket.get_width() * 0.5;
@@ -391,10 +402,12 @@ void process_bucket(const SGPath& work_dir, SGBucket bucket,
     ::memset(buffer.get(), 0, cellcount * sizeof(int));
 
     for (int i = 0; i < imagecount; i++) {
-        images[i]->GetDataChunk(work_dir, buffer.get(),
-                                bwest, bsouth,
-                                col_step / 3600.0, row_step / 3600.0,
-                                span_x, span_y );
+        if ( images[i]->GetBoundingBox().intersects(BucketBounds) ) {
+            images[i]->GetDataChunk(work_dir, buffer.get(),
+                                    bwest, bsouth,
+                                    col_step / 3600.0, row_step / 3600.0,
+                                    span_x, span_y );
+        }
     }
 
     /* ...check the amount of undefined cells... */
