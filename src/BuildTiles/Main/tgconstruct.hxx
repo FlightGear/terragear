@@ -30,6 +30,8 @@
 # error This library requires C++
 #endif                                   
 
+#include <simgear/threads/SGThread.hxx>
+#include <simgear/threads/SGQueue.hxx>
 
 #define TG_MAX_AREA_TYPES       128
 
@@ -56,9 +58,109 @@ typedef std::vector < TGNeighborFaces > neighbor_face_list;
 typedef neighbor_face_list::iterator neighbor_face_list_iterator;
 typedef neighbor_face_list::const_iterator const_neighbor_face_list_iterator;
 
-class TGConstruct {
+class TGConstruct : public SGThread
+{
+public:
+    // Constructor
+    TGConstruct(unsigned int s, SGLockedQueue<SGBucket>& q);
+
+    // Destructor
+    ~TGConstruct();
+
+    // New shared edge matching
+    void SaveToIntermediateFiles( int stage );
+    void LoadFromIntermediateFiles( int stage );
+
+    int      load_landcover ();
+    double   measure_roughness( tgContour &contour );
+    AreaType get_landcover_type (const LandCover &cover, double xpos, double ypos, double dx, double dy);
+    void make_area( const LandCover &cover, tgpolygon_list& polys,
+                    double x1, double y1, double x2, double y2,
+                    double half_dx, double half_dy );
+
+    // land cover file
+    inline std::string get_cover () const { return cover; }
+    inline void set_cover (const std::string &s) { cover = s; }
+
+    // paths
+    void set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load_dirs );
+    void set_options( bool ignore_lm, double n );
+
+    // TODO : REMOVE
+    inline TGNodes* get_nodes() { return &nodes; }
+
+    // node list in geodetic coords (with fixed elevation)
+    inline void get_geod_nodes( std::vector<SGGeod>& points ) const { nodes.get_geod_nodes( points ); }
+
+    // normal list (for each point) in cart coords (for smooth shading)
+    inline void get_point_normals( std::vector<SGVec3f>& normals ) const { nodes.get_normals( normals ); }
+
+    // Debug
+    void set_debug( std::string path, std::vector<std::string> area_defs, std::vector<std::string> shape_defs );
 
 private:
+    virtual void run();
+
+    // Ocean tile or not
+    bool IsOceanTile()  { return isOcean; }
+
+    // Load Data
+    void LoadElevationArray( bool add_nodes );
+    int  LoadLandclassPolys( void );
+
+    // Clip Data
+    bool ClipLandclassPolys( void );
+
+    // Clip Helpers
+//    void move_slivers( TGPolygon& in, TGPolygon& out );
+//    void merge_slivers( TGLandclass& clipped, tgcontour_list& sliver_list );
+
+    // Shared edge Matching
+    void SaveSharedEdgeData( int stage );
+    void LoadSharedEdgeData( int stage );
+
+    void LoadNeighboorEdgeDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west );
+    void ReadNeighborFaces( gzFile& fp );
+    void WriteNeighborFaces( gzFile& fp, const SGGeod& pt ) const;
+    TGNeighborFaces* AddNeighborFaces( const SGGeod& node );
+    TGNeighborFaces* FindNeighborFaces( const SGGeod& node );
+
+    // Polygon Cleaning
+    void CleanClippedPolys( void );
+    void FixTJunctions( void );
+
+    // Tesselation
+    void TesselatePolys( void );
+
+    // Elevation and Flattening
+    void CalcElevations( void );
+    void AverageEdgeElevations( void );
+
+    // Normals and texture coords
+    void LookupNodesPerVertex( void );
+    void LookupFacesPerNode( void );
+    void CalcFaceNormals( void );
+    void CalcPointNormals( void );
+    void CalcTextureCoordinates( void );
+    // Helpers
+    SGVec3f calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) const;
+
+    // Output
+    void WriteBtgFile( void );
+    void AddCustomObjects( void );
+
+    // Misc
+    void calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGVec3d>& wgs84_nodes, tgPolygon& sp );
+
+    // debug
+    bool IsDebugShape( unsigned int id );
+    bool IsDebugArea( unsigned int area );
+
+private:
+    // construct stage to perform
+    SGLockedQueue<SGBucket>& workQueue;
+    unsigned int total_tiles;
+    unsigned int stage;
 
     // path to land-cover file (if any)
     std::string cover;
@@ -113,135 +215,6 @@ private:
 
     // Neighbor Faces
     neighbor_face_list  neighbor_faces;
-
-private:
-    // Ocean tile or not
-    void SetOceanTile() { isOcean = true; }
-    bool IsOceanTile()  { return isOcean; }
-    
-    // Load Data
-    void LoadElevationArray( bool add_nodes );
-    int  LoadLandclassPolys( void );
-
-    // Clip Data
-    bool ClipLandclassPolys( void );
-
-    // Clip Helpers
-//    void move_slivers( TGPolygon& in, TGPolygon& out );
-    void merge_slivers( TGLandclass& clipped, tgcontour_list& sliver_list );
-
-    // Shared edge Matching
-    void SaveSharedEdgeDataStage2( void );
-    void LoadSharedEdgeDataStage2( void );
-    void LoadSharedEdgeData( int stage );
-    void LoadNeighboorEdgeDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west );
-
-    void SaveSharedEdgeData( int stage );
-
-    void ReadNeighborFaces( gzFile& fp );
-    void WriteNeighborFaces( gzFile& fp, const SGGeod& pt ) const;
-    TGNeighborFaces* AddNeighborFaces( const SGGeod& node );
-    TGNeighborFaces* FindNeighborFaces( const SGGeod& node );
-
-    // Polygon Cleaning
-    void CleanClippedPolys( void );
-    void FixTJunctions( void );
-
-    // Tesselation
-    void TesselatePolys( void );
-
-    // Elevation and Flattening
-    void CalcElevations( void );
-    void AverageEdgeElevations( void );
-
-    // Normals and texture coords
-    void LookupNodesPerVertex( void );
-    void LookupFacesPerNode( void );
-    void CalcFaceNormals( void );
-    void CalcPointNormals( void );
-    void CalcTextureCoordinates( void );
-    // Helpers
-    SGVec3f calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) const;
-
-    // Output
-    void WriteBtgFile( void );
-    void AddCustomObjects( void );
-
-    // Misc
-    void calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGVec3d>& wgs84_nodes, tgPolygon& sp );
-
-    // debug
-    bool IsDebugShape( unsigned int id );
-    bool IsDebugArea( unsigned int area );
-
-public:
-    // Constructor
-    TGConstruct();
-
-    // Destructor
-    ~TGConstruct();
-
-    void set_bucket( SGBucket b ) { bucket = b; }
-
-    // New shared edge matching
-    void SaveToIntermediateFiles( int stage );
-    void LoadFromIntermediateFiles( int stage );
-
-    // Three stage construct
-    void ConstructBucketStage1();
-    void ConstructBucketStage2();
-    void ConstructBucketStage3();
-
-    int      load_landcover ();
-    double   measure_roughness( tgContour &contour );
-    AreaType get_landcover_type (const LandCover &cover, double xpos, double ypos, double dx, double dy);
-    void make_area( const LandCover &cover, tgpolygon_list& polys,
-                    double x1, double y1, double x2, double y2,
-                    double half_dx, double half_dy );
-
-    // land cover file
-    inline std::string get_cover () const { return cover; }
-    inline void set_cover (const std::string &s) { cover = s; }
-
-    // paths
-    void set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load_dirs );
-
-#if 0
-    inline std::string get_work_base() const { return work_base; }
-    inline void set_work_base( const std::string s ) { work_base = s; }
-    inline std::string get_output_base() const { return output_base; }
-    inline void set_output_base( const std::string s ) { output_base = s; }
-    inline std::string get_share_base() const { return share_base; }
-    inline void set_share_base( const std::string s ) { share_base = s; }
-    inline void set_load_dirs( const std::vector<std::string> ld ) { load_dirs = ld; }
-#endif
-
-    void set_options( bool ignore_lm, double n );
-
-#if 0
-    // UK grid flag
-    inline bool get_useUKGrid() const { return useUKGrid; }
-    inline void set_useUKGrid( const bool b ) { useUKGrid = b; }
-
-    // Nudge
-    inline void set_nudge( double n ) { nudge = n; }
-
-    // ignore landmass flag
-    inline void set_ignore_landmass( const bool b) { ignoreLandmass = b; }
-#endif
-
-    // TODO : REMOVE
-    inline TGNodes* get_nodes() { return &nodes; }
-
-    // node list in geodetic coords (with fixed elevation)
-    inline void get_geod_nodes( std::vector<SGGeod>& points ) const { nodes.get_geod_nodes( points ); }
-
-    // normal list (for each point) in cart coords (for smooth
-    // shading)
-    inline void get_point_normals( std::vector<SGVec3f>& normals ) const { nodes.get_normals( normals ); }
-
-    // Debug
-    void set_debug( std::string path, std::vector<std::string> area_defs, std::vector<std::string> shape_defs );
 };
 
 

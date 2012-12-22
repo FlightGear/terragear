@@ -117,6 +117,8 @@ int main(int argc, char **argv) {
         }
     }
 
+    int num_threads = 8;
+
     if ( share_dir == "" ) {
         share_dir = work_dir + "/Shared";
     }
@@ -149,124 +151,117 @@ int main(int argc, char **argv) {
         exit(-1);
     }
 
-    // main construction data management class : Stage 1
+    // three identical work queues
+    SGLockedQueue<SGBucket> wq[3];
+
+    // First generate the workqueue of buckets to construct
     if (tile_id == -1) {
         // build all the tiles in an area
         SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) within given bounding box");
+
         SGBucket b_min( min );
         SGBucket b_max( max );
 
         if ( b_min == b_max ) {
-            TGConstruct* all_stages;
-
-            all_stages = new TGConstruct();
-            all_stages->set_cover( cover );
-            all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
-            all_stages->set_options( ignoreLandmass, nudge );
-            all_stages->set_bucket( b_min );
-            all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-            all_stages->ConstructBucketStage1();
-            all_stages->ConstructBucketStage2();
-            all_stages->ConstructBucketStage3();
-
-            delete all_stages;
+            for (unsigned int q=0; q<3; q++) {
+                wq[q].push( b_min );
+            }
         } else {
-            SGBucket b_cur;
-            int dx, dy, i, j;
-            int total_buckets, cur_bucket;
+            int dx, dy;
+            int i, j;
 
             sgBucketDiff(b_min, b_max, &dx, &dy);
+
             SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
             SG_LOG(SG_GENERAL, SG_ALERT, "  dx = " << dx << "  dy = " << dy);
 
-            // construct stage 1
-            total_buckets = (dx+1) * (dy + 1);
-            cur_bucket = 0;
             for ( j = 0; j <= dy; j++ ) {
                 for ( i = 0; i <= dx; i++ ) {
-                    b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
-
-                    TGConstruct* stage1;
-                    stage1 = new TGConstruct();
-                    stage1->set_cover( cover );
-                    stage1->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                    stage1->set_options( ignoreLandmass, nudge );
-                    stage1->set_bucket( b_cur );
-                    stage1->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 1: Construct bucket " << cur_bucket++ << " of " << total_buckets );
-                    stage1->ConstructBucketStage1();
-                    stage1->SaveToIntermediateFiles(1);
-
-                    delete stage1;
-                }
-            }
-
-            // construct stage 2
-            cur_bucket = 0;
-            for ( j = 0; j <= dy; j++ ) {
-                for ( i = 0; i <= dx; i++ ) {
-                    b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
-
-                    TGConstruct* stage2;
-                    stage2 = new TGConstruct();
-                    stage2->set_cover( cover );
-                    stage2->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                    stage2->set_options( ignoreLandmass, nudge );
-                    stage2->set_bucket( b_cur );
-                    stage2->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 2: Construct bucket " << cur_bucket++ << " of " << total_buckets );
-                    stage2->LoadFromIntermediateFiles(1);
-                    stage2->ConstructBucketStage2();
-                    stage2->SaveToIntermediateFiles(2);
-
-                    delete stage2;
-                }
-            }
-
-            // construct stage 3
-            cur_bucket = 0;
-            for ( j = 0; j <= dy; j++ ) {
-                for ( i = 0; i <= dx; i++ ) {
-                    b_cur = sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j);
-
-                    TGConstruct* stage3;
-                    stage3 = new TGConstruct();
-                    stage3->set_cover( cover );
-                    stage3->set_paths( work_dir, share_dir, output_dir, load_dirs );
-                    stage3->set_options( ignoreLandmass, nudge );
-                    stage3->set_bucket( b_cur );
-                    stage3->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-                    SG_LOG(SG_GENERAL, SG_ALERT, "STAGE 3: Construct bucket " << cur_bucket++ << " of " << total_buckets );
-                    stage3->LoadFromIntermediateFiles(2);
-                    stage3->ConstructBucketStage3();
-
-                    delete stage3;
+                    for (unsigned int q=0; q<3; q++) {
+                        wq[q].push( sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j) );
+                    }
                 }
             }
         }
     } else {
         // construct the specified tile
         SG_LOG(SG_GENERAL, SG_ALERT, "Building tile " << tile_id);
-        SGBucket b( tile_id );
-        TGConstruct* all_stages;
-
-        all_stages = new TGConstruct();
-        all_stages->set_cover( cover );
-        all_stages->set_paths( work_dir, share_dir, output_dir, load_dirs );
-        all_stages->set_options( ignoreLandmass, nudge );
-        all_stages->set_bucket( b );
-        all_stages->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
-
-        all_stages->ConstructBucketStage1();
-        all_stages->ConstructBucketStage2();
-        all_stages->ConstructBucketStage3();
-
-        delete all_stages;
+        for (unsigned int q=0; q<3; q++) {
+            wq[q].push( SGBucket( tile_id ) );
+        }
     }
+
+    // now create the worker threads for stage 1
+    std::vector<TGConstruct *> constructs;
+
+    for (int i=0; i<num_threads; i++) {
+        TGConstruct* construct = new TGConstruct( 1, wq[0] );
+        construct->set_cover( cover );
+        construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
+        construct->set_options( ignoreLandmass, nudge );
+        construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+        constructs.push_back( construct );
+    }
+
+    // start all threads
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->start();
+    }
+    // wait for all threads to complete
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->join();
+    }
+    // delete the stage 1 construct objects
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        delete constructs[i];
+    }
+    constructs.clear();
+
+    for (int i=0; i<num_threads; i++) {
+        TGConstruct* construct = new TGConstruct( 2, wq[1] );
+        construct->set_cover( cover );
+        construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
+        construct->set_options( ignoreLandmass, nudge );
+        construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+        constructs.push_back( construct );
+    }
+
+    // start all threads
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->start();
+    }
+    // wait for all threads to complete
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->join();
+    }
+    // delete the stage 2 construct objects
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        delete constructs[i];
+    }
+    constructs.clear();
+
+    for (int i=0; i<num_threads; i++) {
+        TGConstruct* construct = new TGConstruct( 3, wq[2] );
+        construct->set_cover( cover );
+        construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
+        construct->set_options( ignoreLandmass, nudge );
+        construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
+        constructs.push_back( construct );
+    }
+
+    // start all threads
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->start();
+    }
+    // wait for all threads to complete
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->join();
+    }
+    // delete the stage 2 construct objects
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        delete constructs[i];
+    }
+    constructs.clear();
 
     SG_LOG(SG_GENERAL, SG_ALERT, "[Finished successfully]");
     return 0;

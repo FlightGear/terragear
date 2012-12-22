@@ -45,7 +45,7 @@ class TGLandclass
 public:
     void clear(void);
 
-    inline unsigned int area_size( unsigned int area )
+    inline unsigned int area_size( unsigned int area ) const
     {
         return polys[area].size();
     }

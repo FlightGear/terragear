@@ -243,12 +243,6 @@ void TGNodes::Dump( void ) {
         }
 
         SG_LOG(SG_GENERAL, SG_ALERT, "Point[" << i << "] is " << node.GetPosition() << fixed );
-        if ( node.GetFaces().size() ) {
-            TGFaceList faces = node.GetFaces();
-            for (unsigned int j=0; j<faces.size(); j++) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "\tface " << faces[j].area << "," << faces[j].poly << "," << faces[j].tri );
-            }
-        }
     }
 }
 

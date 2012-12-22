@@ -58,6 +58,7 @@ void TGConstruct::FixTJunctions( void ) {
     }
 }
 
+#if 0
 // Attempt to merge slivers into a list of polygons.
 //
 // For each sliver contour, see if a union with another polygon yields
@@ -78,6 +79,7 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  tgcontour_list& sliver_l
 
     sliver_list.clear();
 }
+#endif
 
 void TGConstruct::CleanClippedPolys() {
     // Clean the polys

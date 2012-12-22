@@ -58,6 +58,7 @@ public:
 
     // delete all the data out of node_list
     inline void clear() {
+        tg_node_list.clear();
         kd_tree_valid = false;
     }
 
@@ -122,7 +123,6 @@ public:
         return tg_node_list[index];
     }
 
-
     inline void AddFace( int i, unsigned int area, unsigned int poly, unsigned int tri )
     {
         tg_node_list[i].AddFace( area, poly, tri );
@@ -140,61 +140,6 @@ private:
     UniqueTGNodeSet tg_node_list;
     Tree            tg_kd_tree;
     bool            kd_tree_valid;
-
-#if 0
-    // return true of the two points are "close enough" as defined by
-    // FG_PROXIMITY_EPSILON
-    bool close_enough_2d( const SGGeod& p1, const SGGeod& p2 ) const;
-
-    // return true of the two points are "close enough" as defined by
-    // FG_PROXIMITY_EPSILON
-    bool close_enough_3d( const SGGeod& p1, const SGGeod& p2 ) const;
-
-    // return true of the two points are "close enough" as defined by
-    // FG_COURSE_EPSILON
-    bool course_close_enough( const SGGeod& p1, const SGGeod& p2 );
-#endif
 };
-
-#if 0
-// return true of the two points are "close enough" as defined by
-// FG_PROXIMITY_EPSILON checking just x and y dimensions
-inline bool TGNodes::close_enough_2d( const SGGeod& p1, const SGGeod& p2 )
-    const
-{
-    if ( ( fabs(p1.getLongitudeDeg() - p2.getLongitudeDeg()) < FG_PROXIMITY_EPSILON ) &&
-         ( fabs(p1.getLatitudeDeg()  - p2.getLatitudeDeg()) < FG_PROXIMITY_EPSILON ) ) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-// return true of the two points are "close enough" as defined by
-// FG_PROXIMITY_EPSILON check all three dimensions
-inline bool TGNodes::close_enough_3d( const SGGeod& p1, const SGGeod& p2 )
-    const
-{
-    if ( ( fabs(p1.getLongitudeDeg() - p2.getLongitudeDeg()) < FG_PROXIMITY_EPSILON ) &&
-         ( fabs(p1.getLatitudeDeg()  - p2.getLatitudeDeg()) < FG_PROXIMITY_EPSILON ) &&
-         ( fabs(p1.getElevationM()   - p2.getElevationM()) < FG_PROXIMITY_EPSILON ) ) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-// return true of the two points are "close enough" as defined by
-// FG_COURSE_EPSILON
-inline bool TGNodes::course_close_enough( const SGGeod& p1, const SGGeod& p2 )
-{
-    if ( ( fabs(p1.getLongitudeDeg() - p2.getLongitudeDeg()) < FG_COURSE_EPSILON ) &&
-         ( fabs(p1.getLatitudeDeg()  - p2.getLatitudeDeg()) < FG_COURSE_EPSILON ) ) {
-        return true;
-    } else {
-        return false;
-    }
-}
-#endif
 
 #endif // _TG_NODES_HXX

@@ -222,6 +222,11 @@ public:
         return index;
     }
 
+    void clear( void ) {
+        index_list.clear();
+        node_list.clear();
+    }
+
     TGNode const& operator[]( int index ) const {
         return node_list[index];
     }
@@ -255,7 +260,7 @@ public:
     }
 
 private:
-    unique_tgnode_set         index_list;
+    unique_tgnode_set       index_list;
     std::vector<TGNode>     node_list;
 };
 

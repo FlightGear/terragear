@@ -73,7 +73,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
             } else {
                 int area;
                 std::string material;
-                gzFile fp =gzopen( p.c_str(), "rb" );
+                gzFile fp = gzopen( p.c_str(), "rb" );
                 unsigned int count;
 
                 sgReadUInt( fp, &count );
@@ -107,13 +107,14 @@ int TGConstruct::LoadLandclassPolys( void ) {
                         }
                     }
                 }
+                gzclose( fp ); 
 
                 gzclose( fp );
                 SG_LOG(SG_GENERAL, SG_DEBUG, " Loaded " << p.file());
             }
         } // of directory file children
     }
-    
+
     SG_LOG(SG_GENERAL, SG_ALERT, " Total polys read in this tile: " <<  total_polys_read );
 
     return total_polys_read;
