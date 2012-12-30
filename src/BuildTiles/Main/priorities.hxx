@@ -24,29 +24,151 @@
 #ifndef _PRIORITIES_HXX
 #define _PRIORITIES_HXX
 
+#include <map>
+#include <string>
 
 #include <simgear/compiler.h>
 
-#include <string>
+#include <terragear/tg_polygon.hxx>
 
-typedef unsigned int AreaType;
-int load_area_types( const std::string& filename );
-bool is_hole_area(AreaType areaType);
-bool is_landmass_area(AreaType areaType);
-bool is_island_area(AreaType areaType);
-bool is_water_area(AreaType areaType);
-bool is_lake_area(AreaType areaType);
-bool is_stream_area(AreaType areaType);
-bool is_road_area(AreaType areaType);
-bool is_ocean_area(AreaType areaType);
-AreaType get_sliver_target_area_type();
-AreaType get_default_area_type();
+class TGAreaDefinition {
+public:
+    TGAreaDefinition( const std::string& n, const std::string& c, unsigned int p ) {
+        name     = n;
+        category = c;
+        priority = p;
+    };
 
-// return area type from text name
-AreaType get_area_type( const std::string &area );
+    std::string const& GetName() const {
+        return name;
+    }
 
-// return text form of area name
-std::string get_area_name( AreaType area );
+    unsigned int GetPriority() const {
+        return priority;
+    }
+
+    std::string const& GetCategory() const {
+        return category;
+    }
+
+private:
+    std::string  name;
+    unsigned int priority;
+    std::string  category;
+
+    // future improvements
+    unsigned int smooth_method;
+    tgTexMethod  texture_method;
+    bool         layered;
+    unsigned int default_layer;
+};
+
+typedef std::vector<TGAreaDefinition> area_definition_list;
+typedef area_definition_list::const_iterator area_definition_iterator;
+
+class TGAreaDefinitions {
+public:
+    TGAreaDefinitions() {};
+    int init( const std::string& filename );
+    unsigned int size() const {
+        return area_defs.size();
+    }
+
+    bool is_hole_area( unsigned int p ) const {
+        if ( area_defs[p].GetCategory() == "hole" ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_landmass_area( unsigned int p ) const {
+        if ( area_defs[p].GetCategory() == "landmass" ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_island_area( unsigned int p ) const {
+        if ( area_defs[p].GetCategory() == "island" ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_road_area( unsigned int p ) const {
+        if ( area_defs[p].GetCategory() == "road" ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_water_area( unsigned int p ) const {
+        if ( ( area_defs[p].GetCategory() == "ocean" ) ||
+             ( area_defs[p].GetCategory() == "lake" ) ){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_lake_area( unsigned int p ) const {
+        if ( area_defs[p].GetCategory() == "lake" ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_stream_area( unsigned int p ) const {
+        if ( area_defs[p].GetCategory() == "stream" ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool is_ocean_area( unsigned int p ) const {
+        if ( area_defs[p].GetCategory() == "ocean" ) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    std::string const& get_area_name( unsigned int p ) const {
+        return area_defs[p].GetName();
+    }
+
+    unsigned int get_area_priority( const std::string& name ) const {
+        for (unsigned int i=0; i < area_defs.size(); i++) {
+            if ( area_defs[i].GetName() == name ) {
+                return i;
+            }
+        }
+
+        SG_LOG(SG_GENERAL, SG_ALERT, "No area named " << name);
+        exit(0);
+        return 0;
+    }
+
+
+    std::string const& get_sliver_area_name( void ) const {
+        return sliver_area_name;
+    }
+
+    unsigned int get_sliver_area_priority( void ) const {
+        return sliver_area_priority;
+    }
+
+
+private:
+    area_definition_list area_defs;
+    std::string  sliver_area_name;
+    unsigned int sliver_area_priority;
+};
 
 #endif // _PRIORITIES_HXX
-

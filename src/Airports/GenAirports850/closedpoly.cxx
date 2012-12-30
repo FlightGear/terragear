@@ -457,7 +457,7 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
     {
         if(  shapefile_name.size() ) {
             tgShapefile::FromPolygon( pre_tess, "./airport_dbg", std::string("preclip"), shapefile_name );
-            accum.ToShapefiles( "./airport_dbg", "accum" );
+            accum.ToShapefiles( "./airport_dbg", "accum", true );
         }
 
         tgPolygon clipped = accum.Diff( pre_tess );

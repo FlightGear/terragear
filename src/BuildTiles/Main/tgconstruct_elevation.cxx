@@ -48,7 +48,6 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
 
     array.parse( bucket );
     array.remove_voids( );
-
     if ( add_nodes ) {
         std::vector<SGGeod> const& corner_list = array.get_corner_list();
         for (unsigned int i=0; i<corner_list.size(); i++) {
@@ -84,10 +83,10 @@ void TGConstruct::CalcElevations( void )
     nodes.get_geod_nodes(raw_nodes);
 
     // now flatten some stuff
-    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
-        if ( is_lake_area( (AreaType)area ) ) {
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
+        if ( area_defs.is_lake_area(area) ) {
             for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
-                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
                 tgPolygon poly = polys_clipped.get_poly( area, p );
 
                 for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
@@ -109,9 +108,9 @@ void TGConstruct::CalcElevations( void )
             }
         }
 
-        if ( is_stream_area( (AreaType)area ) ) {
-            for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
-                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+        if ( area_defs.is_stream_area(area) ) {
+            for (unsigned int p = 0; p < polys_clipped.area_size(area); ++p ) {
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
                 tgPolygon poly = polys_clipped.get_poly( area, p );
 
                 for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
@@ -156,9 +155,9 @@ void TGConstruct::CalcElevations( void )
             }
         }
 
-        if ( is_road_area( (AreaType)area ) ) {
+        if ( area_defs.is_road_area(area) ) {
             for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
-                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
                 tgPolygon poly = polys_clipped.get_poly( area, p );
 
                 for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
@@ -203,9 +202,9 @@ void TGConstruct::CalcElevations( void )
             }
         }
 
-        if ( is_ocean_area( (AreaType)area ) ) {
+        if ( area_defs.is_ocean_area(area) ) {
             for (int p = 0; p < (int)polys_clipped.area_size(area); ++p ) {
-                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << (int)polys_clipped.area_size(area) );
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Flattening " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
                 tgPolygon poly = polys_clipped.get_poly( area, p );
 
                 for (unsigned int tri=0; tri < poly.Triangles(); tri++) {

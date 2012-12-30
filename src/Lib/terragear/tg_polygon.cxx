@@ -346,13 +346,13 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
     sgReadString( fp, &strbuff );
     if ( strbuff ) {
         material = strbuff;
-        delete strbuff;
+        delete[] strbuff;
     }
 
     sgReadString( fp, &strbuff );
     if ( strbuff ) {
         flag = strbuff;
-        delete strbuff;
+        delete[] strbuff;
     }
 
     sgReadInt( fp, (int *)&preserve3d );

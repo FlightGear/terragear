@@ -200,11 +200,9 @@ long int tgChopper::GenerateIndex( std::string path )
     long int index = 0;
 
     //Open or create the named mutex
-    boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "tgChopper_index2");
+    boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "tgChopper_index3");
     {
-//        SG_LOG(SG_GENERAL, SG_ALERT, "getting lock");
         boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex);
-//        SG_LOG(SG_GENERAL, SG_ALERT, " - got it");
 
         /* first try to read the file */
         FILE *fp = fopen( index_file.c_str(), "r+" );
@@ -218,7 +216,6 @@ long int tgChopper::GenerateIndex( std::string path )
             }
         } else {
             fread( (void*)&index, sizeof(long int), 1, fp );
-//            SG_LOG(SG_GENERAL, SG_ALERT, " SUCCESS READING INDEX FILE - READ INDEX " << index );
         }
 
         index++;

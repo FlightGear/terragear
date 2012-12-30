@@ -97,9 +97,9 @@ void TGConstruct::CalcFaceNormals( void )
     std::vector<SGGeod>  geod_nodes;
     nodes.get_geod_nodes( geod_nodes );
 
-    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Calculating face normals for " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << polys_in.area_size(area) );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Calculating face normals for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_in.area_size(area) );
             calc_normals( geod_nodes, wgs84_nodes, polys_clipped.get_poly( area, p ) );
         }
     }

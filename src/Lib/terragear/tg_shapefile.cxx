@@ -121,6 +121,11 @@ void tgShapefile::FromClipper( const ClipperLib::Polygons& subject, const std::s
 
         OGRFeature::DestroyFeature(feature);
     }
+
+    // close after each write
+    if ( ds_id >= 0 ) {
+        ds_id = tgShapefile::CloseDatasource( ds_id );
+    }
 }
 
 void tgShapefile::FromPolygon( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )

@@ -102,6 +102,9 @@ public:
 
     int get_array_elev( int col, int row ) const;
     void set_array_elev( int col, int row, int val );
+
+    // reset Array to initial state - ready to load another elevation file
+    void unload( void );
 };
 
 #endif // _ARRAY_HXX

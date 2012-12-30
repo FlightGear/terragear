@@ -38,7 +38,6 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon remains;
     tgPolygon safety_base;
     tgcontour_list slivers;
-    int i, j;
     SGGeod p;
     SGVec2d min, max;
     bool debug_area, debug_shape;
@@ -77,17 +76,16 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon land_mask, water_mask, island_mask;
     tgpolygon_list land_list, water_list, island_list;
 
-    for ( i = 0; i < TG_MAX_AREA_TYPES; i++ ) {
-        if ( is_landmass_area( i ) && !ignoreLandmass ) {
+    for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
+        if ( area_defs.is_landmass_area(i) && !ignoreLandmass ) {
             for ( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
                 land_list.push_back( polys_in.get_poly(i, j) );
             }
-
-        } else if ( is_water_area( i ) ) {
+        } else if ( area_defs.is_water_area(i) ) {
             for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
                 water_list.push_back( polys_in.get_poly(i, j) );
             }
-        } else if ( is_island_area( i ) ) {
+        } else if ( area_defs.is_island_area(i) ) {
             for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
                 island_list.push_back( polys_in.get_poly(i, j) );
             }
@@ -106,23 +104,23 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     }
 
     // process polygons in priority order
-    for ( i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
+    for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
         debug_area = IsDebugArea( i );
-        for( j = 0; j < (int)polys_in.area_size(i); ++j ) {
+        for( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
             tgPolygon& current = polys_in.get_poly(i, j);
             debug_shape = IsDebugShape( polys_in.get_poly( i, j ).GetId() );
 
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Clipping " << get_area_name( (AreaType)i ) << "(" << i << "):" << j+1 << " of " << polys_in.area_size(i) << " id " << polys_in.get_poly( i, j ).GetId() );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Clipping " << area_defs.get_area_name( i ) << "(" << i << "):" << j+1 << " of " << polys_in.area_size(i) << " id " << polys_in.get_poly( i, j ).GetId() );
 
             tmp = current;
 
             // if not a hole, clip the area to the land_mask
-            if ( !ignoreLandmass && !is_hole_area( i ) ) {
+            if ( !ignoreLandmass && !area_defs.is_hole_area(i) ) {
                 tmp = tgPolygon::Intersect( tmp, land_mask );
             }
 
             // if a water area, cut out potential islands
-            if ( is_water_area( i ) ) {
+            if ( area_defs.is_water_area(i) ) {
                 // clip against island mask
                 tmp = tgPolygon::Diff( tmp, island_mask );
             }
@@ -136,7 +134,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 tgShapefile::FromPolygon( tmp, ds_name, layer, name );
 
                 sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
-                accum.ToShapefiles( ds_name, layer );
+                accum.ToShapefiles( ds_name, layer, true );
             }
 
             clipped = accum.Diff( tmp );
@@ -180,7 +178,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 char layer[32];
                 sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
 
-                accum.ToShapefiles( ds_name, layer );
+                accum.ToShapefiles( ds_name, layer, true );
             }
 
             accum_idx++;
@@ -231,18 +229,18 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 #endif
 
         if ( remains.Contours() > 0 ) {
-            remains.SetMaterial( get_area_name(get_sliver_target_area_type()) );
+            remains.SetMaterial( area_defs.get_sliver_area_name() );
             remains.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
-            polys_clipped.add_poly( (int)get_sliver_target_area_type(), remains );
+            polys_clipped.add_poly( area_defs.get_sliver_area_priority(), remains );
         }
     }
 
     // Now make sure any newly added intersection nodes are added to the tgnodes
-    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& poly = polys_clipped.get_poly( area, p );
 
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
 
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {

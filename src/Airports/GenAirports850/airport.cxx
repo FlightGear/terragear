@@ -347,6 +347,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             features[i]->BuildBtg( line_polys, rwy_lights, lf_accum, make_shapefiles );
         }
 
+//        lf_accum.ToShapefiles( "./lf_accum", "test", false );
+
         log_time = time(0);
         GENAPT_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << DebugTimeToString(log_time) );
     }
@@ -658,15 +660,18 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     {
         tgPolygon poly = line_polys[k];
 
+#if 1
         poly = tgPolygon::RemoveCycles( poly );
         poly = tgPolygon::RemoveDups( poly );
         poly = tgPolygon::RemoveBadContours( poly );
-        poly = tgPolygon::Simplify( poly );
-        poly = tgPolygon::RemoveTinyContours( poly );
-        poly = tgPolygon::RemoveSpikes( poly );
-        poly = tgPolygon::RemoveDups( poly );
-        poly = tgPolygon::RemoveBadContours( poly );
-        poly = tgPolygon::RemoveTinyContours( poly );
+
+//        poly = tgPolygon::Simplify( poly );
+//        poly = tgPolygon::RemoveTinyContours( poly );
+//        poly = tgPolygon::RemoveSpikes( poly );
+//        poly = tgPolygon::RemoveDups( poly );
+//        poly = tgPolygon::RemoveBadContours( poly );
+//        poly = tgPolygon::RemoveTinyContours( poly );
+#endif
 
         line_polys[k] = poly;
     }
@@ -1232,6 +1237,5 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
     chopper.Add( divided_base, "Hole" );
     chopper.Add( apt_clearing, "Airport" );
-
     chopper.Save();
 }

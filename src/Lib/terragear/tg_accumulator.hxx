@@ -14,7 +14,7 @@ public:
     void      Add( const tgContour& subject );
     void      Add( const tgPolygon& subject );
 
-    void      ToShapefiles( const std::string& path, const std::string& layer );
+    void      ToShapefiles( const std::string& path, const std::string& layer, bool individual );
 
 private:
     typedef std::vector < ClipperLib::Polygons > clipper_polygons_list;

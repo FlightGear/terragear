@@ -35,39 +35,45 @@
 
 void TGLandclass::clear(void)
 {
-    int i;
-
-    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+    for (unsigned int i=0; i<polys.size(); i++) {
         polys[i].clear();
     }
+    // keep the number of arrays intact - it's constant throughout construct
+    polys.clear();
 }
 
 void TGLandclass::LoadFromGzFile(gzFile& fp)
 {
-    int i, j, count;
+    int i, j, num_layers, num_polys;
 
     // Load all landclass shapes
-    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-        sgReadInt( fp, &count );
+    sgReadInt( fp, &num_layers );
 
-        for (j=0; j<count; j++) {
+    polys.clear();
+    for (i=0; i<num_layers; i++) {
+        tgpolygon_list lc;
+        sgReadInt( fp, &num_polys );
+
+        lc.clear();
+        for (j=0; j<num_polys; j++) {
             tgPolygon poly;
-
             poly.LoadFromGzFile( fp );
-            polys[i].push_back( poly );
+            lc.push_back( poly );
         }
+        polys.push_back(lc);
     }
 }
+
 std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 {
-    int i, j, count;
+    unsigned int count;
     tgPolygon poly;
 
     // Save all landclass shapes
-    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
+    for (unsigned int i=0; i<lc.polys.size(); i++) {
         count = lc.polys[i].size();
         out << count << "\n";
-        for (j=0; j<count; j++) {
+        for (unsigned int j=0; j<count; j++) {
             out << lc.polys[i][j] << " ";
         }
         out << "\n";
@@ -75,17 +81,20 @@ std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 
     return out;
 }
+
 void TGLandclass::SaveToGzFile(gzFile& fp)
 {
-    int i, j, count;
+    int i, j, num_layers, num_polys;
     tgPolygon shape;
 
     // Save all landclass shapes
-    for (i=0; i<TG_MAX_AREA_TYPES; i++) {
-        count = polys[i].size();
-        sgWriteInt( fp, count );
+    num_layers = polys.size();
+    sgWriteInt( fp, num_layers );
+    for (i=0; i<num_layers; i++) {
+        num_polys = polys[i].size();
+        sgWriteInt( fp, num_polys );
 
-        for (j=0; j<count; j++) {
+        for (j=0; j<num_polys; j++) {
             polys[i][j].SaveToGzFile( fp );
         }
     }

@@ -35,14 +35,25 @@
 
 #include <simgear/math/sg_types.hxx>
 #include <simgear/io/lowlevel.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <terragear/tg_polygon.hxx>
 
-#define TG_MAX_AREA_TYPES       128
+typedef std::vector<tgpolygon_list> tglandclass_list;
 
 class TGLandclass
 {
 public:
+    TGLandclass() {};
+
+    void init( unsigned int num_areas) {
+        for (unsigned int i=0; i<num_areas; i++) {
+            tgpolygon_list lc;
+            lc.clear();
+            polys.push_back(lc);
+        }
+    }
+
     void clear(void);
 
     inline unsigned int area_size( unsigned int area ) const
@@ -60,6 +71,10 @@ public:
     }
     inline void add_poly( unsigned int area, const tgPolygon& p )
     {
+        if ( area > polys.capacity() ) {
+            SG_LOG( SG_CLIPPER, SG_ALERT, " area out of bounds " << area << " of " << polys.capacity() );
+            exit(0);
+        }
         polys[area].push_back( p );
     }
     inline void set_poly( unsigned int area, unsigned int poly, const tgPolygon& p )
@@ -98,7 +113,7 @@ public:
     friend std::ostream& operator<< ( std::ostream&, const TGLandclass& );
 
 private:
-    tgpolygon_list polys[TG_MAX_AREA_TYPES];
+    tglandclass_list polys;
 };
 
 #endif // _TGLANDCLASS_HXX

@@ -212,6 +212,10 @@ public:
     tgPolygon() {
         preserve3d = false;
     }
+    ~tgPolygon() {
+        contours.clear();
+        triangles.clear();
+    }
 
     void Erase( void ) {
         contours.clear();

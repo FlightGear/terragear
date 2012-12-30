@@ -192,6 +192,11 @@ class UniqueTGNodeSet {
 public:
     UniqueTGNodeSet() {}
 
+    ~UniqueTGNodeSet() {
+        index_list.clear();
+        node_list.clear();
+    }
+
     unsigned int add( const TGNode& n ) {
         unique_tgnode_set_iterator it;
         TGNodeIndex lookup( n.GetPosition() );

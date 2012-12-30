@@ -32,8 +32,9 @@ using std::ifstream;
 using std::string;
 using std::vector;
 
-static vector<AreaType> usgs_map;
+static vector<unsigned int> usgs_map;
 
+#if 0 // need area_defs
 int load_usgs_map( const std::string& filename ) {
     ifstream in ( filename.c_str() );
 
@@ -57,7 +58,7 @@ int load_usgs_map( const std::string& filename ) {
 }
 
 // Translate USGS land cover values into TerraGear area types.
-AreaType translateUSGSCover (unsigned int usgs_value)
+unsigned int translateUSGSCover (unsigned int usgs_value)
 {
     if ( 0<usgs_value && usgs_value<usgs_map.size() ) {
         return usgs_map[usgs_value-1];
@@ -65,4 +66,4 @@ AreaType translateUSGSCover (unsigned int usgs_value)
         return get_default_area_type();
     }
 }
-
+#endif

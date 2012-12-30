@@ -138,7 +138,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
         taxi_poly.AddContour( taxi_contour );
 
         tgShapefile::FromPolygon( taxi_poly, "./airport_dbg", std::string("preclip"), shapefile_name );
-        accum.ToShapefiles( "./airport_dbg", "accum" );
+        accum.ToShapefiles( "./airport_dbg", "accum", true );
     }
 
     tgPolygon clipped = accum.Diff( taxi_contour );

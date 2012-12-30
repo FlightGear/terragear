@@ -82,8 +82,9 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 for ( unsigned int i=0; i<count; i++ ) {
                     tgPolygon poly;
                     poly.LoadFromGzFile( fp );
-                    area = get_area_type( poly.GetFlag() );
-                    material = get_area_name( area );
+                    area     = area_defs.get_area_priority( poly.GetFlag() );
+                    material = area_defs.get_area_name( area );
+
                     poly.SetMaterial( material );
                     poly.SetId( cur_poly_id++ );
 
@@ -96,10 +97,6 @@ int TGConstruct::LoadLandclassPolys( void ) {
                             SGGeod const& node  = poly.GetNode( j, k );
 
                             if ( poly.GetPreserve3D() ) {
-                                if ( node.getElevationM() < 2.0 ) {
-                                    SG_LOG(SG_GENERAL, SG_ALERT, "FIXED ELEVATION NODE in POLY " << poly.GetFlag() << " has elevation " << node.getElevationM() );
-                                }
-                                
                                 nodes.unique_add_fixed_elevation( node );
                             } else {
                                 nodes.unique_add( node );
@@ -107,7 +104,6 @@ int TGConstruct::LoadLandclassPolys( void ) {
                         }
                     }
                 }
-                gzclose( fp ); 
 
                 gzclose( fp );
                 SG_LOG(SG_GENERAL, SG_DEBUG, " Loaded " << p.file());

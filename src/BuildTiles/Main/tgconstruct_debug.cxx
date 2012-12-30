@@ -32,13 +32,23 @@
 
 using std::string;
 
-void TGConstruct::set_debug( std::string path, std::vector<string> area_defs, std::vector<string> shape_defs )
+void TGConstruct::set_debug( std::string path, std::vector<string> a_defs, std::vector<string> s_defs )
 {
     debug_path = path;
 
+    debug_area_defs = a_defs;
+    debug_shape_defs = s_defs;
+}
+
+void TGConstruct::get_debug( void )
+{
+    // clear out any previous entries
+    debug_areas.clear();
+    debug_shapes.clear();
+
     /* Find any ids for our tile */
-    for (unsigned int i=0; i< area_defs.size(); i++) {
-        string dsd     = area_defs[i];
+    for (unsigned int i=0; i< debug_area_defs.size(); i++) {
+        string dsd     = debug_area_defs[i];
         size_t d_pos   = dsd.find(":");
         string tile    = dsd.substr(0, d_pos);
 
@@ -64,8 +74,8 @@ void TGConstruct::set_debug( std::string path, std::vector<string> area_defs, st
         }
     }
 
-    for (unsigned int i=0; i< shape_defs.size(); i++) {
-        string dsd     = shape_defs[i];
+    for (unsigned int i=0; i< debug_shape_defs.size(); i++) {
+        string dsd     = debug_shape_defs[i];
         size_t d_pos   = dsd.find(":");
         string tile    = dsd.substr(0, d_pos);
 

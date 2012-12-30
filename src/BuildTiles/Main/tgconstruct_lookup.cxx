@@ -35,7 +35,7 @@
 void TGConstruct::LookupNodesPerVertex( void )
 {
     // for each node, traverse all the triangles - and create face lists
-    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+    for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& poly = polys_clipped.get_poly( area, p );
 
@@ -57,7 +57,7 @@ void TGConstruct::LookupNodesPerVertex( void )
 void TGConstruct::LookupFacesPerNode( void )
 {
     // Add each face that includes a node to the node's face list
-    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+    for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon const& poly = polys_clipped.get_poly(area, p );
 

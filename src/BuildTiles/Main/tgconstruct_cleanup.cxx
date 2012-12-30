@@ -38,7 +38,7 @@ void TGConstruct::FixTJunctions( void ) {
     tgRectangle bb;
 
     // traverse each poly, and add intermediate nodes
-    for ( unsigned int i = 0; i < TG_MAX_AREA_TYPES; ++i ) {
+    for ( unsigned int i = 0; i < area_defs.size(); ++i ) {
         for( unsigned int j = 0; j < polys_clipped.area_size(i); ++j ) {
             tgPolygon current = polys_clipped.get_poly(i, j);
             bb = current.GetBoundingBox();
@@ -49,7 +49,7 @@ void TGConstruct::FixTJunctions( void ) {
             after   = current.TotalNodes();
 
             if (before != after) {
-               SG_LOG( SG_CLIPPER, SG_DEBUG, "Fixed T-Junctions in " << get_area_name( (AreaType)i ) << ":" << j+1 << " of " << (int)polys_clipped.area_size(i) << " nodes increased from " << before << " to " << after );
+               SG_LOG( SG_CLIPPER, SG_DEBUG, "Fixed T-Junctions in " << area_defs.get_area_name(i) << ":" << j+1 << " of " << (int)polys_clipped.area_size(i) << " nodes increased from " << before << " to " << after );
             }
 
             /* Save it back */
@@ -83,7 +83,7 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  tgcontour_list& sliver_l
 
 void TGConstruct::CleanClippedPolys() {
     // Clean the polys
-    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+    for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             // step 1 : snap
             tgPolygon poly = polys_clipped.get_poly(area, p);

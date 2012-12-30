@@ -29,6 +29,6 @@
 #include "priorities.hxx"
 
 int load_usgs_map( const std::string& filename );
-AreaType translateUSGSCover( unsigned int usgs_value );
+unsigned int translateUSGSCover( unsigned int usgs_value );
 
 #endif // _USGS_HXX

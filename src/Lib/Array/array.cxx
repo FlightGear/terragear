@@ -40,7 +40,7 @@ using std::string;
 TGArray::TGArray( void ):
   array_in(NULL),
   fitted_in(NULL),
-      in_data(NULL)
+  in_data(NULL)
 {
 
 }
@@ -68,7 +68,7 @@ bool TGArray::open( const string& file_base ) {
     // open fitted data file
     string fitted_name = file_base + ".fit.gz";
     fitted_in = new sg_gzifstream( fitted_name );
-    if ( ! fitted_in->is_open() ) {
+    if ( !fitted_in->is_open() ) {
         // not having a .fit file is unfortunate, but not fatal.  We
         // can do a really stupid/crude fit on the fly, but it will
         // not be nearly as nice as what the offline terrafit utility
@@ -101,6 +101,27 @@ TGArray::close() {
     return true;
 }
 
+void
+TGArray::unload( void ) {
+    if (array_in) {
+        gzclose(array_in);
+        array_in = NULL;
+    }
+
+    if (fitted_in ) {
+        fitted_in->close();
+        delete fitted_in;
+        fitted_in = NULL;
+    }
+
+    if (in_data) {
+        delete[] in_data;
+        in_data = NULL;
+    }
+
+    corner_list.clear();
+    fitted_list.clear();
+}
 
 // parse Array file, pass in the bucket so we can make up values when
 // the file wasn't found.
@@ -430,7 +451,21 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 
 TGArray::~TGArray( void )
 {
-    delete[] in_data;
+    if (in_data) {
+        delete[] in_data;
+        in_data = NULL;
+    }
+
+    if (array_in) {
+        gzclose(array_in);
+        array_in = NULL;
+    }
+
+    if (fitted_in ) {
+        fitted_in->close();
+        delete fitted_in;
+        fitted_in = NULL;
+    }
 }
 
 int TGArray::get_array_elev( int col, int row ) const

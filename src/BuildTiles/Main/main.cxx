@@ -22,10 +22,13 @@
 #  include <config.h>
 #endif
 
+#include <boost/thread.hpp>
+
 #include <simgear/debug/logstream.hxx>
 #include <Include/version.h>
 
 #include "tgconstruct.hxx"
+#include "priorities.hxx"
 #include "usgs.hxx"
 
 using std::string;
@@ -47,6 +50,8 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "  --priorities=<filename>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --usgs-map=<filename>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --ignore-landmass");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --threads");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --threads=<numthreads>");
     SG_LOG(SG_GENERAL, SG_ALERT, " ] <load directory...>");
     exit(-1);
 }
@@ -60,6 +65,7 @@ int main(int argc, char **argv) {
     string usgs_map_file = DEFAULT_USGS_MAPFILE;
     SGGeod min, max;
     long tile_id = -1;
+    int num_threads = 1;
 
     vector<string> load_dirs;
     bool ignoreLandmass = false;
@@ -104,6 +110,10 @@ int main(int argc, char **argv) {
             usgs_map_file = arg.substr(11);
         } else if (arg.find("--ignore-landmass") == 0) {
             ignoreLandmass = true;
+        } else if (arg.find("--threads=") == 0) {
+            num_threads = atoi( arg.substr(10).c_str() );
+        } else if (arg.find("--threads") == 0) {
+            num_threads = boost::thread::hardware_concurrency();
         } else if (arg.find("--debug-dir=") == 0) {
             debug_dir = arg.substr(12);
         } else if (arg.find("--debug-areas=") == 0) {
@@ -116,8 +126,6 @@ int main(int argc, char **argv) {
             break;
         }
     }
-
-    int num_threads = 8;
 
     if ( share_dir == "" ) {
         share_dir = work_dir + "/Shared";
@@ -146,9 +154,9 @@ int main(int argc, char **argv) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Load directory: " << argv[i]);
     }
 
-    if ( !load_area_types( priorities_file )
-        || (!cover.empty() && !load_usgs_map( usgs_map_file)) ) {
-        exit(-1);
+    TGAreaDefinitions areas;
+    if ( areas.init( priorities_file ) ) {
+        exit( -1 );
     }
 
     // three identical work queues
@@ -195,8 +203,8 @@ int main(int argc, char **argv) {
     std::vector<TGConstruct *> constructs;
 
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( 1, wq[0] );
-        construct->set_cover( cover );
+        TGConstruct* construct = new TGConstruct( areas, 1, wq[0] );
+        //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
         construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
@@ -207,10 +215,15 @@ int main(int argc, char **argv) {
     for (unsigned int i=0; i<constructs.size(); i++) {
         constructs[i]->start();
     }
+    // wait for workqueue to empty
+    while( wq[0].size() ) {
+        sleep( 5 );
+    }
     // wait for all threads to complete
     for (unsigned int i=0; i<constructs.size(); i++) {
         constructs[i]->join();
     }
+
     // delete the stage 1 construct objects
     for (unsigned int i=0; i<constructs.size(); i++) {
         delete constructs[i];
@@ -218,8 +231,8 @@ int main(int argc, char **argv) {
     constructs.clear();
 
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( 2, wq[1] );
-        construct->set_cover( cover );
+        TGConstruct* construct = new TGConstruct( areas, 2, wq[1] );
+        //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
         construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
@@ -229,6 +242,10 @@ int main(int argc, char **argv) {
     // start all threads
     for (unsigned int i=0; i<constructs.size(); i++) {
         constructs[i]->start();
+    }
+    // wait for workqueue to empty
+    while( wq[1].size() ) {
+        sleep( 5 );
     }
     // wait for all threads to complete
     for (unsigned int i=0; i<constructs.size(); i++) {
@@ -241,8 +258,8 @@ int main(int argc, char **argv) {
     constructs.clear();
 
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( 3, wq[2] );
-        construct->set_cover( cover );
+        TGConstruct* construct = new TGConstruct( areas, 3, wq[2] );
+        //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
         construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
@@ -252,6 +269,10 @@ int main(int argc, char **argv) {
     // start all threads
     for (unsigned int i=0; i<constructs.size(); i++) {
         constructs[i]->start();
+    }
+    // wait for workqueue to empty
+    while( wq[2].size() ) {
+        sleep( 5 );
     }
     // wait for all threads to complete
     for (unsigned int i=0; i<constructs.size(); i++) {

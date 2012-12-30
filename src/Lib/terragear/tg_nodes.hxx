@@ -54,11 +54,15 @@ public:
         kd_tree_valid = false;
     }
 
-    ~TGNodes( void )    {}
+    ~TGNodes( void )    {
+        tg_node_list.clear();
+        tg_kd_tree.clear();
+    }
 
     // delete all the data out of node_list
     inline void clear() {
         tg_node_list.clear();
+        tg_kd_tree.clear();
         kd_tree_valid = false;
     }
 

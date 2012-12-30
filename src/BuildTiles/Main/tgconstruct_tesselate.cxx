@@ -37,7 +37,7 @@ void TGConstruct::TesselatePolys( void )
     std::vector<SGGeod> poly_extra;
     SGGeod min, max;
 
-    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon poly = polys_clipped.get_poly(area, p );
 
@@ -48,8 +48,8 @@ void TGConstruct::TesselatePolys( void )
             tgRectangle rect = poly.GetBoundingBox();
             nodes.get_geod_inside( rect.getMin(), rect.getMax(), poly_extra );
 
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Tesselating " << get_area_name( (AreaType)area ) << "(" << area << "): " <<
-                    p+1 << " of " << (int)polys_clipped.area_size(area) << ": id = " << poly.GetId() );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Tesselating " << area_defs.get_area_name(area) << "(" << area << "): " <<
+                    p+1 << " of " << polys_clipped.area_size(area) << ": id = " << poly.GetId() );
 
             if ( IsDebugShape( poly.GetId() ) ) {
                 SG_LOG( SG_CLIPPER, SG_INFO, poly );
@@ -61,7 +61,7 @@ void TGConstruct::TesselatePolys( void )
         }
     }
 
-    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& poly = polys_clipped.get_poly(area, p );
 

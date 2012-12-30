@@ -59,15 +59,28 @@ void tgAccumulator::Add( const tgContour& subject )
     accum.push_back( clipper_subject );
 }
 
-void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix )
+void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
 {
     char shapefile[16];
     char layer[16];
 
-    for (unsigned int i=0; i < accum.size(); i++) {
-        sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
-        sprintf( shapefile, "accum_%d", i );
-        tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
+    if ( individual ) {
+        for (unsigned int i=0; i < accum.size(); i++) {
+            sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
+            sprintf( shapefile, "accum_%d", i );
+            tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
+        }
+    } else {
+        ClipperLib::Polygons clipper_result;
+        ClipperLib::Clipper  c;
+        c.Clear();
+
+        for ( unsigned int i=0; i<accum.size(); i++ ) {
+            c.AddPolygons(accum[i], ClipperLib::ptSubject);
+        }
+        c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+
+        tgShapefile::FromClipper( clipper_result, path, layer_prefix, "accum" );
     }
 }
 

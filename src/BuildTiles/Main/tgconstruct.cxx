@@ -33,7 +33,8 @@
 const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
 
 // Constructor
-TGConstruct::TGConstruct(unsigned int s, SGLockedQueue<SGBucket>& q) :
+TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q) :
+        area_defs(areas),
         workQueue(q),
         stage(s),
         ignoreLandmass(false),
@@ -42,13 +43,12 @@ TGConstruct::TGConstruct(unsigned int s, SGLockedQueue<SGBucket>& q) :
         isOcean(false)
 {
     total_tiles = q.size();
+    num_areas = areas.size();
 }
 
 
 // Destructor
 TGConstruct::~TGConstruct() { 
-    array.close();
-
     // land class polygons
     polys_in.clear();
     polys_clipped.clear();
@@ -82,8 +82,14 @@ void TGConstruct::run()
         // assume non ocean tile until proven otherwise
         isOcean = false;
 
-        SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tiles_complete << " of " << total_tiles );
+        // Initialize the landclass lists with the number of area definitions
+        polys_in.init( num_areas );
+        polys_clipped.init( num_areas );
 
+        SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tiles_complete << " of " << total_tiles << " using thread " << current() );
+
+        // Init debug shapes and area for this bucket
+        get_debug();
         if ( debug_shapes.size() || debug_all ) {
             sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
         } else {
@@ -92,6 +98,7 @@ void TGConstruct::run()
 
         if ( stage > 1 ) {
             LoadFromIntermediateFiles( stage-1 );
+            LoadSharedEdgeData( stage-1 );
         }
 
         switch( stage ) {
@@ -110,12 +117,14 @@ void TGConstruct::run()
                     break;
                 }
 
+#if 0
                 // STEP 3)
                 // Load the land use polygons if the --cover option was specified
                 if ( get_cover().size() > 0 ) {
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Loading landclass raster" );
                     load_landcover();
                 }
+#endif
 
                 // STEP 4)
                 // Clip the Landclass polygons
@@ -163,8 +172,8 @@ void TGConstruct::run()
                     // ONLY do this when saving edge nodes...
                     // STEP 11)
                     // Generate face-connected list - needed for saving the edge data
-                    // SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Faces Per Node");
-                    // LookupFacesPerNode();
+                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Faces Per Node");
+                    LookupFacesPerNode();
                 }
                 break;
 
@@ -230,10 +239,12 @@ void TGConstruct::run()
         }
 
         // Clean up for next work queue item
-        array.close();
+        array.unload();
         polys_in.clear();
         polys_clipped.clear();
         nodes.clear();
         neighbor_faces.clear();
+        debug_shapes.clear();
+        debug_areas.clear();
     }
 }

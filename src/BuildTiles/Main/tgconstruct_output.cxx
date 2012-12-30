@@ -135,11 +135,11 @@ void TGConstruct::WriteBtgFile( void )
     int_list pt_n, tri_n, strip_n;
     int_list tri_tc, strip_tc;
 
-    for (unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++) {
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
         // only tesselate non holes
-        if ( !is_hole_area( area ) ) {
+        if ( !area_defs.is_hole_area(area) ) {
             for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-                SG_LOG( SG_CLIPPER, SG_DEBUG, "Ouput nodes for " << get_area_name( (AreaType)area ) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
+                SG_LOG( SG_CLIPPER, SG_DEBUG, "Ouput nodes for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
 
                 tgPolygon   poly      = polys_clipped.get_poly(area, p);
                 string      material  = poly.GetMaterial();

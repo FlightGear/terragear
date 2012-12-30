@@ -7,7 +7,7 @@
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License as
-// published by the Free Software Foundation; either version 2 of the
+// // published by the Free Software Foundation; either version 2 of the
 // License, or (at your option) any later version.
 //
 // This program is distributed in the hope that it will be useful, but
@@ -20,6 +20,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
 // $Id: construct.cxx,v 1.4 2004-11-19 22:25:49 curt Exp $
+
+#if 0
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -279,3 +281,5 @@ int TGConstruct::load_landcover()
     // Return the number of polygons actually read.
     return count;
 }
+
+#endif

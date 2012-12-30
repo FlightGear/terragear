@@ -30,10 +30,10 @@
 
 void TGConstruct::CalcTextureCoordinates( void )
 {
-    for ( unsigned int area = 0; area < TG_MAX_AREA_TYPES; area++ ) {
+    for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon poly = polys_clipped.get_poly(area, p);
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Texturing " << get_area_name( (AreaType)area ) << "(" << area << "): " <<
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Texturing " << area_defs.get_area_name(area) << "(" << area << "): " <<
                     p+1 << " of " << polys_clipped.area_size(area) << " with " << poly.GetMaterial() );
 
             poly.Texture( );

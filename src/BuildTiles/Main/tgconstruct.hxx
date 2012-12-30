@@ -33,8 +33,6 @@
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGQueue.hxx>
 
-#define TG_MAX_AREA_TYPES       128
-
 #include <Array/array.hxx>
 #include <terragear//tg_nodes.hxx>
 #include <landcover/landcover.hxx>
@@ -62,7 +60,7 @@ class TGConstruct : public SGThread
 {
 public:
     // Constructor
-    TGConstruct(unsigned int s, SGLockedQueue<SGBucket>& q);
+    TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q );
 
     // Destructor
     ~TGConstruct();
@@ -71,6 +69,7 @@ public:
     void SaveToIntermediateFiles( int stage );
     void LoadFromIntermediateFiles( int stage );
 
+#if 0
     int      load_landcover ();
     double   measure_roughness( tgContour &contour );
     AreaType get_landcover_type (const LandCover &cover, double xpos, double ypos, double dx, double dy);
@@ -81,6 +80,7 @@ public:
     // land cover file
     inline std::string get_cover () const { return cover; }
     inline void set_cover (const std::string &s) { cover = s; }
+#endif
 
     // paths
     void set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load_dirs );
@@ -153,10 +153,13 @@ private:
     void calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGVec3d>& wgs84_nodes, tgPolygon& sp );
 
     // debug
+    void get_debug( void );
     bool IsDebugShape( unsigned int id );
     bool IsDebugArea( unsigned int area );
 
 private:
+    TGAreaDefinitions const& area_defs;
+    
     // construct stage to perform
     SGLockedQueue<SGBucket>& workQueue;
     unsigned int total_tiles;
@@ -185,12 +188,15 @@ private:
 
     bool debug_all;
 
-    // list of shapes to dump during debug
+    // list of debug definitions (for a whole tgconstruct run
+    std::vector<std::string> debug_area_defs;
+    std::vector<std::string> debug_shape_defs;
+
+    // list of shapes to dump during debug (for a single tile)
     std::vector<unsigned int> debug_areas;
     std::vector<unsigned int> debug_shapes;
 
-    // OGR encode variables
-    // For debug:
+    // OGR encode variables for debug:
     void*     ds_id;            // If we are going to build shapefiles
     void*     l_id;             // datasource and layer IDs
     char      ds_name[128];
@@ -213,9 +219,10 @@ private:
     // ocean tile?
     bool isOcean;
 
+    unsigned int num_areas;
+
     // Neighbor Faces
     neighbor_face_list  neighbor_faces;
 };
-
 
 #endif // _CONSTRUCT_HXX
