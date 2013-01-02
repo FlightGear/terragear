@@ -31,12 +31,10 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/lowlevel.hxx>
 #include <simgear/misc/sg_path.hxx>
-#include <simgear/misc/sg_dir.hxx>
 
 #include <Lib/terragear/tg_rectangle.hxx>
 
 #include <gdal.h>
-#include <gdal_alg.h>
 #include <gdal_priv.h>
 #include <gdalwarper.h>
 #include <ogr_spatialref.h>
@@ -134,7 +132,7 @@ public:
         return pxSizeY * 3600;
     }
 
-    void GetDataChunk(const SGPath &work_dir, int *buffer,
+    void GetDataChunk(int *buffer,
                       double x, double y,
                       double colstep, double rowstep,
                       int w, int h,
@@ -229,7 +227,7 @@ ImageInfo::ImageInfo(GDALDataset *dataset) :
            " e=" << east << " w=" << west);
 }
 
-void ImageInfo::GetDataChunk(const SGPath &work_dir, int *buffer,
+void ImageInfo::GetDataChunk(int *buffer,
                              double x, double y,
                              double colstep, double rowstep,
                              int w, int h,
@@ -256,21 +254,6 @@ void ImageInfo::GetDataChunk(const SGPath &work_dir, int *buffer,
     xformData.y0 = y - pxSizeY * 0.5;
     xformData.col_step = colstep;
     xformData.row_step = rowstep;
-
-    // Interpolate nodata pixels in the source band.
-    // Create a temporary copy of the original for the processing.
-    SGPath tmp_path = work_dir;
-    tmp_path.append(".gdal.tif");
-
-    const char *pszFormat = "GTiff";
-    GDALDriver *poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
-    GDALDataset *interpolate = poDriver->CreateCopy( tmp_path.c_str(), dataset, FALSE,
-                                                     NULL, NULL, NULL );
-    GDALFillNodata( interpolate->GetRasterBand(srcband),
-                    interpolate->GetRasterBand(srcband)->GetMaskBand(),
-                    100.0, 0, 0, NULL, NULL, NULL );
-
-    dataset = interpolate;
 
     // TODO: check if this image can actually cover part of the chunk
 
@@ -321,7 +304,6 @@ void ImageInfo::GetDataChunk(const SGPath &work_dir, int *buffer,
 
     GDALDestroyGenImgProjTransformer( xformData.pTransformerArg );
     GDALDestroyWarpOptions( psWarpOptions );
-    tmp_path.remove();
 }
 
 void write_bucket(const std::string& work_dir, SGBucket bucket,
@@ -403,7 +385,7 @@ void process_bucket(const SGPath& work_dir, SGBucket bucket,
 
     for (int i = 0; i < imagecount; i++) {
         if ( images[i]->GetBoundingBox().intersects(BucketBounds) ) {
-            images[i]->GetDataChunk(work_dir, buffer.get(),
+            images[i]->GetDataChunk(buffer.get(),
                                     bwest, bsouth,
                                     col_step / 3600.0, row_step / 3600.0,
                                     span_x, span_y );
@@ -450,9 +432,7 @@ int main(int argc, const char **argv)
     }
 
     SGPath work_dir(argv[1]);
-    simgear::Dir wd = simgear::Dir(work_dir);
-    wd.create(0755);
-    work_dir = wd.path();
+    work_dir.create_dir( 0755 );
 
     GDALAllRegister();
 
@@ -552,5 +532,3 @@ int main(int argc, const char **argv)
 
     return 0;
 }
-
-// :mode=c++:indentSize=4:
