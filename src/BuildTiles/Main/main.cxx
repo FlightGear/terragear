@@ -22,6 +22,11 @@
 #  include <config.h>
 #endif
 
+#ifdef _MSC_VER
+#  include <windows.h>
+#  define sleep(x) Sleep(x*1000)
+#endif
+
 #include <boost/thread.hpp>
 
 #include <simgear/debug/logstream.hxx>
