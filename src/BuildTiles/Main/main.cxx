@@ -24,7 +24,9 @@
 
 #ifdef _MSC_VER
 #  include <windows.h>
-#  define sleep(x) Sleep(x*1000)
+#  define tgSleep(x) Sleep(x*1000)
+#else
+#  define tgSleep(x) sleep(x)
 #endif
 
 #include <boost/thread.hpp>
@@ -222,7 +224,7 @@ int main(int argc, char **argv) {
     }
     // wait for workqueue to empty
     while( wq[0].size() ) {
-        sleep( 5 );
+        tgSleep( 5 );
     }
     // wait for all threads to complete
     for (unsigned int i=0; i<constructs.size(); i++) {
@@ -250,7 +252,7 @@ int main(int argc, char **argv) {
     }
     // wait for workqueue to empty
     while( wq[1].size() ) {
-        sleep( 5 );
+        tgSleep( 5 );
     }
     // wait for all threads to complete
     for (unsigned int i=0; i<constructs.size(); i++) {
@@ -277,7 +279,7 @@ int main(int argc, char **argv) {
     }
     // wait for workqueue to empty
     while( wq[2].size() ) {
-        sleep( 5 );
+        tgSleep( 5 );
     }
     // wait for all threads to complete
     for (unsigned int i=0; i<constructs.size(); i++) {
