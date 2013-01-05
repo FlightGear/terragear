@@ -14,6 +14,11 @@
 // same bucket.
 // We could experiment with making it so 1 point per bucket, but I'm nervous...
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4309)
+#endif
+
 #define PROXIMITY_MULTIPLIER (100000)
 #define PROXIMITY_EPSILON    ((double) 1 / (double)( PROXIMITY_MULTIPLIER * 10 ) )
 
@@ -67,6 +72,10 @@ private:
     std::size_t  hash;
     unsigned int ordered_index;
 };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 inline bool operator == (const SGVec3fIndex& a, const SGVec3fIndex& b) {
     return (( fabs(a.vec.x() - b.vec.x()) < PROXIMITY_EPSILON ) &&

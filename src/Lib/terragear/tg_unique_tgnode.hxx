@@ -124,6 +124,11 @@ private:
     TGFaceList  faces;
 };
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4309)
+#endif
+
 class TGNodeIndex {
 public:
     TGNodeIndex( SGGeod g ) {
@@ -171,6 +176,10 @@ private:
     std::size_t  hash;
     unsigned int ordered_index;
 };
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 inline bool operator == (const TGNodeIndex& a, const TGNodeIndex& b) {
     return (( fabs(a.geod.getLongitudeDeg() - b.geod.getLongitudeDeg()) < PROXIMITY_EPSILON ) &&
