@@ -200,7 +200,7 @@ long int tgChopper::GenerateIndex( std::string path )
     long int index = 0;
 
     //Open or create the named mutex
-    boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "tgChopper_index3");
+    boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "tgChopper_index2");
     {
         boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex);
 
