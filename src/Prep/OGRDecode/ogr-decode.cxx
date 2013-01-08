@@ -657,6 +657,8 @@ int main( int argc, char **argv ) {
         exit( 1 );
     }
 
+    SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << datasource );
+
     OGRLayer  *poLayer;
 
     if (argc>3) {
