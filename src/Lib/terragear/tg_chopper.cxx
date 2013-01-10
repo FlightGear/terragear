@@ -161,10 +161,9 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 
         bottom_clip = tgPolygon::Intersect( subject, bottom );
 
-        // the texparam should be constant over each clipped poly.
-        // when they are reassembled, we want the texture map to
-        // be seamless
-        Add( bottom_clip, type );
+        if ( (bottom_clip.TotalNodes() > 0) && (bottom_clip.TotalNodes() != subject.TotalNodes()) ) {
+            Add( bottom_clip, type );
+        }
     }
 
     {
@@ -185,12 +184,10 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 
         top_clip = tgPolygon::Intersect( subject, top );
 
-        if ( top_clip.TotalNodes() == subject.TotalNodes() ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Generating top half - total nodes is the same after clip" << subject.TotalNodes() );
-            exit(0);
-        }
-
-        Add( top_clip, type );
+        if ( (top_clip.TotalNodes() > 0) && (top_clip.TotalNodes() != subject.TotalNodes()) ) {
+            Add( top_clip, type );
+        } else
+            return;
     }
 }
 
