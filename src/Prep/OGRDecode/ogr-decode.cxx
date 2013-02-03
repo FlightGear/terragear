@@ -21,7 +21,6 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
-// $Id$
 
 #include <string>
 #include <map>
@@ -210,7 +209,7 @@ void Decoder::processPolygon(OGRPolygon* poGeometry, const string& area_type )
 
 void Decoder::run()
 {
-    // as long as we have feometry to parse, do so
+    // as long as we have geometry to parse, do so
     while (!global_workQueue.empty()) {
         OGRFeature *poFeature = global_workQueue.pop();
         if ( poFeature ) {
@@ -381,7 +380,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     if (!area_type_col.empty()) {
         area_type_field=poFDefn->GetFieldIndex(area_type_col.c_str());
         if (area_type_field==-1) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Field " << area_type_col << " for line-width not found in layer" );
+            SG_LOG( SG_GENERAL, SG_ALERT, "Field " << area_type_col << " for area type not found in layer" );
 	    if (!continue_on_errors)
 		    exit( 1 );
         }
@@ -623,7 +622,7 @@ int main( int argc, char **argv ) {
         }
     }
 
-    SG_LOG( SG_GENERAL, SG_ALERT, "ogr-decode version " << getTGVersion() << "\n" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "\nogr-decode version " << getTGVersion() );
 
     if (argc<3) {
         usage(progname);
