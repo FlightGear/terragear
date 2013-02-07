@@ -63,7 +63,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
         for ( i = 0; i < points.size(); ++i ) {
             if ( points[i].getElevationM() < -9000.0 && !found_one ) {
                 first = points[i];
-                GENAPT_LOG( SG_GENERAL, SG_DEBUG, "found first = " << first );
+                SG_LOG( SG_GENERAL, SG_DEBUG, "found first = " << first );
 
                 found_one = true;
             }
@@ -81,7 +81,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
 
                 if ( array.open(array_path) ) {
                     found_file = true;
-                    GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
                 }
                 i++;
             }
@@ -123,7 +123,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
         count++;
     }
     double average = total / (double) count;
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of point list = " << average);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Average surface height of point list = " << average);
 
     return average;
 }

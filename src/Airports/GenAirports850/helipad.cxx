@@ -36,7 +36,7 @@ Helipad::Helipad(char* definition)
         heli.designator, &heli.lat, &heli.lon, &heli.heading, &heli.length, &heli.width, &heli.surface,
         &heli.marking, &heli.shoulder, &heli.smoothness, &heli.edge_lights);
 
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read helipad: (" << heli.lon << "," << heli.lat << ") heading: " << heli.heading << " length: " << heli.length << " width: " << heli.width );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Read helipad: (" << heli.lon << "," << heli.lat << ") heading: " << heli.heading << " length: " << heli.length << " width: " << heli.width );
 }
 
 tglightcontour_list Helipad::gen_helipad_lights(double maxsize) {

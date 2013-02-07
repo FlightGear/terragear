@@ -72,7 +72,7 @@ public:
 
     void    IncreaseSnap( void )                    { snap *= 2.0f; }
 
-    friend ostream& operator<<(ostream& output, const AirportInfo& ai);
+    friend std::ostream& operator<<(std::ostream& output, const AirportInfo& ai);
 
 private:
     std::string icao;

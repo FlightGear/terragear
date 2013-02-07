@@ -16,7 +16,7 @@ extern double gSnap;
 
 SGLockedQueue<AirportInfo> global_workQueue;
 
-ostream& operator<< (ostream &out, const AirportInfo &ai)
+std::ostream& operator<< (std::ostream &out, const AirportInfo &ai)
 {
     char snap_string[32];
     sprintf( snap_string, "%1.8lf", ai.snap );
@@ -53,7 +53,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
                                              std::vector<std::string> taxiway_defs,
                                              std::vector<std::string> feature_defs )
 {
-    GENAPT_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
+    SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
 
     debug_path = path;
 
@@ -76,7 +76,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -105,7 +105,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -134,7 +134,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -163,7 +163,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                GENAPT_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
+                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -245,11 +245,11 @@ void Scheduler::AddAirport( std::string icao )
     std::ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
-        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-    GENAPT_LOG( SG_GENERAL, SG_INFO, "Adding airport " << icao << " to parse list");
+    SG_LOG( SG_GENERAL, SG_INFO, "Adding airport " << icao << " to parse list");
     while ( !in.eof() && !found ) 
     {
         // remember the position of this line
@@ -261,7 +261,7 @@ void Scheduler::AddAirport( std::string icao )
         // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
-            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
          
             ai = AirportInfo( icao, cur_pos, gSnap );
             global_workQueue.push( ai );
@@ -280,11 +280,11 @@ long Scheduler::FindAirport( std::string icao )
     std::ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
-        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-    GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
     while ( !in.eof() && !found ) 
     {
         // remember the position of this line
@@ -296,7 +296,7 @@ long Scheduler::FindAirport( std::string icao )
         // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
-            GENAPT_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
             found = true;
         }
     }    
@@ -337,7 +337,7 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
     std::ifstream in( filename.c_str() );
     if ( !in.is_open() )
     {
-        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
@@ -482,7 +482,7 @@ Scheduler::Scheduler(std::string& datafile, const std::string& root, const strin
     std::ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
-        GENAPT_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 }

@@ -6,14 +6,14 @@ Windsock::Windsock( char* definition )
 {
     sscanf(definition, "%lf %lf %d", &lat, &lon, &lit);
 
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read Windsock: (" << lon << "," << lat << ") lit: " << lit  );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Read Windsock: (" << lon << "," << lat << ") lit: " << lit  );
 }
 
 Beacon::Beacon( char* definition )
 {
     sscanf(definition, "%lf %lf %d", &lat, &lon, &code);
 
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read Beacon: (" << lon << "," << lat << ") code: " << code  );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Read Beacon: (" << lon << "," << lat << ") code: " << code  );
 }
 
 Sign::Sign( char* definition )
@@ -27,7 +27,7 @@ Sign::Sign( char* definition )
     // Flightgear wants the heading to be the heading in which the sign is read
     heading = -def_heading + 360.0;
 
-    GENAPT_LOG(SG_GENERAL, SG_DEBUG, "Read Sign: (" << lon << "," << lat << ") heading " << def_heading << " size " << size << " definition: " << sgdef << " calc view heading: " << heading );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Read Sign: (" << lon << "," << lat << ") heading " << def_heading << " size " << size << " definition: " << sgdef << " calc view heading: " << heading );
 
     sgn_def = sgdef;
 }
