@@ -42,7 +42,7 @@ Taxiway::Taxiway(char* definition)
         &lat, &lon, designation, &heading, &length, &threshold, &overrun,
         &width, lighting, &surface, &shoulder, &markings, &smoothness, &signs);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Read taxiway: (" << lon << "," << lat << ") heading: " << heading << " length: " << length << " width: " << width );
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Read taxiway: (" << lon << "," << lat << ") heading: " << heading << " length: " << length << " width: " << width );
 
     // adjust length and width from feet to meters
     length *= SG_FEET_TO_METER;
@@ -129,7 +129,7 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface);
+        TG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface);
         throw sg_exception("unknown runway type!");
     }
 

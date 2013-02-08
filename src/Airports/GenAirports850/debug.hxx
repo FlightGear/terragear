@@ -14,22 +14,17 @@ typedef std::map<std::string, std::vector<int>, std::less<std::string> > debug_m
 typedef debug_map::iterator debug_map_iterator;
 typedef debug_map::const_iterator debug_map_const_iterator;
 
-/* We'll need a mutex to print log messages 1 at a time */
-extern SGMutex logMutex;
-
 /* This map maps thread IDs to ICAO prefixes */
 extern std::map<long, std::string> thread_prefix_map;
 
 extern void DebugRegisterPrefix( const std::string& prefix );
 extern std::string DebugTimeToString(time_t& tt);
 
-#define GENAPT_LOG(C,P,M)  do {                                                                                 \
-    logstream& __tmplogstreamref(sglog());                                                                      \
-    if(__tmplogstreamref.would_log(C,P)) {                                                                      \
-        logMutex.lock();                                                                                        \
-        __tmplogstreamref << loglevel(C,P) << thread_prefix_map[SGThread::current()] << ":" << M << std::endl;  \
-        logMutex.unlock();                                                                                      \
-        }                                                                                                       \
-    } while(0)
-
+#define TG_LOG(C,P,M)  do {                                         \
+    if(sglog().would_log(C,P)) {                                    \
+        std::ostringstream os;                                      \
+        os << thread_prefix_map[SGThread::current()] << ":" << M;   \
+        sglog().log(C, P, __FILE__, __LINE__, os.str());            \
+    }                                                               \
+} while(0)
 #endif

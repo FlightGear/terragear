@@ -20,7 +20,7 @@ std::ostream& operator<< (std::ostream &out, const AirportInfo &ai)
 {
     char snap_string[32];
     sprintf( snap_string, "%1.8lf", ai.snap );
-    
+
     out << ai.icao;
     out << ",";
     out << ai.numRunways;
@@ -53,7 +53,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
                                              std::vector<std::string> taxiway_defs,
                                              std::vector<std::string> feature_defs )
 {
-    SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
+    TG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
 
     debug_path = path;
 
@@ -76,7 +76,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -105,7 +105,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -134,7 +134,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -163,7 +163,7 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
 
                 shapes.push_back(i);
 
@@ -181,7 +181,7 @@ bool Scheduler::IsAirportDefinition( char* line, std::string icao )
     int      code;
     Airport* airport = NULL;
     bool     match = false;
-    
+
     // Get the number code
     tok = strtok(line, " \t\r\n");
 
@@ -192,7 +192,7 @@ bool Scheduler::IsAirportDefinition( char* line, std::string icao )
 
         switch(code)
         {
-            case LAND_AIRPORT_CODE: 
+            case LAND_AIRPORT_CODE:
             case SEA_AIRPORT_CODE:
             case HELIPORT_CODE:
                 airport = new Airport( code, line );
@@ -243,14 +243,14 @@ void Scheduler::AddAirport( std::string icao )
     AirportInfo     ai;
 
     std::ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
+    if ( !in.is_open() )
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        TG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-    SG_LOG( SG_GENERAL, SG_INFO, "Adding airport " << icao << " to parse list");
-    while ( !in.eof() && !found ) 
+    TG_LOG( SG_GENERAL, SG_INFO, "Adding airport " << icao << " to parse list");
+    while ( !in.eof() && !found )
     {
         // remember the position of this line
         cur_pos = in.tellg();
@@ -261,14 +261,14 @@ void Scheduler::AddAirport( std::string icao )
         // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
-         
+            TG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
+
             ai = AirportInfo( icao, cur_pos, gSnap );
             global_workQueue.push( ai );
 
             found = true;
         }
-    }    
+    }
 }
 
 long Scheduler::FindAirport( std::string icao )
@@ -278,14 +278,14 @@ long Scheduler::FindAirport( std::string icao )
     bool found = false;
 
     std::ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
+    if ( !in.is_open() )
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        TG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
-    while ( !in.eof() && !found ) 
+    TG_LOG( SG_GENERAL, SG_DEBUG, "Finding airport " << icao );
+    while ( !in.eof() && !found )
     {
         // remember the position of this line
         cur_pos = in.tellg();
@@ -296,10 +296,10 @@ long Scheduler::FindAirport( std::string icao )
         // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
+            TG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << line << " at " << cur_pos );
             found = true;
         }
-    }    
+    }
 
 	if (found)
 	{
@@ -337,7 +337,7 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
     std::ifstream in( filename.c_str() );
     if ( !in.is_open() )
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        TG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
@@ -480,9 +480,9 @@ Scheduler::Scheduler(std::string& datafile, const std::string& root, const strin
     elevation       = elev_src;
 
     std::ifstream in( filename.c_str() );
-    if ( !in.is_open() ) 
+    if ( !in.is_open() )
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        TG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 }
@@ -491,7 +491,7 @@ void Scheduler::Schedule( int num_threads, std::string& summaryfile )
 {
 //    std::ofstream   csvfile;
 
-    // open and truncate the summary file : monitor only appends 
+    // open and truncate the summary file : monitor only appends
 //    csvfile.open( summaryfile.c_str(), std::ios_base::out | std::ios_base::trunc );
 //    csvfile.close();
 

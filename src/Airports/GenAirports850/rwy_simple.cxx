@@ -65,11 +65,11 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
             runway_half.AddNode( 0, runway.GetNode(5) );
         }
 
-        SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
+        TG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
 
         // Displaced threshold if it exists
         if ( rwy.threshold[rwhalf] > 0.0 ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
+            TG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
             start_pct = end_pct;
             end_pct = start_pct + ( rwy.threshold[rwhalf] / length );

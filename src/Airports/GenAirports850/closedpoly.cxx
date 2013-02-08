@@ -63,7 +63,7 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
 
 ClosedPoly::~ClosedPoly()
 {
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Deleting ClosedPoly " << description );
+    TG_LOG( SG_GENERAL, SG_DEBUG, "Deleting ClosedPoly " << description );
 }
 
 void ClosedPoly::AddNode( BezNode* node )
@@ -75,7 +75,7 @@ void ClosedPoly::AddNode( BezNode* node )
     }
     cur_contour->push_back( node );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : " << node->GetLoc() );
+    TG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : " << node->GetLoc() );
 
     // For pavement polys, add a linear feature for each contour
     if (is_pavement)
@@ -92,7 +92,7 @@ void ClosedPoly::AddNode( BezNode* node )
                 feature_desc += "boundary";
             }
 
-            SG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node " << node->GetLoc() << " to current linear feature " << cur_feature);
+            TG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node " << node->GetLoc() << " to current linear feature " << cur_feature);
             cur_feature = new LinearFeature(feature_desc, 1.0f );
         }
         cur_feature->AddNode( node );
@@ -101,13 +101,13 @@ void ClosedPoly::AddNode( BezNode* node )
 
 void ClosedPoly::CloseCurContour()
 {
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Close Contour");
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Close Contour");
 
     // if we are recording a pavement marking - it must be closed -
     // add the first node of the poly
     if (cur_feature)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
+        TG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
         cur_feature->Finish(true, features.size() );
 
         features.push_back(cur_feature);
@@ -146,7 +146,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
     double    total_dist;
     int       num_segs = BEZIER_DETAIL;
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
 
     // clear anything in this point list
     dst.Erase();
@@ -154,7 +154,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
     // iterate through each bezier node in the contour
     for (unsigned int i = 0; i <= src->size()-1; i++)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "\nHandling Node " << i << "\n\n");
+        TG_LOG(SG_GENERAL, SG_DEBUG, "\nHandling Node " << i << "\n\n");
 
         curNode = src->at(i);
         if (i < src->size() - 1)
@@ -211,8 +211,8 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
             {
                 // If total distance is < 4 meters, then we need to modify num Segments so that each segment >= 2 meters
                 num_segs = ((int)total_dist + 1);
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( < 16.0) so num_segs is " << num_segs );
+                TG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                TG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( < 16.0) so num_segs is " << num_segs );
             }
             else
             {
@@ -223,16 +223,16 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
         {
             // If total distance is > 800 meters, then we need to modify num Segments so that each segment <= 100 meters
             num_segs = total_dist / 100.0f + 1;
-            SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
-            SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( > 100.0) so num_segs is " << num_segs );
+            TG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+            TG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " ( > 100.0) so num_segs is " << num_segs );
         }
         else
         {
             if (curve_type != CURVE_LINEAR)
             {
                 num_segs = 8;
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
-                SG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
+                TG_LOG(SG_GENERAL, SG_DEBUG, "Segment from " << curNode->GetLoc() << " to " << nextNode->GetLoc() );
+                TG_LOG(SG_GENERAL, SG_DEBUG, "        Distance is " << total_dist << " (OK) so num_segs is " << num_segs );
             }
             else
             {
@@ -274,11 +274,11 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
 
                 if (p==0)
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
                 }
                 else
                 {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at " << curLoc );
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "   add bezier node (type  " << curve_type << ") at " << curLoc );
                 }
 
                 // now set set cur location for the next iteration
@@ -299,11 +299,11 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
 
                     if (p==0)
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
+                        TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
                     }
                     else
                     {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at " << curLoc );
+                        TG_LOG(SG_GENERAL, SG_DEBUG, "   add linear node at " << curLoc );
                     }
 
                     // now set set prev and cur locations for the next iteration
@@ -317,7 +317,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
                 // just add the one vertex - dist is small
                 dst.AddNode( curLoc );
 
-                SG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
+                TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
                 curLoc = nextLoc;
             }
@@ -333,10 +333,10 @@ void ClosedPoly::Finish()
     // error handling
     if (boundary == NULL)
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, "no boundary");
+        TG_LOG(SG_GENERAL, SG_ALERT, "no boundary");
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Converting a poly with " << holes.size() << " holes");
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Converting a poly with " << holes.size() << " holes");
 
     if (boundary != NULL)
     {
@@ -422,7 +422,7 @@ std::string ClosedPoly::GetMaterial( int surface )
             break;
 
         default:
-            SG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown surface type " << surface_type );
+            TG_LOG(SG_GENERAL, SG_ALERT, "ClosedPoly::BuildBtg: unknown surface type " << surface_type );
             exit(1);
     }
 

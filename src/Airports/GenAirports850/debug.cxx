@@ -3,7 +3,6 @@
 
 std::map<long, std::string> thread_prefix_map;
 
-SGMutex logMutex;
 void DebugRegisterPrefix( const std::string& prefix ) {
     thread_prefix_map[SGThread::current()] = prefix;
 }

@@ -44,7 +44,7 @@ void Parser::set_debug( std::string path, std::vector<std::string> runway_defs,
                                           std::vector<std::string> taxiway_defs,
                                           std::vector<std::string> feature_defs )
 {
-    SG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
+    TG_LOG(SG_GENERAL, SG_ALERT, "Set debug Path " << path);
 
     debug_path = path;
 
@@ -67,7 +67,7 @@ void Parser::set_debug( std::string path, std::vector<std::string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i);
 
                 shapes.push_back(i);
 
@@ -96,7 +96,7 @@ void Parser::set_debug( std::string path, std::vector<std::string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i);
 
                 shapes.push_back(i);
 
@@ -125,7 +125,7 @@ void Parser::set_debug( std::string path, std::vector<std::string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i);
 
                 shapes.push_back(i);
 
@@ -154,7 +154,7 @@ void Parser::set_debug( std::string path, std::vector<std::string> runway_defs,
 
             while (ss >> i)
             {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i);
 
                 shapes.push_back(i);
 
@@ -183,7 +183,7 @@ void Parser::run()
     std::ifstream in( filename.c_str() );
     if ( !in.is_open() ) 
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
+        TG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << filename );
         exit(-1);
     }
 
@@ -204,7 +204,7 @@ void Parser::run()
 
         // Verify this is and airport definition and get the icao
         if( GetAirportDefinition( line, icao ) ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "Found airport " << icao << " at " << pos );
+            TG_LOG( SG_GENERAL, SG_INFO, "Found airport " << icao << " at " << pos );
 
             // Start parse at pos
             SetState(STATE_NONE);
@@ -212,8 +212,8 @@ void Parser::run()
 
             parse_start.stamp();
             log_time = time(0);
-            SG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
-            SG_LOG( SG_GENERAL, SG_ALERT, "Start airport " << icao << " at " << pos << ": start time " << ctime(&log_time) );
+            TG_LOG( SG_GENERAL, SG_ALERT, "\n*******************************************************************" );
+            TG_LOG( SG_GENERAL, SG_ALERT, "Start airport " << icao << " at " << pos << ": start time " << ctime(&log_time) );
 
             in.seekg(pos, std::ios::beg);
             while ( !in.eof() && (cur_state != STATE_DONE ) ) {
@@ -240,11 +240,11 @@ void Parser::run()
             }
 
             log_time = time(0);
-            SG_LOG( SG_GENERAL, SG_ALERT, "Finished airport " << icao << 
+            TG_LOG( SG_GENERAL, SG_ALERT, "Finished airport " << icao << 
                 " : parse " << parse_time << " : build " << build_time << 
                 " : clean " << clean_time << " : tesselate " << triangulation_time );
         } else {
-            SG_LOG( SG_GENERAL, SG_INFO, "Not an airport at pos " << pos << " line is: " << line );  
+            TG_LOG( SG_GENERAL, SG_INFO, "Not an airport at pos " << pos << " line is: " << line );  
         }
     }
 }
@@ -401,7 +401,7 @@ LinearFeature* Parser::ParseFeature( char* line )
         feature = new LinearFeature(NULL, 0.0f);
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Linear Feature with desription \"" << line << "\"");
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Linear Feature with desription \"" << line << "\"");
 
     return feature;
 }
@@ -421,11 +421,11 @@ ClosedPoly* Parser::ParsePavement( char* line )
     if (numParams == 4)
     {
         d = strstr(line,desc);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " thexture heading " << th << " and description " << d);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " thexture heading " << th << " and description " << d);
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " thexture heading " << th );
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " thexture heading " << th );
     }
 
     poly = new ClosedPoly(st, s, th, d);
@@ -451,7 +451,7 @@ ClosedPoly* Parser::ParseBoundary( char* line )
         d = (char *)"none";
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly for airport boundary : " << d);
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly for airport boundary : " << d);
     poly = new ClosedPoly(d);
 
     return poly;
@@ -463,7 +463,7 @@ int Parser::SetState( int state )
     // is when we get a non-node line to parse
     if ( cur_airport && cur_state == STATE_PARSE_PAVEMENT )
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding pavement");
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding pavement");
         cur_pavement->Finish();
         cur_airport->AddPavement( cur_pavement );
         cur_pavement = NULL;
@@ -471,7 +471,7 @@ int Parser::SetState( int state )
 
     if ( cur_airport && cur_state == STATE_PARSE_BOUNDARY )
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding boundary");
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding boundary");
         cur_boundary->Finish();
         cur_airport->AddBoundary( cur_boundary );
         cur_boundary = NULL;
@@ -507,7 +507,7 @@ int Parser::ParseLine(char* line)
                     if (cur_state == STATE_NONE)
                     {
                         SetState( STATE_PARSE_SIMPLE );
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
+                        TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
                         cur_airport = new Airport( code, line );
                     }
                     else
@@ -519,7 +519,7 @@ int Parser::ParseLine(char* line)
                     if (cur_state == STATE_NONE)
                     {
                         SetState( STATE_PARSE_SIMPLE );
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
+                        TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
                         cur_airport = new Airport( code, line );
                     }
                     else
@@ -530,7 +530,7 @@ int Parser::ParseLine(char* line)
     
                 case LAND_RUNWAY_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing runway: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing runway: " << line);
                     cur_runway = new Runway(line);
                     if (cur_airport)
                     {
@@ -540,7 +540,7 @@ int Parser::ParseLine(char* line)
     
                 case WATER_RUNWAY_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing water runway: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing water runway: " << line);
                     cur_waterrunway = new WaterRunway(line);
                     if (cur_airport)
                     {
@@ -549,7 +549,7 @@ int Parser::ParseLine(char* line)
                     break;
                 case HELIPAD_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing helipad: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing helipad: " << line);
                     cur_helipad = new Helipad(line);
                     if (cur_airport)
                     {
@@ -559,7 +559,7 @@ int Parser::ParseLine(char* line)
     
                 case TAXIWAY_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway: " << line);
                     cur_taxiway = new Taxiway(line);
                     if (cur_airport)
                     {
@@ -569,25 +569,25 @@ int Parser::ParseLine(char* line)
     
                 case PAVEMENT_CODE:
                     SetState( STATE_PARSE_PAVEMENT );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing pavement: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing pavement: " << line);
                     cur_pavement  = ParsePavement( line );
                     break;
     
                 case LINEAR_FEATURE_CODE:
                     SetState( STATE_PARSE_FEATURE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Linear Feature: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Linear Feature: " << line);
                     cur_feat = ParseFeature( line );
                     break;
     
                 case BOUNDRY_CODE:
                     SetState( STATE_PARSE_BOUNDARY );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing Boundary: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing Boundary: " << line);
                     cur_boundary = ParseBoundary( line ); 
                     break;
     
                 case NODE_CODE:
                 case BEZIER_NODE_CODE:
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing node: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing node: " << line);
                     cur_node = ParseNode( code, line, prev_node );
     
                     if ( prev_node && (cur_node != prev_node) )
@@ -612,7 +612,7 @@ int Parser::ParseLine(char* line)
     
                 case CLOSE_NODE_CODE:
                 case CLOSE_BEZIER_NODE_CODE:
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing close loop node: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing close loop node: " << line);
                     cur_node = ParseNode( code, line, prev_node );
     
                     if ( cur_state == STATE_PARSE_PAVEMENT )
@@ -666,7 +666,7 @@ int Parser::ParseLine(char* line)
     
                 case TERM_NODE_CODE:
                 case TERM_BEZIER_NODE_CODE:
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing termination node: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing termination node: " << line);
     
                     if ( cur_state == STATE_PARSE_FEATURE )
                     {
@@ -694,7 +694,7 @@ int Parser::ParseLine(char* line)
                         }
                         else
                         {
-                            SG_LOG(SG_GENERAL, SG_ALERT, "Parsing termination node with no previous nodes!!!" );
+                            TG_LOG(SG_GENERAL, SG_ALERT, "Parsing termination node with no previous nodes!!!" );
     
                             // this feature is bogus...
                             delete cur_feat;
@@ -708,66 +708,66 @@ int Parser::ParseLine(char* line)
     
                 case AIRPORT_VIEWPOINT_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing viewpoint: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing viewpoint: " << line);
                     break;
                 case AIRPLANE_STARTUP_LOCATION_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing airplane startup location: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing airplane startup location: " << line);
                     break;
                 case LIGHT_BEACON_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing light beacon: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing light beacon: " << line);
                     cur_beacon = new Beacon(line);
                     cur_airport->AddBeacon( cur_beacon );                                
                     break;
                 case WINDSOCK_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing windsock: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing windsock: " << line);
                     cur_windsock = new Windsock(line);
                     cur_airport->AddWindsock( cur_windsock );                                
                     break;
                 case TAXIWAY_SIGN:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway sign: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway sign: " << line);
                     cur_sign = new Sign(line);
                     cur_airport->AddSign( cur_sign );                                
                     break;
                 case LIGHTING_OBJECT:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing lighting object: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing lighting object: " << line);
                     cur_object = new LightingObj(line);
                     cur_airport->AddObj( cur_object );
                     break;
                 case COMM_FREQ1_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 1: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 1: " << line);
                     break;
                 case COMM_FREQ2_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 2: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 2: " << line);
                     break;
                 case COMM_FREQ3_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 3: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 3: " << line);
                     break;
                 case COMM_FREQ4_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 4: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 4: " << line);
                     break;
                 case COMM_FREQ5_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 5: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 5: " << line);
                     break;
                 case COMM_FREQ6_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 6: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 6: " << line);
                     break;
                 case COMM_FREQ7_CODE:
                     SetState( STATE_PARSE_SIMPLE );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 7: " << line);
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing commfreq 7: " << line);
                     break;
                 case END_OF_FILE :
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "Reached end of file");
+                    TG_LOG(SG_GENERAL, SG_DEBUG, "Reached end of file");
                     SetState( STATE_DONE );
                     break;
             }

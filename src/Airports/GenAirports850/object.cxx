@@ -7,7 +7,7 @@ LightingObj::LightingObj( char* definition )
 {
     sscanf(definition, "%lf %lf %d %lf %lf %s", &lat, &lon, &type, &heading, &glideslope, &assoc_rw);
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Read lighting object: (" << lon << "," << lat << ") heading: " << heading << " type: " << type  );
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Read lighting object: (" << lon << "," << lat << ") heading: " << heading << " type: " << type  );
 }
 
 void LightingObj::BuildBtg( tglightcontour_list& lights )
@@ -30,7 +30,7 @@ void LightingObj::BuildBtg( tglightcontour_list& lights )
 
     if (type == 1)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating VASI = " << assoc_rw);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Generating VASI = " << assoc_rw);
 
         // VASI coordinates describe the center between the two bars.
         // Space between the bars is 200m
@@ -65,7 +65,7 @@ void LightingObj::BuildBtg( tglightcontour_list& lights )
     }
     else if (type == 2)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4L = " << assoc_rw);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4L = " << assoc_rw);
 
         // unit1
         pt1 = SGGeodesy::direct( ref, left_hdg, -12 );
@@ -80,7 +80,7 @@ void LightingObj::BuildBtg( tglightcontour_list& lights )
     }
     else if (type == 3)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4R = " << assoc_rw);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Generating PAPI 4R = " << assoc_rw);
 
         // unit1
         pt1 = SGGeodesy::direct( ref, left_hdg, 12 );
@@ -95,19 +95,19 @@ void LightingObj::BuildBtg( tglightcontour_list& lights )
     }
     else if (type == 4)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Space Shuttle PAPI is deprecated. Use the normal PAPI and set the glideslope accordingly");
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Space Shuttle PAPI is deprecated. Use the normal PAPI and set the glideslope accordingly");
         return;
     }
     else if (type == 5)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating tri-colour VASI = " << assoc_rw);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Generating tri-colour VASI = " << assoc_rw);
 
         // only one light here
         light_contour.AddLight( ref, normal );
     }
     else if (type == 6)
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Generating runway guard light = " << assoc_rw);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Generating runway guard light = " << assoc_rw);
 
         light_contour.SetType( "RWY_GUARD_LIGHTS" );
 
@@ -119,7 +119,7 @@ void LightingObj::BuildBtg( tglightcontour_list& lights )
     }
     else
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Unknown lighting object (PAPI/VASI...) code: " << type);
+        TG_LOG(SG_GENERAL, SG_ALERT, "Unknown lighting object (PAPI/VASI...) code: " << type);
         return;
     }
 

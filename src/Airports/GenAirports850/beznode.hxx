@@ -8,6 +8,8 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/SGMath.hxx>
 
+#include "debug.hxx"
+
 inline double LinearDistance( const SGGeod& p0, const SGGeod& p1 )
 {
     return SGGeodesy::distanceM( p0, p1 );
@@ -259,7 +261,7 @@ public:
 
     void Print()
     {
-        SG_LOG(SG_GENERAL, SG_DEBUG, 
+        TG_LOG(SG_GENERAL, SG_DEBUG, 
             "\tLoc:     " << loc     << "\n" <<
             "\tprev_cp: " << prev_cp << "\n" <<
             "\tnext_cp: " << next_cp << "\n" );

@@ -35,7 +35,7 @@ using namespace std;
 
 // Display usage
 static void usage( int argc, char **argv ) {
-    SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << argv[0] << "\n--input=<apt_file>"
+    TG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << argv[0] << "\n--input=<apt_file>"
     << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
     << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
     << "[ --airport=abcd ] [--max-slope=<decimal>] [--tile=<tile>] [--threads] [--threads=x]"
@@ -236,7 +236,7 @@ int main(int argc, char **argv)
         }
         else if (arg.find("--debug-taxiways=") == 0)
         {
-            SG_LOG(SG_GENERAL, SG_INFO, "add debug taxiway " << arg.substr(17) );
+            TG_LOG(SG_GENERAL, SG_INFO, "add debug taxiway " << arg.substr(17) );
             debug_taxiway_defs.push_back( arg.substr(17) );
         }
         else if (arg.find("--debug-features=") == 0)
@@ -258,26 +258,26 @@ int main(int argc, char **argv)
     std::string airportareadir=work_dir+"/AirportArea";
 
     // this is the main program -
-    SG_LOG(SG_GENERAL, SG_INFO, "Genapts850 version " << getTGVersion() << " running with " << num_threads << " threads" );
-    SG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
-    SG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
-    SG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
-    SG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
-    SG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
-    SG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
+    TG_LOG(SG_GENERAL, SG_INFO, "Genapts850 version " << getTGVersion() << " running with " << num_threads << " threads" );
+    TG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
+    TG_LOG(SG_GENERAL, SG_INFO, "Input file = " << input_file);
+    TG_LOG(SG_GENERAL, SG_INFO, "Work directory = " << work_dir);
+    TG_LOG(SG_GENERAL, SG_INFO, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
+    TG_LOG(SG_GENERAL, SG_INFO, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
+    TG_LOG(SG_GENERAL, SG_INFO, "Terrain sources = ");
     for ( unsigned int i = 0; i < elev_src.size(); ++i ) {
-        SG_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
+        TG_LOG(SG_GENERAL, SG_INFO, "  " << work_dir << "/" << elev_src[i] );
     }
-    SG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
+    TG_LOG(SG_GENERAL, SG_INFO, "Nudge = " << nudge);
 
     if (!max.isValid() || !min.isValid())
     {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
+        TG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
         exit(1);
     }
 
     // make work directory
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Creating AirportArea directory");
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating AirportArea directory");
 
     SGPath sgp( airportareadir );
     sgp.append( "dummy" );
@@ -290,21 +290,21 @@ int main(int argc, char **argv)
 
     if ( work_dir == "" ) 
     {
-    	SG_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
+    	TG_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
     	usage( argc, argv );
 	    exit(-1);
     }
 
     if ( input_file == "" ) 
     {
-    	SG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
+    	TG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
     	exit(-1);
     }
 
     sg_gzifstream in( input_file );
     if ( !in.is_open() ) 
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
+        TG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
         exit(-1);
     }
 
@@ -320,7 +320,7 @@ int main(int argc, char **argv)
         // just find and add the one airport
         scheduler->AddAirport( airport_id );
 
-        SG_LOG(SG_GENERAL, SG_INFO, "Finished Adding airport - now parse");
+        TG_LOG(SG_GENERAL, SG_INFO, "Finished Adding airport - now parse");
         
         // and schedule parsers
         scheduler->Schedule( num_threads, summary_file );
@@ -328,7 +328,7 @@ int main(int argc, char **argv)
 
     else if ( start_id != "" )
     {
-        SG_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
+        TG_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
 
         // scroll forward in datafile
         position = scheduler->FindAirport( start_id );
@@ -350,7 +350,7 @@ int main(int argc, char **argv)
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_INFO, "Done");
+    TG_LOG(SG_GENERAL, SG_INFO, "Done");
     exit(0);
 
     return 0;

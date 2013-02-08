@@ -220,7 +220,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct << " end len % = " << endl_pct);
+    TG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct << " end len % = " << endl_pct);
 
     double dlx, dly;
 
@@ -241,7 +241,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     SGVec2d t3 = SGVec2d( a2.x() + dlx * endl_pct,
                           a2.y() + dly * endl_pct );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "start wid % = " << startw_pct << " end wid % = " << endw_pct);
+    TG_LOG(SG_GENERAL, SG_DEBUG, "start wid % = " << startw_pct << " end wid % = " << endw_pct);
 
     double dwx, dwy;
 
@@ -299,8 +299,8 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     section = tgPolygon::Snap( section, gSnap );
 
     // print runway points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
-    SG_LOG(SG_GENERAL, SG_DEBUG, section );
+    TG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
+    TG_LOG(SG_GENERAL, SG_DEBUG, section );
 
     if(  shapefile_name.size() ) {
         tgShapefile::FromPolygon( section, "./airport_dbg", std::string("preclip"), shapefile_name );
@@ -386,7 +386,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct << " end len % = " << endl_pct);
+    TG_LOG(SG_GENERAL, SG_DEBUG, "start len % = " << startl_pct << " end len % = " << endl_pct);
 
     double dlx, dly;
 
@@ -407,7 +407,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     SGVec2d t3 = SGVec2d( a2.x() + dlx * endl_pct,
                           a2.y() + dly * endl_pct );
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "start wid % = " << startw_pct << " end wid % = " << endw_pct);
+    TG_LOG(SG_GENERAL, SG_DEBUG, "start wid % = " << startw_pct << " end wid % = " << endw_pct);
 
     double dwx, dwy;
 
@@ -445,8 +445,8 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     section = tgPolygon::Snap( section, gSnap );
 
     // print runway points
-    SG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
-    SG_LOG(SG_GENERAL, SG_DEBUG, section );
+    TG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
+    TG_LOG(SG_GENERAL, SG_DEBUG, section );
 
     // Clip the new polygon against what ever has already been created.
     tgPolygon clipped = accum.Diff( section );
@@ -497,7 +497,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                 letter = tmp;
             }
         }
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation letter = " << letter);
 
         // create runway designation letter
         if ( !letter.empty() ) {
@@ -522,7 +522,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
             rwname = "36";
         }
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
 
         char tex1[32]; tex1[0] = '\0';
         char tex2[32]; tex2[0] = '\0';
@@ -584,7 +584,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                       tgAccumulator& accum,
                       std::string& shapefile_name )
 {
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
+    TG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
     std::string section_name = "";
     bool debug = shapefile_name.size() != 0;
 
@@ -625,25 +625,25 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
 
         // Make sure our runway is long enough for the desired marking variant
         if ( (rwy.marking[rwhalf]==2 || rwy.marking[rwhalf]==4) && length < 1150 * SG_FEET_TO_METER ) {
-            SG_LOG( SG_GENERAL, SG_ALERT,
+            TG_LOG( SG_GENERAL, SG_ALERT,
                 "Runway " << rwy.rwnum[rwhalf] << " is not long enough ("
                 << rwy.length << "m) for non-precision markings!  Setting runway markings to visual!");
             rwy.marking[rwhalf]=1;
         }
         if ( (rwy.marking[rwhalf]==3 || rwy.marking[rwhalf]==5) && length < 3075 * SG_FEET_TO_METER ) {
-            SG_LOG( SG_GENERAL, SG_ALERT,
+            TG_LOG( SG_GENERAL, SG_ALERT,
                 "Runway " << rwy.rwnum[rwhalf] << " is not long enough ("
                 << rwy.length << "m) for precision markings!  Setting runway markings to visual!");
             rwy.marking[rwhalf]=1;
         }
-        SG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
+        TG_LOG( SG_GENERAL, SG_DEBUG, "runway marking = " << rwy.marking[rwhalf] );
 
 
         //
         // Displaced threshold if it exists
         //
         if ( rwy.threshold[rwhalf] > 0.0 ) {
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
+            TG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
             double final_arrow = rwy.threshold[rwhalf];
 
@@ -780,7 +780,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
 
             // Now create the marking sections of the runway type
             for ( unsigned int i=0; i < rw_marking_list.size(); ++i) {
-	            SG_LOG(SG_GENERAL, SG_DEBUG, "Runway section texture = " << rw_marking_list[i].tex << " start_pct: " << start1_pct << " end_pct: " << end1_pct << " length: " << rw_marking_list[i].size);
+	            TG_LOG(SG_GENERAL, SG_DEBUG, "Runway section texture = " << rw_marking_list[i].tex << " start_pct: " << start1_pct << " end_pct: " << end1_pct << " length: " << rw_marking_list[i].size);
 
                 if ( end1_pct < 1.0 ) {
                     start1_pct = end1_pct;
