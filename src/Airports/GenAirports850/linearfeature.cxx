@@ -515,17 +515,20 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 // first point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
                 cur_inner = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
+                // OffsetPointsFirst( points.GetNode(j), points.GetNode(j+1), offset, width, cur_inner, cur_outer );
             }
             else if (j == marks[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset-width/2.0f );
                 cur_inner = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset+width/2.0f );
+                // OffsetPointsLast( points.GetNode(j-1), points.GetNode(j), offset, width, cur_inner, cur_outer );
             }
             else
             {
                 cur_outer = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
                 cur_inner = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
+                // OffsetPointsMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset, width, cur_inner, cur_outer );
             }
 
             if ( markStarted )

@@ -198,7 +198,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
 #if FIND_SLIVERS
     // Now, merge any slivers with clipped polys
-    merge_slivers(polys_clipped, slivers);
+    // merge_slivers(polys_clipped, slivers);
+    for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
+        tgPolygon::MergeSlivers( polys_clipped.get_polys(i), slivers );
+    }
 #endif
 
     slivers.clear();
@@ -224,7 +227,9 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 }
             }
 
-            merge_slivers(polys_clipped, slivers);
+            for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
+                tgPolygon::MergeSlivers( polys_clipped.get_polys(i), slivers );
+            }
         }
 #endif
 

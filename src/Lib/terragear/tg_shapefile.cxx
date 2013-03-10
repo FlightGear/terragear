@@ -128,6 +128,50 @@ void tgShapefile::FromClipper( const ClipperLib::Polygons& subject, const std::s
     }
 }
 
+void tgShapefile::FromContour( const tgContour& subject, const std::string& datasource, const std::string& layer, const std::string& description )
+{
+    void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+
+    OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
+
+    OGRPolygon*    polygon = new OGRPolygon();
+
+    if (subject.GetSize() < 3) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
+    } else {
+        // FIXME: Current we ignore the hole-flag and instead assume
+        //        that the first ring is not a hole and the rest
+        //        are holes
+        OGRLinearRing *ring=new OGRLinearRing();
+        for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {
+            OGRPoint *point=new OGRPoint();
+
+            point->setX( subject.GetNode(pt).getLongitudeDeg() );
+            point->setY( subject.GetNode(pt).getLatitudeDeg() );
+            point->setZ( 0.0 );
+            ring->addPoint(point);
+        }
+        ring->closeRings();
+
+        polygon->addRingDirectly(ring);
+
+        OGRFeature* feature = NULL;
+        feature = new OGRFeature( l_id->GetLayerDefn() );
+        feature->SetField("ID", description.c_str());
+        feature->SetGeometry(polygon);
+        if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+        }
+        OGRFeature::DestroyFeature(feature);
+    }
+
+    // close after each write
+    ds_id = tgShapefile::CloseDatasource( ds_id );
+}
+
 void tgShapefile::FromPolygon( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );

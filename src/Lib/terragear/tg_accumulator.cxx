@@ -61,8 +61,8 @@ void tgAccumulator::Add( const tgContour& subject )
 
 void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
 {
-    char shapefile[16];
-    char layer[16];
+    char shapefile[32];
+    char layer[32];
 
     if ( individual ) {
         for (unsigned int i=0; i < accum.size(); i++) {

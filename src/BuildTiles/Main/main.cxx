@@ -166,8 +166,9 @@ int main(int argc, char **argv) {
         exit( -1 );
     }
 
-    // three identical work queues
-    SGLockedQueue<SGBucket> wq[3];
+    // tile work queue
+    std::vector<SGBucket> bucketList;
+    SGLockedQueue<SGBucket> wq;
 
     // First generate the workqueue of buckets to construct
     if (tile_id == -1) {
@@ -178,39 +179,27 @@ int main(int argc, char **argv) {
         SGBucket b_max( max );
 
         if ( b_min == b_max ) {
-            for (unsigned int q=0; q<3; q++) {
-                wq[q].push( b_min );
-            }
+			bucketList.push_back( b_min );
         } else {
-            int dx, dy;
-            int i, j;
-
-            sgBucketDiff(b_min, b_max, &dx, &dy);
-
             SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
-            SG_LOG(SG_GENERAL, SG_ALERT, "  dx = " << dx << "  dy = " << dy);
-
-            for ( j = 0; j <= dy; j++ ) {
-                for ( i = 0; i <= dx; i++ ) {
-                    for (unsigned int q=0; q<3; q++) {
-                        wq[q].push( sgBucketOffset(min.getLongitudeDeg(), min.getLatitudeDeg(), i, j) );
-                    }
-                }
-            }
+            sgGetBuckets( min, max, bucketList );
         }
     } else {
         // construct the specified tile
         SG_LOG(SG_GENERAL, SG_ALERT, "Building tile " << tile_id);
-        for (unsigned int q=0; q<3; q++) {
-            wq[q].push( SGBucket( tile_id ) );
-        }
+        bucketList.push_back( SGBucket( tile_id ) );
     }
+
+	/* fill the workqueue */
+	for (unsigned int i=0; i<bucketList.size(); i++) {
+	    wq.push( bucketList[i] );
+	}
 
     // now create the worker threads for stage 1
     std::vector<TGConstruct *> constructs;
 
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( areas, 1, wq[0] );
+        TGConstruct* construct = new TGConstruct( areas, 1, wq );
         //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
@@ -223,7 +212,7 @@ int main(int argc, char **argv) {
         constructs[i]->start();
     }
     // wait for workqueue to empty
-    while( wq[0].size() ) {
+    while( wq.size() ) {
         tgSleep( 5 );
     }
     // wait for all threads to complete
@@ -237,8 +226,13 @@ int main(int argc, char **argv) {
     }
     constructs.clear();
 
+	/* fill the workqueue */
+	for (unsigned int i=0; i<bucketList.size(); i++) {
+	    wq.push( bucketList[i] );
+	}
+
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( areas, 2, wq[1] );
+        TGConstruct* construct = new TGConstruct( areas, 2, wq );
         //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
@@ -251,7 +245,7 @@ int main(int argc, char **argv) {
         constructs[i]->start();
     }
     // wait for workqueue to empty
-    while( wq[1].size() ) {
+    while( wq.size() ) {
         tgSleep( 5 );
     }
     // wait for all threads to complete
@@ -264,8 +258,13 @@ int main(int argc, char **argv) {
     }
     constructs.clear();
 
+	/* fill the workqueue */
+	for (unsigned int i=0; i<bucketList.size(); i++) {
+	    wq.push( bucketList[i] );
+	}
+
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( areas, 3, wq[2] );
+        TGConstruct* construct = new TGConstruct( areas, 3, wq );
         //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
@@ -278,7 +277,7 @@ int main(int argc, char **argv) {
         constructs[i]->start();
     }
     // wait for workqueue to empty
-    while( wq[2].size() ) {
+    while( wq.size() ) {
         tgSleep( 5 );
     }
     // wait for all threads to complete

@@ -174,7 +174,6 @@ tgPolygon tgPolygon::RemoveSpikes( const tgPolygon& subject )
 // Move slivers from in polygon to out polygon.
 void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
 {
-#if 0
     // traverse each contour of the polygon and attempt to identify
     // likely slivers
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygon::RemoveSlivers()");
@@ -226,7 +225,6 @@ void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
             }
         }
     }
-#endif
 }
 
 tgcontour_list tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& sliver_list ) {

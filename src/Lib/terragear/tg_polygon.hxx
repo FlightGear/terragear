@@ -71,6 +71,11 @@ SGGeod OffsetPointMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod&
 SGGeod OffsetPointFirst( const SGGeod& cur, const SGGeod& next, double offset_by );
 SGGeod OffsetPointLast( const SGGeod& prev, const SGGeod& cur, double offset_by );
 
+void OffsetPointsMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by, double width, int& turn_dir, SGGeod& inner, SGGeod& outer );
+void OffsetPointsMiddle( const SGGeod& gPrev, const SGGeod& gCur, const SGGeod& gNext, double offset_by, double width, SGGeod& inner, SGGeod& outer );
+void OffsetPointsFirst( const SGGeod& cur, const SGGeod& next, double offset_by, double width, SGGeod& inner, SGGeod& outer );
+void OffsetPointsLast( const SGGeod& prev, const SGGeod& cur, double offset_by, double width, SGGeod& inner, SGGeod& outer );
+
 // what abount this?
 
 // Save clipper to shapefile

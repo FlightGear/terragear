@@ -29,6 +29,8 @@
 #include <simgear/misc/sg_dir.hxx>
 #include <simgear/debug/logstream.hxx>
 
+#include <terragear/tg_shapefile.hxx>
+
 #include "tgconstruct.hxx"
 
 using std::string;
@@ -102,6 +104,13 @@ int TGConstruct::LoadLandclassPolys( void ) {
                                 nodes.unique_add( node );
                             }
                         }
+                    }
+
+                    if (IsDebugShape( poly.GetId() )) {
+                        char layer[32];
+                        sprintf(layer, "loaded_%d", poly.GetId() );
+
+                        tgShapefile::FromPolygon( poly, ds_name, layer, material.c_str() );
                     }
                 }
 

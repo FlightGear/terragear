@@ -42,7 +42,9 @@ void TGConstruct::TesselatePolys( void )
             tgPolygon poly = polys_clipped.get_poly(area, p );
 
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgShapefile::FromPolygon( poly, ds_name, "preteselate", "" );
+                char pn[32];
+                sprintf(pn, "%d", poly.GetId() );
+                tgShapefile::FromPolygon( poly, ds_name, "preteselate", pn );
             }
 
             tgRectangle rect = poly.GetBoundingBox();

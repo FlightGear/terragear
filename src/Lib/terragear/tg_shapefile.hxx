@@ -6,6 +6,7 @@
 class tgShapefile
 {
 public:
+    static void  FromContour( const tgContour& subject, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromPolygon( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description );
     static tgPolygon ToPolygon( const void* subject );
 
