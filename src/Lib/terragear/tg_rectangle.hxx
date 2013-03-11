@@ -91,6 +91,13 @@ public:
     virtual void setMax (const SGGeod& p);
 
     /**
+     * Expand the rectangle to encompass a given rectangle
+     *
+     * @param r The rectangle to expand by
+     */
+    virtual void expandBy(const tgRectangle& r);
+
+    /**
      * Make the rectangle sane.
      *
      * Ensure that the min vertex is less than the max vertex.

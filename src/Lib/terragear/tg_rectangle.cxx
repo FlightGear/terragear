@@ -36,6 +36,23 @@ void tgRectangle::setMax (const SGGeod &p)
     _max = p;
 }
 
+void tgRectangle::expandBy(const tgRectangle& r)
+{
+    if ( r.getMin().getLongitudeDeg() < _min.getLongitudeDeg() ) {
+        _min.setLongitudeDeg( r.getMin().getLongitudeDeg() );
+    }
+    if ( r.getMin().getLatitudeDeg() < _min.getLatitudeDeg() ) {
+        _min.setLatitudeDeg( r.getMin().getLatitudeDeg() );
+    }
+
+    if ( r.getMax().getLongitudeDeg() > _max.getLongitudeDeg() ) {
+        _max.setLongitudeDeg( r.getMax().getLongitudeDeg() );
+    }
+    if ( r.getMax().getLatitudeDeg() > _max.getLatitudeDeg() ) {
+        _max.setLatitudeDeg( r.getMax().getLatitudeDeg() );
+    }
+}
+
 void tgRectangle::sanify ()
 {
     double tmp;

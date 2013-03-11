@@ -212,6 +212,8 @@ void Decoder::run()
     // as long as we have geometry to parse, do so
     while (!global_workQueue.empty()) {
         OGRFeature *poFeature = global_workQueue.pop();
+        // SG_LOG( SG_GENERAL, SG_INFO, " remaining features is " << global_workQueue.size() );
+
         if ( poFeature ) {
             OGRGeometry *poGeometry = poFeature->GetGeometryRef();
 
@@ -315,9 +317,9 @@ void Decoder::run()
                     }
                 }
 
-                OGRMultiLineString* multils=(OGRMultiLineString*)poGeometry;
-                for (int i=0;i<multils->getNumGeometries();i++) {
-                    processLineString((OGRLineString*)poGeometry, area_type_name, width, texture_lines);
+                OGRMultiLineString* multilines=(OGRMultiLineString*)poGeometry;
+                for (int i=0;i<multilines->getNumGeometries();i++) {
+                    processLineString((OGRLineString*)(multilines->getGeometryRef(i)), area_type_name, width, texture_lines);
                 }
                 break;
             }
@@ -388,9 +390,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
 
     /* setup a transformation to WGS84 */
     OGRSpatialReference *oSourceSRS, oTargetSRS;
-
     oSourceSRS=poLayer->GetSpatialRef();
-
     if (oSourceSRS == NULL) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Layer " << layername << " has no defined spatial reference system" );
         exit( 1 );
@@ -441,6 +441,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     }
 
     // Now process the workqueue with threads
+    // this just generates all the tgPolygons
     std::vector<Decoder *> decoders;
     for (int i=0; i<num_threads; i++) {
         Decoder* decoder = new Decoder( poCT, area_type_field, point_width_field, line_width_field, results );
@@ -448,18 +449,10 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
         decoders.push_back( decoder );
     }
 
-#if 0
-    while (!global_workQueue.empty()) {
-        sleep(1);
-    }
-#endif
-
     // Then wait until they are finished
     for (unsigned int i=0; i<decoders.size(); i++) {
         decoders[i]->join();
     }
-
-    results.Save();
 
     OCTDestroyCoordinateTransformation ( poCT );
 }
@@ -659,7 +652,6 @@ int main( int argc, char **argv ) {
     SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << datasource );
 
     OGRLayer  *poLayer;
-
     if (argc>3) {
         for (int i=3;i<argc;i++) {
             poLayer = poDS->GetLayerByName( argv[i] );
@@ -681,9 +673,10 @@ int main( int argc, char **argv ) {
         }
     }
 
-    results.Save();
-    
     OGRDataSource::DestroyDataSource( poDS );
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
+    results.Save();
 
     return 0;
 }

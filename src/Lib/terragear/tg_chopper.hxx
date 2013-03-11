@@ -18,7 +18,7 @@ public:
 
 private:
     long int GenerateIndex( std::string path );
-    void Clip( const tgPolygon& subject, const std::string& type, SGBucket& b );
+    tgPolygon Clip( const tgPolygon& subject, const std::string& type, SGBucket& b );
     void Chop( const tgPolygon& subject, const std::string& type );
 
     std::string      root_path;
