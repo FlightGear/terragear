@@ -28,6 +28,10 @@
 #include "output.hxx"
 
 
+
+
+    
+
 Airport::Airport( int c, char* def)
 {
     int   numParams;
@@ -214,6 +218,7 @@ bool Airport::isDebugFeature( int feat )
 // TODO : Add somewhere
 // Determine node elevations of a point_list based on the provided
 // TGAptSurface.  Offset is added to the final elevation
+
 static std::vector<SGGeod> calc_elevations( const tgSurface& surf, const std::vector<SGGeod>& geod_nodes, double offset )
 {
     std::vector<SGGeod> result = geod_nodes;
@@ -333,25 +338,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
     // Starting to clip the polys (for now - only UNIX builds)
     build_start.stamp();
-
-    // Add the linear features
-    if (features.size())
-    {
-        tgAccumulator lf_accum;
-
-        TG_LOG(SG_GENERAL, SG_INFO, "Build " << features.size() << " Linear Feature Polys");
-        for ( unsigned int i=0; i<features.size(); i++ )
-        {
-            TG_LOG(SG_GENERAL, SG_DEBUG, "Build Feature Poly " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
-
-            features[i]->BuildBtg( line_polys, rwy_lights, lf_accum, make_shapefiles );
-        }
-
-//        lf_accum.ToShapefiles( "./lf_accum", "test", false );
-
-        log_time = time(0);
-        TG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << DebugTimeToString(log_time) );
-    }
 
     /* Initialize a new accumulator for the other objects */
     tgAccumulator pvmt_accum;
@@ -547,7 +533,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     if ( apt_base.TotalNodes() == 0 )
     {
         TG_LOG(SG_GENERAL, SG_ALERT, "no airport points generated");
-    	return;
+        return;
     }
 
     tgPolygon filled_base  = tgPolygon::StripHoles( apt_base );
@@ -559,58 +545,46 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
     cleanup_start.stamp();
 
+    // finish building pavements first, then drape the features
+
     // add segments to polygons to remove any possible "T"
     // intersections
     UniqueSGGeodSet tmp_pvmt_nodes;
-    UniqueSGGeodSet tmp_feat_nodes;
 
     // build temporary node list from runways...
     TG_LOG(SG_GENERAL, SG_INFO, "Build Node List " );
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k )
     {
-    	tgPolygon poly = rwy_polys[k];
-    	for ( unsigned int i = 0; i < poly.Contours(); ++i )
+        tgPolygon poly = rwy_polys[k];
+        for ( unsigned int i = 0; i < poly.Contours(); ++i )
         {
-    	    for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
+            for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
             {
                 tmp_pvmt_nodes.add( poly.GetNode(i, j) );
-    	    }
-    	}
+            }
+        }
     }
 
     // and pavements
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k )
     {
-    	tgPolygon poly = pvmt_polys[k];
-    	for ( unsigned int i = 0; i < poly.Contours(); ++i )
+        tgPolygon poly = pvmt_polys[k];
+        for ( unsigned int i = 0; i < poly.Contours(); ++i )
         {
-    	    for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
+            for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
             {
-        		tmp_pvmt_nodes.add( poly.GetNode(i, j) );
-    	    }
-    	}
-    }
-
-    // and linear features ( keep Linear feature nodes seperate)
-    for ( unsigned int k = 0; k < line_polys.size(); ++k )
-    {
-    	tgPolygon poly = line_polys[k];
-    	for ( unsigned int i = 0; i < poly.Contours(); ++i )
-        {
-    	    for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
-            {
-        		tmp_feat_nodes.add( poly.GetNode(i, j) );
-    	    }
-    	}
+                tmp_pvmt_nodes.add( poly.GetNode(i, j) );
+            }
+        }
     }
 
     // and the base
     for ( unsigned int i = 0; i < base_poly.Contours(); ++i )
     {
-    	for ( unsigned int j = 0; j < base_poly.ContourSize( i ); ++j )
+        for ( unsigned int j = 0; j < base_poly.ContourSize( i ); ++j )
         {
-    	    tmp_pvmt_nodes.add( base_poly.GetNode(i, j) );
-    	}
+            tmp_pvmt_nodes.add( base_poly.GetNode(i, j) );
+        }
     }
 
     // the divided base could contain points not found in base_poly,
@@ -644,40 +618,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         pvmt_polys[k] = poly;
     }
 
-    // second pass : and lines
-    for ( unsigned int k = 0; k < line_polys.size(); ++k )
-    {
-        tgPolygon poly = line_polys[k];
-        poly = tgPolygon::AddColinearNodes( poly, tmp_feat_nodes );
-        TG_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
-        line_polys[k] = poly;
-    }
-
     log_time = time(0);
     TG_LOG( SG_GENERAL, SG_ALERT, "Finished adding intermediate nodes for " << icao << " at " << DebugTimeToString(log_time) );
-
-    for ( unsigned int k = 0; k < line_polys.size(); ++k )
-    {
-        tgPolygon poly = line_polys[k];
-
-#if 1
-        poly = tgPolygon::RemoveCycles( poly );
-        poly = tgPolygon::RemoveDups( poly );
-        poly = tgPolygon::RemoveBadContours( poly );
-
-//        poly = tgPolygon::Simplify( poly );
-//        poly = tgPolygon::RemoveTinyContours( poly );
-//        poly = tgPolygon::RemoveSpikes( poly );
-//        poly = tgPolygon::RemoveDups( poly );
-//        poly = tgPolygon::RemoveBadContours( poly );
-//        poly = tgPolygon::RemoveTinyContours( poly );
-#endif
-
-        line_polys[k] = poly;
-    }
-
-    log_time = time(0);
-    TG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << DebugTimeToString(log_time) );
 
     base_poly = tgPolygon::AddColinearNodes( base_poly, tmp_pvmt_nodes );
     base_poly = tgPolygon::Snap( base_poly, gSnap );
@@ -691,19 +633,19 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // Then snap rwy and pavement to grid (was done right after adding intermediate nodes...)
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k )
     {
-    	tgPolygon poly = rwy_polys[k];
+        tgPolygon poly = rwy_polys[k];
         poly = tgPolygon::Snap(poly, gSnap);
         poly = tgPolygon::RemoveDups( poly );
         poly = tgPolygon::RemoveBadContours( poly );
-    	rwy_polys[k] = poly;
+        rwy_polys[k] = poly;
     }
     for ( unsigned int k = 0; k < pvmt_polys.size(); ++k )
     {
-    	tgPolygon poly = pvmt_polys[k];
+        tgPolygon poly = pvmt_polys[k];
         poly = tgPolygon::Snap(poly, gSnap);
         poly = tgPolygon::RemoveDups( poly );
         poly = tgPolygon::RemoveBadContours( poly );
-    	pvmt_polys[k] = poly;
+        pvmt_polys[k] = poly;
     }
 
     cleanup_end.stamp();
@@ -741,21 +683,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         }
     }
 
-    if ( line_polys.size() )
-    {
-        // tesselate the polygons and prepair them for final output
-        TG_LOG(SG_GENERAL, SG_INFO, "Tesselating " << line_polys.size() << " Linear Feature Polys " );
-        for ( unsigned int i = 0; i < line_polys.size(); ++i )
-        {
-            TG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating line poly = " << i + 1 << " of " << line_polys.size() );
-
-            TG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << line_polys[i].Contours() << " total points before = " << line_polys[i].TotalNodes());
-            line_polys[i].Tesselate();
-            TG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << line_polys[i].Triangles());
-            line_polys[i].Texture();
-        }
-    }
-
     /* before tessellating the base, make sure there are no
        intersecting contours */
     base_poly = tgPolygon::Simplify( base_poly );
@@ -776,18 +703,159 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
     triangulation_time = triangulation_end - triangulation_start;
 
+
+    // now create the linear features
+    // and linear features ( keep Linear feature nodes seperate)
+    // Add the linear features
+    if (features.size())
+    {
+        tgAccumulator lf_accum;
+
+        TG_LOG(SG_GENERAL, SG_INFO, "Build " << features.size() << " Linear Feature Polys");
+        for ( unsigned int i=0; i<features.size(); i++ )
+        {
+            TG_LOG(SG_GENERAL, SG_DEBUG, "Build Feature Poly " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
+
+            features[i]->BuildBtg( line_polys, rwy_lights, lf_accum, make_shapefiles );
+        }
+
+        log_time = time(0);
+        TG_LOG( SG_GENERAL, SG_ALERT, "Finished building Linear Features for " << icao << " at " << DebugTimeToString(log_time) );
+    }
+
+    /* collect all pavement line segments */
+    
+    /* collect all the feature nodes */
+    UniqueSGGeodSet tmp_feat_nodes;
+    for ( unsigned int k = 0; k < line_polys.size(); ++k )
+    {
+        tgPolygon poly = line_polys[k];
+        for ( unsigned int i = 0; i < poly.Contours(); ++i )
+        {
+            for ( unsigned int j = 0; j < poly.ContourSize( i ); ++j )
+            {
+                tmp_feat_nodes.add( poly.GetNode(i, j) );
+            }
+        }
+    }
+
+    /* then intersect each feature line segment with the underlying triangles */
+    /* get all the line segments from the lf contours */
+    tgsegment_list lf_segments;
+    for ( unsigned int k = 0; k < line_polys.size(); ++k )
+    {
+        tgPolygon poly = line_polys[k];
+        for ( unsigned int i = 0; i < poly.Contours(); ++i )
+        {
+            tgsegment_list seg = tgContour::ToSegments( poly.GetContour(i) );
+            for ( unsigned int j = 0; j<seg.size(); j++ ) {
+                lf_segments.push_back( seg[j] );
+            }
+        }
+    }
+
+    tgsegment_list pvmnt_segments;
+    for ( unsigned int k = 0; k < rwy_polys.size(); ++k )
+    {
+        tgPolygon poly = rwy_polys[k];
+        for ( unsigned int i = 0; i < poly.Triangles(); ++i )
+        {
+            tgsegment_list seg = poly.GetTriangle(i).ToSegments();
+            for ( unsigned int j = 0; j<seg.size(); j++ ) {
+                pvmnt_segments.push_back( seg[j] );
+            }
+        }
+    }
+    for ( unsigned int k = 0; k < pvmt_polys.size(); ++k )
+    {
+        tgPolygon poly = pvmt_polys[k];
+        for ( unsigned int i = 0; i < poly.Triangles(); ++i )
+        {
+            tgsegment_list seg = poly.GetTriangle(i).ToSegments();
+            for ( unsigned int j = 0; j<seg.size(); j++ ) {
+                pvmnt_segments.push_back( seg[j] );
+            }
+        }
+    }
+
+    // now, for each lf_segment - find the intersection points of the pavements, and add these to
+    // tmp_feat_nodes
+    for ( unsigned int k = 0; k < lf_segments.size(); ++k )
+    {
+        for ( unsigned int i = 0; i < pvmnt_segments.size(); ++i )
+        {
+            std::vector<SGGeod> ints;
+            ints.clear();
+
+            if ( FindIntersections( lf_segments[k], pvmnt_segments[i], ints ) )
+            {
+                for (unsigned int x = 0; x<ints.size(); x++)
+                {
+                    tmp_feat_nodes.add( ints[x] );
+                }
+            }
+        }
+    }
+
+    // second pass : and lines
+    for ( unsigned int k = 0; k < line_polys.size(); ++k )
+    {
+        tgPolygon poly = line_polys[k];
+        poly = tgPolygon::AddColinearNodes( poly, tmp_feat_nodes );
+        TG_LOG(SG_GENERAL, SG_DEBUG, "total size after add nodes = " << poly.TotalNodes());
+        line_polys[k] = poly;
+    }
+
+    for ( unsigned int k = 0; k < line_polys.size(); ++k )
+    {
+        tgPolygon poly = line_polys[k];
+
+        poly = tgPolygon::RemoveCycles( poly );
+        poly = tgPolygon::RemoveDups( poly );
+        poly = tgPolygon::RemoveBadContours( poly );
+
+        line_polys[k] = poly;
+    }
+
+    // Teseelate the linear features
+    if ( line_polys.size() )
+    {
+        // tesselate the polygons and prepair them for final output
+        TG_LOG(SG_GENERAL, SG_INFO, "Tesselating " << line_polys.size() << " Linear Feature Polys " );
+        for ( unsigned int i = 0; i < line_polys.size(); ++i )
+        {
+            TG_LOG(SG_GENERAL, SG_DEBUG, "Tesselating line poly = " << i + 1 << " of " << line_polys.size() );
+
+            TG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << line_polys[i].Contours() << " total points before = " << line_polys[i].TotalNodes());
+            line_polys[i].Tesselate();
+            TG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << line_polys[i].Triangles());
+            line_polys[i].Texture();
+        }
+    }
+
+
     //
     // We should now have the runway polygons all generated with their
     // corresponding triangles and texture coordinates, and the
     // surrounding base area.
     //
-    // Next we need to create the output lists ... vertices, normals,
-    // texture coordinates, and tri-strips
-    //
+    // Now we need to calculate the height of each pavement node using the airport surface.
+    // And drape lf nodes
 
-    // traverse the tri list and create ordered node and texture
-    // coordinate lists
-    // start with just nodes
+    // generate surface based on airport bounds.
+    tgRectangle bounds = apt_base.GetBoundingBox();
+
+    // TODO elevation queries should be performed as member functions of surface
+    // Need average of all the pavement, runway, and base nodes
+    // already gathers for finding t-juntions
+    double average = tgAverageElevation( root, elev_src, tmp_pvmt_nodes.get_list() );
+    tgSurface apt_surf( root, elev_src, bounds, average, slope_max, slope_eps );
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
+
+
+
+
+    
     UniqueSGGeodSet  nodes;
     UniqueSGVec3fSet normals;
     UniqueSGVec2fSet texcoords;
@@ -833,18 +901,18 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
                 index = nodes.add( rwy_polys[k].GetTriNode( i, j ) );
                 tri_v.push_back( index );
 
-        		// use 'the' normal
-        		index = normals.add( vnt );
-        		tri_n.push_back( index );
+                // use 'the' normal
+                index = normals.add( vnt );
+                tri_n.push_back( index );
 
-        		index = texcoords.add( rwy_polys[k].GetTriTexCoord(i,j) );
-        		tri_tc.push_back( index );
-    	    }
-    	    tris_v.push_back( tri_v );
-    	    tris_n.push_back( tri_n );
-    	    tris_tc.push_back( tri_tc );
-    	    tri_materials.push_back( material );
-    	}
+                index = texcoords.add( rwy_polys[k].GetTriTexCoord(i,j) );
+                tri_tc.push_back( index );
+            }
+            tris_v.push_back( tri_v );
+            tris_n.push_back( tri_n );
+            tris_tc.push_back( tri_tc );
+            tri_materials.push_back( material );
+        }
     }
 
     TG_LOG(SG_GENERAL, SG_INFO, "Adding pavement nodes and normals");
@@ -854,12 +922,12 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         std::string material = pvmt_polys[k].GetMaterial();
         TG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
         TG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << pvmt_polys[k].Triangles());
-    	for ( unsigned int i = 0; i < pvmt_polys[k].Triangles(); ++i )
+        for ( unsigned int i = 0; i < pvmt_polys[k].Triangles(); ++i )
         {
-    	    tri_v.clear();
-    	    tri_n.clear();
-    	    tri_tc.clear();
-    	    for ( int j = 0; j < 3; ++j )
+            tri_v.clear();
+            tri_n.clear();
+            tri_tc.clear();
+            for ( int j = 0; j < 3; ++j )
             {
                 index = nodes.add( pvmt_polys[k].GetTriNode( i, j ) );
                 tri_v.push_back( index );
@@ -870,27 +938,27 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
                 index = texcoords.add( pvmt_polys[k].GetTriTexCoord(i,j) );
                 tri_tc.push_back( index );
-    	    }
-    	    tris_v.push_back( tri_v );
-    	    tris_n.push_back( tri_n );
-    	    tris_tc.push_back( tri_tc );
-    	    tri_materials.push_back( material );
-    	}
+            }
+            tris_v.push_back( tri_v );
+            tris_n.push_back( tri_n );
+            tris_tc.push_back( tri_tc );
+            tri_materials.push_back( material );
+        }
     }
 
     TG_LOG(SG_GENERAL, SG_INFO, "Adding line nodes and normals");
     for ( unsigned int k = 0; k < line_polys.size(); ++k )
     {
-    	TG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
         std::string material = line_polys[k].GetMaterial();
-    	TG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
-    	TG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << line_polys[k].Triangles());
-    	for ( unsigned int i = 0; i < line_polys[k].Triangles(); ++i )
+        TG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << line_polys[k].Triangles());
+        for ( unsigned int i = 0; i < line_polys[k].Triangles(); ++i )
         {
-    	    tri_v.clear();
-    	    tri_n.clear();
-    	    tri_tc.clear();
-    	    for ( int j = 0; j < 3; ++j )
+            tri_v.clear();
+            tri_n.clear();
+            tri_tc.clear();
+            for ( int j = 0; j < 3; ++j )
             {
                 index = nodes.add( line_polys[k].GetTriNode( i, j ) );
                 tri_v.push_back( index );
@@ -901,12 +969,12 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
                 index = texcoords.add( line_polys[k].GetTriTexCoord(i,j) );
                 tri_tc.push_back( index );
-    	    }
-    	    tris_v.push_back( tri_v );
-    	    tris_n.push_back( tri_n );
-    	    tris_tc.push_back( tri_tc );
-    	    tri_materials.push_back( material );
-    	}
+            }
+            tris_v.push_back( tri_v );
+            tris_n.push_back( tri_n );
+            tris_tc.push_back( tri_tc );
+            tri_materials.push_back( material );
+        }
     }
 
     // add base points
@@ -916,33 +984,33 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TG_LOG(SG_GENERAL, SG_INFO, "Adding base nodes and normals");
     for ( unsigned int i = 0; i < base_poly.Triangles(); ++i )
     {
-    	tri_v.clear();
-    	tri_n.clear();
-    	tri_tc.clear();
-    	for ( int j = 0; j < 3; ++j )
+        tri_v.clear();
+        tri_n.clear();
+        tri_tc.clear();
+        for ( int j = 0; j < 3; ++j )
         {
-    	    index = nodes.add( base_poly.GetTriNode( i, j ) );
-    	    tri_v.push_back( index );
+            index = nodes.add( base_poly.GetTriNode( i, j ) );
+            tri_v.push_back( index );
 
-    	    index = normals.add( vnt );
-    	    tri_n.push_back( index);
-    	}
-    	tris_v.push_back( tri_v );
-    	tris_n.push_back( tri_n );
-    	tri_materials.push_back( "Grass" );
+            index = normals.add( vnt );
+            tri_n.push_back( index);
+        }
+        tris_v.push_back( tri_v );
+        tris_n.push_back( tri_n );
+        tri_materials.push_back( "Grass" );
 
-    	std::vector < SGGeod > geodNodes = nodes.get_list();
+        std::vector < SGGeod > geodNodes = nodes.get_list();
 
         base_txs.clear();
-    	base_txs = sgCalcTexCoords( b, geodNodes, tri_v );
+        base_txs = sgCalcTexCoords( b, geodNodes, tri_v );
 
-    	base_tc.clear();
-    	for ( unsigned int j = 0; j < base_txs.size(); ++j )
+        base_tc.clear();
+        for ( unsigned int j = 0; j < base_txs.size(); ++j )
         {
-    	    index = texcoords.add(  base_txs[j] );
-    	    base_tc.push_back( index );
-    	}
-    	tris_tc.push_back( base_tc );
+            index = texcoords.add(  base_txs[j] );
+            base_tc.push_back( index );
+        }
+        tris_tc.push_back( base_tc );
     }
 
     // on rare occasion, one or more of the divided base points can be
@@ -950,11 +1018,11 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // build a proper skirt.
     for ( unsigned int i = 0; i < divided_base.Contours(); ++i )
     {
-    	for ( unsigned int j = 0; j < divided_base.ContourSize( i ); ++j )
+        for ( unsigned int j = 0; j < divided_base.ContourSize( i ); ++j )
         {
-    	    index = nodes.add( divided_base.GetNode(i, j) );
+            index = nodes.add( divided_base.GetNode(i, j) );
             TG_LOG(SG_GENERAL, SG_DEBUG, "added base point " << divided_base.GetNode(i, j) << " at " << index );
-    	}
+        }
     }
 
     // Now that we have assembled all the airport geometry nodes into
@@ -963,7 +1031,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // calculating an average over the entire airport surface because
     // it avoids biases introduced from the surrounding area if the
     // airport is located in a bowl or on a hill.
-
+#if 0
     TG_LOG(SG_GENERAL, SG_DEBUG, " calc average elevation");
     {
         std::vector < SGGeod > dbg = nodes.get_list();
@@ -975,46 +1043,44 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             TG_LOG(SG_GENERAL, SG_DEBUG, " node " << w << " is " << dbg[w] );
         }
     }
-
-    double average = tgAverageElevation( root, elev_src, nodes.get_list() );
-
+#endif
     // Now build the fitted airport surface ...
 
     // calculation min/max coordinates of airport area
     TG_LOG(SG_GENERAL, SG_DEBUG, " calculation min/max coordinates of airport area");
 
-    SGGeod min_deg = SGGeod::fromDeg(9999.0, 9999.0);
-    SGGeod max_deg = SGGeod::fromDeg(-9999.0, -9999.0);
-    for ( unsigned int j = 0; j < nodes.get_list().size(); ++j )
-    {
-        SGGeod p = nodes.get_list()[j];
-        if ( p.getLongitudeDeg() < min_deg.getLongitudeDeg() )
-        {
-            TG_LOG(SG_GENERAL, SG_DEBUG, "new min lon from node " << j << " is " << p.getLongitudeDeg() );
-            min_deg.setLongitudeDeg( p.getLongitudeDeg() );
-        }
-        if ( p.getLongitudeDeg() > max_deg.getLongitudeDeg() )
-        {
-            TG_LOG(SG_GENERAL, SG_DEBUG, "new max lon from node " << j << " is " << p.getLongitudeDeg() );
-            max_deg.setLongitudeDeg( p.getLongitudeDeg() );
-        }
-        if ( p.getLatitudeDeg() < min_deg.getLatitudeDeg() )
-        {
-            TG_LOG(SG_GENERAL, SG_DEBUG, "new min lat from node " << j << " is " << p.getLatitudeDeg() );
-            min_deg.setLatitudeDeg( p.getLatitudeDeg() );
-        }
-        if ( p.getLatitudeDeg() > max_deg.getLatitudeDeg() )
-        {
-            TG_LOG(SG_GENERAL, SG_DEBUG, "new max lat from node " << j << " is " << p.getLatitudeDeg() );
-            max_deg.setLatitudeDeg( p.getLatitudeDeg() );
-        }
-    }
-
-    TG_LOG(SG_GENERAL, SG_DEBUG, "Before extending for lights: min = " << min_deg << " max = " << max_deg );
+//    SGGeod min_deg = SGGeod::fromDeg(9999.0, 9999.0);
+//    SGGeod max_deg = SGGeod::fromDeg(-9999.0, -9999.0);
+//    for ( unsigned int j = 0; j < nodes.get_list().size(); ++j )
+//    {
+//        SGGeod p = nodes.get_list()[j];
+//        if ( p.getLongitudeDeg() < min_deg.getLongitudeDeg() )
+//        {
+//            TG_LOG(SG_GENERAL, SG_DEBUG, "new min lon from node " << j << " is " << p.getLongitudeDeg() );
+//            min_deg.setLongitudeDeg( p.getLongitudeDeg() );
+//        }
+//        if ( p.getLongitudeDeg() > max_deg.getLongitudeDeg() )
+//        {
+//            TG_LOG(SG_GENERAL, SG_DEBUG, "new max lon from node " << j << " is " << p.getLongitudeDeg() );
+//            max_deg.setLongitudeDeg( p.getLongitudeDeg() );
+//        }
+//        if ( p.getLatitudeDeg() < min_deg.getLatitudeDeg() )
+//        {
+//            TG_LOG(SG_GENERAL, SG_DEBUG, "new min lat from node " << j << " is " << p.getLatitudeDeg() );
+//            min_deg.setLatitudeDeg( p.getLatitudeDeg() );
+//        }
+//        if ( p.getLatitudeDeg() > max_deg.getLatitudeDeg() )
+//        {
+//            TG_LOG(SG_GENERAL, SG_DEBUG, "new max lat from node " << j << " is " << p.getLatitudeDeg() );
+//            max_deg.setLatitudeDeg( p.getLatitudeDeg() );
+//        }
+//    }
+//    TG_LOG(SG_GENERAL, SG_DEBUG, "Before extending for lights: min = " << min_deg << " max = " << max_deg );
 
     // extend the min/max coordinates of airport area to cover all
     // lights as well
 
+#if 0
     TG_LOG(SG_GENERAL, SG_DEBUG, " extend the min/max coordinates of airport area to cover all lights as well : num rwy lights is " << rwy_lights.size() );
     for ( unsigned int i = 0; i < rwy_lights.size(); ++i )
     {
@@ -1058,10 +1124,10 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TG_LOG(SG_GENERAL, SG_DEBUG, " max: " << max_deg );
     TG_LOG(SG_GENERAL, SG_DEBUG, " average: " << average );
 
-    // TODO elevation queries should be performed as member functions of surface
-    tgRectangle aptBounds(min_deg, max_deg);
-    tgSurface apt_surf( root, elev_src, aptBounds, average, slope_max, slope_eps );
-    TG_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
+
+    // calculate node elevations
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Computing airport node elevations");
+#endif
 
     // add light points
     // pass one, calculate raw elevations from Array
@@ -1071,7 +1137,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             rwy_lights[i].SetElevation(j, light_elevation);
         }
     }
-
     TG_LOG(SG_GENERAL, SG_INFO, "Done with lighting calc_elevations() num light polys is " << rwy_lights.size() );
 
     // pass two, for each light group check if we need to lift (based
@@ -1097,9 +1162,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             pt_materials.push_back( rwy_lights[i].GetType() );
         }
     }
-
-    // calculate node elevations
-    TG_LOG(SG_GENERAL, SG_DEBUG, "Computing airport node elevations");
 
     std::vector<SGGeod> geod_nodes = calc_elevations( apt_surf, nodes.get_list(), 0.0 );
     divided_base = calc_elevations( apt_surf, divided_base, 0.0 );

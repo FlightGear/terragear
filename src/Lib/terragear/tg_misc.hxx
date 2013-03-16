@@ -1,3 +1,6 @@
+#ifndef __TG_MISC_HXX__
+#define __TG_MISC_HXX__
+
 #include <simgear/math/SGMath.hxx>
 
 #include "clipper.hpp"
@@ -36,5 +39,28 @@ double Dist_ToClipper( double dist );
 // should be in rectangle
 tgRectangle BoundingBox_FromClipper( const ClipperLib::Paths& subject );
 
+
+// move to tgSegment
+
 bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SGGeod& p3, SGGeod& intersection);
 
+
+class tgSegment
+{
+public:
+    tgSegment( const SGGeod& s, const SGGeod& e ) {
+        start = s;
+        end   = e;
+    };
+
+    SGGeod start;
+    SGGeod end;
+};
+
+typedef std::vector <tgSegment>  tgsegment_list;
+typedef tgsegment_list::iterator tgsegment_list_iterator;
+typedef tgsegment_list::const_iterator const_tgsegment_list_iterator;
+
+bool FindIntersections( const tgSegment& s1, const tgSegment& s2, std::vector<SGGeod>& ints );
+
+#endif /* __TG_MISC_HXX__ */

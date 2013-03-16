@@ -378,3 +378,39 @@ bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SG
         return false;
     }
 }
+
+bool FindIntersections( const tgSegment& s1, const tgSegment& s2, std::vector<SGGeod>& ints )
+{
+    typedef CGAL::Exact_predicates_exact_constructions_kernel         Kernel;
+    typedef Kernel::Point_2                                           Point_2;
+    typedef CGAL::Segment_2<Kernel>                                   Segment_2;
+
+    Point_2 a1( s1.start.getLongitudeDeg(), s1.start.getLatitudeDeg() );
+    Point_2 b1( s1.end.getLongitudeDeg(), s1.end.getLatitudeDeg() );
+    Point_2 a2( s2.start.getLongitudeDeg(), s2.start.getLatitudeDeg() );
+    Point_2 b2( s2.end.getLongitudeDeg(), s2.end.getLatitudeDeg() );
+
+    Segment_2 seg1( a1, b1 );
+    Segment_2 seg2( a2, b2 );
+
+    CGAL::Object result = CGAL::intersection(seg1, seg2);
+    SGGeod pt;
+    if (const CGAL::Point_2<Kernel> *ipoint = CGAL::object_cast<CGAL::Point_2<Kernel> >(&result)) {
+        // handle the point intersection case with *ipoint.
+        pt = SGGeod::fromDeg( to_double(ipoint->x()), to_double(ipoint->y()) );
+        ints.push_back( pt );
+        return true;
+    } else {
+        if (const CGAL::Segment_2<Kernel> *iseg = CGAL::object_cast<CGAL::Segment_2<Kernel> >(&result)) {
+            // handle the segment intersection case with *iseg.
+            pt = SGGeod::fromDeg( to_double( iseg->source().x() ), to_double( iseg->source().y() ) );
+            ints.push_back( pt );
+            pt = SGGeod::fromDeg( to_double( iseg->target().x() ), to_double( iseg->target().y() ) );
+            ints.push_back( pt );
+            return true;
+        } else {
+            // handle the no intersection case.
+            return false;
+        }
+    }
+}

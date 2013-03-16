@@ -13,6 +13,9 @@
 #include "tg_rectangle.hxx"
 #include "clipper.hpp"
 
+// todo : tgSegments
+#include "tg_misc.hxx"
+
 /* forward declarations */
 class tgPolygon;
 typedef std::vector <tgPolygon>  tgpolygon_list;
@@ -114,6 +117,8 @@ public:
     // conversions
     static ClipperLib::Path ToClipper( const tgContour& subject );
     static tgContour FromClipper( const ClipperLib::Path& subject );
+
+    static tgsegment_list ToSegments( const tgContour& subject );
 
     static tgContour Expand( const tgContour& subject, double offset );
     static tgpolygon_list ExpandToPolygons( const tgContour& subject, double width );

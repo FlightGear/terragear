@@ -423,6 +423,20 @@ tgContour tgContour::FromClipper( const ClipperLib::Path& subject )
     return result;
 }
 
+tgsegment_list tgContour::ToSegments( const tgContour& subject )
+{
+    tgsegment_list result;
+
+    for (unsigned int i = 0; i < subject.GetSize()-1; i++)
+    {
+        result.push_back( tgSegment( subject[i], subject[i+1] ) );
+    }
+
+    result.push_back( tgSegment( subject[subject.GetSize()-1], subject[0] ) );
+
+    return result;
+}
+
 tgRectangle tgContour::GetBoundingBox( void ) const
 {
     SGGeod min, max;

@@ -35,6 +35,30 @@
 #include "tg_misc.hxx"
 #include "tg_polygon.hxx"
 
+tgRectangle tgTriangle::GetBoundingBox( void ) const
+{
+    SGGeod min, max;
+
+    double minx =  std::numeric_limits<double>::infinity();
+    double miny =  std::numeric_limits<double>::infinity();
+    double maxx = -std::numeric_limits<double>::infinity();
+    double maxy = -std::numeric_limits<double>::infinity();
+
+    for (unsigned int i = 0; i < 3; i++) {
+        SGGeod pt = GetNode(i);
+        if ( pt.getLongitudeDeg() < minx ) { minx = pt.getLongitudeDeg(); }
+        if ( pt.getLongitudeDeg() > maxx ) { maxx = pt.getLongitudeDeg(); }
+        if ( pt.getLatitudeDeg()  < miny ) { miny = pt.getLatitudeDeg(); }
+        if ( pt.getLatitudeDeg()  > maxy ) { maxy = pt.getLatitudeDeg(); }
+    }
+
+    min = SGGeod::fromDeg( minx, miny );
+    max = SGGeod::fromDeg( maxx, maxy );
+
+    return tgRectangle( min, max );
+}
+
+
 // tgPolygon static functions
 unsigned int tgPolygon::TotalNodes( void ) const
 {

@@ -111,11 +111,16 @@ public:
         idx_list.resize(  3, -1 );
     }
 
+    tgRectangle GetBoundingBox( void ) const;
+
     SGGeod const& GetNode( unsigned int i ) const {
         return node_list[i];
     }
     std::vector<SGGeod>& GetNodeList( void ) {
         return node_list;
+    }
+    void SetNode( unsigned int i, const SGGeod& n ) {
+        node_list[i] = n;
     }
 
     SGVec2f GetTexCoord( unsigned int i ) const {
@@ -153,6 +158,18 @@ public:
                             p2.getLongitudeDeg() * p3.getLatitudeDeg() - p3.getLongitudeDeg() * p2.getLatitudeDeg() +
                             p3.getLongitudeDeg() * p1.getLatitudeDeg() - p1.getLongitudeDeg() * p3.getLatitudeDeg() ));
     }
+
+    tgsegment_list ToSegments()
+    {
+        tgsegment_list result;
+
+        result.push_back( tgSegment( node_list[0], node_list[1] ) );
+        result.push_back( tgSegment( node_list[1], node_list[2] ) );
+        result.push_back( tgSegment( node_list[2], node_list[0] ) );
+
+        return result;
+    }
+
 
     void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
@@ -277,6 +294,9 @@ public:
     }
     void AddTriangle( const SGGeod& p1, const SGGeod p2, const SGGeod p3 ) {
         triangles.push_back( tgTriangle( p1, p2, p3 ) );
+    }
+    tgTriangle GetTriangle( unsigned int t ) const {
+        return triangles[t];
     }
 
     SGGeod GetTriNode( unsigned int c, unsigned int i ) const {
