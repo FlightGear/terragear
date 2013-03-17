@@ -20,15 +20,15 @@
 //
 
 
-#ifndef _ARRAY_HXX
-#define _ARRAY_HXX
+#ifndef _TG_ARRAY_HXX
+#define _TG_ARRAY_HXX
 
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/misc/sgstream.hxx>
 
-class TGArray {
+class tgArray {
 
 private:
     gzFile array_in;
@@ -56,11 +56,11 @@ private:
 public:
 
     // Constructor
-    TGArray( void );
-    TGArray( const std::string& file );
+    tgArray( void );
+    tgArray( const std::string& file );
 
     // Destructor
-    ~TGArray( void );
+    ~tgArray( void );
 
     // open an Array file (use "-" if input is coming from stdin)
     bool open ( const std::string& file_base );
@@ -107,4 +107,4 @@ public:
     void unload( void );
 };
 
-#endif // _ARRAY_HXX
+#endif // _TG_ARRAY_HXX

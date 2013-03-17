@@ -88,29 +88,27 @@ int TGConstruct::LoadLandclassPolys( void ) {
                     poly.SetMaterial( material );
                     poly.SetId( cur_poly_id++ );
 
-                    if ( poly.Contours() ) {
-                        polys_in.add_poly( area, poly );
-                        total_polys_read++;
+                    polys_in.add_poly( area, poly );
+                    total_polys_read++;
 
-                        // add the nodes
-                        for (unsigned int j=0; j<poly.Contours(); j++) {
-                            for (unsigned int k=0; k<poly.ContourSize(j); k++) {
-                                SGGeod const& node  = poly.GetNode( j, k );
+                    // add the nodes
+                    for (unsigned int j=0; j<poly.Contours(); j++) {
+                        for (unsigned int k=0; k<poly.ContourSize(j); k++) {
+                            SGGeod const& node  = poly.GetNode( j, k );
 
-                                if ( poly.GetPreserve3D() ) {
-                                    nodes.unique_add_fixed_elevation( node );
-                                } else {
-                                    nodes.unique_add( node );
-                                }
+                            if ( poly.GetPreserve3D() ) {
+                                nodes.unique_add node, TG_NODE_FIXED_ELEVATION );
+                            } else {
+                                nodes.unique_add( node );
                             }
                         }
+                    }
 
-                        if (IsDebugShape( poly.GetId() )) {
-                            char layer[32];
-                            sprintf(layer, "loaded_%d", poly.GetId() );
+                    if (IsDebugShape( poly.GetId() )) {
+                        char layer[32];
+                        sprintf(layer, "loaded_%d", poly.GetId() );
 
-                            tgShapefile::FromPolygon( poly, ds_name, layer, material.c_str() );
-                        }
+                        tgShapefile::FromPolygon( poly, ds_name, layer, material.c_str() );
                     }
                 }
 

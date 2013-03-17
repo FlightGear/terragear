@@ -28,7 +28,7 @@
 #include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <Array/array.hxx>
+#include <terragear/tg_array.hxx>
 
 #include "global.hxx"
 #include "debug.hxx"
@@ -41,7 +41,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
 {
     bool done = false;
     unsigned int i;
-    TGArray array;
+    tgArray array;
 
     // make a copy so our routine is non-destructive.
     std::vector<SGGeod> points = points_source;

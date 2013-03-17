@@ -134,7 +134,7 @@ void TGConstruct::AverageEdgeElevations( void )
         if (idx != -1) {
             TGNode const& node = nodes.get_node( idx );
 
-            if ( !node.GetFixedPosition() ) {
+            if ( !node.IsFixedElevation() ) {
                 // set elevation as the average between all tiles that have it
                 nodes.SetElevation( idx, elevation );
             }

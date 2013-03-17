@@ -70,16 +70,8 @@ void TGConstruct::CalcElevations( void )
     double e1, e2, e3, min;
     int    n1, n2, n3;
 
-    for (int i = 0; i < (int)nodes.size(); ++i) {
-        TGNode const& node = nodes.get_node( i );
-        SGGeod pos = node.GetPosition();
-
-        if ( !node.GetFixedPosition() ) {
-            // set elevation as interpolated point from DEM data.
-            nodes.SetElevation( i, array.altitude_from_grid(pos.getLongitudeDeg() * 3600.0, pos.getLatitudeDeg() * 3600.0) );
-        }
-    }
-
+    nodes.SetArray( &array );
+    nodes.CalcElevations( TG_NODE_INTERPOLATED );
     nodes.get_geod_nodes(raw_nodes);
 
     // now flatten some stuff

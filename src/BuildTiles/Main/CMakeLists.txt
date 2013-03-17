@@ -28,7 +28,7 @@ set_target_properties(tg-construct PROPERTIES
 
 target_link_libraries(tg-construct
     terragear
-    Array landcover
+    landcover
     ${Boost_LIBRARIES}
     ${GDAL_LIBRARY}
     ${ZLIB_LIBRARY}

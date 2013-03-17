@@ -26,7 +26,6 @@ add_executable(genapts850
 
 target_link_libraries(genapts850
     terragear
-    Array
     ${GDAL_LIBRARY}
     ${ZLIB_LIBRARY}
     ${CMAKE_THREAD_LIBS_INIT}

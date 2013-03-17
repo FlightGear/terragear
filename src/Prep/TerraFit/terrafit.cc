@@ -53,7 +53,7 @@
 #include <simgear/threads/SGQueue.hxx>
 #include <simgear/threads/SGThread.hxx>
 
-#include <Array/array.hxx>
+#include <terragear/tg_array.hxx>
 #include <Include/version.h>
 #include <Prep/Terra/GreedyInsert.h>
 #include <Prep/Terra/Map.h>
@@ -75,7 +75,7 @@ SGLockedQueue<SGPath> global_workQueue;
  */
 class ArrayMap: public Terra::Map {
 public:
-        ArrayMap(TGArray& array): array(array) {
+        ArrayMap(tgArray& array): array(array) {
                 width=array.get_cols();
                 height=array.get_rows();
                 min=30000;
@@ -103,7 +103,7 @@ public:
         virtual void textRead(istream&) {
         }
 protected:
-        TGArray& array;
+        tgArray& array;
 };
 
 static Terra::ImportMask default_mask;
@@ -170,7 +170,7 @@ void fit_file(const SGPath& path) {
     }
 
     SGBucket bucket; // dummy bucket
-    TGArray inarray(path.dir() + "/" + path.file_base());
+    tgArray inarray(path.dir() + "/" + path.file_base());
     inarray.parse(bucket);
     inarray.close();
 

@@ -33,7 +33,7 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <Array/array.hxx>
+#include <terragear/tg_array.hxx>
 #include <stdlib.h>
 
 using std::cout;
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
             file += b_cur.gen_index_str();
             cout << file << endl;
 
-            TGArray array;
+            tgArray array;
             array.open( file );
             array.parse( b_cur );
 

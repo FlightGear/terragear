@@ -286,7 +286,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
                     // ensure we have all nodes...
-                    TGNode const& node = poly.GetNode( con, n );
+                    SGGeod const& node = poly.GetNode( con, n );
                     nodes.unique_add( node );
                 }
             }

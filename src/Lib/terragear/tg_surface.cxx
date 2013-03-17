@@ -29,7 +29,7 @@
 #include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <Array/array.hxx>
+#include <terragear/tg_array.hxx>
 
 #include "TNT/jama_qr.h"
 #include "tg_surface.hxx"
@@ -94,7 +94,7 @@ static void tgCalcElevations( const std::string &root, const string_list elev_sr
 {
     bool done = false;
     int i, j;
-    TGArray array;
+    tgArray array;
 
     // just bail if no work to do
     if ( Pts.rows() == 0 || Pts.cols() == 0 ) {

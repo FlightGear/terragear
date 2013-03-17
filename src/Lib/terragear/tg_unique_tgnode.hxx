@@ -23,6 +23,13 @@
 #define PROXIMITY_MULTIPLIER (100000)
 #define PROXIMITY_EPSILON    ((double) 1 / (double)( PROXIMITY_MULTIPLIER * 10 ) )
 
+typedef enum {
+    TG_NODE_FIXED_ELEVATION = 0,    // elevation is fixed, and must not change - it's in the node
+    TG_NODE_INTERPOLATED,           // calc elevation from interpolating height field data
+    TG_NODE_SMOOTHED,               // elevation is calculated via a tgSurface
+    TG_NODE_DRAPED                  // elevation is interpolated via a triangle list
+} tgNodeType;
+
 // for each node, we'll need a vector to lookup all triangles the node
 // is a member of.
 struct TGFaceLookup {
@@ -37,21 +44,26 @@ class TGNode {
 public:
     TGNode() {
         // constructor for serialization only
+        type = TG_NODE_INTERPOLATED;
     }
 
-    TGNode( SGGeod p ) {
+    TGNode( SGGeod p, tgNodeType t = TG_NODE_INTERPOLATED ) {
         position    = p;
         CalcWgs84();
 
-        fixed_position  = false;        // no matter what - don't move x, y, or z (likely a hole around an airport generated ny genapts)
+        type = t;
         faces.clear();
     }
 
-    inline void SetFixedPosition( bool fix )
+    inline void SetType( tgNodeType t )
     {
-        if (!fixed_position) {
-            fixed_position = fix;
+        if (type != TG_NODE_FIXED_ELEVATION) {
+            type = t;
         }
+    }
+
+    inline tgNodeType GetType() const {
+        return type;
     }
 
     inline void CalcWgs84()
@@ -70,20 +82,20 @@ public:
     }
 
     inline TGFaceList const& GetFaces( void ) const { return faces; }
-    inline bool GetFixedPosition( void ) const      { return fixed_position; }
+    inline bool IsFixedElevation( void ) const      { return (type == TG_NODE_FIXED_ELEVATION); }
     inline SGVec3d const& GetWgs84( void ) const    { return wgs84; }
 
-    inline void    SetPosition( const SGGeod& p )
+    inline void SetPosition( const SGGeod& p )
     {
-        if (!fixed_position) {
+        if (type != TG_NODE_FIXED_ELEVATION) {
             position = p;
             CalcWgs84();
         }
     }
 
-    inline void    SetElevation( double z )
+    inline void SetElevation( double z )
     {
-        if (!fixed_position) {
+        if (type != TG_NODE_FIXED_ELEVATION) {
             position.setElevationM( z );
             CalcWgs84();
         }
@@ -95,7 +107,7 @@ public:
 
     void SaveToGzFile( gzFile& fp ) {
         sgWriteGeod( fp, position );
-        sgWriteInt( fp, (int)fixed_position );
+        sgWriteInt( fp, (int)type );
 
         // Don't save the facelist per node
         // it's much faster to just redo the lookup
@@ -108,7 +120,7 @@ public:
         CalcWgs84();
 
         sgReadInt( fp, &temp );
-        fixed_position = (bool)temp;
+        type = (tgNodeType)temp;
     }
 
     // Friends for serialization
@@ -118,8 +130,7 @@ private:
     SGGeod      position;
     SGVec3f     normal;
     SGVec3d     wgs84;
-
-    bool        fixed_position;
+    tgNodeType  type;
 
     TGFaceList  faces;
 };

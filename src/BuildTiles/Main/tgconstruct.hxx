@@ -33,7 +33,7 @@
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGQueue.hxx>
 
-#include <Array/array.hxx>
+#include <terragear/tg_array.hxx>
 #include <terragear/tg_nodes.hxx>
 #include <landcover/landcover.hxx>
 
@@ -207,7 +207,7 @@ private:
     SGBucket bucket;
 
     // Elevation data
-    TGArray array;
+    tgArray array;
 
     // land class polygons
     TGLandclass polys_in;

@@ -224,6 +224,34 @@ void TGNodes::get_wgs84_nodes( std::vector<SGVec3d>& points ) const {
     }
 }
 
+void TGNodes::CalcElevations( tgNodeType type ) {
+    for(unsigned int i = 0; i < tg_node_list.size(); i++) {
+        if ( tg_node_list[i].GetType() == type ) {
+            SGGeod pos = tg_node_list[i].GetPosition();
+
+            switch (type)
+            {
+                case TG_NODE_FIXED_ELEVATION:
+                    // invalid - just ignore
+                    break;
+
+                case TG_NODE_INTERPOLATED:
+                    // get elevation from array
+                    SetElevation( i, array->altitude_from_grid(pos.getLongitudeDeg() * 3600.0, pos.getLatitudeDeg() * 3600.0) );
+                    break;
+
+                case TG_NODE_SMOOTHED:
+                    // get elevation from smoothing function
+                    break;
+
+                case TG_NODE_DRAPED:
+                    // get elevation from triangle list
+                    break;
+            }
+        }
+    }
+}
+    
 void TGNodes::get_normals( std::vector<SGVec3f>& normals ) const {
     normals.clear();
     for ( unsigned int i = 0; i < tg_node_list.size(); i++ ) {
@@ -236,7 +264,7 @@ void TGNodes::Dump( void ) {
         TGNode const& node = tg_node_list[ i ];
         std::string fixed;
 
-        if ( node.GetFixedPosition() ) {
+        if ( node.IsFixedElevation() ) {
             fixed = " z is fixed elevation ";
         } else {
             fixed = " z is interpolated elevation ";

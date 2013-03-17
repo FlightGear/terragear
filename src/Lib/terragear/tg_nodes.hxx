@@ -40,6 +40,8 @@ typedef CGAL::Kd_tree<Traits> Tree;
 #include <simgear/io/lowlevel.hxx>
 
 #include "tg_unique_tgnode.hxx"
+#include "tg_surface.hxx"
+#include "tg_array.hxx"
 
 #define FG_PROXIMITY_EPSILON 0.000001
 #define FG_COURSE_EPSILON 0.0001
@@ -52,6 +54,9 @@ public:
     // Constructor and destructor
     TGNodes( void )     {
         kd_tree_valid = false;
+        array         = NULL;
+        surf          = NULL;
+        tris          = NULL;
     }
 
     ~TGNodes( void )    {
@@ -68,24 +73,8 @@ public:
 
     // Add a point to the point list if it doesn't already exist.
     // Returns the index (starting at zero) of the point in the list.
-    void unique_add( const SGGeod& p ) {
-        TGNode n(p);
-        n.SetFixedPosition(false);
-        tg_node_list.add(n);
-        kd_tree_valid = false;
-    }
-
-    void unique_add( const TGNode& n ) {
-        tg_node_list.add(n);
-        kd_tree_valid = false;
-    }
-
-    // Add a point to the point list if it doesn't already exist
-    // (checking all three dimensions.)  Returns the index (starting
-    // at zero) of the point in the list.
-    void unique_add_fixed_elevation( const SGGeod& p ) {
-        TGNode n(p);
-        n.SetFixedPosition(true);
+    void unique_add( const SGGeod& p, tgNodeType t = TG_NODE_INTERPOLATED ) {
+        TGNode n(p, t);
         tg_node_list.add(n);
         kd_tree_valid = false;
     }
@@ -99,7 +88,18 @@ public:
 
     void init_spacial_query( void );
 
+    void SetSurface( tgSurface* s ) {
+        surf = s;
+    }
+    void SetArray( tgArray* a ) {
+        array = a;
+    }
+    void SetTriangles( tgtriangle_list* t ) {
+        tris = t;
+    }
+
     void SetElevation( int idx, double z )  { tg_node_list[idx].SetElevation( z ); }
+    void CalcElevations( tgNodeType type );
 
     SGVec3f GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
     void SetNormal( int idx, SGVec3f n )    { tg_node_list[idx].SetNormal( n ); }
@@ -126,6 +126,9 @@ public:
     TGNode const& operator[]( int index ) const {
         return tg_node_list[index];
     }
+    TGNode& operator[]( int index ) {
+        return tg_node_list[index];
+    }
 
     inline void AddFace( int i, unsigned int area, unsigned int poly, unsigned int tri )
     {
@@ -139,11 +142,16 @@ public:
 
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
-    
+
 private:
     UniqueTGNodeSet tg_node_list;
     Tree            tg_kd_tree;
     bool            kd_tree_valid;
+
+    // temp pointers - not serialized
+    tgArray*            array;      // for interpolated elevation
+    tgSurface*          surf;       // for smoothed elevation
+    tgtriangle_list*    tris;       // for draped elevation
 };
 
 #endif // _TG_NODES_HXX

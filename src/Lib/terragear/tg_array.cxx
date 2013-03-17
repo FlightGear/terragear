@@ -32,12 +32,12 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/io/lowlevel.hxx>
 
-#include "array.hxx"
+#include "tg_array.hxx"
 
 using std::string;
 
 
-TGArray::TGArray( void ):
+tgArray::tgArray( void ):
   array_in(NULL),
   fitted_in(NULL),
   in_data(NULL)
@@ -46,17 +46,17 @@ TGArray::TGArray( void ):
 }
 
 
-TGArray::TGArray( const string &file ):
+tgArray::tgArray( const string &file ):
   array_in(NULL),
   fitted_in(NULL),
       in_data(NULL)
 {
-    TGArray::open(file);
+    tgArray::open(file);
 }
 
 
 // open an Array file (and fitted file if it exists)
-bool TGArray::open( const string& file_base ) {
+bool tgArray::open( const string& file_base ) {
     // open array data file
     string array_name = file_base + ".arr.gz";
 
@@ -86,7 +86,7 @@ bool TGArray::open( const string& file_base ) {
 
 // close an Array file
 bool
-TGArray::close() {
+tgArray::close() {
     if (array_in) {
         gzclose(array_in);
         array_in = NULL;
@@ -102,7 +102,7 @@ TGArray::close() {
 }
 
 void
-TGArray::unload( void ) {
+tgArray::unload( void ) {
     if (array_in) {
         gzclose(array_in);
         array_in = NULL;
@@ -126,7 +126,7 @@ TGArray::unload( void ) {
 // parse Array file, pass in the bucket so we can make up values when
 // the file wasn't found.
 bool
-TGArray::parse( SGBucket& b ) {
+tgArray::parse( SGBucket& b ) {
     // Parse/load the array data file
     if ( array_in ) {
         parse_bin();
@@ -169,7 +169,7 @@ TGArray::parse( SGBucket& b ) {
     return true;
 }
 
-void TGArray::parse_bin()
+void tgArray::parse_bin()
 {
     int32_t header;
     sgReadLong(array_in, &header);
@@ -198,7 +198,7 @@ void TGArray::parse_bin()
 }
 
 // write an Array file
-bool TGArray::write( const string root_dir, SGBucket& b ) {
+bool tgArray::write( const string root_dir, SGBucket& b ) {
     // generate output file name
     string base = b.gen_base_path();
     string path = root_dir + "/" + base;
@@ -232,7 +232,7 @@ bool TGArray::write( const string root_dir, SGBucket& b ) {
 
 
 // do our best to remove voids by picking data from the nearest neighbor.
-void TGArray::remove_voids( ) {
+void tgArray::remove_voids( ) {
     // need two passes to ensure that all voids are removed (unless entire
     // array is a void.)
     bool have_void = true;
@@ -316,7 +316,7 @@ void TGArray::remove_voids( ) {
 
 
 // Return the elevation of the closest non-void grid point to lon, lat
-double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
+double tgArray::closest_nonvoid_elev( double lon, double lat ) const {
     double mindist = 99999999999.9;
     double minelev = -9999.0;
     SGGeod p0 = SGGeod::fromDeg( lon, lat );
@@ -343,7 +343,7 @@ double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
 
 // return the current altitude based on grid data.
 // TODO: We should rewrite this to interpolate exact values, but for now this is good enough
-double TGArray::altitude_from_grid( double lon, double lat ) const {
+double tgArray::altitude_from_grid( double lon, double lat ) const {
     // we expect incoming (lon,lat) to be in arcsec for now
 
     double xlocal, ylocal, dx, dy, zA, zB, elev;
@@ -449,7 +449,7 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 }
 
 
-TGArray::~TGArray( void )
+tgArray::~tgArray( void )
 {
     if (in_data) {
         delete[] in_data;
@@ -468,17 +468,17 @@ TGArray::~TGArray( void )
     }
 }
 
-int TGArray::get_array_elev( int col, int row ) const
+int tgArray::get_array_elev( int col, int row ) const
 {
     return in_data[(col * rows) + row];
 }
 
-void TGArray::set_array_elev( int col, int row, int val )
+void tgArray::set_array_elev( int col, int row, int val )
 {
     in_data[(col * rows) + row] = val;
 }
 
-bool TGArray::is_open() const
+bool tgArray::is_open() const
 {
   if ( array_in != NULL ) {
       return true;

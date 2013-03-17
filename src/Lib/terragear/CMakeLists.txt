@@ -7,6 +7,8 @@ add_library(terragear STATIC
     clipper.hpp
     tg_accumulator.cxx
     tg_accumulator.hxx
+    tg_array.cxx
+    tg_array.hxx
     tg_chopper.cxx
     tg_chopper.hxx
     tg_contour.cxx

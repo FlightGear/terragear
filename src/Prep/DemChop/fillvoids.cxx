@@ -33,7 +33,7 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>
 
-#include <Array/array.hxx>
+#include <terragear/tg_array.hxx>
 
 #include <stdlib.h>
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     cout << "fill array = " << tmp4.str() << endl;
 
     // open the source array
-    TGArray src_array;
+    tgArray src_array;
     src_array.open( tmp3 );
     src_array.parse( bucket );
     if ( !src_array.is_open() ) {
@@ -85,7 +85,7 @@ int main(int argc, char **argv) {
     }
 
     // open the fill array
-    TGArray fill_array;
+    tgArray fill_array;
     fill_array.open( tmp4.str() );
     fill_array.parse( bucket );
     if ( !fill_array.is_open() ) {
