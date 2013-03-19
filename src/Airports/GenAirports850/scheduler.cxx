@@ -179,7 +179,6 @@ bool Scheduler::IsAirportDefinition( char* line, std::string icao )
 {
     char*    tok;
     int      code;
-    Airport* airport = NULL;
     bool     match = false;
 
     // Get the number code
@@ -195,11 +194,13 @@ bool Scheduler::IsAirportDefinition( char* line, std::string icao )
             case LAND_AIRPORT_CODE:
             case SEA_AIRPORT_CODE:
             case HELIPORT_CODE:
-                airport = new Airport( code, line );
-                if ( airport->GetIcao() == icao )
+            {
+                Airport ap( code, line );
+                if ( ap.GetIcao() == icao )
                 {
                     match = true;
                 }
+            }
                 break;
 
             case LAND_RUNWAY_CODE:
@@ -510,5 +511,6 @@ void Scheduler::Schedule( int num_threads, std::string& summaryfile )
     // Then wait until they are finished
     for (unsigned int i=0; i<parsers.size(); i++) {
         parsers[i]->join();
+        delete parsers[i];
     }
 }

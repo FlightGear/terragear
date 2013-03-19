@@ -350,8 +350,7 @@ int main(int argc, char **argv)
         }
     }
 
-    TG_LOG(SG_GENERAL, SG_INFO, "Done");
-    exit(0);
+    TG_LOG(SG_GENERAL, SG_INFO, "Genapts finished successfully");
 
     return 0;
 }

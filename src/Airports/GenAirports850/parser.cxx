@@ -10,7 +10,6 @@ bool Parser::GetAirportDefinition( char* line, std::string& icao )
 {
     char*    tok;
     int      code;
-    Airport* airport = NULL;
     bool     match = false;
 
     // Get the number code
@@ -26,9 +25,11 @@ bool Parser::GetAirportDefinition( char* line, std::string& icao )
             case LAND_AIRPORT_CODE: 
             case SEA_AIRPORT_CODE:
             case HELIPORT_CODE:
-                airport = new Airport( code, line );
-                icao = airport->GetIcao();
+            {
+                Airport ap( code, line );
+                icao = ap.GetIcao();
                 match = true;
+            }
                 break;
 
             default:
@@ -592,7 +593,7 @@ int Parser::ParseLine(char* line)
     
                     if ( prev_node && (cur_node != prev_node) )
                     {
-                        // prev node is done - process it\n");
+                        // prev node is done - process it
                         if ( cur_state == STATE_PARSE_PAVEMENT )
                         {
                             cur_pavement->AddNode( prev_node );
@@ -606,7 +607,7 @@ int Parser::ParseLine(char* line)
                             cur_boundary->AddNode( prev_node );
                         }
                     }
-    
+
                     prev_node = cur_node;
                     break;
     
