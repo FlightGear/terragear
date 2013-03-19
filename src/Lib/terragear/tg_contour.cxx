@@ -38,7 +38,7 @@ double tgContour::GetMinimumAngle( void ) const
 
         p2_index = i;
 
-        if ( i == size ) {
+        if ( i == size - 1 ) {
             p3_index = 0;
         } else {
             p3_index = i + 1;
