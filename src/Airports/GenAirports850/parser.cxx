@@ -615,8 +615,8 @@ int Parser::ParseLine(char* line)
                 case CLOSE_BEZIER_NODE_CODE:
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing close loop node: " << line);
                     cur_node = ParseNode( code, line, prev_node );
-    
-                    if ( cur_state == STATE_PARSE_PAVEMENT )
+
+                    if ( cur_state == STATE_PARSE_PAVEMENT && prev_node )
                     {
                         if (cur_node != prev_node)
                         {
@@ -659,8 +659,8 @@ int Parser::ParseLine(char* line)
                             cur_airport->AddFeature( cur_feat );
                         }
                         cur_feat = NULL;
+                        SetState( STATE_PARSE_SIMPLE );
                     }
-                    SetState( STATE_PARSE_SIMPLE );
                     prev_node = NULL;
                     cur_node  = NULL;
                     break;
