@@ -73,81 +73,72 @@ double tgContour::GetArea( void ) const
     return fabs(area * 0.5);
 }
 
-tgContour tgContour::RemoveCycles( const tgContour& subject )
+bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
 {
-    tgContour result;
-    bool      found;
-    int       iters = 0;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "remove cycles : contour has " << subject.GetSize() << " points" );
+    bool split = false;
 
-    for ( unsigned int i = 0; i < subject.GetSize(); i++ )
-    {
-        result.AddNode( subject.GetNode(i) );
+    if ( subject.GetSize() > 2) {
+        if ( subject.GetArea() > SG_EPSILON*SG_EPSILON ) {
+            // Step 1 - find the first duplicate point
+            for ( unsigned int i = 0; i < subject.GetSize() && !split; i++ ) {
+                // first check until the end of the vector
+                for ( unsigned int j = i + 1; j < subject.GetSize() && !split; j++ ) {
+                    if ( SGGeod_isEqual2D( subject.GetNode(i), subject.GetNode(j) ) ) {
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "detected a dupe: i = " << i << " j = " << j );
+                        split = true;
+
+                        tgContour first;
+                        if ( j < subject.GetSize()-1 ) {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "first contour is " << 0 << ".." << i << "," << j+1 << ".." <<  subject.GetSize()-1);
+
+                            // first contour is (0 .. i) + (j+1..size()-1)
+                            for ( unsigned int n=0; n<=i; n++) {
+                                first.AddNode( subject.GetNode(n) );
+                            }
+                            for ( unsigned int n=j+1; n<=subject.GetSize()-1; n++) {
+                                first.AddNode( subject.GetNode(n) );
+                            }
+                        } else {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "first contour is " << 0 << ".." << i );
+
+                            // first contour is (0 .. i)
+                            for ( unsigned int n=0; n<=i; n++) {
+                                first.AddNode( subject.GetNode(n) );
+                            }
+                        }
+
+                        tgContour second;
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "second contour is " << i << ".." << j-1 );
+
+                        // second contour is (i..j-1)
+                        for ( unsigned int n=i; n<j; n++) {
+                            second.AddNode( subject.GetNode(n) );
+                        }
+
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "remove first: size " << first.GetSize() );
+                        first.SetHole( subject.GetHole() );
+                        RemoveCycles( first, result );
+
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "remove second: size " << second.GetSize() );
+                        second.SetHole( subject.GetHole() );
+                        RemoveCycles( second, result );
+                    }
+                }
+            }
+
+            if (!split) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "no dupes - complete" );
+                result.push_back( subject );
+            }
+        } else {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "degenerate contour: area is " << subject.GetArea() << " discard." );
+        }
+    } else {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "degenerate contour: size is " << subject.GetSize() << " discard." );
     }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "remove small cycles : original contour has " << result.GetSize() << " points" );
-
-    do
-    {
-        found = false;
-
-        // Step 1 - find a duplicate point
-        for ( unsigned int i = 0; i < result.GetSize() && !found; i++ ) {
-            // first check until the end of the vector
-            for ( unsigned int j = i + 1; j < result.GetSize() && !found; j++ ) {
-                if ( SGGeod_isEqual2D( result.GetNode(i), result.GetNode(j) ) ) {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "detected a dupe: i = " << i << " j = " << j );
-
-                    // We found a dupe - calculate the distance between them
-                    if ( i + 4 > j ) {
-                        // it's within target distance - remove the points in between, and start again
-                        if ( j-i == 1 ) {
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing " << i );
-                            result.RemoveNodeAt( i );
-                        } else {
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing from " << i << " to " << j-1 );
-                            result.RemoveNodeRange( i, j-1 );
-                        }
-                        found = true;
-                    }
-                }
-            }
-
-            // then check from beginning to the first point (wrap around)
-            for ( unsigned int j = 0; j < i && !found; j++ ) {
-                if ( (i != j) && ( SGGeod_isEqual2D( result.GetNode(i), result.GetNode(j) ) ) ) {
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "detected a dupe: i = " << i << " j = " << j );
-
-                    // We found a dupe - calculate the distance between them
-                    if ( (result.GetSize() - i + j) < 4 ) {
-                        // it's within target distance - remove from the end point to the end of the vector
-                        if ( i == result.GetSize() - 1 ) {
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing " << result.GetSize()-1 );
-                            result.RemoveNodeAt( result.GetSize()-1 );
-                        } else {
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing from " << i << " to " << result.GetSize()-1 );
-                            result.RemoveNodeRange( i, result.GetSize()-1 );
-                        }
-
-                        // then remove from the beginning of the vector to the beginning point
-                        if ( j == 1 ) {
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing " << j-1 );
-                            result.RemoveNodeAt( 0 );
-                        } else if ( j > 1) {
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "detected a small cycle: i = " << i << " j = " << j << " Erasing from 0 " <<  " to " <<  j-1 );
-                            result.RemoveNodeRange( 0, j-1 );
-                        }
-
-                        found = true;
-                    }
-                }
-            }
-        }
-
-        iters++;
-        SG_LOG(SG_GENERAL, SG_DEBUG, "remove small cycles : after " << iters << " iterations, contour has " << result.GetSize() << " points" );
-    } while( found );
-
-    return result;
+    return split;
 }
 
 tgContour tgContour::RemoveDups( const tgContour& subject )

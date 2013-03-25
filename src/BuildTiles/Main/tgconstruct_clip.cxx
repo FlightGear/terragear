@@ -139,16 +139,6 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
             clipped = accum.Diff( tmp );
 
-            if ( debug_area || debug_shape ) {
-                char layer[32];
-                char name[32];
-
-                sprintf(layer, "post_clip_%d", polys_in.get_poly( i, j ).GetId() );
-                sprintf(name, "shape %d,%d", i,j);
-
-                tgShapefile::FromPolygon( clipped, ds_name, layer, name );
-            }
-
             // only add to output list if the clip left us with a polygon
             if ( clipped.Contours() > 0 ) {
 
@@ -165,11 +155,15 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                     // shape.sps.push_back( sp );
                     polys_clipped.add_poly( i, clipped );
 
-#if 0
                     if ( debug_area || debug_shape ) {
-                        WriteDebugShape( "clipped", shape );
+                        char layer[32];
+                        char name[32];
+
+                        sprintf(layer, "post_clip_%d", polys_in.get_poly( i, j ).GetId() );
+                        sprintf(name, "shape %d,%d", i,j);
+
+                        tgShapefile::FromPolygon( clipped, ds_name, layer, name );
                     }
-#endif
                 }
             }
 
@@ -208,6 +202,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // finally, what ever is left over goes to ocean
     remains = accum.Diff( safety_base );
+    remains = tgPolygon::RemoveDups( remains );
+    remains = tgPolygon::RemoveCycles( remains );
 
     if ( remains.Contours() > 0 ) {
         // cout << "remains contours = " << remains.contours() << endl;
@@ -236,6 +232,9 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         if ( remains.Contours() > 0 ) {
             remains.SetMaterial( area_defs.get_sliver_area_name() );
             remains.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
+            remains.SetId(9999);
+
+            SG_LOG( SG_CLIPPER, SG_INFO, "Adding remains to area " << area_defs.get_sliver_area_priority() );
             polys_clipped.add_poly( area_defs.get_sliver_area_priority(), remains );
         }
     }

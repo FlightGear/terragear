@@ -17,6 +17,11 @@
 class tgPolygon;
 typedef std::vector <tgPolygon>  tgpolygon_list;
 
+class tgContour;
+typedef std::vector <tgContour>  tgcontour_list;
+typedef tgcontour_list::iterator tgcontour_list_iterator;
+typedef tgcontour_list::const_iterator const_tgcontour_list_iterator;
+
 class tgContour
 {
 public:
@@ -74,9 +79,9 @@ public:
 
     static tgContour Snap( const tgContour& subject, double snap );
     static tgContour RemoveDups( const tgContour& subject );
-    static tgContour RemoveCycles( const tgContour& subject );
     static tgContour SplitLongEdges( const tgContour& subject, double dist );
     static tgContour RemoveSpikes( const tgContour& subject );
+    static bool      RemoveCycles( const tgContour& subject, tgcontour_list& result );
 
     static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Diff( const tgContour& subject, tgPolygon& clip );

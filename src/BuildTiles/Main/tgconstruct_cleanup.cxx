@@ -85,26 +85,29 @@ void TGConstruct::CleanClippedPolys() {
     // Clean the polys
     for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            // step 1 : snap
-            tgPolygon poly = polys_clipped.get_poly(area, p);
-            poly = tgPolygon::Snap(poly, gSnap);
+            char layer[32];
 
+            tgPolygon poly = polys_clipped.get_poly(area, p);
+
+            // step 1 : snap
+            poly = tgPolygon::Snap(poly, gSnap);
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgShapefile::FromPolygon( poly, ds_name, "snapped", "" );
+                sprintf(layer, "snapped_%d", poly.GetId() );
+                tgShapefile::FromPolygon( poly, ds_name, layer, "poly" );
             }
 
             // step 2 : remove_dups
             poly = tgPolygon::RemoveDups( poly );
-
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgShapefile::FromPolygon( poly, ds_name, "rem_dups", "" );
+                sprintf(layer, "rem_dups_%d", poly.GetId() );
+                tgShapefile::FromPolygon( poly, ds_name, layer, "poly" );
             }
 
-            // step 3 : remove_bad_contours
-            poly = tgPolygon::RemoveBadContours( poly );
-
+            // step 3 : remove cycles
+            poly = tgPolygon::RemoveCycles( poly );
             if ( IsDebugShape( poly.GetId() ) ) {
-                tgShapefile::FromPolygon( poly, ds_name, "rem_bcs", "" );
+                sprintf(layer, "rem_cycles_%d", poly.GetId() );
+                tgShapefile::FromPolygon( poly, ds_name, layer, "poly" );
             }
 
             polys_clipped.set_poly(area, p, poly);

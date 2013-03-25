@@ -57,9 +57,7 @@ tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
-    result.SetMaterial( subject.GetMaterial() );
-    result.SetTexParams( subject.GetTexParams() );
+    result.SetId( subject.GetId() );
 
     return result;
 }
@@ -81,7 +79,7 @@ tgPolygon tgPolygon::Expand( const SGGeod& subject, double offset )
     contour.AddNode( SGGeod::fromDeg( subject.getLongitudeDeg() + dlon, subject.getLatitudeDeg() + dlat ) );
     contour.AddNode( SGGeod::fromDeg( subject.getLongitudeDeg() - dlon, subject.getLatitudeDeg() + dlat ) );
     contour.SetHole(false);
-    
+
     result.AddContour( contour );
 
     return result;
@@ -118,7 +116,8 @@ tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<SGG
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
+    result.SetId( subject.GetId() );
+    
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         result.AddContour( tgContour::AddColinearNodes( subject.GetContour(c), nodes ) );
     }
