@@ -47,7 +47,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
     std::vector<SGGeod> points = points_source;
 
     // just bail if no work to do
-    if ( points.size() == 0 ) {
+    if ( points.empty() ) {
         return 0.0;
     }
 

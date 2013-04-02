@@ -308,6 +308,17 @@ int main(int argc, char **argv)
         exit(-1);
     }
 
+    // try to figure out which apt.dat version we are reading and bail if version is unsupported
+    in >> skipeol;
+    char line[20];
+    in.getline(line, 20);
+    in.close();
+    int code = atoi(line);
+    if (code == 810) {
+      TG_LOG( SG_GENERAL, SG_ALERT, "ERROR: This version of genapts does not support version 810 apt.dat files." );
+      exit(-1);
+    }
+
     // Create the scheduler
     Scheduler* scheduler = new Scheduler(input_file, work_dir, elev_src);
 
