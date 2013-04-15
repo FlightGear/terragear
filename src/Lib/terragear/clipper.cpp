@@ -1,8 +1,8 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  5.1.2                                                           *
-* Date      :  25 February 2013                                                *
+* Version   :  5.1.4                                                           *
+* Date      :  24 March 2013                                                   *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2013                                         *
 *                                                                              *
@@ -543,14 +543,18 @@ bool IntersectPoint(TEdge &edge1, TEdge &edge2,
   IntPoint &ip, bool UseFullInt64Range)
 {
   double b1, b2;
-  if (SlopesEqual(edge1, edge2, UseFullInt64Range)) return false;
+  if (SlopesEqual(edge1, edge2, UseFullInt64Range))
+  {
+    if (edge2.ybot > edge1.ybot) ip.Y = edge2.ybot;
+    else ip.Y = edge1.ybot;
+    return false;
+  }
   else if (NEAR_ZERO(edge1.dx))
   {
     ip.X = edge1.xbot;
     if (NEAR_EQUAL(edge2.dx, HORIZONTAL))
-    {
       ip.Y = edge2.ybot;
-    } else
+    else
     {
       b2 = edge2.ybot - (edge2.xbot / edge2.dx);
       ip.Y = Round(ip.X / edge2.dx + b2);
@@ -560,14 +564,14 @@ bool IntersectPoint(TEdge &edge1, TEdge &edge2,
   {
     ip.X = edge2.xbot;
     if (NEAR_EQUAL(edge1.dx, HORIZONTAL))
-    {
       ip.Y = edge1.ybot;
-    } else
+    else
     {
       b1 = edge1.ybot - (edge1.xbot / edge1.dx);
       ip.Y = Round(ip.X / edge1.dx + b1);
     }
-  } else 
+  } 
+  else 
   {
     b1 = edge1.xbot - edge1.ybot * edge1.dx;
     b2 = edge2.xbot - edge2.ybot * edge2.dx;
@@ -586,7 +590,8 @@ bool IntersectPoint(TEdge &edge1, TEdge &edge2,
       ip.X = edge1.xtop;
       ip.Y = edge1.ytop;
       return TopX(edge2, edge1.ytop) < edge1.xtop;
-    } else
+    } 
+    else
     {
       ip.X = edge2.xtop;
       ip.Y = edge2.ytop;
@@ -1761,17 +1766,11 @@ void Clipper::IntersectEdges(TEdge *e1, TEdge *e2,
   }
   else if ( e1Contributing )
   {
-    if ((e2Wc == 0 || e2Wc == 1) && 
-      (m_ClipType != ctIntersection || 
-      e2->polyType == ptSubject || (e2->windCnt2 != 0))) 
-        DoEdge1(e1, e2, pt);
+    if (e2Wc == 0 || e2Wc == 1) DoEdge1(e1, e2, pt);
   }
   else if ( e2contributing )
   {
-    if ((e1Wc == 0 || e1Wc == 1) && 
-      (m_ClipType != ctIntersection || 
-      e1->polyType == ptSubject || (e1->windCnt2 != 0))) 
-        DoEdge2(e1, e2, pt);
+    if (e1Wc == 0 || e1Wc == 1) DoEdge2(e1, e2, pt);
   } 
   else if ( (e1Wc == 0 || e1Wc == 1) && 
     (e2Wc == 0 || e2Wc == 1) && !e1stops && !e2stops )
@@ -2204,28 +2203,28 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
   TEdge* e = GetNextInAEL( horzEdge , dir );
   while( e )
   {
+    if ( e->xcurr == horzEdge->xtop && !eMaxPair )
+    {
+      if (SlopesEqual(*e, *horzEdge->nextInLML, m_UseFullRange))
+      {
+        //if output polygons share an edge, they'll need joining later ...
+        if (horzEdge->outIdx >= 0 && e->outIdx >= 0)
+          AddJoin(horzEdge->nextInLML, e, horzEdge->outIdx);
+        break; //we've reached the end of the horizontal line
+      }
+      else if (e->dx < horzEdge->nextInLML->dx)
+      //we really have got to the end of the intermediate horz edge so quit.
+      //nb: More -ve slopes follow more +ve slopes ABOVE the horizontal.
+        break;
+    }
+
     TEdge* eNext = GetNextInAEL( e, dir );
 
     if (eMaxPair ||
-      ((dir == dLeftToRight) && (e->xcurr <= horzRight)) ||
-      ((dir == dRightToLeft) && (e->xcurr >= horzLeft)))
+      ((dir == dLeftToRight) && (e->xcurr < horzRight)) ||
+      ((dir == dRightToLeft) && (e->xcurr > horzLeft)))
     {
-      //ok, so far it looks like we're still in range of the horizontal edge
-      if ( e->xcurr == horzEdge->xtop && !eMaxPair )
-      {
-        if (SlopesEqual(*e, *horzEdge->nextInLML, m_UseFullRange))
-        {
-          //if output polygons share an edge, they'll need joining later ...
-          if (horzEdge->outIdx >= 0 && e->outIdx >= 0)
-            AddJoin(horzEdge->nextInLML, e, horzEdge->outIdx);
-          break; //we've reached the end of the horizontal line
-        }
-        else if (e->dx < horzEdge->nextInLML->dx)
-        //we really have got to the end of the intermediate horz edge so quit.
-        //nb: More -ve slopes follow more +ve slopes ABOVE the horizontal.
-          break;
-      }
-
+      //so far we're still in range of the horizontal edge
       if( e == eMaxPair )
       {
         //horzEdge is evidently a maxima horizontal and we've arrived at its end.
@@ -2261,8 +2260,8 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
       }
       SwapPositionsInAEL( horzEdge, e );
     }
-    else if( (dir == dLeftToRight && e->xcurr > horzRight  && m_SortedEdges) ||
-     (dir == dRightToLeft && e->xcurr < horzLeft && m_SortedEdges) ) break;
+    else if( (dir == dLeftToRight && e->xcurr >= horzRight) ||
+     (dir == dRightToLeft && e->xcurr <= horzLeft) ) break;
     e = eNext;
   } //end while
 
@@ -2345,7 +2344,7 @@ void Clipper::BuildIntersectList(const long64 botY, const long64 topY)
   {
     e->prevInSEL = e->prevInAEL;
     e->nextInSEL = e->nextInAEL;
-    e->tmpX = TopX( *e, topY );
+    e->xcurr = TopX( *e, topY );
     e = e->nextInAEL;
   }
 
@@ -2359,9 +2358,10 @@ void Clipper::BuildIntersectList(const long64 botY, const long64 topY)
     {
       TEdge *eNext = e->nextInSEL;
       IntPoint pt;
-      if(e->tmpX > eNext->tmpX &&
-        IntersectPoint(*e, *eNext, pt, m_UseFullRange))
+      if(e->xcurr > eNext->xcurr)
       {
+        if (!IntersectPoint(*e, *eNext, pt, m_UseFullRange) && e->xcurr > eNext->xcurr +1)
+          throw clipperException("Intersection error");
         if (pt.Y > botY)
         {
             pt.Y = botY;
@@ -2452,7 +2452,7 @@ void Clipper::DoMaxima(TEdge *e, long64 topY)
     if (!eNext) throw clipperException("DoMaxima error");
     IntersectEdges( e, eNext, IntPoint(X, topY), ipBoth );
     SwapPositionsInAEL(e, eNext);
-    eNext = eNext->nextInAEL;
+    eNext = e->nextInAEL;
   }
   if( e->outIdx < 0 && eMaxPair->outIdx < 0 )
   {
@@ -2600,25 +2600,22 @@ void Clipper::FixupOutPolygon(OutRec &outRec)
 
 void Clipper::BuildResult(Polygons &polys)
 {
-  int k = 0;
-  polys.resize(m_PolyOuts.size());
+  polys.reserve(m_PolyOuts.size());
   for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
   {
     if (m_PolyOuts[i]->pts)
     {
-      Polygon* pg = &polys[k];
-      pg->clear();
+      Polygon pg;
       OutPt* p = m_PolyOuts[i]->pts;
       do
       {
-        pg->push_back(p->pt);
+        pg.push_back(p->pt);
         p = p->prev;
       } while (p != m_PolyOuts[i]->pts);
-      //make sure each polygon has at least 3 vertices ...
-      if (pg->size() < 3) pg->clear(); else k++;
+      if (pg.size() > 2) 
+        polys.push_back(pg);
     }
   }
-  polys.resize(k);
 }
 //------------------------------------------------------------------------------
 
@@ -3178,14 +3175,14 @@ PolyOffsetBuilder(const Polygons& in_polys, Polygons& out_polys,
 
     switch (jointype)
     {
-        case jtRound:  //limit defaults to 0.125
-            if (limit <= 0) limit = 0.125;
+        case jtRound:  
+            if (limit <= 0) limit = 0.25;
             else if (limit > std::fabs(delta)) limit = std::fabs(delta);
             break;  
-        case jtMiter:  //limit defaults to twice delta's width ...
+        case jtMiter: 
             if (limit < 2) limit = 2; 
             break;       
-        default:       //otherwise limit is unused
+        default:       //unused
             limit = 1;   
     }
     m_RMin = 2.0/(limit*limit);
@@ -3275,9 +3272,8 @@ private:
 
 void AddPoint(const IntPoint& pt)
 {
-    Polygon::size_type len = m_curr_poly->size();
-    if (len == m_curr_poly->capacity())
-        m_curr_poly->reserve(len + buffLength);
+    if (m_curr_poly->size() == m_curr_poly->capacity())
+        m_curr_poly->reserve(m_curr_poly->capacity() + buffLength);
     m_curr_poly->push_back(pt);
 }
 //------------------------------------------------------------------------------
@@ -3410,38 +3406,62 @@ void SimplifyPolygons(Polygons &polys, PolyFillType fillType)
 }
 //------------------------------------------------------------------------------
 
-void CleanPolygon(Polygon& in_poly, Polygon& out_poly, double distance)
+bool PointsAreClose(IntPoint pt1, IntPoint pt2, long64 distSqrd)
 {
-  //delta = proximity in units/pixels below which vertices
-  //will be stripped. Default ~= sqrt(2) so when adjacent 
-  //vertices have both x & y coords within 1 unit, then 
-  //the second vertex will be stripped. 
-  int len = in_poly.size();
-  if (len < 3) 
-    out_poly.resize(0);
-  else
-    out_poly.resize(in_poly.size());
-
-  int d = (int)(distance * distance);
-  IntPoint p = in_poly[0];
-  int j = 1;
-  for (int i = 1; i < len; i++)
-  {
-      if ((in_poly[i].X - p.X) * (in_poly[i].X - p.X) +
-          (in_poly[i].Y - p.Y) * (in_poly[i].Y - p.Y) <= d)
-          continue;
-      out_poly[j] = in_poly[i];
-      p = in_poly[i];
-      j++;
-  }
-  p = in_poly[j - 1];
-  if ((in_poly[0].X - p.X) * (in_poly[0].X - p.X) +
-      (in_poly[0].Y - p.Y) * (in_poly[0].Y - p.Y) <= d)
-      j--;
-  if (j < len)
-    out_poly.resize(j);
+    long64 dx = pt1.X - pt2.X;
+    long64 dy = pt1.Y - pt2.Y;
+    return ((dx * dx) + (dy * dy) <= distSqrd);
 }
 //------------------------------------------------------------------------------
+
+void CleanPolygon(Polygon& in_poly, Polygon& out_poly, double distance)
+{
+  //distance = proximity in units/pixels below which vertices
+  //will be stripped. Default ~= sqrt(2).
+  int highI = in_poly.size() -1;
+  long64 d = (int)(distance * distance);
+  while (highI > 0 && PointsAreClose(in_poly[highI], in_poly[0], d)) highI--;
+  if (highI < 2)
+  {
+    out_poly.clear();
+    return;
+  }
+  out_poly.resize(highI + 1);
+  bool UseFullRange = FullRangeNeeded(in_poly);
+  IntPoint pt = in_poly[highI];
+  int i = 0;
+  int k = 0;
+  for (;;)
+  {
+    if (i >= highI) break;
+    int j = i + 1;
+
+    if (PointsAreClose(pt, in_poly[j], d))
+    {
+        i = j + 1;
+        while (i <= highI && PointsAreClose(pt, in_poly[i], d)) i++;
+        continue;
+    }
+
+    if (PointsAreClose(in_poly[i], in_poly[j], d) ||
+        SlopesEqual(pt, in_poly[i], in_poly[j], UseFullRange)) 
+    {
+        i = j;
+        continue;
+    }
+
+    pt = in_poly[i++];
+    out_poly[k++] = pt;
+  }
+
+  if (i <= highI) out_poly[k++] = in_poly[i];
+  if (k > 2 && SlopesEqual(out_poly[k -2], out_poly[k -1], out_poly[0], UseFullRange)) 
+    k--;    
+  if (k < 3) out_poly.clear();
+  else if (k <= highI) out_poly.resize(k);
+}
+//------------------------------------------------------------------------------
+
 void CleanPolygons(Polygons& in_polys, Polygons& out_polys, double distance)
 {
   for (Polygons::size_type i = 0; i < in_polys.size(); ++i)

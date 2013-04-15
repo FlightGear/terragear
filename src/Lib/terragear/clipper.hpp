@@ -1,8 +1,8 @@
 /*******************************************************************************
 *                                                                              *
 * Author    :  Angus Johnson                                                   *
-* Version   :  5.1.2                                                           *
-* Date      :  25 February 2013                                                *
+* Version   :  5.1.4                                                           *
+* Date      :  24 March 2013                                                   *
 * Website   :  http://www.angusj.com                                           *
 * Copyright :  Angus Johnson 2010-2013                                         *
 *                                                                              *
@@ -134,7 +134,6 @@ struct TEdge {
   double dx;
   long64 deltaX;
   long64 deltaY;
-  long64 tmpX;
   PolyType polyType;
   EdgeSide side;
   int windDelta; //1 or -1 depending on winding direction

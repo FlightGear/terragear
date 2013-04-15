@@ -73,6 +73,23 @@ double tgContour::GetArea( void ) const
     return fabs(area * 0.5);
 }
 
+bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
+{
+    // first contour is inside second if the intersection of first with second is == first
+    // Intersection returns a polygon...
+    tgPolygon result;
+    bool isInside = false;
+    result = Intersect( inside, outside );
+
+    if ( result.Contours() == 1 ) {
+        if ( result.GetContour(0) == inside ) {
+            isInside = true;
+        }
+    }
+    
+    return isInside;
+}
+
 bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "remove cycles : contour has " << subject.GetSize() << " points" );
@@ -114,6 +131,27 @@ bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
                         // second contour is (i..j-1)
                         for ( unsigned int n=i; n<j; n++) {
                             second.AddNode( subject.GetNode(n) );
+                        }
+
+                        // determine hole vs boundary
+                        if ( IsInside( first, second ) ) {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "first contur is within second contour " );
+
+                            // first contour is inside second : mark first contour as opposite of subject
+                            first.SetHole( !subject.GetHole() );
+                            second.SetHole( subject.GetHole() );
+                        } else if ( IsInside( second, first ) ) {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "second contur is within first contour " );
+
+                            // second contour is inside first : mark second contour as opposite of subject
+                            first.SetHole(   subject.GetHole() );
+                            second.SetHole( !subject.GetHole() );
+                        } else {
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "conturs are (mostly) disjoint " );
+
+                            // neither contour is inside - bots are the same as subject
+                            first.SetHole(   subject.GetHole() );
+                            second.SetHole(  subject.GetHole() );
                         }
 
                         SG_LOG(SG_GENERAL, SG_DEBUG, "remove first: size " << first.GetSize() );
@@ -453,6 +491,32 @@ tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
     c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
     c.AddPolygons(clipper_clip, ClipperLib::ptClip);
     c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+    return result;
+}
+
+tgPolygon tgContour::Intersect( const tgContour& subject, const tgContour& clip )
+{
+    tgPolygon result;
+    UniqueSGGeodSet all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
+        all_nodes.add( subject.GetNode(i) );
+    }
+
+    ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Polygon  clipper_clip    = tgContour::ToClipper( clip );
+    ClipperLib::Polygons clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
+    c.AddPolygon(clipper_clip, ClipperLib::ptClip);
+    c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );

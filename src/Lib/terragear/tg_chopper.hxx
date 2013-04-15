@@ -18,6 +18,7 @@ public:
 
 private:
     long int GenerateIndex( std::string path );
+    void ClipRow( const tgPolygon& subject, const double& center_lat, const std::string& type );
     tgPolygon Clip( const tgPolygon& subject, const std::string& type, SGBucket& b );
     void Chop( const tgPolygon& subject, const std::string& type );
 

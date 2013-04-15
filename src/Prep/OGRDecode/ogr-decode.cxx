@@ -63,6 +63,10 @@ string attribute_query;
 bool use_spatial_query=false;
 double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
 int num_threads = 1;
+bool save_shapefiles=false;
+std::string ds_name=".";
+
+const double gSnap = 0.00000001;      // approx 1 mm
 
 SGLockedQueue<OGRFeature *> global_workQueue;
 
@@ -197,6 +201,7 @@ void Decoder::processPolygon(OGRPolygon* poGeometry, const string& area_type )
 
     // first add the outer ring
     tgPolygon shape = tgShapefile::ToPolygon( poGeometry );
+    shape = tgPolygon::Simplify( shape );
 
     if ( max_segment_length > 0 ) {
         shape = tgPolygon::SplitLongEdges( shape, max_segment_length );
@@ -608,6 +613,10 @@ int main( int argc, char **argv ) {
             num_threads=boost::thread::hardware_concurrency(); 
             argv+=1;
             argc-=1;
+        } else if (!strcmp(argv[1],"--debug")) {
+            argv++;
+            argc--;
+            save_shapefiles=true;
         } else if (!strcmp(argv[1],"--help")) {
             usage(progname);
         } else {

@@ -77,6 +77,25 @@ public:
     double GetMinimumAngle( void ) const;
     double GetArea( void ) const;
 
+    bool   operator==(const tgContour& other ) {
+        bool isEqual = true;
+
+        if ( GetSize() == other.GetSize() )
+        {
+            for (unsigned int i=0; i<GetSize(); i++) {
+                if ( GetNode(i) != other.GetNode(i) ) {
+                    isEqual = false;
+                    break;
+                }
+            }
+        } else {
+            isEqual = false;
+        }
+
+        return isEqual; 
+    }
+
+
     static tgContour Snap( const tgContour& subject, double snap );
     static tgContour RemoveDups( const tgContour& subject );
     static tgContour SplitLongEdges( const tgContour& subject, double dist );
@@ -85,7 +104,9 @@ public:
 
     static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Diff( const tgContour& subject, tgPolygon& clip );
+    static tgPolygon Intersect( const tgContour& subject, const tgContour& clip );
 
+    static bool      IsInside( const tgContour& inside, const tgContour& outside );
     static tgContour AddColinearNodes( const tgContour& subject, UniqueSGGeodSet& nodes );
     static tgContour AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes );
     static bool      FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end );
