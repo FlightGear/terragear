@@ -44,8 +44,6 @@
 /* stretch endpoints to reduce slivers in linear data ~.1 meters */
 #define EP_STRETCH  (0.1)
 
-#define HAS_SIMPLIFY    (0)
-
 using std::string;
 
 // scope?
@@ -203,10 +201,7 @@ void Decoder::processPolygon(OGRPolygon* poGeometry, const string& area_type )
 
     // first add the outer ring
     tgPolygon shape = tgShapefile::ToPolygon( poGeometry );
-
-#if HAS_SIMPLIFY
     shape = tgPolygon::Simplify( shape );
-#endif
 
     if ( max_segment_length > 0 ) {
         shape = tgPolygon::SplitLongEdges( shape, max_segment_length );

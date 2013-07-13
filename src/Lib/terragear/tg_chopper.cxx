@@ -10,9 +10,7 @@
 #include "tg_chopper.hxx"
 #include "tg_shapefile.hxx"
 
-#if HAS_CLIP_ROW
-unsigned int strip_clip = 0;
-#endif
+unsigned int clip_num = 0;
 
 tgPolygon tgChopper::Clip( const tgPolygon& subject,
                       const std::string& type,
@@ -68,7 +66,6 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
     return result;
 }
 
-#if HAS_CLIP_ROW
 // Pass in the center lat for clipping buckets from the row.  
 // We can't rely on sgBucketOffset, as rounding error sometimes causes it to look like there are 2 rows 
 // (the first being a sliver)
@@ -88,9 +85,6 @@ void tgChopper::ClipRow( const tgPolygon& subject, const double& center_lat, con
         Clip( subject, type, b_cur );
     }
 }
-#endif
-
-#if HAS_CLIP_ROW
 
 void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 {
@@ -99,7 +93,6 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
         return;
 
     tgRectangle bb = subject.GetBoundingBox();
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  min = " << bb.getMin() << " max = " << bb.getMax() );
 
     // find buckets for min, and max points of convex hull.
     // note to self: self, you should think about checking for
@@ -110,7 +103,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
     int      dx, dy;
 
     sgBucketDiff(b_min, b_max, &dx, &dy);
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  dx = " << dx << "  dy = " << dy );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "  y_min = " << bb.getMin().getLatitudeDeg() << " y_max = " << bb.getMax().getLatitudeDeg() << " dx = " <<  dx << "  dy = " << dy );
 
     if ( (dx > 2880) || (dy > 1440) )
         throw sg_exception("something is really wrong in split_polygon()!!!!");
@@ -118,6 +111,8 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
     if ( dy == 0 )
     {
         // We just have a single row - no need to intersect first
+        SG_LOG( SG_GENERAL, SG_DEBUG, "   UN_CLIPPED row -  center lat is " << b_min.get_center_lat() );
+
         ClipRow( subject, b_min.get_center_lat(), type );
     }
     else
@@ -136,7 +131,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
             double    clip_top    = b_clip.get_center_lat() + SG_HALF_BUCKET_SPAN; // + 0.01);
             tgPolygon clip_row, clipped;
 
-            SG_LOG( SG_GENERAL, SG_DEBUG, "   row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "   CLIPPED row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
 
             clip_row.AddNode( 0, SGGeod::fromDeg(-180.0, clip_bottom) );
             clip_row.AddNode( 0, SGGeod::fromDeg( 180.0, clip_bottom) );
@@ -145,16 +140,36 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 
             clipped = tgPolygon::Intersect( clip_row, subject );
             if ( clipped.TotalNodes() > 0 ) {
-                ClipRow( clipped, b_clip.get_center_lat(), type );
+
+            if ( subject.GetPreserve3D() ) {
+                clipped.InheritElevations( subject );
+                clipped.SetPreserve3D( true );
+            }
+            clipped.SetTexParams( subject.GetTexParams() );
+            if ( subject.GetTexMethod() == TG_TEX_BY_GEODE ) {
+                // need to set center latitude for geodetic texturing
+                clipped.SetTexMethod( TG_TEX_BY_GEODE, b_clip.get_center_lat() );
+            }
+            clipped.SetFlag(type);
+
+            ClipRow( clipped, b_clip.get_center_lat(), type );
 
 #if 0
                 {
                     char layer[32];
                     char ds_name[64];
-                    sprintf(layer,   "clipped_%d", strip_clip++ );
                     sprintf(ds_name, "./stripped_%s", type.c_str() );
 
+                    sprintf(layer,   "orig_%d", clip_num );
+                    tgShapefile::FromPolygon( subject, ds_name, layer, "poly" );
+                    
+                    sprintf(layer,   "clip_row_%d", clip_num );
+                    tgShapefile::FromPolygon( clip_row, ds_name, layer, "poly" );
+
+                    sprintf(layer,   "result_%d", clip_num );
                     tgShapefile::FromPolygon( clipped, ds_name, layer, "poly" );
+                    
+                    clip_num++;
                 }
 #endif
 
@@ -162,125 +177,6 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
         }
     }
 }
-
-#else
-
-void tgChopper::Add( const tgPolygon& subject, const std::string& type )
-{
-    tgRectangle bb;
-    SGGeod p;
-
-    // bail out immediately if polygon is empty
-    if ( subject.Contours() == 0 )
-        return;
-
-    bb = subject.GetBoundingBox();
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  min = " << bb.getMin() << " max = " << bb.getMax() );
-
-    // find buckets for min, and max points of convex hull.
-    // note to self: self, you should think about checking for
-    // polygons that span the date line
-    SGBucket b_min( bb.getMin() );
-    SGBucket b_max( bb.getMax() );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket min = " << b_min );
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  Bucket max = " << b_max );
-
-    if ( b_min == b_max ) {
-        // shape entirely contained in a single bucket, write and bail
-        Clip( subject, type, b_min );
-    } else {
-        SGBucket b_cur;
-        int dx, dy;
-
-        sgBucketDiff(b_min, b_max, &dx, &dy);
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  polygon spans tile boundaries" );
-        SG_LOG( SG_GENERAL, SG_DEBUG, "  dx = " << dx << "  dy = " << dy );
-
-        if ( (dx > 2880) || (dy > 1440) )
-            throw sg_exception("something is really wrong in split_polygon()!!!!");
-
-        if ( dy <= 1 ) {
-            // we are down to at most two rows, write each column and then bail
-            double min_center_lat = b_min.get_center_lat();
-            double min_center_lon = b_min.get_center_lon();
-            for ( int j = 0; j <= dy; ++j ) {
-                for ( int i = 0; i <= dx; ++i ) {
-                    b_cur = sgBucketOffset(min_center_lon, min_center_lat, i, j);
-                    Clip( subject, type, b_cur );
-                }
-            }
-            return;
-        }
-
-        // we have two or more rows left, split in half (along a
-        // horizontal dividing line) and recurse with each half
-
-        // find mid point (integer math)
-        int mid = (dy + 1) / 2 - 1;
-
-        // determine horizontal clip line
-        SGBucket b_clip = sgBucketOffset( bb.getMin().getLongitudeDeg(), bb.getMin().getLatitudeDeg(), 0, mid);
-        double clip_line = b_clip.get_center_lat();
-        if ( (clip_line >= -90.0 + SG_HALF_BUCKET_SPAN)
-             && (clip_line < 90.0 - SG_HALF_BUCKET_SPAN) )
-            clip_line += SG_HALF_BUCKET_SPAN;
-        else if ( clip_line < -89.0 )
-            clip_line = -89.0;
-        else if ( clip_line >= 89.0 )
-            clip_line = 90.0;
-        else {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Out of range latitude in clip_and_write_poly() = " << clip_line );
-        }
-
-        {
-            //
-            // Crop bottom area (hopefully by putting this in it's own
-            // scope we can shorten the life of some really large data
-            // structures to reduce memory use)
-            //
-
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Generating bottom half (" << bb.getMin().getLatitudeDeg() << "-" << clip_line << ")" );
-
-            tgPolygon bottom, bottom_clip;
-
-            bottom.AddNode( 0, SGGeod::fromDeg(-180.0, bb.getMin().getLatitudeDeg()) );
-            bottom.AddNode( 0, SGGeod::fromDeg( 180.0, bb.getMin().getLatitudeDeg()) );
-            bottom.AddNode( 0, SGGeod::fromDeg( 180.0, clip_line) );
-            bottom.AddNode( 0, SGGeod::fromDeg(-180.0, clip_line) );
-
-            bottom_clip = tgPolygon::Intersect( subject, bottom );
-
-            if ( (bottom_clip.TotalNodes() > 0) && (bottom_clip.TotalNodes() != subject.TotalNodes()) ) {
-                Add( bottom_clip, type );
-            }
-        }
-
-        {
-            //
-            // Crop top area (hopefully by putting this in it's own scope
-            // we can shorten the life of some really large data
-            // structures to reduce memory use)
-            //
-
-            SG_LOG( SG_GENERAL, SG_DEBUG, "Generating top half (" << clip_line << "-" << bb.getMax().getLatitudeDeg() << ")" );
-
-            tgPolygon top, top_clip;
-
-            top.AddNode( 0, SGGeod::fromDeg(-180.0, clip_line) );
-            top.AddNode( 0, SGGeod::fromDeg( 180.0, clip_line) );
-            top.AddNode( 0, SGGeod::fromDeg( 180.0, bb.getMax().getLatitudeDeg()) );
-            top.AddNode( 0, SGGeod::fromDeg(-180.0, bb.getMax().getLatitudeDeg()) );
-
-            top_clip = tgPolygon::Intersect( subject, top );
-
-            if ( (top_clip.TotalNodes() > 0) && (top_clip.TotalNodes() != subject.TotalNodes()) ) {
-                Add( top_clip, type );
-            }
-        }
-    }
-}
-#endif
 
 long int tgChopper::GenerateIndex( std::string path )
 {

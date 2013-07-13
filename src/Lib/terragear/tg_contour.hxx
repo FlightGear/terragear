@@ -13,9 +13,6 @@
 #include "tg_rectangle.hxx"
 #include "clipper.hpp"
 
-#define HAS_IS_INSIDE   (0)
-#define HAS_INTERSECT   (0)
-
 /* forward declarations */
 class tgPolygon;
 typedef std::vector <tgPolygon>  tgpolygon_list;
@@ -107,15 +104,9 @@ public:
 
     static tgPolygon Union( const tgContour& subject, tgPolygon& clip );
     static tgPolygon Diff( const tgContour& subject, tgPolygon& clip );
-
-#if HAS_INTERSECT
     static tgPolygon Intersect( const tgContour& subject, const tgContour& clip );
-#endif
 
-#if HAS_IS_INSIDE
     static bool      IsInside( const tgContour& inside, const tgContour& outside );
-#endif
-
     static tgContour AddColinearNodes( const tgContour& subject, UniqueSGGeodSet& nodes );
     static tgContour AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes );
     static bool      FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end );

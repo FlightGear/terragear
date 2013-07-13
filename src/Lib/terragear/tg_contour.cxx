@@ -73,7 +73,6 @@ double tgContour::GetArea( void ) const
     return fabs(area * 0.5);
 }
 
-#if HAS_IS_INSIDE
 bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
 {
     // first contour is inside second if the intersection of first with second is == first
@@ -90,7 +89,6 @@ bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
     
     return isInside;
 }
-#endif
 
 bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
 {
@@ -135,7 +133,6 @@ bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
                             second.AddNode( subject.GetNode(n) );
                         }
 
-#if HAS_IS_INSIDE
                         // determine hole vs boundary
                         if ( IsInside( first, second ) ) {
                             SG_LOG(SG_GENERAL, SG_DEBUG, "first contur is within second contour " );
@@ -156,7 +153,6 @@ bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
                             first.SetHole(   subject.GetHole() );
                             second.SetHole(  subject.GetHole() );
                         }
-#endif
 
                         SG_LOG(SG_GENERAL, SG_DEBUG, "remove first: size " << first.GetSize() );
                         first.SetHole( subject.GetHole() );
@@ -502,7 +498,6 @@ tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
     return result;
 }
 
-#if HAS_INTERSECT
 tgPolygon tgContour::Intersect( const tgContour& subject, const tgContour& clip )
 {
     tgPolygon result;
@@ -528,7 +523,6 @@ tgPolygon tgContour::Intersect( const tgContour& subject, const tgContour& clip 
 
     return result;
 }
-#endif
 
 static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
                                   const std::vector<SGGeod>& nodes, SGGeod& result,
