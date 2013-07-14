@@ -142,10 +142,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
                                  double heading,
                                  const string& material,
                                  tgpolygon_list& rwy_polys,
-                                 tgpolygon_list& shoulder_polys,
-                                 tgcontour_list& slivers,
-                                 tgAccumulator& accum,
-                                 std::string& shapefile_name )
+                                 tgpolygon_list& shoulder_polys )
 {
     double width = rwy.width;
     double length = rwy.length;
@@ -298,48 +295,20 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     section.AddNode( 0, pg3 );
     section = tgPolygon::Snap( section, gSnap );
 
-    // print runway points
-    TG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
-    TG_LOG(SG_GENERAL, SG_DEBUG, section );
 
-    if(  shapefile_name.size() ) {
-        tgShapefile::FromPolygon( section, "./airport_dbg", std::string("preclip"), shapefile_name );
-    }
-
-    // Clip the new polygon against what ever has already been created.
-    tgPolygon clipped = accum.Diff( section );
-
-    if(  shapefile_name.size() ) {
-        tgShapefile::FromPolygon( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
-    }
-
-    tgPolygon::RemoveSlivers( clipped, slivers );
-
-    // Split long edges to create an object that can better flow with
-    // the surface terrain
-    tgPolygon split = tgPolygon::SplitLongEdges( clipped, 400.0 );
-
-    accum.Add( section );
-
-    // Store away what we need to know for texture coordinate
-    // calculation.  (CLO 10/20/02: why can't we calculate texture
-    // coordinates here?  Oh, becuase later we need to massage the
-    // polygons to avoid "T" intersections and clean up other
-    // potential artifacts and we may add or remove points and need to
-    // do new texture coordinate calcs later.
 
     double len = length / 2.0;
     double sect_len = len * ( endl_pct - startl_pct );
     double sect_wid = width * ( endw_pct - startw_pct );
 
-    split.SetMaterial( material_prefix + material );
-    split.SetTexParams( pg0, sect_wid, sect_len, heading );
-    split.SetTexLimits( minu, minv, maxu, maxv );
-    split.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
+    section.SetMaterial( material_prefix + material );
+    section.SetTexParams( pg0, sect_wid, sect_len, heading );
+    section.SetTexLimits( minu, minv, maxu, maxv );
+    section.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
 
     // Create the final output and push on to the runway super_polygon
     // list
-    rwy_polys.push_back( split );
+    rwy_polys.push_back( section );
 }
 
 // generate a section of texture without shoulders
@@ -349,10 +318,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
                                  double minu, double maxu, double minv, double maxv,
                                  double heading,
                                  const string& material,
-                                 tgpolygon_list& rwy_polys,
-                                 tgcontour_list& slivers,
-                                 tgAccumulator& accum,
-                                 std::string& shapefile_name )
+                                 tgpolygon_list& rwy_polys )
 {
     double width = rwy.width;
     double length = rwy.length;
@@ -444,48 +410,23 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     section.AddNode( 0, pg3 );
     section = tgPolygon::Snap( section, gSnap );
 
-    // print runway points
-    TG_LOG(SG_GENERAL, SG_DEBUG, "pre clipped runway pts " << material_prefix << material);
-    TG_LOG(SG_GENERAL, SG_DEBUG, section );
-
-    // Clip the new polygon against what ever has already been created.
-    tgPolygon clipped = accum.Diff( section );
-
-    tgPolygon::RemoveSlivers( clipped, slivers );
-
-    // Split long edges to create an object that can better flow with
-    // the surface terrain
-    tgPolygon split = tgPolygon::SplitLongEdges( clipped, 400.0 );
-
-    accum.Add( section );
-
-    // Store away what we need to know for texture coordinate
-    // calculation.  (CLO 10/20/02: why can't we calculate texture
-    // coordinates here?  Oh, becuase later we need to massage the
-    // polygons to avoid "T" intersections and clean up other
-    // potential artifacts and we may add or remove points and need to
-    // do new texture coordinate calcs later.
-
     double len = length / 2.0;
     double sect_len = len * ( endl_pct - startl_pct );
     double sect_wid = width * ( endw_pct - startw_pct );
 
-    split.SetMaterial( material_prefix + material );
-    split.SetTexParams( pg0, sect_wid, sect_len, heading );
-    split.SetTexLimits( minu, minv, maxu, maxv );
-    split.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
+    section.SetMaterial( material_prefix + material );
+    section.SetTexParams( pg0, sect_wid, sect_len, heading );
+    section.SetTexLimits( minu, minv, maxu, maxv );
+    section.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
 
     // Create the final output and push on to the runway super_polygon
     // list
-    rwy_polys.push_back( split );
+    rwy_polys.push_back( section );
 }
 
 void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                  double &start_pct, double &end_pct,
-                                 tgpolygon_list& rwy_polys,
-                                 tgcontour_list& slivers,
-                                 tgAccumulator& accum,
-                                 std::string& shapefile_name )
+                                 tgpolygon_list& rwy_polys )
 {
     if (rwname != "XX") { /* Do not create a designation block if the runway name is set to none */
         string letter = "";
@@ -510,10 +451,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 heading,
                                 letter,
                                 rwy_polys,
-                                shoulder_polys,
-                                slivers,
-                                accum,
-                                shapefile_name );
+                                shoulder_polys );
         }
 
 
@@ -541,10 +479,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 heading,
                                 tex1,
                                 rwy_polys, 
-                                shoulder_polys,
-                                slivers,
-                                accum,
-                                shapefile_name );
+                                shoulder_polys );
             gen_runway_section( poly,
                                 start_pct, end_pct,
                                 0.5, 1.0,
@@ -552,10 +487,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 heading,
                                 tex2,
                                 rwy_polys,
-                                shoulder_polys,
-                                slivers,
-                                accum,
-                                shapefile_name );
+                                shoulder_polys );
 
         } else if (rwname.length() == 1) {
             sprintf( tex1, "%c%c", rwname[0], 'c');
@@ -567,10 +499,7 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
                                 heading,
                                 tex1,
                                 rwy_polys,
-                                shoulder_polys,
-                                slivers,
-                                accum,
-                                shapefile_name );
+                                shoulder_polys );
         }
     }
 }
@@ -579,14 +508,10 @@ void Runway::gen_rw_designation( tgPolygon poly, double heading, string rwname,
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
-void Runway::gen_rwy( tgpolygon_list& rwy_polys,
-                      tgcontour_list& slivers,
-                      tgAccumulator& accum,
-                      std::string& shapefile_name )
+void Runway::gen_full_rwy( tgpolygon_list& rwy_polys )
 {
     TG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
     std::string section_name = "";
-    bool debug = shapefile_name.size() != 0;
 
     //
     // Generate the basic runway outlines
@@ -665,7 +590,6 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                 // starting (possibly partial chunk)
                 start1_pct = end1_pct;
                 end1_pct = start1_pct + ( part_len / length );
-                if ( debug ) { section_name = shapefile_name + "_disp_start"; }
                 gen_runway_section( runway_half,
                                     start1_pct, end1_pct,
                                     0.0, 1.0,
@@ -673,16 +597,12 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                     heading,
                                     "dspl_thresh",
                                     rwy_polys,
-                                    shoulder_polys,
-                                    slivers,
-                                    accum,
-                                    section_name );
+                                    shoulder_polys );
 
                 // main chunks
                 for ( int i = 0; i < count; ++i ) {
                     start1_pct = end1_pct;
                     end1_pct = start1_pct + ( 60.0 / length );
-                    if ( debug ) { section_name = shapefile_name + "_disp_" + boost::lexical_cast<std::string>(i); }
                     gen_runway_section( runway_half,
                                         start1_pct, end1_pct,
                                         0.0, 1.0,
@@ -690,17 +610,13 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                         heading,
                                         "dspl_thresh",
                                         rwy_polys,
-                                        shoulder_polys,
-                                        slivers,
-                                        accum,
-                                        section_name );
+                                        shoulder_polys );
                 }
             }
 
             // final arrows
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( final_arrow / length );
-            if ( debug ) { section_name = shapefile_name + "_disp_end"; }
             gen_runway_section( runway_half,
                             start1_pct, end1_pct,
                             0.0, 1.0,
@@ -708,17 +624,13 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                             heading,
                             "dspl_arrows",
                             rwy_polys,
-                            shoulder_polys,
-                            slivers,
-                            accum,
-                            section_name );
+                            shoulder_polys );
         }
 
         if (rwy.marking[rwhalf] == 0) {
             // No marking
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( 10 / length );
-            if ( debug ) { section_name = shapefile_name + "_nothresh"; }
             gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -726,15 +638,11 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                 heading,
                                 "no_threshold",
                                 rwy_polys,
-                                shoulder_polys,
-                                slivers,
-                                accum,
-                                section_name );
+                                shoulder_polys );
         } else {
             // Thresholds for all others
             start1_pct = end1_pct;
             end1_pct = start1_pct + ( 202.0 * SG_FEET_TO_METER / length );
-            if ( debug ) { section_name = shapefile_name + "thresh"; }
             gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -742,18 +650,13 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                 heading,
                                 "threshold",
                                 rwy_polys,
-                                shoulder_polys,
-                                slivers,
-                                accum,
-                                shapefile_name );
+                                shoulder_polys );
         }
 
         // Runway designation block
         gen_rw_designation( runway_half, heading,
                             rwy.rwnum[rwhalf], start1_pct, end1_pct,
-                            rwy_polys, slivers,
-                            accum,
-                            shapefile_name );
+                            rwy_polys );
 
         // Generate remaining markings depending on type of runway
         if (rwy.marking[rwhalf] > 1) {
@@ -785,7 +688,6 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                 if ( end1_pct < 1.0 ) {
                     start1_pct = end1_pct;
                     end1_pct = start1_pct + ( rw_marking_list[i].size / length );
-                    if ( debug ) { section_name = shapefile_name + "_" + rw_marking_list[i].tex; }
                     gen_runway_section( runway_half,
                                         start1_pct, end1_pct,
                                         0.0, 1.0,
@@ -793,10 +695,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                         heading,
                                         rw_marking_list[i].tex,
                                         rwy_polys,
-                                        shoulder_polys,
-                                        slivers,
-                                        accum,
-                                        section_name );
+                                        shoulder_polys );
                 }
             }
         }
@@ -815,7 +714,6 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
         while ( end1_pct < 1.0 ) {
             start1_pct = end1_pct;
             end1_pct = start1_pct + rest1_inc;
-            if ( debug ) { section_name = shapefile_name + "rest_" + boost::lexical_cast<std::string>(end1_pct); }
             gen_runway_section( runway_half,
                                 start1_pct, end1_pct,
                                 0.0, 1.0,
@@ -823,10 +721,7 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                 heading,
                                 "rest",
                                 rwy_polys,
-                                shoulder_polys,
-                                slivers,
-                                accum,
-                                section_name );
+                                shoulder_polys );
         }
 
         start1_pct = 0.0;
@@ -846,7 +741,6 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
             for(int i=0; i<count; i++) {
                 start1_pct=end1_pct;
                 end1_pct = start1_pct + ( part_len / length );
-                if ( debug ) { section_name = shapefile_name + "stopway"; }
                 gen_runway_section( runway_half,
                                     -end1_pct, -start1_pct,
                                     0.0, 1.0,
@@ -854,18 +748,14 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
                                     heading,
                                     "stopway",
                                     rwy_polys,
-                                    shoulder_polys,
-                                    slivers,
-                                    accum,
-                                    section_name );
+                                    shoulder_polys );
             }
         }
     }
 }
 
-void Runway::BuildShoulder( tgpolygon_list& rwy_polys,
-                            tgcontour_list& slivers,
-                            tgAccumulator& accum )
+#if 0
+void Runway::BuildShoulder( tgpolygon_list& rwy_polys )
 {
     tgPolygon base, safe_base;
     tgPolygon shoulder;
@@ -886,3 +776,4 @@ void Runway::BuildShoulder( tgpolygon_list& rwy_polys,
         accum.Add( shoulder );
     }
 }
+#endif

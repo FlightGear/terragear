@@ -498,7 +498,7 @@ void Scheduler::Schedule( int num_threads, std::string& summaryfile )
 
     std::vector<Parser *> parsers;
     for (int i=0; i<num_threads; i++) {
-        Parser* parser = new Parser( filename, work_dir, elevation );
+        Parser* parser = new Parser( filename, debug_path, work_dir, elevation );
         // parser->set_debug();
         parser->start();
         parsers.push_back( parser );

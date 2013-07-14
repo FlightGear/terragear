@@ -429,6 +429,60 @@ std::string ClosedPoly::GetMaterial( int surface )
     return material;
 }
 
+void ClosedPoly::GetPolys( tgpolygon_list& polys )
+{
+    if ( is_pavement && pre_tess.Contours() )
+    {
+        pre_tess.SetMaterial( GetMaterial( surface_type ) );
+        pre_tess.SetTexParams( pre_tess.GetNode(0,0), 5.0, 5.0, texture_heading );
+        pre_tess.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
+        pre_tess.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+
+        polys.push_back( pre_tess );
+    }
+}
+
+void ClosedPoly::GetInnerBasePolys( tgpolygon_list& polys )
+{
+    tgPolygon ib = tgPolygon::Expand( pre_tess, 20.0 );
+
+    ib.SetMaterial( "Grass" );
+    ib.SetTexMethod( TG_TEX_BY_GEODE );
+
+    polys.push_back( ib );
+}
+
+void ClosedPoly::GetOuterBasePolys( tgpolygon_list& polys )
+{
+    tgPolygon ob = tgPolygon::Expand( pre_tess, 50.0 );
+
+    ob.SetMaterial( "Grass" );
+    ob.SetTexMethod( TG_TEX_BY_GEODE );
+
+    polys.push_back( ob );
+}
+
+void ClosedPoly::GetInnerBoundaryPolys( tgpolygon_list& polys )
+{
+    tgPolygon ib = tgPolygon::Expand( pre_tess, 20.0 );
+
+    ib.SetMaterial( "Grass" );
+    ib.SetTexMethod( TG_TEX_BY_GEODE );
+
+    polys.push_back( ib );
+}
+
+void ClosedPoly::GetOuterBoundaryPolys( tgpolygon_list& polys )
+{
+    tgPolygon ob = tgPolygon::Expand( pre_tess, 50.0 );
+
+    ob.SetMaterial( "Grass" );
+    ob.SetTexMethod( TG_TEX_BY_GEODE );
+
+    polys.push_back( ob );
+}
+
+#if 0
 int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, tgAccumulator& accum, std::string& shapefile_name )
 {
     if (is_pavement && pre_tess.Contours() )
@@ -505,3 +559,4 @@ int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::str
 
     return 1;
 }
+#endif

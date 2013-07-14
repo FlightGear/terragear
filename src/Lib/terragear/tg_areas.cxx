@@ -1,4 +1,4 @@
-// TGLandclass.cxx -- Class toSimnplify dealing with shape heiarchy:
+// tg_areas.cxx -- Class toSimnplify dealing with shape heiarchy:
 //                    landclass contains each area (layer) of a tile
 //                    Each area is a list of shapes
 //                    A shape has 1 or more segments
@@ -30,10 +30,10 @@
 #  include <config.h>
 #endif
 
-#include "tglandclass.hxx"
+#include "tg_areas.hxx"
 #include <simgear/io/lowlevel.hxx>
 
-void TGLandclass::clear(void)
+void tgAreas::clear(void)
 {
     for (unsigned int i=0; i<polys.size(); i++) {
         polys[i].clear();
@@ -42,7 +42,7 @@ void TGLandclass::clear(void)
     polys.clear();
 }
 
-void TGLandclass::LoadFromGzFile(gzFile& fp)
+void tgAreas::LoadFromGzFile(gzFile& fp)
 {
     int i, j, num_layers, num_polys;
 
@@ -64,7 +64,7 @@ void TGLandclass::LoadFromGzFile(gzFile& fp)
     }
 }
 
-std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
+std::ostream& operator<< ( std::ostream& out, const tgAreas& lc )
 {
     unsigned int count;
     tgPolygon poly;
@@ -82,7 +82,7 @@ std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
     return out;
 }
 
-void TGLandclass::SaveToGzFile(gzFile& fp)
+void tgAreas::SaveToGzFile(gzFile& fp)
 {
     int i, j, num_layers, num_polys;
     tgPolygon shape;

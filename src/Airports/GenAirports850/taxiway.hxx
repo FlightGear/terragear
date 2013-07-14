@@ -13,6 +13,7 @@ public:
 
     Taxiway(char* def);
 
+#if 0
     int BuildBtg( tgpolygon_list& taxi_polys,
                   tglightcontour_list& taxi_lights,
                   tgcontour_list& slivers,
@@ -26,7 +27,11 @@ public:
                   tgpolygon_list& apt_clearing_polys,
                   tgAccumulator& accum,
                   std::string& shapefile_name );
-
+#endif
+    void GetPolys( tgpolygon_list& polys );
+    void GetInnerBasePolys( tgpolygon_list& polys );
+    void GetOuterBasePolys( tgpolygon_list& polys );
+    
 private:
     SGGeod  origin;
     double  heading;

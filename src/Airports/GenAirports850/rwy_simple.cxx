@@ -28,9 +28,7 @@
 using std::string;
 
 // generate a simple runway
-void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
-                             tgcontour_list& slivers,
-                             tgAccumulator& accum )
+void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys )
 {
     tgContour runway = gen_runway_w_mid( 0.0, 0.0 );
     tgPolygon runway_half;
@@ -79,10 +77,7 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
                                         0.0, 1.0, 0.0, 1.0,
                                         heading,
                                         "",
-                                        rwy_polys,
-                                        slivers,
-                                        accum,
-                                        empty );
+                                        rwy_polys );
         }
 
         // Generate runway
@@ -92,9 +87,6 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
                                     0.0, 0.28, 0.0, 1.0,
                                     heading,
                                     "",
-                                    rwy_polys,
-                                    slivers,
-                                    accum,
-                                    empty );
+                                    rwy_polys );
     }
 }

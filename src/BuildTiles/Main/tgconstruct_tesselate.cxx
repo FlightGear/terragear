@@ -41,6 +41,9 @@ void TGConstruct::TesselatePolys( void )
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon poly = polys_clipped.get_poly(area, p );
 
+            // test test test
+            poly = tgPolygon::SplitLongEdges( poly, 100.0 );
+
             if ( IsDebugShape( poly.GetId() ) ) {
                 char layer[32];
                 sprintf(layer, "pretess_%d_%d", area, p );

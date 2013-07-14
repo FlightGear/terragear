@@ -230,6 +230,8 @@ void Parser::run()
             // write the airport BTG
             if (cur_airport) {
                 cur_airport->set_debug( debug_path, debug_runways, debug_pavements, debug_taxiways, debug_features );
+                TG_LOG( SG_GENERAL, SG_ALERT, "Build Airport " << icao );
+
                 cur_airport->BuildBtg( work_dir, elevation );
 
                 cur_airport->GetBuildTime( build_time );

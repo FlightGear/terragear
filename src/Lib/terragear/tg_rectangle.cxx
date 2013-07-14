@@ -53,6 +53,23 @@ void tgRectangle::expandBy(const tgRectangle& r)
     }
 }
 
+void tgRectangle::expandBy(const SGGeod& p)
+{
+    if ( p.getLongitudeDeg() < _min.getLongitudeDeg() ) {
+        _min.setLongitudeDeg( p.getLongitudeDeg() );
+    }
+    if ( p.getLatitudeDeg() < _min.getLatitudeDeg() ) {
+        _min.setLatitudeDeg( p.getLatitudeDeg() );
+    }
+
+    if ( p.getLongitudeDeg() > _max.getLongitudeDeg() ) {
+        _max.setLongitudeDeg( p.getLongitudeDeg() );
+    }
+    if ( p.getLatitudeDeg() > _max.getLatitudeDeg() ) {
+        _max.setLatitudeDeg( p.getLatitudeDeg() );
+    }
+}
+
 void tgRectangle::sanify ()
 {
     double tmp;

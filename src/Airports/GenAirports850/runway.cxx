@@ -88,6 +88,99 @@ tgContour WaterRunway::GetBuoys()
     return buoys_nodes;
 }
 
+void Runway::GetMainPolys( tgpolygon_list& polys )
+{
+    switch( rwy.surface ) {
+        case 1:
+            material_prefix = "pa_";
+            gen_full_rwy( polys );
+            break;
+
+        case 2:
+            material_prefix = "pc_";
+            gen_full_rwy( polys );
+            break;
+
+        case 3:
+            material_prefix = "grass_rwy";
+            gen_simple_rwy( polys );
+            break;
+
+        case 4:
+        case 5:
+            material_prefix = "dirt_rwy";
+            gen_simple_rwy( polys );
+            break;
+
+        case 12: /* Dry Lakebed */
+            material_prefix = "lakebed_taxiway";
+            gen_simple_rwy( polys );
+            break;
+
+        case 13: /* Water runway (buoys) */
+            break;
+
+        case 14: /* Snow / Ice */
+            break;
+    
+        case 15: /* Transparent */
+            break;
+
+        default:
+            TG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
+            throw sg_exception("unknown runway type!");
+    }
+}
+
+void Runway::GetShoulderPolys( tgpolygon_list& polys )
+{
+    for (unsigned int i=0; i<shoulder_polys.size(); i++) {
+        polys.push_back( shoulder_polys[i] );
+    }
+}
+
+void Runway::GetInnerBasePolys( tgpolygon_list& polys )
+{
+    tgContour base_contour;
+    tgPolygon base;
+    double shoulder_width = 0.0;
+
+    // generate area around runways
+    if ( (rwy.shoulder > 0) && (rwy.surface < 3) ) {
+        shoulder_width = 22.0;
+    } else if ( (rwy.surface == 1) || (rwy.surface == 2) ) {
+        shoulder_width = 2.0;
+    }
+
+    base_contour      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], shoulder_width + 20.0 );
+    base.AddContour( base_contour );
+
+    // and add the clearing to the base
+    polys.push_back( base );
+}
+
+void Runway::GetOuterBasePolys( tgpolygon_list& polys )
+{
+    tgContour base_contour;
+    tgPolygon base;
+    double shoulder_width = 0.0;
+
+    // generate area around runways
+    if ( (rwy.shoulder > 0) && (rwy.surface < 3) ) {
+        shoulder_width = 22.0;
+    } else if ( (rwy.surface == 1) || (rwy.surface == 2) ) {
+        shoulder_width = 2.0;
+    }
+
+    // also clear a safe area around the runway
+    base_contour = gen_runway_area_w_extend( 180.0, -rwy.overrun[0], -rwy.overrun[1], shoulder_width + 50.0 );
+    base.AddContour( base_contour );
+
+    // add this to the airport clearing
+    polys.push_back( base );
+}
+
+#if 0
 int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
 {
     if ( rwy.surface == 1 /* Asphalt */ )
@@ -199,3 +292,4 @@ int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights
 
     return 0;
 }
+#endif

@@ -28,6 +28,7 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "TNT/tnt_array2d.h"
+#include "tg_rectangle.hxx"
 #include "tg_polygon.hxx"
 
 /***

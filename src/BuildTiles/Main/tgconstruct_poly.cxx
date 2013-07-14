@@ -97,7 +97,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
                             SGGeod const& node  = poly.GetNode( j, k );
 
                             if ( poly.GetPreserve3D() ) {
-                                nodes.unique_add node, TG_NODE_FIXED_ELEVATION );
+                                nodes.unique_add( node, TG_NODE_FIXED_ELEVATION );
                             } else {
                                 nodes.unique_add( node );
                             }

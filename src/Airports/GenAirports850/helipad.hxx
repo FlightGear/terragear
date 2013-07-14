@@ -25,6 +25,7 @@ class Helipad
 public:
     Helipad(char* def);
 
+#if 0
     void BuildBtg( tgpolygon_list& heli_polys,
                    tglightcontour_list& heli_lights,
                    tgcontour_list& slivers,
@@ -36,6 +37,11 @@ public:
                    tgpolygon_list& apt_base_polys,
                    tgpolygon_list& apt_clearing_polys,
                    tgAccumulator& accum );
+#endif
+    void GetMainPolys( tgpolygon_list& polys );
+    void GetShoulderPolys( tgpolygon_list& polys );
+    void GetInnerBasePolys( tgpolygon_list& polys );
+    void GetOuterBasePolys( tgpolygon_list& polys );
 
     SGGeod GetLoc()
     {

@@ -161,7 +161,7 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
-
+    
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
 

@@ -113,6 +113,7 @@ void Helipad::build_helipad_shoulders( const tgContour& outer_area )
     }
 }
 
+#if 0
 void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
                         tglightcontour_list& rwy_lights,
                         tgcontour_list& slivers,
@@ -261,3 +262,4 @@ void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
         accum.Add( shoulder );
     }
 }
+#endif

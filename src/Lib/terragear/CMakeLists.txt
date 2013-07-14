@@ -7,6 +7,8 @@ add_library(terragear STATIC
     clipper.hpp
     tg_accumulator.cxx
     tg_accumulator.hxx
+    tg_areas.cxx
+    tg_areas.hxx
     tg_array.cxx
     tg_array.hxx
     tg_chopper.cxx
@@ -29,6 +31,7 @@ add_library(terragear STATIC
     tg_shapefile.hxx
     tg_surface.cxx
     tg_surface.hxx
+    tg_triangle.hxx
     tg_unique_geod.hxx
     tg_unique_tgnode.hxx
     tg_unique_vec2f.hxx

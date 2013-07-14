@@ -18,6 +18,7 @@ public:
     void CloseCurContour();
     void Finish();
 
+#if 0
     // Build BTG for airport base for airports with boundary
     int  BuildBtg( tgPolygon& apt_base,
                    tgPolygon& apt_clearing,
@@ -35,7 +36,14 @@ public:
                    tgpolygon_list& apt_clearing_polys,
                    tgAccumulator& accum,
                    std::string& shapefile_name );
+#endif
 
+    void GetPolys( tgpolygon_list& polys );
+    void GetInnerBasePolys( tgpolygon_list& polys );
+    void GetOuterBasePolys( tgpolygon_list& polys );
+    void GetInnerBoundaryPolys( tgpolygon_list& polys );
+    void GetOuterBoundaryPolys( tgpolygon_list& polys );
+    
     FeatureList* GetFeatures()
     {
         return &features;

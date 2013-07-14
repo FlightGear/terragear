@@ -5,6 +5,10 @@
 #include <simgear/math/sg_types.hxx>
 #include <simgear/threads/SGThread.hxx>
 
+#include <terragear/tg_array.hxx>
+#include <terragear/tg_areas.hxx>
+#include <terragear/tg_nodes.hxx>
+
 #include "runway.hxx"
 #include "object.hxx"
 #include "helipad.hxx"
@@ -13,6 +17,21 @@
 #include "linearfeature.hxx"
 #include "linked_objects.hxx"
 #include "debug.hxx"
+
+// Airport areas are hardcoded - no priority config to deal with
+#define AIRPORT_AREA_RUNWAY             (0)
+#define AIRPORT_AREA_HELIPAD            (1)
+#define AIRPORT_AREA_PAVEMENT           (2)
+#define AIRPORT_AREA_TAXIWAY            (3)
+#define AIRPORT_AREA_RUNWAY_SHOULDER    (4)
+#define AIRPORT_AREA_HELIPAD_SHOULDER   (5)
+#define AIRPORT_AREA_INNER_BASE         (6)
+#define AIRPORT_AREA_OUTER_BASE         (7)
+
+#define AIRPORT_MAX_BASE                (6)
+#define AIRPORT_NUM_AREAS               (8)
+
+#define AIRPORT_LINE                    (0)
 
 class Airport
 {
@@ -109,6 +128,9 @@ public:
     }
 
     void merge_slivers( tgpolygon_list& polys, tgcontour_list& slivers );
+
+
+    // break into stages
     void BuildBtg( const std::string& root, const string_list& elev_src );
 
     void DumpStats( void );
@@ -131,6 +153,37 @@ public:
     bool isDebugFeature ( int i );
 
 private:
+    // The airport building stages....
+    // Step 1 - build the base polygons - clip against higher priorities
+    void BuildBase();
+    // Step 2 - clip the base polygons
+    void ClipBase();
+    // Step 2 - clean the base polygons - fix t-junctions
+    void CleanBase();
+    // Step 3 - tesselate the base polygons - generate triangle list
+    void TesselateBase();
+
+    void TexturePolys();
+    
+    // Step 4 - build the linear feature polygons
+    void BuildFeatures();
+    // Step 5 - add nodes from pavement intersections
+    void IntersectFeaturesWithBase();
+    // Step 6 - clean the features
+    void CleanFeatures();
+    // Step 7 - tesselate the feature polygons
+    void TesselateFeatures();
+
+    // Step 8 - texture all triangles
+    void TextureTriangles();
+    // Step 9 - calculate  elevations
+    void CalcElevations(const std::string& root, const string_list& elev_src);
+
+    void LookupIndexes(void);
+    
+    // Step 10 - output
+    void WriteOutput( const std::string& root, const SGBucket& b );
+
     int          code;               // airport, heliport or sea port
     int          altitude;           // in meters
     std::string  icao;               // airport code
@@ -148,13 +201,26 @@ private:
     HelipadList     helipads;
     PavementList    boundary;
 
+    // runway lights
+    tglightcontour_list rwy_lights;
+
+    // Elevation data
+    tgArray array;
+
+    // area polygons
+    tgAreas polys_built;
+    tgAreas polys_clipped;
+
+    // All Nodes
+    TGNodes nodes;
+
     // stats
     SGTimeStamp build_time;
     SGTimeStamp cleanup_time;
     SGTimeStamp triangulation_time;
 
     // debug
-    std::string          debug_path;
+    std::string     debug_path;
     debug_map       debug_runways;
     debug_map       debug_pavements;
     debug_map       debug_taxiways;

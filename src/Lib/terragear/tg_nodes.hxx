@@ -16,12 +16,12 @@
 #include <boost/iterator/zip_iterator.hpp>
 
 typedef CGAL::Simple_cartesian<double> Kernel;
-typedef Kernel::Point_2 Point;
-typedef boost::tuple<Point, double> Point_and_Elevation;
+typedef Kernel::Point_2 tgn_Point;
+typedef boost::tuple<tgn_Point, double> Point_and_Elevation;
 
 //definition of the property map
 struct My_point_property_map{
-  typedef Point value_type;
+  typedef tgn_Point value_type;
   typedef const value_type& reference;
   typedef const Point_and_Elevation& key_type;
   typedef boost::readable_property_map_tag category;
@@ -34,11 +34,13 @@ typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, 
 typedef CGAL::Fuzzy_iso_box<Traits> Fuzzy_bb;
 typedef CGAL::Kd_tree<Traits> Tree;
 
+class tgSurface;
 
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/io/lowlevel.hxx>
 
+#include "tg_triangle.hxx"
 #include "tg_unique_tgnode.hxx"
 #include "tg_surface.hxx"
 #include "tg_array.hxx"
@@ -55,7 +57,6 @@ public:
     TGNodes( void )     {
         kd_tree_valid = false;
         array         = NULL;
-        surf          = NULL;
         tris          = NULL;
     }
 
@@ -88,9 +89,6 @@ public:
 
     void init_spacial_query( void );
 
-    void SetSurface( tgSurface* s ) {
-        surf = s;
-    }
     void SetArray( tgArray* a ) {
         array = a;
     }
@@ -100,6 +98,7 @@ public:
 
     void SetElevation( int idx, double z )  { tg_node_list[idx].SetElevation( z ); }
     void CalcElevations( tgNodeType type );
+    void CalcElevations( tgNodeType type, const tgSurface& surf );
 
     SGVec3f GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
     void SetNormal( int idx, SGVec3f n )    { tg_node_list[idx].SetNormal( n ); }
@@ -150,7 +149,6 @@ private:
 
     // temp pointers - not serialized
     tgArray*            array;      // for interpolated elevation
-    tgSurface*          surf;       // for smoothed elevation
     tgtriangle_list*    tris;       // for draped elevation
 };
 

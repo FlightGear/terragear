@@ -83,6 +83,7 @@ void Taxiway::GenLights(tglightcontour_list& rwy_lights)
 
 }
 
+#if 0
 int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
 {
     std::string material;
@@ -184,3 +185,4 @@ int Taxiway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_light
 
     return 0;
 }
+#endif

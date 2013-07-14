@@ -92,8 +92,8 @@ void TGNodes::init_spacial_query( void )
 
     for(unsigned int i = 0; i < tg_node_list.size(); i++) {
         // generate the tuple
-        Point   pt( tg_node_list[i].GetPosition().getLongitudeDeg(), tg_node_list[i].GetPosition().getLatitudeDeg() );
-        double  e( tg_node_list[i].GetPosition().getElevationM() );
+        tgn_Point pt( tg_node_list[i].GetPosition().getLongitudeDeg(), tg_node_list[i].GetPosition().getLatitudeDeg() );
+        double    e( tg_node_list[i].GetPosition().getElevationM() );
         Point_and_Elevation pande(pt, e);
 
         // and insert into tree
@@ -117,9 +117,9 @@ bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector
     }
 
     // define an exact rectangulat range query  (fuzziness=0)
-    Point ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
-    Point ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
-    Fuzzy_bb exact_bb(ll, ur);
+    tgn_Point ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
+    tgn_Point ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
+    Fuzzy_bb  exact_bb(ll, ur);
 
     // list of tuples as a result
     std::list<Point_and_Elevation> result;
@@ -143,9 +143,9 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     double east_compare  = b.get_center_lon() + 0.5 * b.get_width();
     double west_compare  = b.get_center_lon() - 0.5 * b.get_width();
 
-    Point ll;
-    Point ur;
-    Fuzzy_bb exact_bb;
+    tgn_Point ll;
+    tgn_Point ur;
+    Fuzzy_bb  exact_bb;
 
     std::list<Point_and_Elevation> result;
     std::list<Point_and_Elevation>::iterator it;
@@ -163,8 +163,8 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     }
 
     // find northern points
-    ll = Point( west_compare - fgPoint3_Epsilon, north_compare - fgPoint3_Epsilon );
-    ur = Point( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
+    ll = tgn_Point( west_compare - fgPoint3_Epsilon, north_compare - fgPoint3_Epsilon );
+    ur = tgn_Point( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
     exact_bb = Fuzzy_bb(ll, ur);
     result.clear();
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
@@ -173,8 +173,8 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     }
 
     // find southern points
-    ll = Point( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = Point( east_compare + fgPoint3_Epsilon, south_compare + fgPoint3_Epsilon );
+    ll = tgn_Point( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
+    ur = tgn_Point( east_compare + fgPoint3_Epsilon, south_compare + fgPoint3_Epsilon );
     exact_bb = Fuzzy_bb(ll, ur);
     result.clear();
 
@@ -184,8 +184,8 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     }
 
     // find eastern points
-    ll = Point( east_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = Point( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
+    ll = tgn_Point( east_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
+    ur = tgn_Point( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
     exact_bb = Fuzzy_bb(ll, ur);
     result.clear();
 
@@ -195,8 +195,8 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     }
 
     // find western points
-    ll = Point( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = Point( west_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
+    ll = tgn_Point( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
+    ur = tgn_Point( west_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
     exact_bb = Fuzzy_bb(ll, ur);
     result.clear();
 
@@ -252,6 +252,26 @@ void TGNodes::CalcElevations( tgNodeType type ) {
     }
 }
     
+void TGNodes::CalcElevations( tgNodeType type, const tgSurface& surf ) {
+    for(unsigned int i = 0; i < tg_node_list.size(); i++) {
+        if ( tg_node_list[i].GetType() == type ) {
+            SGGeod pos = tg_node_list[i].GetPosition();
+
+            switch (type)
+            {
+                case TG_NODE_FIXED_ELEVATION:
+                case TG_NODE_INTERPOLATED:
+                case TG_NODE_DRAPED:
+                    break;
+
+                case TG_NODE_SMOOTHED:
+                    SetElevation( i, surf.query( pos ) );
+                    break;
+            }
+        }
+    }
+}
+
 void TGNodes::get_normals( std::vector<SGVec3f>& normals ) const {
     normals.clear();
     for ( unsigned int i = 0; i < tg_node_list.size(); i++ ) {

@@ -26,8 +26,8 @@
 //
 // $Id: construct.hxx,v 1.13 2004-11-19 22:25:49 curt Exp $
 
-#ifndef _TGLANDCLASS_HXX
-#define _TGLANDCLASS_HXX
+#ifndef _TG_AREAS_HXX_
+#define _TG_AREAS_HXX_
 
 #ifndef __cplusplus
 # error This library requires C++
@@ -39,13 +39,13 @@
 
 #include <terragear/tg_polygon.hxx>
 
-typedef std::vector<tgpolygon_list> tglandclass_list;
+typedef std::vector<tgpolygon_list> tgarea_list;
 
-class TGLandclass
+class tgAreas
 {
 public:
-    TGLandclass() {};
-    ~TGLandclass() {};
+    tgAreas() {};
+	~tgAreas() {};
 
     void init( unsigned int num_areas) {
         clear();
@@ -116,10 +116,10 @@ public:
     void LoadFromGzFile( gzFile& fp );
 
     // Friend for output to stream
-    friend std::ostream& operator<< ( std::ostream&, const TGLandclass& );
+    friend std::ostream& operator<< ( std::ostream&, const tgAreas& );
 
 private:
-    tglandclass_list polys;
+    tgarea_list polys;
 };
 
-#endif // _TGLANDCLASS_HXX
+#endif // _TGAREAS__HXX_

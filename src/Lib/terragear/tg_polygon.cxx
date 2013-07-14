@@ -214,14 +214,28 @@ void tgPolygon::InheritElevations( const tgPolygon& source )
     }
 }
 
+void tgPolygon::SetElevations( const TGNodes& nodes )
+{
+    // lookup elevation for each node
+    for ( unsigned int i = 0; i < contours.size(); ++i ) {
+        for ( unsigned int j = 0; j < contours[i].GetSize(); ++j ) {
+            SGGeod dst_node = GetNode(i,j);
+            int index = nodes.find( dst_node );
+            if ( index >= 0 ) {
+                SetNode( i, j, nodes[index].GetPosition() );
+            } else {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygon::SetElevations - node " << dst_node << " not found" );
+            }
+        }
+    }
+}
+
 void tgPolygon::Texture( void )
 {
     SGGeod  p;
     SGVec2f t;
     double  x, y;
     float   tx, ty;
-
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Texture Poly with material " << material << " method " << tp.method << " tpref " << tp.ref << " heading " << tp.heading );
 
     switch( tp.method ) {
         case TG_TEX_BY_GEODE:

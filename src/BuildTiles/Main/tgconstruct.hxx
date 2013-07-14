@@ -35,9 +35,10 @@
 
 #include <terragear/tg_array.hxx>
 #include <terragear/tg_nodes.hxx>
+#include <terragear/tg_areas.hxx>
+
 #include <landcover/landcover.hxx>
 
-#include "tglandclass.hxx"
 #include "priorities.hxx"
 
 #define FIND_SLIVERS    (0)
@@ -210,8 +211,8 @@ private:
     tgArray array;
 
     // land class polygons
-    TGLandclass polys_in;
-    TGLandclass polys_clipped;
+    tgAreas polys_in;
+    tgAreas polys_clipped;
 
     // All Nodes
     TGNodes nodes;

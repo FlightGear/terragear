@@ -63,9 +63,10 @@
 class Parser : public SGThread
 {
 public:
-    Parser(const std::string& datafile, const std::string& root, const string_list& elev_src )
+    Parser(const std::string& datafile, const std::string& debug, const std::string& root, const string_list& elev_src )
     {
         filename        = datafile;
+        debug_path      = debug;
         work_dir        = root;
         elevation       = elev_src;
 
