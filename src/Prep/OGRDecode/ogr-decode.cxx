@@ -685,7 +685,7 @@ int main( int argc, char **argv ) {
     OGRDataSource::DestroyDataSource( poDS );
 
     SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
-    results.Save();
+    results.Save( save_shapefiles );
 
     return 0;
 }

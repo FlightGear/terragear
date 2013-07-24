@@ -214,16 +214,21 @@ long int tgChopper::GenerateIndex( std::string path )
     return index;
 }
 
-void tgChopper::Save( void )
+void tgChopper::Save( bool DebugShapefiles )
 {
     // traverse the bucket list
     bucket_polys_map_interator it;
     char tile_name[16];
     char poly_ext[16];
 
+    char layer[32];
+    char ds_name[64];
+
     for (it=bp_map.begin(); it != bp_map.end(); it++) {
         SGBucket b( (*it).first );
         tgpolygon_list const& polys = (*it).second;
+
+        sprintf(ds_name, "./bucket_%s", b.gen_index_str().c_str() );
 
         std::string path = root_path + "/" + b.gen_base_path();
         sprintf( tile_name, "%ld", b.gen_index() );
@@ -248,6 +253,12 @@ void tgChopper::Save( void )
         sgWriteUInt( fp, polys.size() );
         for ( unsigned int i=0; i<polys.size(); i++ ) {
             polys[i].SaveToGzFile( fp );
+
+            if ( DebugShapefiles )
+            {
+                sprintf(layer, "poly_%s-%d", b.gen_index_str().c_str(), i );
+                tgShapefile::FromPolygon( polys[i], ds_name, layer, "poly" );
+            }
         }
 
         gzclose( fp );

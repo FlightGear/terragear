@@ -1237,5 +1237,5 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
     chopper.Add( divided_base, "Hole" );
     chopper.Add( apt_clearing, "Airport" );
-    chopper.Save();
+    chopper.Save( false );
 }

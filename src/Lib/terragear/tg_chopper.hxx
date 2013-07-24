@@ -14,7 +14,7 @@ public:
     }
 
     void Add( const tgPolygon& poly, const std::string& type );
-    void Save( void );
+    void Save( bool DebugShapes );
 
 private:
     long int GenerateIndex( std::string path );
