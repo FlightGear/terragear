@@ -128,7 +128,9 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
             tg_insert_polygon(cdt, poly);
         }
 
-        
+        /* make conforming - still has an issue, and can't be compiled with exact_construction kernel */
+        // CGAL::make_conforming_Delaunay_2( cdt );
+
         tg_mark_domains( cdt );
 
         int count=0;

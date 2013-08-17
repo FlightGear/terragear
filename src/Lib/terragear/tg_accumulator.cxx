@@ -14,6 +14,10 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
         all_nodes.add( subject.GetNode(i) );
     }
 
+    for ( unsigned int i = 0; i < nodes.size(); i++ ) {
+        all_nodes.add( nodes[i] );
+    }
+
     unsigned int  num_hits = 0;
     tgRectangle box1 = subject.GetBoundingBox();
 
@@ -50,40 +54,6 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
     return result;
 }
 
-void tgAccumulator::Add( const tgContour& subject )
-{
-    tgPolygon poly;
-    poly.AddContour( subject );
-
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( poly );
-    accum.push_back( clipper_subject );
-}
-
-void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
-{
-    char shapefile[32];
-    char layer[32];
-
-    if ( individual ) {
-        for (unsigned int i=0; i < accum.size(); i++) {
-            sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
-            sprintf( shapefile, "accum_%d", i );
-            tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
-        }
-    } else {
-        ClipperLib::Polygons clipper_result;
-        ClipperLib::Clipper  c;
-        c.Clear();
-
-        for ( unsigned int i=0; i<accum.size(); i++ ) {
-            c.AddPolygons(accum[i], ClipperLib::ptSubject);
-        }
-        c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
-
-        tgShapefile::FromClipper( clipper_result, path, layer_prefix, "accum" );
-    }
-}
-
 tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
 {
     tgPolygon result;
@@ -94,6 +64,10 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
         for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
             all_nodes.add( subject.GetNode(i, j) );
         }
+    }
+
+    for ( unsigned int i = 0; i < nodes.size(); i++ ) {
+        all_nodes.add( nodes[i] );
     }
 
     unsigned int  num_hits = 0;
@@ -137,8 +111,54 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
     return result;
 }
 
+void tgAccumulator::Add( const tgContour& subject )
+{
+    tgPolygon poly;
+
+    // Add the nodes
+    for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
+        nodes.add( subject.GetNode(i) );
+    }
+
+    poly.AddContour( subject );
+
+    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( poly );
+    accum.push_back( clipper_subject );
+}
+
 void tgAccumulator::Add( const tgPolygon& subject )
 {
+    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+            nodes.add( subject.GetNode(i, j) );
+        }
+    }
+
     ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
     accum.push_back( clipper_subject );
+}
+
+void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
+{
+    char shapefile[32];
+    char layer[32];
+
+    if ( individual ) {
+        for (unsigned int i=0; i < accum.size(); i++) {
+            sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
+            sprintf( shapefile, "accum_%d", i );
+            tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
+        }
+    } else {
+        ClipperLib::Polygons clipper_result;
+        ClipperLib::Clipper  c;
+        c.Clear();
+
+        for ( unsigned int i=0; i<accum.size(); i++ ) {
+            c.AddPolygons(accum[i], ClipperLib::ptSubject);
+        }
+        c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+
+        tgShapefile::FromClipper( clipper_result, path, layer_prefix, "accum" );
+    }
 }

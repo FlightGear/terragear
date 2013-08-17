@@ -456,6 +456,12 @@ tgPolygon tgContour::Union( const tgContour& subject, tgPolygon& clip )
         all_nodes.add( subject.GetNode(i) );
     }
 
+    for ( unsigned int i = 0; i < clip.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < clip.ContourSize( i ); ++j ) {
+            all_nodes.add( clip.GetNode(i, j) );
+        }
+    }
+
     ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
     ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
     ClipperLib::Polygons clipper_result;
@@ -480,6 +486,12 @@ tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
         all_nodes.add( subject.GetNode(i) );
+    }
+    
+    for ( unsigned int i = 0; i < clip.Contours(); ++i ) {
+        for ( unsigned int j = 0; j < clip.ContourSize( i ); ++j ) {
+            all_nodes.add( clip.GetNode(i, j) );
+        }
     }
 
     ClipperLib::Polygon clipper_subject = tgContour::ToClipper( subject );
@@ -506,6 +518,10 @@ tgPolygon tgContour::Intersect( const tgContour& subject, const tgContour& clip 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
         all_nodes.add( subject.GetNode(i) );
+    }
+
+    for ( unsigned int i = 0; i < clip.GetSize(); ++i ) {
+        all_nodes.add( clip.GetNode(i) );
     }
 
     ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );

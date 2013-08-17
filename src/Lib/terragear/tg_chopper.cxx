@@ -45,7 +45,7 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
     base.AddNode( 0, SGGeod::fromDeg( max.getLongitudeDeg(), max.getLatitudeDeg()) );
     base.AddNode( 0, SGGeod::fromDeg( min.getLongitudeDeg(), max.getLatitudeDeg()) );
 
-    result = tgPolygon::Intersect( base, subject );
+    result = tgPolygon::Intersect( subject, base );    
     if ( result.Contours() > 0 ) {
         if ( subject.GetPreserve3D() ) {
             result.InheritElevations( subject );
@@ -138,21 +138,21 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
             clip_row.AddNode( 0, SGGeod::fromDeg( 180.0, clip_top)    );
             clip_row.AddNode( 0, SGGeod::fromDeg(-180.0, clip_top)    );
 
-            clipped = tgPolygon::Intersect( clip_row, subject );
+            clipped = tgPolygon::Intersect( subject, clip_row );
             if ( clipped.TotalNodes() > 0 ) {
 
-            if ( subject.GetPreserve3D() ) {
-                clipped.InheritElevations( subject );
-                clipped.SetPreserve3D( true );
-            }
-            clipped.SetTexParams( subject.GetTexParams() );
-            if ( subject.GetTexMethod() == TG_TEX_BY_GEODE ) {
-                // need to set center latitude for geodetic texturing
-                clipped.SetTexMethod( TG_TEX_BY_GEODE, b_clip.get_center_lat() );
-            }
-            clipped.SetFlag(type);
+                if ( subject.GetPreserve3D() ) {
+                    clipped.InheritElevations( subject );
+                    clipped.SetPreserve3D( true );
+                }
+                clipped.SetTexParams( subject.GetTexParams() );
+                if ( subject.GetTexMethod() == TG_TEX_BY_GEODE ) {
+                    // need to set center latitude for geodetic texturing
+                    clipped.SetTexMethod( TG_TEX_BY_GEODE, b_clip.get_center_lat() );
+                }
+                clipped.SetFlag(type);
 
-            ClipRow( clipped, b_clip.get_center_lat(), type );
+                ClipRow( clipped, b_clip.get_center_lat(), type );
 
 #if 0
                 {

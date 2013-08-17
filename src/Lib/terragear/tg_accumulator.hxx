@@ -20,6 +20,7 @@ private:
     typedef std::vector < ClipperLib::Polygons > clipper_polygons_list;
 
     clipper_polygons_list   accum;
+    UniqueSGGeodSet         nodes;
 };
 
 #endif // _TGACCUMULATOR_HXX
