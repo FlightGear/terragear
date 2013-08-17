@@ -4,6 +4,8 @@ add_executable(ogr-decode ogr-decode.cxx)
 target_link_libraries(ogr-decode 
     ${GDAL_LIBRARY}
     terragear
+    ${ZLIB_LIBRARY}
+    ${CMAKE_THREAD_LIBS_INIT}
     ${SIMGEAR_CORE_LIBRARIES}
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )

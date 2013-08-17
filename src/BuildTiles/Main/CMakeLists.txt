@@ -31,6 +31,7 @@ target_link_libraries(tg-construct
     Array landcover
     ${Boost_LIBRARIES}
     ${GDAL_LIBRARY}
+    ${ZLIB_LIBRARY}
     ${SIMGEAR_CORE_LIBRARIES}
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )

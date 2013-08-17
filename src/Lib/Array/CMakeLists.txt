@@ -7,6 +7,7 @@ add_executable(test_array testarray.cxx)
 
 target_link_libraries(test_array 
     Array
+	${ZLIB_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
 
