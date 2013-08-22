@@ -3,7 +3,7 @@
 # Written by Martin Spott
 #
 # Copyright (C) 2010  Markus Metz @ GRASS GIS
-# Copyright (C) 2010  Martin Spott - Martin (at) flightgear (dot) org
+# Copyright (C) 2010 - 2013  Martin Spott - Martin (at) flightgear (dot) org
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -37,6 +37,13 @@ MIN_AREA=1
 #MIN_AREA=0.000000001
 
 YEAR=06
+if [ ${YEAR} = "00" ]; then
+    SRCID=18
+elif [ ${YEAR} = "06" ]; then
+    SRCID=17
+else
+    SRCID=0
+fi
 #PREFIX=nl
 #PREFIX=clc${YEAR}_nl
 PREFIX=clc${YEAR}
@@ -59,7 +66,7 @@ fn_fixpostgis() {
     echo "ALTER TABLE ${LAYER} ADD CONSTRAINT "enforce_geotype_wkb_geometry" CHECK (GeometryType(wkb_geometry) = 'POLYGON'::text);"
     echo "ALTER TABLE ${LAYER} ADD CONSTRAINT "enforce_srid_wkb_geometry" CHECK (ST_SRID(wkb_geometry) = 4326);"
     echo "ALTER TABLE ${LAYER} DROP COLUMN id;"
-    echo "ALTER TABLE ${LAYER} ADD COLUMN src_id numeric(5,0) DEFAULT 1;"
+    echo "ALTER TABLE ${LAYER} ADD COLUMN src_id numeric(5,0) DEFAULT ${SRCID};"
     echo "ALTER TABLE ${LAYER} ADD COLUMN maint_id numeric(5,0) DEFAULT NULL;"
     echo "ALTER TABLE ${LAYER} ADD COLUMN ch_date timestamp;"
     echo "GRANT SELECT ON ${LAYER} TO webuser;"
@@ -123,7 +130,6 @@ fn_clean() {
 ###############################################################################
 
 fn_proj() {
-    CLEANMAP=${PREFIX}_dissolved
     # Re-project from EPSG:3035 - this one is _not_ to be run inside
     # the import location !!!
     MYLOCATION=`g.gisenv get=LOCATION_NAME`
@@ -151,6 +157,7 @@ fn_export() {
 
 fn_import
 fn_clean
+CLEANMAP=${PREFIX}_dissolved
 fn_proj
 fn_export
 
