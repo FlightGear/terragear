@@ -265,26 +265,30 @@ fn_overlay() {
                  ${PREFIX}_lava \
                  ${PREFIX}_landmass;
     do
-        g.remove vect=${LAYER}_postsplit
-        v.split input=${LAYER}_dissolved output=${LAYER}_postsplit length=40 units=kilometers --verbose
-        v.out.ogr input=${LAYER}_postsplit type=area dsn=${DUMPDIR}/${LAYER}_post-split.shp
-        if [ ${COUNT} -eq 1 ]; then
-            g.remove vect=${CLEANMAP}
-            g.copy vect=${LAYER}_postsplit,${CLEANMAP}
-        else
-            g.remove vect=tmp
-            v.overlay ainput=${CLEANMAP} binput=${LAYER}_postsplit output=tmp operator=or snap=0.000001
-            v.db.addcolumn map=tmp columns="newcat integer" --verbose
-            v.db.update map=tmp column=newcat value=b_cat where="a_cat IS NULL" --verbose
-            v.db.update map=tmp column=newcat value=a_cat where="b_cat IS NULL" --verbose
-            v.db.update map=tmp column=newcat value=a_cat where="newcat IS NULL" --verbose
-            v.db.update map=tmp column=newcat value=a_cat where="newcat=0" --verbose
-            g.remove vect=${CLEANMAP}_reclass
-            v.reclass input=tmp output=${CLEANMAP}_reclass column=newcat --verbose
-            g.remove vect=${CLEANMAP}
-            g.rename vect=${CLEANMAP}_reclass,${CLEANMAP}
-        fi
-        COUNT=`expr ${COUNT} + 1`
+    v.info map=${LAYER} > /dev/null
+    LAYERVALID=${?}
+    if [ ${LAYERVALID} -eq 0 ]; then
+            g.remove vect=${LAYER}_postsplit
+            v.split input=${LAYER}_dissolved output=${LAYER}_postsplit length=40 units=kilometers --verbose
+            v.out.ogr input=${LAYER}_postsplit type=area dsn=${DUMPDIR}/${LAYER}_post-split.shp
+            if [ ${COUNT} -eq 1 ]; then
+                g.remove vect=${CLEANMAP}
+                g.copy vect=${LAYER}_postsplit,${CLEANMAP}
+            else
+                g.remove vect=tmp
+                v.overlay ainput=${CLEANMAP} binput=${LAYER}_postsplit output=tmp operator=or snap=0.000001
+                v.db.addcolumn map=tmp columns="newcat integer" --verbose
+                v.db.update map=tmp column=newcat value=b_cat where="a_cat IS NULL" --verbose
+                v.db.update map=tmp column=newcat value=a_cat where="b_cat IS NULL" --verbose
+                v.db.update map=tmp column=newcat value=a_cat where="newcat IS NULL" --verbose
+                v.db.update map=tmp column=newcat value=a_cat where="newcat=0" --verbose
+                g.remove vect=${CLEANMAP}_reclass
+                v.reclass input=tmp output=${CLEANMAP}_reclass column=newcat --verbose
+                g.remove vect=${CLEANMAP}
+                g.rename vect=${CLEANMAP}_reclass,${CLEANMAP}
+            fi
+            COUNT=`expr ${COUNT} + 1`
+    fi
     done
 }
 
