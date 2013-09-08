@@ -45,8 +45,11 @@ class TGLandclass
 {
 public:
     TGLandclass() {};
+    ~TGLandclass() {};
 
     void init( unsigned int num_areas) {
+        clear();
+                
         for (unsigned int i=0; i<num_areas; i++) {
             tgpolygon_list lc;
             lc.clear();
@@ -65,18 +68,21 @@ public:
     {
         return polys[area][poly];
     }
-    inline tgPolygon & get_poly( unsigned int area, unsigned int poly )
+    inline tgPolygon& get_poly( unsigned int area, unsigned int poly )
     {
         return polys[area][poly];
     }
     inline void add_poly( unsigned int area, const tgPolygon& p )
     {
         if ( area > polys.capacity() ) {
-            SG_LOG( SG_CLIPPER, SG_ALERT, " area out of bounds " << area << " of " << polys.capacity() );
+            SG_LOG( SG_GENERAL, SG_ALERT, " area out of bounds " << area << " of " << polys.capacity() );
             exit(0);
         }
         polys[area].push_back( p );
     }
+
+    // TODO : Let's get rid of this - it was a memory leak, and the polygons should really be modified in place
+    // NOTE - this will be considerable work, so leaving as is for now (but fix the leak)
     inline void set_poly( unsigned int area, unsigned int poly, const tgPolygon& p )
     {
         polys[area][poly] = p;

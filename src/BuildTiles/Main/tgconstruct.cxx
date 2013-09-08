@@ -49,10 +49,6 @@ TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLock
 
 // Destructor
 TGConstruct::~TGConstruct() { 
-    // land class polygons
-    polys_in.clear();
-    polys_clipped.clear();
-
     // All Nodes
     nodes.clear();
 }

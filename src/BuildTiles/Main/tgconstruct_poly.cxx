@@ -45,8 +45,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
     string base = bucket.gen_base_path();
     string poly_path;
     int    total_polys_read = 0;
-
-    polys_in.clear();
+    tgPolygon poly;
 
     // load 2D polygons from all directories provided
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
@@ -82,7 +81,6 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
 
                 for ( unsigned int i=0; i<count; i++ ) {
-                    tgPolygon poly;
                     poly.LoadFromGzFile( fp );
                     area     = area_defs.get_area_priority( poly.GetFlag() );
                     material = area_defs.get_area_name( area );

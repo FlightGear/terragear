@@ -34,7 +34,7 @@
 #include <simgear/threads/SGQueue.hxx>
 
 #include <Array/array.hxx>
-#include <terragear//tg_nodes.hxx>
+#include <terragear/tg_nodes.hxx>
 #include <landcover/landcover.hxx>
 
 #include "tglandclass.hxx"
