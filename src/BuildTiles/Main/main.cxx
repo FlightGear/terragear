@@ -284,7 +284,7 @@ int main(int argc, char **argv) {
     for (unsigned int i=0; i<constructs.size(); i++) {
         constructs[i]->join();
     }
-    // delete the stage 2 construct objects
+    // delete the stage 3 construct objects
     for (unsigned int i=0; i<constructs.size(); i++) {
         delete constructs[i];
     }
