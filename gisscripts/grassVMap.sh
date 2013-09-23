@@ -57,8 +57,8 @@ CLEANMAP=cleanmap
 
 if [ ${TYPE} = "v0" ]; then
     SRCKBS=nad83
-    #SNAP=0.00001
-    SNAP=0.000001
+    SNAP=0.00001
+    #SNAP=0.000001
     #MIN_AREA1=1
     MIN_AREA1=0.0000001
     MIN_AREA=100
@@ -147,7 +147,8 @@ fn_importVMap() {
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
         MAP=`echo ${LAYER} | sed -e 's/-/_/g'`
         g.remove vect=${MAP}
-        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
+#        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
+        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} --verbose
     done
 }
 
@@ -288,24 +289,21 @@ fn_reclass() {
             v.db.renamecolumn map=${OUTPUT}_${ZONE} column=newcodeCLC,code_CLC --verbose
             v.reclass input=${OUTPUT}_${ZONE} output=${LCCMAP} column=code_CLC --verbose
         done
-#        g.remove vect=${OUTPUT}_patched
-#        v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${OUTPUT}_patched
-        v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${INTMAP}
-#
-#        g.remove vect=${OUTPUT}_bpol,${OUTPUT}_snap,${OUTPUT}_split,${OUTPUT}_rmsa,${OUTPUT}_rmdangle,${OUTPUT}_rmarea,${OUTPUT}_prune,${OUTPUT}_polyline,${OUTPUT}_dissolved
-#        v.clean input=${OUTPUT}_patched output=${OUTPUT}_bpol -c tool=bpol type=boundary --verbose
-#        v.clean input=${OUTPUT}_bpol output=${OUTPUT}_snap -c tool=snap thresh=${SNAP} type=boundary --verbose
-#        v.split input=${OUTPUT}_snap output=${OUTPUT}_split length=40 units=kilometers --verbose
-#        v.clean input=${OUTPUT}_split output=${OUTPUT}_rmsa -c tool=rmsa type=boundary --verbose
-#        v.clean input=${OUTPUT}_rmsa output=${OUTPUT}_rmdangle tool=rmline,rmdangle thresh=0,-1 type=boundary --verbose
-#        date
-#        v.clean input=${OUTPUT}_rmdangle output=${OUTPUT}_rmarea tool=rmarea thresh=${MIN_AREA1} type=boundary --verbose
-#        date
-#        v.clean input=${OUTPUT}_rmarea output=${OUTPUT}_prune tool=prune thresh=0.00001 type=boundary --verbose
-#        v.build.polylines input=${OUTPUT}_prune output=${OUTPUT}_polyline --verbose
-#        v.dissolve input=${OUTPUT}_polyline output=${OUTPUT}_dissolved --verbose
-#        v.out.ogr input=${OUTPUT}_dissolved type=area dsn=${DUMPDIR}/${OUTPUT}_pre-clip.shp
-        v.out.ogr input=${INTMAP} type=area dsn=${DUMPDIR}/${OUTPUT}_pre-clip.shp
+        g.remove vect=${OUTPUT}_patched
+        v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${OUTPUT}_patched
+#        v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${INTMAP}
+
+        g.remove vect=${OUTPUT}_bpol,${OUTPUT}_snap,${OUTPUT}_split,${OUTPUT}_rmsa,${OUTPUT}_rmdangle,${OUTPUT}_rmarea,${OUTPUT}_prune
+        v.clean input=${OUTPUT}_patched output=${OUTPUT}_bpol -c tool=bpol type=boundary --verbose
+        v.clean input=${OUTPUT}_bpol output=${OUTPUT}_snap -c tool=snap thresh=${SNAP} type=boundary --verbose
+        v.split input=${OUTPUT}_snap output=${OUTPUT}_split length=40 units=kilometers --verbose
+        v.clean input=${OUTPUT}_split output=${OUTPUT}_rmsa -c tool=rmsa type=boundary --verbose
+        v.clean input=${OUTPUT}_rmsa output=${OUTPUT}_rmdangle tool=rmline,rmdangle thresh=0,-1 type=boundary --verbose
+        date
+        v.clean input=${OUTPUT}_rmdangle output=${OUTPUT}_rmarea tool=rmarea thresh=${MIN_AREA1} type=boundary --verbose
+        date
+        v.clean input=${OUTPUT}_rmarea output=${OUTPUT}_prune tool=prune thresh=0.00001 type=boundary --verbose
+        v.out.ogr input=${OUTPUT}_prune type=area dsn=${DUMPDIR}/${OUTPUT}_pre-clip.shp
     done
 }
 
@@ -367,20 +365,17 @@ fn_overlay() {
                  ${PREFIX}_lava \
                  ${PREFIX}_landmass;
     do
-    v.info map=${LAYER}_int > /dev/null
+    v.info map=${LAYER}_prune > /dev/null
     LAYERVALID=${?}
     if [ ${LAYERVALID} -eq 0 ]; then
-#            g.remove vect=${LAYER}_postsplit
-#            v.split input=${LAYER}_dissolved output=${LAYER}_postsplit length=40 units=kilometers --verbose
-#            v.out.ogr input=${LAYER}_postsplit type=area dsn=${DUMPDIR}/${LAYER}_post-split.shp
+            g.remove vect=${LAYER}_postsplit
+            v.split input=${LAYER}_prune output=${LAYER}_postsplit length=40 units=kilometers --verbose
             if [ ${COUNT} -eq 1 ]; then
                 g.remove vect=${CLEANMAP}
-#                g.copy vect=${LAYER}_postsplit,${CLEANMAP}
-                g.copy vect=${LAYER}_int,${CLEANMAP}
+                g.copy vect=${LAYER}_postsplit,${CLEANMAP}
             else
                 g.remove vect=tmp
-#                v.overlay ainput=${CLEANMAP} binput=${LAYER}_postsplit output=tmp operator=or snap=0.000001
-                v.overlay ainput=${CLEANMAP} binput=${LAYER}_int output=tmp operator=or snap=0.000001
+                v.overlay ainput=${CLEANMAP} binput=${LAYER}_postsplit output=tmp operator=or snap=0.000001
                 v.db.addcolumn map=tmp columns="newcat integer" --verbose
                 v.db.update map=tmp column=newcat value=b_cat where="a_cat IS NULL" --verbose
                 v.db.update map=tmp column=newcat value=a_cat where="b_cat IS NULL" --verbose
@@ -411,7 +406,7 @@ fn_preexport() {
 fn_clean() {
     # Caution, don't overwrite the only functional working copy while testing !!!
     #
-    g.remove vect=${PREFIX}_patched,${PREFIX}_bpol,${PREFIX}_snap,${PREFIX}_split,${PREFIX}_rmsa,${PREFIX}_rmdangle,${PREFIX}_rmarea,${PREFIX}_prune,${PREFIX}_polyline,${PREFIX}_dissolved
+    g.remove vect=${PREFIX}_patched,${PREFIX}_bpol,${PREFIX}_snap,${PREFIX}_split,${PREFIX}_rmsa,${PREFIX}_rmdangle,${PREFIX}_rmarea,${PREFIX}_prune,${PREFIX}_dissolved
     g.rename vect=${CLEANMAP},${PREFIX}_patched
     #
     v.clean input=${PREFIX}_patched output=${PREFIX}_bpol -c tool=bpol type=boundary --verbose
@@ -423,8 +418,7 @@ fn_clean() {
     v.clean input=${PREFIX}_rmdangle output=${PREFIX}_rmarea tool=rmarea thresh=${MIN_AREA} type=boundary --verbose
     date
     v.clean input=${PREFIX}_rmarea output=${PREFIX}_prune tool=prune thresh=0.00001 type=boundary --verbose
-    v.build.polylines input=${PREFIX}_prune output=${PREFIX}_polyline --verbose
-    v.dissolve input=${PREFIX}_polyline output=${PREFIX}_dissolved --verbose
+    v.dissolve input=${PREFIX}_prune output=${PREFIX}_dissolved --verbose
 
     #v.split input=${PREFIX}_patched output=${PREFIX}_split layer=-1 vertices=100 --verbose
     #
@@ -444,8 +438,8 @@ fn_proj() {
     g.remove vect=${CLEANMAP}
     v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${CLEANMAP}  # output=${CLEANMAP}
     if [ ${PREFIX} = "v0" ]; then
-        g.remove vect=${PREFIX}_landmass_polyline
-        v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${PREFIX}_landmass_polyline
+        g.remove vect=${PREFIX}_landmass_prune
+        v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${PREFIX}_landmass_prune
     fi
 }
 
@@ -467,20 +461,20 @@ fn_export() {
             LAYER=${NEWLAYER}
         fi
 #        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${PREFIX}_c${CATEGORY}.shp  # For CLC
-        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
-#        fn_topostgis ${LAYER}
+#        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
+        fn_topostgis ${LAYER}
     done
     if [ ${PREFIX} = "v0" ]; then
-        v.out.ogr input=${PREFIX}_landmass_polyline type=area dsn=${DUMPDIR}/${PREFIX}_landmass.shp
-#        fn_topostgis ${PREFIX}_landmass_polyline
+#        v.out.ogr input=${PREFIX}_landmass_prune type=area dsn=${DUMPDIR}/${PREFIX}_landmass.shp
+        fn_topostgis ${PREFIX}_landmass_prune
     fi
 }
 
 fn_single() {
     LAYER=${PREFIX}_single
     v.extract -d input=${CLEANMAP} type=area output=${LAYER} new=1 --verbose
-    v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp
-#    fn_topostgis ${LAYER}
+#    v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp
+    fn_topostgis ${LAYER}
 }
 
 ###############################################################################
