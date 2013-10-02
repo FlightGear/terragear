@@ -57,8 +57,8 @@ CLEANMAP=cleanmap
 
 if [ ${TYPE} = "v0" ]; then
     SRCKBS=nad83
-    SNAP=0.00001
-    #SNAP=0.000001
+    #SNAP=0.00001
+    SNAP=0.000001
     #MIN_AREA1=1
     MIN_AREA1=0.0000001
     MIN_AREA=100
@@ -94,6 +94,7 @@ fn_fixpostgis() {
     echo "DROP INDEX ${LAYER}_cat_idx;"
     echo "ALTER INDEX ${LAYER}_pkey RENAME TO ${LAYER}_pk;"
     echo "ALTER INDEX ${LAYER}_wkb_geometry_idx RENAME TO ${LAYER}_gindex;"
+    echo "ALTER TABLE ${LAYER} ALTER COLUMN wkb_geometry SET STORAGE MAIN;"
     echo "CLUSTER ${LAYER}_gindex ON ${LAYER};"
     echo "ALTER TABLE ${LAYER} ADD CONSTRAINT "enforce_dims_wkb_geometry" CHECK (ST_NDims(wkb_geometry) = 2);"
     echo "ALTER TABLE ${LAYER} ADD CONSTRAINT "enforce_geotype_wkb_geometry" CHECK (GeometryType(wkb_geometry) = 'POLYGON'::text);"
