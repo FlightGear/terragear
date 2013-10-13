@@ -462,11 +462,11 @@ fn_export() {
             LAYER=${NEWLAYER}
         fi
 #        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${PREFIX}_c${CATEGORY}.shp  # For CLC
-#        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
+        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
         fn_topostgis ${LAYER}
     done
     if [ ${PREFIX} = "v0" ]; then
-#        v.out.ogr input=${PREFIX}_landmass_prune type=area dsn=${DUMPDIR}/${PREFIX}_landmass.shp
+        v.out.ogr input=${PREFIX}_landmass_prune type=area dsn=${DUMPDIR}/${PREFIX}_landmass.shp
         fn_topostgis ${PREFIX}_landmass_prune
     fi
 }
