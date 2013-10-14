@@ -190,14 +190,14 @@ int main(int argc, char **argv) {
         bucketList.push_back( SGBucket( tile_id ) );
     }
 
+    std::vector<TGConstruct *> constructs;
+
 	/* fill the workqueue */
 	for (unsigned int i=0; i<bucketList.size(); i++) {
 	    wq.push( bucketList[i] );
 	}
 
     // now create the worker threads for stage 1
-    std::vector<TGConstruct *> constructs;
-
     for (int i=0; i<num_threads; i++) {
         TGConstruct* construct = new TGConstruct( areas, 1, wq );
         //construct->set_cover( cover );
