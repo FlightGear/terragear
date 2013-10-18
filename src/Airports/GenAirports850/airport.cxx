@@ -1079,19 +1079,23 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // for ( unsigned int i = 0; i < rwy_lights.size(); ++i )
     for ( unsigned int i = 0; i < rwy_lights.size(); ++i )
     {
-        pt_v.clear();
-        pt_n.clear();
-        for ( unsigned int j = 0; j < rwy_lights[i].ContourSize(); ++j )
+        if ( rwy_lights[i].ContourSize() )
         {
-            index = nodes.add( rwy_lights[i].GetPosition(j) );
-            pt_v.push_back( index );
+            pt_v.clear();
+            pt_n.clear();
+            for ( unsigned int j = 0; j < rwy_lights[i].ContourSize(); ++j )
+            {
+                index = nodes.add( rwy_lights[i].GetPosition(j) );
+                pt_v.push_back( index );
 
-            index = normals.add( rwy_lights[i].GetNormal(j) );
-            pt_n.push_back( index );
+                index = normals.add( rwy_lights[i].GetNormal(j) );
+                pt_n.push_back( index );
+            }
+
+            pts_v.push_back( pt_v );
+            pts_n.push_back( pt_n );
+            pt_materials.push_back( rwy_lights[i].GetType() );
         }
-        pts_v.push_back( pt_v );
-        pts_n.push_back( pt_n );
-        pt_materials.push_back( rwy_lights[i].GetType() );
     }
 
     // calculate node elevations
