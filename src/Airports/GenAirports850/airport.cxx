@@ -1111,15 +1111,18 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         wgs84_nodes.push_back( SGVec3d::fromGeod(geod_nodes[i]) );
     }
 
-    SGSphered d;
+    SGVec3d gbs_center = SGVec3d::fromGeod( b.get_center() );
+    double dist_squared, radius_squared = 0;
     for ( unsigned int i = 0; i < wgs84_nodes.size(); ++i )
     {
-        d.expandBy(wgs84_nodes[ i ]);
+        dist_squared = distSqr(gbs_center, wgs84_nodes[i]);
+        if ( dist_squared > radius_squared ) {
+            radius_squared = dist_squared;
+        }
     }
 
-    SGVec3d gbs_center = d.getCenter();
-    double gbs_radius = d.getRadius();
-    TG_LOG(SG_GENERAL, SG_DEBUG, "gbs center = " << gbs_center);
+    double gbs_radius = sqrt(radius_squared);
+
     TG_LOG(SG_GENERAL, SG_DEBUG, "Done with wgs84 node mapping");
     TG_LOG(SG_GENERAL, SG_DEBUG, "  center = " << gbs_center << " radius = " << gbs_radius );
 
