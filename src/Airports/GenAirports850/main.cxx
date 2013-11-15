@@ -21,6 +21,7 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sgstream.hxx>
+#include <simgear/misc/strutils.hxx>
 
 #include <Include/version.h>
 
@@ -196,7 +197,7 @@ int main(int argc, char **argv)
 #endif
         else if ( arg.find("--airport=") == 0 ) 
         {
-    	    airport_id = arg.substr(10).c_str();
+            airport_id = simgear::strutils::uppercase( arg.substr(10).c_str() );
     	} 
         else if ( arg == "--clear-dem-path" ) 
         {
