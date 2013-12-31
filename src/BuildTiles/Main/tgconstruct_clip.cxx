@@ -28,6 +28,7 @@
 
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_shapefile.hxx>
+#include <terragear/tg_misc.hxx>
 
 #include "tgconstruct.hxx"
 
@@ -39,32 +40,28 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon safety_base;
     tgcontour_list slivers;
     SGGeod p;
-    SGVec2d min, max;
     bool debug_area, debug_shape;
     static int accum_idx = 0;
-
-    // Get clip bounds
-    min.x() = bucket.get_center_lon() - 0.5 * bucket.get_width();
-    min.y() = bucket.get_center_lat() - 0.5 * bucket.get_height();
-    max.x() = bucket.get_center_lon() + 0.5 * bucket.get_width();
-    max.y() = bucket.get_center_lat() + 0.5 * bucket.get_height();
-
     tgAccumulator accum;
 
     // set up clipping tile : and remember to add the nodes!
-    p = SGGeod::fromDegM( min.x(), min.y(), -9999.0 );
+    p = bucket.get_corner( SG_BUCKET_SW );
+    p.setElevationM( -9999.0 );
     safety_base.AddNode( 0, p );
     nodes.unique_add( p );
 
-    p = SGGeod::fromDegM( max.x(), min.y(), -9999.0 );
+    p = bucket.get_corner( SG_BUCKET_SE );
+    p.setElevationM( -9999.0 );
     safety_base.AddNode( 0, p );
     nodes.unique_add( p );
 
-    p = SGGeod::fromDegM( max.x(), max.y(), -9999.0 );
+    p = bucket.get_corner( SG_BUCKET_NE );
+    p.setElevationM( -9999.0 );
     safety_base.AddNode( 0, p );
     nodes.unique_add( p );
 
-    p = SGGeod::fromDegM( min.x(), max.y(), -9999.0 );
+    p = bucket.get_corner( SG_BUCKET_NW );
+    p.setElevationM( -9999.0 );
     safety_base.AddNode( 0, p );
     nodes.unique_add( p );
 

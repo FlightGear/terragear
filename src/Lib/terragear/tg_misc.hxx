@@ -3,6 +3,13 @@
 #include "clipper.hpp"
 #include "tg_rectangle.hxx"
 
+// SGBucket corners
+#define SG_BUCKET_SW    (0)
+#define SG_BUCKET_SE    (1)
+#define SG_BUCKET_NE    (2)
+#define SG_BUCKET_NW    (3)
+
+
 // SGGeod Cleanup
 SGGeod  SGGeod_snap( const SGGeod& in, double grid );
 

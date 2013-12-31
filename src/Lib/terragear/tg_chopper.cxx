@@ -6,44 +6,21 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/io/lowlevel.hxx>
 
-
 #include "tg_chopper.hxx"
 #include "tg_shapefile.hxx"
-
-unsigned int clip_num = 0;
+#include "tg_misc.hxx"
 
 tgPolygon tgChopper::Clip( const tgPolygon& subject,
                       const std::string& type,
                       SGBucket& b )
 {
-    // p;
-
-    SGGeod min, max;
-    SGGeod c    = b.get_center();
-    double span = b.get_width();
     tgPolygon base, result;
 
-    // calculate bucket dimensions
-    if ( (c.getLatitudeDeg() >= -89.0) && (c.getLatitudeDeg() < 89.0) ) {
-        min = SGGeod::fromDeg( c.getLongitudeDeg() - span/2.0, c.getLatitudeDeg() - SG_HALF_BUCKET_SPAN );
-        max = SGGeod::fromDeg( c.getLongitudeDeg() + span/2.0, c.getLatitudeDeg() + SG_HALF_BUCKET_SPAN );
-    } else if ( c.getLatitudeDeg() < -89.0) {
-        min = SGGeod::fromDeg( -90.0, -180.0 );
-        max = SGGeod::fromDeg( -89.0,  180.0 );
-    } else if ( c.getLatitudeDeg() >= 89.0) {
-        min = SGGeod::fromDeg(  89.0, -180.0 );
-        max = SGGeod::fromDeg(  90.0,  180.0 );
-    } else {
-        SG_LOG( SG_GENERAL, SG_ALERT,  "Out of range latitude in clip_and_write_poly() = " << c.getLatitudeDeg() );
-    }
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  (" << min << ") (" << max << ")" );
-
-    // set up clipping tile
-    base.AddNode( 0, SGGeod::fromDeg( min.getLongitudeDeg(), min.getLatitudeDeg()) );
-    base.AddNode( 0, SGGeod::fromDeg( max.getLongitudeDeg(), min.getLatitudeDeg()) );
-    base.AddNode( 0, SGGeod::fromDeg( max.getLongitudeDeg(), max.getLatitudeDeg()) );
-    base.AddNode( 0, SGGeod::fromDeg( min.getLongitudeDeg(), max.getLatitudeDeg()) );
+    // set up clipping tile : and remember to add the nodes!
+    base.AddNode( 0, b.get_corner( SG_BUCKET_SW ) );
+    base.AddNode( 0, b.get_corner( SG_BUCKET_SE ) );
+    base.AddNode( 0, b.get_corner( SG_BUCKET_NE ) );
+    base.AddNode( 0, b.get_corner( SG_BUCKET_NW ) );
 
     result = tgPolygon::Intersect( subject, base );    
     if ( result.Contours() > 0 ) {
@@ -123,12 +100,10 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 
         for ( int row = 0; row <= dy; row++ )
         {
-            // Generate a clip rectangle - add some buffer on top and bottom, so we don't clip directly on an edge when we 
-            // clip the individual buckets
-            // TODO : May no longer be necessary
+            // Generate a clip rectangle for the whole row
             SGBucket  b_clip      = sgBucketOffset( bb.getMin().getLongitudeDeg(), bb.getMin().getLatitudeDeg(), 0, row );
-            double    clip_bottom = b_clip.get_center_lat() - SG_HALF_BUCKET_SPAN; // + 0.01);
-            double    clip_top    = b_clip.get_center_lat() + SG_HALF_BUCKET_SPAN; // + 0.01);
+            double    clip_bottom = b_clip.get_center_lat() - SG_HALF_BUCKET_SPAN;
+            double    clip_top    = b_clip.get_center_lat() + SG_HALF_BUCKET_SPAN;
             tgPolygon clip_row, clipped;
 
             SG_LOG( SG_GENERAL, SG_DEBUG, "   CLIPPED row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
@@ -153,26 +128,6 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
                 clipped.SetFlag(type);
 
                 ClipRow( clipped, b_clip.get_center_lat(), type );
-
-#if 0
-                {
-                    char layer[32];
-                    char ds_name[64];
-                    sprintf(ds_name, "./stripped_%s", type.c_str() );
-
-                    sprintf(layer,   "orig_%d", clip_num );
-                    tgShapefile::FromPolygon( subject, ds_name, layer, "poly" );
-                    
-                    sprintf(layer,   "clip_row_%d", clip_num );
-                    tgShapefile::FromPolygon( clip_row, ds_name, layer, "poly" );
-
-                    sprintf(layer,   "result_%d", clip_num );
-                    tgShapefile::FromPolygon( clipped, ds_name, layer, "poly" );
-                    
-                    clip_num++;
-                }
-#endif
-
             }
         }
     }
