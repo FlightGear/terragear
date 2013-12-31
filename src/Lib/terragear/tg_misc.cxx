@@ -10,8 +10,8 @@
 
 const double isEqual2D_Epsilon = 0.000001;
 
-#define CLIPPER_FIXEDPT (10000000000000000)
-#define CLIPPER_FIXED1M (            90090)
+#define CLIPPER_FIXEDPT 			(1000000000000)
+#define CLIPPER_METERS_PER_DEGREE	(111000)
 
 SGGeod SGGeod_snap( const SGGeod& in, double grid )
 {
@@ -72,8 +72,8 @@ ClipperLib::IntPoint SGGeod_ToClipper( const SGGeod& p )
 {
     ClipperLib::cUInt x, y;
 
-    x = (ClipperLib::cUInt)( p.getLongitudeDeg() * CLIPPER_FIXEDPT );
-    y = (ClipperLib::cUInt)( p.getLatitudeDeg()  * CLIPPER_FIXEDPT );
+    x = (ClipperLib::cUInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) + 0.5);
+    y = (ClipperLib::cUInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) + 0.5);
 
     return ClipperLib::IntPoint( x, y );
 }
@@ -90,7 +90,7 @@ SGGeod SGGeod_FromClipper( const ClipperLib::IntPoint& p )
 
 double Dist_ToClipper( double dist )
 {
-    return ( dist * ( CLIPPER_FIXEDPT / CLIPPER_FIXED1M ) );
+    return ( (dist / CLIPPER_METERS_PER_DEGREE) * CLIPPER_FIXEDPT );
 }
 
 #ifdef _MSC_VER

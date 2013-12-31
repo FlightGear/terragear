@@ -19,6 +19,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
 
+#include <iostream>
+#include <fstream>
+
 #include <simgear/constants.h>
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGGuard.hxx>
@@ -356,6 +359,18 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
     }
 
     sgReadInt( fp, (int *)&preserve3d );
+}
+
+void tgPolygon::ToClipperFile( const tgPolygon& subject, const std::string& path, const std::string& filename )
+{
+    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
+    std::ofstream     dmpfile;
+    char              pathname[256];
+    
+    sprintf( pathname, "%s/%s", path.c_str(), filename.c_str() );
+    dmpfile.open (pathname);
+    dmpfile << clipper_subject;
+    dmpfile.close();
 }
 
 // Friends for serialization

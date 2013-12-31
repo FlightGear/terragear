@@ -200,6 +200,18 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     slivers.clear();
 
+    if ( debug_shapes.size() )
+    {
+        char layer[32];
+        char name[32];
+        
+        sprintf(layer, "tile_rect" );
+        sprintf(name, "shape");
+        
+        tgShapefile::FromPolygon( safety_base, ds_name, layer, name );
+        tgPolygon::ToClipperFile( safety_base, ds_name, layer );
+    }
+    
     // finally, what ever is left over goes to ocean
     remains = accum.Diff( safety_base );
     
