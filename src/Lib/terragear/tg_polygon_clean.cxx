@@ -105,14 +105,14 @@ tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
         }
     }
 
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Paths clipper_result;
     ClipperLib::Clipper c;
     c.Clear();
 
     for ( unsigned int i = 0; i < subject.Contours(); i++ ) {
         tgContour contour = subject.GetContour( i );
         if ( !contour.GetHole() ) {
-            c.AddPolygon( tgContour::ToClipper( contour ), ClipperLib::ptClip );
+            c.AddPath( tgContour::ToClipper( contour ), ClipperLib::ptClip, true );
         }
     }
     c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
@@ -139,7 +139,7 @@ tgPolygon tgPolygon::Simplify( const tgPolygon& subject )
         }
     }
 
-    ClipperLib::Polygons clipper_poly = tgPolygon::ToClipper( subject );
+    ClipperLib::Paths clipper_poly = tgPolygon::ToClipper( subject );
     SimplifyPolygons( clipper_poly );
 
     result = tgPolygon::FromClipper( clipper_poly );

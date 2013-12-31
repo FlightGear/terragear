@@ -79,7 +79,7 @@ void OffsetPointsLast( const SGGeod& prev, const SGGeod& cur, double offset_by, 
 // what abount this?
 
 // Save clipper to shapefile
-void clipper_to_shapefile( ClipperLib::Polygons polys, char* datasource );
+void clipper_to_shapefile( ClipperLib::Paths polys, char* datasource );
 
 
 // forward declaration
@@ -401,8 +401,8 @@ public:
     static tgPolygon Expand( const SGGeod& subject, double offset );
 
     // Conversions
-    static ClipperLib::Polygons ToClipper( const tgPolygon& subject );
-    static tgPolygon FromClipper( const ClipperLib::Polygons& subject );
+    static ClipperLib::Paths ToClipper( const tgPolygon& subject );
+    static tgPolygon FromClipper( const ClipperLib::Paths& subject );
 
     static void ToShapefile( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& feature );
 

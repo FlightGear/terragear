@@ -373,9 +373,9 @@ tgContour tgContour::RemoveSpikes( const tgContour& subject )
     return result;
 }
 
-ClipperLib::Polygon tgContour::ToClipper( const tgContour& subject )
+ClipperLib::Path tgContour::ToClipper( const tgContour& subject )
 {
-    ClipperLib::Polygon  contour;
+    ClipperLib::Path  contour;
 
     for ( unsigned int i=0; i<subject.GetSize(); i++)
     {
@@ -388,20 +388,20 @@ ClipperLib::Polygon tgContour::ToClipper( const tgContour& subject )
         // holes need to be orientation: false
         if ( Orientation( contour ) ) {
             //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper contour - hole contour needs to be reversed" );
-            ReversePolygon( contour );
+            ReversePath( contour );
         }
     } else {
         // boundaries need to be orientation: true
         if ( !Orientation( contour ) ) {
             //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper contour - boundary contour needs to be reversed" );
-            ReversePolygon( contour );
+            ReversePath( contour );
         }
     }
 
     return contour;
 }
 
-tgContour tgContour::FromClipper( const ClipperLib::Polygon& subject )
+tgContour tgContour::FromClipper( const ClipperLib::Path& subject )
 {
     tgContour result;
 
@@ -462,14 +462,14 @@ tgPolygon tgContour::Union( const tgContour& subject, tgPolygon& clip )
         }
     }
 
-    ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
-    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Path  clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Paths clipper_clip    = tgPolygon::ToClipper( clip );
+    ClipperLib::Paths clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
+    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
     c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
@@ -494,14 +494,14 @@ tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
         }
     }
 
-    ClipperLib::Polygon clipper_subject = tgContour::ToClipper( subject );
-    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Path clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Paths clipper_clip   = tgPolygon::ToClipper( clip );
+    ClipperLib::Paths clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
+    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
     c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
@@ -524,14 +524,14 @@ tgPolygon tgContour::Intersect( const tgContour& subject, const tgContour& clip 
         all_nodes.add( clip.GetNode(i) );
     }
 
-    ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
-    ClipperLib::Polygon  clipper_clip    = tgContour::ToClipper( clip );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Path  clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Path  clipper_clip    = tgContour::ToClipper( clip );
+    ClipperLib::Paths clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygon(clipper_clip, ClipperLib::ptClip);
+    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
+    c.AddPath(clipper_clip, ClipperLib::ptClip, true);
     c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
@@ -745,13 +745,14 @@ tgContour tgContour::Expand( const tgContour& subject, double offset )
     tgContour result;
 
     poly.AddContour( subject );
-    ClipperLib::Polygons clipper_src, clipper_dst;
+    ClipperLib::Paths clipper_src, clipper_dst;
 
     clipper_src = tgPolygon::ToClipper( poly );
 
-    // convert delta from meters to clipper units
-    OffsetPolygons( clipper_src, clipper_dst, Dist_ToClipper(offset) );
-
+    ClipperLib::ClipperOffset co(2.0, 2.0);
+    co.AddPaths(clipper_src, ClipperLib::jtSquare, ClipperLib::etClosedPolygon); 
+    co.Execute(clipper_dst, Dist_ToClipper(offset) );
+  
     poly = tgPolygon::FromClipper( clipper_dst );
 
     if ( poly.Contours() == 1 ) {

@@ -46,12 +46,13 @@ unsigned int tgPolygon::TotalNodes( void ) const
 
 tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
 {
-    ClipperLib::Polygons clipper_src, clipper_dst;
+    ClipperLib::Paths clipper_src, clipper_dst;
     clipper_src = tgPolygon::ToClipper( subject );
     tgPolygon result;
 
-    // convert delta from meters to clipper units
-    OffsetPolygons( clipper_src, clipper_dst, Dist_ToClipper(offset) );
+    ClipperLib::ClipperOffset co(2.0, 2.0);
+    co.AddPaths(clipper_src, ClipperLib::jtSquare, ClipperLib::etClosedPolygon); 
+    co.Execute(clipper_dst, Dist_ToClipper(offset) );
 
     result = tgPolygon::FromClipper( clipper_dst );
 

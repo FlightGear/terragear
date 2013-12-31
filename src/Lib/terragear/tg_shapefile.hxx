@@ -10,7 +10,7 @@ public:
     static void  FromPolygon( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description );
     static tgPolygon ToPolygon( const void* subject );
 
-    static void  FromClipper( const ClipperLib::Polygons& subject, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromClipper( const ClipperLib::Paths& subject, const std::string& datasource, const std::string& layer, const std::string& description );
 
 private:
     static bool initialized;

@@ -70,10 +70,10 @@ double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext )
 
 ClipperLib::IntPoint SGGeod_ToClipper( const SGGeod& p )
 {
-    ClipperLib::long64 x, y;
+    ClipperLib::cUInt x, y;
 
-    x = (ClipperLib::long64)( p.getLongitudeDeg() * CLIPPER_FIXEDPT );
-    y = (ClipperLib::long64)( p.getLatitudeDeg()  * CLIPPER_FIXEDPT );
+    x = (ClipperLib::cUInt)( p.getLongitudeDeg() * CLIPPER_FIXEDPT );
+    y = (ClipperLib::cUInt)( p.getLatitudeDeg()  * CLIPPER_FIXEDPT );
 
     return ClipperLib::IntPoint( x, y );
 }
@@ -98,7 +98,7 @@ double Dist_ToClipper( double dist )
 #   define LONG_LONG_MIN LLONG_MIN
 #endif
 
-tgRectangle BoundingBox_FromClipper( const ClipperLib::Polygons& subject )
+tgRectangle BoundingBox_FromClipper( const ClipperLib::Paths& subject )
 {
     ClipperLib::IntPoint min_pt, max_pt;
     SGGeod min, max;

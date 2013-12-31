@@ -27,7 +27,7 @@ double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext );
 double Dist_ToClipper( double dist );
 
 // should be in rectangle
-tgRectangle BoundingBox_FromClipper( const ClipperLib::Polygons& subject );
+tgRectangle BoundingBox_FromClipper( const ClipperLib::Paths& subject );
 
 bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SGGeod& p3, SGGeod& intersection);
 

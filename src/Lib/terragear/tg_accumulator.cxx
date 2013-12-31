@@ -21,13 +21,13 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
     unsigned int  num_hits = 0;
     tgRectangle box1 = subject.GetBoundingBox();
 
-    ClipperLib::Polygon  clipper_subject = tgContour::ToClipper( subject );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Path  clipper_subject = tgContour::ToClipper( subject );
+    ClipperLib::Paths clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
 
-    c.AddPolygon(clipper_subject, ClipperLib::ptSubject);
+    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
 
     // clip result against all polygons in the accum that intersect our bb
     for (unsigned int i=0; i < accum.size(); i++) {
@@ -35,7 +35,7 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
 
         if ( box2.intersects(box1) )
         {
-            c.AddPolygons(accum[i], ClipperLib::ptClip);
+            c.AddPaths(accum[i], ClipperLib::ptClip, true);
             num_hits++;
         }
     }
@@ -73,13 +73,13 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
     unsigned int  num_hits = 0;
     tgRectangle box1 = subject.GetBoundingBox();
 
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
+    ClipperLib::Paths clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
 
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
+    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
 
     // clip result against all polygons in the accum that intersect our bb
     for (unsigned int i=0; i < accum.size(); i++) {
@@ -87,7 +87,7 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
 
         if ( box2.intersects(box1) )
         {
-            c.AddPolygons(accum[i], ClipperLib::ptClip);
+            c.AddPaths(accum[i], ClipperLib::ptClip, true);
             num_hits++;
         }
     }
@@ -122,7 +122,7 @@ void tgAccumulator::Add( const tgContour& subject )
 
     poly.AddContour( subject );
 
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( poly );
+    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( poly );
     accum.push_back( clipper_subject );
 }
 
@@ -134,7 +134,7 @@ void tgAccumulator::Add( const tgPolygon& subject )
         }
     }
 
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
+    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
     accum.push_back( clipper_subject );
 }
 
@@ -150,12 +150,12 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
             tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
         }
     } else {
-        ClipperLib::Polygons clipper_result;
+        ClipperLib::Paths clipper_result;
         ClipperLib::Clipper  c;
         c.Clear();
 
         for ( unsigned int i=0; i<accum.size(); i++ ) {
-            c.AddPolygons(accum[i], ClipperLib::ptSubject);
+            c.AddPaths(accum[i], ClipperLib::ptSubject, true);
         }
         c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
 

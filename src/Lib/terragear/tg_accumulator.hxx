@@ -17,7 +17,7 @@ public:
     void      ToShapefiles( const std::string& path, const std::string& layer, bool individual );
 
 private:
-    typedef std::vector < ClipperLib::Polygons > clipper_polygons_list;
+    typedef std::vector < ClipperLib::Paths > clipper_polygons_list;
 
     clipper_polygons_list   accum;
     UniqueSGGeodSet         nodes;

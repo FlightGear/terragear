@@ -112,8 +112,8 @@ public:
     static bool      FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end );
 
     // conversions
-    static ClipperLib::Polygon ToClipper( const tgContour& subject );
-    static tgContour FromClipper( const ClipperLib::Polygon& subject );
+    static ClipperLib::Path ToClipper( const tgContour& subject );
+    static tgContour FromClipper( const ClipperLib::Path& subject );
 
     static tgContour Expand( const tgContour& subject, double offset );
     static tgpolygon_list ExpandToPolygons( const tgContour& subject, double width );

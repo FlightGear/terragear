@@ -63,7 +63,7 @@ void TGConstruct::get_debug( void )
 
                 while (ss >> i)
                 {
-                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug file " << i);
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug area " << i);
 
                     debug_areas.push_back(i);
 
@@ -90,7 +90,7 @@ void TGConstruct::get_debug( void )
 
                 while (ss >> i)
                 {
-                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug file " << i);
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug shape " << i);
 
                     debug_shapes.push_back(i);
 

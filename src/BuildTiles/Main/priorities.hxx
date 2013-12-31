@@ -83,7 +83,8 @@ public:
     }
 
     bool is_landmass_area( unsigned int p ) const {
-        if ( area_defs[p].GetCategory() == "landmass" ) {
+        if (( area_defs[p].GetCategory() == "landmass" ) || 
+	    ( area_defs[p].GetCategory() == "other" )) {
             return true;
         } else {
             return false;

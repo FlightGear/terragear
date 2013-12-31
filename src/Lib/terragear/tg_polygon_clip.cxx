@@ -30,9 +30,9 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
         }
     }
 
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
-    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
+    ClipperLib::Paths clipper_clip    = tgPolygon::ToClipper( clip );
+    ClipperLib::Paths clipper_result;
 
     if ( clipper_dump ) {
         dmpfile.open ("subject.txt");
@@ -46,8 +46,8 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
+    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
     c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     if ( clipper_dump ) {
@@ -67,7 +67,7 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 
 tgPolygon tgPolygon::Union( const tgpolygon_list& polys )
 {
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Paths clipper_result;
     ClipperLib::Clipper c;
     UniqueSGGeodSet all_nodes;
     tgPolygon  result;
@@ -83,8 +83,8 @@ tgPolygon tgPolygon::Union( const tgpolygon_list& polys )
 
     c.Clear();
     for (unsigned int i=0; i<polys.size(); i++) {
-        ClipperLib::Polygons clipper_clip = tgPolygon::ToClipper( polys[i] );
-        c.AddPolygons(clipper_clip, ClipperLib::ptSubject);
+        ClipperLib::Paths clipper_clip = tgPolygon::ToClipper( polys[i] );
+        c.AddPaths(clipper_clip, ClipperLib::ptSubject, true);
     }
     c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
 
@@ -112,14 +112,14 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
         }
     }
 
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
-    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
+    ClipperLib::Paths clipper_clip    = tgPolygon::ToClipper( clip );
+    ClipperLib::Paths clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
+    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
     c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
@@ -149,14 +149,14 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
         }
     }
 
-    ClipperLib::Polygons clipper_subject = tgPolygon::ToClipper( subject );
-    ClipperLib::Polygons clipper_clip    = tgPolygon::ToClipper( clip );
-    ClipperLib::Polygons clipper_result;
+    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
+    ClipperLib::Paths clipper_clip    = tgPolygon::ToClipper( clip );
+    ClipperLib::Paths clipper_result;
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPolygons(clipper_subject, ClipperLib::ptSubject);
-    c.AddPolygons(clipper_clip, ClipperLib::ptClip);
+    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
+    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
     c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
@@ -168,9 +168,9 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
     return result;
 }
 
-ClipperLib::Polygons tgPolygon::ToClipper( const tgPolygon& subject )
+ClipperLib::Paths tgPolygon::ToClipper( const tgPolygon& subject )
 {
-    ClipperLib::Polygons result;
+    ClipperLib::Paths result;
 
     for ( unsigned int i=0; i<subject.Contours(); i++ ) {
         result.push_back( tgContour::ToClipper( subject.GetContour(i) ) );
@@ -179,7 +179,7 @@ ClipperLib::Polygons tgPolygon::ToClipper( const tgPolygon& subject )
     return result;
 }
 
-tgPolygon tgPolygon::FromClipper( const ClipperLib::Polygons& subject )
+tgPolygon tgPolygon::FromClipper( const ClipperLib::Paths& subject )
 {
     tgPolygon result;
 

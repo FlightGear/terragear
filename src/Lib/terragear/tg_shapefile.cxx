@@ -73,7 +73,7 @@ void* tgShapefile::CloseDatasource( void* ds_id )
     return (void *)-1;
 }
 
-void tgShapefile::FromClipper( const ClipperLib::Polygons& subject, const std::string& datasource, const std::string& layer, const std::string& description )
+void tgShapefile::FromClipper( const ClipperLib::Paths& subject, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
@@ -85,7 +85,7 @@ void tgShapefile::FromClipper( const ClipperLib::Polygons& subject, const std::s
     SG_LOG(SG_GENERAL, SG_DEBUG, "subject has " << subject.size() << " contours ");
 
     for ( unsigned int i = 0; i < subject.size(); i++ ) {
-        ClipperLib::Polygon const& contour = subject[i];
+        ClipperLib::Path const& contour = subject[i];
 
         if (contour.size() < 3) {
             SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");

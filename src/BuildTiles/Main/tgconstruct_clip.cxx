@@ -134,7 +134,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 tgShapefile::FromPolygon( tmp, ds_name, layer, name );
 
                 sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
-                accum.ToShapefiles( ds_name, layer, true );
+                accum.ToShapefiles( ds_name, layer, false );
             }
 
             clipped = accum.Diff( tmp );
@@ -172,7 +172,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 char layer[32];
                 sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
 
-                accum.ToShapefiles( ds_name, layer, true );
+                accum.ToShapefiles( ds_name, layer, false );
             }
 
             accum_idx++;
@@ -202,9 +202,33 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // finally, what ever is left over goes to ocean
     remains = accum.Diff( safety_base );
+    
+    if ( debug_shapes.size() )
+    {
+	    char layer[32];
+	    char name[32];
+
+	    sprintf(layer, "remains_sb" );
+	    sprintf(name, "shape");
+
+	    tgShapefile::FromPolygon( remains, ds_name, layer, name );      
+    }
+
+
     remains = tgPolygon::RemoveDups( remains );
     remains = tgPolygon::RemoveCycles( remains );
 
+    if ( debug_shapes.size() )
+    {
+	    char layer[32];
+	    char name[32];
+
+	    sprintf(layer, "remains_postclean" );
+	    sprintf(name, "shape");
+
+	    tgShapefile::FromPolygon( remains, ds_name, layer, name );      
+    }
+    
     if ( remains.Contours() > 0 ) {
         // cout << "remains contours = " << remains.contours() << endl;
         // move slivers from remains polygon to slivers polygon
