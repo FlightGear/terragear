@@ -11,6 +11,7 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_polygon.hxx"
+#include "tg_misc.hxx"
 
 /* determining if a face is within the reulting poly */
 struct FaceInfo2
@@ -142,7 +143,10 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
                 SGGeod p1 = SGGeod::fromDeg( to_double(tri.vertex(1).x()), to_double(tri.vertex(1).y()) );
                 SGGeod p2 = SGGeod::fromDeg( to_double(tri.vertex(2).x()), to_double(tri.vertex(2).y()) );
 
-                AddTriangle( p0, p1, p2 );
+                /* Check for Zero Area before inserting */
+                if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p1, p2 ) ) {
+                    AddTriangle( p0, p1, p2 );
+                }
 
                 ++count;
             }
