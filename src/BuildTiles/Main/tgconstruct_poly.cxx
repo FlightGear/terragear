@@ -120,7 +120,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
         } // of directory file children
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, " Total polys read in this tile: " <<  total_polys_read );
+    SG_LOG(SG_GENERAL, SG_DEBUG, " Total polys read in this tile: " <<  total_polys_read );
 
     return total_polys_read;
 }

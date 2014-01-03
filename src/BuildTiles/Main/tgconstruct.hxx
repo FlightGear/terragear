@@ -60,7 +60,7 @@ class TGConstruct : public SGThread
 {
 public:
     // Constructor
-    TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q );
+    TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q, SGMutex* l );
 
     // Destructor
     ~TGConstruct();
@@ -223,6 +223,9 @@ private:
 
     // Neighbor Faces
     neighbor_face_list  neighbor_faces;
+    
+    // file lock
+    SGMutex*    lock;
 };
 
 #endif // _CONSTRUCT_HXX

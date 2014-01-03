@@ -49,6 +49,8 @@ void TGConstruct::AddCustomObjects( void ) {
     string dest_ind = dest_i.str_native();
 
     FILE *fp;
+    
+    lock->lock();
     if ( (fp = fopen( dest_ind.c_str(), "w" )) == NULL ) {
         SG_LOG( SG_GENERAL, SG_ALERT, "ERROR: opening " << dest_ind << " for writing!" );
         exit(-1);
@@ -76,15 +78,15 @@ void TGConstruct::AddCustomObjects( void ) {
             //No custom objects
         } else {
             while ( ! in.eof() ) {
-                SG_LOG( SG_GENERAL, SG_INFO, "Collecting custom objects from " << index_file );
+                SG_LOG( SG_GENERAL, SG_DEBUG, "Collecting custom objects from " << index_file );
                 in.getline(line, 2048);
-                SG_LOG( SG_GENERAL, SG_INFO, "line = " << line );
+                SG_LOG( SG_GENERAL, SG_DEBUG, "line = " << line );
 
                 int result = sscanf( line, "%s %s", token, name );
-                SG_LOG( SG_GENERAL, SG_INFO, "scanf scanned " << result << " tokens" );
+                SG_LOG( SG_GENERAL, SG_DEBUG, "scanf scanned " << result << " tokens" );
 
                 if ( result > 0 ) {
-                    SG_LOG( SG_GENERAL, SG_INFO, "token = " << token << " name = " << name );
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "token = " << token << " name = " << name );
 
                     if ( strcmp( token, "OBJECT" ) == 0 ) {
                         SGPath srcbase(base);
@@ -96,7 +98,7 @@ void TGConstruct::AddCustomObjects( void ) {
 #else
                         string command = "cp " + basecom + " " + dest_dir;
 #endif
-                        SG_LOG( SG_GENERAL, SG_INFO, "running " << command );
+                        SG_LOG( SG_GENERAL, SG_DEBUG, "running " << command );
                         system( command.c_str() );
 
                         fprintf(fp, "OBJECT %s\n", name);
@@ -109,6 +111,8 @@ void TGConstruct::AddCustomObjects( void ) {
     }
 
     fclose(fp);
+    
+    lock->unlock();
 }
 
 void TGConstruct::WriteBtgFile( void )
@@ -222,7 +226,11 @@ void TGConstruct::WriteBtgFile( void )
     obj.set_fan_materials( fan_materials );
 
     bool result;
+    
+    lock->lock();
     result = obj.write_bin( base, binname, bucket );
+    lock->unlock();
+    
     if ( !result )
     {
         throw sg_exception("error writing file. :-(");

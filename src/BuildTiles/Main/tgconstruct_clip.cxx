@@ -267,7 +267,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             remains.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
             remains.SetId(9999);
 
-            SG_LOG( SG_CLIPPER, SG_INFO, "Adding remains to area " << area_defs.get_sliver_area_priority() );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Adding remains to area " << area_defs.get_sliver_area_priority() );
             polys_clipped.add_poly( area_defs.get_sliver_area_priority(), remains );
         }
     }

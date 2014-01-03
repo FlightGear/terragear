@@ -191,6 +191,7 @@ int main(int argc, char **argv) {
     }
 
     std::vector<TGConstruct *> constructs;
+    SGMutex filelock;
 
 	/* fill the workqueue */
 	for (unsigned int i=0; i<bucketList.size(); i++) {
@@ -199,7 +200,7 @@ int main(int argc, char **argv) {
 
     // now create the worker threads for stage 1
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( areas, 1, wq );
+        TGConstruct* construct = new TGConstruct( areas, 1, wq, &filelock );
         //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
@@ -232,7 +233,7 @@ int main(int argc, char **argv) {
 	}
 
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( areas, 2, wq );
+        TGConstruct* construct = new TGConstruct( areas, 2, wq, &filelock );
         //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
@@ -264,7 +265,7 @@ int main(int argc, char **argv) {
 	}
 
     for (int i=0; i<num_threads; i++) {
-        TGConstruct* construct = new TGConstruct( areas, 3, wq );
+        TGConstruct* construct = new TGConstruct( areas, 3, wq, &filelock );
         //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );

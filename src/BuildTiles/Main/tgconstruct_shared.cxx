@@ -47,6 +47,9 @@ void TGConstruct::SaveSharedEdgeData( int stage )
 
             filepath = share_base + "/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str() + "_edges";
             SGPath file(filepath);
+
+            lock->lock();
+            
             file.create_dir( 0755 );
 
             gzFile fp;
@@ -86,6 +89,8 @@ void TGConstruct::SaveSharedEdgeData( int stage )
             }
 
             gzclose(fp);
+            
+            lock->unlock();
         }
         break;
 
@@ -102,23 +107,28 @@ void TGConstruct::SaveSharedEdgeData( int stage )
             // are updated, we'll need to traverse all of these point lists, and update
             // any border nodes elevation as well
             string dir;
-            string file;
+            string file_north, file_south, file_east, file_west;
+            gzFile fp;
             std::vector<SGGeod> north, south, east, west;
             int nCount;
 
             nodes.get_geod_edge( bucket, north, south, east, west );
 
             dir  = share_base + "/stage2/" + bucket.gen_base_path();
-
+            file_north = dir + "/" + bucket.gen_index_str() + "_north_edge";
+            file_south = dir + "/" + bucket.gen_index_str() + "_south_edge";
+            file_east  = dir + "/" + bucket.gen_index_str() + "_east_edge";
+            file_west  = dir + "/" + bucket.gen_index_str() + "_west_edge";
+            
             SGPath sgp( dir );
             sgp.append( "dummy" );
+            
+            lock->lock();
             sgp.create_dir( 0755 );
 
             // north edge
-            file = dir + "/" + bucket.gen_index_str() + "_north_edge";
-            gzFile fp;
-            if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+            if ( (fp = gzopen( file_north.c_str(), "wb9" )) == NULL ) {
+                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_north.c_str() << " for writing!" );
                 return;
             }
             sgClearWriteError();
@@ -133,9 +143,8 @@ void TGConstruct::SaveSharedEdgeData( int stage )
             gzclose(fp);
 
             // south edge
-            file = dir + "/" + bucket.gen_index_str() + "_south_edge";
-            if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+            if ( (fp = gzopen( file_south.c_str(), "wb9" )) == NULL ) {
+                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_south.c_str() << " for writing!" );
                 return;
             }
             sgClearWriteError();
@@ -149,9 +158,8 @@ void TGConstruct::SaveSharedEdgeData( int stage )
             gzclose(fp);
 
             // east edge
-            file = dir + "/" + bucket.gen_index_str() + "_east_edge";
-            if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+            if ( (fp = gzopen( file_east.c_str(), "wb9" )) == NULL ) {
+                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_east.c_str() << " for writing!" );
                 return;
             }
             sgClearWriteError();
@@ -165,9 +173,8 @@ void TGConstruct::SaveSharedEdgeData( int stage )
             gzclose(fp);
 
             // west egde
-            file = dir + "/" + bucket.gen_index_str() + "_west_edge";
-            if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+            if ( (fp = gzopen( file_west.c_str(), "wb9" )) == NULL ) {
+                SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_west.c_str() << " for writing!" );
                 return;
             }
             sgClearWriteError();
@@ -179,6 +186,8 @@ void TGConstruct::SaveSharedEdgeData( int stage )
                 WriteNeighborFaces( fp, west[i] );
             }
             gzclose(fp);
+            
+            lock->unlock();
         }
         break;
     }
@@ -392,38 +401,41 @@ void TGConstruct::ReadNeighborFaces( gzFile& fp )
 void TGConstruct::SaveToIntermediateFiles( int stage )
 {
     string dir;
-    string file;
+    string file_clipped;
+    string file_nodes;
     gzFile fp;
 
     switch( stage ) {
         case 1:     // Save the clipped polys and node list
         {
             /* Only create the file this isn't an ocean tile */
-            if ( !IsOceanTile() ) {
+            if ( !IsOceanTile() ) {                
                 dir  = share_base + "/stage1/" + bucket.gen_base_path();
-
                 SGPath sgp( dir );
                 sgp.append( "dummy" );
+                file_clipped = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
+                file_nodes = dir + "/" + bucket.gen_index_str() + "_nodes";
+                
+                lock->lock();                
+                
                 sgp.create_dir( 0755 );
-
-                file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
-                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                if ( (fp = gzopen( file_clipped.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_clipped.c_str() << " for writing!" );
                     return;
                 }
                 sgClearWriteError();
                 polys_clipped.SaveToGzFile( fp );
                 gzclose( fp );
 
-                file = dir + "/" + bucket.gen_index_str() + "_nodes";
-
-                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                if ( (fp = gzopen( file_nodes.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_nodes.c_str() << " for writing!" );
                     return;
                 }
                 sgClearWriteError();
                 nodes.SaveToGzFile( fp );
                 gzclose( fp );
+                
+                lock->unlock();
             }
 
             break;
@@ -436,25 +448,29 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
 
                 SGPath sgp( dir );
                 sgp.append( "dummy" );
+                file_clipped = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
+                file_nodes = dir + "/" + bucket.gen_index_str() + "_nodes";
+                
+                lock->lock();
                 sgp.create_dir( 0755 );
 
-                file = dir + "/" + bucket.gen_index_str() + "_clipped_polys";
-                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                if ( (fp = gzopen( file_clipped.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_clipped.c_str() << " for writing!" );
                     return;
                 }
                 sgClearWriteError();
                 polys_clipped.SaveToGzFile( fp );
                 gzclose( fp );
 
-                file = dir + "/" + bucket.gen_index_str() + "_nodes";
-                if ( (fp = gzopen( file.c_str(), "wb9" )) == NULL ) {
-                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file.c_str() << " for writing!" );
+                if ( (fp = gzopen( file_nodes.c_str(), "wb9" )) == NULL ) {
+                    SG_LOG( SG_GENERAL, SG_INFO,"ERROR: opening " << file_nodes.c_str() << " for writing!" );
                     return;
                 }
                 sgClearWriteError();
                 nodes.SaveToGzFile( fp );
                 gzclose( fp );
+                
+                lock->unlock();
             }
             break;
         }

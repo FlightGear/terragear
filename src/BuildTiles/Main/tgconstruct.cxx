@@ -33,7 +33,7 @@
 const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
 
 // Constructor
-TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q) :
+TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q, SGMutex* l) :
         area_defs(areas),
         workQueue(q),
         stage(s),
@@ -44,6 +44,7 @@ TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLock
 {
     total_tiles = q.size();
     num_areas = areas.size();
+    lock = l;
 }
 
 
@@ -219,7 +220,7 @@ void TGConstruct::run()
 
                     // STEP 19)
                     // Write Custom objects to .stg file
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Custome Objects");
+                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Custom Objects");
                     AddCustomObjects();
                 }
                 break;
