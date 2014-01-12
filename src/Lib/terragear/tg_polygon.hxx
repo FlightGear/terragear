@@ -405,8 +405,6 @@ public:
     static tgPolygon FromClipper( const ClipperLib::Paths& subject );
     static void ToClipperFile( const tgPolygon& subject, const std::string& path, const std::string& filename );
     
-    static void ToShapefile( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& feature );
-
     // T-Junctions and segment search
     static tgPolygon AddColinearNodes( const tgPolygon& subject, UniqueSGGeodSet& nodes );
     static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<SGGeod>& nodes );

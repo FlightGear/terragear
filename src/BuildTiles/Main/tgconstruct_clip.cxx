@@ -41,8 +41,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgcontour_list slivers;
     SGGeod p;
     bool debug_area, debug_shape;
-    static int accum_idx = 0;
     tgAccumulator accum;
+    unsigned int accum_idx = 0;
 
     // set up clipping tile : and remember to add the nodes!
     p = bucket.get_corner( SG_BUCKET_SW );
@@ -129,9 +129,11 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 sprintf(layer, "pre_clip_%d", polys_in.get_poly( i, j ).GetId() );
                 sprintf(name, "shape %d,%d", i,j);
                 tgShapefile::FromPolygon( tmp, ds_name, layer, name );
-
-                sprintf(layer, "pre_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
+                tgPolygon::ToClipperFile( tmp, ds_name, layer );
+                
+                sprintf(layer, "pre_clip_accum_%d", polys_in.get_poly( i, j ).GetId() );
                 accum.ToShapefiles( ds_name, layer, false );
+                //accum.ToClipperFile( ds_name, layer, false );
             }
 
             clipped = accum.Diff( tmp );
@@ -163,16 +165,21 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                     }
                 }
             }
-
+            if ( debug_area || debug_shape ) {
+                char layer[32];
+                sprintf(layer, "pre2_clip_accum_%d", polys_in.get_poly( i, j ).GetId() );
+                
+                accum.ToShapefiles( ds_name, layer, false );
+                accum.ToClipperfiles( ds_name, layer, false );
+            }
             accum.Add( tmp );
             if ( debug_area || debug_shape ) {
                 char layer[32];
-                sprintf(layer, "post_clip_accum_%d_%d", accum_idx, polys_in.get_poly( i, j ).GetId() );
-
+                sprintf(layer, "post_clip_accum_%d_%d", accum_idx++, polys_in.get_poly( i, j ).GetId() );
+                
                 accum.ToShapefiles( ds_name, layer, false );
+                accum.ToClipperfiles( ds_name, layer, false );
             }
-
-            accum_idx++;
         }
     }
 
@@ -197,8 +204,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     slivers.clear();
 
-    if ( debug_shapes.size() )
-    {
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
         char layer[32];
         char name[32];
         
@@ -206,15 +212,14 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         sprintf(name, "shape");
         
         tgShapefile::FromPolygon( safety_base, ds_name, layer, name );
-        tgPolygon::ToClipperFile( safety_base, ds_name, layer );
+        //tgPolygon::ToClipperFile( safety_base, ds_name, layer );
     }
     
     // finally, what ever is left over goes to ocean
     remains = accum.Diff( safety_base );
     
-    if ( debug_shapes.size() )
-    {
-	    char layer[32];
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
+        char layer[32];
 	    char name[32];
 
 	    sprintf(layer, "remains_sb" );
@@ -227,9 +232,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     remains = tgPolygon::RemoveDups( remains );
     remains = tgPolygon::RemoveCycles( remains );
 
-    if ( debug_shapes.size() )
-    {
-	    char layer[32];
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
+        char layer[32];
 	    char name[32];
 
 	    sprintf(layer, "remains_postclean" );

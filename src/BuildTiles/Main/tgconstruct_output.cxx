@@ -237,7 +237,10 @@ void TGConstruct::WriteBtgFile( void )
     }
     if (debug_all || debug_shapes.size())
     {
+        lock->lock();
         result = obj.write_ascii( base, txtname, bucket );
+        lock->unlock();
+        
         if ( !result )
         {
             throw sg_exception("error writing file. :-(");

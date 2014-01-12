@@ -1,3 +1,7 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_accumulator.hxx"
@@ -128,14 +132,19 @@ void tgAccumulator::Add( const tgContour& subject )
 
 void tgAccumulator::Add( const tgPolygon& subject )
 {
-    for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
-        for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
-            nodes.add( subject.GetNode(i, j) );
+    if ( subject.Contours() ) {
+        ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
+        
+        for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
+            for ( unsigned int j = 0; j < subject.ContourSize( i ); ++j ) {
+                nodes.add( subject.GetNode(i, j) );
+            }
         }
-    }
 
-    ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
-    accum.push_back( clipper_subject );
+        accum.push_back( clipper_subject );
+    } else {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::Add() - Adding poly with " << subject.Contours() << " contours " );
+    }
 }
 
 void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
@@ -143,22 +152,63 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
     char shapefile[32];
     char layer[32];
 
-    if ( individual ) {
-        for (unsigned int i=0; i < accum.size(); i++) {
-            sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
-            sprintf( shapefile, "accum_%d", i );
-            tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
-        }
-    } else {
-        ClipperLib::Paths clipper_result;
-        ClipperLib::Clipper  c;
-        c.Clear();
+    if ( accum.size() ) {
+        if ( individual ) {
+            for (unsigned int i=0; i < accum.size(); i++) {
+                sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
+                sprintf( shapefile, "accum_%d", i );
+                tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
+            }
+        } else {
+            ClipperLib::Paths clipper_result;
+            ClipperLib::Clipper  c;
+            c.Clear();
 
-        for ( unsigned int i=0; i<accum.size(); i++ ) {
-            c.AddPaths(accum[i], ClipperLib::ptSubject, true);
+            for ( unsigned int i=0; i<accum.size(); i++ ) {
+                c.AddPaths(accum[i], ClipperLib::ptSubject, true);
+            }
+        
+            if ( c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+                tgShapefile::FromClipper( clipper_result, path, layer_prefix, "accum" );
+            } else {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Clipper Failure in tgAccumulator::ToShapefiles()" );
+            }
         }
-        c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+    }
+}
 
-        tgShapefile::FromClipper( clipper_result, path, layer_prefix, "accum" );
+void tgAccumulator::ToClipperfiles( const std::string& path, const std::string& layer_prefix, bool individual )
+{
+    std::ofstream file;
+    char filename[256];
+    
+    if ( accum.size() ) {
+        if ( individual ) {
+            for (unsigned int i=0; i < accum.size(); i++) {
+                sprintf( filename, "%s/%s_%d", path.c_str(), layer_prefix.c_str(), i );
+                                
+                file.open (filename);
+                file << accum[i];
+                file.close();
+            }
+        } else {
+            ClipperLib::Paths clipper_result;
+            ClipperLib::Clipper  c;
+            c.Clear();
+            
+            for ( unsigned int i=0; i<accum.size(); i++ ) {
+                c.AddPaths(accum[i], ClipperLib::ptSubject, true);
+            }
+            
+            if ( c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+                sprintf( filename, "%s/%s", path.c_str(), layer_prefix.c_str() );
+                
+                file.open (filename);
+                file << clipper_result;
+                file.close();
+            } else {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Clipper Failure in tgAccumulator::ToClipperFiles()" );
+            }
+        }
     }
 }
