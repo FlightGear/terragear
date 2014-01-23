@@ -187,8 +187,8 @@ TGDem::read_a_record() {
 
     // Map projection parameters (ignored)
     for ( i = 0; i < 15; i++ ) {
-	dnum = next_exp();
-	// printf("%d: %f\n",i,dnum);
+        dnum = next_exp();
+        SG_LOG(SG_GENERAL, SG_DEBUG, i << ": "  << dnum);
     }
 
     // Units code, 3 represents arc-seconds as the unit of measure for

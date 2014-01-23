@@ -154,7 +154,12 @@ long int tgChopper::GenerateIndex( std::string path )
                 exit( 0 );
             }
         } else {
-            fread( (void*)&index, sizeof(long int), 1, fp );
+            if ( fread( (void*)&index, sizeof(long int), 1, fp ) != 1 )
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Error reading Index file " << index_file << " abort");
+                boost::interprocess::named_mutex::remove("tgChopper_index2");
+                exit(0);
+            }
         }
 
         index++;

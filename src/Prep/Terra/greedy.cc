@@ -74,8 +74,8 @@ inline int goal_not_met()
 {
     return
         ( mesh->maxError() > error_threshold &&
-          mesh->pointCount() < point_limit ) ||
-        mesh->pointCount() < min_points;
+          (int)mesh->pointCount() < point_limit ) ||
+          (int)mesh->pointCount() < min_points;
         
 }
 

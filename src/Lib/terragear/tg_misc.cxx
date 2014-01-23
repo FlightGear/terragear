@@ -10,13 +10,8 @@
 
 const double isEqual2D_Epsilon = 0.000001;
 
-#if 0
 #define CLIPPER_FIXEDPT           (1000000000000)
 #define CLIPPER_METERS_PER_DEGREE (111000)
-#else
-#define CLIPPER_FIXEDPT           (10000000000000000)
-#define CLIPPER_METERS_PER_DEGREE (1110000000)
-#endif
 
 SGGeod SGGeod_snap( const SGGeod& in, double grid )
 {
@@ -369,16 +364,17 @@ bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SG
     Segment_2 seg2( a2, b2 );
 
     CGAL::Object result = CGAL::intersection(seg1, seg2);
-    if (const CGAL::Point_2<Kernel> *ipoint = CGAL::object_cast<CGAL::Point_2<Kernel> >(&result)) {
+    const CGAL::Point_2<Kernel> *ipoint = CGAL::object_cast<CGAL::Point_2<Kernel> >(&result);
+    const CGAL::Segment_2<Kernel> *iseg = CGAL::object_cast<CGAL::Segment_2<Kernel> >(&result);
+    
+    if (ipoint) {
         // handle the point intersection case with *ipoint.
         return true;
+    } else if (iseg ) {
+        // handle the segment intersection case with *iseg.
+        return true;
     } else {
-        if (const CGAL::Segment_2<Kernel> *iseg = CGAL::object_cast<CGAL::Segment_2<Kernel> >(&result)) {
-            // handle the segment intersection case with *iseg.
-            return false;
-        } else {
-            // handle the no intersection case.
-            return false;
-        }
+        // handle the no intersection case.
+        return false;
     }
 }

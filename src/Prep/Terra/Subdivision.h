@@ -21,6 +21,11 @@ public:
 	token = t;
 	reshape(e);
     }
+    
+    virtual ~Triangle()
+    {
+        
+    }
 
     Triangle *linkTo(Triangle *t) { next_face = t; return this; }
     Triangle *getLink() { return next_face; }

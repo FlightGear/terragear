@@ -148,15 +148,18 @@ bool TGSrtmTiff::open( const SGPath &f ) {
         
         cout << "Extracting " << file_name.str() << " to " << tmp_dir.path().str() << endl;
         string command = "unzip -d \"" + tmp_dir.path().str() + "\" " + file_name.base();
-        system( command.c_str() );
-
-        simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
-        BOOST_FOREACH(const SGPath& file, files) {
-            string ext = file.lower_extension();
-            if ( (ext == "tif") || (ext == "tiff") ) {
-                file_name = file;
-                break;
+        if ( system( command.c_str() ) != -1 ) {
+            simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
+            BOOST_FOREACH(const SGPath& file, files) {
+                string ext = file.lower_extension();
+                if ( (ext == "tif") || (ext == "tiff") ) {
+                    file_name = file;
+                    break;
+                }
             }
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to issue system call " << command );
+            exit(1);            
         }
         
         remove_tmp_file = true;

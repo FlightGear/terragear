@@ -267,7 +267,9 @@ void log_pending_tile( const string& path, long int tile ) {
     string pending_file = path + "/" + b.gen_index_str() + ".pending";
 
     string command = "touch " + pending_file;
-    system( command.c_str() );
+    if ( system( command.c_str() ) == -1 ) {
+        cout << "Could not issue command " << command << endl;
+    }    
 }
 
 
@@ -288,7 +290,10 @@ void log_failed_tile( const string& path, long int tile ) {
     string failed_file = path + "/" + b.gen_index_str() + ".failed";
 
     string command = "touch " + failed_file;
-    system( command.c_str() );
+    
+    if ( system( command.c_str() ) == -1 ) {
+        cout << "Could not issue command " << command << endl;
+    }
 
     cout << "logged bad tile = " << tile << endl;
 }

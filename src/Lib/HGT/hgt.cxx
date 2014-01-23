@@ -40,11 +40,13 @@
 #  include <direct.h>
 #endif
 
+#include <boost/foreach.hpp>
+
 #include <simgear/constants.h>
 #include <simgear/io/lowlevel.hxx>
 #include <simgear/misc/sg_dir.hxx>
+#include <simgear/debug/logstream.hxx>
 
-#include <boost/foreach.hpp>
 
 #include "hgt.hxx"
 
@@ -92,19 +94,23 @@ TGHgt::open ( const SGPath &f ) {
             
             cout << "Extracting " << file_name.str() << " to " << tmp_dir.path().str() << endl;
             string command = "unzip -d \"" + tmp_dir.path().str() + "\" " + file_name.base();
-            system( command.c_str() );
-
-            simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
-            BOOST_FOREACH(const SGPath& file, files) {
-                string ext = file.lower_extension();
-                if ( ext == "hgt" ) {
-                    file_name = file;
-                    break;
+            if ( system( command.c_str() ) != -1 )
+            {
+                simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
+                BOOST_FOREACH(const SGPath& file, files) {
+                    string ext = file.lower_extension();
+                    if ( ext == "hgt" ) {
+                        file_name = file;
+                        break;
+                    }
                 }
-            }
             
-            remove_tmp_file = true;
-            cout << "Proceeding with " << file_name.str() << endl;
+                remove_tmp_file = true;
+                cout << "Proceeding with " << file_name.str() << endl;
+            } else {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to issue system call " << command );
+                exit(1);
+            }
         }
 
         cout << "Loading HGT data file: " << file_name.str() << endl;

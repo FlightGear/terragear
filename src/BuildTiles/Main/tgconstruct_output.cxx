@@ -99,9 +99,12 @@ void TGConstruct::AddCustomObjects( void ) {
                         string command = "cp " + basecom + " " + dest_dir;
 #endif
                         SG_LOG( SG_GENERAL, SG_DEBUG, "running " << command );
-                        system( command.c_str() );
-
-                        fprintf(fp, "OBJECT %s\n", name);
+                        
+                        if ( system( command.c_str() ) != -1 ) {
+                            fprintf(fp, "OBJECT %s\n", name);
+                        } else {
+                            SG_LOG( SG_GENERAL, SG_ALERT, "Could not issue command " << command ); 
+                        }
                     } else {
                         fprintf(fp, "%s\n", line);
                     }

@@ -91,7 +91,8 @@ public:
                 }
                 depth=32;
         }
-
+        virtual ~ArrayMap() {}
+        
         virtual Terra::real eval(int i, int j) {
                 return (Terra::real)array.get_array_elev(i,j);
         }
