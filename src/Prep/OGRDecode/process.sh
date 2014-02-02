@@ -1,6 +1,5 @@
 #!/bin/bash
 
-ROAD_TYPE="GPL"
 WORKBASE=${HOME}/workdirs
 
 # Base Package
@@ -9,124 +8,158 @@ WORKBASE=${HOME}/workdirs
 SPAT=""
 
 DATASOURCE="PG:dbname=${PGDATABASE} host=${PGHOST} user=${PGUSER}"
-OGRDECODE="${HOME}/terragear/bin/ogr-decode --continue-on-errors --max-segment 400 ${SPAT}"
+COMMAND="${HOME}/terragear/bin/ogr-decode --continue-on-errors --max-segment 400 ${SPAT}"
 
 ProcessLandmass () {
     # World land mass
-    ${OGRDECODE} --area-type Default ${WORKBASE}/Shape-LandMass "${DATASOURCE}" v0_landmass
-    
-    # Void-filling
-#    ${OGRDECODE} --area-type Default ${WORKBASE}/Shape-LandMass "${DATASOURCE}" cs_default
+    ${COMMAND} --area-type Default ${WORKBASE}/Shape-LandMass "${DATASOURCE}" cs_landmass
 }  # ProcessLandmass
 
-ProcessPolygon () {
+ProcessWaterbody () {
     # Inland still water: lakes, intermittent lakes, and flood land
-    ${OGRDECODE} --area-type Lake ${WORKBASE}/Shape-Lakes "${DATASOURCE}" cs_lake
-    ${OGRDECODE} --area-type IntermittentLake ${WORKBASE}/Shape-Lakes "${DATASOURCE}" cs_intermittentlake
-    ${OGRDECODE} --area-type FloodLand ${WORKBASE}/Shape-Lakes "${DATASOURCE}" cs_floodland
-    ${OGRDECODE} --area-type Lagoon ${WORKBASE}/Shape-Lakes "${DATASOURCE}" cs_lagoon
-    ${OGRDECODE} --area-type Estuary ${WORKBASE}/Shape-Lakes "${DATASOURCE}" cs_estuary
-    ${OGRDECODE} --area-type Watercourse ${WORKBASE}/Shape-Rivers "${DATASOURCE}" cs_watercourse
+    ${COMMAND} --area-type Lake ${WORKBASE}/Shape-Waterbody "${DATASOURCE}" cs_lake
+    ${COMMAND} --area-type IntermittentLake ${WORKBASE}/Shape-Waterbody "${DATASOURCE}" cs_intermittentlake
+    ${COMMAND} --area-type FloodLand ${WORKBASE}/Shape-Waterbody "${DATASOURCE}" cs_floodland
+    ${COMMAND} --area-type Lagoon ${WORKBASE}/Shape-Waterbody "${DATASOURCE}" cs_lagoon
+    ${COMMAND} --area-type Estuary ${WORKBASE}/Shape-Waterbody "${DATASOURCE}" cs_estuary
+    ${COMMAND} --area-type Watercourse ${WORKBASE}/Shape-Watercourse "${DATASOURCE}" cs_watercourse
+}  # ProcessWaterbody
 
+ProcessCity () {
     # Population areas: cities and towns
-    ${OGRDECODE} --area-type SubUrban ${WORKBASE}/Shape-Cities "${DATASOURCE}" cs_suburban
-    ${OGRDECODE} --area-type Urban ${WORKBASE}/Shape-Cities "${DATASOURCE}" cs_urban
-    ${OGRDECODE} --area-type Town ${WORKBASE}/Shape-Cities "${DATASOURCE}" cs_town
-    ${OGRDECODE} --area-type Town --point-width 400 ${WORKBASE}/Shape-Cities "${DATASOURCE}" v0_town
-    ${OGRDECODE} --area-type Industrial ${WORKBASE}/Shape-Cities "${DATASOURCE}" cs_industrial
-    ${OGRDECODE} --area-type Construction ${WORKBASE}/Shape-Cities "${DATASOURCE}" cs_construction
-    ${OGRDECODE} --area-type Transport ${WORKBASE}/Shape-Cities "${DATASOURCE}" cs_transport
-    ${OGRDECODE} --area-type Port ${WORKBASE}/Shape-Cities "${DATASOURCE}" cs_port
-    
+    ${COMMAND} --area-type SubUrban ${WORKBASE}/Shape-City "${DATASOURCE}" cs_suburban
+    ${COMMAND} --area-type Urban ${WORKBASE}/Shape-City "${DATASOURCE}" cs_urban
+    ${COMMAND} --area-type Town ${WORKBASE}/Shape-City "${DATASOURCE}" cs_town
+#    ${COMMAND} --area-type Town --point-width 400 ${WORKBASE}/Shape-City "${DATASOURCE}" cs_town
+}  # ProcessCity
+
+ProcessCommercial () {
+    ${COMMAND} --area-type Industrial ${WORKBASE}/Shape-Commercial "${DATASOURCE}" cs_industrial
+    ${COMMAND} --area-type Construction ${WORKBASE}/Shape-Commercial "${DATASOURCE}" cs_construction
+    ${COMMAND} --area-type Transport ${WORKBASE}/Shape-Commercial "${DATASOURCE}" cs_transport
+    ${COMMAND} --area-type Port ${WORKBASE}/Shape-Commercial "${DATASOURCE}" cs_port
+    ${COMMAND} --area-type Fishing ${WORKBASE}/Shape-Commercial "${DATASOURCE}" cs_fishing
+}  # ProcessCommercial
+
+ProcessForest () {
     # Forest: deciduous broad, evergreen broad, mixed
-    ${OGRDECODE} --area-type DeciduousForest ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_deciduousforest
-    ${OGRDECODE} --area-type EvergreenForest ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_evergreenforest
-    ${OGRDECODE} --area-type MixedForest ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_mixedforest
-    ${OGRDECODE} --area-type RainForest ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_rainforest
-    
+    ${COMMAND} --area-type DeciduousForest ${WORKBASE}/Shape-Forest "${DATASOURCE}" cs_deciduousforest
+    ${COMMAND} --area-type EvergreenForest ${WORKBASE}/Shape-Forest "${DATASOURCE}" cs_evergreenforest
+    ${COMMAND} --area-type MixedForest ${WORKBASE}/Shape-Forest "${DATASOURCE}" cs_mixedforest
+    ${COMMAND} --area-type RainForest ${WORKBASE}/Shape-Forest "${DATASOURCE}" cs_rainforest
+    ${COMMAND} --area-type AgroForest ${WORKBASE}/Shape-Forest "${DATASOURCE}" cs_agroforest
+}  # ProcessForest
+
+ProcessLandCover () {
     # Ground cover: sand, tidal, lava, barren, grass, scrub, herb-tundra
-    ${OGRDECODE} --area-type Airport ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_airport
-    ${OGRDECODE} --area-type Rock ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_rock
-    ${OGRDECODE} --area-type Dirt ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_dirt
-    ${OGRDECODE} --area-type BarrenCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_barrencover
-    ${OGRDECODE} --area-type GolfCourse ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_golfcourse
-    ${OGRDECODE} --area-type Cemetery ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_cemetery
-    ${OGRDECODE} --area-type Grassland ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_grassland
-    ${OGRDECODE} --area-type Greenspace ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_greenspace
-    ${OGRDECODE} --area-type OpenMining ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_openmining
-    ${OGRDECODE} --area-type Dump ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_dump
-    ${OGRDECODE} --area-type Lava ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_lava
-    ${OGRDECODE} --area-type Sand ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_sand
-    ${OGRDECODE} --area-type Saline ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_saline
-    ${OGRDECODE} --area-type Scrub ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_scrub
-    ${OGRDECODE} --area-type Heath ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_heath
-    ${OGRDECODE} --area-type Sclerophyllous ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_sclerophyllous
-    ${OGRDECODE} --area-type Burnt ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_burnt
-    ${OGRDECODE} --area-type HerbTundra ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_herbtundra
-    ${OGRDECODE} --area-type AgroForest ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_agroforest
+    ${COMMAND} --area-type Airport ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_airport
+    ${COMMAND} --area-type Rock ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_rock
+    ${COMMAND} --area-type Dirt ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_dirt
+    ${COMMAND} --area-type BarrenCover ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_barrencover
+    ${COMMAND} --area-type GolfCourse ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_golfcourse
+    ${COMMAND} --area-type Cemetery ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_cemetery
+    ${COMMAND} --area-type Grassland ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_grassland
+    ${COMMAND} --area-type Greenspace ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_greenspace
+    ${COMMAND} --area-type OpenMining ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_openmining
+    ${COMMAND} --area-type Dump ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_dump
+    ${COMMAND} --area-type Lava ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_lava
+    ${COMMAND} --area-type Sand ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_sand
+    ${COMMAND} --area-type Saline ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_saline
+    ${COMMAND} --area-type Scrub ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_scrub
+    ${COMMAND} --area-type Heath ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_heath
+    ${COMMAND} --area-type Sclerophyllous ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_sclerophyllous
+    ${COMMAND} --area-type Burnt ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_burnt
+    ${COMMAND} --area-type HerbTundra ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_herbtundra
 
-    # Marshes: marsh and bog
-    ${OGRDECODE} --area-type Bog ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_bog
-    ${OGRDECODE} --area-type Marsh ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_marsh
-    ${OGRDECODE} --area-type Littoral ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_littoral
-    ${OGRDECODE} --area-type SaltMarsh ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_saltmarsh
-    
-    # Ice cover: glaciers, pack ice, and sea ice
-    ${OGRDECODE} --area-type Glacier ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_glacier
-    ${OGRDECODE} --area-type PackIce ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_packice
-    ${OGRDECODE} --area-type PolarIce ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_polarice
-    
-    # Crops: mixed pasture, dry crop, irrigated crop
-    ${OGRDECODE} --area-type CropGrass ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_cropgrass
-    ${OGRDECODE} --area-type DryCrop ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_drycrop
-    ${OGRDECODE} --area-type IrrCrop ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_irrcrop
-    ${OGRDECODE} --area-type Rice ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_rice
-    ${OGRDECODE} --area-type MixedCrop ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_mixedcrop
-    ${OGRDECODE} --area-type ComplexCrop ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_complexcrop
-    ${OGRDECODE} --area-type DryCrop ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_naturalcrop
-    ${OGRDECODE} --area-type Vineyard ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_vineyard
-    ${OGRDECODE} --area-type Orchard ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_orchard
-    ${OGRDECODE} --area-type Olives ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_olives
-    
     # Concrete walls
-    ${OGRDECODE} --area-type Asphalt ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_asphalt
-}  # ProcessPolygon
+    ${COMMAND} --area-type Asphalt ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_asphalt
 
-ProcessLine () {
+    # Uncovered areas
+    ${COMMAND} --area-type Scrub ${WORKBASE}/Shape-LandCover "${DATASOURCE}" cs_void
+}  # ProcessLandCover
+
+ProcessIce () {
+    # Ice cover: glaciers, pack ice, and sea ice
+    ${COMMAND} --area-type Glacier ${WORKBASE}/Shape-Ice "${DATASOURCE}" cs_glacier
+    ${COMMAND} --area-type PackIce ${WORKBASE}/Shape-Ice "${DATASOURCE}" cs_packice
+    ${COMMAND} --area-type PolarIce ${WORKBASE}/Shape-Ice "${DATASOURCE}" cs_polarice
+}  # ProcessIce
+
+ProcessFloodland () {
+    # Marshes: marsh and bog
+    ${COMMAND} --area-type Bog ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_bog
+    ${COMMAND} --area-type Marsh ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_marsh
+    ${COMMAND} --area-type Littoral ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_littoral
+    ${COMMAND} --area-type SaltMarsh ${WORKBASE}/Shape-Floodland "${DATASOURCE}" cs_saltmarsh
+}  # ProcessFloodland
+
+ProcessAgro () {
+    # Crops: mixed pasture, dry crop, irrigated crop
+    ${COMMAND} --area-type CropGrass ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_cropgrass
+    ${COMMAND} --area-type DryCrop ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_drycrop
+    ${COMMAND} --area-type IrrCrop ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_irrcrop
+    ${COMMAND} --area-type Rice ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_rice
+    ${COMMAND} --area-type MixedCrop ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_mixedcrop
+    ${COMMAND} --area-type ComplexCrop ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_complexcrop
+    ${COMMAND} --area-type NaturalCrop ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_naturalcrop
+    ${COMMAND} --area-type Vineyard ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_vineyard
+    ${COMMAND} --area-type Orchard ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_orchard
+    ${COMMAND} --area-type Olives ${WORKBASE}/Shape-Agro "${DATASOURCE}" cs_olives
+}  # ProcessAgro
+
+# OSM lines expect "SET tunnel = NULL WHERE tunnel LIKE '' OR tunnel ILIKE 'no' OR tunnel ILIKE 'false'"
+#              and "SET bridge = NULL WHERE bridge LIKE '' OR bridge ILIKE 'no' OR bridge ILIKE 'false'"
+# Get linear textures with "--texture-lines"
+# Fetch line width from OSM tables via "--line-width-column width", but
+#     requires pre-formatting width columns, as they may contain random
+#     garbage
+ProcessRoad () {
     # Roads: highway, freeway, trail
-    # Railroads: single and multiple tracks
-    # Inland moving water: rivers/streams, intermittent streams, and canals
-    if [ ${ROAD_TYPE} = "GPL" ]; then
-      ${OGRDECODE} --area-type Freeway --line-width 50m ${WORKBASE}/Shape-Roads "${DATASOURCE}" cs_freeway
-      ${OGRDECODE} --area-type Road --line-width 20m ${WORKBASE}/Shape-Roads "${DATASOURCE}" cs_road
-      #
-      ${OGRDECODE} --area-type Railroad --line-width 20m ${WORKBASE}/Shape-Railroads "${DATASOURCE}" cs_railroad2
-      ${OGRDECODE} --area-type Railroad --line-width 10m ${WORKBASE}/Shape-Railroads "${DATASOURCE}" cs_railroad1
-      #
-      ${OGRDECODE} --area-type Stream --line-width 40 ${WORKBASE}/Shape-Rivers "${DATASOURCE}" cs_stream
-      ${OGRDECODE} --area-type IntermittentStream --line-width 40 ${WORKBASE}/Shape-Rivers "${DATASOURCE}" cs_intermittentstream
-      ${OGRDECODE} --area-type Canal --line-width 50 ${WORKBASE}/Shape-Canals "${DATASOURCE}" cs_canal
-    fi
-    if [ ${ROAD_TYPE} = "OSM" ]; then
-      ${OGRDECODE} --area-type Freeway --line-width 11m ${WORKBASE}/Shape-Roads "${DATASOURCE}" osm_motorway || echo "ERROR on osm_motorway: ${?}"
-      ${OGRDECODE} --area-type Freeway --line-width 7m ${WORKBASE}/Shape-Roads "${DATASOURCE}" osm_trunk || echo "ERROR on osm_trunk: ${?}"
-      ${OGRDECODE} --area-type Freeway --line-width 9m ${WORKBASE}/Shape-Roads "${DATASOURCE}" osm_primary || echo "ERROR on osm_primary: ${?}"
-      ${OGRDECODE} --area-type Road --line-width 7m ${WORKBASE}/Shape-Roads "${DATASOURCE}" osm_secondary || echo "ERROR on osm_secondary: ${?}"
-      ${OGRDECODE} --area-type Road --line-width 5m ${WORKBASE}/Shape-Roads "${DATASOURCE}" osm_tertiary || echo "ERROR on osm_tertiary: ${?}"
-      #
-      ${OGRDECODE} --area-type Railroad --line-width 5m ${WORKBASE}/Shape-Railroads "${DATASOURCE}" osm_rail || echo "ERROR on osm_rail: ${?}"
-      #
-      ${OGRDECODE} --area-type Stream --line-width 3 ${WORKBASE}/Shape-Rivers "${DATASOURCE}" osm_drain || echo "ERROR on osm_drain: ${?}"
-      ${OGRDECODE} --area-type Stream --line-width 12 ${WORKBASE}/Shape-Rivers "${DATASOURCE}" osm_river || echo "ERROR on osm_river: ${?}"
-      ${OGRDECODE} --area-type Canal --line-width 12 ${WORKBASE}/Shape-Canals "${DATASOURCE}" osm_canal || echo "ERROR on osm_canal: ${?}"
-    fi
-    if [ ${ROAD_TYPE} = "OSMcover" ]; then
-      ${OGRDECODE} --area-type Freeway ${WORKBASE}/Shape-LandCover "${DATASOURCE}" osm_road_cover
-    fi
-}  # ProcessLine
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Freeway --line-width 11m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_motorway || echo "ERROR on osm_motorway: ${?}"
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Freeway --line-width 7m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_trunk || echo "ERROR on osm_trunk: ${?}"
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Freeway --line-width 9m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_primary || echo "ERROR on osm_primary: ${?}"
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Road --line-width 7m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_secondary || echo "ERROR on osm_secondary: ${?}"
+#    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Road --line-width 5m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_tertiary || echo "ERROR on osm_tertiary: ${?}"
+#    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Road --line-width 4m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_residential || echo "ERROR on osm_residential: ${?}"
+#    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Road --line-width 4m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_unclassified || echo "ERROR on osm_unclassified: ${?}"
+#    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Road --line-width 3m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_service || echo "ERROR on osm_service: ${?}"
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Freeway --line-width 9m ${WORKBASE}/Shape-Road "${DATASOURCE}" osm_raceway || echo "ERROR on osm_raceway: ${?}"
+}  # ProcessRoad
 
-ProcessLandmass
-ProcessPolygon
-ProcessLine
+ProcessRailroad () {
+    # Railroads: single and multiple tracks
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Railroad --line-width 5m ${WORKBASE}/Shape-Railroad "${DATASOURCE}" osm_rail || echo "ERROR on osm_rail: ${?}"
+#    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Railroad --line-width 2m ${WORKBASE}/Shape-Railroad "${DATASOURCE}" osm_tram || echo "ERROR on osm_tram: ${?}"
+}  # ProcessRailroad
+
+ProcessStream () {
+    # Inland moving water: rivers/streams, intermittent streams, and canals
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Stream --line-width 3 ${WORKBASE}/Shape-Stream "${DATASOURCE}" osm_drain || echo "ERROR on osm_drain: ${?}"
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Stream --line-width 12 ${WORKBASE}/Shape-Stream "${DATASOURCE}" osm_river || echo "ERROR on osm_river: ${?}"
+    ${COMMAND} --where "tunnel IS NULL AND bridge IS NULL" --area-type Canal --line-width 12 ${WORKBASE}/Shape-Stream "${DATASOURCE}" osm_canal || echo "ERROR on osm_canal: ${?}"
+#
+#    ${COMMAND} --area-type Freeway ${WORKBASE}/Shape-RoadCover "${DATASOURCE}" osm_road_cover
+}  # ProcessStream
+
+#ProcessLandmass
+
+# ProcessWaterbody
+# ProcessCity
+# ProcessCommercial
+# ProcessForest
+#
+# ProcessLandCover
+# ProcessIce
+# ProcessFloodland
+# ProcessAgro
+#
+# ProcessRoad
+# ProcessRailroad
+# ProcessStream
+# ProcessPolygon
+# ProcessLine
+
+CALLNAME=`basename ${0}`
+${CALLNAME}
 
 # EOF
