@@ -1,6 +1,7 @@
 #include <simgear/debug/logstream.hxx>
 #include "linked_objects.hxx"
 #include "debug.hxx"
+#include <cstdio>
 
 Windsock::Windsock( char* definition )
 {

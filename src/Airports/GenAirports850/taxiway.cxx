@@ -6,6 +6,8 @@
 
 #include <terragear/tg_shapefile.hxx>
 
+#include <cstdio>
+
 #include "global.hxx"
 #include "apt_math.hxx"
 #include "beznode.hxx"

@@ -7,6 +7,8 @@
 
 #include <terragear/tg_polygon.hxx>
 
+#include <cstdio>
+
 #include "global.hxx"
 #include "apt_math.hxx"
 #include "beznode.hxx"

@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
 	tmp_file.concat(".arr.new.gz");
 	SGPath orig_file(tmp3);
 	orig_file.concat(".arr.gz");
-	rename( tmp_file.str().c_str(), orig_file.str().c_str() );
+        orig_file.rename(tmp_file);
       }
     } else {
       cout << "no voids" << endl;

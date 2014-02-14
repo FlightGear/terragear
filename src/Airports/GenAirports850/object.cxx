@@ -2,6 +2,7 @@
 #include <simgear/debug/logstream.hxx>
 #include "object.hxx"
 #include "debug.hxx"
+#include <cstdio>
 
 LightingObj::LightingObj( char* definition )
 {

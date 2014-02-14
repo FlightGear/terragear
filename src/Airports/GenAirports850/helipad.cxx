@@ -23,6 +23,7 @@
 #include "runway.hxx"
 #include "debug.hxx"
 
+#include <cstdio>
 #include <stdlib.h>
 
 Helipad::Helipad(char* definition)
