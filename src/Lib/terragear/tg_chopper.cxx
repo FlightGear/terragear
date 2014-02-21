@@ -52,13 +52,13 @@ void tgChopper::ClipRow( const tgPolygon& subject, const double& center_lat, con
     tgRectangle bb = subject.GetBoundingBox();
     SGBucket    b_min( bb.getMin() );
     SGBucket    b_max( bb.getMax() );
-    double      min_center_lon = b_min.get_center_lon();
     int         dx, dy;
 
     sgBucketDiff(b_min, b_max, &dx, &dy);
+    SGBucket start = SGBucket(SGGeod::fromDeg( b_min.get_center_lon(), center_lat ));
 
     for ( int i = 0; i <= dx; ++i ) {
-        SGBucket b_cur = sgBucketOffset(min_center_lon, center_lat, i, 0);
+        SGBucket b_cur = start.sibling(i, 0);
         Clip( subject, type, b_cur );
     }
 }
@@ -101,7 +101,8 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
         for ( int row = 0; row <= dy; row++ )
         {
             // Generate a clip rectangle for the whole row
-            SGBucket  b_clip      = sgBucketOffset( bb.getMin().getLongitudeDeg(), bb.getMin().getLatitudeDeg(), 0, row );
+
+            SGBucket  b_clip      = b_min.sibling(0, row);
             double    clip_bottom = b_clip.get_center_lat() - SG_HALF_BUCKET_SPAN;
             double    clip_top    = b_clip.get_center_lat() + SG_HALF_BUCKET_SPAN;
             tgPolygon clip_row, clipped;

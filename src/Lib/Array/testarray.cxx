@@ -72,7 +72,7 @@ int main( int argc, char **argv ) {
        exit(1);
     }
 
-    SGBucket b( lon, lat );
+    SGBucket b( SGGeod::fromDeg(lon, lat) );
     cout << "input: lon=" << lon << ", lat=" << lat <<
        ", gives Bucket = " << b << endl;
 

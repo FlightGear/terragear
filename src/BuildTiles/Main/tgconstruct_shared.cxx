@@ -201,11 +201,9 @@ void TGConstruct::LoadSharedEdgeData( int stage )
             // we need to read just 4 buckets for stage 1 - 1 for each edge
             std::vector<SGGeod> north, south, east, west;
             SGBucket   nb, sb, eb, wb;
-            double     clon = bucket.get_center_lon();
-            double     clat = bucket.get_center_lat();
 
             // Read North tile and add its southern nodes
-            nb = sgBucketOffset(clon, clat, 0, 1);
+            nb = bucket.sibling(0, 1);
             LoadNeighboorEdgeDataStage1( nb, north, south, east, west );
             // Add southern nodes from northern tile
             for (unsigned int i=0; i<south.size(); i++) {
@@ -213,21 +211,21 @@ void TGConstruct::LoadSharedEdgeData( int stage )
             }
 
             // Read South Tile and add its northern nodes
-            sb = sgBucketOffset(clon, clat, 0, -1);
+            sb = bucket.sibling(0, -1);
             LoadNeighboorEdgeDataStage1( sb, north, south, east, west );
             for (unsigned  int i=0; i<north.size(); i++) {
                 nodes.unique_add( north[i] );
             }
 
             // Read East Tile and add its western nodes
-            eb = sgBucketOffset(clon, clat, 1, 0);
+            eb = bucket.sibling(1, 0);
             LoadNeighboorEdgeDataStage1( eb, north, south, east, west );
             for (unsigned  int i=0; i<west.size(); i++) {
                 nodes.unique_add( west[i] );
             }
 
             // Read West Tile and add its eastern nodes
-            wb = sgBucketOffset(clon, clat, -1, 0);
+            wb = bucket.sibling(-1, 0);
             LoadNeighboorEdgeDataStage1( wb, north, south, east, west );
             for (unsigned  int i=0; i<east.size(); i++) {
                 nodes.unique_add( east[i] );
@@ -239,13 +237,11 @@ void TGConstruct::LoadSharedEdgeData( int stage )
         {
             string dir;
             string file;
-            double     clon = bucket.get_center_lon();
-            double     clat = bucket.get_center_lat();
             gzFile     fp;
             SGBucket   b;
 
             // Read Northern tile and add its southern node faces
-            b    = sgBucketOffset(clon, clat, 0, 1);
+            b    = bucket.sibling(0, 1);
             dir  = share_base + "/stage2/" + b.gen_base_path();
             file = dir + "/" + b.gen_index_str() + "_south_edge";
             fp = gzopen( file.c_str(), "rb" );
@@ -256,7 +252,7 @@ void TGConstruct::LoadSharedEdgeData( int stage )
             }
 
             // Read Southern tile and add its northern node faces
-            b    = sgBucketOffset(clon, clat, 0, -1);
+            b    = bucket.sibling(0, -1);
             dir  = share_base + "/stage2/" + b.gen_base_path();
             file = dir + "/" + b.gen_index_str() + "_north_edge";
             fp = gzopen( file.c_str(), "rb" );
@@ -267,7 +263,7 @@ void TGConstruct::LoadSharedEdgeData( int stage )
             }
 
             // Read Eastern tile and add its western node faces
-            b    = sgBucketOffset(clon, clat, 1, 0);
+            b    = bucket.sibling(1, 0);
             dir  = share_base + "/stage2/" + b.gen_base_path();
             file = dir + "/" + b.gen_index_str() + "_west_edge";
             fp = gzopen( file.c_str(), "rb" );
@@ -278,7 +274,7 @@ void TGConstruct::LoadSharedEdgeData( int stage )
             }
 
             // Read Western tile and add its eastern node faces
-            b    = sgBucketOffset(clon, clat, -1, 0);
+            b    = bucket.sibling(-1, 0);
             dir  = share_base + "/stage2/" + b.gen_base_path();
             file = dir + "/" + b.gen_index_str() + "_east_edge";
             fp = gzopen( file.c_str(), "rb" );

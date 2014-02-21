@@ -503,7 +503,7 @@ int main(int argc, const char **argv)
          * specified datasets and check all the tiles contained in them.
          */
 
-        SGBucket start(west, south), end(east, north);
+        SGBucket start( SGGeod::fromDeg(west, south) ), end( SGGeod::fromDeg(east, north) );
 
         int dx, dy;
 
@@ -513,7 +513,7 @@ int main(int argc, const char **argv)
 
         for (int x = 0; x <= dx; x++) {
             for (int y = 0; y <= dy; y++) {
-                SGBucket bucket = sgBucketOffset(west, south, x, y);
+                SGBucket bucket = start.sibling(x, y);
 
                 process_bucket(work_dir, bucket, images.get(), datasetcount);
             }

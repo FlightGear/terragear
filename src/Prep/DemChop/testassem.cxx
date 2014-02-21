@@ -60,14 +60,13 @@ int main(int argc, char **argv) {
     int lat_arcsec = (int)(lat_deg * 3600.0);
     int res = 1;
 
-    SGVec2d min, max;
-    min.x() = lon_deg + SG_HALF_BUCKET_SPAN;
-    min.y() = lat_deg + SG_HALF_BUCKET_SPAN;
-    SGBucket b_min( min.x(), min.y() );
+    SGGeod min = SGGeod::fromDeg( lon_deg + SG_HALF_BUCKET_SPAN,
+                                  lat_deg + SG_HALF_BUCKET_SPAN );
+    SGGeod max = SGGeod::fromDeg( lon_deg + 1 - SG_HALF_BUCKET_SPAN,
+                                  lat_deg + 1 - SG_HALF_BUCKET_SPAN );
 
-    max.x() = lon_deg + 1 - SG_HALF_BUCKET_SPAN;
-    max.y() = lat_deg + 1 - SG_HALF_BUCKET_SPAN;
-    SGBucket b_max( max.x(), max.y() );
+    SGBucket b_min( min );
+    SGBucket b_max( max );
 
     SGBucket b_cur;
     int dx, dy, i, j;
@@ -82,7 +81,7 @@ int main(int argc, char **argv) {
 
     for ( j = 0; j <= dy; j++ ) {
         for ( i = 0; i <= dx; i++ ) {
-            b_cur = sgBucketOffset(min.x(), min.y(), i, j);
+            b_cur = b_min.sibling(i, j);
             string file = work_dir + "/";
             file += b_cur.gen_base_path() + "/";
             file += b_cur.gen_index_str();

@@ -169,7 +169,7 @@ void fit_file(const SGPath& path) {
         unlink( outPath.c_str() );
     }
 
-    SGBucket bucket(0,0); // dummy bucket
+    SGBucket bucket; // dummy bucket
     TGArray inarray(path.dir() + "/" + path.file_base());
     inarray.parse(bucket);
     inarray.close();

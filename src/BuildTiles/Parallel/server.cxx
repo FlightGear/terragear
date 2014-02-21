@@ -139,7 +139,7 @@ void init_tile_count( const string& chunk ) {
     lat = 100;
 
     // determine tile height
-    SGBucket tmp1( 0.0, 0.0 );
+    SGBucket tmp1;
     dy = tmp1.get_height();
 
     string lons = chunk.substr(0, 4);
@@ -185,7 +185,7 @@ long int get_next_tile() {
 	// adjacent tiles)
 	lat += 2.0 * dy;
 
-	SGBucket tmp( 0.0, lat );
+	SGBucket tmp( SGGeod::fromDeg(0.0, lat) );
 	double dx = tmp.get_width();
 	lon = start_lon + (shift_over*dx) + (dx*0.5);
     }
@@ -214,7 +214,7 @@ long int get_next_tile() {
 	lat = start_lat + (shift_up*dy) + (dy*0.5);
 
 	// reset lon
-	SGBucket tmp( 0.0, lat );
+	SGBucket tmp( SGGeod::fromDeg(0.0, lat) );
 	double dx = tmp.get_width();
 	// lon = -82 + (shift_over*dx) + (dx*0.5);
 	lon = start_lon + (shift_over*dx) + (dx*0.5);
@@ -229,10 +229,10 @@ long int get_next_tile() {
     //    start_lon = false;
     // }
 
-    b = SGBucket( lon, lat );
+    b = SGBucket( SGGeod::fromDeg(lon, lat) );
 
     // increment to next tile
-    SGBucket tmp( 0.0, lat );
+    SGBucket tmp( SGGeod::fromDeg(0.0, lat) );
     double dx = tmp.get_width();
 
     // skip every other column (to avoid two clients working on

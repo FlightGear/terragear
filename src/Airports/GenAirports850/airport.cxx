@@ -317,7 +317,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     apt_lon = apt_lon / (double)num_samples;
     apt_lat = apt_lat / (double)num_samples;
 
-    SGBucket b( apt_lon, apt_lat );
+    SGBucket b( SGGeod::fromDeg(apt_lon, apt_lat) );
     TG_LOG(SG_GENERAL, SG_DEBUG, b.gen_base_path() << "/" << b.gen_index_str());
 
     // If we are cutting in the linear features, add them first

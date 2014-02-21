@@ -63,16 +63,13 @@ int main(int argc, char **argv) {
     dem.parse();
     dem.close();
 
-    SGVec2d min, max;
-    min.x() = dem.get_originx() / 3600.0 + SG_HALF_BUCKET_SPAN;
-    min.y() = dem.get_originy() / 3600.0 + SG_HALF_BUCKET_SPAN;
-    SGBucket b_min( min.x(), min.y() );
+    SGGeod min = SGGeod::fromDeg(dem.get_originx() / 3600.0 + SG_HALF_BUCKET_SPAN,
+                                 dem.get_originy() / 3600.0 + SG_HALF_BUCKET_SPAN);
 
-    max.x() = (dem.get_originx() + dem.get_cols() * dem.get_col_step()) / 3600.0
-	- SG_HALF_BUCKET_SPAN;
-    max.y() = (dem.get_originy() + dem.get_rows() * dem.get_row_step()) / 3600.0
-	- SG_HALF_BUCKET_SPAN;
-    SGBucket b_max( max.x(), max.y() );
+    SGGeod max = SGGeod::fromDeg( (dem.get_originx() + dem.get_cols() * dem.get_col_step()) / 3600.0 - SG_HALF_BUCKET_SPAN,
+                                  (dem.get_originy() + dem.get_rows() * dem.get_row_step()) / 3600.0 - SG_HALF_BUCKET_SPAN );
+    SGBucket b_min( min );
+    SGBucket b_max( max );
 
     if ( b_min == b_max ) {
 	dem.write_area( work_dir, b_min );
@@ -91,7 +88,7 @@ int main(int argc, char **argv) {
 
 	for ( j = 0; j <= dy; j++ ) {
 	    for ( i = 0; i <= dx; i++ ) {
-		b_cur = sgBucketOffset(min.x(), min.y(), i, j);
+		b_cur = b_min.sibling(i, j);
 		dem.write_area( work_dir, b_cur );
 	    }
 	}
