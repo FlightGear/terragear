@@ -89,42 +89,39 @@ class UniqueSGVec3dSet {
 public:
     UniqueSGVec3dSet() {}
 
-    unsigned int add( const SGVec3d& v );
-    int          find( const SGVec3d& v ) const;
+    unsigned int add( const SGVec3d& v )  {
+        unique_vec3d_set_iterator it;
+        SGVec3dIndex lookup( v );
+        
+        it = index_list.find( lookup );
+        if ( it == index_list.end() ) {
+            lookup.SetOrderedIndex( vector_list.size() );
+            index_list.insert( lookup );
+            
+            vector_list.push_back(v);
+        } else {
+            lookup = *it;
+        }
+        
+        return lookup.GetOrderedIndex();
+    }
+    
+    int find( const SGVec3d& v ) const {
+        unique_vec3d_set_iterator it;
+        SGVec3dIndex lookup( v );
+        int index = -1;
+        
+        it = index_list.find( lookup );
+        if ( it != index_list.end() ) {
+            index = it->GetOrderedIndex();
+        }
+        
+        return index;
+    }
+    
     std::vector<SGVec3d>& get_list( void ) { return vector_list; }
 
 private:
     unique_vec3d_set        index_list;
     std::vector<SGVec3d>    vector_list;
 };
-
-unsigned int UniqueSGVec3dSet::add( const SGVec3d& v ) {
-    unique_vec3d_set_iterator it;
-    SGVec3dIndex lookup( v );
-
-    it = index_list.find( lookup );
-    if ( it == index_list.end() ) {
-        lookup.SetOrderedIndex( vector_list.size() );
-        index_list.insert( lookup );
-
-        vector_list.push_back(v);
-    } else {
-        lookup = *it;
-    }
-
-    return lookup.GetOrderedIndex();
-}
-
-
-int UniqueSGVec3dSet::find( const SGVec3d& v ) const {
-    unique_vec3d_set_iterator it;
-    SGVec3dIndex lookup( v );
-    int index = -1;
-
-    it = index_list.find( lookup );
-    if ( it != index_list.end() ) {
-        index = it->GetOrderedIndex();
-    }
-
-    return index;
-}

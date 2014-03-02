@@ -74,10 +74,14 @@ public:
 
     // Add a point to the point list if it doesn't already exist.
     // Returns the index (starting at zero) of the point in the list.
-    void unique_add( const SGGeod& p, tgNodeType t = TG_NODE_INTERPOLATED ) {
+    unsigned int unique_add( const SGGeod& p, tgNodeType t = TG_NODE_INTERPOLATED ) {
+        int idx;
+        
         TGNode n(p, t);
-        tg_node_list.add(n);
+        idx = tg_node_list.add(n);
         kd_tree_valid = false;
+        
+        return idx;
     }
 
     // Find the index of the specified point (compair to the same
@@ -99,6 +103,7 @@ public:
     void SetElevation( int idx, double z )  { tg_node_list[idx].SetElevation( z ); }
     void CalcElevations( tgNodeType type );
     void CalcElevations( tgNodeType type, const tgSurface& surf );
+    void CalcElevations( tgNodeType type, const tgtriangle_list& mesh );
 
     SGVec3f GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
     void SetNormal( int idx, SGVec3f n )    { tg_node_list[idx].SetNormal( n ); }

@@ -248,6 +248,8 @@ void TGNodes::CalcElevations( tgNodeType type ) {
                     // get elevation from triangle list
                     break;
             }
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "CalcElevations (interpolated) Ignore pos " << tg_node_list[i].GetPosition() << " with type " << tg_node_list[i].GetType() );
         }
     }
 }
@@ -268,6 +270,42 @@ void TGNodes::CalcElevations( tgNodeType type, const tgSurface& surf ) {
                     SetElevation( i, surf.query( pos ) );
                     break;
             }
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "CalcElevations smoothed Ignore pos " << tg_node_list[i].GetPosition() << " with type " << tg_node_list[i].GetType() );
+        }        
+    }
+}
+
+void TGNodes::CalcElevations( tgNodeType type, const tgtriangle_list& mesh ) {
+    for(unsigned int i = 0; i < tg_node_list.size(); i++) {
+        if ( tg_node_list[i].GetType() == type ) {
+            SGGeod pos = tg_node_list[i].GetPosition();
+            bool foundElev = false;
+            
+            switch (type)
+            {
+                case TG_NODE_FIXED_ELEVATION:
+                case TG_NODE_INTERPOLATED:
+                case TG_NODE_SMOOTHED:
+                    break;
+                    
+                case TG_NODE_DRAPED:
+                    // we need to find the triangle this node is within
+                    for ( unsigned int tri=0; tri<mesh.size() && !foundElev; tri++ ) {
+                        foundElev = mesh[tri].InterpolateHeight( pos );
+                        if ( foundElev )
+                        {
+                            tg_node_list[i].SetElevation( pos.getElevationM() );
+                        }
+                    }
+                    
+                    if (!foundElev) {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "CalcElevations Could not drape point " << pos );
+                    }
+                    break;
+            }
+        }  else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "CalcElevations draped Ignore pos " << tg_node_list[i].GetPosition() << " with type " << tg_node_list[i].GetType() );
         }
     }
 }

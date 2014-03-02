@@ -171,6 +171,21 @@ bool tgPolygon::FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod
     return found;
 }
 
+tgPolygon tgPolygon::AddIntersectingNodes( const tgPolygon& subject, const tgtriangle_list& mesh )
+{
+    tgPolygon result;
+
+    result.SetMaterial( subject.GetMaterial() );
+    result.SetTexParams( subject.GetTexParams() );
+    result.SetId( subject.GetId() );
+
+    for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
+        result.AddContour( tgContour::AddIntersectingNodes( subject.GetContour(c), mesh ) );
+    }
+    
+    return result;
+}
+
 SGGeod InterpolateElevation( const SGGeod& dst_node, const SGGeod& start, const SGGeod& end )
 {
     double total_dist = SGGeodesy::distanceM( start, end );
@@ -263,11 +278,13 @@ void tgPolygon::Texture( void )
         case TG_TEX_BY_TPS_CLIPU:
         case TG_TEX_BY_TPS_CLIPV:
         case TG_TEX_BY_TPS_CLIPUV:
-        {
+        {            
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tp ref is " << tp.ref << " width " << tp.width << " Length " << tp.length );
+            
             for ( unsigned int i = 0; i < triangles.size(); i++ ) {
                 for ( unsigned int j = 0; j < 3; j++ ) {
                     p = triangles[i].GetNode( j );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "point = " << p);
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "triangle " << i << " node " << j << " = " << p);
 
                     //
                     // 1. Calculate distance and bearing from the center of
@@ -279,7 +296,7 @@ void tgPolygon::Texture( void )
                     // azimuth are in degrees.  distance in meters
                     double az1, az2, dist;
                     SGGeodesy::inverse( tp.ref, p, az1, az2, dist );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "basic course = " << az2);
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\tbasic course = " << az2 << " dist is " << dist );
 
                     //
                     // 2. Rotate this back into a coordinate system where Y
@@ -287,7 +304,7 @@ void tgPolygon::Texture( void )
                     //
 
                     double course = SGMiscd::normalizePeriodic(0, 360, az2 - tp.heading);
-                    SG_LOG( SG_GENERAL, SG_DEBUG,"  course = " << course << "  dist = " << dist );
+                    SG_LOG( SG_GENERAL, SG_DEBUG,"\t  course = " << course << "  dist = " << dist );
 
                     //
                     // 3. Convert from polar to cartesian coordinates
@@ -295,7 +312,7 @@ void tgPolygon::Texture( void )
 
                     x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
                     y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "  x = " << x << " y = " << y);
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  x = " << x << " y = " << y);
 
                     //
                     // 4. Map x, y point into texture coordinates
@@ -304,7 +321,7 @@ void tgPolygon::Texture( void )
 
                     tmp = (float)x / (float)tp.width;
                     tx = tmp * (float)(tp.maxu - tp.minu) + (float)tp.minu;
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ")");
 
                     // clip u?
                     if ( (tp.method == TG_TEX_BY_TPS_CLIPU) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
@@ -313,8 +330,16 @@ void tgPolygon::Texture( void )
                     }
 
                     tmp = (float)y / (float)tp.length;
-                    ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
+                    if ( tp.method != TG_TEX_BY_TPS_CLIPU )
+                    {
+                        ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
+                    }
+                    else
+                    {
+                        ty = tmp+(float)tp.minv;
+                    }
+                    
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << ty << ")");
 
                     // clip v?
                     if ( (tp.method == TG_TEX_BY_TPS_CLIPV) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
@@ -323,11 +348,11 @@ void tgPolygon::Texture( void )
                     }
 
                     t = SGVec2f( tx, ty );
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ", " << ty << ")");
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ", " << ty << ")");
 
                     triangles[i].SetTexCoord( j, t );
                 }
-            }
+            }            
         }
         break;
     }

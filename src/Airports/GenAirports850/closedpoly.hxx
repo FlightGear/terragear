@@ -18,37 +18,15 @@ public:
     void CloseCurContour();
     void Finish();
 
-#if 0
-    // Build BTG for airport base for airports with boundary
-    int  BuildBtg( tgPolygon& apt_base,
-                   tgPolygon& apt_clearing,
-                   std::string& shapefile_name );
-
-    // Build BTG for pavements for airports with no boundary
-    int  BuildBtg( tgpolygon_list& rwy_polys,
-                   tgcontour_list& slivers,
-                   tgAccumulator& accum,
-                   std::string& shapefile_name );
-
-    int  BuildBtg( tgpolygon_list& rwy_polys,
-                   tgcontour_list& slivers,
-                   tgpolygon_list& apt_base_polys,
-                   tgpolygon_list& apt_clearing_polys,
-                   tgAccumulator& accum,
-                   std::string& shapefile_name );
-#endif
-
     void GetPolys( tgpolygon_list& polys );
     void GetInnerBasePolys( tgpolygon_list& polys );
     void GetOuterBasePolys( tgpolygon_list& polys );
     void GetInnerBoundaryPolys( tgpolygon_list& polys );
     void GetOuterBoundaryPolys( tgpolygon_list& polys );
     
-    FeatureList* GetFeatures()
-    {
-        return &features;
-    }
-
+    void GetFeaturePolys( tgpolygon_list& polys );
+    void GetFeatureLights( tglightcontour_list& lights );
+    
 private:
     // convert the BezierPoly to a normal Poly (adding nodes for the curves)
     void CreateConvexHull( void );

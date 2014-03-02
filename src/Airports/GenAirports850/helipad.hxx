@@ -42,7 +42,8 @@ public:
     void GetShoulderPolys( tgpolygon_list& polys );
     void GetInnerBasePolys( tgpolygon_list& polys );
     void GetOuterBasePolys( tgpolygon_list& polys );
-
+    void GetLights( tglightcontour_list& lights );
+    
     SGGeod GetLoc()
     {
         return SGGeod::fromDeg(heli.lon, heli.lat);

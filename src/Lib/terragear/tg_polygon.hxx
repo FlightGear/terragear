@@ -333,7 +333,8 @@ public:
     static tgPolygon AddColinearNodes( const tgPolygon& subject, UniqueSGGeodSet& nodes );
     static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<SGGeod>& nodes );
     static bool      FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod& start, SGGeod& end );
-
+    static tgPolygon AddIntersectingNodes( const tgPolygon& subject, const tgtriangle_list& mesh );
+    
     // IO
     void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );

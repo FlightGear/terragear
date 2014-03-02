@@ -56,31 +56,114 @@ Taxiway::Taxiway(char* definition)
     taxi_contour = gen_wgs84_rect( origin, heading, length, width );
 }
 
-void Taxiway::GenLights(tglightcontour_list& rwy_lights)
+
+void Taxiway::GetPolys( tgpolygon_list& polys )
 {
-    // Create blue taxiway edge lights along the long sides of the taxiway
-    // Spacing is 10m
-
-    // Vector calculation
-    SGVec3f vec = normalize(SGVec3f::fromGeod(taxi_contour.GetNode(0)));
-
-    tgLightContour blue;
-    blue.SetType( "RWY_BLUE_TAXIWAY_LIGHTS" );
-
-    for ( unsigned int i = 0; i < taxi_contour.GetSize(); ++i ) {
-        double dist, course, cs;
-        SGGeodesy::inverse(taxi_contour.GetNode(i), taxi_contour.GetNode(i+1), course, cs, dist );
-        int divs = (int)(dist / 10.0);
-        double step = dist/divs;
-        SGGeod pt = taxi_contour.GetNode(i);
-        for (int j = 0; j < divs; ++j) {
-            pt = SGGeodesy::direct(pt, course, step );
-            blue.AddLight( pt, vec );
+    std::string material;
+    
+    if ( surface == 1 /* Asphalt */ )
+    {
+        if ( (width <= 50) && (lighting[1] == '6') ) {
+            material = "pa_taxiway";
+        } else {
+            material = "pa_tiedown";
         }
-        i++;
     }
-    rwy_lights.push_back( blue );
+    else if ( surface == 2 /* Concrete */ )
+    {
+        if ( (width <= 50) && (lighting[1] == '6') ) {
+            material = "pc_taxiway";
+        } else {
+            material = "pc_tiedown";
+        }
+    }
+    else if ( surface == 3 /* Turf/Grass */ )
+    {
+        material = "grass_rwy";
+    }
+    else if ( surface == 4 /* Dirt */ || surface == 5 /* Gravel */ )
+    {
+        material = "dirt_rwy";
+    }
+    else if ( surface == 12 /* Dry Lakebed */ )
+    {
+        material = "lakebed_taxiway";
+    }
+    else if ( surface == 13 /* Water runway (buoy's?) */ )
+    {
+        // water
+    }
+    else if ( surface == 14 /* Snow / Ice */ )
+    {
+        // Ice
+    }
+    else if ( surface == 15 /* Transparent */ )
+    {
+        //Transparent texture
+    }
+    else
+    {
+        TG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << surface);
+        throw sg_exception("unknown runway type!");
+    }
+    
+    tgPolygon taxiway;
+    taxiway.AddContour( taxi_contour );    
+    taxiway.SetMaterial( material );
+    taxiway.SetTexParams( taxi_contour.GetNode(0), width, 25*SG_FEET_TO_METER, heading );
+    taxiway.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
+    taxiway.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, -1.0, 1.0, 1.0 );
+    polys.push_back( taxiway );
+}
 
+void Taxiway::GetInnerBasePolys( tgpolygon_list& polys )
+{
+    tgPolygon ib;
+    
+    ib.AddContour( tgContour::Expand( taxi_contour, 20.0) );
+    ib.SetMaterial( "Grass" );
+    ib.SetTexMethod( TG_TEX_BY_GEODE );
+    
+    polys.push_back( ib );
+}
+
+void Taxiway::GetOuterBasePolys( tgpolygon_list& polys )
+{
+    tgPolygon ob;
+    
+    ob.AddContour( tgContour::Expand( taxi_contour, 50.0) );
+    ob.SetMaterial( "Grass" );
+    ob.SetTexMethod( TG_TEX_BY_GEODE );
+    
+    polys.push_back( ob );
+}
+
+void Taxiway::GetLights(tglightcontour_list& lights)
+{
+    if ( (surface == 1) || (surface == 2) ) {
+        // Create blue taxiway edge lights along the long sides of the taxiway
+        // Spacing is 10m
+
+        // Vector calculation
+        SGVec3f vec = normalize(SGVec3f::fromGeod(taxi_contour.GetNode(0)));
+
+        tgLightContour blue;
+        blue.SetType( "RWY_BLUE_TAXIWAY_LIGHTS" );
+
+        for ( unsigned int i = 0; i < taxi_contour.GetSize(); ++i ) {
+            double dist, course, cs;
+            SGGeodesy::inverse(taxi_contour.GetNode(i), taxi_contour.GetNode(i+1), course, cs, dist );
+            int divs = (int)(dist / 10.0);
+            double step = dist/divs;
+            SGGeod pt = taxi_contour.GetNode(i);
+            for (int j = 0; j < divs; ++j) {
+                pt = SGGeodesy::direct(pt, course, step );
+                blue.AddLight( pt, vec );
+            }
+            i++;
+        }
+        lights.push_back( blue );
+    }
 }
 
 #if 0

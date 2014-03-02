@@ -442,6 +442,22 @@ void ClosedPoly::GetPolys( tgpolygon_list& polys )
     }
 }
 
+void ClosedPoly::GetFeaturePolys( tgpolygon_list& polys )
+{
+    for ( unsigned int i = 0; i < features.size(); i++)
+    {
+        features[i]->GetPolys( polys );
+    }    
+}
+
+void ClosedPoly::GetFeatureLights( tglightcontour_list& lights )
+{
+    for ( unsigned int i = 0; i < features.size(); i++)
+    {
+        features[i]->GetLights( lights );
+    }    
+}
+
 void ClosedPoly::GetInnerBasePolys( tgpolygon_list& polys )
 {
     tgPolygon ib = tgPolygon::Expand( pre_tess, 20.0 );
@@ -481,82 +497,3 @@ void ClosedPoly::GetOuterBoundaryPolys( tgpolygon_list& polys )
 
     polys.push_back( ob );
 }
-
-#if 0
-int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, tgAccumulator& accum, std::string& shapefile_name )
-{
-    if (is_pavement && pre_tess.Contours() )
-    {
-        tgPolygon base, safe_base;
-
-        BuildBtg( rwy_polys, slivers, accum, shapefile_name );
-
-        base = tgPolygon::Expand( pre_tess, 20.0 );
-        safe_base = tgPolygon::Expand( pre_tess, 50.0);
-
-        // add this to the airport clearing
-        apt_clearing_polys.push_back( safe_base );
-
-        // and add the clearing to the base
-        apt_base_polys.push_back( base );
-    }
-
-    // clean up to save ram : we're done here...
-    return 1;
-}
-
-int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
-{
-    if ( is_pavement && pre_tess.Contours() )
-    {
-        if(  shapefile_name.size() ) {
-            tgShapefile::FromPolygon( pre_tess, "./airport_dbg", std::string("preclip"), shapefile_name );
-            accum.ToShapefiles( "./airport_dbg", "accum", true );
-        }
-
-        tgPolygon clipped = accum.Diff( pre_tess );
-
-        if ( clipped.Contours() ) {
-            if(  shapefile_name.size() ) {
-                tgShapefile::FromPolygon( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
-            }
-
-            tgPolygon::RemoveSlivers( clipped, slivers );
-
-            clipped.SetMaterial( GetMaterial( surface_type ) );
-            clipped.SetTexParams( clipped.GetNode(0,0), 5.0, 5.0, texture_heading );
-            clipped.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
-            clipped.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
-
-            rwy_polys.push_back( clipped );
-
-            accum.Add( pre_tess );
-        }
-    }
-
-    return 1;
-}
-
-
-// Just used for user defined border - add a little bit, as some modelers made the border exactly on the edges
-// - resulting in no base, which we can't handle
-int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::string& shapefile_name )
-{
-    tgPolygon base, safe_base;
-
-    // verify the poly has been generated, and the contour isn't a pavement
-    if ( !is_pavement && pre_tess.Contours() )
-    {
-        base = tgPolygon::Expand( pre_tess, 2.0);
-        safe_base = tgPolygon::Expand( pre_tess, 5.0);
-
-        // add this to the airport clearing
-        apt_clearing = tgPolygon::Union( safe_base, apt_clearing);
-
-        // and add the clearing to the base
-        apt_base = tgPolygon::Union( base, apt_base );
-    }
-
-    return 1;
-}
-#endif

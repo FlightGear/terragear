@@ -56,6 +56,25 @@ void write_index( const string& base, const SGBucket& b, const string& name )
     fclose( fp );
 }
 
+void write_index_lines( const string& base, const SGBucket& b, const string& name )
+{
+    string dir = base + "/" + b.gen_base_path();
+    SGPath sgp( dir );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
+    
+    string file = dir + "/" + b.gen_index_str() + ".ind";
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Writing object to " << file );
+    
+    FILE *fp;
+    if ( (fp = fopen( file.c_str(), "a" )) == NULL ) {
+        SG_LOG( SG_GENERAL, SG_ALERT, "ERROR: opening " << file << " for writing!" );
+        exit(-1);
+    }
+    
+    fprintf( fp, "OBJECT_LINES %s\n", name.c_str() );
+    fclose( fp );
+}
 
 // update index file (list of shared objects to be included in final
 // scenery build)

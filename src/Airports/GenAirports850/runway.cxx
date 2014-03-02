@@ -180,6 +180,34 @@ void Runway::GetOuterBasePolys( tgpolygon_list& polys )
     polys.push_back( base );
 }
 
+void Runway::GetLights( tglightcontour_list& lights )
+{
+    // first, check the surface type - anything but concrete and asphalt are easy
+    switch( rwy.surface )
+    {
+        case 1: // asphalt:
+        case 2: // concrete
+            TG_LOG( SG_GENERAL, SG_DEBUG, "Get Lights: asphalt or concrete " << rwy.surface);
+            gen_runway_lights( lights );
+            break;
+            
+        case 3: // Grass
+        case 4: // Dirt
+        case 5: // Gravel
+        case 12: // dry lakebed
+            TG_LOG( SG_GENERAL, SG_DEBUG, "Get Lights: Grass, Dirt, Gravel or Dry Lakebed " << rwy.surface );
+            gen_runway_lights( lights );
+            break;
+            
+        case 13: // water
+        case 14: // snow
+        case 15: // transparent
+        default: // unknown
+            TG_LOG( SG_GENERAL, SG_DEBUG, "Get Lights: no lights: " << rwy.surface);
+            break;
+    }
+}
+
 #if 0
 int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
 {

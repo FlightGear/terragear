@@ -3,6 +3,9 @@ include_directories(${PROJECT_SOURCE_DIR}/src/Lib)
 
 add_executable(genapts850
     airport.hxx airport.cxx
+    airport_base.cxx
+    airport_features.cxx
+    airport_lights.cxx
     apt_math.hxx apt_math.cxx
     beznode.hxx
     closedpoly.hxx closedpoly.cxx

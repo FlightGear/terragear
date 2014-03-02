@@ -217,15 +217,15 @@ void TGConstruct::WriteBtgFile( void )
     obj.set_pt_materials( pt_materials );
     obj.set_tris_v( tris_v );
     obj.set_tris_n( tris_n );
-    obj.set_tris_tc( tris_tc );
+    obj.set_tris_pri_tc( tris_tc );
     obj.set_tri_materials( tri_materials );
     obj.set_strips_v( strips_v );
     obj.set_strips_n( strips_n );
-    obj.set_strips_tc( strips_tc );
+    obj.set_strips_pri_tc( strips_tc );
     obj.set_strip_materials( strip_materials );
     obj.set_fans_v( fans_v );
     obj.set_fans_n( fans_n );
-    obj.set_fans_tc( fans_tc );
+    obj.set_fans_pri_tc( fans_tc );
     obj.set_fan_materials( fan_materials );
 
     bool result;

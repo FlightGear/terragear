@@ -25,6 +25,7 @@
 
 #include <cstdio>
 #include <stdlib.h>
+#include <boost/concept_check.hpp>
 
 Helipad::Helipad(char* definition)
 {
@@ -112,6 +113,144 @@ void Helipad::build_helipad_shoulders( const tgContour& outer_area )
         shoulder_polys.push_back( shoulder_poly );
     }
 }
+
+
+
+
+void Helipad::GetMainPolys( tgpolygon_list& polys )
+{
+    //
+    // Generate the basic helipad outlines
+    //
+    double heli_size;
+    
+    // helipad constructed as a square with width or length added around it
+    if ( heli.width == heli.length ) {
+        heli_size = heli.length;
+    } else if ( heli.width > heli.length ) {
+        heli_size = heli.length;
+    } else {
+        heli_size = heli.width;
+    }
+    
+    tgPolygon helipad;
+    helipad.AddContour( gen_wgs84_area( GetLoc(), heli_size, 0, 0, heli_size, heli.heading, false) );
+    
+    std::string heli_mat, extra_mat;
+    if (heli.surface == 1) {
+        heli_mat  = "pa_heli";
+        extra_mat = "pa_tiedown";
+    } else {
+        heli_mat  = "pc_heli";
+        extra_mat = "pc_tiedown";
+    }
+    
+    helipad.SetMaterial( heli_mat );
+    helipad.SetTexParams( helipad.GetNode(0, 0), heli_size, heli_size, heli.heading );
+    helipad.SetTexLimits( 0,0,1,1 );
+    helipad.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, -1.0, -1.0, 1.0, 1.0 );
+    polys.push_back( helipad );
+    
+    // Now generate the actual rectangle, and clip it with the square
+    // need areference point at the origin of the direction, in the middle of width
+    SGGeod ref = SGGeodesy::direct( SGGeod::fromDeg(heli.lon, heli.lat),
+                                    SGMiscd::normalizePeriodic(0, 360, heli.heading + 180 ),
+                                    heli.length/2 );
+    
+    tgContour tiedown_area = gen_wgs84_rect( ref, heli.heading, heli.length, heli.width );
+    tgPolygon tiedown;
+    tiedown.AddContour( tiedown_area );
+    
+    // Create the final output and push on to the runway super_polygon
+    // list
+    tiedown.SetMaterial( extra_mat );
+    tiedown.SetTexParams( tiedown_area.GetNode(0), 5.0, 5.0, heli.heading );
+    tiedown.SetTexLimits( 1,1,0,0 );
+    tiedown.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+    polys.push_back( tiedown );
+    
+    // and build the shoulders 
+    build_helipad_shoulders( tiedown_area );   
+}
+
+void Helipad::GetShoulderPolys( tgpolygon_list& polys )
+{
+    for (unsigned int i=0; i<shoulder_polys.size(); i++) {
+        polys.push_back( shoulder_polys[i] );
+    }
+}
+
+void Helipad::GetInnerBasePolys( tgpolygon_list& polys )
+{
+    double    length, width;
+    tgPolygon ib;
+    
+    length = heli.length;
+    width  = heli.width;
+    if ( (heli.shoulder == 1) || (heli.shoulder == 2 ) ) {
+        length += 12.0;
+        width += 12.0;
+    } else {
+        length += 2.0;
+        width += 2.0;
+    }
+    
+    ib.AddContour( gen_helipad_area_w_extend( length * 0.25, width * 0.25 ) );
+    ib.SetMaterial( "Grass" );
+    ib.SetTexMethod( TG_TEX_BY_GEODE );
+    
+    // add this to the airport clearing
+    polys.push_back( ib );
+}
+
+void Helipad::GetOuterBasePolys( tgpolygon_list& polys )
+{
+    double    length, width;
+    tgPolygon ob;
+    
+    length = heli.length;
+    width  = heli.width;
+    if ( (heli.shoulder == 1) || (heli.shoulder == 2 ) ) {
+        length += 12.0;
+        width += 12.0;
+    } else {
+        length += 2.0;
+        width += 2.0;
+    }
+    
+    ob.AddContour( gen_helipad_area_w_extend( length * 0.5, width * 0.5 ) );
+    ob.SetMaterial( "Grass" );
+    ob.SetTexMethod( TG_TEX_BY_GEODE );
+    
+    // add this to the airport clearing
+    polys.push_back( ob );
+}
+
+void Helipad::GetLights( tglightcontour_list& lights )
+{
+    if (heli.edge_lights)
+    {
+        double heli_size;
+        
+        // helipad constructed as a square with width or length added around it
+        if ( heli.width == heli.length ) {
+            heli_size = heli.length;
+        } else if ( heli.width > heli.length ) {
+            heli_size = heli.length;
+        } else {
+            heli_size = heli.width;
+        }
+        
+        // Now generate the helipad lights
+        tglightcontour_list s = gen_helipad_lights(heli_size);
+        for ( unsigned int i = 0; i < s.size(); ++i ) {
+            lights.push_back( s[i] );
+        }
+    }
+}
+
+
+
 
 #if 0
 void Helipad::BuildBtg( tgpolygon_list& rwy_polys,

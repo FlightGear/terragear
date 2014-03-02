@@ -113,7 +113,9 @@ public:
     static tgContour AddColinearNodes( const tgContour& subject, UniqueSGGeodSet& nodes );
     static tgContour AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes );
     static bool      FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end );
-
+    static tgContour AddIntersectingNodes( const tgContour& subject, const tgtriangle_list& mesh );
+    static tgContour AddIntersectingNodes( const tgContour& subject, const tgTriangle& tri );
+    
     // conversions
     static ClipperLib::Path ToClipper( const tgContour& subject );
     static tgContour FromClipper( const ClipperLib::Path& subject );

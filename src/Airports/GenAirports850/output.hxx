@@ -32,6 +32,10 @@
 // update index file (list of objects to be included in final scenery build)
 void write_index( const std::string& base, const SGBucket& b, const std::string& name );
 
+// btg contains line data only - draped on top of base
+// lower LOD levels don't load this.
+void write_index_lines( const std::string& base, const SGBucket& b, const std::string& name );
+
 // update index file (list of shared objects to be included in final
 // scenery build)
 void write_index_shared( const std::string &base, const SGBucket &b,

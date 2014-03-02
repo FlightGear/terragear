@@ -103,14 +103,16 @@ public:
     // Constructor, specify min and max coordinates of desired area in
     // lon/lat degrees, also please specify an "average" airport
     // elevations in meters.
-    tgSurface( const std::string &path, const string_list& elev_src,
-               tgRectangle aptBounds, double average_elev_m,
-               double slope_max, double slope_eps
-             );
-
+    tgSurface();
+    
     // Destructor
     ~tgSurface();
 
+    void Create( const std::string &path, const string_list& elev_src,
+            tgRectangle aptBounds, double average_elev_m,
+            double slope_max, double slope_eps
+    );
+    
     // Use a linear least squares method to fit a 3d polynomial to the
     // sampled surface data
     void fit();

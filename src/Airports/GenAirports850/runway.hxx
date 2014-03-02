@@ -58,6 +58,8 @@ public:
     void GetInnerBasePolys( tgpolygon_list& polys );
     void GetOuterBasePolys( tgpolygon_list& polys );
 
+    void GetLights( tglightcontour_list& lights );
+    
 private:
     struct TGRunway {
     // data for whole runway

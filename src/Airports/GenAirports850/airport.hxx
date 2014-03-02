@@ -27,9 +27,10 @@
 #define AIRPORT_AREA_HELIPAD_SHOULDER   (5)
 #define AIRPORT_AREA_INNER_BASE         (6)
 #define AIRPORT_AREA_OUTER_BASE         (7)
+#define AIRPORT_AREA_FEATURES           (8)
 
 #define AIRPORT_MAX_BASE                (6)
-#define AIRPORT_NUM_AREAS               (8)
+#define AIRPORT_NUM_AREAS               (9)
 
 #define AIRPORT_LINE                    (0)
 
@@ -154,6 +155,9 @@ public:
 
 private:
     // The airport building stages....
+    
+    // Build the base (base_construct)
+    
     // Step 1 - build the base polygons - clip against higher priorities
     void BuildBase();
     // Step 2 - clip the base polygons
@@ -162,28 +166,32 @@ private:
     void CleanBase();
     // Step 3 - tesselate the base polygons - generate triangle list
     void TesselateBase();
+    void TextureBase();
+    // Step 9 - calculate  elevations
+    void CalcBaseElevations(const std::string& root, const string_list& elev_src);    
+    void LookupBaseIndexes(void);
+    // Step 10 - output
+    void WriteBaseOutput( const std::string& root, const SGBucket& b );
 
-    void TexturePolys();
+    // Build the features (feat_construct)
     
     // Step 4 - build the linear feature polygons
     void BuildFeatures();
-    // Step 5 - add nodes from pavement intersections
-    void IntersectFeaturesWithBase();
-    // Step 6 - clean the features
+    void ClipFeatures();
     void CleanFeatures();
-    // Step 7 - tesselate the feature polygons
+    void IntersectFeaturesWithBase(void);
+    // Step 3 - tesselate the base polygons - generate triangle list
     void TesselateFeatures();
-
-    // Step 8 - texture all triangles
-    void TextureTriangles();
-    // Step 9 - calculate  elevations
-    void CalcElevations(const std::string& root, const string_list& elev_src);
-
-    void LookupIndexes(void);
-    
+    void TextureFeatures();
+    void CalcFeatureElevations(void);    
+    void LookupFeatureIndexes(void);
     // Step 10 - output
-    void WriteOutput( const std::string& root, const SGBucket& b );
-
+    void WriteFeatureOutput( const std::string& root, const SGBucket& b );
+    
+    // Build the lights (light_construct)
+    void BuildLights( void );
+    void WriteLightsOutput( const std::string& root, const SGBucket& b );
+    
     int          code;               // airport, heliport or sea port
     int          altitude;           // in meters
     std::string  icao;               // airport code
@@ -202,18 +210,32 @@ private:
     PavementList    boundary;
 
     // runway lights
-    tglightcontour_list rwy_lights;
+    tglightcontour_list lights;
 
     // Elevation data
     tgArray array;
 
+    // the smoothing surface for generating the base
+    tgSurface       base_surf;
+    
+    // the triangles making up the base mesh
+    tgtriangle_list base_mesh;
+    
     // area polygons
     tgAreas polys_built;
     tgAreas polys_clipped;
 
-    // All Nodes
-    TGNodes nodes;
+    // Base Nodes
+    TGNodes base_nodes;
+    tgPolygon inner_base, outer_base;
 
+    // Feature Nodes
+    TGNodes feat_nodes;
+    
+    // Light Nodes
+    TGNodes light_nodes;
+    
+    
     // stats
     SGTimeStamp build_time;
     SGTimeStamp cleanup_time;

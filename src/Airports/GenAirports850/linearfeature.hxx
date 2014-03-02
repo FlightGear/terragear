@@ -94,7 +94,10 @@ public:
     }
 
     int Finish( bool closed, unsigned int idx );
-    int BuildBtg( tgpolygon_list& line_polys, tglightcontour_list& lights, tgAccumulator& accum, bool debug );
+    
+    void GetPolys( tgpolygon_list& polys );    
+    void GetLights( tglightcontour_list& lights );
+    
 
 private:
     double          offset;

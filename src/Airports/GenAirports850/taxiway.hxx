@@ -31,6 +31,7 @@ public:
     void GetPolys( tgpolygon_list& polys );
     void GetInnerBasePolys( tgpolygon_list& polys );
     void GetOuterBasePolys( tgpolygon_list& polys );
+    void GetLights(tglightcontour_list& lights);
     
 private:
     SGGeod  origin;
@@ -41,7 +42,6 @@ private:
     char    lighting[6];
 
     tgContour taxi_contour;
-    void GenLights(tglightcontour_list& rwy_lights);
 };
 
 typedef std::vector <Taxiway *> TaxiwayList;

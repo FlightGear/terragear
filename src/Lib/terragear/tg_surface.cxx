@@ -220,13 +220,13 @@ static void tgClampElevations( tgMatrix& Pts,
 
 // Constructor, specify min and max coordinates of desired area in
 // lon/lat degrees
-tgSurface::tgSurface( const std::string& path,
-                      const string_list& elev_src,
-                      tgRectangle aptBounds,
-                      double average_elev_m,
-                      double slope_max,
-                      double slope_eps
-                    )
+void tgSurface::Create( const std::string& path,
+                   const string_list& elev_src,
+                   tgRectangle aptBounds,
+                   double average_elev_m,
+                   double slope_max,
+                   double slope_eps
+                 )
 {
     // Calculate desired size of grid
     _aptBounds = aptBounds;
@@ -345,6 +345,9 @@ tgSurface::tgSurface( const std::string& path,
     SG_LOG(SG_GENERAL, SG_DEBUG, "  fit process successful.");
 }
 
+tgSurface::tgSurface() {
+    Pts = NULL;
+}
 
 tgSurface::~tgSurface() {
     delete Pts;

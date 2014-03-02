@@ -36,6 +36,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include "tg_nodes.hxx"
 #include "tg_rectangle.hxx"
@@ -90,17 +91,17 @@ public:
         idx_list[i] = idx;
     }
 
-    void    SetFaceNormal( const SGVec3f& n ) {
+    void SetFaceNormal( const SGVec3f& n ) {
         face_normal = n;
     };
     SGVec3f const& GetFaceNormal( void ) const {
         return face_normal;
     }
 
-    void    SetFaceArea( double a ) {
+    void SetFaceArea( double a ) {
         face_area = a;
     }
-    double  GetFaceArea( void ) const {
+    double GetFaceArea( void ) const {
         return face_area;
     }
 
@@ -110,7 +111,7 @@ public:
                             p3.getLongitudeDeg() * p1.getLatitudeDeg() - p1.getLongitudeDeg() * p3.getLatitudeDeg() ));
     }
 
-    tgsegment_list ToSegments()
+    tgsegment_list ToSegments() const
     {
         tgsegment_list result;
 
@@ -121,7 +122,44 @@ public:
         return result;
     }
 
-
+    bool InterpolateHeight( SGGeod& pt ) const
+    {
+        tgRectangle bb = GetBoundingBox();
+        
+        // SG_LOG(SG_TERRAIN, SG_ALERT, "TEST " << lon << "," << lat << " with BB " << minx << "," << miny << " - " << maxx << "," << maxy );
+        if ( bb.isInside( pt ) ) {
+            SGVec2d A = SGVec2d( node_list[0].getLongitudeDeg(), node_list[0].getLatitudeDeg() );
+            SGVec2d B = SGVec2d( node_list[1].getLongitudeDeg(), node_list[1].getLatitudeDeg() );
+            SGVec2d C = SGVec2d( node_list[2].getLongitudeDeg(), node_list[2].getLatitudeDeg() );
+            SGVec2d P = SGVec2d( pt.getLongitudeDeg(),           pt.getLatitudeDeg()           );
+            
+            SGVec2d V0 = C - A;
+            SGVec2d V1 = B - A;
+            SGVec2d V2 = P - A;
+            
+            // Compute dot products
+            double dot00 = dot(V0, V0);
+            double dot01 = dot(V0, V1);
+            double dot02 = dot(V0, V2);
+            double dot11 = dot(V1, V1);
+            double dot12 = dot(V1, V2);
+            
+            // Compute barycentric coordinates
+            double invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+            double l1 = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            double l2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
+            double l3 = ( 1 - l1 - l2 );
+            
+            if ( (l1 >= 0) && (l2 >= 0) && (l3 >= 0) ) {
+                double h = node_list[2].getElevationM()*l1 + node_list[1].getElevationM()*l2 + node_list[0].getElevationM()*l3;
+                pt.setElevationM( h );
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 

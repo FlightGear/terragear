@@ -370,13 +370,21 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     double      heading;
     double      dist;
     double      az2;
-    double      last_end_v;
+    double      v_dist = 10.0;
+    double      v_start = 0.0f;
+    double      v_end = 0.0f;
     double      width = 0;
+    double      atlas_start = 0.0, atlas_end = 0.0;
     std::string material;
     double      cur_light_dist = 0.0f;
     double      light_delta = 0;
     bool        markStarted;
 
+    #define     ATLAS_WIDTH (0.0078125)
+    
+    #define INVALID_START ATLAS_WIDTH*40
+    #define INVALID_END   ATLAS_WIDTH*41
+    
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
@@ -386,127 +394,174 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     for (unsigned int i=0; i<marks.size(); i++)
     {
         markStarted = false;
-        last_end_v   = 0.0f;
-
+        
         // which material for this mark?
         switch( marks[i]->type )
-        {
+        {            
             case LF_NONE:
                 break;
-
-            case LF_SOLID_YELLOW:
+                
+            // single width lines
+            case LF_SOLID_YELLOW: // good
                 material = "lf_sng_solid_yellow";
-                width = 0.25f;
+                width = 0.5f;
+                atlas_start = 1*ATLAS_WIDTH;
+                atlas_end   = 2*ATLAS_WIDTH;
                 break;
 
-            case LF_BROKEN_YELLOW:
+            case LF_BROKEN_YELLOW: // good
                 material = "lf_sng_broken_yellow";
-                width = 0.25f;
-                break;
-
-            case LF_SOLID_DBL_YELLOW:
-                material = "lf_dbl_solid_yellow";
                 width = 0.5f;
+                atlas_start = 2*ATLAS_WIDTH;
+                atlas_end   = 3*ATLAS_WIDTH;
                 break;
 
-            case LF_RUNWAY_HOLD:
-                material = "lf_runway_hold";
-                width = 1.0f;
-                break;
-
-            case LF_OTHER_HOLD:
-                material = "lf_other_hold";
-                width = 0.5f;
-                break;
-
-            case LF_ILS_HOLD:
-                material = "lf_ils_hold";
-                width = 1.0f;
-                break;
-
-            case LF_SAFETYZONE_CENTERLINE:
-                material = "lf_safetyzone_centerline";
-                width = 0.75f;
-                break;
-
-            case LF_SINGLE_LANE_QUEUE:
+            case LF_SINGLE_LANE_QUEUE: // good
                 material = "lf_sng_lane_queue";
-                width = 0.25f;
-                break;
-
-            case LF_DOUBLE_LANE_QUEUE:
-                material = "lf_dbl_lane_queue";
                 width = 0.5f;
+                atlas_start = 3*ATLAS_WIDTH;
+                atlas_end   = 4*ATLAS_WIDTH;
                 break;
-
-            case LF_B_SOLID_YELLOW:
+                
+            case LF_B_SOLID_YELLOW: // good
                 material = "lf_sng_solid_yellow_border";
-                width = 0.25f;
-                break;
-
-            case LF_B_BROKEN_YELLOW:
-                material = "lf_sng_broken_yellow_border";
-                width = 0.25f;
-                break;
-
-            case LF_B_SOLID_DBL_YELLOW:
-                material = "lf_dbl_solid_yellow_border";
                 width = 0.5f;
+                atlas_start = 4*ATLAS_WIDTH;
+                atlas_end   = 5*ATLAS_WIDTH;
                 break;
 
-            case LF_B_RUNWAY_HOLD:
-                material = "lf_runway_hold_border";
+            case LF_B_BROKEN_YELLOW: // good
+                material = "lf_sng_broken_yellow_border";
+                width = 0.5f;
+                atlas_start = 5*ATLAS_WIDTH;
+                atlas_end   = 6*ATLAS_WIDTH;
+                break;
+                
+            case LF_B_SINGLE_LANE_QUEUE: // good
+                material = "lf_sng_lane_queue_border";
+                width = 0.5f;
+                atlas_start = 6*ATLAS_WIDTH;
+                atlas_end   = 7*ATLAS_WIDTH;
+                break;
+                
+            case LF_SOLID_WHITE: // good
+                material = "lf_sng_solid_white";
+                width = 0.5f;
+                atlas_start = 7*ATLAS_WIDTH;
+                atlas_end   = 8*ATLAS_WIDTH;
+                break;
+                
+            case LF_BROKEN_WHITE: // good
+                material = "lf_broken_white";
+                width = 0.5f;
+                atlas_start = 8*ATLAS_WIDTH;
+                atlas_end   = 9*ATLAS_WIDTH;
+                break;
+                
+
+
+            case LF_SOLID_DBL_YELLOW:   // good
+                material = "lf_dbl_solid_yellow";
                 width = 1.0f;
+                atlas_start =10*ATLAS_WIDTH;
+                atlas_end =  12*ATLAS_WIDTH;
+                break;
+
+            case LF_DOUBLE_LANE_QUEUE: // good
+                material = "lf_dbl_lane_queue";
+                width = 1.0f;
+                atlas_start = 12*ATLAS_WIDTH;
+                atlas_end   = 14*ATLAS_WIDTH;
+                break;
+                
+            case LF_OTHER_HOLD: // good
+                material = "lf_other_hold";
+                width = 1.0f;
+                atlas_start = 14*ATLAS_WIDTH;
+                atlas_end   = 16*ATLAS_WIDTH;
+                break;
+
+            case LF_B_SOLID_DBL_YELLOW: // good
+                material = "lf_dbl_solid_yellow_border";
+                width = 1.0f;
+                atlas_start = 16*ATLAS_WIDTH;
+                atlas_end   = 18*ATLAS_WIDTH;
+                break;
+                
+            case LF_B_DOUBLE_LANE_QUEUE:
+                material = "lf_dbl_lane_queue_border";
+                width = 1.0f;
+                atlas_start = 18*ATLAS_WIDTH;
+                atlas_end   = 20*ATLAS_WIDTH;
                 break;
 
             case LF_B_OTHER_HOLD:
                 material = "lf_other_hold_border";
-                width = 0.5f;
+                width = 1.0f;
+                atlas_start = 20*ATLAS_WIDTH;
+                atlas_end   = 22*ATLAS_WIDTH;
                 break;
+                
+            case LF_CHECKERBOARD_WHITE:
+                material = "lf_checkerboard_white";
+                width = 1.0f;
+                atlas_start = 22*ATLAS_WIDTH;
+                atlas_end   = 24*ATLAS_WIDTH;
+                break;
+                
+
+            case LF_RUNWAY_HOLD:
+                material = "lf_runway_hold";
+                width = 2.0f;
+                atlas_start = 24*ATLAS_WIDTH;
+                atlas_end   = 28*ATLAS_WIDTH;
+                break;
+
+            case LF_B_RUNWAY_HOLD:
+                material = "lf_runway_hold_border";
+                width = 2.0f;
+                atlas_start = 28*ATLAS_WIDTH;
+                atlas_end   = 32*ATLAS_WIDTH;
+                break;
+                
+            case LF_ILS_HOLD:
+                material = "lf_ils_hold";
+                width = 2.0f;
+                atlas_start = 32*ATLAS_WIDTH;
+                atlas_end   = 36*ATLAS_WIDTH;
+                break;
+
+            case LF_SAFETYZONE_CENTERLINE:
+                material = "lf_safetyzone_centerline";
+                width = 2.0f;
+                atlas_start = 36*ATLAS_WIDTH;
+                atlas_end =   40*ATLAS_WIDTH;
+                break;
+
+
+
 
             case LF_B_ILS_HOLD:
                 material = "lf_ils_hold_border";
-                width = 1.0f;
+                width = 2.0f;
+                atlas_start = 38*ATLAS_WIDTH;
+                atlas_end =   42*ATLAS_WIDTH;
                 break;
 
             case LF_B_SAFETYZONE_CENTERLINE:
                 material = "lf_safetyzone_centerline_border";
-                width = 0.75f;
-                break;
-
-            case LF_B_SINGLE_LANE_QUEUE:
-                material = "lf_sng_lane_queue_border";
-                width = 0.25f;
-                break;
-
-            case LF_B_DOUBLE_LANE_QUEUE:
-                material = "lf_dbl_lane_queue_border";
-                width = 0.5f;
-                break;
-
-            case LF_SOLID_WHITE:
-                material = "lf_sng_solid_white";
-                width = 0.25f;
-                break;
-
-            case LF_CHECKERBOARD_WHITE:
-                material = "lf_checkerboard_white";
-                width = 0.5f;
-                break;
-
-            case LF_BROKEN_WHITE:
-                material = "lf_broken_white";
-                width = 0.25f;
+                width = 2.00f;
+                atlas_start = 42*ATLAS_WIDTH;
+                atlas_end   = 46*ATLAS_WIDTH;
                 break;
 
             default:
                 TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << marks[i]->type );
                 exit(1);
         }
-
+        
         for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
         {
-            TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
             // for each point on the PointsList, generate a quad from
             // start to next, offset by 2 distnaces from the edge
 
@@ -531,12 +586,46 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 // OffsetPointsMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset, width, cur_inner, cur_outer );
             }
 
+            
+            // Linear feature texturing
+            //
+            // u is clipped based on the texture atlas.
+            // The atlas contains vertical stripes, so only u is looked up.
+            // v sarts at 0.0 at the beginning of a mark, and the end v is calculated.  
+            // The continuing marks start v is based on the previous poly's end v 
+            //
+            // Diagramed below:
+            //
+            //
+            // poly 1
+            // length  = 48.75
+            // v_dist (v=0,1) = 10.0
+            // v_start = 0.000
+            // v_end   = 4.875
+            
+            // 00.00   10.00   20.00   30.00   40.00   48.75
+            // 0       1       2       3       4       4.875
+            
+            // poly 2
+            // length  = 24.93
+            // v_dist  = 10.0
+            // v_start = 0.875 : fmod( prev v_end, 1.0 )
+            // v_end   = 0.875 + 2.493 = 3.368
+            
+            // 08.75   10.00   20.00   30.00   33.68 
+            // 0.875   1       2       3       3.368       
+            
             if ( markStarted )
             {
                 SGGeod prev_mp = midpoint( prev_outer, prev_inner );
                 SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
                 SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
 
+                v_start = fmod( v_end, 1.0 );
+                v_end   = v_start + (dist/v_dist);
+                
+                TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: Create TCs for mark " << i << " poly " << j << " dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
+                
                 poly.Erase();
                 poly.AddNode( 0, prev_inner );
                 poly.AddNode( 0, prev_outer );
@@ -545,12 +634,12 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 poly = tgPolygon::Snap( poly, gSnap );
 
                 poly.SetMaterial( material );
-                poly.SetTexParams( prev_inner, width, 1.0f, heading );
-                poly.SetTexLimits( 0, last_end_v, 1, 1 );
+                poly.SetTexParams( prev_inner, width, v_dist, heading );
+                                
                 poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+                poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
+                                
                 marking_polys.push_back(poly);
-
-                last_end_v = (double)1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
             } else {
                 markStarted = true;
             }
@@ -715,26 +804,18 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     return 1;
 }
 
-int LinearFeature::BuildBtg(tgpolygon_list& line_polys, tglightcontour_list& lights, tgAccumulator& accum, bool make_shapefiles )
+void LinearFeature::GetPolys( tgpolygon_list& polys )
 {
-    tgPolygon poly;
-    SGGeod    min, max, minp, maxp;
-
-    TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature::BuildBtg: " << description);
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
-        // Clipping and triangulation need to copy texparams, and material info...
-        marking_polys[i] = accum.Diff( marking_polys[i] );
-        line_polys.push_back( marking_polys[i] );
+        polys.push_back( marking_polys[i] );
+    }    
+}
 
-        accum.Add( marking_polys[i] );
-    }
-
-    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::BuildBtg: add " << lighting_polys.size() << " light defs");
+void LinearFeature::GetLights( tglightcontour_list& lights )
+{
     for ( unsigned i = 0; i < lighting_polys.size(); i++)
     {
         lights.push_back( lighting_polys[i] );
     }
-
-    return 1;
 }

@@ -753,6 +753,50 @@ bool tgContour::FindColinearLine( const tgContour& subject, const SGGeod& node, 
     return false;
 }
 
+tgContour tgContour::AddIntersectingNodes( const tgContour& subject, const tgTriangle& tri )
+{
+    tgsegment_list contour_segs = ToSegments( subject );
+    tgsegment_list triangle_segs = tri.ToSegments();
+    std::vector<SGGeod> intersections;
+    tgContour result;
+    
+    for ( unsigned int cs=0; cs<contour_segs.size(); cs++ ) {
+        for ( unsigned int ts=0; ts<triangle_segs.size(); ts++ ) {
+            FindIntersections( contour_segs[cs], triangle_segs[ts], intersections );
+        }
+    }
+    
+    // first, add all of the intersecting points - AddColinearNodes will sort them
+    result = AddColinearNodes( subject, intersections );
+    
+    return result;
+}
+
+tgContour tgContour::AddIntersectingNodes( const tgContour& subject, const tgtriangle_list& mesh )
+{
+    // first, lets limit the set based on bounding box
+    tgRectangle bb = subject.GetBoundingBox();
+    tgContour result;
+    
+    // copy the contour
+    for ( unsigned int n=0; n<subject.GetSize(); n++ )
+    {
+        result.AddNode( subject.GetNode(n) );
+    }
+    
+    for ( unsigned int t=0; t < mesh.size(); t++ ) {
+        tgRectangle tbb = mesh[t].GetBoundingBox();
+        if ( bb.intersects( tbb ) )
+        {
+            // look for line intersections
+            result = AddIntersectingNodes( result, mesh[t] );
+        }
+    }
+    
+    return result;
+}
+
+
 tgContour tgContour::Expand( const tgContour& subject, double offset )
 {
     tgPolygon poly;
