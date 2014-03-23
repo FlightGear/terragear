@@ -58,6 +58,13 @@ tgRectangle tgTriangle::GetBoundingBox( void ) const
     return tgRectangle( min, max );
 }
 
+SGGeod tgTriangle::GetCentroid( void ) const
+{
+    return SGGeod::fromDeg( 
+        (node_list[0].getLongitudeDeg() + node_list[1].getLongitudeDeg() + node_list[2].getLongitudeDeg()) / 3,
+        (node_list[0].getLatitudeDeg() + node_list[1].getLatitudeDeg() + node_list[2].getLatitudeDeg()) / 3
+    );
+}
 
 // tgPolygon static functions
 unsigned int tgPolygon::TotalNodes( void ) const
@@ -252,6 +259,8 @@ void tgPolygon::Texture( void )
     double  x, y;
     float   tx, ty;
 
+    sglog().setLogLevels( SG_GENERAL, SG_INFO );
+    
     switch( tp.method ) {
         case TG_TEX_BY_GEODE:
         {
@@ -269,7 +278,7 @@ void tgPolygon::Texture( void )
 
                 nodes = triangles[i].GetNodeList();
                 tc_list = sgCalcTexCoords( tp.center_lat, nodes, node_idxs );
-                triangles[i].SetTexCoordList( tc_list );
+                triangles[i].SetPriTexCoordList( tc_list );
             }
         }
         break;
@@ -350,11 +359,140 @@ void tgPolygon::Texture( void )
                     t = SGVec2f( tx, ty );
                     SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ", " << ty << ")");
 
-                    triangles[i].SetTexCoord( j, t );
+                    triangles[i].SetPriTexCoord( j, t );
                 }
             }            
         }
         break;
+        
+        default:
+            SG_LOG(SG_GENERAL, SG_ALERT, "TEX METHOD NOT SET for PRIMARY tex params " << tp.method );
+            //exit(100);
+            break;            
+    }
+}
+
+void tgPolygon::TextureSecondary( void )
+{
+    SGGeod      p;
+    SGVec2f     t;
+    double      x, y;
+    float       tx, ty;
+    tgTexParams stp;
+    
+    for ( unsigned int i = 0; i < triangles.size(); i++ ) {
+        stp = triangles[i].GetSecondaryTexParams();
+    
+        switch( stp.method ) {
+            case TG_TEX_BY_GEODE:
+            {
+                // The Simgear General texture coordinate routine takes a fan.
+                // Simgear could probably use a new function that just takes a Geod vector
+                // For now, just create an identity fan...
+                std::vector< int > node_idxs;
+                for (int i = 0; i < 3; i++) {
+                    node_idxs.push_back(i);
+                }
+            
+                for ( unsigned int i = 0; i < triangles.size(); i++ ) {
+                    std::vector< SGVec2f > tc_list;
+                    std::vector< SGGeod > nodes;
+                
+                    nodes = triangles[i].GetNodeList();
+                    tc_list = sgCalcTexCoords( stp.center_lat, nodes, node_idxs );
+                    triangles[i].SetSecTexCoordList( tc_list );
+                }
+            }
+            break;
+        
+            case TG_TEX_BY_TPS_NOCLIP:
+            case TG_TEX_BY_TPS_CLIPU:
+            case TG_TEX_BY_TPS_CLIPV:
+            case TG_TEX_BY_TPS_CLIPUV:
+            {             
+                SG_LOG(SG_GENERAL, SG_DEBUG, "stp ref is " << stp.ref << " width " << stp.width << " Length " << stp.length );
+            
+                for ( unsigned int j = 0; j < 3; j++ ) {
+                    p = triangles[i].GetNode( j );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "triangle " << i << " node " << j << " = " << p);
+                    
+                    //
+                    // 1. Calculate distance and bearing from the center of
+                    // the poly
+                    //
+                    
+                    // given alt, lat1, lon1, lat2, lon2, calculate starting
+                    // and ending az1, az2 and distance (s).  Lat, lon, and
+                    // azimuth are in degrees.  distance in meters
+                    double az1, az2, dist;
+                    SGGeodesy::inverse( stp.ref, p, az1, az2, dist );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\tbasic course = " << az2 << " dist is " << dist );
+                    
+                    //
+                    // 2. Rotate this back into a coordinate system where Y
+                    // runs the length of the poly and X runs crossways.
+                    //
+                    
+                    double course = SGMiscd::normalizePeriodic(0, 360, az2 - stp.heading);
+                    SG_LOG( SG_GENERAL, SG_DEBUG,"\t  course = " << course << "  dist = " << dist );
+                    
+                    //
+                    // 3. Convert from polar to cartesian coordinates
+                    //
+                    
+                    x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
+                    y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  x = " << x << " y = " << y);
+                    
+                    //
+                    // 4. Map x, y point into texture coordinates
+                    //
+                    float tmp;
+                    
+                    tmp = (float)x / (float)stp.width;
+                    tx = tmp * (float)(stp.maxu - stp.minu) + (float)stp.minu;
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ")");
+                    
+                    // clip u?
+                    if ( (stp.method == TG_TEX_BY_TPS_CLIPU) || (stp.method == TG_TEX_BY_TPS_CLIPUV) ) {
+                        if ( tx < (float)stp.min_clipu ) { tx = (float)stp.min_clipu; }
+                        if ( tx > (float)stp.max_clipu ) { tx = (float)stp.max_clipu; }
+                    }
+                    
+                    tmp = (float)y / (float)stp.length;
+                    if ( stp.method != TG_TEX_BY_TPS_CLIPU )
+                    {
+                        ty = tmp * (float)(stp.maxv - stp.minv) + (float)stp.minv;
+                    }
+                    else
+                    {
+                        ty = tmp+(float)stp.minv;
+                    }
+                    
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << ty << ")");
+                    
+                    // clip v?
+                    if ( (stp.method == TG_TEX_BY_TPS_CLIPV) || (stp.method == TG_TEX_BY_TPS_CLIPUV) ) {
+                        if ( ty < (float)stp.min_clipv ) { ty = (float)stp.min_clipv; }
+                        if ( ty > (float)stp.max_clipv ) { ty = (float)stp.max_clipv; }
+                    }
+                    
+                    t = SGVec2f( tx, ty );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ", " << ty << ")");
+                    
+                    triangles[i].SetSecTexCoord( j, t );
+                }
+            }
+            break;
+            
+            case TG_TEX_UNKNOWN:
+                SG_LOG(SG_GENERAL, SG_DEBUG, "TEX METHOD UNKNOWN (never set) for secondary tex params " << stp.method );
+                break;
+                
+            default:
+                SG_LOG(SG_GENERAL, SG_DEBUG, "TEX METHOD NOT SET for secondary tex params " << stp.method );
+                break;
+        }
     }
 }
 
@@ -474,13 +612,20 @@ std::ostream& operator<< ( std::ostream& output, const tgTriangle& subject )
         output << "empty\n";
     }
 
-    output << "texture coords\n";
-    if ( subject.tc_list.size() == 3 ) {
-        output << subject.tc_list[0] << ", " << subject.tc_list[1] << ", " << subject.tc_list[2] << "\n";
+    output << "primary texture coords\n";
+    if ( subject.pri_tc_list.size() == 3 ) {
+        output << subject.pri_tc_list[0] << ", " << subject.pri_tc_list[1] << ", " << subject.pri_tc_list[2] << "\n";
     } else {
         output << "empty\n";
     }
-
+    
+    output << "secondary texture coords\n";
+    if ( subject.sec_tc_list.size() == 3 ) {
+        output << subject.sec_tc_list[0] << ", " << subject.sec_tc_list[1] << ", " << subject.sec_tc_list[2] << "\n";
+    } else {
+        output << "empty\n";
+    }
+    
     output << "node indexes\n";
     if ( subject.idx_list.size() == 3 ) {
         output << subject.idx_list[0] << ", " << subject.idx_list[1] << ", " << subject.idx_list[2] << "\n";

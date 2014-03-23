@@ -78,10 +78,11 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 unsigned int count;
 
                 sgReadUInt( fp, &count );
-                SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
+                SG_LOG( SG_GENERAL, SG_INFO, " Load " << count << " polys from " << p.realpath() );
 
                 for ( unsigned int i=0; i<count; i++ ) {
                     poly.LoadFromGzFile( fp );
+                    
                     area     = area_defs.get_area_priority( poly.GetFlag() );
                     material = area_defs.get_area_name( area );
 

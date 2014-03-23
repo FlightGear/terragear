@@ -180,6 +180,8 @@ void Airport::IntersectFeaturesWithBase(void)
 
 void Airport::TesselateFeatures()
 {
+    sglog().setLogLevels( SG_GENERAL, SG_INFO );
+    
     // tesselate the polygons and prepair them for final output
     for (unsigned int p = 0; p < polys_clipped.area_size(AIRPORT_AREA_FEATURES); p++ ) {
         //TG_LOG(SG_GENERAL, SG_INFO, "Tesselating Base poly " << area << ", " << p );
@@ -192,6 +194,33 @@ void Airport::TesselateFeatures()
         #endif
             
         poly.Tesselate();
+        
+        // for each triangle in the solution, find the triangle it is coplanar with
+        for ( unsigned int t=0; t<poly.Triangles(); t++ ) {
+            SGGeod c = poly.GetTriangle(t).GetCentroid();
+            bool trifound = false;
+            
+            // now find the triangle in the base mesh this feature triangle is coplanar with
+            for ( unsigned int bm=0; bm<base_mesh.size(); bm++ ) {
+                if ( base_mesh[bm].IsPointInside( c ) ) {
+                    // assign secondary TexParams from base_mesh triangle parent poly
+                    tgTexParams tp = base_mesh[bm].GetParent()->GetTexParams();
+                    if ( tp.method == TG_TEX_UNKNOWN ) {
+                        SG_LOG( SG_GENERAL, SG_INFO, "Tesselate poly " << p+1 << " of " << (int)polys_clipped.area_size(AIRPORT_AREA_FEATURES) << " triangle " << t+1 << " found tp with unset method " );
+                    }
+                    
+                    SG_LOG( SG_GENERAL, SG_INFO, "Tesselate poly " << p+1 << " of " << (int)polys_clipped.area_size(AIRPORT_AREA_FEATURES) << " triangle " << t+1 << " set tp with method " << tp.method );
+                    poly.GetTriangle(t).SetSecondaryTexParams( tp );
+                    trifound = true;
+                    break;
+                }
+            }
+            
+            if (!trifound) {
+                SG_LOG( SG_GENERAL, SG_INFO, "Tesselate poly " << p+1 << " of " << (int)polys_clipped.area_size(AIRPORT_AREA_FEATURES) << " triangle " << t+1 << " could not find base mesh texparams " );
+                exit(-100);
+            }
+        }
     }
 
     for (unsigned int p = 0; p < polys_clipped.area_size(AIRPORT_AREA_FEATURES); p++ ) {
@@ -208,10 +237,24 @@ void Airport::TesselateFeatures()
 }
 
 void Airport::TextureFeatures( void )
-{    
+{        
     for( unsigned int p = 0; p < polys_clipped.area_size(AIRPORT_AREA_FEATURES); p++ ) {
         tgPolygon& poly = polys_clipped.get_poly(AIRPORT_AREA_FEATURES, p);
-        poly.Texture( );
+        poly.Texture();
+
+        sglog().setLogLevels( SG_GENERAL, SG_DEBUG );
+        poly.TextureSecondary();
+        
+        for ( unsigned int t=0; t<poly.Triangles(); t++ ) {
+            for ( unsigned int n=0; n<3; n++) {
+                SGVec2f ptc = poly.GetTriPriTexCoord( t, n );
+                SG_LOG( SG_GENERAL, SG_DEBUG, "Texture poly " << p+1 << " of " << (int)polys_clipped.area_size(AIRPORT_AREA_FEATURES) << " triangle " << t+1 << " node " << n+1 << " pri tx " <<  ptc );
+            
+                SGVec2f stc = poly.GetTriSecTexCoord( t, n );
+                SG_LOG( SG_GENERAL, SG_DEBUG, "Texture poly " << p+1 << " of " << (int)polys_clipped.area_size(AIRPORT_AREA_FEATURES) << " triangle " << t+1 << " node " << n+1 << " sec tx " <<  stc );
+            }
+        }
+        sglog().setLogLevels( SG_GENERAL, SG_INFO );        
     }    
 }
 
@@ -269,18 +312,21 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
         
         group_list tris_v; tris_v.clear();
         group_list tris_n; tris_n.clear();
-        group_list tris_tc; tris_tc.clear();
+        group_list tris_pri_tc; tris_pri_tc.clear();
+        group_list tris_sec_tc; tris_sec_tc.clear();
         string_list tri_materials; tri_materials.clear();
         
         group_list strips_v; strips_v.clear();
         group_list strips_n; strips_n.clear();
-        group_list strips_tc; strips_tc.clear();
+        group_list strips_pri_tc; strips_pri_tc.clear();
+        group_list strips_sec_tc; strips_sec_tc.clear();
         string_list strip_materials; strip_materials.clear();
         
         int index;
         int_list pt_v, tri_v, strip_v;
         int_list pt_n, tri_n, strip_n;
-        int_list tri_tc, strip_tc;
+        int_list tri_pri_tc, strip_pri_tc;
+        int_list tri_sec_tc, strip_sec_tc;
         
         for (unsigned int p = 0; p < polys_clipped.area_size(AIRPORT_AREA_FEATURES); p++ ) {
             tgPolygon   poly      = polys_clipped.get_poly(AIRPORT_AREA_FEATURES, p);
@@ -289,7 +335,8 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
             for (unsigned int k = 0; k < poly.Triangles(); ++k) {
                 tri_v.clear();
                 tri_n.clear();
-                tri_tc.clear();
+                tri_pri_tc.clear();
+                tri_sec_tc.clear();
                 for (int l = 0; l < 3; ++l) {
                     
                     // SG_LOG( SG_GENERAL, SG_INFO, "tri index is " << poly.GetTriIdx( k, l ) );
@@ -301,13 +348,16 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
                     index = normals.add( vnt );
                     tri_n.push_back( index );
                     
-                    index = texcoords.add( poly.GetTriTexCoord( k, l ) );
-                    tri_tc.push_back( index );
+                    index = texcoords.add( poly.GetTriPriTexCoord( k, l ) );
+                    tri_pri_tc.push_back( index );
+                    
+                    index = texcoords.add( poly.GetTriSecTexCoord( k, l ) );
+                    tri_sec_tc.push_back( index );                    
                 }
                 tris_v.push_back( tri_v );
                 tris_n.push_back( tri_n );
-                tris_tc.push_back( tri_tc );
-                
+                tris_pri_tc.push_back( tri_pri_tc );
+                tris_sec_tc.push_back( tri_sec_tc );               
                 tri_materials.push_back( material );
             }
         }
@@ -353,11 +403,13 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
         obj.set_pt_materials( pt_materials );
         obj.set_tris_v( tris_v );
         obj.set_tris_n( tris_n );
-        obj.set_tris_pri_tc( tris_tc );
+        obj.set_tris_pri_tc( tris_pri_tc );
+        obj.set_tris_sec_tc( tris_sec_tc );
         obj.set_tri_materials( tri_materials );
         obj.set_strips_v( strips_v );
         obj.set_strips_n( strips_n );
-        obj.set_strips_pri_tc( strips_tc );
+        obj.set_strips_pri_tc( strips_pri_tc );
+        obj.set_strips_sec_tc( strips_sec_tc );
         obj.set_strip_materials( strip_materials );
         obj.set_fans_v( fans_v );
         obj.set_fans_n( fans_n );

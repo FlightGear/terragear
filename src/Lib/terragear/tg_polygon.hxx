@@ -63,6 +63,7 @@
 
 #include "tg_rectangle.hxx"
 #include "tg_contour.hxx"
+#include "tg_texparams.hxx"
 
 // utilities - belong is simgear?
 double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, const SGVec3d& cp );
@@ -92,44 +93,6 @@ class TGNodes;
 typedef std::vector <tgPolygon>  tgpolygon_list;
 typedef tgpolygon_list::iterator tgpolygon_list_iterator;
 typedef tgpolygon_list::const_iterator const_tgpolygon_list_iterator;
-
-
-typedef enum {
-    TG_TEX_BY_GEODE,
-    TG_TEX_BY_TPS_NOCLIP,
-    TG_TEX_BY_TPS_CLIPU,
-    TG_TEX_BY_TPS_CLIPV,
-    TG_TEX_BY_TPS_CLIPUV
-} tgTexMethod;
-
-class tgTexParams
-{
-public:
-    SGGeod ref;
-    double width;
-    double length;
-    double heading;
-
-    double minu;
-    double maxu;
-    double minv;
-    double maxv;
-
-    double min_clipu;
-    double max_clipu;
-    double min_clipv;
-    double max_clipv;
-
-    tgTexMethod method;
-
-    double center_lat;
-
-    void SaveToGzFile( gzFile& fp ) const;
-    void LoadFromGzFile( gzFile& fp );
-
-    // Friend for output
-    friend std::ostream& operator<< ( std::ostream&, const tgTexParams& );
-};
 
 class tgPolygon
 {
@@ -192,21 +155,28 @@ public:
     unsigned int Triangles( void ) const {
         return triangles.size();
     }
-    void AddTriangle( const tgTriangle& triangle ) {
+    void AddTriangle( tgTriangle& triangle ) {
+        triangle.SetParent( this );
         triangles.push_back( triangle );
     }
     void AddTriangle( const SGGeod& p1, const SGGeod p2, const SGGeod p3 ) {
-        triangles.push_back( tgTriangle( p1, p2, p3 ) );
+        triangles.push_back( tgTriangle( p1, p2, p3, this ) );
     }
-    tgTriangle GetTriangle( unsigned int t ) const {
+    tgTriangle& GetTriangle( unsigned int t ) {
         return triangles[t];
-    }
-
+    }    
     SGGeod GetTriNode( unsigned int c, unsigned int i ) const {
         return triangles[c].GetNode( i );
     }
-    SGVec2f GetTriTexCoord( unsigned int c, unsigned int i ) const {
-        return triangles[c].GetTexCoord( i );
+    SGVec2f GetTriPriTexCoord( unsigned int c, unsigned int i ) const {
+        return triangles[c].GetPriTexCoord( i );
+    }
+    SGVec2f GetTriSecTexCoord( unsigned int c, unsigned int i ) const {
+        if ( c < triangles.size() ) {
+            return triangles[c].GetSecTexCoord( i );
+        } else {
+            return SGVec2f(0.0, 0.0);
+        }
     }
     void SetTriIdx( unsigned int c, unsigned int i, int idx ) {
         triangles[c].SetIndex( i, idx );
@@ -296,6 +266,7 @@ public:
         return tp.method;
     }
     void Texture( void );
+    void TextureSecondary( void );
 
     // Tesselation
     void Tesselate( void );

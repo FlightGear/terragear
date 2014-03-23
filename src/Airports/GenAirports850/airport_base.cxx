@@ -438,7 +438,7 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
                         index = normals.add( vnt );
                         tri_n.push_back( index );
 
-                        index = texcoords.add( poly.GetTriTexCoord( k, l ) );
+                        index = texcoords.add( poly.GetTriPriTexCoord( k, l ) );
                         tri_tc.push_back( index );
                     }
                     tris_v.push_back( tri_v );

@@ -72,7 +72,8 @@ void write_index_lines( const string& base, const SGBucket& b, const string& nam
         exit(-1);
     }
     
-    fprintf( fp, "OBJECT_LINES %s\n", name.c_str() );
+//    fprintf( fp, "OBJECT_LINES %s\n", name.c_str() );
+    fprintf( fp, "OBJECT %s\n", name.c_str() );
     fclose( fp );
 }
 

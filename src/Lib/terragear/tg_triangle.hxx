@@ -40,30 +40,72 @@
 
 #include "tg_nodes.hxx"
 #include "tg_rectangle.hxx"
+#include "tg_texparams.hxx"
 #include "tg_misc.hxx"
 #include "clipper.hpp"
+
+typedef std::vector<double>  va_dbl_list;
+typedef std::vector<int>     va_int_list;
+
+typedef std::vector<va_dbl_list> vertex_attrib_double_list;
+typedef std::vector<va_int_list> vertex_attrib_integer_list;
+
+class tgPolygon;
 
 class tgTriangle
 {
 public:
     tgTriangle() {
+        // resize mandatory lists
         node_list.resize( 3, SGGeod::fromDegM(0.0, 0.0, 0.0) );
-        tc_list.resize(   3, SGVec2f(0.0, 0.0) );
+        pri_tc_list.resize(   3, SGVec2f(0.0, 0.0) );
         norm_list.resize( 3, SGVec3d(0.0, 0.0, 0.0) );
         idx_list.resize(  3, -1 );
+
+        // clear optional lists
+        sec_tc_list.clear();
+        vas_dbl.clear();
+        vas_int.clear();
+        
+        parent = NULL;
+        
+        secondaryTP.method = TG_TEX_UNKNOWN;
     }
 
-    tgTriangle( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2 ) {
+    tgTriangle( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2, const tgPolygon* p ) {
         node_list.push_back( p0 );
         node_list.push_back( p1 );
         node_list.push_back( p2 );
 
-        tc_list.resize(   3, SGVec2f(0.0, 0.0) );
+        // resize mandatory lists
+        pri_tc_list.resize(   3, SGVec2f(0.0, 0.0) );
         norm_list.resize( 3, SGVec3d(0.0, 0.0, 0.0) );
         idx_list.resize(  3, -1 );
+
+        // clear optional lists
+        sec_tc_list.resize( 3, SGVec2f(0.0, 0.0) );
+        vas_dbl.clear();
+        vas_int.clear();
+        
+        parent = p;
     }
 
+    const tgPolygon* GetParent() {
+        return parent;
+    }
+    void SetParent( const tgPolygon* p ) {
+        parent = p;
+    }
+    
+    void SetSecondaryTexParams( tgTexParams tp ) {
+        secondaryTP = tp;
+    }
+    tgTexParams GetSecondaryTexParams( void ) const {
+        return secondaryTP;
+    }
+    
     tgRectangle GetBoundingBox( void ) const;
+    SGGeod GetCentroid( void ) const;
 
     SGGeod const& GetNode( unsigned int i ) const {
         return node_list[i];
@@ -75,15 +117,26 @@ public:
         node_list[i] = n;
     }
 
-    SGVec2f GetTexCoord( unsigned int i ) const {
-        return tc_list[i];
+    SGVec2f GetPriTexCoord( unsigned int i ) const {
+        return pri_tc_list[i];
     }
-    void SetTexCoord( unsigned int i, const SGVec2f tc ) {
-        tc_list[i] = tc;
+    void SetPriTexCoord( unsigned int i, const SGVec2f tc ) {
+        pri_tc_list[i] = tc;
     }
-    void SetTexCoordList( const std::vector<SGVec2f>& tcs ) {
-        tc_list = tcs;
+    void SetPriTexCoordList( const std::vector<SGVec2f>& tcs ) {
+        pri_tc_list = tcs;
     }
+
+    SGVec2f GetSecTexCoord( unsigned int i ) const {
+        return sec_tc_list[i];
+    }
+    void SetSecTexCoord( unsigned int i, const SGVec2f tc ) {
+        sec_tc_list[i] = tc;
+    }
+    void SetSecTexCoordList( const std::vector<SGVec2f>& tcs ) {
+        sec_tc_list = tcs;
+    }
+    
     int GetIndex( unsigned int i ) const {
         return idx_list[i];
     }
@@ -122,6 +175,42 @@ public:
         return result;
     }
 
+    bool IsPointInside( SGGeod& pt ) const
+    {
+        tgRectangle bb = GetBoundingBox();
+        
+        // SG_LOG(SG_TERRAIN, SG_ALERT, "TEST " << lon << "," << lat << " with BB " << minx << "," << miny << " - " << maxx << "," << maxy );
+        if ( bb.isInside( pt ) ) {
+            SGVec2d A = SGVec2d( node_list[0].getLongitudeDeg(), node_list[0].getLatitudeDeg() );
+            SGVec2d B = SGVec2d( node_list[1].getLongitudeDeg(), node_list[1].getLatitudeDeg() );
+            SGVec2d C = SGVec2d( node_list[2].getLongitudeDeg(), node_list[2].getLatitudeDeg() );
+            SGVec2d P = SGVec2d( pt.getLongitudeDeg(),           pt.getLatitudeDeg()           );
+            
+            SGVec2d V0 = C - A;
+            SGVec2d V1 = B - A;
+            SGVec2d V2 = P - A;
+            
+            // Compute dot products
+            double dot00 = dot(V0, V0);
+            double dot01 = dot(V0, V1);
+            double dot02 = dot(V0, V2);
+            double dot11 = dot(V1, V1);
+            double dot12 = dot(V1, V2);
+            
+            // Compute barycentric coordinates
+            double invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+            double l1 = (dot11 * dot02 - dot01 * dot12) * invDenom;
+            double l2 = (dot00 * dot12 - dot01 * dot02) * invDenom;
+            double l3 = ( 1 - l1 - l2 );
+            
+            if ( (l1 >= 0) && (l2 >= 0) && (l3 >= 0) ) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
     bool InterpolateHeight( SGGeod& pt ) const
     {
         tgRectangle bb = GetBoundingBox();
@@ -167,11 +256,19 @@ public:
     friend std::ostream& operator<< ( std::ostream&, const tgTriangle& );
 
 private:
+    const tgPolygon* parent;
+    
     std::vector<SGGeod>  node_list;
-    std::vector<SGVec2f> tc_list;
+    std::vector<SGVec2f> pri_tc_list;
+    std::vector<SGVec2f> sec_tc_list;
     std::vector<SGVec3d> norm_list;
     std::vector<int>     idx_list;
-
+    
+    tgTexParams secondaryTP;
+    
+    vertex_attrib_double_list   vas_dbl;
+    vertex_attrib_integer_list  vas_int;
+    
     SGVec3f face_normal;
     double  face_area;
 };

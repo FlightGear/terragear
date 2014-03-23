@@ -163,7 +163,7 @@ void TGConstruct::WriteBtgFile( void )
                         index = normals.add( nodes.GetNormal( index ) );
                         tri_n.push_back( index );
 
-                        index = texcoords.add( poly.GetTriTexCoord( k, l ) );
+                        index = texcoords.add( poly.GetTriPriTexCoord( k, l ) );
                         tri_tc.push_back( index );
                     }
                     tris_v.push_back( tri_v );
