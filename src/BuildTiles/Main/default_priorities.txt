@@ -4,7 +4,6 @@ Ocean				# collect slivers as ocean
 
 # Area types in order of descending priority
 Hole			hole	# Leave area completely empty
-Airport			other
 Freeway			road
 Road			road
 Road-Motorway       road
@@ -20,6 +19,7 @@ Road-Unclassified   road
 
 Railroad		road
 Asphalt			road
+Airport			other
 Pond			lake
 Lake			lake
 DryLake			lake
