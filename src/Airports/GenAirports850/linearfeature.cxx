@@ -440,7 +440,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 break;
 
             case LF_B_SOLID_YELLOW:
-                material = "lf_dbl_solid_yellow";
+                material = "lf_sng_solid_yellow_border";
                 width = 0.25f;
                 break;
 
