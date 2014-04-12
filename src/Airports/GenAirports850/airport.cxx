@@ -764,6 +764,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     base_poly.Tesselate();
     TG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly - done : Triangles = " << base_poly.Triangles());
     // should we texture base here?
+    base_poly.SetTexMethod( TG_TEX_BY_GEODE, b.get_center_lat() );
+    base_poly.Texture();
 
     triangulation_end.stamp();
 
@@ -788,6 +790,10 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // traverse the tri list and create ordered node and texture
     // coordinate lists
     // start with just nodes
+    SGBinObject obj;
+    SGBinObjectTriangle sgboTri;
+    SGBinObjectPoint    sgboPt;
+
     UniqueSGGeodSet  nodes;
     UniqueSGVec3fSet normals;
     UniqueSGVec2fSet texcoords;
@@ -814,36 +820,36 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // calculate "the" normal for this airport
     SGVec3f vnt = SGVec3f::fromGeod( base_poly.GetNode(0, 0) );
     vnt = normalize(vnt);
-
     TG_LOG(SG_GENERAL, SG_INFO, "Adding runway nodes and normals");
+
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k )
     {
+        tgPolygon poly = rwy_polys[k];
+
         TG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
         std::string material = rwy_polys[k].GetMaterial();
         TG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
         TG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << rwy_polys[k].Triangles());
         for ( unsigned int i = 0; i < rwy_polys[k].Triangles(); ++i )
         {
-            tri_v.clear();
-            tri_n.clear();
-            tri_tc.clear();
-            // let's go out on a limb, and assume triangles have 3 points..
-            for ( int j = 0; j < 3; ++j )
-            {
-                index = nodes.add( rwy_polys[k].GetTriNode( i, j ) );
-                tri_v.push_back( index );
-
-        		// use 'the' normal
-        		index = normals.add( vnt );
-        		tri_n.push_back( index );
-
-        		index = texcoords.add( rwy_polys[k].GetTriTexCoord(i,j) );
-        		tri_tc.push_back( index );
-    	    }
-    	    tris_v.push_back( tri_v );
-    	    tris_n.push_back( tri_n );
-    	    tris_tc.push_back( tri_tc );
-    	    tri_materials.push_back( material );
+            sgboTri.clear();
+            sgboTri.material = material;
+     
+            for (int l = 0; l < 3; ++l) {
+                int index;
+                        
+                index = nodes.add( poly.GetTriNode( i, l ) );
+                sgboTri.v_list.push_back( index );
+                        
+                // use 'the' normal
+                index = normals.add( vnt );
+                sgboTri.n_list.push_back( index );
+                        
+                index = texcoords.add( poly.GetTriTexCoord( i, l ) );
+                sgboTri.tc_list[0].push_back( index );
+            }
+                    
+            obj.add_triangle( sgboTri );
     	}
     }
 
@@ -854,95 +860,83 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         std::string material = pvmt_polys[k].GetMaterial();
         TG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
         TG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << pvmt_polys[k].Triangles());
-    	for ( unsigned int i = 0; i < pvmt_polys[k].Triangles(); ++i )
+        for ( unsigned int i = 0; i < pvmt_polys[k].Triangles(); ++i )
         {
-    	    tri_v.clear();
-    	    tri_n.clear();
-    	    tri_tc.clear();
-    	    for ( int j = 0; j < 3; ++j )
-            {
-                index = nodes.add( pvmt_polys[k].GetTriNode( i, j ) );
-                tri_v.push_back( index );
-
+            tgPolygon poly = pvmt_polys[k];
+            sgboTri.clear();
+            sgboTri.material = material;
+     
+            for (int l = 0; l < 3; ++l) {
+                int index;
+        
+                index = nodes.add( poly.GetTriNode( i, l ) );                
+                sgboTri.v_list.push_back( index );
+                        
                 // use 'the' normal
                 index = normals.add( vnt );
-                tri_n.push_back( index );
-
-                index = texcoords.add( pvmt_polys[k].GetTriTexCoord(i,j) );
-                tri_tc.push_back( index );
-    	    }
-    	    tris_v.push_back( tri_v );
-    	    tris_n.push_back( tri_n );
-    	    tris_tc.push_back( tri_tc );
-    	    tri_materials.push_back( material );
-    	}
+                sgboTri.n_list.push_back( index );
+                        
+                index = texcoords.add( poly.GetTriTexCoord( i, l ) );
+                sgboTri.tc_list[0].push_back( index );
+            }
+                    
+            obj.add_triangle( sgboTri );
+        }
     }
 
     TG_LOG(SG_GENERAL, SG_INFO, "Adding line nodes and normals");
     for ( unsigned int k = 0; k < line_polys.size(); ++k )
     {
-    	TG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
+        TG_LOG(SG_GENERAL, SG_INFO, "tri " << k);
         std::string material = line_polys[k].GetMaterial();
-    	TG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
-    	TG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << line_polys[k].Triangles());
-    	for ( unsigned int i = 0; i < line_polys[k].Triangles(); ++i )
+        TG_LOG(SG_GENERAL, SG_INFO, "material = " << material);
+        TG_LOG(SG_GENERAL, SG_INFO, "triangles = " << line_polys[k].Triangles());
+        for ( unsigned int i = 0; i < line_polys[k].Triangles(); ++i )
         {
-    	    tri_v.clear();
-    	    tri_n.clear();
-    	    tri_tc.clear();
-    	    for ( int j = 0; j < 3; ++j )
-            {
-                index = nodes.add( line_polys[k].GetTriNode( i, j ) );
-                tri_v.push_back( index );
-
+            tgPolygon poly = line_polys[k];
+            sgboTri.clear();
+            sgboTri.material = material;
+     
+            for (int l = 0; l < 3; ++l) {
+                int index;
+                        
+                index = nodes.add( poly.GetTriNode( i, l ) );                
+                sgboTri.v_list.push_back( index );
+                        
                 // use 'the' normal
                 index = normals.add( vnt );
-                tri_n.push_back( index );
-
-                index = texcoords.add( line_polys[k].GetTriTexCoord(i,j) );
-                tri_tc.push_back( index );
-    	    }
-    	    tris_v.push_back( tri_v );
-    	    tris_n.push_back( tri_n );
-    	    tris_tc.push_back( tri_tc );
-    	    tri_materials.push_back( material );
-    	}
+                sgboTri.n_list.push_back( index );
+                        
+                index = texcoords.add( poly.GetTriTexCoord( i, l ) );
+                sgboTri.tc_list[0].push_back( index );
+            }
+                    
+            obj.add_triangle( sgboTri );
+        }
     }
 
     // add base points
-    std::vector< SGVec2f > base_txs;
-    int_list base_tc;
-
-    TG_LOG(SG_GENERAL, SG_INFO, "Adding base nodes and normals");
-    for ( unsigned int i = 0; i < base_poly.Triangles(); ++i )
-    {
-    	tri_v.clear();
-    	tri_n.clear();
-    	tri_tc.clear();
-    	for ( int j = 0; j < 3; ++j )
-        {
-    	    index = nodes.add( base_poly.GetTriNode( i, j ) );
-    	    tri_v.push_back( index );
-
-    	    index = normals.add( vnt );
-    	    tri_n.push_back( index);
-    	}
-    	tris_v.push_back( tri_v );
-    	tris_n.push_back( tri_n );
-    	tri_materials.push_back( "Grass" );
-
-    	std::vector < SGGeod > geodNodes = nodes.get_list();
-
-        base_txs.clear();
-    	base_txs = sgCalcTexCoords( b, geodNodes, tri_v );
-
-    	base_tc.clear();
-    	for ( unsigned int j = 0; j < base_txs.size(); ++j )
-        {
-    	    index = texcoords.add(  base_txs[j] );
-    	    base_tc.push_back( index );
-    	}
-    	tris_tc.push_back( base_tc );
+    TG_LOG(SG_GENERAL, SG_INFO, "Adding base triangles");    
+    std::string material = "Grass";
+    for (unsigned int k = 0; k < base_poly.Triangles(); ++k) {
+        sgboTri.clear();
+        sgboTri.material = material;
+                    
+        for (int l = 0; l < 3; ++l) {
+            int index;
+                        
+            index = nodes.add( base_poly.GetTriNode( k, l ) );            
+            sgboTri.v_list.push_back( index );
+                        
+            // use 'the' normal
+            index = normals.add( vnt );
+            sgboTri.n_list.push_back( index );
+                        
+            index = texcoords.add( base_poly.GetTriTexCoord( k, l ) );
+            sgboTri.tc_list[0].push_back( index );
+        }
+                    
+        obj.add_triangle( sgboTri );
     }
 
     // on rare occasion, one or more of the divided base points can be
@@ -950,11 +944,11 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // build a proper skirt.
     for ( unsigned int i = 0; i < divided_base.Contours(); ++i )
     {
-    	for ( unsigned int j = 0; j < divided_base.ContourSize( i ); ++j )
+        for ( unsigned int j = 0; j < divided_base.ContourSize( i ); ++j )
         {
-    	    index = nodes.add( divided_base.GetNode(i, j) );
+            index = nodes.add( divided_base.GetNode(i, j) );
             TG_LOG(SG_GENERAL, SG_DEBUG, "added base point " << divided_base.GetNode(i, j) << " at " << index );
-    	}
+        }
     }
 
     // Now that we have assembled all the airport geometry nodes into
@@ -1081,20 +1075,20 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     {
         if ( rwy_lights[i].ContourSize() )
         {
-            pt_v.clear();
-            pt_n.clear();
+            sgboPt.clear();
+            sgboPt.material = rwy_lights[i].GetType();
+                   
             for ( unsigned int j = 0; j < rwy_lights[i].ContourSize(); ++j )
             {
+                int index;
+                       
                 index = nodes.add( rwy_lights[i].GetPosition(j) );
-                pt_v.push_back( index );
-
+                sgboPt.v_list.push_back( index );
+                        
                 index = normals.add( rwy_lights[i].GetNormal(j) );
-                pt_n.push_back( index );
+                sgboPt.n_list.push_back( index );
             }
-
-            pts_v.push_back( pt_v );
-            pts_n.push_back( pt_n );
-            pt_materials.push_back( rwy_lights[i].GetType() );
+            obj.add_point( sgboPt );
         }
     }
 
@@ -1127,35 +1121,14 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TG_LOG(SG_GENERAL, SG_DEBUG, "  center = " << gbs_center << " radius = " << gbs_radius );
 
     // null structures
-    group_list fans_v; fans_v.clear();
-    group_list fans_n; fans_n.clear();
-    group_list fans_tc; fans_tc.clear();
-    string_list fan_materials; fan_materials.clear();
-
     std::string objpath = root + "/AirportObj";
     std::string name = icao + ".btg";
 
-    SGBinObject obj;
     obj.set_gbs_center( gbs_center );
     obj.set_gbs_radius( gbs_radius );
     obj.set_wgs84_nodes( wgs84_nodes );
     obj.set_normals( normals.get_list() );
     obj.set_texcoords( texcoords.get_list() );
-    obj.set_pts_v( pts_v );
-    obj.set_pts_n( pts_n );
-    obj.set_pt_materials( pt_materials );
-    obj.set_tris_v( tris_v );
-    obj.set_tris_n( tris_n );
-    obj.set_tris_tc( tris_tc );
-    obj.set_tri_materials( tri_materials );
-    obj.set_strips_v( strips_v );
-    obj.set_strips_n( strips_n );
-    obj.set_strips_tc( strips_tc );
-    obj.set_strip_materials( strip_materials );
-    obj.set_fans_v( fans_v );
-    obj.set_fans_n( fans_n );
-    obj.set_fans_tc( fans_tc );
-    obj.set_fan_materials( fan_materials );
 
     bool result;
     result = obj.write_bin( objpath, name, b );
