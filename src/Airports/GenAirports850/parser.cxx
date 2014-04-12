@@ -657,7 +657,7 @@ int Parser::ParseLine(char* line)
                         }
                         if (cur_airport)
                         {
-                            cur_feat->Finish( true, cur_airport->NumFeatures() );
+                            cur_feat->Finish( true );
                             cur_airport->AddFeature( cur_feat );
                         }
                         cur_feat = NULL;
@@ -691,7 +691,7 @@ int Parser::ParseLine(char* line)
                             }
                             if (cur_airport)
                             {
-                                cur_feat->Finish( false, cur_airport->NumFeatures()  );
+                                cur_feat->Finish( false );
                                 cur_airport->AddFeature( cur_feat );
                             }
                         }

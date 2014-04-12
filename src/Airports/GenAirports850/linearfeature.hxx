@@ -6,6 +6,7 @@
 #include <terragear/tg_light.hxx>
 #include "beznode.hxx"
 
+// Linear Feature Markings (from apt.dat spec)
 
 #define LF_NONE                     (0)
 #define LF_SOLID_YELLOW             (1)
@@ -39,6 +40,14 @@
 #define LF_BIDIR_GREEN_AMBER        (105)
 #define LF_OMNIDIR_RED              (106)
 
+// Runway Markings (FG Specific)
+#define RWY_BORDER                  (1000)
+#define RWY_THRESH                  (1001)
+#define RWY_DISP_TAIL               (1002)
+#define RWY_TZONE                   (1003)
+#define RWY_AIM                     (1004)
+#define RWY_CENTERLINE              (1005)
+
 struct Marking
 {
 public:
@@ -65,7 +74,7 @@ typedef std::vector <Lighting*> LightingList;
 class LinearFeature
 {
 public:
-    LinearFeature( char* desc, double o )
+    LinearFeature( const char* desc, double o )
     {
         if ( desc )
         {
@@ -93,7 +102,7 @@ public:
         contour.push_back( b );
     }
 
-    int Finish( bool closed, unsigned int idx );
+    int Finish( bool closed, double width = 0.0f );
     
     void GetPolys( tgpolygon_list& polys );    
     void GetLights( tglightcontour_list& lights );
@@ -108,9 +117,12 @@ private:
 
     LightingList    lights;
     Lighting*       cur_light;
-
+    
+    double AddMarkingPoly( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
+    
+    double GetCapDist( unsigned int type );
     void ConvertContour( BezContour* src, bool closed );
-
+    
     // text description
     std::string description;
 

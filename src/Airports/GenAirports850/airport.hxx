@@ -27,10 +27,11 @@
 #define AIRPORT_AREA_HELIPAD_SHOULDER   (5)
 #define AIRPORT_AREA_INNER_BASE         (6)
 #define AIRPORT_AREA_OUTER_BASE         (7)
-#define AIRPORT_AREA_FEATURES           (8)
+#define AIRPORT_AREA_RWY_FEATURES       (8)
+#define AIRPORT_AREA_TAXI_FEATURES      (9)
 
 #define AIRPORT_MAX_BASE                (6)
-#define AIRPORT_NUM_AREAS               (9)
+#define AIRPORT_NUM_AREAS               (10)
 
 #define AIRPORT_LINE                    (0)
 

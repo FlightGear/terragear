@@ -399,57 +399,6 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         SGVec3f vnt = SGVec3f::fromGeod( base_nodes.get_node(0).GetPosition() );
         vnt = normalize(vnt);
 
-        group_list pts_v; pts_v.clear();
-        group_list pts_n; pts_n.clear();
-        string_list pt_materials; pt_materials.clear();
-
-        group_list tris_v; tris_v.clear();
-        group_list tris_n; tris_n.clear();
-        group_list tris_tc; tris_tc.clear();
-        string_list tri_materials; tri_materials.clear();
-
-        group_list strips_v; strips_v.clear();
-        group_list strips_n; strips_n.clear();
-        group_list strips_tc; strips_tc.clear();
-        string_list strip_materials; strip_materials.clear();
-
-        int index;
-        int_list pt_v, tri_v, strip_v;
-        int_list pt_n, tri_n, strip_n;
-        int_list tri_tc, strip_tc;
-
-        for (unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++) {
-            for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-                tgPolygon   poly      = polys_clipped.get_poly(area, p);
-                std::string material  = poly.GetMaterial();
-
-                for (unsigned int k = 0; k < poly.Triangles(); ++k) {
-                    tri_v.clear();
-                    tri_n.clear();
-                    tri_tc.clear();
-                    for (int l = 0; l < 3; ++l) {
-
-                        // SG_LOG( SG_GENERAL, SG_INFO, "tri index is " << poly.GetTriIdx( k, l ) );
-
-                        index = poly.GetTriIdx( k, l );
-                        tri_v.push_back( index );
-
-                        // use 'the' normal
-                        index = normals.add( vnt );
-                        tri_n.push_back( index );
-
-                        index = texcoords.add( poly.GetTriPriTexCoord( k, l ) );
-                        tri_tc.push_back( index );
-                    }
-                    tris_v.push_back( tri_v );
-                    tris_n.push_back( tri_n );
-                    tris_tc.push_back( tri_tc );
-
-                    tri_materials.push_back( material );
-                }
-            }
-        }
-
         std::vector< SGVec3d > wgs84_nodes;
         base_nodes.get_wgs84_nodes( wgs84_nodes );
         SGVec3d gbs_center = SGVec3d::fromGeod( b.get_center() );
@@ -467,12 +416,6 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         SG_LOG(SG_GENERAL, SG_DEBUG, "Done with wgs84 node mapping");
         SG_LOG(SG_GENERAL, SG_DEBUG, "  center = " << gbs_center << " radius = " << gbs_radius );
 
-        // null structures
-        group_list fans_v; fans_v.clear();
-        group_list fans_n; fans_n.clear();
-        group_list fans_tc; fans_tc.clear();
-        string_list fan_materials; fan_materials.clear();
-
         std::string base = objpath;
         std::string binname = b.gen_index_str();
         binname += ".btg";
@@ -481,29 +424,50 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 
         SGBinObject obj;
 
+        sglog().setLogLevels( SG_ALL, SG_DEBUG );
+        
+        for (unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++) {
+            for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+                tgPolygon   poly      = polys_clipped.get_poly(area, p);
+                std::string material  = poly.GetMaterial();
+                SGBinObjectTriangle sgboTri;
+                
+                for (unsigned int k = 0; k < poly.Triangles(); ++k) {
+                    sgboTri.clear();
+                    
+                    // Set Triangle Material
+                    sgboTri.material = material;
+                    
+                    // For each triangle vertex, set the appropriate indexes
+                    for (int l = 0; l < 3; ++l) {
+                        int index;                        
+
+                        index = poly.GetTriIdx( k, l );
+                        sgboTri.v_list.push_back( index );
+                        
+                        // use 'the' normal
+                        index = normals.add( vnt );
+                        sgboTri.n_list.push_back( index );
+                        
+                        index = texcoords.add( poly.GetTriPriTexCoord( k, l ) );
+                        sgboTri.tc_list[0].push_back( index );
+                    }                    
+                    obj.add_triangle( sgboTri );
+                }
+            }
+        }
+        
         obj.set_gbs_center( gbs_center );
         obj.set_gbs_radius( gbs_radius );
         obj.set_wgs84_nodes( wgs84_nodes );
         obj.set_normals( normals.get_list() );
         obj.set_texcoords( texcoords.get_list() );
-        obj.set_pts_v( pts_v );
-        obj.set_pts_n( pts_n );
-        obj.set_pt_materials( pt_materials );
-        obj.set_tris_v( tris_v );
-        obj.set_tris_n( tris_n );
-        obj.set_tris_pri_tc( tris_tc );
-        obj.set_tri_materials( tri_materials );
-        obj.set_strips_v( strips_v );
-        obj.set_strips_n( strips_n );
-        obj.set_strips_pri_tc( strips_tc );
-        obj.set_strip_materials( strip_materials );
-        obj.set_fans_v( fans_v );
-        obj.set_fans_n( fans_n );
-        obj.set_fans_pri_tc( fans_tc );
-        obj.set_fan_materials( fan_materials );
-
+                
         bool result;
         result = obj.write_bin( objpath, name, b );
+
+        sglog().setLogLevels( SG_ALL, SG_INFO );
+
         if ( !result )
         {
             throw sg_exception("error writing file. :-(");

@@ -21,8 +21,8 @@ add_executable(genapts850
     output.hxx output.cxx
     parser.hxx parser.cxx
     runway.cxx runway.hxx
-    rwy_simple.cxx
-    rwy_gen.cxx
+    runway_simple.cxx
+    runway_full.cxx
     scheduler.cxx scheduler.hxx
     taxiway.cxx taxiway.hxx
 )

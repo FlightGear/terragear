@@ -93,28 +93,28 @@ void Runway::GetMainPolys( tgpolygon_list& polys )
     switch( rwy.surface ) {
         case 1:
             material_prefix = "pa_";
-            gen_full_rwy( polys );
+            gen_full_rwy();
             break;
 
         case 2:
             material_prefix = "pc_";
-            gen_full_rwy( polys );
+            gen_full_rwy();
             break;
 
         case 3:
             material_prefix = "grass_rwy";
-            gen_simple_rwy( polys );
+            gen_simple_rwy();
             break;
 
         case 4:
         case 5:
             material_prefix = "dirt_rwy";
-            gen_simple_rwy( polys );
+            gen_simple_rwy();
             break;
 
         case 12: /* Dry Lakebed */
             material_prefix = "lakebed_taxiway";
-            gen_simple_rwy( polys );
+            gen_simple_rwy();
             break;
 
         case 13: /* Water runway (buoys) */
@@ -130,12 +130,32 @@ void Runway::GetMainPolys( tgpolygon_list& polys )
             TG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
             throw sg_exception("unknown runway type!");
     }
+    
+    for ( unsigned int i=0; i< runway_polys.size(); i++ ) {
+        polys.push_back( runway_polys[i] );
+    }
 }
 
 void Runway::GetShoulderPolys( tgpolygon_list& polys )
 {
     for (unsigned int i=0; i<shoulder_polys.size(); i++) {
         polys.push_back( shoulder_polys[i] );
+    }
+}
+
+void Runway::GetMarkingPolys( tgpolygon_list& polys )
+{
+    TG_LOG(SG_GENERAL, SG_ALERT, "BLAH BLAH BLAH runway has feature count " << features.size() );
+
+    for ( unsigned int i = 0; i < features.size(); i++) {
+        features[i]->GetPolys( polys );
+    }
+
+    TG_LOG(SG_GENERAL, SG_ALERT, "YES YES runway has marking poly count " << marking_polys.size() );
+    
+    // then add the marking polys we generated ourselves ( without lines )
+    for ( unsigned int i = 0; i < marking_polys.size(); i++ ) {
+        polys.push_back(marking_polys[i]);
     }
 }
 
@@ -207,117 +227,3 @@ void Runway::GetLights( tglightcontour_list& lights )
             break;
     }
 }
-
-#if 0
-int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
-{
-    if ( rwy.surface == 1 /* Asphalt */ )
-    {
-        material_prefix = "pa_";
-    }
-    else if ( rwy.surface == 2 /* Concrete */ )
-    {
-        material_prefix = "pc_";
-    }
-    else if ( rwy.surface == 3 /* Turf/Grass */ )
-    {
-        material_prefix = "grass_rwy";
-    }
-    else if ( rwy.surface == 4 /* Dirt */ || rwy.surface == 5 /* Gravel */ )
-    {
-        material_prefix = "dirt_rwy";
-    }
-    else if ( rwy.surface == 12 /* Dry Lakebed */ )
-    {
-        material_prefix = "lakebed_taxiway";
-    }
-    else if ( rwy.surface == 13 /* Water runway (buoys) */ )
-    {
-        // water
-    }
-    else if ( rwy.surface == 14 /* Snow / Ice */ )
-    {
-        // Ice
-    }
-    else if ( rwy.surface == 15 /* Transparent */ )
-    {
-        //Transparent texture
-    }
-    else
-    {
-        TG_LOG(SG_GENERAL, SG_WARN, "surface_code = " << rwy.surface);
-        throw sg_exception("unknown runway type!");
-    }
-
-    // first, check the surface type - anything but concrete and asphalt are easy
-    switch( rwy.surface )
-    {
-        case 1: // asphalt:
-        case 2: // concrete
-            TG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: asphalt or concrete " << rwy.surface);
-            gen_rwy( rwy_polys, slivers, accum, shapefile_name );
-            gen_runway_lights( rwy_lights );
-            break;
-
-        case 3: // Grass
-        case 4: // Dirt
-        case 5: // Gravel
-        case 12: // dry lakebed
-            TG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Grass, Dirt, Gravel or Dry Lakebed " << rwy.surface );
-            gen_simple_rwy( rwy_polys, slivers, accum );
-            gen_runway_lights( rwy_lights );
-            break;
-
-        case 13: // water
-            TG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Water");
-            break;
-
-        case 14: // snow
-            TG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: Snow");
-            break;
-
-        case 15: // transparent
-            TG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: transparent");
-            break;
-
-        default: // unknown
-            TG_LOG( SG_GENERAL, SG_DEBUG, "Build Runway: unknown: " << rwy.surface);
-            break;
-    }
-
-    return 0;
-}
-
-int Runway::BuildBtg( tgpolygon_list& rwy_polys, tglightcontour_list& rwy_lights, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, tgAccumulator& accum, std::string& shapefile_name )
-{
-    tgContour base_contour, safe_base_contour;
-    tgPolygon base, safe_base;
-    double shoulder_width = 0.0;
-
-    BuildBtg( rwy_polys, rwy_lights, slivers, accum, shapefile_name );
-
-    // generate area around runways
-    if ( (rwy.shoulder > 0) && (rwy.surface < 3) ) {
-        shoulder_width += 22.0;
-    } else if ( (rwy.surface == 1) || (rwy.surface == 2) ) {
-        shoulder_width += 2.0;
-    }
-
-    base_contour      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], shoulder_width + 20.0 );
-    base_contour      = tgContour::Snap( base_contour, gSnap );
-    base.AddContour( base_contour );
-
-    // also clear a safe area around the runway
-    safe_base_contour = gen_runway_area_w_extend( 180.0, -rwy.overrun[0], -rwy.overrun[1], shoulder_width + 50.0 );
-    safe_base_contour = tgContour::Snap( safe_base_contour, gSnap );
-    safe_base.AddContour( safe_base_contour );
-
-    // add this to the airport clearing
-    apt_clearing_polys.push_back( safe_base );
-
-    // and add the clearing to the base
-    apt_base_polys.push_back( base );
-
-    return 0;
-}
-#endif

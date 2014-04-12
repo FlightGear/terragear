@@ -6,6 +6,7 @@
 #include <terragear/tg_light.hxx>
 
 #include "apt_math.hxx"
+#include "linearfeature.hxx"
 
 class Runway
 {
@@ -33,27 +34,8 @@ public:
         return (rwy.surface < 3) ? true : false;
     }
 
-#if 0
-    int BuildBtg( tgpolygon_list& rwy_polys,
-                  tglightcontour_list& rwy_lights,
-                  tgcontour_list& slivers,
-                  tgAccumulator& accum,
-                  std::string& shapefile_name );
-
-    int BuildBtg( tgpolygon_list& rwy_polys,
-                  tglightcontour_list& rwy_lights,
-                  tgcontour_list& slivers,
-                  tgpolygon_list& apt_base_polys,
-                  tgpolygon_list& apt_clearing_polys,
-                  tgAccumulator& accum,
-                  std::string& shapefile_name );
-
-    void BuildShoulder( tgpolygon_list& rwy_polys,
-                        tgcontour_list& slivers,
-                        tgAccumulator& accum );
-#endif
-
     void GetMainPolys( tgpolygon_list& polys );
+    void GetMarkingPolys(tgpolygon_list& polys );
     void GetShoulderPolys( tgpolygon_list& polys );
     void GetInnerBasePolys( tgpolygon_list& polys );
     void GetOuterBasePolys( tgpolygon_list& polys );
@@ -90,9 +72,15 @@ private:
     TGRunway      rwy;
     std::string   material_prefix;
 
+    // storage for the runway - very simple without marking polys
+    tgpolygon_list runway_polys;
+    
+    // storage for the runway markings
+    tgpolygon_list marking_polys;
+    
     // storage for Shoulders - The superpolys are generated during rwy construction,
     // but not clipped until shoulder construction.
-    tgpolygon_list  shoulder_polys;
+    tgpolygon_list shoulder_polys;
 
     // Build Helpers:
     // generate an area for a runway and include midpoints
@@ -108,29 +96,40 @@ private:
         return ( gen_wgs84_area( GetStart(), GetEnd(), 2.0*length_extend, displ1, displ2, rwy.width + 2.0*width_extend, rwy.heading, false) );
     }
 
-    void gen_rw_designation( tgPolygon poly, double heading, std::string rwname,
-                             double &start_pct, double &end_pct,
-                             tgpolygon_list& rwy_polys );
+    // new API
+    tgContour GetSectionBB( const tgPolygon& runway, double startl_pct, double endl_pct, double startw_pct, double endw_pct, double heading  );
 
-    // generate a section of runway with shoulders
-    void gen_runway_section( const tgPolygon& runway,
-                      double startl_pct, double endl_pct,
-                      double startw_pct, double endw_pct,
-                      double minu, double maxu, double minv, double maxv,
-                      double heading,
-                      const std::string& material,
-                      tgpolygon_list& rwy_polys,
-                      tgpolygon_list& shoulder_polys );
-
+    
+    LinearFeature* gen_perpendicular_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark );
+    LinearFeature* gen_paralell_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double offset, int mark );
+    LinearFeature* gen_chevron_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, int mark );
+    
+    void   gen_designation_polygon( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, const std::string& mark );
+    
+    void   gen_base( const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders );
+    void   gen_border( const SGGeod& start, const SGGeod& end, double heading, double dist );
+    SGGeod gen_disp_thresh( const SGGeod& start, double length, double heading );
+    void   gen_threshold( const SGGeod& start, double heading  );
+    void   gen_stopway( const SGGeod& start, double length, double heading );
+    SGGeod gen_designation( const SGGeod& start, int rwhalf, double heading );
+    double gen_centerline( int rwhalf, const tgPolygon& runway, double start_pct, double heading );
+    
+    void   gen_feature( const tgPolygon& runway,
+                        double startl_pct, double endl_pct,
+                        double startw_pct, double endw_pct,
+                        double minu, double maxu, double minv, double maxv,
+                        double heading,
+                        const std::string& material );
+                             
     // generate a section of runway without shoulders
-    void gen_runway_section( const tgPolygon& runway,
+    void gen_section( const tgPolygon& runway,
                       double startl_pct, double endl_pct,
                       double startw_pct, double endw_pct,
                       double minu, double maxu, double minv, double maxv,
                       double heading,
                       const std::string& material,
-                      tgpolygon_list& rwy_polys );
-
+                      bool with_shoulders );
+    
     // generate a section of shoulder
     tgPolygon gen_shoulder_section( SGGeod& p0, SGGeod& p1,
                                     SGGeod& t0, SGGeod& t1, 
@@ -139,8 +138,8 @@ private:
                                     double width,
                                     std::string surface );
 
-    void gen_simple_rwy( tgpolygon_list& rwy_polys );
-    void gen_full_rwy( tgpolygon_list& rwy_polys );
+    void gen_simple_rwy(void);
+    void gen_full_rwy(void);
 
     void gen_runway_lights( tglightcontour_list& lights );
 
@@ -170,6 +169,9 @@ private:
     tgLightContour      gen_odals( const int kind, bool recip );
     tglightcontour_list gen_ssalx( const std::string& kind, bool recip );
     tglightcontour_list gen_malsx( const std::string& kind, bool recip );
+    
+    // Runway Marking Polys
+    FeatureList features;    
 };
 
 typedef std::vector <Runway *> RunwayList;

@@ -4,6 +4,24 @@
 #include "beznode.hxx"
 #include "linearfeature.hxx"
 
+double LinearFeature::GetCapDist( unsigned int type )
+{
+    double cap_dist;
+    
+    switch( type )
+    {                        
+        case RWY_CENTERLINE:
+            cap_dist = 200 * SG_FEET_TO_METER * 0.125;
+            break;
+                        
+        default:
+            cap_dist = 10 * SG_FEET_TO_METER * 0.125;
+            break;
+    }
+    
+    return cap_dist;
+}
+
 void LinearFeature::ConvertContour( BezContour* src, bool closed )
 {
     BezNode*  curNode;
@@ -362,7 +380,39 @@ LinearFeature::~LinearFeature()
     }
 }
 
-int LinearFeature::Finish( bool closed, unsigned int idx )
+double LinearFeature::AddMarkingPoly( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
+{
+    SGGeod prev_mp = midpoint( prev_outer, prev_inner );
+    SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
+    double az2, dist;
+    tgPolygon poly;
+    
+    SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
+    
+    v_start = fmod( v_end, 1.0 );
+    v_end   = v_start + (dist/v_dist);
+    
+    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
+    
+    poly.Erase();
+    poly.AddNode( 0, prev_inner );
+    poly.AddNode( 0, prev_outer );
+    poly.AddNode( 0, cur_outer  );
+    poly.AddNode( 0, cur_inner  );
+    poly = tgPolygon::Snap( poly, gSnap );
+    
+    poly.SetMaterial( material );
+    poly.SetTexParams( prev_inner, width, v_dist, heading );
+    
+    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+    poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
+    
+    marking_polys.push_back(poly);
+
+    return v_end;
+}
+
+int LinearFeature::Finish( bool closed, double def_width )
 {
     tgPolygon   poly;
     SGGeod      prev_inner, prev_outer;
@@ -380,10 +430,27 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     double      light_delta = 0;
     bool        markStarted;
 
-    #define     ATLAS_WIDTH (0.0078125)
+    #define     ATLAS_SINGLE_WIDTH  (1*0.007812500)
+    #define     ATLAS_DOUBLE_WIDTH  (2*0.007812500)
+    #define     ATLAS_TRIPLE_WIDTH  (3*0.007812500)
+    #define     ATLAS_QUAD_WIDTH    (4*0.007812500)
     
-    #define INVALID_START ATLAS_WIDTH*40
-    #define INVALID_END   ATLAS_WIDTH*41
+    #define     ATLAS_BUFFER0       (0.000000000)
+    #define     ATLAS_BUFFER4       (0.000976563)
+    #define     ATLAS_BUFFER8       (0.001953125)
+    #define     ATLAS_BUFFER16      (0.003906250)
+    #define     ATLAS_BUFFER32      (0.007812500)
+    
+    #define     ATLAS_BUFFER        ATLAS_BUFFER0
+
+    #define     RW_TEX0_START       (ATLAS_BUFFER)
+    #define     RW_TEX0_END         (RW_TEX0_START+ATLAS_QUAD_WIDTH)
+    #define     RW_TEX1_START       (RW_TEX0_END+2*ATLAS_BUFFER)
+    #define     RW_TEX1_END         (RW_TEX1_START+ATLAS_SINGLE_WIDTH)
+    #define     RW_TEX2_START       (RW_TEX1_END+2*ATLAS_BUFFER)
+    #define     RW_TEX2_END         (RW_TEX2_START+ATLAS_SINGLE_WIDTH)
+        
+    
     
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
@@ -403,158 +470,203 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 
             // single width lines
             case LF_SOLID_YELLOW: // good
-                material = "lf_sng_solid_yellow";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 1*ATLAS_WIDTH;
-                atlas_end   = 2*ATLAS_WIDTH;
+                atlas_start = 0*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 1*ATLAS_SINGLE_WIDTH;
                 break;
 
             case LF_BROKEN_YELLOW: // good
-                material = "lf_sng_broken_yellow";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 2*ATLAS_WIDTH;
-                atlas_end   = 3*ATLAS_WIDTH;
+                atlas_start = 1*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 2*ATLAS_SINGLE_WIDTH;
                 break;
 
             case LF_SINGLE_LANE_QUEUE: // good
-                material = "lf_sng_lane_queue";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 3*ATLAS_WIDTH;
-                atlas_end   = 4*ATLAS_WIDTH;
+                atlas_start = 2*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 3*ATLAS_SINGLE_WIDTH;
                 break;
                 
             case LF_B_SOLID_YELLOW: // good
-                material = "lf_sng_solid_yellow_border";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 4*ATLAS_WIDTH;
-                atlas_end   = 5*ATLAS_WIDTH;
+                atlas_start = 3*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 4*ATLAS_SINGLE_WIDTH;
                 break;
 
             case LF_B_BROKEN_YELLOW: // good
-                material = "lf_sng_broken_yellow_border";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 5*ATLAS_WIDTH;
-                atlas_end   = 6*ATLAS_WIDTH;
+                atlas_start = 4*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 5*ATLAS_SINGLE_WIDTH;
                 break;
                 
             case LF_B_SINGLE_LANE_QUEUE: // good
-                material = "lf_sng_lane_queue_border";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 6*ATLAS_WIDTH;
-                atlas_end   = 7*ATLAS_WIDTH;
+                atlas_start = 5*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 6*ATLAS_SINGLE_WIDTH;
                 break;
                 
             case LF_SOLID_WHITE: // good
-                material = "lf_sng_solid_white";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 7*ATLAS_WIDTH;
-                atlas_end   = 8*ATLAS_WIDTH;
+                atlas_start = 6*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 7*ATLAS_SINGLE_WIDTH;
                 break;
                 
             case LF_BROKEN_WHITE: // good
-                material = "lf_broken_white";
+                material = "taxi_markings";
                 width = 0.5f;
-                atlas_start = 8*ATLAS_WIDTH;
-                atlas_end   = 9*ATLAS_WIDTH;
+                atlas_start = 7*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 8*ATLAS_SINGLE_WIDTH;
                 break;
-                
-
 
             case LF_SOLID_DBL_YELLOW:   // good
-                material = "lf_dbl_solid_yellow";
+                material = "taxi_markings";
                 width = 1.0f;
-                atlas_start =10*ATLAS_WIDTH;
-                atlas_end =  12*ATLAS_WIDTH;
+                atlas_start = 8*ATLAS_SINGLE_WIDTH;
+                atlas_end =  10*ATLAS_SINGLE_WIDTH;
                 break;
 
             case LF_DOUBLE_LANE_QUEUE: // good
-                material = "lf_dbl_lane_queue";
+                material = "taxi_markings";
                 width = 1.0f;
-                atlas_start = 12*ATLAS_WIDTH;
-                atlas_end   = 14*ATLAS_WIDTH;
+                atlas_start = 10*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 12*ATLAS_SINGLE_WIDTH;
                 break;
                 
             case LF_OTHER_HOLD: // good
-                material = "lf_other_hold";
+                material = "taxi_markings";
                 width = 1.0f;
-                atlas_start = 14*ATLAS_WIDTH;
-                atlas_end   = 16*ATLAS_WIDTH;
+                atlas_start = 12*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 14*ATLAS_SINGLE_WIDTH;
                 break;
 
             case LF_B_SOLID_DBL_YELLOW: // good
-                material = "lf_dbl_solid_yellow_border";
+                material = "taxi_markings";
                 width = 1.0f;
-                atlas_start = 16*ATLAS_WIDTH;
-                atlas_end   = 18*ATLAS_WIDTH;
+                atlas_start = 14*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 16*ATLAS_SINGLE_WIDTH;
                 break;
                 
             case LF_B_DOUBLE_LANE_QUEUE:
-                material = "lf_dbl_lane_queue_border";
+                material = "taxi_markings";
                 width = 1.0f;
-                atlas_start = 18*ATLAS_WIDTH;
-                atlas_end   = 20*ATLAS_WIDTH;
+                atlas_start = 16*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 18*ATLAS_SINGLE_WIDTH;
                 break;
 
             case LF_B_OTHER_HOLD:
-                material = "lf_other_hold_border";
+                material = "taxi_markings";
                 width = 1.0f;
-                atlas_start = 20*ATLAS_WIDTH;
-                atlas_end   = 22*ATLAS_WIDTH;
-                break;
-                
-            case LF_CHECKERBOARD_WHITE:
-                material = "lf_checkerboard_white";
-                width = 1.0f;
-                atlas_start = 22*ATLAS_WIDTH;
-                atlas_end   = 24*ATLAS_WIDTH;
-                break;
-                
+                atlas_start = 18*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 20*ATLAS_SINGLE_WIDTH;
+                break;                
 
             case LF_RUNWAY_HOLD:
-                material = "lf_runway_hold";
+                material = "taxi_markings";
                 width = 2.0f;
-                atlas_start = 24*ATLAS_WIDTH;
-                atlas_end   = 28*ATLAS_WIDTH;
+                atlas_start = 20*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 24*ATLAS_SINGLE_WIDTH;
                 break;
 
             case LF_B_RUNWAY_HOLD:
-                material = "lf_runway_hold_border";
+                material = "taxi_markings";
                 width = 2.0f;
-                atlas_start = 28*ATLAS_WIDTH;
-                atlas_end   = 32*ATLAS_WIDTH;
+                atlas_start = 24*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 28*ATLAS_SINGLE_WIDTH;
                 break;
                 
             case LF_ILS_HOLD:
-                material = "lf_ils_hold";
+                material = "taxi_markings";
                 width = 2.0f;
-                atlas_start = 32*ATLAS_WIDTH;
-                atlas_end   = 36*ATLAS_WIDTH;
+                atlas_start = 28*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 32*ATLAS_SINGLE_WIDTH;
                 break;
-
-            case LF_SAFETYZONE_CENTERLINE:
-                material = "lf_safetyzone_centerline";
-                width = 2.0f;
-                atlas_start = 36*ATLAS_WIDTH;
-                atlas_end =   40*ATLAS_WIDTH;
-                break;
-
-
-
 
             case LF_B_ILS_HOLD:
-                material = "lf_ils_hold_border";
+                material = "taxi_markings";
                 width = 2.0f;
-                atlas_start = 38*ATLAS_WIDTH;
-                atlas_end =   42*ATLAS_WIDTH;
+                atlas_start = 32*ATLAS_SINGLE_WIDTH;
+                atlas_end =   36*ATLAS_SINGLE_WIDTH;
                 break;
-
+                
+            case LF_SAFETYZONE_CENTERLINE:
+                material = "taxi_markings";
+                width = 2.0f;
+                atlas_start = 36*ATLAS_SINGLE_WIDTH;
+                atlas_end =   40*ATLAS_SINGLE_WIDTH;
+                break;
+                
             case LF_B_SAFETYZONE_CENTERLINE:
-                material = "lf_safetyzone_centerline_border";
+                material = "taxi_markings";
                 width = 2.00f;
-                atlas_start = 42*ATLAS_WIDTH;
-                atlas_end   = 46*ATLAS_WIDTH;
+                atlas_start = 40*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 44*ATLAS_SINGLE_WIDTH;
+                break;
+                
+            case LF_CHECKERBOARD_WHITE:
+                material = "taxi_markings";
+                width = 1.0f;
+                atlas_start = 44*ATLAS_SINGLE_WIDTH;
+                atlas_end   = 48*ATLAS_SINGLE_WIDTH;
+                break;    
+
+            case RWY_BORDER:
+                material = "rwy_markings";
+                width = 0.9144; // 36 inches
+                atlas_start = RW_TEX1_START;
+                atlas_end   = RW_TEX1_END;
+                break;
+                
+            case RWY_DISP_TAIL:
+                material = "rwy_markings";
+                width = 0.4572; // 18 inches
+                atlas_start = RW_TEX1_START;
+                atlas_end   = RW_TEX1_END;
+                break;
+                
+            case RWY_CENTERLINE:
+                material = "rwy_markings";
+                width  = 0.9144; // 36 inches
+                v_dist = 200 * SG_FEET_TO_METER;
+                atlas_start = RW_TEX2_START;
+                atlas_end   = RW_TEX2_END;
+                
+                break;
+                
+            case RWY_THRESH:
+                material = "rwy_markings";
+                width = 1.7526; // 5.75 ft
+                atlas_start = RW_TEX0_START;
+                atlas_end   = RW_TEX0_END;
+                
+                v_end = (double)rand()/(double)RAND_MAX;
                 break;
 
+            case RWY_TZONE:
+                material = "rwy_markings";
+                width = 1.2192; // 48 inches ft
+                atlas_start = RW_TEX0_START;
+                atlas_end   = RW_TEX0_END;
+                
+                v_end = (double)rand()/(double)RAND_MAX;
+                break;
+
+            case RWY_AIM:
+                material = "rwy_markings";
+                width = 6.096; // 20 ft
+                atlas_start = RW_TEX0_START;
+                atlas_end   = RW_TEX0_END;
+                
+                v_end = (double)rand()/(double)RAND_MAX;
+                break;
+                              
+            
             default:
                 TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << marks[i]->type );
                 exit(1);
@@ -570,20 +682,17 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 // first point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
                 cur_inner = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
-                // OffsetPointsFirst( points.GetNode(j), points.GetNode(j+1), offset, width, cur_inner, cur_outer );
             }
             else if (j == marks[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset-width/2.0f );
                 cur_inner = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset+width/2.0f );
-                // OffsetPointsLast( points.GetNode(j-1), points.GetNode(j), offset, width, cur_inner, cur_outer );
             }
             else
             {
                 cur_outer = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
                 cur_inner = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
-                // OffsetPointsMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset, width, cur_inner, cur_outer );
             }
 
             
@@ -617,29 +726,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             
             if ( markStarted )
             {
-                SGGeod prev_mp = midpoint( prev_outer, prev_inner );
-                SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
-                SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
-
-                v_start = fmod( v_end, 1.0 );
-                v_end   = v_start + (dist/v_dist);
-                
-                TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: Create TCs for mark " << i << " poly " << j << " dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
-                
-                poly.Erase();
-                poly.AddNode( 0, prev_inner );
-                poly.AddNode( 0, prev_outer );
-                poly.AddNode( 0, cur_outer  );
-                poly.AddNode( 0, cur_inner  );
-                poly = tgPolygon::Snap( poly, gSnap );
-
-                poly.SetMaterial( material );
-                poly.SetTexParams( prev_inner, width, v_dist, heading );
-                                
-                poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
-                poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
-                                
-                marking_polys.push_back(poly);
+                v_end = AddMarkingPoly( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
             } else {
                 markStarted = true;
             }

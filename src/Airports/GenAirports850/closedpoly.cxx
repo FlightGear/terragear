@@ -108,7 +108,7 @@ void ClosedPoly::CloseCurContour()
     if (cur_feature)
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
-        cur_feature->Finish(true, features.size() );
+        cur_feature->Finish(true);
 
         features.push_back(cur_feature);
         cur_feature = NULL;

@@ -28,7 +28,7 @@
 using std::string;
 
 // generate a simple runway
-void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys )
+void Runway::gen_simple_rwy(void)
 {
     tgContour runway = gen_runway_w_mid( 0.0, 0.0 );
     tgPolygon runway_half;
@@ -69,7 +69,6 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys )
         if ( rwy.threshold[rwhalf] > 0.0 ) {
             TG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
-            
             start_pct = end_pct;
             end_pct = start_pct + ( rwy.threshold[rwhalf] / length );
             Runway::gen_section( runway_half,
@@ -78,7 +77,7 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys )
                                  0.0, 1.0, 0.0, 1.0,
                                  heading,
                                  "",
-                                 rwy_polys );
+                                 false );
         }
 
         // Generate runway
@@ -88,6 +87,6 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys )
                              0.0, 0.28, 0.0, 1.0,
                              heading,
                              "",
-                             rwy_polys );
+                             false );
     }
 }

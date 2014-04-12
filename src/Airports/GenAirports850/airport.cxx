@@ -310,29 +310,33 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     WriteBaseOutput( root, b );
     
     // 9: Build the linear feature polygons
+    TG_LOG(SG_GENERAL, SG_INFO, "Build Features" );
     BuildFeatures();
 
+    TG_LOG(SG_GENERAL, SG_INFO, "Clip Features" );
     ClipFeatures();
     
     // 3: Clean the polys
     feat_nodes.init_spacial_query();
     
-    TG_LOG(SG_GENERAL, SG_INFO, "CleanBase" );
+    TG_LOG(SG_GENERAL, SG_INFO, "CleanFeatures" );
     
     CleanFeatures();
     
+    TG_LOG(SG_GENERAL, SG_INFO, "IntersectFeaturesWithBase" );
     // we need to add nodes that intersect with the 
     // base we will drape with
     IntersectFeaturesWithBase();
     
     // 4: Teseelate Base polys
+    TG_LOG(SG_GENERAL, SG_INFO, "TesselateFeatures" );
     TesselateFeatures();
     
     TG_LOG(SG_GENERAL, SG_INFO, "LookupIndexes" );
     
     LookupFeatureIndexes();
     
-    TG_LOG(SG_GENERAL, SG_INFO, "TextureBase" );
+    TG_LOG(SG_GENERAL, SG_INFO, "TextureFeatures" );
     
     // 5: Texture Base polys
     TextureFeatures();
@@ -342,7 +346,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     CalcFeatureElevations();
     
     // save Base
-    TG_LOG(SG_GENERAL, SG_INFO, "Write Base" );
+    TG_LOG(SG_GENERAL, SG_INFO, "Write Features" );
     WriteFeatureOutput( root, b );
     
     // Build Lights
