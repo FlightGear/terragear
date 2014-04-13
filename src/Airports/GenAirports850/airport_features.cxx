@@ -57,6 +57,41 @@ void Airport::BuildFeatures( void )
         TG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
         pavements[i]->GetFeaturePolys( polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES) );
     }
+    
+    // for now - caps are the same priority - just add them later...
+    for ( unsigned int i=0; i<runways.size(); i++ )
+    {
+        TG_LOG(SG_GENERAL, SG_ALERT, "Build Runway Feature Poly " << i + 1 << " of " << runways.size() );
+        runways[i]->GetCapPolys( polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES) );
+    }
+    
+    for ( unsigned int i=0; i<features.size(); i++ )
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Build Feature Poly (caps) " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
+        features[i]->GetCapPolys( polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES) );
+    }
+    
+    for ( unsigned int i=0; i<pavements.size(); i++ )
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement (caps)" << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
+        pavements[i]->GetFeatureCapPolys( polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES) );
+    }
+    
+    // make sure we have a va method...
+    TG_LOG(SG_GENERAL, SG_ALERT, "check all built features have va attrib " );
+
+    for ( unsigned int x=0; x<polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES).size(); x++ ) {
+        if (polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES)[x].GetNumIntVas() != 1 ) {
+            TG_LOG(SG_GENERAL, SG_ALERT, "rwy poly " << x << " dows not have int va " );
+        }
+    }
+    
+    for ( unsigned int x=0; x<polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).size(); x++ ) {
+        if (polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES)[x].GetNumIntVas() != 1 ) {
+            TG_LOG(SG_GENERAL, SG_ALERT, "taxi poly " << x << " dows not have int va " );
+        }
+    }
+    
 }
 
 void Airport::ClipFeatures()
@@ -146,7 +181,25 @@ void Airport::ClipFeatures()
             }
         }
     }
-    
+   
+   TG_LOG(SG_GENERAL, SG_ALERT, "check all features have va attrib after clipping" );
+   
+   for ( unsigned int x=0; x<polys_clipped.get_polys(AIRPORT_AREA_RWY_FEATURES).size(); x++ ) {
+       if (polys_clipped.get_polys(AIRPORT_AREA_RWY_FEATURES)[x].GetNumIntVas() != 1 ) {
+           TG_LOG(SG_GENERAL, SG_ALERT, "rwy poly " << x << " dows not have int va " );
+           exit(0);
+       }
+   }
+   
+   for ( unsigned int x=0; x<polys_clipped.get_polys(AIRPORT_AREA_TAXI_FEATURES).size(); x++ ) {
+       if (polys_clipped.get_polys(AIRPORT_AREA_TAXI_FEATURES)[x].GetNumIntVas() != 1 ) {
+           TG_LOG(SG_GENERAL, SG_ALERT, "taxi poly " << x << " dows not have int va " );
+           exit(0);
+       }
+   }
+
+   TG_LOG(SG_GENERAL, SG_ALERT, "after clipping, all features have va attrib " );
+   
 }
 
 void Airport::CleanFeatures()
@@ -159,14 +212,44 @@ void Airport::CleanFeatures()
     for ( unsigned int area=AIRPORT_AREA_RWY_FEATURES; area<=AIRPORT_AREA_TAXI_FEATURES; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon current = polys_clipped.get_poly(area, p);
+
+            if ( current.GetNumIntVas() != 1 ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "AddColinearNodes broken before call" );
+                exit(0);
+            }
+            
             bb = current.GetBoundingBox();
             feat_nodes.get_geod_inside( bb.getMin(), bb.getMax(), points );
             
             before  = current.TotalNodes();
             current = tgPolygon::AddColinearNodes( current, points );
+            
+            if ( current.GetNumIntVas() != 1 ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "AddColinearNodes broke us" );
+                exit(0);
+            }
+            
             current = tgPolygon::Snap(current, gSnap);
+
+            if ( current.GetNumIntVas() != 1 ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Snap broke us" );
+                exit(0);
+            }
+            
             current = tgPolygon::RemoveDups( current );
+            
+            if ( current.GetNumIntVas() != 1 ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "RemoveDups broke us" );
+                exit(0);
+            }
+            
             current = tgPolygon::RemoveBadContours( current );
+            
+            if ( current.GetNumIntVas() != 1 ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "RemoveBadContours broke us" );
+                exit(0);
+            }
+            
             after   = current.TotalNodes();
             
             if (before != after) {
@@ -181,9 +264,26 @@ void Airport::CleanFeatures()
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& current = polys_clipped.get_poly(area, p);
             current = tgPolygon::Simplify( current );
+
+            if ( current.GetNumIntVas() != 1 ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Simplify broke us" );
+                exit(0);
+            }
+            
             polys_clipped.set_poly( area, p, current );
         }
     }
+    
+    TG_LOG(SG_GENERAL, SG_ALERT, "check all features have va attrib after cleaning" );
+    
+    for ( unsigned int x=0; x<polys_clipped.get_polys(AIRPORT_AREA_TAXI_FEATURES).size(); x++ ) {
+        if (polys_clipped.get_polys(AIRPORT_AREA_TAXI_FEATURES)[x].GetNumIntVas() != 1 ) {
+            TG_LOG(SG_GENERAL, SG_ALERT, "poly " << x << " dows not have int va " );
+        }
+    }
+    
+    TG_LOG(SG_GENERAL, SG_ALERT, "after cleaning, all features have va attrib " );
+    
 }
 
 void Airport::IntersectFeaturesWithBase(void)
@@ -303,18 +403,15 @@ void Airport::TextureFeatures( void )
             tgPolygon& poly = polys_clipped.get_poly(area, p);
             poly.Texture();
 
+            // make sure poly has a vertex mask
+            if (poly.GetNumIntVas() != 1) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "poly with material " << poly.GetMaterial() << " does not have int vas " << poly.GetNumIntVas() );
+                exit(0);
+            }                
+            
 //          sglog().setLogLevels( SG_GENERAL, SG_DEBUG );
           poly.TextureSecondary();
         
-            for ( unsigned int t=0; t<poly.Triangles(); t++ ) {
-                for ( unsigned int n=0; n<3; n++) {
-                    SGVec2f ptc = poly.GetTriPriTexCoord( t, n );
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "Texture poly " << p+1 << " of " << (int)polys_clipped.area_size(area) << " triangle " << t+1 << " node " << n+1 << " pri tx " <<  ptc );
-            
-                    SGVec2f stc = poly.GetTriSecTexCoord( t, n );
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "Texture poly " << p+1 << " of " << (int)polys_clipped.area_size(area) << " triangle " << t+1 << " node " << n+1 << " sec tx " <<  stc );
-                }
-            }
 //          sglog().setLogLevels( SG_GENERAL, SG_INFO );        
         }
     }
@@ -358,11 +455,60 @@ void Airport::LookupFeatureIndexes( void )
     }
 }
 
+// belongs in terragear lib...
+unsigned int add_unique_int( std::vector<int>& vaints, int attrib )
+{
+    // traverse the list and look for a match;
+    unsigned int idx = 0;
+    bool found = false;
+    
+    for ( unsigned int i=0; i<vaints.size(); i++ ) {
+        if ( vaints[i] == attrib ) {
+            found = true;
+            idx = i;
+            break;
+        }
+    }
+    
+    if ( !found ) {
+        idx = vaints.size();
+        vaints.push_back(attrib);
+    }
+    
+    return idx;
+}
+
+unsigned int add_unique_float( std::vector<float>& vaflts, float attrib )
+{
+    // traverse the list and look for a match;
+    unsigned int idx = 0;
+    bool found = false;
+    
+    for ( unsigned int i=0; i<vaflts.size(); i++ ) {
+        if ( fabs ( vaflts[i] - attrib ) < 0.0000000001 ) {
+            found = true;
+            idx = i;
+            break;
+        }
+    }
+    
+    if ( !found ) {
+        idx = vaflts.size();
+        vaflts.push_back(attrib);
+    }
+    
+    return idx;
+}
+
 void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
 {
+    SG_LOG(SG_GENERAL, SG_INFO, "WriteFeatureOutput" );
+    
     if ( feat_nodes.size() ) {
         UniqueSGVec3fSet normals;
         UniqueSGVec2fSet texcoords;
+        std::vector<int>   vaints;    // don't bother with uniqueness : we can just look it up ( may do this later )
+        std::vector<float> vafloats;  // same
         
         std::string objpath = root + "/AirportObj";
         std::string name = icao + "_lines.btg";
@@ -399,6 +545,8 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
             for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
                 tgPolygon   poly      = polys_clipped.get_poly(area, p);
                 std::string material  = poly.GetMaterial();
+                unsigned int num_int_vas = poly.GetNumIntVas();
+                unsigned int num_flt_vas = poly.GetNumFltVas();                
                 SGBinObjectTriangle sgboTri;
                 
                 for (unsigned int k = 0; k < poly.Triangles(); ++k) {
@@ -423,7 +571,29 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
                         
                         index = texcoords.add( poly.GetTriSecTexCoord( k, l ) );
                         sgboTri.tc_list[1].push_back( index );
-                    }                    
+                        
+                        for ( unsigned int m=0; m<num_int_vas; m++ ) {
+                            index = add_unique_int( vaints, poly.GetTriIntVA( k, l, m  ) );
+                            sgboTri.va_list[m].push_back( index );
+                        }
+                        
+                        for ( unsigned int m=0; m<num_flt_vas; m++ ) {
+                            index = add_unique_float( vafloats, poly.GetTriFltVA( k, l, m  ) );
+                            sgboTri.va_list[4+m].push_back( index );
+                        }
+                    }    
+                    
+                    if ( num_int_vas == 1 )
+                    {
+                        if ( ( sgboTri.va_list[0][0] != sgboTri.va_list[0][1] ) ||
+                             ( sgboTri.va_list[0][1] != sgboTri.va_list[0][2] ) || 
+                             ( sgboTri.va_list[0][2] != sgboTri.va_list[0][0] ) )
+                        {
+                            SG_LOG(SG_GENERAL, SG_INFO, "vertex atttrib mismatch!");
+                            exit(0);
+                        }
+                    }         
+                            
                     obj.add_triangle( sgboTri );
                 }
             }
@@ -434,11 +604,18 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
         obj.set_wgs84_nodes( wgs84_nodes );
         obj.set_normals( normals.get_list() );
         obj.set_texcoords( texcoords.get_list() );
+        if (!vaints.empty()) {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "adding int va list of size " << vaints.size() );
+            obj.set_intvetexattribs( vaints );
+        } else {
+            SG_LOG(SG_GENERAL, SG_INFO, "crap - no int vas ");
+        }
         
-        bool result;
-        SG_LOG(SG_GENERAL, SG_INFO, "save lines to " << objpath);
+        if (!vafloats.empty()) {
+            obj.set_floatvetexattribs( vafloats );
+        }
         
-        result = obj.write_bin( objpath, name, b );
+        bool result = obj.write_bin( objpath, name, b );
         if ( !result )
         {
             throw sg_exception("error writing file. :-(");

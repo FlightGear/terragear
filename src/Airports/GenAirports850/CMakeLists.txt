@@ -22,7 +22,7 @@ add_executable(genapts850
     parser.hxx parser.cxx
     runway.cxx runway.hxx
     runway_simple.cxx
-    runway_full.cxx
+    runway_precision.cxx
     scheduler.cxx scheduler.hxx
     taxiway.cxx taxiway.hxx
 )

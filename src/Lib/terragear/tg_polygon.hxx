@@ -34,6 +34,8 @@
 #include <vector>
 #include <zlib.h> 
 
+#include <boost/array.hpp>
+
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
 
@@ -56,7 +58,6 @@
 // For the first attempt, I will just have TGPolygon with a list of contours.
 // the extra data are stored in paralell vectors.
 // This should also make TGSuperPoly obsolete
-#include <boost/concept_check.hpp>
 
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/threads/SGThread.hxx>
@@ -64,6 +65,7 @@
 #include "tg_rectangle.hxx"
 #include "tg_contour.hxx"
 #include "tg_texparams.hxx"
+#include "tg_vertattribs.hxx"
 
 // utilities - belong is simgear?
 double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, const SGVec3d& cp );
@@ -99,6 +101,16 @@ class tgPolygon
 public:
     tgPolygon() {
         preserve3d = false;
+        tp.method = TG_TEX_UNKNOWN;
+        for ( unsigned int i=0; i<4; i++ ) {
+            int_vas[i].method = TG_VA_UNKNOWN;
+        }
+        va_int_mask = 0;
+        
+        for ( unsigned int i=0; i<4; i++ ) {
+            flt_vas[i].method = TG_VA_UNKNOWN;
+        }        
+        va_flt_mask = 0;
     }
     ~tgPolygon() {
         contours.clear();
@@ -178,6 +190,21 @@ public:
             return SGVec2f(0.0, 0.0);
         }
     }
+    unsigned int GetTriIntVA( unsigned int c, unsigned int i, unsigned int a  ) const {
+        if ( c < triangles.size() ) {
+            return triangles[c].GetIntVA( i, a );
+        } else {
+            return 0;
+        }
+    }
+    float GetTriFltVA( unsigned int c, unsigned int i, unsigned int a  ) const {
+        if ( c < triangles.size() ) {
+            return triangles[c].GetFltVA( i, a );
+        } else {
+            return 0.0;
+        }
+    }
+    
     void SetTriIdx( unsigned int c, unsigned int i, int idx ) {
         triangles[c].SetIndex( i, idx );
     }
@@ -265,6 +292,46 @@ public:
     tgTexMethod GetTexMethod( void ) const {
         return tp.method;
     }
+
+    void SetVertexAttributeInt(tgVAttribMethod m, int index, int attrib)
+    {
+        if ( index < 4 ) {
+            int_vas[index].method = m;
+            int_vas[index].attrib = attrib;
+            
+            va_int_mask |= 1 << index;            
+        }
+    }
+    void SetVertexAttributeFlt(tgVAttribMethod m, int index, float attrib)
+    {
+        if ( index < 4 ) {
+            flt_vas[index].method = m;
+            flt_vas[index].attrib = attrib;
+            
+            va_flt_mask |= 1 << index;            
+        }
+    }
+    
+    unsigned int GetNumIntVas( void ) {
+        int num = 0;
+        for ( unsigned int i=0; i<4; i++ ) {
+            if ( (va_int_mask>>i) & 0x01 ) {
+                num++;
+            }
+        }
+        
+        return num;
+    }
+    unsigned int GetNumFltVas( void ) {
+        int num = 0;
+        for ( unsigned int i=0; i<4; i++ ) {
+            if ( (va_flt_mask>>i) & 0x01 ) {
+                num++;
+            }
+        }
+        return num;
+    }
+    
     void Texture( void );
     void TextureSecondary( void );
 
@@ -312,6 +379,13 @@ public:
 
     friend std::ostream& operator<< ( std::ostream&, const tgPolygon& );
 
+public:
+    int_va_list     int_vas;
+    flt_va_list     flt_vas;
+    
+    unsigned int    va_int_mask;
+    unsigned int    va_flt_mask;
+    
 private:
     tgcontour_list  contours;
     tgtriangle_list triangles;

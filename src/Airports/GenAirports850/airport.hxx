@@ -193,6 +193,9 @@ private:
     void BuildLights( void );
     void WriteLightsOutput( const std::string& root, const SGBucket& b );
     
+    // Airport Objects
+    void WriteObjects( const std::string& root, const SGBucket& b );
+    
     int          code;               // airport, heliport or sea port
     int          altitude;           // in meters
     std::string  icao;               // airport code

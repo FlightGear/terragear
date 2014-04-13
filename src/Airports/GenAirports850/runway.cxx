@@ -145,17 +145,25 @@ void Runway::GetShoulderPolys( tgpolygon_list& polys )
 
 void Runway::GetMarkingPolys( tgpolygon_list& polys )
 {
-    TG_LOG(SG_GENERAL, SG_ALERT, "BLAH BLAH BLAH runway has feature count " << features.size() );
-
     for ( unsigned int i = 0; i < features.size(); i++) {
         features[i]->GetPolys( polys );
     }
-
-    TG_LOG(SG_GENERAL, SG_ALERT, "YES YES runway has marking poly count " << marking_polys.size() );
     
     // then add the marking polys we generated ourselves ( without lines )
     for ( unsigned int i = 0; i < marking_polys.size(); i++ ) {
         polys.push_back(marking_polys[i]);
+    }
+}
+
+void Runway::GetCapPolys( tgpolygon_list& polys )
+{
+    for ( unsigned int i = 0; i < features.size(); i++) {
+        features[i]->GetCapPolys( polys );
+    }
+    
+    // then add the marking polys we generated ourselves ( without lines )
+    for ( unsigned int i = 0; i < cap_polys.size(); i++ ) {
+        polys.push_back(cap_polys[i]);
     }
 }
 

@@ -350,7 +350,88 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     WriteFeatureOutput( root, b );
     
     // Build Lights
+    TG_LOG(SG_GENERAL, SG_INFO, "Build Lights" );
     BuildLights();
     
+    TG_LOG(SG_GENERAL, SG_INFO, "Write Lights" );
     WriteLightsOutput( root, b );
+    
+    // Generate Objects
+    TG_LOG(SG_GENERAL, SG_INFO, "Write Objects" );    
+    WriteObjects( root, b );
+}
+
+void Airport::WriteObjects( const std::string& root, const SGBucket& b )
+{
+    SGGeod ref_geod;
+    std::string objpath = root + "/AirportObj";
+    
+
+    // TODO : tower nodes?
+#if 0 
+    // write out tower references
+    for ( i = 0; i < (int)tower_nodes.size(); ++i )
+    {
+        write_index_shared( objpath, b, tower_nodes[i],
+                            "Models/Airport/tower.xml",
+                            0.0 );
+    }
+#endif
+
+    // calc elevations and write out windsock references
+    TG_LOG(SG_GENERAL, SG_INFO, "Computing elevations for " << windsocks.size() << " windsocks"); 
+    for ( unsigned int i = 0; i < windsocks.size(); ++i )
+    {
+        ref_geod = windsocks[i]->GetLoc();
+        ref_geod.setElevationM( base_surf.query( ref_geod ) );
+        
+        if ( windsocks[i]->IsLit() )
+        {
+            write_index_shared( objpath, b, ref_geod,
+                                "Models/Airport/windsock_lit.xml", 0.0 );
+        }
+        else
+        {
+            write_index_shared( objpath, b, ref_geod,
+                                "Models/Airport/windsock.xml", 0.0 );
+        }
+    }
+    
+    // write out beacon references
+    for ( unsigned int i = 0; i < beacons.size(); ++i )
+    {
+        ref_geod = beacons[i]->GetLoc();
+        ref_geod.setElevationM( base_surf.query( ref_geod ) );
+        
+        write_index_shared( objpath, b, ref_geod,
+                            "Models/Airport/beacon.xml",
+                            0.0 );
+    }
+    
+    // write out taxiway signs references
+    TG_LOG(SG_GENERAL, SG_INFO, "Computing elevations for " << signs.size() << " signs"); 
+    for ( unsigned int i = 0; i < signs.size(); ++i )
+    {
+        ref_geod = signs[i]->GetLoc();
+        ref_geod.setElevationM( base_surf.query( ref_geod ) );
+        write_object_sign( objpath, b, ref_geod,
+                           signs[i]->GetDefinition(),
+                           signs[i]->GetHeading(),
+                           signs[i]->GetSize() );
+    }
+    
+    // write out water buoys
+    for ( unsigned int i = 0; i < waterrunways.size(); ++i )
+    {
+        tgContour buoys = waterrunways[i]->GetBuoys();
+        
+        for ( unsigned int j = 0; j < buoys.GetSize(); ++j )
+        {
+            ref_geod = buoys.GetNode(j);
+            ref_geod.setElevationM( base_surf.query( ref_geod ) );
+            write_index_shared( objpath, b, ref_geod,
+                                "Models/Airport/water_rw_buoy.xml",
+                                0.0 );
+        }
+    }
 }

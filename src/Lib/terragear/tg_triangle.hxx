@@ -44,11 +44,11 @@
 #include "tg_misc.hxx"
 #include "clipper.hpp"
 
-typedef std::vector<double>  va_dbl_list;
-typedef std::vector<int>     va_int_list;
+typedef boost::array<int, 3>   int_va;
+typedef boost::array<float, 3> flt_va;
 
-typedef std::vector<va_dbl_list> vertex_attrib_double_list;
-typedef std::vector<va_int_list> vertex_attrib_integer_list;
+typedef boost::array<int_va, 4>  va_int_list;
+typedef boost::array<flt_va, 4>  va_flt_list;
 
 class tgPolygon;
 
@@ -64,8 +64,6 @@ public:
 
         // clear optional lists
         sec_tc_list.clear();
-        vas_dbl.clear();
-        vas_int.clear();
         
         parent = NULL;
         
@@ -84,8 +82,6 @@ public:
 
         // clear optional lists
         sec_tc_list.resize( 3, SGVec2f(0.0, 0.0) );
-        vas_dbl.clear();
-        vas_int.clear();
         
         parent = p;
     }
@@ -135,6 +131,20 @@ public:
     }
     void SetSecTexCoordList( const std::vector<SGVec2f>& tcs ) {
         sec_tc_list = tcs;
+    }
+    
+    void SetIntVA( unsigned int i, unsigned int idx, int attrib ) {
+        vas_int[idx][i] = attrib;
+    }
+    unsigned int GetIntVA( unsigned int i, unsigned int idx ) const {
+        return vas_int[idx][i];
+    }
+    
+    void SetFltVA( unsigned int i, unsigned int idx, float attrib ) {
+        vas_flt[idx][i] = attrib;
+    }
+    unsigned int GetFltVA( unsigned int i, unsigned int idx ) const {
+        return vas_flt[idx][i];
     }
     
     int GetIndex( unsigned int i ) const {
@@ -266,9 +276,9 @@ private:
     
     tgTexParams secondaryTP;
     
-    vertex_attrib_double_list   vas_dbl;
-    vertex_attrib_integer_list  vas_int;
-    
+    va_int_list  vas_int;
+    va_flt_list  vas_flt;
+        
     SGVec3f face_normal;
     double  face_area;
 };

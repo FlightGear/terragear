@@ -108,6 +108,12 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
         // Make sure we keep texturing info
         result.SetMaterial( subject.GetMaterial() );
         result.SetTexParams( subject.GetTexParams() );
+        result.SetId( subject.GetId() );        
+        result.va_int_mask = subject.va_int_mask;
+        result.va_flt_mask = subject.va_flt_mask;
+        result.int_vas = subject.int_vas;
+        result.flt_vas = subject.flt_vas;
+        
     } else {
         result = subject;
     }

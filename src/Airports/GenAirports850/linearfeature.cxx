@@ -11,15 +11,99 @@ double LinearFeature::GetCapDist( unsigned int type )
     switch( type )
     {                        
         case RWY_CENTERLINE:
-            cap_dist = 200 * SG_FEET_TO_METER * 0.125;
+            cap_dist = 200 * SG_FEET_TO_METER * 0.25;
             break;
                         
         default:
-            cap_dist = 10 * SG_FEET_TO_METER * 0.125;
+            cap_dist = 10 * SG_FEET_TO_METER * 0.25;
             break;
     }
     
     return cap_dist;
+}
+
+Marking* LinearFeature::CheckEndCap(BezNode* curNode, Marking* cur_mark)
+{
+    /* first check if we are expecting to finish the start cap */
+    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckEndCap - call FinishStartCap" );
+    FinishStartCap(curNode->GetLoc(), cur_mark);
+    
+    if (curNode->GetMarking() != cur_mark->type)
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckEndCap Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->cap_start_idx << " to " << points.GetSize() );
+        
+        // marking has ended, or changed : current marking no longer repeats
+        cur_mark->repeat_end_idx = points.GetSize();
+        
+        // check if we can insert a point for the cap
+        SGGeod prev_point = points.GetNode(points.GetSize()-1);
+        double heading, az2, dist;
+        double cap_dist = GetCapDist( cur_mark->type );
+        SGGeodesy::inverse(prev_point, curNode->GetLoc(), heading, az2, dist );
+        
+        // if we can, insert it, otherwise, repeat_end == cap_end
+        if ( dist > cap_dist ) {
+            TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " add point " );
+            points.AddNode( SGGeodesy::direct(prev_point, heading, dist-cap_dist) );
+        } else {
+            TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " don't add point " );                    
+        }            
+        cur_mark->cap_end_idx = points.GetSize();
+        
+        marks.push_back(cur_mark);
+        cur_mark = NULL; 
+    }
+    else
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->cap_start_idx << " with type " << cur_mark->type );
+    }
+    
+    return cur_mark;
+}
+
+Marking* LinearFeature::CheckStartCap(BezNode* curNode)
+{
+    Marking* cur_mark = NULL;
+    
+    if (curNode->GetMarking())
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckStartCap Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
+        
+        // we aren't watching a mark, and this node has one
+        cur_mark = new Marking;
+        cur_mark->type = curNode->GetMarking();
+        cur_mark->cap_start_idx = points.GetSize();
+        cur_mark->cap_started = true;
+    }
+    
+    return cur_mark;
+}
+
+void LinearFeature::FinishStartCap(const SGGeod& curLoc, Marking* cur_mark)
+{
+    if ( cur_mark->cap_started ) {
+        if ( points.GetSize() ) {
+            // check if we can insert a point for the cap
+            SGGeod prev_point = points.GetNode(points.GetSize()-1);
+        
+            double heading, az2, dist;
+            double cap_dist = GetCapDist( cur_mark->type );
+            SGGeodesy::inverse(prev_point, curLoc, heading, az2, dist );
+            // if we can, insert it, otherwise, repeat_start == cap_start
+            if ( dist > cap_dist ) {
+                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::FinishStartCap mark start : dist is " << dist << " cap_dist is " << cap_dist << " add point " );
+                cur_mark->repeat_start_idx = points.GetSize();
+                points.AddNode( SGGeodesy::direct(prev_point, heading, cap_dist) );
+            } else {
+                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::FinishStartCap mark start : dist is " << dist << " cap_dist is " << cap_dist << " don't add point " );                    
+                cur_mark->repeat_start_idx = points.GetSize();
+            }
+        
+            cur_mark->cap_started = false;                        
+        } else {
+            TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::FinishStartCap we don't have any points yet... ");
+        }
+    }
 }
 
 void LinearFeature::ConvertContour( BezContour* src, bool closed )
@@ -66,33 +150,13 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         // are we watching a mark for the end?
         if (cur_mark)
         {
-            if (curNode->GetMarking() != cur_mark->type)
-            {
-                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.GetSize() );
-
-                // marking has ended, or changed
-                cur_mark->end_idx = points.GetSize();
-                marks.push_back(cur_mark);
-                cur_mark = NULL;
-            }
-            else
-            {
-                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->start_idx << " with type " << cur_mark->type );
-            }
+            cur_mark = CheckEndCap(curNode, cur_mark);
         }
 
         // should we start a new mark?
         if (cur_mark == NULL)
         {
-            if (curNode->GetMarking())
-            {
-                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
-
-                // we aren't watching a mark, and this node has one
-                cur_mark = new Marking;
-                cur_mark->type = curNode->GetMarking();
-                cur_mark->start_idx = points.GetSize();
-            }
+            cur_mark = CheckStartCap(curNode);
         }
         ////////////////////////////////////////////////////////////////////////////////////
 
@@ -282,6 +346,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                     nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
                 }
 
+                // check if we started a start cap
+                if ( cur_mark && cur_mark->cap_started ) {
+                    FinishStartCap( curLoc, cur_mark );
+                }
+                
                 // add the feature vertex
                 points.AddNode(curLoc);
 
@@ -308,6 +377,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                     // calculate next location
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
 
+                    // Check is we need a start cap
+                    if ( cur_mark && cur_mark->cap_started ) {
+                        FinishStartCap( curLoc, cur_mark );
+                    }
+                    
                     // add the feature vertex
                     points.AddNode(curLoc);
 
@@ -328,6 +402,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             {
                 nextLoc = nextNode->GetLoc();
 
+                // Check if we need a start cap
+                if ( cur_mark && cur_mark->cap_started ) {
+                    FinishStartCap( curLoc, cur_mark );
+                }
+
                 // just add the one vertex - dist is small
                 points.AddNode(curLoc);
 
@@ -346,12 +425,28 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         points.AddNode(curLoc);
     }
 
-    // check for marking that goes all the way to the end...
+    // check for marking that goes all the way to the end.
+    // NOTE, we already added all the points - if we need a cap - we need to insert it before the last node
     if (cur_mark)
     {
-       TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.GetSize() );
-
-       cur_mark->end_idx = points.GetSize()-1;
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->cap_start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.GetSize() );
+           
+       // check if we can insert a point for the cap
+       SGGeod prev_point = points.GetNode(points.GetSize()-2);
+       SGGeod last_point = points.GetNode(points.GetSize()-1);
+       double heading, az2, dist;
+       double cap_dist = GetCapDist( cur_mark->type );
+       SGGeodesy::inverse(prev_point, last_point, heading, az2, dist );
+           
+       // if we can, insert it, otherwise, repeat_end == cap_end
+       if ( dist > cap_dist ) {
+           TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " insert point " );
+           points.InsertNode( SGGeodesy::direct(prev_point, heading, dist-cap_dist), points.GetSize()-1 );
+       } else {
+           TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " don't insert point " );                    
+       }
+           
+       cur_mark->cap_end_idx = points.GetSize()-1;
        marks.push_back(cur_mark);
        cur_mark = NULL;
     }
@@ -380,7 +475,7 @@ LinearFeature::~LinearFeature()
     }
 }
 
-double LinearFeature::AddMarkingPoly( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
+double LinearFeature::AddMarkingPolyCapStart( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
 {
     SGGeod prev_mp = midpoint( prev_outer, prev_inner );
     SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
@@ -402,13 +497,86 @@ double LinearFeature::AddMarkingPoly( const SGGeod& prev_inner, const SGGeod& pr
     poly = tgPolygon::Snap( poly, gSnap );
     
     poly.SetMaterial( material );
-    poly.SetTexParams( prev_inner, width, v_dist, heading );
+    poly.SetTexParams( prev_inner, width, v_dist * 0.125, heading );
     
+    poly.SetTexMethod( TG_TEX_1X1_ATLAS );
+    poly.SetTexLimits( atlas_start, 0.0, atlas_end, 0.125 );
+    
+    // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
+    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
+    
+    cap_polys.push_back(poly);
+    
+    return v_end;
+}
+
+double LinearFeature::AddMarkingPolyRepeat( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
+{
+    SGGeod prev_mp = midpoint( prev_outer, prev_inner );
+    SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
+    double az2, dist;
+    tgPolygon poly;
+    
+    SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
+    
+    v_start = fmod( v_end, 1.0 );
+    v_end   = v_start + (dist/v_dist);
+    
+    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
+        
+    poly.Erase();
+    poly.AddNode( 0, prev_inner );
+    poly.AddNode( 0, prev_outer );
+    poly.AddNode( 0, cur_outer  );
+    poly.AddNode( 0, cur_inner  );
+    poly = tgPolygon::Snap( poly, gSnap );
+    
+    poly.SetMaterial( material );
+    poly.SetTexParams( prev_inner, width, v_dist, heading );
+
     poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
     poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
+
+    // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
+    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
+
+    marking_polys.push_back(poly);
+        
+    return v_end;
+}
+
+double LinearFeature::AddMarkingPolyCapEnd( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
+{
+    SGGeod prev_mp = midpoint( prev_outer, prev_inner );
+    SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
+    double az2, dist;
+    tgPolygon poly;
+    
+    SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
+    
+    v_start = fmod( v_end, 1.0 );
+    v_end   = v_start + (dist/v_dist);
+    
+    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
+    
+    poly.Erase();
+    poly.AddNode( 0, prev_inner );
+    poly.AddNode( 0, prev_outer );
+    poly.AddNode( 0, cur_outer  );
+    poly.AddNode( 0, cur_inner  );
+    poly = tgPolygon::Snap( poly, gSnap );
+    
+    poly.SetMaterial( material );
+    poly.SetTexParams( prev_inner, width, v_dist * 0.125, heading );
+    
+    poly.SetTexMethod( TG_TEX_1X1_ATLAS );
+    poly.SetTexLimits( atlas_start, 0.875, atlas_end, 1.0 );
+    
+    // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
+    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
     
     marking_polys.push_back(poly);
-
+    
     return v_end;
 }
 
@@ -441,7 +609,7 @@ int LinearFeature::Finish( bool closed, double def_width )
     #define     ATLAS_BUFFER16      (0.003906250)
     #define     ATLAS_BUFFER32      (0.007812500)
     
-    #define     ATLAS_BUFFER        ATLAS_BUFFER0
+    #define     ATLAS_BUFFER        ATLAS_BUFFER8
 
     #define     RW_TEX0_START       (ATLAS_BUFFER)
     #define     RW_TEX0_END         (RW_TEX0_START+ATLAS_QUAD_WIDTH)
@@ -672,18 +840,18 @@ int LinearFeature::Finish( bool closed, double def_width )
                 exit(1);
         }
         
-        for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
+        for (unsigned int j = marks[i]->cap_start_idx; j <= marks[i]->cap_end_idx; j++)
         {
             // for each point on the PointsList, generate a quad from
             // start to next, offset by 2 distnaces from the edge
 
-            if (j == marks[i]->start_idx)
+            if (j == marks[i]->cap_start_idx)
             {
                 // first point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
                 cur_inner = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
             }
-            else if (j == marks[i]->end_idx)
+            else if (j == marks[i]->cap_end_idx)
             {
                 // last point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset-width/2.0f );
@@ -726,7 +894,13 @@ int LinearFeature::Finish( bool closed, double def_width )
             
             if ( markStarted )
             {
-                v_end = AddMarkingPoly( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
+                if ( j == marks[i]->repeat_start_idx ) {
+                    v_end = AddMarkingPolyCapStart( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist/8.0, heading, atlas_start, atlas_end, v_start, v_end );
+                } else if (j == marks[i]->cap_end_idx)  {
+                    v_end = AddMarkingPolyCapEnd( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist/8.0, heading, atlas_start, atlas_end, v_start, v_end );
+                }else {
+                    v_end = AddMarkingPolyRepeat( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
+                }
             } else {
                 markStarted = true;
             }
@@ -896,6 +1070,14 @@ void LinearFeature::GetPolys( tgpolygon_list& polys )
     for ( unsigned int i = 0; i < marking_polys.size(); i++)
     {
         polys.push_back( marking_polys[i] );
+    }    
+}
+
+void LinearFeature::GetCapPolys( tgpolygon_list& polys )
+{
+    for ( unsigned int i = 0; i < cap_polys.size(); i++)
+    {
+        polys.push_back( cap_polys[i] );
     }    
 }
 

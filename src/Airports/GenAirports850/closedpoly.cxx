@@ -450,6 +450,14 @@ void ClosedPoly::GetFeaturePolys( tgpolygon_list& polys )
     }    
 }
 
+void ClosedPoly::GetFeatureCapPolys( tgpolygon_list& polys )
+{
+    for ( unsigned int i = 0; i < features.size(); i++)
+    {
+        features[i]->GetCapPolys( polys );
+    }    
+}
+
 void ClosedPoly::GetFeatureLights( tglightcontour_list& lights )
 {
     for ( unsigned int i = 0; i < features.size(); i++)

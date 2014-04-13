@@ -423,8 +423,6 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         txtname += ".txt";
 
         SGBinObject obj;
-
-        sglog().setLogLevels( SG_ALL, SG_DEBUG );
         
         for (unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++) {
             for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
@@ -466,8 +464,6 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         bool result;
         result = obj.write_bin( objpath, name, b );
 
-        sglog().setLogLevels( SG_ALL, SG_INFO );
-
         if ( !result )
         {
             throw sg_exception("error writing file. :-(");
@@ -476,121 +472,6 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         // write out airport object reference
         write_index( objpath, b, name );
 
-    #if 0
-        
-    #if 0 // TODO : along with taxiway signs
-        // write out tower references
-        for ( i = 0; i < (int)tower_nodes.size(); ++i )
-        {
-            write_index_shared( objpath, b, tower_nodes[i],
-                                "Models/Airport/tower.xml",
-                                0.0 );
-        }
-    #endif
-
-        SGGeod ref_geod;
-        // calc elevations and write out windsock references
-        TG_LOG(SG_GENERAL, SG_DEBUG, "Computing windsock node elevations");
-
-        for ( unsigned int i = 0; i < windsocks.size(); ++i )
-        {
-            SGGeod ref_geod = windsocks[i]->GetLoc();
-            ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
-
-            if ( windsocks[i]->IsLit() )
-            {
-                write_index_shared( objpath, b, ref_geod,
-                                    "Models/Airport/windsock_lit.xml", 0.0 );
-            }
-            else
-            {
-                write_index_shared( objpath, b, ref_geod,
-                                    "Models/Airport/windsock.xml", 0.0 );
-            }
-        }
-
-        // write out beacon references
-        for ( unsigned int i = 0; i < beacons.size(); ++i )
-        {
-            ref_geod = beacons[i]->GetLoc();
-            ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
-
-            write_index_shared( objpath, b, ref_geod,
-                                "Models/Airport/beacon.xml",
-                                0.0 );
-        }
-
-        // write out taxiway signs references
-        for ( unsigned int i = 0; i < signs.size(); ++i )
-        {
-            ref_geod = signs[i]->GetLoc();
-            ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
-            write_object_sign( objpath, b, ref_geod,
-                                signs[i]->GetDefinition(),
-                                signs[i]->GetHeading(),
-                                signs[i]->GetSize() );
-        }
-
-        // write out water buoys
-        for ( unsigned int i = 0; i < waterrunways.size(); ++i )
-        {
-            tgContour buoys = waterrunways[i]->GetBuoys();
-
-            for ( unsigned int j = 0; j < buoys.GetSize(); ++j )
-            {
-                ref_geod = buoys.GetNode(j);
-                ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
-                write_index_shared( objpath, b, ref_geod,
-                                    "Models/Airport/water_rw_buoy.xml",
-                                    0.0 );
-            }
-        }
-    #endif
-
-#if 0    
-        std::string holepath = root + "/AirportArea";
-        tgChopper chopper( holepath );
-
-        // union up all inner and outer base polys
-        tgPolygon inner_base = tgPolygon::Union( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
-        
-        int before, after;
-        std::vector<SGGeod> points;
-        tgRectangle bb;
-        
-        bb = inner_base.GetBoundingBox();
-
-        base_nodes.init_spacial_query();
-        base_nodes.get_geod_inside( bb.getMin(), bb.getMax(), points );
-                
-        before  = inner_base.TotalNodes();
-        inner_base = tgPolygon::AddColinearNodes( inner_base, points );
-        inner_base = tgPolygon::Snap(inner_base, gSnap);
-        inner_base = tgPolygon::RemoveDups( inner_base );
-        inner_base = tgPolygon::RemoveBadContours( inner_base );
-        after   = inner_base.TotalNodes();
-        
-        if (before != after) {
-            SG_LOG( SG_CLIPPER, SG_ALERT, "Fixed T-Junctions in inner base: nodes increased from " << before << " to " << after );
-        }
-
-        tgPolygon outer_base = tgPolygon::Union( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
-
-        /* need to polulate the elevations in inner base */
-        inner_base.SetElevations( base_nodes );
-
-//      tgShapefile::FromPolygon( inner_base, "./hole_dbg", "hole poly", "hole" );
-//      tgShapefile::FromPolygon( outer_base, "./hole_dbg", "base poly", "base" );
-        
-        inner_base.SetPreserve3D( true );
-        chopper.Add( inner_base, "Hole" );
-
-        outer_base.SetPreserve3D( false );
-        outer_base.SetTexMethod( TG_TEX_BY_GEODE );
-        chopper.Add( outer_base, "Airport" );
-
-        chopper.Save(false);
-#endif        
 
         std::string holepath = root + "/AirportArea";
         tgChopper chopper( holepath );

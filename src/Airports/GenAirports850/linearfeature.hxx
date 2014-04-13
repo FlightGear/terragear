@@ -52,8 +52,11 @@ struct Marking
 {
 public:
     unsigned int type;
-    unsigned int start_idx;
-    unsigned int end_idx;
+    unsigned int cap_end_idx;
+    unsigned int repeat_start_idx;
+    unsigned int repeat_end_idx;
+    unsigned int cap_start_idx;
+    bool cap_started;
 };
 typedef std::vector <Marking*> MarkingList;
 
@@ -104,7 +107,8 @@ public:
 
     int Finish( bool closed, double width = 0.0f );
     
-    void GetPolys( tgpolygon_list& polys );    
+    void GetPolys( tgpolygon_list& polys );
+    void GetCapPolys( tgpolygon_list& polys );
     void GetLights( tglightcontour_list& lights );
     
 
@@ -118,9 +122,15 @@ private:
     LightingList    lights;
     Lighting*       cur_light;
     
-    double AddMarkingPoly( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
+    double AddMarkingPolyCapStart( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
+    double AddMarkingPolyRepeat( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
+    double AddMarkingPolyCapEnd( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
     
-    double GetCapDist( unsigned int type );
+    double   GetCapDist( unsigned int type );
+    Marking* CheckStartCap(BezNode* curNode);
+    Marking* CheckEndCap(BezNode* curNode, Marking* curMark);
+    void     FinishStartCap(const SGGeod& curLoc, Marking* cur_mark);
+    
     void ConvertContour( BezContour* src, bool closed );
     
     // text description
@@ -133,6 +143,7 @@ private:
     tgContour  points;
 
     tgpolygon_list      marking_polys;
+    tgpolygon_list      cap_polys;      // lower priority than the marks themselves
     tglightcontour_list lighting_polys;
 };
 

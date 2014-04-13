@@ -355,34 +355,15 @@ void Runway::gen_section( const tgPolygon& runway,
     section.AddNode( 0, pg3 );
     section = tgPolygon::Snap( section, gSnap );
 
-    //double len = length / 2.0;
-    //double sect_len = len * ( endl_pct - startl_pct );
-    //double sect_wid = width * ( endw_pct - startw_pct );
-
-    // ( for the old texturing )
-#if 0    
-    section.SetMaterial( material_prefix + material );    
-    section.SetTexParams( pg0, sect_wid, sect_len, heading );
-    section.SetTexLimits( minu, minv, maxu, maxv );
-    section.SetTexMethod( TG_TEX_BY_TPS_CLIPUV, 0.0, 0.0, 1.0, 1.0 );
-#else
-//  section.SetMaterial( "runway_asphalt" );
     section.SetMaterial( "pa_tiedown" );
     section.SetTexParams( pg0, 5.0, 5.0, heading );
     section.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
     section.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
-#endif
 
-    // for each section, draw the border lines
-    
-    
-    
-    // Create the final output and push on to the runway super_polygon
-    // list
     runway_polys.push_back( section );
 }
 
-
+#if 0
 void Runway::gen_feature( const tgPolygon& runway,
                           double startl_pct, double endl_pct,
                           double startw_pct, double endw_pct,
@@ -492,6 +473,7 @@ void Runway::gen_feature( const tgPolygon& runway,
     
     marking_polys.push_back( section );
 }
+#endif
 
 static void SplitLongSegment( const SGGeod& p0, const SGGeod& p1, 
                               double max_len,
@@ -674,8 +656,9 @@ void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, d
     poly.SetTexParams( poly.GetNode(0,0), width, length, heading );
     poly.SetTexMethod( TG_TEX_1X1_ATLAS );
     poly.SetTexLimits( minx, miny, maxx, maxy );
+    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
     
-    marking_polys.push_back( poly );
+    cap_polys.push_back( poly );
 }
 
 LinearFeature* Runway::gen_perpendicular_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark )
@@ -741,7 +724,6 @@ LinearFeature* Runway::gen_paralell_marking_feature( const SGGeod& start_ref, do
     node->SetMarking( mark );
     node->SetTerm(true);
     feat->AddNode( node );
-    
     feat->Finish(false);
     
     return feat;
@@ -1262,7 +1244,7 @@ void Runway::gen_full_rwy(void)
 
         // create the runway polys and borders ( simple without markings )
         gen_base( start_ref, center, heading, rwy.length/2, true );
-        
+
         if (rwy.overrun[rwhalf] > 0.0) {
             TG_LOG( SG_GENERAL, SG_INFO, "runway heading = " << heading << " designation " << rwy.rwnum[rwhalf] << " has overrun " << rwy.overrun[rwhalf] );
             

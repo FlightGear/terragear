@@ -57,6 +57,11 @@ public:
     void SetNode( unsigned int i, SGGeod n ) {
         node_list[i] = n;
     }
+    void InsertNode( SGGeod n, int before ) {
+        std::vector<SGGeod>::iterator it = node_list.begin()+before;
+        node_list.insert( it, n );
+    }
+    
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }

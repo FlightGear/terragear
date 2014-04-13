@@ -36,6 +36,7 @@ public:
 
     void GetMainPolys( tgpolygon_list& polys );
     void GetMarkingPolys(tgpolygon_list& polys );
+    void GetCapPolys(tgpolygon_list& polys );
     void GetShoulderPolys( tgpolygon_list& polys );
     void GetInnerBasePolys( tgpolygon_list& polys );
     void GetOuterBasePolys( tgpolygon_list& polys );
@@ -77,6 +78,7 @@ private:
     
     // storage for the runway markings
     tgpolygon_list marking_polys;
+    tgpolygon_list cap_polys;
     
     // storage for Shoulders - The superpolys are generated during rwy construction,
     // but not clipped until shoulder construction.

@@ -25,6 +25,7 @@ public:
     void GetOuterBoundaryPolys( tgpolygon_list& polys );
     
     void GetFeaturePolys( tgpolygon_list& polys );
+    void GetFeatureCapPolys( tgpolygon_list& polys );
     void GetFeatureLights( tglightcontour_list& lights );
     
 private:

@@ -61,7 +61,11 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
+    result.va_int_mask = subject.va_int_mask;
+    result.va_flt_mask = subject.va_flt_mask;
+    result.int_vas = subject.int_vas;
+    result.flt_vas = subject.flt_vas;
+    
     return result;
 }
 
@@ -127,7 +131,11 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
+    result.va_int_mask = subject.va_int_mask;
+    result.va_flt_mask = subject.va_flt_mask;
+    result.int_vas = subject.int_vas;
+    result.flt_vas = subject.flt_vas;
+    
     return result;
 }
 
@@ -164,7 +172,11 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
     
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
+    result.va_int_mask = subject.va_int_mask;
+    result.va_flt_mask = subject.va_flt_mask;
+    result.int_vas = subject.int_vas;
+    result.flt_vas = subject.flt_vas;
+    
     return result;
 }
 

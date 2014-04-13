@@ -93,7 +93,11 @@ tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
-
+    result.va_int_mask = subject.va_int_mask;
+    result.va_flt_mask = subject.va_flt_mask;
+    result.int_vas = subject.int_vas;
+    result.flt_vas = subject.flt_vas;
+    
     return result;
 }
 
@@ -152,6 +156,10 @@ tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<SGG
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.va_int_mask = subject.va_int_mask;
+    result.va_flt_mask = subject.va_flt_mask;
+    result.int_vas = subject.int_vas;
+    result.flt_vas = subject.flt_vas;
     
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         result.AddContour( tgContour::AddColinearNodes( subject.GetContour(c), nodes ) );
@@ -185,7 +193,11 @@ tgPolygon tgPolygon::AddIntersectingNodes( const tgPolygon& subject, const tgtri
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
-
+    result.va_int_mask = subject.va_int_mask;
+    result.va_flt_mask = subject.va_flt_mask;
+    result.int_vas = subject.int_vas;
+    result.flt_vas = subject.flt_vas;
+    
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         result.AddContour( tgContour::AddIntersectingNodes( subject.GetContour(c), mesh ) );
     }
@@ -517,6 +529,38 @@ void tgPolygon::Texture( void )
             SG_LOG(SG_GENERAL, SG_ALERT, "TEX METHOD NOT SET for PRIMARY tex params " << tp.method );
             //exit(100);
             break;            
+    }
+    
+    for ( unsigned int i=0; i<3; i++ ) {
+        switch( int_vas[i].method ) {
+            case TG_VA_UNKNOWN:
+                break;
+
+            case TG_VA_CONSTANT:
+                // set each vertex attribute to the constant
+                for ( unsigned int j = 0; j < triangles.size(); j++ ) {
+                    for ( unsigned int k = 0; k < 3; k++ ) {
+                        triangles[j].SetIntVA( k, i, int_vas[i].attrib );
+                    }
+                }       
+                break;
+        }
+    }
+
+    for ( unsigned int i=0; i<3; i++ ) {
+        switch( flt_vas[i].method ) {
+            case TG_VA_UNKNOWN:
+                break;
+                
+            case TG_VA_CONSTANT:
+                // set each vertex attribute to the constant
+                for ( unsigned int j = 0; j < triangles.size(); j++ ) {
+                    for ( unsigned int k = 0; k < 3; j++ ) {
+                        triangles[j].SetFltVA( k, i, flt_vas[i].attrib );
+                    }
+                }       
+                break;
+        }
     }
 }
 
