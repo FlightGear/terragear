@@ -64,6 +64,7 @@ void TGConstruct::TesselatePolys( void )
     }
 
     for (unsigned int area = 0; area < area_defs.size(); area++) {
+        bool isRoad = area_defs.is_road_area( area );        
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& poly = polys_clipped.get_poly(area, p );
 
@@ -71,7 +72,13 @@ void TGConstruct::TesselatePolys( void )
             for (unsigned int k=0; k < poly.Triangles(); k++) {
                 for (int l = 0; l < 3; l++) {
                     // ensure we have all nodes...
-                    nodes.unique_add( poly.GetTriNode( k, l ) );
+                    SGGeod node = poly.GetTriNode( k, l );
+                    if ( CheckMatchingNode( node, isRoad, false ) ) {
+                        nodes.unique_add( node );
+                    } else {
+                        SG_LOG( SG_GENERAL, SG_INFO, "after tesselation, we can't add a node - quit");
+                        exit(1);
+                    }
                 }
             }
         }

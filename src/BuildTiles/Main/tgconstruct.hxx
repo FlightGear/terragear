@@ -83,7 +83,8 @@ public:
 #endif
 
     // paths
-    void set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load_dirs );
+    void set_paths( const std::string work, const std::string share, const std::string match, 
+                    const std::string output, const std::vector<std::string> load_dirs );
     void set_options( bool ignore_lm, double n );
 
     // TODO : REMOVE
@@ -98,6 +99,8 @@ public:
     // Debug
     void set_debug( std::string path, std::vector<std::string> area_defs, std::vector<std::string> shape_defs );
 
+    void CreateMatchedEdgeFiles( std::vector<SGBucket>& bucketList );
+    
 private:
     virtual void run();
 
@@ -107,6 +110,10 @@ private:
     // Load Data
     void LoadElevationArray( bool add_nodes );
     int  LoadLandclassPolys( void );
+    bool CheckMatchingNode( SGGeod& node, bool road, bool fixed );
+    
+    SGGeod GetNearestNodeLatitude( const SGGeod& node, const std::vector<SGGeod>& selection );
+    SGGeod GetNearestNodeLongitude( const SGGeod& node, const std::vector<SGGeod>& selection );
 
     // Clip Data
     bool ClipLandclassPolys( void );
@@ -118,8 +125,11 @@ private:
     // Shared edge Matching
     void SaveSharedEdgeData( int stage );
     void LoadSharedEdgeData( int stage );
+    void LoadMatchedEdgeFiles();
 
     void LoadNeighboorEdgeDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west );
+    void LoadNeighboorMatchDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west );
+
     void ReadNeighborFaces( gzFile& fp );
     void WriteNeighborFaces( gzFile& fp, const SGGeod& pt ) const;
     TGNeighborFaces* AddNeighborFaces( const SGGeod& node );
@@ -164,14 +174,16 @@ private:
     SGLockedQueue<SGBucket>& workQueue;
     unsigned int total_tiles;
     unsigned int stage;
+    std::vector<SGGeod> nm_north, nm_south, nm_east, nm_west;
 
     // path to land-cover file (if any)
     std::string cover;
 
     // paths
     std::string work_base;
-    std::string output_base;
     std::string share_base;
+    std::string match_base;
+    std::string output_base;
 
     std::vector<std::string> load_dirs;
 

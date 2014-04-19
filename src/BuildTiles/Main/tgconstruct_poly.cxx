@@ -84,23 +84,22 @@ int TGConstruct::LoadLandclassPolys( void ) {
                     poly.LoadFromGzFile( fp );
                     area     = area_defs.get_area_priority( poly.GetFlag() );
                     material = area_defs.get_area_name( area );
-
+                    bool isRoad = area_defs.is_road_area( area );
+                    
                     poly.SetMaterial( material );
                     poly.SetId( cur_poly_id++ );
 
                     if ( poly.Contours() ) {
-                        polys_in.add_poly( area, poly );
-                        total_polys_read++;
-
                         // add the nodes
                         for (unsigned int j=0; j<poly.Contours(); j++) {
-                            for (unsigned int k=0; k<poly.ContourSize(j); k++) {
-                                SGGeod const& node  = poly.GetNode( j, k );
-
-                                if ( poly.GetPreserve3D() ) {
-                                    nodes.unique_add_fixed_elevation( node );
+                            for (int k=poly.ContourSize(j)-1; k>= 0; k--) {
+                                SGGeod node  = poly.GetNode( j, k );
+                                bool isFixed = poly.GetPreserve3D();
+                                
+                                if ( CheckMatchingNode( node, isRoad, isFixed ) ) {
+                                    poly.SetNode( j, k, node );
                                 } else {
-                                    nodes.unique_add( node );
+                                    poly.DelNode( j, k );
                                 }
                             }
                         }
@@ -110,6 +109,13 @@ int TGConstruct::LoadLandclassPolys( void ) {
                             sprintf(layer, "loaded_%d", poly.GetId() );
 
                             tgShapefile::FromPolygon( poly, ds_name, layer, material.c_str() );
+                        }
+
+                        /* make sure we loaded a valid poly */
+                        poly = tgPolygon::RemoveBadContours(poly);
+                        if ( poly.Contours() ) {
+                            polys_in.add_poly( area, poly );
+                            total_polys_read++;
                         }
                     }
                 }
@@ -123,4 +129,113 @@ int TGConstruct::LoadLandclassPolys( void ) {
     SG_LOG(SG_GENERAL, SG_DEBUG, " Total polys read in this tile: " <<  total_polys_read );
 
     return total_polys_read;
+}
+
+bool TGConstruct::CheckMatchingNode( SGGeod& node, bool road, bool fixed )
+{
+    bool   matched = false;
+    bool   added = false;
+    
+    if ( fixed ) {
+        node = nodes.unique_add_fixed_elevation( node );
+        added = true;
+    } else {
+        // check mutable edge
+        if ( !nm_north.empty() ) {
+            double north_compare = bucket.get_center_lat() + 0.5 * bucket.get_height();
+            if ( fabs(node.getLatitudeDeg() - north_compare) < SG_EPSILON) {
+                if ( !road ) {
+                    // node is on the non_mutable northern border - get closest pt
+                    node = GetNearestNodeLongitude( node, nm_north );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, " AddNode: constrained on north border from " <<  node << " to " << node );
+                    added = true;
+                } else {
+                    matched = true;
+                }
+            } 
+        } 
+        
+        if ( !added && !matched && !nm_south.empty() ) {
+            double south_compare = bucket.get_center_lat() - 0.5 * bucket.get_height();
+            if ( fabs(node.getLatitudeDeg() - south_compare) < SG_EPSILON) {
+                if ( !road ) {
+                    // node is on the non_mutable southern border - get closest pt
+                    node = GetNearestNodeLongitude( node, nm_south );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, " AddNode: constrained on south border from " <<  node << " to " << node );
+                    added = true;
+                } else {
+                    matched = true;
+                }
+            }
+        } 
+        
+        if ( !added && !matched && !nm_east.empty() ) {
+            double east_compare  = bucket.get_center_lon() + 0.5 * bucket.get_width();
+            if ( fabs(node.getLongitudeDeg() - east_compare) < SG_EPSILON) {
+                if ( !road ) {
+                    // node is on the non_mutable eastern border - get closest pt
+                    node = GetNearestNodeLatitude( node, nm_east );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, " AddNode: constrained on east border from " <<  node << " to " << node );
+                    added = true;
+                } else {
+                    matched = true;
+                }
+            }
+        } 
+        
+        if ( !added && !matched && !nm_west.empty() ) {
+            double west_compare  = bucket.get_center_lon() - 0.5 * bucket.get_width();
+            if ( fabs(node.getLongitudeDeg() - west_compare) < SG_EPSILON) {
+                if ( !road ) {
+                    // node is on the non_mutable western border - get closest pt
+                    node = GetNearestNodeLatitude( node, nm_west );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, " AddNode: constrained on west border from " <<  node << " to " << node );                
+                    added = true;
+                } else {
+                    matched = true;
+                }
+            }
+        } 
+    }
+    
+    if (!added && !matched) {
+        node = nodes.unique_add( node );
+        added = true;
+    }
+    
+    return added;
+}
+
+SGGeod TGConstruct::GetNearestNodeLongitude( const SGGeod& node, const std::vector<SGGeod>& selection )
+{
+    double       min_dist = std::numeric_limits<double>::infinity();
+    double       cur_dist;
+    unsigned int min_idx = 0;
+    
+    for ( unsigned int i=0; i<selection.size(); i++ ) {
+        cur_dist = fabs( node.getLongitudeDeg() - selection[i].getLongitudeDeg() );
+        if ( cur_dist < min_dist ) {
+            min_dist = cur_dist;
+            min_idx = i;
+        }
+    }
+    
+    return selection[min_idx];
+}
+
+SGGeod TGConstruct::GetNearestNodeLatitude( const SGGeod& node, const std::vector<SGGeod>& selection )
+{
+    double       min_dist = std::numeric_limits<double>::infinity();
+    double       cur_dist;
+    unsigned int min_idx = 0;
+    
+    for ( unsigned int i=0; i<selection.size(); i++ ) {
+        cur_dist = fabs( node.getLatitudeDeg() - selection[i].getLatitudeDeg() );
+        if ( cur_dist < min_dist ) {
+            min_dist = cur_dist;
+            min_idx = i;
+        }
+    }
+    
+    return selection[min_idx];
 }

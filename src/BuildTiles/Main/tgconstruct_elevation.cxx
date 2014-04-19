@@ -56,7 +56,10 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
 
         std::vector<SGGeod> const& fit_list = array.get_fitted_list();
         for (unsigned int i=0; i<fit_list.size(); i++) {
-            nodes.unique_add( fit_list[i] );
+            SGGeod node = fit_list[i];
+            if ( CheckMatchingNode( node, false, false ) ) {
+                nodes.unique_add( node );
+            }
         }
     }
 }

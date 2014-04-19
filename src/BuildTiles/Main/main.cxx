@@ -47,6 +47,7 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "[ --output-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --work-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --share-dir=<directory>");
+    SG_LOG(SG_GENERAL, SG_ALERT, "  --match-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --cover=<path to land-cover raster>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --tile-id=<id>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --min-lon=<degrees>");
@@ -63,10 +64,23 @@ static void usage( const string name ) {
     exit(-1);
 }
 
+void RemoveDuplicateBuckets( std::vector<SGBucket>& keep, std::vector<SGBucket>& remove )
+{
+    for ( unsigned int i=0; i<remove.size(); i++) {
+        for ( unsigned int j=0; j<keep.size(); j++ ) {
+            if ( remove[i] == keep[j] ) {
+                keep.erase( keep.begin()+j );
+                break;
+            }
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     string output_dir = ".";
     string work_dir = ".";
     string share_dir = "";
+    string match_dir = "";
     string cover = "";
     string priorities_file = DEFAULT_PRIORITIES_FILE;
     string usgs_map_file = DEFAULT_USGS_MAPFILE;
@@ -97,6 +111,8 @@ int main(int argc, char **argv) {
             work_dir = arg.substr(11);
         } else if (arg.find("--share-dir=") == 0) {
             share_dir = arg.substr(12);
+        } else if (arg.find("--match-dir=") == 0) {
+            match_dir = arg.substr(12);
         } else if (arg.find("--tile-id=") == 0) {
             tile_id = atol(arg.substr(10).c_str());
         } else if ( arg.find("--min-lon=") == 0 ) {
@@ -142,6 +158,8 @@ int main(int argc, char **argv) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Output directory is " << output_dir);
     SG_LOG(SG_GENERAL, SG_ALERT, "Working directory is " << work_dir);
     SG_LOG(SG_GENERAL, SG_ALERT, "Shared directory is " << share_dir);
+    SG_LOG(SG_GENERAL, SG_ALERT, "Match directory is " << match_dir);
+    
     if ( tile_id > 0 ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Tile id is " << tile_id);
     } else {
@@ -166,11 +184,14 @@ int main(int argc, char **argv) {
         exit( -1 );
     }
 
-    // tile work queue
+    // tile work queue 
+    std::vector<SGBucket> matchList;
     std::vector<SGBucket> bucketList;
     SGLockedQueue<SGBucket> wq;
+    SGMutex filelock;
 
-    // First generate the workqueue of buckets to construct
+    // First, check if we want to match existing scenery - 
+    // if we do, generate a list of buckets outside of the bounding box
     if (tile_id == -1) {
         // build all the tiles in an area
         SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) within given bounding box");
@@ -179,19 +200,42 @@ int main(int argc, char **argv) {
         SGBucket b_max( max );
 
         if ( b_min == b_max ) {
-			bucketList.push_back( b_min );
+            bucketList.push_back( b_min );
         } else {
             SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
-            sgGetBuckets( min, max, bucketList );
+            sgGetBuckets( min, max, bucketList );            
+        }
+        if ( match_dir != "" ) {
+            b_min = b_min.sibling(-1,-1);
+            b_max = b_max.sibling(1,1);
+            
+            sgGetBuckets( b_min.get_center(), b_max.get_center(), matchList );            
         }
     } else {
         // construct the specified tile
         SG_LOG(SG_GENERAL, SG_ALERT, "Building tile " << tile_id);
         bucketList.push_back( SGBucket( tile_id ) );
+        if ( match_dir != "" ) {
+            SGBucket b_min( SGBucket(tile_id).sibling(-1,-1) );
+            SGBucket b_max( SGBucket(tile_id).sibling( 1, 1) );
+            sgGetBuckets( b_min.get_center(), b_max.get_center(), matchList );
+        }
     }
 
+    if ( match_dir != "" ) {
+        RemoveDuplicateBuckets( matchList, bucketList );
+        
+        // generate the immuatble shared files - when tile matching, we must not
+        // modify shared edges from an immutable file - new tile will collapse
+        // triangles as appropriate.
+        TGConstruct* construct = new TGConstruct( areas, 1, wq, &filelock );
+        //construct->set_cover( cover );
+        construct->set_paths( work_dir, share_dir, match_dir, output_dir, load_dirs );        
+        construct->CreateMatchedEdgeFiles( matchList );
+        delete construct;
+    }
+    
     std::vector<TGConstruct *> constructs;
-    SGMutex filelock;
 
 	/* fill the workqueue */
 	for (unsigned int i=0; i<bucketList.size(); i++) {
@@ -202,7 +246,7 @@ int main(int argc, char **argv) {
     for (int i=0; i<num_threads; i++) {
         TGConstruct* construct = new TGConstruct( areas, 1, wq, &filelock );
         //construct->set_cover( cover );
-        construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
+        construct->set_paths( work_dir, share_dir, match_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
         construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
         constructs.push_back( construct );
@@ -235,7 +279,7 @@ int main(int argc, char **argv) {
     for (int i=0; i<num_threads; i++) {
         TGConstruct* construct = new TGConstruct( areas, 2, wq, &filelock );
         //construct->set_cover( cover );
-        construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
+        construct->set_paths( work_dir, share_dir, match_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
         construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
         constructs.push_back( construct );
@@ -267,7 +311,7 @@ int main(int argc, char **argv) {
     for (int i=0; i<num_threads; i++) {
         TGConstruct* construct = new TGConstruct( areas, 3, wq, &filelock );
         //construct->set_cover( cover );
-        construct->set_paths( work_dir, share_dir, output_dir, load_dirs );
+        construct->set_paths( work_dir, share_dir, match_dir, output_dir, load_dirs );
         construct->set_options( ignoreLandmass, nudge );
         construct->set_debug( debug_dir, debug_area_defs, debug_shape_defs );
         constructs.push_back( construct );

@@ -278,6 +278,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // Now make sure any newly added intersection nodes are added to the tgnodes
     for (unsigned int area = 0; area < area_defs.size(); area++) {
+        bool isRoad = area_defs.is_road_area( area );
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& poly = polys_clipped.get_poly( area, p );
 
@@ -286,8 +287,12 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
                     // ensure we have all nodes...
-                    TGNode const& node = poly.GetNode( con, n );
-                    nodes.unique_add( node );
+                    SGGeod node = poly.GetNode( con, n );
+                    if ( CheckMatchingNode( node, isRoad, false ) ) {
+                        poly.SetNode( con, n, node );
+                    } else {
+                        poly.DelNode( con, n );
+                    }
                 }
             }
         }

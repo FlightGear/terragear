@@ -55,9 +55,12 @@ TGConstruct::~TGConstruct() {
 }
 
 // TGConstruct: Setup
-void TGConstruct::set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load ) {
+void TGConstruct::set_paths( const std::string work, const std::string share, 
+                             const std::string match, const std::string output, 
+                             const std::vector<std::string> load ) {
     work_base   = work;
     share_base  = share;
+    match_base  = match;
     output_base = output;
     load_dirs   = load;
 }
@@ -93,6 +96,12 @@ void TGConstruct::run()
             strcpy( ds_name, "" );
         }
 
+        if ( stage == 1 ) {
+            // Matched edge data is generated from a previous scenery build - do this before we
+            // start the current tile - it can mark edges as immutable
+            LoadMatchedEdgeFiles();
+        }
+        
         if ( stage > 1 ) {
             LoadFromIntermediateFiles( stage-1 );
             LoadSharedEdgeData( stage-1 );

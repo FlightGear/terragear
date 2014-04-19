@@ -68,26 +68,32 @@ public:
 
     // Add a point to the point list if it doesn't already exist.
     // Returns the index (starting at zero) of the point in the list.
-    void unique_add( const SGGeod& p ) {
+    SGGeod unique_add( const SGGeod& p ) {
         TGNode n(p);
         n.SetFixedPosition(false);
-        tg_node_list.add(n);
+        unsigned idx = tg_node_list.add(n);
         kd_tree_valid = false;
+        
+        return tg_node_list[idx].GetPosition();
     }
 
-    void unique_add( const TGNode& n ) {
-        tg_node_list.add(n);
+    SGGeod unique_add( const TGNode& n ) {
+        unsigned int idx = tg_node_list.add(n);
         kd_tree_valid = false;
+
+        return tg_node_list[idx].GetPosition();
     }
 
     // Add a point to the point list if it doesn't already exist
     // (checking all three dimensions.)  Returns the index (starting
     // at zero) of the point in the list.
-    void unique_add_fixed_elevation( const SGGeod& p ) {
+    SGGeod unique_add_fixed_elevation( const SGGeod& p ) {
         TGNode n(p);
         n.SetFixedPosition(true);
-        tg_node_list.add(n);
+        unsigned int idx = tg_node_list.add(n);
         kd_tree_valid = false;
+        
+        return tg_node_list[idx].GetPosition();
     }
 
     // Find the index of the specified point (compair to the same

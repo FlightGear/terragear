@@ -264,6 +264,9 @@ public:
 
         contours[c].AddNode( n );
     }
+    void DelNode( unsigned int c, unsigned int n ) {
+        contours[c].DelNode( n );
+    }
 
     tgRectangle GetBoundingBox( void ) const;
 

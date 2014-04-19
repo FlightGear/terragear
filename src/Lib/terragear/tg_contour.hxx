@@ -54,6 +54,9 @@ public:
     void SetNode( unsigned int i, SGGeod n ) {
         node_list[i] = n;
     }
+    void DelNode( unsigned int i ) {
+        node_list.erase( node_list.begin()+i);
+    }
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }
