@@ -397,7 +397,7 @@ fn_preexport() {
     for CATEGORY in ${SELECTION}; do
         LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${PREFIX}_/g"`
         g.remove vect=${LAYER}_postclip
-        v.extract cats=${CATEGORY} input=${CLEANMAP} output=${LAYER}_postclip type=area
+        v.extract input=${CLEANMAP} type=area output=${LAYER}_postclip cats=${CATEGORY}
         v.out.ogr input=${LAYER}_postclip type=area dsn=${DUMPDIR}/${LAYER}_post-clip.shp
     done
 }
@@ -437,10 +437,10 @@ fn_proj() {
     MYMAPSET=`g.gisenv get=MAPSET`
     g.mapset location=wgs84 mapset=${MYMAPSET}
     g.remove vect=${CLEANMAP}
-    v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${CLEANMAP}  # output=${CLEANMAP}
+    v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${CLEANMAP} --verbose  # output=${CLEANMAP}
     if [ ${PREFIX} = "v0" ]; then
         g.remove vect=${PREFIX}_landmass_prune
-        v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${PREFIX}_landmass_prune
+        v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${PREFIX}_landmass_prune --verbose
     fi
 }
 
@@ -454,7 +454,7 @@ fn_export() {
 #        LAYER=${PREFIX}_${CATEGORY}
         LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${PREFIX}_/g"`
         g.remove vect=${LAYER}
-        v.extract cats=${CATEGORY} input=${CLEANMAP} output=${LAYER} type=area
+        v.extract input=${CLEANMAP} type=area output=${LAYER} cats=${CATEGORY}
         if [ ${PREFIX} = "v0" -a ${LAYER} = "${PREFIX}_landmass" ]; then
             NEWLAYER="${PREFIX}_void"
             g.remove vect=${NEWLAYER}
