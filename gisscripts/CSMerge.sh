@@ -38,6 +38,8 @@ mkdir -p ${DUMPDIR}
 MODE="testing"  # production, testing
 
 InitCutoutTable () {
+    # Create table to hold the (dissolved) boundary around the new custom landcover,
+    # this should contain exactly one single (multi)polygon.
     ${PSQL} "DROP TABLE ${CUTLAYER}"
 #    ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
 #                 wkb_geometry geometry, \
@@ -52,17 +54,13 @@ InitCutoutTable () {
                  CONSTRAINT enforce_geotype_wkb_geometry CHECK (ST_GeometryType(wkb_geometry) = 'ST_Polygon'::text), \
                  CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326) \
                  )"
-    
+
     ${PSQL} "ALTER TABLE ${CUTLAYER} ADD PRIMARY KEY (ogc_fid)"
     ${PSQL} "ALTER TABLE ${CUTLAYER} ALTER COLUMN wkb_geometry SET STORAGE MAIN"
 }
 
-InitDiffTable () {
-    ${PSQL} "DROP TABLE ${DIFFLAYER}"
-    ${PSQL} "CREATE TABLE ${DIFFLAYER} (ogc_fid serial NOT NULL, wkb_geometry geometry NOT NULL, CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326))"
-}
-
 ImportShape () {
+    # Load the boundary (multi)polygon.
     rm -f ${SHAPE}\.dbf
     ogr2ogr -f PostgreSQL PG:"host=${PGHOST} user=${PGUSER} dbname=${PGDATABASE}" -append -t_srs "EPSG:4326" ${SHAPE}\.shp -nln ${CUTLAYER} > /dev/null 2>&1
     RETURN=${?}
@@ -75,7 +73,15 @@ ImportShape () {
     fi
 }
 
+InitDiffTable () {
+    # Create table to hold the difference between custom scenery polygons and the boundary polygon.
+    ${PSQL} "DROP TABLE ${DIFFLAYER}"
+    ${PSQL} "CREATE TABLE ${DIFFLAYER} (ogc_fid serial NOT NULL, wkb_geometry geometry NOT NULL, CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326))"
+}
+
 CheckWithin () {
+    # Check wether pre-existing custom scenery poly lies completely inside the boundary polygon,
+    # then remove it, otherwise store the difference in diff table.
     GEOM=${1}
     CSLAYER=`echo ${GEOM} | awk -F\# '{print $1}'`
     OGC_FID=`echo ${GEOM} | awk -F\# '{print $2}'`
@@ -96,6 +102,8 @@ CheckWithin () {
 }
 
 SingularizeDump () {
+    # Turn potential multi-geometries from diff table into single geometries
+    # and store them back to production table.
     if [ `${PSQL} "SELECT COUNT(*) FROM ${DIFFLAYER}"` -gt 0 ]; then
         for OGC_FID in `${PSQL} "SELECT ogc_fid FROM ${DIFFLAYER} WHERE ST_NumGeometries(wkb_geometry) IS NOT NULL"`; do
             ${PSQL} "INSERT INTO ${DIFFLAYER} (wkb_geometry) \
@@ -117,6 +125,11 @@ SingularizeDump () {
 }
 
 CheckIntersects () {
+    # Check if the boundary polygon consists of just one single object,
+    # determine custom scenery database tables and loop through all of them,
+    # check for polygons whose BBox intersects with the BBox of the boundary polygon,
+    # check if these polygons effectively intersect (not just their BBoxes),
+    # process intersecting polygons.
     SINGULAR=`${PSQL} "SELECT COUNT(*) FROM ${CUTLAYER}"`
     if [ ${SINGULAR} -ne 1 ]; then
         echo "Selection requires to contain exactly one single feature - exiting !"
