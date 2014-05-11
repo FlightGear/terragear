@@ -40,21 +40,7 @@ static void usage( int argc, char **argv ) {
     << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
     << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
     << "[ --airport=abcd ] [--max-slope=<decimal>] [--tile=<tile>] [--threads] [--threads=x]"
-    << "[--chunk=<chunk>] [--clear-dem-path] [--dem-path=<path>] [--verbose] [--help]");
-}
-
-
-void setup_default_elevation_sources(string_list& elev_src) {
-    elev_src.push_back( "SRTM2-Africa-3" );
-    elev_src.push_back( "SRTM2-Australia-3" );
-    elev_src.push_back( "SRTM2-Eurasia-3" );
-    elev_src.push_back( "SRTM2-Islands-3" );
-    elev_src.push_back( "SRTM2-North_America-3" );
-    elev_src.push_back( "SRTM2-South_America-3" );
-    elev_src.push_back( "DEM-USGS-3" );
-    elev_src.push_back( "SRTM-1" );
-    elev_src.push_back( "SRTM-3" );
-    elev_src.push_back( "SRTM-30" );
+    << "[--chunk=<chunk>] [--dem-path=<path>] [--verbose] [--help]");
 }
 
 // Display help and usage
@@ -112,7 +98,6 @@ int main(int argc, char **argv)
     // Setup elevation directories
     string_list elev_src;
     elev_src.clear();
-    setup_default_elevation_sources(elev_src);
 
     std::string debug_dir = ".";
     vector<std::string> debug_runway_defs;
@@ -181,39 +166,21 @@ int main(int argc, char **argv)
         {
             max.setLatitudeDeg(atof( arg.substr(10).c_str() ));
         }
-#if 0 // relly? - do we need this?
-        else if ( arg.find("--chunk=") == 0 )
-        {
-            tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(), 10.0);
-            min = rectangle.getMin();
-            max = rectangle.getMax();
-        }
-        else if ( arg.find("--tile=") == 0 )
-        {
-            tg::Rectangle rectangle = tg::parseTile(arg.substr(7).c_str());
-            min = rectangle.getMin();
-            max = rectangle.getMax();
-        }
-#endif
         else if ( arg.find("--airport=") == 0 ) 
         {
             airport_id = simgear::strutils::uppercase( arg.substr(10).c_str() );
-    	} 
-        else if ( arg == "--clear-dem-path" ) 
-        {
-    	    elev_src.clear();
-    	} 
+        } 
         else if ( arg.find("--dem-path=") == 0 ) 
         {
-    	    elev_src.push_back( arg.substr(11) );
-    	} 
+            elev_src.push_back( arg.substr(11) );
+        } 
         else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) 
         {
-    	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
-    	}
+            sglog().setLogLevels( SG_GENERAL, SG_BULK );
+        }
         else if ( (arg.find("--max-slope=") == 0) ) 
         {
-    	    slope_max = atof( arg.substr(12).c_str() );
+            slope_max = atof( arg.substr(12).c_str() );
         }
         else if ( (arg.find("--threads=") == 0) )
         {
@@ -246,14 +213,14 @@ int main(int argc, char **argv)
         }
         else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) )
         {
-    	    help( argc, argv, elev_src );
-    	    exit(-1);
-    	} 
+            help( argc, argv, elev_src );
+            exit(-1);
+        } 
         else 
         {
-    	    usage( argc, argv );
-    	    exit(-1);
-    	}
+            usage( argc, argv );
+            exit(-1);
+        }
     }
 
     std::string airportareadir=work_dir+"/AirportArea";
@@ -291,17 +258,22 @@ int main(int argc, char **argv)
 
     if ( work_dir == "" ) 
     {
-    	TG_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
-    	usage( argc, argv );
-	    exit(-1);
+        TG_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
+        usage( argc, argv );
+        exit(-1);
     }
 
     if ( input_file == "" ) 
     {
-    	TG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
-    	exit(-1);
+        TG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
+        exit(-1);
     }
 
+    if ( elev_src.empty() )
+    {
+        TG_LOG( SG_GENERAL, SG_WARN,  "Warning: no elevation source - airport will be at sea level." );
+    }
+    
     sg_gzifstream in( input_file );
     if ( !in.is_open() ) 
     {

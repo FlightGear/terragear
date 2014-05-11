@@ -606,13 +606,15 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
         obj.set_texcoords( texcoords.get_list() );
         if (!vaints.empty()) {
             SG_LOG(SG_GENERAL, SG_DEBUG, "adding int va list of size " << vaints.size() );
-            obj.set_intvetexattribs( vaints );
+//          TODO : Fix Simgear API
+//          obj.set_intvetexattribs( vaints );
         } else {
             SG_LOG(SG_GENERAL, SG_INFO, "crap - no int vas ");
         }
         
         if (!vafloats.empty()) {
-            obj.set_floatvetexattribs( vafloats );
+//          TODO : Fix Simgear API
+//          obj.set_floatvetexattribs( vafloats );
         }
         
         bool result = obj.write_bin( objpath, name, b );
