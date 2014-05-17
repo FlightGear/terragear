@@ -571,7 +571,7 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
                         
                         index = texcoords.add( poly.GetTriSecTexCoord( k, l ) );
                         sgboTri.tc_list[1].push_back( index );
-                        
+
                         for ( unsigned int m=0; m<num_int_vas; m++ ) {
                             index = add_unique_int( vaints, poly.GetTriIntVA( k, l, m  ) );
                             sgboTri.va_list[m].push_back( index );
@@ -606,15 +606,13 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
         obj.set_texcoords( texcoords.get_list() );
         if (!vaints.empty()) {
             SG_LOG(SG_GENERAL, SG_DEBUG, "adding int va list of size " << vaints.size() );
-//          TODO : Fix Simgear API
-//          obj.set_intvetexattribs( vaints );
+            obj.set_intvetexattribs( vaints );
         } else {
             SG_LOG(SG_GENERAL, SG_INFO, "crap - no int vas ");
         }
         
         if (!vafloats.empty()) {
-//          TODO : Fix Simgear API
-//          obj.set_floatvetexattribs( vafloats );
+            obj.set_floatvetexattribs( vafloats );
         }
         
         bool result = obj.write_bin( objpath, name, b );

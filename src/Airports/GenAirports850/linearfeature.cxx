@@ -497,7 +497,7 @@ double LinearFeature::AddMarkingPolyCapStart( const SGGeod& prev_inner, const SG
     poly = tgPolygon::Snap( poly, gSnap );
     
     poly.SetMaterial( material );
-    poly.SetTexParams( prev_inner, width, v_dist * 0.125, heading );
+    poly.SetTexParams( prev_inner, width, v_dist, heading );
     
     poly.SetTexMethod( TG_TEX_1X1_ATLAS );
     poly.SetTexLimits( atlas_start, 0.0, atlas_end, 0.125 );
@@ -567,7 +567,7 @@ double LinearFeature::AddMarkingPolyCapEnd( const SGGeod& prev_inner, const SGGe
     poly = tgPolygon::Snap( poly, gSnap );
     
     poly.SetMaterial( material );
-    poly.SetTexParams( prev_inner, width, v_dist * 0.125, heading );
+    poly.SetTexParams( prev_inner, width, v_dist, heading );
     
     poly.SetTexMethod( TG_TEX_1X1_ATLAS );
     poly.SetTexLimits( atlas_start, 0.875, atlas_end, 1.0 );
@@ -850,17 +850,29 @@ int LinearFeature::Finish( bool closed, double def_width )
                 // first point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
                 cur_inner = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
+
+                /* v_dist is meaningless - no poly to draw yet */
             }
             else if (j == marks[i]->cap_end_idx)
             {
                 // last point on the mark - offset heading is 90deg
                 cur_outer = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset-width/2.0f );
                 cur_inner = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset+width/2.0f );
+                
+                /* calc v_dist for the end cap */
+                v_dist = SGGeodesy::distanceM( points.GetNode(j-1), points.GetNode(j) );
             }
             else
             {
                 cur_outer = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset-width/2.0f );
                 cur_inner = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset+width/2.0f );
+
+                /* calc v_dist for the start cap */
+                if ( j == marks[i]->repeat_start_idx ) {
+                    v_dist = SGGeodesy::distanceM( points.GetNode(j-1), points.GetNode(j) );
+                } else {
+                    v_dist = 10;
+                }
             }
 
             
@@ -895,9 +907,9 @@ int LinearFeature::Finish( bool closed, double def_width )
             if ( markStarted )
             {
                 if ( j == marks[i]->repeat_start_idx ) {
-                    v_end = AddMarkingPolyCapStart( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist/8.0, heading, atlas_start, atlas_end, v_start, v_end );
+                    v_end = AddMarkingPolyCapStart( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
                 } else if (j == marks[i]->cap_end_idx)  {
-                    v_end = AddMarkingPolyCapEnd( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist/8.0, heading, atlas_start, atlas_end, v_start, v_end );
+                    v_end = AddMarkingPolyCapEnd( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
                 }else {
                     v_end = AddMarkingPolyRepeat( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
                 }
