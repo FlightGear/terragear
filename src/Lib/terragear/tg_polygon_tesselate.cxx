@@ -144,7 +144,7 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
                 SGGeod p2 = SGGeod::fromDeg( to_double(tri.vertex(2).x()), to_double(tri.vertex(2).y()) );
 
                 /* Check for Zero Area before inserting */
-                if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p1, p2 ) ) {
+                if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
                     AddTriangle( p0, p1, p2 );
                 }
 
