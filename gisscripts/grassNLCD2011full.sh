@@ -73,8 +73,8 @@ while [ ${S} -lt 48 ]; do
     while [ ${W} -lt -62 ]; do
         g.mapset location=${MYLOCATION} mapset=${MYMAPSET}
 
-        E=`expr ${W} + 3`
-        N=`expr ${S} + 3`
+        E=`expr ${W} + 2`
+        N=`expr ${S} + 2`
 
         LL="`echo ${W} - 0.125 | bc`,`echo ${S} - 0.125 | bc`"
         UR="`echo ${E} + 0.125 | bc`,`echo ${N} + 0.125 | bc`"
