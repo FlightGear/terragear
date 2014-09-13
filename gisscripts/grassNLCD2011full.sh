@@ -65,9 +65,9 @@ PSQL="psql -tA -h ${PGHOST} -U ${PGUSER} -d ${PGDATABASE}"
 MYLOCATION=`g.gisenv get=LOCATION_NAME`
 MYMAPSET=`g.gisenv get=MAPSET`
 
-# Start looping over full NLCD2011 at: W=-131, S=19
+# Start looping over full NLCD2011 at: W=-131, S=21
 # Base Package Scenery at            : W=-124, S=36, E=-120, N=39
-S=19
+S=21
 while [ ${S} -lt 48 ]; do
     W=-131
     while [ ${W} -lt -62 ]; do
@@ -76,10 +76,10 @@ while [ ${S} -lt 48 ]; do
         E=`expr ${W} + 3`
         N=`expr ${S} + 3`
 
-        LL="${W},${S}"
-        UR="${E},${N}"
+        LL="`echo ${W} - 0.125 | bc`,`echo ${S} - 0.125 | bc`"
+        UR="`echo ${E} + 0.125 | bc`,`echo ${N} + 0.125 | bc`"
         #SUFFIX="_124_36"  # no minus sign
-        SUFFIX="_`echo ${LL} | tr \, _ | tr -d \-`"
+        SUFFIX="_`echo ${W}_${S} | tr -d \-`"
 
         # Convert lon/lat into map projection:
         read WP SP <<< `m.proj -i coordinates=${LL} | awk -F\| '{print $1, $2}'`
@@ -91,6 +91,7 @@ while [ ${S} -lt 48 ]; do
         g.region align=rast_e -p --verbose
         g.region -b -g
 
+        echo "### Vectorizing (${W} ${S}, ${E} ${N}) ### "
         r.to.vect -b -s input=rast_e output=vect_raw_s type=area --verbose --overwrite
         v.build map=vect_raw_s --verbose  # if "r.to.vect -b" was used
         NUMPOLYS=`v.info -t map=vect_raw_s | grep \= | grep -v \=0$ | wc -l`
