@@ -23,6 +23,15 @@
 # ll_s=21.74230778
 # ll_e=-63.67219185
 # ll_n=49.17706319
+#
+# west:       -2493045
+# south:      177285
+# east:       2342655
+# north:      3310005
+
+# To put it simple:
+#     S/N: 20/50    - 15 rows a 2° - 208848/row
+#     W/E: -131/-63 - 34 cols a 2° - 142226/col
 
 # DB-Connection
 PGHOST=localhost
@@ -67,31 +76,30 @@ MYMAPSET=`g.gisenv get=MAPSET`
 
 # Start looping over full NLCD2011 at: W=-131, S=21
 # Base Package Scenery at            : W=-124, S=36, E=-120, N=39
-S=21
-while [ ${S} -lt 48 ]; do
-    W=-131
-    while [ ${W} -lt -62 ]; do
+S=177285
+while [ ${S} -lt 3310005 ]; do
+    W=-2493045
+    while [ ${W} -lt 2342655 ]; do
         g.mapset location=${MYLOCATION} mapset=${MYMAPSET}
 
-        E=`expr ${W} + 2`
-        N=`expr ${S} + 2`
+        E=`expr ${W} + 142226`
+        N=`expr ${S} + 208848`
 
-        LL="`echo ${W} - 0.125 | bc`,`echo ${S} - 0.125 | bc`"
-        UR="`echo ${E} + 0.125 | bc`,`echo ${N} + 0.125 | bc`"
-        #SUFFIX="_124_36"  # no minus sign
+        LL="`echo ${W} - 125 | bc`,`echo ${S} - 125 | bc`"
+        UR="`echo ${E} + 125 | bc`,`echo ${N} + 125 | bc`"
         SUFFIX="_`echo ${W}_${S} | tr -d \-`"
 
         # Convert lon/lat into map projection:
-        read WP SP <<< `m.proj -i coordinates=${LL} | awk -F\| '{print $1, $2}'`
-        read EP NP <<< `m.proj -i coordinates=${UR} | awk -F\| '{print $1, $2}'`
+        read WP SP <<< `m.proj -o -d coordinates=${LL} | awk -F\| '{print $1, $2}'`
+        read EP NP <<< `m.proj -o -d coordinates=${UR} | awk -F\| '{print $1, $2}'`
 
         # Base Package Scenery:
         #g.region w=-2465464.95 s=1804592.77 e=-2037425.60 n=2033555.35 --verbose
-        g.region w=${WP} s=${SP} e=${EP} n=${NP} --verbose
+        g.region w=${W} s=${S} e=${E} n=${N} --verbose
         g.region align=rast_e -p --verbose
         g.region -b -g
 
-        echo "### Vectorizing (${W} ${S}, ${E} ${N}) ### "
+        echo "### Vectorizing (${WP} ${SP}, ${EP} ${NP}) ### "
         r.to.vect -b -s input=rast_e output=vect_raw_s type=area --verbose --overwrite
         v.build map=vect_raw_s --verbose  # if "r.to.vect -b" was used
         NUMPOLYS=`v.info -t map=vect_raw_s | grep \= | grep -v \=0$ | wc -l`
@@ -178,12 +186,12 @@ while [ ${S} -lt 48 ]; do
             v.out.ogr input=vect_full${SUFFIX} type=area olayer=newcs_full format=PostgreSQL dsn="${DSN}" --verbose --overwrite
 #            v.out.ogr input=vect_full${SUFFIX} type=area dsn=${HOME}/shp/nlcd2011full.shp --verbose
 #            ${PSQL} -c "SELECT DISTINCT fn_SceneDir(wkb_geometry), fn_SceneSubDir(wkb_geometry) FROM fgs_objects WHERE ob_id = 533101;"
-            ${PSQL} -c "SELECT fn_CSMerge('dummy');"
+            ${PSQL} -e -c "SELECT fn_CSMerge('${SUFFIX}');"
 
         fi
-        W=`expr ${W} + 2`
+        W=`expr ${W} + 142226`
     done
-    S=`expr ${S} + 2`
+    S=`expr ${S} + 208848`
 done
 
 # EOF
