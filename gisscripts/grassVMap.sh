@@ -91,7 +91,7 @@ PSQL="psql -tA -h ${PGHOST} -U ${PGUSER} -d ${PGDATABASE}"
 
 fn_fixpostgis() {
     LAYER=${1}
-    echo "DROP INDEX ${LAYER}_cat_idx;"
+    echo "DROP INDEX IF EXISTS ${LAYER}_cat_idx;"
     echo "ALTER INDEX ${LAYER}_pkey RENAME TO ${LAYER}_pk;"
     echo "ALTER INDEX ${LAYER}_wkb_geometry_idx RENAME TO ${LAYER}_gindex;"
     echo "ALTER TABLE ${LAYER} ALTER COLUMN wkb_geometry SET STORAGE MAIN;"
@@ -110,7 +110,7 @@ fn_fixpostgis() {
 fn_topostgis() {
     GRMAP=${1}
     PGLAYER=${PREFIX}_`echo ${GRMAP} | cut -f 2 -d \_`
-    echo "DROP TABLE ${PGLAYER};" | ${PSQL}
+    echo "DROP TABLE IF EXISTS ${PGLAYER};" | ${PSQL}
     v.out.postgis input=${GRMAP} olayer=${PGLAYER} dsn="${DSN}" options="${LAYEROPTS}"
     fn_fixpostgis ${PGLAYER} | ${PSQL}
 }
