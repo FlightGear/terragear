@@ -130,13 +130,13 @@ fn_importCLC() {
         MAP=`echo ${LAYER} | cut -f 2 -d \_`
         CODECLC=`echo ${MAP} | tr -d c`
         INTMAP=${MAP}_int
-        g.remove vect=${MAP}
+        g.remove -f type=vect pattern=${MAP}
         v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
         v.db.addcolumn map=${MAP} columns="newcodeCLC integer" --verbose
         v.db.update map=${MAP} column=newcodeCLC value=${CODECLC} --verbose
         v.db.dropcolumn map=${MAP} column=code_${YEAR} --verbose
         v.db.renamecolumn map=${MAP} column=newcodeCLC,codeCLC --verbose
-        g.remove vect=${INTMAP}
+        g.remove -f type=vect pattern=${INTMAP}
         v.reclass input=${MAP} output=${INTMAP} column=codeCLC --verbose
         v.out.ogr input=${INTMAP} type=area dsn=${DUMPDIR}/${PREFIX}_${MAP}_pre-clip.shp
     done
@@ -147,7 +147,7 @@ fn_importVMap() {
     for SHAPEFILE in `ls ${LOADDIR}/*-area.shp`; do
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
         MAP=`echo ${LAYER} | sed -e 's/-/_/g'`
-        g.remove vect=${MAP}
+        g.remove -f type=vect pattern=${MAP}
 #        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
         v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} --verbose
     done
@@ -157,7 +157,7 @@ fn_importCS() {
     LOADDIR=${HOME}/shp
     for SHAPEFILE in `ls ${LOADDIR}/${PREFIX}_*.shp`; do
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
-        g.remove vect=${LAYER}
+        g.remove -f type=vect pattern=${LAYER}
         v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${LAYER} snap=${SNAP} --verbose
     done
 }
@@ -193,10 +193,10 @@ fn_split() {
     # 'treesa@veg(*)_area'     | veg=50             | v0_mixedforest
     # 'tundraa@veg(*)_area'    |                    | v0_herbtundra
     #
-    g.remove vect=`g.mlist type=vect pattern="${PREFIX}_*_???" separator=,`
+    g.remove -f type=vect pattern=`g.list type=vect pattern="${PREFIX}_*_???" separator=,`
 
-    for CLASS in `g.mlist type=vect pattern="???_*_*_area" | cut -f 2,3 -d \_ | sort | uniq`; do  # veg_cropa, veg_grassa
-        for LAYER in `g.mlist type=vect pattern="???_${CLASS}_area" | sort`; do  # eur_veg_cropa_area, noa_veg_cropa_area
+    for CLASS in `g.list type=vect pattern="???_*_*_area" | cut -f 2,3 -d \_ | sort | uniq`; do  # veg_cropa, veg_grassa
+        for LAYER in `g.list type=vect pattern="???_${CLASS}_area" | sort`; do  # eur_veg_cropa_area, noa_veg_cropa_area
             ZONE=`echo ${LAYER} | cut -f 1 -d \_`  # eur, noa
             V0LAYER=`echo ${LAYER} | awk -F\_ '{print $3 "@" $2 "(*)_" $4}'`  # cropa@veg(*)_area
             case ${V0LAYER} in
@@ -276,13 +276,13 @@ fn_split() {
 ########################################################################
 
 fn_reclass() {
-    for OUTPUT in `g.mlist type=vect pattern="${PREFIX}_*_???" | awk -F\_ '{print $1 "_" $2}' | sort | uniq`; do
+    for OUTPUT in `g.list type=vect pattern="${PREFIX}_*_???" | awk -F\_ '{print $1 "_" $2}' | sort | uniq`; do
         CATEGORY=`echo ${OUTPUT} | sed -e "s/^${PREFIX}_/cs_/g"`
         CODECLC=`grep "\ ${CATEGORY}\$" ${MAPPINGFILE} | awk '{print $1}'`
         INTMAP=${OUTPUT}_int
-        for ZONE in `g.mlist type=vect pattern="${PREFIX}_*_[a-z][a-z][a-z]" | awk -F\_ '{print $3}' | sort | uniq`; do
+        for ZONE in `g.list type=vect pattern="${PREFIX}_*_[a-z][a-z][a-z]" | awk -F\_ '{print $3}' | sort | uniq`; do
             LCCMAP=${OUTPUT}_${ZONE}_lcclass
-            g.remove vect=${LCCMAP}
+            g.remove -f type=vect pattern=${LCCMAP}
             v.db.addtable map=${OUTPUT}_${ZONE}
             v.db.addcolumn map=${OUTPUT}_${ZONE} columns="newcodeCLC integer" --verbose
             v.db.update map=${OUTPUT}_${ZONE} column=newcodeCLC value=${CODECLC} --verbose
@@ -290,11 +290,11 @@ fn_reclass() {
             v.db.renamecolumn map=${OUTPUT}_${ZONE} column=newcodeCLC,code_CLC --verbose
             v.reclass input=${OUTPUT}_${ZONE} output=${LCCMAP} column=code_CLC --verbose
         done
-        g.remove vect=${OUTPUT}_patched
-        v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${OUTPUT}_patched
-#        v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${INTMAP}
+        g.remove -f type=vect pattern=${OUTPUT}_patched
+        v.patch input=`g.list type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${OUTPUT}_patched
+#        v.patch input=`g.list type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${INTMAP}
 
-        g.remove vect=${OUTPUT}_bpol,${OUTPUT}_snap,${OUTPUT}_split,${OUTPUT}_rmsa,${OUTPUT}_rmdangle,${OUTPUT}_rmarea,${OUTPUT}_prune
+        g.remove -f type=vect pattern=${OUTPUT}_bpol,${OUTPUT}_snap,${OUTPUT}_split,${OUTPUT}_rmsa,${OUTPUT}_rmdangle,${OUTPUT}_rmarea,${OUTPUT}_prune
         v.clean input=${OUTPUT}_patched output=${OUTPUT}_bpol -c tool=bpol type=boundary --verbose
         v.clean input=${OUTPUT}_bpol output=${OUTPUT}_snap -c tool=snap thresh=${SNAP} type=boundary --verbose
         v.split input=${OUTPUT}_snap output=${OUTPUT}_split length=40 units=kilometers --verbose
@@ -369,22 +369,22 @@ fn_overlay() {
     v.info map=${LAYER}_prune > /dev/null
     LAYERVALID=${?}
     if [ ${LAYERVALID} -eq 0 ]; then
-            g.remove vect=${LAYER}_postsplit
+            g.remove -f type=vect pattern=${LAYER}_postsplit
             v.split input=${LAYER}_prune output=${LAYER}_postsplit length=40 units=kilometers --verbose
             if [ ${COUNT} -eq 1 ]; then
-                g.remove vect=${CLEANMAP}
+                g.remove -f type=vect pattern=${CLEANMAP}
                 g.copy vect=${LAYER}_postsplit,${CLEANMAP}
             else
-                g.remove vect=tmp
+                g.remove -f type=vect pattern=tmp
                 v.overlay ainput=${CLEANMAP} binput=${LAYER}_postsplit output=tmp operator=or snap=0.000001
                 v.db.addcolumn map=tmp columns="newcat integer" --verbose
                 v.db.update map=tmp column=newcat value=b_cat where="a_cat IS NULL" --verbose
                 v.db.update map=tmp column=newcat value=a_cat where="b_cat IS NULL" --verbose
                 v.db.update map=tmp column=newcat value=a_cat where="newcat IS NULL" --verbose
                 v.db.update map=tmp column=newcat value=a_cat where="newcat=0" --verbose
-                g.remove vect=${CLEANMAP}_reclass
+                g.remove -f type=vect pattern=${CLEANMAP}_reclass
                 v.reclass input=tmp output=${CLEANMAP}_reclass column=newcat --verbose
-                g.remove vect=${CLEANMAP}
+                g.remove -f type=vect pattern=${CLEANMAP}
                 g.rename vect=${CLEANMAP}_reclass,${CLEANMAP}
             fi
             COUNT=`expr ${COUNT} + 1`
@@ -396,7 +396,7 @@ fn_preexport() {
     SELECTION=`v.category input=${CLEANMAP} type=centroid option=print | sort -n | uniq`
     for CATEGORY in ${SELECTION}; do
         LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${PREFIX}_/g"`
-        g.remove vect=${LAYER}_postclip
+        g.remove -f type=vect pattern=${LAYER}_postclip
         v.extract input=${CLEANMAP} type=area output=${LAYER}_postclip cats=${CATEGORY}
         v.out.ogr input=${LAYER}_postclip type=area dsn=${DUMPDIR}/${LAYER}_post-clip.shp
     done
@@ -407,7 +407,7 @@ fn_preexport() {
 fn_clean() {
     # Caution, don't overwrite the only functional working copy while testing !!!
     #
-    g.remove vect=${PREFIX}_patched,${PREFIX}_bpol,${PREFIX}_snap,${PREFIX}_split,${PREFIX}_rmsa,${PREFIX}_rmdangle,${PREFIX}_rmarea,${PREFIX}_prune,${PREFIX}_dissolved
+    g.remove -f type=vect pattern=${PREFIX}_patched,${PREFIX}_bpol,${PREFIX}_snap,${PREFIX}_split,${PREFIX}_rmsa,${PREFIX}_rmdangle,${PREFIX}_rmarea,${PREFIX}_prune,${PREFIX}_dissolved
     g.rename vect=${CLEANMAP},${PREFIX}_patched
     #
     v.clean input=${PREFIX}_patched output=${PREFIX}_bpol -c tool=bpol type=boundary --verbose
@@ -436,10 +436,10 @@ fn_proj() {
     MYLOCATION=`g.gisenv get=LOCATION_NAME`
     MYMAPSET=`g.gisenv get=MAPSET`
     g.mapset location=wgs84 mapset=${MYMAPSET}
-    g.remove vect=${CLEANMAP}
+    g.remove -f type=vect pattern=${CLEANMAP}
     v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${CLEANMAP} --verbose  # output=${CLEANMAP}
     if [ ${PREFIX} = "v0" ]; then
-        g.remove vect=${PREFIX}_landmass_prune
+        g.remove -f type=vect pattern=${PREFIX}_landmass_prune
         v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=${PREFIX}_landmass_prune --verbose
     fi
 }
@@ -453,11 +453,11 @@ fn_export() {
     for CATEGORY in ${SELECTION}; do
 #        LAYER=${PREFIX}_${CATEGORY}
         LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${PREFIX}_/g"`
-        g.remove vect=${LAYER}
+        g.remove -f type=vect pattern=${LAYER}
         v.extract input=${CLEANMAP} type=area output=${LAYER} cats=${CATEGORY}
         if [ ${PREFIX} = "v0" -a ${LAYER} = "${PREFIX}_landmass" ]; then
             NEWLAYER="${PREFIX}_void"
-            g.remove vect=${NEWLAYER}
+            g.remove -f type=vect pattern=${NEWLAYER}
             g.rename vect=${LAYER},${NEWLAYER}
             LAYER=${NEWLAYER}
         fi

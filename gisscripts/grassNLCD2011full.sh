@@ -104,7 +104,7 @@ while [ ${S} -lt 3310005 ]; do
         v.build map=vect_raw_s --verbose  # if "r.to.vect -b" was used
         NUMPOLYS=`v.info -t map=vect_raw_s | grep \= | grep -v \=0$ | wc -l`
         if [ ${NUMPOLYS} -eq 0 ]; then
-            g.remove vect=vect_raw_s
+            g.remove -f type=vect pattern=vect_raw_s
         else
 
             v.db.addcolumn map=vect_raw_s columns="codeNLCD integer" --verbose
