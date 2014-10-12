@@ -34,7 +34,7 @@
 #     W/E: -131/-63 - 34 cols a 2° - 142226/col
 
 # DB-Connection
-PGHOST=localhost
+PGHOST=eclipse.optiputer.net
 PGDATABASE=landcover
 PGUSER=martin
 DSN="PG:host=${PGHOST} dbname=${PGDATABASE} user=${PGUSER}"
@@ -85,8 +85,8 @@ while [ ${S} -lt 3310005 ]; do
         E=`expr ${W} + 142226`
         N=`expr ${S} + 208848`
 
-        LL="`echo ${W} - 125 | bc`,`echo ${S} - 125 | bc`"
-        UR="`echo ${E} + 125 | bc`,`echo ${N} + 125 | bc`"
+        LL="`echo ${W} - 256 | bc`,`echo ${S} - 256 | bc`"
+        UR="`echo ${E} + 256 | bc`,`echo ${N} + 256 | bc`"
         SUFFIX="_`echo ${W}_${S} | tr -d \-`"
 
         # Convert lon/lat into map projection:
@@ -97,7 +97,6 @@ while [ ${S} -lt 3310005 ]; do
         #g.region w=-2465464.95 s=1804592.77 e=-2037425.60 n=2033555.35 --verbose
         g.region w=${W} s=${S} e=${E} n=${N} --verbose
         g.region align=rast_e -p --verbose
-        g.region -b -g
 
         echo "### Vectorizing (${WP} ${SP}, ${EP} ${NP}) ### "
         r.to.vect -b -s input=rast_e output=vect_raw_s type=area --verbose --overwrite
@@ -186,7 +185,8 @@ while [ ${S} -lt 3310005 ]; do
             v.out.ogr input=vect_full${SUFFIX} type=area olayer=newcs_full format=PostgreSQL dsn="${DSN}" --verbose --overwrite
 #            v.out.ogr input=vect_full${SUFFIX} type=area dsn=${HOME}/shp/nlcd2011full.shp --verbose
 #            ${PSQL} -c "SELECT DISTINCT fn_SceneDir(wkb_geometry), fn_SceneSubDir(wkb_geometry) FROM fgs_objects WHERE ob_id = 533101;"
-            ${PSQL} -e -c "SELECT fn_CSMerge('${SUFFIX}');"
+            ${PSQL} -e -c "SELECT fn_CSMerge('${SUFFIX}');" && \
+                echo "### region_tag # `g.region vect=vect_collect${SUFFIX} -b -g | tr "\n" \ `###"
 
         fi
         W=`expr ${W} + 142226`
