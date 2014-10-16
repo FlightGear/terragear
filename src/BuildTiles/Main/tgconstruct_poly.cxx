@@ -109,7 +109,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
                         char layer[32];
                         sprintf(layer, "loaded_%d", poly.GetId() );
 
-                        tgShapefile::FromPolygon( poly, ds_name, layer, material.c_str() );
+                        tgShapefile::FromPolygon( poly, true, ds_name, layer, material.c_str() );
                     }
                 }
 

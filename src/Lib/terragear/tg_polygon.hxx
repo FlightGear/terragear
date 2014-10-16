@@ -339,6 +339,9 @@ public:
     void Tesselate( void );
     void Tesselate( const std::vector<SGGeod>& extra );
 
+    // Straight Skeleton
+    tgpolygon_list StraightSkeleton(void);
+    
     // Boolean operations
     static void      SetClipperDump( bool dmp );
     static tgPolygon Union( const tgPolygon& subject, tgPolygon& clip );

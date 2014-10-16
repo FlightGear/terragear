@@ -41,7 +41,7 @@
 #include "tg_nodes.hxx"
 #include "tg_rectangle.hxx"
 #include "tg_texparams.hxx"
-#include "tg_misc.hxx"
+#include "tg_cgal.hxx"
 #include "clipper.hpp"
 
 typedef boost::array<int, 3>   int_va;

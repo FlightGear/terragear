@@ -1,10 +1,12 @@
 #ifndef __TG_MISC_HXX__
 #define __TG_MISC_HXX__
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <simgear/math/SGMath.hxx>
 
 #include "clipper.hpp"
 #include "tg_rectangle.hxx"
+#include "tg_cgal.hxx"
 
 // SGBucket corners
 #define SG_BUCKET_SW    (0)
@@ -36,31 +38,13 @@ double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext );
 // Clipper Conversion
 double Dist_ToClipper( double dist );
 
+bool IsNodeCollinear( const SGGeod& start, const SGGeod& end, const SGGeod& node );
+
 // should be in rectangle
 tgRectangle BoundingBox_FromClipper( const ClipperLib::Paths& subject );
 
-
-// move to tgSegment
-
+// convert to tgCgalBase
 bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SGGeod& p3, SGGeod& intersection);
-
-
-class tgSegment
-{
-public:
-    tgSegment( const SGGeod& s, const SGGeod& e ) {
-        start = s;
-        end   = e;
-    };
-
-    SGGeod start;
-    SGGeod end;
-};
-
-typedef std::vector <tgSegment>  tgsegment_list;
-typedef tgsegment_list::iterator tgsegment_list_iterator;
-typedef tgsegment_list::const_iterator const_tgsegment_list_iterator;
-
 bool FindIntersections( const tgSegment& s1, const tgSegment& s2, std::vector<SGGeod>& ints );
 
 #endif /* __TG_MISC_HXX__ */

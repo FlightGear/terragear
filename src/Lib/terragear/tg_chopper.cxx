@@ -218,7 +218,7 @@ void tgChopper::Save( bool DebugShapefiles )
             if ( DebugShapefiles )
             {
                 sprintf(layer, "poly_%s-%d", b.gen_index_str().c_str(), i );
-                tgShapefile::FromPolygon( polys[i], ds_name, layer, "poly" );
+                tgShapefile::FromPolygon( polys[i], true, ds_name, layer, "poly" );
             }
         }
 

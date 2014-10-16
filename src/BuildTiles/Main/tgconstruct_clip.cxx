@@ -95,9 +95,9 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // Dump the masks
     if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
-        tgShapefile::FromPolygon( land_mask, ds_name, "land_mask", "" );
-        tgShapefile::FromPolygon( water_mask, ds_name, "water_mask", "" );
-        tgShapefile::FromPolygon( island_mask, ds_name, "island_mask", "" );
+        tgShapefile::FromPolygon( land_mask, true, ds_name, "land_mask", "" );
+        tgShapefile::FromPolygon( water_mask, true, ds_name, "water_mask", "" );
+        tgShapefile::FromPolygon( island_mask, true, ds_name, "island_mask", "" );
     }
 
     // process polygons in priority order
@@ -128,7 +128,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
                 sprintf(layer, "pre_clip_%d", polys_in.get_poly( i, j ).GetId() );
                 sprintf(name, "shape %d,%d", i,j);
-                tgShapefile::FromPolygon( tmp, ds_name, layer, name );
+                tgShapefile::FromPolygon( tmp, true, ds_name, layer, name );
                 tgPolygon::ToClipperFile( tmp, ds_name, layer );
                 
                 sprintf(layer, "pre_clip_accum_%d", polys_in.get_poly( i, j ).GetId() );
@@ -161,7 +161,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                         sprintf(layer, "post_clip_%d", polys_in.get_poly( i, j ).GetId() );
                         sprintf(name, "shape %d,%d", i,j);
 
-                        tgShapefile::FromPolygon( clipped, ds_name, layer, name );
+                        tgShapefile::FromPolygon( clipped, true, ds_name, layer, name );
                     }
                 }
             }
@@ -189,7 +189,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         char name[32];
         for ( unsigned int i=0; i<slivers.size(); i++ ) {
             sprintf( name, "sliver %4d", i );
-            tgShapefile::FromContour( slivers[i], ds_name, "slivers", name );
+            tgShapefile::FromContour( slivers[i], true ds_name, "slivers", name );
         }
     }
 #endif
@@ -211,7 +211,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         sprintf(layer, "tile_rect" );
         sprintf(name, "shape");
         
-        tgShapefile::FromPolygon( safety_base, ds_name, layer, name );
+        tgShapefile::FromPolygon( safety_base, true, ds_name, layer, name );
         //tgPolygon::ToClipperFile( safety_base, ds_name, layer );
     }
     
@@ -225,7 +225,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 	    sprintf(layer, "remains_sb" );
 	    sprintf(name, "shape");
 
-	    tgShapefile::FromPolygon( remains, ds_name, layer, name );      
+	    tgShapefile::FromPolygon( remains, true, ds_name, layer, name );      
     }
 
 
@@ -239,7 +239,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 	    sprintf(layer, "remains_postclean" );
 	    sprintf(name, "shape");
 
-	    tgShapefile::FromPolygon( remains, ds_name, layer, name );      
+	    tgShapefile::FromPolygon( remains, true, ds_name, layer, name );      
     }
     
     if ( remains.Contours() > 0 ) {
@@ -256,7 +256,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 char name[32];
                 for ( unsigned int i=0; i<slivers.size(); i++ ) {
                     sprintf( name, "sliver %4d", i );
-                    tgShapefile::FromContour( slivers[i], ds_name, "remains slivers", name );
+                    tgShapefile::FromContour( slivers[i], true, ds_name, "remains slivers", name );
                 }
             }
 

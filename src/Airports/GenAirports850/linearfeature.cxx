@@ -1,9 +1,15 @@
 #include <stdlib.h>
 
+#include <terragear/tg_shapefile.hxx>
+
 #include "global.hxx"
 #include "beznode.hxx"
 #include "linearfeature.hxx"
 
+#define USE_GRAPH                   (1)
+
+
+#if !USE_GRAPH
 double LinearFeature::GetCapDist( unsigned int type )
 {
     double cap_dist;
@@ -106,6 +112,43 @@ void LinearFeature::FinishStartCap(const SGGeod& curLoc, Marking* cur_mark)
     }
 }
 
+#else
+
+unsigned int LinearFeature::CheckMarkChange(BezNode* curNode, unsigned int cur_mark)
+{    
+    /* first check if we are expecting to finish the start cap */
+    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkChange" );
+    
+    if (curNode->GetMarking() != cur_mark)
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkChange Marking has changed from " << cur_mark << " to " << curNode->GetMarking() );
+
+        cur_mark = curNode->GetMarking();
+    }
+    else
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking with type " << cur_mark );
+    }
+    
+    return cur_mark;
+}
+
+unsigned int LinearFeature::CheckMarkStart(BezNode* curNode)
+{    
+    unsigned int mark = 0;
+    
+    if (curNode->GetMarking())
+    {
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkStart Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
+        
+        // we aren't watching a mark, and this node has one
+        mark = curNode->GetMarking();
+    }
+    
+    return mark;
+}
+#endif
+
 void LinearFeature::ConvertContour( BezContour* src, bool closed )
 {
     BezNode*  curNode;
@@ -115,38 +158,60 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     SGGeod    nextLoc;
     SGGeod    cp1;
     SGGeod    cp2;
-
+    unsigned int last_node;
+    
     int       curve_type = CURVE_LINEAR;
     double    total_dist;
     double    theta1, theta2;
     int       num_segs = BEZIER_DETAIL;
 
+#if !USE_GRAPH
     Marking*  cur_mark = NULL;
+#endif
+    
+    unsigned int edge_type = 0;
+    
     Lighting* cur_light = NULL;
 
     TG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
 
     // clear anything in the point list
     points.Erase();
-
+    
+#if USE_GRAPH    
+    // clear the nodes and edge list
+    edges.clear();
+#endif
+    
+    if ( closed ) {
+        last_node = src->size()-1;
+    } else {
+        last_node = src->size()-2;
+    }
+    
     // iterate through each bezier node in the contour
-    for (unsigned int i=0; i <= src->size()-1; i++)
+    for (unsigned int i=0; i <= last_node; i++)
     {
         curNode = src->at(i);
 
-        if (i < src->size() - 1)
+        if (i < last_node)
         {
             nextNode = src->at(i+1);
         }
-        else
+        else if ( closed )
         {
             // for the last node, next is the first. as all contours are closed
             nextNode = src->at(0);
+        } 
+        else
+        {
+            // last node is actuall 1 past this...
+            nextNode = src->at(i+1);
         }
-
+        
         ////////////////////////////////////////////////////////////////////////////////////
         // remember the index for the starting stopping of marks on the converted contour
-
+#if !USE_GRAPH
         // are we watching a mark for the end?
         if (cur_mark)
         {
@@ -159,11 +224,23 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             cur_mark = CheckStartCap(curNode);
         }
         ////////////////////////////////////////////////////////////////////////////////////
-
+#else
+        // are we watching a mark for the end?
+        if ( edge_type )
+        {
+            edge_type = CheckMarkChange(curNode, edge_type);
+        }
+        
+        // should we start a new mark?
+        if (edge_type == 0)
+        {
+            edge_type = CheckMarkStart(curNode);
+        }
+        ////////////////////////////////////////////////////////////////////////////////////
+#endif
 
         ////////////////////////////////////////////////////////////////////////////////////
         // remember the index for the starting stopping of lights on the converted contour
-
         // are we watching a mark for the end?
         if (cur_light)
         {
@@ -346,14 +423,27 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                     nextLoc = CalculateCubicLocation( curNode->GetLoc(), cp1, cp2, nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
                 }
 
+#if !USE_GRAPH       
                 // check if we started a start cap
                 if ( cur_mark && cur_mark->cap_started ) {
                     FinishStartCap( curLoc, cur_mark );
                 }
-                
+#endif
+
                 // add the feature vertex
                 points.AddNode(curLoc);
-
+              
+#if USE_GRAPH                
+                // add and edge from curLoc to nextLoc with marking type and width
+                // look up or create a new graph node
+                tgIntersectionNode* curNode  = nodes.Get(curLoc);
+                tgIntersectionNode* nextNode = nodes.Get(nextLoc);
+                
+                // passing nodes to the edge constructor seems weird, but this can generate a new node
+                // if the new edge intersects one already created
+                edges.push_back( new tgIntersectionEdge( curNode, nextNode, 1.0, edge_type ) );
+#endif
+                
                 if (p==0)
                 {
                     TG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
@@ -377,14 +467,24 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                     // calculate next location
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
 
+#if !USE_GRAPH                
                     // Check is we need a start cap
                     if ( cur_mark && cur_mark->cap_started ) {
                         FinishStartCap( curLoc, cur_mark );
                     }
-                    
+#endif
+
                     // add the feature vertex
                     points.AddNode(curLoc);
 
+#if USE_GRAPH                
+                    // add and edge from curLoc to nextLoc with marking type and width
+                    // look up or create a new graph node
+                    tgIntersectionNode* curNode  = nodes.Get(curLoc);
+                    tgIntersectionNode* nextNode = nodes.Get(nextLoc);
+                    edges.push_back( new tgIntersectionEdge( curNode, nextNode, 1.0, edge_type ) );
+#endif
+                    
                     if (p==0)
                     {
                         TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
@@ -402,14 +502,24 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             {
                 nextLoc = nextNode->GetLoc();
 
+#if !USE_GRAPH                
                 // Check if we need a start cap
                 if ( cur_mark && cur_mark->cap_started ) {
                     FinishStartCap( curLoc, cur_mark );
                 }
+#endif
 
                 // just add the one vertex - dist is small
                 points.AddNode(curLoc);
 
+#if USE_GRAPH                
+                // add and edge from curLoc to nextLoc with marking type and width
+                // look up or create a new graph node
+                tgIntersectionNode* curNode  = nodes.Get(curLoc);
+                tgIntersectionNode* nextNode = nodes.Get(nextLoc);
+                edges.push_back( new tgIntersectionEdge( curNode, nextNode, 1.0, edge_type ) );
+#endif
+                
                 TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
                 curLoc = nextLoc;
@@ -425,31 +535,35 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         points.AddNode(curLoc);
     }
 
+#if !USE_GRAPH
     // check for marking that goes all the way to the end.
     // NOTE, we already added all the points - if we need a cap - we need to insert it before the last node
     if (cur_mark)
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->cap_start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.GetSize() );
            
-       // check if we can insert a point for the cap
-       SGGeod prev_point = points.GetNode(points.GetSize()-2);
-       SGGeod last_point = points.GetNode(points.GetSize()-1);
-       double heading, az2, dist;
-       double cap_dist = GetCapDist( cur_mark->type );
-       SGGeodesy::inverse(prev_point, last_point, heading, az2, dist );
+        // check if we can insert a point for the cap
+        if ( points.GetSize() >= 2 ) {
+            SGGeod prev_point = points.GetNode(points.GetSize()-2);
+            SGGeod last_point = points.GetNode(points.GetSize()-1);
+            double heading, az2, dist;
+            double cap_dist = GetCapDist( cur_mark->type );
+            SGGeodesy::inverse(prev_point, last_point, heading, az2, dist );
            
-       // if we can, insert it, otherwise, repeat_end == cap_end
-       if ( dist > cap_dist ) {
-           TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " insert point " );
-           points.InsertNode( SGGeodesy::direct(prev_point, heading, dist-cap_dist), points.GetSize()-1 );
-       } else {
-           TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " don't insert point " );                    
-       }
+            // if we can, insert it, otherwise, repeat_end == cap_end
+            if ( dist > cap_dist ) {
+                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " insert point " );
+                points.InsertNode( SGGeodesy::direct(prev_point, heading, dist-cap_dist), points.GetSize()-1 );
+            } else {
+                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour mark end : dist is " << dist << " cap_dist is " << cap_dist << " don't insert point " );                    
+            }
            
-       cur_mark->cap_end_idx = points.GetSize()-1;
-       marks.push_back(cur_mark);
-       cur_mark = NULL;
+            cur_mark->cap_end_idx = points.GetSize()-1;
+            marks.push_back(cur_mark);
+            cur_mark = NULL;
+        }
     }
+#endif
 
     // check for lighting that goes all the way to the end...
     if (cur_light)
@@ -462,12 +576,15 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     }
 }
 
+
 LinearFeature::~LinearFeature()
 {
+#if !USE_GRAPH
     for (unsigned int i=0; i<marks.size(); i++)
     {
         delete marks[i];
     }
+#endif
 
     for (unsigned int i=0; i<lights.size(); i++)
     {
@@ -475,6 +592,7 @@ LinearFeature::~LinearFeature()
     }
 }
 
+#if !USE_GRAPH
 double LinearFeature::AddMarkingPolyCapStart( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
 {
     SGGeod prev_mp = midpoint( prev_outer, prev_inner );
@@ -494,7 +612,7 @@ double LinearFeature::AddMarkingPolyCapStart( const SGGeod& prev_inner, const SG
     poly.AddNode( 0, prev_outer );
     poly.AddNode( 0, cur_outer  );
     poly.AddNode( 0, cur_inner  );
-    poly = tgPolygon::Snap( poly, gSnap );
+    //poly = tgPolygon::Snap( poly, gSnap );
     
     poly.SetMaterial( material );
     poly.SetTexParams( prev_inner, width, v_dist, heading );
@@ -507,6 +625,41 @@ double LinearFeature::AddMarkingPolyCapStart( const SGGeod& prev_inner, const SG
     
     cap_polys.push_back(poly);
     
+    return v_end;
+}
+
+double LinearFeature::AddMarkingPolyCapEnd( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
+{
+    SGGeod prev_mp = midpoint( prev_outer, prev_inner );
+    SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
+    double az2, dist;
+    tgPolygon poly;
+
+    SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
+
+    v_start = fmod( v_end, 1.0 );
+    v_end   = v_start + (dist/v_dist);
+
+    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
+
+    poly.Erase();
+    poly.AddNode( 0, prev_inner );
+    poly.AddNode( 0, prev_outer );
+    poly.AddNode( 0, cur_outer  );
+    poly.AddNode( 0, cur_inner  );
+    //poly = tgPolygon::Snap( poly, gSnap );
+
+    poly.SetMaterial( material );
+    poly.SetTexParams( prev_inner, width, v_dist, heading );
+
+    poly.SetTexMethod( TG_TEX_1X1_ATLAS );
+    poly.SetTexLimits( atlas_start, 0.875, atlas_end, 1.0 );
+
+    // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
+    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
+
+    marking_polys.push_back(poly);
+
     return v_end;
 }
 
@@ -523,30 +676,67 @@ double LinearFeature::AddMarkingPolyRepeat( const SGGeod& prev_inner, const SGGe
     v_end   = v_start + (dist/v_dist);
     
     TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
-        
+    
     poly.Erase();
     poly.AddNode( 0, prev_inner );
     poly.AddNode( 0, prev_outer );
     poly.AddNode( 0, cur_outer  );
     poly.AddNode( 0, cur_inner  );
-    poly = tgPolygon::Snap( poly, gSnap );
+    //poly = tgPolygon::Snap( poly, gSnap );
     
     poly.SetMaterial( material );
     poly.SetTexParams( prev_inner, width, v_dist, heading );
-
+    
     poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
     poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
-
+    
     // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
     poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
-
+    
     marking_polys.push_back(poly);
-        
+    
     return v_end;
 }
 
-double LinearFeature::AddMarkingPolyCapEnd( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
+#else
+
+double LinearFeature::AddMarkingStartTriRepeat( const SGGeod& prev, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
 {
+    SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
+    double az2, dist;
+    tgPolygon poly;
+    
+    SGGeodesy::inverse( prev, cur_mp, heading, az2, dist );
+    
+    v_start = fmod( v_end, 1.0 );
+    v_end   = v_start + (dist/v_dist);
+    
+    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
+    
+    poly.Erase();
+    poly.AddNode( 0, prev );
+    poly.AddNode( 0, cur_outer  );
+    poly.AddNode( 0, cur_inner  );
+    //poly = tgPolygon::Snap( poly, gSnap );
+    
+    poly.SetMaterial( material );
+    
+    // TODO: tex params ref needs to be offset by 1/2 width
+    poly.SetTexParams( prev, width, v_dist, heading );
+    
+    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+    poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
+    
+    // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
+    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
+    
+    marking_polys.push_back(poly);
+    
+    return v_end;
+}
+
+double LinearFeature::AddMarkingPolyRepeat( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
+{    
     SGGeod prev_mp = midpoint( prev_outer, prev_inner );
     SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
     double az2, dist;
@@ -564,25 +754,481 @@ double LinearFeature::AddMarkingPolyCapEnd( const SGGeod& prev_inner, const SGGe
     poly.AddNode( 0, prev_outer );
     poly.AddNode( 0, cur_outer  );
     poly.AddNode( 0, cur_inner  );
-    poly = tgPolygon::Snap( poly, gSnap );
+    //poly = tgPolygon::Snap( poly, gSnap );
     
     poly.SetMaterial( material );
     poly.SetTexParams( prev_inner, width, v_dist, heading );
     
-    poly.SetTexMethod( TG_TEX_1X1_ATLAS );
-    poly.SetTexLimits( atlas_start, 0.875, atlas_end, 1.0 );
+    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+    poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
     
     // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
-    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
+    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
     
     marking_polys.push_back(poly);
     
     return v_end;
 }
+#endif
+
+#if USE_GRAPH
+void LinearFeature::GenerateIntersectionTris(void)
+{    
+    // just build a single 2 edge node for now - 3 edge node is node 1
+    
+    // three step process - all nodes need to be run each time before starting the next step
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: ConstrainEdges at node " << i << " of " << nodes.size() );
+        nodes[i]->ConstrainEdges();
+    }
+
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: GenerateEdges at node " << i << " of " << nodes.size() );
+        nodes[i]->GenerateEdges();
+    }
+
+    for (unsigned int i=0; i<nodes.size(); i++) {
+        TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: FixMultisegmentIntersections at node " << i << " of " << nodes.size() );
+        nodes[i]->FixMultisegmentIntersections();
+    }
+
+// now dump all edges
+    for ( tgintersectionedge_it it=edges.begin(); it != edges.end(); it++ ) {
+        (*it)->ToShapefile();
+    }
+    
+// now dump the polys
+#if 1
+    int edgeid = 1;
+    for ( tgintersectionedge_it it=edges.begin(); it != edges.end(); it++ ) {
+        char layer[32];
+        sprintf(layer, "edge_%03d", edgeid++ );
+        tgPolygon poly = (*it)->GetPoly("complete");
+        tgShapefile::FromPolygon( poly, false, "./edge_dbg", layer, "edge" );
+    }
+#endif    
+}
+
+#if 0
+void LinearFeature::GenerateNonIntersectingPolys(void)
+{
+    tgintersectionedge_it prev_it, cur_it, next_it;
+    tgIntersectionEdge *prev, *cur, *next;
+    
+    for ( cur_it=edges.begin(); cur_it != edges.end(); cur_it++ ) {
+        if ( cur_it == edges.begin() ) {
+            prev = NULL;
+        } else {
+            prev_it = cur_it; prev_it--; prev = (*prev_it);
+        }
+        
+        cur = (*cur_it);
+        
+        next_it = cur_it;
+        next_it++;
+        if ( next_it == edges.end() ) {
+            next = NULL;
+        } else {
+            next = (*next_it);
+        }
+        
+        cur->GenerateJoinBoundary( prev, next );
+    }
+}
+#endif
+
+#if 0
+void LinearFeature::GenerateMarkingPolys(void)
+{
+    SGGeod      start_inner, start_outer;
+    SGGeod      end_inner,   end_outer;
+    double      heading;
+    double      v_dist = 10.0;
+    double      v_start = 0.0f;
+    double      v_end = 0.0f;
+    double      atlas_start = 0.0, atlas_end = 0.0;
+    std::string material;
+
+    bool    edgeStarted = false;
+
+//    TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: we have " << edges.size() << " edges" );
+    
+    // traverse the edges and generate polys
+    tgintersectionedge_it it;
+    for ( it=edges.begin(); it != edges.end(); it++ ) {
+        tgintersectionedge_it next_it = it; next_it++;
+        tgintersectionedge_it prev_it = it; if (it != edges.begin()) prev_it--;
+        
+        tgIntersectionEdge* edge = (*it);
+        GetMarkInfo( edge->type, width, material, atlas_start, atlas_end, v_dist );             
+
+        // get starting positions
+        switch( edge->start->edgeList.size() ) {
+            case 1:
+//                TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge " << i << " is start of feature ( no shared edges )" );
+                
+                start_outer = OffsetPointFirst( edge->start->position, edge->end->position, offset-width/2.0f );
+                start_inner = OffsetPointFirst( edge->start->position, edge->end->position, offset+width/2.0f );
+                break;
+                
+            case 2:
+//                TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge " << i << " is continuation of feature ( 1 shared edge )" );
+                
+                if ( it != edges.begin() ) {
+                    tgIntersectionEdge* prev_edge = (*prev_it);
+                    
+                    start_outer = OffsetPointMiddle( prev_edge->start->position, edge->start->position, edge->end->position, offset-width/2.0f );
+                    start_inner = OffsetPointMiddle( prev_edge->start->position, edge->start->position, edge->end->position, offset+width/2.0f );
+                } else {
+                    // TODO - make more generic and find the edge from the node...
+//                    TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge " << i << " is continuation of feature ( 1 shared edge ), but we are at the beginning of feature - need to find the other edge" );
+                }
+                break;
+                
+            default:
+                TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge starts at an intersection ( sharing " << edge->start->edgeList.size()-1 << "edges " );
+
+                // dump the intersection points
+                TG_LOG(SG_GENERAL, SG_INFO, "right is" <<  edge->start->GetRightIntersectionPos(edge) << " left is " << edge->start->GetLeftIntersectionPos(edge) );
+                break;
+        }
+        
+        // get ending positions
+        switch( edge->end->edgeList.size() ) {
+            case 1:
+//                TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge " << i << " is end of feature ( no shared edges )" );
+                
+                end_outer = OffsetPointLast( edge->start->position, edge->end->position, offset-width/2.0f );
+                end_inner = OffsetPointLast( edge->start->position, edge->end->position, offset+width/2.0f );
+                break;
+                
+            case 2:
+//                TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge " << i << " will continue further ( 1 shared edge )" );
+                if ( next_it != edges.end() ) {
+                    tgIntersectionEdge* next_edge = (*next_it);
+                                
+                    end_outer = OffsetPointMiddle( edge->start->position, edge->end->position, next_edge->end->position, offset-width/2.0f );
+                    end_inner = OffsetPointMiddle( edge->start->position, edge->end->position, next_edge->end->position, offset+width/2.0f );
+                } else {
+                    // TODO - make more generic and find the edge from the node...
+//                    TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge " << i << " would continue further ( 1 shared edge ), but we are at the end of feature - need to find the other edge" );
+                }
+                break;
+                
+            default:
+                TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: edge ends at an intersection ( more than 1 shared edge ) - ignore for now - blunt end" );
+
+                end_outer = OffsetPointLast( edge->start->position, edge->end->position, offset-width/2.0f );
+                end_inner = OffsetPointLast( edge->start->position, edge->end->position, offset+width/2.0f );
+                break;
+        }
+
+//        TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: " << start_inner << ", " << start_outer << ", " << end_outer << ", " << end_inner );        
+        
+        v_end = AddMarkingPolyRepeat( start_inner, start_outer, end_outer, end_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
+    }
+}
+#else
+
+static int lfid = 0;
+static int edgeid = 1;
+
+void LinearFeature::GenerateMarkingPolys(void)
+{
+    double      v_dist = 10.0;
+    double      v_start = 0.0f;
+    double      v_end = 0.0f;
+    double      atlas_start = 0.0, atlas_end = 0.0;
+    std::string material;
+
+    lfid++;
+    
+    for ( tgintersectionedge_it it=edges.begin(); it != edges.end(); it++ ) {
+        // TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: edge id " << edge_id++ );
+        double    heading, dist, tex_w;
+        int       type;
+        SGGeod    texref;
+        tgPolygon poly;
+        char      layer[128];
+        sprintf( layer, "feat_%d_edge_id_%d", lfid, edgeid );            
+        sprintf( layer, "feat_%d", lfid );
+        
+        if ( edgeid == 435 ) {
+            poly = (*it)->CreatePolygon(type, heading, dist, width, texref, layer);
+        } else {
+            poly = (*it)->CreatePolygon(type, heading, dist, width, texref, NULL);            
+        }
+        
+        GetMarkInfo( type, tex_w, material, atlas_start, atlas_end, v_dist );
+        
+        v_start = fmod( v_end, 1.0 );
+        v_end   = v_start + (dist/v_dist);
+        
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
+                
+        poly.SetMaterial( material );
+        poly.SetTexParams( texref, width, v_dist, heading );
+        
+        poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+        poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
+        
+        // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
+        poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
+
+        if ( edgeid == 435 ) {
+            char name[128];          
+            sprintf( name,  "edge_%d", edgeid );
+            tgShapefile::FromPolygon( poly, false, "./edge_dbg", layer, name );
+        }
+        
+        marking_polys.push_back(poly);
+        
+        edgeid++;
+    }
+}    
+#endif
+#endif
+
+void LinearFeature::GetMarkInfo( unsigned int type, double& width, std::string& material, double& atlas_start, double& atlas_end, double& v_dist )
+{
+    #define     ATLAS_SINGLE_WIDTH  (1*0.007812500)
+    #define     ATLAS_DOUBLE_WIDTH  (2*0.007812500)
+    #define     ATLAS_TRIPLE_WIDTH  (3*0.007812500)
+    #define     ATLAS_QUAD_WIDTH    (4*0.007812500)
+    
+    #define     ATLAS_BUFFER0       (0.000000000)
+    #define     ATLAS_BUFFER4       (0.000976563)
+    #define     ATLAS_BUFFER8       (0.001953125)
+    #define     ATLAS_BUFFER16      (0.003906250)
+    #define     ATLAS_BUFFER32      (0.007812500)
+    
+    #define     ATLAS_BUFFER        ATLAS_BUFFER8
+    
+    #define     RW_TEX0_START       (ATLAS_BUFFER)
+    #define     RW_TEX0_END         (RW_TEX0_START+ATLAS_QUAD_WIDTH)
+    #define     RW_TEX1_START       (RW_TEX0_END+2*ATLAS_BUFFER)
+    #define     RW_TEX1_END         (RW_TEX1_START+ATLAS_SINGLE_WIDTH)
+    #define     RW_TEX2_START       (RW_TEX1_END+2*ATLAS_BUFFER)
+    #define     RW_TEX2_END         (RW_TEX2_START+ATLAS_SINGLE_WIDTH)
+    
+    // which material for this mark?
+    v_dist = 10.0;
+    
+#define TEST 1
+    
+#if TEST
+    material = "lftest";
+    width = 0.5f;
+    atlas_start = 0;
+    atlas_end   = 1;
+#else    
+    switch( type )
+    {            
+        case LF_NONE:
+            break;
+            
+            // single width lines
+        case LF_SOLID_YELLOW: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 0*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 1*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_BROKEN_YELLOW: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 1*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 2*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_SINGLE_LANE_QUEUE: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 2*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 3*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_SOLID_YELLOW: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 3*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 4*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_BROKEN_YELLOW: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 4*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 5*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_SINGLE_LANE_QUEUE: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 5*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 6*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_SOLID_WHITE: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 6*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 7*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_BROKEN_WHITE: // good
+            material = "taxi_markings";
+            width = 0.5f;
+            atlas_start = 7*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 8*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_SOLID_DBL_YELLOW:   // good
+            material = "taxi_markings";
+            width = 1.0f;
+            atlas_start = 8*ATLAS_SINGLE_WIDTH;
+            atlas_end =  10*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_DOUBLE_LANE_QUEUE: // good
+            material = "taxi_markings";
+            width = 1.0f;
+            atlas_start = 10*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 12*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_OTHER_HOLD: // good
+            material = "taxi_markings";
+            width = 1.0f;
+            atlas_start = 12*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 14*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_SOLID_DBL_YELLOW: // good
+            material = "taxi_markings";
+            width = 1.0f;
+            atlas_start = 14*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 16*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_DOUBLE_LANE_QUEUE:
+            material = "taxi_markings";
+            width = 1.0f;
+            atlas_start = 16*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 18*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_OTHER_HOLD:
+            material = "taxi_markings";
+            width = 1.0f;
+            atlas_start = 18*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 20*ATLAS_SINGLE_WIDTH;
+            break;                
+            
+        case LF_RUNWAY_HOLD:
+            material = "taxi_markings";
+            width = 2.0f;
+            atlas_start = 20*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 24*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_RUNWAY_HOLD:
+            material = "taxi_markings";
+            width = 2.0f;
+            atlas_start = 24*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 28*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_ILS_HOLD:
+            material = "taxi_markings";
+            width = 2.0f;
+            atlas_start = 28*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 32*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_ILS_HOLD:
+            material = "taxi_markings";
+            width = 2.0f;
+            atlas_start = 32*ATLAS_SINGLE_WIDTH;
+            atlas_end =   36*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_SAFETYZONE_CENTERLINE:
+            material = "taxi_markings";
+            width = 2.0f;
+            atlas_start = 36*ATLAS_SINGLE_WIDTH;
+            atlas_end =   40*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_B_SAFETYZONE_CENTERLINE:
+            material = "taxi_markings";
+            width = 2.00f;
+            atlas_start = 40*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 44*ATLAS_SINGLE_WIDTH;
+            break;
+            
+        case LF_CHECKERBOARD_WHITE:
+            material = "taxi_markings";
+            width = 1.0f;
+            atlas_start = 44*ATLAS_SINGLE_WIDTH;
+            atlas_end   = 48*ATLAS_SINGLE_WIDTH;
+            break;    
+            
+        case RWY_BORDER:
+            material = "rwy_markings";
+            width = 0.9144; // 36 inches
+            atlas_start = RW_TEX1_START;
+            atlas_end   = RW_TEX1_END;
+            break;
+            
+        case RWY_DISP_TAIL:
+            material = "rwy_markings";
+            width = 0.4572; // 18 inches
+            atlas_start = RW_TEX1_START;
+            atlas_end   = RW_TEX1_END;
+            break;
+            
+        case RWY_CENTERLINE:
+            material = "rwy_markings";
+            width  = 0.9144; // 36 inches
+            v_dist = 200 * SG_FEET_TO_METER;
+            atlas_start = RW_TEX2_START;
+            atlas_end   = RW_TEX2_END;
+            
+            break;
+            
+        case RWY_THRESH:
+            material = "rwy_markings";
+            width = 1.7526; // 5.75 ft
+            atlas_start = RW_TEX0_START;
+            atlas_end   = RW_TEX0_END;
+            break;
+            
+        case RWY_TZONE:
+            material = "rwy_markings";
+            width = 1.2192; // 48 inches ft
+            atlas_start = RW_TEX0_START;
+            atlas_end   = RW_TEX0_END;
+            break;
+            
+        case RWY_AIM:
+            material = "rwy_markings";
+            width = 6.096; // 20 ft
+            atlas_start = RW_TEX0_START;
+            atlas_end   = RW_TEX0_END;
+            break;
+            
+            
+        default:
+            TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << type );
+            exit(1);
+    }
+#endif    
+}
 
 int LinearFeature::Finish( bool closed, double def_width )
 {
-    tgPolygon   poly;
     SGGeod      prev_inner, prev_outer;
     SGGeod      cur_inner,  cur_outer;
     double      heading;
@@ -596,250 +1242,20 @@ int LinearFeature::Finish( bool closed, double def_width )
     std::string material;
     double      cur_light_dist = 0.0f;
     double      light_delta = 0;
-    bool        markStarted;
-
-    #define     ATLAS_SINGLE_WIDTH  (1*0.007812500)
-    #define     ATLAS_DOUBLE_WIDTH  (2*0.007812500)
-    #define     ATLAS_TRIPLE_WIDTH  (3*0.007812500)
-    #define     ATLAS_QUAD_WIDTH    (4*0.007812500)
-    
-    #define     ATLAS_BUFFER0       (0.000000000)
-    #define     ATLAS_BUFFER4       (0.000976563)
-    #define     ATLAS_BUFFER8       (0.001953125)
-    #define     ATLAS_BUFFER16      (0.003906250)
-    #define     ATLAS_BUFFER32      (0.007812500)
-    
-    #define     ATLAS_BUFFER        ATLAS_BUFFER8
-
-    #define     RW_TEX0_START       (ATLAS_BUFFER)
-    #define     RW_TEX0_END         (RW_TEX0_START+ATLAS_QUAD_WIDTH)
-    #define     RW_TEX1_START       (RW_TEX0_END+2*ATLAS_BUFFER)
-    #define     RW_TEX1_END         (RW_TEX1_START+ATLAS_SINGLE_WIDTH)
-    #define     RW_TEX2_START       (RW_TEX1_END+2*ATLAS_BUFFER)
-    #define     RW_TEX2_END         (RW_TEX2_START+ATLAS_SINGLE_WIDTH)
-        
-    
+    bool        markStarted = false;        
     
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
     ConvertContour( &contour, closed );
 
+#if !USE_GRAPH
     // now generate the supoerpoly and texparams lists for markings
     for (unsigned int i=0; i<marks.size(); i++)
     {
         markStarted = false;
         
-        // which material for this mark?
-        switch( marks[i]->type )
-        {            
-            case LF_NONE:
-                break;
-                
-            // single width lines
-            case LF_SOLID_YELLOW: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 0*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 1*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_BROKEN_YELLOW: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 1*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 2*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_SINGLE_LANE_QUEUE: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 2*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 3*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_B_SOLID_YELLOW: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 3*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 4*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_B_BROKEN_YELLOW: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 4*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 5*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_B_SINGLE_LANE_QUEUE: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 5*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 6*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_SOLID_WHITE: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 6*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 7*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_BROKEN_WHITE: // good
-                material = "taxi_markings";
-                width = 0.5f;
-                atlas_start = 7*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 8*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_SOLID_DBL_YELLOW:   // good
-                material = "taxi_markings";
-                width = 1.0f;
-                atlas_start = 8*ATLAS_SINGLE_WIDTH;
-                atlas_end =  10*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_DOUBLE_LANE_QUEUE: // good
-                material = "taxi_markings";
-                width = 1.0f;
-                atlas_start = 10*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 12*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_OTHER_HOLD: // good
-                material = "taxi_markings";
-                width = 1.0f;
-                atlas_start = 12*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 14*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_B_SOLID_DBL_YELLOW: // good
-                material = "taxi_markings";
-                width = 1.0f;
-                atlas_start = 14*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 16*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_B_DOUBLE_LANE_QUEUE:
-                material = "taxi_markings";
-                width = 1.0f;
-                atlas_start = 16*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 18*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_B_OTHER_HOLD:
-                material = "taxi_markings";
-                width = 1.0f;
-                atlas_start = 18*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 20*ATLAS_SINGLE_WIDTH;
-                break;                
-
-            case LF_RUNWAY_HOLD:
-                material = "taxi_markings";
-                width = 2.0f;
-                atlas_start = 20*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 24*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_B_RUNWAY_HOLD:
-                material = "taxi_markings";
-                width = 2.0f;
-                atlas_start = 24*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 28*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_ILS_HOLD:
-                material = "taxi_markings";
-                width = 2.0f;
-                atlas_start = 28*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 32*ATLAS_SINGLE_WIDTH;
-                break;
-
-            case LF_B_ILS_HOLD:
-                material = "taxi_markings";
-                width = 2.0f;
-                atlas_start = 32*ATLAS_SINGLE_WIDTH;
-                atlas_end =   36*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_SAFETYZONE_CENTERLINE:
-                material = "taxi_markings";
-                width = 2.0f;
-                atlas_start = 36*ATLAS_SINGLE_WIDTH;
-                atlas_end =   40*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_B_SAFETYZONE_CENTERLINE:
-                material = "taxi_markings";
-                width = 2.00f;
-                atlas_start = 40*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 44*ATLAS_SINGLE_WIDTH;
-                break;
-                
-            case LF_CHECKERBOARD_WHITE:
-                material = "taxi_markings";
-                width = 1.0f;
-                atlas_start = 44*ATLAS_SINGLE_WIDTH;
-                atlas_end   = 48*ATLAS_SINGLE_WIDTH;
-                break;    
-
-            case RWY_BORDER:
-                material = "rwy_markings";
-                width = 0.9144; // 36 inches
-                atlas_start = RW_TEX1_START;
-                atlas_end   = RW_TEX1_END;
-                break;
-                
-            case RWY_DISP_TAIL:
-                material = "rwy_markings";
-                width = 0.4572; // 18 inches
-                atlas_start = RW_TEX1_START;
-                atlas_end   = RW_TEX1_END;
-                break;
-                
-            case RWY_CENTERLINE:
-                material = "rwy_markings";
-                width  = 0.9144; // 36 inches
-                v_dist = 200 * SG_FEET_TO_METER;
-                atlas_start = RW_TEX2_START;
-                atlas_end   = RW_TEX2_END;
-                
-                break;
-                
-            case RWY_THRESH:
-                material = "rwy_markings";
-                width = 1.7526; // 5.75 ft
-                atlas_start = RW_TEX0_START;
-                atlas_end   = RW_TEX0_END;
-                
-                v_end = (double)rand()/(double)RAND_MAX;
-                break;
-
-            case RWY_TZONE:
-                material = "rwy_markings";
-                width = 1.2192; // 48 inches ft
-                atlas_start = RW_TEX0_START;
-                atlas_end   = RW_TEX0_END;
-                
-                v_end = (double)rand()/(double)RAND_MAX;
-                break;
-
-            case RWY_AIM:
-                material = "rwy_markings";
-                width = 6.096; // 20 ft
-                atlas_start = RW_TEX0_START;
-                atlas_end   = RW_TEX0_END;
-                
-                v_end = (double)rand()/(double)RAND_MAX;
-                break;
-                              
-            
-            default:
-                TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << marks[i]->type );
-                exit(1);
-        }
-        
+        GetMarkInfo( marks[i]->type, width, material, atlas_start, atlas_end, v_dist );        
         for (unsigned int j = marks[i]->cap_start_idx; j <= marks[i]->cap_end_idx; j++)
         {
             // for each point on the PointsList, generate a quad from
@@ -906,6 +1322,8 @@ int LinearFeature::Finish( bool closed, double def_width )
             
             if ( markStarted )
             {
+                TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateMarkingPolys: " << prev_inner << ", " << prev_outer << ", " << cur_outer << ", " << cur_inner );        
+                
                 if ( j == marks[i]->repeat_start_idx ) {
                     v_end = AddMarkingPolyCapStart( prev_inner, prev_outer, cur_outer, cur_inner, material, width, v_dist, heading, atlas_start, atlas_end, v_start, v_end );
                 } else if (j == marks[i]->cap_end_idx)  {
@@ -921,6 +1339,17 @@ int LinearFeature::Finish( bool closed, double def_width )
             prev_inner = cur_inner;
         }
     }
+#else
+    // first, calculate not intersecting geometry
+    // GenerateNonIntersectingPolys();
+    
+    // calculate intersection Triangles
+    GenerateIntersectionTris();
+    
+    // Convert edges to polys
+    GenerateMarkingPolys();
+
+#endif
 
     // now generate the superpoly list for lights with constant distance between lights (depending on feature type)
     tglightcontour_list light_contours;

@@ -9,12 +9,18 @@ add_library(terragear STATIC
     tg_accumulator.hxx
     tg_areas.cxx
     tg_areas.hxx
+    tg_arrangement.cxx
+    tg_arrangement.hxx
     tg_array.cxx
     tg_array.hxx
+    tg_cgal.cxx
+    tg_cgal.hxx
     tg_chopper.cxx
     tg_chopper.hxx
     tg_contour.cxx
     tg_contour.hxx
+    tg_graph.cxx
+    tg_graph.hxx
     tg_light.hxx
     tg_misc.cxx
     tg_misc.hxx
@@ -29,6 +35,7 @@ add_library(terragear STATIC
     tg_rectangle.hxx
     tg_shapefile.cxx
     tg_shapefile.hxx
+    tg_sskel.cxx
     tg_surface.cxx
     tg_surface.hxx
     tg_triangle.hxx

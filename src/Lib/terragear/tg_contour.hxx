@@ -84,7 +84,9 @@ public:
 
     double GetMinimumAngle( void ) const;
     double GetArea( void ) const;
-
+    bool   IsClockwise( void ) const;
+    void   Reverse(void);
+    
     bool   operator==(const tgContour& other ) {
         bool isEqual = true;
 

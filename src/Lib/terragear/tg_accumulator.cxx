@@ -47,7 +47,7 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
     if (num_hits) {
         if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-            exit(-1);
+            //exit(-1);
         }
         result = tgPolygon::FromClipper( clipper_result );
         result = tgPolygon::AddColinearNodes( result, all_nodes );
@@ -99,7 +99,7 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
     if (num_hits) {
         if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-            exit(-1);
+            //exit(-1);
         }
 
         result = tgPolygon::FromClipper( clipper_result );
@@ -153,6 +153,36 @@ void tgAccumulator::Add( const tgPolygon& subject )
     }
 }
 
+tgPolygon tgAccumulator::Union()
+{
+    tgPolygon result;
+    UniqueSGGeodSet all_nodes;
+    
+    /* before diff - gather all nodes */    
+    for ( unsigned int i = 0; i < nodes.size(); i++ ) {
+        all_nodes.add( nodes[i] );
+    }
+    
+    ClipperLib::Paths clipper_result;
+    
+    ClipperLib::Clipper c;
+    c.Clear();
+    
+    for (unsigned int i=0; i < accum.size(); i++) {
+        c.AddPaths(accum[i], ClipperLib::ptSubject, true);
+    }
+    
+    if ( !c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Union Accumulator returned FALSE" );
+        //exit(-1);
+    }
+        
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
+        
+    return result;
+}
+
 void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
 {
     char shapefile[32];
@@ -163,7 +193,7 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
             for (unsigned int i=0; i < accum.size(); i++) {
                 sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
                 sprintf( shapefile, "accum_%d", i );
-                tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
+                tgShapefile::FromClipper( accum[i], true, path, layer, std::string(shapefile) );
             }
         } else {
             ClipperLib::Paths clipper_result;
@@ -175,7 +205,7 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
             }
         
             if ( c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
-                tgShapefile::FromClipper( clipper_result, path, layer_prefix, "accum" );
+                tgShapefile::FromClipper( clipper_result, true, path, layer_prefix, "accum" );
             } else {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Clipper Failure in tgAccumulator::ToShapefiles()" );
             }

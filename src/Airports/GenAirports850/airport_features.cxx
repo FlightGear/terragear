@@ -221,6 +221,8 @@ void Airport::CleanFeatures()
             bb = current.GetBoundingBox();
             feat_nodes.get_geod_inside( bb.getMin(), bb.getMax(), points );
             
+            // SG_LOG( SG_GENERAL, SG_ALERT, "poly " << area << ", " << p << " AddColinearNodes" );
+            
             before  = current.TotalNodes();
             current = tgPolygon::AddColinearNodes( current, points );
             
@@ -229,12 +231,16 @@ void Airport::CleanFeatures()
                 exit(0);
             }
             
-            current = tgPolygon::Snap(current, gSnap);
+            // SG_LOG( SG_GENERAL, SG_ALERT, "poly " << area << ", " << p << " Snap" );
+            
+            //current = tgPolygon::Snap(current, gSnap);
 
             if ( current.GetNumIntVas() != 1 ) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "Snap broke us" );
                 exit(0);
             }
+            
+            // SG_LOG( SG_GENERAL, SG_ALERT, "poly " << area << ", " << p << " RemoveDups" );
             
             current = tgPolygon::RemoveDups( current );
             
@@ -242,6 +248,8 @@ void Airport::CleanFeatures()
                 SG_LOG( SG_GENERAL, SG_ALERT, "RemoveDups broke us" );
                 exit(0);
             }
+            
+            // SG_LOG( SG_GENERAL, SG_ALERT, "poly " << area << ", " << p << " ReoveBadContours" );
             
             current = tgPolygon::RemoveBadContours( current );
             
@@ -572,6 +580,7 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
                         index = texcoords.add( poly.GetTriSecTexCoord( k, l ) );
                         sgboTri.tc_list[1].push_back( index );
 
+#if 0                        
                         for ( unsigned int m=0; m<num_int_vas; m++ ) {
                             index = add_unique_int( vaints, poly.GetTriIntVA( k, l, m  ) );
                             sgboTri.va_list[m].push_back( index );
@@ -581,8 +590,10 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
                             index = add_unique_float( vafloats, poly.GetTriFltVA( k, l, m  ) );
                             sgboTri.va_list[4+m].push_back( index );
                         }
+#endif                        
                     }    
                     
+#if 0                    
                     if ( num_int_vas == 1 )
                     {
                         if ( ( sgboTri.va_list[0][0] != sgboTri.va_list[0][1] ) ||
@@ -593,7 +604,8 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
                             exit(0);
                         }
                     }         
-                            
+#endif
+
                     obj.add_triangle( sgboTri );
                 }
             }
@@ -606,13 +618,13 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
         obj.set_texcoords( texcoords.get_list() );
         if (!vaints.empty()) {
             SG_LOG(SG_GENERAL, SG_DEBUG, "adding int va list of size " << vaints.size() );
-            obj.set_intvetexattribs( vaints );
+            //obj.set_intvetexattribs( vaints );
         } else {
             SG_LOG(SG_GENERAL, SG_INFO, "crap - no int vas ");
         }
         
         if (!vafloats.empty()) {
-            obj.set_floatvetexattribs( vafloats );
+            //obj.set_floatvetexattribs( vafloats );
         }
         
         bool result = obj.write_bin( objpath, name, b );

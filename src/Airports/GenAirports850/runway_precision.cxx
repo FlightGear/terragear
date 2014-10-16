@@ -37,6 +37,8 @@
 #include "beznode.hxx"
 #include "runway.hxx"
 
+#define RUNWAY_FEATS 0
+
 using std::string;
 struct sections
 {
@@ -974,13 +976,16 @@ void Runway::gen_base( const SGGeod& start, const SGGeod& end, double heading, d
     runway_polys.push_back( runway );
     
 #if DEBUG
-    tgShapefile::FromPolygon( runway, "./dbg", "Runway", "runway" );
+    tgShapefile::FromPolygon( runway, true, "./dbg", "Runway", "runway" );
 #endif
     
     /* Now add the white border around the whole runway (0.5M wide) */
     // generate right poly
-    gen_border( start, end, heading, dist );
 
+#if RUNWAY_FEATS
+    gen_border( start, end, heading, dist );
+#endif
+    
     if ( with_shoulders ) {
         // generate right shoulder
         offset_heading = SGMiscd::normalizePeriodic(0, 360, heading + 90);
@@ -1004,7 +1009,7 @@ void Runway::gen_base( const SGGeod& start, const SGGeod& end, double heading, d
         shoulder_polys.push_back( right_shoulder );
 
 #if DEBUG
-        tgShapefile::FromPolygon( runway, "./dbg", "right_shoulder", "right_shoulder" );
+        tgShapefile::FromPolygon( runway, true, "./dbg", "right_shoulder", "right_shoulder" );
 #endif
         
         // generate left shoulder
@@ -1027,7 +1032,7 @@ void Runway::gen_base( const SGGeod& start, const SGGeod& end, double heading, d
         shoulder_polys.push_back( left_shoulder );    
 
 #if DEBUG
-        tgShapefile::FromPolygon( runway, "./dbg", "left_shoulder", "left_shoulder" );
+        tgShapefile::FromPolygon( runway, true, "./dbg", "left_shoulder", "left_shoulder" );
 #endif        
     }
 }
@@ -1129,7 +1134,7 @@ void Runway::gen_stopway( const SGGeod& start, double length, double heading )
     stopway.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
     
 #if DEBUG
-    tgShapefile::FromPolygon( stopway, "./dbg", "Stopway", "stopway" );
+    tgShapefile::FromPolygon( stopway, true, "./dbg", "Stopway", "stopway" );
 #endif
     
     runway_polys.push_back( stopway );
@@ -1245,6 +1250,7 @@ void Runway::gen_full_rwy(void)
         // create the runway polys and borders ( simple without markings )
         gen_base( start_ref, center, heading, rwy.length/2, true );
 
+#if RUNWAY_FEATS
         if (rwy.overrun[rwhalf] > 0.0) {
             TG_LOG( SG_GENERAL, SG_INFO, "runway heading = " << heading << " designation " << rwy.rwnum[rwhalf] << " has overrun " << rwy.overrun[rwhalf] );
             
@@ -1322,5 +1328,7 @@ void Runway::gen_full_rwy(void)
                 }
             }
         }
+#endif
+
     }
 }

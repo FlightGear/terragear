@@ -93,9 +93,11 @@ void ClosedPoly::AddNode( BezNode* node )
             }
 
             TG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node " << node->GetLoc() << " to current linear feature " << cur_feature);
-            cur_feature = new LinearFeature(feature_desc, 1.0f );
+
+// TODO
+//            cur_feature = new LinearFeature(feature_desc, 1.0f );
         }
-        cur_feature->AddNode( node );
+//      cur_feature->AddNode( node );
     }
 }
 
