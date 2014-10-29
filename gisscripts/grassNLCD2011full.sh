@@ -85,8 +85,8 @@ while [ ${S} -lt 3310005 ]; do
         E=`expr ${W} + 142226`
         N=`expr ${S} + 208848`
 
-        LL="`echo ${W} - 256 | bc`,`echo ${S} - 256 | bc`"
-        UR="`echo ${E} + 256 | bc`,`echo ${N} + 256 | bc`"
+        LL="`echo ${W} - 1536 | bc`,`echo ${S} - 1536 | bc`"
+        UR="`echo ${E} + 1536 | bc`,`echo ${N} + 1536 | bc`"
         SUFFIX="_`echo ${W}_${S} | tr -d \-`"
 
         # Convert lon/lat into map projection:
@@ -153,8 +153,9 @@ while [ ${S} -lt 3310005 ]; do
             v.centroids input=vect_dissolved_2 output=vect_filled cat=9 step=0 --verbose --overwrite
 
             v.extract -d -t input=vect_filled type=area output=vect_collect${SUFFIX} new=1 --verbose --overwrite
-#            v.out.postgis input=vect_collect${SUFFIX} type=area olayer=newcs_collect dsn="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
-            v.out.ogr input=vect_collect${SUFFIX} type=area olayer=newcs_collect format=PostgreSQL dsn="${DSN}" --verbose --overwrite
+            v.out.postgis input=vect_collect${SUFFIX} type=area olayer=newcs_collect dsn="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
+#            v.out.ogr input=vect_collect${SUFFIX} type=area olayer=newcs_collect format=PostgreSQL dsn="${DSN}" --verbose --overwrite
+            # For debug only.
 #            v.out.ogr input=vect_collect${SUFFIX} type=area dsn=${HOME}/shp/nlcd2011collect.shp --verbose
 
             v.db.addtable map=vect_filled
@@ -183,6 +184,7 @@ while [ ${S} -lt 3310005 ]; do
             v.edit map=vect_full${SUFFIX} tool=delete cats=9 --verbose
 #            v.out.postgis input=vect_full${SUFFIX} type=area olayer=newcs_full dsn="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
             v.out.ogr input=vect_full${SUFFIX} type=area olayer=newcs_full format=PostgreSQL dsn="${DSN}" --verbose --overwrite
+            # For debug only.
 #            v.out.ogr input=vect_full${SUFFIX} type=area dsn=${HOME}/shp/nlcd2011full.shp --verbose
 #            ${PSQL} -c "SELECT DISTINCT fn_SceneDir(wkb_geometry), fn_SceneSubDir(wkb_geometry) FROM fgs_objects WHERE ob_id = 533101;"
             ${PSQL} -e -c "SELECT fn_CSMerge('${SUFFIX}');" && \
