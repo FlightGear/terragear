@@ -84,18 +84,33 @@ while [ ${S} -lt 3310005 ]; do
 
         E=`expr ${W} + 142226`
         N=`expr ${S} + 208848`
-
-        LL="`echo ${W} - 1536 | bc`,`echo ${S} - 1536 | bc`"
-        UR="`echo ${E} + 1536 | bc`,`echo ${N} + 1536 | bc`"
         SUFFIX="_`echo ${W}_${S} | tr -d \-`"
 
+        # Clipping rectangle
+        W1=`echo ${W} - 768 | bc`
+        S1=`echo ${S} - 768 | bc`
+        E1=`echo ${E} + 768 | bc`
+        N1=`echo ${N} + 768 | bc`
+
+        # Vectorize this
+        W2=`echo ${W} - 1536 | bc`
+        S2=`echo ${S} - 1536 | bc`
+        E2=`echo ${E} + 1536 | bc`
+        N2=`echo ${N} + 1536 | bc`
+
         # Convert lon/lat into map projection:
+        LL="${W},${S}"
+        UR="${E},${N}"
         read WP SP <<< `m.proj -o -d coordinates=${LL} | awk -F\| '{print $1, $2}'`
         read EP NP <<< `m.proj -o -d coordinates=${UR} | awk -F\| '{print $1, $2}'`
 
         # Base Package Scenery:
         #g.region w=-2465464.95 s=1804592.77 e=-2037425.60 n=2033555.35 --verbose
-        g.region w=${W} s=${S} e=${E} n=${N} --verbose
+        g.region w=${W1} s=${S1} e=${E1} n=${N1} --verbose
+        g.region align=rast_e -p --verbose
+        v.in.region output=cliprect type=area --verbose --overwrite
+
+        g.region w=${W2} s=${S2} e=${E2} n=${N2} --verbose
         g.region align=rast_e -p --verbose
 
         echo "### Vectorizing (${WP} ${SP}, ${EP} ${NP}) ### "
@@ -137,6 +152,7 @@ while [ ${S} -lt 3310005 ]; do
 
             g.mapset location=wgs84 mapset=${MYMAPSET}
             v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=vect_dissolved_1${SUFFIX} --verbose --overwrite
+            v.proj location=${MYLOCATION} mapset=${MYMAPSET} input=cliprect --verbose --overwrite
 
             v.generalize input=vect_dissolved_1${SUFFIX} output=vect_gen${SUFFIX} method=snakes threshold=36 alpha=.2 beta=.2 --verbose --overwrite
 
@@ -151,36 +167,37 @@ while [ ${S} -lt 3310005 ]; do
             v.dissolve input=vect_prune_2 output=vect_dissolved_2 --verbose --overwrite
 
             v.centroids input=vect_dissolved_2 output=vect_filled cat=9 step=0 --verbose --overwrite
+            v.overlay ainput=vect_filled binput=cliprect output=vect_clipped operator=and olayer=0,1,0 --verbose --overwrite
 
-            v.extract -d -t input=vect_filled type=area output=vect_collect${SUFFIX} new=1 --verbose --overwrite
+            v.extract -d -t input=vect_clipped type=area output=vect_collect${SUFFIX} new=1 --verbose --overwrite
             v.out.postgis input=vect_collect${SUFFIX} type=area olayer=newcs_collect dsn="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
 #            v.out.ogr input=vect_collect${SUFFIX} type=area olayer=newcs_collect format=PostgreSQL dsn="${DSN}" --verbose --overwrite
             # For debug only.
 #            v.out.ogr input=vect_collect${SUFFIX} type=area dsn=${HOME}/shp/nlcd2011collect.shp --verbose
 
-            v.db.addtable map=vect_filled
-            v.db.addcolumn map=vect_filled columns="pglayer varchar" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_void where="cat=1" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_ocean where="cat=9" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_lake where="cat=11" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_glacier where="cat=12" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_greenspace where="cat=21" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_town where="cat=22" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_suburban where="cat=23" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_urban where="cat=24" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_dirt where="cat=31" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_deciduousforest where="cat=41" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_evergreenforest where="cat=42" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_mixedforest where="cat=43" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_herbtundra where="cat=51" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_scrub where="cat=52" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_grassland where="cat=71" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_drycrop where="cat=81" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_naturalcrop where="cat=82" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_floodland where="cat=90" --verbose
-            v.db.update map=vect_filled column=pglayer value=cs_marsh where="cat=95" --verbose
+            v.db.addtable map=vect_clipped
+            v.db.addcolumn map=vect_clipped columns="pglayer varchar" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_void where="cat=1" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_ocean where="cat=9" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_lake where="cat=11" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_glacier where="cat=12" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_greenspace where="cat=21" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_town where="cat=22" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_suburban where="cat=23" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_urban where="cat=24" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_dirt where="cat=31" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_deciduousforest where="cat=41" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_evergreenforest where="cat=42" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_mixedforest where="cat=43" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_herbtundra where="cat=51" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_scrub where="cat=52" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_grassland where="cat=71" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_drycrop where="cat=81" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_naturalcrop where="cat=82" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_floodland where="cat=90" --verbose
+            v.db.update map=vect_clipped column=pglayer value=cs_marsh where="cat=95" --verbose
 
-            g.copy vect=vect_filled,vect_full${SUFFIX} --verbose --overwrite
+            g.rename vect=vect_clipped,vect_full${SUFFIX} --verbose --overwrite
             v.edit map=vect_full${SUFFIX} tool=delete cats=9 --verbose
 #            v.out.postgis input=vect_full${SUFFIX} type=area olayer=newcs_full dsn="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
             v.out.ogr input=vect_full${SUFFIX} type=area olayer=newcs_full format=PostgreSQL dsn="${DSN}" --verbose --overwrite
