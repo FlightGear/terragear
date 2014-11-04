@@ -87,16 +87,16 @@ while [ ${S} -lt 3310005 ]; do
         SUFFIX="_`echo ${W}_${S} | tr -d \-`"
 
         # Clipping rectangle
-        W1=`echo ${W} - 768 | bc`
-        S1=`echo ${S} - 768 | bc`
-        E1=`echo ${E} + 768 | bc`
-        N1=`echo ${N} + 768 | bc`
+        W1=`echo ${W} - 256 | bc`
+        S1=`echo ${S} - 256 | bc`
+        E1=`echo ${E} + 256 | bc`
+        N1=`echo ${N} + 256 | bc`
 
         # Vectorize this
-        W2=`echo ${W} - 1536 | bc`
-        S2=`echo ${S} - 1536 | bc`
-        E2=`echo ${E} + 1536 | bc`
-        N2=`echo ${N} + 1536 | bc`
+        W2=`echo ${W} - 1024 | bc`
+        S2=`echo ${S} - 1024 | bc`
+        E2=`echo ${E} + 1024 | bc`
+        N2=`echo ${N} + 1024 | bc`
 
         # Convert lon/lat into map projection:
         LL="${W},${S}"
