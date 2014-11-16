@@ -414,7 +414,7 @@ double tgSurface::query( SGGeod query ) const {
     // sanity check
     if ( !_aptBounds.isInside(query) )
     {
-        SG_LOG(SG_GENERAL, SG_WARN, "Warning: query out of bounds for fitted surface!");
+        SG_LOG(SG_GENERAL, SG_WARN, "Warning: Elevation query out of bounds for fitted surface!");
         return -9999.0;
     }
 
@@ -435,6 +435,52 @@ double tgSurface::query( SGGeod query ) const {
     + A[11]*x*x*x*y*y + A[12]*x*x*x*y*y*y + A[13]*y*y*y + A[14]*x*y*y*y
     + A[15]*x*x*y*y*y;
     result += area_center.getElevationM();
+
+    return result;
+}
+
+double tgSurface::calc_elevation( const SGGeod& node, double offset )
+{
+    double elev = query( node );
+    elev += offset;
+
+    return elev;
+}
+
+tgSurface::PointList tgSurface::calc_elevations( const PointList& geod_nodes, double offset )
+{
+    PointList result = geod_nodes;
+    for ( unsigned int i = 0; i < result.size(); ++i ) {
+        double elev = query( result[i] );
+        result[i].setElevationM( elev + offset );
+    }
+
+    return result;
+}
+
+tgContour tgSurface::calc_elevations( const tgContour& geod_nodes, double offset )
+{
+    tgContour result = geod_nodes;
+    for ( unsigned int i = 0; i < result.GetSize(); ++i ) {
+        SGGeod node = result.GetNode(i);
+        double elev = query( node );
+        node.setElevationM( elev + offset );
+        result.SetNode( i, node );
+    }
+
+    return result;
+}
+
+tgPolygon tgSurface::calc_elevations( const tgPolygon& poly, double offset )
+{
+    tgPolygon result;
+
+    for ( unsigned int i = 0; i < poly.Contours(); ++i ) {
+        tgContour contour = poly.GetContour( i );
+        tgContour elevated = calc_elevations( contour, offset );
+
+        result.AddContour( elevated );
+    }
 
     return result;
 }

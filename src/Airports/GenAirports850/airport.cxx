@@ -211,58 +211,6 @@ bool Airport::isDebugFeature( int feat )
 }
 
 
-// TODO : Add somewhere
-// Determine node elevations of a point_list based on the provided
-// TGAptSurface.  Offset is added to the final elevation
-static std::vector<SGGeod> calc_elevations( const tgSurface& surf, const std::vector<SGGeod>& geod_nodes, double offset )
-{
-    std::vector<SGGeod> result = geod_nodes;
-    for ( unsigned int i = 0; i < result.size(); ++i ) {
-        double elev = surf.query( result[i] );
-        result[i].setElevationM( elev + offset );
-    }
-
-    return result;
-}
-
-
-static tgContour calc_elevations( const tgSurface& surf, const tgContour& geod_nodes, double offset )
-{
-    tgContour result = geod_nodes;
-    for ( unsigned int i = 0; i < result.GetSize(); ++i ) {
-        SGGeod node = result.GetNode(i);
-        double elev = surf.query( node );
-        node.setElevationM( elev + offset );
-        result.SetNode( i, node );
-    }
-
-    return result;
-}
-
-static double calc_elevation( const tgSurface& surf, const SGGeod& node, double offset )
-{
-    double elev = surf.query( node );
-    elev += offset;
-
-    return elev;
-}
-
-
-// Determine node elevations of each node of a TGPolygon based on the
-// provided TGAptSurface.  Offset is added to the final elevation
-static tgPolygon calc_elevations( const tgSurface& surf, const tgPolygon& poly, double offset )
-{
-    tgPolygon result;
-
-    for ( unsigned int i = 0; i < poly.Contours(); ++i ) {
-        tgContour contour = poly.GetContour( i );
-        tgContour elevated = calc_elevations( surf, contour, offset );
-
-        result.AddContour( elevated );
-    }
-
-    return result;
-}
 
 void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 {
@@ -887,10 +835,10 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TG_LOG(SG_GENERAL, SG_INFO, "Adding line nodes and normals");
     for ( unsigned int k = 0; k < line_polys.size(); ++k )
     {
-        TG_LOG(SG_GENERAL, SG_INFO, "tri " << k);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "tri " << k);
         std::string material = line_polys[k].GetMaterial();
-        TG_LOG(SG_GENERAL, SG_INFO, "material = " << material);
-        TG_LOG(SG_GENERAL, SG_INFO, "triangles = " << line_polys[k].Triangles());
+        TG_LOG(SG_GENERAL, SG_DEBUG, "material = " << material);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "triangles = " << line_polys[k].Triangles());
         for ( unsigned int i = 0; i < line_polys[k].Triangles(); ++i )
         {
             tgPolygon poly = line_polys[k];
@@ -1052,7 +1000,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TG_LOG(SG_GENERAL, SG_DEBUG, " max: " << max_deg );
     TG_LOG(SG_GENERAL, SG_DEBUG, " average: " << average );
 
-    // TODO elevation queries should be performed as member functions of surface
     tgRectangle aptBounds(min_deg, max_deg);
     tgSurface apt_surf( root, elev_src, aptBounds, average, slope_max, slope_eps );
     TG_LOG(SG_GENERAL, SG_DEBUG, "Airport surface created");
@@ -1061,7 +1008,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // pass one, calculate raw elevations from Array
     for ( unsigned int i = 0; i < rwy_lights.size(); ++i ) {
         for ( unsigned int j = 0; j < rwy_lights[i].ContourSize(); j++ ) {
-            double light_elevation = calc_elevation( apt_surf, rwy_lights[i].GetNode(j), 0.0 );
+            double light_elevation = apt_surf.calc_elevation( rwy_lights[i].GetNode(j), 0.0 );
             rwy_lights[i].SetElevation(j, light_elevation);
         }
     }
@@ -1095,8 +1042,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // calculate node elevations
     TG_LOG(SG_GENERAL, SG_DEBUG, "Computing airport node elevations");
 
-    std::vector<SGGeod> geod_nodes = calc_elevations( apt_surf, nodes.get_list(), 0.0 );
-    divided_base = calc_elevations( apt_surf, divided_base, 0.0 );
+    std::vector<SGGeod> geod_nodes = apt_surf.calc_elevations( nodes.get_list(), 0.0 );
+    divided_base = apt_surf.calc_elevations( divided_base, 0.0 );
 
     // calculate wgs84 mapping of nodes
     std::vector<SGVec3d> wgs84_nodes;
@@ -1157,7 +1104,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     for ( unsigned int i = 0; i < windsocks.size(); ++i )
     {
         SGGeod ref_geod = windsocks[i]->GetLoc();
-        ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
+        ref_geod.setElevationM( apt_surf.calc_elevation( ref_geod, 0.0 ) );
 
         if ( windsocks[i]->IsLit() )
         {
@@ -1175,7 +1122,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     for ( unsigned int i = 0; i < beacons.size(); ++i )
     {
         ref_geod = beacons[i]->GetLoc();
-        ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
+        ref_geod.setElevationM( apt_surf.calc_elevation( ref_geod, 0.0 ) );
 
         write_index_shared( objpath, b, ref_geod,
                             "Models/Airport/beacon.xml",
@@ -1186,7 +1133,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     for ( unsigned int i = 0; i < signs.size(); ++i )
     {
         ref_geod = signs[i]->GetLoc();
-        ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
+        ref_geod.setElevationM( apt_surf.calc_elevation( ref_geod, 0.0 ) );
         write_object_sign( objpath, b, ref_geod,
                             signs[i]->GetDefinition(),
                             signs[i]->GetHeading(),
@@ -1201,7 +1148,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         for ( unsigned int j = 0; j < buoys.GetSize(); ++j )
         {
             ref_geod = buoys.GetNode(j);
-            ref_geod.setElevationM( calc_elevation( apt_surf, ref_geod, 0.0 ) );
+            ref_geod.setElevationM( apt_surf.calc_elevation( ref_geod, 0.0 ) );
             write_index_shared( objpath, b, ref_geod,
                                 "Models/Airport/water_rw_buoy.xml",
                                 0.0 );

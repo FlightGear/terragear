@@ -96,6 +96,7 @@ private:
  * and dips in the airport surface.
  */
 class tgSurface {
+typedef std::vector<SGGeod> PointList;
 
 public:
 
@@ -110,14 +111,10 @@ public:
     // Destructor
     ~tgSurface();
 
-    // Use a linear least squares method to fit a 3d polynomial to the
-    // sampled surface data
-    void fit();
-
-    // Query the elevation of a point, return -9999 if out of range.
-    // This routine makes a simplistic assumption that X,Y space is
-    // proportional to u,v space on the nurbs surface which it isn't.
-    double query( SGGeod query ) const;
+    double calc_elevation( const SGGeod& node, double offset );
+    PointList calc_elevations( const PointList& geod_nodes, double offset );
+    tgContour calc_elevations( const tgContour& geod_nodes, double offset );
+    tgPolygon calc_elevations( const tgPolygon& poly, double offset );
 
 private:
     // The actual nurbs surface approximation for the airport
@@ -133,8 +130,14 @@ private:
     // externally seeded average airport elevation
     double _average_elev_m;
 
-//    double slope_max = 0.02;
-//    double slope_eps = 0.00001;
+    // Use a linear least squares method to fit a 3d polynomial to the
+    // sampled surface data
+    void fit();
+
+    // Query the elevation of a point, return -9999 if out of range.
+    // This routine makes a simplistic assumption that X,Y space is
+    // proportional to u,v space on the nurbs surface which it isn't.
+    double query( SGGeod query ) const;
 };
 
 #endif // _SURFACE_HXX
