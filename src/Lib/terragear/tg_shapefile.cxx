@@ -15,6 +15,8 @@ void* tgShapefile::OpenDatasource( const char* datasource_name )
     OGRSFDriver*    ogrdriver;
     const char*     format_name = "ESRI Shapefile";
 
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Open Datasource: " << datasource_name );
+ 
     if (!tgShapefile::initialized) {
         OGRRegisterAll();
         tgShapefile::initialized = true;
@@ -36,7 +38,6 @@ void* tgShapefile::OpenDatasource( const char* datasource_name )
 
     if ( !datasource ) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Unable to open or create datasource: " << datasource_name );
-        exit(1);
     }
 
     return (void*)datasource;
@@ -97,8 +98,10 @@ void* tgShapefile::CloseDatasource( void* ds_id )
 void tgShapefile::FromClipper( const ClipperLib::Paths& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
-
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromClipper open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
+    
     OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
 
@@ -152,7 +155,9 @@ void tgShapefile::FromClipper( const ClipperLib::Paths& subject, bool asPolygon,
 void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromContour open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
 
     OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
@@ -196,7 +201,9 @@ void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const s
 void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygon open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
     
     OGRLayer*      l_id;
     
@@ -307,7 +314,9 @@ void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, const s
 void tgShapefile::FromGeod( const SGGeod& geode, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromGeod open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
     
     OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POINT );
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
@@ -333,22 +342,30 @@ void tgShapefile::FromGeod( const SGGeod& geode, const std::string& datasource, 
     ds_id = tgShapefile::CloseDatasource( ds_id );    
 }
 
-void tgShapefile::FromGeodList( const std::vector<SGGeod>& list, const std::string& datasource, const std::string& layer, const std::string& description )
+void tgShapefile::FromGeodList( const std::vector<SGGeod>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     if ( !list.empty() ) {    
         char geod_desc[64];
 
         for ( unsigned int i=0; i<list.size(); i++ ) {
             sprintf(geod_desc, "%s_%d", description.c_str(), i+1);
-            tgShapefile::FromGeod( list[i], datasource, layer, geod_desc );
+            if ( show_dir ) {
+                if ( i < list.size()-1 ) {
+                    tgShapefile::FromSegment( tgSegment( list[i], list[i+1] ), true, datasource, layer, geod_desc );
+                }
+            } else {
+                tgShapefile::FromGeod( list[i], datasource, layer, geod_desc );
+            }
         }
     }
 }
 
-void tgShapefile::FromSegment( const tgSegment& subject, const std::string& datasource, const std::string& layer, const std::string& description )
+void tgShapefile::FromSegment( const tgSegment& subject, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromSegment open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
         
     OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
@@ -356,18 +373,47 @@ void tgShapefile::FromSegment( const tgSegment& subject, const std::string& data
     OGRLineString* line = new OGRLineString();
     
     OGRPoint* start = new OGRPoint;
-            
-    start->setX( subject.start.getLongitudeDeg() );
-    start->setY( subject.start.getLatitudeDeg() );
+
+    SGGeod geodStart = subject.GetGeodStart();
+    SGGeod geodEnd   = subject.GetGeodEnd();
+    
+    start->setX( geodStart.getLongitudeDeg() );
+    start->setY( geodStart.getLatitudeDeg() );
     start->setZ( 0.0 );
     
     line->addPoint(start);
 
-    OGRPoint* end = new OGRPoint;
-    end->setX( subject.end.getLongitudeDeg() );
-    end->setY( subject.end.getLatitudeDeg() );
-    end->setZ( 0.0 );
-    line->addPoint(end);
+    if ( show_dir ) {
+        SGGeod lArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
+        SGGeod rArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
+        
+        OGRPoint* end = new OGRPoint;
+        end->setX( geodEnd.getLongitudeDeg() );
+        end->setY( geodEnd.getLatitudeDeg() );
+        end->setZ( 0.0 );
+        line->addPoint(end);
+        
+        OGRPoint* lend = new OGRPoint;
+        lend->setX( lArrow.getLongitudeDeg() );
+        lend->setY( lArrow.getLatitudeDeg() );
+        lend->setZ( 0.0 );
+        line->addPoint(lend);
+        
+        OGRPoint* rend = new OGRPoint;
+        rend->setX( rArrow.getLongitudeDeg() );
+        rend->setY( rArrow.getLatitudeDeg() );
+        rend->setZ( 0.0 );
+        line->addPoint(rend);
+        
+        // finish the arrow
+        line->addPoint(end);
+    } else {        
+        OGRPoint* end = new OGRPoint;
+        end->setX( geodEnd.getLongitudeDeg() );
+        end->setY( geodEnd.getLatitudeDeg() );
+        end->setZ( 0.0 );
+        line->addPoint(end);
+    }
     
     OGRFeature* feature = NULL;
     feature = OGRFeature::CreateFeature( l_id->GetLayerDefn() );    
@@ -384,14 +430,14 @@ void tgShapefile::FromSegment( const tgSegment& subject, const std::string& data
     ds_id = tgShapefile::CloseDatasource( ds_id );
 }
 
-void tgShapefile::FromSegmentList( const std::vector<tgSegment>& list, const std::string& datasource, const std::string& layer, const std::string& description )
+void tgShapefile::FromSegmentList( const std::vector<tgSegment>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     if ( !list.empty() ) {    
         char seg_desc[64];
 
         for ( unsigned int i=0; i<list.size(); i++ ) {
             sprintf(seg_desc, "%s_%d", description.c_str(), i+1);
-            tgShapefile::FromSegment( list[i], datasource, layer, seg_desc );
+            tgShapefile::FromSegment( list[i], show_dir, datasource, layer, seg_desc );
         }
     }
 }
@@ -399,7 +445,9 @@ void tgShapefile::FromSegmentList( const std::vector<tgSegment>& list, const std
 void tgShapefile::FromRay( const tgRay& subject, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromRay open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
         
     OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
@@ -407,16 +455,18 @@ void tgShapefile::FromRay( const tgRay& subject, const std::string& datasource, 
     OGRLineString* line = new OGRLineString();
     
     OGRPoint* start = new OGRPoint;
-            
-    start->setX( subject.start.getLongitudeDeg() );
-    start->setY( subject.start.getLatitudeDeg() );
+
+    SGGeod geodStart = subject.GetGeodStart();
+    
+    start->setX( geodStart.getLongitudeDeg() );
+    start->setY( geodStart.getLatitudeDeg() );
     start->setZ( 0.0 );
     
     line->addPoint(start);
 
-    SGGeod rayEnd = TGEuclidean::direct( subject.start, subject.heading, 5.0 );
-    SGGeod lArrow = TGEuclidean::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.heading+190), 0.2 );
-    SGGeod rArrow = TGEuclidean::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.heading+170), 0.2 );
+    SGGeod rayEnd = TGEuclidean::direct( geodStart, subject.GetHeading(), 5.0 );
+    SGGeod lArrow = TGEuclidean::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
+    SGGeod rArrow = TGEuclidean::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
     
     OGRPoint* end = new OGRPoint;
     end->setX( rayEnd.getLongitudeDeg() );
@@ -469,25 +519,28 @@ void tgShapefile::FromRayList( const std::vector<tgRay>& list, const std::string
 void tgShapefile::FromLine( const tgLine& subject, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromLine open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
         
     OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
-    
-    double heading = TGEuclidean::courseDeg( subject.start, subject.end );
-    
+        
     OGRLineString* line = new OGRLineString();
     
     OGRPoint* start = new OGRPoint;
-            
-    start->setX( subject.start.getLongitudeDeg() );
-    start->setY( subject.start.getLatitudeDeg() );
+
+    SGGeod geodStart = subject.GetGeodStart();
+    SGGeod geodEnd   = subject.GetGeodEnd();
+    
+    start->setX( geodStart.getLongitudeDeg() );
+    start->setY( geodStart.getLatitudeDeg() );
     start->setZ( 0.0 );
     
     line->addPoint(start);
     
-    SGGeod slArrow = TGEuclidean::direct( subject.start, SGMiscd::normalizePeriodic(0, 360, heading-10), 0.2 );
-    SGGeod srArrow = TGEuclidean::direct( subject.start, SGMiscd::normalizePeriodic(0, 360, heading+10), 0.2 );
+    SGGeod slArrow = TGEuclidean::direct( geodStart, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()-10), 0.2 );
+    SGGeod srArrow = TGEuclidean::direct( geodStart, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+10), 0.2 );
     
     OGRPoint* lstart = new OGRPoint;
     lstart->setX( slArrow.getLongitudeDeg() );
@@ -504,12 +557,12 @@ void tgShapefile::FromLine( const tgLine& subject, const std::string& datasource
     // start back at the beginning
     line->addPoint(start);
 
-    SGGeod elArrow = TGEuclidean::direct( subject.end, SGMiscd::normalizePeriodic(0, 360, heading+170), 0.2 );
-    SGGeod erArrow = TGEuclidean::direct( subject.end, SGMiscd::normalizePeriodic(0, 360, heading+190), 0.2 );
+    SGGeod elArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
+    SGGeod erArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
     
     OGRPoint* end = new OGRPoint;
-    end->setX( subject.end.getLongitudeDeg() );
-    end->setY( subject.end.getLatitudeDeg() );
+    end->setX( geodEnd.getLongitudeDeg() );
+    end->setY( geodEnd.getLatitudeDeg() );
     end->setZ( 0.0 );
     line->addPoint(end);
     
@@ -553,6 +606,58 @@ void tgShapefile::FromLineList( const std::vector<tgLine>& list, const std::stri
             tgShapefile::FromLine( list[i], datasource, layer, line_desc );
         }
     }
+}
+
+void tgShapefile::FromRectangle( const tgRectangle& subject, const std::string& datasource, const std::string& layer, const std::string& description )
+{
+    void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromRectangle open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
+    
+    OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
+        
+    OGRLineString* ogr_bb = new OGRLineString();
+         
+    SGGeod  min = subject.getMin();
+    SGGeod  max = subject.getMax();
+    
+    OGRPoint *point=new OGRPoint();
+    point->setZ( 0.0 );
+         
+    point->setX( min.getLongitudeDeg() );
+    point->setY( min.getLatitudeDeg() );
+    ogr_bb->addPoint(point);
+
+    point->setX( max.getLongitudeDeg() );
+    point->setY( min.getLatitudeDeg() );
+    ogr_bb->addPoint(point);
+
+    point->setX( max.getLongitudeDeg() );
+    point->setY( max.getLatitudeDeg() );
+    ogr_bb->addPoint(point);
+
+    point->setX( min.getLongitudeDeg() );
+    point->setY( max.getLatitudeDeg() );
+    ogr_bb->addPoint(point);
+    
+    point->setX( min.getLongitudeDeg() );
+    point->setY( min.getLatitudeDeg() );
+    ogr_bb->addPoint(point);
+    
+    OGRFeature* feature = NULL;
+    feature = new OGRFeature( l_id->GetLayerDefn() );
+    feature->SetField("ID", description.c_str());
+    feature->SetGeometry(ogr_bb);
+    if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+    }
+    OGRFeature::DestroyFeature(feature);
+    
+    // close after each write
+    ds_id = tgShapefile::CloseDatasource( ds_id );
 }
 
 tgPolygon tgShapefile::ToPolygon( const void* subject )

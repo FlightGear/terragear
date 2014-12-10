@@ -15,12 +15,17 @@ add_library(terragear STATIC
     tg_array.hxx
     tg_cgal.cxx
     tg_cgal.hxx
+    tg_cgal_epec.hxx
     tg_chopper.cxx
     tg_chopper.hxx
     tg_contour.cxx
     tg_contour.hxx
-    tg_graph.cxx
-    tg_graph.hxx
+    tg_intersection_edge.cxx
+    tg_intersection_edge.hxx
+    tg_intersection_node.cxx
+    tg_intersection_node.hxx
+    tg_intersection_generator.cxx
+    tg_intersection_generator.hxx
     tg_light.hxx
     tg_misc.cxx
     tg_misc.hxx
@@ -33,6 +38,9 @@ add_library(terragear STATIC
     tg_polygon_tesselate.cxx
     tg_rectangle.cxx
     tg_rectangle.hxx
+    tg_segmentnetwork.cxx
+    tg_segmentnetwork.hxx
+    tg_segmentnetwork_ars.cxx
     tg_shapefile.cxx
     tg_shapefile.hxx
     tg_sskel.cxx

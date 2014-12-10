@@ -8,7 +8,7 @@
 #include "tg_polygon.hxx"
 #include "tg_euclidean.hxx"
 #include "tg_misc.hxx"
-#include "tg_cgal.hxx"
+#include "tg_cgal_epec.hxx"
 #include "tg_shapefile.hxx"
 
 const double isEqual2D_Epsilon = 0.000001;
@@ -27,6 +27,23 @@ bool SGGeod_isEqual2D( const SGGeod& g0, const SGGeod& g1 )
 {
     return ( (fabs( g0.getLongitudeDeg() - g1.getLongitudeDeg() ) < isEqual2D_Epsilon) &&
              (fabs( g0.getLatitudeDeg()  - g1.getLatitudeDeg() )  < isEqual2D_Epsilon ) );
+}
+
+bool SGGeod_isLessThan2D( const SGGeod& g0, const SGGeod& g1 )
+{
+    bool lessThan = false;
+    
+    // if x == x, then y MUST be < y
+    if ( (fabs( g0.getLongitudeDeg() - g1.getLongitudeDeg() ) < isEqual2D_Epsilon) ) {
+        if ( ( g1.getLatitudeDeg() - g0.getLatitudeDeg() ) > isEqual2D_Epsilon ) {
+            lessThan = true;
+        }
+    // otherwise, just check if x < x
+    } else if ( ( g1.getLongitudeDeg() - g0.getLongitudeDeg() ) > isEqual2D_Epsilon ) {
+       lessThan = true;
+    }
+    
+    return lessThan;
 }
 
 SGVec2d SGGeod_ToSGVec2d( const SGGeod& p )
@@ -355,18 +372,18 @@ SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 )
 double Bisect( const SGGeod& center, double heading1, double heading2, bool right )
 {   
     // convert starting point to CGAL
-    CBPoint_2 pt2( center.getLongitudeDeg(), center.getLatitudeDeg() );
+    EPECPoint_2 pt2( center.getLongitudeDeg(), center.getLatitudeDeg() );
     
     // we need two lines for the bisector function
-    CBLine_2 line1( pt2, tgCgalBase::HeadingToDirection( heading1 ) );
-    CBLine_2 line2( pt2, tgCgalBase::HeadingToDirection( heading2 ) );
+    EPECLine_2 line1( pt2, tgCgalBase::HeadingToDirection( heading1 ) );
+    EPECLine_2 line2( pt2, tgCgalBase::HeadingToDirection( heading2 ) );
 
     // we need two vectors for orientation
-    CBVector_2  vec1( line1 );
-    CBVector_2  vec2( line2 );
+    EPECVector_2  vec1( line1 );
+    EPECVector_2  vec2( line2 );
 
-    CBLine_2      bisect = CGAL::bisector( line1, line2 );
-    CBDirection_2 dir = bisect.direction();
+    EPECLine_2      bisect = CGAL::bisector( line1, line2 );
+    EPECDirection_2 dir = bisect.direction();
 
     // if we pass right as true, we want the heading of a right turn.
     // CGAL returns heading as if we add unit vectors, so heading always follows the
@@ -388,17 +405,17 @@ double Bisect( const SGGeod& center, double heading1, double heading2, bool righ
 
 bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SGGeod& p3, SGGeod& intersection)
 {
-    CBPoint_2 a1( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
-    CBPoint_2 b1( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
-    CBPoint_2 a2( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
-    CBPoint_2 b2( p3.getLongitudeDeg(), p3.getLatitudeDeg() );
+    EPECPoint_2 a1( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    EPECPoint_2 b1( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    EPECPoint_2 a2( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
+    EPECPoint_2 b2( p3.getLongitudeDeg(), p3.getLatitudeDeg() );
 
-    CBSegment_2 seg1( a1, b1 );
-    CBSegment_2 seg2( a2, b2 );
+    EPECSegment_2 seg1( a1, b1 );
+    EPECSegment_2 seg2( a2, b2 );
 
     CGAL::Object result = CGAL::intersection(seg1, seg2);
-    const CBPoint_2     *ipoint = CGAL::object_cast<CBPoint_2>(&result);
-    const CBSegment_2   *iseg   = CGAL::object_cast<CBSegment_2>(&result);
+    const EPECPoint_2     *ipoint = CGAL::object_cast<EPECPoint_2>(&result);
+    const EPECSegment_2   *iseg   = CGAL::object_cast<EPECSegment_2>(&result);
     
     if (ipoint) {
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
@@ -414,28 +431,26 @@ bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SG
 
 bool FindIntersections( const tgSegment& s1, const tgSegment& s2, std::vector<SGGeod>& ints )
 {
-    CBPoint_2 a1( s1.start.getLongitudeDeg(), s1.start.getLatitudeDeg() );
-    CBPoint_2 b1( s1.end.getLongitudeDeg(),   s1.end.getLatitudeDeg() );
-    CBPoint_2 a2( s2.start.getLongitudeDeg(), s2.start.getLatitudeDeg() );
-    CBPoint_2 b2( s2.end.getLongitudeDeg(),   s2.end.getLatitudeDeg() );
+    EPECPoint_2 a1 = s1.GetCGALStart();
+    EPECPoint_2 b1 = s1.GetCGALEnd();
+    EPECPoint_2 a2 = s2.GetCGALStart();
+    EPECPoint_2 b2 = s2.GetCGALEnd();
 
-    CBSegment_2 seg1( a1, b1 );
-    CBSegment_2 seg2( a2, b2 );
+    EPECSegment_2 seg1( a1, b1 );
+    EPECSegment_2 seg2( a2, b2 );
 
     CGAL::Object result = CGAL::intersection(seg1, seg2);
     SGGeod pt;
-    if (const CBPoint_2 *ipoint = CGAL::object_cast<CBPoint_2>(&result)) {
+    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         pt = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         ints.push_back( pt );
         return true;
     } else {
-        if (const CBSegment_2 *iseg = CGAL::object_cast<CBSegment_2>(&result)) {
+        if (const EPECSegment_2 *iseg = CGAL::object_cast<EPECSegment_2>(&result)) {
             // handle the segment intersection case with *iseg.
-            pt = SGGeod::fromDeg( CGAL::to_double( iseg->source().x() ), CGAL::to_double( iseg->source().y() ) );
-            ints.push_back( pt );
-            pt = SGGeod::fromDeg( CGAL::to_double( iseg->target().x() ), CGAL::to_double( iseg->target().y() ) );
-            ints.push_back( pt );
+            ints.push_back( tgCgalBase::EPECPointToGeod( iseg->source() ) );
+            ints.push_back( tgCgalBase::EPECPointToGeod( iseg->target() ) );
             return true;
         } else {
             // handle the no intersection case.

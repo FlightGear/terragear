@@ -15,7 +15,7 @@ public:
 
     inline std::string GetDescription() { return description; }
     void AddNode( BezNode* node );
-    void CloseCurContour();
+    void CloseCurContour(tgIntersectionGenerator* pig);
     void Finish();
 
     void GetPolys( tgpolygon_list& polys );

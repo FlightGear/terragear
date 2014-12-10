@@ -139,7 +139,7 @@ unsigned int LinearFeature::CheckMarkStart(BezNode* curNode)
     
     if (curNode->GetMarking())
     {
-        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkStart Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
+        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkStart Start Marking with " << curNode->GetMarking() );
         
         // we aren't watching a mark, and this node has one
         mark = curNode->GetMarking();
@@ -149,7 +149,7 @@ unsigned int LinearFeature::CheckMarkStart(BezNode* curNode)
 }
 #endif
 
-void LinearFeature::ConvertContour( BezContour* src, bool closed )
+void LinearFeature::ConvertContour( tgIntersectionGenerator* pig, BezContour* src, bool closed )
 {
     BezNode*  curNode;
     BezNode*  nextNode;
@@ -180,7 +180,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     
 #if USE_GRAPH    
     // clear the nodes and edge list
-    edges.clear();
+    // edges.clear();
 #endif
     
     if ( closed ) {
@@ -434,14 +434,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
                 points.AddNode(curLoc);
               
 #if USE_GRAPH                
-                // add and edge from curLoc to nextLoc with marking type and width
-                // look up or create a new graph node
-                tgIntersectionNode* curNode  = nodes.Get(curLoc);
-                tgIntersectionNode* nextNode = nodes.Get(nextLoc);
-                
-                // passing nodes to the edge constructor seems weird, but this can generate a new node
-                // if the new edge intersects one already created
-                edges.push_back( new tgIntersectionEdge( curNode, nextNode, 1.0, edge_type ) );
+                pig->Insert( curLoc, nextLoc, 1.0, edge_type );
 #endif
                 
                 if (p==0)
@@ -480,9 +473,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 #if USE_GRAPH                
                     // add and edge from curLoc to nextLoc with marking type and width
                     // look up or create a new graph node
-                    tgIntersectionNode* curNode  = nodes.Get(curLoc);
-                    tgIntersectionNode* nextNode = nodes.Get(nextLoc);
-                    edges.push_back( new tgIntersectionEdge( curNode, nextNode, 1.0, edge_type ) );
+                    pig->Insert( curLoc, nextLoc, 1.0, edge_type );
 #endif
                     
                     if (p==0)
@@ -515,9 +506,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 #if USE_GRAPH                
                 // add and edge from curLoc to nextLoc with marking type and width
                 // look up or create a new graph node
-                tgIntersectionNode* curNode  = nodes.Get(curLoc);
-                tgIntersectionNode* nextNode = nodes.Get(nextLoc);
-                edges.push_back( new tgIntersectionEdge( curNode, nextNode, 1.0, edge_type ) );
+                pig->Insert( curLoc, nextLoc, 1.0, edge_type );
 #endif
                 
                 TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
@@ -776,31 +765,17 @@ void LinearFeature::GenerateIntersectionTris(void)
 {    
     // just build a single 2 edge node for now - 3 edge node is node 1
     
-    // three step process - all nodes need to be run each time before starting the next step
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: ConstrainEdges at node " << i << " of " << nodes.size() );
-        nodes[i]->ConstrainEdges();
-    }
-
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: GenerateEdges at node " << i << " of " << nodes.size() );
-        nodes[i]->GenerateEdges();
-    }
-
-    for (unsigned int i=0; i<nodes.size(); i++) {
-        TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: FixMultisegmentIntersections at node " << i << " of " << nodes.size() );
-        nodes[i]->FixMultisegmentIntersections();
-    }
+//    lf_insersector.Execute();
 
 // now dump all edges
-    for ( tgintersectionedge_it it=edges.begin(); it != edges.end(); it++ ) {
-        (*it)->ToShapefile();
-    }
+//    for ( tgintersectionedge_it it=lf_insersector.edges_begin(); it != lf_insersector.edges_end(); it++ ) {
+//        (*it)->ToShapefile();
+//    }
     
 // now dump the polys
-#if 1
+#if 0
     int edgeid = 1;
-    for ( tgintersectionedge_it it=edges.begin(); it != edges.end(); it++ ) {
+    for ( tgintersectionedge_it it=lf_insersector.edges_begin(); it != lf_insersector.edges_end(); it++ ) {
         char layer[32];
         sprintf(layer, "edge_%03d", edgeid++ );
         tgPolygon poly = (*it)->GetPoly("complete");
@@ -941,9 +916,8 @@ void LinearFeature::GenerateMarkingPolys(void)
     double      atlas_start = 0.0, atlas_end = 0.0;
     std::string material;
 
-    lfid++;
-    
-    for ( tgintersectionedge_it it=edges.begin(); it != edges.end(); it++ ) {
+#if 0    
+    for ( tgintersectionedge_it it=lf_insersector.edges_begin(); it != lf_insersector.edges_end(); it++ ) {
         // TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: edge id " << edge_id++ );
         double    heading, dist, tex_w;
         int       type;
@@ -985,6 +959,8 @@ void LinearFeature::GenerateMarkingPolys(void)
         
         edgeid++;
     }
+#endif
+
 }    
 #endif
 #endif
@@ -1227,7 +1203,7 @@ void LinearFeature::GetMarkInfo( unsigned int type, double& width, std::string& 
 #endif    
 }
 
-int LinearFeature::Finish( bool closed, double def_width )
+int LinearFeature::Finish( tgIntersectionGenerator* pig, bool closed, double def_width )
 {
     SGGeod      prev_inner, prev_outer;
     SGGeod      cur_inner,  cur_outer;
@@ -1247,7 +1223,7 @@ int LinearFeature::Finish( bool closed, double def_width )
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
-    ConvertContour( &contour, closed );
+    ConvertContour( pig, &contour, closed );
 
 #if !USE_GRAPH
     // now generate the supoerpoly and texparams lists for markings
@@ -1344,10 +1320,10 @@ int LinearFeature::Finish( bool closed, double def_width )
     // GenerateNonIntersectingPolys();
     
     // calculate intersection Triangles
-    GenerateIntersectionTris();
+    // GenerateIntersectionTris();
     
     // Convert edges to polys
-    GenerateMarkingPolys();
+    // GenerateMarkingPolys();
 
 #endif
 

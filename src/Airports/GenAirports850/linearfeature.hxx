@@ -4,7 +4,7 @@
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_light.hxx>
-#include <terragear/tg_graph.hxx>
+#include <terragear/tg_intersection_generator.hxx>
 
 #include "beznode.hxx"
 
@@ -108,7 +108,7 @@ public:
         contour.push_back( b );
     }
 
-    int Finish( bool closed, double width = 0.0f );
+    int Finish( tgIntersectionGenerator* pig, bool closed, double width = 0.0f );
     
     void GetPolys( tgpolygon_list& polys );
     void GetCapPolys( tgpolygon_list& polys );
@@ -150,7 +150,7 @@ private:
     
     
     void GetMarkInfo( unsigned int type, double& width, std::string& material, double& atlas_start, double& atlas_end, double& v_dist );
-    void ConvertContour( BezContour* src, bool closed );
+    void ConvertContour( tgIntersectionGenerator* pig, BezContour* src, bool closed );
 
     // text description
     std::string description;
@@ -161,10 +161,8 @@ private:
     // contour definition after bezier interpolation - still used for lights - TODO: convert to tggraphnode_list / edge
     tgContour  points;
     
-    tgIntersectionNodeList  nodes;
-    tgintersectionedge_list edges;
-
-
+    // all linear features are stored in the lf_intersector
+    //tgIntersectionGenerator lf_insersector;
     
     tgpolygon_list      marking_polys;
     tgpolygon_list      cap_polys;      // lower priority than the marks themselves

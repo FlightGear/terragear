@@ -36,6 +36,9 @@ Airport::Airport( int c, char* def)
     char* tok;
     int   ct = 0;
 
+    lf_ig = NULL;
+    rm_ig = NULL;
+    
     code = c;
 
     // we need to tokenize airports, since we can't scanf two strings next to each other...
@@ -78,6 +81,11 @@ Airport::Airport( int c, char* def)
     }
 
     altitude *= SG_FEET_TO_METER;
+    
+    if ( done ) {
+        lf_ig = new tgIntersectionGenerator(icao);
+        rm_ig = new tgIntersectionGenerator(icao);
+    }
 
     TG_LOG( SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", control tower " << ct << ", and description " << description );
 }
@@ -137,6 +145,14 @@ Airport::~Airport()
     for (unsigned int i=0; i<boundary.size(); i++)
     {
         delete boundary[i];
+    }
+    
+    if ( lf_ig ) {
+        delete lf_ig;
+    }
+    
+    if ( rm_ig ) {
+        delete rm_ig;
     }
 }
 

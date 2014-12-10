@@ -1,5 +1,9 @@
+#ifndef _TGSHAPEFILE_HXX
+#define _TGSHAPEFILE_HXX
+
 #include "tg_polygon.hxx"
 #include "tg_contour.hxx"
+#include "tg_rectangle.hxx"
 #include "tg_misc.hxx"
 #include "clipper.hpp"
 
@@ -18,10 +22,10 @@ public:
     static void  FromClipper( const ClipperLib::Paths& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
     
     static void  FromGeod( const SGGeod& pt, const std::string& datasource, const std::string& layer, const std::string& description );
-    static void  FromGeodList( const std::vector<SGGeod>& list, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromGeodList( const std::vector<SGGeod>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
 
-    static void  FromSegment( const tgSegment& subject, const std::string& datasource, const std::string& layer, const std::string& description );
-    static void  FromSegmentList( const std::vector<tgSegment>& list, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromSegment( const tgSegment& subject, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromSegmentList( const std::vector<tgSegment>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
 
     static void  FromRay( const tgRay& subject, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromRayList( const std::vector<tgRay>& list, const std::string& datasource, const std::string& layer, const std::string& description );
@@ -29,6 +33,8 @@ public:
     static void  FromLine( const tgLine& subject, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromLineList( const std::vector<tgLine>& list, const std::string& datasource, const std::string& layer, const std::string& description );
 
+    static void  FromRectangle( const tgRectangle& subject, const std::string& datasource, const std::string& layer, const std::string& description );
+    
     static tgPolygon ToPolygon( const void* subject );
 
 private:
@@ -38,3 +44,5 @@ private:
     static void* OpenLayer( void* ds_id, const char* layer_name, shapefile_layer_t type );
     static void* CloseDatasource( void* ds_id );
 };
+
+#endif // _TGSHAPEFILE_HXX

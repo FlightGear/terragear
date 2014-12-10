@@ -101,7 +101,7 @@ void ClosedPoly::AddNode( BezNode* node )
     }
 }
 
-void ClosedPoly::CloseCurContour()
+void ClosedPoly::CloseCurContour( tgIntersectionGenerator* pig )
 {
     TG_LOG(SG_GENERAL, SG_DEBUG, "Close Contour");
 
@@ -110,7 +110,7 @@ void ClosedPoly::CloseCurContour()
     if (cur_feature)
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
-        cur_feature->Finish(true);
+        cur_feature->Finish( pig, true);
 
         features.push_back(cur_feature);
         cur_feature = NULL;

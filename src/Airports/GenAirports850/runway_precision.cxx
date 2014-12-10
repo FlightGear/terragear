@@ -663,7 +663,7 @@ void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, d
     cap_polys.push_back( poly );
 }
 
-LinearFeature* Runway::gen_perpendicular_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark )
+LinearFeature* Runway::gen_perpendicular_marking_feature( tgIntersectionGenerator* pig, const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark )
 {
     LinearFeature* feat = new LinearFeature((const char *)"feat", 0 );
     BezNode* node = NULL;
@@ -693,12 +693,12 @@ LinearFeature* Runway::gen_perpendicular_marking_feature( const SGGeod& start_re
     node->SetTerm(true);
     feat->AddNode( node );
     
-    feat->Finish(false);
+    feat->Finish( pig, false);
     
     return feat;
 }
 
-LinearFeature* Runway::gen_paralell_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double offset, int mark )
+LinearFeature* Runway::gen_paralell_marking_feature( tgIntersectionGenerator* pig, const SGGeod& start_ref, double heading, double start_dist, double length, double offset, int mark )
 {
     LinearFeature* feat = new LinearFeature((const char *)"feat", 0 );
     BezNode* node = NULL;
@@ -726,12 +726,12 @@ LinearFeature* Runway::gen_paralell_marking_feature( const SGGeod& start_ref, do
     node->SetMarking( mark );
     node->SetTerm(true);
     feat->AddNode( node );
-    feat->Finish(false);
+    feat->Finish( pig, false);
     
     return feat;
 }
 
-LinearFeature* Runway::gen_chevron_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, int mark )
+LinearFeature* Runway::gen_chevron_feature( tgIntersectionGenerator* pig, const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, int mark )
 {
     // need to make a contour of two lines.
     LinearFeature* feat = new LinearFeature((const char *)"feat", 0 );
@@ -759,17 +759,17 @@ LinearFeature* Runway::gen_chevron_feature( const SGGeod& start_ref, double head
     node->SetTerm(true);
     feat->AddNode( node );
     
-    feat->Finish(false);
+    feat->Finish( pig, false);
     
     return feat;    
 }
 
-void Runway::gen_threshold( const SGGeod& start, double heading )
+void Runway::gen_threshold( tgIntersectionGenerator* pig, const SGGeod& start, double heading )
 {
     int num_marks;
     
     // first, draw the thresholdbar
-    LinearFeature* threshold_bar = gen_perpendicular_marking_feature( start, heading, 0, 10*SG_FEET_TO_METER, rwy.width, RWY_THRESH ); 
+    LinearFeature* threshold_bar = gen_perpendicular_marking_feature( pig, start, heading, 0, 10*SG_FEET_TO_METER, rwy.width, RWY_THRESH ); 
     features.push_back( threshold_bar );
     
     // then generate the threshold marking starting from 20'. 50' long
@@ -803,7 +803,7 @@ void Runway::gen_threshold( const SGGeod& start, double heading )
                 int    mark_offset = m - center_mark;    // negetive to the left, positive to the right
                 double feat_offset = mark_offset * ( (5.75*SG_FEET_TO_METER) + mark_spacing ); // mark width + spacing
 
-                threshold_mark = gen_paralell_marking_feature( start, heading, 20*SG_FEET_TO_METER, 150*SG_FEET_TO_METER, feat_offset, RWY_THRESH );
+                threshold_mark = gen_paralell_marking_feature( pig, start, heading, 20*SG_FEET_TO_METER, 150*SG_FEET_TO_METER, feat_offset, RWY_THRESH );
                 features.push_back( threshold_mark );
             }
         }
@@ -857,7 +857,7 @@ SGGeod Runway::gen_designation( const SGGeod& start_ref, int rwhalf, double head
     return end_ref;
 }
 
-void Runway::gen_border( const SGGeod& start, const SGGeod& end, double heading, double dist )
+void Runway::gen_border( tgIntersectionGenerator* pig, const SGGeod& start, const SGGeod& end, double heading, double dist )
 {
     LinearFeature*      border;
     BezNode*            node;
@@ -889,7 +889,7 @@ void Runway::gen_border( const SGGeod& start, const SGGeod& end, double heading,
     }
     
     // terminate and add the feature
-    border->Finish( false );    
+    border->Finish( pig, false );    
     features.push_back( border );
 
     border = new LinearFeature( (const char *)"rwy_border", 0 );
@@ -906,7 +906,7 @@ void Runway::gen_border( const SGGeod& start, const SGGeod& end, double heading,
     }
 
     // terminate and add the feature
-    border->Finish( false );    
+    border->Finish( pig, false );    
     features.push_back( border );
 }
 
@@ -918,7 +918,7 @@ void Runway::gen_border( const SGGeod& start, const SGGeod& end, double heading,
 //
 
 
-void Runway::gen_base( const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders )
+void Runway::gen_base( tgIntersectionGenerator* pig, const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders )
 {
     tgPolygon   runway, left_shoulder, right_shoulder;
     double      offset_heading;
@@ -983,7 +983,7 @@ void Runway::gen_base( const SGGeod& start, const SGGeod& end, double heading, d
     // generate right poly
 
 #if RUNWAY_FEATS
-    gen_border( start, end, heading, dist );
+    gen_border( pig, start, end, heading, dist );
 #endif
     
     if ( with_shoulders ) {
@@ -1037,7 +1037,7 @@ void Runway::gen_base( const SGGeod& start, const SGGeod& end, double heading, d
     }
 }
 
-SGGeod Runway::gen_disp_thresh( const SGGeod& start, double displacement, double heading )
+SGGeod Runway::gen_disp_thresh( tgIntersectionGenerator* pig, const SGGeod& start, double displacement, double heading )
 {
     SGGeod thresh = SGGeodesy::direct( start, heading, displacement );
     
@@ -1066,7 +1066,7 @@ SGGeod Runway::gen_disp_thresh( const SGGeod& start, double displacement, double
     
     // each chevron is painted 3' wide in a 15'x45' box 5' behind the threshold
     for ( int i=0; i<num_chevrons; i++ ) {
-        LinearFeature* chevron = gen_chevron_feature( start, heading, 
+        LinearFeature* chevron = gen_chevron_feature( pig, start, heading, 
                                                       displacement-(55*SG_FEET_TO_METER), 
                                                       45*SG_FEET_TO_METER, 15*SG_FEET_TO_METER, 
                                                       cur_offset, RWY_BORDER );
@@ -1081,13 +1081,13 @@ SGGeod Runway::gen_disp_thresh( const SGGeod& start, double displacement, double
     TG_LOG(SG_GENERAL, SG_INFO, "Runway displaced threshold is " << displacement << " meters long: draw " << num_arrows << " arrows " );
     
     for ( int i=0; i<num_arrows; i++ ) {
-        LinearFeature* chevron = gen_chevron_feature( thresh, heading, 
+        LinearFeature* chevron = gen_chevron_feature( pig, thresh, heading, 
                                                       arrow_offset, 
                                                       45*SG_FEET_TO_METER, 15*SG_FEET_TO_METER, 
                                                       0, RWY_BORDER );
         features.push_back( chevron );
         
-        LinearFeature* tail = gen_paralell_marking_feature( thresh, heading, 
+        LinearFeature* tail = gen_paralell_marking_feature( pig, thresh, heading, 
                                                             arrow_offset-22.5, 24, 
                                                             0.0, RWY_DISP_TAIL );        
         features.push_back( tail );
@@ -1098,7 +1098,7 @@ SGGeod Runway::gen_disp_thresh( const SGGeod& start, double displacement, double
     return thresh;
 }
 
-void Runway::gen_stopway( const SGGeod& start, double length, double heading )
+void Runway::gen_stopway( tgIntersectionGenerator* pig, const SGGeod& start, double length, double heading )
 {
     tgPolygon   stopway;
     double      offset_heading;
@@ -1162,7 +1162,7 @@ void Runway::gen_stopway( const SGGeod& start, double length, double heading )
     node->SetMarking(RWY_BORDER);
     node->SetTerm(true);
     partial->AddNode(node);
-    partial->Finish(false);
+    partial->Finish(pig, false);
     features.push_back( partial );
     
     part_start = SGGeodesy::direct( start, offset_heading, 15 );
@@ -1177,7 +1177,7 @@ void Runway::gen_stopway( const SGGeod& start, double length, double heading )
     node->SetMarking(RWY_BORDER);
     node->SetTerm(true);
     partial->AddNode(node);
-    partial->Finish(false);
+    partial->Finish( pig, false );
     features.push_back( partial );
     
     // now calculate the number of full chevrons
@@ -1186,7 +1186,7 @@ void Runway::gen_stopway( const SGGeod& start, double length, double heading )
     
     // each chevron is painted 3' wide in a 15'x45' box 5' behind the threshold
     for ( int i=0; i<num_chevrons; i++ ) {
-        LinearFeature* chevron = gen_chevron_feature( start, heading, 
+        LinearFeature* chevron = gen_chevron_feature( pig, start, heading, 
                                                       cur_offset, 
                                                       offset_width, offset_width*2, 
                                                       0, RWY_BORDER );
@@ -1199,7 +1199,7 @@ void Runway::gen_stopway( const SGGeod& start, double length, double heading )
     if ( last_partial_length > 1.0 ) {
         part_start = SGGeodesy::direct( start, heading, -(length-1.5) );
         offset_width *= (last_partial_length/30);
-        LinearFeature* chevron = gen_chevron_feature( part_start, heading, 
+        LinearFeature* chevron = gen_chevron_feature( pig, part_start, heading, 
                                                       0, 
                                                       offset_width, offset_width*2, 
                                                       0, RWY_BORDER );
@@ -1211,7 +1211,7 @@ void Runway::gen_stopway( const SGGeod& start, double length, double heading )
 // rwy_polys, texparams, and accum.  For specific details and
 // dimensions of precision runway markings, please refer to FAA
 // document AC 150/5340-1H
-void Runway::gen_full_rwy(void)
+void Runway::gen_full_rwy(tgIntersectionGenerator* pig)
 {
     TG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
 
@@ -1248,7 +1248,7 @@ void Runway::gen_full_rwy(void)
         }
 
         // create the runway polys and borders ( simple without markings )
-        gen_base( start_ref, center, heading, rwy.length/2, true );
+        gen_base( pig, start_ref, center, heading, rwy.length/2, true );
 
 #if RUNWAY_FEATS
         if (rwy.overrun[rwhalf] > 0.0) {

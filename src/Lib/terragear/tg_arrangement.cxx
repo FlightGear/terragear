@@ -52,18 +52,87 @@ void tgArrangement::Add( const tgSegment& subject )
 {
     std::vector<arrPoint> pts;            
 
-    SG_LOG(SG_GENERAL, SG_INFO, "tgArrangment::add segment: start " << subject.start << " to end " << subject.end );
+    SG_LOG(SG_GENERAL, SG_INFO, "tgArrangment::add segment: start " << subject.GetCGALStart() << " to end " << subject.GetCGALEnd() );
     
-    if ( !SGGeod_isReallyEqual2D( subject.start, subject.end ) ) {
-        pts.push_back( arrPoint( subject.start.getLongitudeDeg(), subject.start.getLatitudeDeg() ) );
-        pts.push_back( arrPoint( subject.end.getLongitudeDeg(), subject.end.getLatitudeDeg() ) );
+//  pts.push_back( arrPoint( subject.start.getLongitudeDeg(), subject.start.getLatitudeDeg() ) );
+//  pts.push_back( arrPoint( subject.end.getLongitudeDeg(), subject.end.getLatitudeDeg() ) );
         
-        insert( arr, arrPolyline(pts.begin(), pts.end()) );    
-    } else {
-        SG_LOG(SG_GENERAL, SG_INFO, "tgArrangment::add segment: start == end - ignore ");
-    }
+    pts.push_back( subject.GetCGALStart() );
+    pts.push_back( subject.GetCGALEnd()   );
+
+    insert( arr, arrPolyline(pts.begin(), pts.end()) );    
         
     SG_LOG(SG_GENERAL, SG_INFO, "tgArrangment::add segment: complete" );        
+}
+
+#if 0
+double tgContour::GetArea( void ) const
+{
+double area = 0.0;
+SGVec2d a, b;
+unsigned int i, j;
+
+if ( node_list.size() >= 3 ) {
+    j = node_list.size() - 1;
+    for (i=0; i<node_list.size(); i++) {
+        a = SGGeod_ToSGVec2d( node_list[i] );
+        b = SGGeod_ToSGVec2d( node_list[j] );
+        
+        area += (b.x() + a.x()) * (b.y() - a.y());
+        j=i;
+        }
+        } else {
+            area = 0;
+            }
+            
+            return fabs(area * 0.5);
+            }
+#endif            
+            
+void tgArrangement::DumpPolys( void )
+{
+    arrArrangement::Face_const_iterator fit;
+    
+    for( fit = arr.faces_begin(); fit != arr.faces_end(); fit++ ) {
+        arrArrangement::Face face = (*fit);
+        if( face.has_outer_ccb() ) {
+            arrArrangement::Ccb_halfedge_const_circulator ccb = face.outer_ccb();
+            arrArrangement::Ccb_halfedge_const_circulator cur = ccb;
+            arrArrangement::Halfedge_const_handle         he;
+            std::vector<tgSegment>                        segList;
+            double  area = 0.0;
+            SGVec2d a, b;
+            
+            segList.clear();
+            do
+            {
+                he = cur;
+
+                // ignore inner antenna
+                if ( he->face() != he->twin()->face() ) {                    
+                    //std::cout << "   [" << he->curve() << "]   " << "(" << he->target()->point() << ")";
+                    SGGeod start = SGGeod::fromDeg( CGAL::to_double( he->source()->point().x() ), 
+                                                    CGAL::to_double( he->source()->point().y() ) );
+                    SGGeod end   = SGGeod::fromDeg( CGAL::to_double( he->target()->point().x() ), 
+                                                    CGAL::to_double( he->target()->point().y() ) );
+                
+                    tgSegment seg( start, end );
+                    segList.push_back( seg );
+                    
+                    a = SGGeod_ToSGVec2d( start );
+                    b = SGGeod_ToSGVec2d( end );
+                    
+                    area += (b.x() + a.x()) * (b.y() - a.y());
+                }
+                
+                ++cur;
+            } while (cur != ccb);
+            
+            if ( fabs( area ) < 0.00000000001 ) {
+                tgShapefile::FromSegmentList( segList, false, "./edge_dbg", "polys", "poly" );
+            }
+        }
+    }
 }
 
 static int arr_id = 0;
@@ -79,31 +148,31 @@ void tgArrangement::ToShapefiles( const std::string& path, const std::string& la
     std::vector<SGGeod> vertex_list;
     typename arrArrangement::Vertex_const_iterator vit;
     for ( vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit ) {
-        vertex_list.push_back( SGGeod::fromDeg( to_double(vit->point().x()), 
-                                                to_double(vit->point().y())) );
+        vertex_list.push_back( SGGeod::fromDeg( CGAL::to_double(vit->point().x()), 
+                                                CGAL::to_double(vit->point().y())) );
     }
     
     sprintf( layer, "arr_%s_%d_vertex", layer_prefix.c_str(), arr_id );
-    tgShapefile::FromGeodList( vertex_list, "./edge_dbg", layer, "vertex" );
+    tgShapefile::FromGeodList( vertex_list, false, "./edge_dbg", layer, "vertex" );
 
     std::vector<tgSegment> segment_list;
     typename arrArrangement::Edge_const_iterator eit;
     
     for ( eit = arr.edges_begin(); eit != arr.edges_end(); ++eit ) {
-        unsigned int numPoints = eit->curve().points();
+        unsigned int numSegments = eit->curve().number_of_segments();
         
-        for ( unsigned int i=0; i<numPoints-1; i++ ) {
+        for ( unsigned int i=0; i<numSegments; i++ ) {
             arrSegment seg = eit->curve()[i];
-            tgSegment tgseg( SGGeod::fromDeg( to_double( seg.source().x() ),
-                                              to_double( seg.source().y() ) ),
-                             SGGeod::fromDeg( to_double( seg.target().x() ),
-                                              to_double( seg.target().y() ) ) );
+            tgSegment tgseg( SGGeod::fromDeg( CGAL::to_double( seg.source().x() ),
+                                              CGAL::to_double( seg.source().y() ) ),
+                             SGGeod::fromDeg( CGAL::to_double( seg.target().x() ),
+                                              CGAL::to_double( seg.target().y() ) ) );
             segment_list.push_back( tgseg );
         }
     }
 
     sprintf( layer, "arr_%s_%d_edges", layer_prefix.c_str(), arr_id );
-    tgShapefile::FromSegmentList( segment_list, "./edge_dbg", layer, "vertex" );
+    tgShapefile::FromSegmentList( segment_list, false, "./edge_dbg", layer, "vertex" );
     
     // Print the arrangement edges.
     std::cout << arr.number_of_edges() << "edges : " << std::endl;

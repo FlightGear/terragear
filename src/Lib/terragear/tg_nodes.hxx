@@ -17,19 +17,22 @@
 
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::Point_2 tgn_Point;
-typedef boost::tuple<tgn_Point, double> Point_and_Elevation;
+typedef boost::tuple<tgn_Point,double> Point_and_Elevation;
 
 //definition of the property map
+#if 0
 struct My_point_property_map{
   typedef tgn_Point value_type;
   typedef const value_type& reference;
   typedef const Point_and_Elevation& key_type;
   typedef boost::readable_property_map_tag category;
 };
+#endif
 
 //typedef CGAL::Search_traits_2<Kernel> Traits;
 typedef CGAL::Search_traits_2<Kernel> Traits_base;
-typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, Traits_base> Traits;
+//typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, Traits_base> Traits;
+typedef CGAL::Search_traits_adapter<Point_and_Elevation,CGAL::Nth_of_tuple_property_map<0, Point_and_Elevation>,Traits_base>    Traits;
 
 typedef CGAL::Fuzzy_iso_box<Traits> Fuzzy_bb;
 typedef CGAL::Kd_tree<Traits> Tree;

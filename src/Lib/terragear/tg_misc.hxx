@@ -1,12 +1,10 @@
 #ifndef __TG_MISC_HXX__
 #define __TG_MISC_HXX__
 
-#include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 #include <simgear/math/SGMath.hxx>
 
 #include "clipper.hpp"
 #include "tg_rectangle.hxx"
-#include "tg_cgal.hxx"
 
 // SGBucket corners
 #define SG_BUCKET_SW    (0)
@@ -25,6 +23,7 @@ SGGeod               SGGeod_FromClipper( const ClipperLib::IntPoint& p );
 
 // SGGeod Equivelence test
 bool    SGGeod_isEqual2D( const SGGeod& g0, const SGGeod& g1 );
+bool    SGGeod_isLessThan2D( const SGGeod& g0, const SGGeod& g1 );
 
 // SGGeod Angle calculation
 double  SGGeod_CalculateTheta( const SGGeod& p0, const SGGeod& p1, const SGGeod& p2 );
@@ -45,6 +44,8 @@ tgRectangle BoundingBox_FromClipper( const ClipperLib::Paths& subject );
 
 // convert to tgCgalBase
 bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SGGeod& p3, SGGeod& intersection);
+
+class tgSegment;
 bool FindIntersections( const tgSegment& s1, const tgSegment& s2, std::vector<SGGeod>& ints );
 
 #endif /* __TG_MISC_HXX__ */

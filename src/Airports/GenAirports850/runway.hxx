@@ -34,7 +34,7 @@ public:
         return (rwy.surface < 3) ? true : false;
     }
 
-    void GetMainPolys( tgpolygon_list& polys );
+    void GetMainPolys( tgIntersectionGenerator* pig, tgpolygon_list& polys );
     void GetMarkingPolys(tgpolygon_list& polys );
     void GetCapPolys(tgpolygon_list& polys );
     void GetShoulderPolys( tgpolygon_list& polys );
@@ -102,17 +102,17 @@ private:
     tgContour GetSectionBB( const tgPolygon& runway, double startl_pct, double endl_pct, double startw_pct, double endw_pct, double heading  );
 
     
-    LinearFeature* gen_perpendicular_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark );
-    LinearFeature* gen_paralell_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double offset, int mark );
-    LinearFeature* gen_chevron_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, int mark );
+    LinearFeature* gen_perpendicular_marking_feature( tgIntersectionGenerator* pig, const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark );
+    LinearFeature* gen_paralell_marking_feature( tgIntersectionGenerator* pig, const SGGeod& start_ref, double heading, double start_dist, double length, double offset, int mark );
+    LinearFeature* gen_chevron_feature( tgIntersectionGenerator* pig, const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, int mark );
     
     void   gen_designation_polygon( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, const std::string& mark );
     
-    void   gen_base( const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders );
-    void   gen_border( const SGGeod& start, const SGGeod& end, double heading, double dist );
-    SGGeod gen_disp_thresh( const SGGeod& start, double length, double heading );
-    void   gen_threshold( const SGGeod& start, double heading  );
-    void   gen_stopway( const SGGeod& start, double length, double heading );
+    void   gen_base( tgIntersectionGenerator* pig, const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders );
+    void   gen_border( tgIntersectionGenerator* pig, const SGGeod& start, const SGGeod& end, double heading, double dist );
+    SGGeod gen_disp_thresh( tgIntersectionGenerator* pig, const SGGeod& start, double length, double heading );
+    void   gen_threshold( tgIntersectionGenerator* pig, const SGGeod& start, double heading  );
+    void   gen_stopway( tgIntersectionGenerator* pig, const SGGeod& start, double length, double heading );
     SGGeod gen_designation( const SGGeod& start, int rwhalf, double heading );
     double gen_centerline( int rwhalf, const tgPolygon& runway, double start_pct, double heading );
     
@@ -141,7 +141,7 @@ private:
                                     std::string surface );
 
     void gen_simple_rwy(void);
-    void gen_full_rwy(void);
+    void gen_full_rwy(tgIntersectionGenerator* pig);
 
     void gen_runway_lights( tglightcontour_list& lights );
 

@@ -88,17 +88,17 @@ tgContour WaterRunway::GetBuoys()
     return buoys_nodes;
 }
 
-void Runway::GetMainPolys( tgpolygon_list& polys )
+void Runway::GetMainPolys( tgIntersectionGenerator* pig, tgpolygon_list& polys )
 {
     switch( rwy.surface ) {
         case 1:
             material_prefix = "pa_";
-            gen_full_rwy();
+            gen_full_rwy(pig);
             break;
 
         case 2:
             material_prefix = "pc_";
-            gen_full_rwy();
+            gen_full_rwy(pig);
             break;
 
         case 3:

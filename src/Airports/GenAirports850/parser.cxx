@@ -629,7 +629,7 @@ int Parser::ParseLine(char* line)
                         {
                             cur_pavement->AddNode( cur_node );
                         }
-                        cur_pavement->CloseCurContour();
+                        cur_pavement->CloseCurContour( cur_airport->GetLFG() );
                     }
                     else if ( cur_state == STATE_PARSE_BOUNDARY )
                     {
@@ -642,7 +642,7 @@ int Parser::ParseLine(char* line)
                         {
                             cur_boundary->AddNode( cur_node );
                         }
-                        cur_boundary->CloseCurContour();
+                        cur_boundary->CloseCurContour( cur_airport->GetLFG() );
                     }
                     else if ( cur_state == STATE_PARSE_FEATURE )
                     {
@@ -657,7 +657,7 @@ int Parser::ParseLine(char* line)
                         }
                         if (cur_airport)
                         {
-                            cur_feat->Finish( true );
+                            cur_feat->Finish( cur_airport->GetLFG(), true );
                             cur_airport->AddFeature( cur_feat );
                         }
                         cur_feat = NULL;
@@ -691,7 +691,7 @@ int Parser::ParseLine(char* line)
                             }
                             if (cur_airport)
                             {
-                                cur_feat->Finish( false );
+                                cur_feat->Finish( cur_airport->GetLFG(), false );
                                 cur_airport->AddFeature( cur_feat );
                             }
                         }

@@ -132,6 +132,9 @@ public:
     void merge_slivers( tgpolygon_list& polys, tgcontour_list& slivers );
 
 
+    tgIntersectionGenerator* GetLFG( void ) { return lf_ig; }
+    tgIntersectionGenerator* GetRMG( void ) { return rm_ig; }
+    
     // break into stages
     void BuildBtg( const std::string& root, const string_list& elev_src );
 
@@ -213,6 +216,10 @@ private:
     HelipadList     helipads;
     PavementList    boundary;
 
+    // feature poly intersections
+    tgIntersectionGenerator* lf_ig;
+    tgIntersectionGenerator* rm_ig;
+    
     // runway lights
     tglightcontour_list lights;
 

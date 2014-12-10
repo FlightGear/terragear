@@ -36,6 +36,7 @@ void Airport::BuildFeatures( void )
     
     TG_LOG(SG_GENERAL, SG_ALERT, "Building Runway Lines " );
 
+#if 0    
     // need a new polys_buit / Polys clipped for linear features (including priority defs )
     for ( unsigned int i=0; i<runways.size(); i++ )
     {
@@ -91,7 +92,27 @@ void Airport::BuildFeatures( void )
             TG_LOG(SG_GENERAL, SG_ALERT, "taxi poly " << x << " dows not have int va " );
         }
     }
+#else
+    lf_ig->Execute();
+
+    // now dump all edges
+    int idx = 0;
+    for ( tgintersectionedge_it it=lf_ig->edges_begin(); it != lf_ig->edges_end(); it++, idx++ ) {
+        (*it)->ToShapefile();
+    }
     
+    char datasource[64];
+
+    sprintf(datasource, "./edge_dbg/%s", icao.c_str() );
+    TG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource );
+    for ( tgintersectionedge_it it=lf_ig->edges_begin(); it != lf_ig->edges_end(); it++ ) {
+        char feat[32];
+        sprintf(feat, "edge_%05d", (*it)->id );
+        tgPolygon poly = (*it)->GetPoly("complete");
+        tgShapefile::FromPolygon( poly, false, datasource, "complete", feat );
+    }
+    
+#endif    
 }
 
 void Airport::ClipFeatures()
