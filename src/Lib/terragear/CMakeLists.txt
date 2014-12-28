@@ -18,6 +18,8 @@ add_library(terragear STATIC
     tg_cgal_epec.hxx
     tg_chopper.cxx
     tg_chopper.hxx
+    tg_cluster.cxx
+    tg_cluster.hxx
     tg_contour.cxx
     tg_contour.hxx
     tg_intersection_edge.cxx

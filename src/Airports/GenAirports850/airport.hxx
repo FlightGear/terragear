@@ -132,7 +132,17 @@ public:
     void merge_slivers( tgpolygon_list& polys, tgcontour_list& slivers );
 
 
-    tgIntersectionGenerator* GetLFG( void ) { return lf_ig; }
+    tgIntersectionGenerator* GetLFG( unsigned int type ) { 
+        if ( type <= 9 ) {
+            return normal_lf_ig[type-1]; 
+        } else if ( type <= 22 ) {
+            return white_lf_ig[type-20];
+        } else if ( type <= 59 ) {
+            return black_lf_ig[type-51];             
+        } else {
+            return rm_ig;
+        }
+    }
     tgIntersectionGenerator* GetRMG( void ) { return rm_ig; }
     
     // break into stages
@@ -216,8 +226,10 @@ private:
     HelipadList     helipads;
     PavementList    boundary;
 
-    // feature poly intersections
-    tgIntersectionGenerator* lf_ig;
+    // feature poly intersections ( one for each type )
+    tgIntersectionGenerator* normal_lf_ig[9];
+    tgIntersectionGenerator* white_lf_ig[3];
+    tgIntersectionGenerator* black_lf_ig[9];
     tgIntersectionGenerator* rm_ig;
     
     // runway lights

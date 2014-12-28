@@ -180,6 +180,26 @@ tgPolygon tgPolygon::Simplify( const tgPolygon& subject )
     return result;
 }
 
+tgPolygon tgPolygon::RemoveColinearNodes( const tgPolygon& subject )
+{
+    tgPolygon result;
+
+    ClipperLib::Paths clipper_poly = tgPolygon::ToClipper( subject );
+    SimplifyPolygons( clipper_poly );
+
+    result = tgPolygon::FromClipper( clipper_poly );
+
+    result.SetMaterial( subject.GetMaterial() );
+    result.SetTexParams( subject.GetTexParams() );
+    result.SetId( subject.GetId() );
+    result.va_int_mask = subject.va_int_mask;
+    result.va_flt_mask = subject.va_flt_mask;
+    result.int_vas = subject.int_vas;
+    result.flt_vas = subject.flt_vas;
+    
+    return result;
+}
+
 tgPolygon tgPolygon::RemoveTinyContours( const tgPolygon& subject )
 {
     double min_area = SG_EPSILON*SG_EPSILON;

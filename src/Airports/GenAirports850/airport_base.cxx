@@ -50,7 +50,7 @@ void Airport::BuildBase( void )
     for ( unsigned int i=0; i<runways.size(); i++ )
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "Build Runway " << i + 1 << " of " << runways.size());
-        runways[i]->GetMainPolys( rm_ig, polys_built.get_polys(AIRPORT_AREA_RUNWAY) );
+        runways[i]->GetMainPolys( this, polys_built.get_polys(AIRPORT_AREA_RUNWAY) );
         runways[i]->GetShoulderPolys( polys_built.get_polys(AIRPORT_AREA_RUNWAY_SHOULDER) );
         if (!userBoundary) {
             runways[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );

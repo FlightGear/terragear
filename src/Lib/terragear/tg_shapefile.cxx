@@ -198,15 +198,20 @@ void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const s
     ds_id = tgShapefile::CloseDatasource( ds_id );
 }
 
-void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description )
+void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description )
 {
+    if ( asPolygon && withTriangles ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygon Can't create shapefile asPolygon with triangles" );
+        return;
+    }
+    
     void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
     if ( !ds_id ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygon open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
     }
     
     OGRLayer*      l_id;
-    
+        
     if ( asPolygon ) {
         l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
     } else {
@@ -256,7 +261,42 @@ void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, const s
             }
             OGRFeature::DestroyFeature(feature);
         }
-    } else {        
+    } else if ( withTriangles ) {
+        for ( unsigned int i = 0; i < subject.Triangles(); i++ ) {
+            tgTriangle triangle = subject.GetTriangle( i );
+            OGRLineString* ogr_triangle = new OGRLineString();
+                        
+            // FIXME: Current we ignore the hole-flag and instead assume
+            //        that the first ring is not a hole and the rest
+            //        are holes
+            for (unsigned int pt = 0; pt < 3; pt++) {
+                OGRPoint *point=new OGRPoint();
+                
+                point->setX( triangle.GetNode(pt).getLongitudeDeg() );
+                point->setY( triangle.GetNode(pt).getLatitudeDeg() );
+                point->setZ( 0.0 );
+                ogr_triangle->addPoint(point);                        
+            }
+            
+            // add the first point again
+            OGRPoint *point=new OGRPoint();
+            
+            point->setX( triangle.GetNode(0).getLongitudeDeg() );
+            point->setY( triangle.GetNode(0).getLatitudeDeg() );
+            point->setZ( 0.0 );
+            ogr_triangle->addPoint(point);
+            
+            OGRFeature* feature = NULL;
+            feature = new OGRFeature( l_id->GetLayerDefn() );
+            feature->SetField("ID", description.c_str());
+            feature->SetGeometry(ogr_triangle);
+            if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+            }
+            OGRFeature::DestroyFeature(feature);
+        }
+    } else {
         for ( unsigned int i = 0; i < subject.Contours(); i++ ) {
             tgContour contour = subject.GetContour( i );
             OGRLineString* ogr_contour = new OGRLineString();
@@ -274,17 +314,7 @@ void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, const s
                 point->setX( contour.GetNode(pt).getLongitudeDeg() );
                 point->setY( contour.GetNode(pt).getLatitudeDeg() );
                 point->setZ( 0.0 );
-                ogr_contour->addPoint(point);
-                        
-                OGRFeature* feature = NULL;
-                feature = new OGRFeature( l_id->GetLayerDefn() );
-                feature->SetField("ID", description.c_str());
-                feature->SetGeometry(ogr_contour);
-                if( l_id->CreateFeature( feature ) != OGRERR_NONE )
-                {
-                    SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-                }
-                OGRFeature::DestroyFeature(feature);
+                ogr_contour->addPoint(point);                        
             }
             
             // add the first point again

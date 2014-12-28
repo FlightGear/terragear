@@ -57,8 +57,8 @@ void tgArrangement::Add( const tgSegment& subject )
 //  pts.push_back( arrPoint( subject.start.getLongitudeDeg(), subject.start.getLatitudeDeg() ) );
 //  pts.push_back( arrPoint( subject.end.getLongitudeDeg(), subject.end.getLatitudeDeg() ) );
         
-    pts.push_back( subject.GetCGALStart() );
-    pts.push_back( subject.GetCGALEnd()   );
+    pts.push_back( subject.GetEPECStart() );
+    pts.push_back( subject.GetEPECEnd()   );
 
     insert( arr, arrPolyline(pts.begin(), pts.end()) );    
         

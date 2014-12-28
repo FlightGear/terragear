@@ -47,7 +47,7 @@ void TGConstruct::TesselatePolys( void )
             if ( IsDebugShape( poly.GetId() ) ) {
                 char layer[32];
                 sprintf(layer, "pretess_%d_%d", area, p );
-                tgShapefile::FromPolygon( poly, true, ds_name, layer, "poly" );
+                tgShapefile::FromPolygon( poly, true, false, ds_name, layer, "poly" );
             }
 
             tgRectangle rect = poly.GetBoundingBox();

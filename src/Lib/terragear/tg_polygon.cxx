@@ -446,6 +446,83 @@ void tgPolygon::Texture( void )
         }
         break;
         
+        case TG_TEX_BY_TPS_CLIPU_EUCLIDEAN:
+        {            
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tp ref is " << tp.ref << " width " << tp.width << " Length " << tp.length );
+            
+            for ( unsigned int i = 0; i < triangles.size(); i++ ) {
+                for ( unsigned int j = 0; j < 3; j++ ) {
+                    p = triangles[i].GetNode( j );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "triangle " << i << " node " << j << " = " << p);
+                    
+                    //
+                    // 1. Calculate distance and bearing from the center of
+                    // the poly
+                    //
+                    
+                    // given alt, lat1, lon1, lat2, lon2, calculate starting
+                    // and ending az1, az2 and distance (s).  Lat, lon, and
+                    // azimuth are in degrees.  distance in meters
+                    double az1, az2, dist;
+                    //TGEuclidean::inverse( tp.ref, p, az1, az2, dist );
+                    // SGGeodesy::inverse( tp.ref, p, az1_g, az2_g, dist_g );
+                    
+                    az1  = TGEuclidean::courseDeg( tp.ref, p );
+                    dist = TGEuclidean::distanceM( tp.ref, p );
+                    
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\tbasic course = " << az1 << " dist is " << dist );
+                    
+                    //
+                    // 2. Rotate this back into a coordinate system where Y
+                    // runs the length of the poly and X runs crossways.
+                    //
+                    
+                    double course = SGMiscd::normalizePeriodic(0, 360, az1 - tp.heading);
+                    SG_LOG( SG_GENERAL, SG_DEBUG,"\t  course = " << course << "  dist = " << dist );
+                    
+                    //
+                    // 3. Convert from polar to cartesian coordinates
+                    //
+                    
+                    x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
+                    y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  x = " << x << " y = " << y);
+                    
+                    //
+                    // 4. Map x, y point into texture coordinates
+                    //
+                    float tmp;
+                    
+                    tmp = (float)x / (float)tp.width;
+                    tx = tmp * (float)(tp.maxu - tp.minu) + (float)tp.minu;
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ")");
+                    
+                    // clip u?
+                    if ( (tp.method == TG_TEX_BY_TPS_CLIPU_EUCLIDEAN) || (tp.method == TG_TEX_BY_TPS_CLIPUV_EUCLIDEAN) ) {
+                        if ( tx < (float)tp.min_clipu ) { tx = (float)tp.min_clipu; }
+                        if ( tx > (float)tp.max_clipu ) { tx = (float)tp.max_clipu; }
+                    }
+                    
+                    tmp = (float)y / (float)tp.length;
+                    ty = tmp+(float)tp.minv;
+                    
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << ty << ")");
+                    
+                    // clip v?
+                    if ( (tp.method == TG_TEX_BY_TPS_CLIPV) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
+                        if ( ty < (float)tp.min_clipv ) { ty = (float)tp.min_clipv; }
+                        if ( ty > (float)tp.max_clipv ) { ty = (float)tp.max_clipv; }
+                    }
+                    
+                    t = SGVec2f( tx, ty );
+                    SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ", " << ty << ")");
+                    
+                    triangles[i].SetPriTexCoord( j, t );
+                }
+            }            
+        }
+        break;
+        
         case TG_TEX_1X1_ATLAS:
         {            
             SG_LOG(SG_GENERAL, SG_DEBUG, "tp ref is " << tp.ref << " width " << tp.width << " Length " << tp.length );

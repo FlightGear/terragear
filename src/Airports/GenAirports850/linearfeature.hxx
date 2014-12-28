@@ -50,6 +50,7 @@
 #define RWY_AIM                     (1004)
 #define RWY_CENTERLINE              (1005)
 
+class Airport;
 
 struct Marking
 {
@@ -101,6 +102,9 @@ public:
 
     ~LinearFeature();
 
+    double GetWidth( unsigned int type );
+    static int GetTextureInfo(unsigned int info, std::string& material, double& atlas_start, double& atlas_end, double& v_dist);
+    
     inline std::string GetDescription() { return description; }
 
     void AddNode( BezNode* b )
@@ -108,7 +112,7 @@ public:
         contour.push_back( b );
     }
 
-    int Finish( tgIntersectionGenerator* pig, bool closed, double width = 0.0f );
+    int Finish( Airport* ap, bool closed, double width = 0.0f );
     
     void GetPolys( tgpolygon_list& polys );
     void GetCapPolys( tgpolygon_list& polys );
@@ -150,7 +154,7 @@ private:
     
     
     void GetMarkInfo( unsigned int type, double& width, std::string& material, double& atlas_start, double& atlas_end, double& v_dist );
-    void ConvertContour( tgIntersectionGenerator* pig, BezContour* src, bool closed );
+    void ConvertContour( Airport* ap, BezContour* src, bool closed );
 
     // text description
     std::string description;

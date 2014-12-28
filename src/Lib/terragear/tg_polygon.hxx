@@ -174,6 +174,9 @@ public:
     void AddTriangle( const SGGeod& p1, const SGGeod p2, const SGGeod p3 ) {
         triangles.push_back( tgTriangle( p1, p2, p3, this ) );
     }
+    const tgTriangle& GetTriangle( unsigned int t ) const {
+        return triangles[t];
+    }    
     tgTriangle& GetTriangle( unsigned int t ) {
         return triangles[t];
     }    
@@ -357,6 +360,7 @@ public:
     static tgPolygon RemoveDups( const tgPolygon& subject );
     static tgPolygon RemoveBadContours( const tgPolygon& subject );
     static tgPolygon Simplify( const tgPolygon& subject );
+    static tgPolygon RemoveColinearNodes( const tgPolygon& subject );
     static tgPolygon RemoveTinyContours( const tgPolygon& subject );
     static tgPolygon RemoveSpikes( const tgPolygon& subject );
     static void           RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers );

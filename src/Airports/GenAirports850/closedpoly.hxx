@@ -6,6 +6,8 @@
 #include "beznode.hxx"
 #include "linearfeature.hxx"
 
+class Airport;
+
 class ClosedPoly
 {
 public:
@@ -15,7 +17,7 @@ public:
 
     inline std::string GetDescription() { return description; }
     void AddNode( BezNode* node );
-    void CloseCurContour(tgIntersectionGenerator* pig);
+    void CloseCurContour( Airport* ap );
     void Finish();
 
     void GetPolys( tgpolygon_list& polys );

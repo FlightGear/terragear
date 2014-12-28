@@ -20,12 +20,12 @@ tgRectangle tgSegment::GetBoundingBox( void ) const
 
 bool tgSegment::Intersect( const tgSegment& seg, SGGeod& intersection) const
 {
-    EPECSegment_2 s1 = toCgal();
-    EPECSegment_2 s2 = seg.toCgal();
+    EPECSRSegment_2 s1 = toCgal();
+    EPECSRSegment_2 s2 = seg.toCgal();
     bool          retval = false;
         
     CGAL::Object result = CGAL::intersection(s1, s2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
@@ -36,12 +36,12 @@ bool tgSegment::Intersect( const tgSegment& seg, SGGeod& intersection) const
     
 bool tgSegment::Intersect( const tgRay& ray, SGGeod& intersection) const
 {
-    EPECSegment_2 s1 = toCgal();
-    EPECRay_2     r2 = ray.toCgal();
+    EPECSRSegment_2 s1 = toCgal();
+    EPECSRRay_2     r2 = ray.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(s1, r2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
@@ -52,12 +52,12 @@ bool tgSegment::Intersect( const tgRay& ray, SGGeod& intersection) const
     
 bool tgSegment::Intersect( const tgLine& line, SGGeod& intersection) const
 {
-    EPECSegment_2 s1 = toCgal();
-    EPECLine_2    l2 = line.toCgal();
+    EPECSRSegment_2 s1 = toCgal();
+    EPECSRLine_2    l2 = line.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(s1, l2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
@@ -68,19 +68,19 @@ bool tgSegment::Intersect( const tgLine& line, SGGeod& intersection) const
 
 bool tgSegment::Intersect( const tgSegment& seg, SGGeod* iPos, tgSegment* iSeg ) const
 {
-    EPECSegment_2 s1 = toCgal();
-    EPECSegment_2 s2 = seg.toCgal();
+    EPECSRSegment_2 s1 = toCgal();
+    EPECSRSegment_2 s2 = seg.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(s1, s2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *iPos.
         SG_LOG(SG_GENERAL, SG_INFO, "tgSegment::Intersect: result is point" );
         iPos = new SGGeod();
         iPos->setLongitudeDeg( CGAL::to_double(ipoint->x()) );
         iPos->setLatitudeDeg( CGAL::to_double(ipoint->y()) );
         retval = true;
-    } else if (const EPECSegment_2 *iseg = CGAL::object_cast<EPECSegment_2>(&result)) {
+    } else if (const EPECSRSegment_2 *iseg = CGAL::object_cast<EPECSRSegment_2>(&result)) {
         // handle the point intersection case with *iSeg.
         SG_LOG(SG_GENERAL, SG_INFO, "tgSegment::Intersect: result is segment" );
         iSeg = new tgSegment( iseg->source(), iseg->target() );
@@ -99,8 +99,8 @@ bool tgSegment::IsOnLine( const SGGeod& pos ) const
     const double bbEpsilon  = SG_EPSILON*10;
     const double errEpsilon = SG_EPSILON*4;
 
-    SGGeod p0 = EPECPointToGeod(start);
-    SGGeod p1 = EPECPointToGeod(end);
+    SGGeod p0 = EPECSRPointToGeod(start);
+    SGGeod p1 = EPECSRPointToGeod(end);
 
     double xdist = fabs(p0.getLongitudeDeg() - p1.getLongitudeDeg());
     double ydist = fabs(p0.getLatitudeDeg()  - p1.getLatitudeDeg());
@@ -165,12 +165,12 @@ bool tgSegment::IsOnLine( const SGGeod& pos ) const
 
 bool tgRay::Intersect( const tgSegment& seg, SGGeod& intersection) const
 {
-    EPECRay_2     r1 = toCgal();
-    EPECSegment_2 s2 = seg.toCgal();
+    EPECSRRay_2     r1 = toCgal();
+    EPECSRSegment_2 s2 = seg.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(r1, s2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
@@ -181,12 +181,12 @@ bool tgRay::Intersect( const tgSegment& seg, SGGeod& intersection) const
     
 bool tgRay::Intersect( const tgRay& ray, SGGeod& intersection) const
 {
-    EPECRay_2     r1 = toCgal();
-    EPECRay_2     r2 = ray.toCgal();
+    EPECSRRay_2     r1 = toCgal();
+    EPECSRRay_2     r2 = ray.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(r1, r2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
@@ -197,12 +197,12 @@ bool tgRay::Intersect( const tgRay& ray, SGGeod& intersection) const
     
 bool tgRay::Intersect( const tgLine& line, SGGeod& intersection) const
 {
-    EPECRay_2     r1 = toCgal();
-    EPECLine_2    l2 = line.toCgal();
+    EPECSRRay_2     r1 = toCgal();
+    EPECSRLine_2    l2 = line.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(r1, l2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
@@ -214,19 +214,19 @@ bool tgRay::Intersect( const tgLine& line, SGGeod& intersection) const
 
 bool tgLine::Intersect( const tgSegment& seg, SGGeod& intersection) const
 {
-    EPECLine_2    l1 = toCgal();
-    EPECSegment_2 s2 = seg.toCgal();
+    EPECSRLine_2    l1 = toCgal();
+    EPECSRSegment_2 s2 = seg.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(l1, s2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
-    } else if (const EPECSegment_2 *iseg = CGAL::object_cast<EPECSegment_2>(&result)) {
+    } else if (const EPECSRSegment_2 *iseg = CGAL::object_cast<EPECSRSegment_2>(&result)) {
         SG_LOG(SG_GENERAL, SG_INFO, "tgLine::Intersect: result is segment " << iseg );
         retval = true;
-    } else if (const EPECRay_2 *iray = CGAL::object_cast<EPECRay_2>(&result)) {
+    } else if (const EPECSRRay_2 *iray = CGAL::object_cast<EPECSRRay_2>(&result)) {
         SG_LOG(SG_GENERAL, SG_INFO, "tgLine::Intersect: result is ray " << iray );
         retval = true;
     } 
@@ -236,12 +236,12 @@ bool tgLine::Intersect( const tgSegment& seg, SGGeod& intersection) const
     
 bool tgLine::Intersect( const tgRay& ray, SGGeod& intersection) const
 {
-    EPECLine_2    l1 = toCgal();
-    EPECRay_2     r2 = ray.toCgal();
+    EPECSRLine_2    l1 = toCgal();
+    EPECSRRay_2     r2 = ray.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(l1, r2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;
@@ -252,12 +252,12 @@ bool tgLine::Intersect( const tgRay& ray, SGGeod& intersection) const
     
 bool tgLine::Intersect( const tgLine& line, SGGeod& intersection) const
 {
-    EPECLine_2    l1 = toCgal();
-    EPECLine_2    l2 = line.toCgal();
+    EPECSRLine_2    l1 = toCgal();
+    EPECSRLine_2    l2 = line.toCgal();
     bool          retval = false;
     
     CGAL::Object result = CGAL::intersection(l1, l2);
-    if (const EPECPoint_2 *ipoint = CGAL::object_cast<EPECPoint_2>(&result)) {
+    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
         // handle the point intersection case with *ipoint.
         intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
         retval = true;

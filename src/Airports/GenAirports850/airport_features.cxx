@@ -93,27 +93,75 @@ void Airport::BuildFeatures( void )
         }
     }
 #else
-    lf_ig->Execute();
+    for ( unsigned int i=0; i<9; i++ ) {
+        if ( normal_lf_ig[i] ) {
+            normal_lf_ig[i]->Execute(true);
+            for ( tgintersectionedge_it it=normal_lf_ig[i]->edges_begin(); it != normal_lf_ig[i]->edges_end(); it++ ) {
+                tgPolygon poly = (*it)->GetPoly("complete");
+                polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
+            }            
+        }
+    }
+    for ( unsigned int i=0; i<3; i++ ) {
+        if ( white_lf_ig[i] ) {
+            white_lf_ig[i]->Execute(true);
+            for ( tgintersectionedge_it it=white_lf_ig[i]->edges_begin(); it != white_lf_ig[i]->edges_end(); it++ ) {
+                tgPolygon poly = (*it)->GetPoly("complete");
+                polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
+            }            
+        }
+    }
+    for ( unsigned int i=0; i<9; i++ ) {
+        if ( black_lf_ig[i] ) {
+            black_lf_ig[i]->Execute(true);
+            for ( tgintersectionedge_it it=black_lf_ig[i]->edges_begin(); it != black_lf_ig[i]->edges_end(); it++ ) {
+                tgPolygon poly = (*it)->GetPoly("complete");
+                polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
+            }            
+        }
+    }
 
+    if ( rm_ig ) {
+        // don't clean runway features - we know what we're doing here :)
+        rm_ig->Execute(false);
+        for ( tgintersectionedge_it it=rm_ig->edges_begin(); it != rm_ig->edges_end(); it++ ) {
+            tgPolygon poly = (*it)->GetPoly("complete");
+            polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES).push_back(poly);
+        }            
+    }
+    
+    // for now - caps are the same priority - just add them later...
+    for ( unsigned int i=0; i<runways.size(); i++ )
+    {
+        TG_LOG(SG_GENERAL, SG_ALERT, "Build Runway Feature Poly " << i + 1 << " of " << runways.size() );
+        runways[i]->GetCapPolys( polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES) );
+    }
+    
+    
     // now dump all edges
+#if 0
     int idx = 0;
     for ( tgintersectionedge_it it=lf_ig->edges_begin(); it != lf_ig->edges_end(); it++, idx++ ) {
         (*it)->ToShapefile();
     }
-    
-    char datasource[64];
 
+    char datasource[64];
     sprintf(datasource, "./edge_dbg/%s", icao.c_str() );
     TG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource );
+    
     for ( tgintersectionedge_it it=lf_ig->edges_begin(); it != lf_ig->edges_end(); it++ ) {
         char feat[32];
         sprintf(feat, "edge_%05d", (*it)->id );
         tgPolygon poly = (*it)->GetPoly("complete");
-        tgShapefile::FromPolygon( poly, false, datasource, "complete", feat );
+        tgShapefile::FromPolygon( poly, false, false, datasource, "complete", feat );        
     }
+#endif
+
     
 #endif    
 }
+
+#define CLIP_INTERSECTED_FEATURES   (1)
 
 void Airport::ClipFeatures()
 {
@@ -123,7 +171,21 @@ void Airport::ClipFeatures()
     
     // first, collect all the base nodes
     TG_LOG(SG_GENERAL, SG_INFO, "Clipping Feature polys" );
-
+    
+    for ( unsigned int x=0; x<polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES).size(); x++ ) {
+        if (polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES)[x].GetNumIntVas() != 1 ) {
+            TG_LOG(SG_GENERAL, SG_ALERT, "rwy poly " << x << " dows not have int va " );
+            exit(0);
+        }
+    }
+    
+    for ( unsigned int x=0; x<polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).size(); x++ ) {
+        if (polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES)[x].GetNumIntVas() != 1 ) {
+            TG_LOG(SG_GENERAL, SG_ALERT, "taxi poly " << x << " dows not have int va " );
+            exit(0);
+        }
+    }
+    
     for( unsigned int p = 0; p < polys_built.area_size(AIRPORT_AREA_RWY_FEATURES); p++ ) {
         tgPolygon& current = polys_built.get_poly(AIRPORT_AREA_RWY_FEATURES, p);
         
@@ -145,6 +207,7 @@ void Airport::ClipFeatures()
     for( unsigned int p = 0; p < polys_built.area_size(AIRPORT_AREA_TAXI_FEATURES); p++ ) {
         tgPolygon& current = polys_built.get_poly(AIRPORT_AREA_TAXI_FEATURES, p);
             
+#if CLIP_INTERSECTED_FEATURES        
         clipped = taxi_accum.Diff( current );
             
         // only add to output list if the clip left us with a polygon
@@ -156,8 +219,11 @@ void Airport::ClipFeatures()
                 polys_clipped.add_poly( AIRPORT_AREA_TAXI_FEATURES, clipped );
             }
         }
-            
+        
         taxi_accum.Add( current );
+#else
+        polys_clipped.add_poly( AIRPORT_AREA_TAXI_FEATURES, current );
+#endif            
     }
     
     // now break into max segment size
@@ -335,16 +401,20 @@ void Airport::IntersectFeaturesWithBase(void)
                     tri.SetNode( n, base_nodes[tri.GetIndex(n)].GetPosition() );
                 }
 
+                // todo - this should add the triangle to an arrangement
+                // so we can do faster lookups
                 base_mesh.push_back( tri );
             }
         }
     }
     
+#if 1
     for ( unsigned int area=AIRPORT_AREA_RWY_FEATURES; area<=AIRPORT_AREA_TAXI_FEATURES; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {        
             tgPolygon current = polys_clipped.get_poly(area, p);
 
             before  = current.TotalNodes();
+            // TODO : elevation mesh should have drape function that takes triangles
             current = tgPolygon::AddIntersectingNodes( current, base_mesh );
             after   = current.TotalNodes();
         
@@ -353,9 +423,11 @@ void Airport::IntersectFeaturesWithBase(void)
             }           
         
             /* Save it back */
-            polys_clipped.set_poly( area, p, current );
+            polys_clipped.set_poly( area, p, current );            
         }
     }
+#endif    
+    
     
     intersect_end.stamp();
     
@@ -365,6 +437,9 @@ void Airport::IntersectFeaturesWithBase(void)
 void Airport::TesselateFeatures()
 {
     //sglog().setLogLevels( SG_GENERAL, SG_INFO );
+    
+    char datasource[64];
+    sprintf(datasource, "./edge_dbg/%s", icao.c_str() );
     
     // tesselate the polygons and prepair them for final output
     for ( unsigned int area=AIRPORT_AREA_RWY_FEATURES; area<=AIRPORT_AREA_TAXI_FEATURES; area++ ) {
@@ -409,6 +484,8 @@ void Airport::TesselateFeatures()
             }
 #endif
 
+            // Let's dump the finished linear features
+            tgShapefile::FromPolygon( poly, false, true, datasource, "triangles", poly.GetMaterial().c_str() );
         }
 
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {

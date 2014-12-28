@@ -14,6 +14,7 @@ tgIntersectionNode::tgIntersectionNode( const SGGeod& pos )
 {
     position = pos;
     edgeList.clear();
+    start_v = NODE_UNTEXTURED;
 }
 
 void tgIntersectionNode::AddEdge( bool originated, tgIntersectionEdge* edge ) 
@@ -345,6 +346,119 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeI
     return nxt_info;
 }
 
+tgIntersectionEdgeInfo* tgIntersectionNode::GetUntexturedEdge( double heading ) 
+{
+    tgIntersectionEdgeInfo* untextured = NULL;
+    
+    // for now, just return the next untextured edge info
+    for (tgintersectionedgeinfo_it cur = edgeList.begin(); cur != edgeList.end(); cur++) {
+        if( !(*cur)->IsTextured() ) {
+            untextured = (*cur);
+            break;
+        }
+    }
+    
+    return untextured;
+}
+
+bool tgIntersectionNode::IsTextureComplete( void ) 
+{
+    bool textureComplete = true;
+    
+    // for now, just return the next untextured edge info
+    for (tgintersectionedgeinfo_it cur = edgeList.begin(); cur != edgeList.end(); cur++) {
+        if( !(*cur)->IsTextured() ) {
+            textureComplete = false;
+            break;
+        }
+    }
+    
+    return textureComplete;
+}
+
+bool tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo( tgIntersectionEdgeInfo*& info, tgIntersectionNode*& node, std::stack<tgIntersectionNode*>& stack, bool& resetV )
+{
+    // this function is used when texturing.  it takes an edge info representing the edge we are leaving by.
+    // if there are any untextured edges on this current node, then it is pushed onto the stack.
+    // we return the node at the other end of edge info.
+    // we try to return the continuation of this edge based on heading when traversing the next node
+    
+    // if the next node is a cap or fully textured node, ( i.e. end of the feature ), then we pop the next node, 
+    // and untextured edge info off the stack
+    
+    // if there isn't anything on the stack, we are done with this network - return true
+    // otherwise, return false - we are not done yet
+    tgIntersectionNode*     next_node;
+    tgIntersectionEdgeInfo* next_info;
+    bool                    done = false;
+        
+    if ( !IsTextureComplete() ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo push cur node " << node << " ino is " << info );
+        
+        stack.push(this);
+    } else {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo cur node " << node << " complete info is " << info );
+    }
+    
+    if ( info->IsOriginating() ) {
+        next_node = info->GetEdge()->end;
+    } else {
+        next_node = info->GetEdge()->start;
+    }
+
+    if ( next_node ) {    
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo next node " << next_node );
+    
+        // if next node is done, pop
+        resetV = false;
+        if ( next_node->IsTextureComplete() || next_node->IsCap() ) {
+            if ( stack.size() ) {
+                next_node = stack.top(); stack.pop();
+                next_info = next_node->GetUntexturedEdge();
+                resetV    = true;
+
+                SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - popped node (1) " << next_node << " next_info is " << next_info );
+            
+            } else {
+                next_node = NULL;
+                next_info = NULL;
+                done = true;
+            
+                SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - stack empty(1) - we're done " );
+            }
+        } else {
+            next_info = next_node->GetUntexturedEdge( info->GetHeading() );
+
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo use next node - next info is " << next_info );
+            if ( next_info->GetEdge() == NULL ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo use next node - next info edge is NULL " );
+            }                
+        }
+    } else {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo next node is NULL " );        
+
+        if ( stack.size() ) {
+            next_node = stack.top(); stack.pop();
+            next_info = next_node->GetUntexturedEdge();
+            resetV    = true;
+            
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - popped node (2)" << next_node );
+            
+        } else {
+            next_node = NULL;
+            next_info = NULL;
+            done = true;
+            
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - stack empty (2) - we're done " );
+        }
+    }
+    
+    info = next_info;
+    node = next_node;
+    
+    return done;
+}
+
 void tgIntersectionNode::AddCapEdges( tgIntersectionNodeList& nodelist, tgintersectionedge_list& edgelist ) 
 {
     // if this node has just one edge, we may need to add a cap edge
@@ -361,18 +475,10 @@ void tgIntersectionNode::AddCapEdges( tgIntersectionNodeList& nodelist, tginters
         // euclidean distance is in degrees :( - TODO - need distanceM and distanceE
         if ( cur_length > 1.0 ) {
             // Add a new node 0.5 M away
-            tgIntersectionNode* newEnd  = nodelist.Add( TGEuclidean::direct( position, cur_heading, 0.5 ) );
-            tgIntersectionEdge* newEdge = cur_edge->Split( newEnd );
+            tgIntersectionNode* newNode = nodelist.Add( TGEuclidean::direct( position, cur_heading, 0.5 ) );
+            tgIntersectionEdge* newEdge = cur_edge->Split( cur_info->IsOriginating(), newNode );
             edgelist.push_back( newEdge );
-        }
-    
-        if ( cur_edge ) {
-            if ( cur_info->IsOriginating() ) {
-            } else {
-            }
-        } else {
-            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "AddCapEdges: no cur edge!!! " );
-        }
+        }    
     }
 }
 
@@ -422,11 +528,11 @@ void tgIntersectionNode::CompleteSpecialIntersections( void )
     tgintersectionedgeinfo_it prv, cur, nxt;
     
     switch( edgeList.size() ) {
-        case 1:
-            // TODO : is it possible for caps to participate in ms intersections?
-            // looks like sharp edge could cause odd geometry here.
-            CompleteCap( (*edgeList.begin()) );
-            break;
+        //case 1:
+        //    // TODO : is it possible for caps to participate in ms intersections?
+        //    // looks like sharp edge could cause odd geometry here.
+        //    CompleteCap( (*edgeList.begin()) );
+        //   break;
             
         default:
             for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
@@ -442,6 +548,7 @@ void tgIntersectionNode::CompleteSpecialIntersections( void )
     }
 }
 
+#if 1
 void tgIntersectionNode::GenerateBisectRays( void ) 
 {
     tgintersectionedgeinfo_it prv, cur, nxt;
@@ -514,6 +621,68 @@ void tgIntersectionNode::GenerateBisectRays( void )
         }
     }
 }
+#else
+void tgIntersectionNode::GenerateBisectRays( void ) 
+{
+    // use just CGAL for precision
+    tgintersectionedgeinfo_it prv, cur, nxt;
+
+    for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
+        // Get previous edge info - with wrap around
+        if ( cur == edgeList.begin() ) {
+            prv = edgeList.end();
+        } else {
+            prv = cur;
+        }
+        prv--;
+        
+        // get next edge info - with wrap around
+        nxt = cur;
+        nxt++;
+        if ( nxt == edgeList.end() ) {
+            nxt = edgeList.begin();
+        }
+        
+        // we need to get the edge info to determine the edge origination info
+        tgIntersectionEdgeInfo* prv_info = (*prv);
+        tgIntersectionEdgeInfo* cur_info = (*cur);
+        tgIntersectionEdgeInfo* nxt_info = (*nxt);
+          
+        tgRay prv_heading = prv_info->GetDirectionRay();
+        tgRay cur_heading = cur_info->GetDirectionRay();
+        tgRay nxt_heading = nxt_info->GetDirectionRay();
+          
+        tgRay bp_ray = Bisect( cur_heading, prv_heading, true );        
+        tgRay bn_ray = Bisect( nxt_heading, cur_heading, true );
+        
+        // Add the bisecting ray between prev and current as a constraint
+        tgIntersectionEdge* cur_edge = cur_info->GetEdge();
+        
+        if ( cur_edge ) {
+            double dist = SGGeodesy::distanceM( cur_edge->start->GetPosition(), cur_edge->end->GetPosition() );
+            if ( dist < 0.5 ) {
+                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "Edge: " << cur_edge->id << " length is " << dist );
+            }
+            
+            if ( cur_info->IsOriginating() ) {
+                //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add BR constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bnxt_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and next (" << std::setprecision(16) << nxt_heading << ")" );
+                cur_edge->AddBottomRightConstraint(bn_ray);
+                
+                //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add BL constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bprv_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and prev (" << std::setprecision(16) << prv_heading << ")" );
+                cur_edge->AddBottomLeftConstraint(bp_ray);
+            } else {
+                //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add TL constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bnxt_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and next (" << std::setprecision(16) << nxt_heading << ")" );
+                cur_edge->AddTopLeftConstraint(bn_ray);
+                
+                //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add TR constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bprv_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and prev (" << std::setprecision(16) << prv_heading << ")" );
+                cur_edge->AddTopRightConstraint(bp_ray);
+            }
+        } else {
+            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: no cur edge!!! " );
+        }
+    }
+}
+#endif
 
 void tgIntersectionNode::GenerateCapRays( void ) 
 {
@@ -521,8 +690,10 @@ void tgIntersectionNode::GenerateCapRays( void )
                 
     // we need to get the edge info to determine the edge origination info
     tgIntersectionEdgeInfo* cur_info = (*cur);
-    double cur_heading = cur_info->GetHeading();
-        
+
+    // for caps, use geodesy to make nice 90 deg angles
+    double cur_heading = cur_info->GetGeodesyHeading();    
+    
     tgRay l_ray = tgRay( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading-90 ) );
     tgRay r_ray = tgRay( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading+90 ) );
                 
@@ -581,6 +752,9 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
 
     std::list<SGGeod> ce_constraint;
     std::list<SGGeod> ne_constraint;
+
+    std::list<SGGeod> ce_projectlist;
+    std::list<SGGeod> ne_projectlist;
     
     // remember how to traverse current and next edge iterators (prev or next)
     bool ce_originating;
@@ -724,19 +898,27 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
                 if ( cur_iteration > 0 ) {
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: all sides are closer than ends, and we've traversed at least one segment - multisegment complete");
                     
+                    if ( cur_iteration == 1 ) {
+                        
+                    }
+                    
                     ce_constraint.push_back(ce_side_intersect);
+                    ce_projectlist.push_back(ce_side_intersect);
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " Adding intersection with side to " << ce_cons_name << " constraint.  size is " << ce_constraint.size() );
                 
                     ne_constraint.push_back(ne_side_intersect);
+                    ne_projectlist.push_back(ne_side_intersect);
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " Adding intersection with side to " << ne_cons_name << " constraint.  size is " << ne_constraint.size() );
                 
                     // set the constraint ( and flag that we intersected the sides )
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " Saving " << ce_cons_name << " Constraint with " << ce_constraint.size() << " nodes "); 
                     ce->SetRightConstraint( ce_originating, ce_constraint );
+                    ce->SetRightProjectList( ce_originating, ce_projectlist );
                     applyList.push_back( ce );
                     
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " Saving " << ne_cons_name << " Constraint with " << ne_constraint.size() << " nodes "); 
                     ne->SetLeftConstraint( ne_originating, ne_constraint );
+                    ne->SetLeftProjectList( ne_originating, ne_projectlist );
                     applyList.push_back( ne );
                     
                     done = true;
@@ -751,10 +933,13 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " end distance < ne " << ne_id << " distance - finish " << ce_id );
                     
                     bisect_position = ce_end_intersect;
-                    
-                    // ne will get bisector position added at the beginning of next loop
+                                        
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " Adding end bisect position to " << ce_cons_name << " constraint.  size is " << ce_constraint.size() );
                     ce_constraint.push_back(bisect_position);
+                    
+                    // ne will get bisector position added to it's constraint at the beginning of the next loop.
+                    // But we want to project this vertex to the other side of next edge, so remember it
+                    ne_projectlist.push_back(bisect_position);
                     
                     if ( ce_originating ) {
                         // get the next edge (CCW) from the END node : not enough - need to find an edge that intersects the same bisector at the same point...
@@ -769,12 +954,14 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
                         SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: can't find next edge for ce " << ce_id );
                         done = true;
                     } else {
-                        // set the constraint
+                        // set the constraint and project list
                         SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: " << ce->id << " Saving " << ce_cons_name << " Constraint with " << ce_constraint.size() << " nodes "); 
                         ce->SetRightConstraint( ce_originating, ce_constraint );
+                        ce->SetRightProjectList( ce_originating, ce_projectlist );
                         applyList.push_back( ce );
                         
                         ce_constraint.clear();
+                        ce_projectlist.clear();
 
                         ce_originating  = cur_info->IsOriginating();
                         ce              = cur_info->GetEdge();
@@ -785,10 +972,13 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
 
                     bisect_position = ne_end_intersect;
                     
-                    // ce will get bisector position added at the beginning of next loop
                     ne_constraint.push_back( ne_end_intersect );
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " Added end bisect position to " << ne_cons_name << " constraint.  size is " << ne_constraint.size() );
                     
+                    // ce will get bisector position added to it's constraint at the beginning of the next loop.
+                    // But we want to project this vertex to the other side of cur edge, so remember it
+                    ce_projectlist.push_back(bisect_position);
+
                     if ( ne_originating ) {
                         // get the prev edge (CW) from the END node
                         nxt_info = ne->end->GetPrevEdgeInfo( nxt_info, bisector, bisect_position, ne_layer );
@@ -804,10 +994,12 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
                         // set the constraint
                         SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: " << ne->id << " Saving " << ne_cons_name << " Constraint with " << ne_constraint.size() << " nodes "); 
                         ne->SetLeftConstraint( ne_originating, ne_constraint );
+                        ne->SetLeftProjectList( ne_originating, ne_projectlist );
                         applyList.push_back( ne );
                         
                         ne_constraint.clear();
-
+                        ne_projectlist.clear();
+                        
                         ne_originating  = nxt_info->IsOriginating();
                         ne              = nxt_info->GetEdge();
                         ne_id           = ne->id;

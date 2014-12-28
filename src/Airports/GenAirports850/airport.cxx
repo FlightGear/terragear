@@ -36,7 +36,15 @@ Airport::Airport( int c, char* def)
     char* tok;
     int   ct = 0;
 
-    lf_ig = NULL;
+    for ( unsigned int i=0; i<9; i++ ) {
+        normal_lf_ig[i] = NULL;
+    }
+    for ( unsigned int i=0; i<3; i++ ) {
+        white_lf_ig[i] = NULL;
+    }
+    for ( unsigned int i=0; i<9; i++ ) {
+        black_lf_ig[i] = NULL;
+    }
     rm_ig = NULL;
     
     code = c;
@@ -83,8 +91,16 @@ Airport::Airport( int c, char* def)
     altitude *= SG_FEET_TO_METER;
     
     if ( done ) {
-        lf_ig = new tgIntersectionGenerator(icao);
-        rm_ig = new tgIntersectionGenerator(icao);
+        for ( unsigned int i=0; i<9; i++ ) {
+            normal_lf_ig[i] = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );
+        }
+        for ( unsigned int i=0; i<3; i++ ) {
+            white_lf_ig[i] = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );;
+        }
+        for ( unsigned int i=0; i<9; i++ ) {
+            black_lf_ig[i] = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );;
+        }        
+        rm_ig = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );
     }
 
     TG_LOG( SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", control tower " << ct << ", and description " << description );
@@ -147,9 +163,21 @@ Airport::~Airport()
         delete boundary[i];
     }
     
-    if ( lf_ig ) {
-        delete lf_ig;
+    for ( unsigned int i=0; i<9; i++ ) {
+        if ( normal_lf_ig[i] ) {
+            delete normal_lf_ig[i];
+        }
     }
+    for ( unsigned int i=0; i<3; i++ ) {
+        if ( white_lf_ig[i] ) {
+            delete white_lf_ig[i];
+        }
+    }
+    for ( unsigned int i=0; i<9; i++ ) {
+        if ( black_lf_ig[i] ) {
+            delete black_lf_ig[i];
+        }
+    }        
     
     if ( rm_ig ) {
         delete rm_ig;
@@ -333,11 +361,11 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     ClipFeatures();
     
     // 3: Clean the polys
-    feat_nodes.init_spacial_query();
+    //feat_nodes.init_spacial_query();
     
-    TG_LOG(SG_GENERAL, SG_INFO, "CleanFeatures" );
+    //TG_LOG(SG_GENERAL, SG_INFO, "CleanFeatures" );
     
-    CleanFeatures();
+    //CleanFeatures();
     
     TG_LOG(SG_GENERAL, SG_INFO, "IntersectFeaturesWithBase" );
     // we need to add nodes that intersect with the 

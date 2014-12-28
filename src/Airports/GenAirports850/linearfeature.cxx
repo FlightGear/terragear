@@ -1,10 +1,14 @@
 #include <stdlib.h>
 
 #include <terragear/tg_shapefile.hxx>
+#include <terragear/tg_intersection_generator.hxx>
+
 
 #include "global.hxx"
 #include "beznode.hxx"
 #include "linearfeature.hxx"
+#include "airport.hxx"
+
 
 #define USE_GRAPH                   (1)
 
@@ -149,7 +153,7 @@ unsigned int LinearFeature::CheckMarkStart(BezNode* curNode)
 }
 #endif
 
-void LinearFeature::ConvertContour( tgIntersectionGenerator* pig, BezContour* src, bool closed )
+void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
 {
     BezNode*  curNode;
     BezNode*  nextNode;
@@ -168,8 +172,10 @@ void LinearFeature::ConvertContour( tgIntersectionGenerator* pig, BezContour* sr
 #if !USE_GRAPH
     Marking*  cur_mark = NULL;
 #endif
+    tgIntersectionGenerator* pig = NULL;
     
     unsigned int edge_type = 0;
+    double edge_width;
     
     Lighting* cur_light = NULL;
 
@@ -235,6 +241,13 @@ void LinearFeature::ConvertContour( tgIntersectionGenerator* pig, BezContour* sr
         if (edge_type == 0)
         {
             edge_type = CheckMarkStart(curNode);
+        }
+        
+        if (edge_type) {
+            pig = ap->GetLFG(edge_type);
+            edge_width = GetWidth( edge_type );
+        } else {
+            pig = NULL;
         }
         ////////////////////////////////////////////////////////////////////////////////////
 #endif
@@ -434,7 +447,9 @@ void LinearFeature::ConvertContour( tgIntersectionGenerator* pig, BezContour* sr
                 points.AddNode(curLoc);
               
 #if USE_GRAPH                
-                pig->Insert( curLoc, nextLoc, 1.0, edge_type );
+                if ( pig ) {
+                    pig->Insert( curLoc, nextLoc, edge_width, edge_type );
+                }
 #endif
                 
                 if (p==0)
@@ -473,7 +488,9 @@ void LinearFeature::ConvertContour( tgIntersectionGenerator* pig, BezContour* sr
 #if USE_GRAPH                
                     // add and edge from curLoc to nextLoc with marking type and width
                     // look up or create a new graph node
-                    pig->Insert( curLoc, nextLoc, 1.0, edge_type );
+                    if ( pig ) {
+                        pig->Insert( curLoc, nextLoc, edge_width, edge_type );
+                    }
 #endif
                     
                     if (p==0)
@@ -506,7 +523,9 @@ void LinearFeature::ConvertContour( tgIntersectionGenerator* pig, BezContour* sr
 #if USE_GRAPH                
                 // add and edge from curLoc to nextLoc with marking type and width
                 // look up or create a new graph node
-                pig->Insert( curLoc, nextLoc, 1.0, edge_type );
+                if ( pig ) {
+                    pig->Insert( curLoc, nextLoc, edge_width, edge_type );
+                }
 #endif
                 
                 TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
@@ -965,7 +984,80 @@ void LinearFeature::GenerateMarkingPolys(void)
 #endif
 #endif
 
-void LinearFeature::GetMarkInfo( unsigned int type, double& width, std::string& material, double& atlas_start, double& atlas_end, double& v_dist )
+double LinearFeature::GetWidth( unsigned int type )
+{
+    double width = 0.0f;
+    
+    switch( type )
+    {            
+        case LF_NONE:
+            break;
+            
+            // single width lines
+        case LF_SOLID_YELLOW: // good
+        case LF_BROKEN_YELLOW: // good
+        case LF_SINGLE_LANE_QUEUE: // good
+        case LF_B_SOLID_YELLOW: // good
+        case LF_B_BROKEN_YELLOW: // good
+        case LF_B_SINGLE_LANE_QUEUE: // good
+        case LF_SOLID_WHITE: // good
+        case LF_BROKEN_WHITE: // good
+            width = 0.5f;
+            break;
+            
+        case LF_SOLID_DBL_YELLOW:   // good
+        case LF_DOUBLE_LANE_QUEUE: // good
+        case LF_OTHER_HOLD: // good
+        case LF_B_SOLID_DBL_YELLOW: // good
+        case LF_B_DOUBLE_LANE_QUEUE:
+        case LF_B_OTHER_HOLD:
+        case LF_CHECKERBOARD_WHITE:
+            width = 1.0f;
+            break;                
+            
+        case LF_RUNWAY_HOLD:
+        case LF_B_RUNWAY_HOLD:
+        case LF_ILS_HOLD:
+        case LF_B_ILS_HOLD:
+        case LF_SAFETYZONE_CENTERLINE:
+        case LF_B_SAFETYZONE_CENTERLINE:
+            width = 2.00f;
+            break;
+            
+        case RWY_BORDER:
+            width = 0.9144; // 36 inches
+            break;
+            
+        case RWY_DISP_TAIL:
+            width = 0.4572; // 18 inches
+            break;
+            
+        case RWY_CENTERLINE:
+            width  = 0.9144; // 36 inches            
+            break;
+            
+        case RWY_THRESH:
+            width = 1.7526; // 5.75 ft
+            break;
+            
+        case RWY_TZONE:
+            width = 1.2192; // 48 inches ft
+            break;
+            
+        case RWY_AIM:
+            width = 6.096; // 20 ft
+            break;
+                        
+        default:
+            TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << type );
+            exit(1);
+    }
+
+    return width;
+}
+
+// TODO: make this a static function so I can register it as a callback
+int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, double& atlas_start, double& atlas_end, double& v_dist )
 {
     #define     ATLAS_SINGLE_WIDTH  (1*0.007812500)
     #define     ATLAS_DOUBLE_WIDTH  (2*0.007812500)
@@ -978,23 +1070,23 @@ void LinearFeature::GetMarkInfo( unsigned int type, double& width, std::string& 
     #define     ATLAS_BUFFER16      (0.003906250)
     #define     ATLAS_BUFFER32      (0.007812500)
     
-    #define     ATLAS_BUFFER        ATLAS_BUFFER8
+    #define     ATLAS_BUFFER        ATLAS_BUFFER0
     
     #define     RW_TEX0_START       (ATLAS_BUFFER)
     #define     RW_TEX0_END         (RW_TEX0_START+ATLAS_QUAD_WIDTH)
-    #define     RW_TEX1_START       (RW_TEX0_END+2*ATLAS_BUFFER)
+    #define     RW_TEX1_START       (RW_TEX0_END)
     #define     RW_TEX1_END         (RW_TEX1_START+ATLAS_SINGLE_WIDTH)
-    #define     RW_TEX2_START       (RW_TEX1_END+2*ATLAS_BUFFER)
+    #define     RW_TEX2_START       (RW_TEX1_END)
     #define     RW_TEX2_END         (RW_TEX2_START+ATLAS_SINGLE_WIDTH)
     
     // which material for this mark?
     v_dist = 10.0;
     
-#define TEST 1
+#define TEST 0
     
 #if TEST
     material = "lftest";
-    width = 0.5f;
+    //width = 0.5f;
     atlas_start = 0;
     atlas_end   = 1;
 #else    
@@ -1006,168 +1098,144 @@ void LinearFeature::GetMarkInfo( unsigned int type, double& width, std::string& 
             // single width lines
         case LF_SOLID_YELLOW: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 0*ATLAS_SINGLE_WIDTH;
             atlas_end   = 1*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_BROKEN_YELLOW: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 1*ATLAS_SINGLE_WIDTH;
             atlas_end   = 2*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_SINGLE_LANE_QUEUE: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 2*ATLAS_SINGLE_WIDTH;
             atlas_end   = 3*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_SOLID_YELLOW: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 3*ATLAS_SINGLE_WIDTH;
             atlas_end   = 4*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_BROKEN_YELLOW: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 4*ATLAS_SINGLE_WIDTH;
             atlas_end   = 5*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_SINGLE_LANE_QUEUE: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 5*ATLAS_SINGLE_WIDTH;
             atlas_end   = 6*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_SOLID_WHITE: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 6*ATLAS_SINGLE_WIDTH;
             atlas_end   = 7*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_BROKEN_WHITE: // good
             material = "taxi_markings";
-            width = 0.5f;
             atlas_start = 7*ATLAS_SINGLE_WIDTH;
             atlas_end   = 8*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_SOLID_DBL_YELLOW:   // good
             material = "taxi_markings";
-            width = 1.0f;
             atlas_start = 8*ATLAS_SINGLE_WIDTH;
             atlas_end =  10*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_DOUBLE_LANE_QUEUE: // good
             material = "taxi_markings";
-            width = 1.0f;
             atlas_start = 10*ATLAS_SINGLE_WIDTH;
             atlas_end   = 12*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_OTHER_HOLD: // good
             material = "taxi_markings";
-            width = 1.0f;
             atlas_start = 12*ATLAS_SINGLE_WIDTH;
             atlas_end   = 14*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_SOLID_DBL_YELLOW: // good
             material = "taxi_markings";
-            width = 1.0f;
             atlas_start = 14*ATLAS_SINGLE_WIDTH;
             atlas_end   = 16*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_DOUBLE_LANE_QUEUE:
             material = "taxi_markings";
-            width = 1.0f;
             atlas_start = 16*ATLAS_SINGLE_WIDTH;
             atlas_end   = 18*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_OTHER_HOLD:
             material = "taxi_markings";
-            width = 1.0f;
             atlas_start = 18*ATLAS_SINGLE_WIDTH;
             atlas_end   = 20*ATLAS_SINGLE_WIDTH;
             break;                
             
         case LF_RUNWAY_HOLD:
             material = "taxi_markings";
-            width = 2.0f;
             atlas_start = 20*ATLAS_SINGLE_WIDTH;
             atlas_end   = 24*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_RUNWAY_HOLD:
             material = "taxi_markings";
-            width = 2.0f;
             atlas_start = 24*ATLAS_SINGLE_WIDTH;
             atlas_end   = 28*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_ILS_HOLD:
             material = "taxi_markings";
-            width = 2.0f;
             atlas_start = 28*ATLAS_SINGLE_WIDTH;
             atlas_end   = 32*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_ILS_HOLD:
             material = "taxi_markings";
-            width = 2.0f;
             atlas_start = 32*ATLAS_SINGLE_WIDTH;
             atlas_end =   36*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_SAFETYZONE_CENTERLINE:
             material = "taxi_markings";
-            width = 2.0f;
             atlas_start = 36*ATLAS_SINGLE_WIDTH;
             atlas_end =   40*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_B_SAFETYZONE_CENTERLINE:
             material = "taxi_markings";
-            width = 2.00f;
             atlas_start = 40*ATLAS_SINGLE_WIDTH;
             atlas_end   = 44*ATLAS_SINGLE_WIDTH;
             break;
             
         case LF_CHECKERBOARD_WHITE:
             material = "taxi_markings";
-            width = 1.0f;
             atlas_start = 44*ATLAS_SINGLE_WIDTH;
             atlas_end   = 48*ATLAS_SINGLE_WIDTH;
             break;    
             
         case RWY_BORDER:
             material = "rwy_markings";
-            width = 0.9144; // 36 inches
             atlas_start = RW_TEX1_START;
             atlas_end   = RW_TEX1_END;
             break;
             
         case RWY_DISP_TAIL:
             material = "rwy_markings";
-            width = 0.4572; // 18 inches
             atlas_start = RW_TEX1_START;
             atlas_end   = RW_TEX1_END;
             break;
             
         case RWY_CENTERLINE:
             material = "rwy_markings";
-            width  = 0.9144; // 36 inches
             v_dist = 200 * SG_FEET_TO_METER;
             atlas_start = RW_TEX2_START;
             atlas_end   = RW_TEX2_END;
@@ -1176,21 +1244,18 @@ void LinearFeature::GetMarkInfo( unsigned int type, double& width, std::string& 
             
         case RWY_THRESH:
             material = "rwy_markings";
-            width = 1.7526; // 5.75 ft
             atlas_start = RW_TEX0_START;
             atlas_end   = RW_TEX0_END;
             break;
             
         case RWY_TZONE:
             material = "rwy_markings";
-            width = 1.2192; // 48 inches ft
             atlas_start = RW_TEX0_START;
             atlas_end   = RW_TEX0_END;
             break;
             
         case RWY_AIM:
             material = "rwy_markings";
-            width = 6.096; // 20 ft
             atlas_start = RW_TEX0_START;
             atlas_end   = RW_TEX0_END;
             break;
@@ -1201,9 +1266,11 @@ void LinearFeature::GetMarkInfo( unsigned int type, double& width, std::string& 
             exit(1);
     }
 #endif    
+
+    return 0;
 }
 
-int LinearFeature::Finish( tgIntersectionGenerator* pig, bool closed, double def_width )
+int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
 {
     SGGeod      prev_inner, prev_outer;
     SGGeod      cur_inner,  cur_outer;
@@ -1223,7 +1290,7 @@ int LinearFeature::Finish( tgIntersectionGenerator* pig, bool closed, double def
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
-    ConvertContour( pig, &contour, closed );
+    ConvertContour( ap, &contour, closed );
 
 #if !USE_GRAPH
     // now generate the supoerpoly and texparams lists for markings

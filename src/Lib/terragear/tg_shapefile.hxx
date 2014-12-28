@@ -18,7 +18,7 @@ public:
     } shapefile_layer_t;
 
     static void  FromContour( const tgContour& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
-    static void  FromPolygon( const tgPolygon& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromPolygon( const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromClipper( const ClipperLib::Paths& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
     
     static void  FromGeod( const SGGeod& pt, const std::string& datasource, const std::string& layer, const std::string& description );

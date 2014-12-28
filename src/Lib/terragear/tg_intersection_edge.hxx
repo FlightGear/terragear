@@ -1,6 +1,10 @@
 #ifndef __TG_INTERSECTION_EDGE_HXX__
 #define __TG_INTERSECTION_EDGE_HXX__
 
+#include "tg_polygon.hxx"
+
+typedef int (*tgIntersectionGeneratorTexInfoCb)(unsigned int info, std::string& material, double& atlas_start, double& atlas_end, double& v_dist);
+
 // forward declarations
 class tgIntersectionEdge;
 class tgIntersectionNode;
@@ -23,14 +27,29 @@ public:
         return heading;
     }
     
+    double GetGeodesyHeading(void) const {
+        return geodesy_heading;
+    }
+    
+    tgRay GetDirectionRay( void ) const;
+    
     bool IsOriginating(void) const {
         return originating; 
     }
+    
+    bool IsTextured(void) const {
+        return textured; 
+    }
+    
+    double Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb );
+    
 
 private:
     tgIntersectionEdge*     edge;
     bool                    originating;        // edge originates at this node
+    bool                    textured;
     double                  heading;            // edge heading from this node 
+    double                  geodesy_heading;
 };
 
 struct EdgeInfoPtrComp
@@ -47,6 +66,13 @@ struct EdgeInfoPtrComp
 typedef std::set<tgIntersectionEdgeInfo *, EdgeInfoPtrComp> tgintersectionedgeinfo_list;
 typedef tgintersectionedgeinfo_list::iterator               tgintersectionedgeinfo_it;
 
+#define FLAGS_INTERSECTED_BOTTOM_CONSTRAINTS       (0x00000001)
+#define FLAGS_INTERSECTED_TOP_CONSTRAINTS          (0x00000002)
+#define FLAGS_INTERSECT_CONSTRAINTS_COMPLETE       (0x00000003)
+
+#define FLAGS_TEXTURED                             (0x00000004)
+
+
 class tgIntersectionEdge
 {
 public:
@@ -60,6 +86,8 @@ public:
     const char* GetDatasource( void ) const {
         return datasource;
     }
+    
+    bool Verify( unsigned long int f );
     
     void AddBottomRightConstraint( const tgRay& c ) {
         constrain_br.push_back( c );
@@ -82,6 +110,10 @@ public:
     
     void SetLeftConstraint( bool originating, const std::list<SGGeod>& cons );
     void SetRightConstraint( bool originating, const std::list<SGGeod>& cons );
+
+    void SetLeftProjectList( bool originating, const std::list<SGGeod>& pl );
+    void SetRightProjectList( bool originating, const std::list<SGGeod>& pl );
+
     void ApplyConstraint( bool apply );
     
     void Complete( void );
@@ -185,7 +217,7 @@ public:
         }
     }
 
-    tgIntersectionEdge* Split( tgIntersectionNode* newEnd );
+    tgIntersectionEdge* Split( bool originating, tgIntersectionNode* newNode );
     
     void ToShapefile( void ) const;
     tgSegment ToSegment( void ) const;
@@ -196,6 +228,7 @@ public:
     tgPolygon GetPoly(const char* prefix);
     
     void DumpConstraint( const char* layer, const char* label, const std::list<SGGeod>& contour ) const;
+    double Texture( bool originating, double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb );
     
     tgIntersectionNode* start;
     tgIntersectionNode* end;
@@ -231,15 +264,32 @@ public:
     bool                mstl_set;
     bool                mstr_set;
     
+    std::list<SGGeod>   projectlist_msbl;
+    std::list<SGGeod>   projectlist_msbr;
+    std::list<SGGeod>   projectlist_mstl;
+    std::list<SGGeod>   projectlist_mstr;
+    
+    bool                msblpl_valid;
+    bool                msbrpl_valid;
+    bool                mstlpl_valid;
+    bool                mstrpl_valid;
+    
+    bool                msblpl_set;
+    bool                msbrpl_set;
+    bool                mstlpl_set;
+    bool                mstrpl_set;
+    
     std::list<SGGeod>   left_contour;
     std::list<SGGeod>   right_contour;
     
     unsigned long int   id;
+    unsigned long int   flags;
     
 private:
     SGGeod IntersectCorner( const SGGeod& pos, tgray_list& constraint1, tgray_list& constraint2, tgLine& side, 
                             const char* c1name, const char* c2name, const char* sname );
     
+    tgPolygon           poly;
     std::string         debugRoot;
     char                datasource[64];
 };

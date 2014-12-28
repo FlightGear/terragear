@@ -8,6 +8,7 @@
 #include "global.hxx"
 #include "beznode.hxx"
 #include "closedpoly.hxx"
+#include "airport.hxx"
 
 #define NO_BEZIER       (0)
 
@@ -101,7 +102,7 @@ void ClosedPoly::AddNode( BezNode* node )
     }
 }
 
-void ClosedPoly::CloseCurContour( tgIntersectionGenerator* pig )
+void ClosedPoly::CloseCurContour( Airport* ap )
 {
     TG_LOG(SG_GENERAL, SG_DEBUG, "Close Contour");
 
@@ -110,7 +111,7 @@ void ClosedPoly::CloseCurContour( tgIntersectionGenerator* pig )
     if (cur_feature)
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "We still have an active linear feature - add the first node to close it");
-        cur_feature->Finish( pig, true);
+        cur_feature->Finish(ap, true);
 
         features.push_back(cur_feature);
         cur_feature = NULL;

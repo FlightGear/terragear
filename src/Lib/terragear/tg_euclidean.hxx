@@ -20,7 +20,7 @@ public:
 #endif        
     }
     
-#if 1    
+#if 1
     static double courseRad( const SGGeod& start, const SGGeod& end ) {
 #if USE_EUCLIDEAN        
         return SGMiscd::normalizeAngle2( 
