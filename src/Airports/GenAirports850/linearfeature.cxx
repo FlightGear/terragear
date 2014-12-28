@@ -929,13 +929,14 @@ static int edgeid = 1;
 
 void LinearFeature::GenerateMarkingPolys(void)
 {
+#if 0
     double      v_dist = 10.0;
     double      v_start = 0.0f;
     double      v_end = 0.0f;
     double      atlas_start = 0.0, atlas_end = 0.0;
     std::string material;
 
-#if 0    
+
     for ( tgintersectionedge_it it=lf_insersector.edges_begin(); it != lf_insersector.edges_end(); it++ ) {
         // TG_LOG(SG_GENERAL, SG_INFO, "LinearFeature::GenerateIntersectionTris: edge id " << edge_id++ );
         double    heading, dist, tex_w;

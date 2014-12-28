@@ -463,7 +463,7 @@ void tgPolygon::Texture( void )
                     // given alt, lat1, lon1, lat2, lon2, calculate starting
                     // and ending az1, az2 and distance (s).  Lat, lon, and
                     // azimuth are in degrees.  distance in meters
-                    double az1, az2, dist;
+                    double az1, dist;
                     //TGEuclidean::inverse( tp.ref, p, az1, az2, dist );
                     // SGGeodesy::inverse( tp.ref, p, az1_g, az2_g, dist_g );
                     
