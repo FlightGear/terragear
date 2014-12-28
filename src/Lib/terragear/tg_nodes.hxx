@@ -1,8 +1,8 @@
 #ifndef _TG_NODES_HXX
 #define _TG_NODES_HXX
 
-#ifndef __cplusplus
-# error This library requires C++
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
 #endif
 
 #include <cstdlib>
@@ -20,7 +20,7 @@ typedef Kernel::Point_2 Point;
 typedef boost::tuple<Point, double> Point_and_Elevation;
 
 //definition of the property map
-#if 0
+#ifdef CGAL_OLD
 struct My_point_property_map{
   typedef Point value_type;
   typedef const value_type& reference;
@@ -31,8 +31,12 @@ struct My_point_property_map{
 
 //typedef CGAL::Search_traits_2<Kernel> Traits;
 typedef CGAL::Search_traits_2<Kernel> Traits_base;
-//typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, Traits_base> Traits;
+
+#ifdef CGAL_OLD
+typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, Traits_base> Traits;
+#else
 typedef CGAL::Search_traits_adapter<Point_and_Elevation,CGAL::Nth_of_tuple_property_map<0, Point_and_Elevation>,Traits_base>    Traits;
+#endif
 
 typedef CGAL::Fuzzy_iso_box<Traits> Fuzzy_bb;
 typedef CGAL::Kd_tree<Traits> Tree;

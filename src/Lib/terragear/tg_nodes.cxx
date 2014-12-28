@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
 #include <simgear/debug/logstream.hxx>
 #include "tg_nodes.hxx"
 
@@ -81,7 +85,7 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
 // Three dimensional queries is a bit overkill, but the code, although faster, is slightly more cumbersome
 
 // get function for the property map - needed for cgal trait extension
-#if 0
+#ifdef CGAL_OLD
 My_point_property_map::reference get(My_point_property_map, My_point_property_map::key_type p) {
     return boost::get<0>(p);
 }
