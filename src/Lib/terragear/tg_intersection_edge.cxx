@@ -5,7 +5,6 @@
 #include "tg_intersection_edge.hxx"
 #include "tg_intersection_node.hxx"
 #include "tg_misc.hxx"
-#include "tg_euclidean.hxx"
       
 #define DEBUG_INTERSECTIONS (0)
 #define LOG_INTERSECTION    (SG_DEBUG)
@@ -39,32 +38,22 @@ tgIntersectionEdge::tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNod
     s->AddEdge( true, this );
     e->AddEdge( false, this );
     
-    double ecourse   = TGEuclidean::courseDeg(start->GetPosition(), end->GetPosition());
+    double ecourse   = SGGeodesy::courseDeg(start->GetPosition(), end->GetPosition());
     double elcourse  = SGMiscd::normalizePeriodic(0, 360, ecourse - 90);
-
-//    double gcourse   = SGGeodesy::courseDeg(start->GetPosition(), end->GetPosition());
-//    double glcourse  = SGMiscd::normalizePeriodic(0, 360, gcourse - 90);
     
-#if 1
-    botLeft   = TGEuclidean::direct( start->GetPosition(), elcourse,  width/2 );    
-    botRight  = TGEuclidean::direct( start->GetPosition(), elcourse, -width/2 );
-
-    topLeft   = TGEuclidean::direct( end->GetPosition(), elcourse,  width/2 );
-    topRight  = TGEuclidean::direct( end->GetPosition(), elcourse, -width/2 );
-#else
     botLeft   = SGGeodesy::direct( start->GetPosition(), elcourse,  width/2 );    
     botRight  = SGGeodesy::direct( start->GetPosition(), elcourse, -width/2 );
 
     topLeft   = SGGeodesy::direct( end->GetPosition(), elcourse,  width/2 );
     topRight  = SGGeodesy::direct( end->GetPosition(), elcourse, -width/2 );
-#endif
-    // make sides 1 bit longer...
-    SGGeod side_bl = TGEuclidean::direct( botLeft, ecourse, -10.0 );
-    SGGeod side_tl = TGEuclidean::direct( topLeft, ecourse,  10.0 );
     
-    SGGeod side_br = TGEuclidean::direct( botRight, ecourse, -10.0 );
-    SGGeod side_tr = TGEuclidean::direct( topRight, ecourse,  10.0 );
-        
+    // make sides 1 bit longer...
+    SGGeod side_bl = SGGeodesy::direct( botLeft, ecourse, -10.0 );
+    SGGeod side_tl = SGGeodesy::direct( topLeft, ecourse,  10.0 );
+    
+    SGGeod side_br = SGGeodesy::direct( botRight, ecourse, -10.0 );
+    SGGeod side_tr = SGGeodesy::direct( topRight, ecourse,  10.0 );
+    
     side_l    = tgLine( side_bl, side_tl );
     side_r    = tgLine( side_br, side_tr );
 
@@ -75,13 +64,13 @@ tgIntersectionEdge::tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNod
 double tgIntersectionEdge::GetHeading( bool originating ) const 
 {
     if ( originating ) {
-        return TGEuclidean::courseDeg( start->GetPosition(), end->GetPosition() );
+        return SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
     } else {
-        return TGEuclidean::courseDeg( end->GetPosition(), start->GetPosition() );
+        return SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
     }
 }
     
-double tgIntersectionEdge::GetLength( void ) const 
+double tgIntersectionEdge::GetGeodesyLength( void ) const 
 {
     return SGGeodesy::distanceM( start->GetPosition(), end->GetPosition() );
 }
@@ -104,15 +93,15 @@ tgIntersectionEdge* tgIntersectionEdge::Split( bool originating, tgIntersectionN
     newNode->AddEdge( !originating, this );
 
     // then update all the geometery info for the modified edge
-    double ecourse   = TGEuclidean::courseDeg(start->GetPosition(), end->GetPosition());
+    double ecourse   = SGGeodesy::courseDeg(start->GetPosition(), end->GetPosition());
     double elcourse  = SGMiscd::normalizePeriodic(0, 360, ecourse - 90);
-        
-    botLeft   = TGEuclidean::direct( start->GetPosition(), elcourse,  width/2 );    
-    botRight  = TGEuclidean::direct( start->GetPosition(), elcourse, -width/2 );
 
-    topLeft   = TGEuclidean::direct( end->GetPosition(), elcourse,  width/2 );
-    topRight  = TGEuclidean::direct( end->GetPosition(), elcourse, -width/2 );
-    
+    botLeft   = SGGeodesy::direct( start->GetPosition(), elcourse,  width/2 );    
+    botRight  = SGGeodesy::direct( start->GetPosition(), elcourse, -width/2 );
+
+    topLeft   = SGGeodesy::direct( end->GetPosition(), elcourse,  width/2 );
+    topRight  = SGGeodesy::direct( end->GetPosition(), elcourse, -width/2 );
+
     side_l    = tgLine( botLeft,  topLeft );
     side_r    = tgLine( botRight, topRight );
     
@@ -143,7 +132,6 @@ tgRectangle tgIntersectionEdge::GetBoundingBox( void ) const
     
 void tgIntersectionEdge::ToShapefile( void ) const
 {            
-#if DEBUG_INTERSECTIONS    
     char layer[128];
     
     // draw line from start to end
@@ -180,7 +168,6 @@ void tgIntersectionEdge::ToShapefile( void ) const
     sprintf( layer, "%ld_complete", id );
     DumpConstraint( layer, "right", right_contour );
     DumpConstraint( layer, "left",  left_contour );
-#endif    
 }
 
 tgSegment tgIntersectionEdge::ToSegment( void ) const
@@ -188,51 +175,30 @@ tgSegment tgIntersectionEdge::ToSegment( void ) const
     return tgSegment( start->GetPosition(), end->GetPosition() );
 }
 
-SGGeod tgIntersectionEdge::IntersectCorner( const SGGeod& pos, tgray_list& constraint1, tgray_list& constraint2, tgLine& side,
-                                     const char* c1name, const char* c2name, const char* sname )
-{
-    // super simple version of this function - intersect the first constraint with the side...
-    // TODO : Just move it into IntersectConstraintsAndSides
-    SGGeod side_intersect;
-
-    if ( !constraint1[0].Intersect( side, side_intersect ) ) {
-        char layer[128];
-        
-        sprintf( layer, "NO_INT_%s_AND_%s", c1name, sname );
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << c1name << " did not intersect " << sname );
-        
-        tgShapefile::FromRay(  constraint1[0], GetDatasource(), layer, "ray" );
-        tgShapefile::FromLine( side, GetDatasource(), layer, "line" );
-    } else if ( side_intersect.getLatitudeDeg() < 0.1 ) {
-        char layer[128];
-        
-        sprintf( layer, "BAD_INT_%s_AND_%s", c1name, sname );
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << c1name << " has bad intersect with " << sname );
-        
-        tgShapefile::FromRay(  constraint1[0], GetDatasource(), layer, "ray" );
-        tgShapefile::FromLine( side, GetDatasource(), layer, "line" );        
-    }
-    
-    
-    return side_intersect;
-}
-
 void tgIntersectionEdge::IntersectConstraintsAndSides(tgIntersectionEdgeInfo* cur)
 {        
-    bool ce_originating = cur->IsOriginating();
+    bool   ce_originating = cur->IsOriginating();
     
     if ( ce_originating ) {        
         if ( constrain_bl.size() == 1 ) {
-            conBotLeft = IntersectCorner( start->GetPosition(), constrain_bl, constrain_tl, 
-                                          side_l, "BL", "TL", "LS" );            
+            if ( !constrain_bl[0].Intersect( side_l, conBotLeft ) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " bottom left did not intersect left side" );
+        
+                tgShapefile::FromRay(  constrain_bl[0], GetDatasource(), "NO_INT_bottom_left_with_left_side", "ray" );
+                tgShapefile::FromLine( side_l, GetDatasource(), "NO_INT_bottom_left_with_left_side", "line" );                
+            }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );
             SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_bl.size() << " bl constraints - expecting 1. Length is " << dist);                    
         }
 
         if ( constrain_br.size() == 1 ) {
-            conBotRight = IntersectCorner( start->GetPosition(), constrain_br, constrain_tr, 
-                                           side_r, "BR", "TR", "RS" );
+            if ( !constrain_br[0].Intersect( side_r, conBotRight ) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " bottom right did not intersect right side" );
+
+                tgShapefile::FromRay(  constrain_br[0], GetDatasource(), "NO_INT_bottom_right_with_right_side", "ray" );
+                tgShapefile::FromLine( side_r, GetDatasource(), "NO_INT_bottom_right_with_right_side", "line" );                
+            }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );
             SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_br.size() << " br constraints - expecting 1. length is " << dist );                    
@@ -241,16 +207,24 @@ void tgIntersectionEdge::IntersectConstraintsAndSides(tgIntersectionEdgeInfo* cu
         flags |= FLAGS_INTERSECTED_BOTTOM_CONSTRAINTS;      
     } else {
         if ( constrain_tl.size() == 1 ) {
-            conTopLeft = IntersectCorner( end->GetPosition(), constrain_tl, constrain_bl, 
-                                          side_l, "TL", "BL", "LS" );            
+            if ( !constrain_tl[0].Intersect( side_l, conTopLeft ) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " top left did not intersect left side" );
+        
+                tgShapefile::FromRay(  constrain_tl[0], GetDatasource(), "NO_INT_top_left_with_left_side", "ray" );
+                tgShapefile::FromLine( side_l, GetDatasource(), "NO_INT_top_left_with_left_side", "line" );                
+            }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );            
             SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_tl.size() << " tl constraints - expecting 1.  length is " << dist );                    
         }
 
         if ( constrain_tr.size() == 1 ) {
-            conTopRight = IntersectCorner( end->GetPosition(), constrain_tr, constrain_br, 
-                                           side_r, "TR", "BR", "RS" );
+            if ( !constrain_tr[0].Intersect( side_r, conTopRight ) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " top right did not intersect right side" );
+
+                tgShapefile::FromRay(  constrain_tr[0], GetDatasource(), "NO_INT_top_right_with_right_side", "ray" );
+                tgShapefile::FromLine( side_r, GetDatasource(), "NO_INT_top_right_with_right_side", "line" );                
+            }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );
             SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_tr.size() << " tr constraints - expecting 1.  Length is " << dist );                    
@@ -438,7 +412,9 @@ tgPolygon tgIntersectionEdge::CreatePolygon( int& id, double& heading, double& d
 // best to come up with something as general as possible.
 void tgIntersectionEdge::Complete( void )
 {
+#if DEBUG_INTERSECTIONS                                    
     char layer[256];
+#endif
     
     // build right and left contours
     // right contour starts at bottom right corner, and ends at top left corner
@@ -467,13 +443,11 @@ void tgIntersectionEdge::Complete( void )
         if ( side_r.isOn( (*last_it ) ) ) {
             // yes, use conTopRight for top right corner
             right_contour.push_back( conTopRight );
-            // right_contour.push_back( end->GetPosition() );
         } else {
 #if DEBUG_INTERSECTIONS                                    
             sprintf( layer, "NOT_ON_RIGHT_SIDE_1" );
             tgShapefile::FromGeod( (*last_it ), GetDatasource(), layer, "pt" );
 #endif            
-            //right_contour.push_back( end->GetPosition() );            
         }
     } else if ( constrain_msbr.empty() && !constrain_mstr.empty() ) {
         // no MS on bottom right, but MS on top right
@@ -499,7 +473,6 @@ void tgIntersectionEdge::Complete( void )
 
         // Check if start of msbr is equal to Start. If not, add start first
         if ( !SGGeod_isEqual2D( start->GetPosition(), *constrain_msbr.begin() ) ) {
-            // right_contour.push_back( start->GetPosition() );
         }
         
         // add MSBR
@@ -514,16 +487,10 @@ void tgIntersectionEdge::Complete( void )
 
     if ( constrain_mstl.empty() && constrain_msbl.empty() ) {
         // no ms corners - use normal corners
-        // left_contour.push_back( end->GetPosition() );
         left_contour.push_back( conTopLeft );
         left_contour.push_back( conBotLeft );
     } else if ( !constrain_mstl.empty() && constrain_msbl.empty() ) {
         // MS on top left, but no MS on bottom left
-
-        // Check if start of mstl is equal to End. If not, add end first
-        if ( !SGGeod_isEqual2D( end->GetPosition(), *constrain_mstl.begin() ) ) {
-            // left_contour.push_back( end->GetPosition() );
-        }
 
         // add MSTL
         left_contour.insert( left_contour.end(), constrain_mstl.begin(), constrain_mstl.end() );
@@ -534,17 +501,14 @@ void tgIntersectionEdge::Complete( void )
         if ( side_l.isOn( (*last_it ) ) ) {
             // yes, use conBotLeft for bottom left corner
             left_contour.push_back( conBotLeft );
-            // left_contour.push_back( start->GetPosition() );
         } else {
 #if DEBUG_INTERSECTIONS                                    
             sprintf( layer, "NOT_ON_LEFT_SIDE_1" );
             tgShapefile::FromGeod( (*last_it ), GetDatasource(), layer, "pt" );
 #endif            
-            //left_contour.push_back( start->GetPosition() );            
         }
     } else if ( constrain_mstl.empty() && !constrain_msbl.empty() ) {
         // no MS on top left, but MS on bottom left
-        // left_contour.push_back( end->GetPosition() );
  
         // check if start of MSBL is on left side
         std::list<SGGeod>::iterator first_it = constrain_msbl.begin();
@@ -563,11 +527,6 @@ void tgIntersectionEdge::Complete( void )
         left_contour.insert( left_contour.end(), constrain_msbl.begin(), constrain_msbl.end() );
     } else {
         // MS on top left and bottom left
-
-        // Check if start of mstl is equal to End. If not, add end first
-        if ( !SGGeod_isEqual2D( end->GetPosition(), *constrain_mstl.begin() ) ) {
-            // left_contour.push_back( end->GetPosition() );
-        }
         
         // add MSTL
         left_contour.insert( left_contour.end(), constrain_mstl.begin(), constrain_mstl.end() );
@@ -578,81 +537,17 @@ void tgIntersectionEdge::Complete( void )
     
     // now check if we need to add start or end
     // if the start / end node degree is > 2, then add the start / end position
-#if 0
-    tgLine contour_connection;
-    contour_connection = tgLine( *left_contour.rbegin(), *right_contour.begin() );
-    sprintf( layer, "left_end_to_right_start" );
-    tgShapefile::FromLine( contour_connection, GetDatasource(), layer, "line" );
-    if ( !contour_connection.isOn( start->GetPosition() ) ) {
-        left_contour.push_back( start->GetPosition() );
-    }
-    
-    contour_connection = tgLine( *right_contour.rbegin(), *left_contour.begin() );
-    sprintf( layer, "right_end_to_left_start" );
-    tgShapefile::FromLine( contour_connection, GetDatasource(), layer, "line" );
-    if ( !contour_connection.isOn( end->GetPosition() ) ) {
-        right_contour.push_back( end->GetPosition() );
-    }
-#else
     if ( start->Degree() > 2 ) {
         left_contour.push_back( start->GetPosition() );
     }
     if ( end->Degree() > 2 ) {
         right_contour.push_back( end->GetPosition() );
     }
-#endif
- 
-#if 0 
-    double course;    
-    course = TGEuclidean::courseDeg( start->GetPosition(), end->GetPosition() ) + 90;
-    for ( std::list<SGGeod>::iterator lit = left_contour.begin(); lit != left_contour.end(); lit++ ) {
-        // find the opposite edge and see if we can split it
-        tgLine perp( (*lit), course );
-        
-        std::list<SGGeod>::iterator rit_s = right_contour.begin();
-        std::list<SGGeod>::iterator rit_e = rit_s; rit_e++;        
-        do {
-            if ( perp.OrientedSide( (*rit_s) ) != perp.OrientedSide( (*rit_e) ) ) {
-                tgSegment seg( (*rit_s), (*rit_e) );
-                SGGeod    intersection;
-                if ( perp.Intersect( seg, intersection ) ) {
-                    rit_s = right_contour.insert( rit_e, intersection );
-                }
-                break;
-            } else {
-                rit_s=rit_e;
-                rit_e++;
-            }
-        } while ( rit_e != right_contour.end() );
-    }
-    
-    // TODO : Traverse left contour, and see if we can project ( in relation to segment course ) onto the right.
-    course = TGEuclidean::courseDeg( start->GetPosition(), end->GetPosition() ) - 90;    
-    for ( std::list<SGGeod>::iterator rit = right_contour.begin(); rit != right_contour.end(); rit++ ) {
-        // find the opposite edge and see if we can split it
-        tgLine perp( (*rit), course );
-        
-        std::list<SGGeod>::iterator lit_s = left_contour.begin();
-        std::list<SGGeod>::iterator lit_e = lit_s; lit_e++;        
-        do {
-            if ( perp.OrientedSide( (*lit_s) ) != perp.OrientedSide( (*lit_e) ) ) {
-                tgSegment seg( (*lit_s), (*lit_e) );
-                SGGeod    intersection;
-                if ( perp.Intersect( seg, intersection ) ) {
-                    lit_s = left_contour.insert( lit_e, intersection );
-                }
-                break;
-            } else {
-                lit_s=lit_e;
-                lit_e++;
-            }
-        } while ( lit_e != left_contour.end() );
-    }
-#endif
 
-#if 1
+    // now project added nodes in multisegment intersections to opposite sides 
+    // suggestion by I4DNF to generate more well behaved triangulations
     double course;
-    course = TGEuclidean::courseDeg( start->GetPosition(), end->GetPosition() ) + 90;
+    course = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() ) + 90;    
     for ( std::list<SGGeod>::iterator lit = projectlist_msbl.begin(); lit != projectlist_msbl.end(); lit++ ) {
         // find the opposite edge and see if we can split it
         tgLine perp( (*lit), course );
@@ -695,7 +590,7 @@ void tgIntersectionEdge::Complete( void )
         } while ( rit_e != right_contour.end() );
     }
 
-    course = TGEuclidean::courseDeg( start->GetPosition(), end->GetPosition() ) - 90;
+    course = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() ) - 90;
     for ( std::list<SGGeod>::iterator rit = projectlist_msbr.begin(); rit != projectlist_msbr.end(); rit++ ) {
         // find the opposite edge and see if we can split it
         tgLine perp( (*rit), course );
@@ -737,7 +632,6 @@ void tgIntersectionEdge::Complete( void )
             }
         } while ( lit_e != left_contour.end() );
     }
-#endif    
 }
 
 bool tgIntersectionEdge::Verify( unsigned long int f )  
@@ -798,8 +692,6 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
     double      v_start;
     double      v_dist;
     double      heading;
-    SGGeod      offset;
-    double      e_dist;
     
     std::list<SGGeod>::iterator i;
     
@@ -809,9 +701,6 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
     for ( i = left_contour.begin(); i != left_contour.end(); i++) {
         poly.AddNode( 0, *i );
     }
-    
-    // remove colinear nodes : through clipper simplification
-    // poly = tgPolygon::RemoveColinearNodes( poly );
 
     // now generate texture coordiantes
     texInfoCb( type, material, texAtlasStartU, texAtlasEndU, v_dist );
@@ -820,33 +709,22 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
     v_start = fmod( v_end, 1.0 );
     v_end   = v_start + (dist/v_dist);
         
-    // we need to calculate the geodetic width for texturing this edge : average 
-    double e_width = (TGEuclidean::distanceM( botLeft, botRight ) + TGEuclidean::distanceM( topLeft, topRight ) )/2;    
-        
     // calculate euclidean v dist
     if ( originating ) {
-        heading = TGEuclidean::courseDeg( start->GetPosition(), end->GetPosition() );
-        offset = SGGeodesy::direct( start->GetPosition(), heading, v_dist );
-        e_dist = TGEuclidean::distanceM( start->GetPosition(), offset );
+        heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
     } else {
-        heading = TGEuclidean::courseDeg( end->GetPosition(), start->GetPosition() );
-        offset = SGGeodesy::direct( end->GetPosition(), heading, v_dist );
-        e_dist = TGEuclidean::distanceM( end->GetPosition(), offset );        
-    }
-    
-    //SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionEdge::Texture: width is " << width << " e_width is " << e_width );
-    
+        heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
+    }    
     poly.SetMaterial( material );
     
     if ( originating ) {
-        poly.SetTexParams( botLeft, e_width, e_dist, heading );
+        poly.SetTexParams( botLeft, width, dist, heading );
     } else {
-        poly.SetTexParams( topRight, e_width, e_dist, heading );        
+        poly.SetTexParams( topRight, width, dist, heading );        
     }
     
-    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU_EUCLIDEAN, -1.0, 0.0, 1.0, 0.0 );
+    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
     poly.SetTexLimits( texAtlasStartU, v_start, texAtlasEndU, v_end );
-    
     poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
 
     flags |= FLAGS_TEXTURED;
@@ -861,10 +739,10 @@ tgIntersectionEdgeInfo::tgIntersectionEdgeInfo( bool orig, tgIntersectionEdge* e
     textured          = false;
     
     if ( originating ) {
-        heading         = TGEuclidean::courseDeg( edge->start->GetPosition(), edge->end->GetPosition() );
+        heading         = SGGeodesy::courseDeg( edge->start->GetPosition(), edge->end->GetPosition() );
         geodesy_heading = SGGeodesy::courseDeg( edge->start->GetPosition(), edge->end->GetPosition() );
     } else {
-        heading         = TGEuclidean::courseDeg( edge->end->GetPosition(), edge->start->GetPosition() );
+        heading         = SGGeodesy::courseDeg( edge->end->GetPosition(), edge->start->GetPosition() );
         geodesy_heading = SGGeodesy::courseDeg( edge->end->GetPosition(), edge->start->GetPosition() );
     }
 }

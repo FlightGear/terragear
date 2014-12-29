@@ -91,16 +91,21 @@ Airport::Airport( int c, char* def)
     altitude *= SG_FEET_TO_METER;
     
     if ( done ) {
+        char ig_ds[64];
         for ( unsigned int i=0; i<9; i++ ) {
-            normal_lf_ig[i] = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );
+            sprintf(ig_ds, "%s_normal_%d", icao.c_str(), i ); 
+            normal_lf_ig[i] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
         }
         for ( unsigned int i=0; i<3; i++ ) {
-            white_lf_ig[i] = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );;
+            sprintf(ig_ds, "%s_white_%d", icao.c_str(), i ); 
+            white_lf_ig[i] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );;
         }
         for ( unsigned int i=0; i<9; i++ ) {
-            black_lf_ig[i] = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );;
+            sprintf(ig_ds, "%s_black_%d", icao.c_str(), i ); 
+            black_lf_ig[i] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );;
         }        
-        rm_ig = new tgIntersectionGenerator(icao, LinearFeature::GetTextureInfo );
+        sprintf(ig_ds, "%s_runways", icao.c_str() ); 
+        rm_ig = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
     }
 
     TG_LOG( SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", control tower " << ct << ", and description " << description );

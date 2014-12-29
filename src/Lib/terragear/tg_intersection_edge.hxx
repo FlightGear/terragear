@@ -119,7 +119,7 @@ public:
     void Complete( void );
     
     double GetHeading( bool originating ) const;
-    double GetLength( void ) const;
+    double GetGeodesyLength( void ) const;
     
     tgRay GetTopRightConstraint( bool originating ) const {
         if ( originating ) {
@@ -285,10 +285,7 @@ public:
     unsigned long int   id;
     unsigned long int   flags;
     
-private:
-    SGGeod IntersectCorner( const SGGeod& pos, tgray_list& constraint1, tgray_list& constraint2, tgLine& side, 
-                            const char* c1name, const char* c2name, const char* sname );
-    
+private:    
     tgPolygon           poly;
     std::string         debugRoot;
     char                datasource[64];

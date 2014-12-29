@@ -5,7 +5,6 @@
 #include "tg_intersection_node.hxx"
 #include "tg_intersection_edge.hxx"
 #include "tg_misc.hxx"
-#include "tg_euclidean.hxx"
       
 #define DEBUG_INTERSECTIONS (0)
 #define LOG_INTERSECTION    (SG_DEBUG)
@@ -45,7 +44,10 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetPrevEdgeInfo( tgIntersectionEdgeI
     tgIntersectionEdgeInfo*   prv_info = NULL;
     const tgIntersectionEdge* ce       = cur_info->GetEdge();
     int                       ce_id    = ce->id;
+
+#if DEBUG_INTERSECTIONS                        
     char                      layer[256];
+#endif
     
     if ( edgeList.size() > 1 ) {
         for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
@@ -199,7 +201,10 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeI
     tgIntersectionEdgeInfo*   nxt_info = NULL;
     const tgIntersectionEdge* ce       = cur_info->GetEdge();
     int                       ce_id    = ce->id;
+
+#if DEBUG_INTERSECTIONS                        
     char                      layer[256];
+#endif
     
     if ( edgeList.size() > 1 ) {
         for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
@@ -467,15 +472,16 @@ void tgIntersectionNode::AddCapEdges( tgIntersectionNodeList& nodelist, tginters
                 
         // we need to get the edge info to determine the edge origination info
         tgIntersectionEdgeInfo* cur_info = (*cur);
-        double cur_heading = cur_info->GetHeading();
+        //double cur_heading = cur_info->GetHeading();
+        double cur_heading = cur_info->GetGeodesyHeading();
         
         tgIntersectionEdge* cur_edge = cur_info->GetEdge();
-        double cur_length = cur_edge->GetLength();
+        double cur_length = cur_edge->GetGeodesyLength();
         
         // euclidean distance is in degrees :( - TODO - need distanceM and distanceE
         if ( cur_length > 1.0 ) {
             // Add a new node 0.5 M away
-            tgIntersectionNode* newNode = nodelist.Add( TGEuclidean::direct( position, cur_heading, 0.5 ) );
+            tgIntersectionNode* newNode = nodelist.Add( SGGeodesy::direct( position, cur_heading, 0.5 ) );
             tgIntersectionEdge* newEdge = cur_edge->Split( cur_info->IsOriginating(), newNode );
             edgelist.push_back( newEdge );
         }    
@@ -588,12 +594,14 @@ void tgIntersectionNode::GenerateBisectRays( void )
         
         // we want right turns - so calc angle a,b,c from cur,origin,prv
         bprv_heading = Bisect( position, cur_heading, prv_heading, true );
-        tgRay bp_ray = tgRay( position, bprv_heading );
+        SGGeod bp_next = SGGeodesy::direct( position, bprv_heading, 1.0 );
+        tgRay bp_ray = tgRay( position, bp_next );
 
         // we want right turns - so calc angle a,b,c from nxt,origin,cur
         bnxt_heading = Bisect( position, nxt_heading, cur_heading, true );
-        tgRay bn_ray = tgRay( position, bnxt_heading );
-                
+        SGGeod bn_next = SGGeodesy::direct( position, bnxt_heading, 1.0 );
+        tgRay bn_ray = tgRay( position, bn_next );
+        
         // Add the bisecting ray between prev and current as a constraint
         tgIntersectionEdge* cur_edge = cur_info->GetEdge();
         
@@ -694,8 +702,11 @@ void tgIntersectionNode::GenerateCapRays( void )
     // for caps, use geodesy to make nice 90 deg angles
     double cur_heading = cur_info->GetGeodesyHeading();    
     
-    tgRay l_ray = tgRay( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading-90 ) );
-    tgRay r_ray = tgRay( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading+90 ) );
+    SGGeod lnext = SGGeodesy::direct( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading-90 ), 1.0 );
+    SGGeod rnext = SGGeodesy::direct( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading+90 ), 1.0 );
+    
+    tgRay l_ray = tgRay( position, lnext );
+    tgRay r_ray = tgRay( position, rnext );
                 
     // Add the cap rays as constraints
     tgIntersectionEdge* cur_edge = cur_info->GetEdge();
@@ -843,13 +854,14 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
         sprintf( ce_layer, "%s_%03ld_INTERSECTIONS_iter_%d", original_int_name, ne->id, cur_iteration );
         sprintf( ne_layer, "%s_%03ld_INTERSECTIONS_iter_%d", original_int_name, ce->id, cur_iteration );
         
+        //todo SGGeodesy exception case- what is it?
         if ( bisector.Intersect( ce_end, ce_end_intersect ) ) {
 #if DEBUG_INTERSECTIONS                                    
             tgShapefile::FromGeod( ce_end_intersect, ce->GetDatasource(), ce_layer, "ce_end_intersect" );
 #endif            
             // if we have a point intersection, what is the distance between 
             // the node and the intersection
-            ce_end_dist = TGEuclidean::distanceM( bisect_position, ce_end_intersect );
+            ce_end_dist = SGGeodesy::distanceM( bisect_position, ce_end_intersect );
         } else {
             SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ERROR - can't intersect bisector " << ce_layer << " with ce " << ce_id << " top right constraint");
             
@@ -862,7 +874,7 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
 #endif
             // if we have a point intersection, what is the distance between 
             // the node and the intersection
-            ne_end_dist = TGEuclidean::distanceM( bisect_position, ne_end_intersect );
+            ne_end_dist = SGGeodesy::distanceM( bisect_position, ne_end_intersect );
         } else {
             SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ERROR - can't intersect bisector " << ce_layer << " with ne " << ne_id << " top left constraint");
             
@@ -875,7 +887,7 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
 #endif
             // if we have a point intersection, what is the distance between 
             // the node and the intersection
-            ce_side_dist = TGEuclidean::distanceM( bisect_position, ce_side_intersect );
+            ce_side_dist = SGGeodesy::distanceM( bisect_position, ce_side_intersect );
         }
         
         if ( bisector.Intersect( ne_side, ne_side_intersect ) ) {
@@ -884,7 +896,7 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
 #endif
             // if we have a point intersection, what is the distance between 
             // the node and the intersection
-            ne_side_dist = TGEuclidean::distanceM( bisect_position, ne_side_intersect );
+            ne_side_dist = SGGeodesy::distanceM( bisect_position, ne_side_intersect );
         }
 
         sprintf( ce_layer, "%s_%03ld_GETNEXT_iter_%d", original_int_name, ne->id, cur_iteration );
@@ -897,10 +909,6 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
                 // verify multiseg ( current_iteration > 1 )
                 if ( cur_iteration > 0 ) {
                     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: all sides are closer than ends, and we've traversed at least one segment - multisegment complete");
-                    
-                    if ( cur_iteration == 1 ) {
-                        
-                    }
                     
                     ce_constraint.push_back(ce_side_intersect);
                     ce_projectlist.push_back(ce_side_intersect);

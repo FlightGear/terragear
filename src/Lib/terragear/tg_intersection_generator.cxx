@@ -4,7 +4,7 @@
 
 #include "tg_intersection_generator.hxx"
 
-#define DEBUG_INTERSECTIONS (1)
+#define DEBUG_INTERSECTIONS (0)
 #define LOG_INTERSECTION    (SG_DEBUG)
 
 void tgIntersectionGenerator::Insert( const SGGeod& s, const SGGeod& e, double w, unsigned int t )
@@ -14,6 +14,7 @@ void tgIntersectionGenerator::Insert( const SGGeod& s, const SGGeod& e, double w
 
 void tgIntersectionGenerator::ToShapefile( const char* prefix )
 {
+#if DEBUG_INTERSECTIONS    
     char name[32];
     
     for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
@@ -21,6 +22,7 @@ void tgIntersectionGenerator::ToShapefile( const char* prefix )
         sprintf( name, "seg_%04ld", (*it)->id );
         tgShapefile::FromSegment( seg, true, datasource, prefix, name );    
     }
+#endif    
 }
 
 void tgIntersectionGenerator::Execute( bool clean )
@@ -101,10 +103,18 @@ void tgIntersectionGenerator::Execute( bool clean )
         (*it)->Complete();
     }
 
-    // verifty all edges have been intersected
+#if DEBUG_INTERSECTIONS    
+    SG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource );    
+
     for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
-        (*it)->Verify( FLAGS_INTERSECT_CONSTRAINTS_COMPLETE);
+        char feat[32];
+        sprintf(feat, "edge_%05ld", (*it)->id );
+        tgPolygon poly = (*it)->GetPoly("complete");
+        tgShapefile::FromPolygon( poly, false, false, datasource, "complete", feat );
+
+        (*it)->ToShapefile();        
     }
+#endif
     
     // to texture, start at caps, and try to cross intersections nicely ( push the start_v )
     SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Texture");        

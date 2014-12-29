@@ -7,8 +7,9 @@
 
 class tgIntersectionGenerator {
 public:
-    tgIntersectionGenerator(const std::string& dr, tgIntersectionGeneratorTexInfoCb cb) : segNet(dr), texInfoCb(cb), debugRoot(dr)  {
-        sprintf( datasource, "./edge_dbg/%s", debugRoot.c_str() );
+    tgIntersectionGenerator(const char* dr, tgIntersectionGeneratorTexInfoCb cb) : segNet(dr), texInfoCb(cb)  {
+        strcpy(  debugRoot, dr );
+        sprintf( datasource, "./edge_dbg/%s", debugRoot );
     }
     
     void                                Insert( const SGGeod& s, const SGGeod& e, double w, unsigned int t );
@@ -25,8 +26,7 @@ private:
     tgintersectionedge_list             edgelist;
         
     tgIntersectionGeneratorTexInfoCb    texInfoCb;
-    std::string                         debugRoot;
-    
+    char                                debugRoot[64];
     char                                datasource[64];
     
 };

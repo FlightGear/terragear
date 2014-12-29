@@ -9,7 +9,6 @@
 #include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include "tg_euclidean.hxx"
 #include "tg_segmentnetwork.hxx"
 #include "tg_cluster.hxx"
 #include "tg_shapefile.hxx"
@@ -465,7 +464,7 @@ void tgSegmentNetwork::ExtendFingers( void )
             // Walk from the nearest_vertex to the point p, using walk algorithm,
             // and find the location of the query point p. Note that the set fo edges
             // we have crossed so far is initially empty.
-            course = TGEuclidean::courseDeg( geodPrev, geodCurr );
+            course = SGGeodesy::courseDeg( geodPrev, geodCurr );
             segnetPoint minPoint;
             
             // First, try directly in front
@@ -572,14 +571,14 @@ void tgSegmentNetwork::FixShortSegments(void)
                     else if ( sq_distance < THRESH_EXTEND ) {
                         SGGeod sourceGeod = SGGeod::fromDeg( CGAL::to_double(sourceHandle->point().x()), CGAL::to_double(sourceHandle->point().y()) );
                         SGGeod targetGeod = SGGeod::fromDeg( CGAL::to_double(targetHandle->point().x()), CGAL::to_double(targetHandle->point().y()) );
-                        double course     = TGEuclidean::courseDeg(sourceGeod, targetGeod);
-                    
+                        double course     = SGGeodesy::courseDeg(sourceGeod, targetGeod);
+                        
                         // need to figure out which way to extend ( or both )
                         if ( ( src_degree > 2 ) && ( trg_degree <= 2 ) ) {
                             SG_LOG(SG_GENERAL, LOG_FIX_SHORT_SEGMENT, "tgSegmentNetwork::extend from source" );
 
                             // calculate new target from source, and magnitude
-                            SGGeod newTargetGeod  = TGEuclidean::direct(sourceGeod, course, 0.2);
+                            SGGeod newTargetGeod  = SGGeodesy::direct(sourceGeod, course, 0.2);
                             segnetPoint newTarget = segnetPoint( newTargetGeod.getLongitudeDeg(), newTargetGeod.getLatitudeDeg() );
                         
                             //ModifyEdges( targetHandle, newTarget, invalid_vh, delEdges, newEdges );
@@ -587,7 +586,7 @@ void tgSegmentNetwork::FixShortSegments(void)
                             SG_LOG(SG_GENERAL, LOG_FIX_SHORT_SEGMENT, "tgSegmentNetwork::extend from target" );
 
                             // calculate new target from source, and magnitude
-                            SGGeod newSourceGeod  = TGEuclidean::direct(targetGeod, course, -0.2);
+                            SGGeod newSourceGeod  = SGGeodesy::direct(targetGeod, course, -0.2);
                             segnetPoint newSource = segnetPoint( newSourceGeod.getLongitudeDeg(), newSourceGeod.getLatitudeDeg() );
                         
                             //ModifyEdges( sourceHandle, newSource, invalid_vh, delEdges, newEdges );

@@ -4,7 +4,6 @@
 #include <simgear/math/SGMath.hxx>
 
 #include "tg_cgal_epec.hxx"
-#include "tg_euclidean.hxx"
 #include "tg_rectangle.hxx"
 #include "tg_misc.hxx"
 

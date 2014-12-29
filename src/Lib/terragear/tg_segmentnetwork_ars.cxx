@@ -9,7 +9,6 @@
 #include <simgear/math/SGMath.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include "tg_euclidean.hxx"
 #include "tg_segmentnetwork.hxx"
 #include "tg_shapefile.hxx"
 
@@ -17,7 +16,7 @@ bool tgSegmentNetwork::ArbitraryRayShoot( const segnetVertexHandle from, double 
 {
     segnetPoint originPoint = from->point();
     SGGeod geodCurr = SGGeod::fromDeg( CGAL::to_double(originPoint.x()), CGAL::to_double(originPoint.y()) );
-    SGGeod geodNext = TGEuclidean::direct( geodCurr, course, 5.0 );
+    SGGeod geodNext = SGGeodesy::direct( geodCurr, course, 5.0 );
     bool   found    = false;
     
     Halfedge_set crossed_edges;

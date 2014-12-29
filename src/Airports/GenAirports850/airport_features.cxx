@@ -651,8 +651,8 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
             for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
                 tgPolygon   poly      = polys_clipped.get_poly(area, p);
                 std::string material  = poly.GetMaterial();
-                //unsigned int num_int_vas = poly.GetNumIntVas();
-                //unsigned int num_flt_vas = poly.GetNumFltVas();
+                unsigned int num_int_vas = poly.GetNumIntVas();
+                unsigned int num_flt_vas = poly.GetNumFltVas();                
                 SGBinObjectTriangle sgboTri;
                 
                 for (unsigned int k = 0; k < poly.Triangles(); ++k) {

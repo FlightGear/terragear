@@ -4,8 +4,7 @@
 #include <simgear/misc/sg_path.hxx>
 
 #include "tg_shapefile.hxx"
-#include "tg_euclidean.hxx"
-#include "tg_misc.hxx"
+// #include "tg_misc.hxx"
 
 bool tgShapefile::initialized = false;
 
@@ -414,8 +413,8 @@ void tgShapefile::FromSegment( const tgSegment& subject, bool show_dir, const st
     line->addPoint(start);
 
     if ( show_dir ) {
-        SGGeod lArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
-        SGGeod rArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
+        SGGeod lArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
+        SGGeod rArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
         
         OGRPoint* end = new OGRPoint;
         end->setX( geodEnd.getLongitudeDeg() );
@@ -494,9 +493,9 @@ void tgShapefile::FromRay( const tgRay& subject, const std::string& datasource, 
     
     line->addPoint(start);
 
-    SGGeod rayEnd = TGEuclidean::direct( geodStart, subject.GetHeading(), 5.0 );
-    SGGeod lArrow = TGEuclidean::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
-    SGGeod rArrow = TGEuclidean::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
+    SGGeod rayEnd = SGGeodesy::direct( geodStart, subject.GetHeading(), 5.0 );
+    SGGeod lArrow = SGGeodesy::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
+    SGGeod rArrow = SGGeodesy::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
     
     OGRPoint* end = new OGRPoint;
     end->setX( rayEnd.getLongitudeDeg() );
@@ -569,8 +568,8 @@ void tgShapefile::FromLine( const tgLine& subject, const std::string& datasource
     
     line->addPoint(start);
     
-    SGGeod slArrow = TGEuclidean::direct( geodStart, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()-10), 0.2 );
-    SGGeod srArrow = TGEuclidean::direct( geodStart, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+10), 0.2 );
+    SGGeod slArrow = SGGeodesy::direct( geodStart, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()-10), 0.2 );
+    SGGeod srArrow = SGGeodesy::direct( geodStart, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+10), 0.2 );
     
     OGRPoint* lstart = new OGRPoint;
     lstart->setX( slArrow.getLongitudeDeg() );
@@ -587,8 +586,8 @@ void tgShapefile::FromLine( const tgLine& subject, const std::string& datasource
     // start back at the beginning
     line->addPoint(start);
 
-    SGGeod elArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
-    SGGeod erArrow = TGEuclidean::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
+    SGGeod elArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
+    SGGeod erArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
     
     OGRPoint* end = new OGRPoint;
     end->setX( geodEnd.getLongitudeDeg() );

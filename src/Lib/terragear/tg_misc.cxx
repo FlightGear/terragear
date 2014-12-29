@@ -6,7 +6,6 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_polygon.hxx"
-#include "tg_euclidean.hxx"
 #include "tg_misc.hxx"
 #include "tg_cgal_epec.hxx"
 #include "tg_shapefile.hxx"
@@ -369,6 +368,48 @@ SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 )
                              (p0.getElevationM()   + p1.getElevationM()) / 2 );
 }
 
+#if 0
+void Bisect( const SGGeod& gCenter, double heading1, double heading2, bool right )
+{
+    double  courseCur, courseNext, courseAvg, theta;
+    SGVec3d dirCur, dirNext, dirAvg, cp;
+    double  courseOffset, distOffsetInner, distOffsetOuter;
+    SGGeod  pt;
+    
+    // first, find if the line turns left or right ar src
+    // for this, take the cross product of the vectors from prev to src, and src to next.
+    // if the cross product is negetive, we've turned to the left
+    // if the cross product is positive, we've turned to the right
+    dirCur  = SGVec3d( sin( heading1*SGD_DEGREES_TO_RADIANS ), cos( heading1*SGD_DEGREES_TO_RADIANS ), 0.0f );
+    dirNext = SGVec3d( sin( heading2*SGD_DEGREES_TO_RADIANS ), cos( heading2*SGD_DEGREES_TO_RADIANS ), 0.0f );
+    
+    // Now find the average
+    dirAvg = normalize( dirCur + dirNext );
+    courseAvg = SGMiscd::rad2deg( atan( dirAvg.x()/dirAvg.y() ) );
+    if (courseAvg < 0) {
+        courseAvg += 180.0f;
+    }
+    
+    // check the turn direction
+    cp    = cross( dirCur, dirNext );
+    theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext ) );
+    
+    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
+        // straight line blows up math - offset 90 degree and dist is as given
+        courseOffset = SGMiscd::normalizePeriodic(0, 360, heading2-90.0);
+    }  else  {
+        // calculate correct distance for the offset point
+        if (cp.z() < 0.0f) {
+            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg+180);
+            turn_dir = 0;
+        } else {
+            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg);
+            turn_dir = 1;
+        }
+    }
+    return courseOffset;
+}
+#else
 double Bisect( const SGGeod& center, double heading1, double heading2, bool right )
 {   
     // convert starting point to CGAL
@@ -402,6 +443,7 @@ double Bisect( const SGGeod& center, double heading1, double heading2, bool righ
     
     return tgCgalBase::DirectionToHeading( dir );
 }
+#endif
 
 tgRay Bisect( const tgRay& r1, const tgRay& r2, bool right )
 {
