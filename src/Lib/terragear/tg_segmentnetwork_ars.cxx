@@ -617,7 +617,7 @@ Result_type tgSegmentNetwork::_walk_from_vertex(segnetVertexHandle nearest_verte
         
         if (new_vertex) {
             // We found a vertex closer to p; Continue using this vertex.
-            const segnetVertexHandle* p_vh = Result().template assign<segnetVertexHandle>(obj);
+            const segnetVertexHandle* p_vh = Result().assign<segnetVertexHandle>(obj);
             CGAL_assertion(p_vh != NULL);
             vh = *p_vh;
             continue;
@@ -625,12 +625,12 @@ Result_type tgSegmentNetwork::_walk_from_vertex(segnetVertexHandle nearest_verte
         
         // If p is located on an edge or on a vertex, return the object
         // that wraps this arrangement feature.
-        if (Result().template assign<segnetHalfedgeHandle>(obj) ||
-            Result().template assign<segnetVertexHandle>(obj)) {
+        if (Result().assign<segnetHalfedgeHandle>(obj) ||
+            Result().assign<segnetVertexHandle>(obj)) {
             return obj;
         }
         
-        const segnetFaceHandle* p_fh = Result().template assign<segnetFaceHandle>(obj);
+        const segnetFaceHandle* p_fh = Result().assign<segnetFaceHandle>(obj);
         if (p_fh) {
             // Walk to p from the face we have located:
             return _walk_from_face(*p_fh, vh->point(), p, crossed_edges);
