@@ -5,6 +5,11 @@ include (CheckCSourceCompiles)
 include (CheckCXXSourceCompiles)
 include (CheckIncludeFile)
 include (CPack)
+if(${CMAKE_VERSION} VERSION_GREATER 2.8.4)
+  include(GNUInstallDirs)
+else(${CMAKE_VERSION} VERSION_GREATER 2.8.4)
+  include(OldGNUInstallDirs)
+endif(${CMAKE_VERSION} VERSION_GREATER 2.8.4)
 
 project(TerraGear)
 
