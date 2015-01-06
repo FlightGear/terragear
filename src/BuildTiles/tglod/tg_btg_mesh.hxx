@@ -150,11 +150,14 @@ typedef tgBtgMesh::Vertex_iterator                      tgBtgVertex_iterator;
 typedef tgBtgMesh::Vertex_handle                        tgBtgVertex_handle;
 typedef tgBtgMesh::Halfedge_iterator                    tgBtgHalfedge_iterator;
 typedef tgBtgMesh::Halfedge_around_facet_circulator     tgBtgHalfedge_facet_circulator;
+typedef tgBtgMesh::Halfedge_around_vertex_circulator    tgBtgHalfedge_vertex_circulator;
 typedef tgBtgMesh::Halfedge_handle                      tgBtgHalfedge_handle;
 typedef tgBtgMesh::Facet_iterator                       tgBtgFacet_iterator;
 typedef tgBtgMesh::Facet_handle                         tgBtgFacet_handle;
 
+                                                        
+
 void tgReadBtgAsMesh( const SGBinObject& inobj, tgBtgMesh& mesh );
 bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile );
-int  tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, float boundary_wgt, float shape_wgt, const std::string& name );
-
+int  tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, float boundary_wgt, float shape_wgt, double cl, const std::string& name );
+void tgMeshToShapefile( tgBtgMesh& mesh, const std::string& name );

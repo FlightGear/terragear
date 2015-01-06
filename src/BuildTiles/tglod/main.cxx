@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     double max_lat =   90;
     int    level = 0;
     
-    sglog().setLogLevels( SG_ALL, SG_DEBUG );
+    sglog().setLogLevels( SG_ALL, SG_INFO );
 
     //
     // Parse the command-line arguments.
@@ -121,7 +121,7 @@ int main(int argc, char **argv)
                 char cmdline[256];
         
                 SG_LOG( SG_GENERAL, SG_ALERT, "           box " << i << " : " << subdivide[i] << " level " << subdivide[i].getStartLevel() << " height is " << subdivide[i].getHeightDeg() );
-                sprintf( cmdline, "/home/peter/Development/terragear/release/src/BuildTiles/tglod/tg-lod --work-dir=%s --min-lon=%f --min-lat=%f --max-lon=%f --max-lat=%f", 
+                sprintf( cmdline, "/home/psadro/Development/terragear/release/src/BuildTiles/tglod/tg-lod --work-dir=%s --min-lon=%f --min-lat=%f --max-lon=%f --max-lat=%f", 
                         work_dir.c_str(),
                         subdivide[i].getLongitudeDeg(), 
                         subdivide[i].getLatitudeDeg(), 
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
                 if ( inobj.read_bin( infile.str() ) ) {
                     tgBtgMesh mesh;
                     tgReadBtgAsMesh( inobj, mesh );                    
-                    tgBtgSimplify( mesh, 0.25f, 0.5f, 0.5f, 0.0f, b.gen_index_str() );
+                    tgBtgSimplify( mesh, 0.25f, 0.5f, 0.5f, 0.0f, b.get_center_lat(), b.gen_index_str() );
                     tgWriteMeshAsBtg( mesh, b.get_center(), outfile );
                 }
             }

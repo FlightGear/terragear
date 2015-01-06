@@ -34,6 +34,8 @@
 #include <terragear/tg_unique_vec3f.hxx>
 #include <terragear/tg_unique_vec2f.hxx>
 
+#include <terragear/tg_shapefile.hxx>
+
 #include "tg_btg_mesh.hxx"
 
 template <class HDS>
@@ -57,9 +59,16 @@ public:
         typedef typename HDS::Vertex   Vertex;
         typedef typename Vertex::Point Point;
         
+        const std::vector<SGVec3d>& wgs84_nodes = obj.get_wgs84_nodes();
+        SGVec3d gbs_center = obj.get_gbs_center();
+
         for ( int v=0; v<num_vertices; v++ ) {
-            SGVec3d sgn = obj.get_wgs84_nodes()[v];
-            B.add_vertex( Point( sgn.x(), sgn.y(), sgn.z() ) );
+            SGVec3d wgs84 = wgs84_nodes[v];
+            SGVec3d raw   = SGVec3d( gbs_center.x() + wgs84.x(),
+                                     gbs_center.y() + wgs84.y(),
+                                     gbs_center.z() + wgs84.z() );            
+            
+            B.add_vertex( Point( raw.x(), raw.y(), raw.z() ) );
         }
         
         // read texture coordinates
@@ -245,4 +254,45 @@ bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile)
     outobj.set_texcoords( texcoords.get_list() );
     
     return outobj.write_bin_file( outfile );
+}
+
+void tgMeshToShapefile(tgBtgMesh& mesh, const std::string& name)
+{
+    std::vector<SGGeod>    nodes;
+    std::vector<tgSegment> segs;
+
+    for (tgBtgFacet_iterator fit = mesh.facets_begin(); fit != mesh.facets_end(); fit++ ) {
+        // create a tgSegment list for the face    
+        nodes.clear();
+        segs.clear();
+        
+        tgBtgHalfedge_handle hh = fit->halfedge();
+        
+        tgBtgHalfedge_facet_circulator hfc_end = (tgBtgHalfedge_facet_circulator)hh;
+        tgBtgHalfedge_facet_circulator hfc_cur = hfc_end;
+        do {
+            // create a list of geods
+            SGGeod gnode = SGGeod::fromCart( SGVec3d( hfc_cur->vertex()->point().x(),
+                                                    hfc_cur->vertex()->point().y(),
+                                                    hfc_cur->vertex()->point().z() ) );
+            nodes.push_back( gnode );
+            
+            hfc_cur++;
+        } while(hfc_cur != hfc_end);
+        
+        for ( unsigned int i=0; i<nodes.size(); i++ ) {
+            if ( i != nodes.size()-1 ) {
+                tgSegment seg(nodes[i], nodes[i+1]);
+                segs.push_back(seg);
+            } else {
+                tgSegment seg(nodes[i], nodes[0]);                
+                segs.push_back(seg);
+            }            
+        }
+        
+        char datasource[64];
+        sprintf( datasource, "./simp_dbg/%s", name.c_str() );
+        
+        tgShapefile::FromSegmentList( segs, false, datasource, "original_mesh", "mesh" );
+    }
 }

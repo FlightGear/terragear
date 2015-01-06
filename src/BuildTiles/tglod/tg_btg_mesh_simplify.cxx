@@ -40,10 +40,13 @@
 // Visitor base
 #include <CGAL/Surface_mesh_simplification/Edge_collapse_visitor_base.h>
 
+#include <simgear/misc/texcoord.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <terragear/tg_shapefile.hxx>
 
 typedef CGAL::Line_3<tgBtgKernel>                             tgBtg_Line_3;
+
+#define DEBUG_SIMPLIFY  (0)
 
 //
 // BGL property map which indicates whether an edge is marked as non-removable
@@ -93,7 +96,8 @@ struct CollapseInfo
 
 struct CollapseVisitor : SMS::Edge_collapse_visitor_base<tgBtgMesh>
 {
-    CollapseVisitor( CollapseInfo* ci, const std::string& n ) : cinfo(ci), name(n) {}
+    CollapseVisitor( CollapseInfo* ci, const std::string& n, double cl ) : cinfo(ci), center_lat(cl), name(n) {}
+    char datasource[64];
     char layer[64];
     
     // Called during the collecting phase for each edge collected.
@@ -119,9 +123,11 @@ struct CollapseVisitor : SMS::Edge_collapse_visitor_base<tgBtgMesh>
         if ( !placement ) {
             ++cinfo->placement_uncomputable;
         } else {
-            ++cinfo->collapsing;
+            ++cinfo->collapsing;            
             
-            sprintf( layer, "%s_collapsing_%04lu", name.c_str(), cinfo->collapsing );
+#if DEBUG_SIMPLIFY            
+            sprintf( datasource, "./simp_dbg/%s", name.c_str() );
+            sprintf( layer, "collapsing_verts_%04lu", cinfo->collapsing );
             // for now, recalculate texture coordinates based on new placement
             // convert cartesian point to Geod, and use simgear's tc function
             //
@@ -130,21 +136,53 @@ struct CollapseVisitor : SMS::Edge_collapse_visitor_base<tgBtgMesh>
             //
             // this is possible if we still have the tgconstruct data
             // perhaps LOD should be performed during tgconstruct ( 4th stage )
-            if ( profile.left_face_exists() && profile.right_face_exists() ) {
-                
-                SGGeod gv0 = SGGeod::fromCart( SGVec3d( profile.p0().x(), profile.p0().y(), profile.p0().z() ) );
-                SGGeod gv1 = SGGeod::fromCart( SGVec3d( profile.p1().x(), profile.p1().y(), profile.p1().z() ) );
+            SGGeod gplace = SGGeod::fromCart( SGVec3d( placement.get().x(), placement.get().y(), placement.get().z() ) );
+            tgShapefile::FromGeod( gplace, datasource, layer, "Placement" );
+            
+            SG_LOG( SG_GENERAL, SG_ALERT, "New node will be at " << gplace );
+            
+            SGGeod gv0 = SGGeod::fromCart( SGVec3d( profile.p0().x(), profile.p0().y(), profile.p0().z() ) );
+            tgShapefile::FromGeod( gv0, datasource, layer, "V0" );
+            SGGeod gv1 = SGGeod::fromCart( SGVec3d( profile.p1().x(), profile.p1().y(), profile.p1().z() ) );
+            tgShapefile::FromGeod( gv1, datasource, layer, "V1" );
+            
+            if ( profile.left_face_exists() ) {   
                 SGGeod gL  = SGGeod::fromCart( SGVec3d( profile.vL()->point().x(), profile.vL()->point().y(), profile.vL()->point().z() ) );
+                tgShapefile::FromGeod( gL,  datasource, layer, "VL" );
+            }
+            
+            if ( profile.right_face_exists() ) {
                 SGGeod gR  = SGGeod::fromCart( SGVec3d( profile.vR()->point().x(), profile.vR()->point().y(), profile.vR()->point().z() ) );
-
-                tgShapefile::FromGeod( gv0, "./simp_dbg", layer, "V0" );
-                tgShapefile::FromGeod( gv1, "./simp_dbg", layer, "V1" );
-                tgShapefile::FromGeod( gL,  "./simp_dbg", layer, "VL" );
-                tgShapefile::FromGeod( gR,  "./simp_dbg", layer, "VR" );
+                tgShapefile::FromGeod( gR,  datasource, layer, "VR" );
             }
             
             // which face is the point in?
-            
+            // traverse the triangles
+            Profile::Triangle_vector triangles = profile.triangles();
+            sprintf( layer, "collapsing_tris_%04lu", cinfo->collapsing );
+                     
+            for ( unsigned int i=0; i< triangles.size(); i++ ) {
+                std::vector<tgSegment> segs;
+                
+                SGGeod g0 = SGGeod::fromCart( SGVec3d(triangles[i].v0->point().x(),
+                                                      triangles[i].v0->point().y(),
+                                                      triangles[i].v0->point().z() ));
+
+                SGGeod g1 = SGGeod::fromCart( SGVec3d(triangles[i].v1->point().x(),
+                                                      triangles[i].v1->point().y(),
+                                                      triangles[i].v1->point().z() ));
+
+                SGGeod g2 = SGGeod::fromCart( SGVec3d(triangles[i].v2->point().x(),
+                                                      triangles[i].v2->point().y(),
+                                                      triangles[i].v2->point().z() ));
+                
+                segs.push_back( tgSegment( g0, g1 ) );
+                segs.push_back( tgSegment( g1, g2 ) );
+                segs.push_back( tgSegment( g2, g0 ) );
+                
+                tgShapefile::FromSegmentList( segs, false, datasource, layer, "tris" );
+            }
+#endif
         }
     }            
     
@@ -157,22 +195,58 @@ struct CollapseVisitor : SMS::Edge_collapse_visitor_base<tgBtgMesh>
     }                
     
     // Called AFTER each edge has been collapsed
-    void OnCollapsed( Profile const&, tgBtgVertex_handle )
+    void OnCollapsed( Profile const& profile, tgBtgVertex_handle new_node )
     {
         ++cinfo->collapsed;
+        
+        // calculate the tex coords of the collapsed vertex in Geodetic coordinates
+        SGGeod g = SGGeod::fromCart( SGVec3d( new_node->point().x(),
+                                              new_node->point().y(),
+                                              new_node->point().z() ));
+        
+        // ToDo : Create a new SimGear texcoordinate generator that just takes a list of geods, or a single geod
+        // The Simgear General texture coordinate routine currently takes a fan.
+        std::vector< int >      node_idxs;
+        std::vector< SGGeod >   nodes;
+        std::vector< SGVec2f >  tc_list;
+        
+        node_idxs.push_back(0);
+        nodes.push_back(g);
+
+        tc_list = sgCalcTexCoords( center_lat, nodes, node_idxs );
+        
+        // how set this tc on all half edges incident to this vertex
+        tgBtgHalfedge_vertex_circulator hv_cur = new_node->vertex_begin();
+        tgBtgHalfedge_vertex_circulator hv_end = hv_cur;
+                    
+        int num_he = 1;
+        
+        do { 
+            // set primary texture coordinate : all normals need to be recomputed
+            // when we are done, as all the faces change
+            hv_cur->SetTexCoord( tc_list[0] );
+            hv_cur++;
+            num_he++;
+        } while(hv_cur != hv_end);
+
+        SG_LOG( SG_GENERAL, SG_ALERT, "Set TC incident to vertex " << g << " : " << num_he << " halfedges " );
+        
     }                
     
     CollapseInfo* cinfo;
-    std::string   name;
+    double        center_lat;
+    std::string   name;    
 };
 
-int tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, float boundary_wgt, float shape_wgt, const std::string& name )
+int tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, float boundary_wgt, float shape_wgt, double cl, const std::string& name )
 {
     CollapseInfo    ci;
-    CollapseVisitor vis(&ci, name);
+    CollapseVisitor vis(&ci, name, cl );
 
     // first write the whole mesh as triangles
-    
+#if DEBUG_SIMPLIFY
+    tgMeshToShapefile( mesh, name );
+#endif
     
     // In this example, the simplification stops when the number of undirected edges
     // drops below 25% of the initial count
