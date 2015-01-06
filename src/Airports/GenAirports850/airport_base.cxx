@@ -181,12 +181,9 @@ void Airport::ClipBase()
 
             // only add to output list if the clip left us with a polygon
             if ( clipped.Contours() > 0 ) {
-                // add the sliverless result polygon to the clipped polys list
-                if ( clipped.Contours() > 0  ) {
-                    // copy all of the superpolys and texparams
-                    clipped.SetId( polys_built.get_poly( area, p ).GetId() );
-                    polys_clipped.add_poly( area, clipped );
-                }
+                // copy all of the superpolys and texparams
+                clipped.SetId( polys_built.get_poly( area, p ).GetId() );
+                polys_clipped.add_poly( area, clipped );
             }
 
             accum.Add( current );
@@ -390,6 +387,44 @@ void Airport::LookupBaseIndexes( void )
 void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 {
     if ( base_nodes.size() ) {
+        //
+        // first write the pavements and grass as chopped polys for undetailed LOD
+        //
+        tgAccumulator base_ld_accum;
+        tgAccumulator pvmt_ld_accum;
+        
+        for ( unsigned int area = AIRPORT_AREA_INNER_BASE; area <= AIRPORT_AREA_OUTER_BASE; area++ ) {
+            for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+                tgPolygon& poly = polys_clipped.get_poly( area, p );
+                base_ld_accum.Add( poly );
+            }
+        }
+        tgPolygon base_ld = base_ld_accum.Union();
+
+        for ( unsigned int area = AIRPORT_AREA_RUNWAY; area <= AIRPORT_AREA_HELIPAD_SHOULDER; area++ ) {
+            for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+                tgPolygon& poly = polys_clipped.get_poly( area, p );
+                pvmt_ld_accum.Add( poly );
+            }
+        }
+        tgPolygon pvmt_ld = base_ld_accum.Union();
+
+        std::string   low_detail_path = root + "/Airport_lowdetail";
+        tgChopper     ld_chopper( low_detail_path );
+   
+        base_ld.SetTexMethod( TG_TEX_BY_GEODE );
+        base_ld.SetPreserve3D( false );
+        ld_chopper.Add( base_ld, "Airport" );
+
+        pvmt_ld.SetTexMethod( TG_TEX_BY_GEODE );
+        pvmt_ld.SetPreserve3D( false );
+        ld_chopper.Add( base_ld, "Asphalt" );
+
+        ld_chopper.Save(false);
+        
+        //
+        // Then create seperate smoothed .btg for high detail airport
+        //
         UniqueSGVec3fSet normals;
         UniqueSGVec2fSet texcoords;
 
@@ -473,6 +508,10 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         write_index( objpath, b, name );
 
 
+        //
+        // Finally, write the 'connective tissue' between the outer airport base ( unsmoothed )
+        // to the hole ( smoothed )
+        //
         std::string holepath = root + "/AirportArea";
         tgChopper chopper( holepath );
 
@@ -480,10 +519,6 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 
         /* need to polulate the elevations in inner base */
         inner_base.SetElevations( base_nodes );
-
-//      tgShapefile::FromPolygon( inner_base, "./hole_dbg", "hole poly", "hole" );
-//      tgShapefile::FromPolygon( outer_base, "./hole_dbg", "base poly", "base" );
-
         inner_base.SetPreserve3D( true );
         chopper.Add( inner_base, "Hole" );
 
