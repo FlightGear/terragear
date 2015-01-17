@@ -675,10 +675,10 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
                         index = texcoords.add( poly.GetTriPriTexCoord( k, l ) );
                         sgboTri.tc_list[0].push_back( index );
                         
+#if 0                        
                         index = texcoords.add( poly.GetTriSecTexCoord( k, l ) );
                         sgboTri.tc_list[1].push_back( index );
 
-#if 0                        
                         for ( unsigned int m=0; m<num_int_vas; m++ ) {
                             index = add_unique_int( vaints, poly.GetTriIntVA( k, l, m  ) );
                             sgboTri.va_list[m].push_back( index );

@@ -63,6 +63,7 @@ int main(int argc, char **argv)
     double min_lat =  -90;
     double max_lon =  180;
     double max_lat =   90;
+    SGGeod min, max;
     int    level = 0;
     
     sglog().setLogLevels( SG_ALL, SG_INFO );
@@ -93,7 +94,7 @@ int main(int argc, char **argv)
         }
     }
     
-    
+#if 0 // when we cn handle different tile sizes    
     double width  = max_lon - min_lon;
     double height = max_lat - min_lat;
 
@@ -156,6 +157,68 @@ int main(int argc, char **argv)
             }
         }
     }
+    
+#else
+
+    min = SGGeod::fromDeg( min_lon, min_lat );
+    max = SGGeod::fromDeg( max_lon, max_lat );
+    
+    if (min.isValid() && max.isValid() && (min != max))
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
+        SG_LOG(SG_GENERAL, SG_ALERT, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
+    } else
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Lon/Lat unset or wrong");
+        exit(1);
+    }
+
+    // tile work queue
+    std::vector<SGBucket> bucketList;
+
+    // First generate the workqueue of buckets to construct
+    // build all the tiles in an area
+    SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) within given bounding box");
+    
+    SGBucket b_min( min );
+    SGBucket b_max( max );
+    
+    if ( b_min == b_max ) {
+        bucketList.push_back( b_min );
+    } else {
+        SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
+        sgGetBuckets( min, max, bucketList );
+    }
+
+    for ( unsigned int i=0; i<bucketList.size(); i++ ) {
+        SGBucket    b = bucketList[i];
+        SGPath      infile  = work_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".btg.gz";
+        SGPath      outfile = output_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".btg.gz";
+        SGBinObject inobj;
+            
+        if ( infile.exists() ) {
+            char cmd[256];
+                        
+            SG_LOG(SG_GENERAL, SG_ALERT, "Readding tile " << b.gen_index_str() << " : " << i << " of " << bucketList.size() );
+            if ( inobj.read_bin( infile.str() ) ) {
+                tgBtgMesh mesh;
+                SG_LOG(SG_GENERAL, SG_ALERT, "Converting tile " << b.gen_index_str() );
+                tgReadBtgAsMesh( inobj, mesh );                    
+                SG_LOG(SG_GENERAL, SG_ALERT, "Simplifying tile " << b.gen_index_str() );
+                tgBtgSimplify( mesh, 0.25f, 0.5f, 0.5f, 0.0f, b.get_center_lat(), b.gen_index_str() );
+                SG_LOG(SG_GENERAL, SG_ALERT, "Writing  tile " << b.gen_index_str() );
+                tgWriteMeshAsBtg( mesh, b.get_center(), outfile );
+                
+                SGPath inSTG = work_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".stg";
+                SGPath outSTG = output_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".stg";
+                
+                sprintf( cmd, "cp %s %s", inSTG.c_str(), outSTG.c_str() );
+                system( cmd );                
+            }
+        }
+    }
+    
+#endif
         
     return 0;
 }

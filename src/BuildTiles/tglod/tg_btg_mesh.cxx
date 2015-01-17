@@ -63,12 +63,8 @@ public:
         SGVec3d gbs_center = obj.get_gbs_center();
 
         for ( int v=0; v<num_vertices; v++ ) {
-            SGVec3d wgs84 = wgs84_nodes[v];
-            SGVec3d raw   = SGVec3d( gbs_center.x() + wgs84.x(),
-                                     gbs_center.y() + wgs84.y(),
-                                     gbs_center.z() + wgs84.z() );            
-            
-            B.add_vertex( Point( raw.x(), raw.y(), raw.z() ) );
+            SGVec3d sgn = obj.get_wgs84_nodes()[v] + gbs_center;
+            B.add_vertex( Point( sgn.x(), sgn.y(), sgn.z() ) );
         }
         
         // read texture coordinates
@@ -290,9 +286,9 @@ void tgMeshToShapefile(tgBtgMesh& mesh, const std::string& name)
             }            
         }
         
-        char datasource[64];
-        sprintf( datasource, "./simp_dbg/%s", name.c_str() );
+//      char datasource[64];
+//      sprintf( datasource, "./simp_dbg/%s", name.c_str() );
         
-        tgShapefile::FromSegmentList( segs, false, datasource, "original_mesh", "mesh" );
+//      tgShapefile::FromSegmentList( segs, false, datasource, "original_mesh", "mesh" );
     }
 }
