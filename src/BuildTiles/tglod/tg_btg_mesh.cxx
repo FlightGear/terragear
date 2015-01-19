@@ -28,6 +28,7 @@
 
 //#include <cstdio>
 #include <simgear/math/SGMath.hxx>
+#include <simgear/misc/texcoord.hxx>
 #include <simgear/debug/logstream.hxx>
 
 #include <terragear/tg_unique_vec3d.hxx>
@@ -200,30 +201,42 @@ bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile)
         
             tgBtgHalfedge_handle hh = (*fit)->halfedge();
             
-            // now add the per vertex stuff
             tgBtgHalfedge_facet_circulator hfc_end = (tgBtgHalfedge_facet_circulator)hh;
             tgBtgHalfedge_facet_circulator hfc_cur = hfc_end;
-            do { 
-                int index;
-                
-                // to verify, read back the points
+
+            // need to send a list of geods for the tcs
+            std::vector< int >      node_idxs;
+            for (int i = 0; i < 3; i++) {
+                node_idxs.push_back(i);
+            }
+            std::vector< SGGeod >   nodes;
+            int index;
+            
+            do {                
                 SGVec3d node = SGVec3d( hfc_cur->vertex()->point().x(),
                                         hfc_cur->vertex()->point().y(),
                                         hfc_cur->vertex()->point().z() );
+
                 index = vertices.add( node );
                 sgboTri.v_list.push_back( index );
 
                 index = normals.add( hfc_cur->GetNormal() );
                 sgboTri.n_list.push_back( index );
                 
-                index = texcoords.add( hfc_cur->GetTexCoord() );
-                sgboTri.tc_list[0].push_back( index );
-                        
+                // calc tc 
+                nodes.push_back(SGGeod::fromCart( node ));
+                                        
                 hfc_cur++;
             } while(hfc_cur != hfc_end);            
         
             if ( sgboTri.v_list.size() != 3 ) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Facet had more than 3 vertices " );
+            }
+            
+            std::vector<SGVec2f> tc_list = sgCalcTexCoords( center, nodes, node_idxs );            
+            for ( unsigned int i=0; i<tc_list.size(); i++ ) {
+                index = texcoords.add( tc_list[i] );
+                sgboTri.tc_list[0].push_back( index );
             }
             
             outobj.add_triangle( sgboTri );
@@ -286,9 +299,9 @@ void tgMeshToShapefile(tgBtgMesh& mesh, const std::string& name)
             }            
         }
         
-//      char datasource[64];
-//      sprintf( datasource, "./simp_dbg/%s", name.c_str() );
+      char datasource[64];
+      sprintf( datasource, "./simp_dbg/%s", name.c_str() );
         
-//      tgShapefile::FromSegmentList( segs, false, datasource, "original_mesh", "mesh" );
+      tgShapefile::FromSegmentList( segs, false, datasource, "original_mesh", "mesh" );
     }
 }

@@ -384,6 +384,19 @@ void Airport::LookupBaseIndexes( void )
     }
 }
 
+#if 0
+#define AIRPORT_AREA_RUNWAY             (0)
+#define AIRPORT_AREA_HELIPAD            (1)
+#define AIRPORT_AREA_PAVEMENT           (2)
+#define AIRPORT_AREA_TAXIWAY            (3)
+#define AIRPORT_AREA_RUNWAY_SHOULDER    (4)
+#define AIRPORT_AREA_HELIPAD_SHOULDER   (5)
+#define AIRPORT_AREA_INNER_BASE         (6)
+#define AIRPORT_AREA_OUTER_BASE         (7)
+#define AIRPORT_AREA_RWY_FEATURES       (8)
+#define AIRPORT_AREA_TAXI_FEATURES      (9)
+#endif
+
 void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 {
     if ( base_nodes.size() ) {
@@ -394,20 +407,20 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         tgAccumulator pvmt_ld_accum;
         
         for ( unsigned int area = AIRPORT_AREA_INNER_BASE; area <= AIRPORT_AREA_OUTER_BASE; area++ ) {
-            for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-                tgPolygon& poly = polys_clipped.get_poly( area, p );
+            for( unsigned int p = 0; p < polys_built.area_size(area); p++ ) {
+                tgPolygon& poly = polys_built.get_poly( area, p );
                 base_ld_accum.Add( poly );
             }
         }
         tgPolygon base_ld = base_ld_accum.Union();
 
         for ( unsigned int area = AIRPORT_AREA_RUNWAY; area <= AIRPORT_AREA_HELIPAD_SHOULDER; area++ ) {
-            for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-                tgPolygon& poly = polys_clipped.get_poly( area, p );
+            for( unsigned int p = 0; p < polys_built.area_size(area); p++ ) {
+                tgPolygon& poly = polys_built.get_poly( area, p );
                 pvmt_ld_accum.Add( poly );
             }
         }
-        tgPolygon pvmt_ld = base_ld_accum.Union();
+        tgPolygon pvmt_ld = pvmt_ld_accum.Union();
 
         std::string   low_detail_path = root + "/Airport_lowdetail";
         tgChopper     ld_chopper( low_detail_path );
@@ -418,7 +431,7 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 
         pvmt_ld.SetTexMethod( TG_TEX_BY_GEODE );
         pvmt_ld.SetPreserve3D( false );
-        ld_chopper.Add( base_ld, "Asphalt" );
+        ld_chopper.Add( pvmt_ld, "Asphalt" );
 
         ld_chopper.Save(false);
         
