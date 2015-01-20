@@ -38,13 +38,17 @@
 #include <terragear/BucketBox.hxx>
 #include <terragear/tg_shapefile.hxx>
 
+#include "tg_geometry_arrays.hxx"
+
 #include <Include/version.h>
 
 // display usage and exit
+#if 0
 static void usage( const std::string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << name);
     exit(-1);
 }
+#endif
 
 // usage tglod minx, miny, maxx, maxy, level input_dir output_dir
 // 
@@ -53,21 +57,196 @@ static void usage( const std::string name ) {
 //              14.00,35.75 - 14.25,36.00
 //              14.25,35.75 - 14.50,36.00
 
+void
+collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, std::list<std::string>& files, std::list<SGBucket>& ocean)
+{
+    if (bucketBox.getIsBucketSize()) {
+        std::string fileName = sceneryPath;
+        fileName += bucketBox.getBucket().gen_base_path();
+        fileName += std::string("/");
+        fileName += bucketBox.getBucket().gen_index_str();
+        fileName += std::string(".btg.gz");
+        if (SGPath(fileName).exists())
+            files.push_back(fileName);
+        else
+            ocean.push_back(bucketBox.getBucket());
+    } else {
+        BucketBox bucketBoxList[100];
+        unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);
+        for (unsigned i = 0; i < numTiles; ++i) {
+            collectBtgFiles(bucketBoxList[i], sceneryPath, files, ocean);
+        }
+    }
+}
+
+int
+collapseBtg(const std::string& outfile, const std::list<std::string>& infiles, const std::list<SGBucket>& ocean)
+{
+    Arrays arrays;
+    
+    for (std::list<std::string>::const_iterator i = infiles.begin(); i != infiles.end(); ++i) {
+        SGBinObject binObj;
+        if (!binObj.read_bin(*i)) {
+            std::cerr << "Error Reading file " << *i << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        arrays.insert(binObj);
+    }
+
+    for (std::list<SGBucket>::const_iterator i = ocean.begin(); i != ocean.end(); ++i) {
+        std::vector<SGGeod>  geod;
+        int_list             geod_idxs;
+        std::vector<SGVec3d> vertices;
+        std::vector<SGVec3f> normals;
+
+        for (unsigned j = 0; j < 4; ++j) {
+            geod.push_back(i->get_corner(j));
+            geod_idxs.push_back(j);
+            
+            vertices.push_back(SGVec3d::fromGeod(geod.back()));
+            normals.push_back(toVec3f(normalize(vertices.back())));
+        }
+
+        std::vector<SGVec2f> texCoords = sgCalcTexCoords(*i, geod, geod_idxs);
+        
+        arrays.insertFanGeometry("Ocean", SGVec3d::zeros(), vertices, normals, texCoords, geod_idxs, geod_idxs, geod_idxs);
+    }
+
+    // TODO create mesh from Arrays
+    tgBtgMesh mesh;
+    tgReadArraysAsMesh( arrays, mesh );                    
+    
+#if 0    
+    SGBinObject bigBinObj;
+    bigBinObj.set_wgs84_nodes(arrays.vertices);
+    std::vector<SGVec4f> colors;
+    colors.push_back(SGVec4f(1, 1, 1, 1));
+    bigBinObj.set_colors(colors);
+    bigBinObj.set_normals(arrays.normals);
+    bigBinObj.set_texcoords(arrays.texcoords);
+    bigBinObj.set_tris_v(arrays.indices);
+    bigBinObj.set_tris_n(arrays.indices);
+    bigBinObj.set_tris_tc(arrays.indices);
+    bigBinObj.set_tri_materials(arrays.materials);
+
+    SGBox<double> box;
+    for (size_t i = 0; i < arrays.vertices.size(); ++i)
+        box.expandBy(arrays.vertices[i]);
+    bigBinObj.set_gbs_center(box.getCenter());
+    bigBinObj.set_gbs_radius(length(box.getHalfSize()));
+
+    for (size_t i = 0; i < arrays.vertices.size(); ++i)
+        arrays.vertices[i] -= outBinObj.get_gbs_center();
+
+    if (!outBinObj.write_bin_file(SGPath(outfile))) {
+        std::cerr << "Error Writing file " << outfile << std::endl;
+        return EXIT_FAILURE;
+    }
+#endif    
+
+    return EXIT_SUCCESS;
+}
+
+
+int
+createTree(const BucketBox& bucketBox, const std::string& sceneryPath, const std::string& outPath, unsigned level)
+{
+    if (bucketBox.getStartLevel() == level) {
+        // We want an other level of indirection for paging
+        std::list<std::string> files;
+        std::list<SGBucket>    ocean;
+        collectBtgFiles(bucketBox, sceneryPath, files, ocean);
+        if (files.empty()) {
+            return EXIT_SUCCESS;
+        }
+        
+        std::stringstream ss;
+        ss << outPath << "/";
+        for (unsigned i = 3; i < level; i += 2) {
+            ss << bucketBox.getParentBox(i) << "/";
+        }
+        
+        SGPath(ss.str()).create_dir(0755);
+        ss << bucketBox << ".btg.gz";
+        collapseBtg(ss.str(), files, ocean);
+   
+    } else {
+        BucketBox bucketBoxList[100];
+        unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);
+        for (unsigned i = 0; i < numTiles; ++i) {
+            if (EXIT_FAILURE == createTree(bucketBoxList[i], sceneryPath, outPath, level)) {
+                return EXIT_FAILURE;
+            }
+        }
+    }
+    
+    return EXIT_SUCCESS;
+}
+
+
 int main(int argc, char **argv) 
 {
-    std::string output_dir = ".";
-    std::string work_dir = ".";
+    std::string outfile;
+    std::string sceneryPath = "/share/scenery/svn/Terrain/";
+    unsigned level = ~0u;
+    int c;
+    while ((c = getopt(argc, argv, "l:o:p:S:")) != EOF) {
+        switch (c) {
+            case 'l':
+                level = atoi(optarg);
+                break;
+            case 'o':
+                outfile = optarg;
+                break;
+            case 'p':
+                sglog().set_log_classes(SG_ALL);
+                sglog().set_log_priority(sgDebugPriority(atoi(optarg)));
+                break;
+            case 'S':
+                sceneryPath = optarg;
+                break;
+        }
+    }
     
-    // default = whole earth - hehe
-    double min_lon = -180;
-    double min_lat =  -90;
-    double max_lon =  180;
-    double max_lat =   90;
-    SGGeod min, max;
-    int    level = 0;
+    if (outfile.empty()) {
+        std::cerr << "No output file or directory given." << std::endl;
+        return EXIT_FAILURE;
+    }
     
-    sglog().setLogLevels( SG_ALL, SG_INFO );
+    if (level <= 8) {
+        return createTree(BucketBox(-180, -90, 360, 180), sceneryPath, outfile, level);
+    } else {
+        std::list<std::string> infiles;
+        for (int i = optind; i < argc; ++i)
+            infiles.push_back(argv[i]);
+        
+        std::list<SGBucket> ocean;
+        if (infiles.empty()) {
+            std::stringstream ss;
+            std::string::size_type pos = outfile.find_last_of("/\\");
+            if (pos != std::string::npos)
+                ss.str(outfile.substr(pos + 1));
+            else
+                ss.str(outfile);
+            BucketBox bucketBox;
+            ss >> bucketBox;
+            if (ss.fail())
+                return EXIT_FAILURE;
+            
+            collectBtgFiles(bucketBox, sceneryPath, infiles, ocean);
+        }
+        
+        if (infiles.empty())
+            return EXIT_FAILURE;
+        
+        return collapseBtg(outfile, infiles, ocean);
+    }
 
+    return 0;
+}
+
+#if 0        
     //
     // Parse the command-line arguments.
     //
@@ -94,72 +273,6 @@ int main(int argc, char **argv)
         }
     }
     
-#if 0 // when we cn handle different tile sizes    
-    double width  = max_lon - min_lon;
-    double height = max_lat - min_lat;
-
-    // generate a bucketbox covering the area
-    BucketBox box( min_lon, min_lat, width, height );
-    SG_LOG( SG_GENERAL, SG_ALERT, "Box is: " << box << " level is " << box.getStartLevel() );
-    
-    if ( box.getStartLevel() < 8 ) {
-        // we are not in the bucket stage        
-        BucketBox subdivide[32];    // Pretty sure the maximum number of sub tiles is 25 
-                                    // when we traverse between level 1 and 2
-                                    // level 2 is  36.000 x  12.000     
-                                    // level 1 is 180.000 x  60.000 ( 25 level 2 tiles = 1 level 1 tile )
-    
-        // subdivide the box to get higher res mesh
-        unsigned numTiles = box.getSubDivision(subdivide, 32);
-    
-        if ( numTiles ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "subdivided box " << box << " into " << numTiles << " tiles " );
-    
-            for( unsigned int i=0; i<numTiles; i++ ) {
-                // TODO : after subdividing - see if the mesh (.SPT format) is available 
-                
-                // if not - we need to generate it ( for now - recursively - I'd like to not respawn, however )
-                char cmdline[256];
-        
-                SG_LOG( SG_GENERAL, SG_ALERT, "           box " << i << " : " << subdivide[i] << " level " << subdivide[i].getStartLevel() << " height is " << subdivide[i].getHeightDeg() );
-                sprintf( cmdline, "/home/psadro/Development/terragear/release/src/BuildTiles/tglod/tg-lod --work-dir=%s --min-lon=%f --min-lat=%f --max-lon=%f --max-lat=%f", 
-                        work_dir.c_str(),
-                        subdivide[i].getLongitudeDeg(), 
-                        subdivide[i].getLatitudeDeg(), 
-                        subdivide[i].getLongitudeDeg() + subdivide[i].getWidthDeg(), 
-                        subdivide[i].getLatitudeDeg()  + subdivide[i].getHeightDeg() );
-                
-                system( cmdline );
-            }
-        }
-    } 
-    else 
-    {
-        // we've reached the bucket stage - read in all of the bucket triangles to generate a simplified mesh
-        BucketBox subdivide[32];
-    
-        // subdivide the box to get higher res mesh
-        unsigned numTiles = box.getSubDivision(subdivide, 32);
-    
-        if ( numTiles ) {
-            for( unsigned int i=0; i<numTiles; i++ ) {
-                SGBucket    b = subdivide[i].getBucket();
-                SGPath      infile = work_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".btg.gz";
-                SGPath      outfile = output_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".btg.gz";
-                SGBinObject inobj;
-
-                if ( inobj.read_bin( infile.str() ) ) {
-                    tgBtgMesh mesh;
-                    tgReadBtgAsMesh( inobj, mesh );                    
-                    tgBtgSimplify( mesh, 0.25f, 0.5f, 0.5f, 0.0f, b.get_center_lat(), b.gen_index_str() );
-                    tgWriteMeshAsBtg( mesh, b.get_center(), outfile );
-                }
-            }
-        }
-    }
-    
-#else
-
     min = SGGeod::fromDeg( min_lon, min_lat );
     max = SGGeod::fromDeg( max_lon, max_lat );
     
@@ -217,8 +330,6 @@ int main(int argc, char **argv)
             }
         }
     }
-    
+}    
 #endif
         
-    return 0;
-}

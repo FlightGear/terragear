@@ -31,10 +31,6 @@
 #include <simgear/misc/texcoord.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <terragear/tg_unique_vec3d.hxx>
-#include <terragear/tg_unique_vec3f.hxx>
-#include <terragear/tg_unique_vec2f.hxx>
-
 #include <terragear/tg_shapefile.hxx>
 
 #include "tg_btg_mesh.hxx"
@@ -145,6 +141,97 @@ private:
     SGBinObject obj;
 };
 
+template <class HDS>
+class tgBuildArrayMesh : public CGAL::Modifier_base<HDS> {
+public:
+    tgBuildArrayMesh(const Arrays& a) { arr = a; }
+    
+    void operator()( HDS& hds ) {
+        int num_vertices = arr.vertices.get_list().size();
+        
+        // just read in triangles. ignoring fans and strips
+        int num_triangles = arr.getTriangleCount();
+        
+        // Postcondition: hds is a valid polyhedral surface.
+        CGAL::Polyhedron_incremental_builder_3<HDS> B( hds, true);
+        B.begin_surface( num_vertices, num_triangles, 0);
+        typedef typename HDS::Vertex   Vertex;
+        typedef typename Vertex::Point Point;
+        
+        const std::vector<SGVec3d>& vertices  = arr.vertices.get_list();
+        const std::vector<SGVec3f>& normals   = arr.normals.get_list();
+        const std::vector<SGVec2f>& texcoords = arr.texcoords.get_list();
+        
+        for ( int v=0; v<num_vertices; v++ ) {
+            SGVec3d sgn = vertices[v];
+            B.add_vertex( Point( sgn.x(), sgn.y(), sgn.z() ) );
+        }
+                                
+        // loop through all the materials, and get the list of triangle indicies        
+        for ( matTris::iterator mti = arr.tris.begin(); mti != arr.tris.end(); mti++ ) {
+            PointList& pl = mti->second;
+            for ( unsigned int i = 2; i < pl.vertexIndex.size(); i += 3 ) {
+                std::vector< std::size_t> indices;
+                std::vector< Point > points_inserted;
+                std::vector< Point > points_traversed;
+                
+                indices.push_back( pl.vertexIndex[i-2] );
+                indices.push_back( pl.vertexIndex[i-1] );
+                indices.push_back( pl.vertexIndex[i-0] );
+
+                // for verification we added the triangles clockwise.
+                SGVec3d sgn;
+                sgn = vertices[pl.vertexIndex[i-2]];
+                points_inserted.push_back( Point( sgn.x(), sgn.y(), sgn.z() ) );
+                sgn = vertices[pl.vertexIndex[i-1]];
+                points_inserted.push_back( Point( sgn.x(), sgn.y(), sgn.z() ) );
+                sgn = vertices[pl.vertexIndex[i-0]];
+                points_inserted.push_back( Point( sgn.x(), sgn.y(), sgn.z() ) );
+                    
+                int vidx = i-2;
+                if ( B.test_facet( indices.begin(), indices.end() ) ) {
+                    tgBtgHalfedge_handle hh = B.add_facet( indices.begin(), indices.end() );
+                    
+                    // add the per face stuff (material)
+                    hh->facet()->SetMaterial( mti->first );
+                    
+                    // now add the per vertex stuff
+                    tgBtgHalfedge_facet_circulator hfc_end = (tgBtgHalfedge_facet_circulator)hh;
+                    tgBtgHalfedge_facet_circulator hfc_cur = hfc_end;
+                    do { 
+                        // to verify, read back the points
+                        points_traversed.push_back( hfc_cur->vertex()->point() );
+                        
+                        // set normal and primary texture coordinate
+                        hfc_cur->SetTexCoord( texcoords[pl.texcoordIndex[vidx]] );
+                        hfc_cur->SetNormal( normals[pl.normalIndex[vidx]] );
+                        
+                        vidx++;
+                        hfc_cur++;
+                    } while(hfc_cur != hfc_end);
+                    
+                    for ( int i=0; i<3; i++ ) {
+                        if ( points_inserted[i] != points_inserted[i] ) {
+                            SG_LOG(SG_GENERAL, SG_ALERT, "Added triangle vertex at " << i << ":" << points_inserted[i] << ", and read back " << points_traversed[i] );
+                        }
+                    }
+                    
+                } else {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Couldn't add triangle w/indices " << indices[0] << ", " << indices[1] << ", " <<  indices[2] );
+                    
+                    // TODO: keep a triangle list of errors as well in Build_BTG_Mesh object
+                    // - so new BTG can get bright red error triangles...
+                }
+            }
+        }
+        B.end_surface();        
+    }
+    
+private:
+    Arrays arr;
+};
+
+
 void tgReadBtgAsMesh(const SGBinObject& inobj, tgBtgMesh& mesh)
 {
     tgBuildBtgMesh<tgBtgHalfedgeDS> m(inobj);
@@ -165,6 +252,28 @@ void tgReadBtgAsMesh(const SGBinObject& inobj, tgBtgMesh& mesh)
     for ( tgBtgFacet_iterator fit = mesh.facets_begin(), efit = mesh.facets_end(); fit != efit; ++fit ) {
         fit->id() = face_id++;
     }
+}
+
+void tgReadArraysAsMesh( const Arrays& arrays, tgBtgMesh& mesh )
+{
+    tgBuildArrayMesh<tgBtgHalfedgeDS> m(arrays);
+    mesh.delegate( m );
+    
+    // now that the mesh has been created - set the IDs
+    // This just makes the edge_collapse call easier to follow :)
+    std::size_t vertex_id   = 0 ;
+    std::size_t halfedge_id = 0 ;
+    std::size_t face_id     = 0 ;
+    
+    for ( tgBtgVertex_iterator vit = mesh.vertices_begin(), evit = mesh.vertices_end(); vit != evit; ++vit) {
+        vit->id() = vertex_id++;
+    }
+    for ( tgBtgHalfedge_iterator hit = mesh.halfedges_begin(), ehit = mesh.halfedges_end(); hit != ehit; ++hit) {
+        hit->id() = halfedge_id++;
+    }
+    for ( tgBtgFacet_iterator fit = mesh.facets_begin(), efit = mesh.facets_end(); fit != efit; ++fit ) {
+        fit->id() = face_id++;
+    }   
 }
 
 bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile) 

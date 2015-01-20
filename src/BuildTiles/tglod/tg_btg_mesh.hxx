@@ -18,6 +18,9 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
+#ifndef __TG_BTG_MESH_HXX__
+#define __TG_BTG_MESH_HXX__
+
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
@@ -34,6 +37,8 @@
 
 #include <simgear/math/SGMath.hxx>
 #include <simgear/io/sg_binobj.hxx>
+
+#include "tg_geometry_arrays.hxx"
 
 // CGAL mesh consists of three data structures.
 // Points, directed haldedges, and faces.
@@ -158,6 +163,9 @@ typedef tgBtgMesh::Facet_handle                         tgBtgFacet_handle;
                                                         
 
 void tgReadBtgAsMesh( const SGBinObject& inobj, tgBtgMesh& mesh );
+void tgReadArraysAsMesh( const Arrays& arrays, tgBtgMesh& mesh );
 bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile );
 int  tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, float boundary_wgt, float shape_wgt, double cl, const std::string& name );
 void tgMeshToShapefile( tgBtgMesh& mesh, const std::string& name );
+
+#endif /* __TG_BTG_MESH_HXX__ */
