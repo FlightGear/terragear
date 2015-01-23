@@ -28,6 +28,7 @@
 
 //#include <cstdio>
 #include <simgear/math/SGMath.hxx>
+#include <simgear/math/SGBox.hxx>
 #include <simgear/misc/texcoord.hxx>
 #include <simgear/debug/logstream.hxx>
 
@@ -276,7 +277,7 @@ void tgReadArraysAsMesh( const Arrays& arrays, tgBtgMesh& mesh )
     }   
 }
 
-bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile) 
+bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGPath& outfile) 
 {
     typedef std::vector<tgBtgFacet_handle>          FacetList_t;
     typedef FacetList_t::iterator                   FacetList_iterator;
@@ -342,7 +343,7 @@ bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile)
                 SG_LOG(SG_GENERAL, SG_ALERT, "Facet had more than 3 vertices " );
             }
             
-            std::vector<SGVec2f> tc_list = sgCalcTexCoords( center, nodes, node_idxs );            
+            std::vector<SGVec2f> tc_list = sgCalcTexCoords( nodes[0].getLatitudeDeg(), nodes, node_idxs );            
             for ( unsigned int i=0; i<tc_list.size(); i++ ) {
                 index = texcoords.add( tc_list[i] );
                 sgboTri.tc_list[0].push_back( index );
@@ -351,22 +352,16 @@ bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGGeod& center, SGPath& outfile)
             outobj.add_triangle( sgboTri );
         }
     }
-    
-    SGVec3d gbs_center = SGVec3d::fromGeod( center );
-    double dist_squared, radius_squared = 0;
+        
     std::vector<SGVec3d> wgs84_nodes = vertices.get_list();
-    
+    SGBox<double> box;
     for (int i = 0; i < (int)wgs84_nodes.size(); ++i)
     {
-        dist_squared = distSqr(gbs_center, wgs84_nodes[i]);
-        if ( dist_squared > radius_squared ) {
-            radius_squared = dist_squared;
-        }
+        box.expandBy(vertices.get_list()[i]);
     }
-    double gbs_radius = sqrt(radius_squared);
+    outobj.set_gbs_center(box.getCenter());
+    outobj.set_gbs_radius(length(box.getHalfSize()));
     
-    outobj.set_gbs_center( gbs_center );
-    outobj.set_gbs_radius( gbs_radius );
     outobj.set_wgs84_nodes( wgs84_nodes );
     outobj.set_normals( normals.get_list() );
     outobj.set_texcoords( texcoords.get_list() );
@@ -408,7 +403,7 @@ void tgMeshToShapefile(tgBtgMesh& mesh, const std::string& name)
             }            
         }
         
-      char datasource[64];
+      char datasource[1024];
       sprintf( datasource, "./simp_dbg/%s", name.c_str() );
         
       tgShapefile::FromSegmentList( segs, false, datasource, "original_mesh", "mesh" );

@@ -30,6 +30,7 @@
 
 #include "tg_btg_mesh.hxx"
 
+#include <simgear/math/SGGeometry.hxx>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/io/sg_binobj.hxx>
@@ -58,29 +59,60 @@ static void usage( const std::string name ) {
 //              14.25,35.75 - 14.50,36.00
 
 void
-collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, std::list<std::string>& files, std::list<SGBucket>& ocean)
+collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, const std::string& outPath, std::list<std::string>& files, std::list<SGBucket>& ocean)
 {
-    if (bucketBox.getIsBucketSize()) {
-        std::string fileName = sceneryPath;
-        fileName += bucketBox.getBucket().gen_base_path();
-        fileName += std::string("/");
-        fileName += bucketBox.getBucket().gen_index_str();
-        fileName += std::string(".btg.gz");
-        if (SGPath(fileName).exists())
-            files.push_back(fileName);
-        else
-            ocean.push_back(bucketBox.getBucket());
+    unsigned int level = bucketBox.getStartLevel();
+
+    // if this bucket is level 8, then children are bucket size - read normal BTG tiles
+    SG_LOG(SG_GENERAL, SG_ALERT, "collectBTGFiles : level is " << level << " file is " << bucketBox );
+    if (level == 8) {
+        BucketBox bucketBoxList[100];
+        unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);
+
+        for (unsigned i = 0; i < numTiles; ++i) {        
+            std::string fileName = sceneryPath;
+            fileName += bucketBoxList[i].getBucket().gen_base_path();
+            fileName += std::string("/");
+            fileName += bucketBoxList[i].getBucket().gen_index_str();
+            fileName += std::string(".btg.gz");
+
+            SG_LOG(SG_GENERAL, SG_ALERT, "\t" << fileName );
+
+            if (SGPath(fileName).exists()) {
+                files.push_back(fileName);
+            } else {
+                ocean.push_back(bucketBoxList[i].getBucket());
+            }
+        }
     } else {
         BucketBox bucketBoxList[100];
         unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);
+        
         for (unsigned i = 0; i < numTiles; ++i) {
-            collectBtgFiles(bucketBoxList[i], sceneryPath, files, ocean);
+            std::string fileName = outPath;
+            fileName += std::string("/");            
+            for (unsigned j = 3; j <= level; j += 2) {
+                fileName += bucketBoxList[i].getParentBox(j);
+                fileName += std::string("/");
+            }
+            fileName += std::string(".btg.gz");
+            
+            SG_LOG(SG_GENERAL, SG_ALERT, "\t" << fileName );
+
+            if (SGPath(fileName).exists()) {
+                files.push_back(fileName);
+            } else {
+                // need to get all of the ocean sub buckets
+                ocean.push_back(bucketBoxList[i].getBucket());
+            }
+            
+            // collectBtgFiles(bucketBoxList[i], sceneryPath, files, ocean);
         }
     }
 }
 
 int
-collapseBtg(const std::string& outfile, const std::list<std::string>& infiles, const std::list<SGBucket>& ocean)
+collapseBtg(int level, const std::string& outfile, const std::list<std::string>& infiles, const std::list<SGBucket>& ocean)
 {
     Arrays arrays;
     
@@ -89,6 +121,8 @@ collapseBtg(const std::string& outfile, const std::list<std::string>& infiles, c
         if (!binObj.read_bin(*i)) {
             std::cerr << "Error Reading file " << *i << std::endl;
             return EXIT_FAILURE;
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Read  tile " << *i );
         }
 
         arrays.insert(binObj);
@@ -117,33 +151,9 @@ collapseBtg(const std::string& outfile, const std::list<std::string>& infiles, c
     tgBtgMesh mesh;
     tgReadArraysAsMesh( arrays, mesh );                    
     
-#if 0    
-    SGBinObject bigBinObj;
-    bigBinObj.set_wgs84_nodes(arrays.vertices);
-    std::vector<SGVec4f> colors;
-    colors.push_back(SGVec4f(1, 1, 1, 1));
-    bigBinObj.set_colors(colors);
-    bigBinObj.set_normals(arrays.normals);
-    bigBinObj.set_texcoords(arrays.texcoords);
-    bigBinObj.set_tris_v(arrays.indices);
-    bigBinObj.set_tris_n(arrays.indices);
-    bigBinObj.set_tris_tc(arrays.indices);
-    bigBinObj.set_tri_materials(arrays.materials);
-
-    SGBox<double> box;
-    for (size_t i = 0; i < arrays.vertices.size(); ++i)
-        box.expandBy(arrays.vertices[i]);
-    bigBinObj.set_gbs_center(box.getCenter());
-    bigBinObj.set_gbs_radius(length(box.getHalfSize()));
-
-    for (size_t i = 0; i < arrays.vertices.size(); ++i)
-        arrays.vertices[i] -= outBinObj.get_gbs_center();
-
-    if (!outBinObj.write_bin_file(SGPath(outfile))) {
-        std::cerr << "Error Writing file " << outfile << std::endl;
-        return EXIT_FAILURE;
-    }
-#endif    
+    tgBtgSimplify( mesh, 0.25f, 0.5f, 0.5f, 0.0f, 0.0f, outfile );
+    SG_LOG(SG_GENERAL, SG_ALERT, "Writing  tile " << outfile );
+    tgWriteMeshAsBtg( mesh, SGPath(outfile) );
 
     return EXIT_SUCCESS;
 }
@@ -156,10 +166,15 @@ createTree(const BucketBox& bucketBox, const std::string& sceneryPath, const std
         // We want an other level of indirection for paging
         std::list<std::string> files;
         std::list<SGBucket>    ocean;
+        
+        // collectBtgFiles collects all children BTGs - and ocean btgs where files are not found.  
+        // TODO get the ration of land / ocean to determine what simplification to use
         collectBtgFiles(bucketBox, sceneryPath, files, ocean);
         if (files.empty()) {
             return EXIT_SUCCESS;
         }
+
+        SG_LOG(SG_GENERAL, SG_ALERT, "Found " << files.size() << "non ocean tiles " );
         
         std::stringstream ss;
         ss << outPath << "/";
@@ -169,7 +184,7 @@ createTree(const BucketBox& bucketBox, const std::string& sceneryPath, const std
         
         SGPath(ss.str()).create_dir(0755);
         ss << bucketBox << ".btg.gz";
-        collapseBtg(ss.str(), files, ocean);
+        collapseBtg(level, ss.str(), files, ocean);
    
     } else {
         BucketBox bucketBoxList[100];
@@ -214,7 +229,9 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     
-    if (level <= 8) {
+    if (level <= 9) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Create level " << level );
+
         return createTree(BucketBox(-180, -90, 360, 180), sceneryPath, outfile, level);
     } else {
         std::list<std::string> infiles;
@@ -240,96 +257,8 @@ int main(int argc, char **argv)
         if (infiles.empty())
             return EXIT_FAILURE;
         
-        return collapseBtg(outfile, infiles, ocean);
+        return collapseBtg(level, outfile, infiles, ocean);
     }
 
     return 0;
 }
-
-#if 0        
-    //
-    // Parse the command-line arguments.
-    //
-    int arg_pos;
-    for (arg_pos = 1; arg_pos < argc; arg_pos++) {
-        std::string arg = argv[arg_pos];
-
-        if (arg.find("--output-dir=") == 0) {
-            output_dir = arg.substr(13);
-        } else if (arg.find("--work-dir=") == 0) {
-            work_dir = arg.substr(11);
-        } else if ( arg.find("--min-lon=") == 0 ) {
-            min_lon = atof( arg.substr(10).c_str() );
-        } else if ( arg.find("--max-lon=") == 0 ) {
-            max_lon = atof( arg.substr(10).c_str() );
-        } else if ( arg.find("--min-lat=") == 0 ) {
-            min_lat = atof( arg.substr(10).c_str() );
-        } else if ( arg.find("--max-lat=") == 0 ) {
-            max_lat = atof( arg.substr(10).c_str() );
-        } else if (arg.find("--level=") == 0) {
-            level = atoi( arg.substr(8).c_str() );
-        } else {
-            SG_LOG( SG_GENERAL, SG_ALERT, "unknown param " << arg );
-        }
-    }
-    
-    min = SGGeod::fromDeg( min_lon, min_lat );
-    max = SGGeod::fromDeg( max_lon, max_lat );
-    
-    if (min.isValid() && max.isValid() && (min != max))
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
-        SG_LOG(SG_GENERAL, SG_ALERT, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
-    } else
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Lon/Lat unset or wrong");
-        exit(1);
-    }
-
-    // tile work queue
-    std::vector<SGBucket> bucketList;
-
-    // First generate the workqueue of buckets to construct
-    // build all the tiles in an area
-    SG_LOG(SG_GENERAL, SG_ALERT, "Building tile(s) within given bounding box");
-    
-    SGBucket b_min( min );
-    SGBucket b_max( max );
-    
-    if ( b_min == b_max ) {
-        bucketList.push_back( b_min );
-    } else {
-        SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
-        sgGetBuckets( min, max, bucketList );
-    }
-
-    for ( unsigned int i=0; i<bucketList.size(); i++ ) {
-        SGBucket    b = bucketList[i];
-        SGPath      infile  = work_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".btg.gz";
-        SGPath      outfile = output_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".btg.gz";
-        SGBinObject inobj;
-            
-        if ( infile.exists() ) {
-            char cmd[256];
-                        
-            SG_LOG(SG_GENERAL, SG_ALERT, "Readding tile " << b.gen_index_str() << " : " << i << " of " << bucketList.size() );
-            if ( inobj.read_bin( infile.str() ) ) {
-                tgBtgMesh mesh;
-                SG_LOG(SG_GENERAL, SG_ALERT, "Converting tile " << b.gen_index_str() );
-                tgReadBtgAsMesh( inobj, mesh );                    
-                SG_LOG(SG_GENERAL, SG_ALERT, "Simplifying tile " << b.gen_index_str() );
-                tgBtgSimplify( mesh, 0.25f, 0.5f, 0.5f, 0.0f, b.get_center_lat(), b.gen_index_str() );
-                SG_LOG(SG_GENERAL, SG_ALERT, "Writing  tile " << b.gen_index_str() );
-                tgWriteMeshAsBtg( mesh, b.get_center(), outfile );
-                
-                SGPath inSTG = work_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".stg";
-                SGPath outSTG = output_dir + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".stg";
-                
-                sprintf( cmd, "cp %s %s", inSTG.c_str(), outSTG.c_str() );
-                system( cmd );                
-            }
-        }
-    }
-}    
-#endif
-        

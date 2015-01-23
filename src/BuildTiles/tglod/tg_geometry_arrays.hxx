@@ -120,8 +120,8 @@ public:
     bool insert(const SGBinObject& obj)
     {
         if (obj.get_tris_n().size() < obj.get_tris_v().size() ||
-            obj.get_tris_tcs()[0].size() < obj.get_tris_v().size()) {
-            SG_LOG(SG_TERRAIN, SG_ALERT, "Group list sizes for triangles do not match!");
+            obj.get_tris_tcs().size() < obj.get_tris_v().size()) {
+            SG_LOG(SG_TERRAIN, SG_ALERT, "Group list sizes for triangles do not match! v : " << obj.get_tris_v().size() << " n : " << obj.get_tris_n().size() << " tc : " << obj.get_tris_tcs().size() );
             return false;
         }
 
