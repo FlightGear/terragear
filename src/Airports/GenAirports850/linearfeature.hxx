@@ -55,9 +55,14 @@ public:
     unsigned int start_idx;
     unsigned int end_idx;
 
-    bool IsDirectional()
+    // 1 for unidirectional
+    // 2 for bidirectional
+    // 0 for omnidirectional
+    int LightDirection()
     {
-        return (type == 103 || type == 104) ? true : false;
+        if (type == 103 || type == 104) return 1;
+        else if (type == 101 || type == 105) return 2;
+        return 0;
     }
 };
 typedef std::vector <Lighting*> LightingList;
