@@ -783,7 +783,7 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
     {
         markStarted = false;
         cur_light_dist = 0.0f;
-        bool directional_light = lights[i]->IsDirectional();
+        int light_direction = lights[i]->LightDirection();
         bool alternate = false;
 
         // which material for this light
@@ -861,33 +861,54 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
                         tmp = SGGeodesy::direct( prev_outer, heading, cur_light_dist );
                     }
 
-                    SGVec3f vec;
-                    if ( !directional_light )
+                    SGVec3f vec1, vec2;
+                    if ( light_direction == 0)
                     {
                         // calculate the omnidirectional normal
-                        vec = normalize(SGVec3f::fromGeod(tmp));
-                    } else
+                        vec1 = normalize(SGVec3f::fromGeod(tmp));
+                    } else if ( light_direction == 1)
                     {
                         // calculate the directional normal
                         double heading_vec = SGMiscd::normalizePeriodic( 0, 360, heading + 90.0 );
                         SGVec3f cart1 = SGVec3f::fromGeod(tmp);
                         SGVec3f cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading_vec, 10 ) );
-                        vec = normalize(cart2 - cart1);
+                        vec1 = normalize(cart2 - cart1);
+                    } else //( light_direction == 2)
+                    {
+                        // calculate the directional normal for 2 directional lights
+                        double heading_vec = SGMiscd::normalizePeriodic( 0, 360, heading + 180.0 );
+                        SGVec3f cart1 = SGVec3f::fromGeod(tmp);
+                        SGVec3f cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading, 10 ) );
+                        vec1 = normalize(cart2 - cart1);
+                        cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading_vec, 10 ) );
+                        vec2 = normalize(cart2 - cart1);
                     }
 
                     if (!alternate)
                     {
-                        cur_light_contour.AddLight( tmp, vec );
+                        cur_light_contour.AddLight( tmp, vec1 );
+                        if ( light_direction == 2)
+                        {
+                            cur_light_contour.AddLight( tmp, vec2 );
+                        }
                     }
                     else
                     {
                         if (switch_poly)
                         {
-                            cur_light_contour.AddLight( tmp, vec );
+                            cur_light_contour.AddLight( tmp, vec1 );
+                            if ( light_direction == 2)
+                            {
+                                cur_light_contour.AddLight( tmp, vec2 );
+                            }
                         }
                         else
                         {
-                            alt_light_contour.AddLight( tmp, vec );
+                            alt_light_contour.AddLight( tmp, vec1 );
+                            if ( light_direction == 2)
+                            {
+                                alt_light_contour.AddLight( tmp, vec2 );
+                            }
                         }
                         switch_poly = !switch_poly;
                     }
