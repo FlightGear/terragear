@@ -58,124 +58,200 @@ static void usage( const std::string name ) {
 //              14.00,35.75 - 14.25,36.00
 //              14.25,35.75 - 14.50,36.00
 
+struct subDivision {
+public:
+    std::string fileName;
+    unsigned int numOcean;
+    std::vector<SGBucket> land;
+    std::vector<SGBucket> ocean;
+};
+
+// this recurses under given bucketbox, pushing land and ocean puckets
 void
-collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, const std::string& outPath, std::list<std::string>& files, std::list<SGBucket>& ocean)
+collectLandAndOcean(const BucketBox& bucketBox, const std::string& sceneryPath, const std::string& outPath, subDivision& subTile, bool saveOceanBuckets)
+{
+    if (bucketBox.getIsBucketSize()) {
+        std::string fileName = sceneryPath;
+        fileName += bucketBox.getBucket().gen_base_path();
+        fileName += std::string("/");
+        fileName += bucketBox.getBucket().gen_index_str();
+        fileName += std::string(".btg.gz");
+        if (SGPath(fileName).exists()) {
+            subTile.land.push_back( bucketBox.getBucket() );
+        } else {
+            subTile.numOcean++;
+            if ( saveOceanBuckets ) {
+                subTile.ocean.push_back( bucketBox.getBucket() );
+            }
+        }
+    } else {
+        BucketBox bucketBoxList[100];
+        unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);
+        for (unsigned i = 0; i < numTiles; ++i) {
+            collectLandAndOcean(bucketBoxList[i], sceneryPath, outPath, subTile, saveOceanBuckets);
+        }
+    }
+}
+
+// this is now non - recursive. This is only called when we wish to get the immediate submesh beneath this bucketbox
+bool
+collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, const std::string& outPath, std::vector<subDivision>& subTiles)
 {
     unsigned int level = bucketBox.getStartLevel();
-
+    bool hasLand = false;
+    bool saveOceanBuckets = false;
+    
     // if this bucket is level 8, then children are bucket size - read normal BTG tiles
-    SG_LOG(SG_GENERAL, SG_ALERT, "collectBTGFiles : level is " << level << " file is " << bucketBox );
     if (level == 8) {
         BucketBox bucketBoxList[100];
         unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);
-
-        for (unsigned i = 0; i < numTiles; ++i) {        
+        
+        for (unsigned i = 0; i < numTiles; ++i) {
+            subDivision st;
+            st.numOcean = 0;
+            
             std::string fileName = sceneryPath;
             fileName += bucketBoxList[i].getBucket().gen_base_path();
             fileName += std::string("/");
             fileName += bucketBoxList[i].getBucket().gen_index_str();
             fileName += std::string(".btg.gz");
 
-            SG_LOG(SG_GENERAL, SG_ALERT, "\t" << fileName );
-
             if (SGPath(fileName).exists()) {
-                files.push_back(fileName);
+                hasLand = true;
+                st.fileName = fileName;
+                st.land.push_back(bucketBoxList[i].getBucket());
             } else {
-                ocean.push_back(bucketBoxList[i].getBucket());
+                st.numOcean++;
+                st.ocean.push_back(bucketBoxList[i].getBucket());
             }
+            subTiles.push_back(st);
         }
     } else {
         BucketBox bucketBoxList[100];
         unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);
         
         for (unsigned i = 0; i < numTiles; ++i) {
-            std::string fileName = outPath;
-            fileName += std::string("/");            
-            for (unsigned j = 3; j <= level; j += 2) {
-                fileName += bucketBoxList[i].getParentBox(j);
-                fileName += std::string("/");
-            }
-            fileName += std::string(".btg.gz");
+            subDivision st;
+            st.numOcean = 0;
             
-            SG_LOG(SG_GENERAL, SG_ALERT, "\t" << fileName );
+            std::stringstream ss;
+            ss << outPath << "/";
+            for (unsigned j = 3; j <= level; j += 2) {
+                ss << bucketBoxList[i].getParentBox(j) << "/";
+            }
+            ss << bucketBoxList[i] << ".btg.gz";
+            
+            std::string fileName = ss.str();
 
             if (SGPath(fileName).exists()) {
-                files.push_back(fileName);
+                hasLand = true;
+                st.fileName = fileName;
+                saveOceanBuckets = false;
+
+                SG_LOG(SG_GENERAL, SG_ALERT, "\tFOUND " << fileName );
+                
             } else {
-                // need to get all of the ocean sub buckets
-                ocean.push_back(bucketBoxList[i].getBucket());
+                SG_LOG(SG_GENERAL, SG_ALERT, "\tNOT FOUND " << fileName );
+                
+                // we need to remember any ocean buckets under us
+                saveOceanBuckets = true;
             }
             
-            // collectBtgFiles(bucketBoxList[i], sceneryPath, files, ocean);
+            // find all of the land / ocean tiles beneath this subTile
+            collectLandAndOcean( bucketBoxList[i], sceneryPath, outPath, st, saveOceanBuckets );
+            
+            subTiles.push_back(st);
         }
     }
+    
+    return hasLand;
 }
 
 int
-collapseBtg(int level, const std::string& outfile, const std::list<std::string>& infiles, const std::list<SGBucket>& ocean)
+collapseBtg(int level, const std::string& outfile, std::vector<subDivision>& subTiles)
 {
     Arrays arrays;
     
-    for (std::list<std::string>::const_iterator i = infiles.begin(); i != infiles.end(); ++i) {
-        SGBinObject binObj;
-        if (!binObj.read_bin(*i)) {
-            std::cerr << "Error Reading file " << *i << std::endl;
-            return EXIT_FAILURE;
-        } else {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Read  tile " << *i );
-        }
+    for (unsigned int i = 0; i < subTiles.size(); i++ ) {
+        if ( !subTiles[i].fileName.empty() ) {
+            SGBinObject binObj;
+            if (!binObj.read_bin(subTiles[i].fileName)) {
+                std::cerr << "Error Reading file " << subTiles[i].fileName << std::endl;
+                return EXIT_FAILURE;
+            } else {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Read  tile " << subTiles[i].fileName );
+            }
 
-        arrays.insert(binObj);
+            arrays.insert(binObj);
+        }
     }
 
-    for (std::list<SGBucket>::const_iterator i = ocean.begin(); i != ocean.end(); ++i) {
-        std::vector<SGGeod>  geod;
-        int_list             geod_idxs;
-        std::vector<SGVec3d> vertices;
-        std::vector<SGVec3f> normals;
+    for (unsigned int i = 0; i < subTiles.size(); i++ ) {
+        for ( unsigned int j = 0; j <  subTiles[i].ocean.size(); j++ ) {
+            std::vector<SGGeod>  geod;
+            int_list             geod_idxs;
+            std::vector<SGVec3d> vertices;
+            std::vector<SGVec3f> normals;
 
-        for (unsigned j = 0; j < 4; ++j) {
-            geod.push_back(i->get_corner(j));
-            geod_idxs.push_back(j);
+            for (unsigned k = 0; k < 4; ++k) {
+                geod.push_back(subTiles[i].ocean[j].get_corner(k));
+                geod_idxs.push_back(k);
             
-            vertices.push_back(SGVec3d::fromGeod(geod.back()));
-            normals.push_back(toVec3f(normalize(vertices.back())));
-        }
+                vertices.push_back(SGVec3d::fromGeod(geod.back()));
+                normals.push_back(toVec3f(normalize(vertices.back())));
+            }
 
-        std::vector<SGVec2f> texCoords = sgCalcTexCoords(*i, geod, geod_idxs);
+            std::vector<SGVec2f> texCoords = sgCalcTexCoords(subTiles[i].ocean[j], geod, geod_idxs);
         
-        arrays.insertFanGeometry("Ocean", SGVec3d::zeros(), vertices, normals, texCoords, geod_idxs, geod_idxs, geod_idxs);
+            arrays.insertFanGeometry("Ocean", SGVec3d::zeros(), vertices, normals, texCoords, geod_idxs, geod_idxs, geod_idxs);
+        }
     }
-
+    
+    // determine the simplification ratio
+    unsigned int num_subTiles = subTiles.size();
+    float denom = 0.0f;
+    for ( unsigned int i=0; i<num_subTiles; i++ ) {
+        // if 100% land, then the ratio should be 1/num_subtiles.
+        // but - each ocean tile decreases the simplification ratio of a subtile
+        
+        // example 2 sub meshes : each one consists of 2 btgs
+        // 1 btg is both land, the other is 1 land, 1 ocean
+        // ratio for full land is 1/2
+        // ration here is 1/( 2/2 + 1/2 ) = 1/1.5 .666 
+        
+        denom += ( subTiles[i].land.size() / ( subTiles[i].land.size() + subTiles[i].numOcean ) );
+    }
+    float simpRatio = 1.0f/denom;
+    
     // TODO create mesh from Arrays
     tgBtgMesh mesh;
     tgReadArraysAsMesh( arrays, mesh );                    
     
-    tgBtgSimplify( mesh, 0.25f, 0.5f, 0.5f, 0.0f, 0.0f, outfile );
-    SG_LOG(SG_GENERAL, SG_ALERT, "Writing  tile " << outfile );
+    SG_LOG(SG_GENERAL, SG_ALERT, "Simplifying tile " << outfile << " with ratio " << simpRatio );
+
+    tgBtgSimplify( mesh, simpRatio, 0.5f, 0.5f, 0.0f, 0.0f, outfile );
     tgWriteMeshAsBtg( mesh, SGPath(outfile) );
 
     return EXIT_SUCCESS;
 }
-
 
 int
 createTree(const BucketBox& bucketBox, const std::string& sceneryPath, const std::string& outPath, unsigned level)
 {
     if (bucketBox.getStartLevel() == level) {
         // We want an other level of indirection for paging
-        std::list<std::string> files;
-        std::list<SGBucket>    ocean;
+        //std::list<std::string> files;   // actual files to be read as mesh for collapse
+        //std::list<SGBucket>    land;    // level 9 buckets that are non-ocean
+        //std::list<SGBucket>    ocean;   // level 9 buckets that are ocean
+        std::vector<subDivision>   subTiles;
         
         // collectBtgFiles collects all children BTGs - and ocean btgs where files are not found.  
         // TODO get the ration of land / ocean to determine what simplification to use
-        collectBtgFiles(bucketBox, sceneryPath, files, ocean);
-        if (files.empty()) {
+        bool hasLand = collectBtgFiles(bucketBox, sceneryPath, outPath, subTiles);
+        if (!hasLand) {
             return EXIT_SUCCESS;
         }
-
-        SG_LOG(SG_GENERAL, SG_ALERT, "Found " << files.size() << "non ocean tiles " );
-        
+                
         std::stringstream ss;
         ss << outPath << "/";
         for (unsigned i = 3; i < level; i += 2) {
@@ -184,7 +260,7 @@ createTree(const BucketBox& bucketBox, const std::string& sceneryPath, const std
         
         SGPath(ss.str()).create_dir(0755);
         ss << bucketBox << ".btg.gz";
-        collapseBtg(level, ss.str(), files, ocean);
+        collapseBtg(level, ss.str(), subTiles);
    
     } else {
         BucketBox bucketBoxList[100];
@@ -229,35 +305,9 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
     
-    if (level <= 9) {
+    if (level <= 8) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Create level " << level );
-
         return createTree(BucketBox(-180, -90, 360, 180), sceneryPath, outfile, level);
-    } else {
-        std::list<std::string> infiles;
-        for (int i = optind; i < argc; ++i)
-            infiles.push_back(argv[i]);
-        
-        std::list<SGBucket> ocean;
-        if (infiles.empty()) {
-            std::stringstream ss;
-            std::string::size_type pos = outfile.find_last_of("/\\");
-            if (pos != std::string::npos)
-                ss.str(outfile.substr(pos + 1));
-            else
-                ss.str(outfile);
-            BucketBox bucketBox;
-            ss >> bucketBox;
-            if (ss.fail())
-                return EXIT_FAILURE;
-            
-            collectBtgFiles(bucketBox, sceneryPath, infiles, ocean);
-        }
-        
-        if (infiles.empty())
-            return EXIT_FAILURE;
-        
-        return collapseBtg(level, outfile, infiles, ocean);
     }
 
     return 0;

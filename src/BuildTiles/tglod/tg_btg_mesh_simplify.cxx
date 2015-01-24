@@ -46,7 +46,7 @@
 
 typedef CGAL::Line_3<tgBtgKernel>                             tgBtg_Line_3;
 
-#define DEBUG_SIMPLIFY  (1)
+#define DEBUG_SIMPLIFY  (0)
 
 //
 // BGL property map which indicates whether an edge is marked as non-removable
@@ -254,8 +254,8 @@ int tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, flo
     // first write the whole mesh as triangles
 #if DEBUG_SIMPLIFY
     char mesh_name[1024];
-    //sprintf( mesh_name, "%s_%s", name.c_str(), "before" );
-    //tgMeshToShapefile( mesh, mesh_name );
+    sprintf( mesh_name, "%s_%s", name.c_str(), "before" );
+    tgMeshToShapefile( mesh, mesh_name );
 #endif
     
     // In this example, the simplification stops when the number of undirected edges
