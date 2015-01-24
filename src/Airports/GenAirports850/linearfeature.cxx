@@ -868,19 +868,18 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
                         vec1 = normalize(SGVec3f::fromGeod(tmp));
                     } else if ( light_direction == 1)
                     {
-                        // calculate the directional normal
+                        // calculate the directional normal. These lights all face to the right
                         double heading_vec = SGMiscd::normalizePeriodic( 0, 360, heading + 90.0 );
                         SGVec3f cart1 = SGVec3f::fromGeod(tmp);
                         SGVec3f cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading_vec, 10 ) );
                         vec1 = normalize(cart2 - cart1);
                     } else //( light_direction == 2)
                     {
-                        // calculate the directional normal for 2 directional lights
-                        double heading_vec = SGMiscd::normalizePeriodic( 0, 360, heading + 180.0 );
+                        // calculate the directional normals for bidirectional lights
                         SGVec3f cart1 = SGVec3f::fromGeod(tmp);
                         SGVec3f cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading, 10 ) );
                         vec1 = normalize(cart2 - cart1);
-                        cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading_vec, 10 ) );
+                        cart2 = SGVec3f::fromGeod( SGGeodesy::direct( tmp, heading, -10 ) );
                         vec2 = normalize(cart2 - cart1);
                     }
 
