@@ -81,9 +81,11 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
 // Three dimensional queries is a bit overkill, but the code, although faster, is slightly more cumbersome
 
 // get function for the property map - needed for cgal trait extension
+#if 0
 My_point_property_map::reference get(My_point_property_map, My_point_property_map::key_type p) {
     return boost::get<0>(p);
 }
+#endif
 
 // Build the k-d tree
 void TGNodes::init_spacial_query( void )
