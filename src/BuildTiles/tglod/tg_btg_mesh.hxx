@@ -163,7 +163,7 @@ typedef tgBtgMesh::Facet_handle                         tgBtgFacet_handle;
                                                         
 
 void tgReadBtgAsMesh( const SGBinObject& inobj, tgBtgMesh& mesh );
-void tgReadArraysAsMesh( const Arrays& arrays, tgBtgMesh& mesh );
+void tgReadArraysAsMesh( const Arrays& arrays, tgBtgMesh& mesh, const std::string& name );
 bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGPath& outfile );
 int  tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, float boundary_wgt, float shape_wgt, double cl, const std::string& name );
 void tgMeshToShapefile( tgBtgMesh& mesh, const std::string& name );

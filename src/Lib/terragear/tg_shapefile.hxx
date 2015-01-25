@@ -24,6 +24,7 @@ public:
     static void  FromGeod( const SGGeod& pt, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromGeodList( const std::vector<SGGeod>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
 
+    static void  FromSegment( void* lid, const tgSegment& subject, bool show_dir, const std::string& description );
     static void  FromSegment( const tgSegment& subject, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromSegmentList( const std::vector<tgSegment>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
 

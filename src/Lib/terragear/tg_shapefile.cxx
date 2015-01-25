@@ -389,18 +389,10 @@ void tgShapefile::FromGeodList( const std::vector<SGGeod>& list, bool show_dir, 
     }
 }
 
-void tgShapefile::FromSegment( const tgSegment& subject, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description )
+void tgShapefile::FromSegment( void* lid, const tgSegment& subject, bool show_dir, const std::string& description )
 {
-    void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    if ( !ds_id ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromSegment open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
-    }
-        
-    OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
-    
     OGRLineString* line = new OGRLineString();
-    
+    OGRLayer* l_id = (OGRLayer *)lid;
     OGRPoint* start = new OGRPoint;
 
     SGGeod geodStart = subject.GetGeodStart();
@@ -453,7 +445,20 @@ void tgShapefile::FromSegment( const tgSegment& subject, bool show_dir, const st
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
     }
-    OGRFeature::DestroyFeature(feature);
+    OGRFeature::DestroyFeature(feature);    
+}
+
+void tgShapefile::FromSegment( const tgSegment& subject, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description )
+{
+    void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromSegment open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
+    
+    OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
+
+    FromSegment( (void *)l_id, subject, show_dir, description );
     
     // close after each write
     ds_id = tgShapefile::CloseDatasource( ds_id );
@@ -462,12 +467,22 @@ void tgShapefile::FromSegment( const tgSegment& subject, bool show_dir, const st
 void tgShapefile::FromSegmentList( const std::vector<tgSegment>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     if ( !list.empty() ) {    
+        void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+        if ( !ds_id ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromSegment open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+        }
+        
+        OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
+        
         char seg_desc[64];
-
         for ( unsigned int i=0; i<list.size(); i++ ) {
             sprintf(seg_desc, "%s_%d", description.c_str(), i+1);
-            tgShapefile::FromSegment( list[i], show_dir, datasource, layer, seg_desc );
+            tgShapefile::FromSegment( (void *)l_id, list[i], show_dir, seg_desc );
         }
+
+        // close after each write
+        ds_id = tgShapefile::CloseDatasource( ds_id );        
     }
 }
 

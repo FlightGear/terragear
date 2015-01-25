@@ -29,6 +29,7 @@
 //#include <cstdio>
 #include <simgear/math/SGMath.hxx>
 #include <simgear/math/SGBox.hxx>
+#include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/texcoord.hxx>
 #include <simgear/debug/logstream.hxx>
 
@@ -127,16 +128,23 @@ public:
                         }
                     }
                     
-                } else {
+                } else {                    
                     SG_LOG(SG_GENERAL, SG_ALERT, "Couldn't add triangle w/indices " << indices[0] << ", " << indices[1] << ", " <<  indices[2] );
+
+                    SGGeod g0 = SGGeod::fromCart( obj.get_wgs84_nodes()[indices[0]] + gbs_center );
+                    SGGeod g1 = SGGeod::fromCart( obj.get_wgs84_nodes()[indices[1]] + gbs_center );
+                    SGGeod g2 = SGGeod::fromCart( obj.get_wgs84_nodes()[indices[2]] + gbs_center );
                     
-                    // TODO: keep a triangle list of errors as well in Build_BTG_Mesh object
-                    // - so new BTG can get bright red error triangles...
+                    bad_tri_segs.push_back( tgSegment(g0, g1) );
+                    bad_tri_segs.push_back( tgSegment(g1, g2) );
+                    bad_tri_segs.push_back( tgSegment(g2, g0) );                    
                 }
             }
         }
-        B.end_surface();        
+        B.end_surface();
     }
+
+    std::vector<tgSegment> bad_tri_segs;
     
 private:
     SGBinObject obj;
@@ -220,13 +228,20 @@ public:
                 } else {
                     SG_LOG(SG_GENERAL, SG_ALERT, "Couldn't add triangle w/indices " << indices[0] << ", " << indices[1] << ", " <<  indices[2] );
                     
-                    // TODO: keep a triangle list of errors as well in Build_BTG_Mesh object
-                    // - so new BTG can get bright red error triangles...
+                    SGGeod g0 = SGGeod::fromCart( vertices[indices[0]] );
+                    SGGeod g1 = SGGeod::fromCart( vertices[indices[1]] );
+                    SGGeod g2 = SGGeod::fromCart( vertices[indices[2]] );
+                    
+                    bad_tri_segs.push_back( tgSegment(g0, g1) );
+                    bad_tri_segs.push_back( tgSegment(g1, g2) );
+                    bad_tri_segs.push_back( tgSegment(g2, g0) );                    
                 }
             }
         }
         B.end_surface();        
     }
+
+    std::vector<tgSegment> bad_tri_segs;
     
 private:
     Arrays arr;
@@ -255,10 +270,21 @@ void tgReadBtgAsMesh(const SGBinObject& inobj, tgBtgMesh& mesh)
     }
 }
 
-void tgReadArraysAsMesh( const Arrays& arrays, tgBtgMesh& mesh )
+void tgReadArraysAsMesh( const Arrays& arrays, tgBtgMesh& mesh, const std::string& name )
 {
+    SGPath          pathname( name );
+    
     tgBuildArrayMesh<tgBtgHalfedgeDS> m(arrays);
     mesh.delegate( m );
+    
+#if 1
+    char datasource[64];    
+    char mesh_name[1024];
+    
+    sprintf( datasource, "./simp_dbg" );
+    sprintf( mesh_name, "%s_%s", pathname.file().c_str(), "bad_tris" );
+    tgShapefile::FromSegmentList( m.bad_tri_segs, false, datasource, mesh_name, "mesh" );
+#endif
     
     // now that the mesh has been created - set the IDs
     // This just makes the edge_collapse call easier to follow :)
@@ -371,14 +397,15 @@ bool tgWriteMeshAsBtg( tgBtgMesh& p, const SGPath& outfile)
 
 void tgMeshToShapefile(tgBtgMesh& mesh, const std::string& name)
 {
-    std::vector<SGGeod>    nodes;
     std::vector<tgSegment> segs;
-
+    std::vector<SGGeod>    nodes;
+    char                   datasource[1024];
+    
+    sprintf( datasource, "./simp_dbg" );
     for (tgBtgFacet_iterator fit = mesh.facets_begin(); fit != mesh.facets_end(); fit++ ) {
-        // create a tgSegment list for the face    
         nodes.clear();
-        segs.clear();
         
+        // create a tgSegment list for the face            
         tgBtgHalfedge_handle hh = fit->halfedge();
         
         tgBtgHalfedge_facet_circulator hfc_end = (tgBtgHalfedge_facet_circulator)hh;
@@ -386,8 +413,8 @@ void tgMeshToShapefile(tgBtgMesh& mesh, const std::string& name)
         do {
             // create a list of geods
             SGGeod gnode = SGGeod::fromCart( SGVec3d( hfc_cur->vertex()->point().x(),
-                                                    hfc_cur->vertex()->point().y(),
-                                                    hfc_cur->vertex()->point().z() ) );
+                                                      hfc_cur->vertex()->point().y(),
+                                                      hfc_cur->vertex()->point().z() ) );
             nodes.push_back( gnode );
             
             hfc_cur++;
@@ -401,11 +428,8 @@ void tgMeshToShapefile(tgBtgMesh& mesh, const std::string& name)
                 tgSegment seg(nodes[i], nodes[0]);                
                 segs.push_back(seg);
             }            
-        }
-        
-      char datasource[1024];
-      sprintf( datasource, "./simp_dbg/%s", name.c_str() );
-        
-      tgShapefile::FromSegmentList( segs, false, datasource, "original_mesh", "mesh" );
+        }        
     }
+    
+    tgShapefile::FromSegmentList( segs, false, datasource, name.c_str(), "mesh" );    
 }

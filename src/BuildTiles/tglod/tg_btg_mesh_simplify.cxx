@@ -40,13 +40,15 @@
 // Visitor base
 #include <CGAL/Surface_mesh_simplification/Edge_collapse_visitor_base.h>
 
+#include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/texcoord.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <terragear/tg_shapefile.hxx>
 
 typedef CGAL::Line_3<tgBtgKernel>                             tgBtg_Line_3;
 
-#define DEBUG_SIMPLIFY  (0)
+#define DEBUG_SIMPLIFY        (1)
+#define DEBUG_SIMPLIFY_EDGES  (0)
 
 //
 // BGL property map which indicates whether an edge is marked as non-removable
@@ -64,14 +66,14 @@ struct Border_is_constrained_edge_map {
     Border_is_constrained_edge_map() {}
     Border_is_constrained_edge_map(const tgBtgMesh& sm) : sm_ptr(&sm) {}
     
-#if 0
+#if 1
     friend bool get(Border_is_constrained_edge_map m, const key_type& edge) {
         return CGAL::is_border(edge, *m.sm_ptr);
 #else
     friend bool get(Border_is_constrained_edge_map m, const key_type& edge) {
         return false;
-    }
 #endif    
+    }
 };
 
 // Placement class
@@ -130,7 +132,7 @@ struct CollapseVisitor : SMS::Edge_collapse_visitor_base<tgBtgMesh>
         } else {
             ++cinfo->collapsing;            
             
-#if 0
+#if DEBUG_SIMPLIFY_EDGES
             // DEBUG_SIMPLIFY            
             sprintf( datasource, "./simp_dbg/%s", name.c_str() );
             sprintf( layer, "collapsing_verts_%04lu", cinfo->collapsing );
@@ -203,42 +205,7 @@ struct CollapseVisitor : SMS::Edge_collapse_visitor_base<tgBtgMesh>
     // Called AFTER each edge has been collapsed
     void OnCollapsed( Profile const& profile, tgBtgVertex_handle new_node )
     {
-        ++cinfo->collapsed;
-        
-#if 0        
-        // calculate the tex coords of the collapsed vertex in Geodetic coordinates
-        SGGeod g = SGGeod::fromCart( SGVec3d( new_node->point().x(),
-                                              new_node->point().y(),
-                                              new_node->point().z() ));
-        
-        // ToDo : Create a new SimGear texcoordinate generator that just takes a list of geods, or a single geod
-        // The Simgear General texture coordinate routine currently takes a fan.
-        std::vector< int >      node_idxs;
-        std::vector< SGGeod >   nodes;
-        std::vector< SGVec2f >  tc_list;
-        
-        node_idxs.push_back(0);
-        nodes.push_back(g);
-
-        tc_list = sgCalcTexCoords( center_lat, nodes, node_idxs );
-        
-        // how set this tc on all half edges incident to this vertex
-        tgBtgHalfedge_vertex_circulator hv_cur = new_node->vertex_begin();
-        tgBtgHalfedge_vertex_circulator hv_end = hv_cur;
-                    
-        int num_he = 1;
-        
-        do { 
-            // set primary texture coordinate : all normals need to be recomputed
-            // when we are done, as all the faces change
-            hv_cur->SetTexCoord( tc_list[0] );
-            hv_cur++;
-            num_he++;
-        } while(hv_cur != hv_end);
-
-        SG_LOG( SG_GENERAL, SG_ALERT, "Set TC incident to vertex " << g << " : " << num_he << " halfedges to " << tc_list[0] );
-#endif
-
+        ++cinfo->collapsed;     
     }                
     
     CollapseInfo* cinfo;
@@ -250,11 +217,12 @@ int tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, flo
 {
     CollapseInfo    ci;
     CollapseVisitor vis(&ci, name, cl );
+    SGPath          pathname( name );
     
     // first write the whole mesh as triangles
 #if DEBUG_SIMPLIFY
     char mesh_name[1024];
-    sprintf( mesh_name, "%s_%s", name.c_str(), "before" );
+    sprintf( mesh_name, "%s_%s", pathname.file().c_str(), "before" );
     tgMeshToShapefile( mesh, mesh_name );
 #endif
     
@@ -279,7 +247,7 @@ int tgBtgSimplify( tgBtgMesh& mesh, float stop_percentage, float volume_wgt, flo
     SG_LOG( SG_GENERAL, SG_ALERT, "           SUCCESS Simplifying obj : " << r << " edges removed " << mesh.size_of_halfedges()/2 << " edges left " );
 
 #if DEBUG_SIMPLIFY
-    sprintf( mesh_name, "%s_%s", name.c_str(), "after" );
+    sprintf( mesh_name, "%s_%s", pathname.file().c_str(), "after" );
     tgMeshToShapefile( mesh, mesh_name );
  #endif
     

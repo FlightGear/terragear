@@ -7,6 +7,7 @@
 #include <terragear/tg_unique_vec2f.hxx>
 #include <terragear/tg_unique_vec3f.hxx>
 #include <terragear/tg_unique_vec3d.hxx>
+#include <terragear/tg_polygon.hxx>
 
 
 struct VertNormTex {
@@ -82,7 +83,7 @@ public:
         vIndex = vertices.add(v2.vertex + center);
         nIndex = normals.add(v2.normal);
         tIndex = texcoords.add(v2.texCoord);
-        tris[material].AddPoint( vIndex, nIndex, tIndex );        
+        tris[material].AddPoint( vIndex, nIndex, tIndex );
     }
 
     void

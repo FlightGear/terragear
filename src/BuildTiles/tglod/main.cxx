@@ -147,12 +147,7 @@ collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, cons
                 hasLand = true;
                 st.fileName = fileName;
                 saveOceanBuckets = false;
-
-                SG_LOG(SG_GENERAL, SG_ALERT, "\tFOUND " << fileName );
-                
             } else {
-                SG_LOG(SG_GENERAL, SG_ALERT, "\tNOT FOUND " << fileName );
-                
                 // we need to remember any ocean buckets under us
                 saveOceanBuckets = true;
             }
@@ -225,7 +220,7 @@ collapseBtg(int level, const std::string& outfile, std::vector<subDivision>& sub
     
     // TODO create mesh from Arrays
     tgBtgMesh mesh;
-    tgReadArraysAsMesh( arrays, mesh );                    
+    tgReadArraysAsMesh( arrays, mesh, outfile );                    
     
     SG_LOG(SG_GENERAL, SG_ALERT, "Simplifying tile " << outfile << " with ratio " << simpRatio );
 
