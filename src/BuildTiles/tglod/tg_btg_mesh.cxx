@@ -153,10 +153,10 @@ private:
 template <class HDS>
 class tgBuildArrayMesh : public CGAL::Modifier_base<HDS> {
 public:
-    tgBuildArrayMesh(const Arrays& a) { arr = a; }
+    tgBuildArrayMesh(const Arrays& a) : arr(a) { }
     
     void operator()( HDS& hds ) {
-        int num_vertices = arr.vertices.get_list().size();
+        int num_vertices = arr.vertexVector.size();
         
         // just read in triangles. ignoring fans and strips
         int num_triangles = arr.getTriangleCount();
@@ -167,7 +167,7 @@ public:
         typedef typename HDS::Vertex   Vertex;
         typedef typename Vertex::Point Point;
         
-        const std::vector<SGVec3d>& vertices  = arr.vertices.get_list();
+        const std::vector<SGVec3d>& vertices  = arr.getVertexList();
         const std::vector<SGVec3f>& normals   = arr.normals.get_list();
         const std::vector<SGVec2f>& texcoords = arr.texcoords.get_list();
         
@@ -177,8 +177,8 @@ public:
         }
                                 
         // loop through all the materials, and get the list of triangle indicies        
-        for ( matTris::iterator mti = arr.tris.begin(); mti != arr.tris.end(); mti++ ) {
-            PointList& pl = mti->second;
+        for ( matTris::const_iterator mti = arr.tris.begin(); mti != arr.tris.end(); mti++ ) {
+            const PointList& pl = mti->second;
             for ( unsigned int i = 2; i < pl.vertexIndex.size(); i += 3 ) {
                 std::vector< std::size_t> indices;
                 std::vector< Point > points_inserted;
@@ -244,7 +244,7 @@ public:
     std::vector<tgSegment> bad_tri_segs;
     
 private:
-    Arrays arr;
+    const Arrays& arr;
 };
 
 

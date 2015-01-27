@@ -127,6 +127,7 @@ public:
     }
     
     std::vector<SGVec2f>& get_list( void ) { return vector_list; }
+    const std::vector<SGVec2f>& get_list( void ) const { return vector_list; }
 
 private:
     unique_vec2f_set        index_list;

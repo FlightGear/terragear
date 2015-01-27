@@ -61,6 +61,8 @@ static void usage( const std::string name ) {
 struct subDivision {
 public:
     std::string fileName;
+    SGGeod min;
+    SGGeod max;
     unsigned int numOcean;
     std::vector<SGBucket> land;
     std::vector<SGBucket> ocean;
@@ -122,8 +124,14 @@ collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, cons
                 st.land.push_back(bucketBoxList[i].getBucket());
             } else {
                 st.numOcean++;
-                st.ocean.push_back(bucketBoxList[i].getBucket());
+                st.ocean.push_back(bucketBoxList[i].getBucket());                
             }
+
+            st.min = SGGeod::fromDeg( bucketBoxList[i].getLongitudeDeg(), 
+                                      bucketBoxList[i].getLatitudeDeg() );
+            st.max = SGGeod::fromDeg( bucketBoxList[i].getLongitudeDeg() + bucketBoxList[i].getWidthDeg(), 
+                                      bucketBoxList[i].getLatitudeDeg() + bucketBoxList[i].getHeightDeg() );
+            
             subTiles.push_back(st);
         }
     } else {
@@ -152,6 +160,11 @@ collectBtgFiles(const BucketBox& bucketBox, const std::string& sceneryPath, cons
                 saveOceanBuckets = true;
             }
             
+            st.min = SGGeod::fromDeg( bucketBoxList[i].getLongitudeDeg(), 
+                                      bucketBoxList[i].getLatitudeDeg() );
+            st.max = SGGeod::fromDeg( bucketBoxList[i].getLongitudeDeg() + bucketBoxList[i].getWidthDeg(), 
+                                      bucketBoxList[i].getLatitudeDeg() + bucketBoxList[i].getHeightDeg() );
+
             // find all of the land / ocean tiles beneath this subTile
             collectLandAndOcean( bucketBoxList[i], sceneryPath, outPath, st, saveOceanBuckets );
             
@@ -177,7 +190,7 @@ collapseBtg(int level, const std::string& outfile, std::vector<subDivision>& sub
                 SG_LOG(SG_GENERAL, SG_ALERT, "Read  tile " << subTiles[i].fileName );
             }
 
-            arrays.insert(binObj);
+            arrays.insert(subTiles[i].min, subTiles[i].max, binObj);
         }
     }
 
@@ -198,7 +211,7 @@ collapseBtg(int level, const std::string& outfile, std::vector<subDivision>& sub
 
             std::vector<SGVec2f> texCoords = sgCalcTexCoords(subTiles[i].ocean[j], geod, geod_idxs);
         
-            arrays.insertFanGeometry("Ocean", SGVec3d::zeros(), vertices, normals, texCoords, geod_idxs, geod_idxs, geod_idxs);
+            arrays.insertFanGeometry("Ocean", geod[0], geod[2], SGVec3d::zeros(), vertices, normals, texCoords, geod_idxs, geod_idxs, geod_idxs);
         }
     }
     
@@ -216,7 +229,9 @@ collapseBtg(int level, const std::string& outfile, std::vector<subDivision>& sub
         
         denom += ( subTiles[i].land.size() / ( subTiles[i].land.size() + subTiles[i].numOcean ) );
     }
-    float simpRatio = 1.0f/denom;
+    
+    // float simpRatio = 1.0f/denom;
+    float simpRatio = 1.0f/num_subTiles;
     
     // TODO create mesh from Arrays
     tgBtgMesh mesh;
