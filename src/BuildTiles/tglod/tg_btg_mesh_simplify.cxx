@@ -47,7 +47,7 @@
 
 typedef CGAL::Line_3<tgBtgKernel>                             tgBtg_Line_3;
 
-#define DEBUG_SIMPLIFY        (1)
+#define DEBUG_SIMPLIFY        (0)
 #define DEBUG_SIMPLIFY_EDGES  (0)
 
 //

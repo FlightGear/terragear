@@ -102,12 +102,13 @@ public:
             gaPointWithIndex pi( pt, index );
             vertexTree.insert( pi );
         } else {
+#if 0            
             for ( it = result.begin(); it != result.end(); it++ ) {
                 SG_LOG(SG_TERRAIN, SG_ALERT, "Found " << result.size() << " points in search circle : " << std::setprecision(16) << 
                     "(" << pt.x() << "," << pt.y() << ")  found (" <<
                     boost::get<0>(*it).x() << "," << boost::get<0>(*it).y() << ")" );
             }
-            
+#endif            
             // return the index of the nearest neighbor
             index = boost::get<1>( *(result.begin()) );
         }

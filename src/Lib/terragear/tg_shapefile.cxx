@@ -391,61 +391,67 @@ void tgShapefile::FromGeodList( const std::vector<SGGeod>& list, bool show_dir, 
 
 void tgShapefile::FromSegment( void* lid, const tgSegment& subject, bool show_dir, const std::string& description )
 {
-    OGRLineString* line = new OGRLineString();
+    //OGRLineString* line = new OGRLineString();
+    OGRLineString line;
     OGRLayer* l_id = (OGRLayer *)lid;
-    OGRPoint* start = new OGRPoint;
-
+    //OGRPoint* start = new OGRPoint;
+    OGRPoint start;
+    
     SGGeod geodStart = subject.GetGeodStart();
     SGGeod geodEnd   = subject.GetGeodEnd();
     
-    start->setX( geodStart.getLongitudeDeg() );
-    start->setY( geodStart.getLatitudeDeg() );
-    start->setZ( 0.0 );
+    start.setX( geodStart.getLongitudeDeg() );
+    start.setY( geodStart.getLatitudeDeg() );
+    start.setZ( 0.0 );
     
-    line->addPoint(start);
+    line.addPoint(&start);
 
     if ( show_dir ) {
         SGGeod lArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
         SGGeod rArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
         
-        OGRPoint* end = new OGRPoint;
-        end->setX( geodEnd.getLongitudeDeg() );
-        end->setY( geodEnd.getLatitudeDeg() );
-        end->setZ( 0.0 );
-        line->addPoint(end);
+        // OGRPoint* end = new OGRPoint;
+        OGRPoint end;
+        end.setX( geodEnd.getLongitudeDeg() );
+        end.setY( geodEnd.getLatitudeDeg() );
+        end.setZ( 0.0 );
+        line.addPoint(&end);
         
-        OGRPoint* lend = new OGRPoint;
-        lend->setX( lArrow.getLongitudeDeg() );
-        lend->setY( lArrow.getLatitudeDeg() );
-        lend->setZ( 0.0 );
-        line->addPoint(lend);
+        // OGRPoint* lend = new OGRPoint;
+        OGRPoint lend;
+        lend.setX( lArrow.getLongitudeDeg() );
+        lend.setY( lArrow.getLatitudeDeg() );
+        lend.setZ( 0.0 );
+        line.addPoint(&lend);
         
-        OGRPoint* rend = new OGRPoint;
-        rend->setX( rArrow.getLongitudeDeg() );
-        rend->setY( rArrow.getLatitudeDeg() );
-        rend->setZ( 0.0 );
-        line->addPoint(rend);
+        //OGRPoint* rend = new OGRPoint;
+        OGRPoint rend;
+        rend.setX( rArrow.getLongitudeDeg() );
+        rend.setY( rArrow.getLatitudeDeg() );
+        rend.setZ( 0.0 );
+        line.addPoint(&rend);
         
         // finish the arrow
-        line->addPoint(end);
+        line.addPoint(&end);
     } else {        
-        OGRPoint* end = new OGRPoint;
-        end->setX( geodEnd.getLongitudeDeg() );
-        end->setY( geodEnd.getLatitudeDeg() );
-        end->setZ( 0.0 );
-        line->addPoint(end);
+        // OGRPoint* end = new OGRPoint;
+        OGRPoint end;
+        end.setX( geodEnd.getLongitudeDeg() );
+        end.setY( geodEnd.getLatitudeDeg() );
+        end.setZ( 0.0 );
+        line.addPoint(&end);
     }
     
     OGRFeature* feature = NULL;
     feature = OGRFeature::CreateFeature( l_id->GetLayerDefn() );    
     feature->SetField("ID", description.c_str());
-    feature->SetGeometry( line ); 
+    feature->SetGeometry( &line ); 
 
     if( l_id->CreateFeature( feature ) != OGRERR_NONE )
     {
         SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
     }
-    OGRFeature::DestroyFeature(feature);    
+    OGRFeature::DestroyFeature(feature);
 }
 
 void tgShapefile::FromSegment( const tgSegment& subject, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description )

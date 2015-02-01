@@ -147,6 +147,7 @@ private:
     SGVec3f calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) const;
 
     // Output
+    void WriteMeshFile( void );
     void WriteBtgFile( void );
     void AddCustomObjects( void );
 

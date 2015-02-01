@@ -272,6 +272,7 @@ createTree(const BucketBox& bucketBox, const std::string& sceneryPath, const std
         ss << bucketBox << ".btg.gz";
         collapseBtg(level, ss.str(), subTiles);
    
+        //exit(0);
     } else {
         BucketBox bucketBoxList[100];
         unsigned numTiles = bucketBox.getSubDivision(bucketBoxList, 100);

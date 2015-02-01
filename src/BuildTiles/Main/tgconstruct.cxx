@@ -214,11 +214,16 @@ void TGConstruct::run()
                     CalcTextureCoordinates();
 
                     // STEP 18)
+                    // Generate the mesh file for LOD
+                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Mesh File");
+                    WriteMeshFile();
+                    
+                    // STEP 19)
                     // Generate the btg file
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate BTG File");
                     WriteBtgFile();
 
-                    // STEP 19)
+                    // STEP 20)
                     // Write Custom objects to .stg file
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Custom Objects");
                     AddCustomObjects();
