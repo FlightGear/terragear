@@ -23,7 +23,9 @@ static void stringPurifier( std::string& s )
 ClosedPoly::ClosedPoly( char* desc )
 {
     is_pavement = false;
-
+    is_border   = true;
+    has_feature = false;
+    
     if ( desc )
     {
         description = desc;
@@ -44,8 +46,11 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
     surface_type = st;
     smoothness   = s;
     texture_heading = th;
-    is_pavement = true;
 
+    is_pavement = (surface_type != 15) ? true : false;
+    is_border   = false;
+    has_feature = true;
+    
     if ( desc )
     {
         description = desc;
@@ -78,7 +83,7 @@ void ClosedPoly::AddNode( BezNode* node )
     TG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : " << node->GetLoc() );
 
     // For pavement polys, add a linear feature for each contour
-    if (is_pavement)
+    if (has_feature)
     {
         if (!cur_feature)
         {
@@ -418,7 +423,6 @@ std::string ClosedPoly::GetMaterial( int surface )
             break;
 
         case 15:
-            material = "Grass";
             break;
 
         default:
@@ -431,7 +435,7 @@ std::string ClosedPoly::GetMaterial( int surface )
 
 int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgpolygon_list& apt_base_polys, tgpolygon_list& apt_clearing_polys, tgAccumulator& accum, std::string& shapefile_name )
 {
-    if (is_pavement && pre_tess.Contours() )
+    if ( is_pavement && pre_tess.Contours() )
     {
         tgPolygon base, safe_base;
 
@@ -461,7 +465,6 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
         }
 
         tgPolygon clipped = accum.Diff( pre_tess );
-
         if ( clipped.Contours() ) {
             if(  shapefile_name.size() ) {
                 tgShapefile::FromPolygon( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
@@ -475,8 +478,8 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
             clipped.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
 
             rwy_polys.push_back( clipped );
-
-            accum.Add( pre_tess );
+            
+            accum.Add( pre_tess );                
         }
     }
 
@@ -491,7 +494,7 @@ int ClosedPoly::BuildBtg( tgPolygon& apt_base, tgPolygon& apt_clearing, std::str
     tgPolygon base, safe_base;
 
     // verify the poly has been generated, and the contour isn't a pavement
-    if ( !is_pavement && pre_tess.Contours() )
+    if ( is_border && pre_tess.Contours() )
     {
         base = tgPolygon::Expand( pre_tess, 2.0);
         safe_base = tgPolygon::Expand( pre_tess, 5.0);

@@ -49,6 +49,9 @@ private:
 
 
     bool   is_pavement;
+    bool   is_border;
+    bool   has_feature;
+    
     int    surface_type;
     float  smoothness;
     double texture_heading;
