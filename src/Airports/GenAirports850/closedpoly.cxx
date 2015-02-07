@@ -24,6 +24,8 @@ static void stringPurifier( std::string& s )
 ClosedPoly::ClosedPoly( char* desc )
 {
     is_pavement = false;
+    is_border   = true;
+    has_feature = false;
 
     if ( desc )
     {
@@ -45,7 +47,10 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
     surface_type = st;
     smoothness   = s;
     texture_heading = th;
-    is_pavement = true;
+    
+    is_pavement = (surface_type != 15) ? true : false;
+    is_border   = false;
+    has_feature = true;
 
     if ( desc )
     {
@@ -79,7 +84,7 @@ void ClosedPoly::AddNode( BezNode* node )
     TG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : " << node->GetLoc() );
 
     // For pavement polys, add a linear feature for each contour
-    if (is_pavement)
+    if (has_feature)
     {
         if (!cur_feature)
         {
@@ -95,10 +100,9 @@ void ClosedPoly::AddNode( BezNode* node )
 
             TG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node " << node->GetLoc() << " to current linear feature " << cur_feature);
 
-// TODO
-//            cur_feature = new LinearFeature(feature_desc, 1.0f );
+            cur_feature = new LinearFeature(feature_desc, 1.0f );
         }
-//      cur_feature->AddNode( node );
+        cur_feature->AddNode( node );
     }
 }
 
@@ -421,7 +425,6 @@ std::string ClosedPoly::GetMaterial( int surface )
             break;
 
         case 15:
-            material = "Grass";
             break;
 
         default:

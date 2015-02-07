@@ -211,3 +211,9 @@ void TGConstruct::WriteBtgFile( void )
         }
     }
 }
+
+void TGConstruct::WriteMeshFile( void )
+{
+    
+}
+
