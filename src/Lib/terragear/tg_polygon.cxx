@@ -121,6 +121,7 @@ tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<SGG
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         result.AddContour( tgContour::AddColinearNodes( subject.GetContour(c), nodes ) );
@@ -132,6 +133,22 @@ tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<SGG
 tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, UniqueSGGeodSet& nodes )
 {
     return AddColinearNodes( subject, nodes.get_list() );
+}
+
+tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<TGNode*>& nodes )
+{
+    tgPolygon result;
+    
+    result.SetMaterial( subject.GetMaterial() );
+    result.SetTexParams( subject.GetTexParams() );
+    result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
+    
+    for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
+        result.AddContour( tgContour::AddColinearNodes( subject.GetContour(c), subject.GetPreserve3D(), nodes ) );
+    }
+    
+    return result;
 }
 
 // this is the opposite of FindColinearNodes - it takes a single SGGeode,

@@ -86,6 +86,7 @@ void clipper_to_shapefile( ClipperLib::Paths polys, char* datasource );
 // Forward Declaration:
 class tgPolygon;
 class tgChoppedPolygons;
+class TGNode;
 
 typedef std::vector <tgPolygon>  tgpolygon_list;
 typedef tgpolygon_list::iterator tgpolygon_list_iterator;
@@ -413,6 +414,8 @@ public:
     static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<SGGeod>& nodes );
     static bool      FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod& start, SGGeod& end );
 
+    static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<TGNode*>& nodes );
+    
     // IO
     void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );

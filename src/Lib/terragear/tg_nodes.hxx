@@ -15,17 +15,27 @@
 #include <CGAL/Search_traits_adapter.h>     /* Just use two dimensional lookup - elevation is a trait */
 #include <boost/iterator/zip_iterator.hpp>
 
+#include <simgear/compiler.h>
+#include <simgear/bucket/newbucket.hxx>
+#include <simgear/io/lowlevel.hxx>
+
+#include "tg_unique_tgnode.hxx"
+
+#define FG_PROXIMITY_EPSILON 0.000001
+#define FG_COURSE_EPSILON 0.0001
+
+
 typedef CGAL::Simple_cartesian<double> Kernel;
 typedef Kernel::Point_2 Point;
-typedef boost::tuple<Point, double> Point_and_Elevation;
+typedef boost::tuple<Point, double, TGNode*> Point_and_Elevation;
 
 //definition of the property map
 #ifdef CGAL_OLD
 struct My_point_property_map{
-  typedef Point value_type;
-  typedef const value_type& reference;
-  typedef const Point_and_Elevation& key_type;
-  typedef boost::readable_property_map_tag category;
+    typedef Point value_type;
+    typedef const value_type& reference;
+    typedef const Point_and_Elevation& key_type;
+    typedef boost::readable_property_map_tag category;
 };
 #endif
 
@@ -40,16 +50,6 @@ typedef CGAL::Search_traits_adapter<Point_and_Elevation,CGAL::Nth_of_tuple_prope
 
 typedef CGAL::Fuzzy_iso_box<Traits> Fuzzy_bb;
 typedef CGAL::Kd_tree<Traits> Tree;
-
-
-#include <simgear/compiler.h>
-#include <simgear/bucket/newbucket.hxx>
-#include <simgear/io/lowlevel.hxx>
-
-#include "tg_unique_tgnode.hxx"
-
-#define FG_PROXIMITY_EPSILON 0.000001
-#define FG_COURSE_EPSILON 0.0001
 
 
 /* This class handles ALL of the nodes in a tile : 3d nodes in elevation data, 2d nodes generated from landclass, etc) */
@@ -123,6 +123,8 @@ public:
     // Find all the nodes within a bounding box
     bool get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector<SGGeod>& points ) const;
 
+    bool get_nodes_inside( const SGGeod& min, const SGGeod& max, std::vector<TGNode*>& points ) const;
+    
     // Find a;; the nodes on the tile edges
     bool get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west ) const;
 

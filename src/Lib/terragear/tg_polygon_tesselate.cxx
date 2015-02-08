@@ -190,8 +190,11 @@ void tgPolygon::Tesselate()
                 SGGeod p1 = SGGeod::fromDeg( to_double(tri.vertex(1).x()), to_double(tri.vertex(1).y()) );
                 SGGeod p2 = SGGeod::fromDeg( to_double(tri.vertex(2).x()), to_double(tri.vertex(2).y()) );
 
-                AddTriangle( p0, p1, p2 );
-
+                /* Check for Zero Area before inserting */
+                if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
+                    AddTriangle( p0, p1, p2 );
+                }
+                
                 ++count;
             } else {
                 SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : face not in domain");

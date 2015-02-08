@@ -45,6 +45,19 @@ bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector
     return true;
 }
 
+bool TGNodes::get_nodes_inside( const SGGeod& min, const SGGeod& max, std::vector<TGNode*>& points ) const {
+    points.clear();
+    for ( unsigned int i = 0; i < tg_node_list.size(); i++ ) {
+        SGGeod const& pt = tg_node_list[i].GetPosition();
+        
+        if ( IsAlmostWithin( pt, min, max ) ) {
+            points.push_back( &tg_node_list[i] );
+        }
+    }
+    
+    return true;
+}
+
 bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west ) const {
     double north_compare = b.get_center_lat() + 0.5 * b.get_height();
     double south_compare = b.get_center_lat() - 0.5 * b.get_height();
@@ -100,7 +113,7 @@ void TGNodes::init_spacial_query( void )
         // generate the tuple
         Point   pt( tg_node_list[i].GetPosition().getLongitudeDeg(), tg_node_list[i].GetPosition().getLatitudeDeg() );
         double  e( tg_node_list[i].GetPosition().getElevationM() );
-        Point_and_Elevation pande(pt, e);
+        Point_and_Elevation pande( pt, e, &tg_node_list[i] );
 
         // and insert into tree
         tg_kd_tree.insert( pande );
@@ -139,6 +152,36 @@ bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector
         points.push_back( SGGeod::fromDegM( boost::get<0>(*it).x(), boost::get<0>(*it).y(), boost::get<1>(*it) ) );
     }
 
+    return true;
+}
+
+bool TGNodes::get_nodes_inside( const SGGeod& min, const SGGeod& max, std::vector<TGNode*>& points ) const {
+    points.clear();
+
+    // Have we generated the k-d tree?
+    if ( !kd_tree_valid ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "get_geod_inside called with invalid kdtree" );
+        exit(0);
+        return false;
+    }
+    
+    // define an exact rectangulat range query  (fuzziness=0)
+    Point ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
+    Point ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
+    Fuzzy_bb exact_bb(ll, ur);
+    
+    // list of tuples as a result
+    std::list<Point_and_Elevation> result;
+    std::list<Point_and_Elevation>::iterator it;
+    
+    // perform the query
+    tg_kd_tree.search(std::back_inserter( result ), exact_bb);
+    
+    // and convert the tuples back into SGGeod
+    for ( it = result.begin(); it != result.end(); it++ ) {
+        points.push_back( boost::get<2>(*it) );
+    }
+    
     return true;
 }
 

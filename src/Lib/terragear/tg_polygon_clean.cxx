@@ -9,6 +9,7 @@ tgPolygon tgPolygon::Snap( const tgPolygon& subject, double snap )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     for (unsigned int c = 0; c < subject.Contours(); c++) {
         result.AddContour( tgContour::Snap( subject.GetContour( c ), snap ) );
@@ -24,6 +25,7 @@ tgPolygon tgPolygon::RemoveDups( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         result.AddContour( tgContour::RemoveDups( subject.GetContour( c ) ) );
@@ -39,6 +41,7 @@ tgPolygon tgPolygon::RemoveBadContours( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         tgContour contour = subject.GetContour(c);
@@ -59,7 +62,8 @@ tgPolygon tgPolygon::RemoveCycles( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
-
+    result.SetPreserve3D( subject.GetPreserve3D() );
+    
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         contours.clear();
 
@@ -84,6 +88,7 @@ tgPolygon tgPolygon::SplitLongEdges( const tgPolygon& subject, double dist )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     for ( unsigned c = 0; c < subject.Contours(); c++ )
     {
@@ -123,6 +128,7 @@ tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     return result;
 }
@@ -148,6 +154,7 @@ tgPolygon tgPolygon::Simplify( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     return result;
 }
@@ -160,6 +167,7 @@ tgPolygon tgPolygon::RemoveTinyContours( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         tgContour contour = subject.GetContour( c );
@@ -183,6 +191,7 @@ tgPolygon tgPolygon::RemoveSpikes( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     
     for ( unsigned int c = 0; c < subject.Contours(); c++ ) {
         result.AddContour( tgContour::RemoveSpikes( subject.GetContour(c) ) );
@@ -275,6 +284,7 @@ tgcontour_list tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& s
                 result.SetMaterial( polys[j].GetMaterial() );
                 result.SetTexParams( polys[j].GetTexParams() );
                 result.SetId( polys[j].GetId() );
+                result.SetPreserve3D( polys[j].GetPreserve3D() );
                 polys[j] = result;
                 done = true;
             }

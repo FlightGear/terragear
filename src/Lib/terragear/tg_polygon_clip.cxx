@@ -61,7 +61,9 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
+    result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
+    
     return result;
 }
 
@@ -127,7 +129,9 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
+    result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
+    
     return result;
 }
 
@@ -164,7 +168,9 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
-
+    result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
+    
     return result;
 }
 
