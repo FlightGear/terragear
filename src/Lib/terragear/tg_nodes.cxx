@@ -1,91 +1,14 @@
 #include <simgear/debug/logstream.hxx>
+
 #include "tg_nodes.hxx"
+#include "tg_shapefile.hxx"
 
 const double fgPoint3_Epsilon = 0.000001;
-
-#define USE_SPACIAL_QUERY
-
-#ifndef USE_SPACIAL_QUERY
-
-void TGNodes::init_spacial_query( void )
-{
-    kd_tree_valid = true;
-}
-
-static bool IsWithin( const SGGeod pt, double xmin, double xmax, double ymin, double ymax )
-{
-    return ( (xmin <= pt.getLongitudeDeg()) && (ymin <= pt.getLatitudeDeg()) &&
-             (xmax >= pt.getLongitudeDeg()) && (ymax >= pt.getLatitudeDeg()) );
-}
-
-static bool IsAlmostWithin( const SGGeod pt, const SGGeod& min, const SGGeod& max )
-{
-    // make sure we take epsilon into account
-    return ( IsWithin(pt,
-                      min.getLongitudeDeg() - fgPoint3_Epsilon,
-                      max.getLongitudeDeg() + fgPoint3_Epsilon,
-                      min.getLatitudeDeg()  - fgPoint3_Epsilon,
-                      max.getLatitudeDeg()  + fgPoint3_Epsilon ) );
-}
-
-bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector<SGGeod>& points ) const {
-    points.clear();
-    for ( unsigned int i = 0; i < tg_node_list.size(); i++ ) {
-        SGGeod const& pt = tg_node_list[i].GetPosition();
-
-        if ( IsAlmostWithin( pt, min, max ) ) {
-            points.push_back( pt );
-        }
-    }
-
-    return true;
-}
-
-bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west ) const {
-    double north_compare = b.get_center_lat() + 0.5 * b.get_height();
-    double south_compare = b.get_center_lat() - 0.5 * b.get_height();
-    double east_compare  = b.get_center_lon() + 0.5 * b.get_width();
-    double west_compare  = b.get_center_lon() - 0.5 * b.get_width();
-
-    north.clear();
-    south.clear();
-    east.clear();
-    west.clear();
-
-    for ( unsigned int i = 0; i < tg_node_list.size(); i++ ) {
-        SGGeod const& pt = tg_node_list[i].GetPosition();
-
-        // may save the same point twice - so we get all the corners
-        if ( fabs(pt.getLatitudeDeg() - north_compare) < SG_EPSILON) {
-            north.push_back( pt );
-        }
-        if ( fabs(pt.getLatitudeDeg() - south_compare) < SG_EPSILON) {
-            south.push_back( pt );
-        }
-        if ( fabs(pt.getLongitudeDeg() - east_compare) < SG_EPSILON) {
-            east.push_back( pt );
-        }
-        if ( fabs(pt.getLongitudeDeg() - west_compare) < SG_EPSILON) {
-            west.push_back( pt );
-        }
-    }
-
-    return true;
-}
-
-#else
 
 // The spacial search utilizes the boost tuple construct.
 // The k-d tree is generated in two dimensions. and the first element of the tuple is this 2d point
 // the second element of the tuple is the elevation of this point
 // Three dimensional queries is a bit overkill, but the code, although faster, is slightly more cumbersome
-
-// get function for the property map - needed for cgal trait extension
-#if 0
-My_point_property_map::reference get(My_point_property_map, My_point_property_map::key_type p) {
-    return boost::get<0>(p);
-}
-#endif
 
 // Build the k-d tree
 void TGNodes::init_spacial_query( void )
@@ -96,7 +19,7 @@ void TGNodes::init_spacial_query( void )
         // generate the tuple
         tgn_Point pt( tg_node_list[i].GetPosition().getLongitudeDeg(), tg_node_list[i].GetPosition().getLatitudeDeg() );
         double    e( tg_node_list[i].GetPosition().getElevationM() );
-        Point_and_Elevation pande(pt, e);
+        Point_and_Elevation pande( pt, e, &tg_node_list[i] );
 
         // and insert into tree
         tg_kd_tree.insert( pande );
@@ -135,6 +58,36 @@ bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector
         points.push_back( SGGeod::fromDegM( boost::get<0>(*it).x(), boost::get<0>(*it).y(), boost::get<1>(*it) ) );
     }
 
+    return true;
+}
+
+bool TGNodes::get_nodes_inside( const SGGeod& min, const SGGeod& max, std::vector<TGNode*>& points ) const {
+    points.clear();
+    
+    // Have we generated the k-d tree?
+    if ( !kd_tree_valid ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "get_nodes_inside called with invalid kdtree" );
+        exit(0);
+        return false;
+    }
+    
+    // define an exact rectangulat range query  (fuzziness=0)
+    tgn_Point ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
+    tgn_Point ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
+    Fuzzy_bb  exact_bb(ll, ur);
+    
+    // list of tuples as a result
+    std::list<Point_and_Elevation> result;
+    std::list<Point_and_Elevation>::iterator it;
+    
+    // perform the query
+    tg_kd_tree.search(std::back_inserter( result ), exact_bb);
+    
+    // and convert the tuples back into SGGeod
+    for ( it = result.begin(); it != result.end(); it++ ) {
+        points.push_back( boost::get<2>(*it) );
+    }
+    
     return true;
 }
 
@@ -209,8 +162,6 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
 
     return true;
 }
-
-#endif
 
 void TGNodes::get_geod_nodes( std::vector<SGGeod>& points  ) const {
     points.clear();
@@ -332,6 +283,39 @@ void TGNodes::Dump( void ) {
 
         SG_LOG(SG_GENERAL, SG_ALERT, "Point[" << i << "] is " << node.GetPosition() << fixed );
     }
+}
+
+void TGNodes::ToShapefile(void)
+{
+    std::vector<SGGeod> fixed_nodes;
+    std::vector<SGGeod> interpolated_nodes;
+    std::vector<SGGeod> draped_nodes;
+    std::vector<SGGeod> smoothed_nodes;
+    
+    for (unsigned int i=0; i<tg_node_list.size(); i++) {
+        switch( tg_node_list[ i ].GetType() ) {
+            case TG_NODE_FIXED_ELEVATION:
+                fixed_nodes.push_back( tg_node_list[ i ].GetPosition() );
+                break;
+
+            case TG_NODE_INTERPOLATED:
+                interpolated_nodes.push_back( tg_node_list[ i ].GetPosition() );
+                break;
+
+            case TG_NODE_DRAPED:
+                draped_nodes.push_back( tg_node_list[ i ].GetPosition() );
+                break;
+
+            case TG_NODE_SMOOTHED:
+                smoothed_nodes.push_back( tg_node_list[ i ].GetPosition() );
+                break;                
+        }
+    }
+    
+    tgShapefile::FromGeodList( fixed_nodes, false, "./", "fixed nodes", "fixed" );
+    tgShapefile::FromGeodList( interpolated_nodes, false, "./", "interpolated nodes", "interpolated" );
+    tgShapefile::FromGeodList( draped_nodes, false, "./", "draped nodes", "draped" );
+    tgShapefile::FromGeodList( smoothed_nodes, false, "./", "smoothed nodes", "smoothed" );
 }
 
 void TGNodes::SaveToGzFile( gzFile& fp )

@@ -6,6 +6,8 @@
 #include "tg_accumulator.hxx"
 #include "tg_contour.hxx"
 #include "tg_polygon.hxx"
+#include "tg_unique_tgnode.hxx"
+#include "tg_shapefile.hxx"
 
 tgContour tgContour::Snap( const tgContour& subject, double snap )
 {
@@ -734,6 +736,87 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
     return found_node;
 }
 
+static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
+                                  const std::vector<TGNode*>& nodes, TGNode*& result,
+                                  double bbEpsilon, double errEpsilon )
+{
+    bool found_node = false;
+    double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
+    
+    SGGeod p0 = start;
+    SGGeod p1 = end;
+    
+    double xdist = fabs(p0.getLongitudeDeg() - p1.getLongitudeDeg());
+    double ydist = fabs(p0.getLatitudeDeg()  - p1.getLatitudeDeg());
+    
+    x_err_min = xdist + 1.0;
+    y_err_min = ydist + 1.0;
+    
+    if ( xdist > ydist ) {
+        // sort these in a sensible order
+        SGGeod p_min, p_max;
+        if ( p0.getLongitudeDeg() < p1.getLongitudeDeg() ) {
+            p_min = p0;
+            p_max = p1;
+        } else {
+            p_min = p1;
+            p_max = p0;
+        }
+        
+        m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
+        b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
+        
+        for ( int i = 0; i < (int)nodes.size(); ++i ) {
+            // cout << i << endl;
+            SGGeod current = nodes[i]->GetPosition();
+            
+            if ( (current.getLongitudeDeg() > (p_min.getLongitudeDeg() + (bbEpsilon))) && (current.getLongitudeDeg() < (p_max.getLongitudeDeg() - (bbEpsilon))) ) {
+                y_err = fabs(current.getLatitudeDeg() - (m * current.getLongitudeDeg() + b));
+                
+                if ( y_err < errEpsilon ) {
+                    found_node = true;
+                    if ( y_err < y_err_min ) {
+                        result = nodes[i];
+                        y_err_min = y_err;
+                    }
+                }
+            }
+        }
+    } else {
+        // sort these in a sensible order
+        SGGeod p_min, p_max;
+        if ( p0.getLatitudeDeg() < p1.getLatitudeDeg() ) {
+            p_min = p0;
+            p_max = p1;
+        } else {
+            p_min = p1;
+            p_max = p0;
+        }
+        
+        m1 = (p_min.getLongitudeDeg() - p_max.getLongitudeDeg()) / (p_min.getLatitudeDeg() - p_max.getLatitudeDeg());
+        b1 = p_max.getLongitudeDeg() - m1 * p_max.getLatitudeDeg();
+        
+        for ( int i = 0; i < (int)nodes.size(); ++i ) {
+            SGGeod current = nodes[i]->GetPosition();
+            
+            if ( (current.getLatitudeDeg() > (p_min.getLatitudeDeg() + (bbEpsilon))) && (current.getLatitudeDeg() < (p_max.getLatitudeDeg() - (bbEpsilon))) ) {
+                
+                x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
+                
+                if ( x_err < errEpsilon ) {
+                    found_node = true;
+                    if ( x_err < x_err_min ) {
+                        result = nodes[i];
+                        x_err_min = x_err;
+                    }
+                }
+            }
+        }
+    }
+    
+    return found_node;
+}
+
 static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, std::vector<SGGeod>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
 {
     SGGeod new_pt;
@@ -752,7 +835,36 @@ static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, std::vecto
     }
 }
 
-#define TG_EPSILON 0.0000000000000001
+extern SGGeod InterpolateElevation( const SGGeod& dst_node, const SGGeod& start, const SGGeod& end );
+
+static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, bool preserve3d, std::vector<TGNode*>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
+{
+    TGNode* new_pt = NULL;
+    SGGeod  new_geode;
+    
+    SG_LOG(SG_GENERAL, SG_BULK, "   " << p0 << " <==> " << p1 );
+    
+    bool found_extra = FindIntermediateNode( p0, p1, nodes, new_pt, bbEpsilon, errEpsilon );
+    
+    if ( found_extra && new_pt ) {
+        if ( preserve3d ) {
+            // interpolate the new nodes elevation based on p0, p1            
+            new_geode = InterpolateElevation( new_pt->GetPosition(), p0, p1 );
+            
+            SG_LOG(SG_GENERAL, SG_ALERT, "INTERPOLATE ELVATION between " << p0 << " and " << p1 << " returned elvation " << new_geode.getElevationM() );
+            
+            new_pt->SetElevation( new_geode.getElevationM() );
+            new_pt->SetType( TG_NODE_FIXED_ELEVATION );
+        }
+
+        AddIntermediateNodes( p0, new_pt->GetPosition(), preserve3d, nodes, result, bbEpsilon, errEpsilon  );
+        
+        result.AddNode( new_pt->GetPosition() );
+        SG_LOG(SG_GENERAL, SG_BULK, "    adding = " << new_pt->GetPosition() );
+        
+        AddIntermediateNodes( new_pt->GetPosition(), p1, preserve3d, nodes, result, bbEpsilon, errEpsilon  );
+    }
+}
 
 tgContour tgContour::AddColinearNodes( const tgContour& subject, UniqueSGGeodSet& nodes )
 {
@@ -769,7 +881,6 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, UniqueSGGeodSet
 
         // add intermediate points
         AddIntermediateNodes( p0, p1, tmp_nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
-        //AddIntermediateNodes( p0, p1, tmp_nodes, result, TG_EPSILON, TG_EPSILON/10 );
     }
 
     p0 = subject.GetNode( subject.GetSize() - 1 );
@@ -780,8 +891,7 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, UniqueSGGeodSet
 
     // add intermediate points
     AddIntermediateNodes( p0, p1, tmp_nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
-    //AddIntermediateNodes( p0, p1, tmp_nodes, result, TG_EPSILON, TG_EPSILON/10 );
-    
+
     // maintain original hole flag setting
     result.SetHole( subject.GetHole() );
 
@@ -802,7 +912,6 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, std::vector<SGG
 
         // add intermediate points
         AddIntermediateNodes( p0, p1, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
-        //AddIntermediateNodes( p0, p1, nodes, result, TG_EPSILON, TG_EPSILON/10 );
     }
 
     p0 = subject.GetNode( subject.GetSize() - 1 );
@@ -813,11 +922,55 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, std::vector<SGG
 
     // add intermediate points
     AddIntermediateNodes( p0, p1, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
-    //AddIntermediateNodes( p0, p1, nodes, result, TG_EPSILON, TG_EPSILON/10 );
+
+    // maintain original hole flag setting
+    result.SetHole( subject.GetHole() );
+
+    return result;
+}
+
+tgContour tgContour::AddColinearNodes( const tgContour& subject, bool preserve3d, std::vector<TGNode*>& nodes )
+{
+    SGGeod p0, p1;
+    tgContour result;
+    static int contour_idx = 1;
+    char layer[256];
+    
+    if ( preserve3d ) {
+        sprintf( layer, "before_%03d", contour_idx );
+        tgShapefile::FromContour( subject, false, "./", layer, "contour" );    
+    }
+    
+    for ( unsigned int n = 0; n < subject.GetSize()-1; n++ ) {
+        p0 = subject.GetNode( n );
+        p1 = subject.GetNode( n+1 );
+        
+        // add start of segment
+        result.AddNode( p0 );
+        
+        // add intermediate points
+        AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
+    }
+    
+    p0 = subject.GetNode( subject.GetSize() - 1 );
+    p1 = subject.GetNode( 0 );
+    
+    // add start of segment
+    result.AddNode( p0 );
+    
+    // add intermediate points
+    AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
     
     // maintain original hole flag setting
     result.SetHole( subject.GetHole() );
 
+    if ( preserve3d ) {
+        sprintf( layer, "after_%03d", contour_idx );
+        tgShapefile::FromContour( result, false, "./", layer, "contour" );    
+    }
+    
+    contour_idx++;
+    
     return result;
 }
 

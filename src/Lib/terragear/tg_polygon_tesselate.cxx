@@ -147,7 +147,7 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
                 if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
                     AddTriangle( p0, p1, p2 );
                 } else {
-                    SG_LOG( SG_GENERAL, SG_INFO, "tesselation dropping ZAT" );
+                    SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
                 }
                 
                 ++count;

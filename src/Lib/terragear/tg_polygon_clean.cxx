@@ -9,6 +9,7 @@ tgPolygon tgPolygon::Snap( const tgPolygon& subject, double snap )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -28,6 +29,7 @@ tgPolygon tgPolygon::RemoveDups( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -47,6 +49,7 @@ tgPolygon tgPolygon::RemoveBadContours( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -71,6 +74,7 @@ tgPolygon tgPolygon::RemoveCycles( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -100,6 +104,7 @@ tgPolygon tgPolygon::SplitLongEdges( const tgPolygon& subject, double dist )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -143,6 +148,7 @@ tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -172,6 +178,7 @@ tgPolygon tgPolygon::Simplify( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -192,6 +199,7 @@ tgPolygon tgPolygon::RemoveColinearNodes( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -208,6 +216,7 @@ tgPolygon tgPolygon::RemoveTinyContours( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -235,6 +244,7 @@ tgPolygon tgPolygon::RemoveSpikes( const tgPolygon& subject )
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -331,6 +341,7 @@ tgcontour_list tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& s
                 result.SetMaterial( polys[j].GetMaterial() );
                 result.SetTexParams( polys[j].GetTexParams() );
                 result.SetId( polys[j].GetId() );
+	        result.SetPreserve3D( polys[j].GetPreserve3D() );
                 result.va_int_mask = polys[j].va_int_mask;
                 result.va_flt_mask = polys[j].va_flt_mask;
                 result.int_vas = polys[j].int_vas;

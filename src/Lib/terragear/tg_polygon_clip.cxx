@@ -61,6 +61,8 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
+    result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -131,6 +133,8 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
+    result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;
@@ -169,9 +173,11 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
-    
+
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
+    result.SetId( subject.GetId() );
+    result.SetPreserve3D( subject.GetPreserve3D() );
     result.va_int_mask = subject.va_int_mask;
     result.va_flt_mask = subject.va_flt_mask;
     result.int_vas = subject.int_vas;

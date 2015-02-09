@@ -166,6 +166,9 @@ void TGConstruct::run()
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Elevation Per Node");
                     CalcElevations();
 
+                    // debug : dump the nodes
+                    nodes.ToShapefile();
+                    
                     // ONLY do this when saving edge nodes...
                     // STEP 11)
                     // Generate face-connected list - needed for saving the edge data

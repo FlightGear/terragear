@@ -34,7 +34,7 @@
 
 void TGConstruct::FixTJunctions( void ) {
     int before, after;
-    std::vector<SGGeod> points;
+    std::vector<TGNode*> points;
     tgRectangle bb;
 
     // traverse each poly, and add intermediate nodes
@@ -42,7 +42,7 @@ void TGConstruct::FixTJunctions( void ) {
         for( unsigned int j = 0; j < polys_clipped.area_size(i); ++j ) {
             tgPolygon current = polys_clipped.get_poly(i, j);
             bb = current.GetBoundingBox();
-            nodes.get_geod_inside( bb.getMin(), bb.getMax(), points );
+            nodes.get_nodes_inside( bb.getMin(), bb.getMax(), points );
 
             before  = current.TotalNodes();
             current = tgPolygon::AddColinearNodes( current, points );

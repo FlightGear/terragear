@@ -15,30 +15,6 @@
 #include <CGAL/Search_traits_adapter.h>     /* Just use two dimensional lookup - elevation is a trait */
 #include <boost/iterator/zip_iterator.hpp>
 
-typedef CGAL::Simple_cartesian<double> Kernel;
-typedef Kernel::Point_2 tgn_Point;
-typedef boost::tuple<tgn_Point,double> Point_and_Elevation;
-
-//definition of the property map
-#if 0
-struct My_point_property_map{
-  typedef tgn_Point value_type;
-  typedef const value_type& reference;
-  typedef const Point_and_Elevation& key_type;
-  typedef boost::readable_property_map_tag category;
-};
-#endif
-
-//typedef CGAL::Search_traits_2<Kernel> Traits;
-typedef CGAL::Search_traits_2<Kernel> Traits_base;
-//typedef CGAL::Search_traits_adapter<Point_and_Elevation, My_point_property_map, Traits_base> Traits;
-typedef CGAL::Search_traits_adapter<Point_and_Elevation,CGAL::Nth_of_tuple_property_map<0, Point_and_Elevation>,Traits_base>    Traits;
-
-typedef CGAL::Fuzzy_iso_box<Traits> Fuzzy_bb;
-typedef CGAL::Kd_tree<Traits> Tree;
-
-class tgSurface;
-
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/io/lowlevel.hxx>
@@ -47,6 +23,18 @@ class tgSurface;
 #include "tg_unique_tgnode.hxx"
 #include "tg_surface.hxx"
 #include "tg_array.hxx"
+
+typedef CGAL::Simple_cartesian<double> Kernel;
+typedef Kernel::Point_2 tgn_Point;
+typedef boost::tuple<tgn_Point,double,TGNode*> Point_and_Elevation;
+
+typedef CGAL::Search_traits_2<Kernel> Traits_base;
+typedef CGAL::Search_traits_adapter<Point_and_Elevation,CGAL::Nth_of_tuple_property_map<0, Point_and_Elevation>,Traits_base>    Traits;
+
+typedef CGAL::Fuzzy_iso_box<Traits> Fuzzy_bb;
+typedef CGAL::Kd_tree<Traits> Tree;
+
+class tgSurface;
 
 #define FG_PROXIMITY_EPSILON 0.000001
 #define FG_COURSE_EPSILON 0.0001
@@ -117,6 +105,9 @@ public:
     // Find all the nodes within a bounding box
     bool get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector<SGGeod>& points ) const;
 
+    // Find all the nodes within a bounding box
+    bool get_nodes_inside( const SGGeod& min, const SGGeod& max, std::vector<TGNode*>& points ) const;
+    
     // Find a;; the nodes on the tile edges
     bool get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west ) const;
 
@@ -146,7 +137,8 @@ public:
     inline size_t size() const { return tg_node_list.size(); }
 
     void Dump( void );
-
+    void ToShapefile( void );
+    
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
 

@@ -91,6 +91,7 @@ void clipper_to_shapefile( ClipperLib::Paths polys, char* datasource );
 class tgPolygon;
 class tgChoppedPolygons;
 class TGNodes;
+class TGNode;
 
 typedef std::vector <tgPolygon>  tgpolygon_list;
 typedef tgpolygon_list::iterator tgpolygon_list_iterator;
@@ -377,6 +378,7 @@ public:
     // T-Junctions and segment search
     static tgPolygon AddColinearNodes( const tgPolygon& subject, UniqueSGGeodSet& nodes );
     static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<SGGeod>& nodes );
+    static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<TGNode*>& nodes );
     static bool      FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod& start, SGGeod& end );
     static tgPolygon AddIntersectingNodes( const tgPolygon& subject, const tgtriangle_list& mesh );
     

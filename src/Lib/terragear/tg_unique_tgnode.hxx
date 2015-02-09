@@ -4,6 +4,7 @@
 #include <boost/unordered_set.hpp>
 #include <boost/concept_check.hpp>
 
+#include <simgear/debug/logstream.hxx>
 #include <simgear/math/SGGeod.hxx>
 #include <simgear/math/SGMisc.hxx>
 
@@ -98,6 +99,8 @@ public:
         if (type != TG_NODE_FIXED_ELEVATION) {
             position.setElevationM( z );
             CalcWgs84();
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::SetElevations - REFUSE - type is " << type << " cur elevation is " << position.getElevationM() << " new would be " << z );
         }
     }
 

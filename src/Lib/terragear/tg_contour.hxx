@@ -17,6 +17,8 @@
 #include "tg_misc.hxx"
 
 /* forward declarations */
+class TGNode;
+
 class tgPolygon;
 typedef std::vector <tgPolygon>  tgpolygon_list;
 
@@ -119,6 +121,7 @@ public:
     static bool      IsInside( const tgContour& inside, const tgContour& outside );
     static tgContour AddColinearNodes( const tgContour& subject, UniqueSGGeodSet& nodes );
     static tgContour AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes );
+    static tgContour AddColinearNodes( const tgContour& subject, bool preserve3d, std::vector<TGNode*>& nodes );
     static bool      FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end );
     static tgContour AddIntersectingNodes( const tgContour& subject, const tgtriangle_list& mesh );
     static tgContour AddIntersectingNodes( const tgContour& subject, const tgTriangle& tri );

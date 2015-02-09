@@ -158,39 +158,118 @@ void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const s
         SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromContour open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
     }
 
-    OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
+    OGRLayer*      l_id;
+    if ( asPolygon ) {
+        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
+    } else {
+        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+    }
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
-
-    OGRPolygon*    polygon = new OGRPolygon();
 
     if (subject.GetSize() < 3) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
     } else {
-        // FIXME: Current we ignore the hole-flag and instead assume
-        //        that the first ring is not a hole and the rest
-        //        are holes
-        OGRLinearRing *ring=new OGRLinearRing();
-        for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {
-            OGRPoint *point=new OGRPoint();
 
-            point->setX( subject.GetNode(pt).getLongitudeDeg() );
-            point->setY( subject.GetNode(pt).getLatitudeDeg() );
-            point->setZ( 0.0 );
-            ring->addPoint(point);
+        if ( asPolygon ) {
+            OGRPolygon*    polygon = new OGRPolygon();
+            OGRLinearRing ring;
+            for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {
+                OGRPoint point;
+
+                point.setX( subject.GetNode(pt).getLongitudeDeg() );
+                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ring.addPoint(&point);
+                
+                // get heading to next point
+                double heading;
+                if ( pt == subject.GetSize()-1 ) {
+                    heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(0) );
+                } else {
+                    heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(pt+1) );
+                }
+                
+                SGGeod left  = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading-170), 0.2 );            
+                point.setX( left.getLongitudeDeg() );
+                point.setY( left.getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ring.addPoint(&point);
+                
+                SGGeod right = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading+170), 0.2 );
+                point.setX( right.getLongitudeDeg() );
+                point.setY( right.getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ring.addPoint(&point);
+                
+                point.setX( subject.GetNode(pt).getLongitudeDeg() );
+                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ring.addPoint(&point);
+            }
+            ring.closeRings();
+
+            polygon->addRingDirectly(&ring);
+
+            OGRFeature* feature = NULL;
+            feature = new OGRFeature( l_id->GetLayerDefn() );
+            feature->SetField("ID", description.c_str());
+            feature->SetGeometry(polygon);
+            if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+            }
+            OGRFeature::DestroyFeature(feature);
+        } else {
+            OGRLineString ogr_contour;
+            OGRPoint      point;
+            
+            for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {                
+                point.setX( subject.GetNode(pt).getLongitudeDeg() );
+                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ogr_contour.addPoint(&point);
+                
+                // get heading to next point
+                double heading;
+                if ( pt == subject.GetSize()-1 ) {
+                    heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(0) );
+                } else {
+                    heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(pt+1) );
+                }
+                
+                SGGeod left  = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading-170), 1.0 );            
+                point.setX( left.getLongitudeDeg() );
+                point.setY( left.getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ogr_contour.addPoint(&point);
+                
+                SGGeod right = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading+170), 1.0 );
+                point.setX( right.getLongitudeDeg() );
+                point.setY( right.getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ogr_contour.addPoint(&point);
+                
+                point.setX( subject.GetNode(pt).getLongitudeDeg() );
+                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setZ( 0.0 );
+                ogr_contour.addPoint(&point);
+            }
+
+            point.setX( subject.GetNode(0).getLongitudeDeg() );
+            point.setY( subject.GetNode(0).getLatitudeDeg() );
+            point.setZ( 0.0 );
+            ogr_contour.addPoint(&point);
+                        
+            OGRFeature* feature = NULL;
+            feature = new OGRFeature( l_id->GetLayerDefn() );
+            feature->SetField("ID", description.c_str());
+            feature->SetGeometry(&ogr_contour);
+            if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+            }
+            OGRFeature::DestroyFeature(feature);            
         }
-        ring->closeRings();
-
-        polygon->addRingDirectly(ring);
-
-        OGRFeature* feature = NULL;
-        feature = new OGRFeature( l_id->GetLayerDefn() );
-        feature->SetField("ID", description.c_str());
-        feature->SetGeometry(polygon);
-        if( l_id->CreateFeature( feature ) != OGRERR_NONE )
-        {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-        }
-        OGRFeature::DestroyFeature(feature);
     }
 
     // close after each write
