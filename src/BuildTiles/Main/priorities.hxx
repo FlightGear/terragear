@@ -156,6 +156,15 @@ public:
         return 0;
     }
 
+    std::vector<std::string> get_name_array( void ) const {
+        std::vector<std::string> names;
+        
+        for ( unsigned int i=0; i<area_defs.size(); i++ ) {
+            names.push_back( area_defs[i].GetName() );
+        }
+        
+        return names;
+    }
 
     std::string const& get_sliver_area_name( void ) const {
         return sliver_area_name;

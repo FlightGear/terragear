@@ -137,7 +137,7 @@ public:
     inline size_t size() const { return tg_node_list.size(); }
 
     void Dump( void );
-    void ToShapefile( void );
+    void ToShapefile( const std::string& datasourse );
     
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );

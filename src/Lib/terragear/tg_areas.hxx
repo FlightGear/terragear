@@ -37,7 +37,8 @@
 #include <simgear/io/lowlevel.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <terragear/tg_polygon.hxx>
+#include "tg_nodes.hxx"
+#include "tg_polygon.hxx"
 
 typedef std::vector<tgpolygon_list> tgarea_list;
 
@@ -47,7 +48,7 @@ public:
     tgAreas() {};
 	~tgAreas() {};
 
-    void init( unsigned int num_areas) {
+    void init( unsigned int num_areas, std::vector<std::string> names ) {
         clear();
                 
         for (unsigned int i=0; i<num_areas; i++) {
@@ -55,10 +56,13 @@ public:
             lc.clear();
             polys.push_back(lc);
         }
+        
+        area_names = names;
     }
 
     void clear(void);
-
+    void SyncNodes( TGNodes& nodes );
+    
     inline unsigned int area_size( unsigned int area ) const
     {
         return polys[area].size();
@@ -112,6 +116,8 @@ public:
         return polys[area][poly].GetTexParams();
     }
 
+    void ToShapefile( const std::string& datasource );
+    
     void SaveToGzFile( gzFile& fp );
     void LoadFromGzFile( gzFile& fp );
 
@@ -120,6 +126,7 @@ public:
 
 private:
     tgarea_list polys;
+    std::vector<std::string> area_names;
 };
 
 #endif // _TGAREAS__HXX_

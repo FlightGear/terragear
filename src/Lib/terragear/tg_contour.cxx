@@ -848,12 +848,18 @@ static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, bool prese
     
     if ( found_extra && new_pt ) {
         if ( preserve3d ) {
+            // when preserving elevation - it's important not to change the contour
+            // move the new node to the contour, instead of moving the contour to the point
+            tgSegment seg( p0, p1 );
+            new_geode = seg.Project( new_pt->GetPosition() );
+            
             // interpolate the new nodes elevation based on p0, p1            
-            new_geode = InterpolateElevation( new_pt->GetPosition(), p0, p1 );
+            new_geode = InterpolateElevation( new_geode, p0, p1 );
             
             SG_LOG(SG_GENERAL, SG_ALERT, "INTERPOLATE ELVATION between " << p0 << " and " << p1 << " returned elvation " << new_geode.getElevationM() );
             
-            new_pt->SetElevation( new_geode.getElevationM() );
+            new_pt->SetPosition( new_geode );
+            // new_pt->SetElevation( new_geode.getElevationM() );
             new_pt->SetType( TG_NODE_FIXED_ELEVATION );
         }
 
@@ -933,6 +939,8 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, bool preserve3d
 {
     SGGeod p0, p1;
     tgContour result;
+
+#if 0    // TEMP debugging roads on airport ground
     static int contour_idx = 1;
     char layer[256];
     
@@ -940,7 +948,8 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, bool preserve3d
         sprintf( layer, "before_%03d", contour_idx );
         tgShapefile::FromContour( subject, false, "./", layer, "contour" );    
     }
-    
+#endif
+
     for ( unsigned int n = 0; n < subject.GetSize()-1; n++ ) {
         p0 = subject.GetNode( n );
         p1 = subject.GetNode( n+1 );
@@ -949,7 +958,7 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, bool preserve3d
         result.AddNode( p0 );
         
         // add intermediate points
-        AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
+        AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*20, SG_EPSILON*15 );
     }
     
     p0 = subject.GetNode( subject.GetSize() - 1 );
@@ -959,17 +968,19 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, bool preserve3d
     result.AddNode( p0 );
     
     // add intermediate points
-    AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
+    AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*20, SG_EPSILON*15 );
     
     // maintain original hole flag setting
     result.SetHole( subject.GetHole() );
 
+#if 0 // TEMP roads on airport debug    
     if ( preserve3d ) {
         sprintf( layer, "after_%03d", contour_idx );
         tgShapefile::FromContour( result, false, "./", layer, "contour" );    
     }
     
     contour_idx++;
+#endif
     
     return result;
 }

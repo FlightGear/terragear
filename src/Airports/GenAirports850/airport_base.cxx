@@ -36,8 +36,8 @@ void Airport::BuildBase( void )
     bool userBoundary = false;
 
     /* initialize tgAreas for the number of layers we have */
-    polys_built.init( AIRPORT_NUM_AREAS );
-    polys_clipped.init( AIRPORT_NUM_AREAS );
+    polys_built.init( AIRPORT_NUM_AREAS, area_names );
+    polys_clipped.init( AIRPORT_NUM_AREAS, area_names );
 
     if (boundary.size()) {
         TG_LOG(SG_GENERAL, SG_INFO, "Build Base with user defined boundary" );

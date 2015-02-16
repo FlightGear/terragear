@@ -164,7 +164,7 @@ int main(int argc, char **argv) {
     TGAreaDefinitions areas;
     if ( areas.init( priorities_file ) ) {
         exit( -1 );
-    }
+    }    
 
     // tile work queue
     std::vector<SGBucket> bucketList;
@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
         SGBucket b_max( max );
 
         if ( b_min == b_max ) {
-			bucketList.push_back( b_min );
+            bucketList.push_back( b_min );
         } else {
             SG_LOG(SG_GENERAL, SG_ALERT, "  construction area spans tile boundaries");
             sgGetBuckets( min, max, bucketList );
@@ -193,10 +193,10 @@ int main(int argc, char **argv) {
     std::vector<TGConstruct *> constructs;
     SGMutex filelock;
 
-	/* fill the workqueue */
-	for (unsigned int i=0; i<bucketList.size(); i++) {
-	    wq.push( bucketList[i] );
-	}
+    /* fill the workqueue */
+    for (unsigned int i=0; i<bucketList.size(); i++) {
+        wq.push( bucketList[i] );
+    }
 
     // now create the worker threads for stage 1
     for (int i=0; i<num_threads; i++) {
@@ -227,10 +227,10 @@ int main(int argc, char **argv) {
     }
     constructs.clear();
 
-	/* fill the workqueue */
-	for (unsigned int i=0; i<bucketList.size(); i++) {
-	    wq.push( bucketList[i] );
-	}
+    /* fill the workqueue */
+    for (unsigned int i=0; i<bucketList.size(); i++) {
+        wq.push( bucketList[i] );
+    }
 
     for (int i=0; i<num_threads; i++) {
         TGConstruct* construct = new TGConstruct( areas, 2, wq, &filelock );

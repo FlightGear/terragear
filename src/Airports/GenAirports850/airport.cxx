@@ -49,6 +49,18 @@ Airport::Airport( int c, char* def)
     
     code = c;
 
+    // for debugging, add names to area defs
+    area_names.push_back("Runway");
+    area_names.push_back("Helipad");
+    area_names.push_back("Pavement");
+    area_names.push_back("Taxiway");
+    area_names.push_back("RunwayShoulder");
+    area_names.push_back("HelipadShoulder");
+    area_names.push_back("InnerBase");
+    area_names.push_back("OuterBase");
+    area_names.push_back("RunwayFeatures");
+    area_names.push_back("TaxiwayFeatures");
+    
     // we need to tokenize airports, since we can't scanf two strings next to each other...
     numParams = 0;
     bool done = false;

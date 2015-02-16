@@ -285,7 +285,7 @@ void TGNodes::Dump( void ) {
     }
 }
 
-void TGNodes::ToShapefile(void)
+void TGNodes::ToShapefile( const std::string& datasource )
 {
     std::vector<SGGeod> fixed_nodes;
     std::vector<SGGeod> interpolated_nodes;
@@ -312,10 +312,10 @@ void TGNodes::ToShapefile(void)
         }
     }
     
-    tgShapefile::FromGeodList( fixed_nodes, false, "./", "fixed nodes", "fixed" );
-    tgShapefile::FromGeodList( interpolated_nodes, false, "./", "interpolated nodes", "interpolated" );
-    tgShapefile::FromGeodList( draped_nodes, false, "./", "draped nodes", "draped" );
-    tgShapefile::FromGeodList( smoothed_nodes, false, "./", "smoothed nodes", "smoothed" );
+    tgShapefile::FromGeodList( fixed_nodes, false, datasource, "fixed nodes", "fixed" );
+    tgShapefile::FromGeodList( interpolated_nodes, false, datasource, "interpolated nodes", "interpolated" );
+    tgShapefile::FromGeodList( draped_nodes, false, datasource, "draped nodes", "draped" );
+    tgShapefile::FromGeodList( smoothed_nodes, false, datasource, "smoothed nodes", "smoothed" );
 }
 
 void TGNodes::SaveToGzFile( gzFile& fp )

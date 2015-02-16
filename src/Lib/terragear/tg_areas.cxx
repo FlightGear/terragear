@@ -30,8 +30,11 @@
 #  include <config.h>
 #endif
 
-#include "tg_areas.hxx"
 #include <simgear/io/lowlevel.hxx>
+
+#include "tg_areas.hxx"
+#include "tg_polygon.hxx"
+#include "tg_shapefile.hxx"
 
 void tgAreas::clear(void)
 {
@@ -40,6 +43,26 @@ void tgAreas::clear(void)
     }
     // keep the number of arrays intact - it's constant throughout construct
     polys.clear();
+}
+
+void tgAreas::SyncNodes( TGNodes& nodes )
+{
+    for (unsigned int area=0; area<polys.size(); area++) {
+        for (unsigned int p=0; p<polys[area].size(); p++ ) {
+            tgPolygon& poly = polys[area][p];
+        
+            for (unsigned int con=0; con < poly.Contours(); con++) {
+                for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
+                    // ensure we have all nodes...
+                    SGGeod const& node = poly.GetNode( con, n );
+                    int index = nodes.unique_add( node );
+                    poly.SetNode( con, n, nodes[index].GetPosition() );
+                }
+            }
+        }
+    }
+    
+    nodes.init_spacial_query();    
 }
 
 void tgAreas::LoadFromGzFile(gzFile& fp)
@@ -97,5 +120,13 @@ void tgAreas::SaveToGzFile(gzFile& fp)
         for (j=0; j<num_polys; j++) {
             polys[i][j].SaveToGzFile( fp );
         }
+    }
+}
+
+void tgAreas::ToShapefile( const std::string& datasource )
+{
+    for (unsigned int area=0; area<polys.size(); area++) {
+        //for each area, write a polygon list        
+        tgShapefile::FromPolygonList( polys[area], false, false, datasource, area_names[area], "area" );
     }
 }

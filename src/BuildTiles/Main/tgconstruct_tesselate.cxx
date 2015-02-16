@@ -65,18 +65,4 @@ void TGConstruct::TesselatePolys( void )
             polys_clipped.set_poly( area, p, poly );
         }
     }
-
-    for (unsigned int area = 0; area < area_defs.size(); area++) {
-        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon& poly = polys_clipped.get_poly(area, p );
-
-            // ensure all added nodes are accounted for
-            for (unsigned int k=0; k < poly.Triangles(); k++) {
-                for (int l = 0; l < 3; l++) {
-                    // ensure we have all nodes...
-                    nodes.unique_add( poly.GetTriNode( k, l ) );
-                }
-            }
-        }
-    }
 }

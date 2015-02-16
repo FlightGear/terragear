@@ -99,6 +99,16 @@ public:
     bool Intersect( const tgSegment& seg, SGGeod* iPos, tgSegment* iSeg ) const;
     bool IsOnLine( const SGGeod& pos ) const;
     
+    SGGeod Project( const SGGeod& pos ) const
+    {
+        EPECSRPoint_2   b( pos.getLongitudeDeg(), pos.getLatitudeDeg() );
+        EPECSRLine_2    lin( start, end );
+        
+        EPECSRPoint_2   p = lin.projection( b ); 
+        
+        return SGGeod::fromDeg( CGAL::to_double(p.x()), CGAL::to_double(p.y()) );
+    }
+    
     double DistanceFromOld( const SGGeod& pos ) const
     {
         EPECSRSegment_2 seg( start, end );

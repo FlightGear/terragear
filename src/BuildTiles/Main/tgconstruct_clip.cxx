@@ -276,22 +276,5 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         }
     }
 
-    // Now make sure any newly added intersection nodes are added to the tgnodes
-    for (unsigned int area = 0; area < area_defs.size(); area++) {
-        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon& poly = polys_clipped.get_poly( area, p );
-
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
-
-            for (unsigned int con=0; con < poly.Contours(); con++) {
-                for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
-                    // ensure we have all nodes...
-                    SGGeod const& node = poly.GetNode( con, n );
-                    nodes.unique_add( node );
-                }
-            }
-        }
-    }
-
     return true;
 }

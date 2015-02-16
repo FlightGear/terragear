@@ -18,13 +18,14 @@ public:
     } shapefile_layer_t;
 
     static void  FromContour( const tgContour& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromContourList( const std::vector<tgContour>& list, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
+    
     static void  FromPolygon( const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description );
-    static void  FromClipper( const ClipperLib::Paths& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromPolygonList( const std::vector<tgPolygon>& list, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description );
     
     static void  FromGeod( const SGGeod& pt, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromGeodList( const std::vector<SGGeod>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
 
-    static void  FromSegment( void* lid, const tgSegment& subject, bool show_dir, const std::string& description );
     static void  FromSegment( const tgSegment& subject, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromSegmentList( const std::vector<tgSegment>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
 
@@ -35,11 +36,17 @@ public:
     static void  FromLineList( const std::vector<tgLine>& list, const std::string& datasource, const std::string& layer, const std::string& description );
 
     static void  FromRectangle( const tgRectangle& subject, const std::string& datasource, const std::string& layer, const std::string& description );
+
+    static void  FromClipper( const ClipperLib::Paths& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
     
     static tgPolygon ToPolygon( const void* subject );
 
 private:
     static bool initialized;
+
+    static void  FromContour( void *lid, bool asPolygon, const std::string& description );
+    static void  FromPolygon( void *lid, const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& description );
+    static void  FromSegment( void* lid, const tgSegment& subject, bool show_dir, const std::string& description );
 
     static void* OpenDatasource( const char* datasource_name );
     static void* OpenLayer( void* ds_id, const char* layer_name, shapefile_layer_t type );

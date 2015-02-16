@@ -44,6 +44,7 @@ TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLock
 {
     total_tiles = q.size();
     num_areas = areas.size();
+    
     lock = l;
 }
 
@@ -80,8 +81,8 @@ void TGConstruct::run()
         isOcean = false;
 
         // Initialize the landclass lists with the number of area definitions
-        polys_in.init( num_areas );
-        polys_clipped.init( num_areas );
+        polys_in.init( num_areas, area_defs.get_name_array() );        
+        polys_clipped.init( num_areas, area_defs.get_name_array() );
 
         SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tiles_complete << " of " << total_tiles << " using thread " << current() );
 
@@ -128,12 +129,18 @@ void TGConstruct::run()
                 SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Clipping landclass polys" );
                 ClipLandclassPolys();
 
+                // Now make sure any newly added intersection nodes are added to the tgnodes
+                polys_clipped.SyncNodes( nodes );
+                
                 // STEP 5)
                 // Clean the polys - after this, we shouldn't change their shape (other than slightly for
                 // fix T-Junctions - as This is the end of the first pass for multicore design
                 SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Cleaning landclass polys" );
-                nodes.init_spacial_query();
                 CleanClippedPolys();
+                
+                // Now make sure any newly added intersection nodes are added to the tgnodes
+                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Syn nodes" );
+                polys_clipped.SyncNodes( nodes );                
                 break;
 
             case 2:
@@ -149,12 +156,18 @@ void TGConstruct::run()
                     nodes.init_spacial_query();
                     FixTJunctions();
 
+                    // Now make sure any newly added intersection nodes are added to the tgnodes
+                    polys_clipped.SyncNodes( nodes );
+                    
                     // STEP 8)
                     // Generate triangles - we can't generate the node-face lookup table
                     // until all polys are tesselated, as extra nodes can still be generated
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Tesselate" );
                     TesselatePolys();
 
+                    // Now make sure any newly added intersection nodes are added to the tgnodes
+                    polys_clipped.SyncNodes( nodes );
+                    
                     // STEP 9)
                     // Generate triangle vertex coordinates to node index lists
                     // NOTE: After this point, no new nodes can be added
@@ -166,8 +179,11 @@ void TGConstruct::run()
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Elevation Per Node");
                     CalcElevations();
 
+#if 0  // ROADS ON AIRPORT DEBUGGING
                     // debug : dump the nodes
-                    nodes.ToShapefile();
+                    nodes.ToShapefile( bucket.gen_index_str() );
+                    polys_clipped.ToShapefile( bucket.gen_index_str() );
+#endif
                     
                     // ONLY do this when saving edge nodes...
                     // STEP 11)

@@ -265,6 +265,8 @@ private:
     SGTimeStamp triangulation_time;
 
     // debug
+    std::vector<std::string>    area_names;
+    
     std::string     debug_path;
     debug_map       debug_runways;
     debug_map       debug_pavements;
