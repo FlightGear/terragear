@@ -131,7 +131,7 @@ fn_importCLC() {
         CODECLC=`echo ${MAP} | tr -d c`
         INTMAP=${MAP}_int
         g.remove -f type=vect pattern=${MAP}
-        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
+        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
         v.db.addcolumn map=${MAP} columns="newcodeCLC integer" --verbose
         v.db.update map=${MAP} column=newcodeCLC value=${CODECLC} --verbose
         v.db.dropcolumn map=${MAP} column=code_${YEAR} --verbose
@@ -148,8 +148,8 @@ fn_importVMap() {
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
         MAP=`echo ${LAYER} | sed -e 's/-/_/g'`
         g.remove -f type=vect pattern=${MAP}
-#        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
-        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} --verbose
+#        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
+        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${MAP} --verbose
     done
 }
 
@@ -158,7 +158,7 @@ fn_importCS() {
     for SHAPEFILE in `ls ${LOADDIR}/${PREFIX}_*.shp`; do
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
         g.remove -f type=vect pattern=${LAYER}
-        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${LAYER} snap=${SNAP} --verbose
+        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${LAYER} snap=${SNAP} --verbose
     done
 }
 
