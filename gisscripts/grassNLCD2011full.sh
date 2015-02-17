@@ -41,16 +41,16 @@ DSN="PG:host=${PGHOST} dbname=${PGDATABASE} user=${PGUSER}"
 LAYEROPTS="FID=ogc_fid, GEOMETRY_NAME=wkb_geometry, SPATIAL_INDEX=YES, PRIMARY_KEY=YES, SRID=4326"
 PSQL="psql -tA -h ${PGHOST} -U ${PGUSER} -d ${PGDATABASE}"
 
-#g.remove rast=rast
+#g.remove -f type=rast name=rast
 #r.in.gdal input=/home/martin/live/MRLC/nlcd_2011_landcover_2011_edition_2014_03_31.img output=rast --verbose
 #
-#g.remove rast=rast_null
+#g.remove -f type=rast name=rast_null
 #r.mapcalc "rast_null = if(rast[0,0]>0,rast[0,0],null())" --verbose
 #
-#g.remove rast=rast_notnull
+#g.remove -f type=rast name=rast_notnull
 #r.mapcalc "rast_notnull = if(isnull(rast_null),mode(rast_null[3, -3],rast_null[3, -2],rast_null[3, -1],rast_null[3, 0],rast_null[3, 1],rast_null[3, 2],rast_null[3, 3],rast_null[2, -3],rast_null[2, -2],rast_null[2, -1],rast_null[2, 0],rast_null[2, 1],rast_null[2, 2],rast_null[2, 3],rast_null[1, -3],rast_null[1, -2],rast_null[1, -1],rast_null[1, 0],rast_null[1, 1],rast_null[1, 2],rast_null[1, 3],rast_null[0, -3],rast_null[0, -2],rast_null[0, -1],rast_null[0, 0],rast_null[0, 1],rast_null[0, 2],rast_null[0, 3],rast_null[-1, -3],rast_null[-1, -2],rast_null[-1, -1],rast_null[-1, 0],rast_null[-1, 1],rast_null[-1, 2],rast_null[-1, 3],rast_null[-2, -3],rast_null[-2, -2],rast_null[-2, -1],rast_null[-2, 0],rast_null[-2, 1],rast_null[-2, 2],rast_null[-2, 3],rast_null[-3, -3],rast_null[-3, -2],rast_null[-3, -1],rast_null[-3, 0],rast_null[-3, 1],rast_null[-3, 2],rast_null[-3, 3]), rast_null)" --verbose
 #
-#g.remove rast=rast_n
+#g.remove -f type=rast name=rast_n
 #r.neighbors -c input=rast_notnull output=rast_n size=3 method=mode --verbose
 #
 #g.region rast=rast_n -b -g
