@@ -111,7 +111,7 @@ fn_topostgis() {
     GRMAP=${1}
     PGLAYER=${PREFIX}_`echo ${GRMAP} | cut -f 2 -d \_`
     echo "DROP TABLE IF EXISTS ${PGLAYER};" | ${PSQL}
-    v.out.postgis input=${GRMAP} olayer=${PGLAYER} dsn="${DSN}" options="${LAYEROPTS}"
+    v.out.postgis input=${GRMAP} olayer=${PGLAYER} output="${DSN}" options="${LAYEROPTS}"
     fn_fixpostgis ${PGLAYER} | ${PSQL}
 }
 
@@ -138,7 +138,7 @@ fn_importCLC() {
         v.db.renamecolumn map=${MAP} column=newcodeCLC,codeCLC --verbose
         g.remove -f type=vect pattern=${INTMAP}
         v.reclass input=${MAP} output=${INTMAP} column=codeCLC --verbose
-        v.out.ogr input=${INTMAP} type=area dsn=${DUMPDIR}/${PREFIX}_${MAP}_pre-clip.shp
+        v.out.ogr input=${INTMAP} type=area output=${DUMPDIR}/${PREFIX}_${MAP}_pre-clip.shp
     done
 }
 
@@ -304,7 +304,7 @@ fn_reclass() {
         v.clean input=${OUTPUT}_rmdangle output=${OUTPUT}_rmarea tool=rmarea thresh=${MIN_AREA1} type=boundary --verbose
         date
         v.clean input=${OUTPUT}_rmarea output=${OUTPUT}_prune tool=prune thresh=0.00001 type=boundary --verbose
-        v.out.ogr input=${OUTPUT}_prune type=area dsn=${DUMPDIR}/${OUTPUT}_pre-clip.shp
+        v.out.ogr input=${OUTPUT}_prune type=area output=${DUMPDIR}/${OUTPUT}_pre-clip.shp
     done
 }
 
@@ -398,7 +398,7 @@ fn_preexport() {
         LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${PREFIX}_/g"`
         g.remove -f type=vect pattern=${LAYER}_postclip
         v.extract input=${CLEANMAP} type=area output=${LAYER}_postclip cats=${CATEGORY}
-        v.out.ogr input=${LAYER}_postclip type=area dsn=${DUMPDIR}/${LAYER}_post-clip.shp
+        v.out.ogr input=${LAYER}_postclip type=area output=${DUMPDIR}/${LAYER}_post-clip.shp
     done
 }
 
@@ -461,12 +461,12 @@ fn_export() {
             g.rename vect=${LAYER},${NEWLAYER}
             LAYER=${NEWLAYER}
         fi
-#        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${PREFIX}_c${CATEGORY}.shp  # For CLC
-        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
+#        v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${PREFIX}_c${CATEGORY}.shp  # For CLC
+        v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
         fn_topostgis ${LAYER}
     done
     if [ ${PREFIX} = "v0" ]; then
-        v.out.ogr input=${PREFIX}_landmass_prune type=area dsn=${DUMPDIR}/${PREFIX}_landmass.shp
+        v.out.ogr input=${PREFIX}_landmass_prune type=area output=${DUMPDIR}/${PREFIX}_landmass.shp
         fn_topostgis ${PREFIX}_landmass_prune
     fi
 }
@@ -474,7 +474,7 @@ fn_export() {
 fn_single() {
     LAYER=${PREFIX}_single
     v.extract -d input=${CLEANMAP} type=area output=${LAYER} new=1 --verbose
-#    v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp
+#    v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${LAYER}.shp
     fn_topostgis ${LAYER}
 }
 

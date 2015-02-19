@@ -170,10 +170,10 @@ while [ ${S} -lt 3310005 ]; do
             v.overlay ainput=vect_filled binput=cliprect output=vect_clipped operator=and olayer=0,1,0 --verbose --overwrite
 
             v.extract -d -t input=vect_clipped type=area output=vect_collect${SUFFIX} new=1 --verbose --overwrite
-            v.out.postgis input=vect_collect${SUFFIX} type=area olayer=newcs_collect dsn="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
-#            v.out.ogr input=vect_collect${SUFFIX} type=area olayer=newcs_collect format=PostgreSQL dsn="${DSN}" --verbose --overwrite
+            v.out.postgis input=vect_collect${SUFFIX} type=area olayer=newcs_collect output="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
+#            v.out.ogr input=vect_collect${SUFFIX} type=area olayer=newcs_collect format=PostgreSQL output="${DSN}" --verbose --overwrite
             # For debug only.
-#            v.out.ogr input=vect_collect${SUFFIX} type=area dsn=${HOME}/shp/nlcd2011collect.shp --verbose
+#            v.out.ogr input=vect_collect${SUFFIX} type=area output=${HOME}/shp/nlcd2011collect.shp --verbose
 
             v.db.addtable map=vect_clipped
             v.db.addcolumn map=vect_clipped columns="pglayer varchar" --verbose
@@ -199,10 +199,10 @@ while [ ${S} -lt 3310005 ]; do
 
             g.rename vect=vect_clipped,vect_full${SUFFIX} --verbose --overwrite
             v.edit map=vect_full${SUFFIX} tool=delete cats=9 --verbose
-#            v.out.postgis input=vect_full${SUFFIX} type=area olayer=newcs_full dsn="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
-            v.out.ogr input=vect_full${SUFFIX} type=area olayer=newcs_full format=PostgreSQL dsn="${DSN}" --verbose --overwrite
+#            v.out.postgis input=vect_full${SUFFIX} type=area olayer=newcs_full output="${DSN}" options="${LAYEROPTS}" --verbose --overwrite
+            v.out.ogr input=vect_full${SUFFIX} type=area olayer=newcs_full format=PostgreSQL output="${DSN}" --verbose --overwrite
             # For debug only.
-#            v.out.ogr input=vect_full${SUFFIX} type=area dsn=${HOME}/shp/nlcd2011full.shp --verbose
+#            v.out.ogr input=vect_full${SUFFIX} type=area output=${HOME}/shp/nlcd2011full.shp --verbose
 #            ${PSQL} -c "SELECT DISTINCT fn_SceneDir(wkb_geometry), fn_SceneSubDir(wkb_geometry) FROM fgs_objects WHERE ob_id = 533101;"
             ${PSQL} -e -c "SELECT fn_CSMerge('${SUFFIX}');" && \
                 echo "### region_tag # `g.region vect=vect_collect${SUFFIX} -b -g | tr "\n" \ `###"
