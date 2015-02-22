@@ -49,6 +49,7 @@ public:
         kd_tree_valid = false;
         array         = NULL;
         tris          = NULL;
+        tex_v         = 0.0f;
     }
 
     ~TGNodes( void )    {
@@ -146,6 +147,7 @@ private:
     UniqueTGNodeSet tg_node_list;
     Tree            tg_kd_tree;
     bool            kd_tree_valid;
+    double          tex_v;
 
     // temp pointers - not serialized
     tgArray*            array;      // for interpolated elevation

@@ -277,14 +277,14 @@ void tgShapefile::FromPolygon( void *lid, const tgPolygon& subject, bool asPolyg
     OGRLayer* l_id = (OGRLayer *)lid;
     
     if ( asPolygon ) {
-        OGRPolygon polygon;
+        OGRPolygon* polygon = new OGRPolygon;
         
         for ( unsigned int i = 0; i < subject.Contours(); i++ ) {
             bool skip_ring=false;
             tgContour contour = subject.GetContour( i );
             
             if (contour.GetSize() < 3) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points " << contour.GetSize() );
                 skip_ring=true;
             }
             
@@ -302,13 +302,13 @@ void tgShapefile::FromPolygon( void *lid, const tgPolygon& subject, bool asPolyg
             ring.closeRings();
             
             if (!skip_ring) {
-                polygon.addRingDirectly(&ring);
+                polygon->addRingDirectly(&ring);
             }
             
             OGRFeature* feature = NULL;
             feature = new OGRFeature( l_id->GetLayerDefn() );
             feature->SetField("ID", description.c_str());
-            feature->SetGeometry(&polygon);
+            feature->SetGeometry(polygon);
             if( l_id->CreateFeature( feature ) != OGRERR_NONE )
             {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");

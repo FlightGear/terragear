@@ -36,10 +36,7 @@ public:
     bool IsOriginating(void) const {
         return originating; 
     }
-    
-    bool IsTextured(void) const {
-        return textured; 
-    }
+    bool IsTextured(void) const;
     
     double Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb );
     
@@ -228,6 +225,9 @@ public:
     tgPolygon GetPoly(const char* prefix);
     
     void DumpConstraint( const char* layer, const char* label, const std::list<SGGeod>& contour ) const;
+    bool IsTextured( void ) const {
+        return (flags & FLAGS_TEXTURED);
+    }
     double Texture( bool originating, double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb );
     
     tgIntersectionNode* start;

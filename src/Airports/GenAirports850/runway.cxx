@@ -6,6 +6,7 @@
 #include <simgear/math/SGGeodesy.hxx>
 
 #include <terragear/tg_polygon.hxx>
+#include <terragear/tg_shapefile.hxx>
 
 #include <cstdio>
 
@@ -183,6 +184,11 @@ void Runway::GetInnerBasePolys( tgpolygon_list& polys )
     base_contour      = gen_runway_area_w_extend( 20.0, -rwy.overrun[0], -rwy.overrun[1], shoulder_width + 20.0 );
     base.AddContour( base_contour );
 
+    base.SetMaterial( "Grass" );
+    base.SetTexMethod( TG_TEX_BY_GEODE );
+    
+    //tgShapefile::FromPolygon( base, true, false, "./dbg", "innerbase", "runway" );
+    
     // and add the clearing to the base
     polys.push_back( base );
 }
@@ -204,6 +210,9 @@ void Runway::GetOuterBasePolys( tgpolygon_list& polys )
     base_contour = gen_runway_area_w_extend( 180.0, -rwy.overrun[0], -rwy.overrun[1], shoulder_width + 50.0 );
     base.AddContour( base_contour );
 
+    base.SetMaterial( "Grass" );
+    base.SetTexMethod( TG_TEX_BY_GEODE );
+    
     // add this to the airport clearing
     polys.push_back( base );
 }

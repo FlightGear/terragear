@@ -4,7 +4,7 @@
 
 #include "tg_intersection_generator.hxx"
 
-#define DEBUG_INTERSECTIONS (0)
+#define DEBUG_INTERSECTIONS (1)
 #define LOG_INTERSECTION    (SG_DEBUG)
 
 void tgIntersectionGenerator::Insert( const SGGeod& s, const SGGeod& e, double w, unsigned int t )

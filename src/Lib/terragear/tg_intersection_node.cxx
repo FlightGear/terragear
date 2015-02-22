@@ -7,7 +7,10 @@
 #include "tg_misc.hxx"
       
 #define DEBUG_INTERSECTIONS (0)
+#define DEBUG_TEXTURING     (1)
+
 #define LOG_INTERSECTION    (SG_DEBUG)
+#define LOG_TEXTURING       (SG_INFO)
 
 tgIntersectionNode::tgIntersectionNode( const SGGeod& pos )
 {
@@ -355,6 +358,9 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetUntexturedEdge( double heading )
 {
     tgIntersectionEdgeInfo* untextured = NULL;
     
+    static int gue_idx = 0;
+    char info[128];
+    
     // for now, just return the next untextured edge info
     for (tgintersectionedgeinfo_it cur = edgeList.begin(); cur != edgeList.end(); cur++) {
         if( !(*cur)->IsTextured() ) {
@@ -362,6 +368,14 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetUntexturedEdge( double heading )
             break;
         }
     }
+    
+    if ( untextured) {
+        sprintf( info, "getuntex_edge_visit_%d_found_edge_id_%d", gue_idx++, untextured->GetEdge()->id );
+    } else {
+        sprintf( info, "getuntex_edge_visit_%d_no_edges", gue_idx++ );
+    }
+    
+    tgShapefile::FromGeod( position, "./", "TexNodesGUE", info );
     
     return untextured;
 }
@@ -397,12 +411,15 @@ bool tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo( tgIntersectionEdgeInfo
     tgIntersectionEdgeInfo* next_info;
     bool                    done = false;
         
+    static int gncn_idx = 0;
+    char node_info[128];
+    
     if ( !IsTextureComplete() ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo push cur node " << node << " ino is " << info );
+        SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo push cur node " << node << " ino is " << info );
         
         stack.push(this);
     } else {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo cur node " << node << " complete info is " << info );
+        SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo cur node " << node << " complete info is " << info );
     }
     
     if ( info->IsOriginating() ) {
@@ -412,54 +429,74 @@ bool tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo( tgIntersectionEdgeInfo
     }
 
     if ( next_node ) {    
-        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo next node " << next_node );
+        SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo next node " << next_node );
     
         // if next node is done, pop
         resetV = false;
-        if ( next_node->IsTextureComplete() || next_node->IsCap() ) {
+        //if ( next_node->IsTextureComplete() || next_node->IsCap() ) {
+        if ( next_node->IsTextureComplete() ) {
             if ( stack.size() ) {
                 next_node = stack.top(); stack.pop();
                 next_info = next_node->GetUntexturedEdge();
                 resetV    = true;
 
-                SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - popped node (1) " << next_node << " next_info is " << next_info );
+                SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - popped node (1) " << next_node << " next_info is " << next_info );
+                if ( !next_info ) {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - popped node (1) " << next_node << " But it had no untextured edges! " );                    
+                }
             
             } else {
                 next_node = NULL;
                 next_info = NULL;
                 done = true;
             
-                SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - stack empty(1) - we're done " );
+                SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - stack empty(1) - we're done " );
             }
         } else {
             next_info = next_node->GetUntexturedEdge( info->GetHeading() );
 
-            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo use next node - next info is " << next_info );
+            SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo use next node - next info is " << next_info );
             if ( next_info->GetEdge() == NULL ) {
-                SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo use next node - next info edge is NULL " );
+                SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo use next node - next info edge is NULL " );
             }                
         }
     } else {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo next node is NULL " );        
+        SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo next node is NULL " );        
 
         if ( stack.size() ) {
             next_node = stack.top(); stack.pop();
             next_info = next_node->GetUntexturedEdge();
             resetV    = true;
             
-            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - popped node (2)" << next_node );
+            SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - popped node (2)" << next_node );
             
         } else {
             next_node = NULL;
             next_info = NULL;
             done = true;
             
-            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - stack empty (2) - we're done " );
+            SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo node complete - stack empty (2) - we're done " );
         }
     }
     
     info = next_info;
     node = next_node;
+
+    if ( resetV ) {
+        if ( info ) {
+            sprintf( node_info, "getnextconn_visit_%d_reset_v_next_edge_is_%d", gncn_idx++, info->GetEdge()->id );
+        } else {
+            sprintf( node_info, "getnextconn_visit_%d_reset_v_no_next_edge", gncn_idx++ );            
+        }
+    } else {
+        if ( info ) {
+            sprintf( node_info, "getnextconn_visit_%d_keep_v_next_edge_is_%d", gncn_idx++, info->GetEdge()->id );
+        } else {
+            sprintf( node_info, "getnextconn_visit_%d_keep_v_no_next_edge", gncn_idx++ );            
+        }
+    }
+    
+    tgShapefile::FromGeod( position, "./", "TexNodesGNCE", node_info );
     
     return done;
 }

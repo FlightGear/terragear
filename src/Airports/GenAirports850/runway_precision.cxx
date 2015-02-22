@@ -37,7 +37,7 @@
 #include "beznode.hxx"
 #include "runway.hxx"
 
-#define RUNWAY_FEATS 1
+#define RUNWAY_FEATS 0
 
 using std::string;
 struct sections
@@ -1010,7 +1010,7 @@ void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, doub
         shoulder_polys.push_back( right_shoulder );
 
 #if DEBUG
-        tgShapefile::FromPolygon( runway, true, false, "./dbg", "right_shoulder", "right_shoulder" );
+        tgShapefile::FromPolygon( right_shoulder, true, false, "./dbg", "right_shoulder", "right_shoulder" );
 #endif
         
         // generate left shoulder
@@ -1033,7 +1033,7 @@ void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, doub
         shoulder_polys.push_back( left_shoulder );    
 
 #if DEBUG
-        tgShapefile::FromPolygon( runway, true, false, "./dbg", "left_shoulder", "left_shoulder" );
+        tgShapefile::FromPolygon( left_shoulder, true, false, "./dbg", "left_shoulder", "left_shoulder" );
 #endif        
     }
 }
@@ -1273,12 +1273,61 @@ void Runway::gen_full_rwy(Airport* ap)
         // Runway designation markings : return is the start of the centerline 
         start_ref = gen_designation( start_ref, rwhalf, heading );
 
-        // draw the cenerline
-        // just draw two lines for testing
-        LinearFeature* centerline = gen_paralell_marking_feature( ap, start_ref, heading, 
-                                                                    0, SGGeodesy::distanceM(start_ref, center), 
-                                                                    0.0, RWY_CENTERLINE );        
-        features.push_back(centerline);
+        // draw the cenerline.  We draw each segment individually instead of on long dotted segment
+        // because runways are long, the curvature of the earth has an efect, and the lines won't
+        // meet in the center if we start at the rwy designation
+        // see 150_5340_1l section 2.4.e note 3.
+        //
+        // To accommodate varying runway lengths, all adjustments to the uniform
+        // pattern of runway centerline stripes and gaps are made near the runway midpoint (defined as the
+        // distance between the two thresholds or displaced thresholds). Under such cases, reduce the
+        // lengths of both the stripes and gaps starting from midpoint and proceed toward the runway
+        // thresholds. Reduced stripes must be at least 80 feet (24 m) in length, and the reduced gaps must
+        // be at least 40 feet (12.3 m) in length. The affected stripes and gaps within the section should
+        // show a uniform pattern.
+        
+        // half a gap, and 1/3 a stripe
+        #define SEGMENT_LENGTH  (SG_FEET_TO_METER*40)    
+        #define STRIPE_LENGTH   (SEGMENT_LENGTH*3)
+        #define GAP_LENGTH      (SEGMENT_LENGTH*2)
+        
+        // to conform with this, we take the length from the desgnation to 14*segment length from the midpoint.
+        // we then divide this length into stripe/gap combos and round up.
+        // the remaining segments are compressed by remaining/560 
+
+        double offset_length = SGGeodesy::distanceM(start_ref, center) - (14*SEGMENT_LENGTH);
+        unsigned int num_full_sections = (offset_length / (STRIPE_LENGTH+GAP_LENGTH)) + 1;
+        double uncompressed_length = num_full_sections * (STRIPE_LENGTH+GAP_LENGTH);
+        double compressed_length = SGGeodesy::distanceM(start_ref, center) - uncompressed_length;
+        double compress_ratio = compressed_length/(14*SEGMENT_LENGTH);
+
+        TG_LOG( SG_GENERAL, SG_ALERT, " RWY CENTERLINE: offset_length is " << offset_length << " full_segs is " << num_full_sections );
+        TG_LOG( SG_GENERAL, SG_ALERT, "                 uncompressed_length is " << uncompressed_length << " compressed_length " << compressed_length );
+        TG_LOG( SG_GENERAL, SG_ALERT, "                 compress_ratio is " << compress_ratio  );
+        
+        for ( unsigned int i=0; i<num_full_sections; i++ ) {
+            // now loop from start to end...
+            double next_heading = SGGeodesy::courseDeg( start_ref, center );            
+            LinearFeature* centerline = gen_paralell_marking_feature( ap, start_ref, next_heading, 
+                                                                      0, STRIPE_LENGTH, 
+                                                                      0.0, RWY_BORDER );
+            features.push_back(centerline);
+            
+            // generate next start ref
+            start_ref = SGGeodesy::direct( start_ref, next_heading, (STRIPE_LENGTH+GAP_LENGTH) );
+        }
+        
+        // now generate the 3 compressed sections
+        for ( unsigned int i=0; i<3; i++ ) {
+            double next_heading = SGGeodesy::courseDeg( start_ref, center );
+            LinearFeature* centerline = gen_paralell_marking_feature( ap, start_ref, next_heading, 
+                                                                      0, STRIPE_LENGTH*compress_ratio, 
+                                                                      0.0, RWY_BORDER );
+            features.push_back(centerline);
+            
+            // generate next start ref
+            start_ref = SGGeodesy::direct( start_ref, next_heading, (STRIPE_LENGTH+GAP_LENGTH)*compress_ratio );
+        }
 
         // Draw the runway markings
         if (rwy.marking[rwhalf] > 1) {
