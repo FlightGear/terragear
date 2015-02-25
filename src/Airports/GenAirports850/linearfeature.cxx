@@ -565,10 +565,7 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
     #define     RW_TEX1_END         (RW_TEX1_START+ATLAS_SINGLE_WIDTH)
     #define     RW_TEX2_START       (RW_TEX1_END)
     #define     RW_TEX2_END         (RW_TEX2_START+ATLAS_SINGLE_WIDTH)
-    
-    // which material for this mark?
-    v_dist = 10.0;
-    
+        
 #define TEST 0
     
 #if TEST
@@ -587,138 +584,161 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
             material = "taxi_markings";
             atlas_start = 0*ATLAS_SINGLE_WIDTH;
             atlas_end   = 1*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.15 m wide x 2 m long
             break;
             
         case LF_BROKEN_YELLOW: // good
             material = "taxi_markings";
             atlas_start = 1*ATLAS_SINGLE_WIDTH;
             atlas_end   = 2*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.15 m wide x 2 m long
             break;
             
         case LF_SINGLE_LANE_QUEUE: // good
             material = "taxi_markings";
             atlas_start = 2*ATLAS_SINGLE_WIDTH;
             atlas_end   = 3*ATLAS_SINGLE_WIDTH;
+            v_dist = 12.0;   // 0.15 m wide x 12 m long
             break;
             
         case LF_B_SOLID_YELLOW: // good
             material = "taxi_markings";
             atlas_start = 3*ATLAS_SINGLE_WIDTH;
             atlas_end   = 4*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.45 m wide x 2 m long
             break;
             
         case LF_B_BROKEN_YELLOW: // good
             material = "taxi_markings";
             atlas_start = 4*ATLAS_SINGLE_WIDTH;
             atlas_end   = 5*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.45 m wide x 2 m long
             break;
             
         case LF_B_SINGLE_LANE_QUEUE: // good
             material = "taxi_markings";
             atlas_start = 5*ATLAS_SINGLE_WIDTH;
             atlas_end   = 6*ATLAS_SINGLE_WIDTH;
+            v_dist = 12.0;   // 0.45 m wide x 12 m long            
             break;
             
         case LF_SOLID_WHITE: // good
             material = "taxi_markings";
             atlas_start = 6*ATLAS_SINGLE_WIDTH;
             atlas_end   = 7*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.15 m wide x 2 m long
             break;
             
         case LF_BROKEN_WHITE: // good
             material = "taxi_markings";
             atlas_start = 7*ATLAS_SINGLE_WIDTH;
             atlas_end   = 8*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.15 m wide x 2 m long
             break;
             
         case LF_SOLID_DBL_YELLOW:   // good
             material = "taxi_markings";
             atlas_start = 8*ATLAS_SINGLE_WIDTH;
             atlas_end =  10*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.45 m wide x 2 m long
             break;
             
         case LF_DOUBLE_LANE_QUEUE: // good
             material = "taxi_markings";
             atlas_start = 10*ATLAS_SINGLE_WIDTH;
             atlas_end   = 12*ATLAS_SINGLE_WIDTH;
+            v_dist = 12.0;   // 0.45 m wide x 12 m long
             break;
             
         case LF_OTHER_HOLD: // good
             material = "taxi_markings";
             atlas_start = 12*ATLAS_SINGLE_WIDTH;
             atlas_end   = 14*ATLAS_SINGLE_WIDTH;
+            v_dist = 6.0;   // 1 m wide x 6 m long
             break;
             
         case LF_B_SOLID_DBL_YELLOW: // good
             material = "taxi_markings";
             atlas_start = 14*ATLAS_SINGLE_WIDTH;
             atlas_end   = 16*ATLAS_SINGLE_WIDTH;
+            v_dist = 2.0;   // 0.75 m wide x 2 m long
             break;
             
         case LF_B_DOUBLE_LANE_QUEUE:
             material = "taxi_markings";
             atlas_start = 16*ATLAS_SINGLE_WIDTH;
             atlas_end   = 18*ATLAS_SINGLE_WIDTH;
+            v_dist = 12.0;   // 0.75 m wide x 12 m long
             break;
             
         case LF_B_OTHER_HOLD:
             material = "taxi_markings";
             atlas_start = 18*ATLAS_SINGLE_WIDTH;
             atlas_end   = 20*ATLAS_SINGLE_WIDTH;
+            v_dist = 6.0;   // 1.3 m wide x 6 m long
             break;                
             
         case LF_RUNWAY_HOLD:
             material = "taxi_markings";
             atlas_start = 20*ATLAS_SINGLE_WIDTH;
             atlas_end   = 24*ATLAS_SINGLE_WIDTH;
+            v_dist = 1.8;   // 2.1 m wide x 1.8 m long
             break;
             
         case LF_B_RUNWAY_HOLD:
             material = "taxi_markings";
             atlas_start = 24*ATLAS_SINGLE_WIDTH;
             atlas_end   = 28*ATLAS_SINGLE_WIDTH;
+            v_dist = 1.8;   // 2.4 m wide x 1.8 m long
             break;
             
         case LF_ILS_HOLD:
             material = "taxi_markings";
             atlas_start = 28*ATLAS_SINGLE_WIDTH;
             atlas_end   = 32*ATLAS_SINGLE_WIDTH;
+            v_dist = 3.0;   // 2.4 m wide x 3.0 m long
             break;
             
         case LF_B_ILS_HOLD:
             material = "taxi_markings";
             atlas_start = 32*ATLAS_SINGLE_WIDTH;
             atlas_end =   36*ATLAS_SINGLE_WIDTH;
+            v_dist = 3.0;   // 2.4 m wide x 3.0 m long
             break;
             
-        case LF_SAFETYZONE_CENTERLINE:
+        case LF_SAFETYZONE_CENTERLINE: // note - these should ALWAYS be black...
             material = "taxi_markings";
             atlas_start = 36*ATLAS_SINGLE_WIDTH;
             atlas_end =   40*ATLAS_SINGLE_WIDTH;
+            v_dist = 3.64;   // 1.2 m wide x 3.64 m long
             break;
             
         case LF_B_SAFETYZONE_CENTERLINE:
             material = "taxi_markings";
             atlas_start = 40*ATLAS_SINGLE_WIDTH;
             atlas_end   = 44*ATLAS_SINGLE_WIDTH;
+            v_dist = 3.64;   // 1.2 m wide x 3.64 m long
             break;
             
         case LF_CHECKERBOARD_WHITE:
             material = "taxi_markings";
             atlas_start = 44*ATLAS_SINGLE_WIDTH;
             atlas_end   = 48*ATLAS_SINGLE_WIDTH;
+            v_dist = 3.64;   // 0.6 m wide x 2.6 m long
             break;    
             
         case RWY_BORDER:
             material = "rwy_markings";
             atlas_start = RW_TEX1_START;
             atlas_end   = RW_TEX1_END;
+            v_dist = 10.0;
             break;
             
         case RWY_DISP_TAIL:
             material = "rwy_markings";
             atlas_start = RW_TEX1_START;
             atlas_end   = RW_TEX1_END;
+            v_dist = 10.0;
             break;
             
         case RWY_CENTERLINE:
@@ -726,25 +746,28 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
             v_dist = 200 * SG_FEET_TO_METER;
             atlas_start = RW_TEX2_START;
             atlas_end   = RW_TEX2_END;
-            
+            v_dist = 10.0;            
             break;
             
         case RWY_THRESH:
             material = "rwy_markings";
             atlas_start = RW_TEX0_START;
             atlas_end   = RW_TEX0_END;
+            v_dist = 10.0;
             break;
             
         case RWY_TZONE:
             material = "rwy_markings";
             atlas_start = RW_TEX0_START;
             atlas_end   = RW_TEX0_END;
+            v_dist = 10.0;
             break;
             
         case RWY_AIM:
             material = "rwy_markings";
             atlas_start = RW_TEX0_START;
             atlas_end   = RW_TEX0_END;
+            v_dist = 10.0;
             break;
             
             

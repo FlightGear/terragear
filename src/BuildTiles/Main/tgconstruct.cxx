@@ -169,16 +169,20 @@ void TGConstruct::run()
                     polys_clipped.SyncNodes( nodes );
                     
                     // STEP 9)
+                    // We have all the nodes we need (plus extra that were clipped away)
+                    // mark the used and remove the unused
+                    LookupUnusedNodes();
+                    
+                    // STEP 10)
                     // Generate triangle vertex coordinates to node index lists
                     // NOTE: After this point, no new nodes can be added
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Nodes Per Vertex");
                     LookupNodesPerVertex();
 
-                    // STEP 10)
+                    // STEP 11)
                     // Interpolate elevations, and flatten stuff
                     SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Elevation Per Node");
                     CalcElevations();
-
 #if 0  // ROADS ON AIRPORT DEBUGGING
                     // debug : dump the nodes
                     nodes.ToShapefile( bucket.gen_index_str() );

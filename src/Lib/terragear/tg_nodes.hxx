@@ -83,6 +83,10 @@ public:
         return tg_node_list.find(n);
     }
 
+    void SetUsed( int idx ) {
+        tg_node_list[idx].SetUsed();
+    }
+    
     void init_spacial_query( void );
 
     void SetArray( tgArray* a ) {
@@ -97,6 +101,8 @@ public:
     void CalcElevations( tgNodeType type, const tgSurface& surf );
     void CalcElevations( tgNodeType type, const tgtriangle_list& mesh );
 
+    void DeleteUnused( void );
+    
     SGVec3f GetNormal( int idx ) const      { return tg_node_list[idx].GetNormal(); }
     void SetNormal( int idx, SGVec3f n )    { tg_node_list[idx].SetNormal( n ); }
 

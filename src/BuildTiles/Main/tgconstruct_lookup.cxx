@@ -29,6 +29,25 @@
 
 #include "tgconstruct.hxx"
 
+void TGConstruct::LookupUnusedNodes( void )
+{
+    // for each node, traverse all the triangles - and create face lists
+    for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
+        for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+            tgPolygon& poly = polys_clipped.get_poly( area, p );
+
+            for (unsigned int tri=0; tri < poly.Triangles(); tri++) {
+                for (unsigned int vertex = 0; vertex < 3; vertex++) {
+                    int idx = nodes.find( poly.GetTriNode( tri, vertex ) );
+                    nodes.SetUsed(idx);
+                }
+            }
+        }
+    }
+    
+    nodes.DeleteUnused();
+}
+
 // This function populates the Superpoly tri_idx polygon.
 // This polygon is a mirror of tris, except the verticies are
 // indexes into the node array (cast as unsigned long)

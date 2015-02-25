@@ -17,6 +17,49 @@ tgIntersectionNode::tgIntersectionNode( const SGGeod& pos )
     position = pos;
     edgeList.clear();
     start_v = NODE_UNTEXTURED;
+    endpoint = false;
+}
+
+void tgIntersectionNode::CheckEndpoint( void )
+{
+    tgintersectionedgeinfo_it cur;
+
+    // any intersection is an endpoint 
+    if ( edgeList.size() > 2 ) {
+        endpoint = true;
+    }
+    
+    // caps are NOT endpoints - but its neighbor is
+    if ( !endpoint ) {
+        for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
+            // check if the other node of this edge is a cap
+            if ( (*cur)->IsOriginating() ) {
+                if ( (*cur)->GetEdge()->end->IsCap() ) {
+                    endpoint = true;
+                }
+            } else {
+                if ( (*cur)->GetEdge()->start->IsCap() ) {
+                    endpoint = true;
+                }
+            }
+        }
+    }
+    
+    // only other way to have an endpoint is with two edges with different 
+    // textures
+    if ( !endpoint ) {
+        if ( edgeList.size() == 2 ) {
+            unsigned int texture;
+            
+            cur = edgeList.begin();
+            texture = (*cur)->GetEdge()->type;
+            
+            cur++;
+            if ( (*cur)->GetEdge()->type != texture ) {
+                endpoint = true;
+            }
+        }
+    }
 }
 
 void tgIntersectionNode::AddEdge( bool originated, tgIntersectionEdge* edge ) 
@@ -198,6 +241,37 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetPrevEdgeInfo( tgIntersectionEdgeI
     return prv_info;
 }
 
+tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdge* cur_edge )
+{
+    tgintersectionedgeinfo_it cur, nxt;
+    tgIntersectionEdgeInfo* nxt_info = NULL;
+    
+//    SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextEdgeInfo: this " << this << " cur_edge_id " << cur_edge->id );
+    
+    if ( edgeList.size() > 1 ) {
+        for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
+            // edge info is unique from node to node - but the edge itself is shared
+            if( (*cur)->GetEdge() == cur_edge ) {
+                // we found the current edge info - increment to next
+                nxt = cur;
+                nxt++;
+
+                if ( nxt == edgeList.end() ) {
+                    nxt = edgeList.begin();
+                }
+                
+                nxt_info = (*nxt);
+                
+//                SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::GetNextEdgeInfo: this " << this << " selected edge " << nxt_info->GetEdge()->id );
+            }
+        }
+    } else {
+        nxt_info = NULL;
+    }
+    
+    return nxt_info;
+}
+
 tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgRay& bisector, const SGGeod& bisect_pos, const char* prefix )
 {
     tgintersectionedgeinfo_it cur, nxt;
@@ -354,6 +428,141 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeI
     return nxt_info;
 }
 
+double tgIntersectionNode::CalcDistanceToNextEndpoint( tgIntersectionEdgeInfo* cur_info )
+{
+    double total_dist = 0.0f;
+    tgIntersectionNode* next_node = NULL;
+    tgIntersectionEdge* cur_edge = NULL;
+    bool done = false;
+
+    do {
+        cur_edge = cur_info->GetEdge();        
+        total_dist += cur_edge->GetGeodesyLength();
+        
+        if ( cur_info->IsOriginating() ) {
+            next_node = cur_edge->end;
+        } else {
+            next_node = cur_edge->start;
+        }
+
+        if ( next_node == this ) {
+           SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::CalcDistanceToNextEndpoint ERROR : We looped around ");
+           done = true;
+        }
+        
+        if ( next_node->IsEndpoint() ) {
+            done = true;
+        } else {
+            cur_info = next_node->GetNextEdgeInfo( cur_edge );            
+        }
+        
+        if ( !cur_info ) {
+            SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::CalcDistanceToNextEndpoint ERROR: getnextInfo returned NULL" );
+            done = true;
+        }
+        
+    } while (!done);
+    
+    return total_dist;
+}
+
+void tgIntersectionNode::TextureToNextEndpoint( tgIntersectionEdgeInfo* cur_info, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio )
+{
+    double start_v = 0.0f;
+    
+    tgIntersectionNode* next_node = NULL;
+    tgIntersectionEdge* cur_edge = NULL;
+    bool done = false;
+
+    do {
+        cur_edge = cur_info->GetEdge();        
+        start_v = cur_info->Texture(start_v, texInfoCb, ratio);
+
+        if ( cur_info->IsOriginating() ) {
+            next_node = cur_edge->end;
+        } else {
+            next_node = cur_edge->start;
+        }
+
+        if ( next_node == this ) {
+           SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::TextureToNextEndpoint ERROR : We looped around ");
+           done = true;
+        }
+        
+        if ( next_node->IsEndpoint() ) {
+            SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::TextureToNextEndpoint FINISHED - start_v is " << start_v);
+            done = true;
+        } else {
+            cur_info = next_node->GetNextEdgeInfo( cur_edge );
+        }
+
+        if ( !cur_info ) {
+            SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::CalcDistanceToNextEndpoint ERROR: getnextInfo returned NULL" );
+            done = true;
+        }
+        
+    } while (!done);
+}
+
+void tgIntersectionNode::TextureEdges( tgIntersectionGeneratorTexInfoCb texInfoCb ) 
+{
+    if (!endpoint) {
+        return;
+    }
+    
+    for (tgintersectionedgeinfo_it cur = edgeList.begin(); cur != edgeList.end(); cur++) {
+        if (*cur) {
+            // check for start CAP
+            if ( (*cur)->IsStartCap() ) {
+                SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::TextureEdges found Start CAP " );
+            } else if ( (*cur)->IsEndCap() ) {
+                SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::TextureEdges found Start CAP " );
+            } else if ( (*cur)->IsOriginating() ) {
+                // we need to get the total distance between this, and the next endpoint
+                // we know that each node from here to the next endpoint is degree 2
+                // ( but we'll check just to be sure )
+                double total_dist = CalcDistanceToNextEndpoint( (*cur) );
+                
+                // now calculate compression factor - need to get the repeating v length for this
+                unsigned int type = (*cur)->GetEdge()->type;
+                
+                std::string material;
+                double      texAtlasStartU, texAtlasEndU;
+                double      v_dist;
+    
+                // Get the v_dist for this texture
+                texInfoCb( type, material, texAtlasStartU, texAtlasEndU, v_dist );
+
+                // get remainder
+                double frac = fmod( total_dist, v_dist ) / v_dist;
+                bool stretch = false;
+                int num_sections;
+                if ( (0.0 <= frac) &&  (frac <= 0.5) ) {
+                    // we should use less sections and stretch
+                    num_sections = total_dist / v_dist;
+                    stretch = true;    
+                } else {
+                    // we should use 1 more section and shrink
+                    num_sections = (total_dist / v_dist) + 1;
+                }
+                
+                double section_length = total_dist / num_sections;
+                double ratio = section_length / v_dist;
+                
+                if ( stretch ) {
+                    SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::TextureEdges found total_dist of " << total_dist << " texture dist is " << v_dist << " stretch_ratio " << ratio );
+                } else {
+                    SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::TextureEdges found total_dist of " << total_dist << " texture dist is " << v_dist << " shrink_ratio " << ratio );
+                }
+                
+                TextureToNextEndpoint( (*cur), texInfoCb, ratio );
+            }
+        } else {
+            SG_LOG(SG_GENERAL, LOG_TEXTURING, "tgIntersectionNode::TextureEdges found NULL pointer in edge list");
+        }
+    }
+}
+
 tgIntersectionEdgeInfo* tgIntersectionNode::GetUntexturedEdge( double heading ) 
 {
     tgIntersectionEdgeInfo* untextured = NULL;
@@ -370,7 +579,7 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetUntexturedEdge( double heading )
     }
     
     if ( untextured) {
-        sprintf( info, "getuntex_edge_visit_%d_found_edge_id_%d", gue_idx++, untextured->GetEdge()->id );
+        sprintf( info, "getuntex_edge_visit_%d_found_edge_id_%ld", gue_idx++, untextured->GetEdge()->id );
     } else {
         sprintf( info, "getuntex_edge_visit_%d_no_edges", gue_idx++ );
     }
@@ -484,13 +693,13 @@ bool tgIntersectionNode::GetNextConnectedNodeAndEdgeInfo( tgIntersectionEdgeInfo
 
     if ( resetV ) {
         if ( info ) {
-            sprintf( node_info, "getnextconn_visit_%d_reset_v_next_edge_is_%d", gncn_idx++, info->GetEdge()->id );
+            sprintf( node_info, "getnextconn_visit_%d_reset_v_next_edge_is_%ld", gncn_idx++, info->GetEdge()->id );
         } else {
             sprintf( node_info, "getnextconn_visit_%d_reset_v_no_next_edge", gncn_idx++ );            
         }
     } else {
         if ( info ) {
-            sprintf( node_info, "getnextconn_visit_%d_keep_v_next_edge_is_%d", gncn_idx++, info->GetEdge()->id );
+            sprintf( node_info, "getnextconn_visit_%d_keep_v_next_edge_is_%ld", gncn_idx++, info->GetEdge()->id );
         } else {
             sprintf( node_info, "getnextconn_visit_%d_keep_v_no_next_edge", gncn_idx++ );            
         }

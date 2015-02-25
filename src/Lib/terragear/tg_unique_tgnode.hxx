@@ -1,13 +1,23 @@
 #ifndef _TG_UNIQUE_TGNODE_HXX
 #define _TG_UNIQUE_TGNODE_HXX
 
-#include <boost/unordered_set.hpp>
-#include <boost/concept_check.hpp>
+//#include <boost/unordered_set.hpp>
+//#include <boost/concept_check.hpp>
+
+// kd-tree for verticies ( with data for the vertex handle in arrangement
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Kd_tree.h>
+#include <CGAL/algorithm.h>
+#include <CGAL/Fuzzy_sphere.h>
+#include <CGAL/Search_traits_2.h>
+#include <CGAL/Search_traits_adapter.h>
+
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/SGGeod.hxx>
 #include <simgear/math/SGMisc.hxx>
 
+#if 0
 // Implement Unique TGNode list
 
 // We use a hash to store the indices.  All iterators returned from find are
@@ -291,5 +301,247 @@ private:
     unique_tgnode_set       index_list;
     std::vector<TGNode>     node_list;
 };
+
+#else
+
+#include "tg_cgal_epec.hxx"
+
+typedef enum {
+    TG_NODE_FIXED_ELEVATION = 0,    // elevation is fixed, and must not change - it's in the node
+    TG_NODE_INTERPOLATED,           // calc elevation from interpolating height field data
+    TG_NODE_SMOOTHED,               // elevation is calculated via a tgSurface
+    TG_NODE_DRAPED                  // elevation is interpolated via a triangle list
+} tgNodeType;
+
+// for each node, we'll need a vector to lookup all triangles the node
+// is a member of.
+struct TGFaceLookup {
+    unsigned int    area;
+    unsigned int    poly;
+    unsigned int    tri;
+};
+typedef std::vector < TGFaceLookup > TGFaceList;
+
+
+typedef INEXACTKernel::Point_2                  CartPoint;
+
+typedef boost::tuple<CartPoint,unsigned int>    PointAndIndex;
+typedef CGAL::Search_traits_2<INEXACTKernel>    TraitsBase;
+typedef CGAL::Search_traits_adapter<PointAndIndex, CGAL::Nth_of_tuple_property_map<0, PointAndIndex>,TraitsBase>  SearchTraits;
+
+typedef CGAL::Fuzzy_sphere<SearchTraits>        FuzzyCir;
+typedef CGAL::Kd_tree<SearchTraits>             CartTree;
+
+class TGNode {
+public:
+    TGNode() {
+        // constructor for serialization only
+        type = TG_NODE_INTERPOLATED;
+        used = false;
+    }
+
+    TGNode( SGGeod p, tgNodeType t = TG_NODE_INTERPOLATED ) {
+        position    = p;
+        CalcWgs84();
+
+        type = t;
+        faces.clear();
+        used = false;
+    }
+
+    inline void SetType( tgNodeType t )
+    {
+        if (type != TG_NODE_FIXED_ELEVATION) {
+            type = t;
+        }
+    }
+
+    inline tgNodeType GetType() const {
+        return type;
+    }
+
+    inline void CalcWgs84()
+    {
+        wgs84 = SGVec3d::fromGeod(position);
+    }
+
+    inline void AddFace( unsigned int area, unsigned int poly, unsigned int tri )
+    {
+        TGFaceLookup    face;
+        face.area   = area;
+        face.poly   = poly;
+        face.tri    = tri;
+
+        faces.push_back( face );
+    }
+
+    inline TGFaceList const& GetFaces( void ) const { return faces; }
+    inline bool IsFixedElevation( void ) const      { return (type == TG_NODE_FIXED_ELEVATION); }
+    inline SGVec3d const& GetWgs84( void ) const    { return wgs84; }
+
+    inline void SetPosition( const SGGeod& p )
+    {
+        if (type != TG_NODE_FIXED_ELEVATION) {
+            position = p;
+            CalcWgs84();
+        }
+    }
+
+    inline void SetElevation( double z )
+    {
+        if (type != TG_NODE_FIXED_ELEVATION) {
+            position.setElevationM( z );
+            CalcWgs84();
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::SetElevations - REFUSE - type is " << type << " cur elevation is " << position.getElevationM() << " new would be " << z );
+        }
+    }
+
+    inline bool IsUsed( void ) const {
+        return used;
+    }
+    
+    inline void SetUsed()
+    {
+        used = true;
+    }
+    
+    inline SGGeod const&  GetPosition( void ) const        { return position; }
+    inline void    SetNormal( const SGVec3f& n )    { normal = n; }
+    inline SGVec3f GetNormal( void ) const          { return normal; }
+
+    void SaveToGzFile( gzFile& fp ) {
+        sgWriteGeod( fp, position );
+        sgWriteInt( fp, (int)type );
+
+        // Don't save the facelist per node
+        // it's much faster to just redo the lookup
+    }
+
+    void LoadFromGzFile( gzFile& fp ) {
+        int temp;
+
+        sgReadGeod( fp, position );
+        CalcWgs84();
+
+        sgReadInt( fp, &temp );
+        type = (tgNodeType)temp;        
+    }
+
+    // Friends for serialization
+    friend std::ostream& operator<< ( std::ostream&, const TGNode& );
+ 
+private:
+    SGGeod      position;
+    SGVec3f     normal;
+    SGVec3d     wgs84;
+    tgNodeType  type;
+    bool        used;
+    
+    TGFaceList  faces;
+};
+
+class UniqueTGNodeSet {
+public:
+    UniqueTGNodeSet() {}
+
+    ~UniqueTGNodeSet() {
+        node_list.clear();
+    }
+
+    unsigned int add( const TGNode& n ) {
+        std::list<PointAndIndex> query_result;
+        int index;
+        
+        // first - create a search node
+        CartPoint pt( n.GetPosition().getLongitudeDeg(), n.GetPosition().getLatitudeDeg() );
+        FuzzyCir query_circle( pt, 0.0000001 );  // approx 1 cm
+
+        // perform the query
+        query_result.clear();
+        tree.search(std::back_inserter( query_result ), query_circle);
+
+        // we should always have at least one result
+        if ( query_result.empty() ) 
+        {
+            index = node_list.size();
+            PointAndIndex pti(pt, index);
+            
+            tree.insert(pti);
+            node_list.push_back(n);
+        } else {
+            std::list<PointAndIndex>::const_iterator it = query_result.begin();
+            index = boost::get<1>(*it);
+        }
+
+        return index;
+    }
+
+    int find( const TGNode& n ) const {
+        std::list<PointAndIndex> query_result;
+        int index = -1;
+        
+        // first - create a search node
+        CartPoint pt( n.GetPosition().getLongitudeDeg(), n.GetPosition().getLatitudeDeg() );
+        FuzzyCir query_circle( pt, 0.0000001 );  // approx 1 cm
+
+        // perform the query
+        query_result.clear();
+        tree.search(std::back_inserter( query_result ), query_circle);
+
+        // we should always have at least one result
+        if ( !query_result.empty() ) 
+        {
+            std::list<PointAndIndex>::const_iterator it = query_result.begin();
+            index = boost::get<1>(*it);
+        }
+
+        return index;
+    }
+
+    void clear( void ) {
+        tree.clear();
+        node_list.clear();
+    }
+
+    TGNode const& operator[]( int index ) const {
+        return node_list[index];
+    }
+
+    TGNode& operator[]( int index ) {
+        return node_list[index];
+    }
+
+    size_t size( void ) const {
+        return node_list.size();
+    }
+
+    std::vector<TGNode>& get_list( void ) { return node_list; }
+
+    void SaveToGzFile( gzFile& fp ) {
+        // Just save the node_list - rebuild the index list on load
+        sgWriteUInt( fp, node_list.size() );
+        for (unsigned int i=0; i<node_list.size(); i++) {
+            node_list[i].SaveToGzFile( fp );
+        }
+    }
+
+    void LoadFromGzFile( gzFile& fp ) {
+        unsigned int count;
+        sgReadUInt( fp, &count );
+        for (unsigned int i=0; i<count; i++) {
+            TGNode node;
+            node.LoadFromGzFile( fp );
+            add( node );
+        }
+    }
+
+private:
+    CartTree            tree;
+    std::vector<TGNode> node_list;
+};
+
+
+#endif
 
 #endif /* _TG_UNIQUE_TGNODE_HXX */

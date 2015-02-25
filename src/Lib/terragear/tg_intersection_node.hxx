@@ -32,12 +32,18 @@ public:
     void   SetStartV( double sv ) { start_v = sv; }
     double GetStartV( void ) const { return start_v; }
     
+    tgIntersectionEdgeInfo* GetNextEdgeInfo( tgIntersectionEdge* cur_edge );
+    
     tgIntersectionEdgeInfo* GetFirstEdgeInfo( void ) { return (*edgeList.begin()); }
     tgIntersectionEdgeInfo* GetPrevEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgRay& bisector, const SGGeod& bisect_pos, const char* prefix );
     tgIntersectionEdgeInfo* GetNextEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgRay& bisector, const SGGeod& bisect_pos, const char* prefix );
     bool                    GetNextConnectedNodeAndEdgeInfo( tgIntersectionEdgeInfo*& info, tgIntersectionNode*& node, std::stack<tgIntersectionNode*>& stack, bool& resetV );
-    
+    double                  CalcDistanceToNextEndpoint( tgIntersectionEdgeInfo* cur_info );
+    void                    TextureToNextEndpoint( tgIntersectionEdgeInfo* cur_info, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio );
+    void                    TextureEdges( tgIntersectionGeneratorTexInfoCb texInfoCb );
     bool                    IsTextureComplete( void );
+    void                    CheckEndpoint( void );
+    bool                    IsEndpoint( void ) const { return endpoint; }
     tgIntersectionEdgeInfo* GetUntexturedEdge( double heading = NO_HEADING );
     
 private:
@@ -51,6 +57,7 @@ private:
     SGGeod                      position;
     tgintersectionedgeinfo_list edgeList;
     double                      start_v;
+    bool                        endpoint;
 };
 typedef std::vector<tgIntersectionNode*> tgintersectionnode_list;
 

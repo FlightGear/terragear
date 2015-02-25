@@ -35,6 +35,16 @@
 
 #define AIRPORT_LINE                    (0)
 
+// define the linear feature layers that clip against each other, rather than intersect
+#define SINGLE_LINE                     (0)
+#define DOUBLE_LINE                     (1)
+#define TRIPLE_LINE                     (2)
+#define RUNWAY_HOLD                     (3)
+#define ILS_HOLD                        (4)
+#define OTHER_HOLD                      (5)
+#define SINGLE_WHITE                    (6)
+#define CHECKERBOARD_WHITE              (7)
+
 class Airport
 {
 public:
@@ -133,14 +143,55 @@ public:
 
 
     tgIntersectionGenerator* GetLFG( unsigned int type ) { 
-        if ( type <= 9 ) {
-            return normal_lf_ig[type-1]; 
-        } else if ( type <= 22 ) {
-            return white_lf_ig[type-20];
-        } else if ( type <= 59 ) {
-            return black_lf_ig[type-51];             
-        } else {
-            return rm_ig;
+        switch( type ) {
+            case 1: // solid yellow
+            case 51:
+            case 2: // broken yellow
+            case 52:
+            case 8: // broken yellow ( wide spacing )
+            case 58:
+                return lf_ig[SINGLE_LINE];
+                break;
+                
+            case 3: // solid double yellow
+            case 53:
+            case 9: // broken double yellow ( wide spacing )
+            case 59:
+                return lf_ig[DOUBLE_LINE];
+                break;
+          
+            case 7: // taxiway centerline in rway safety zones
+            case 57:
+                return lf_ig[TRIPLE_LINE];
+                break;
+                
+            case 4: // Runway Hold
+            case 54:
+                return lf_ig[RUNWAY_HOLD];
+                break;
+
+            case 6: // ILS Hold
+            case 56:
+                return lf_ig[ILS_HOLD];
+                break;
+
+            case 5: // Other Hold 
+            case 55:
+                return lf_ig[OTHER_HOLD];
+                break;
+
+            case 20: // single white
+            case 22:
+                return lf_ig[SINGLE_WHITE];
+                break;
+                
+            case 21: // checkerboard white
+                return lf_ig[CHECKERBOARD_WHITE];
+                break;
+
+            default: 
+                return rm_ig;
+                break;
         }
     }
     tgIntersectionGenerator* GetRMG( void ) { return rm_ig; }
@@ -227,9 +278,7 @@ private:
     PavementList    boundary;
 
     // feature poly intersections ( one for each type )
-    tgIntersectionGenerator* normal_lf_ig[9];
-    tgIntersectionGenerator* white_lf_ig[3];
-    tgIntersectionGenerator* black_lf_ig[9];
+    tgIntersectionGenerator* lf_ig[8];
     tgIntersectionGenerator* rm_ig;
     
     // runway lights

@@ -177,6 +177,30 @@ void TGNodes::get_wgs84_nodes( std::vector<SGVec3d>& points ) const {
     }
 }
 
+void TGNodes::DeleteUnused( void ) {
+    // copy the old list to a new list
+    std::vector<TGNode> used_nodes;
+    unsigned int total_nodes = tg_node_list.size();
+    
+    for(unsigned int i = 0; i < tg_node_list.size(); i++) {
+        if ( tg_node_list[i].IsUsed() ) {
+            used_nodes.push_back( tg_node_list[i] );
+        }
+    }
+    tg_node_list.clear();
+    
+    tg_kd_tree.clear();
+    kd_tree_valid = false;
+    
+    for(unsigned int i = 0; i < used_nodes.size(); i++) {
+        tg_node_list.add(used_nodes[i]);
+    }
+    
+    unsigned int kept_nodes = tg_node_list.size();
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "TGNodes::DeleteUnused total_nodes " << total_nodes << " kept nodes " << kept_nodes );
+}
+
 void TGNodes::CalcElevations( tgNodeType type ) {
     for(unsigned int i = 0; i < tg_node_list.size(); i++) {
         if ( tg_node_list[i].GetType() == type ) {
@@ -300,6 +324,10 @@ void TGNodes::ToShapefile( const std::string& datasource )
 
             case TG_NODE_INTERPOLATED:
                 interpolated_nodes.push_back( tg_node_list[ i ].GetPosition() );
+                if ( interpolated_nodes.size() == 1633 ) {
+                    tgShapefile::FromGeod( tg_node_list[ i ].GetPosition(), "./", "node1633", "interpolated" );
+                    SG_LOG(SG_GENERAL, SG_ALERT, "interpolated node 1633 has " << tg_node_list[i].GetFaces().size() );
+                }
                 break;
 
             case TG_NODE_DRAPED:

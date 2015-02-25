@@ -4,8 +4,11 @@
 
 #include "tg_intersection_generator.hxx"
 
-#define DEBUG_INTERSECTIONS (1)
+#define DEBUG_INTERSECTIONS (0)
 #define LOG_INTERSECTION    (SG_DEBUG)
+
+#define DEBUG_TEXTURE       (1)
+#define LOG_TEXTURE         (SG_INFO)
 
 void tgIntersectionGenerator::Insert( const SGGeod& s, const SGGeod& e, double w, unsigned int t )
 {    
@@ -14,14 +17,25 @@ void tgIntersectionGenerator::Insert( const SGGeod& s, const SGGeod& e, double w
 
 void tgIntersectionGenerator::ToShapefile( const char* prefix )
 {
-#if DEBUG_INTERSECTIONS    
+#if DEBUG_INTERSECTIONS || DEBUG_TEXTURE
+    char layer[64];
     char name[32];
     
+    sprintf( layer, "%s_edges", prefix );
     for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
         tgSegment seg( (*it)->start->GetPosition(), (*it)->end->GetPosition() );
         sprintf( name, "seg_%04ld", (*it)->id );
-        tgShapefile::FromSegment( seg, true, datasource, prefix, name );    
+        tgShapefile::FromSegment( seg, true, datasource, layer, name );    
     }
+    
+    sprintf( layer, "%s_endpoints", prefix );
+    for (unsigned int i=0; i<nodelist.size(); i++) {
+        if ( nodelist[i]->IsEndpoint() ) {
+            sprintf( name, "endpoint_%04d", i );
+            tgShapefile::FromGeod( nodelist[i]->GetPosition(), datasource, layer, name );    
+        }
+    }
+    
 #endif    
 }
 
@@ -103,7 +117,7 @@ void tgIntersectionGenerator::Execute( bool clean )
         (*it)->Complete();
     }
 
-#if DEBUG_INTERSECTIONS    
+#if DEBUG_INTERSECTIONS || DEBUG_TEXTURE
     SG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource );    
 
     for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
@@ -118,6 +132,7 @@ void tgIntersectionGenerator::Execute( bool clean )
     
     // to texture, start at caps, and try to cross intersections nicely ( push the start_v )
     SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Texture");        
+#if 0
     for (unsigned int i=0; i<nodelist.size(); i++) {
         // can't always assume all features have caps ( think circle )
         if ( /* nodelist[i]->IsCap() && */ !nodelist[i]->IsTextureComplete() ) {
@@ -155,6 +170,29 @@ void tgIntersectionGenerator::Execute( bool clean )
             }
         }
     }
+#else
+    // To texture, first find all nodes that contain the repeat endpoints.
+    for (unsigned int i=0; i<nodelist.size(); i++) {
+        nodelist[i]->CheckEndpoint();
+    }
+
+    ToShapefile("Endpoints" );
+
+    int num_ep = 0;
+    for (unsigned int i=0; i<nodelist.size(); i++) {
+        if ( nodelist[i]->IsEndpoint() ) {
+            num_ep++;
+        }
+    }
+    
+    // Now we traverse between all endpoints
+    for (unsigned int i=0; i<nodelist.size(); i++) {
+        if ( nodelist[i]->IsEndpoint() ) {
+            SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Texture ep " << i << " num_eps is " << num_ep );    
+            nodelist[i]->TextureEdges( texInfoCb );
+        }
+    }
+#endif
 
     for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
         (*it)->Verify( FLAGS_TEXTURED );

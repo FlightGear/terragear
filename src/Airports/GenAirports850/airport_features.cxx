@@ -93,28 +93,10 @@ void Airport::BuildFeatures( void )
         }
     }
 #else
-    for ( unsigned int i=0; i<9; i++ ) {
-        if ( normal_lf_ig[i] ) {
-            normal_lf_ig[i]->Execute(true);
-            for ( tgintersectionedge_it it=normal_lf_ig[i]->edges_begin(); it != normal_lf_ig[i]->edges_end(); it++ ) {
-                tgPolygon poly = (*it)->GetPoly("complete");
-                polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
-            }            
-        }
-    }
-    for ( unsigned int i=0; i<3; i++ ) {
-        if ( white_lf_ig[i] ) {
-            white_lf_ig[i]->Execute(true);
-            for ( tgintersectionedge_it it=white_lf_ig[i]->edges_begin(); it != white_lf_ig[i]->edges_end(); it++ ) {
-                tgPolygon poly = (*it)->GetPoly("complete");
-                polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
-            }            
-        }
-    }
-    for ( unsigned int i=0; i<9; i++ ) {
-        if ( black_lf_ig[i] ) {
-            black_lf_ig[i]->Execute(true);
-            for ( tgintersectionedge_it it=black_lf_ig[i]->edges_begin(); it != black_lf_ig[i]->edges_end(); it++ ) {
+    for ( unsigned int i=0; i<8; i++ ) {
+        if (lf_ig[i] ) {
+            lf_ig[i]->Execute(true);
+            for ( tgintersectionedge_it it=lf_ig[i]->edges_begin(); it != lf_ig[i]->edges_end(); it++ ) {
                 tgPolygon poly = (*it)->GetPoly("complete");
                 polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
             }            

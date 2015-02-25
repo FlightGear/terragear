@@ -36,14 +36,8 @@ Airport::Airport( int c, char* def)
     char* tok;
     int   ct = 0;
 
-    for ( unsigned int i=0; i<9; i++ ) {
-        normal_lf_ig[i] = NULL;
-    }
-    for ( unsigned int i=0; i<3; i++ ) {
-        white_lf_ig[i] = NULL;
-    }
-    for ( unsigned int i=0; i<9; i++ ) {
-        black_lf_ig[i] = NULL;
+    for ( unsigned int i=0; i<8; i++ ) {
+        lf_ig[i] = NULL;
     }
     rm_ig = NULL;
     
@@ -104,18 +98,31 @@ Airport::Airport( int c, char* def)
     
     if ( done ) {
         char ig_ds[64];
-        for ( unsigned int i=0; i<9; i++ ) {
-            sprintf(ig_ds, "%s_normal_%d", icao.c_str(), i ); 
-            normal_lf_ig[i] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
-        }
-        for ( unsigned int i=0; i<3; i++ ) {
-            sprintf(ig_ds, "%s_white_%d", icao.c_str(), i ); 
-            white_lf_ig[i] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );;
-        }
-        for ( unsigned int i=0; i<9; i++ ) {
-            sprintf(ig_ds, "%s_black_%d", icao.c_str(), i ); 
-            black_lf_ig[i] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );;
-        }        
+
+        sprintf(ig_ds, "%s_single_yellow", icao.c_str() ); 
+        lf_ig[SINGLE_LINE] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+
+        sprintf(ig_ds, "%s_double_yellow", icao.c_str() ); 
+        lf_ig[DOUBLE_LINE] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+
+        sprintf(ig_ds, "%s_triple_yellow", icao.c_str() ); 
+        lf_ig[TRIPLE_LINE] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+
+        sprintf(ig_ds, "%s_runway_hold", icao.c_str() ); 
+        lf_ig[RUNWAY_HOLD] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+
+        sprintf(ig_ds, "%s_ils_hold", icao.c_str() ); 
+        lf_ig[ILS_HOLD] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+
+        sprintf(ig_ds, "%s_other_hold", icao.c_str() ); 
+        lf_ig[OTHER_HOLD] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+
+        sprintf(ig_ds, "%s_single_white", icao.c_str() ); 
+        lf_ig[SINGLE_WHITE] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+
+        sprintf(ig_ds, "%s_checkerboard_white", icao.c_str() ); 
+        lf_ig[CHECKERBOARD_WHITE] = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
+        
         sprintf(ig_ds, "%s_runways", icao.c_str() ); 
         rm_ig = new tgIntersectionGenerator(ig_ds, LinearFeature::GetTextureInfo );
     }
@@ -180,21 +187,11 @@ Airport::~Airport()
         delete boundary[i];
     }
     
-    for ( unsigned int i=0; i<9; i++ ) {
-        if ( normal_lf_ig[i] ) {
-            delete normal_lf_ig[i];
+    for ( unsigned int i=0; i<8; i++ ) {
+        if ( lf_ig[i] ) {
+            delete lf_ig[i];
         }
     }
-    for ( unsigned int i=0; i<3; i++ ) {
-        if ( white_lf_ig[i] ) {
-            delete white_lf_ig[i];
-        }
-    }
-    for ( unsigned int i=0; i<9; i++ ) {
-        if ( black_lf_ig[i] ) {
-            delete black_lf_ig[i];
-        }
-    }        
     
     if ( rm_ig ) {
         delete rm_ig;

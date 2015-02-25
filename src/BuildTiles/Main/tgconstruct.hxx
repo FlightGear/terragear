@@ -138,6 +138,7 @@ private:
     void AverageEdgeElevations( void );
 
     // Normals and texture coords
+    void LookupUnusedNodes( void );
     void LookupNodesPerVertex( void );
     void LookupFacesPerNode( void );
     void CalcFaceNormals( void );

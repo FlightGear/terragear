@@ -36,9 +36,12 @@ public:
     bool IsOriginating(void) const {
         return originating; 
     }
+    bool IsStartCap(void) const;
+    bool IsEndCap(void) const;
+    
     bool IsTextured(void) const;
     
-    double Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb );
+    double Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio );
     
 
 private:
@@ -228,7 +231,7 @@ public:
     bool IsTextured( void ) const {
         return (flags & FLAGS_TEXTURED);
     }
-    double Texture( bool originating, double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb );
+    double Texture( bool originating, double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio );
     
     tgIntersectionNode* start;
     tgIntersectionNode* end;

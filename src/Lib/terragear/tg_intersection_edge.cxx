@@ -685,7 +685,7 @@ tgPolygon tgIntersectionEdge::GetPoly(const char* prefix)
     return poly;
 }
 
-double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersectionGeneratorTexInfoCb texInfoCb )
+double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio )
 {
     std::string material;
     double      texAtlasStartU, texAtlasEndU;
@@ -705,6 +705,7 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
 
     // now generate texture coordiantes
     texInfoCb( type, material, texAtlasStartU, texAtlasEndU, v_dist );
+    v_dist *= ratio;
     
     if ( start->IsCap() ) {
         
@@ -713,14 +714,14 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );
         char from_to[128];
-        sprintf( from_to, "id %d textured start cap %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
+        sprintf( from_to, "id %ld textured start cap %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
         tgShapefile::FromSegment( seg, true, "./", "Texture", from_to );
         
     } else if ( end->IsCap() ) {
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );
         char from_to[128];
-        sprintf( from_to, "id %d textured end start cap %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
+        sprintf( from_to, "id %ld textured end start cap %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
         tgShapefile::FromSegment( seg, true, "./", "Texture", from_to );
         
         poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
@@ -730,9 +731,11 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         v_end   = v_start + (dist/v_dist);
         
         if ( originating ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " originating" );
             heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
             poly.SetTexParams( botLeft, width, dist, heading );
         } else {
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " NOT originating" );
             heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
             poly.SetTexParams( topRight, width, dist, heading );        
         }    
@@ -745,7 +748,7 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );
         char from_to[128];
-        sprintf( from_to, "id %d textured %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
+        sprintf( from_to, "id %ld textured %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
         tgShapefile::FromSegment( seg, true, "./", "Texture", from_to );
     }
     
@@ -768,14 +771,24 @@ tgIntersectionEdgeInfo::tgIntersectionEdgeInfo( bool orig, tgIntersectionEdge* e
     }
 }
 
-double tgIntersectionEdgeInfo::Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb ) {
-    return edge->Texture( originating, vEnd, texInfoCb );
+double tgIntersectionEdgeInfo::Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio ) {
+    return edge->Texture( originating, vEnd, texInfoCb, ratio );
 }
 
 bool tgIntersectionEdgeInfo::IsTextured( void ) const {
     return edge->IsTextured(); 
 }
 
+bool tgIntersectionEdgeInfo::IsStartCap(void) const
+{
+    return (edge->start->Degree() == 1);
+}
+
+bool tgIntersectionEdgeInfo::IsEndCap(void) const
+{
+    return (edge->end->Degree() == 1);
+}
+    
 tgRay tgIntersectionEdgeInfo::GetDirectionRay(void) const
 {
     SGGeod s, e;
