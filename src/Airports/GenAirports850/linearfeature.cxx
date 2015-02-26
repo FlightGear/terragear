@@ -568,12 +568,6 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
         
 #define TEST 0
     
-#if TEST
-    material = "lftest";
-    //width = 0.5f;
-    atlas_start = 0;
-    atlas_end   = 1;
-#else    
     switch( type )
     {            
         case LF_NONE:
@@ -775,8 +769,13 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
             TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << type );
             exit(1);
     }
-#endif    
 
+#if TEST
+    material = "lftest";
+    atlas_start = 0;
+    atlas_end   = 1;
+#endif
+    
     return 0;
 }
 

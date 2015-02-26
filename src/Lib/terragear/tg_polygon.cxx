@@ -445,15 +445,16 @@ void tgPolygon::Texture( void )
                     }
                     
                     tmp = (float)y / (float)tp.length;
-                    ty = tmp+(float)tp.minv;
+                    //ty = tmp+(float)tp.minv;
+                    ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
                     
                     SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << ty << ")");
                     
                     // clip v?
-                    if ( (tp.method == TG_TEX_BY_TPS_CLIPV) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
-                        if ( ty < (float)tp.min_clipv ) { ty = (float)tp.min_clipv; }
-                        if ( ty > (float)tp.max_clipv ) { ty = (float)tp.max_clipv; }
-                    }
+                    //if ( (tp.method == TG_TEX_BY_TPS_CLIPV) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
+                    //    if ( ty < (float)tp.min_clipv ) { ty = (float)tp.min_clipv; }
+                    //    if ( ty > (float)tp.max_clipv ) { ty = (float)tp.max_clipv; }
+                    //}
                     
                     t = SGVec2f( tx, ty );
                     SG_LOG(SG_GENERAL, SG_DEBUG, "\t  (" << tx << ", " << ty << ")");

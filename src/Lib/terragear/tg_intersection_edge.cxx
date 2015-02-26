@@ -731,15 +731,15 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         v_end   = v_start + (dist/v_dist);
         
         if ( originating ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " originating" );
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
             heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
             poly.SetTexParams( botLeft, width, dist, heading );
         } else {
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " NOT originating" );
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " NOT originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
             heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
             poly.SetTexParams( topRight, width, dist, heading );        
         }    
-    
+
         poly.SetMaterial( material );
         poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
         poly.SetTexLimits( texAtlasStartU, v_start, texAtlasEndU, v_end );
