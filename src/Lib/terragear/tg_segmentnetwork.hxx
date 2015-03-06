@@ -142,6 +142,8 @@ public:
     segnetedge_it output_begin( void ) { return output.begin(); }
     segnetedge_it output_end( void )   { return output.end();   }
     
+    bool      empty( void ) const { return (arr.number_of_edges() == 0); }
+    
 private:
     void      BuildTree( void );
     void      Cluster( void );

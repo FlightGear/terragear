@@ -12,6 +12,13 @@
 #define SG_BUCKET_NE    (2)
 #define SG_BUCKET_NW    (3)
 
+// add these to a debug header
+#define DEBUG_INTERSECTIONS (0)
+#define LOG_INTERSECTION    (SG_DEBUG)
+
+#define DEBUG_TEXTURE       (1)
+#define LOG_TEXTURE         (SG_INFO)
+
 
 // SGGeod Cleanup
 SGGeod  SGGeod_snap( const SGGeod& in, double grid );

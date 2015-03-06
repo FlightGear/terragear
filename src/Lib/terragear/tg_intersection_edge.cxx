@@ -5,9 +5,6 @@
 #include "tg_intersection_edge.hxx"
 #include "tg_intersection_node.hxx"
 #include "tg_misc.hxx"
-      
-#define DEBUG_INTERSECTIONS (0)
-#define LOG_INTERSECTION    (SG_DEBUG)
 
 // generate intersection edge in euclidean space
 tgIntersectionEdge::tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNode* e, double w, unsigned int t, const std::string& dr ) 
@@ -21,6 +18,11 @@ tgIntersectionEdge::tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNod
     
     id = ++ge_count;
     flags = 0;
+    
+    br_set = false;
+    tr_set = false;
+    tl_set = false;
+    bl_set = false;
     
     msbr_set = false;
     msbr_valid = false;
@@ -141,10 +143,10 @@ void tgIntersectionEdge::ToShapefile( void ) const
     
     // just write the array of constraints
     sprintf( layer, "%ld_ends", id );
-    tgShapefile::FromRayList( constrain_bl, datasource, layer, "botLeft" );
-    tgShapefile::FromRayList( constrain_br, datasource, layer, "botRight" );
-    tgShapefile::FromRayList( constrain_tr, datasource, layer, "topRight" );
-    tgShapefile::FromRayList( constrain_tl, datasource, layer, "topLeft" );
+    tgShapefile::FromRay( constrain_bl, datasource, layer, "botLeft" );
+    tgShapefile::FromRay( constrain_br, datasource, layer, "botRight" );
+    tgShapefile::FromRay( constrain_tr, datasource, layer, "topRight" );
+    tgShapefile::FromRay( constrain_tl, datasource, layer, "topLeft" );
     
     sprintf( layer, "%ld_sides", id );
     tgShapefile::FromLine( side_l, datasource, layer, "left" );
@@ -180,54 +182,54 @@ void tgIntersectionEdge::IntersectConstraintsAndSides(tgIntersectionEdgeInfo* cu
     bool   ce_originating = cur->IsOriginating();
     
     if ( ce_originating ) {        
-        if ( constrain_bl.size() == 1 ) {
-            if ( !constrain_bl[0].Intersect( side_l, conBotLeft ) ) {
+        if ( bl_set ) {
+            if ( !constrain_bl.Intersect( side_l, conBotLeft ) ) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " bottom left did not intersect left side" );
         
-                tgShapefile::FromRay(  constrain_bl[0], GetDatasource(), "NO_INT_bottom_left_with_left_side", "ray" );
+                tgShapefile::FromRay(  constrain_bl, GetDatasource(), "NO_INT_bottom_left_with_left_side", "ray" );
                 tgShapefile::FromLine( side_l, GetDatasource(), "NO_INT_bottom_left_with_left_side", "line" );                
             }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );
-            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_bl.size() << " bl constraints - expecting 1. Length is " << dist);                    
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has no bl constraints - expecting 1. Length is " << dist);                    
         }
 
-        if ( constrain_br.size() == 1 ) {
-            if ( !constrain_br[0].Intersect( side_r, conBotRight ) ) {
+        if ( br_set ) {
+            if ( !constrain_br.Intersect( side_r, conBotRight ) ) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " bottom right did not intersect right side" );
 
-                tgShapefile::FromRay(  constrain_br[0], GetDatasource(), "NO_INT_bottom_right_with_right_side", "ray" );
+                tgShapefile::FromRay(  constrain_br, GetDatasource(), "NO_INT_bottom_right_with_right_side", "ray" );
                 tgShapefile::FromLine( side_r, GetDatasource(), "NO_INT_bottom_right_with_right_side", "line" );                
             }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );
-            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_br.size() << " br constraints - expecting 1. length is " << dist );                    
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has no br constraints - expecting 1. length is " << dist );                    
         }
         
         flags |= FLAGS_INTERSECTED_BOTTOM_CONSTRAINTS;      
     } else {
-        if ( constrain_tl.size() == 1 ) {
-            if ( !constrain_tl[0].Intersect( side_l, conTopLeft ) ) {
+        if ( tl_set ) {
+            if ( !constrain_tl.Intersect( side_l, conTopLeft ) ) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " top left did not intersect left side" );
         
-                tgShapefile::FromRay(  constrain_tl[0], GetDatasource(), "NO_INT_top_left_with_left_side", "ray" );
+                tgShapefile::FromRay(  constrain_tl, GetDatasource(), "NO_INT_top_left_with_left_side", "ray" );
                 tgShapefile::FromLine( side_l, GetDatasource(), "NO_INT_top_left_with_left_side", "line" );                
             }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );            
-            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_tl.size() << " tl constraints - expecting 1.  length is " << dist );                    
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has no tl constraints - expecting 1.  length is " << dist );                    
         }
 
-        if ( constrain_tr.size() == 1 ) {
-            if ( !constrain_tr[0].Intersect( side_r, conTopRight ) ) {
+        if ( tr_set ) {
+            if ( !constrain_tr.Intersect( side_r, conTopRight ) ) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge " << id << ":" << " top right did not intersect right side" );
 
-                tgShapefile::FromRay(  constrain_tr[0], GetDatasource(), "NO_INT_top_right_with_right_side", "ray" );
+                tgShapefile::FromRay(  constrain_tr, GetDatasource(), "NO_INT_top_right_with_right_side", "ray" );
                 tgShapefile::FromLine( side_r, GetDatasource(), "NO_INT_top_right_with_right_side", "line" );                
             }
         } else {
             double dist = SGGeodesy::distanceM(start->GetPosition(), end->GetPosition() );
-            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has " << constrain_tr.size() << " tr constraints - expecting 1.  Length is " << dist );                    
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionEdge::IntersectConstraintsAndSides: cur edge has no tr constraints - expecting 1.  Length is " << dist );                    
         }
         
         flags |= FLAGS_INTERSECTED_TOP_CONSTRAINTS;
@@ -287,7 +289,7 @@ void tgIntersectionEdge::SetRightConstraint( bool originating, const std::list<S
 void tgIntersectionEdge::SetLeftProjectList( bool originating, const std::list<SGGeod>& pl )
 {
     if ( originating ) {
-        if (!msblpl_valid) {
+        if (!msblpl_set) {
             projectlist_msbl.clear();
             
             // if we are originating, push to front of bottom left constraint
@@ -297,7 +299,7 @@ void tgIntersectionEdge::SetLeftProjectList( bool originating, const std::list<S
             msblpl_set = true;
         }
     } else {
-        if (!mstrpl_valid) {
+        if (!mstrpl_set) {
             projectlist_mstr.clear();
             
             // otherwise, push to front of top right constraint
@@ -312,7 +314,7 @@ void tgIntersectionEdge::SetLeftProjectList( bool originating, const std::list<S
 void tgIntersectionEdge::SetRightProjectList( bool originating, const std::list<SGGeod>& pl )
 {
     if ( originating ) {
-        if (!msbrpl_valid) {
+        if (!msbrpl_set) {
             projectlist_msbr.clear();
             
             // if we are originating, push to back of bottom right constraint
@@ -322,7 +324,7 @@ void tgIntersectionEdge::SetRightProjectList( bool originating, const std::list<
             msbrpl_set = true;
         }
     } else {
-        if (!mstlpl_valid) {
+        if (!mstlpl_set) {
             projectlist_mstl.clear();
             
             // otherwise, push to back of top left constraint

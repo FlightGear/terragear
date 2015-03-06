@@ -150,6 +150,7 @@ typedef tgsegment_list::const_iterator const_tgsegment_list_iterator;
 class tgRay : public tgCgalBase
 {
 public:
+    tgRay() {}
     tgRay( const SGGeod& s, double h ) {
         start = EPECSRPoint_2( s.getLongitudeDeg(), s.getLatitudeDeg() );
         dir   = HeadingToDirection( h );

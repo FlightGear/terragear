@@ -6,11 +6,11 @@
 #include "tg_intersection_edge.hxx"
 #include "tg_misc.hxx"
       
-#define DEBUG_INTERSECTIONS (0)
-#define DEBUG_TEXTURING     (1)
+#define DEBUG_INTERSECTIONS (1)
+#define DEBUG_TEXTURING     (0)
 
-#define LOG_INTERSECTION    (SG_DEBUG)
-#define LOG_TEXTURING       (SG_INFO)
+#define LOG_INTERSECTION    (SG_INFO)
+#define LOG_TEXTURING       (SG_DEBUG)
 
 tgIntersectionNode::tgIntersectionNode( const SGGeod& pos )
 {
@@ -859,16 +859,16 @@ void tgIntersectionNode::GenerateBisectRays( void )
 
             if ( cur_info->IsOriginating() ) {
                 //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add BR constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bnxt_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and next (" << std::setprecision(16) << nxt_heading << ")" );
-                cur_edge->AddBottomRightConstraint(bn_ray);
+                cur_edge->SetBottomRightConstraint(bn_ray);
 
                 //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add BL constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bprv_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and prev (" << std::setprecision(16) << prv_heading << ")" );
-                cur_edge->AddBottomLeftConstraint(bp_ray);
+                cur_edge->SetBottomLeftConstraint(bp_ray);
             } else {
                 //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add TL constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bnxt_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and next (" << std::setprecision(16) << nxt_heading << ")" );
-                cur_edge->AddTopLeftConstraint(bn_ray);
+                cur_edge->SetTopLeftConstraint(bn_ray);
 
                 //SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add TR constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bprv_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and prev (" << std::setprecision(16) << prv_heading << ")" );
-                cur_edge->AddTopRightConstraint(bp_ray);
+                cur_edge->SetTopRightConstraint(bp_ray);
             }
         } else {
             SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: no cur edge!!! " );
@@ -959,11 +959,11 @@ void tgIntersectionNode::GenerateCapRays( void )
         
     if ( cur_edge ) {
         if ( cur_info->IsOriginating() ) {
-            cur_edge->AddBottomRightConstraint(r_ray);
-            cur_edge->AddBottomLeftConstraint(l_ray);
+            cur_edge->SetBottomRightConstraint(r_ray);
+            cur_edge->SetBottomLeftConstraint(l_ray);
         } else {
-            cur_edge->AddTopLeftConstraint(r_ray);
-            cur_edge->AddTopRightConstraint(l_ray);
+            cur_edge->SetTopLeftConstraint(r_ray);
+            cur_edge->SetTopRightConstraint(l_ray);
         }
     } else {
         SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateCapRays: no cur edge!!! " );

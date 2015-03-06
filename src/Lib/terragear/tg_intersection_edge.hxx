@@ -89,17 +89,33 @@ public:
     
     bool Verify( unsigned long int f );
     
-    void AddBottomRightConstraint( const tgRay& c ) {
-        constrain_br.push_back( c );
+    void SetBottomRightConstraint( const tgRay& c ) {
+        if ( br_set ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::SetBottomRightConstraint : already set");
+        }
+        constrain_br = c;
+        br_set = true;
     }
-    void AddBottomLeftConstraint( const tgRay& c ) {
-        constrain_bl.push_back( c );
+    void SetBottomLeftConstraint( const tgRay& c ) {
+        if ( bl_set ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::SetBottomLeftConstraint : already set");
+        }
+        constrain_bl= c;
+        bl_set = true;
     }
-    void AddTopLeftConstraint( const tgRay& c ) {
-        constrain_tl.push_back( c );
+    void SetTopLeftConstraint( const tgRay& c ) {
+        if ( tl_set ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::SetTopLeftConstraint : already set");
+        }
+        constrain_tl = c;
+        tl_set = true;
     }
-    void AddTopRightConstraint( const tgRay& c ) {
-        constrain_tr.push_back( c );
+    void SetTopRightConstraint( const tgRay& c ) {
+        if ( tr_set ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::SetTopRightConstraint : already set");
+        }
+        constrain_tr = c;
+        tr_set = true;
     }
     
     typedef enum {
@@ -123,16 +139,16 @@ public:
     
     tgRay GetTopRightConstraint( bool originating ) const {
         if ( originating ) {
-            if ( !constrain_tr.empty() ) {
-                return constrain_tr[0];
+            if ( tr_set ) {
+                return constrain_tr;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetTopRightConstraint : but we don't have any");
                 SGGeod invalid;
                 return tgRay( invalid, 0 );
             }
         } else {
-            if ( !constrain_bl.empty() ) {
-                return constrain_bl[0];
+            if ( bl_set ) {
+                return constrain_bl;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetTopRightConstraint : but we don't have any");
                 SGGeod invalid;
@@ -143,16 +159,16 @@ public:
     
     tgRay GetTopLeftConstraint( bool originating ) const {
         if ( originating ) {
-            if ( !constrain_tl.empty() ) {
-                return constrain_tl[0];
+            if ( tl_set ) {
+                return constrain_tl;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetTopLeftConstraint : but we don't have any");
                 SGGeod invalid;
                 return tgRay( invalid, 0 );
             }
         } else {
-            if ( !constrain_br.empty() ) {
-                return constrain_br[0];
+            if ( br_set ) {
+                return constrain_br;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetTopLeftConstraint : but we don't have any");
                 SGGeod invalid;
@@ -163,16 +179,16 @@ public:
     
     tgRay GetBottomRightConstraint( bool originating ) const {
         if ( originating ) {
-            if ( !constrain_br.empty() ) {
-                return constrain_br[0];
+            if ( br_set ) {
+                return constrain_br;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetBottomRightConstraint : but we don't have any");
                 SGGeod invalid;
                 return tgRay( invalid, 0 );
             }
         } else {
-            if ( !constrain_tl.empty() ) {
-                return constrain_tl[0];
+            if ( tl_set ) {
+                return constrain_tl;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetBottomRightConstraint : but we don't have any");
                 SGGeod invalid;
@@ -183,16 +199,16 @@ public:
     
     tgRay GetBottomLeftConstraint( bool originating ) const {
         if ( originating ) {
-            if ( !constrain_bl.empty() ) {
-                return constrain_bl[0];
+            if ( bl_set ) {
+                return constrain_bl;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetBottomLeftConstraint : but we don't have any");
                 SGGeod invalid;
                 return tgRay( invalid, 0 );
             }
         } else {
-            if ( !constrain_tr.empty() ) {
-                return constrain_tr[0];
+            if ( tr_set ) {
+                return constrain_tr;
             } else {
                 SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::GetBottomLeftConstraint : but we don't have any");
                 SGGeod invalid;
@@ -247,10 +263,15 @@ public:
     tgLine              side_l;
     tgLine              side_r;
         
-    tgray_list          constrain_br;
-    tgray_list          constrain_bl;
-    tgray_list          constrain_tl;
-    tgray_list          constrain_tr;
+    tgRay               constrain_br;
+    tgRay               constrain_bl;
+    tgRay               constrain_tl;
+    tgRay               constrain_tr;
+
+    bool                bl_set;
+    bool                br_set;
+    bool                tl_set;
+    bool                tr_set;
     
     std::list<SGGeod>   constrain_msbl;
     std::list<SGGeod>   constrain_msbr;
@@ -272,10 +293,10 @@ public:
     std::list<SGGeod>   projectlist_mstl;
     std::list<SGGeod>   projectlist_mstr;
     
-    bool                msblpl_valid;
-    bool                msbrpl_valid;
-    bool                mstlpl_valid;
-    bool                mstrpl_valid;
+//    bool                msblpl_valid;
+//    bool                msbrpl_valid;
+//    bool                mstlpl_valid;
+//    bool                mstrpl_valid;
     
     bool                msblpl_set;
     bool                msbrpl_set;
