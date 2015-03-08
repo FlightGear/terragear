@@ -37,14 +37,11 @@ public:
     tgIntersectionEdgeInfo* GetFirstEdgeInfo( void ) { return (*edgeList.begin()); }
     tgIntersectionEdgeInfo* GetPrevEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgRay& bisector, const SGGeod& bisect_pos, const char* prefix );
     tgIntersectionEdgeInfo* GetNextEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgRay& bisector, const SGGeod& bisect_pos, const char* prefix );
-    bool                    GetNextConnectedNodeAndEdgeInfo( tgIntersectionEdgeInfo*& info, tgIntersectionNode*& node, std::stack<tgIntersectionNode*>& stack, bool& resetV );
-    double                  CalcDistanceToNextEndpoint( tgIntersectionEdgeInfo* cur_info );
+    double                  CalcDistanceToNextEndpoint( tgIntersectionEdgeInfo* cur_info, unsigned int& num_edges );
     void                    TextureToNextEndpoint( tgIntersectionEdgeInfo* cur_info, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio );
     void                    TextureEdges( tgIntersectionGeneratorTexInfoCb texInfoCb );
-    bool                    IsTextureComplete( void );
     void                    CheckEndpoint( void );
     bool                    IsEndpoint( void ) const { return endpoint; }
-    tgIntersectionEdgeInfo* GetUntexturedEdge( double heading = NO_HEADING );
     
 private:
     void GenerateBisectRays( void );

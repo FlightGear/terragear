@@ -54,28 +54,32 @@ void tgIntersectionGenerator::Execute( bool clean )
             }
         }
         
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Saving Cleaned to " << debugRoot );
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Saving Cleaned to " << debugRoot );
+#if DEBUG_INTERSECTIONS
         ToShapefile("cleaned");
-
+#endif
+        
         // add end cap segments
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Execute:AddCaps");
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute:AddCaps");
         for (unsigned int i=0; i<nodelist.size(); i++) {
             SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute: ConstrainEdges at node " << i << " of " << nodelist.size() );
             nodelist[i]->AddCapEdges( nodelist, edgelist );
         }
         
         SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Saving Capped to " << debugRoot );
+#if DEBUG_INTERSECTIONS
         ToShapefile("Capped");
+#endif
         
         //find shared edge constraints at each node
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Execute:AddConstraints");
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute:AddConstraints");
         for (unsigned int i=0; i<nodelist.size(); i++) {
             SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute: ConstrainEdges at node " << i << " of " << nodelist.size() );
             nodelist[i]->ConstrainEdges();
         }
 
         // Generate the edge from each node
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Execute:GenerateEdges");
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute:GenerateEdges");
         for (unsigned int i=0; i<nodelist.size(); i++) {
             SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute: GenerateEdges at node " << i << " of " << nodelist.size() );
             nodelist[i]->GenerateEdges();
@@ -95,7 +99,7 @@ void tgIntersectionGenerator::Execute( bool clean )
         }
             
         // fix multisegment intersections - happens when segments do not diverge from each other before the end of the edge
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::FixMultiSegment");
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::FixMultiSegment");
         for (unsigned int i=0; i<nodelist.size(); i++) {
             SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute: FixSpecialIntersections at node " << i << " of " << nodelist.size() );
             nodelist[i]->CompleteSpecialIntersections();
@@ -107,58 +111,22 @@ void tgIntersectionGenerator::Execute( bool clean )
         }
         
         // complete the edges
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::CompletePolygon");
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::CompletePolygon");
         for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
             (*it)->Complete();
         }
         
         // to texture, start at caps, and try to cross intersections nicely ( push the start_v )
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Texture");        
-    #if 0
-        for (unsigned int i=0; i<nodelist.size(); i++) {
-            // can't always assume all features have caps ( think circle )
-            if ( /* nodelist[i]->IsCap() && */ !nodelist[i]->IsTextureComplete() ) {
-                // start here
-                SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionGenerator::Start texture at node " << i << " of " << nodelist.size() );
-                tgIntersectionNode*     cur_node = nodelist[i];
-                tgIntersectionEdgeInfo* cur_info = nodelist[i]->GetFirstEdgeInfo();
-                bool done      = false;
-                bool reset_v   = false;
-                double start_v = 0.0f;
-                
-                std::stack<tgIntersectionNode*> untextured_node_stack;
-                
-                while(!done) {
-                    cur_node->SetStartV( start_v );
-                    if ( cur_info ) {
-                        if ( cur_info->GetEdge() ) {
-                            start_v = cur_info->Texture(start_v, texInfoCb);
-                
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionGenerator::Get next node " << cur_node );
-                            done = cur_node->GetNextConnectedNodeAndEdgeInfo( cur_info, cur_node, untextured_node_stack, reset_v );
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionGenerator::Got next node " << cur_node << " info " << cur_info << " done? " << done );
-                    
-                            if ( reset_v ) {
-                                start_v = cur_node->GetStartV();
-                            }
-                        } else {
-                            SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionGenerator::cur_info->edge is NULL");
-                            done = true;
-                        }
-                    } else {
-                        SG_LOG(SG_GENERAL, SG_DEBUG, "tgIntersectionGenerator::cur_info is NULL");
-                        done = true;
-                    }
-                }
-            }
-        }
-    #else
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Texture");        
+
         // To texture, first find all nodes that contain the repeat endpoints.
         for (unsigned int i=0; i<nodelist.size(); i++) {
             nodelist[i]->CheckEndpoint();
         }
 
+#if DEBUG_TEXTURE        
         ToShapefile("Endpoints" );
+#endif
 
         int num_ep = 0;
         for (unsigned int i=0; i<nodelist.size(); i++) {
@@ -170,17 +138,16 @@ void tgIntersectionGenerator::Execute( bool clean )
         // Now we traverse between all endpoints
         for (unsigned int i=0; i<nodelist.size(); i++) {
             if ( nodelist[i]->IsEndpoint() ) {
-                SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Texture ep " << i << " num_eps is " << num_ep );    
+                SG_LOG(SG_GENERAL, LOG_TEXTURE, "tgIntersectionGenerator::Texture ep " << i << " num_eps is " << num_ep );    
                 nodelist[i]->TextureEdges( texInfoCb );
             }
         }
-    #endif
 
         for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
             (*it)->Verify( FLAGS_TEXTURED );
         }
 
-    #if DEBUG_INTERSECTIONS || DEBUG_TEXTURE
+#if DEBUG_INTERSECTIONS || DEBUG_TEXTURE
         SG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource );    
 
         for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
@@ -191,8 +158,8 @@ void tgIntersectionGenerator::Execute( bool clean )
 
             (*it)->ToShapefile();        
         }
-    #endif
+#endif
         
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Complete");    
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Complete");    
     }
 }

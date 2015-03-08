@@ -402,6 +402,7 @@ LinearFeature::~LinearFeature()
     }
 }
 
+#if 0
 double LinearFeature::AddMarkingStartTriRepeat( const SGGeod& prev, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
 {
     SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
@@ -470,6 +471,7 @@ double LinearFeature::AddMarkingPolyRepeat( const SGGeod& prev_inner, const SGGe
     
     return v_end;
 }
+#endif
 
 double LinearFeature::GetWidth( unsigned int type )
 {

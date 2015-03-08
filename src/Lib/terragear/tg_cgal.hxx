@@ -152,13 +152,20 @@ class tgRay : public tgCgalBase
 public:
     tgRay() {}
     tgRay( const SGGeod& s, double h ) {
-        start = EPECSRPoint_2( s.getLongitudeDeg(), s.getLatitudeDeg() );
-        dir   = HeadingToDirection( h );
+        SGGeod e = SGGeodesy::direct( s, h, 5.0 );
+        
+        start = EPECSRPoint_2( e.getLongitudeDeg(), e.getLatitudeDeg() );
+        end   = EPECSRPoint_2( e.getLongitudeDeg(), e.getLatitudeDeg() );       
+        dir   = EPECSRDirection_2( EPECSRSegment_2( start, end ) );        
     }
 
     tgRay( const EPECSRPoint_2& s, EPECSRDirection_2 d ) {
         start = s;
         dir   = d;
+
+        EPECSRRay_2    ray( start, dir );
+        EPECSRVector_2 vector = ray.to_vector();
+        end   = start + vector;        
     }
     
     tgRay( const SGGeod& s, const SGGeod& e ) {
@@ -174,7 +181,7 @@ public:
     EPECSRRay_2 toCgal( void ) const
     {    
         return EPECSRRay_2( start, dir );
-    }    
+    }
     
     bool Intersect( const tgSegment& seg, SGGeod& intersection) const;
     bool Intersect( const tgRay& ray,     SGGeod& intersection) const;

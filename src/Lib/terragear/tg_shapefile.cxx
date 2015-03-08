@@ -608,6 +608,7 @@ void tgShapefile::FromRay( const tgRay& subject, const std::string& datasource, 
     OGRPoint      start;
 
     SGGeod geodStart = subject.GetGeodStart();
+    SGGeod geodEnd   = subject.GetGeodEnd();
     
     start.setX( geodStart.getLongitudeDeg() );
     start.setY( geodStart.getLatitudeDeg() );
@@ -615,13 +616,12 @@ void tgShapefile::FromRay( const tgRay& subject, const std::string& datasource, 
     
     line.addPoint(&start);
 
-    SGGeod rayEnd = SGGeodesy::direct( geodStart, subject.GetHeading(), 5.0 );
-    SGGeod lArrow = SGGeodesy::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
-    SGGeod rArrow = SGGeodesy::direct( rayEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
-    
+    SGGeod lArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+190), 0.2 );
+    SGGeod rArrow = SGGeodesy::direct( geodEnd, SGMiscd::normalizePeriodic(0, 360, subject.GetHeading()+170), 0.2 );
+
     OGRPoint end;
-    end.setX( rayEnd.getLongitudeDeg() );
-    end.setY( rayEnd.getLatitudeDeg() );
+    end.setX( geodEnd.getLongitudeDeg() );
+    end.setY( geodEnd.getLatitudeDeg() );
     end.setZ( 0.0 );
     line.addPoint(&end);
     

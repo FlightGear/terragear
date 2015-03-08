@@ -125,41 +125,15 @@ public:
     
 
 private:
+    unsigned int CheckMarkStart(BezNode* curNode);
+    unsigned int CheckMarkChange(BezNode* curNode, unsigned int cur_edge);    
+    void         ConvertContour( Airport* ap, BezContour* src, bool closed );
+
     double          offset;
     double          width;
-
-    MarkingList         marks;
-    Marking*            cur_mark;
     
-    LightingList        lights;
-    Lighting*           cur_light;
-    
-    double AddMarkingPolyCapStart( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
-    double AddMarkingPolyRepeat( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
-    double AddMarkingPolyCapEnd( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
-    
-    double AddMarkingStartTriRepeat( const SGGeod& prev, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end );
-    
-    double   GetCapDist( unsigned int type );
-    Marking* CheckStartCap(BezNode* curNode);
-    Marking* CheckEndCap(BezNode* curNode, Marking* curMark);
-    void     FinishStartCap(const SGGeod& curLoc, Marking* cur_mark);
-
-    
-    
-    
-    unsigned int CheckMarkStart(BezNode* curNode);
-    unsigned int CheckMarkChange(BezNode* curNode, unsigned int cur_edge);
-    void         GenerateMarkingPolys(void);
-    
-    
-    void         GenerateIntersectionTris(void);
-    //void         GenerateNonIntersectingPolys(void);
-    
-    
-    
-    void GetMarkInfo( unsigned int type, double& width, std::string& material, double& atlas_start, double& atlas_end, double& v_dist );
-    void ConvertContour( Airport* ap, BezContour* src, bool closed );
+    LightingList    lights;
+    Lighting*       cur_light;
 
     // text description
     std::string description;
@@ -168,10 +142,7 @@ private:
     BezContour  contour;
 
     // contour definition after bezier interpolation - still used for lights - TODO: convert to tggraphnode_list / edge
-    tgContour  points;
-    
-    // all linear features are stored in the lf_intersector
-    //tgIntersectionGenerator lf_insersector;
+    tgContour   points;
     
     tgpolygon_list      marking_polys;
     tgpolygon_list      cap_polys;      // lower priority than the marks themselves

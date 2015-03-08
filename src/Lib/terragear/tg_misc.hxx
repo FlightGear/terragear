@@ -16,8 +16,8 @@
 #define DEBUG_INTERSECTIONS (0)
 #define LOG_INTERSECTION    (SG_DEBUG)
 
-#define DEBUG_TEXTURE       (1)
-#define LOG_TEXTURE         (SG_INFO)
+#define DEBUG_TEXTURE       (0)
+#define LOG_TEXTURE         (SG_DEBUG)
 
 
 // SGGeod Cleanup

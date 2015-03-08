@@ -713,31 +713,37 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         
         poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
         
+#if DEBUG_TEXTURE        
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );
         char from_to[128];
         sprintf( from_to, "id %ld textured start cap %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
         tgShapefile::FromSegment( seg, true, "./", "Texture", from_to );
+#endif
         
     } else if ( end->IsCap() ) {
+
+        poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
+        
+#if DEBUG_TEXTURE        
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );
         char from_to[128];
         sprintf( from_to, "id %ld textured end start cap %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
         tgShapefile::FromSegment( seg, true, "./", "Texture", from_to );
+#endif
         
-        poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
     } else {
         double dist = SGGeodesy::distanceM( start->GetPosition(), end->GetPosition() );
         v_start = fmod( v_end, 1.0 );
         v_end   = v_start + (dist/v_dist);
         
         if ( originating ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
+            SG_LOG( SG_GENERAL, LOG_TEXTURE, "tgIntersectionEdge::Texture : edge " << id << " originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
             heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
             poly.SetTexParams( botLeft, width, dist, heading );
         } else {
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdge::Texture : edge " << id << " NOT originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
+            SG_LOG( SG_GENERAL, LOG_TEXTURE, "tgIntersectionEdge::Texture : edge " << id << " NOT originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
             heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
             poly.SetTexParams( topRight, width, dist, heading );        
         }    
@@ -747,11 +753,13 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         poly.SetTexLimits( texAtlasStartU, v_start, texAtlasEndU, v_end );
         poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
         
+#if DEBUG_TEXTURE        
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );
         char from_to[128];
         sprintf( from_to, "id %ld textured %d from %lf, to %lf", id, textured_idx++, v_start, v_end );
         tgShapefile::FromSegment( seg, true, "./", "Texture", from_to );
+#endif        
     }
     
     flags |= FLAGS_TEXTURED;

@@ -37,7 +37,7 @@
 #include "beznode.hxx"
 #include "runway.hxx"
 
-#define RUNWAY_FEATS 0
+#define RUNWAY_FEATS 1
 
 using std::string;
 struct sections
