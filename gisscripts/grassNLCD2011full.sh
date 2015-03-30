@@ -158,7 +158,7 @@ while [ ${S} -lt 3310005 ]; do
 
             # Ensure boundaries are clean, otherwise "collection" map might contain holes.
             v.clean input=vect_gen${SUFFIX} output=vect_bpol_2 -c tool=bpol type=boundary --verbose --overwrite
-            v.clean input=vect_bpol_2 output=vect_snap_2 -c tool=snap thresh=0.000001 type=boundary --verbose --overwrite
+            v.clean input=vect_bpol_2 output=vect_snap_2 -c tool=snap thresh=0.00000001 type=boundary --verbose --overwrite
             v.split input=vect_snap_2 output=vect_split_2 length=40 units=kilometers --verbose --overwrite
             v.clean input=vect_split_2 output=vect_rmsa_2 -c tool=rmsa type=boundary --verbose --overwrite
             v.clean input=vect_rmsa_2 output=vect_rmdangle_2 tool=rmline,rmdangle thresh=0,-1 type=boundary --verbose --overwrite
