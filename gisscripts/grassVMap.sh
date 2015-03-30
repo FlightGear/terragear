@@ -131,14 +131,14 @@ fn_importCLC() {
         CODECLC=`echo ${MAP} | tr -d c`
         INTMAP=${MAP}_int
         g.remove -f type=vect pattern=${MAP}
-        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
+        v.in.ogr input="${LOADDIR}" layer=${LAYER} dsn=${MAP} snap=${SNAP} --verbose
         v.db.addcolumn map=${MAP} columns="newcodeCLC integer" --verbose
         v.db.update map=${MAP} column=newcodeCLC value=${CODECLC} --verbose
         v.db.dropcolumn map=${MAP} column=code_${YEAR} --verbose
         v.db.renamecolumn map=${MAP} column=newcodeCLC,codeCLC --verbose
         g.remove -f type=vect pattern=${INTMAP}
         v.reclass input=${MAP} output=${INTMAP} column=codeCLC --verbose
-        v.out.ogr input=${INTMAP} type=area output=${DUMPDIR}/${PREFIX}_${MAP}_pre-clip.shp
+        v.out.ogr input=${INTMAP} type=area output=${DUMPDIR}/${PREFIX}_${MAP}_pre-clip.shp format=ESRI_Shapefile
     done
 }
 
@@ -148,8 +148,8 @@ fn_importVMap() {
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
         MAP=`echo ${LAYER} | sed -e 's/-/_/g'`
         g.remove -f type=vect pattern=${MAP}
-#        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
-        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${MAP} --verbose
+#        v.in.ogr input="${LOADDIR}" layer=${LAYER} dsn=${MAP} snap=${SNAP} --verbose
+        v.in.ogr input="${LOADDIR}" layer=${LAYER} dsn=${MAP} --verbose
     done
 }
 
@@ -158,7 +158,7 @@ fn_importCS() {
     for SHAPEFILE in `ls ${LOADDIR}/${PREFIX}_*.shp`; do
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
         g.remove -f type=vect pattern=${LAYER}
-        v.in.ogr input="${LOADDIR}" layer=${LAYER} output=${LAYER} snap=${SNAP} --verbose
+        v.in.ogr input="${LOADDIR}" layer=${LAYER} dsn=${LAYER} snap=${SNAP} --verbose
     done
 }
 
@@ -304,7 +304,7 @@ fn_reclass() {
         v.clean input=${OUTPUT}_rmdangle output=${OUTPUT}_rmarea tool=rmarea thresh=${MIN_AREA1} type=boundary --verbose
         date
         v.clean input=${OUTPUT}_rmarea output=${OUTPUT}_prune tool=prune thresh=0.00001 type=boundary --verbose
-        v.out.ogr input=${OUTPUT}_prune type=area output=${DUMPDIR}/${OUTPUT}_pre-clip.shp
+        v.out.ogr input=${OUTPUT}_prune type=area output=${DUMPDIR}/${OUTPUT}_pre-clip.shp format=ESRI_Shapefile
     done
 }
 
@@ -398,7 +398,7 @@ fn_preexport() {
         LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${PREFIX}_/g"`
         g.remove -f type=vect pattern=${LAYER}_postclip
         v.extract input=${CLEANMAP} type=area output=${LAYER}_postclip cats=${CATEGORY}
-        v.out.ogr input=${LAYER}_postclip type=area output=${DUMPDIR}/${LAYER}_post-clip.shp
+        v.out.ogr input=${LAYER}_postclip type=area output=${DUMPDIR}/${LAYER}_post-clip.shp format=ESRI_Shapefile
     done
 }
 
@@ -461,12 +461,12 @@ fn_export() {
             g.rename vect=${LAYER},${NEWLAYER}
             LAYER=${NEWLAYER}
         fi
-#        v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${PREFIX}_c${CATEGORY}.shp  # For CLC
-        v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
+#        v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${PREFIX}_c${CATEGORY}.shp format=ESRI_Shapefile  # For CLC
+        v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${LAYER}.shp format=ESRI_Shapefile  # For VMap0/CS
         fn_topostgis ${LAYER}
     done
     if [ ${PREFIX} = "v0" ]; then
-        v.out.ogr input=${PREFIX}_landmass_prune type=area output=${DUMPDIR}/${PREFIX}_landmass.shp
+        v.out.ogr input=${PREFIX}_landmass_prune type=area output=${DUMPDIR}/${PREFIX}_landmass.shp format=ESRI_Shapefile
         fn_topostgis ${PREFIX}_landmass_prune
     fi
 }
@@ -474,7 +474,7 @@ fn_export() {
 fn_single() {
     LAYER=${PREFIX}_single
     v.extract -d input=${CLEANMAP} type=area output=${LAYER} new=1 --verbose
-#    v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${LAYER}.shp
+#    v.out.ogr input=${LAYER} type=area output=${DUMPDIR}/${LAYER}.shp format=ESRI_Shapefile
     fn_topostgis ${LAYER}
 }
 
