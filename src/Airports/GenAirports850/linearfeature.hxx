@@ -56,11 +56,8 @@ struct Marking
 {
 public:
     unsigned int type;
-    unsigned int cap_end_idx;
-    unsigned int repeat_start_idx;
-    unsigned int repeat_end_idx;
-    unsigned int cap_start_idx;
-    bool cap_started;
+    unsigned int start_idx;
+    unsigned int end_idx;
 };
 typedef std::vector <Marking*> MarkingList;
 
@@ -108,7 +105,7 @@ public:
     ~LinearFeature();
 
     double GetWidth( unsigned int type );
-    static int GetTextureInfo(unsigned int info, std::string& material, double& atlas_start, double& atlas_end, double& v_dist);
+    static int GetTextureInfo(unsigned int info, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist);
     
     inline std::string GetDescription() { return description; }
 
@@ -127,11 +124,14 @@ public:
 private:
     unsigned int CheckMarkStart(BezNode* curNode);
     unsigned int CheckMarkChange(BezNode* curNode, unsigned int cur_edge);    
-    void         ConvertContour( Airport* ap, BezContour* src, bool closed );
+    void         ConvertContour( BezContour* src, bool closed );
 
     double          offset;
     double          width;
-    
+
+    MarkingList     marks;
+    Marking*        cur_mark;
+
     LightingList    lights;
     Lighting*       cur_light;
 
@@ -141,7 +141,7 @@ private:
     // contour definition (each beznode has marking type)
     BezContour  contour;
 
-    // contour definition after bezier interpolation - still used for lights - TODO: convert to tggraphnode_list / edge
+    // contour definition after bezier interpolation
     tgContour   points;
     
     tgpolygon_list      marking_polys;

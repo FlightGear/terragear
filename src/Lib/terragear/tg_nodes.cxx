@@ -272,7 +272,7 @@ void TGNodes::CalcElevations( tgNodeType type, const tgtriangle_list& mesh ) {
                         foundElev = mesh[tri].InterpolateHeight( pos );
                         if ( foundElev )
                         {
-                            tg_node_list[i].SetElevation( pos.getElevationM() );
+                            tg_node_list[i].SetElevation( pos.getElevationM() + 0.01f );
                         }
                     }
                     

@@ -586,10 +586,10 @@ tgContour Runway::GetSectionBB( const tgPolygon& runway,
 void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, const std::string& mark )
 {
     // Atlas positions
-    #define DESG_START_X    (0.046386719)
-    #define DESG_START_Y    (0.000000000)
-    #define DESG_WIDTH      (0.026855469)
-    #define DESG_HEIGHT     (0.335937500)
+    #define DESG_START_X    (0.0l)
+    #define DESG_START_Y    (0.0l)
+    #define DESG_WIDTH      (0.25l)
+    #define DESG_HEIGHT     (0.25l)
     
     tgPolygon poly;
 
@@ -608,44 +608,44 @@ void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, d
         
     // calculate atlas tcs describing the area we want to use
     if ( mark == "0" ) {
-        minx = DESG_START_X+0*DESG_WIDTH;
-        miny = DESG_START_Y+2*DESG_HEIGHT;
+        minx = DESG_START_X+1*DESG_WIDTH;
+        miny = DESG_START_Y+1*DESG_HEIGHT;
     } else if ( mark == "1" ) {
         minx = DESG_START_X+0*DESG_WIDTH;
-        miny = DESG_START_Y+1*DESG_HEIGHT;
+        miny = DESG_START_Y+3*DESG_HEIGHT;
     } else if ( mark == "2" ) {
-        minx = DESG_START_X+0*DESG_WIDTH;
-        miny = DESG_START_Y+0*DESG_HEIGHT;
+        minx = DESG_START_X+1*DESG_WIDTH;
+        miny = DESG_START_Y+3*DESG_HEIGHT;
     } else if ( mark == "3" ) {
-        minx = DESG_START_X+1*DESG_WIDTH;
-        miny = DESG_START_Y+2*DESG_HEIGHT;
-    } else if ( mark == "4" ) {
-        minx = DESG_START_X+1*DESG_WIDTH;
-        miny = DESG_START_Y+1*DESG_HEIGHT;        
-    } else if ( mark == "5" ) {
-        minx = DESG_START_X+1*DESG_WIDTH;
-        miny = DESG_START_Y+0*DESG_HEIGHT;        
-    } else if ( mark == "6" ) {
         minx = DESG_START_X+2*DESG_WIDTH;
+        miny = DESG_START_Y+3*DESG_HEIGHT;
+    } else if ( mark == "4" ) {
+        minx = DESG_START_X+3*DESG_WIDTH;
+        miny = DESG_START_Y+3*DESG_HEIGHT;        
+    } else if ( mark == "5" ) {
+        minx = DESG_START_X+0*DESG_WIDTH;
+        miny = DESG_START_Y+2*DESG_HEIGHT;        
+    } else if ( mark == "6" ) {
+        minx = DESG_START_X+1*DESG_WIDTH;
         miny = DESG_START_Y+2*DESG_HEIGHT;        
     } else if ( mark == "7" ) {
         minx = DESG_START_X+2*DESG_WIDTH;
-        miny = DESG_START_Y+1*DESG_HEIGHT;        
+        miny = DESG_START_Y+2*DESG_HEIGHT;        
     } else if ( mark == "8" ) {
-        minx = DESG_START_X+2*DESG_WIDTH;
-        miny = DESG_START_Y+0*DESG_HEIGHT;        
-    } else if ( mark == "9" ) {
         minx = DESG_START_X+3*DESG_WIDTH;
         miny = DESG_START_Y+2*DESG_HEIGHT;        
-    } else if ( mark == "L" ) {
-        minx = DESG_START_X+3*DESG_WIDTH;
+    } else if ( mark == "9" ) {
+        minx = DESG_START_X+0*DESG_WIDTH;
         miny = DESG_START_Y+1*DESG_HEIGHT;        
+    } else if ( mark == "L" ) {
+        minx = DESG_START_X+1*DESG_WIDTH;
+        miny = DESG_START_Y+0*DESG_HEIGHT;        
+    } else if ( mark == "C" ) {
+        minx = DESG_START_X+2*DESG_WIDTH;
+        miny = DESG_START_Y+0*DESG_HEIGHT;        
     } else if ( mark == "R" ) {
         minx = DESG_START_X+3*DESG_WIDTH;
         miny = DESG_START_Y+0*DESG_HEIGHT;        
-    } else if ( mark == "C" ) {
-        minx = DESG_START_X+4*DESG_WIDTH;
-        miny = DESG_START_Y+2*DESG_HEIGHT;        
     } else {
         TG_LOG(SG_GENERAL, SG_ALERT, "Unknown designation mark " << mark);
         return;
@@ -654,7 +654,7 @@ void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, d
     maxx = minx + DESG_WIDTH;
     maxy = miny + DESG_HEIGHT;    
     
-    poly.SetMaterial( "rwy_markings" );
+    poly.SetMaterial( "rwy_designations" );
     poly.SetTexParams( poly.GetNode(0,0), width, length, heading );
     poly.SetTexMethod( TG_TEX_1X1_ATLAS );
     poly.SetTexLimits( minx, miny, maxx, maxy );

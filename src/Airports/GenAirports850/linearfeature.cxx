@@ -9,41 +9,7 @@
 #include "linearfeature.hxx"
 #include "airport.hxx"
 
-unsigned int LinearFeature::CheckMarkChange(BezNode* curNode, unsigned int cur_mark)
-{    
-    /* first check if we are expecting to finish the start cap */
-    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkChange" );
-    
-    if (curNode->GetMarking() != cur_mark)
-    {
-        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkChange Marking has changed from " << cur_mark << " to " << curNode->GetMarking() );
-
-        cur_mark = curNode->GetMarking();
-    }
-    else
-    {
-        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking with type " << cur_mark );
-    }
-    
-    return cur_mark;
-}
-
-unsigned int LinearFeature::CheckMarkStart(BezNode* curNode)
-{    
-    unsigned int mark = 0;
-    
-    if (curNode->GetMarking())
-    {
-        TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::CheckMarkStart Start Marking with " << curNode->GetMarking() );
-        
-        // we aren't watching a mark, and this node has one
-        mark = curNode->GetMarking();
-    }
-    
-    return mark;
-}
-
-void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
+void LinearFeature::ConvertContour( BezContour* src, bool closed )
 {
     BezNode*  curNode;
     BezNode*  nextNode;
@@ -58,12 +24,8 @@ void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
     double    total_dist;
     double    theta1, theta2;
     int       num_segs = BEZIER_DETAIL;
-
-    tgIntersectionGenerator* pig = NULL;
     
-    unsigned int edge_type  = 0;
-    double       edge_width = 0.0f;
-    
+    Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
 
     TG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
@@ -99,28 +61,42 @@ void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
         
         ////////////////////////////////////////////////////////////////////////////////////
         // remember the index for the starting stopping of marks on the converted contour
+
         // are we watching a mark for the end?
-        if ( edge_type )
+        if (cur_mark)
         {
-            edge_type = CheckMarkChange(curNode, edge_type);
+            if (curNode->GetMarking() != cur_mark->type)
+            {
+                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking has changed from " << cur_mark->type << " to " << curNode->GetMarking() << " save mark from " << cur_mark->start_idx << " to " << points.GetSize() );
+
+                // marking has ended, or changed
+                cur_mark->end_idx = points.GetSize();
+                marks.push_back(cur_mark);
+                cur_mark = NULL;
+            }
+            else
+            {
+                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Continue Marking from " << cur_mark->start_idx << " with type " << cur_mark->type );
+            }
         }
-        
+
         // should we start a new mark?
-        if (edge_type == 0)
+        if (cur_mark == NULL)
         {
-            edge_type = CheckMarkStart(curNode);
+            if (curNode->GetMarking())
+            {
+                TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Start Marking from " << points.GetSize() << " with type " << curNode->GetMarking() );
+
+                // we aren't watching a mark, and this node has one
+                cur_mark = new Marking;
+                cur_mark->type = curNode->GetMarking();
+                cur_mark->start_idx = points.GetSize();
+            }
         }
-        
-        if (edge_type) {
-            pig = ap->GetLFG(edge_type);
-            edge_width = GetWidth( edge_type );
-        } else {
-            pig = NULL;
-        }
-        ////////////////////////////////////////////////////////////////////////////////////
 
         ////////////////////////////////////////////////////////////////////////////////////
         // remember the index for the starting stopping of lights on the converted contour
+
         // are we watching a mark for the end?
         if (cur_light)
         {
@@ -304,11 +280,8 @@ void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
                 }
 
                 // add the feature vertex
-                points.AddNode(curLoc);              
-                if ( pig ) {
-                    pig->Insert( curLoc, nextLoc, edge_width, edge_type );
-                }
-                
+                points.AddNode(curLoc);
+
                 if (p==0)
                 {
                     TG_LOG(SG_GENERAL, SG_DEBUG, "adding Curve Anchor node (type " << curve_type << ") at " << curLoc );
@@ -335,12 +308,6 @@ void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
                     // add the feature vertex
                     points.AddNode(curLoc);
 
-                    // add and edge from curLoc to nextLoc with marking type and width
-                    // look up or create a new graph node
-                    if ( pig ) {
-                        pig->Insert( curLoc, nextLoc, edge_width, edge_type );
-                    }
-                    
                     if (p==0)
                     {
                         TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear anchor node at " << curLoc );
@@ -361,12 +328,6 @@ void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
                 // just add the one vertex - dist is small
                 points.AddNode(curLoc);
 
-                // add and edge from curLoc to nextLoc with marking type and width
-                // look up or create a new graph node
-                if ( pig ) {
-                    pig->Insert( curLoc, nextLoc, edge_width, edge_type );
-                }
-                
                 TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
                 curLoc = nextLoc;
@@ -374,12 +335,18 @@ void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
         }
     }
 
-    if (closed)
-    {
-        TG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at " << curLoc );
+    // need to add the markings for last segment
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Closed COntour : adding last node at " << curLoc );
+    points.AddNode(curLoc);
 
-        // need to add the markings for last segment
-        points.AddNode(curLoc);
+    // check for marking that goes all the way to the end...
+    if (cur_mark)
+    {
+       TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::ConvertContour Marking from " << cur_mark->start_idx << " with type " << cur_mark->type << " ends at the end of the contour: " << points.GetSize() );
+
+       cur_mark->end_idx = points.GetSize()-1;
+       marks.push_back(cur_mark);
+       cur_mark = NULL;
     }
 
     // check for lighting that goes all the way to the end...
@@ -393,85 +360,18 @@ void LinearFeature::ConvertContour( Airport* ap, BezContour* src, bool closed )
     }
 }
 
-
 LinearFeature::~LinearFeature()
 {
+    for (unsigned int i=0; i<marks.size(); i++)
+    {
+        delete marks[i];
+    }
+
     for (unsigned int i=0; i<lights.size(); i++)
     {
         delete lights[i];
     }
 }
-
-#if 0
-double LinearFeature::AddMarkingStartTriRepeat( const SGGeod& prev, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
-{
-    SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
-    double az2, dist;
-    tgPolygon poly;
-    
-    SGGeodesy::inverse( prev, cur_mp, heading, az2, dist );
-    
-    v_start = fmod( v_end, 1.0 );
-    v_end   = v_start + (dist/v_dist);
-    
-    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
-    
-    poly.Erase();
-    poly.AddNode( 0, prev );
-    poly.AddNode( 0, cur_outer  );
-    poly.AddNode( 0, cur_inner  );
-    
-    poly.SetMaterial( material );
-    
-    // TODO: tex params ref needs to be offset by 1/2 width
-    poly.SetTexParams( prev, width, v_dist, heading );
-    
-    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
-    poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
-    
-    // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
-    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
-    
-    marking_polys.push_back(poly);
-    
-    return v_end;
-}
-
-double LinearFeature::AddMarkingPolyRepeat( const SGGeod& prev_inner, const SGGeod& prev_outer, const SGGeod& cur_outer, const SGGeod& cur_inner, std::string material, double width, double v_dist, double heading, double atlas_start, double atlas_end, double v_start, double v_end )
-{    
-    SGGeod prev_mp = midpoint( prev_outer, prev_inner );
-    SGGeod cur_mp  = midpoint( cur_outer,  cur_inner  );
-    double az2, dist;
-    tgPolygon poly;
-    
-    SGGeodesy::inverse( prev_mp, cur_mp, heading, az2, dist );
-    
-    v_start = fmod( v_end, 1.0 );
-    v_end   = v_start + (dist/v_dist);
-    
-    TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: Create TCs for mark.  dist is " << dist << " v_start is " << v_start << " v_end is " << v_end );
-    
-    poly.Erase();
-    poly.AddNode( 0, prev_inner );
-    poly.AddNode( 0, prev_outer );
-    poly.AddNode( 0, cur_outer  );
-    poly.AddNode( 0, cur_inner  );
-    //poly = tgPolygon::Snap( poly, gSnap );
-    
-    poly.SetMaterial( material );
-    poly.SetTexParams( prev_inner, width, v_dist, heading );
-    
-    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
-    poly.SetTexLimits( atlas_start, v_start, atlas_end, v_end );
-    
-    // for end caps, use a constant integral to identify end caps : 1 = cap, 0 = repeat
-    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
-    
-    marking_polys.push_back(poly);
-    
-    return v_end;
-}
-#endif
 
 double LinearFeature::GetWidth( unsigned int type )
 {
@@ -486,31 +386,58 @@ double LinearFeature::GetWidth( unsigned int type )
         case LF_SOLID_YELLOW: // good
         case LF_BROKEN_YELLOW: // good
         case LF_SINGLE_LANE_QUEUE: // good
+        case LF_SOLID_WHITE: // good
+        case LF_BROKEN_WHITE: // good
+            width = 0.30f;  // 0.15 is too narrow - looks like OSG drops them
+            break;
+            
         case LF_B_SOLID_YELLOW: // good
         case LF_B_BROKEN_YELLOW: // good
         case LF_B_SINGLE_LANE_QUEUE: // good
-        case LF_SOLID_WHITE: // good
-        case LF_BROKEN_WHITE: // good
-            width = 0.5f;
+            width = 0.45f;
             break;
             
         case LF_SOLID_DBL_YELLOW:   // good
         case LF_DOUBLE_LANE_QUEUE: // good
+            width = 0.45f;
+            break;
+            
         case LF_OTHER_HOLD: // good
+            width = 0.45f;
+            break;
+            
         case LF_B_SOLID_DBL_YELLOW: // good
         case LF_B_DOUBLE_LANE_QUEUE:
         case LF_B_OTHER_HOLD:
-        case LF_CHECKERBOARD_WHITE:
-            width = 1.0f;
+            width = 0.75f;
             break;                
+
+        case LF_CHECKERBOARD_WHITE:
+            width = 1.2f;
+            break;
             
         case LF_RUNWAY_HOLD:
+            width = 2.1f;
+            break;
+            
         case LF_B_RUNWAY_HOLD:
+            width = 2.4f;
+            break;
+            
         case LF_ILS_HOLD:
+            width = 2.4f;
+            break;
+            
         case LF_B_ILS_HOLD:
+            width = 2.7f;
+            break;
+            
         case LF_SAFETYZONE_CENTERLINE:
+            width = 0.75f;
+            break;
+            
         case LF_B_SAFETYZONE_CENTERLINE:
-            width = 2.00f;
+            width = 1.05f;
             break;
             
         case RWY_BORDER:
@@ -546,7 +473,7 @@ double LinearFeature::GetWidth( unsigned int type )
 }
 
 // TODO: make this a static function so I can register it as a callback
-int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, double& atlas_start, double& atlas_end, double& v_dist )
+int LinearFeature::GetTextureInfo( unsigned int type, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist )
 {
     #define     ATLAS_SINGLE_WIDTH  (1*0.007812500)
     #define     ATLAS_DOUBLE_WIDTH  (2*0.007812500)
@@ -568,205 +495,440 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
     #define     RW_TEX2_START       (RW_TEX1_END)
     #define     RW_TEX2_END         (RW_TEX2_START+ATLAS_SINGLE_WIDTH)
         
+    #define     pix4                (4/4096)
+    
+#define ATLAS_WIDTH                 (1024.0l);
+    
 #define TEST 0
+    //cap = false;
     
     switch( type )
     {            
         case LF_NONE:
             break;
             
-            // single width lines
-        case LF_SOLID_YELLOW: // good
+        case LF_SOLID_YELLOW:
             material = "taxi_markings";
-            atlas_start = 0*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 1*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.15 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 4.0l/ATLAS_WIDTH;
+                atlas_endu   = 12.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 4.0l/ATLAS_WIDTH;
+                atlas_endu   = 12.0l/ATLAS_WIDTH;
+                
+                v_dist = 2.0;   // 0.15 m wide x 2 m long
+            }
             break;
             
-        case LF_BROKEN_YELLOW: // good
+        case LF_BROKEN_YELLOW:
             material = "taxi_markings";
-            atlas_start = 1*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 2*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.15 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 20.0l/ATLAS_WIDTH;
+                atlas_endu   = 28.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 20.0l/ATLAS_WIDTH;
+                atlas_endu   = 28.0l/ATLAS_WIDTH;
+
+                v_dist = 2.0;   // 0.15 m wide x 2 m long
+            }
             break;
             
-        case LF_SINGLE_LANE_QUEUE: // good
+        case LF_SINGLE_LANE_QUEUE:
             material = "taxi_markings";
-            atlas_start = 2*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 3*ATLAS_SINGLE_WIDTH;
-            v_dist = 12.0;   // 0.15 m wide x 12 m long
+            if ( cap ) {
+                atlas_startu = 36.0l/ATLAS_WIDTH;
+                atlas_endu   = 44.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 36.0l/ATLAS_WIDTH;
+                atlas_endu   = 44.0l/ATLAS_WIDTH;
+
+                v_dist = 12.0;   // 0.15 m wide x 12 m long
+            }
             break;
             
-        case LF_B_SOLID_YELLOW: // good
+        case LF_B_SOLID_YELLOW:
             material = "taxi_markings";
-            atlas_start = 3*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 4*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.45 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 116.0l/ATLAS_WIDTH;
+                atlas_endu   = 140.0l/ATLAS_WIDTH;
+                
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 52.0l/ATLAS_WIDTH;
+                atlas_endu   = 76.0l/ATLAS_WIDTH;
+                
+                v_dist = 2.0;   // 0.45 m wide x 2 m long
+            }
             break;
             
-        case LF_B_BROKEN_YELLOW: // good
+        case LF_B_BROKEN_YELLOW:
             material = "taxi_markings";
-            atlas_start = 4*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 5*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.45 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 116.0l/ATLAS_WIDTH;
+                atlas_endu   = 140.0l/ATLAS_WIDTH;
+                
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 84.0l/ATLAS_WIDTH;
+                atlas_endu   = 108.0l/ATLAS_WIDTH;
+                
+                v_dist = 2.0;   // 0.45 m wide x 2 m long
+            }
             break;
             
-        case LF_B_SINGLE_LANE_QUEUE: // good
+        case LF_B_SINGLE_LANE_QUEUE:
             material = "taxi_markings";
-            atlas_start = 5*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 6*ATLAS_SINGLE_WIDTH;
-            v_dist = 12.0;   // 0.45 m wide x 12 m long            
+            if ( cap ) {
+                atlas_startu = 116.0l/ATLAS_WIDTH;
+                atlas_endu   = 140.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 116.0l/ATLAS_WIDTH;
+                atlas_endu   = 140.0l/ATLAS_WIDTH;
+
+                v_dist = 12.0;   // 0.45 m wide x 12 m long
+            }
             break;
             
-        case LF_SOLID_WHITE: // good
+        case LF_SOLID_WHITE:
             material = "taxi_markings";
-            atlas_start = 6*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 7*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.15 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 148.0l/ATLAS_WIDTH;
+                atlas_endu   = 156.0l/ATLAS_WIDTH;
+                
+                atlas_startv = 0.125l;
+                atlas_endv   = 0.25l;
+            } else {
+                atlas_startu = 148.0l/ATLAS_WIDTH;
+                atlas_endu   = 156.0l/ATLAS_WIDTH;
+
+                v_dist = 2.0;   // 0.15 m wide x 2 m long
+            }
             break;
             
-        case LF_BROKEN_WHITE: // good
+        case LF_BROKEN_WHITE:
             material = "taxi_markings";
-            atlas_start = 7*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 8*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.15 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 164.0l/ATLAS_WIDTH;
+                atlas_endu   = 172.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.125l;
+                atlas_endv   = 0.25l;
+            } else {
+                atlas_startu = 164.0l/ATLAS_WIDTH;
+                atlas_endu   = 172.0l/ATLAS_WIDTH;
+
+                v_dist = 2.0;   // 0.15 m wide x 2 m long
+            }
             break;
             
         case LF_SOLID_DBL_YELLOW:   // good
             material = "taxi_markings";
-            atlas_start = 8*ATLAS_SINGLE_WIDTH;
-            atlas_end =  10*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.45 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 204.0l/ATLAS_WIDTH;
+                atlas_endu   = 228.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 204.0l/ATLAS_WIDTH;
+                atlas_endu   = 228.0l/ATLAS_WIDTH;
+
+                v_dist = 2.0;   // 0.45 m wide x 2 m long
+            }
             break;
             
-        case LF_DOUBLE_LANE_QUEUE: // good
+        case LF_DOUBLE_LANE_QUEUE:
             material = "taxi_markings";
-            atlas_start = 10*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 12*ATLAS_SINGLE_WIDTH;
-            v_dist = 12.0;   // 0.45 m wide x 12 m long
+            if ( cap ) {
+                atlas_startu = 236.0l/ATLAS_WIDTH;
+                atlas_endu   = 260.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 236.0l/ATLAS_WIDTH;
+                atlas_endu   = 260.0l/ATLAS_WIDTH;
+
+                v_dist = 12.0;   // 0.45 m wide x 12 m long
+            }
             break;
             
-        case LF_OTHER_HOLD: // good
+        case LF_OTHER_HOLD:
             material = "taxi_markings";
-            atlas_start = 12*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 14*ATLAS_SINGLE_WIDTH;
-            v_dist = 6.0;   // 1 m wide x 6 m long
+            if ( cap ) {
+                atlas_startu = 268.0l/ATLAS_WIDTH;
+                atlas_endu   = 292.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 268.0l/ATLAS_WIDTH;
+                atlas_endu   = 292.0l/ATLAS_WIDTH;
+
+                v_dist = 6.0;   // 1 m wide x 6 m long
+            }
             break;
             
         case LF_B_SOLID_DBL_YELLOW: // good
             material = "taxi_markings";
-            atlas_start = 14*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 16*ATLAS_SINGLE_WIDTH;
-            v_dist = 2.0;   // 0.75 m wide x 2 m long
+            if ( cap ) {
+                atlas_startu = 300.0l/ATLAS_WIDTH;
+                atlas_endu   = 340.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 300.0l/ATLAS_WIDTH;
+                atlas_endu   = 340.0l/ATLAS_WIDTH;
+
+                v_dist = 2.0;   // 0.75 m wide x 2 m long
+            }
             break;
             
         case LF_B_DOUBLE_LANE_QUEUE:
             material = "taxi_markings";
-            atlas_start = 16*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 18*ATLAS_SINGLE_WIDTH;
-            v_dist = 12.0;   // 0.75 m wide x 12 m long
+            if ( cap ) {
+                atlas_startu = 348.0l/ATLAS_WIDTH;
+                atlas_endu   = 388.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 348.0l/ATLAS_WIDTH;
+                atlas_endu   = 388.0l/ATLAS_WIDTH;
+
+                v_dist = 12.0;   // 0.75 m wide x 12 m long
+            }
             break;
             
         case LF_B_OTHER_HOLD:
             material = "taxi_markings";
-            atlas_start = 18*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 20*ATLAS_SINGLE_WIDTH;
-            v_dist = 6.0;   // 1.3 m wide x 6 m long
+            if ( cap ) {
+                // use double lane queue for cap.
+                atlas_startu = 348.0l/ATLAS_WIDTH;
+                atlas_endu   = 388.0l/ATLAS_WIDTH;
+                
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 396.0l/ATLAS_WIDTH;
+                atlas_endu   = 436.0l/ATLAS_WIDTH;
+
+                v_dist = 6.0;   // 1.3 m wide x 6 m long
+            }
             break;                
             
         case LF_RUNWAY_HOLD:
             material = "taxi_markings";
-            atlas_start = 20*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 24*ATLAS_SINGLE_WIDTH;
-            v_dist = 1.8;   // 2.1 m wide x 1.8 m long
+            if ( cap ) {
+                atlas_startu = 444.0l/ATLAS_WIDTH;
+                atlas_endu   = 500.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 444.0l/ATLAS_WIDTH;
+                atlas_endu   = 500.0l/ATLAS_WIDTH;
+
+                v_dist = 1.8;   // 2.1 m wide x 1.8 m long
+            }
             break;
             
         case LF_B_RUNWAY_HOLD:
             material = "taxi_markings";
-            atlas_start = 24*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 28*ATLAS_SINGLE_WIDTH;
-            v_dist = 1.8;   // 2.4 m wide x 1.8 m long
+            if ( cap ) {
+                atlas_startu = 588.0l/ATLAS_WIDTH;
+                atlas_endu   = 660.0l/ATLAS_WIDTH;
+                
+                atlas_startv = 0.05l;
+                atlas_endv   = 0.125l;
+            } else {
+                atlas_startu = 508.0l/ATLAS_WIDTH;
+                atlas_endu   = 580.0l/ATLAS_WIDTH;
+
+                v_dist = 1.8;   // 2.1 m wide x 1.8 m long
+            }
             break;
             
         case LF_ILS_HOLD:
             material = "taxi_markings";
-            atlas_start = 28*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 32*ATLAS_SINGLE_WIDTH;
-            v_dist = 3.0;   // 2.4 m wide x 3.0 m long
+            if ( cap ) {
+                atlas_startu = 668.0l/ATLAS_WIDTH;
+                atlas_endu   = 700.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = 668.0l/ATLAS_WIDTH;
+                atlas_endu   = 700.0l/ATLAS_WIDTH;
+
+                v_dist = 6.0;   // 2.4 m wide x 3.0 m long
+            }
             break;
             
         case LF_B_ILS_HOLD:
             material = "taxi_markings";
-            atlas_start = 32*ATLAS_SINGLE_WIDTH;
-            atlas_end =   36*ATLAS_SINGLE_WIDTH;
-            v_dist = 3.0;   // 2.4 m wide x 3.0 m long
+            if ( cap ) {
+                atlas_startu = 708.0l/ATLAS_WIDTH;
+                atlas_endu   = 744.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = 708.0l/ATLAS_WIDTH;
+                atlas_endu   = 744.0l/ATLAS_WIDTH;
+
+                v_dist = 6.0;   // 2.4 m wide x 3.0 m long ( 2 lengths to preserve aspect ratio in texture atlas )
+            }
             break;
             
         case LF_SAFETYZONE_CENTERLINE: // note - these should ALWAYS be black...
             material = "taxi_markings";
-            atlas_start = 36*ATLAS_SINGLE_WIDTH;
-            atlas_end =   40*ATLAS_SINGLE_WIDTH;
-            v_dist = 3.64;   // 1.2 m wide x 3.64 m long
+            if ( cap ) {
+                atlas_startu = 752.0l/ATLAS_WIDTH;
+                atlas_endu   = 800.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = 752.0l/ATLAS_WIDTH;
+                atlas_endu   = 800.0l/ATLAS_WIDTH;
+
+                v_dist = 3.64;   // 1.2 m wide x 3.64 m long
+            }
             break;
             
         case LF_B_SAFETYZONE_CENTERLINE:
             material = "taxi_markings";
-            atlas_start = 40*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 44*ATLAS_SINGLE_WIDTH;
-            v_dist = 3.64;   // 1.2 m wide x 3.64 m long
+            if ( cap ) {
+                atlas_startu = 588.0l/ATLAS_WIDTH;
+                atlas_endu   = 644.0l/ATLAS_WIDTH;
+                
+                atlas_startv = 0.25f;
+                atlas_endv   = 0.375f;
+            } else {
+                atlas_startu = 808.0l/ATLAS_WIDTH;
+                atlas_endu   = 864.0l/ATLAS_WIDTH;
+
+                v_dist = 3.64;   // 1.2 m wide x 3.64 m long
+            }
             break;
             
         case LF_CHECKERBOARD_WHITE:
             material = "taxi_markings";
-            atlas_start = 44*ATLAS_SINGLE_WIDTH;
-            atlas_end   = 48*ATLAS_SINGLE_WIDTH;
-            v_dist = 3.64;   // 0.6 m wide x 2.6 m long
+            if ( cap ) {
+                atlas_startu = 180.0l/ATLAS_WIDTH;
+                atlas_endu   = 196.0l/ATLAS_WIDTH;
+
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = 180.0l/ATLAS_WIDTH;
+                atlas_endu   = 196.0l/ATLAS_WIDTH;
+
+                v_dist = 3.64;   // 0.6 m wide x 2.6 m long
+            }
             break;    
             
         case RWY_BORDER:
             material = "rwy_markings";
-            atlas_start = RW_TEX1_START;
-            atlas_end   = RW_TEX1_END;
-            v_dist = 10.0;
+            if ( cap ) {
+                atlas_startu = 28*ATLAS_SINGLE_WIDTH;
+                atlas_endu   = 29*ATLAS_SINGLE_WIDTH;
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = RW_TEX1_START;
+                atlas_endu   = RW_TEX1_END;
+                v_dist = 10.0;
+            }
             break;
             
         case RWY_DISP_TAIL:
             material = "rwy_markings";
-            atlas_start = RW_TEX1_START;
-            atlas_end   = RW_TEX1_END;
-            v_dist = 10.0;
+            if ( cap ) {
+                atlas_startu = 28*ATLAS_SINGLE_WIDTH;
+                atlas_endu   = 29*ATLAS_SINGLE_WIDTH;
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = RW_TEX1_START;
+                atlas_endu   = RW_TEX1_END;
+                v_dist = 10.0;
+            }
             break;
             
         case RWY_CENTERLINE:
             material = "rwy_markings";
-            v_dist = 200 * SG_FEET_TO_METER;
-            atlas_start = RW_TEX2_START;
-            atlas_end   = RW_TEX2_END;
-            v_dist = 10.0;            
+            if ( cap ) {
+                atlas_startu = 28*ATLAS_SINGLE_WIDTH;
+                atlas_endu   = 29*ATLAS_SINGLE_WIDTH;
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                v_dist = 200 * SG_FEET_TO_METER;
+                atlas_startu = RW_TEX2_START;
+                atlas_endu   = RW_TEX2_END;
+                v_dist = 10.0;
+            }
             break;
             
         case RWY_THRESH:
             material = "rwy_markings";
-            atlas_start = RW_TEX0_START;
-            atlas_end   = RW_TEX0_END;
-            v_dist = 10.0;
+            if ( cap ) {
+                atlas_startu = 28*ATLAS_SINGLE_WIDTH;
+                atlas_endu   = 29*ATLAS_SINGLE_WIDTH;
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = RW_TEX0_START;
+                atlas_endu   = RW_TEX0_END;
+                v_dist = 10.0;
+            }
             break;
             
         case RWY_TZONE:
             material = "rwy_markings";
-            atlas_start = RW_TEX0_START;
-            atlas_end   = RW_TEX0_END;
-            v_dist = 10.0;
+            if ( cap ) {
+                atlas_startu = 28*ATLAS_SINGLE_WIDTH;
+                atlas_endu   = 29*ATLAS_SINGLE_WIDTH;
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = RW_TEX0_START;
+                atlas_endu   = RW_TEX0_END;
+                v_dist = 10.0;
+            }
             break;
             
         case RWY_AIM:
             material = "rwy_markings";
-            atlas_start = RW_TEX0_START;
-            atlas_end   = RW_TEX0_END;
-            v_dist = 10.0;
+            if ( cap ) {
+                atlas_startu = 28*ATLAS_SINGLE_WIDTH;
+                atlas_endu   = 29*ATLAS_SINGLE_WIDTH;
+                atlas_startv = 0.0f;
+                atlas_endv   = 0.125f;
+            } else {
+                atlas_startu = RW_TEX0_START;
+                atlas_endu   = RW_TEX0_END;
+                v_dist = 10.0;
+            }
             break;
-            
-            
+
         default:
             TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown marking " << type );
             exit(1);
@@ -774,8 +936,8 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
 
 #if TEST
     material = "lftest";
-    atlas_start = 0;
-    atlas_end   = 1;
+    atlas_startu = 0;
+    atlas_endu   = 1;
 #endif
     
     return 0;
@@ -783,8 +945,7 @@ int LinearFeature::GetTextureInfo( unsigned int type, std::string& material, dou
 
 int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
 {
-    SGGeod      prev_inner, prev_outer;
-    SGGeod      cur_inner,  cur_outer;
+    SGGeod      prev, cur;
     double      heading;
     double      dist;
     double      az2;
@@ -796,7 +957,45 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
-    ConvertContour( ap, &contour, closed );
+    ConvertContour( &contour, closed );
+
+    // now offset the markings and add them to the intersection generator
+    for (unsigned int i=0; i<marks.size(); i++)
+    {
+        double edge_width = GetWidth( marks[i]->type );
+        tgIntersectionGenerator* pig = ap->GetLFG( marks[i]->type );        
+        markStarted = false;
+        
+        for (unsigned int j = marks[i]->start_idx; j <= marks[i]->end_idx; j++)
+        {
+            TG_LOG(SG_GENERAL, SG_DEBUG, "LinearFeature::Finish: calculating offsets for mark " << i << " whose start idx is " << marks[i]->start_idx << " and end idx is " << marks[i]->end_idx << " cur idx is " << j );
+
+            if (j == marks[i]->start_idx)
+            {
+                // first point on the mark - offset heading is 90deg
+                cur = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset );
+            }
+            else if (j == marks[i]->end_idx)
+            {
+                // last point on the mark - offset heading is 90deg
+                cur = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset );
+            }
+            else
+            {
+                cur = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset );
+            }
+
+            if ( markStarted ) {
+                if ( pig ) {
+                    pig->Insert( prev, cur, edge_width, marks[i]->type );
+                }
+            } else {
+                markStarted = true;
+            }
+
+            prev = cur;
+        }
+    }
 
     // now generate the superpoly list for lights with constant distance between lights (depending on feature type)
     tglightcontour_list light_contours;
@@ -853,16 +1052,16 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
             if (j == lights[i]->start_idx)
             {
                 // first point on the light - offset heading is 90deg
-                cur_outer = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset );
+                cur = OffsetPointFirst( points.GetNode(j), points.GetNode(j+1), offset );
             }
             else if (j == lights[i]->end_idx)
             {
                 // last point on the mark - offset heading is 90deg
-                cur_outer = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset );
+                cur = OffsetPointLast( points.GetNode(j-1), points.GetNode(j), offset );
             }
             else
             {
-                cur_outer = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset );
+                cur = OffsetPointMiddle( points.GetNode(j-1), points.GetNode(j), points.GetNode(j+1), offset );
             }
 
             if ( markStarted )
@@ -871,18 +1070,18 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
                 bool   switch_poly = true;
 
                 // calculate the heading and distance from prev to cur
-                SGGeodesy::inverse( prev_outer, cur_outer, heading, az2, dist );
+                SGGeodesy::inverse( prev, cur, heading, az2, dist );
 
                 while (cur_light_dist < dist)
                 {
                     if (cur_light_dist == 0.0f)
                     {
-                        tmp = prev_outer;
+                        tmp = prev;
                     }
                     else
                     {
                         // calculate the position of the next light
-                        tmp = SGGeodesy::direct( prev_outer, heading, cur_light_dist );
+                        tmp = SGGeodesy::direct( prev, heading, cur_light_dist );
                     }
 
                     SGVec3f vec1, vec2;
@@ -946,7 +1145,7 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
                 markStarted = true;
             }
 
-            prev_outer = cur_outer;
+            prev = cur;
         }
 
         // if there were lights generated - create the superpoly

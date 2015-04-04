@@ -691,6 +691,7 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
 {
     std::string material;
     double      texAtlasStartU, texAtlasEndU;
+    double      texAtlasStartV, texAtlasEndV;
     double      v_start;
     double      v_dist;
     double      heading;
@@ -704,15 +705,22 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
     for ( i = left_contour.begin(); i != left_contour.end(); i++) {
         poly.AddNode( 0, *i );
     }
-
-    // now generate texture coordiantes
-    texInfoCb( type, material, texAtlasStartU, texAtlasEndU, v_dist );
-    v_dist *= ratio;
     
     if ( start->IsCap() ) {
+        texInfoCb( type, true, material, texAtlasStartU, texAtlasEndU, texAtlasStartV, texAtlasEndV, v_dist );
         
-        poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
-        
+        if ( originating ) {
+            heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
+            poly.SetTexParams( botLeft, width, 0.5, heading );
+        } else {
+            heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
+            poly.SetTexParams( topRight, width, 0.5, heading );        
+        }
+        poly.SetMaterial( material );
+        poly.SetTexMethod( TG_TEX_1X1_ATLAS );
+        poly.SetTexLimits( texAtlasStartU, texAtlasStartV, texAtlasEndU, texAtlasEndV );
+        poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
+                
 #if DEBUG_TEXTURE        
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );
@@ -722,8 +730,19 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
 #endif
         
     } else if ( end->IsCap() ) {
-
-        poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
+        texInfoCb( type, true, material, texAtlasStartU, texAtlasEndU, texAtlasStartV, texAtlasEndV, v_dist );
+        
+        if ( originating ) {
+            heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
+            poly.SetTexParams( botLeft, width, 0.5, heading );
+        } else {
+            heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
+            poly.SetTexParams( topRight, width, 0.5, heading );        
+        }
+        poly.SetMaterial( material );
+        poly.SetTexMethod( TG_TEX_1X1_ATLAS );
+        poly.SetTexLimits( texAtlasStartU, texAtlasStartV, texAtlasEndU, texAtlasEndV );
+        poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
         
 #if DEBUG_TEXTURE        
         // DEBUG : add an arrow with v_start, v_end
@@ -734,6 +753,9 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
 #endif
         
     } else {
+        texInfoCb( type, false, material, texAtlasStartU, texAtlasEndU, texAtlasStartV, texAtlasEndV, v_dist );
+        v_dist *= ratio;
+        
         double dist = SGGeodesy::distanceM( start->GetPosition(), end->GetPosition() );
         v_start = fmod( v_end, 1.0 );
         v_end   = v_start + (dist/v_dist);
@@ -783,6 +805,23 @@ tgIntersectionEdgeInfo::tgIntersectionEdgeInfo( bool orig, tgIntersectionEdge* e
 
 double tgIntersectionEdgeInfo::Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio ) {
     return edge->Texture( originating, vEnd, texInfoCb, ratio );
+}
+
+void tgIntersectionEdgeInfo::TextureStartCap( tgIntersectionGeneratorTexInfoCb texInfoCb ) {
+    if ( edge->right_contour.empty() || edge->left_contour.empty() ) {
+        SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdgeInfo::TextureEndCap : edge " << edge->id << " HAS NO CONTOUR ");
+    } else {
+        edge->Texture( originating, 0.0f, texInfoCb, 1.0f );
+    }    
+}
+
+void tgIntersectionEdgeInfo::TextureEndCap( tgIntersectionGeneratorTexInfoCb texInfoCb ) {
+    
+    if ( edge->right_contour.empty() || edge->left_contour.empty() ) {
+        SG_LOG( SG_GENERAL, SG_ALERT, "tgIntersectionEdgeInfo::TextureEndCap : edge " << edge->id << " HAS NO CONTOUR ");
+    } else {
+        edge->Texture( originating, 0.0f, texInfoCb, 1.0f );
+    }
 }
 
 bool tgIntersectionEdgeInfo::IsTextured( void ) const {

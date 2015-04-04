@@ -472,7 +472,7 @@ void tgIntersectionNode::TextureToNextEndpoint( tgIntersectionEdgeInfo* cur_info
     do {
         cur_edge = cur_info->GetEdge();        
         start_v = cur_info->Texture(start_v, texInfoCb, ratio);
-
+        
         if ( cur_info->IsOriginating() ) {
             next_node = cur_edge->end;
         } else {
@@ -515,8 +515,10 @@ void tgIntersectionNode::TextureEdges( tgIntersectionGeneratorTexInfoCb texInfoC
             // check for start CAP
             if ( (*cur)->IsStartCap() ) {
                 SG_LOG(SG_GENERAL, LOG_TEXTURE, "tgIntersectionNode::TextureEdges found Start CAP " );
+                (*cur)->TextureStartCap(texInfoCb);
             } else if ( (*cur)->IsEndCap() ) {
                 SG_LOG(SG_GENERAL, LOG_TEXTURE, "tgIntersectionNode::TextureEdges found End CAP " );
+                (*cur)->TextureEndCap(texInfoCb);
             } else if ( !(*cur)->GetEdge()->IsTextured() ) {
                 unsigned int num_edges = 0;
                 
@@ -532,10 +534,11 @@ void tgIntersectionNode::TextureEdges( tgIntersectionGeneratorTexInfoCb texInfoC
                 
                 std::string material;
                 double      texAtlasStartU, texAtlasEndU;
+                double      texAtlasStartV, texAtlasEndV;
                 double      v_dist;
     
                 // Get the v_dist for this texture
-                texInfoCb( type, material, texAtlasStartU, texAtlasEndU, v_dist );
+                texInfoCb( type, false, material, texAtlasStartU, texAtlasEndU, texAtlasStartV, texAtlasEndV, v_dist );
 
                 // get remainder
                 double frac = fmod( total_dist, v_dist ) / v_dist;

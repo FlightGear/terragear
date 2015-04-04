@@ -3,7 +3,7 @@
 
 #include "tg_polygon.hxx"
 
-typedef int (*tgIntersectionGeneratorTexInfoCb)(unsigned int info, std::string& material, double& atlas_start, double& atlas_end, double& v_dist);
+typedef int (*tgIntersectionGeneratorTexInfoCb)(unsigned int info, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist);
 
 // forward declarations
 class tgIntersectionEdge;
@@ -42,7 +42,8 @@ public:
     bool IsTextured(void) const;
     
     double Texture( double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio );
-    
+    void   TextureStartCap( tgIntersectionGeneratorTexInfoCb texInfoCb );
+    void   TextureEndCap( tgIntersectionGeneratorTexInfoCb texInfoCb );
 
 private:
     tgIntersectionEdge*     edge;
@@ -248,6 +249,7 @@ public:
         return (flags & FLAGS_TEXTURED);
     }
     double Texture( bool originating, double vEnd, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio );
+    void   TextureCap( bool originating, tgIntersectionGeneratorTexInfoCb texInfoCb );
     
     tgIntersectionNode* start;
     tgIntersectionNode* end;
