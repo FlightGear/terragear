@@ -34,14 +34,15 @@ void tgSegmentNetwork::Add( const SGGeod& source, const SGGeod& target, double w
     
     tgSegment input(s, e);
     sprintf( feat, "input_%05d", input_count++ );
-    tgShapefile::FromSegment( input, false, datasource, "input", feat );
+    tgShapefile::FromSegment( input, true, datasource, "input", feat );
 #endif
     
     segnetPoint snSource( source.getLongitudeDeg(), source.getLatitudeDeg() );
     segnetPoint snTarget( target.getLongitudeDeg(), target.getLatitudeDeg() );
 
+    double      heading = SGGeodesy::courseDeg( source, target );
     segnetCurve curve(snSource, snTarget);
-    CurveData   data( width, type );
+    CurveData   data( width, type, heading );
     
     CGAL::insert( arr, segnetCurveWithData(curve, data) );
 }
@@ -633,6 +634,7 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
     SGGeod                   start, end;
     double                   max_width;
     unsigned int             max_type;
+    double                   max_heading;
     
     segnetArrangement::Edge_const_iterator eit;
     segnetPolylineList::const_iterator     oit;
@@ -652,8 +654,9 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
     while( oit != sroutput.end() ) {
         // first, get the curve data to assign each output segment
         segnetTraits::Data_container::const_iterator    dit;
-        max_width = 0.0;
+        max_width = 0.0l;
         max_type  = 0;
+        max_heading = 0.0l;
         
         if ( eit->curve().data().size() == 0 ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "tgSegmentNetwork::GenerateOutput found an edge with no DATA\n");
@@ -666,6 +669,9 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
             if (dit->type > max_type) {
                 max_type = dit->type;
             }
+            if (dit->heading > max_heading) {
+                max_heading = dit->heading;
+            }
         }
 
         if ( max_width < 0.1 ) {
@@ -676,7 +682,7 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
             SG_LOG(SG_GENERAL, SG_ALERT, "tgSegmentNetwork::GenerateOutput found an edge with type == 0\n");
         }
         
-        CurveData   data( max_width, max_type );
+        CurveData   data( max_width, max_type, max_heading );
 
 
         // output is a polyline - which corresponds to a single segment in input
@@ -720,31 +726,36 @@ void tgSegmentNetwork::GenerateOutput( void )
     SGGeod       start, end;
     double       max_width;
     unsigned int max_type;
+    double       heading_sum, heading_avg;
+    unsigned int num_dit;
     
     for (eit = arr.edges_begin(); eit != arr.edges_end(); ++eit)
     {
-        // convert to Geod
-        start = SGGeod::fromDeg( CGAL::to_double( eit->source()->point().x() ),
-                                 CGAL::to_double( eit->source()->point().y() ) );
-        end   = SGGeod::fromDeg( CGAL::to_double( eit->target()->point().x() ),
-                                 CGAL::to_double( eit->target()->point().y() ) );
-        
         // Go over the incident edges of the current vertex and examine their width and type
-        segnetTraits::Data_container::const_iterator    dit;
-        max_width = 0.0;
+        segnetTraits::Data_container::const_iterator   dit;
+        max_width = 0.0l;
         max_type  = 0;
+        heading_sum = 0.0l;
+        heading_avg = 0.0l;
+        num_dit = 0;
         
         if ( eit->curve().data().size() == 0 ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "tgSegmentNetwork::GenerateOutput found an edge with no DATA\n");
         }
         
-        for (dit = eit->curve().data().begin(); dit != eit->curve().data().end();  ++dit) {
+        num_dit = eit->curve().data().size();
+        for (dit = eit->curve().data().begin(); dit != eit->curve().data().end();  ++dit) {            
             if (dit->width > max_width) {
                 max_width = dit->width;
             }
             if (dit->type > max_type) {
                 max_type = dit->type;
             }
+            
+            heading_sum += dit->heading;            
+            if ( num_dit > 1 ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgSegmentNetwork::GenerateOutput found an edge with data > 1.  adding heading " << dit->heading << " to sum gives us " << heading_sum << "\n");
+            }            
         }
 
         if ( max_width < 0.1 ) {
@@ -754,8 +765,22 @@ void tgSegmentNetwork::GenerateOutput( void )
         if ( max_type == 0 ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "tgSegmentNetwork::GenerateOutput found an edge with type == 0\n");
         }
+        
+        heading_avg = heading_sum/num_dit;
+        
+        // convert to Geod
+        start = SGGeod::fromDeg( CGAL::to_double( eit->source()->point().x() ),
+                                 CGAL::to_double( eit->source()->point().y() ) );
+        end   = SGGeod::fromDeg( CGAL::to_double( eit->target()->point().x() ),
+                                 CGAL::to_double( eit->target()->point().y() ) );
 
-        output.push_back( segnetEdge( start, end, max_width, max_type ) ); 
+        double cleanedHeading = SGGeodesy::courseDeg(start, end);
+        double delta = SGMiscd::normalizePeriodic( 0, 360, cleanedHeading - heading_avg );
+        if ( (delta <= 90.0l) || (delta >= 270) ) {
+            output.push_back( segnetEdge( start, end, max_width, max_type ) );
+        } else {
+            output.push_back( segnetEdge( end, start, max_width, max_type ) );            
+        }
     }
 }
 

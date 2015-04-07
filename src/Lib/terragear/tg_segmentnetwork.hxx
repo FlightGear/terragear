@@ -51,7 +51,7 @@ typedef segnetedge_list::iterator segnetedge_it;
 class CurveData {
 public:
     CurveData() {}
-    CurveData( double w, int t ) : width(w), type(t) {}
+    CurveData( double w, int t, double h ) : width(w), type(t), heading(h) {}
     
     bool operator==(const CurveData& rhs) const {
         return width == rhs.width && type == rhs.type;
@@ -59,6 +59,7 @@ public:
     
     double          width;
     unsigned int    type;
+    double          heading;
 };
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel                           segnetKernel;
