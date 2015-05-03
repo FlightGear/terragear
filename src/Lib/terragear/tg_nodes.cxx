@@ -13,6 +13,7 @@ const double fgPoint3_Epsilon = 0.000001;
 // Build the k-d tree
 void TGNodes::init_spacial_query( void )
 {
+#if 0    
     tg_kd_tree.clear();
 
     for(unsigned int i = 0; i < tg_node_list.size(); i++) {
@@ -26,6 +27,7 @@ void TGNodes::init_spacial_query( void )
     }
 
     kd_tree_valid = true;
+#endif    
 }
 
 // Spacial Queries using CGAL and boost tuple
@@ -34,21 +36,23 @@ void TGNodes::init_spacial_query( void )
 bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector<SGGeod>& points ) const {
     points.clear();
 
+#if 0
     // Have we generated the k-d tree?
     if ( !kd_tree_valid ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "get_geod_inside called with invalid kdtree" );
         exit(0);
         return false;
     }
+#endif
 
     // define an exact rectangulat range query  (fuzziness=0)
-    tgn_Point ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
-    tgn_Point ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
-    Fuzzy_bb  exact_bb(ll, ur);
+    TGNodePoint     ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
+    TGNodePoint     ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
+    TGNodeFuzzyBox  exact_bb(ll, ur);
 
     // list of tuples as a result
-    std::list<Point_and_Elevation> result;
-    std::list<Point_and_Elevation>::iterator it;
+    std::list<TGNodeData> result;
+    std::list<TGNodeData>::iterator it;
 
     // perform the query
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
@@ -64,28 +68,30 @@ bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector
 bool TGNodes::get_nodes_inside( const SGGeod& min, const SGGeod& max, std::vector<TGNode*>& points ) const {
     points.clear();
     
+#if 0    
     // Have we generated the k-d tree?
     if ( !kd_tree_valid ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "get_nodes_inside called with invalid kdtree" );
         exit(0);
         return false;
     }
-    
+#endif
+
     // define an exact rectangulat range query  (fuzziness=0)
-    tgn_Point ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
-    tgn_Point ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
-    Fuzzy_bb  exact_bb(ll, ur);
+    TGNodePoint     ll( min.getLongitudeDeg() - fgPoint3_Epsilon, min.getLatitudeDeg() - fgPoint3_Epsilon );
+    TGNodePoint     ur( max.getLongitudeDeg() + fgPoint3_Epsilon, max.getLatitudeDeg() + fgPoint3_Epsilon );
+    TGNodeFuzzyBox  exact_bb(ll, ur);
     
     // list of tuples as a result
-    std::list<Point_and_Elevation> result;
-    std::list<Point_and_Elevation>::iterator it;
+    std::list<TGNodeData> result;
+    std::list<TGNodeData>::iterator it;
     
     // perform the query
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
     
     // and convert the tuples back into SGGeod
     for ( it = result.begin(); it != result.end(); it++ ) {
-        points.push_back( boost::get<2>(*it) );
+        points.push_back( boost::get<3>(*it) );
     }
     
     return true;
@@ -98,29 +104,32 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     double east_compare  = b.get_center_lon() + 0.5 * b.get_width();
     double west_compare  = b.get_center_lon() - 0.5 * b.get_width();
 
-    tgn_Point ll;
-    tgn_Point ur;
-    Fuzzy_bb  exact_bb;
+    TGNodePoint     ll;
+    TGNodePoint     ur;
+    TGNodeFuzzyBox  exact_bb;
 
-    std::list<Point_and_Elevation> result;
-    std::list<Point_and_Elevation>::iterator it;
+    std::list<TGNodeData> result;
+    std::list<TGNodeData>::iterator it;
 
     north.clear();
     south.clear();
     east.clear();
     west.clear();
 
+#if 0    
     // Have we generated the k-d tree?
     if ( !kd_tree_valid ) {
         SG_LOG(SG_GENERAL, SG_ALERT, "get_geod_edge called with invalid kdtree" );
         exit(0);
         return false;
     }
+#endif
 
     // find northern points
-    ll = tgn_Point( west_compare - fgPoint3_Epsilon, north_compare - fgPoint3_Epsilon );
-    ur = tgn_Point( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
-    exact_bb = Fuzzy_bb(ll, ur);
+    ll = TGNodePoint( west_compare - fgPoint3_Epsilon, north_compare - fgPoint3_Epsilon );
+    ur = TGNodePoint( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
+    exact_bb = TGNodeFuzzyBox(ll, ur);
+    
     result.clear();
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
     for ( it = result.begin(); it != result.end(); it++ ) {
@@ -128,9 +137,9 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     }
 
     // find southern points
-    ll = tgn_Point( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = tgn_Point( east_compare + fgPoint3_Epsilon, south_compare + fgPoint3_Epsilon );
-    exact_bb = Fuzzy_bb(ll, ur);
+    ll = TGNodePoint( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
+    ur = TGNodePoint( east_compare + fgPoint3_Epsilon, south_compare + fgPoint3_Epsilon );
+    exact_bb = TGNodeFuzzyBox(ll, ur);
     result.clear();
 
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
@@ -139,9 +148,9 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     }
 
     // find eastern points
-    ll = tgn_Point( east_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = tgn_Point( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
-    exact_bb = Fuzzy_bb(ll, ur);
+    ll = TGNodePoint( east_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
+    ur = TGNodePoint( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
+    exact_bb = TGNodeFuzzyBox(ll, ur);
     result.clear();
 
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
@@ -150,9 +159,9 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     }
 
     // find western points
-    ll = tgn_Point( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = tgn_Point( west_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
-    exact_bb = Fuzzy_bb(ll, ur);
+    ll = TGNodePoint( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
+    ur = TGNodePoint( west_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
+    exact_bb = TGNodeFuzzyBox(ll, ur);
     result.clear();
 
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
@@ -187,13 +196,13 @@ void TGNodes::DeleteUnused( void ) {
             used_nodes.push_back( tg_node_list[i] );
         }
     }
-    tg_node_list.clear();
     
+    // rebuild and reindex the tree
+    tg_node_list.clear();
     tg_kd_tree.clear();
-    kd_tree_valid = false;
     
     for(unsigned int i = 0; i < used_nodes.size(); i++) {
-        tg_node_list.add(used_nodes[i]);
+        unique_add(used_nodes[i].GetPosition(), used_nodes[i].GetType() );
     }
     
     unsigned int kept_nodes = tg_node_list.size();
@@ -348,10 +357,20 @@ void TGNodes::ToShapefile( const std::string& datasource )
 
 void TGNodes::SaveToGzFile( gzFile& fp )
 {
-    tg_node_list.SaveToGzFile( fp );
+    // Just save the node_list - rebuild the kd_tree on load
+    sgWriteUInt( fp, tg_node_list.size() );
+    for (unsigned int i=0; i<tg_node_list.size(); i++) {
+        tg_node_list[i].SaveToGzFile( fp );
+    }    
 }
 
 void TGNodes::LoadFromGzFile( gzFile& fp )
 {
-    tg_node_list.LoadFromGzFile( fp );
+    unsigned int count;
+    sgReadUInt( fp, &count );
+    for (unsigned int i=0; i<count; i++) {
+        TGNode node;
+        node.LoadFromGzFile( fp );
+        unique_add(node.GetPosition(), node.GetType() );
+    }
 }

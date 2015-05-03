@@ -2,6 +2,9 @@
 
 #include "tg_polygon.hxx"
 
+#define DEBUG_POLY_CLEAN    SG_INFO
+
+#if 0
 tgPolygon tgPolygon::Snap( const tgPolygon& subject, double snap )
 {
     tgPolygon result;
@@ -21,7 +24,16 @@ tgPolygon tgPolygon::Snap( const tgPolygon& subject, double snap )
 
     return result;
 }
+#endif
 
+void tgPolygon::Snap( double snap )
+{
+    for (unsigned int c = 0; c < contours.size(); c++) {
+        contours[c].Snap( snap );
+    }
+}
+
+#if 0
 tgPolygon tgPolygon::RemoveDups( const tgPolygon& subject )
 {
     tgPolygon result;
@@ -41,7 +53,20 @@ tgPolygon tgPolygon::RemoveDups( const tgPolygon& subject )
 
     return result;
 }
+#endif
 
+unsigned int tgPolygon::RemoveDups( void )
+{
+    unsigned int total_removed = 0;
+    
+    for ( unsigned int c = 0; c < Contours(); c++ ) {
+        total_removed += contours[c].RemoveDups();
+    }
+    
+    return total_removed;
+}
+
+#if 0
 tgPolygon tgPolygon::RemoveBadContours( const tgPolygon& subject )
 {
     tgPolygon result;
@@ -64,6 +89,27 @@ tgPolygon tgPolygon::RemoveBadContours( const tgPolygon& subject )
     }
 
     return result;
+}
+#endif
+
+unsigned int tgPolygon::RemoveBadContours( void )
+{
+    tgcontour_list_iterator it = contours.begin();
+    unsigned int before = contours.size();
+    
+    while( it != contours.end() ) {
+        if ( (*it).GetSize() < 3 ) {
+            it = contours.erase( it );
+        } else {
+            it++;
+        }
+    }
+    
+    if ( before != contours.size() ) {
+        SG_LOG(SG_GENERAL, DEBUG_POLY_CLEAN, "RemoveBadContours before: " << before << " after: " << contours.size() );
+    }
+    
+    return before - contours.size();
 }
 
 tgPolygon tgPolygon::RemoveCycles( const tgPolygon& subject )

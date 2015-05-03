@@ -138,6 +138,7 @@ long int tgChopper::GenerateIndex( std::string path )
 {
     std::string index_file = path + "/chop.idx";
     long int index = 0;
+    int  bRead = -1;
 
     //Open or create the named mutex
     boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "tgChopper_index2");
@@ -155,11 +156,11 @@ long int tgChopper::GenerateIndex( std::string path )
                 exit( 0 );
             }
         } else {
-            fread( (void*)&index, sizeof(long int), 1, fp );
+            bRead = fread( (void*)&index, sizeof(long int), 1, fp );
             if (ferror(fp))
             {
                 perror ("The following error occurred");
-                SG_LOG(SG_GENERAL, SG_ALERT, "Error reading Index file " << index_file << " abort");
+                SG_LOG(SG_GENERAL, SG_ALERT, "Error reading Index file " << index_file << " abort : bRead is " << bRead);
                 boost::interprocess::named_mutex::remove("tgChopper_index2");
                 exit(0);
             }

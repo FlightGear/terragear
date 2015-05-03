@@ -9,6 +9,9 @@
 #include "tg_unique_tgnode.hxx"
 #include "tg_shapefile.hxx"
 
+#define DEBUG_POLY_CLEAN    SG_INFO
+
+#if 0
 tgContour tgContour::Snap( const tgContour& subject, double snap )
 {
     tgContour result;
@@ -21,6 +24,18 @@ tgContour tgContour::Snap( const tgContour& subject, double snap )
     result.SetHole( subject.GetHole() );
 
     return result;
+}
+#endif
+
+void tgContour::Snap( double snap )
+{
+    SGGeod pt;
+    
+    for (unsigned int i = 0; i < node_list.size(); i++) {
+        node_list[i].setLatitudeDeg(  snap * SGMisc<double>::round( node_list[i].getLatitudeDeg()/snap ) );
+        node_list[i].setLongitudeDeg( snap * SGMisc<double>::round( node_list[i].getLongitudeDeg()/snap ) );
+        node_list[i].setElevationM(   snap * SGMisc<double>::round( node_list[i].getElevationM()/snap ) );
+    }
 }
 
 double tgContour::GetMinimumAngle( void ) const
@@ -210,6 +225,7 @@ bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
     return split;
 }
 
+#if 0
 tgContour tgContour::RemoveDups( const tgContour& subject )
 {
     tgContour result;
@@ -271,7 +287,65 @@ tgContour tgContour::RemoveDups( const tgContour& subject )
     } while( found );
 
     return result;
+}
+#endif
 
+unsigned int tgContour::RemoveDups( void )
+{
+    unsigned int iters = 0;
+    unsigned int orig_nodes = 0;
+    bool         found;
+    
+    orig_nodes = GetSize();
+    
+    do
+    {
+        found = false;
+        
+        // Step 1 - find a neighboring duplicate points
+        SGGeod       cur, next;
+        unsigned int cur_loc, next_loc;
+        
+        for ( unsigned int i = 0; i < GetSize() && !found; i++ ) {
+            if (i == GetSize() - 1 ) {
+                cur_loc = i;
+                cur  = GetNode(i);
+                
+                next_loc = 0;
+                next = GetNode(0);
+                
+                //SG_LOG( SG_GENERAL, DEBUG_POLY_CLEAN, " cur is last point: " << cur << " next is first point: " << next );
+            } else {
+                cur_loc = i;
+                cur  = GetNode(i);
+                
+                next_loc = i+1;
+                next = GetNode(i+1);
+                //SG_LOG( SG_GENERAL, DEBUG_POLY_CLEAN, " cur is: " << cur << " next is : " << next );
+            }
+            
+            if ( SGGeod_isEqual2D( cur, next ) ) {
+                // keep the point with higher Z
+                if ( cur.getElevationM() < next.getElevationM() ) {
+                    //SG_LOG(SG_GENERAL, DEBUG_POLY_CLEAN, "remove_contour_dups: erasing " << cur );
+                    RemoveNodeAt( cur_loc );
+                    // result.RemoveNodeAt( result.begin()+cur );
+                } else {
+                    //SG_LOG(SG_GENERAL, DEBUG_POLY_CLEAN, "remove_contour_dups: erasing " << next );
+                    RemoveNodeAt( next_loc );
+                }
+                found = true;
+            }
+        }
+        
+        iters++;
+    } while( found );
+    
+    if ( GetSize() != orig_nodes ) {
+        SG_LOG(SG_GENERAL, DEBUG_POLY_CLEAN, "remove_contour_dups : after " << iters << " iterations, contour decrease from " << orig_nodes << " to  " << GetSize() << " nodes" );        
+    }
+    
+    return orig_nodes - GetSize();
 }
 
 tgContour tgContour::SplitLongEdges( const tgContour& subject, double max_len )

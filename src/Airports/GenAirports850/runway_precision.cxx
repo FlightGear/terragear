@@ -186,7 +186,7 @@ tgPolygon Runway::gen_shoulder_section( SGGeod& p0, SGGeod& p1, SGGeod& t0, SGGe
     poly.AddNode( 0, s1 );
     poly.AddNode( 0, s2 );
     poly.AddNode( 0, s3 );
-    poly = tgPolygon::Snap( poly, gSnap );
+    poly.Snap(gSnap);
 
     poly.SetMaterial( surface );
     if (side == 0) {
@@ -355,7 +355,7 @@ void Runway::gen_section( const tgPolygon& runway,
     section.AddNode( 0, pg0 );
     section.AddNode( 0, pg1 );
     section.AddNode( 0, pg3 );
-    section = tgPolygon::Snap( section, gSnap );
+    section.Snap( gSnap );
 
     section.SetMaterial( "pa_tiedown" );
     section.SetTexParams( pg0, 5.0, 5.0, heading );
@@ -969,7 +969,7 @@ void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, doub
         SGGeod pt = SGGeodesy::direct( midline[n], offset_heading, offset_width );
         runway.AddNode(0, pt);
     }
-    runway = tgPolygon::Snap( runway, gSnap );
+    runway.Snap( gSnap );
     runway.SetMaterial( "pa_tiedown" );
     runway.SetTexParams( runway.GetNode(0,0), 5.0, 5.0, heading );
     runway.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
@@ -1002,7 +1002,7 @@ void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, doub
             right_shoulder.AddNode(0, pt);
         }
         
-        right_shoulder = tgPolygon::Snap( right_shoulder, gSnap );
+        right_shoulder.Snap( gSnap );
         right_shoulder.SetMaterial( shoulder_surface );
         right_shoulder.SetTexParams( ref, shoulder_width, 5, heading );
         right_shoulder.SetTexLimits( 0,0,1,1 );
@@ -1025,7 +1025,7 @@ void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, doub
             // this is the primary texture reference point
             if ( n == (int)midline.size()-1 ) { ref = pt; }                
         }
-        left_shoulder = tgPolygon::Snap( left_shoulder, gSnap );
+        left_shoulder.Snap( gSnap );
         left_shoulder.SetMaterial( shoulder_surface );
         left_shoulder.SetTexParams( ref, shoulder_width, 5, SGMiscd::normalizePeriodic(0, 360, heading+180 ) );
         left_shoulder.SetTexLimits( 0,0,1,1 );
@@ -1128,7 +1128,7 @@ void Runway::gen_stopway( Airport* ap, const SGGeod& start, double length, doubl
     stopway.AddNode(0, SGGeodesy::direct( start, offset_heading,  offset_width ));
     stopway.AddNode(0, SGGeodesy::direct( start, offset_heading, -offset_width ));
     
-    // stopway = tgPolygon::Snap( stopway, gSnap );
+    stopway.Snap( gSnap );
     stopway.SetMaterial( "pa_tiedown" );
     stopway.SetTexParams( stopway.GetNode(0,0), 5.0, 5.0, heading );
     stopway.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );

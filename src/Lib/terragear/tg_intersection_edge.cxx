@@ -546,6 +546,7 @@ void tgIntersectionEdge::Complete( void )
         right_contour.push_back( end->GetPosition() );
     }
 
+#if 0 // let triangulation do this ?    
     // now project added nodes in multisegment intersections to opposite sides 
     // suggestion by I4DNF to generate more well behaved triangulations
     double course;
@@ -634,6 +635,8 @@ void tgIntersectionEdge::Complete( void )
             }
         } while ( lit_e != left_contour.end() );
     }
+#endif
+
 }
 
 bool tgIntersectionEdge::Verify( unsigned long int f )  
@@ -695,7 +698,10 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
     double      v_start;
     double      v_dist;
     double      heading;
+
+#if DEBUG_TEXTURE        
     static int  textured_idx = 0;
+#endif
     
     std::list<SGGeod>::iterator i;
     
@@ -720,7 +726,7 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         poly.SetTexMethod( TG_TEX_1X1_ATLAS );
         poly.SetTexLimits( texAtlasStartU, texAtlasStartV, texAtlasEndU, texAtlasEndV );
         poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
-                
+
 #if DEBUG_TEXTURE        
         // DEBUG : add an arrow with v_start, v_end
         tgSegment seg( start->GetPosition(), end->GetPosition() );

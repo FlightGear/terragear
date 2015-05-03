@@ -364,8 +364,9 @@ void ClosedPoly::Finish()
             pre_tess.AddContour( dst_contour );
         }
 
-        pre_tess = tgPolygon::Snap( pre_tess, gSnap );
-        pre_tess = tgPolygon::RemoveDups( pre_tess );
+        pre_tess.Snap(gSnap);
+        pre_tess.RemoveDups();
+        pre_tess.RemoveBadContours();
     }
 
     // save memory by deleting unneeded resources

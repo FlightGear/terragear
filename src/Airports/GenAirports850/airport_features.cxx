@@ -311,7 +311,7 @@ void Airport::CleanFeatures()
             
             // SG_LOG( SG_GENERAL, SG_ALERT, "poly " << area << ", " << p << " RemoveDups" );
             
-            current = tgPolygon::RemoveDups( current );
+            current.RemoveDups();
             
             if ( current.GetNumIntVas() != 1 ) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "RemoveDups broke us" );
@@ -320,7 +320,7 @@ void Airport::CleanFeatures()
             
             // SG_LOG( SG_GENERAL, SG_ALERT, "poly " << area << ", " << p << " ReoveBadContours" );
             
-            current = tgPolygon::RemoveBadContours( current );
+            current.RemoveBadContours();
             
             if ( current.GetNumIntVas() != 1 ) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "RemoveBadContours broke us" );
@@ -421,6 +421,7 @@ void Airport::TesselateFeatures()
     //sglog().setLogLevels( SG_GENERAL, SG_INFO );
     
     char datasource[64];
+    char feature_desc[64];
     sprintf(datasource, "./edge_dbg/%s", icao.c_str() );
     
     // tesselate the polygons and prepair them for final output
@@ -429,11 +430,11 @@ void Airport::TesselateFeatures()
             //TG_LOG(SG_GENERAL, SG_INFO, "Tesselating Base poly " << area << ", " << p );
             tgPolygon& poly = polys_clipped.get_poly(area, p );
             
-            #if DEBUG
-            char layer[32];
-            sprintf(layer, "tess_%d_%d", area, p );
-            tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
-            #endif
+//            #if DEBUG
+//            char layer[32];
+//            sprintf(layer, "tess_%d_%d", area, p );
+//            tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
+//            #endif
             
             poly.Tesselate();
         
@@ -467,7 +468,8 @@ void Airport::TesselateFeatures()
 #endif
 
             // Let's dump the finished linear features
-            tgShapefile::FromPolygon( poly, false, true, datasource, "triangles", poly.GetMaterial().c_str() );
+            sprintf( feature_desc, "poly_%s_%d\n", poly.GetMaterial().c_str(), poly.GetId() );
+            tgShapefile::FromPolygon( poly, false, true, datasource, "triangles", feature_desc );
         }
 
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {

@@ -12,6 +12,7 @@
 
 #include "tg_polygon.hxx"
 #include "tg_misc.hxx"
+#include "tg_shapefile.hxx"
 
 /* determining if a face is within the reulting poly */
 struct FaceInfo2
@@ -102,16 +103,29 @@ static void tg_insert_polygon(CDTPlus& cdt,const Polygon_2& polygon)
 void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
 {
     CDTPlus cdt;
+    std::vector<SGGeod> geods;
+    char layer[256];
+    bool debug = false;
+    
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Tess with extra " << id );
+    
+    // first - dump the poly we are tesselating, along with all of its vertices_begin
+    if ( id == 31718 ) {
+        debug = true;
+    }
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Tess with extra" );
-
+    if ( debug ) {
+        sprintf( layer, "poly_%03d", id );
+        tgShapefile::FromPolygon(*this, false, false, "./tridbg", layer, "polygon" );
+    }
+    
     // Bail right away if polygon is empty
     if ( contours.size() != 0 ) {
         // First, convert the extra points to cgal Points
         std::vector<Point> points;
         points.reserve(extra.size());
         for (unsigned int n = 0; n < extra.size(); n++) {
-            points.push_back( Point(extra[n].getLongitudeDeg(), extra[n].getLatitudeDeg() ) );
+            points.push_back( Point(extra[n].getLongitudeDeg(), extra[n].getLatitudeDeg() ) );            
         }
 
         cdt.insert(points.begin(), points.end());
@@ -124,17 +138,24 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
             for (unsigned int n = 0; n < contour.GetSize(); n++ ) {
                 SGGeod node = contour.GetNode(n);
                 poly.push_back( Point( node.getLongitudeDeg(), node.getLatitudeDeg() ) );
+                geods.push_back( node );
             }
 
             tg_insert_polygon(cdt, poly);
         }
 
+        if ( debug ) {
+            sprintf( layer, "nodes_%03d", id );
+            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "nodes" );
+        }
+        
         /* make conforming - still has an issue, and can't be compiled with exact_construction kernel */
         // CGAL::make_conforming_Delaunay_2( cdt );
 
         tg_mark_domains( cdt );
 
         int count=0;
+        geods.clear();
         for (CDTPlus::Finite_faces_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) {
             if ( fit->info().in_domain() ) {
                 Triangle_2 tri = cdt.triangle(fit);
@@ -143,15 +164,27 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
                 SGGeod p1 = SGGeod::fromDeg( to_double(tri.vertex(1).x()), to_double(tri.vertex(1).y()) );
                 SGGeod p2 = SGGeod::fromDeg( to_double(tri.vertex(2).x()), to_double(tri.vertex(2).y()) );
 
+                geods.push_back( p0 );
+                geods.push_back( p1 );
+                geods.push_back( p2 );
+                
                 /* Check for Zero Area before inserting */
-                if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
+                //if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
                     AddTriangle( p0, p1, p2 );
-                } else {
-                    SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
-                }
+                //} else {
+                //    SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
+                //}
                 
                 ++count;
             }
+        }
+        
+        if ( debug ) {
+            sprintf( layer, "tris_%03d", id );
+            tgShapefile::FromPolygon(*this, false, true, "./tridbg", layer, "tris" );
+
+            sprintf( layer, "tri_nodes_%03d", id );
+            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "after_tri" );        
         }
     }
 }
@@ -159,9 +192,22 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
 void tgPolygon::Tesselate()
 {
     CDTPlus cdt;
+    std::vector<SGGeod> geods;
+    char layer[256];
+    bool debug = false;
+    
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Tess " << id );
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Tess" );
-
+    if ( id == 31718 ) {
+        debug = true;
+    }
+    
+    // first - dump the poly we are tesselating, along with all of its vertices_begin
+    if ( debug ) {
+        sprintf( layer, "poly_%03d", id );
+        tgShapefile::FromPolygon(*this, false, false, "./tridbg", layer, "polygon" );
+    }
+    
     // Bail right away if polygon is empty
     if ( contours.size() != 0 ) {
         // insert each polygon as a constraint into the triangulation
@@ -173,15 +219,23 @@ void tgPolygon::Tesselate()
                 SGGeod node = contour.GetNode(n);
                 SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : Adding GEOD " << node);
                 poly.push_back( Point( node.getLongitudeDeg(), node.getLatitudeDeg() ) );
+
+                geods.push_back( node );                
             }
 
             tg_insert_polygon(cdt, poly);
         }
 
+        if ( debug ) {
+            sprintf( layer, "nodes_%03d", id );
+            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "nodes" );
+        }
+        
         assert(cdt.is_valid());
         tg_mark_domains( cdt );
 
         int count=0;
+        geods.clear();
         for (CDTPlus::Finite_faces_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) {
             if ( fit->info().in_domain() ) {
                 SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : face   in domain");
@@ -192,21 +246,31 @@ void tgPolygon::Tesselate()
                 SGGeod p1 = SGGeod::fromDeg( to_double(tri.vertex(1).x()), to_double(tri.vertex(1).y()) );
                 SGGeod p2 = SGGeod::fromDeg( to_double(tri.vertex(2).x()), to_double(tri.vertex(2).y()) );
 
+                geods.push_back( p0 );
+                geods.push_back( p1 );
+                geods.push_back( p2 );
+                
                 /* Check for Zero Area before inserting */
-                if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
+                //if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
                     AddTriangle( p0, p1, p2 );
-                } else {
-                    SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
-                }
+                //} else {
+                //    SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
+                //}
 
                 ++count;
             } else {
                 SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : face not in domain");
             }
         }
-    }
-    else
-    {
+        
+        if ( debug ) {
+            sprintf( layer, "tris_%03d", id );
+            tgShapefile::FromPolygon(*this, false, true, "./tridbg", layer, "tris" );
+        
+            sprintf( layer, "tri_nodes_%03d", id );
+            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "after_tri" );                
+        }
+    } else {
         SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : no contours" );
     }
 }

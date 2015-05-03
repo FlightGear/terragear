@@ -247,9 +247,9 @@ void Airport::CleanBase()
 
             before  = current.TotalNodes();
             current = tgPolygon::AddColinearNodes( current, points );
-            current = tgPolygon::Snap(current, gSnap);
-            current = tgPolygon::RemoveDups( current );
-            current = tgPolygon::RemoveBadContours( current );
+            current.Snap(gSnap);
+            current.RemoveDups();
+            current.RemoveBadContours();
             after   = current.TotalNodes();
 
             if (before != after) {
@@ -267,9 +267,9 @@ void Airport::CleanBase()
     
     before  = inner_base.TotalNodes();
     inner_base = tgPolygon::AddColinearNodes( inner_base, points );
-    inner_base = tgPolygon::Snap(inner_base, gSnap);
-    inner_base = tgPolygon::RemoveDups( inner_base );
-    inner_base = tgPolygon::RemoveBadContours( inner_base );
+    inner_base.Snap(gSnap);
+    inner_base.RemoveDups();
+    inner_base.RemoveBadContours();
     after   = inner_base.TotalNodes();
     
     if (before != after) {

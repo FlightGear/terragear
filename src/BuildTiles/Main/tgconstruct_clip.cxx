@@ -229,7 +229,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     }
 
 
-    remains = tgPolygon::RemoveDups( remains );
+    remains.RemoveDups();
+    remains.RemoveBadContours();
     remains = tgPolygon::RemoveCycles( remains );
 
     if ( debug_all || debug_shapes.size() || debug_areas.size() ) {

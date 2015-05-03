@@ -108,8 +108,8 @@ public:
     }
 
 
-    static tgContour Snap( const tgContour& subject, double snap );
-    static tgContour RemoveDups( const tgContour& subject );
+    //static tgContour Snap( const tgContour& subject, double snap );
+    //static tgContour RemoveDups( const tgContour& subject );
     static tgContour SplitLongEdges( const tgContour& subject, double dist );
     static tgContour RemoveSpikes( const tgContour& subject );
     static bool      RemoveCycles( const tgContour& subject, tgcontour_list& result );
@@ -137,6 +137,11 @@ public:
 
     static void ToShapefile( const tgContour& subject, const std::string& datasource, const std::string& layer, const std::string& feature );
 
+    
+    // non static cleaning
+    void         Snap( double snap );
+    unsigned int RemoveDups( void );
+    
     void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 

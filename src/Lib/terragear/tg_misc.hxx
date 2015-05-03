@@ -13,7 +13,7 @@
 #define SG_BUCKET_NW    (3)
 
 // add these to a debug header
-#define DEBUG_INTERSECTIONS (0)
+#define DEBUG_INTERSECTIONS (1)
 #define LOG_INTERSECTION    (SG_DEBUG)
 
 #define DEBUG_TEXTURE       (0)

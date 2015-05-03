@@ -304,6 +304,8 @@ private:
 
 #else
 
+#if 0
+
 #include "tg_cgal_epec.hxx"
 
 typedef enum {
@@ -441,6 +443,7 @@ private:
     TGFaceList  faces;
 };
 
+
 class UniqueTGNodeSet {
 public:
     UniqueTGNodeSet() {}
@@ -541,6 +544,8 @@ private:
     std::vector<TGNode> node_list;
 };
 
+
+#endif
 
 #endif
 

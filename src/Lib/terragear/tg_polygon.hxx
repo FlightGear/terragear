@@ -101,6 +101,8 @@ class tgPolygon
 {
 public:
     tgPolygon() {
+        static unsigned int cur_id = 0;
+        
         preserve3d = false;
         tp.method = TG_TEX_UNKNOWN;
         for ( unsigned int i=0; i<4; i++ ) {
@@ -112,6 +114,8 @@ public:
             flt_vas[i].method = TG_VA_UNKNOWN;
         }        
         va_flt_mask = 0;
+        
+        id = cur_id++;
     }
     ~tgPolygon() {
         contours.clear();
@@ -354,12 +358,12 @@ public:
     static tgPolygon Intersect( const tgPolygon& subject, const tgPolygon& clip );
 
     // cleanup operations
-    static tgPolygon Snap( const tgPolygon& subject, double snap );
+    //static tgPolygon Snap( const tgPolygon& subject, double snap );
     static tgPolygon StripHoles( const tgPolygon& subject );
     static tgPolygon SplitLongEdges( const tgPolygon& subject, double dist );
     static tgPolygon RemoveCycles( const tgPolygon& subject );
-    static tgPolygon RemoveDups( const tgPolygon& subject );
-    static tgPolygon RemoveBadContours( const tgPolygon& subject );
+    //static tgPolygon RemoveDups( const tgPolygon& subject );
+    //static tgPolygon RemoveBadContours( const tgPolygon& subject );
     static tgPolygon Simplify( const tgPolygon& subject );
     static tgPolygon RemoveColinearNodes( const tgPolygon& subject );
     static tgPolygon RemoveTinyContours( const tgPolygon& subject );
@@ -381,6 +385,12 @@ public:
     static tgPolygon AddColinearNodes( const tgPolygon& subject, std::vector<TGNode*>& nodes );
     static bool      FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod& start, SGGeod& end );
     static tgPolygon AddIntersectingNodes( const tgPolygon& subject, const tgtriangle_list& mesh );
+
+    // NON STATIC CLEANING
+    void         Snap( double snap );
+    unsigned int RemoveDups( void );
+    unsigned int RemoveBadContours( void );
+    
     
     // IO
     void SaveToGzFile( gzFile& fp ) const;

@@ -109,7 +109,7 @@ void Helipad::build_helipad_shoulders( const tgContour& outer_area )
         shoulder_poly.SetTexParams( shoulder_poly.GetNode(0, 1), shoulder_width, 5.0, shoulder_heading );
         shoulder_poly.SetTexLimits( 1,1,0,0 );
         shoulder_poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, 0.0, 0.0, 1.0, 1.0 );
-        shoulder_poly = tgPolygon::Snap( shoulder_poly, gSnap );
+        shoulder_poly.Snap(gSnap);
         shoulder_polys.push_back( shoulder_poly );
     }
 }

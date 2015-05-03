@@ -90,20 +90,27 @@ void TGConstruct::CleanClippedPolys() {
             tgPolygon poly = polys_clipped.get_poly(area, p);
 
             // step 1 : snap
-            poly = tgPolygon::Snap(poly, gSnap);
+            poly.Snap(gSnap);
             if ( IsDebugShape( poly.GetId() ) ) {
                 sprintf(layer, "snapped_%d", poly.GetId() );
                 tgShapefile::FromPolygon( poly, true, false, ds_name, layer, "poly" );
             }
 
             // step 2 : remove_dups
-            poly = tgPolygon::RemoveDups( poly );
+            poly.RemoveDups();
             if ( IsDebugShape( poly.GetId() ) ) {
                 sprintf(layer, "rem_dups_%d", poly.GetId() );
                 tgShapefile::FromPolygon( poly, true, false, ds_name, layer, "poly" );
             }
 
-            // step 3 : remove cycles
+            // step 2 : remove_dups
+            poly.RemoveBadContours();
+            if ( IsDebugShape( poly.GetId() ) ) {
+                sprintf(layer, "rem_dups_%d", poly.GetId() );
+                tgShapefile::FromPolygon( poly, true, false, ds_name, layer, "poly" );
+            }
+            
+            // step 4 : remove cycles
             poly = tgPolygon::RemoveCycles( poly );
             if ( IsDebugShape( poly.GetId() ) ) {
                 sprintf(layer, "rem_cycles_%d", poly.GetId() );

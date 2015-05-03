@@ -28,6 +28,7 @@
 
 #include <simgear/misc/sg_dir.hxx>
 #include <simgear/debug/logstream.hxx>
+#include <simgear/timing/timestamp.hxx>
 
 #include <terragear/tg_shapefile.hxx>
 
@@ -44,8 +45,12 @@ int TGConstruct::LoadLandclassPolys( void ) {
 
     string base = bucket.gen_base_path();
     string poly_path;
-    int    total_polys_read = 0;
+    unsigned int total_polys_read = 0;
+    unsigned int total_nodes = 0;
     tgPolygon poly;
+    
+    SGTimeStamp addnode;
+    SGTimeStamp start, end;
 
     // load 2D polygons from all directories provided
     for ( i = 0; i < (int)load_dirs.size(); ++i ) {
@@ -97,11 +102,15 @@ int TGConstruct::LoadLandclassPolys( void ) {
                         for (unsigned int k=0; k<poly.ContourSize(j); k++) {
                             SGGeod const& node  = poly.GetNode( j, k );
 
+                            start.stamp();
+                            total_nodes++;
                             if ( poly.GetPreserve3D() ) {
                                 nodes.unique_add( node, TG_NODE_FIXED_ELEVATION );
                             } else {
                                 nodes.unique_add( node );
                             }
+                            end.stamp();
+                            addnode += (end-start);
                         }
                     }
 
@@ -120,6 +129,9 @@ int TGConstruct::LoadLandclassPolys( void ) {
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, " Total polys read in this tile: " <<  total_polys_read );
-
+    
+    SG_LOG( SG_GENERAL, SG_INFO, " added " << total_nodes << " unique nodes in " << addnode );
+    
+    
     return total_polys_read;
 }

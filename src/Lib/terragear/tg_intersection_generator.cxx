@@ -152,8 +152,8 @@ void tgIntersectionGenerator::Execute( bool clean )
 
         for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
             char feat[32];
-            sprintf(feat, "edge_%05ld", (*it)->id );
             tgPolygon poly = (*it)->GetPoly("complete");
+            sprintf(feat, "edge_%05ld", poly.GetId() );
             tgShapefile::FromPolygon( poly, false, false, datasource, "complete", feat );
 
             (*it)->ToShapefile();        
