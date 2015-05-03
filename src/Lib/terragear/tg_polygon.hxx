@@ -390,6 +390,7 @@ public:
     void         Snap( double snap );
     unsigned int RemoveDups( void );
     unsigned int RemoveBadContours( void );
+    void         AddColinearNodes( const std::vector<SGGeod>& nodes );
     
     
     // IO

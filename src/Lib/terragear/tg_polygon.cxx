@@ -169,6 +169,13 @@ tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, std::vector<SGG
     return result;
 }
 
+void tgPolygon::AddColinearNodes( const std::vector<SGGeod>& nodes )
+{    
+    for ( unsigned int c = 0; c < Contours(); c++ ) {
+        contours[c] = tgContour::AddColinearNodes( contours[c], nodes );
+    }
+}
+
 tgPolygon tgPolygon::AddColinearNodes( const tgPolygon& subject, UniqueSGGeodSet& nodes )
 {
     return AddColinearNodes( subject, nodes.get_list() );

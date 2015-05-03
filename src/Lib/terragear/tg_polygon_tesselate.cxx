@@ -103,22 +103,44 @@ static void tg_insert_polygon(CDTPlus& cdt,const Polygon_2& polygon)
 void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
 {
     CDTPlus cdt;
-    std::vector<SGGeod> geods;
+
+    static unsigned int trinum = 1;
     char layer[256];
     bool debug = false;
+    std::vector<SGGeod> polynodes;
     
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Tess with extra " << id );
+    // 7072
     
-    // first - dump the poly we are tesselating, along with all of its vertices_begin
-    if ( id == 31718 ) {
+    if ( trinum >= 11190 ) {
         debug = true;
     }
-
+  
+    // add extra as intermediate nodes....
+    AddColinearNodes( extra );
+    
+    // gather all nodes in the poly
+    if ( contours.size() != 0 ) {
+        for ( unsigned int c = 0; c < contours.size(); c++ ) {
+            tgContour contour = contours[c];
+            for (unsigned int n = 0; n < contour.GetSize(); n++ ) {
+                SGGeod node = contour.GetNode(n);
+                polynodes.push_back( node );
+            }
+        }
+    }        
+    
     if ( debug ) {
-        sprintf( layer, "poly_%03d", id );
+        sprintf( layer, "poly_%06u", trinum );
         tgShapefile::FromPolygon(*this, false, false, "./tridbg", layer, "polygon" );
+        sprintf( layer, "extra_%06u", trinum );
+        tgShapefile::FromGeodList( extra, false, "./tridbg", layer, "extra" );
+        sprintf( layer, "polynodes_%06u", trinum );
+        tgShapefile::FromGeodList( polynodes, false, "./tridbg", layer, "extra" );
     }
     
+    SG_LOG( SG_GENERAL, SG_INFO, "Tess with extra " << trinum );
+    
+    // first - dump the poly we are tesselating, along with all of its vertices_begin
     // Bail right away if polygon is empty
     if ( contours.size() != 0 ) {
         // First, convert the extra points to cgal Points
@@ -128,8 +150,16 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
             points.push_back( Point(extra[n].getLongitudeDeg(), extra[n].getLatitudeDeg() ) );            
         }
 
+        if ( debug ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "num extra is " << points.size() );            
+        }
+        
         cdt.insert(points.begin(), points.end());
 
+        if ( debug ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "num contours is " << contours.size() );            
+        }
+        
         // then insert each polygon as a constraint into the triangulation
         for ( unsigned int c = 0; c < contours.size(); c++ ) {
             tgContour contour = contours[c];
@@ -138,15 +168,8 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
             for (unsigned int n = 0; n < contour.GetSize(); n++ ) {
                 SGGeod node = contour.GetNode(n);
                 poly.push_back( Point( node.getLongitudeDeg(), node.getLatitudeDeg() ) );
-                geods.push_back( node );
             }
-
             tg_insert_polygon(cdt, poly);
-        }
-
-        if ( debug ) {
-            sprintf( layer, "nodes_%03d", id );
-            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "nodes" );
         }
         
         /* make conforming - still has an issue, and can't be compiled with exact_construction kernel */
@@ -155,7 +178,6 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
         tg_mark_domains( cdt );
 
         int count=0;
-        geods.clear();
         for (CDTPlus::Finite_faces_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) {
             if ( fit->info().in_domain() ) {
                 Triangle_2 tri = cdt.triangle(fit);
@@ -164,29 +186,19 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
                 SGGeod p1 = SGGeod::fromDeg( to_double(tri.vertex(1).x()), to_double(tri.vertex(1).y()) );
                 SGGeod p2 = SGGeod::fromDeg( to_double(tri.vertex(2).x()), to_double(tri.vertex(2).y()) );
 
-                geods.push_back( p0 );
-                geods.push_back( p1 );
-                geods.push_back( p2 );
-                
                 /* Check for Zero Area before inserting */
-                //if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
+                if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
                     AddTriangle( p0, p1, p2 );
-                //} else {
-                //    SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
-                //}
+                } else {
+                    SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
+                }
                 
                 ++count;
             }
-        }
-        
-        if ( debug ) {
-            sprintf( layer, "tris_%03d", id );
-            tgShapefile::FromPolygon(*this, false, true, "./tridbg", layer, "tris" );
-
-            sprintf( layer, "tri_nodes_%03d", id );
-            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "after_tri" );        
-        }
+        }        
     }
+    
+    trinum++;
 }
 
 void tgPolygon::Tesselate()

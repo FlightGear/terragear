@@ -51,7 +51,14 @@ string attribute_query;
 bool use_spatial_query=false;
 double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
 
-tgIntersectionGenerator smooth_contours("./ig_dbg/", NULL);
+int GetTextureInfo( unsigned int type, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist )
+{
+    material = area_type;
+    atlas_startu = 0;
+    atlas_endu   = 1;
+    
+    return 0;
+}
 
 /* very GDAL specific here... */
 inline static bool is_ocean_area( const std::string &area ) {
@@ -66,7 +73,7 @@ inline static bool is_null_area( const std::string& area ) {
     return area == "Null";
 }
 
-void processLineString(OGRLineString* poGeometry, const string& area_type, int width )
+void processLineString(OGRLineString* poGeometry, const string& area_type, int width, tgIntersectionGenerator* pig )
 {
     SGGeod p0, p1;
     int i, numPoints;
@@ -82,11 +89,11 @@ void processLineString(OGRLineString* poGeometry, const string& area_type, int w
         p0 = SGGeod::fromDeg( poGeometry->getX(i-1), poGeometry->getY(i-1) );
         p1 = SGGeod::fromDeg( poGeometry->getX(i),   poGeometry->getY(i) );
 
-        smooth_contours.Insert( p0, p1, width, 0 );
+        pig->Insert( p0, p1, width, 1 );
     }
 }
 
-void processLayer(OGRLayer* poLayer, tgChopper& results )
+void processLayer(OGRLayer* poLayer, tgChopper& results, tgIntersectionGenerator* pig )
 {
     int feature_count=poLayer->GetFeatureCount();
 
@@ -236,7 +243,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
                 }
             }
 
-            processLineString((OGRLineString*)poGeometry, area_type_name, width);
+            processLineString((OGRLineString*)poGeometry, area_type_name, width, pig);
             break;
         }
         case wkbMultiLineString: {
@@ -251,7 +258,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
 
             OGRMultiLineString* multils=(OGRMultiLineString*)poGeometry;
             for (int i=0;i<multils->getNumGeometries();i++) {
-                processLineString((OGRLineString*)poGeometry, area_type_name, width);
+                processLineString((OGRLineString*)poGeometry, area_type_name, width, pig);
             }
             break;
         }
@@ -311,7 +318,7 @@ int main( int argc, char **argv ) {
     string datasource,work_dir;
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
-
+    
     while (argc>1) {
         if (!strcmp(argv[1],"--line-width")) {
             if (argc<3) {
@@ -386,7 +393,7 @@ int main( int argc, char **argv ) {
     }
 
     SG_LOG( SG_GENERAL, SG_ALERT, "ogr-decode version " << getTGVersion() << "\n" );
-
+    
     if (argc<3) {
         usage(progname);
     }
@@ -397,6 +404,7 @@ int main( int argc, char **argv ) {
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
 
+    tgIntersectionGenerator smooth_contours(area_type.c_str(), GetTextureInfo);
     tgChopper results( work_dir );
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
@@ -422,7 +430,7 @@ int main( int argc, char **argv ) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
                 exit( 1 );
             }
-            processLayer(poLayer, results );
+            processLayer(poLayer, results, &smooth_contours );
         }
     } else {
         for (int i=0;i<poDS->GetLayerCount();i++) {
@@ -430,7 +438,7 @@ int main( int argc, char **argv ) {
 
             assert(poLayer != NULL);
 
-            processLayer(poLayer, results );
+            processLayer(poLayer, results, &smooth_contours );
         }
     }
 
@@ -444,8 +452,11 @@ int main( int argc, char **argv ) {
     // delta height info may be needed....
     // maybe needs a new class entirely based on intersectiongenerator.
     
-    smooth_contours.Execute(true);
-    
+    smooth_contours.Execute(true);    
+    for ( tgintersectionedge_it it=smooth_contours.edges_begin(); it != smooth_contours.edges_end(); it++ ) {
+        tgPolygon poly = (*it)->GetPoly("complete");
+        results.Add( poly, area_type );
+    }            
     results.Save(false);
     
     OGRDataSource::DestroyDataSource( poDS );

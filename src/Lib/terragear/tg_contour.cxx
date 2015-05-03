@@ -891,7 +891,7 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
     return found_node;
 }
 
-static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, std::vector<SGGeod>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
+static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, const std::vector<SGGeod>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
 {
     SGGeod new_pt;
 
@@ -978,7 +978,7 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, UniqueSGGeodSet
     return result;
 }
 
-tgContour tgContour::AddColinearNodes( const tgContour& subject, std::vector<SGGeod>& nodes )
+tgContour tgContour::AddColinearNodes( const tgContour& subject, const std::vector<SGGeod>& nodes )
 {
     SGGeod p0, p1;
     tgContour result;

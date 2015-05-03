@@ -220,10 +220,12 @@ public:
             index = boost::get<2>(*it);
         }
         
+#if 0        
         calls++;
         if ( calls % 100 == 0 ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::unique_add called " << calls << " times ");
         }
+#endif        
         
         return index;
     }
@@ -249,10 +251,12 @@ public:
             index = (int)boost::get<2>(*it);
         }
 
+#if 0        
         calls++;
         if ( calls % 100 == 0 ) {
             SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::find called " << calls << " times ");
         }
+#endif
 
         return index;
     }

@@ -114,11 +114,12 @@ int TGConstruct::LoadLandclassPolys( void ) {
                         }
                     }
 
-                    if (IsDebugShape( poly.GetId() )) {
-                        char layer[32];
-                        sprintf(layer, "loaded_%d", poly.GetId() );
+//                    if (IsDebugShape( poly.GetId() )) {
+                    if ( true ) {
+                        char desc[32];
+                        sprintf(desc, "loaded_%d", poly.GetId() );
 
-                        tgShapefile::FromPolygon( poly, true, false, ds_name, layer, material.c_str() );
+                        tgShapefile::FromPolygon( poly, true, false, "./loaded", material, desc );
                     }
                 }
 
