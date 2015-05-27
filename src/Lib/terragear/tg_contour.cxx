@@ -924,7 +924,7 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
 
     tgContour      expanded;
     tgPolygon      segment;
-    tgAccumulator  accum;
+    tgAccumulator  accum("ExpandToPolygons");
     tgpolygon_list result;
 
     // generate poly and texparam lists for each line segment

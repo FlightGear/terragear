@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <climits>
 
 #include <simgear/debug/logstream.hxx>
 
@@ -12,6 +13,8 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
 {
     tgPolygon  result;
     UniqueSGGeodSet all_nodes;
+    bool done = false;
+    unsigned int max_hits = UINT_MAX;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.GetSize(); ++i ) {
@@ -28,31 +31,42 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
     ClipperLib::Path  clipper_subject = tgContour::ToClipper( subject );
     ClipperLib::Paths clipper_result;
 
-    ClipperLib::Clipper c;
-    c.Clear();
+    while ( !done && max_hits > 0 ) {
+        ClipperLib::Clipper c;
+        c.Clear();
 
-    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
+        c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
 
-    // clip result against all polygons in the accum that intersect our bb
-    for (unsigned int i=0; i < accum.size(); i++) {
-        tgRectangle box2 = BoundingBox_FromClipper( accum[i] );
+        // clip result against all polygons in the accum that intersect our bb
+        for (unsigned int i=0; i < accum.size(); i++) {
+            tgRectangle box2 = BoundingBox_FromClipper( accum[i] );
 
-        if ( box2.intersects(box1) )
-        {
-            c.AddPaths(accum[i], ClipperLib::ptClip, true);
-            num_hits++;
+            if ( box2.intersects(box1) )
+            {
+                if ( num_hits < max_hits ) {
+                    c.AddPaths(accum[i], ClipperLib::ptClip, true);
+                    num_hits++;
+                }
+            }
         }
-    }
 
-    if (num_hits) {
-        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-            exit(-1);
+        if (num_hits) {
+            if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE - reducing accumulator" );
+                max_hits = num_hits-1;
+
+                FILE* fp = fopen( "./accumulator_fail.log", "a" );
+                fprintf( fp, "%s : reduce from %d to %d\n", debugstr.c_str(), num_hits, max_hits );
+                fclose(fp);
+            } else {
+                result = tgPolygon::FromClipper( clipper_result );
+                result = tgPolygon::AddColinearNodes( result, all_nodes );
+                done = true;
+            }
+        } else {
+            result.AddContour( subject );
+            done = true;
         }
-        result = tgPolygon::FromClipper( clipper_result );
-        result = tgPolygon::AddColinearNodes( result, all_nodes );
-    } else {
-        result.AddContour( subject );
     }
 
     return result;
@@ -62,6 +76,8 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
 {
     tgPolygon result;
     UniqueSGGeodSet all_nodes;
+    bool done = false;
+    unsigned int max_hits = UINT_MAX;
 
     /* before diff - gather all nodes */
     for ( unsigned int i = 0; i < subject.Contours(); ++i ) {
@@ -80,36 +96,44 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
     ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
     ClipperLib::Paths clipper_result;
 
-    ClipperLib::Clipper c;
-    c.Clear();
+    while ( !done && max_hits > 0 ) {    
+        ClipperLib::Clipper c;
+        c.Clear();
 
-    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
+        c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
 
-    // clip result against all polygons in the accum that intersect our bb
-    for (unsigned int i=0; i < accum.size(); i++) {
-        tgRectangle box2 = BoundingBox_FromClipper( accum[i] );
+        // clip result against all polygons in the accum that intersect our bb
+        for (unsigned int i=0; i < accum.size(); i++) {
+            tgRectangle box2 = BoundingBox_FromClipper( accum[i] );
 
-        if ( box2.intersects(box1) )
-        {
-            c.AddPaths(accum[i], ClipperLib::ptClip, true);
-            num_hits++;
-        }
-    }
-
-    if (num_hits) {
-        if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE" );
-            exit(-1);
+            if ( box2.intersects(box1) )
+            {
+                c.AddPaths(accum[i], ClipperLib::ptClip, true);
+                num_hits++;
+            }
         }
 
-        result = tgPolygon::FromClipper( clipper_result );
-        result = tgPolygon::AddColinearNodes( result, all_nodes );
+        if (num_hits) {
+            if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE - reducing accumulator" );
+                max_hits = num_hits-1;
 
-        // Make sure we keep texturing info
-        result.SetMaterial( subject.GetMaterial() );
-        result.SetTexParams( subject.GetTexParams() );
-    } else {
-        result = subject;
+                FILE* fp = fopen( "./accumulator_fail.log", "a" );
+                fprintf( fp, "%s : reduce from %d to %d\n", debugstr.c_str(), num_hits, max_hits );
+                fclose(fp);                
+            } else {
+                result = tgPolygon::FromClipper( clipper_result );
+                result = tgPolygon::AddColinearNodes( result, all_nodes );
+
+                // Make sure we keep texturing info
+                result.SetMaterial( subject.GetMaterial() );
+                result.SetTexParams( subject.GetTexParams() );
+                done = true;
+            }
+        } else {
+            result = subject;
+            done = true;
+        }
     }
 
     return result;

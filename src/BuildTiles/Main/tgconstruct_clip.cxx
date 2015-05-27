@@ -41,7 +41,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgcontour_list slivers;
     SGGeod p;
     bool debug_area, debug_shape;
-    tgAccumulator accum;
+    tgAccumulator accum(bucket.gen_index_str());
     unsigned int accum_idx = 0;
 
     // set up clipping tile : and remember to add the nodes!

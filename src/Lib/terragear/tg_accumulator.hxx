@@ -8,6 +8,8 @@
 class tgAccumulator
 {
 public:
+    tgAccumulator( const std::string& d ) : debugstr(d) {}
+    
     tgPolygon Diff( const tgContour& subject );
     tgPolygon Diff( const tgPolygon& subject );
 
@@ -22,6 +24,7 @@ private:
 
     clipper_polygons_list   accum;
     UniqueSGGeodSet         nodes;
+    std::string             debugstr;
 };
 
 #endif // _TGACCUMULATOR_HXX

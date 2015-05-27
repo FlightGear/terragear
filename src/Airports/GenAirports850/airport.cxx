@@ -285,7 +285,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // Add the linear features
     if (features.size())
     {
-        tgAccumulator lf_accum;
+        tgAccumulator lf_accum(icao);
 
         TG_LOG(SG_GENERAL, SG_INFO, "Build " << features.size() << " Linear Feature Polys");
         for ( unsigned int i=0; i<features.size(); i++ )
@@ -302,7 +302,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     }
 
     /* Initialize a new accumulator for the other objects */
-    tgAccumulator pvmt_accum;
+    tgAccumulator pvmt_accum(icao);
 
     // Build runways next
     if (runways.size())
