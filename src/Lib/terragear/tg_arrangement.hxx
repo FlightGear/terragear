@@ -7,26 +7,49 @@
 #include <CGAL/Arr_polyline_traits_2.h>
 #include <CGAL/Arrangement_2.h>
 
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Polygon_with_holes_2.h>
+#include <CGAL/Polygon_set_2.h>
+#include <CGAL/Boolean_set_operations_2.h>
+
 #include "tg_cgal_epec.hxx"
 #include "tg_polygon.hxx"
 
 typedef EPECKernel                                          arrKernel;
-typedef CGAL::Arr_segment_traits_2<arrKernel>               arrSegment_traits;
-typedef CGAL::Arr_polyline_traits_2<arrSegment_traits>      arrTraits;
+//typedef EPICKernel                                          arrKernel;
+//typedef INEXACTKernel                                       arrKernel;
+typedef CGAL::Arr_segment_traits_2<arrKernel>               arrTraits;
+//typedef CGAL::Arr_polyline_traits_2<arrSegment_traits>      arrTraits;
 typedef arrTraits::Point_2                                  arrPoint;
-typedef arrTraits::Curve_2                                  arrPolyline;
-typedef CGAL::Arr_segment_2<arrKernel>                      arrSegment;
+typedef arrTraits::Curve_2                                  arrSegment;
+//typedef CGAL::Arr_segment_2<arrKernel>                      arrSegment;
 typedef CGAL::Arrangement_2<arrTraits>                      arrArrangement;
+
+typedef arrArrangement::Ccb_halfedge_const_circulator       arrCcbHEConstCirc;
+typedef arrArrangement::Halfedge_const_handle               arrHEConstHand;
+
+
+typedef CGAL::Polygon_2<arrKernel>                          Polygon;
+typedef CGAL::Polygon_with_holes_2<arrKernel>               Polygon_with_holes;
+typedef CGAL::Polygon_set_2<arrKernel>                      Polygon_set;
 
 class tgArrangement
 {
 public:
+    void      Clear( void );
     void      Add( const tgPolygon& subject );
+    void      Add( const tgContour& contour );
     void      Add( const tgSegment& subject );
     void      DumpPolys( void );
     void      ToShapefiles( const std::string& path, const std::string& layer );
+    void      ToShapefiles( const std::string& path, const std::string& layer_prefix, Polygon_set& polys );
+
+    Polygon_set ToPolygonSet( int contour );
     
-private:
+private:    
+    void GetPolygons( const arrArrangement::Face_const_handle& fh, Polygon_set& polygons, int contour );
+    void GetHoles( const arrArrangement::Face_const_handle& fh, std::list<Polygon>& holes, Polygon_set& polygons );
+    
     arrArrangement  arr;
 };
 

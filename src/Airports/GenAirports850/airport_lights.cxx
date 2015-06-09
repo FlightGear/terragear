@@ -97,7 +97,8 @@ void Airport::WriteLightsOutput( const std::string& root, const SGBucket& b )
                 {
                     int index;
                 
-                    index = light_nodes.unique_add( lights[i].GetPosition(j), TG_NODE_SMOOTHED );
+                    SGGeod pos = lights[i].GetPosition(j);
+                    index = light_nodes.unique_add( pos, TG_NODE_SMOOTHED );
                     sgboPt.v_list.push_back( index );
                 
                     index = light_normals.add( lights[i].GetNormal(j) );

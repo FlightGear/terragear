@@ -104,12 +104,16 @@ public:
     
     inline void SetElevation( double z )
     {
+#if 0
+        position.setElevationM( 0 );
+#else        
         if (type != TG_NODE_FIXED_ELEVATION) {
             position.setElevationM( z );
             CalcWgs84();
         } else {
             SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::SetElevations - REFUSE - type is " << type << " cur elevation is " << position.getElevationM() << " new would be " << z );
         }
+#endif        
     }
     
     inline bool IsUsed( void ) const {
@@ -190,77 +194,12 @@ public:
 
     // Add a point to the point list if it doesn't already exist.
     // Returns the index (starting at zero) of the point in the list.
-    unsigned int unique_add( const SGGeod& p, tgNodeType t = TG_NODE_INTERPOLATED ) {
-        static unsigned int calls = 0;
-        
-        std::list<TGNodeData>   searchResults;
-        unsigned int            index;
-        
-        // first - create a search node
-        TGNodePoint     pt( p.getLongitudeDeg(), p.getLatitudeDeg() );
-        TGNodeFuzzyCir  query_circle( pt, 0.0000001 );  // approx 1 cm
-        
-        // perform the query
-        searchResults.clear();
-        tg_kd_tree.search(std::back_inserter( searchResults ), query_circle);
-        
-        if ( searchResults.empty() ) {
-            // no node here - add a new one
-            index = tg_node_list.size();
-            double e = p.getElevationM();
-            
-            tg_node_list.push_back( TGNode(p,t) );
-            
-            TGNodeData data(pt, e, index, &tg_node_list[index]);
-            
-            tg_kd_tree.insert(data);            
-        } else {
-            // we found a node - use it
-            std::list<TGNodeData>::const_iterator it = searchResults.begin();
-            index = boost::get<2>(*it);
-        }
-        
-#if 0        
-        calls++;
-        if ( calls % 100 == 0 ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::unique_add called " << calls << " times ");
-        }
-#endif        
-        
-        return index;
-    }
-
+    unsigned int unique_add( SGGeod& p, tgNodeType t = TG_NODE_INTERPOLATED );
+    
     // Find the index of the specified point (compair to the same
     // tolerance as unique_add().  Returns -1 if not found.
-    int find(  const SGGeod& p ) const {
-        std::list<TGNodeData>   searchResults;
-        int index = -1;
-        static unsigned int calls = 0;
-        
-        // first - create a search node
-        TGNodePoint     pt( p.getLongitudeDeg(), p.getLatitudeDeg() );
-        TGNodeFuzzyCir  query_circle( pt, 0.0000001 );  // approx 1 cm
-        
-        // perform the query
-        searchResults.clear();
-        tg_kd_tree.search(std::back_inserter( searchResults ), query_circle);
-        
-        if ( !searchResults.empty() ) {
-            // we found a node - use it
-            std::list<TGNodeData>::const_iterator it = searchResults.begin();
-            index = (int)boost::get<2>(*it);
-        }
-
-#if 0        
-        calls++;
-        if ( calls % 100 == 0 ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::find called " << calls << " times ");
-        }
-#endif
-
-        return index;
-    }
-
+    int find(  const SGGeod& p ) const;
+    
     void SetUsed( int idx ) {
         tg_node_list[idx].SetUsed();
     }

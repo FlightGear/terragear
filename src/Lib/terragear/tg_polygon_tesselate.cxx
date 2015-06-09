@@ -100,23 +100,16 @@ static void tg_insert_polygon(CDTPlus& cdt,const Polygon_2& polygon)
     }
 }
 
-void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
+void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
 {
     CDTPlus cdt;
 
     static unsigned int trinum = 1;
     char layer[256];
-    bool debug = false;
     std::vector<SGGeod> polynodes;
-    
-    // 7072
-    
-    if ( trinum >= 11190 ) {
-        debug = true;
-    }
-  
+
     // add extra as intermediate nodes....
-    AddColinearNodes( extra );
+    // AddColinearNodes( extra );
     
     // gather all nodes in the poly
     if ( contours.size() != 0 ) {
@@ -138,7 +131,7 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
         tgShapefile::FromGeodList( polynodes, false, "./tridbg", layer, "extra" );
     }
     
-    SG_LOG( SG_GENERAL, SG_INFO, "Tess with extra " << trinum );
+    SG_LOG( SG_GENERAL, SG_INFO, "Tess with extra " << id );
     
     // first - dump the poly we are tesselating, along with all of its vertices_begin
     // Bail right away if polygon is empty
@@ -154,7 +147,7 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
             SG_LOG( SG_GENERAL, SG_INFO, "num extra is " << points.size() );            
         }
         
-        cdt.insert(points.begin(), points.end());
+        // cdt.insert(points.begin(), points.end());
 
         if ( debug ) {
             SG_LOG( SG_GENERAL, SG_INFO, "num contours is " << contours.size() );            
@@ -201,18 +194,13 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
     trinum++;
 }
 
-void tgPolygon::Tesselate()
+void tgPolygon::Tesselate(bool debug)
 {
     CDTPlus cdt;
     std::vector<SGGeod> geods;
     char layer[256];
-    bool debug = false;
     
     SG_LOG( SG_GENERAL, SG_DEBUG, "Tess " << id );
-
-    if ( id == 31718 ) {
-        debug = true;
-    }
     
     // first - dump the poly we are tesselating, along with all of its vertices_begin
     if ( debug ) {

@@ -698,6 +698,10 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
     double      v_start;
     double      v_dist;
     double      heading;
+    
+    // snapping never works - we need to merge nearby points....
+    // double      snap = 0.000001;      // approx 10 cm
+
 
 #if DEBUG_TEXTURE        
     static int  textured_idx = 0;
@@ -705,12 +709,14 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
     
     std::list<SGGeod>::iterator i;
     
+    // snap the polys
     for ( i = right_contour.begin(); i != right_contour.end(); i++) {
         poly.AddNode( 0, *i );
     }    
     for ( i = left_contour.begin(); i != left_contour.end(); i++) {
         poly.AddNode( 0, *i );
     }
+    // poly.Snap( snap );
     
     if ( start->IsCap() ) {
         texInfoCb( type, true, material, texAtlasStartU, texAtlasEndU, texAtlasStartV, texAtlasEndV, v_dist );

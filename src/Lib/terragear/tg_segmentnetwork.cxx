@@ -73,7 +73,8 @@ void tgSegmentNetwork::Clean( bool clean )
     
         // really small snapround?  fix for Paris?
         SG_LOG(SG_GENERAL, SG_INFO, "tgSegmentNetwork::RemoveColinearSegments" );        
-        RemoveColinearSegments();
+        //RemoveColinearSegments();
+        ToShapefiles( "removed_colinear_segments" );
     }
     
     GenerateOutput();

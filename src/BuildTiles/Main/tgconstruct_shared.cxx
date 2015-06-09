@@ -27,12 +27,153 @@
 #include <iomanip>
 
 #include <simgear/misc/sg_dir.hxx>
+#include <simgear/io/sg_binobj.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/lowlevel.hxx>
 
 #include "tgconstruct.hxx"
 
 using std::string;
+
+void TGConstruct::CreateMatchedEdgeFiles( std::vector<SGBucket>& bucketList )
+{
+    // todo - add to work queue
+    for ( unsigned int i=0; i<bucketList.size(); i++ ) {
+        SGBucket b = bucketList[i];
+        nodes.clear();
+        
+        // load the .btg from the match directory
+        SGPath file = match_base + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".btg.gz";
+        SGBinObject obj;
+        
+        obj.read_bin( file.str() );
+        std::vector<SGVec3d> wgs84_nodes(obj.get_wgs84_nodes() );
+        
+        string filepath;
+        std::vector<SGGeod> north, south, east, west;
+        int nCount;
+        
+        // read in all of the .btg nodes
+        for ( unsigned int j=0; j<wgs84_nodes.size(); j++ ) {
+            SGGeod pos = SGGeod::fromCart( wgs84_nodes[j] + obj.get_gbs_center() );
+            nodes.unique_add( pos );
+        }
+        
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Read " << nodes.size() << " from file " << file.str()  );
+        
+        nodes.init_spacial_query();
+        nodes.get_geod_edge( b, north, south, east, west );
+        
+        filepath = share_base + "/match1/" + b.gen_base_path() + "/" + b.gen_index_str() + "_edges";
+        SGPath file2(filepath);
+        
+        lock->lock();
+        
+        file2.create_dir( 0755 );
+        
+        gzFile fp;
+        if ( (fp = gzopen( filepath.c_str(), "wb9" )) == NULL ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "ERROR: opening " << file.str() << " for writing!" );
+            return;
+        }
+        
+        sgClearWriteError();
+        
+        // north
+        nCount = north.size();
+        SG_LOG( SG_GENERAL, SG_DEBUG, "write " << north.size() << " northern nodes to file " << filepath.c_str()  );
+        sgWriteInt( fp, nCount );
+        for (int i=0; i<nCount; i++) {
+            sgWriteGeod( fp, north[i] );
+        }
+        
+        // south
+        nCount = south.size();
+        SG_LOG( SG_GENERAL, SG_DEBUG, "write " << south.size() << " southern nodes to file " << filepath.c_str()  );
+        sgWriteInt( fp, nCount );
+        for (int i=0; i<nCount; i++) {
+            sgWriteGeod( fp, south[i] );
+        }
+        
+        // east
+        nCount = east.size();
+        SG_LOG( SG_GENERAL, SG_DEBUG, "write " << east.size() << " eastern nodes to file " << filepath.c_str()  );
+        sgWriteInt( fp, nCount );
+        for (int i=0; i<nCount; i++) {
+            sgWriteGeod( fp, east[i] );
+        }
+        
+        // west
+        nCount = west.size();
+        SG_LOG( SG_GENERAL, SG_DEBUG, "write " << west.size() << " western nodes to file " << filepath.c_str()  );
+        sgWriteInt( fp, nCount );
+        for (int i=0; i<nCount; i++) {
+            sgWriteGeod( fp, west[i] );
+        }        
+        
+        gzclose(fp);
+        
+        lock->unlock();
+    }
+}
+
+void TGConstruct::LoadMatchedEdgeFiles()
+{
+    // try to load matched edges - on successful load, the edge is marked immutable
+    
+    // we need to read just 4 buckets for stage 1 - 1 for each edge
+    std::vector<SGGeod> north, south, east, west;
+    SGBucket   nb, sb, eb, wb;
+    
+    // Read Northern tile and add its southern nodes
+    nb = bucket.sibling(0, 1);
+    LoadNeighboorMatchDataStage1( nb, north, south, east, west );
+    if ( !south.empty() ) {
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Read " << south.size() << " northern matched nodes " );
+        
+        // Add southern nodes from northern tile
+        for (unsigned int i=0; i<south.size(); i++) {
+            nodes.unique_add( south[i] );
+            nm_north.push_back( south[i] );
+        }
+    }
+    
+    // Read Southern Tile and add its northern nodes
+    sb = bucket.sibling(0, -1);
+    LoadNeighboorMatchDataStage1( sb, north, south, east, west );
+    if ( !north.empty() ) {
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Read " << north.size() << " southern matched nodes " );
+        
+        for (unsigned int i=0; i<north.size(); i++) {
+            nodes.unique_add( north[i] );
+            nm_south.push_back( north[i] );
+        }
+    }
+    
+    // Read Eastern Tile and add its western nodes
+    eb = bucket.sibling(1, 0);
+    LoadNeighboorMatchDataStage1( eb, north, south, east, west );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Read " << west.size() << " eastern matched nodes " );
+    
+    if ( !west.empty() ) {
+        for (unsigned int i=0; i<west.size(); i++) {
+            nodes.unique_add( west[i] );
+            nm_east.push_back( west[i] );
+        }
+    }
+    
+    // Read Western Tile and add its eastern nodes
+    wb = bucket.sibling(-1, 0);
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Read " << east.size() << " western matched nodes " );
+    
+    LoadNeighboorMatchDataStage1( wb, north, south, east, west );
+    if ( !east.empty() ) {
+        for (unsigned int i=0; i<east.size(); i++) {
+            nodes.unique_add( east[i] );
+            nm_west.push_back( east[i] );
+        }
+    }
+}
 
 void TGConstruct::SaveSharedEdgeData( int stage )
 {
@@ -523,6 +664,60 @@ void TGConstruct::LoadNeighboorEdgeDataStage1( SGBucket& b, std::vector<SGGeod>&
             west.push_back(pt);
         }
 
+        gzclose( fp );
+    }
+}
+
+void TGConstruct::LoadNeighboorMatchDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west )
+{
+    string dir;
+    string file;
+    gzFile fp;
+    SGGeod pt;
+    int nCount;
+    
+    dir  = share_base + "/match1/" + b.gen_base_path();
+    file = dir + "/" + b.gen_index_str() + "_edges";
+    fp = gzopen( file.c_str(), "rb" );
+    
+    north.clear();
+    south.clear();
+    east.clear();
+    west.clear();
+    
+    if (fp) {
+        // North
+        sgReadInt( fp, &nCount );
+        SG_LOG( SG_CLIPPER, SG_DEBUG, "loading " << nCount << "Points on " << b.gen_index_str() << " north boundary");
+        for (int i=0; i<nCount; i++) {
+            sgReadGeod( fp, pt );
+            north.push_back(pt);
+        }
+        
+        // South
+        sgReadInt( fp, &nCount );
+        SG_LOG( SG_CLIPPER, SG_DEBUG, "loading " << nCount << "Points on " << b.gen_index_str() << " south boundary");
+        for (int i=0; i<nCount; i++) {
+            sgReadGeod( fp, pt );
+            south.push_back(pt);
+        }
+        
+        // East
+        sgReadInt( fp, &nCount );
+        SG_LOG( SG_CLIPPER, SG_DEBUG, "loading " << nCount << "Points on " << b.gen_index_str() << " east boundary");
+        for (int i=0; i<nCount; i++) {
+            sgReadGeod( fp, pt );
+            east.push_back(pt);
+        }
+        
+        // West
+        sgReadInt( fp, &nCount );
+        SG_LOG( SG_CLIPPER, SG_DEBUG, "loading " << nCount << "Points on " << b.gen_index_str() << " west boundary");
+        for (int i=0; i<nCount; i++) {
+            sgReadGeod( fp, pt );
+            west.push_back(pt);
+        }
+        
         gzclose( fp );
     }
 }

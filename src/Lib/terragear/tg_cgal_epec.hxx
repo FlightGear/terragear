@@ -1,4 +1,5 @@
 #include <CGAL/Simple_cartesian.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel_with_sqrt.h>
 
@@ -20,6 +21,14 @@ typedef CGAL::Line_2<EPECSRKernel>                                  EPECSRLine_2
 typedef CGAL::Ray_2<EPECSRKernel>                                   EPECSRRay_2;
 typedef CGAL::Vector_2<EPECSRKernel>                                EPECSRVector_2;
 typedef CGAL::Segment_2<EPECSRKernel>                               EPECSRSegment_2;
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel         EPICKernel;
+typedef EPECKernel::Point_2                                         EPICPoint_2;
+typedef EPECKernel::Direction_2                                     EPICDirection_2;
+typedef CGAL::Line_2<EPECKernel>                                    EPICLine_2;
+typedef CGAL::Ray_2<EPECKernel>                                     EPICRay_2;
+typedef CGAL::Vector_2<EPECKernel>                                  EPICVector_2;
+typedef CGAL::Segment_2<EPECKernel>                                 EPICSegment_2;
 
 typedef CGAL::Simple_cartesian<double>                              INEXACTKernel;
 

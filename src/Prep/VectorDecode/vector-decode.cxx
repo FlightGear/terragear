@@ -51,11 +51,26 @@ string attribute_query;
 bool use_spatial_query=false;
 double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
 
+struct areaDef 
+{
+public:
+    areaDef( std::string m, unsigned int w, std::string ds ) : 
+    material(m), width(w), datasource(ds) {}
+    
+    std::string  material;
+    unsigned int width;
+    std::string  datasource;
+};
+
+std::vector<areaDef> areaDefs;
+
 int GetTextureInfo( unsigned int type, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist )
 {
-    material = area_type;
+    material = areaDefs[type].material;
     atlas_startu = 0;
     atlas_endu   = 1;
+    
+    v_dist = 10.0l;
     
     return 0;
 }
@@ -73,7 +88,7 @@ inline static bool is_null_area( const std::string& area ) {
     return area == "Null";
 }
 
-void processLineString(OGRLineString* poGeometry, const string& area_type, int width, tgIntersectionGenerator* pig )
+void processLineString(OGRLineString* poGeometry, unsigned int idx, int width, tgIntersectionGenerator* pig )
 {
     SGGeod p0, p1;
     int i, numPoints;
@@ -89,37 +104,32 @@ void processLineString(OGRLineString* poGeometry, const string& area_type, int w
         p0 = SGGeod::fromDeg( poGeometry->getX(i-1), poGeometry->getY(i-1) );
         p1 = SGGeod::fromDeg( poGeometry->getX(i),   poGeometry->getY(i) );
 
-        pig->Insert( p0, p1, width, 1 );
+        pig->Insert( p0, p1, width, idx );
     }
 }
 
-void processLayer(OGRLayer* poLayer, tgChopper& results, tgIntersectionGenerator* pig )
+void processLayer(OGRLayer* poLayer, tgChopper& results, unsigned int idx, std::map<int, tgIntersectionGenerator*>& pig )
 {
     int feature_count=poLayer->GetFeatureCount();
-
+    int zorder;
+    
     if (feature_count!=-1 && start_record>0 && start_record>=feature_count) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Layer has only " << feature_count << " records, but start record is set to " << start_record );
         exit( 1 );
     }
-
+    
+    // first, get default width
+    line_width = areaDefs[idx].width;
+    
     /* determine the indices of the required columns */
     OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
     string layername=poFDefn->GetName();
-    int line_width_field=-1, area_type_field=-1;
+    int line_width_field=-1;
 
     if (!line_width_col.empty()) {
         line_width_field=poFDefn->GetFieldIndex(line_width_col.c_str());
         if (line_width_field==-1) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Field " << line_width_col << " for line-width not found in layer" );
-        if (!continue_on_errors)
-            exit( 1 );
-        }
-    }
-
-    if (!area_type_col.empty()) {
-        area_type_field=poFDefn->GetFieldIndex(area_type_col.c_str());
-        if (area_type_field==-1) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Field " << area_type_col << " for line-width not found in layer" );
         if (!continue_on_errors)
             exit( 1 );
         }
@@ -201,37 +211,14 @@ void processLayer(OGRLayer* poLayer, tgChopper& results, tgIntersectionGenerator
                 continue;
         }
 
-        string area_type_name=area_type;
-        if (area_type_field!=-1) {
-            area_type_name=poFeature->GetFieldAsString(area_type_field);
-        }
-
-        if ( is_ocean_area(area_type_name) ) {
-            // interior of polygon is ocean, holes are islands
-
-            SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
-
-            // Ocean data now comes from GSHHS so we want to ignore
-            // all other ocean data
-            continue;
-        } else if ( is_void_area(area_type_name) ) {
-            // interior is ????
-
-            // skip for now
-            SG_LOG(  SG_GENERAL, SG_ALERT, "Void area ... SKIPPING!" );
-
-            continue;
-        } else if ( is_null_area(area_type_name) ) {
-            // interior is ????
-
-            // skip for now
-            SG_LOG(  SG_GENERAL, SG_ALERT, "Null area ... SKIPPING!" );
-
-            continue;
-        }
-
         poGeometry->transform( poCT );
 
+        // get the intersection generator from z-order
+        zorder=poFeature->GetFieldAsInteger("Z_ORDER");
+        if ( pig.find(zorder) == pig.end() ) {
+            pig[zorder] = new tgIntersectionGenerator("./vectordecode", 1, GetTextureInfo);
+        } 
+        
         switch (geoType) {
         case wkbLineString: {
             SG_LOG( SG_GENERAL, SG_DEBUG, "LineString feature" );
@@ -243,7 +230,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results, tgIntersectionGenerator
                 }
             }
 
-            processLineString((OGRLineString*)poGeometry, area_type_name, width, pig);
+            processLineString((OGRLineString*)poGeometry, idx, width, pig[zorder]);
             break;
         }
         case wkbMultiLineString: {
@@ -258,7 +245,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results, tgIntersectionGenerator
 
             OGRMultiLineString* multils=(OGRMultiLineString*)poGeometry;
             for (int i=0;i<multils->getNumGeometries();i++) {
-                processLineString((OGRLineString*)poGeometry, area_type_name, width, pig);
+                processLineString((OGRLineString*)poGeometry, idx, width, pig[zorder]);
             }
             break;
         }
@@ -307,58 +294,62 @@ void usage(char* progname) {
     SG_LOG( SG_GENERAL, SG_ALERT, "        Directory to put the polygon files in" );
     SG_LOG( SG_GENERAL, SG_ALERT, "<datasource>" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        The datasource from which to fetch the data" );
-    SG_LOG( SG_GENERAL, SG_ALERT, "<layername>..." );
-    SG_LOG( SG_GENERAL, SG_ALERT, "        The layers to process." );
-    SG_LOG( SG_GENERAL, SG_ALERT, "        If no layer is given, all layers in the datasource are used" );
+//    SG_LOG( SG_GENERAL, SG_ALERT, "<layername>..." );
+//    SG_LOG( SG_GENERAL, SG_ALERT, "        The layers to process." );
+//    SG_LOG( SG_GENERAL, SG_ALERT, "        If no layer is given, all layers in the datasource are used" );
     exit(-1);
+}
+    
+static void ReadConfig( const std::string& filename )
+{
+    std::ifstream in ( filename.c_str() );
+    
+    if ( ! in ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open config file " << filename);
+        return;
+    }
+    SG_LOG(SG_GENERAL, SG_ALERT, "Config file is " << filename);
+    
+    std::string material, datasource;
+    int width;
+    
+    while ( !in.eof() ) {
+        in >> material;
+        in >> width;
+        in >> datasource;
+
+        SG_LOG(SG_GENERAL, SG_ALERT, "Read material " << material << " with width " << width << " datasourse is " << datasource );
+        
+        areaDefs.push_back( areaDef(material, width, datasource) );
+    }
+    in.close();
+    
+    return;
 }
 
 int main( int argc, char **argv ) {
     char* progname=argv[0];
-    string datasource,work_dir;
+    string data_dir = ".";
+    string work_dir = ".";
+    string config = ".";
+    std::vector<string> datasource;
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
     
-    while (argc>1) {
-        if (!strcmp(argv[1],"--line-width")) {
-            if (argc<3) {
-                usage(progname);
-            }
-            line_width=atoi(argv[2]);
-            argv+=2;
-            argc-=2;
-        } else if (!strcmp(argv[1],"--line-width-column")) {
-            if (argc<3) {
-                usage(progname);
-            }
-            line_width_col=argv[2];
-            argv+=2;
-            argc-=2;
-        } else if (!strcmp(argv[1],"--area-type")) {
-            if (argc<3) {
-                usage(progname);
-            }
-            area_type=argv[2];
-            argv+=2;
-            argc-=2;
-        } else if (!strcmp(argv[1],"--area-type-column")) {
-            if (argc<3) {
-                usage(progname);
-            }
-            area_type_col=argv[2];
-            argv+=2;
-            argc-=2;
-        } else if (!strcmp(argv[1],"--continue-on-errors")) {
-            argv++;
-            argc--;
-            continue_on_errors=1;
-        } else if (!strcmp(argv[1],"--max-segment")) {
-            if (argc<3) {
-                usage(progname);
-            }
-            max_segment_length=atoi(argv[2]);
-            argv+=2;
-            argc-=2;
+    int arg_pos;
+    for (arg_pos = 1; arg_pos < argc; arg_pos++) {
+        string arg = argv[arg_pos];
+        
+        if (arg.find("--data-dir=") == 0) {
+            data_dir = arg.substr(11);
+        } else if (arg.find("--work-dir=") == 0) {
+            work_dir = arg.substr(11);
+        } else if (arg.find("--config=") == 0) {
+            config = arg.substr(9);
+        }
+    }
+
+#if 0    
         } else if (!strcmp(argv[1],"--start-record")) {
             if (argc<3) {
                 usage(progname);
@@ -391,54 +382,44 @@ int main( int argc, char **argv ) {
             break;
         }
     }
+#endif
 
-    SG_LOG( SG_GENERAL, SG_ALERT, "ogr-decode version " << getTGVersion() << "\n" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "vector-decode version " << getTGVersion() << "\n" );
     
-    if (argc<3) {
+    if (argc<4) {
         usage(progname);
     }
-    work_dir=argv[1];
-    datasource=argv[2];
+
+    SG_LOG( SG_GENERAL, SG_ALERT, "read config" );
+    ReadConfig(config);
 
     SGPath sgp( work_dir );
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
 
-    tgIntersectionGenerator smooth_contours(area_type.c_str(), GetTextureInfo);
+    std::map<int, tgIntersectionGenerator*> igs;    
     tgChopper results( work_dir );
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
 
     OGRRegisterAll();
     OGRDataSource       *poDS;
 
-    poDS = OGRSFDriverRegistrar::Open( datasource.c_str(), FALSE );
-    if( poDS == NULL )
-    {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << datasource );
-        exit( 1 );
-    }
-
-    OGRLayer  *poLayer;
-
-    if (argc>3) {
-        for (int i=3;i<argc;i++) {
-            poLayer = poDS->GetLayerByName( argv[i] );
-
-            if (poLayer == NULL )
-            {
-                SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
-                exit( 1 );
+    for ( unsigned int i=0; i<areaDefs.size(); i++ ) {
+        char pathname[256];
+        
+        sprintf( pathname, "%s/%s", data_dir.c_str(), areaDefs[i].datasource.c_str() );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Opening datasource " << pathname << " for reading." );
+        poDS = OGRSFDriverRegistrar::Open( pathname, FALSE );
+        
+        if( poDS != NULL ) {
+            OGRLayer  *poLayer;
+            for (int j=0;j<poDS->GetLayerCount();j++) {
+                poLayer = poDS->GetLayer(j);
+                processLayer(poLayer, results, i, igs );
             }
-            processLayer(poLayer, results, &smooth_contours );
-        }
-    } else {
-        for (int i=0;i<poDS->GetLayerCount();i++) {
-            poLayer = poDS->GetLayer(i);
-
-            assert(poLayer != NULL);
-
-            processLayer(poLayer, results, &smooth_contours );
+            
+            OGRDataSource::DestroyDataSource( poDS );            
+        } else {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << pathname );
         }
     }
 
@@ -452,14 +433,29 @@ int main( int argc, char **argv ) {
     // delta height info may be needed....
     // maybe needs a new class entirely based on intersectiongenerator.
     
+    std::map<int, tgIntersectionGenerator*>::reverse_iterator it;
+    for ( it=igs.rbegin(); it!=igs.rend(); it++ ) {
+        SG_LOG( SG_GENERAL, SG_ALERT, "Found zorder " << (*it).first );
+        tgIntersectionGenerator* pig = (*it).second;
+        
+        pig->Execute(true);
+        for ( tgintersectionedge_it it = pig->edges_begin(); it != pig->edges_end(); it++ ) {
+            tgPolygon poly = (*it)->GetPoly("complete");
+            SG_LOG( SG_GENERAL, SG_ALERT, "got poly w/mat= " << poly.GetMaterial() );
+            results.Add( poly, poly.GetMaterial() );
+        }            
+        results.Save(false);
+    }
+        
+    
+#if 0 // todo - traverse the zorders...    
     smooth_contours.Execute(true);    
     for ( tgintersectionedge_it it=smooth_contours.edges_begin(); it != smooth_contours.edges_end(); it++ ) {
         tgPolygon poly = (*it)->GetPoly("complete");
         results.Add( poly, area_type );
     }            
     results.Save(false);
-    
-    OGRDataSource::DestroyDataSource( poDS );
+#endif    
 
     return 0;
 }

@@ -45,18 +45,20 @@ void tgAreas::clear(void)
     polys.clear();
 }
 
+// TODO for tile merging, areas need to know the area defs file.  bring in from tgconstruct
 void tgAreas::SyncNodes( TGNodes& nodes )
 {
     for (unsigned int area=0; area<polys.size(); area++) {
+        //bool isRoad = area_defs.is_road_area( area );
         for (unsigned int p=0; p<polys[area].size(); p++ ) {
             tgPolygon& poly = polys[area][p];
         
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
                     // ensure we have all nodes...
-                    SGGeod const& node = poly.GetNode( con, n );
-                    int index = nodes.unique_add( node );
-                    poly.SetNode( con, n, nodes[index].GetPosition() );
+                    SGGeod node = poly.GetNode( con, n );
+                    nodes.unique_add( node );
+                    poly.SetNode( con, n, node );
                 }
             }
         }

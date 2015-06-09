@@ -29,11 +29,153 @@
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_shapefile.hxx>
 #include <terragear/tg_misc.hxx>
+#include <terragear/tg_arrangement.hxx>
 
 #include "tgconstruct.hxx"
 
+
+// CGAL clipping with Polygon_2_with_holes
+//
+// to guarantee we don't crash, we need to ensure each polygon is correct.
+// 1) insert each original contour into an empty arrangement.
+//    read back the faces and add as boundary or holes as new contours
+// 2) create the difference of all boundary contours with all hole contours
+//    The polygon is now a valid Polygon_2_with_holes.  
+//    It should always be able to clip against the others.
+
 using std::string;
 
+#if USE_CGAL
+bool TGConstruct::ClipLandclassPolys( void ) {
+    tgPolygon clipped, tmp;
+    tgPolygon remains;
+    tgPolygon safety_base;
+    tgAccumulator accum;
+    bool debug_area, debug_shape;
+
+    // set up clipping tile
+    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_SW ) );
+    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_SE ) );
+    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_NE ) );
+    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_NW ) );
+
+    // set up land mask, we clip most things to this since it is our
+    // best representation of land vs. ocean.  If we have other less
+    // accurate data that spills out into the ocean, we want to just
+    // clip it.
+    // also set up a mask for all water and islands
+    tgPolygon land_mask, water_mask, island_mask;
+    tgpolygon_list land_list, water_list, island_list;
+    
+    SG_LOG(SG_GENERAL, SG_ALERT, "ignoreLandmass: " << ignoreLandmass );
+    
+    for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
+        if ( area_defs.is_landmass_area(i) && !ignoreLandmass ) {
+            for ( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
+                land_list.push_back( polys_in.get_poly(i, j) );
+            }
+        } else if ( area_defs.is_water_area(i) ) {
+            for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
+                water_list.push_back( polys_in.get_poly(i, j) );
+            }
+        } else if ( area_defs.is_island_area(i) ) {
+            for (unsigned int j = 0; j < polys_in.area_size(i); j++) {
+                island_list.push_back( polys_in.get_poly(i, j) );
+            }
+        }
+    }
+
+    land_mask   = tgPolygon::Union_cgal( land_list );
+    water_mask  = tgPolygon::Union_cgal( water_list );
+    island_mask = tgPolygon::Union_cgal( island_list );
+
+    // Dump the masks
+    if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
+        tgShapefile::FromPolygon( land_mask, true, false, ds_name, "land_mask", "" );
+        tgShapefile::FromPolygon( water_mask, true, false, ds_name, "water_mask", "" );
+        tgShapefile::FromPolygon( island_mask, true, false, ds_name, "island_mask", "" );
+    }
+
+    // process polygons in priority order
+    for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
+        //debug_area = IsDebugArea( i );
+        for( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
+            tgPolygon& current = polys_in.get_poly(i, j);
+            debug_shape = IsDebugShape( polys_in.get_poly( i, j ).GetId() );
+
+            SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << area_defs.get_area_name( i ) << "(" << i << "):" << j+1 << " of " << polys_in.area_size(i) << " id " << polys_in.get_poly( i, j ).GetId() );
+
+            tmp = current;
+
+            // if not a hole, clip the area to the land_mask
+            if ( !ignoreLandmass && !area_defs.is_hole_area(i) ) {
+                tmp = tgPolygon::Intersect( tmp, land_mask );
+            }
+
+            // if a water area, cut out potential islands
+            if ( area_defs.is_water_area(i) ) {
+                // clip against island mask
+                tmp = tgPolygon::Diff( tmp, island_mask );
+            }
+
+            // first useage of clipping - diff against accumulator
+            //accum.Diff_cgal( tmp );
+            accum.Diff_and_Add_cgal( tmp );
+            
+            // only add to output list if the clip left us with a polygon
+            if ( tmp.Contours() > 0 ) {
+                // shape.sps.push_back( sp );
+                polys_clipped.add_poly( i, tmp );
+            }
+
+            //accum.Add_cgal( current );
+        }
+        SG_LOG( SG_CLIPPER, SG_INFO, "Clipping " << area_defs.get_area_name( i ) << " Complete" );
+    }
+
+    SG_LOG( SG_CLIPPER, SG_INFO, "Clipping Complete - diff with tile" );
+    
+    // dump the accumulator
+    accum.ToShapefiles( "./", "accum", false );
+    
+    // finally, what ever is left over goes to ocean
+    accum.Diff_cgal( safety_base );    
+    if ( safety_base.Contours() > 0 ) {
+        safety_base.SetMaterial( area_defs.get_sliver_area_name() );
+        safety_base.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
+
+        SG_LOG( SG_CLIPPER, SG_DEBUG, "Adding remains to area " << area_defs.get_sliver_area_priority() );
+        polys_clipped.add_poly( area_defs.get_sliver_area_priority(), safety_base );
+    }
+
+    SG_LOG( SG_CLIPPER, SG_INFO, "Clipping Complete" );
+
+    // Now make sure any newly added intersection nodes are added to the tgnodes
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
+        bool isRoad = area_defs.is_road_area( area );
+        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+            tgPolygon& poly = polys_clipped.get_poly( area, p );
+            
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
+            
+            for (unsigned int con=0; con < poly.Contours(); con++) {
+                for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
+                    // ensure we have all nodes...
+                    SGGeod node = poly.GetNode( con, n );
+                    if ( CheckMatchingNode( node, isRoad, false ) ) {
+                        poly.SetNode( con, n, node );
+                    } else {
+                        poly.DelNode( con, n );
+                    }
+                }
+            }
+        }
+    }
+    
+    return true;
+}
+
+#else
 bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon clipped, tmp;
     tgPolygon remains;
@@ -276,6 +418,30 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             polys_clipped.add_poly( area_defs.get_sliver_area_priority(), remains );
         }
     }
+    
+    // Now make sure any newly added intersection nodes are added to the tgnodes
+    for (unsigned int area = 0; area < area_defs.size(); area++) {
+        bool isRoad = area_defs.is_road_area( area );
+        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
+            tgPolygon& poly = polys_clipped.get_poly( area, p );
+
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
+
+            for (unsigned int con=0; con < poly.Contours(); con++) {
+                for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
+                    // ensure we have all nodes...
+                    SGGeod node = poly.GetNode( con, n );
+                    if ( CheckMatchingNode( node, isRoad, false ) ) {
+                        poly.SetNode( con, n, node );
+                    } else {
+                        poly.DelNode( con, n );
+                    }
+                }
+            }
+        }
+    }
+    
 
     return true;
 }
+#endif

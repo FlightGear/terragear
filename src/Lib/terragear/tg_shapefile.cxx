@@ -149,25 +149,36 @@ void tgShapefile::FromClipper( const ClipperLib::Paths& subject, bool asPolygon,
     }
 }
 
-void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description )
+void tgShapefile::FromContour( void *lid, const tgContour& subject, bool asPolygon, bool withNumber, const std::string& description )
 {
-    void* ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
-    if ( !ds_id ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromContour open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
-    }
-
-    OGRLayer* l_id;
-    if ( asPolygon ) {
-        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
-    } else {
-        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
-    }
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
-
+    OGRLayer* l_id = (OGRLayer *)lid;
+    
     if (subject.GetSize() < 3) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "Polygon with less than 3 points");
     } else {
-        if ( asPolygon ) {
+        if ( withNumber ) {
+            OGRPoint point;
+            char desc[128];
+            
+            for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {
+                sprintf( desc, "%s_%d", description.c_str(), pt );
+                
+                point.setX( subject.GetNode(pt).getLongitudeDeg() );
+                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setZ( 0.0 );
+            
+                OGRFeature* feature = NULL;
+                feature = new OGRFeature( l_id->GetLayerDefn() );
+                feature->SetField("ID", desc);
+                feature->SetGeometry(&point);
+            
+                if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+                {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+                }
+                OGRFeature::DestroyFeature(feature);
+            }
+        } else if ( asPolygon ) {
             OGRPolygon    polygon;
             OGRLinearRing ring;
             OGRPoint      point;
@@ -232,7 +243,9 @@ void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const s
                 } else {
                     heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(pt+1) );
                 }
-                
+      
+// show direction?
+#if 0
                 SGGeod left  = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading-170), 1.0 );            
                 point.setX( left.getLongitudeDeg() );
                 point.setY( left.getLatitudeDeg() );
@@ -249,6 +262,7 @@ void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const s
                 point.setY( subject.GetNode(pt).getLatitudeDeg() );
                 point.setZ( 0.0 );
                 ogr_contour.addPoint(&point);
+#endif                
             }
 
             point.setX( subject.GetNode(0).getLongitudeDeg() );
@@ -267,9 +281,56 @@ void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, const s
             OGRFeature::DestroyFeature(feature);            
         }
     }
+}
 
+void tgShapefile::FromContour( const tgContour& subject, bool asPolygon, bool withNumber, const std::string& datasource, const std::string& layer, const std::string& description )
+{
+    void* ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+    if ( !ds_id ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromSegment open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+    }
+
+    OGRLayer* l_id;    
+    if ( withNumber ) {
+        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POINT );        
+    } else if ( asPolygon ) {
+        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
+    } else {
+        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+    }
+
+    FromContour( (void *)l_id, subject, asPolygon, withNumber, description );
+    
     // close after each write
     ds_id = tgShapefile::CloseDatasource( ds_id );
+}
+
+void tgShapefile::FromContourList( const std::vector<tgContour>& list, bool asPolygon, bool withNumber, const std::string& datasource, const std::string& layer, const std::string& description )
+{
+    if ( !list.empty() ) {    
+        void* ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+        if ( !ds_id ) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygonList open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+        }
+
+        OGRLayer* l_id;
+        if ( withNumber ) {
+            l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POINT );        
+        } else if ( asPolygon ) {
+            l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
+        } else {
+            l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+        }
+        
+        char cont_desc[64];
+        for ( unsigned int i=0; i<list.size(); i++ ) {
+            sprintf(cont_desc, "%s_%d", description.c_str(), i+1);
+            tgShapefile::FromContour( (void *)l_id, list[i], asPolygon, withNumber, cont_desc );
+        }
+        
+        // close after each write
+        ds_id = tgShapefile::CloseDatasource( ds_id );
+    }
 }
 
 void tgShapefile::FromPolygon( void *lid, const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& description )

@@ -233,7 +233,7 @@ void Airport::ClipFeatures()
         for (unsigned int con=0; con < poly.Contours(); con++) {
             for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
                 // ensure
-                SGGeod const& node = poly.GetNode( con, n );
+                SGGeod node = poly.GetNode( con, n );
                 feat_nodes.unique_add( node, TG_NODE_DRAPED );
             }
         }
@@ -245,7 +245,7 @@ void Airport::ClipFeatures()
         for (unsigned int con=0; con < poly.Contours(); con++) {
             for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
                 // ensure
-                SGGeod const& node = poly.GetNode( con, n );
+                SGGeod node = poly.GetNode( con, n );
                 feat_nodes.unique_add( node, TG_NODE_DRAPED );
             }
         }
@@ -436,7 +436,7 @@ void Airport::TesselateFeatures()
 //            tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
 //            #endif
             
-            poly.Tesselate();
+            poly.Tesselate(false);
         
 #if 1            
             // for each triangle in the solution, find the triangle it is coplanar with
@@ -479,7 +479,8 @@ void Airport::TesselateFeatures()
             for (unsigned int k=0; k < poly.Triangles(); k++) {
                 for (int l = 0; l < 3; l++) {
                     // ensure we have all nodes...
-                    feat_nodes.unique_add( poly.GetTriNode( k, l ), TG_NODE_DRAPED );
+                    SGGeod pos = poly.GetTriNode( k, l );
+                    feat_nodes.unique_add( pos, TG_NODE_DRAPED );
                 }
             }
         }

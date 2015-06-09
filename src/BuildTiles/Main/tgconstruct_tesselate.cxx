@@ -43,7 +43,8 @@ void TGConstruct::TesselatePolys( void )
 
             // test test test
             poly = tgPolygon::SplitLongEdges( poly, 100.0 );
-
+            poly = tgPolygon::RemoveCycles( poly );
+            
             if ( IsDebugShape( poly.GetId() ) ) {
                 char layer[32];
                 sprintf(layer, "pretess_%d_%d", area, p );
@@ -60,7 +61,7 @@ void TGConstruct::TesselatePolys( void )
                 SG_LOG( SG_CLIPPER, SG_INFO, poly );
             }
 
-            poly.Tesselate( poly_extra );
+            poly.Tesselate( poly_extra, IsDebugShape(poly.GetId()) );
 
             polys_clipped.set_poly( area, p, poly );
         }

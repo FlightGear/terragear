@@ -214,7 +214,7 @@ void Airport::ClipBase()
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
                     // ensure
-                    SGGeod const& node = poly.GetNode( con, n );
+                    SGGeod node = poly.GetNode( con, n );
                     base_nodes.unique_add( node, TG_NODE_SMOOTHED );
                 }
             }
@@ -225,7 +225,7 @@ void Airport::ClipBase()
     for (unsigned int con=0; con < inner_base.Contours(); con++) {
         for (unsigned int n = 0; n < inner_base.ContourSize( con ); n++) {
             // ensure
-            SGGeod const& node = inner_base.GetNode( con, n );
+            SGGeod node = inner_base.GetNode( con, n );
             base_nodes.unique_add( node, TG_NODE_SMOOTHED );
         }
     }
@@ -305,7 +305,7 @@ void Airport::TesselateBase()
             tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
 #endif
 
-            poly.Tesselate();
+            poly.Tesselate(false);
         }
     }
 
@@ -319,7 +319,8 @@ void Airport::TesselateBase()
             for (unsigned int k=0; k < poly.Triangles(); k++) {
                 for (int l = 0; l < 3; l++) {
                     // ensure we have all nodes...
-                    base_nodes.unique_add( poly.GetTriNode( k, l ), TG_NODE_SMOOTHED );
+                    SGGeod pos = poly.GetTriNode( k, l );
+                    base_nodes.unique_add( pos, TG_NODE_SMOOTHED );
                 }
             }
         }

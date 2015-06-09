@@ -144,6 +144,10 @@ public:
             contours.erase( contours.begin() + idx );
         }
     }
+    void SetContours( tgcontour_list& clist ) {
+        contours.clear();
+        contours = clist;
+    }
 
     unsigned int TotalNodes( void ) const;
 
@@ -164,7 +168,10 @@ public:
 
         contours[c].AddNode( n );
     }
-
+    void DelNode( unsigned int c, unsigned int n ) {
+        contours[c].DelNode( n );
+    }
+    
     tgRectangle GetBoundingBox( void ) const;
 
     void InheritElevations( const tgPolygon& source );
@@ -344,8 +351,8 @@ public:
     void TextureSecondary( void );
 
     // Tesselation
-    void Tesselate( void );
-    void Tesselate( const std::vector<SGGeod>& extra );
+    void Tesselate( bool debug );
+    void Tesselate( const std::vector<SGGeod>& extra, bool debug );
 
     // Straight Skeleton
     tgpolygon_list StraightSkeleton(void);
@@ -353,7 +360,9 @@ public:
     // Boolean operations
     static void      SetClipperDump( bool dmp );
     static tgPolygon Union( const tgPolygon& subject, tgPolygon& clip );
+    static tgPolygon Union_cgal( const tgPolygon& subject, tgPolygon& clip );
     static tgPolygon Union( const tgpolygon_list& polys );
+    static tgPolygon Union_cgal( const tgpolygon_list& polys );
     static tgPolygon Diff( const tgPolygon& subject, tgPolygon& clip );
     static tgPolygon Intersect( const tgPolygon& subject, const tgPolygon& clip );
 

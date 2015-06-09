@@ -56,13 +56,16 @@ TGConstruct::~TGConstruct() {
 }
 
 // TGConstruct: Setup
-void TGConstruct::set_paths( const std::string work, const std::string share, const std::string output, const std::vector<std::string> load ) {
+void TGConstruct::set_paths( const std::string work, const std::string share, 
+                             const std::string match, const std::string output, 
+                             const std::vector<std::string> load ) {
     work_base   = work;
     share_base  = share;
+    match_base  = match;
     output_base = output;
     load_dirs   = load;
 }
-
+                             
 void TGConstruct::set_options( bool ignore_lm, double n ) {
     ignoreLandmass = ignore_lm;
     nudge          = n;
@@ -135,12 +138,12 @@ void TGConstruct::run()
                 // STEP 5)
                 // Clean the polys - after this, we shouldn't change their shape (other than slightly for
                 // fix T-Junctions - as This is the end of the first pass for multicore design
-                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Cleaning landclass polys" );
-                CleanClippedPolys();
+                //SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Cleaning landclass polys" );
+                //CleanClippedPolys();
                 
                 // Now make sure any newly added intersection nodes are added to the tgnodes
-                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Syn nodes" );
-                polys_clipped.SyncNodes( nodes );                
+                //SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Syn nodes" );
+                //polys_clipped.SyncNodes( nodes );                
                 break;
 
             case 2:
@@ -171,7 +174,7 @@ void TGConstruct::run()
                     // STEP 9)
                     // We have all the nodes we need (plus extra that were clipped away)
                     // mark the used and remove the unused
-                    LookupUnusedNodes();
+                    //LookupUnusedNodes();
                     
                     // STEP 10)
                     // Generate triangle vertex coordinates to node index lists

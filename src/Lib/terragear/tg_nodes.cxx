@@ -10,6 +10,77 @@ const double fgPoint3_Epsilon = 0.000001;
 // the second element of the tuple is the elevation of this point
 // Three dimensional queries is a bit overkill, but the code, although faster, is slightly more cumbersome
 
+unsigned int TGNodes::unique_add( SGGeod& p, tgNodeType t ) {
+    //static unsigned int calls = 0;
+    
+    std::list<TGNodeData>   searchResults;
+    unsigned int            index;
+    
+    // first - create a search node
+    TGNodePoint     pt( p.getLongitudeDeg(), p.getLatitudeDeg() );
+    //TGNodeFuzzyCir  query_circle( pt, 0.000000001 );  // approx .1 mm
+    TGNodeFuzzyCir  query_circle( pt, 0.0000001 );  // approx 1 cm
+    
+    // perform the query
+    searchResults.clear();
+    tg_kd_tree.search(std::back_inserter( searchResults ), query_circle);
+    
+    if ( searchResults.empty() ) {
+        // no node here - add a new one
+        index = tg_node_list.size();
+        double e = p.getElevationM();
+        
+        tg_node_list.push_back( TGNode(p,t) );
+        
+        TGNodeData data(pt, e, index, &tg_node_list[index]);
+        
+        tg_kd_tree.insert(data);            
+    } else {
+        // we found a node - use it
+        std::list<TGNodeData>::const_iterator it = searchResults.begin();
+        index = boost::get<2>(*it);
+        p = tg_node_list[index].GetPosition();
+    }
+    
+#if 0        
+    calls++;
+    if ( calls % 100 == 0 ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::unique_add called " << calls << " times ");
+    }
+#endif        
+
+    return index;
+}
+
+int TGNodes::find(  const SGGeod& p ) const {
+    std::list<TGNodeData>   searchResults;
+    int index = -1;
+    // static unsigned int calls = 0;
+    
+    // first - create a search node
+    TGNodePoint     pt( p.getLongitudeDeg(), p.getLatitudeDeg() );
+    TGNodeFuzzyCir  query_circle( pt, 0.0000001 );  // approx 1 cm
+    
+    // perform the query
+    searchResults.clear();
+    tg_kd_tree.search(std::back_inserter( searchResults ), query_circle);
+    
+    if ( !searchResults.empty() ) {
+        // we found a node - use it
+        std::list<TGNodeData>::const_iterator it = searchResults.begin();
+        index = (int)boost::get<2>(*it);
+    }
+    
+#if 0        
+    calls++;
+    if ( calls % 100 == 0 ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "TGNode::find called " << calls << " times ");
+    }
+#endif
+
+    return index;
+}
+
 // Build the k-d tree
 void TGNodes::init_spacial_query( void )
 {
@@ -202,7 +273,8 @@ void TGNodes::DeleteUnused( void ) {
     tg_kd_tree.clear();
     
     for(unsigned int i = 0; i < used_nodes.size(); i++) {
-        unique_add(used_nodes[i].GetPosition(), used_nodes[i].GetType() );
+        SGGeod pos = used_nodes[i].GetPosition();
+        unique_add(pos, used_nodes[i].GetType() );
     }
     
     unsigned int kept_nodes = tg_node_list.size();
@@ -371,6 +443,7 @@ void TGNodes::LoadFromGzFile( gzFile& fp )
     for (unsigned int i=0; i<count; i++) {
         TGNode node;
         node.LoadFromGzFile( fp );
-        unique_add(node.GetPosition(), node.GetType() );
+        SGGeod pos = node.GetPosition();
+        unique_add(pos, node.GetType() );
     }
 }

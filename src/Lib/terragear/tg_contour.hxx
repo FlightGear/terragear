@@ -63,7 +63,9 @@ public:
         std::vector<SGGeod>::iterator it = node_list.begin()+before;
         node_list.insert( it, n );
     }
-    
+    void DelNode( unsigned int i ) {
+        node_list.erase( node_list.begin()+i);
+    }
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }
@@ -141,6 +143,7 @@ public:
     // non static cleaning
     void         Snap( double snap );
     unsigned int RemoveDups( void );
+    void         RemoveAntenna( void );
 
     void AddColinearNodes( std::vector<SGGeod>& nodes );
     

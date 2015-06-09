@@ -5,9 +5,11 @@
 #include "tg_intersection_edge.hxx"
 #include "tg_segmentnetwork.hxx"
 
+#define IG_DEBUG_COMPLETE       (0x01)
+
 class tgIntersectionGenerator {
 public:
-    tgIntersectionGenerator(const char* dr, tgIntersectionGeneratorTexInfoCb cb) : segNet(dr), texInfoCb(cb)  {
+    tgIntersectionGenerator(const char* dr, unsigned int f, tgIntersectionGeneratorTexInfoCb cb) : segNet(dr), texInfoCb(cb), flags(f)  {
         strcpy(  debugRoot, dr );
         sprintf( datasource, "./edge_dbg/%s", debugRoot );
     }
@@ -28,6 +30,7 @@ private:
     tgIntersectionGeneratorTexInfoCb    texInfoCb;
     char                                debugRoot[64];
     char                                datasource[64];
+    unsigned int                        flags;
     
 };
 

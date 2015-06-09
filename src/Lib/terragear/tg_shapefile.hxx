@@ -17,8 +17,8 @@ public:
         LT_POLY
     } shapefile_layer_t;
 
-    static void  FromContour( const tgContour& subject, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
-    static void  FromContourList( const std::vector<tgContour>& list, bool asPolygon, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromContour( const tgContour& subject, bool asPolygon, bool withNumber, const std::string& datasource, const std::string& layer, const std::string& description );
+    static void  FromContourList( const std::vector<tgContour>& list, bool asPolygon, bool withNumber, const std::string& datasource, const std::string& layer, const std::string& description );
     
     static void  FromPolygon( const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromPolygonList( const std::vector<tgPolygon>& list, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description );
@@ -44,7 +44,7 @@ public:
 private:
     static bool initialized;
 
-    static void  FromContour( void *lid, bool asPolygon, const std::string& description );
+    static void  FromContour( void *lid, const tgContour& subject, bool asPolygon, bool withNumber, const std::string& description );
     static void  FromPolygon( void *lid, const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& description );
     static void  FromSegment( void* lid, const tgSegment& subject, bool show_dir, const std::string& description );
 

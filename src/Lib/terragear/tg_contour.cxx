@@ -136,6 +136,23 @@ bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
     return isInside;
 }
 
+void tgContour::RemoveAntenna( void )
+{
+    // use cgal arrangment on the contour to find and edges with faces the same as twin, and remove
+    tgArrangement arr;
+    tgContour     clean;
+    
+#if 0    
+    arr.Add( *this );
+    clean = arr.ToTgContour();
+    
+    node_list.clear();
+    for ( unsigned int i=0; i<clean.GetSize(); i++ ) {
+        node_list.push_back( clean.GetNode(i) );
+    }
+#endif    
+}
+
 bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
 {
     SG_LOG(SG_GENERAL, SG_DEBUG, "remove cycles : contour has " << subject.GetSize() << " points" );
