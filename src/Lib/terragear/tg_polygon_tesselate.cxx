@@ -114,8 +114,6 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
             points.push_back( Point(extra[n].getLongitudeDeg(), extra[n].getLatitudeDeg() ) );
         }
 
-        cdt.insert(points.begin(), points.end());
-
         // then insert each polygon as a constraint into the triangulation
         for ( unsigned int c = 0; c < contours.size(); c++ ) {
             tgContour contour = contours[c];
@@ -129,6 +127,10 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
             tg_insert_polygon(cdt, poly);
         }
 
+        if ( !points.empty() ) {
+            cdt.insert(points.begin(), points.end());
+        }
+        
         /* make conforming - still has an issue, and can't be compiled with exact_construction kernel */
         // CGAL::make_conforming_Delaunay_2( cdt );
 

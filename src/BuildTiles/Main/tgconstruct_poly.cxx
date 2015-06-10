@@ -112,6 +112,9 @@ int TGConstruct::LoadLandclassPolys( void ) {
                         }
 
                         /* make sure we loaded a valid poly */
+                        poly = tgPolygon::RemoveDups(poly);
+                        poly = tgPolygon::RemoveCycles(poly);
+                        poly = tgPolygon::RemoveDups(poly);
                         poly = tgPolygon::RemoveBadContours(poly);
                         if ( poly.Contours() ) {
                             polys_in.add_poly( area, poly );
