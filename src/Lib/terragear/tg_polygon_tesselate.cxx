@@ -107,9 +107,6 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
     static unsigned int trinum = 1;
     char layer[256];
     std::vector<SGGeod> polynodes;
-
-    // add extra as intermediate nodes....
-    // AddColinearNodes( extra );
     
     // gather all nodes in the poly
     if ( contours.size() != 0 ) {
@@ -146,8 +143,6 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
         if ( debug ) {
             SG_LOG( SG_GENERAL, SG_INFO, "num extra is " << points.size() );            
         }
-        
-        // cdt.insert(points.begin(), points.end());
 
         if ( debug ) {
             SG_LOG( SG_GENERAL, SG_INFO, "num contours is " << contours.size() );            
@@ -163,6 +158,12 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
                 poly.push_back( Point( node.getLongitudeDeg(), node.getLatitudeDeg() ) );
             }
             tg_insert_polygon(cdt, poly);
+        }
+
+        // then insert the extra points - must be done AFTER polygons are added, as there may be duplicated
+        // points, and we want the vertex handle to point to the correct node
+        if ( !points.empty() ) {
+            cdt.insert(points.begin(), points.end());
         }
         
         /* make conforming - still has an issue, and can't be compiled with exact_construction kernel */

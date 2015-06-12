@@ -7,14 +7,15 @@
 #include "tg_misc.hxx"
 
 // generate intersection edge in euclidean space
-tgIntersectionEdge::tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNode* e, double w, unsigned int t, const std::string& dr ) 
+tgIntersectionEdge::tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNode* e, double w, int z, unsigned int t, const std::string& dr ) 
 {
     static unsigned int ge_count = 0;
 
-    start = s;
-    end   = e;
-    width = w;
-    type  = t;
+    start  = s;
+    end    = e;
+    width  = w;
+    zorder = z;
+    type   = t;
     
     id = ++ge_count;
     flags = 0;
@@ -60,7 +61,7 @@ tgIntersectionEdge::tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNod
     side_r    = tgLine( side_br, side_tr );
 
     debugRoot = dr;
-    sprintf(datasource, "./edge_dbg/%s/edge_%02ld/", debugRoot.c_str(), id );
+    sprintf(datasource, "./edge_dbg/%s/edge_%06lu/", debugRoot.c_str(), id );
 }
     
 double tgIntersectionEdge::GetHeading( bool originating ) const 
@@ -109,9 +110,9 @@ tgIntersectionEdge* tgIntersectionEdge::Split( bool originating, tgIntersectionN
     
     // now create the new edge with start == new end, end = oldEnd;
     if ( originating ) {
-        newEdge = new tgIntersectionEdge( newNode, oldNode, width, type, debugRoot );
+        newEdge = new tgIntersectionEdge( newNode, oldNode, width, zorder, type, debugRoot );
     } else {
-        newEdge = new tgIntersectionEdge( oldNode, newNode, width, type, debugRoot );        
+        newEdge = new tgIntersectionEdge( oldNode, newNode, width, zorder, type, debugRoot );        
     }
     
     return newEdge;

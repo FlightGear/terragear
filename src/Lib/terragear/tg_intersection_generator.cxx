@@ -4,43 +4,41 @@
 
 #include "tg_intersection_generator.hxx"
 
-void tgIntersectionGenerator::Insert( const SGGeod& s, const SGGeod& e, double w, unsigned int t )
+void tgIntersectionGenerator::Insert( const SGGeod& s, const SGGeod& e, double w, int z, unsigned int t )
 {    
-    segNet.Add( s, e, w, t );
+    segNet.Add( s, e, w, z, t );
 }
 
 void tgIntersectionGenerator::ToShapefile( const char* prefix )
 {
-#if DEBUG_INTERSECTIONS || DEBUG_TEXTURE
     char layer[64];
     char name[32];
     
     sprintf( layer, "%s_edges", prefix );
     for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
         tgSegment seg( (*it)->start->GetPosition(), (*it)->end->GetPosition() );
-        sprintf( name, "seg_%04ld", (*it)->id );
+        sprintf( name, "seg_%06ld", (*it)->id );
         tgShapefile::FromSegment( seg, true, datasource, layer, name );    
     }
     
     sprintf( layer, "%s_endpoints", prefix );
     for (unsigned int i=0; i<nodelist.size(); i++) {
         if ( nodelist[i]->IsEndpoint() ) {
-            sprintf( name, "endpoint_%04d", i );
+            sprintf( name, "endpoint_%06d", i );
             tgShapefile::FromGeod( nodelist[i]->GetPosition(), datasource, layer, name );    
         }
     }
-    
-#endif    
 }
 
-void tgIntersectionGenerator::Execute( bool clean )
+void tgIntersectionGenerator::Execute( void )
 {
     if ( !segNet.empty() ) {
         // Segnet has all of the edges and nodes in an arrangement : clean it
         SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Clean network " );
         edgelist.clear();
     
-        segNet.Clean( clean );
+        // create a clean segment network
+        segNet.Execute();
         
         // now retreive the cleaned edges 
         for ( segnetedge_it snit = segNet.output_begin(); snit != segNet.output_end(); snit++ ) {
@@ -49,13 +47,13 @@ void tgIntersectionGenerator::Execute( bool clean )
             tgIntersectionNode* end   = nodelist.Add( snit->end );
 
             if ( start != end ) {
-                tgIntersectionEdge* newEdge = new tgIntersectionEdge( start, end, snit->width, snit->type, debugRoot );
+                tgIntersectionEdge* newEdge = new tgIntersectionEdge( start, end, snit->width, snit->zorder, snit->type, debugRoot );
                 edgelist.push_back( newEdge );
             }
         }
         
-        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Saving Cleaned to " << debugRoot );
 #if DEBUG_INTERSECTIONS
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Saving Cleaned Network to " << debugRoot );
         ToShapefile("cleaned");
 #endif
         
@@ -66,8 +64,8 @@ void tgIntersectionGenerator::Execute( bool clean )
             nodelist[i]->AddCapEdges( nodelist, edgelist );
         }
         
-        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Saving Capped to " << debugRoot );
 #if DEBUG_INTERSECTIONS
+        SG_LOG(SG_GENERAL, SG_INFO, "tgIntersectionGenerator::Saving Capped Network to " << debugRoot );
         ToShapefile("Capped");
 #endif
         
@@ -148,18 +146,28 @@ void tgIntersectionGenerator::Execute( bool clean )
         }
 
         if ( flags & IG_DEBUG_COMPLETE ) {
-            SG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource );    
-
+            SG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource << " 0%" );    
+            unsigned int fivePercent = edgelist.size()/20;
+            unsigned int curPercent = fivePercent;
+            unsigned int curPrint   = 5;
+            
             for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
                 char feat[32];
                 tgPolygon poly = (*it)->GetPoly("complete");
-                sprintf(feat, "edge_%05ld", poly.GetId() );
+                sprintf(feat, "edge_%06u", poly.GetId() );
                 tgShapefile::FromPolygon( poly, false, false, datasource, "complete", feat );
 
-                (*it)->ToShapefile();
+//                (*it)->ToShapefile();
+                
+                curPercent--;
+                if ( curPercent == 0 ) {
+                    SG_LOG(SG_GENERAL, SG_INFO, "Saving complete to " << datasource << " " << curPrint << "%" );
+                    curPercent = fivePercent;
+                    curPrint += 5;
+                }
             }
         }
         
-        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Complete");    
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionGenerator::Complete");    
     }
 }

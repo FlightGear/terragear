@@ -33,6 +33,7 @@
 #include <Include/version.h>
 
 #include <terragear/tg_polygon.hxx>
+#include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_intersection_generator.hxx>
 #include <terragear/tg_chopper.hxx>
 #include <terragear/tg_shapefile.hxx>
@@ -62,7 +63,7 @@ public:
     std::string  datasource;
 };
 
-std::vector<areaDef> areaDefs;
+std::vector<areaDef>    areaDefs;
 
 int GetTextureInfo( unsigned int type, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist )
 {
@@ -75,23 +76,11 @@ int GetTextureInfo( unsigned int type, bool cap, std::string& material, double& 
     return 0;
 }
 
-/* very GDAL specific here... */
-inline static bool is_ocean_area( const std::string &area ) {
-    return area == "Ocean" || area == "Bay  Estuary or Ocean";
-}
-
-inline static bool is_void_area( const std::string &area ) {
-    return area == "Void Area";
-}
-
-inline static bool is_null_area( const std::string& area ) {
-    return area == "Null";
-}
-
-void processLineString(OGRLineString* poGeometry, unsigned int idx, int width, tgIntersectionGenerator* pig )
+void processLineString(OGRLineString* poGeometry, unsigned int idx, int width, int zorder, tgIntersectionGenerator* pig )
 {
     SGGeod p0, p1;
     int i, numPoints;
+    double dbl_w = width;
 
     numPoints = poGeometry->getNumPoints();
     if (numPoints < 2) {
@@ -104,11 +93,11 @@ void processLineString(OGRLineString* poGeometry, unsigned int idx, int width, t
         p0 = SGGeod::fromDeg( poGeometry->getX(i-1), poGeometry->getY(i-1) );
         p1 = SGGeod::fromDeg( poGeometry->getX(i),   poGeometry->getY(i) );
 
-        pig->Insert( p0, p1, width, idx );
+        pig->Insert( p0, p1, dbl_w, zorder, idx );
     }
 }
 
-void processLayer(OGRLayer* poLayer, tgChopper& results, unsigned int idx, std::map<int, tgIntersectionGenerator*>& pig )
+void processLayer(OGRLayer* poLayer, tgChopper& results, unsigned int idx, tgIntersectionGenerator* pig )
 {
     int feature_count=poLayer->GetFeatureCount();
     int zorder;
@@ -215,9 +204,6 @@ void processLayer(OGRLayer* poLayer, tgChopper& results, unsigned int idx, std::
 
         // get the intersection generator from z-order
         zorder=poFeature->GetFieldAsInteger("Z_ORDER");
-        if ( pig.find(zorder) == pig.end() ) {
-            pig[zorder] = new tgIntersectionGenerator("./vectordecode", 1, GetTextureInfo);
-        } 
         
         switch (geoType) {
         case wkbLineString: {
@@ -230,7 +216,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results, unsigned int idx, std::
                 }
             }
 
-            processLineString((OGRLineString*)poGeometry, idx, width, pig[zorder]);
+            processLineString((OGRLineString*)poGeometry, idx, width, zorder, pig);
             break;
         }
         case wkbMultiLineString: {
@@ -245,7 +231,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results, unsigned int idx, std::
 
             OGRMultiLineString* multils=(OGRMultiLineString*)poGeometry;
             for (int i=0;i<multils->getNumGeometries();i++) {
-                processLineString((OGRLineString*)poGeometry, idx, width, pig[zorder]);
+                processLineString((OGRLineString*)poGeometry, idx, width, zorder, pig);
             }
             break;
         }
@@ -397,7 +383,7 @@ int main( int argc, char **argv ) {
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
 
-    std::map<int, tgIntersectionGenerator*> igs;    
+    tgIntersectionGenerator* pig = new tgIntersectionGenerator( "./vectordecode", 0, 1, GetTextureInfo );
     tgChopper results( work_dir );
 
     OGRRegisterAll();
@@ -414,7 +400,7 @@ int main( int argc, char **argv ) {
             OGRLayer  *poLayer;
             for (int j=0;j<poDS->GetLayerCount();j++) {
                 poLayer = poDS->GetLayer(j);
-                processLayer(poLayer, results, i, igs );
+                processLayer(poLayer, results, i, pig );
             }
             
             OGRDataSource::DestroyDataSource( poDS );            
@@ -432,30 +418,71 @@ int main( int argc, char **argv ) {
     // get skin segments
     // delta height info may be needed....
     // maybe needs a new class entirely based on intersectiongenerator.
+
+    // we have all of the data - execute the intersection generator
+    // don't clean the OSM map data - as we don't want to generate intersections
+    // that don't really exist ( bridges and tunnels )
+    // OSM data should have correct intersection nodes already.
+    // - they need them to do routing.
+    pig->Execute();
     
-    std::map<int, tgIntersectionGenerator*>::reverse_iterator it;
-    for ( it=igs.rbegin(); it!=igs.rend(); it++ ) {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Found zorder " << (*it).first );
-        tgIntersectionGenerator* pig = (*it).second;
-        
-        pig->Execute(true);
-        for ( tgintersectionedge_it it = pig->edges_begin(); it != pig->edges_end(); it++ ) {
-            tgPolygon poly = (*it)->GetPoly("complete");
-            SG_LOG( SG_GENERAL, SG_ALERT, "got poly w/mat= " << poly.GetMaterial() );
-            results.Add( poly, poly.GetMaterial() );
-        }            
-        results.Save(false);
-    }
-        
-    
-#if 0 // todo - traverse the zorders...    
-    smooth_contours.Execute(true);    
-    for ( tgintersectionedge_it it=smooth_contours.edges_begin(); it != smooth_contours.edges_end(); it++ ) {
+    // now retreive the polygons in reverse z-order.  store them in lists
+    std::map<int, tgpolygon_list*> polygons;
+            
+    for ( tgintersectionedge_it it = pig->edges_begin(); it != pig->edges_end(); it++ ) {
         tgPolygon poly = (*it)->GetPoly("complete");
-        results.Add( poly, area_type );
-    }            
+        int       zo   = (*it)->GetZorder();
+
+        if ( polygons.find( zo ) == polygons.end() ) {
+            // add new polygon list at this zorder
+            polygons[zo] = new tgpolygon_list;
+        }
+        polygons[zo]->push_back( poly );
+    }
+    
+    // clip them in z order
+    tgAccumulator accum;    
+    std::map<int, tgpolygon_list*>::reverse_iterator pmap_it;
+
+    std::cout << " start clip " << std::endl;
+    
+    for ( pmap_it = polygons.rbegin(); pmap_it != polygons.rend(); pmap_it++ ) {
+        std::vector<tgPolygon>::iterator poly_it;
+
+        std::cout << " clip zorder " << (*pmap_it).first << std::endl;
+
+        unsigned int num_polys = (*pmap_it).second->size();
+        unsigned int p = 1;
+        
+        for ( poly_it = (*pmap_it).second->begin(); poly_it != (*pmap_it).second->end(); poly_it++ ) {
+            tgPolygon current = (*poly_it);
+            current.RemoveDups();
+            
+            std::cout << " clipping poly " << p << " of " << num_polys << std::endl;
+            
+            if ( ((*pmap_it).first == 16) && (p == 7) ) {
+                tgShapefile::FromPolygon( current, false, false, "./clip_dbg", "clip_16_7", "poly" );
+                
+                std::vector<SGGeod> geods;
+                for ( unsigned int i=0; i<current.ContourSize(0); i++ ) {
+                    geods.push_back( current.GetNode( 0, i ) );
+                }
+                
+                tgShapefile::FromGeodList( geods, false, "./clip_dbg", "nodes_16_7", "nodes" );
+            }
+            
+            accum.Diff_and_Add_cgal( current );
+
+            std::cout << "   clipped poly " << p++ << " of " << num_polys << std::endl;
+            
+            // only add to output list if the clip left us with a polygon
+            if ( current.Contours() > 0 ) {
+                results.Add( current, current.GetMaterial() );
+            }
+        }
+    }
+
     results.Save(false);
-#endif    
 
     return 0;
 }

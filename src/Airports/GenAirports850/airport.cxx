@@ -100,31 +100,31 @@ Airport::Airport( int c, char* def)
         char ig_ds[64];
 
         sprintf(ig_ds, "%s_single_yellow", icao.c_str() ); 
-        lf_ig[SINGLE_LINE] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[SINGLE_LINE] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
 
         sprintf(ig_ds, "%s_double_yellow", icao.c_str() ); 
-        lf_ig[DOUBLE_LINE] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[DOUBLE_LINE] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
 
         sprintf(ig_ds, "%s_triple_yellow", icao.c_str() ); 
-        lf_ig[TRIPLE_LINE] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[TRIPLE_LINE] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
 
         sprintf(ig_ds, "%s_runway_hold", icao.c_str() ); 
-        lf_ig[RUNWAY_HOLD] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[RUNWAY_HOLD] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
 
         sprintf(ig_ds, "%s_ils_hold", icao.c_str() ); 
-        lf_ig[ILS_HOLD] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[ILS_HOLD] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
 
         sprintf(ig_ds, "%s_other_hold", icao.c_str() ); 
-        lf_ig[OTHER_HOLD] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[OTHER_HOLD] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
 
         sprintf(ig_ds, "%s_single_white", icao.c_str() ); 
-        lf_ig[SINGLE_WHITE] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[SINGLE_WHITE] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
 
         sprintf(ig_ds, "%s_checkerboard_white", icao.c_str() ); 
-        lf_ig[CHECKERBOARD_WHITE] = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        lf_ig[CHECKERBOARD_WHITE] = new tgIntersectionGenerator(ig_ds, 1, 0, LinearFeature::GetTextureInfo );
         
         sprintf(ig_ds, "%s_runways", icao.c_str() ); 
-        rm_ig = new tgIntersectionGenerator(ig_ds, 0, LinearFeature::GetTextureInfo );
+        rm_ig = new tgIntersectionGenerator(ig_ds, 0, 0, LinearFeature::GetTextureInfo );
     }
 
     TG_LOG( SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", control tower " << ct << ", and description " << description );

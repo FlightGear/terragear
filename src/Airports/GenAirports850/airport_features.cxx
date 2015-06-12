@@ -95,7 +95,7 @@ void Airport::BuildFeatures( void )
 #else
     for ( unsigned int i=0; i<8; i++ ) {
         if (lf_ig[i] ) {
-            lf_ig[i]->Execute(true);
+            lf_ig[i]->Execute();
             for ( tgintersectionedge_it it=lf_ig[i]->edges_begin(); it != lf_ig[i]->edges_end(); it++ ) {
                 tgPolygon poly = (*it)->GetPoly("complete");
                 polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
@@ -105,7 +105,7 @@ void Airport::BuildFeatures( void )
 
     if ( rm_ig ) {
         // don't clean runway features - we know what we're doing here :)
-        rm_ig->Execute(false);
+        rm_ig->Execute();
         for ( tgintersectionedge_it it=rm_ig->edges_begin(); it != rm_ig->edges_end(); it++ ) {
             tgPolygon poly = (*it)->GetPoly("complete");
             polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES).push_back(poly);

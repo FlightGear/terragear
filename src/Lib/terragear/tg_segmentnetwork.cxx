@@ -21,12 +21,14 @@
 #define LOG_SHORT_EDGES         SG_DEBUG
 #define LOG_FIX_SHORT_SEGMENT   SG_DEBUG
 
-tgSegmentNetwork::tgSegmentNetwork( const std::string debugRoot ) : invalid_vh()
+tgSegmentNetwork::tgSegmentNetwork( unsigned int cf, const std::string debugRoot ) : invalid_vh()
 {
+    clean_flags = cf;
+    
     sprintf( datasource, "./edge_dbg/%s", debugRoot.c_str() );
 }
 
-void tgSegmentNetwork::Add( const SGGeod& source, const SGGeod& target, double width, unsigned int type )
+void tgSegmentNetwork::Add( const SGGeod& source, const SGGeod& target, double width, int zorder, unsigned int type )
 {
 #if DEBUG_STAGES    
     static int input_count = 1;
@@ -36,22 +38,26 @@ void tgSegmentNetwork::Add( const SGGeod& source, const SGGeod& target, double w
     sprintf( feat, "input_%05d", input_count++ );
     tgShapefile::FromSegment( input, true, datasource, "input", feat );
 #endif
-    
-    segnetPoint snSource( source.getLongitudeDeg(), source.getLatitudeDeg() );
-    segnetPoint snTarget( target.getLongitudeDeg(), target.getLatitudeDeg() );
 
-    double      heading = SGGeodesy::courseDeg( source, target );
-    segnetCurve curve(snSource, snTarget);
-    CurveData   data( width, type, heading );
+    if ( clean_flags ) {
+        segnetPoint snSource( source.getLongitudeDeg(), source.getLatitudeDeg() );
+        segnetPoint snTarget( target.getLongitudeDeg(), target.getLatitudeDeg() );
+
+        double      heading = SGGeodesy::courseDeg( source, target );
+        segnetCurve curve(snSource, snTarget);
+        CurveData   data( width, type, zorder, heading );
     
-    CGAL::insert( arr, segnetCurveWithData(curve, data) );
+        CGAL::insert( arr, segnetCurveWithData(curve, data) );
+    } else {
+        output.push_back( segnetEdge( source, target, width, zorder, type ) );
+    }
 }
             
-void tgSegmentNetwork::Clean( bool clean )
+void tgSegmentNetwork::Execute( void )
 {    
     ToShapefiles( "input" );
     
-    if ( clean ) {
+    if ( clean_flags ) {
         // first, cluster the nodes
         SG_LOG(SG_GENERAL, SG_INFO, "tgSegmentNetwork::Cluster" );    
         Cluster();    
@@ -75,9 +81,9 @@ void tgSegmentNetwork::Clean( bool clean )
         SG_LOG(SG_GENERAL, SG_INFO, "tgSegmentNetwork::RemoveColinearSegments" );        
         //RemoveColinearSegments();
         ToShapefiles( "removed_colinear_segments" );
+
+        GenerateOutput();
     }
-    
-    GenerateOutput();
 }
 
 bool tgSegmentNetwork::IsVertexHandleInList( segnetVertexHandle h, std::list<segnetVertexHandle>& vertexList )
@@ -635,6 +641,7 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
     SGGeod                   start, end;
     double                   max_width;
     unsigned int             max_type;
+    int                      max_zorder;
     double                   max_heading;
     
     segnetArrangement::Edge_const_iterator eit;
@@ -657,6 +664,7 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
         segnetTraits::Data_container::const_iterator    dit;
         max_width = 0.0l;
         max_type  = 0;
+        max_zorder = -999;
         max_heading = 0.0l;
         
         if ( eit->curve().data().size() == 0 ) {
@@ -669,6 +677,9 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
             }
             if (dit->type > max_type) {
                 max_type = dit->type;
+            }
+            if (dit->zorder > max_zorder) {
+                max_zorder = dit->zorder;
             }
             if (dit->heading > max_heading) {
                 max_heading = dit->heading;
@@ -683,7 +694,7 @@ void tgSegmentNetwork::RemoveColinearSegments( void )
             SG_LOG(SG_GENERAL, SG_ALERT, "tgSegmentNetwork::GenerateOutput found an edge with type == 0\n");
         }
         
-        CurveData   data( max_width, max_type, max_heading );
+        CurveData   data( max_width, max_type, max_zorder, max_heading );
 
 
         // output is a polyline - which corresponds to a single segment in input
@@ -726,6 +737,7 @@ void tgSegmentNetwork::GenerateOutput( void )
     
     SGGeod       start, end;
     double       max_width;
+    int          max_zorder;
     unsigned int max_type;
     double       heading_sum, heading_avg;
     unsigned int num_dit;
@@ -735,6 +747,7 @@ void tgSegmentNetwork::GenerateOutput( void )
         // Go over the incident edges of the current vertex and examine their width and type
         segnetTraits::Data_container::const_iterator   dit;
         max_width = 0.0l;
+        max_zorder = -999;
         max_type  = 0;
         heading_sum = 0.0l;
         heading_avg = 0.0l;
@@ -748,6 +761,9 @@ void tgSegmentNetwork::GenerateOutput( void )
         for (dit = eit->curve().data().begin(); dit != eit->curve().data().end();  ++dit) {            
             if (dit->width > max_width) {
                 max_width = dit->width;
+            }
+            if (dit->zorder > max_zorder) {
+                max_zorder = dit->zorder;
             }
             if (dit->type > max_type) {
                 max_type = dit->type;
@@ -778,9 +794,9 @@ void tgSegmentNetwork::GenerateOutput( void )
         double cleanedHeading = SGGeodesy::courseDeg(start, end);
         double delta = SGMiscd::normalizePeriodic( 0, 360, cleanedHeading - heading_avg );
         if ( (delta <= 90.0l) || (delta >= 270) ) {
-            output.push_back( segnetEdge( start, end, max_width, max_type ) );
+            output.push_back( segnetEdge( start, end, max_width, max_zorder, max_type ) );
         } else {
-            output.push_back( segnetEdge( end, start, max_width, max_type ) );            
+            output.push_back( segnetEdge( end, start, max_width, max_zorder, max_type ) );            
         }
     }
 }

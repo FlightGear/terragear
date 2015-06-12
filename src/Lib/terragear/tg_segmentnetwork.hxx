@@ -33,16 +33,18 @@
 class segnetEdge 
 {
 public:
-    segnetEdge( const SGGeod& s, const SGGeod& e, double w, unsigned int t ) {
-        start = s;
-        end   = e;
-        width = w;
-        type  = t;
+    segnetEdge( const SGGeod& s, const SGGeod& e, double w, int z, unsigned int t ) {
+        start  = s;
+        end    = e;
+        width  = w;
+        zorder = z;
+        type   = t;
     }
 
     SGGeod start;
     SGGeod end;
     double width;
+    int    zorder;
     unsigned int type;
 };
 typedef std::vector<segnetEdge>   segnetedge_list;
@@ -51,7 +53,7 @@ typedef segnetedge_list::iterator segnetedge_it;
 class CurveData {
 public:
     CurveData() {}
-    CurveData( double w, int t, double h ) : width(w), type(t), heading(h) {}
+    CurveData( double w, int t, int z, double h ) : width(w), type(t), zorder(z), heading(h) {}
     
     bool operator==(const CurveData& rhs) const {
         return width == rhs.width && type == rhs.type;
@@ -59,6 +61,7 @@ public:
     
     double          width;
     unsigned int    type;
+    int             zorder;
     double          heading;
 };
 
@@ -132,10 +135,10 @@ typedef CGAL::Kd_tree<nodesTraits>                                  nodesTree;
 class tgSegmentNetwork
 {
 public:
-    tgSegmentNetwork( const std::string debugRoot );
+    tgSegmentNetwork( unsigned int cf, const std::string debugRoot );
     
-    void      Add( const SGGeod& source, const SGGeod& target, double width, unsigned int type );
-    void      Clean( bool clean );
+    void      Add( const SGGeod& source, const SGGeod& target, double width, int zorder, unsigned int type );
+    void      Execute( void );
     
     void      DumpPolys( void );
     void      ToShapefiles( const char* prefix );
@@ -143,7 +146,14 @@ public:
     segnetedge_it output_begin( void ) { return output.begin(); }
     segnetedge_it output_end( void )   { return output.end();   }
     
-    bool      empty( void ) const { return (arr.number_of_edges() == 0); }
+    bool empty( void ) const 
+    { 
+        if ( clean_flags ) {
+            return (arr.number_of_edges() == 0); 
+        } else {
+            return output.empty();
+        }
+    }
     
 private:
     void      BuildTree( void );
@@ -179,6 +189,7 @@ private:
     bool _have_odd_intersections(const segnetXMonotoneCurve& cv, const segnetXMonotoneCurve& seg, bool p_is_left, bool& p_on_curve, bool& cv_and_seg_overlap, bool& cv_is_contained_in_seg) const;
 #endif
     
+    unsigned int       clean_flags;
     segnetArrangement  arr;
     nodesTree          tree;
     segnetedge_list    output;

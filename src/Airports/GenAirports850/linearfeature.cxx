@@ -987,7 +987,7 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
 
             if ( markStarted ) {
                 if ( pig ) {
-                    pig->Insert( prev, cur, edge_width, marks[i]->type );
+                    pig->Insert( prev, cur, edge_width, 0, marks[i]->type );
                 }
             } else {
                 markStarted = true;

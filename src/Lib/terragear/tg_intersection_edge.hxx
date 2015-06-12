@@ -77,7 +77,7 @@ typedef tgintersectionedgeinfo_list::iterator               tgintersectionedgein
 class tgIntersectionEdge
 {
 public:
-    tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNode* e, double w, unsigned int t, const std::string& dr );
+    tgIntersectionEdge( tgIntersectionNode* s, tgIntersectionNode* e, double w, int z, unsigned int t, const std::string& dr );
     
     bool operator==(const tgIntersectionEdge& e) { 
         return ((start == e.start) && (end == e.end)); 
@@ -133,6 +133,7 @@ public:
 
     void ApplyConstraint( bool apply );
     
+    int  GetZorder( void ) const { return zorder; }
     void Complete( void );
     
     double GetHeading( bool originating ) const;
@@ -254,6 +255,7 @@ public:
     tgIntersectionNode* start;
     tgIntersectionNode* end;
     double              width;
+    int                 zorder;
     unsigned int        type;
     
     SGGeod              botLeft, botRight;
