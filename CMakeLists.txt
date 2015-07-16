@@ -98,7 +98,7 @@ find_package(Boost COMPONENTS system thread REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(Threads REQUIRED)
 find_package(SimGear 3.1.0 REQUIRED)
-find_package(GDAL 1.6.0 REQUIRED)
+find_package(GDAL 2.0.0 REQUIRED)
 find_package(TIFF REQUIRED) # needed for SRTM
 set (CGAL_MINIMUM 4.5)
 

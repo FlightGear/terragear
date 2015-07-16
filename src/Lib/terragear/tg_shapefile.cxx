@@ -24,7 +24,7 @@ void* tgShapefile::OpenDatasource( const char* datasource_name )
     SGPath sgp( datasource_name );
     sgp.create_dir( 0755 );
     
-    ogrdriver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName( format_name );
+    ogrdriver = (OGRSFDriver*) OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName( format_name );
     if ( !ogrdriver ) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Unknown datasource format driver: " << format_name );
         exit(1);

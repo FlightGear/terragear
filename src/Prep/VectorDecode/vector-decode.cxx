@@ -386,24 +386,24 @@ int main( int argc, char **argv ) {
     tgIntersectionGenerator* pig = new tgIntersectionGenerator( "./vectordecode", 0, 1, GetTextureInfo );
     tgChopper results( work_dir );
 
-    OGRRegisterAll();
-    OGRDataSource       *poDS;
+    GDALAllRegister();
+    GDALDataset       *poDS;
 
     for ( unsigned int i=0; i<areaDefs.size(); i++ ) {
         char pathname[256];
         
         sprintf( pathname, "%s/%s", data_dir.c_str(), areaDefs[i].datasource.c_str() );
         SG_LOG( SG_GENERAL, SG_ALERT, "Opening datasource " << pathname << " for reading." );
-        poDS = OGRSFDriverRegistrar::Open( pathname, FALSE );
-        
+        poDS = (GDALDataset*) GDALOpen( pathname, GA_ReadOnly );
+
         if( poDS != NULL ) {
             OGRLayer  *poLayer;
             for (int j=0;j<poDS->GetLayerCount();j++) {
                 poLayer = poDS->GetLayer(j);
                 processLayer(poLayer, results, i, pig );
             }
-            
-            OGRDataSource::DestroyDataSource( poDS );            
+
+            GDALClose( poDS );
         } else {
             SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << pathname );
         }

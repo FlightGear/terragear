@@ -459,7 +459,7 @@ void usage(const char* progname, const std::string& msg) {
         SG_LOG(SG_GENERAL, SG_INFO, "\t\tAvailable formats:");
         OGRSFDriverRegistrar* registrar=OGRSFDriverRegistrar::GetRegistrar();
         for (int i=0;i<registrar->GetDriverCount();i++) {
-                SG_LOG(SG_GENERAL, SG_INFO, "\t\t\t-f \"" << registrar->GetDriver(i)->GetName() << "\"");
+                SG_LOG(SG_GENERAL, SG_INFO, "\t\t\t-f \"" << registrar->GetDriver(i)->GetDescription() << "\"");
         }
         SG_LOG(SG_GENERAL, SG_INFO, "\t\tDefault: ESRI Shapefile");
         SG_LOG(SG_GENERAL, SG_INFO, "");
@@ -519,7 +519,7 @@ int main(int argc, char** argv) {
         const char* dst_datasource=argv[optind++];
         OGRSFDriver *ogrdriver;
 
-        ogrdriver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(format_name);
+        ogrdriver = (OGRSFDriver*) OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(format_name);
         if (!ogrdriver) {
                 usage(argv[0],std::string("Unknown datasource format driver:")+format_name);
                 exit(1);
