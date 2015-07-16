@@ -18,7 +18,8 @@ void* tgShapefile::OpenDatasource( const char* datasource_name )
         tgShapefile::initialized = true;
     }
 
-    ogrdriver = OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName( format_name );
+    ogrdriver = (OGRSFDriver*) OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName( format_name );
+
     if ( !ogrdriver ) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Unknown datasource format driver: " << format_name );
         exit(1);

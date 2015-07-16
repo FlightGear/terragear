@@ -27,6 +27,7 @@
 
 #include <boost/thread.hpp>
 #include <ogrsf_frmts.h>
+#include <gdal_priv.h>
 
 #include <simgear/compiler.h>
 #include <simgear/threads/SGThread.hxx>
@@ -648,10 +649,10 @@ int main( int argc, char **argv ) {
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
 
-    OGRRegisterAll();
-    OGRDataSource       *poDS;
+    GDALAllRegister();
+    GDALDataset       *poDS;
 
-    poDS = OGRSFDriverRegistrar::Open( datasource.c_str(), FALSE );
+    poDS = (GDALDataset*) GDALOpen( datasource.c_str(), GA_ReadOnly );
     if( poDS == NULL )
     {
         SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << datasource );
@@ -682,7 +683,7 @@ int main( int argc, char **argv ) {
         }
     }
 
-    OGRDataSource::DestroyDataSource( poDS );
+    GDALClose(poDS);
 
     SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
     results.Save( save_shapefiles );
