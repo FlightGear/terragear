@@ -218,6 +218,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     // finally, what ever is left over goes to ocean
     remains = accum.Diff( safety_base );
     
+    // tgShapefile::FromPolygon( remains, ds_name, "remains", "poly" );
+    
     if ( debug_all || debug_shapes.size() || debug_areas.size() ) {
         char layer[32];
 	    char name[32];

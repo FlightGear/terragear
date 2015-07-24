@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <simgear/debug/logstream.hxx>
@@ -457,21 +458,36 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
 
 int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
 {
+    char layer[128];
+    
     if ( is_pavement && pre_tess.Contours() )
     {
         if(  shapefile_name.size() ) {
-            tgShapefile::FromPolygon( pre_tess, "./airport_dbg", std::string("preclip"), shapefile_name );
-            accum.ToShapefiles( "./airport_dbg", "accum", true );
+            sprintf( layer, "%s_preclip", shapefile_name.c_str() );
+            tgShapefile::FromPolygon( pre_tess, "./airport_dbg", layer, std::string("preclip") );
+            
+            pre_tess.Tesselate();
+            sprintf( layer, "%s_preclip_tris", shapefile_name.c_str() );
+            tgShapefile::FromTriangles( pre_tess, "./airport_dbg", layer, std::string("preclip") );
+
+            //accum.ToShapefiles( "./airport_dbg", "accum", true );
         }
 
         tgPolygon clipped = accum.Diff( pre_tess );
         if ( clipped.Contours() ) {
             if(  shapefile_name.size() ) {
-                tgShapefile::FromPolygon( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
+                sprintf( layer, "%s_postclip", shapefile_name.c_str() );
+                tgShapefile::FromPolygon( clipped, "./airport_dbg", layer, std::string("postclip") );
             }
 
-            tgPolygon::RemoveSlivers( clipped, slivers );
+            // tgPolygon::RemoveSlivers( clipped, slivers );
 
+            if(  shapefile_name.size() ) {
+                clipped.Tesselate();
+                sprintf( layer, "%s_postclip_tris", shapefile_name.c_str() );
+                tgShapefile::FromTriangles( clipped, "./airport_dbg", layer, std::string("postclip") );                
+            }
+            
             clipped.SetMaterial( GetMaterial( surface_type ) );
             clipped.SetTexParams( clipped.GetNode(0,0), 5.0, 5.0, texture_heading );
             clipped.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );

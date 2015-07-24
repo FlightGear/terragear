@@ -146,7 +146,7 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
 
     // Clip the new polygon against what ever has already been created.
     tgPolygon clipped = accum.Diff( helipad );
-    tgPolygon::RemoveSlivers( clipped, slivers );
+    // tgPolygon::RemoveSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
@@ -171,7 +171,7 @@ void Helipad::BuildBtg( tgpolygon_list& rwy_polys,
 
     tgPolygon outer_poly = tgContour::Diff( outer_area, heli_poly );
     clipped = accum.Diff( outer_poly );
-    tgPolygon::RemoveSlivers( clipped, slivers );
+    // tgPolygon::RemoveSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
@@ -249,7 +249,7 @@ void Helipad::BuildShoulder( tgpolygon_list& rwy_polys,
 
         // Clip the new polygon against what ever has already been created.
         tgPolygon clipped = accum.Diff( shoulder );
-        tgPolygon::RemoveSlivers( clipped, slivers );
+        // tgPolygon::RemoveSlivers( clipped, slivers );
 
         // Split long edges to create an object that can better flow with
         // the surface terrain

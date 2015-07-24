@@ -93,7 +93,7 @@ void TGConstruct::run()
         if ( debug_shapes.size() || debug_all ) {
             sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
         } else {
-            strcpy( ds_name, "" );
+            sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
         }
 
         if ( stage == 1 ) {

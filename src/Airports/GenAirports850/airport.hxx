@@ -131,6 +131,8 @@ public:
     bool isDebugFeature ( int i );
 
 private:
+    bool CheckZFightingTriangles( const char* prefix, const char* debug_root, const tgPolygon& base_poly, const tgpolygon_list& rwy_polys, const tgpolygon_list& pvmt_polys );
+    
     int          code;               // airport, heliport or sea port
     int          altitude;           // in meters
     std::string  icao;               // airport code

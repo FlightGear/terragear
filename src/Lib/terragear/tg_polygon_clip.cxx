@@ -4,6 +4,7 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_polygon.hxx"
+#include "tg_misc.hxx"
 
 static bool clipper_dump = false;
 void tgPolygon::SetClipperDump( bool dmp )
@@ -194,6 +195,55 @@ tgPolygon tgPolygon::FromClipper( const ClipperLib::Paths& subject )
     {
         result.AddContour( tgContour::FromClipper( subject[i] ) );
     }
+
+    return result;
+}
+
+ClipperLib::Path tgTriangle::ToClipper( const tgTriangle& subject )
+{
+    ClipperLib::Path  contour;
+
+    for ( unsigned int i=0; i<3; i++)
+    {
+        SGGeod p = subject.GetNode( i );
+        contour.push_back( SGGeod_ToClipper(p) );
+    }
+
+    // boundaries need to be orientation: true
+    if ( !Orientation( contour ) ) {
+        //SG_LOG(SG_GENERAL, SG_INFO, "Building clipper contour - boundary contour needs to be reversed" );
+        ReversePath( contour );
+    }
+
+    return contour;
+}
+
+tgPolygon tgTriangle::Intersect( const tgTriangle& subject, const tgTriangle& clip )
+{
+    tgPolygon result;
+    UniqueSGGeodSet all_nodes;
+
+    /* before diff - gather all nodes */
+    for ( unsigned int i = 0; i < 3; ++i ) {
+        all_nodes.add( subject.GetNode(i) );
+    }
+
+    for ( unsigned int i = 0; i < 3; ++i ) {
+        all_nodes.add( clip.GetNode(i) );
+    }
+
+    ClipperLib::Path  clipper_subject = tgTriangle::ToClipper( subject );
+    ClipperLib::Path  clipper_clip    = tgTriangle::ToClipper( clip );
+    ClipperLib::Paths clipper_result;
+
+    ClipperLib::Clipper c;
+    c.Clear();
+    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
+    c.AddPath(clipper_clip, ClipperLib::ptClip, true);
+    c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+
+    result = tgPolygon::FromClipper( clipper_result );
+    result = tgPolygon::AddColinearNodes( result, all_nodes );
 
     return result;
 }

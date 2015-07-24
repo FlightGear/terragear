@@ -65,6 +65,34 @@ void* tgShapefile::OpenLayer( void* ds_id, const char* layer_name ) {
     return (void*)layer;
 }
 
+void* tgShapefile::OpenLineLayer( void* ds_id, const char* layer_name ) {
+    OGRDataSource* datasource = ( OGRDataSource * )ds_id;
+    OGRLayer* layer;
+
+    OGRSpatialReference srs;
+    srs.SetWellKnownGeogCS("WGS84");
+
+    layer = datasource->GetLayerByName( layer_name );
+
+    if ( !layer ) {
+        layer = datasource->CreateLayer( layer_name, &srs, wkbLineString25D, NULL );
+
+        OGRFieldDefn descriptionField( "ID", OFTString );
+        descriptionField.SetWidth( 128 );
+
+        if( layer->CreateField( &descriptionField ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'Description' failed" );
+        }
+    }
+
+    if ( !layer ) {
+        SG_LOG( SG_GENERAL, SG_ALERT, "Creation of layer '" << layer_name << "' failed" );
+        return NULL;
+    }
+
+    return (void*)layer;
+}
+
 void* tgShapefile::CloseDatasource( void* ds_id )
 {
     OGRDataSource* datasource = ( OGRDataSource * )ds_id;
@@ -170,6 +198,46 @@ void tgShapefile::FromContour( const tgContour& subject, const std::string& data
 
     // close after each write
     ds_id = tgShapefile::CloseDatasource( ds_id );
+}
+
+void tgShapefile::FromTriangles( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )
+{
+    void*          ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenDatasource returned " << (unsigned long)ds_id);
+
+    OGRLayer*      l_id  = (OGRLayer *)tgShapefile::OpenLineLayer( ds_id, layer.c_str() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgShapefile::OpenLayer returned " << (unsigned long)l_id);
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "subject has " << subject.Contours() << " contours ");
+
+    for ( unsigned int i = 0; i < subject.Triangles(); i++ ) {
+        // FIXME: Current we ignore the hole-flag and instead assume
+        //        that the first ring is not a hole and the rest
+        //        are holes
+        OGRLinearRing  ring;
+        for (unsigned int pt = 0; pt < 3; pt++) {
+            OGRPoint point;
+
+            point.setX( subject.GetTriNode(i, pt).getLongitudeDeg() );
+            point.setY( subject.GetTriNode(i, pt).getLatitudeDeg() );
+            point.setZ( 0.0 );
+            ring.addPoint(&point);
+        }
+        ring.closeRings();
+
+        OGRFeature* feature = NULL;
+        feature = new OGRFeature( l_id->GetLayerDefn() );
+        feature->SetField("ID", description.c_str());
+        feature->SetGeometry(&ring);
+        if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+        }
+        OGRFeature::DestroyFeature(feature);
+    }
+
+    // close after each write
+    ds_id = tgShapefile::CloseDatasource( ds_id );    
 }
 
 void tgShapefile::FromPolygon( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )

@@ -8,7 +8,7 @@
 #include "tg_polygon.hxx"
 #include "tg_misc.hxx"
 
-const double isEqual2D_Epsilon = 0.000001;
+const double isEqual2D_Epsilon = 0.000000001;
 
 #define CLIPPER_FIXEDPT           (1000000000000)
 #define CLIPPER_METERS_PER_DEGREE (111000)

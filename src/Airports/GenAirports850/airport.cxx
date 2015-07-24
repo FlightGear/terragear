@@ -14,6 +14,7 @@
 
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_chopper.hxx>
+#include <terragear/tg_shapefile.hxx>
 #include <terragear/tg_unique_geod.hxx>
 #include <terragear/tg_unique_vec3f.hxx>
 #include <terragear/tg_unique_vec2f.hxx>
@@ -233,6 +234,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     tglightcontour_list rwy_lights;
 
     bool make_shapefiles = false;
+    char debug_root[32];
+    sprintf(debug_root, "./airport_dbg/%s/", icao.c_str() );
 
     // parse main airport information
     double apt_lon = 0.0, apt_lat = 0.0;
@@ -311,7 +314,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         for ( unsigned int i=0; i<runways.size(); i++ )
         {
             TG_LOG(SG_GENERAL, SG_DEBUG, "Build Runway " << i + 1 << " of " << runways.size());
-            slivers.clear();
+            //slivers.clear();
 
             if ( isDebugRunway(i) ) {
                 sprintf( shapefile_name, "runway_%d", i );
@@ -330,7 +333,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
 
             // Now try to merge any slivers we found
-            tgPolygon::MergeSlivers( rwy_polys, slivers );
+            // tgPolygon::MergeSlivers( rwy_polys, slivers );
         }
 
         log_time = time(0);
@@ -354,7 +357,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         for ( unsigned int i=0; i<helipads.size(); i++ )
         {
             TG_LOG(SG_GENERAL, SG_DEBUG, "Build helipad " << i + 1 << " of " << helipads.size());
-            slivers.clear();
+            //slivers.clear();
 
             if (boundary.size())
             {
@@ -366,7 +369,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
 
             // Now try to merge any slivers we found
-            tgPolygon::MergeSlivers( rwy_polys, slivers );
+            //tgPolygon::MergeSlivers( rwy_polys, slivers );
         }
     }
 
@@ -377,7 +380,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         for ( unsigned int i=0; i<pavements.size(); i++ )
         {
             TG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
-            slivers.clear();
+            //slivers.clear();
 
             if ( isDebugPavement(i) ) {
                 sprintf( shapefile_name, "pvmnt_%d", i );
@@ -396,8 +399,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
 
             // Now try to merge any slivers we found
-            tgPolygon::MergeSlivers( rwy_polys, slivers );
-            tgPolygon::MergeSlivers( pvmt_polys, slivers );
+            //tgPolygon::MergeSlivers( rwy_polys, slivers );
+            //tgPolygon::MergeSlivers( pvmt_polys, slivers );
         }
 
         log_time = time(0);
@@ -411,7 +414,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         for ( unsigned int i=0; i<taxiways.size(); i++ )
         {
             TG_LOG(SG_GENERAL, SG_DEBUG, "Build Taxiway " << i + 1 << " of " << taxiways.size());
-            slivers.clear();
+            //slivers.clear();
 
             if ( isDebugTaxiway(i) ) {
                 sprintf( shapefile_name, "taxiway_%d", i );
@@ -430,8 +433,8 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             }
 
             // Now try to merge any slivers we found
-            tgPolygon::MergeSlivers( rwy_polys, slivers );
-            tgPolygon::MergeSlivers( pvmt_polys, slivers );
+            //tgPolygon::MergeSlivers( rwy_polys, slivers );
+            //tgPolygon::MergeSlivers( pvmt_polys, slivers );
         }
     }
 
@@ -445,12 +448,12 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
             if ( runways[i]->GetsShoulder() )
             {
-                slivers.clear();
+                //slivers.clear();
                 runways[i]->BuildShoulder( rwy_polys, slivers, pvmt_accum );
 
                 // Now try to merge any slivers we found
-                tgPolygon::MergeSlivers( rwy_polys, slivers );
-                tgPolygon::MergeSlivers( pvmt_polys, slivers );
+                //tgPolygon::MergeSlivers( rwy_polys, slivers );
+                //tgPolygon::MergeSlivers( pvmt_polys, slivers );
             }
         }
     }
@@ -465,12 +468,12 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
             if ( helipads[i]->GetsShoulder() )
             {
-                slivers.clear();
+                //slivers.clear();
                 helipads[i]->BuildShoulder( rwy_polys, slivers, pvmt_accum );
 
                 // Now try to merge any slivers we found
-                tgPolygon::MergeSlivers( rwy_polys, slivers );
-                tgPolygon::MergeSlivers( pvmt_polys, slivers );
+                //tgPolygon::MergeSlivers( rwy_polys, slivers );
+                //tgPolygon::MergeSlivers( pvmt_polys, slivers );
             }
         }
     }
@@ -628,14 +631,15 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TG_LOG( SG_GENERAL, SG_ALERT, "Finished cleaning polys for " << icao << " at " << DebugTimeToString(log_time) );
 
     base_poly = tgPolygon::AddColinearNodes( base_poly, tmp_pvmt_nodes );
-    base_poly = tgPolygon::Snap( base_poly, gSnap );
-
+    // base_poly = tgPolygon::Snap( base_poly, gSnap );
+    
     // Finally find slivers in base
-    slivers.clear();
-    tgPolygon::RemoveSlivers( base_poly, slivers );
-    tgPolygon::MergeSlivers( rwy_polys, slivers );
-    tgPolygon::MergeSlivers( pvmt_polys, slivers );
-
+    //slivers.clear();
+    //tgPolygon::RemoveSlivers( base_poly, slivers );
+    //tgPolygon::MergeSlivers( rwy_polys, slivers );
+    //tgPolygon::MergeSlivers( pvmt_polys, slivers );
+    
+#if 0
     // Then snap rwy and pavement to grid (was done right after adding intermediate nodes...)
     for ( unsigned int k = 0; k < rwy_polys.size(); ++k )
     {
@@ -653,10 +657,15 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         poly = tgPolygon::RemoveBadContours( poly );
     	pvmt_polys[k] = poly;
     }
-
+#endif
+    
     cleanup_end.stamp();
     cleanup_time = cleanup_end - cleanup_start;
-
+    
+    /* before tessellating the base, make sure there are no
+       intersecting contours */
+    base_poly = tgPolygon::Simplify( base_poly );
+    
     triangulation_start.stamp();
 
     // tesselate the polygons and prepair them for final output
@@ -669,6 +678,14 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
             TG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << rwy_polys[i].Contours() << " total points before = " << rwy_polys[i].TotalNodes());
             rwy_polys[i].Tesselate();
+            
+#if 0
+            // dump the triangles for each poly
+            char desc[128];
+            sprintf( desc, "poly_%06d", i );
+            tgShapefile::FromTriangles( rwy_polys[i], debug_root, "rwy_polys", desc );
+#endif
+
             TG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << rwy_polys[i].Triangles());
             rwy_polys[i].Texture();
         }
@@ -684,6 +701,13 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
             TG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << pvmt_polys[i].Contours() << " total points before = " << pvmt_polys[i].TotalNodes());
             pvmt_polys[i].Tesselate();
+
+#if 0            
+            char desc[128];
+            sprintf( desc, "poly_%06d", i );
+            tgShapefile::FromTriangles( pvmt_polys[i], debug_root, "pvmt_polys", desc );
+#endif
+
             TG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << pvmt_polys[i].Triangles());
             pvmt_polys[i].Texture();
         }
@@ -699,17 +723,27 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
             TG_LOG(SG_GENERAL, SG_DEBUG, "contours before " << line_polys[i].Contours() << " total points before = " << line_polys[i].TotalNodes());
             line_polys[i].Tesselate();
+            
+#if 0
+            char desc[128];
+            sprintf( desc, "poly_%06d", i );
+            tgShapefile::FromTriangles( line_polys[i], debug_root, "line_polys", desc );
+#endif
+
             TG_LOG(SG_GENERAL, SG_DEBUG, "triangles after = " << line_polys[i].Triangles());
             line_polys[i].Texture();
         }
     }
-
-    /* before tessellating the base, make sure there are no
-       intersecting contours */
-    base_poly = tgPolygon::Simplify( base_poly );
-
+    
     TG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly : " << base_poly.Contours() << " contours " );
     base_poly.Tesselate();
+
+#if 0    
+    char desc[128];
+    sprintf( desc, "poly" );
+    tgShapefile::FromTriangles( base_poly, debug_root, "base_poly", desc );
+#endif
+
     TG_LOG(SG_GENERAL, SG_INFO, "Tesselating base poly - done : Triangles = " << base_poly.Triangles());
     // should we texture base here?
     base_poly.SetTexMethod( TG_TEX_BY_GEODE, b.get_center_lat() );
@@ -725,6 +759,15 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     }
 
     triangulation_time = triangulation_end - triangulation_start;
+
+#if 0    
+    // CheckZFighting( "post triangulation", debug_root, base_poly, rwy_polys, pvmt_polys );
+    if ( CheckZFightingTriangles( "post triangulation tris", debug_root, base_poly, rwy_polys, pvmt_polys ) ) {
+        char cmd[128];
+        sprintf( cmd, "echo %s >> zfight.txt\n", icao.c_str() );
+        system ( cmd );
+    }
+#endif
 
     //
     // We should now have the runway polygons all generated with their
@@ -1165,4 +1208,143 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     chopper.Add( divided_base, "Hole" );
     chopper.Add( apt_clearing, "Airport" );
     chopper.Save( false );
+}
+
+bool Airport::CheckZFightingTriangles( const char* prefix, const char* debug_root, const tgPolygon& base_poly, const tgpolygon_list& rwy_polys, const tgpolygon_list& pvmt_polys )
+{
+    char layer[128];
+    char desc[128];
+
+    sprintf( layer, "zfighting_%s", prefix );
+    double min_area_thresh = 1.0e-10;
+    
+    bool zfighting = false;
+    
+    if ( rwy_polys.size() ) {
+        for ( unsigned int i = 0; i < rwy_polys.size(); ++i ) {
+            tgPolygon   subject = rwy_polys[i];
+            for ( unsigned int j = 0; j < subject.Triangles(); ++j ) {            
+                tgTriangle  subTri = subject.GetTriangle( j );
+                tgRectangle subBB  = subTri.GetBoundingBox();
+    
+                for ( unsigned int k = 0; k < pvmt_polys.size(); ++k ) {
+                    tgPolygon   test   = pvmt_polys[k];
+                    for ( unsigned int l = 0; l < test.Triangles(); ++l ) {
+                        tgTriangle  testTri = test.GetTriangle( l );
+                        tgRectangle testBB  = testTri.GetBoundingBox();
+                
+                        if ( subBB.intersects( testBB ) ) {
+                            // find the intersection
+                            tgPolygon intersection = tgTriangle::Intersect( subTri, testTri );
+                    
+                            for ( unsigned int m = 0; m < intersection.Contours(); m++ ) {
+                                tgContour intContour = intersection.GetContour( m );
+                                if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {                        
+                                    TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between runway poly " << i << " and pavement poly " << k << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
+                                    sprintf( desc, "rwy_%06d_pvmt_%06d", i, j );
+                                    tgShapefile::FromContour( intContour, debug_root, layer, desc );
+                                    zfighting = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // intersect each pavement poly with each pavement, runway, and base poly
+    if ( pvmt_polys.size() ) {
+        for ( unsigned int i = 0; i < pvmt_polys.size(); ++i ) {
+            tgPolygon   subject = pvmt_polys[i];
+            for ( unsigned int j = 0; j < subject.Triangles(); ++j ) {            
+                tgTriangle  subTri = subject.GetTriangle( j );
+                tgRectangle subBB  = subTri.GetBoundingBox();
+    
+                for ( unsigned int k = 0; k < rwy_polys.size(); ++k ) {
+                    tgPolygon   test   = rwy_polys[k];
+                    for ( unsigned int l = 0; l < test.Triangles(); ++l ) {
+                        tgTriangle  testTri = test.GetTriangle( l );
+                        tgRectangle testBB  = testTri.GetBoundingBox();
+                
+                        if ( subBB.intersects( testBB ) ) {
+                            // find the intersection
+                            tgPolygon intersection = tgTriangle::Intersect( subTri, testTri );
+
+                            for ( unsigned int m = 0; m < intersection.Contours(); m++ ) {
+                                tgContour intContour = intersection.GetContour( m );
+                                if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {                        
+                                    TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between pavement poly " << i << " and runway poly " << k << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
+                                    sprintf( desc, "pvmt_%06d_rwy_%06d", i, j );
+                                    tgShapefile::FromContour( intContour, debug_root, layer, desc );
+                                    zfighting = true;
+                                }
+                            }                            
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // intersect base poly with each runway and pavement poly
+    tgPolygon   subject = base_poly;
+
+    for ( unsigned int i = 0; i < subject.Triangles(); ++i ) {
+        tgTriangle  subTri = subject.GetTriangle( i );
+        tgRectangle subBB  = subTri.GetBoundingBox();
+
+        for ( unsigned int j = 0; j < rwy_polys.size(); ++j ) {
+            tgPolygon   test   = rwy_polys[j];
+            for ( unsigned int k = 0; k < test.Triangles(); ++k ) {
+                tgTriangle  testTri = test.GetTriangle( k );
+                tgRectangle testBB  = testTri.GetBoundingBox();
+        
+                if ( subBB.intersects( testBB ) ) {
+                    // find the intersection
+                    tgPolygon intersection = tgTriangle::Intersect( subTri, testTri );
+            
+                    for ( unsigned int m = 0; m < intersection.Contours(); m++ ) {
+                        tgContour intContour = intersection.GetContour( m );
+                        if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {
+                            TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between base poly and runway poly " << j << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
+                            sprintf( desc, "base_rwy_%06d", j );
+                            tgShapefile::FromContour( intContour, debug_root, layer, desc );
+                            zfighting = true;
+                        }
+                    }                    
+                }
+            }
+        }
+    }
+
+    for ( unsigned int i = 0; i < subject.Triangles(); ++i ) {
+        tgTriangle  subTri = subject.GetTriangle( i );
+        tgRectangle subBB  = subTri.GetBoundingBox();
+
+        for ( unsigned int j = 0; j < pvmt_polys.size(); ++j ) {
+            tgPolygon   test   = pvmt_polys[j];
+            for ( unsigned int k = 0; k < test.Triangles(); ++k ) {
+                tgTriangle  testTri = test.GetTriangle( k );
+                tgRectangle testBB  = testTri.GetBoundingBox();
+        
+                if ( subBB.intersects( testBB ) ) {
+                    // find the intersection
+                    tgPolygon intersection = tgTriangle::Intersect( subTri, testTri );
+            
+                    for ( unsigned int m = 0; m < intersection.Contours(); m++ ) {
+                        tgContour intContour = intersection.GetContour( m );
+                        if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {                        
+                            TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between base poly and pavement poly " << j << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
+                            sprintf( desc, "base_pvmt_%06d", j );
+                            tgShapefile::FromContour( intContour, debug_root, layer, desc );
+                            zfighting = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return zfighting;
 }

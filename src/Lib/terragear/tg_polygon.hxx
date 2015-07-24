@@ -112,6 +112,29 @@ public:
         idx_list.resize(  3, -1 );
     }
 
+    tgRectangle GetBoundingBox( void ) const
+    {
+        SGGeod min, max;
+
+        double minx =  std::numeric_limits<double>::infinity();
+        double miny =  std::numeric_limits<double>::infinity();
+        double maxx = -std::numeric_limits<double>::infinity();
+        double maxy = -std::numeric_limits<double>::infinity();
+
+        for (unsigned int i = 0; i < node_list.size(); i++) {
+            SGGeod pt = GetNode(i);
+            if ( pt.getLongitudeDeg() < minx ) { minx = pt.getLongitudeDeg(); }
+            if ( pt.getLongitudeDeg() > maxx ) { maxx = pt.getLongitudeDeg(); }
+            if ( pt.getLatitudeDeg()  < miny ) { miny = pt.getLatitudeDeg(); }
+            if ( pt.getLatitudeDeg()  > maxy ) { maxy = pt.getLatitudeDeg(); }
+        }
+
+        min = SGGeod::fromDeg( minx, miny );
+        max = SGGeod::fromDeg( maxx, maxy );
+
+        return tgRectangle( min, max );        
+    }
+
     SGGeod const& GetNode( unsigned int i ) const {
         return node_list[i];
     }
@@ -155,6 +178,9 @@ public:
                             p3.getLongitudeDeg() * p1.getLatitudeDeg() - p1.getLongitudeDeg() * p3.getLatitudeDeg() ));
     }
 
+    static ClipperLib::Path ToClipper( const tgTriangle& subject );
+    static tgPolygon Intersect( const tgTriangle& subject, const tgTriangle& clip );
+    
     void SaveToGzFile( gzFile& fp ) const;
     void LoadFromGzFile( gzFile& fp );
 
@@ -281,6 +307,9 @@ public:
     }
     void AddTriangle( const SGGeod& p1, const SGGeod p2, const SGGeod p3 ) {
         triangles.push_back( tgTriangle( p1, p2, p3 ) );
+    }
+    tgTriangle GetTriangle( unsigned int t ) {
+        return triangles[t];
     }
 
     SGGeod GetTriNode( unsigned int c, unsigned int i ) const {

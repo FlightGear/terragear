@@ -313,7 +313,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
         tgShapefile::FromPolygon( clipped, "./airport_dbg", std::string("postclip"), shapefile_name );
     }
 
-    tgPolygon::RemoveSlivers( clipped, slivers );
+    //tgPolygon::RemoveSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
@@ -451,7 +451,7 @@ void Runway::gen_runway_section( const tgPolygon& runway,
     // Clip the new polygon against what ever has already been created.
     tgPolygon clipped = accum.Diff( section );
 
-    tgPolygon::RemoveSlivers( clipped, slivers );
+    //tgPolygon::RemoveSlivers( clipped, slivers );
 
     // Split long edges to create an object that can better flow with
     // the surface terrain
@@ -875,7 +875,7 @@ void Runway::BuildShoulder( tgpolygon_list& rwy_polys,
 
         // Clip the new polygon against what ever has already been created.
         tgPolygon clipped = accum.Diff( shoulder );
-        tgPolygon::RemoveSlivers( clipped, slivers );
+        //tgPolygon::RemoveSlivers( clipped, slivers );
 
         // Split long edges to create an object that can better flow with
         // the surface terrain

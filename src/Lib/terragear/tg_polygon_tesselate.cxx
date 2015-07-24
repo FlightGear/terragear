@@ -105,6 +105,9 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra )
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Tess with extra" );
 
+    // clear any triangles from previous tesselation
+    triangles.clear();
+    
     // Bail right away if polygon is empty
     if ( contours.size() != 0 ) {
         // First, convert the extra points to cgal Points
@@ -161,6 +164,9 @@ void tgPolygon::Tesselate()
     CDTPlus cdt;
 
     SG_LOG( SG_GENERAL, SG_DEBUG, "Tess" );
+
+    // clear any triangles from previous tesselation
+    triangles.clear();
 
     // Bail right away if polygon is empty
     if ( contours.size() != 0 ) {
