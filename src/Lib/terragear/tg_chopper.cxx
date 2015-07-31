@@ -103,8 +103,11 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
             // Generate a clip rectangle for the whole row
 
             SGBucket  b_clip      = b_min.sibling(0, row);
-            double    clip_bottom = b_clip.get_center_lat() - SG_HALF_BUCKET_SPAN;
-            double    clip_top    = b_clip.get_center_lat() + SG_HALF_BUCKET_SPAN;
+            
+            // add a small offset when generating the row.  clipper is having difficulty
+            // with colinear horizontal lines...
+            double    clip_bottom = b_clip.get_center_lat() - 0.0630;
+            double    clip_top    = b_clip.get_center_lat() + 0.0630;
             tgPolygon clip_row, clipped;
 
             SG_LOG( SG_GENERAL, SG_DEBUG, "   CLIPPED row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
