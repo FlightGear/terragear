@@ -293,7 +293,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
     // Find the average of all the runway and heliport long / lats
     int num_samples = 0;
-    TG_LOG(SG_GENERAL, SG_ALERT, "num runways is " << runways.size() << " num heipads is " << helipads.size() );
+    TG_LOG(SG_GENERAL, SG_ALERT, "num runways is " << runways.size() << " num helipads is " << helipads.size() );
 
     for (unsigned int i=0; i<runways.size(); i++)
     {
