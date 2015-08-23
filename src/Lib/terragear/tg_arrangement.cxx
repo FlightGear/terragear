@@ -153,6 +153,7 @@ Polygon_set tgArrangement::ToPolygonSet( int contour )
     return polygons;
 }
 
+#if 0
 static tgContour ToTgContour( const Polygon& p )
 {
     tgContour contour;
@@ -166,7 +167,9 @@ static tgContour ToTgContour( const Polygon& p )
     
     return contour;
 }
+#endif
 
+#if 0
 static void ToShapefile( const Polygon_with_holes& pwh, int c )
 {
     char layer[256];
@@ -192,6 +195,7 @@ static void ToShapefile( const Polygon_with_holes& pwh, int c )
         SG_LOG(SG_GENERAL, SG_INFO, "tgArrangmentPWH to Shapefile - pwh is unbounded" );
     }
 }
+#endif
 
 #if 1
 void tgArrangement::GetPolygons( const arrArrangement::Face_const_handle& fh, Polygon_set& polygons, int c )

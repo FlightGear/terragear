@@ -5,6 +5,7 @@
 
 // arrangement
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+//#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arr_consolidated_curve_data_traits_2.h>
 #include <CGAL/Arrangement_2/Arr_traits_adaptor_2.h>
@@ -145,6 +146,7 @@ public:
     
     segnetedge_it output_begin( void ) { return output.begin(); }
     segnetedge_it output_end( void )   { return output.end();   }
+    unsigned int  output_size( void )  { return output.size();  }
     
     bool empty( void ) const 
     { 

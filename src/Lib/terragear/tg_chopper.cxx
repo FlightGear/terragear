@@ -22,7 +22,7 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
     base.AddNode( 0, b.get_corner( SG_BUCKET_NE ) );
     base.AddNode( 0, b.get_corner( SG_BUCKET_NW ) );
 
-    result = tgPolygon::Intersect( subject, base );    
+    result = tgPolygon::Intersect( subject, base );
     if ( result.Contours() > 0 ) {
         if ( subject.GetPreserve3D() ) {
             result.InheritElevations( subject );
@@ -35,9 +35,12 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
         }
         result.SetFlag(type);
 
-        lock.lock();
-        bp_map[b.gen_index()].push_back( result );
-        lock.unlock();
+        long int cur_bucket = b.gen_index();
+        if ( ( bucket_id < 0 ) || (cur_bucket == bucket_id ) ) {
+            lock.lock();
+            bp_map[b.gen_index()].push_back( result );
+            lock.unlock();
+        }
     }
 
     return result;

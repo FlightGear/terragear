@@ -8,10 +8,28 @@
 
 tgIntersectionNode::tgIntersectionNode( const SGGeod& pos )
 {
+    static unsigned int cur_id = 1;
+    
     position = pos;
+    position2 = edgeArrPoint( pos.getLongitudeDeg(), pos.getLatitudeDeg() );
+    
     edgeList.clear();
     start_v = NODE_UNTEXTURED;
     endpoint = false;
+    id = cur_id++;
+}
+
+tgIntersectionNode::tgIntersectionNode( const edgeArrPoint& pos )
+{
+    static unsigned int cur_id = 1;
+    
+    position = SGGeod::fromDeg( CGAL::to_double( pos.x() ), CGAL::to_double( pos.y() ) );
+    position2 = pos;
+    
+    edgeList.clear();
+    start_v = NODE_UNTEXTURED;
+    endpoint = false;
+    id = cur_id++;
 }
 
 void tgIntersectionNode::CheckEndpoint( void )
@@ -77,17 +95,12 @@ void tgIntersectionNode::DelEdge( bool originated, tgIntersectionEdge* edge )
     SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::DelEdge: exit - node has " << edgeList.size() << " edges ");    
 }
 
-
-tgIntersectionEdgeInfo* tgIntersectionNode::GetPrevEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgRay& bisector, const SGGeod& bisect_pos, const char* prefix )
+tgIntersectionEdgeInfo* tgIntersectionNode::GetPrevEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgConstraint& bisector, const edgeArrPoint& bisect_pos, const char* prefix )
 {
     tgintersectionedgeinfo_it prv, cur;
     tgIntersectionEdgeInfo*   prv_info = NULL;
     const tgIntersectionEdge* ce       = cur_info->GetEdge();
-    int                       ce_id    = ce->id;
-
-#if DEBUG_INTERSECTIONS                        
-    char                      layer[256];
-#endif
+    unsigned int              ce_id    = ce->id;
     
     if ( edgeList.size() > 1 ) {
         for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
@@ -103,126 +116,23 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetPrevEdgeInfo( tgIntersectionEdgeI
                 }
             }
         }
-    
+        
         // now, loop around until we find an edge where the top/bottom intersects the bisector at the same position
-        while ( !prv_info && prv != cur ) {
+        while ( (!prv_info) && ((*prv)->GetEdge()->id != ce_id) ) {
             bool ve_originating    = (*prv)->IsOriginating();
             tgIntersectionEdge* ve = (*prv)->GetEdge();
-            int ve_id              = ve->id;
 
-            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: verify prev edge for ce " << ce_id << " which could be " << ve_id << " has proper intersection with bisector - check BottomRight" );
+            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: ce " << ce_id << " check pe " << (*prv)->GetEdge()->id );
+            
             // bisect the shared constraint to verify
             if ( !prv_info ) {
-                SGGeod              verify_intersect;
-                char                cons_name[16];
-                
-                tgRay ve_start = ve->GetBottomLeftConstraint( ve_originating );
-                
-                if ( ve_originating ) {
-                    strcpy( cons_name, "BL" );
+                if ( ve->VerifyIntersectionLocation( ve_originating, bisector, bisect_pos ) ) {
+                    prv_info = (*prv);
                 } else {
-                    strcpy( cons_name, "TR" );
-                }
-
-                if ( bisector.Intersect( ve_start, verify_intersect ) ) {
-                    if ( SGGeod_isEqual2D( bisect_pos, verify_intersect ) ) {
-                        // true found the correct edge
-                        prv_info = (*prv);
-
-#if DEBUG_INTERSECTIONS                        
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif                        
-                    } else {
-                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: ve " << ve_id << " bisector intersects ve_start, but not at the same pos as ce." );
-
-#if DEBUG_INTERSECTIONS                        
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif                        
-                    }
-                } else {
-                    SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: ve " << ve_id << " bisector DOES NOT intersect ve_start." );
-
-#if DEBUG_INTERSECTIONS                        
-                    sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-
-                    sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-#endif                    
+                    SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: bisector does not intersect at same loc" );
                 }
             }
-
-            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: verify prev edge for ce " << ce_id << " which could be " << ve_id << " has proper intersection with bisector - check BottomLeft" );
-            // bisect the shared constraint to verify
-            if ( !prv_info ) {
-                SGGeod              verify_intersect;
-                char                cons_name[16];
-                
-                tgRay ve_start = ve->GetBottomRightConstraint( ve_originating );
-
-                if ( ve_originating ) {
-                    strcpy( cons_name, "BR" );
-                } else {
-                    strcpy( cons_name, "TL" );
-                }
-
-                if ( bisector.Intersect( ve_start, verify_intersect ) ) {
-                    if ( SGGeod_isEqual2D( bisect_pos, verify_intersect ) ) {
-                        // true found teh correct edge
-                        prv_info = (*prv);
-
-#if DEBUG_INTERSECTIONS                        
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif                        
-                        
-                    } else {
-                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: ve " << ve_id << " bisector intersects ve_start, but not at the same pos as ce." );
-
-#if DEBUG_INTERSECTIONS                                                
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif                        
-                    }
-                } else {
-                    SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetPrevEdgeInfo: ve " << ve_id << " bisector DOES NOT intersect ve_start." );
-
-#if DEBUG_INTERSECTIONS                        
-                    sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                    
-                    sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );                        
-#endif                    
-                }
-            }
-
+            
             if ( prv != edgeList.begin() ) {
                 prv--;
             } else {
@@ -240,8 +150,6 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdge*
     tgintersectionedgeinfo_it cur, nxt;
     tgIntersectionEdgeInfo* nxt_info = NULL;
     
-//    SG_LOG(SG_GENERAL, LOG_TEXTURE, "tgIntersectionNode::GetNextEdgeInfo: this " << this << " cur_edge_id " << cur_edge->id );
-    
     if ( edgeList.size() > 1 ) {
         for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
             // edge info is unique from node to node - but the edge itself is shared
@@ -255,8 +163,6 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdge*
                 }
                 
                 nxt_info = (*nxt);
-                
-                //                SG_LOG(SG_GENERAL, LOG_TEXTURE, "tgIntersectionNode::GetNextEdgeInfo: this " << this << " selected edge " << nxt_info->GetEdge()->id );
             }
         }
     } else {
@@ -266,17 +172,14 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdge*
     return nxt_info;
 }
 
-tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgRay& bisector, const SGGeod& bisect_pos, const char* prefix )
+tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeInfo* cur_info, const tgConstraint& bisector, const edgeArrPoint& bisect_pos, const char* prefix )
 {
     tgintersectionedgeinfo_it cur, nxt;
     tgIntersectionEdgeInfo*   nxt_info = NULL;
     const tgIntersectionEdge* ce       = cur_info->GetEdge();
-    int                       ce_id    = ce->id;
-
-#if DEBUG_INTERSECTIONS                        
-    char                      layer[256];
-#endif
+    unsigned int              ce_id    = ce->id;
     
+    SG_LOG( SG_GENERAL, SG_INFO, "GetNextEdgeInfo: cur_edge " << cur_info->GetEdge()->id );
     if ( edgeList.size() > 1 ) {
         for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
             // edge info is unique from node to node - but the edge itself is shared
@@ -292,123 +195,16 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeI
         }
 
         // now, loop around until we find an edge where the top/bottom intersects the bisector at the same position
-        while ( !nxt_info && nxt != cur ) {
+        while ( (!nxt_info) && ((*nxt)->GetEdge()->id != ce_id) ) {
+            SG_LOG( SG_GENERAL, SG_INFO, "GetNextEdgeInfo: nxt " << (*nxt)->GetEdge()->id << " cur " << ce_id );
+            
             bool ve_originating    = (*nxt)->IsOriginating();
             tgIntersectionEdge* ve = (*nxt)->GetEdge();
-            int ve_id              = ve->id;
             
-            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetNextEdgeInfo: verify next edge for ce " << ce_id << " which could be " << ve_id << " has proper intersection with bisector - check BottomRight" );
             // bisect the shared constraint to verify
             if ( !nxt_info ) {
-                SGGeod              verify_intersect;
-                char                cons_name[16];
-
-                tgRay ve_start = ve->GetBottomRightConstraint( ve_originating );
-
-                if ( ve_originating ) {
-                    strcpy( cons_name, "BR" );
-                } else {
-                    strcpy( cons_name, "TL" );
-                }
-
-                if ( bisector.Intersect( ve_start, verify_intersect ) ) {
-                    if ( SGGeod_isEqual2D( bisect_pos, verify_intersect ) ) {
-                        // true found the correct edge
-                        nxt_info = (*nxt);
-
-#if DEBUG_INTERSECTIONS                        
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif
-                        
-                    } else {
-                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetNextEdgeInfo: ve " << ve_id << " bisector intersects ve_start, but not at the same pos as ce." );
-
-#if DEBUG_INTERSECTIONS                        
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif
-                        
-                    }
-                } else {
-                    SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetNextEdgeInfo: ve " << ve_id << " bisector DOES NOT intersect ve_start." );
-
-#if DEBUG_INTERSECTIONS                        
-                    sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                    
-                    sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-#endif                    
-                }
-            }
-            
-            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetNextEdgeInfo: verify next edge for ce " << ce_id << " which could be " << ve_id << " has proper intersection with bisector - check BottomLeft" );
-            // bisect the shared constraint to verify
-            if ( !nxt_info ) {
-                SGGeod              verify_intersect;
-                char                cons_name[16];
-
-                tgRay ve_start = ve->GetBottomLeftConstraint( ve_originating );
-
-                if ( ve_originating ) {
-                    strcpy( cons_name, "BL" );
-                } else {
-                    strcpy( cons_name, "TR" );
-                }
-
-                if ( bisector.Intersect( ve_start, verify_intersect ) ) {
-                    if ( SGGeod_isEqual2D( bisect_pos, verify_intersect ) ) {
-                        // true found teh correct edge
-                        nxt_info = (*nxt);
-
-#if DEBUG_INTERSECTIONS                        
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif                        
-                    } else {
-                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetNextEdgeInfo: ve " << ve_id << " bisector intersects ve_start, but not at the same pos as ce." );
-
-#if DEBUG_INTERSECTIONS                        
-                        sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-                        
-                        sprintf(layer, "%s_ve_intersect_id_%04d_%s", prefix, ve_id, cons_name );
-                        tgShapefile::FromGeod( verify_intersect, ce->GetDatasource(), layer, "pt" );
-#endif
-                        
-                    }
-                } else {
-                    SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::GetNextEdgeInfo: ve " << ve_id << " bisector DOES NOT intersect ve_start." );
-
-#if DEBUG_INTERSECTIONS                        
-                    sprintf(layer, "%s_ve_bisector_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( bisector, ce->GetDatasource(), layer, "cons" );
-                    
-                    sprintf(layer, "%s_ve_start_id_%04d_%s", prefix, ve_id, cons_name );
-                    tgShapefile::FromRay( ve_start, ce->GetDatasource(), layer, "cons" );
-#endif                    
+                if ( ve->VerifyIntersectionLocation( ve_originating, bisector, bisect_pos ) ) {
+                    nxt_info = (*nxt);
                 }
             }
 
@@ -416,7 +212,7 @@ tgIntersectionEdgeInfo* tgIntersectionNode::GetNextEdgeInfo( tgIntersectionEdgeI
             if ( nxt == edgeList.end() ) {
                 nxt = edgeList.begin();
             }        
-        }                                    
+        }            
     }
     
     return nxt_info;
@@ -577,9 +373,11 @@ void tgIntersectionNode::AddCapEdges( tgIntersectionNodeList& nodelist, tginters
     // if this node has just one edge, we may need to add a cap edge
     if ( edgeList.size() == 1 ) {
         tgintersectionedgeinfo_it cur = edgeList.begin();
-                
+
         // we need to get the edge info to determine the edge origination info
         tgIntersectionEdgeInfo* cur_info = (*cur);
+        
+#if 0        
         //double cur_heading = cur_info->GetHeading();
         double cur_heading = cur_info->GetGeodesyHeading();
         
@@ -592,7 +390,44 @@ void tgIntersectionNode::AddCapEdges( tgIntersectionNodeList& nodelist, tginters
             tgIntersectionNode* newNode = nodelist.Add( SGGeodesy::direct( position, cur_heading, 0.5 ) );
             tgIntersectionEdge* newEdge = cur_edge->Split( cur_info->IsOriginating(), newNode );
             edgelist.push_back( newEdge );
-        }    
+        }
+#else
+        tgIntersectionEdge* cur_edge = cur_info->GetEdge();
+
+        // to split, we need to use an exact position for the new node. ( not doubles )
+        // we use side intersections to determine where to direct the constraints.
+        // if the new edge is just nearly paralell to the old, we can get strange intersection locations
+        CGAL::Vector_2<edgeArrKernel> vec = cur_edge->ToVector();
+
+        // get the length of the vector
+        edgeArrKernel::FT length = sqrt( CGAL::to_double(vec.squared_length()) );
+
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::AddCapEdges: current edge " << cur_edge->id << " length is " << length << "(deg) " << length*111000 << "(meters)");
+        
+        // approx meters
+        if ( (length * 111000) > 1.0 ) {
+            // we want to have a translate unit vector
+            vec = vec / length;
+            vec = vec / 222000;
+            
+            edgeArrKernel::FT length2 = sqrt( CGAL::to_double(vec.squared_length()) );
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::AddCapEdges: new edge length is " << length2 << "(deg) " << length2*111000 << "(meters)");
+            
+            if (!cur_info->IsOriginating() ) {
+                vec = -vec;
+            }
+            edgeArrTransformation translate(CGAL::TRANSLATION, vec);
+            edgeArrPoint splitPt  = translate(position2);
+            
+            tgIntersectionNode* newNode = nodelist.Add( splitPt );
+            tgIntersectionEdge* newEdge = cur_edge->Split( cur_info->IsOriginating(), newNode );
+            edgelist.push_back( newEdge );
+        }
+        else
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::AddCapEdges: current edge " << cur_edge->id << " length is " << length*111000 );
+        }
+#endif
     }
 }
 
@@ -620,6 +455,18 @@ void tgIntersectionNode::ConstrainEdges( void )
 // Step 2 - create edge shapes
 void tgIntersectionNode::GenerateEdges()
 {
+    // traverse the constraints from the edge start node
+    // note that the start node CAN be outside the final shape.
+    // This only happens when a segment is thin, and does not fully 
+    // reach the intersection node.  We know where the new
+    // start is in this case...
+    tgintersectionedgeinfo_it cur;
+    
+    for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
+        if ((*cur)->IsOriginating() ) {
+            (*cur)->GetEdge()->Generate();
+        }
+    }
     switch( edgeList.size() ) {
         case 1:
             // add cap
@@ -662,128 +509,350 @@ void tgIntersectionNode::CompleteSpecialIntersections( void )
     }
 }
 
+
+inline SGGeod CalculateLinearLocation( const SGGeod& p0, const SGGeod& p1, const double t )
+{
+    // these are 2d approximations using lon, and lat as x,y cartesion coords
+    // how expensive would this be to do in Geodetic math?
+    SGVec2d v0 = SGVec2d( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    SGVec2d v1 = SGVec2d( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    SGVec2d result;
+
+    // we do this - backwards. if t=1, we want p0
+    double term1 = t;
+    double term2 = (1.0f - t);
+
+    result = (v0 * term1) + (v1 * term2);
+
+    return SGGeod::fromDeg( result.x(), result.y() );
+}
+
+bool tgIntersectionNode::IntersectCurRightSideWithNextLeftSide( tgIntersectionEdgeInfo* cur_info, tgIntersectionEdgeInfo* nxt_info, edgeArrPoint& intersectionLocation )
+{
+    bool intersects = false;
+    
+    tgIntersectionEdge* cur_edge = cur_info->GetEdge();
+    tgIntersectionEdge* nxt_edge = nxt_info->GetEdge();
+
+    edgeArrLine curRight = cur_edge->GetRightSide( cur_info->IsOriginating() );
+    edgeArrLine nxtLeft  = nxt_edge->GetLeftSide( nxt_info->IsOriginating() );
+
+    // special case if the lines are paralell
+    if ( CGAL::parallel(curRight, nxtLeft) ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::IntersectCurRightSideWithNextLeftSide: current edge " << cur_edge->id << " is paralell with " << nxt_edge->id );
+        // generate perpendicular ray, and intersect with side
+        CGAL::Vector_2<edgeArrKernel> vec = cur_edge->ToVector();
+        if ( !cur_info->IsOriginating() ) {
+            vec = -vec;
+        }        
+        CGAL::Vector_2<edgeArrKernel> perp = vec.perpendicular( CGAL::CLOCKWISE );
+        
+        // translate nodes position by vector to get 2nd point
+        edgeArrTransformation translateRight(CGAL::TRANSLATION, perp);
+        edgeArrPoint target = translateRight( position2 );
+        edgeArrLine  bisector( position2, target );
+        
+        CGAL::Object result;
+        result = CGAL::intersection( curRight, bisector );
+        if (const edgeArrPoint *ipoint = CGAL::object_cast<edgeArrPoint>(&result)) {
+            // handle the point intersection case with *ipoint.
+            intersectionLocation = *ipoint;
+            intersects = true;
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::IntersectCurRightSideWithNextLeftSide: current edge " << cur_edge->id << " PARALELL but CAN'T INTERSECT " << nxt_edge->id );                            
+        }
+        
+    } else {    
+        CGAL::Object result;
+        result = CGAL::intersection( curRight, nxtLeft );
+        if (const edgeArrPoint *ipoint = CGAL::object_cast<edgeArrPoint>(&result)) {
+            // handle the point intersection case with *ipoint.
+            intersectionLocation = *ipoint;
+            intersects = true;
+            if ( ( cur_edge->id == 1 ) && (nxt_edge->id == 58 ) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::IntersectCurRightSideWithNextLeftSide: current edge " << cur_edge->id << " REALLY INTERSECTS with " << nxt_edge->id );                
+            }
+        }
+    }
+    
+    return intersects;
+}
+
+// we only use bisector rays as a helper with multisegment intersections.
 void tgIntersectionNode::GenerateBisectRays( void ) 
 {
-    tgintersectionedgeinfo_it prv, cur, nxt;
+    tgintersectionedgeinfo_it cur, nxt;
+
 #if DEBUG_INTERSECTIONS
     char layer[128];
 #endif
     
-    for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {
-        // Get previous edge info - with wrap around
-        if ( cur == edgeList.begin() ) {
-            prv = edgeList.end();
-        } else {
-            prv = cur;
-        }
-        prv--;
-
+    sgDebugPriority LOG_NODE_DBG = SG_DEBUG;
+    
+    edgeArrPoint eaPosition( position.getLongitudeDeg(), position.getLatitudeDeg() );
+    
+    for (cur = edgeList.begin(); cur != edgeList.end(); cur++) {        
         // get next edge info - with wrap around
-        nxt = cur;
-        nxt++;
+        nxt = cur; nxt++;
         if ( nxt == edgeList.end() ) {
             nxt = edgeList.begin();
         }
         
         // we need to get the edge info to determine the edge origination info
-        tgIntersectionEdgeInfo* prv_info = (*prv);
         tgIntersectionEdgeInfo* cur_info = (*cur);
         tgIntersectionEdgeInfo* nxt_info = (*nxt);
-
-        double prv_heading;
-        double cur_heading;
-        double nxt_heading;
         
-        double bprv_heading;
-        double bnxt_heading;
+        tgIntersectionEdge*     cur_edge = cur_info->GetEdge();
+        tgIntersectionEdge*     nxt_edge = nxt_info->GetEdge();
+        
+        //double cur_heading;
+        //double nxt_heading;
+        //double bisect_heading;
         
         // the edge info always has heading with respect to the node
-        cur_heading = cur_info->GetHeading();
-        prv_heading = prv_info->GetHeading();
-        nxt_heading = nxt_info->GetHeading();
-        
-        // we want right turns - so calc angle a,b,c from cur,origin,prv
-        bprv_heading = Bisect( position, cur_heading, prv_heading, true );
-        SGGeod bp_next = SGGeodesy::direct( position, bprv_heading, 1.0 );
-        tgRay bp_ray = tgRay( position, bp_next );
-        
-        // we want right turns - so calc angle a,b,c from nxt,origin,cur
-        bnxt_heading = Bisect( position, nxt_heading, cur_heading, true );
-        SGGeod bn_next = SGGeodesy::direct( position, bnxt_heading, 1.0 );
-        tgRay bn_ray = tgRay( position, bn_next );
-        
-        // Add the bisecting ray between prev and current as a constraint
-        tgIntersectionEdge* cur_edge = cur_info->GetEdge();
-        
-        if ( cur_edge ) {
-            double dist = SGGeodesy::distanceM( cur_edge->start->GetPosition(), cur_edge->end->GetPosition() );
-            if ( dist < 0.5 ) {
-                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "Edge: " << cur_edge->id << " length is " << dist );
-            }
-
-            if ( cur_info->IsOriginating() ) {
-                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add BR constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bnxt_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and next (" << std::setprecision(16) << nxt_heading << ")" );
-                cur_edge->SetBottomRightConstraint(bn_ray);
+        //cur_heading = cur_info->GetHeading();
+        //nxt_heading = nxt_info->GetHeading();
                 
-                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add BL constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bprv_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and prev (" << std::setprecision(16) << prv_heading << ")" );
-                cur_edge->SetBottomLeftConstraint(bp_ray);
+        // we parametize the thinner segment.  The origin of the secondary
+        // constraint is the ration 0..1 of the thin segment width / thick 
+        // segment width
+        double cur_width = cur_edge->width;
+        double nxt_width = nxt_edge->width;
+        char constraint_desc[128];
 
-#if DEBUG_INTERSECTIONS
-                sprintf( layer, "bisector_with_%03ld_BotRight", nxt_info->GetEdge()->id );
-                tgShapefile::FromRay( bn_ray, cur_edge->GetDatasource(), layer, "bisector" );
-
-                sprintf( layer, "bisector_with_%03ld_BotLeft", prv_info->GetEdge()->id );
-                tgShapefile::FromRay( bp_ray, cur_edge->GetDatasource(), layer, "bisector" );
-#endif
-                
+        SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays: current edge is " << cur_edge->id << " width " << cur_width );
+        SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays:    next edge is " << nxt_edge->id << " width " << nxt_width );
+        
+        if ( cur_width == nxt_width ) {
+            // instead of using bisect_heading - find the intersection of the two lines making up cur edge right side, and next edge left side
+            //tgLine curRight = cur_edge->GetRightSide( cur_info->IsOriginating() );
+            // edgeArrLine curRight = cur_edge->GetRightSide( cur_info->IsOriginating() );
+            // tgLine nxtLeft  = nxt_edge->GetLeftSide( nxt_info->IsOriginating() );
+            // edgeArrLine nxtLeft = nxt_edge->GetLeftSide( nxt_info->IsOriginating() );
+            edgeArrPoint rayIntersect;
+            if ( IntersectCurRightSideWithNextLeftSide( cur_info, nxt_info, rayIntersect ) ) {
+            
+                // debug the intersect point... why is it different below...
+                char desc[128];
+                sprintf( desc, "intersection_%06ld_rightside_and_%06ld_leftside", cur_edge->id, nxt_edge->id );
+                cur_edge->AddDebugPoint( rayIntersect, desc );
+            
+                if ( cur_info->IsOriginating() ) {
+                    sprintf(constraint_desc, "BR_%ld_equal_%ld_position_via_bisector", cur_edge->id, nxt_edge->id );                
+                    cur_edge->AddConstraint( BOT_RIGHT_CONSTRAINT, tgConstraint::fromRay(eaPosition, rayIntersect, nxt_edge->id, constraint_desc) );
+                } else {
+                    sprintf(constraint_desc, "TL_%ld_equal_%ld_position_via_bisector", cur_edge->id, nxt_edge->id );                
+                    cur_edge->AddConstraint( TOP_LEFT_CONSTRAINT, tgConstraint::fromRay(eaPosition, rayIntersect, nxt_edge->id, constraint_desc) );
+                }
+            
+                if ( nxt_info->IsOriginating() ) {                    
+                    sprintf(constraint_desc, "BL_%ld_equal_%ld_position_via_bistector", nxt_edge->id, cur_edge->id );
+                    nxt_edge->AddConstraint( BOT_LEFT_CONSTRAINT, tgConstraint::fromRay(eaPosition, rayIntersect, cur_edge->id, constraint_desc) );
+                } else {
+                    sprintf(constraint_desc, "TR_%ld_equal_%ld_position_via_bistector", nxt_edge->id, cur_edge->id );
+                    nxt_edge->AddConstraint( TOP_RIGHT_CONSTRAINT, tgConstraint::fromRay(eaPosition, rayIntersect, cur_edge->id, constraint_desc) );
+                }
             } else {
-                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add TL constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bnxt_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and next (" << std::setprecision(16) << nxt_heading << ")" );
-                cur_edge->SetTopLeftConstraint(bn_ray);
-
-                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: Add TR constraint to edge " << cur_info->GetEdge()->id << " from " << position << " heading " << std::setprecision(16) << bprv_heading << " from cur (" << std::setprecision(16) << cur_heading << ", originating) and prev (" << std::setprecision(16) << prv_heading << ")" );
-                cur_edge->SetTopRightConstraint(bp_ray);
-
-#if DEBUG_INTERSECTIONS
-                sprintf( layer, "bisector_with_%03ld_TopLeft", nxt_info->GetEdge()->id );
-                tgShapefile::FromRay( bn_ray, cur_edge->GetDatasource(), layer, "bisector" );
-
-                sprintf( layer, "bisector_with_%03ld_TopRight", prv_info->GetEdge()->id );
-                tgShapefile::FromRay( bp_ray, cur_edge->GetDatasource(), layer, "bisector" );
-#endif
-                
+                SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays: ERROR - no intersect between " << cur_edge->id << " and " << nxt_edge->id );
             }
         } else {
-            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateBisectRays: no cur edge!!! " );
-        }
+#if 0            
+            // we have a more complex intersection.
+            // calculate the bisect ratio to determine which edge we will use 
+            // to offset the bisector rays
+            double bisect_ratio = cur_width / nxt_width;
+            bool valid = false;
+            
+            SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays: bisect_ratio" << bisect_ratio );
+            SGGeod leftIntersection, rightIntersection, offsetOrigin;
+       
+            if ( bisect_ratio > 1.0 ) {
+                // the ratio is greater than 1.  The current edge is the thicker of the two.
+                // we want to find where the thin edge centerline intersects with
+                // both this current edge's right side, and the left side of the edge after the next edge
+              
+                tgintersectionedgeinfo_it nxt_nxt = nxt; nxt_nxt++;
+                if ( nxt_nxt == edgeList.end() ) {
+                    nxt_nxt = edgeList.begin();
+                }
+
+                tgIntersectionEdgeInfo* nxt_nxt_info = (*nxt_nxt);        
+                tgIntersectionEdge*     nxt_nxt_edge = nxt_nxt_info->GetEdge();
+                double                  nxt_nxt_heading = nxt_nxt_info->GetHeading();
+                
+                // right and left intersection points are reletive to the thin ( next ) edge
+                if ( nxt_edge->ToLine().Intersect( cur_edge->GetRightSide( cur_info->IsOriginating() ), rightIntersection ) ) {
+                    if ( nxt_edge->ToLine().Intersect( nxt_nxt_edge->GetLeftSide( nxt_nxt_info->IsOriginating() ), leftIntersection ) ) {
+                        // both intersection successfull - which is closer to node position?
+                        double rightDist = SGGeodesy::distanceM( position, rightIntersection );
+                        double leftDist  = SGGeodesy::distanceM( position, leftIntersection );
+                        
+                        SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays1: rightDist " << rightDist );
+                        SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays1: leftDist " << leftDist );
+                        
+                        if ( rightDist <= leftDist ) {
+                            SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays1: use right intersection" );
+                            
+                            // use the right ( current ) intersection to interpolate
+                            offsetOrigin = CalculateLinearLocation( position, rightIntersection, 1/bisect_ratio );
+                            bisect_heading = Bisect( position, nxt_heading, cur_heading, true );
+                            
+                        } else {
+                            SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays1: use left intersection" );
+                        
+                            // use the left ( next next ) intersection to interpolate                            
+                            offsetOrigin = CalculateLinearLocation( position, leftIntersection, 1/bisect_ratio );
+                            bisect_heading = SGMiscd::normalizePeriodic( 0, 360, Bisect( position, nxt_nxt_heading, nxt_heading, true ) );
+                        }
+                        
+                        valid = true;
+                    } else {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::GenerateBisectRays: no intersection between next ( thin ) edge and next next left side. node deg is " << Degree() );
+                    }
+                } else {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::GenerateBisectRays: no intersection between next ( thin ) edge and cur right side" );                    
+                }
+            
+                if ( valid ) {
+                    // for the current (thick) edge, we have a segment and ray
+                    if ( cur_info->IsOriginating() ) {
+                        sprintf(constraint_desc, "BR_%ld_thick_%ld_pos_to_origin", cur_edge->id, nxt_edge->id );
+                        cur_edge->AddConstraint( BOT_RIGHT_CONSTRAINT, tgConstraint::fromSegment(position, offsetOrigin, nxt_edge->id, constraint_desc) );
+                    
+                        sprintf(constraint_desc, "BR_%ld_thick_%ld_origin_via_bisector", cur_edge->id, nxt_edge->id );
+                        cur_edge->AddConstraint( BOT_RIGHT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, SGMiscd::normalizePeriodic( 0, 360, bisect_heading ), nxt_edge->id, constraint_desc) );
+                    } else {
+                        sprintf(constraint_desc, "TL_%ld_thick_%ld_pos_to_origin", cur_edge->id, nxt_edge->id );
+                        cur_edge->AddConstraint( TOP_LEFT_CONSTRAINT, tgConstraint::fromSegment(position, offsetOrigin, nxt_edge->id, constraint_desc) );
+                    
+                        sprintf(constraint_desc, "TL_%ld_thick_%ld_origin_via_bisector", cur_edge->id, nxt_edge->id );
+                        cur_edge->AddConstraint( TOP_LEFT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, SGMiscd::normalizePeriodic( 0, 360, bisect_heading ), nxt_edge->id, constraint_desc) );
+                    }
+                
+                    // for the next (thin) edge, we just have a ray
+                    if ( nxt_info->IsOriginating() ) {
+                        sprintf(constraint_desc, "BL_%ld_thin_%ld_origin_via_bisector", nxt_edge->id, cur_edge->id );
+                        nxt_edge->AddConstraint( BOT_LEFT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, SGMiscd::normalizePeriodic( 0, 360, bisect_heading ), cur_edge->id, constraint_desc) );
+                    } else {
+                        sprintf(constraint_desc, "TR_%ld_thin_%ld_origin_via_bisector", nxt_edge->id, cur_edge->id );
+                        nxt_edge->AddConstraint( TOP_RIGHT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, SGMiscd::normalizePeriodic( 0, 360, bisect_heading ), cur_edge->id, constraint_desc) );
+                    }
+                }
+            } else {
+                // the ratio is less than 1.  The current edge is the thinner of the two.
+                // we want to find where the thin edge centerline intersects with
+                // both the previous edge's right side, and the left side of the next edge
+                tgintersectionedgeinfo_it prv;
+
+                if ( cur == edgeList.begin() ) {
+                    prv = edgeList.end();
+                } else {
+                    prv = cur;
+                }
+                prv--;
+
+                tgIntersectionEdgeInfo* prv_info = (*prv);        
+                tgIntersectionEdge*     prv_edge = prv_info->GetEdge();
+                double                  prv_heading = prv_info->GetHeading();
+                
+                // right and left intersection points are reletive to the thin ( next ) edge
+                if ( cur_edge->ToLine().Intersect( prv_edge->GetRightSide( prv_info->IsOriginating() ), rightIntersection ) ) {
+                    if ( cur_edge->ToLine().Intersect( nxt_edge->GetLeftSide( nxt_info->IsOriginating() ), leftIntersection ) ) {
+                        // both intersection successfull - which is closer to node position?
+                        double rightDist = SGGeodesy::distanceM( position, rightIntersection );
+                        double leftDist  = SGGeodesy::distanceM( position, leftIntersection );
+
+                        SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays2: rightDist " << rightDist );
+                        SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays2: leftDist " << leftDist );
+                        
+                        if ( rightDist <= leftDist ) {
+                            SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays2: use right intersection" );
+
+                            // use the right ( prv ) intersection to interpolate
+                            offsetOrigin = CalculateLinearLocation( position, rightIntersection, bisect_ratio );
+                            //bisect_heading = SGMiscd::normalizePeriodic( 0, 360, Bisect( position, cur_heading, prv_heading, true ) + 90 );
+                            bisect_heading = SGMiscd::normalizePeriodic( 0, 360, Bisect( position, cur_heading, prv_heading, true ) );
+                        } else {
+                            SG_LOG(SG_GENERAL, LOG_NODE_DBG, "tgIntersectionNode::GenerateBisectRays2: use left intersection" );
+
+                            // use the left ( nxt ) intersection to interpolate
+                            offsetOrigin = CalculateLinearLocation( position, leftIntersection, bisect_ratio );
+                            bisect_heading = Bisect( position, nxt_heading, cur_heading, true );
+                        }
+                        
+                        valid = true;
+                    } else {
+                        SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::GenerateBisectRays: no intersection between cur ( thin ) edge and next left side" );
+                    }
+                } else {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "tgIntersectionNode::GenerateBisectRays: no intersection between cur ( thin ) edge and prev right side" );                    
+                }
+                 
+                if ( valid ) {
+                    // for the current (thin) edge, we just have a ray originating from 
+                    // the calculated origin
+                    if ( cur_info->IsOriginating() ) {
+                        sprintf(constraint_desc, "BR_%ld_thin_%ld_origin_via_bisector", cur_edge->id, nxt_edge->id );
+                        cur_edge->AddConstraint( BOT_RIGHT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, bisect_heading, nxt_edge->id, constraint_desc) );                        
+                    } else {
+                        sprintf(constraint_desc, "TL_%ld_thin_%ld_origin_via_bisector", cur_edge->id, nxt_edge->id );
+                        cur_edge->AddConstraint( TOP_LEFT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, bisect_heading, nxt_edge->id, constraint_desc) );                        
+                    }            
+
+                    // for the thick edge, we have the constraint from the node position to origin, then a ray
+                    if ( nxt_info->IsOriginating() ) {
+                        sprintf(constraint_desc, "BL_%ld_thick_%ld_pos_to_origin", nxt_edge->id, cur_edge->id );
+                        nxt_edge->AddConstraint( BOT_LEFT_CONSTRAINT, tgConstraint::fromSegment(position, offsetOrigin, cur_edge->id, constraint_desc) );
+
+                        sprintf(constraint_desc, "BL_%ld_thick_%ld_origin_via_bisector", nxt_edge->id, cur_edge->id );
+                        nxt_edge->AddConstraint( BOT_LEFT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, bisect_heading, cur_edge->id, constraint_desc) );
+                    } else {
+                        sprintf(constraint_desc, "TR_%ld_thick_%ld_pos_to_origin", nxt_edge->id, cur_edge->id );
+                        nxt_edge->AddConstraint( TOP_RIGHT_CONSTRAINT, tgConstraint::fromSegment(position, offsetOrigin, cur_edge->id, constraint_desc) );
+
+                        sprintf(constraint_desc, "TR_%ld_thick_%ld_origin_via_bisector", nxt_edge->id, cur_edge->id );
+                        nxt_edge->AddConstraint( TOP_RIGHT_CONSTRAINT, tgConstraint::fromRay(offsetOrigin, bisect_heading, cur_edge->id, constraint_desc) );
+                    }
+                }
+            }
+#endif
+        }                        
     }
 }
 
 void tgIntersectionNode::GenerateCapRays( void ) 
 {
     tgintersectionedgeinfo_it cur = edgeList.begin();
-                
-    // we need to get the edge info to determine the edge origination info
-    tgIntersectionEdgeInfo* cur_info = (*cur);
-
-    // for caps, use geodesy to make nice 90 deg angles
-    double cur_heading = cur_info->GetGeodesyHeading();    
+    tgIntersectionEdgeInfo*   cur_info = (*cur);
+    tgIntersectionEdge*       cur_edge = cur_info->GetEdge();    
+    char                      constraint_desc[128];
+  
+    CGAL::Vector_2<edgeArrKernel> vec = cur_edge->ToVector();
+    if ( !cur_info->IsOriginating() ) {
+        vec = -vec;
+    }
     
-    SGGeod lnext = SGGeodesy::direct( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading-90 ), 1.0 );
-    SGGeod rnext = SGGeodesy::direct( position, SGMiscd::normalizePeriodic( 0, 360, cur_heading+90 ), 1.0 );
+    // transform the start point to the right and left by width/2
+    CGAL::Vector_2<edgeArrKernel> perp = vec.perpendicular( CGAL::CLOCKWISE );    
+    edgeArrTransformation translateRight(CGAL::TRANSLATION, perp);
+    edgeArrTransformation translateLeft(CGAL::TRANSLATION, -perp);
     
-    tgRay l_ray = tgRay( position, lnext );
-    tgRay r_ray = tgRay( position, rnext );
-                
-    // Add the cap rays as constraints
-    tgIntersectionEdge* cur_edge = cur_info->GetEdge();
-        
+    edgeArrPoint pr = translateRight( position2 );
+    edgeArrPoint pl = translateLeft( position2 );
+    
     if ( cur_edge ) {
         if ( cur_info->IsOriginating() ) {
-            cur_edge->SetBottomRightConstraint(r_ray);
-            cur_edge->SetBottomLeftConstraint(l_ray);
+            sprintf(constraint_desc, "BR_%ld_Cap", cur_edge->id );
+            cur_edge->AddConstraint( BOT_RIGHT_CONSTRAINT, tgConstraint::fromRay(position2, pr, 0, constraint_desc) );
+
+            sprintf(constraint_desc, "BL_%ld_Cap", cur_edge->id );
+            cur_edge->AddConstraint( BOT_LEFT_CONSTRAINT, tgConstraint::fromRay(position2, pl, 0, constraint_desc) );
         } else {
-            cur_edge->SetTopLeftConstraint(r_ray);
-            cur_edge->SetTopRightConstraint(l_ray);
+            sprintf(constraint_desc, "TR_%ld_Cap", cur_edge->id );
+            cur_edge->AddConstraint( TOP_RIGHT_CONSTRAINT, tgConstraint::fromRay(position2, pl, 0, constraint_desc) );
+
+            sprintf(constraint_desc, "TL_%ld_Cap", cur_edge->id );
+            cur_edge->AddConstraint( TOP_LEFT_CONSTRAINT, tgConstraint::fromRay(position2, pr, 0, constraint_desc) );
         }
     } else {
         SG_LOG(SG_GENERAL, LOG_INTERSECTION, "GenerateCapRays: no cur edge!!! " );
@@ -795,6 +864,7 @@ void tgIntersectionNode::GenerateCapRays( void )
 // we do the same thing 4 times in this function
 void tgIntersectionNode::IntersectBisectRays( void )
 {
+#if 0    
     tgintersectionedgeinfo_it cur;
     
     for (cur = edgeList.begin(); cur != edgeList.end(); cur++) { 
@@ -807,6 +877,7 @@ void tgIntersectionNode::IntersectBisectRays( void )
             SG_LOG(SG_GENERAL, SG_ALERT, "IntersectBisectRays: NO cur edge" );
         }
     }
+#endif    
 }
 
 // this may or may not be multisegment
@@ -818,6 +889,7 @@ void tgIntersectionNode::IntersectBisectRays( void )
 
 void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeInfo* cur_info, tgIntersectionEdgeInfo* nxt_info )
 {
+#if 0    
     char   original_int_name[64];
     
     // list of edges we traverse
@@ -1093,10 +1165,245 @@ void tgIntersectionNode::CompleteMultiSegmentIntersections( tgIntersectionEdgeIn
     for ( tgintersectionedge_it it = applyList.begin(); it != applyList.end(); it++ ) {
         (*it)->ApplyConstraint( apply );
     }
+#else
+    // list of edges we traverse
+    tgintersectionedge_list applyList;
+
+    // current position and heading of the bisector
+    // double ce_heading = 0.0, ne_heading = 0.0, bisect_heading;
+    edgeArrPoint bisect_position( position.getLongitudeDeg(), position.getLatitudeDeg() );
+
+    std::list<edgeArrPoint> ce_constraint;
+    std::list<edgeArrPoint> ne_constraint;
+
+    std::list<edgeArrPoint> ce_projectlist;
+    std::list<edgeArrPoint> ne_projectlist;
+
+    // remember how to traverse current and next edge iterators (prev or next)
+    bool ce_originating;
+    bool ne_originating;
+
+    tgIntersectionEdge* ce;
+    tgIntersectionEdge* ne;
+
+    char ce_layer[128];
+    char ne_layer[128];
+
+    char ce_cons_name[64];
+    char ne_cons_name[64];
+    char bisector_name[64];
+    
+    int  cur_iteration = 0;
+
+    SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ENTER: current edge " << cur_info->GetEdge()->id << " and next edge " << nxt_info->GetEdge()->id );
+
+    // iterate until the end of the intersection is found, or we discover this is NOT multisegment
+    bool done  = false;
+    bool apply = false;
+
+    ce_originating = cur_info->IsOriginating();
+    ne_originating = nxt_info->IsOriginating();
+
+    ce = cur_info->GetEdge();
+    ne = nxt_info->GetEdge();
+
+    int ce_id = ce->id;
+    int ne_id = ne->id;
+
+    while (!done) {        
+        // first, calculate the bisect heading
+//        ce_heading = ce->GetHeading( ce_originating );
+//        ne_heading = ne->GetHeading( ne_originating );
+//        bisect_heading = Bisect( bisect_position, ne_heading, ce_heading, true );
+
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: iter " << cur_iteration );
+        
+        // instead of using bisect_heading - find the intersection of the two lines making up cur edge right side, and next edge left side
+        edgeArrPoint rayIntersect;
+        if ( IntersectCurRightSideWithNextLeftSide( cur_info, nxt_info, rayIntersect ) ) {
+            if ( ce_originating ) {
+                strcpy( ce_cons_name, "BotRight" );
+            } else {
+                strcpy( ce_cons_name, "TopLeft" );
+            }
+        
+            if ( ne_originating ) {
+                strcpy( ne_cons_name, "BotLeft" );
+            } else {
+                strcpy( ne_cons_name, "TopRight" );
+            }
+
+            // add the bisect position to constraints        
+            ce_constraint.push_back( bisect_position );
+            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " Added intersection position to " << ce_cons_name << " constraint.  size is " << ce_constraint.size() );
+        
+            ne_constraint.push_back( bisect_position );
+            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " Added intersection position to " << ne_cons_name << " constraint.  size is " << ne_constraint.size() );
+        
+            sprintf( bisector_name, "bisector_cur_%04d_nxt_%04d", ce_id, ne_id );
+            tgConstraint bisector = tgConstraint::fromRay( bisect_position, rayIntersect, 0, bisector_name );
+        
+            // this should be a function of the edges - just pass in the bisector ray.  
+            // return nearest intersection, and wether it was side or end
+            edgeArrPoint ce_end_intersect, ne_end_intersect;
+            double       ce_end_dist,      ne_end_dist;
+        
+            edgeArrPoint ce_side_intersect, ne_side_intersect;
+            double       ce_side_dist,      ne_side_dist;
+        
+            ce->IntersectWithBisector( cur_info->IsOriginating(), true,  bisector, ce_end_intersect, ce_end_dist, ce_side_intersect, ce_side_dist );
+            ne->IntersectWithBisector( nxt_info->IsOriginating(), false, bisector, ne_end_intersect, ne_end_dist, ne_side_intersect, ne_side_dist );
+        
+            if( ce_end_dist == std::numeric_limits< double >::infinity() ) {
+                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ERROR - can't intersect bisector with ce " << ce_id << " top right constraint");
+                done = true;
+            }
+                
+            if( ne_end_dist == std::numeric_limits< double >::infinity() ) {
+                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ERROR - can't intersect bisector with ne " << ne_id << " top left constraint");
+                done = true;
+            }
+
+            if (!done) {
+                // if the side intersection distances are lower than the constraint distances, than we are done
+                if ( (ce_side_dist != std::numeric_limits< double >::infinity()) && (ce_side_dist < ce_end_dist) && 
+                     (ne_side_dist != std::numeric_limits< double >::infinity()) && (ne_side_dist < ne_end_dist) ) {
+                
+                    // verify multiseg ( current_iteration > 1 )
+                    if ( cur_iteration > 0 ) {
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: all sides are closer than ends, and we've traversed at least one segment - multisegment complete");
+                    
+                        ce_constraint.push_back(ce_side_intersect);
+                        ce_projectlist.push_back(ce_side_intersect);
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " Adding intersection with side to " << ce_cons_name << " constraint.  size is " << ce_constraint.size() );
+                    
+                        ne_constraint.push_back(ne_side_intersect);
+                        ne_projectlist.push_back(ne_side_intersect);
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " Adding intersection with side to " << ne_cons_name << " constraint.  size is " << ne_constraint.size() );
+                    
+                        // set the constraint ( and flag that we intersected the sides )
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " Saving " << ce_cons_name << " Constraint with " << ce_constraint.size() << " nodes "); 
+                        ce->SetRightConstraint( ce_originating, ce_constraint );
+                        ce->SetRightProjectList( ce_originating, ce_projectlist );
+                        applyList.push_back( ce );
+                    
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " Saving " << ne_cons_name << " Constraint with " << ne_constraint.size() << " nodes "); 
+                        ne->SetLeftConstraint( ne_originating, ne_constraint );
+                        ne->SetLeftProjectList( ne_originating, ne_projectlist );
+                        applyList.push_back( ne );
+                    
+                        done = true;
+                        apply = true;
+                    } else {
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: all sides are closer than ends - looks like a normal edge - not multisegment");
+                        done = true;
+                    }
+                } else {
+                    // Finish the correct edge, and increment to next unfinished edge
+                    if ( ce_end_dist < ne_end_dist ) {
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " end distance < ne " << ne_id << " distance - finish " << ce_id );
+                        
+                        bisect_position = ce_end_intersect;
+                        
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ce " << ce_id << " Adding end bisect position to " << ce_cons_name << " constraint.  size is " << ce_constraint.size() );
+                        ce_constraint.push_back(bisect_position);
+                        
+                        // ne will get bisector position added to it's constraint at the beginning of the next loop.
+                        // But we want to project this vertex to the other side of next edge, so remember it
+                        ne_projectlist.push_back(bisect_position);
+                        
+                        if ( ce_originating ) {
+                            // get the next edge (CCW) from the END node : not enough - need to find an edge that intersects the same bisector at the same point...
+                            // this function should return NULL if such an edge does not exist
+                            cur_info = ce->end->GetNextEdgeInfo( cur_info, bisector, bisect_position, ce_layer );
+                        } else {
+                            // get the next edge (CCW) from the START node
+                            cur_info = ce->start->GetNextEdgeInfo( cur_info, bisector, bisect_position, ce_layer );
+                        }
+                        
+                        if (cur_info == NULL) {
+                            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: can't find next edge for ce " << ce_id );
+                            done = true;
+                        } else {
+                            // set the constraint and project list
+                            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: " << ce->id << " Saving " << ce_cons_name << " Constraint with " << ce_constraint.size() << " nodes "); 
+                            ce->SetRightConstraint( ce_originating, ce_constraint );
+                            ce->SetRightProjectList( ce_originating, ce_projectlist );
+                            applyList.push_back( ce );
+                            
+                            ce_originating  = cur_info->IsOriginating();
+                            ce              = cur_info->GetEdge();
+                            ce_id           = ce->id;
+                            
+                            ce_constraint.clear();
+                            ce_constraint.push_back( ce->GetStart( cur_info->IsOriginating() ) );
+
+                            ce_projectlist.clear();                                                        
+                        }
+                    } else {
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " end distance < ce " << ce_id << " distance - finish " << ne_id );
+                        
+                        bisect_position = ne_end_intersect;
+                        
+                        ne_constraint.push_back( ne_end_intersect );
+                        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: ne " << ne_id << " Added end bisect position to " << ne_cons_name << " constraint.  size is " << ne_constraint.size() );
+                        
+                        // ce will get bisector position added to it's constraint at the beginning of the next loop.
+                        // But we want to project this vertex to the other side of cur edge, so remember it
+                        ce_projectlist.push_back(bisect_position);
+                        
+                        if ( ne_originating ) {
+                            // get the prev edge (CW) from the END node
+                            nxt_info = ne->end->GetPrevEdgeInfo( nxt_info, bisector, bisect_position, ne_layer );
+                        } else {
+                            // get the prev edge (CW) from the START node
+                            nxt_info = ne->start->GetPrevEdgeInfo( nxt_info, bisector, bisect_position, ne_layer );
+                        }
+                        
+                        if (nxt_info == NULL) {
+                            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: can't find next edge for ne " << ne_id );
+                            done = true;
+                        } else {
+                            // set the constraint
+                            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: " << ne->id << " Saving " << ne_cons_name << " Constraint with " << ne_constraint.size() << " nodes "); 
+                            ne->SetLeftConstraint( ne_originating, ne_constraint );
+                            ne->SetLeftProjectList( ne_originating, ne_projectlist );
+                            applyList.push_back( ne );
+                            
+                            ne_originating  = nxt_info->IsOriginating();
+                            ne              = nxt_info->GetEdge();
+                            ne_id           = ne->id;
+
+                            ne_constraint.clear();
+                            ne_projectlist.clear();
+                            ne_constraint.push_back( ne->GetStart( nxt_info->IsOriginating() ) );
+                        }
+                    }
+                }
+            } else {
+                SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: bisector does not intersect both ends");
+                done = true;
+            }
+        } else {
+            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::CompleteIntersection: cur right side does not intersect with nxt left side ");
+            done = true;
+        }
+        
+        cur_iteration++;
+#endif
+        
+    }
+
+    for ( tgintersectionedge_it it = applyList.begin(); it != applyList.end(); it++ ) {
+        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionNode::APPLY COPNSTRAINT");
+        (*it)->ApplyConstraint( apply );
+    }
+
 }
 
 void tgIntersectionNode::CompleteCap( tgIntersectionEdgeInfo* cur_info )
 {
+#if 0    
     tgIntersectionEdge* ce = cur_info->GetEdge();
     bool ce_originating = cur_info->IsOriginating();
     
@@ -1125,6 +1432,5 @@ void tgIntersectionNode::CompleteCap( tgIntersectionEdgeInfo* cur_info )
     }
     
     ce->ApplyConstraint( true );    
+#endif    
 }
-
-

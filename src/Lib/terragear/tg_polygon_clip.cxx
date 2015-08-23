@@ -41,7 +41,7 @@ static bool ToCgalPolyWithHoles( const tgPolygon& subject, Polygon_set& cgSubjec
     // SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Inserting " << subject.Contours() << " contours "  );
 
     for (unsigned int i=0; i<subject.Contours(); i++ ) {
-        char layer[128];
+        // char layer[128];
 
         //sprintf( layer, "%04u_original_contour_%d", subject.GetId(), i );
         //tgShapefile::FromContour( subject.GetContour(i), false, true, "./clip_dbg", layer, "cont" );

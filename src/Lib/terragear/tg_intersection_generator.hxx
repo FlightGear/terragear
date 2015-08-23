@@ -10,9 +10,8 @@
 
 class tgIntersectionGenerator {
 public:
-    tgIntersectionGenerator(const char* dr, unsigned int cln_f, unsigned int int_f, tgIntersectionGeneratorTexInfoCb cb) : segNet(cln_f, dr), texInfoCb(cb), flags(int_f)  {
-        strcpy(  debugRoot, dr );
-        sprintf( datasource, "./edge_dbg/%s", debugRoot );
+    tgIntersectionGenerator(const char* dbg, unsigned int cln_f, unsigned int int_f, tgIntersectionGeneratorTexInfoCb cb) : segNet(cln_f, dbg), texInfoCb(cb), flags(int_f)  {
+        strcpy(  debugDatabase, dbg );
     }
     
     void                                Insert( const SGGeod& s, const SGGeod& e, double w, int z, unsigned int t );
@@ -29,10 +28,8 @@ private:
     tgintersectionedge_list             edgelist;
         
     tgIntersectionGeneratorTexInfoCb    texInfoCb;
-    char                                debugRoot[64];
-    char                                datasource[64];
-    unsigned int                        flags;
-    
+    char                                debugDatabase[256];
+    unsigned int                        flags;    
 };
 
 #endif /* __TG_INTERSECTION_GENERATOR_HXX__ */

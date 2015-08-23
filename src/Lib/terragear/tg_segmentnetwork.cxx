@@ -39,6 +39,8 @@ void tgSegmentNetwork::Add( const SGGeod& source, const SGGeod& target, double w
     tgShapefile::FromSegment( input, true, datasource, "input", feat );
 #endif
 
+    //std::cout << "Adding from " << source << " to " << target << std::endl;
+    
     if ( clean_flags ) {
         segnetPoint snSource( source.getLongitudeDeg(), source.getLatitudeDeg() );
         segnetPoint snTarget( target.getLongitudeDeg(), target.getLatitudeDeg() );
@@ -55,7 +57,11 @@ void tgSegmentNetwork::Add( const SGGeod& source, const SGGeod& target, double w
             
 void tgSegmentNetwork::Execute( void )
 {    
+    std::cout << "Save Input to " << datasource << std::endl;
+    
     ToShapefiles( "input" );
+
+    SG_LOG(SG_GENERAL, SG_INFO, "Done" );    
     
     if ( clean_flags ) {
         // first, cluster the nodes
@@ -865,32 +871,45 @@ void tgSegmentNetwork::DumpPolys( void )
 
 void tgSegmentNetwork::ToShapefiles( const char* prefix )
 {
+#if 0    
     char layer[128];
+ 
+    if ( clean_flags ) {
+        CGAL_precondition( arr.is_valid () );
     
-    CGAL_precondition( arr.is_valid () );
+        // first - write the vertex layer
+        std::vector<SGGeod> vertex_list;
+        typename segnetArrangement::Vertex_const_iterator vit;
+        for ( vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit ) {
+            vertex_list.push_back( SGGeod::fromDeg( CGAL::to_double(vit->point().x()), 
+                                                    CGAL::to_double(vit->point().y())) );
+        }
     
-    // first - write the vertex layer
-    std::vector<SGGeod> vertex_list;
-    typename segnetArrangement::Vertex_const_iterator vit;
-    for ( vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit ) {
-        vertex_list.push_back( SGGeod::fromDeg( CGAL::to_double(vit->point().x()), 
-                                                CGAL::to_double(vit->point().y())) );
-    }
-    
-    sprintf(layer, "%s_sn_vertices", prefix );
-    tgShapefile::FromGeodList( vertex_list, false, datasource, layer, "vertex" );
+        sprintf(layer, "%s_sn_vertices", prefix );
+        tgShapefile::FromGeodList( vertex_list, false, datasource, layer, "vertex" );
 
-    std::vector<tgSegment> segment_list;
-    typename segnetArrangement::Edge_const_iterator eit;
+        std::vector<tgSegment> segment_list;
+        typename segnetArrangement::Edge_const_iterator eit;
     
-    for ( eit = arr.edges_begin(); eit != arr.edges_end(); ++eit ) {
-        tgSegment   tgseg( SGGeod::fromDeg( CGAL::to_double( eit->source()->point().x() ),
-                                            CGAL::to_double( eit->source()->point().y() ) ),
-                           SGGeod::fromDeg( CGAL::to_double( eit->target()->point().x() ),
-                                            CGAL::to_double( eit->target()->point().y() ) ) );
-        segment_list.push_back( tgseg );
-    }
+        for ( eit = arr.edges_begin(); eit != arr.edges_end(); ++eit ) {
+            tgSegment   tgseg( SGGeod::fromDeg( CGAL::to_double( eit->source()->point().x() ),
+                                                CGAL::to_double( eit->source()->point().y() ) ),
+                               SGGeod::fromDeg( CGAL::to_double( eit->target()->point().x() ),
+                                                CGAL::to_double( eit->target()->point().y() ) ) );
+            segment_list.push_back( tgseg );
+        }
 
-    sprintf(layer, "%s_sn_edges", prefix );
-    tgShapefile::FromSegmentList( segment_list, false, datasource, layer, "edge" );
+        sprintf(layer, "%s_sn_edges", prefix );
+        tgShapefile::FromSegmentList( segment_list, false, datasource, layer, "edge" );
+    } else {
+        std::vector<tgSegment> segment_list;
+        
+        for ( unsigned int i=0; i<output.size(); i++ ) {
+            segment_list.push_back( tgSegment( output[i].start, output[i].end ) );
+        }
+        
+        sprintf(layer, "%s_sn_edges", prefix );
+        tgShapefile::FromSegmentList( segment_list, false, datasource, layer, "edge" );
+    }
+#endif    
 }

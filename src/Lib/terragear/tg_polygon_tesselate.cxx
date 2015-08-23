@@ -7,6 +7,7 @@
 #include <CGAL/Constrained_triangulation_plus_2.h>
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Triangle_2.h>
+#include <CGAL/Line_2.h>
 
 #include <simgear/debug/logstream.hxx>
 
@@ -35,7 +36,78 @@ typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag>  CDT;
 typedef CGAL::Constrained_triangulation_plus_2<CDT>               CDTPlus;
 typedef CDTPlus::Point                                            Point;
 typedef CGAL::Polygon_2<K>                                        Polygon_2;
+typedef CGAL::Line_2<K>                                           Line;
 typedef CGAL::Triangle_2<K>                                       Triangle_2;
+
+
+typedef boost::tuple<Point,CDTPlus::Vertex_handle>                PointHandle;
+typedef CGAL::Search_traits_2<K>                                  SearchTraitsBase;
+typedef CGAL::Search_traits_adapter<PointHandle,CGAL::Nth_of_tuple_property_map<0, PointHandle>,SearchTraitsBase> SearchTraits;
+
+typedef CGAL::Fuzzy_sphere<SearchTraits>                          SearchFuzzyCir;
+typedef CGAL::Kd_tree<SearchTraits>                               SearchTree;
+
+struct constraint 
+{
+public:
+    constraint( CDTPlus::Vertex_handle s, CDTPlus::Vertex_handle t ) : 
+        source(s), target(t) {}
+
+    CDTPlus::Vertex_handle  source;
+    CDTPlus::Vertex_handle  target;
+};
+
+static void AddPoint( const SGGeod& p, SearchTree& tree, CDTPlus& cdt ) {
+    std::list<PointHandle>  searchResults;
+    
+    // first - create a search node
+    Point           pt( p.getLongitudeDeg(), p.getLatitudeDeg() );
+    SearchFuzzyCir  query_circle( pt, 0.0000001 );  // approx 1 cm
+    
+    // perform the query
+    searchResults.clear();
+    tree.search(std::back_inserter( searchResults ), query_circle);
+    
+    CDTPlus::Vertex_handle h;
+    if ( searchResults.empty() ) {
+        // no node here - add a new one
+        // index = tg_node_list.size();
+        // double e = p.getElevationM();
+        
+        //tg_node_list.push_back( TGNode(p,t) );
+        h = cdt.insert( pt );
+        PointHandle data(pt, h);
+        
+        tree.insert(data);            
+    } else {
+        // we found a node - don't insert again
+    }    
+}
+
+static CDTPlus::Vertex_handle Lookup(  const SGGeod& p, SearchTree& tree ) {
+    std::list<PointHandle>  searchResults;
+    
+    // first - create a search node
+    Point           pt( p.getLongitudeDeg(), p.getLatitudeDeg() );
+    SearchFuzzyCir  query_circle( pt, 0.0000001 );  // approx 1 cm
+    
+    // perform the query
+    searchResults.clear();
+    tree.search(std::back_inserter( searchResults ), query_circle);
+    
+    CDTPlus::Vertex_handle h;
+    if ( !searchResults.empty() ) {
+        // we found a node - use it
+        std::list<PointHandle>::const_iterator it = searchResults.begin();
+        h = (CDTPlus::Vertex_handle)boost::get<1>(*it);
+        //SG_LOG( SG_GENERAL, SG_ALERT, "Found node for " << p << " at " << (Point)boost::get<0>(*it) );        
+    } else {
+        // we found a node - don't insert again
+        SG_LOG( SG_GENERAL, SG_ALERT, "CAN'T FIND NODE" );        
+    }    
+    
+    return h;
+}
 
 static void tg_mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border )
 {
@@ -100,11 +172,121 @@ static void tg_insert_polygon(CDTPlus& cdt,const Polygon_2& polygon)
     }
 }
 
+static void save_cgal_debug( unsigned long id, SearchTree& tree, const std::vector<constraint>&  constraints )
+{
+    char filename[64];
+    sprintf( filename, "tridata_%06lu", id );
+    
+    std::vector<CDTPlus::Vertex_handle> handles;
+    
+    // save datafiles for CGAL post
+    std::ofstream output_file(filename);
+    if (!output_file.is_open()) {
+        std::cerr << "Failed to open the " << "./output_polys.txt" << std::endl;
+        exit(0);
+    }
+    
+    SearchTree::iterator it1 = tree.begin();
+    output_file << tree.size() << std::endl;
+    while ( it1 != tree.end() ) {
+        output_file << std::setprecision(16) << (Point)(boost::get<0>(*it1)) << std::endl;
+        handles.push_back( (CDTPlus::Vertex_handle)(boost::get<1>(*it1)) );
+        
+        it1++;
+    }
+    
+    // then write the constraints as indicies to points
+    output_file << constraints.size() << std::endl;
+    for ( unsigned int i=0; i<constraints.size(); i++ ) {
+        // find the index of the handles
+        int s = -1, t = -1;
+        
+        for ( unsigned int j=0; j<handles.size(); j++ ) {
+            if ( constraints[i].source == handles[j] ) {
+                s = j;
+            }
+            if ( constraints[i].target == handles[j] ) {
+                t = j;
+            }
+            
+            if ( (s >= 0) && (t >= 0) ) {
+                break;
+            }
+        }
+        
+        output_file << s << " " << t << std::endl;
+    }
+    
+    // output_file << std::setprecision(16) << P;            
+    output_file.close();
+}
+
+static void insert_constraints(CDTPlus& cdt, const std::vector<constraint>&  constraints, char* datasource, unsigned long id)
+{
+    char layer[256];
+    char cons[128];
+    
+    sprintf( layer, "constraints_%06lu", id );
+    
+    Line curLine, nxtLine;
+    SGGeod gSource, gTarget;
+    CDTPlus::Vertex_handle hSource, hTarget;
+    
+    int constraint_num = 1;
+    for ( unsigned int i=0; i<constraints.size(); i++ ) {        
+        // done add equal constraint lines - combine the segments
+        curLine = Line(constraints[i].source->point(), constraints[i].target->point() );
+        
+        if ( i > 0 ) {
+            if ( curLine != nxtLine ) {
+                sprintf( cons, "cons_%04d", constraint_num++ );
+                
+                gSource = SGGeod::fromDeg( CGAL::to_double( hSource->point().x() ),
+                                           CGAL::to_double( hSource->point().y() ) );
+                gTarget = SGGeod::fromDeg( CGAL::to_double( hTarget->point().x() ),
+                                           CGAL::to_double( hTarget->point().y() ) );
+        
+                tgShapefile::FromSegment( tgSegment(gSource, gTarget), false, datasource, layer, cons );
+
+                // new constraint - add the previous
+                cdt.insert_constraint( hSource, hTarget );
+                
+                // now remember this new one, but don't add it yet
+                hSource = constraints[i].source;
+                hTarget = constraints[i].target;                
+            } else {
+                // cur constraint is really part of last constraint - extend it
+                hTarget = constraints[i].target;
+                SG_LOG( SG_GENERAL, SG_INFO, "Tess with extra " << id << " EXTENDING CONSTRAINT" );
+            }
+        } else {
+            // first constraint - don't add it, just remember it
+            hSource = constraints[i].source;
+            hTarget = constraints[i].target;
+        }   
+        
+        nxtLine = curLine;
+    }
+    
+    // add the final constraint
+    sprintf( cons, "cons_%04d", constraint_num++ );
+    
+    gSource = SGGeod::fromDeg( CGAL::to_double( hSource->point().x() ),
+                            CGAL::to_double( hSource->point().y() ) );
+    gTarget = SGGeod::fromDeg( CGAL::to_double( hTarget->point().x() ),
+                            CGAL::to_double( hTarget->point().y() ) );
+
+    tgShapefile::FromSegment( tgSegment(gSource, gTarget), false, datasource, layer, cons );
+
+    cdt.insert_constraint( hSource, hTarget );    
+}
+                
 void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
 {
-    CDTPlus cdt;
+    SearchTree  tree;
+    CDTPlus     cdt;
 
-    static unsigned int trinum = 1;
+    char datasource[64];
     char layer[256];
     std::vector<SGGeod> polynodes;
     
@@ -119,56 +301,68 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
         }
     }        
     
+    debug = true;
     if ( debug ) {
-        sprintf( layer, "poly_%06u", trinum );
-        tgShapefile::FromPolygon(*this, false, false, "./tridbg", layer, "polygon" );
-        sprintf( layer, "extra_%06u", trinum );
-        tgShapefile::FromGeodList( extra, false, "./tridbg", layer, "extra" );
-        sprintf( layer, "polynodes_%06u", trinum );
-        tgShapefile::FromGeodList( polynodes, false, "./tridbg", layer, "extra" );
+        sprintf(datasource, "./tridbg/tri_%06u", id );
+
+        sprintf( layer, "poly_%06u", id );
+        tgShapefile::FromPolygon(*this, false, false, datasource, layer, "polygon" );
+        sprintf( layer, "extra_%06u", id );
+        tgShapefile::FromGeodList( extra, false, datasource, layer, "extra" );
+        sprintf( layer, "polynodes_%06u", id );
+        tgShapefile::FromGeodList( polynodes, false, datasource, layer, "extra" );
     }
     
-    SG_LOG( SG_GENERAL, SG_INFO, "Tess with extra " << id );
+    SG_LOG( SG_GENERAL, SG_INFO, "Tess with extra " << id << " extra nodes " << extra.size() << " poly nodes " << polynodes.size() );
+    
+    //////////////// ADD UNIQUE NODES with handles //////////////////////
+    // we need to keep track of added points - we may have dupes in extra
     
     // first - dump the poly we are tesselating, along with all of its vertices_begin
     // Bail right away if polygon is empty
     if ( contours.size() != 0 ) {
-        // First, convert the extra points to cgal Points
-        std::vector<Point> points;
-        points.reserve(extra.size());
+        // First, Add all the extra points
         for (unsigned int n = 0; n < extra.size(); n++) {
-            points.push_back( Point(extra[n].getLongitudeDeg(), extra[n].getLatitudeDeg() ) );            
-        }
-
-        if ( debug ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "num extra is " << points.size() );            
-        }
-
-        if ( debug ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "num contours is " << contours.size() );            
+            AddPoint( extra[n], tree, cdt );
         }
         
-        // then insert each polygon as a constraint into the triangulation
+        // then insert each polygon point 
         for ( unsigned int c = 0; c < contours.size(); c++ ) {
             tgContour contour = contours[c];
-            Polygon_2 poly;
 
             for (unsigned int n = 0; n < contour.GetSize(); n++ ) {
                 SGGeod node = contour.GetNode(n);
-                poly.push_back( Point( node.getLongitudeDeg(), node.getLatitudeDeg() ) );
+                AddPoint( node, tree, cdt );
             }
-            tg_insert_polygon(cdt, poly);
+        }
+        
+        SG_LOG( SG_GENERAL, SG_INFO, "  Added " << tree.size() << " nodes for " << id );
+                
+        // Now add the constraints
+        std::vector<constraint> constraints;
+        for ( unsigned int c = 0; c < contours.size(); c++ ) {
+            tgContour contour = contours[c];
+            CDTPlus::Vertex_handle source, target;
+            unsigned int n;
+            
+            // compare current with next segment - combine if paralell
+            for ( n = 0; n < contour.GetSize()-1; n++ ) {
+                source = Lookup( contour.GetNode(n), tree );
+                target = Lookup( contour.GetNode(n+1), tree );
+                constraints.push_back( constraint( source, target ) );
+            }
+            source = Lookup( contour.GetNode(n), tree );
+            source = Lookup( contour.GetNode(0), tree );
+            constraints.push_back( constraint( source, target ) );
         }
 
-        // then insert the extra points - must be done AFTER polygons are added, as there may be duplicated
-        // points, and we want the vertex handle to point to the correct node
-        if ( !points.empty() ) {
-            cdt.insert(points.begin(), points.end());
-        }
+        save_cgal_debug( id, tree, constraints );
+        
+        insert_constraints( cdt, constraints, datasource, id );
+        SG_LOG( SG_GENERAL, SG_INFO, "  Added " << constraints.size() << " constraints for " << id );
         
         /* make conforming - still has an issue, and can't be compiled with exact_construction kernel */
         // CGAL::make_conforming_Delaunay_2( cdt );
-
         tg_mark_domains( cdt );
 
         int count=0;
@@ -183,16 +377,17 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
                 /* Check for Zero Area before inserting */
                 if ( !SGGeod_isEqual2D( p0, p1 ) && !SGGeod_isEqual2D( p1, p2 ) && !SGGeod_isEqual2D( p0, p2 ) ) {
                     AddTriangle( p0, p1, p2 );
+                    ++count;
                 } else {
                     SG_LOG( SG_GENERAL, SG_BULK, "tesselation dropping ZAT" );
+                    ++count;
                 }
                 
-                ++count;
             }
-        }        
+        }
+
+        SG_LOG( SG_GENERAL, SG_INFO, "  Got " << count << " triangles for " << id );        
     }
-    
-    trinum++;
 }
 
 void tgPolygon::Tesselate(bool debug)
@@ -206,7 +401,7 @@ void tgPolygon::Tesselate(bool debug)
     // first - dump the poly we are tesselating, along with all of its vertices_begin
     if ( debug ) {
         sprintf( layer, "poly_%03d", id );
-        tgShapefile::FromPolygon(*this, false, false, "./tridbg", layer, "polygon" );
+        //tgShapefile::FromPolygon(*this, false, false, "./tridbg", layer, "polygon" );
     }
     
     // Bail right away if polygon is empty
@@ -229,7 +424,7 @@ void tgPolygon::Tesselate(bool debug)
 
         if ( debug ) {
             sprintf( layer, "nodes_%03d", id );
-            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "nodes" );
+            //tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "nodes" );
         }
         
         assert(cdt.is_valid());
@@ -266,10 +461,10 @@ void tgPolygon::Tesselate(bool debug)
         
         if ( debug ) {
             sprintf( layer, "tris_%03d", id );
-            tgShapefile::FromPolygon(*this, false, true, "./tridbg", layer, "tris" );
+            //tgShapefile::FromPolygon(*this, false, true, "./tridbg", layer, "tris" );
         
             sprintf( layer, "tri_nodes_%03d", id );
-            tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "after_tri" );                
+            //tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "after_tri" );                
         }
     } else {
         SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : no contours" );

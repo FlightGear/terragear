@@ -14,7 +14,7 @@
 
 // add these to a debug header
 #define DEBUG_INTERSECTIONS (0)
-#define LOG_INTERSECTION    (SG_DEBUG)
+#define LOG_INTERSECTION    (SG_INFO)
 
 #define DEBUG_TEXTURE       (0)
 #define LOG_TEXTURE         (SG_DEBUG)
@@ -54,5 +54,9 @@ bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SG
 
 class tgSegment;
 bool FindIntersections( const tgSegment& s1, const tgSegment& s2, std::vector<SGGeod>& ints );
+
+inline double tgHeadingToAngle( double heading ) {
+    return SGMiscd::normalizePeriodic(0, 360, 90-heading);
+}
 
 #endif /* __TG_MISC_HXX__ */

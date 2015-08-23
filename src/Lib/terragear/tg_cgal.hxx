@@ -2,6 +2,7 @@
 #define __TG_CGAL_CONV_HXX__
 
 #include <simgear/math/SGMath.hxx>
+#include <simgear/threads/SGThread.hxx>
 
 #include "tg_cgal_epec.hxx"
 #include "tg_rectangle.hxx"
@@ -48,6 +49,7 @@ public:
 
     EPECPoint_2     GetEPECStart( void ) const { EPECSR_to_double toDouble; INEXACTKernel::Point_2 tmp = toDouble(start); return EPECPoint_2(tmp.x(), tmp.y()); }
     EPECPoint_2     GetEPECEnd  ( void ) const { EPECSR_to_double toDouble; INEXACTKernel::Point_2 tmp = toDouble(end);   return EPECPoint_2(tmp.x(), tmp.y()); }
+    EPECDirection_2 GetEPECDir  ( void ) const { EPECSR_to_double toDouble; INEXACTKernel::Direction_2 tmp = toDouble(dir);   return EPECDirection_2(tmp.dx(), tmp.dy()); }
     
     // All internal data kept full CGAL precision
 protected:
@@ -154,7 +156,7 @@ public:
     tgRay( const SGGeod& s, double h ) {
         SGGeod e = SGGeodesy::direct( s, h, 5.0 );
         
-        start = EPECSRPoint_2( e.getLongitudeDeg(), e.getLatitudeDeg() );
+        start = EPECSRPoint_2( s.getLongitudeDeg(), s.getLatitudeDeg() );
         end   = EPECSRPoint_2( e.getLongitudeDeg(), e.getLatitudeDeg() );       
         dir   = EPECSRDirection_2( EPECSRSegment_2( start, end ) );        
     }
@@ -163,10 +165,34 @@ public:
         start = s;
         dir   = d;
 
-        EPECSRRay_2    ray( start, dir );
-        EPECSRVector_2 vector = ray.to_vector();
-        end   = start + vector;        
+        double h = DirectionToHeading( dir );
+        SGGeod e = SGGeodesy::direct( SGGeod::fromDeg( CGAL::to_double(start.x()), CGAL::to_double(start.y()) ), h, 5.0 );
+
+        end   = EPECSRPoint_2( e.getLongitudeDeg(), e.getLatitudeDeg() );       
     }
+    
+    tgRay( const EPECPoint_2& s, EPECDirection_2 d ) {
+        start = EPECSRPoint_2( CGAL::to_double(s.x()), CGAL::to_double(s.y()) );
+        dir   = EPECSRDirection_2( CGAL::to_double(d.dx()), CGAL::to_double(d.dy()) );
+
+        double h = DirectionToHeading( dir );
+        SGGeod e = SGGeodesy::direct( SGGeod::fromDeg( CGAL::to_double(start.x()), CGAL::to_double(start.y()) ), h, 5.0 );
+
+        end   = EPECSRPoint_2( e.getLongitudeDeg(), e.getLatitudeDeg() );       
+    }
+
+#if 0
+        EPECSRVector_2   vector = ray.to_vector();
+        EPECSRKernel::FT len = sqrt( vector.squared_length() );
+
+        // make the vector .0001 long
+        if ( len != 0 ) {
+            EPECSRKernel::FT cooef = 0.0001 / len;
+            end   = start + ( cooef * vector );
+        } else {
+            end = start + vector * 10;
+        }   
+#endif
     
     tgRay( const SGGeod& s, const SGGeod& e ) {
         start = EPECSRPoint_2( s.getLongitudeDeg(), s.getLatitudeDeg() );
@@ -191,8 +217,6 @@ public:
 typedef std::vector <tgRay>  tgray_list;
 typedef tgray_list::iterator tgray_list_iterator;
 typedef tgray_list::const_iterator const_tgray_list_iterator;
-
-
 
 class tgLine : public tgCgalBase
 {

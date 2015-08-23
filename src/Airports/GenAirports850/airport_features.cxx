@@ -103,6 +103,7 @@ void Airport::BuildFeatures( void )
         }
     }
 
+#if 0    
     if ( rm_ig ) {
         // don't clean runway features - we know what we're doing here :)
         rm_ig->Execute();
@@ -111,7 +112,8 @@ void Airport::BuildFeatures( void )
             polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES).push_back(poly);
         }            
     }
-    
+#endif
+
     // for now - caps are the same priority - just add them later...
     for ( unsigned int i=0; i<runways.size(); i++ )
     {
