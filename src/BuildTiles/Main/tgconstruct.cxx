@@ -29,6 +29,7 @@
 
 #include <simgear/debug/logstream.hxx>
 #include "tgconstruct.hxx"
+#include "tgconstruct_mesh.hxx"
 
 const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
 
@@ -131,9 +132,15 @@ void TGConstruct::run()
                 // Clip the Landclass polygons
                 SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Clipping landclass polys" );
                 ClipLandclassPolys();
-
+                {
+                    // TEST TEST TEST Generate a mesh from the clipped polys
+                    tgMesh  mesh(area_defs, polys_clipped);
+                    mesh.ToShapefile("./mesh");
+                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Saved mesh" );
+                    exit(0);
+                }
                 // Now make sure any newly added intersection nodes are added to the tgnodes
-                polys_clipped.SyncNodes( nodes );
+                // polys_clipped.SyncNodes( nodes );
                 
                 // STEP 5)
                 // Clean the polys - after this, we shouldn't change their shape (other than slightly for

@@ -59,7 +59,7 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "  --ignore-landmass");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --threads");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --threads=<numthreads>");
-    SG_LOG(SG_GENERAL, SG_ALERT, " ] <load directory...>");
+    SG_LOG(SG_GENERAL, SG_ALERT, " ]");
     exit(-1);
 }
 
@@ -171,10 +171,10 @@ int main(int argc, char **argv) {
         }
     }
     SG_LOG(SG_GENERAL, SG_ALERT, "Nudge is " << nudge);
-    for (int i = arg_pos; i < argc; i++) {
-        load_dirs.push_back(argv[i]);
-        SG_LOG(SG_GENERAL, SG_ALERT, "Load directory: " << argv[i]);
-    }
+//    for (int i = arg_pos; i < argc; i++) {
+//        load_dirs.push_back(argv[i]);
+//        SG_LOG(SG_GENERAL, SG_ALERT, "Load directory: " << argv[i]);
+//    }
 
     TGAreaDefinitions areas;
     if ( areas.init( priorities_file ) ) {

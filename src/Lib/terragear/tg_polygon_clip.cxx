@@ -47,7 +47,7 @@ static bool ToCgalPolyWithHoles( const tgPolygon& subject, Polygon_set& cgSubjec
         //tgShapefile::FromContour( subject.GetContour(i), false, true, "./clip_dbg", layer, "cont" );
         
         arr.Clear();
-        arr.Add( subject.GetContour(i) );
+        arr.Add( subject.GetContour(i), NULL );
 
         // retreive the new Contour(s) from traversing the outermost face first
         // any holes in this face are individual polygons
@@ -105,7 +105,7 @@ static tgContour ToTgContour( const Polygon& p, bool isHole )
     }
     
     // remove antenna
-    contour.RemoveAntenna();
+    // contour.RemoveAntenna();
     contour.SetHole( isHole );
     
     return contour;

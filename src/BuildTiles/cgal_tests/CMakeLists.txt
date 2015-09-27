@@ -26,5 +26,19 @@ target_link_libraries(cgaltritest
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 
+add_executable(cgalarrtest
+    arrtest.cxx
+)
+
+target_link_libraries(cgalarrtest
+    terragear
+    ${Boost_LIBRARIES}
+    ${GDAL_LIBRARY}    
+    ${ZLIB_LIBRARY}
+    ${SIMGEAR_CORE_LIBRARIES}
+    ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+)
+
 install(TARGETS cgalcliptest RUNTIME DESTINATION bin)
 install(TARGETS cgaltritest RUNTIME DESTINATION bin)
+install(TARGETS cgalarrtest RUNTIME DESTINATION bin)

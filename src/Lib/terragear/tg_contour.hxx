@@ -5,8 +5,13 @@
 # error This library requires C++
 #endif
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Arr_segment_traits_2.h>
+
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/math/SGGeod.hxx>
+
 #include <boost/concept_check.hpp>
 
 #include "tg_unique_geod.hxx"
@@ -15,6 +20,16 @@
 
 // todo : tgSegments
 #include "tg_misc.hxx"
+
+
+// alternate exact math
+typedef CGAL::Exact_predicates_exact_constructions_kernel   tgKernel;
+
+typedef CGAL::Arr_segment_traits_2<tgKernel>                tgTraits;
+typedef tgTraits::Point_2                                   tgPoint;
+typedef tgTraits::Segment_2                                 tgSegment2;
+typedef tgTraits::Line_2                                    tgLine2;
+
 
 /* forward declarations */
 class TGNode;
@@ -36,6 +51,7 @@ public:
 
     void Erase() {
         node_list.clear();
+        point_list.clear();
     }
 
     void SetHole( bool h ) {
@@ -46,13 +62,18 @@ public:
     }
 
     unsigned int GetSize( void ) const {
-        return node_list.size();
+        // return node_list.size();
+        return point_list.size();
     }
 
     void Resize( int size ) {
         node_list.resize( size );
     }
 
+    void AddPoint( tgPoint p ) {
+        point_list.push_back( p );
+    }
+    
     void AddNode( SGGeod n ) {
         node_list.push_back( n );
     }
@@ -69,10 +90,14 @@ public:
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }
-    SGGeod const& operator[]( int index ) const {
-        return node_list[index];
-    }
+//    SGGeod const& operator[]( int index ) const {
+//        return node_list[index];
+//    }
 
+    tgPoint GetPoint( unsigned int i ) const {
+        return point_list[i];
+    }
+    
     void RemoveNodeAt( unsigned int idx ) {
         if ( idx < node_list.size() ) {
             node_list.erase( node_list.begin() + idx );
@@ -91,6 +116,7 @@ public:
     bool   IsClockwise( void ) const;
     void   Reverse(void);
     
+#if 0
     bool   operator==(const tgContour& other ) {
         bool isEqual = true;
 
@@ -108,7 +134,7 @@ public:
 
         return isEqual; 
     }
-
+#endif
 
     //static tgContour Snap( const tgContour& subject, double snap );
     //static tgContour RemoveDups( const tgContour& subject );
@@ -125,14 +151,14 @@ public:
     static tgContour AddColinearNodes( const tgContour& subject, const std::vector<SGGeod>& nodes );
     static tgContour AddColinearNodes( const tgContour& subject, bool preserve3d, std::vector<TGNode*>& nodes );
     static bool      FindColinearLine( const tgContour& subject, const SGGeod& node, SGGeod& start, SGGeod& end );
-    static tgContour AddIntersectingNodes( const tgContour& subject, const tgtriangle_list& mesh );
-    static tgContour AddIntersectingNodes( const tgContour& subject, const tgTriangle& tri );
+//  static tgContour AddIntersectingNodes( const tgContour& subject, const tgtriangle_list& mesh );
+//  static tgContour AddIntersectingNodes( const tgContour& subject, const tgTriangle& tri );
     
     // conversions
     static ClipperLib::Path ToClipper( const tgContour& subject );
     static tgContour FromClipper( const ClipperLib::Path& subject );
 
-    static tgsegment_list ToSegments( const tgContour& subject );
+//  static tgsegment_list ToSegments( const tgContour& subject );
 
     static tgContour Expand( const tgContour& subject, double offset );
     static tgpolygon_list ExpandToPolygons( const tgContour& subject, double width );
@@ -156,6 +182,7 @@ public:
 
 private:
     std::vector<SGGeod>  node_list;
+    std::vector<tgPoint> point_list;
     bool hole;
 };
 

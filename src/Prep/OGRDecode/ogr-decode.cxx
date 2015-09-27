@@ -121,10 +121,11 @@ void Decoder::processPoint(OGRPoint* poGeometry, const string& area_type, int wi
     if ( max_segment_length > 0  ) {
         shape = tgPolygon::SplitLongEdges( shape, max_segment_length );
     }
-    shape.SetPreserve3D( false );
+    shape.SetMaterial( area_type );
     shape.SetTexMethod( TG_TEX_BY_GEODE );
+    shape.SetPreserve3D( false );
 
-    chopper.Add( shape, area_type );
+    chopper.Add( shape );
 }
 
 void Decoder::processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture )
@@ -185,6 +186,7 @@ void Decoder::processLineString(OGRLineString* poGeometry, const string& area_ty
     // make a plygons from the line segments
     segments = tgContour::ExpandToPolygons( line, width );
     for ( unsigned int i=0; i<segments.size(); i++ ) {
+        segments[i].SetMaterial( area_type );
         segments[i].SetPreserve3D( false );
         if (with_texture) {
             segments[i].SetTexMethod( TG_TEX_BY_TPS_CLIPU );
@@ -192,7 +194,7 @@ void Decoder::processLineString(OGRLineString* poGeometry, const string& area_ty
             segments[i].SetTexMethod( TG_TEX_BY_GEODE );
         }
 
-        chopper.Add( segments[i], area_type );
+        chopper.Add( segments[i] );
     }
 }
 
@@ -202,15 +204,17 @@ void Decoder::processPolygon(OGRPolygon* poGeometry, const string& area_type )
 
     // first add the outer ring
     tgPolygon shape = tgShapefile::ToPolygon( poGeometry );
-    shape = tgPolygon::Simplify( shape );
+    //shape = tgPolygon::Simplify( shape );
 
     if ( max_segment_length > 0 ) {
         shape = tgPolygon::SplitLongEdges( shape, max_segment_length );
     }
     // shape.SetPreserve3D( preserve3D );
+    shape.SetMaterial( area_type );
+    shape.SetTexMethod( TG_TEX_BY_GEODE );
     shape.SetPreserve3D( false );
 
-    chopper.Add( shape, area_type  );
+    chopper.Add( shape  );
 }
 
 void Decoder::run()

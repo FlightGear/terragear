@@ -1,8 +1,14 @@
 #ifndef __TG_INTERSECTION_EDGE_HXX__
 #define __TG_INTERSECTION_EDGE_HXX__
 
+#include <ogrsf_frmts.h>
+
+// temp temp temp
+#include <terragear/tg_polygon.hxx>
+
+#include <terragear/polygon_set/tg_polygon_set.hxx>
+
 #include "tg_constraint.hxx"
-#include "tg_polygon.hxx"
 
 typedef int (*tgIntersectionGeneratorTexInfoCb)(unsigned int info, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist);
 
@@ -97,6 +103,7 @@ public:
     bool IntersectWithBisector( bool originating, bool right, const tgConstraint& bisector, edgeArrPoint& ce_end_intersect, double& ce_end_dist, edgeArrPoint& ce_side_intersect, double& ce_side_dist );
     bool VerifyIntersectionLocation( bool originating, const tgConstraint& bisector, const edgeArrPoint& verify_pos );
         
+    void GenerateSideConstraints( void );
     void Generate( void );
     bool Verify( unsigned long int f );
     void AddDebugPoint( const SGGeod& pos, const char* desc );
@@ -135,14 +142,14 @@ public:
     edgeArrPoint GetStart( bool originating ) const;
     
     void AddConstraint( ConstraintPos_e pos, tgConstraint cons );
-    void DumpArrangement( void* dsid, void* skeleton_lid, void* constraints_lid, void* startv_lid, void* poly_lid, const char* prefix );
+    void DumpArrangement( OGRLayer* skeleton_lid, OGRLayer* constraints_lid, OGRLayer* startv_lid, OGRLayer* poly_lid );
     
     tgIntersectionEdge* Split( bool originating, tgIntersectionNode* newNode );
     
     tgLine    ToLine( void ) const;
     CGAL::Vector_2<edgeArrKernel> ToVector( void ) const;
     
-    tgPolygon GetPoly(const char* prefix);
+    tgPolygonSet GetPoly(const char* prefix);
     
     bool IsTextured( void ) const {
         return (flags & FLAGS_TEXTURED);
@@ -173,9 +180,10 @@ public:
     unsigned long int   flags;
     
 private:    
-    tgPolygon           poly;
-    SGGeod              vStart;    
-    // std::vector<tgConstraint>   constraints[NUM_CONSTRAINTS];
+    tgPolygonSet        poly;
+    cgalPoly_Point      vStart;    
+    cgalPoly_Point      texRefTopRight;
+    cgalPoly_Point      texRefBotLeft;
     std::vector<tgConstraint>  constraints[NUM_CONSTRAINTS];
     
     std::string         debugDataset;

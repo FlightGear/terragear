@@ -152,8 +152,7 @@ public:
         }
 
         SG_LOG(SG_GENERAL, SG_ALERT, "No area named " << name);
-        exit(0);
-        return 0;
+        return 0xFFFF;
     }
 
     std::vector<std::string> get_name_array( void ) const {

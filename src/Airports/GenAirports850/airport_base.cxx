@@ -14,7 +14,7 @@
 
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_surface.hxx>
-#include <terragear/tg_chopper.hxx>
+#include <terragear/polygon_set/tg_polygon_chop.hxx>
 #include <terragear/tg_rectangle.hxx>
 #include <terragear/tg_unique_geod.hxx>
 #include <terragear/tg_unique_vec3f.hxx>
@@ -423,16 +423,17 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         }
         tgPolygon pvmt_ld = pvmt_ld_accum.Union();
 
-        std::string   low_detail_path = root + "/Airport_lowdetail";
-        tgChopper     ld_chopper( low_detail_path );
+        tgChopper     ld_chopper( root );
    
+        base_ld.SetMaterial( "Airport_low" );
         base_ld.SetTexMethod( TG_TEX_BY_GEODE );
         base_ld.SetPreserve3D( false );
-        ld_chopper.Add( base_ld, "Airport" );
+        ld_chopper.Add( base_ld  );
 
+        pvmt_ld.SetMaterial( "Asphalt_low" );
         pvmt_ld.SetTexMethod( TG_TEX_BY_GEODE );
         pvmt_ld.SetPreserve3D( false );
-        ld_chopper.Add( pvmt_ld, "Asphalt" );
+        ld_chopper.Add( pvmt_ld );
 
         ld_chopper.Save(false);
         
@@ -526,19 +527,22 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
         // Finally, write the 'connective tissue' between the outer airport base ( unsmoothed )
         // to the hole ( smoothed )
         //
-        std::string holepath = root + "/AirportArea";
-        tgChopper chopper( holepath );
+
+        SG_LOG(SG_GENERAL, SG_INFO, "Saving polys to " << root);
+        tgChopper chopper( root );
 
         tgPolygon outer_base = tgPolygon::Union( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
 
         /* need to polulate the elevations in inner base */
+        inner_base.SetMaterial( "Hole" );
         inner_base.SetElevations( base_nodes );
         inner_base.SetPreserve3D( true );
-        chopper.Add( inner_base, "Hole" );
+        chopper.Add( inner_base );
 
+        outer_base.SetMaterial( "Airport_high" );
         outer_base.SetPreserve3D( false );
         outer_base.SetTexMethod( TG_TEX_BY_GEODE );
-        chopper.Add( outer_base, "Airport" );
+        chopper.Add( outer_base );
 
         chopper.Save(false);
     }

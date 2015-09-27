@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include <terragear/tg_shapefile.hxx>
-#include <terragear/tg_intersection_generator.hxx>
 
 
 #include "global.hxx"

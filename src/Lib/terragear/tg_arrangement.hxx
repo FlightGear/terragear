@@ -38,7 +38,7 @@ class tgArrangement
 public:
     void      Clear( void );
     void      Add( const tgPolygon& subject );
-    void      Add( const tgContour& contour );
+    void      Add( const tgContour& contour, const char* layer );
     void      Add( const tgSegment& subject );
     void      DumpPolys( void );
     void      ToShapefiles( const std::string& path, const std::string& layer );
@@ -49,6 +49,9 @@ public:
 private:    
     void GetPolygons( const arrArrangement::Face_const_handle& fh, Polygon_set& polygons, int contour );
     void GetHoles( const arrArrangement::Face_const_handle& fh, std::list<Polygon>& holes, Polygon_set& polygons );
+    
+    void SaveCCB( const arrArrangement::Ccb_halfedge_const_circulator& ccb, const char* path, const char* layer );
+    void SaveFace( const arrArrangement::Face_const_handle& fh, const char* path, const char* layer );
     
     arrArrangement  arr;
 };

@@ -3,7 +3,7 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_misc.hxx"
-#include "tg_accumulator.hxx"
+//#include "tg_accumulator.hxx"
 #include "tg_contour.hxx"
 #include "tg_polygon.hxx"
 #include "tg_unique_tgnode.hxx"
@@ -73,6 +73,7 @@ double tgContour::GetMinimumAngle( void ) const
 void tgContour::Reverse(void)
 {
     std::reverse(node_list.begin(), node_list.end());
+    std::reverse(point_list.begin(), point_list.end());
 }
 
 bool tgContour::IsClockwise(void) const
@@ -119,6 +120,7 @@ double tgContour::GetArea( void ) const
     return fabs(area * 0.5);
 }
 
+#if 0
 bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
 {
     // first contour is inside second if the intersection of first with second is == first
@@ -135,14 +137,15 @@ bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
     
     return isInside;
 }
+#endif
 
+#if 0    
 void tgContour::RemoveAntenna( void )
 {
     // use cgal arrangment on the contour to find and edges with faces the same as twin, and remove
     tgArrangement arr;
     tgContour     clean;
     
-#if 0    
     arr.Add( *this );
     clean = arr.ToTgContour();
     
@@ -150,8 +153,8 @@ void tgContour::RemoveAntenna( void )
     for ( unsigned int i=0; i<clean.GetSize(); i++ ) {
         node_list.push_back( clean.GetNode(i) );
     }
-#endif    
 }
+#endif    
 
 bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
 {
@@ -196,6 +199,7 @@ bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
                             second.AddNode( subject.GetNode(n) );
                         }
 
+#if 0                        
                         // determine hole vs boundary
                         if ( IsInside( first, second ) ) {
                             SG_LOG(SG_GENERAL, SG_DEBUG, "first contur is within second contour " );
@@ -216,6 +220,7 @@ bool tgContour::RemoveCycles( const tgContour& subject, tgcontour_list& result )
                             first.SetHole(   subject.GetHole() );
                             second.SetHole(  subject.GetHole() );
                         }
+#endif
 
                         SG_LOG(SG_GENERAL, SG_DEBUG, "remove first: size " << first.GetSize() );
                         first.SetHole( subject.GetHole() );
@@ -545,19 +550,22 @@ tgContour tgContour::FromClipper( const ClipperLib::Path& subject )
     return result;
 }
 
+#if 0
 tgsegment_list tgContour::ToSegments( const tgContour& subject )
 {
     tgsegment_list result;
 
-    for (unsigned int i = 0; i < subject.GetSize()-1; i++)
+    unsigned int size = subject.GetSize();
+    for (unsigned int i = 0; i < size-1; i++)
     {
-        result.push_back( tgSegment( subject[i], subject[i+1] ) );
+        result.push_back( tgSegment( subject.GetNode(i), subject.GetNode(i+1) ) );
     }
 
-    result.push_back( tgSegment( subject[subject.GetSize()-1], subject[0] ) );
+    result.push_back( tgSegment( subject.GetNode(size-1), subject.GetNode(0) ) );
 
     return result;
 }
+#endif
 
 tgRectangle tgContour::GetBoundingBox( void ) const
 {
@@ -1113,6 +1121,7 @@ bool tgContour::FindColinearLine( const tgContour& subject, const SGGeod& node, 
     return false;
 }
 
+#if 0
 tgContour tgContour::AddIntersectingNodes( const tgContour& subject, const tgTriangle& tri )
 {
     tgsegment_list contour_segs = ToSegments( subject );
@@ -1131,7 +1140,9 @@ tgContour tgContour::AddIntersectingNodes( const tgContour& subject, const tgTri
     
     return result;
 }
+#endif
 
+#if 0
 tgContour tgContour::AddIntersectingNodes( const tgContour& subject, const tgtriangle_list& mesh )
 {
     // first, lets limit the set based on bounding box
@@ -1155,7 +1166,7 @@ tgContour tgContour::AddIntersectingNodes( const tgContour& subject, const tgtri
     
     return result;
 }
-
+#endif
 
 tgContour tgContour::Expand( const tgContour& subject, double offset )
 {
@@ -1183,6 +1194,7 @@ tgContour tgContour::Expand( const tgContour& subject, double offset )
     return result;
 }
 
+#if 0
 tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double width )
 {
     int turn_dir;
@@ -1295,6 +1307,7 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
 
     return result;
 }
+#endif
 
 void tgContour::SaveToGzFile( gzFile& fp ) const
 {

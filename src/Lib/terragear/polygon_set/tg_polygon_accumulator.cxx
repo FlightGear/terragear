@@ -6,10 +6,10 @@
 
 #include <simgear/debug/logstream.hxx>
 
-#include "tg_accumulator.hxx"
-#include "tg_shapefile.hxx"
-#include "tg_misc.hxx"
+#include "tg_polygon_def.hxx"
+#include "tg_polygon_accumulator.hxx"
 
+#if 0
 tgPolygon tgAccumulator::Diff( const tgContour& subject )
 {
     tgPolygon  result;
@@ -129,31 +129,134 @@ static tgContour ToTgContour( const Polygon& p, bool isHole )
     
     Polygon::Vertex_const_iterator vit;
     for (vit = p.vertices_begin(); vit != p.vertices_end(); ++vit) {
-        SGGeod g = SGGeod::fromDeg( CGAL::to_double( vit->x()), 
-                                    CGAL::to_double( vit->y()) );
-        contour.AddNode( g );
+        contour.AddPoint( *vit );
     }
     
     // remove antenna
-    contour.RemoveAntenna();
+    // contour.RemoveAntenna();
     contour.SetHole( isHole );
     
     return contour;
 }
-  
-static tgcontour_list ToTgPolygon( const Polygon_set& ps )
+
+static void cgPolygonToSegList( const Polygon& p, std::vector<tgSegment2>& segs )
 {
-    tgcontour_list contours;
+    Polygon::Vertex_const_iterator          src, trg;
+
+    src = p.vertices_begin();
+    trg = src; trg++;
+    while( trg != p.vertices_end() ) {
+        segs.push_back( tgSegment2(*src++, *trg++) );
+    }
+    trg = p.vertices_begin();
+    segs.push_back( tgSegment2(*src, *trg) );    
+}
+
+static void FindIntersections( const Polygon_with_holes& pwh, const tgLine2& line, std::vector<tgPoint>& intersections )
+{    
+    // find the intersection of all segments and sorth them from bottom to top.
+    Polygon                                 p  = pwh.outer_boundary();
+    Polygon_with_holes::Hole_const_iterator hit;
+    std::vector<tgSegment2>                 segs;
+
+    cgPolygonToSegList( p, segs );
+    for (hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+        cgPolygonToSegList( *hit, segs );
+    }
+    
+    for ( unsigned int i=0; i<segs.size(); i++ ) {
+        CGAL::Object result = CGAL::intersection(line, segs[i]);
+        if (const tgPoint *ipoint = CGAL::object_cast<tgPoint>(&result)) {
+            intersections.push_back( *ipoint );
+        }
+    }
+    std::sort( intersections.begin(), intersections.end() );    
+}
+
+bool myfunction (boost::tuple<tgKernel::RT, tgKernel::RT> i, boost::tuple<tgKernel::RT, tgKernel::RT> j ) 
+{ 
+    // sort from largest to smallest
+    return (  boost::get<0>(i) > boost::get<0>(j) ); 
+}
+
+static tgPoint GetInteriorPoint( const Polygon_with_holes& pwh )
+{
+    std::vector<tgKernel::RT>                               xcoords;
+    std::vector< boost::tuple<tgKernel::RT, tgKernel::RT> > xbest;
+    tgPoint      max_pos;
+    
+    // find the largest delta in x
+    Polygon      p  = pwh.outer_boundary();
+    CGAL::Bbox_2 bb = p.bbox();
+
+    Polygon_with_holes::Hole_const_iterator hit;
+    Polygon::Vertex_const_iterator          vit;
+    for (vit = p.vertices_begin(); vit != p.vertices_end(); ++vit) {
+        xcoords.push_back( vit->x() );
+    }
+    for (hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+        for (vit = hit->vertices_begin(); vit != hit->vertices_end(); ++vit) {
+            xcoords.push_back( vit->x() );
+        }
+    }
+    std::sort( xcoords.begin(), xcoords.end() );
+
+    for (unsigned int i=0; i<xcoords.size()-1; i++) {
+        tgKernel::RT delta = xcoords[i+1]-xcoords[i];
+        xbest.push_back( boost::make_tuple( delta, xcoords[i]+delta/2 ) );
+    }
+    std::sort( xbest.begin(), xbest.end(), myfunction );
+    
+    // create a vertical line at the midpoint of the largest delta
+    for ( unsigned int i=0; i<xbest.size(); i++ ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "GetInteriorPoint: i " << i << " width " << xbest[i].get<0>() << " location " << xbest[i].get<1>() );       
+    }
+    
+#if 1
+    for ( unsigned int i=0; i<xbest.size(); i++ ) {
+        tgLine2 line( tgPoint( xbest[i].get<1>(), bb.ymin() ), tgPoint(xbest[i].get<1>(), bb.ymax()) );
+        // get and sort the intersections with all segments of the pwh and this line
+        
+        std::vector<tgPoint> intersections;
+        FindIntersections( pwh, line, intersections );
+        // from 0-1 IN face, 1-2 OUT of face, 2-3 IN face, etccc.
+        // we want the biggest delta between 0,1 2,3 4,5, etc, and the midpoint of the biggest.
+        
+        tgKernel::RT max_delta = 0.0;
+        for ( unsigned int i=0; i<intersections.size(); i+=2 ) {
+            if ( intersections[i+1].y() - intersections[i].y() > max_delta ) {
+                max_delta = intersections[i+1].y()-intersections[i].y();
+                max_pos   = tgPoint( intersections[i].x(), intersections[i].y()+max_delta/2 );
+            }
+        }
+        
+        if ( max_delta > 0.000001 ) {
+            break;
+        }
+    }
+#endif
+
+    return max_pos;
+}
+
+static void ToTgPolygon( const Polygon_set& ps, tgPolygon& poly )
+{
+    tgcontour_list          contours;
+    std::vector<tgPoint>    interiorPoints;
 
     std::list<Polygon_with_holes> pwh_list;
     std::list<Polygon_with_holes>::const_iterator it;
 
     ps.polygons_with_holes( std::back_inserter(pwh_list) );
+
+    SG_LOG(SG_GENERAL, SG_ALERT, "ToTgPolygon : got " << pwh_list.size() << " polys with holes ");
     for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
         Polygon_with_holes pwh = (*it);
 
         // Add the boundary Contour
         if (!pwh.is_unbounded()) {
+            interiorPoints.push_back( GetInteriorPoint( pwh ) );
+            
             tgContour cont = ToTgContour( pwh.outer_boundary(), false );
             contours.push_back( cont );
             
@@ -162,18 +265,23 @@ static tgcontour_list ToTgPolygon( const Polygon_set& ps )
                 cont = ToTgContour( *hit, true );
                 contours.push_back( cont );
             }
+        } else {
+            SG_LOG(SG_GENERAL, SG_ALERT, "ToTgPolygon : pwh is unbounded!");
         }
     }
-    
-    return contours;
+
+    poly.SetInteriorPoints( interiorPoints );
+    poly.SetContours( contours );
 }
 
 void ToShapefile( const Polygon_set& ps, const char* layer )
 {
-    tgcontour_list contours;
-
-    contours = ToTgPolygon( ps );
-    tgShapefile::FromContourList( contours, false, false, "./clip_dbg", layer, "poly" );
+    tgPolygon poly;
+    ToTgPolygon( ps, poly );
+    
+    SG_LOG(SG_GENERAL, SG_ALERT, "ToShapefile : got " << poly.Contours() << " contours" );
+    
+    tgShapefile::FromPolygon( poly, true, false, "./clip_dbg", layer, "poly" );
 }
 
 static CGAL::Bbox_2 GetBoundingBox( const Polygon_set& subject ) 
@@ -274,17 +382,17 @@ static bool ToCgalPolyWithHoles( const tgPolygon& subject, Polygon_set& cgSubjec
     // Example of a single self intersecting contour that should be represented by a polygon 
     
     // first, we need to get all of the contours in reletively simple format
-    // SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Inserting " << subject.Contours() << " contours "  );
+    SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Inserting " << subject.Contours() << " contours "  );
 
     for (unsigned int i=0; i<subject.Contours(); i++ ) {
-        // char layer[128];
+        char layer[128];
 
         //sprintf( layer, "%04u_original_contour_%d", subject.GetId(), i );
         //tgShapefile::FromContour( subject.GetContour(i), false, true, "./clip_dbg", layer, "cont" );
-        
+    
         arr.Clear();
-        arr.Add( subject.GetContour(i) );
-
+        arr.Add( subject.GetContour(i), layer );
+    
         // retreive the new Contour(s) from traversing the outermost face first
         // any holes in this face are individual polygons
         // any holes in those faces are holes, etc...
@@ -312,7 +420,6 @@ static bool ToCgalPolyWithHoles( const tgPolygon& subject, Polygon_set& cgSubjec
             //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : after - face_valid " << face.is_valid() << " boundaries_valid " << boundaries.is_valid()  );
         }
         //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Join complete"  );
-        
     }
     
     // now, generate the result
@@ -320,8 +427,12 @@ static bool ToCgalPolyWithHoles( const tgPolygon& subject, Polygon_set& cgSubjec
     
     // dump to shapefile
     if ( boundaries.is_valid() ) {
+        //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Boundary valid - get bounding box"  );
+        
         cgSubject = boundaries;
         bb = GetBoundingBox( cgSubject );
+
+        //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Boundary valid - bb is " << bb  );
         
         return true;
     } else {
@@ -348,13 +459,7 @@ void tgAccumulator::Diff_cgal( tgPolygon& subject )
             cgalSubject.difference( diff );
         }
 
-        //sprintf( layer, "%04u_cgal_subject_after_diff", subject.GetId() );
-        //ToShapefile( cgalSubject, layer );
-    
-        tgcontour_list contours;
-        contours = ToTgPolygon( cgalSubject );
-    
-        subject.SetContours( contours );
+        ToTgPolygon( cgalSubject, subject );
     }
 }
 
@@ -370,16 +475,18 @@ void tgAccumulator::Add_cgal( const tgPolygon& subject )
     }
 }
 
+#endif
+
 // rewrite to use bounding boxes, and lists of polygons with holes 
 // need a few functions:
 // 1) generate a Polygon_set from the Polygons_with_holes in the list that intersect subject bounding box
 // 2) Add to the Polygons_with_holes list with a Polygon set ( and the bounding boxes )
     
-Polygon_set tgAccumulator::GetAccumPolygonSet( const CGAL::Bbox_2& bbox ) 
+cgalPoly_PolygonSet tgAccumulator::GetAccumPolygonSet( const CGAL::Bbox_2& bbox ) 
 {
     std::list<tgAccumEntry>::const_iterator it;
-    std::list<Polygon_with_holes> accum;
-    Polygon_set ps;
+    std::list<cgalPoly_PolygonWithHoles> accum;
+    cgalPoly_PolygonSet ps;
     
     // traverse all of the Polygon_with_holes and accumulate their union
     for ( it=accum_cgal_list.begin(); it!=accum_cgal_list.end(); it++ ) {
@@ -393,10 +500,10 @@ Polygon_set tgAccumulator::GetAccumPolygonSet( const CGAL::Bbox_2& bbox )
     return ps;
 }
 
-void tgAccumulator::AddAccumPolygonSet( const Polygon_set& ps )
+void tgAccumulator::AddAccumPolygonSet( const cgalPoly_PolygonSet& ps )
 {
-    std::list<Polygon_with_holes> pwh_list;
-    std::list<Polygon_with_holes>::const_iterator it;
+    std::list<cgalPoly_PolygonWithHoles> pwh_list;
+    std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
     CGAL::Bbox_2 bbox;
     
     ps.polygons_with_holes( std::back_inserter(pwh_list) );
@@ -409,58 +516,49 @@ void tgAccumulator::AddAccumPolygonSet( const Polygon_set& ps )
     }    
 }
 
-void tgAccumulator::Diff_and_Add_cgal( tgPolygon& subject )
+#define DEBUG_DIFF_AND_ADD 0
+void tgAccumulator::Diff_and_Add_cgal( tgPolygonSet& subject )
 {
-    Polygon_set     cgSubject;
-    CGAL::Bbox_2    cgBoundingBox;
-
-#if 0    
+#if DEBUG_DIFF_AND_ADD    
     char            layer[128];
 #endif
     
-    if ( ToCgalPolyWithHoles( subject, cgSubject, cgBoundingBox ) ) {
-        Polygon_set add  = cgSubject;
-        Polygon_set diff = GetAccumPolygonSet( cgBoundingBox );
+    cgalPoly_PolygonSet subPs  = subject.getPs();
+    cgalPoly_PolygonSet difPs = GetAccumPolygonSet( subject.getBoundingBox() );
 
-#if 0        
-        sprintf( layer, "clip_%03d_pre_subject", subject.GetId() );
-        ToShapefile( add, layer );
+#if DEBUG_DIFF_AND_ADD    
+    sprintf( layer, "clip_%03ld_pre_subject", subject.getId() );
+    toShapefile( add, layer );
         
-        tgContour bb;
-        bb.AddNode( SGGeod::fromDeg( cgBoundingBox.xmin(), cgBoundingBox.ymin() ) );
-        bb.AddNode( SGGeod::fromDeg( cgBoundingBox.xmin(), cgBoundingBox.ymax() ) );
-        bb.AddNode( SGGeod::fromDeg( cgBoundingBox.xmax(), cgBoundingBox.ymax() ) );
-        bb.AddNode( SGGeod::fromDeg( cgBoundingBox.xmax(), cgBoundingBox.ymin() ) );
+    tgContour bb;
+    bb.AddPoint( tgPoint( cgBoundingBox.xmin(), cgBoundingBox.ymin() ) );
+    bb.AddPoint( tgPoint( cgBoundingBox.xmin(), cgBoundingBox.ymax() ) );
+    bb.AddPoint( tgPoint( cgBoundingBox.xmax(), cgBoundingBox.ymax() ) );
+    bb.AddPoint( tgPoint( cgBoundingBox.xmax(), cgBoundingBox.ymin() ) );
         
-        sprintf( layer, "clip_%03d_bbox", subject.GetId() );
-        tgShapefile::FromContour( bb, false, false, "./clip_dbg", layer, "bbox" );
+    sprintf( layer, "clip_%03ld_bbox", subject.getId() );
+    tgShapefile::FromContour( bb, false, false, "./clip_dbg", layer, "bbox" );
         
-        sprintf( layer, "clip_%03d_pre_accum", subject.GetId() );
-        ToShapefile( diff, layer );
+    sprintf( layer, "clip_%03ld_pre_accum", subject.getId() );
+    ToShapefile( diff, layer );
 #endif
 
-        if ( diff.number_of_polygons_with_holes() ) {
-            cgSubject.difference( diff );
+    if ( difPs.number_of_polygons_with_holes() ) {
+        subPs.difference( difPs );
             
-#if 0
-            sprintf( layer, "clip_%03d_post_subject", subject.GetId() );
+#if DEBUG_DIFF_AND_ADD    
+        sprintf( layer, "clip_%03ld_post_subject", subject.getId() );
             ToShapefile( cgSubject, layer );            
 #endif
 
-        }
+        subject.setPs( subPs );            
+    }
 
-        // add the polygons_with_holes to the accumulator list
-        AddAccumPolygonSet( add );
-        
-        tgcontour_list contours = ToTgPolygon( cgSubject );
-        subject.SetContours( contours );
-    } else {
-        tgcontour_list contours;
-        contours.clear();
-        subject.SetContours( contours );
-    }    
+    // add the polygons_with_holes to the accumulator list
+    AddAccumPolygonSet( subPs );
 }
 
+#if 0
 void tgAccumulator::Add( const tgContour& subject )
 {
     tgPolygon poly;
@@ -522,6 +620,7 @@ tgPolygon tgAccumulator::Union()
         
     return result;
 }
+#endif
 
 #if 0
 void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
@@ -554,12 +653,13 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
     }
 }
 #else
-void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
-{
-    ToShapefile( accum_cgal, layer_prefix.c_str() );
-}
+//void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
+//{
+//    ToShapefile( accum_cgal, layer_prefix.c_str() );
+//}
 #endif
 
+#if 0
 void tgAccumulator::ToClipperfiles( const std::string& path, const std::string& layer_prefix, bool individual )
 {
     std::ofstream file;
@@ -595,3 +695,4 @@ void tgAccumulator::ToClipperfiles( const std::string& path, const std::string& 
         }
     }
 }
+#endif

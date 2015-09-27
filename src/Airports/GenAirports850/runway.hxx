@@ -2,7 +2,7 @@
 #define _RUNWAY_H_
 
 #include <terragear/tg_polygon.hxx>
-#include <terragear/tg_accumulator.hxx>
+#include <terragear/polygon_set/tg_polygon_accumulator.hxx>
 #include <terragear/tg_light.hxx>
 
 #include "apt_math.hxx"

@@ -47,6 +47,11 @@ typedef CGAL::Search_traits_adapter<PointHandle,CGAL::Nth_of_tuple_property_map<
 typedef CGAL::Fuzzy_sphere<SearchTraits>                          SearchFuzzyCir;
 typedef CGAL::Kd_tree<SearchTraits>                               SearchTree;
 
+
+
+
+
+#if 0
 struct constraint 
 {
 public:
@@ -56,7 +61,9 @@ public:
     CDTPlus::Vertex_handle  source;
     CDTPlus::Vertex_handle  target;
 };
+#endif
 
+#if 0
 static void AddPoint( const SGGeod& p, SearchTree& tree, CDTPlus& cdt ) {
     std::list<PointHandle>  searchResults;
     
@@ -83,7 +90,9 @@ static void AddPoint( const SGGeod& p, SearchTree& tree, CDTPlus& cdt ) {
         // we found a node - don't insert again
     }    
 }
+#endif
 
+#if 0
 static CDTPlus::Vertex_handle Lookup(  const SGGeod& p, SearchTree& tree ) {
     std::list<PointHandle>  searchResults;
     
@@ -108,6 +117,7 @@ static CDTPlus::Vertex_handle Lookup(  const SGGeod& p, SearchTree& tree ) {
     
     return h;
 }
+#endif
 
 static void tg_mark_domains(CDT& ct, CDT::Face_handle start, int index, std::list<CDT::Edge>& border )
 {
@@ -172,6 +182,8 @@ static void tg_insert_polygon(CDTPlus& cdt,const Polygon_2& polygon)
     }
 }
 
+
+#if 0
 static void save_cgal_debug( unsigned long id, SearchTree& tree, const std::vector<constraint>&  constraints )
 {
     char filename[64];
@@ -220,7 +232,9 @@ static void save_cgal_debug( unsigned long id, SearchTree& tree, const std::vect
     // output_file << std::setprecision(16) << P;            
     output_file.close();
 }
+#endif
 
+#if 0
 static void insert_constraints(CDTPlus& cdt, const std::vector<constraint>&  constraints, char* datasource, unsigned long id)
 {
     char layer[256];
@@ -280,7 +294,9 @@ static void insert_constraints(CDTPlus& cdt, const std::vector<constraint>&  con
 
     cdt.insert_constraint( hSource, hTarget );    
 }
-                
+#endif
+
+#if 0                
 void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
 {
     SearchTree  tree;
@@ -389,6 +405,7 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
         SG_LOG( SG_GENERAL, SG_INFO, "  Got " << count << " triangles for " << id );        
     }
 }
+#endif
 
 void tgPolygon::Tesselate(bool debug)
 {
@@ -466,6 +483,64 @@ void tgPolygon::Tesselate(bool debug)
             sprintf( layer, "tri_nodes_%03d", id );
             //tgShapefile::FromGeodList( geods, false, "./tridbg", layer, "after_tri" );                
         }
+    } else {
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : no contours" );
+    }
+}
+
+void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
+{
+    CDTPlus cdt;
+    std::vector<SGGeod> geods;
+    char layer[256];
+    
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Tess " << id );
+        
+    // Bail right away if polygon is empty
+    if ( contours.size() != 0 ) {
+        // insert each polygon as a constraint into the triangulation
+        for ( unsigned int c = 0; c < contours.size(); c++ ) {
+            tgContour contour = contours[c];
+            Polygon_2 poly;
+
+            for (unsigned int n = 0; n < contour.GetSize(); n++ ) {
+                SGGeod node = contour.GetNode(n);
+                SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : Adding GEOD " << node);
+                poly.push_back( Point( node.getLongitudeDeg(), node.getLatitudeDeg() ) );
+
+                geods.push_back( node );                
+            }
+
+            tg_insert_polygon(cdt, poly);
+        }
+        
+        assert(cdt.is_valid());
+        tg_mark_domains( cdt );
+
+        int count=0;
+        geods.clear();
+        for (CDTPlus::Finite_faces_iterator fit=cdt.finite_faces_begin(); fit!=cdt.finite_faces_end(); ++fit) {
+            if ( fit->info().in_domain() ) {
+                SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : face   in domain");
+
+                Triangle_2 tri = cdt.triangle(fit);
+
+                SGGeod p0 = SGGeod::fromDeg( to_double(tri.vertex(0).x()), to_double(tri.vertex(0).y()) );
+                SGGeod p1 = SGGeod::fromDeg( to_double(tri.vertex(1).x()), to_double(tri.vertex(1).y()) );
+                SGGeod p2 = SGGeod::fromDeg( to_double(tri.vertex(2).x()), to_double(tri.vertex(2).y()) );
+
+                geods.push_back( p0 );
+                geods.push_back( p1 );
+                geods.push_back( p2 );
+                
+                /* Check for Zero Area before inserting */
+                AddTriangle( p0, p1, p2 );
+
+                ++count;
+            } else {
+                SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : face not in domain");
+            }
+        }        
     } else {
         SG_LOG( SG_GENERAL, SG_DEBUG, "Tess : no contours" );
     }

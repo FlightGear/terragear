@@ -6,84 +6,92 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/io/lowlevel.hxx>
 
-#include "tg_chopper.hxx"
+#include "tg_polygon_chop.hxx"
 #include "tg_shapefile.hxx"
 #include "tg_misc.hxx"
 
-tgPolygon tgChopper::Clip( const tgPolygon& subject,
-                      const std::string& type,
-                      SGBucket& b )
+void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
 {
-    tgPolygon base, result;
+    cgalPoly_Point base_pts[4];
+    tgPolygonSet   result;
+    SGGeod         pt;
 
     // set up clipping tile : and remember to add the nodes!
-    base.AddNode( 0, b.get_corner( SG_BUCKET_SW ) );
-    base.AddNode( 0, b.get_corner( SG_BUCKET_SE ) );
-    base.AddNode( 0, b.get_corner( SG_BUCKET_NE ) );
-    base.AddNode( 0, b.get_corner( SG_BUCKET_NW ) );
+    pt = b.get_corner( SG_BUCKET_SW );
+    base_pts[0] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
 
-    result = tgPolygon::Intersect( subject, base );
-    if ( result.Contours() > 0 ) {
-        if ( subject.GetPreserve3D() ) {
-            result.InheritElevations( subject );
-            result.SetPreserve3D( true );
-        }
-        result.SetTexParams( subject.GetTexParams() );
-        if ( subject.GetTexMethod() == TG_TEX_BY_GEODE ) {
-            // need to set center latitude for geodetic texturing
-            result.SetTexMethod( TG_TEX_BY_GEODE, b.get_center_lat() );
-        }
-        result.SetFlag(type);
+    pt = b.get_corner( SG_BUCKET_SE );    
+    base_pts[1] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
+    
+    pt = b.get_corner( SG_BUCKET_NE );    
+    base_pts[2] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
+    
+    pt = b.get_corner( SG_BUCKET_NW );
+    base_pts[3] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
 
+    cgalPoly_Polygon base( base_pts, base_pts+4 );
+
+    result = subject.intersection( base );
+
+    if ( !result.isEmpty() ) {
+//      if ( subject.GetPreserve3D() ) {
+//          result.InheritElevations( subject );
+//          result.SetPreserve3D( true );
+//      }
+        
         long int cur_bucket = b.gen_index();
+        SG_LOG( SG_GENERAL, SG_INFO, " - poly saved in bucket " << cur_bucket << " bucket_id is " << bucket_id );
+
         if ( ( bucket_id < 0 ) || (cur_bucket == bucket_id ) ) {
-            lock.lock();
             bp_map[b.gen_index()].push_back( result );
-            lock.unlock();
         }
     }
-
-    return result;
 }
 
 // Pass in the center lat for clipping buckets from the row.  
 // We can't rely on sgBucketOffset, as rounding error sometimes causes it to look like there are 2 rows 
 // (the first being a sliver)
 // This leads to using that poly as the subject - which leads to having no usable polygon for this row.
-void tgChopper::ClipRow( const tgPolygon& subject, const double& center_lat, const std::string& type )
+void tgChopper::ClipRow( const tgPolygonSet& subject, const double& center_lat )
 {
-    tgRectangle bb = subject.GetBoundingBox();
-    SGBucket    b_min( bb.getMin() );
-    SGBucket    b_max( bb.getMax() );
-    int         dx, dy;
+    CGAL::Bbox_2 bb = subject.getBoundingBox();
+    SGGeod       gMin = SGGeod::fromDeg( CGAL::to_double(bb.xmin()), CGAL::to_double(bb.ymin()) );
+    SGGeod       gMax = SGGeod::fromDeg( CGAL::to_double(bb.xmax()), CGAL::to_double(bb.ymax()) );
+    SGBucket     b_min( gMin );
+    SGBucket     b_max( gMax );
+    int          dx, dy;
 
     sgBucketDiff(b_min, b_max, &dx, &dy);
     SGBucket start = SGBucket(SGGeod::fromDeg( b_min.get_center_lon(), center_lat ));
 
     for ( int i = 0; i <= dx; ++i ) {
         SGBucket b_cur = start.sibling(i, 0);
-        Clip( subject, type, b_cur );
+        Clip( subject, b_cur );
     }
 }
 
-void tgChopper::Add( const tgPolygon& subject, const std::string& type )
+void tgChopper::Add( const tgPolygonSet& subject )
 {
     // bail out immediately if polygon is empty
-    if ( subject.Contours() == 0 )
+    if ( subject.isEmpty() ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper::Add - subject is empty" );
         return;
+    }
 
-    tgRectangle bb = subject.GetBoundingBox();
+    CGAL::Bbox_2 bb = subject.getBoundingBox();
 
     // find buckets for min, and max points of convex hull.
     // note to self: self, you should think about checking for
     // polygons that span the date line
-    SGBucket b_min( bb.getMin() );
-    SGBucket b_max( bb.getMax() );
-    SGBucket b_cur;
-    int      dx, dy;
+    SGGeod       gMin = SGGeod::fromDeg( CGAL::to_double(bb.xmin()), CGAL::to_double(bb.ymin()) );
+    SGGeod       gMax = SGGeod::fromDeg( CGAL::to_double(bb.xmax()), CGAL::to_double(bb.ymax()) );
+    SGBucket     b_min( gMin );
+    SGBucket     b_max( gMax );
+    SGBucket     b_cur;
+    int          dx, dy;
 
     sgBucketDiff(b_min, b_max, &dx, &dy);
-    SG_LOG( SG_GENERAL, SG_DEBUG, "  y_min = " << bb.getMin().getLatitudeDeg() << " y_max = " << bb.getMax().getLatitudeDeg() << " dx = " <<  dx << "  dy = " << dy );
+    SG_LOG( SG_GENERAL, SG_INFO, "  y_min = " << bb.ymin() << " y_max = " << bb.ymax() << " dx = " <<  dx << "  dy = " << dy );
 
     if ( (dx > 2880) || (dy > 1440) )
         throw sg_exception("something is really wrong in split_polygon()!!!!");
@@ -91,35 +99,36 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
     if ( dy == 0 )
     {
         // We just have a single row - no need to intersect first
-        SG_LOG( SG_GENERAL, SG_DEBUG, "   UN_CLIPPED row -  center lat is " << b_min.get_center_lat() );
+        SG_LOG( SG_GENERAL, SG_INFO, "   UN_CLIPPED row -  center lat is " << b_min.get_center_lat() );
 
-        ClipRow( subject, b_min.get_center_lat(), type );
+        ClipRow( subject, b_min.get_center_lat() );
     }
     else
     {
         // Multiple rows - perform row intersection to reduce the number of bucket clips we need
         // since many shapes are narraw in some places, wide in others - bb will be at the widest part
-        SG_LOG( SG_GENERAL, SG_DEBUG, "subject spans tile rows: bb is from lat " << bb.getMin().getLatitudeDeg() << " to " << bb.getMax().getLatitudeDeg() << " dy is " << dy );
+        SG_LOG( SG_GENERAL, SG_INFO, "subject spans tile rows: bb is from lat " << bb.ymin() << " to " << bb.ymax() << " dy is " << dy );
 
         for ( int row = 0; row <= dy; row++ )
         {
             // Generate a clip rectangle for the whole row
 
-            SGBucket  b_clip      = b_min.sibling(0, row);
-            double    clip_bottom = b_clip.get_center_lat() - SG_HALF_BUCKET_SPAN;
-            double    clip_top    = b_clip.get_center_lat() + SG_HALF_BUCKET_SPAN;
-            tgPolygon clip_row, clipped;
+            SGBucket     b_clip      = b_min.sibling(0, row);
+            double       clip_bottom = b_clip.get_center_lat() - SG_HALF_BUCKET_SPAN;
+            double       clip_top    = b_clip.get_center_lat() + SG_HALF_BUCKET_SPAN;
+            cgalPoly_Point clip_pts[4];
+            
+            clip_pts[0] = cgalPoly_Point( -180.0, clip_bottom );
+            clip_pts[1] = cgalPoly_Point(  180.0, clip_bottom );
+            clip_pts[2] = cgalPoly_Point(  180.0, clip_top );
+            clip_pts[3] = cgalPoly_Point( -180.0, clip_top );
+            cgalPoly_Polygon clip_row( clip_pts, clip_pts+4 );
 
-            SG_LOG( SG_GENERAL, SG_DEBUG, "   CLIPPED row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
+            SG_LOG( SG_GENERAL, SG_INFO, "   CLIPPED row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
 
-            clip_row.AddNode( 0, SGGeod::fromDeg(-180.0, clip_bottom) );
-            clip_row.AddNode( 0, SGGeod::fromDeg( 180.0, clip_bottom) );
-            clip_row.AddNode( 0, SGGeod::fromDeg( 180.0, clip_top)    );
-            clip_row.AddNode( 0, SGGeod::fromDeg(-180.0, clip_top)    );
-
-            clipped = tgPolygon::Intersect( subject, clip_row );
-            if ( clipped.TotalNodes() > 0 ) {
-
+            tgPolygonSet clipped = subject.intersection( clip_row );
+            if ( !clipped.isEmpty() ) {
+#if 0
                 if ( subject.GetPreserve3D() ) {
                     clipped.InheritElevations( subject );
                     clipped.SetPreserve3D( true );
@@ -129,14 +138,15 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
                     // need to set center latitude for geodetic texturing
                     clipped.SetTexMethod( TG_TEX_BY_GEODE, b_clip.get_center_lat() );
                 }
-                clipped.SetFlag(type);
+#endif
 
-                ClipRow( clipped, b_clip.get_center_lat(), type );
+                ClipRow( clipped, b_clip.get_center_lat() );
             }
         }
     }
 }
 
+#if 0
 long int tgChopper::GenerateIndex( std::string path )
 {
     std::string index_file = path + "/chop.idx";
@@ -180,22 +190,17 @@ long int tgChopper::GenerateIndex( std::string path )
 
     return index;
 }
+#endif
 
 void tgChopper::Save( bool DebugShapefiles )
 {
     // traverse the bucket list
     bucket_polys_map_interator it;
     char tile_name[16];
-    char poly_ext[16];
-
-    char layer[32];
-    char ds_name[64];
 
     for (it=bp_map.begin(); it != bp_map.end(); it++) {
         SGBucket b( (*it).first );
-        tgpolygon_list const& polys = (*it).second;
-
-        sprintf(ds_name, "./bucket_%s", b.gen_index_str().c_str() );
+        tgPolygonSetList const& polys = (*it).second;
 
         std::string path = root_path + "/" + b.gen_base_path();
         sprintf( tile_name, "%ld", b.gen_index() );
@@ -205,29 +210,9 @@ void tgChopper::Save( bool DebugShapefiles )
         SGPath sgp( polyfile );
         sgp.create_dir( 0755 );
 
-        long int poly_index = GenerateIndex( path );
-
-        sprintf( poly_ext, "%ld", poly_index );
-        polyfile = polyfile + "." + poly_ext;
-
-        gzFile fp;
-        if ( (fp = gzopen( polyfile.c_str(), "wb9" )) == NULL ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "ERROR: opening " << polyfile.c_str() << " for writing!" );
-            return;
-        }
-
-        /* Write polys to the file */
-        sgWriteUInt( fp, polys.size() );
+        // save chopped polygons to a Shapefile in layer named from material
         for ( unsigned int i=0; i<polys.size(); i++ ) {
-            polys[i].SaveToGzFile( fp );
-
-            if ( DebugShapefiles )
-            {
-                sprintf(layer, "poly_%s-%d", b.gen_index_str().c_str(), i );
-                tgShapefile::FromPolygon( polys[i], true, false, ds_name, layer, "poly" );
-            }
+            polys[i].toShapefile( sgp.c_str(), polys[i].getMaterial().c_str() );
         }
-
-        gzclose( fp );
     }
 }

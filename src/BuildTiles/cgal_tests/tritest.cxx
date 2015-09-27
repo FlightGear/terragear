@@ -49,7 +49,7 @@ typedef CDTPlus::Point                                            Point;
 
 int main(int argc, char* argv[])
 {
-    const char* filename = (argc > 1) ? argv[1] : "cgalpolys.txt";
+    const char* filename = (argc > 1) ? argv[1] : "tri_test.txt";
     std::ifstream input_file(filename);
     if (!input_file.is_open()) {
         std::cerr << "Failed to open the " << filename <<std::endl;

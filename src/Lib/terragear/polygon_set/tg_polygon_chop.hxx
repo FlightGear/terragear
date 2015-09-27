@@ -1,9 +1,11 @@
 #include <map>
 
-#include "tg_polygon.hxx"
+#include <simgear/bucket/newbucket.hxx>
+
+#include "tg_polygon_set.hxx"
 
 // for ogr-decode : generate a bunch of polygons, mapped by bucket id
-typedef std::map<long int, tgpolygon_list> bucket_polys_map;
+typedef std::map<long int, tgPolygonSetList> bucket_polys_map;
 typedef bucket_polys_map::iterator bucket_polys_map_interator;
 
 class tgChopper
@@ -14,17 +16,15 @@ public:
         bucket_id = bid;
     }
 
-    void Add( const tgPolygon& poly, const std::string& type );
+    void Add( const tgPolygonSet& poly );
     void Save( bool DebugShapes );
 
 private:
-    long int GenerateIndex( std::string path );
-    void ClipRow( const tgPolygon& subject, const double& center_lat, const std::string& type );
-    tgPolygon Clip( const tgPolygon& subject, const std::string& type, SGBucket& b );
-    void Chop( const tgPolygon& subject, const std::string& type );
+    void ClipRow( const tgPolygonSet& subject, const double& center_lat );
+    void Clip( const tgPolygonSet& subject, SGBucket& b );
+    void Chop( const tgPolygonSet& subject );
 
     long int         bucket_id;     // set if we only want to save a single bucket
     std::string      root_path;
     bucket_polys_map bp_map;
-    SGMutex          lock;
 };

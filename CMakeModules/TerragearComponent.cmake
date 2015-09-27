@@ -1,0 +1,21 @@
+
+macro(terragear_component_common name includePath sourcesList sources headers)
+    set(fc${sourcesList} ${name})
+    set(fh${sourcesList} ${name})
+    foreach(s ${sources})
+        set_property(GLOBAL APPEND PROPERTY ${sourcesList} "${CMAKE_CURRENT_SOURCE_DIR}/${s}")
+        set(fc${sourcesList} "${fc${sourcesList}}#${CMAKE_CURRENT_SOURCE_DIR}/${s}")
+    endforeach()
+
+    foreach(h ${headers})
+        set_property(GLOBAL APPEND PROPERTY PUBLIC_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/${h}")
+        set(fh${sourcesList} "${fh${sourcesList}}#${CMAKE_CURRENT_SOURCE_DIR}/${h}")
+    endforeach()
+
+    set_property( GLOBAL APPEND PROPERTY TGLIB_INCLUDE_DIRS ${includePath})      
+    install (FILES ${headers}  DESTINATION include/terragear/${includePath})
+endmacro()
+
+function(terragear_component name includePath sources headers)
+    terragear_component_common(${name} ${includePath} CORE_SOURCES "${sources}" "${headers}")
+endfunction()

@@ -148,11 +148,18 @@ public:
         contours.clear();
         contours = clist;
     }
-
+    void SetInteriorPoints( std::vector<tgPoint>& points ) {
+        interior_points.clear();
+        interior_points = points;
+    }
+    const std::vector<tgPoint>& GetInteriorPoints( void ) const {
+        return interior_points;
+    }
+    
     unsigned int TotalNodes( void ) const;
 
-    SGGeod const& GetNode( unsigned int c, unsigned int i ) const {
-        return contours[c][i];
+    SGGeod GetNode( unsigned int c, unsigned int i ) const {
+        return contours[c].GetNode(i);
     }
     void SetNode( unsigned int c, unsigned int i, const SGGeod& n ) {
         contours[c].SetNode( i, n );
@@ -170,6 +177,17 @@ public:
     }
     void DelNode( unsigned int c, unsigned int n ) {
         contours[c].DelNode( n );
+    }
+
+    void AddPoint( unsigned int c, const tgPoint& p ) {
+        // Make sure we have contour c.  If we don't add it
+        while( contours.size() < c+1 ) {
+            tgContour dummy;
+            dummy.SetHole( false );
+            contours.push_back( dummy );
+        }
+        
+        contours[c].AddPoint( p );
     }
     
     tgRectangle GetBoundingBox( void ) const;
@@ -244,13 +262,6 @@ public:
     }
     void SetMaterial( const std::string& m ) {
         material = m;
-    }
-
-    std::string const& GetFlag( void ) const {
-        return flag;
-    }
-    void SetFlag( const std::string& f ) {
-        flag = f;
     }
 
     bool GetPreserve3D( void ) const {
@@ -416,8 +427,9 @@ public:
     unsigned int    va_flt_mask;
     
 private:
-    tgcontour_list  contours;
-    tgtriangle_list triangles;
+    tgcontour_list          contours;
+    std::vector<tgPoint>    interior_points;
+    tgtriangle_list         triangles;
 
     std::string     material;
     std::string     flag;       // let's get rid of this....

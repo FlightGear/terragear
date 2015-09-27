@@ -37,11 +37,12 @@
 
 #include <Include/version.h>
 
-#include <terragear/tg_polygon.hxx>
-#include <terragear/tg_accumulator.hxx>
-#include <terragear/tg_intersection_generator.hxx>
-#include <terragear/tg_chopper.hxx>
-#include <terragear/tg_shapefile.hxx>
+#include <terragear/vector_intersections/tg_intersection_generator.hxx>
+
+#include <terragear/polygon_set/tg_polygon_set.hxx>
+#include <terragear/polygon_set/tg_polygon_accumulator.hxx>
+#include <terragear/polygon_set/tg_polygon_chop.hxx>
+//#include <terragear/tg_shapefile.hxx>
 
 #ifdef _MSC_VER
 #  include <windows.h>
@@ -79,6 +80,8 @@ std::vector<areaDef>    areaDefs;
 
 int GetTextureInfo( unsigned int type, bool cap, std::string& material, double& atlas_startu, double& atlas_endu, double& atlas_startv, double& atlas_endv, double& v_dist )
 {
+    SG_LOG( SG_GENERAL, SG_WARN, "setting material to  idx " << type << " name " << areaDefs[type].material );
+    
     material = areaDefs[type].material;
     atlas_startu = 0;
     atlas_endu   = 1;
@@ -338,141 +341,6 @@ void CreateWorkDirs( const std::string work_dir, const std::vector<SGBucket>& bu
     }
 }
 
-#if 0
-class Decoder : public SGThread
-{
-public:
-    Decoder(SGLockedQueue<SGBucket>& wq, const std::string& dd, const std::string& wd, SGMutex* l) : workQueue(wq), dataDir(dd), workDir(wd) {
-        lockOgr = l;
-    }
-
-private:
-    virtual void run();
-    void processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture );
-    
-private:
-    SGLockedQueue<SGBucket>& workQueue;
-    SGMutex*                 lockOgr;
-    
-    std::string              dataDir;
-    std::string              workDir;
-};
-
-void Decoder::run()
-{
-    SGBucket bucket;
-    
-    // as long as we have buckets to parse, do so
-    while (!workQueue.empty()) {
-
-        SG_LOG( SG_GENERAL, SG_ALERT, "wq size is " << workQueue.size() );
-        
-        bucket = workQueue.pop();
-        char debugdir[128];
-
-        SG_LOG( SG_GENERAL, SG_ALERT, "Decode bucket " << bucket.gen_index_str() );
-
-        lockOgr->lock();
-        
-//        sprintf( debugdir, "./vectordecode/%s.sqlite", bucket.gen_index_str().c_str() );
-        sprintf( debugdir, "./vectordecode/%s", bucket.gen_index_str().c_str() );
-
-        SG_LOG( SG_GENERAL, SG_ALERT, "debug path is " << debugdir );
-        
-        tgIntersectionGenerator* pig = new tgIntersectionGenerator( debugdir, 0, 1, GetTextureInfo );
-        tgChopper results( workDir, bucket.gen_index() );
-
-        GDALDataset *poDS;        
-        for ( unsigned int i=0; i<areaDefs.size(); i++ ) {
-            char pathname[256];
-            
-            sprintf( pathname, "%s/%s", dataDir.c_str(), areaDefs[i].datasource.c_str() );
-            SG_LOG( SG_GENERAL, SG_ALERT, "Opening datasource " << pathname << " for reading." );
-            poDS = (GDALDataset*)GDALOpenEx( pathname, GDAL_OF_VECTOR, NULL, NULL, NULL );
-
-            if( poDS != NULL ) {
-                OGRLayer  *poLayer;
-                for (int j=0;j<poDS->GetLayerCount();j++) {
-                    poLayer = poDS->GetLayer(j);
-                    processLayer(poLayer, bucket, results, i, pig );
-                }
-                
-                GDALClose( poDS );
-            } else {
-                SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << pathname );
-            }
-        }        
-        // lockOgr->unlock();
-        
-        // add some additional Variables to the intersection generator
-        // cleaning parameters
-        // texture mode
-        // simplify parameters
-        // and add some data access
-        // get skeleton segments
-        // get skin segments
-        // delta height info may be needed....
-        // maybe needs a new class entirely based on intersectiongenerator.
-        
-        // we have all of the data - execute the intersection generator
-        // don't clean the OSM map data - as we don't want to generate intersections
-        // that don't really exist ( bridges and tunnels )
-        // OSM data should have correct intersection nodes already.
-        // - they need them to do routing.        
-        // lockOgr->lock();
-        pig->Execute();
-        
-        // now retreive the polygons in reverse z-order.  store them in lists
-        std::map<int, tgpolygon_list*> polygons;
-        
-        for ( tgintersectionedge_it it = pig->edges_begin(); it != pig->edges_end(); it++ ) {
-            tgPolygon poly = (*it)->GetPoly("complete");
-            int       zo   = (*it)->GetZorder();
-            
-            if ( polygons.find( zo ) == polygons.end() ) {
-                // add new polygon list at this zorder
-                polygons[zo] = new tgpolygon_list;
-            }
-            polygons[zo]->push_back( poly );
-        }
-        
-        // clip them in z order
-        tgAccumulator accum;    
-        std::map<int, tgpolygon_list*>::reverse_iterator pmap_it;
-        
-        std::cout << " start clip " << std::endl;
-        
-        for ( pmap_it = polygons.rbegin(); pmap_it != polygons.rend(); pmap_it++ ) {
-            std::vector<tgPolygon>::iterator poly_it;
-            
-            std::cout << " clip zorder " << (*pmap_it).first << std::endl;
-            
-            unsigned int num_polys = (*pmap_it).second->size();
-            unsigned int p = 1;
-            
-            for ( poly_it = (*pmap_it).second->begin(); poly_it != (*pmap_it).second->end(); poly_it++ ) {
-                tgPolygon current = (*poly_it);
-                current.RemoveDups();
-
-                accum.Diff_and_Add_cgal( current );
-                
-                // only add to output list if the clip left us with a polygon
-                if ( current.Contours() > 0 ) {
-                    results.Add( current, current.GetMaterial() );
-                }
-            }
-        }
-        
-        results.Save(false);
-        
-        delete pig;
-
-        lockOgr->unlock();        
-    }
-}
-#endif
-
-
 int main( int argc, char **argv ) {
     char* progname=argv[0];
     string data_dir = ".";
@@ -565,53 +433,14 @@ int main( int argc, char **argv ) {
 
     // I don't think this is threadsafe - pre create the workdir tree
     CreateWorkDirs( work_dir, bucketList);
-    
-    /* fill the workqueue */
-    //SGLockedQueue<SGBucket> wq;
-    //for (unsigned int i=0; i<bucketList.size(); i++) {
-    //    wq.push( bucketList[i] );
-    //}
-
-    // only allow one thread reading from OGR at a time...
-    //SGMutex ogrLock;
-    
-    // now create the worker threads for stage 1
-    //std::vector<Decoder *> decoders;        
-    //for (int i=0; i<num_threads; i++) {
-    //    Decoder* decoder = new Decoder( wq, data_dir, work_dir, &ogrLock );
-    //    decoders.push_back( decoder );
-    //}
-    
-    // start all threads
-    //for (unsigned int i=0; i<decoders.size(); i++) {
-    //    decoders[i]->start();
-    //}
-
-    // wait for workqueue to empty
-    //while( wq.size() ) {
-    //    tgSleep( 5 );
-    //}
-
-    // wait for all threads to complete
-    //for (unsigned int i=0; i<decoders.size(); i++) {
-    //    decoders[i]->join();
-    //}
-    
-
-    
-    
         
     // as long as we have buckets to parse, do so
     for (unsigned int i=0; i<bucketList.size(); i++) {
         SGBucket bucket = bucketList[i];
         char debugdir[128];
 
-        SG_LOG( SG_GENERAL, SG_ALERT, "Decode bucket " << bucket.gen_index_str() );
-        
-//        sprintf( debugdir, "./vectordecode/%s.sqlite", bucket.gen_index_str().c_str() );
+        SG_LOG( SG_GENERAL, SG_ALERT, "Decode bucket " << bucket.gen_index_str() );        
         sprintf( debugdir, "./vectordecode/%s", bucket.gen_index_str().c_str() );
-
-        SG_LOG( SG_GENERAL, SG_ALERT, "debug path is " << debugdir );
         
         tgIntersectionGenerator* pig = new tgIntersectionGenerator( debugdir, 0, 1, GetTextureInfo );
         tgChopper results( work_dir, bucket.gen_index() );
@@ -656,42 +485,34 @@ int main( int argc, char **argv ) {
         pig->Execute();
         
         // now retreive the polygons in reverse z-order.  store them in lists
-        std::map<int, tgpolygon_list*> polygons;
+        std::map<int, tgPolygonSetList*> polygons;
         
         for ( tgintersectionedge_it it = pig->edges_begin(); it != pig->edges_end(); it++ ) {
-            tgPolygon poly = (*it)->GetPoly("complete");
-            int       zo   = (*it)->GetZorder();
+            tgPolygonSet poly = (*it)->GetPoly("complete");
+            int          zo   = (*it)->GetZorder();
             
             if ( polygons.find( zo ) == polygons.end() ) {
                 // add new polygon list at this zorder
-                polygons[zo] = new tgpolygon_list;
+                polygons[zo] = new tgPolygonSetList;
             }
             polygons[zo]->push_back( poly );
         }
         
         // clip them in z order
         tgAccumulator accum;    
-        std::map<int, tgpolygon_list*>::reverse_iterator pmap_it;
-        
-        std::cout << " start clip " << std::endl;
+        std::map<int, tgPolygonSetList*>::reverse_iterator pmap_it;
         
         for ( pmap_it = polygons.rbegin(); pmap_it != polygons.rend(); pmap_it++ ) {
-            std::vector<tgPolygon>::iterator poly_it;
-            
-            std::cout << " clip zorder " << (*pmap_it).first << std::endl;
-            
-            //unsigned int num_polys = (*pmap_it).second->size();
-            //unsigned int p = 1;
-            
+            std::vector<tgPolygonSet>::iterator poly_it;            
             for ( poly_it = (*pmap_it).second->begin(); poly_it != (*pmap_it).second->end(); poly_it++ ) {
-                tgPolygon current = (*poly_it);
-                current.RemoveDups();
+                tgPolygonSet current = (*poly_it);
+                //current.RemoveDups();
 
                 accum.Diff_and_Add_cgal( current );
                 
                 // only add to output list if the clip left us with a polygon
-                if ( current.Contours() > 0 ) {
-                    results.Add( current, current.GetMaterial() );
+                if ( !current.isEmpty() ) {
+                    results.Add( current );
                 }
             }
         }
@@ -700,12 +521,6 @@ int main( int argc, char **argv ) {
         
         delete pig;
     }
-    
-    
-    
-    
-    
-    
     
     return 0;
 }

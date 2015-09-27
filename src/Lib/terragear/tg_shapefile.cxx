@@ -249,8 +249,8 @@ void tgShapefile::FromContour( void *lid, const tgContour& subject, bool asPolyg
             for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {
                 sprintf( desc, "%s_%d", description.c_str(), pt );
                 
-                point.setX( subject.GetNode(pt).getLongitudeDeg() );
-                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setX( CGAL::to_double( subject.GetPoint(pt).x() ) );
+                point.setY( CGAL::to_double( subject.GetPoint(pt).y() ) );
                 point.setZ( 0.0 );
             
                 OGRFeature* feature = NULL;
@@ -270,38 +270,13 @@ void tgShapefile::FromContour( void *lid, const tgContour& subject, bool asPolyg
             OGRPoint      point;
             
             for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {
-                point.setX( subject.GetNode(pt).getLongitudeDeg() );
-                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setX( CGAL::to_double( subject.GetPoint(pt).x() ) );
+                point.setY( CGAL::to_double( subject.GetPoint(pt).y() ) );
                 point.setZ( 0.0 );
-                ring.addPoint(&point);
-                
-                // get heading to next point
-                double heading;
-                if ( pt == subject.GetSize()-1 ) {
-                    heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(0) );
-                } else {
-                    heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(pt+1) );
-                }
-                
-                SGGeod left  = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading-170), 0.2 );            
-                point.setX( left.getLongitudeDeg() );
-                point.setY( left.getLatitudeDeg() );
-                point.setZ( 0.0 );
-                ring.addPoint(&point);
-                
-                SGGeod right = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading+170), 0.2 );
-                point.setX( right.getLongitudeDeg() );
-                point.setY( right.getLatitudeDeg() );
-                point.setZ( 0.0 );
-                ring.addPoint(&point);
-                
-                point.setX( subject.GetNode(pt).getLongitudeDeg() );
-                point.setY( subject.GetNode(pt).getLatitudeDeg() );
-                point.setZ( 0.0 );
-                ring.addPoint(&point);
+                ring.addPoint(&point);                
             }
             ring.closeRings();
-            polygon.addRingDirectly(&ring);
+            polygon.addRing(&ring);
 
             OGRFeature* feature = NULL;
             feature = new OGRFeature( l_id->GetLayerDefn() );
@@ -317,42 +292,14 @@ void tgShapefile::FromContour( void *lid, const tgContour& subject, bool asPolyg
             OGRPoint      point;
             
             for (unsigned int pt = 0; pt < subject.GetSize(); pt++) {                
-                point.setX( subject.GetNode(pt).getLongitudeDeg() );
-                point.setY( subject.GetNode(pt).getLatitudeDeg() );
+                point.setX( CGAL::to_double( subject.GetPoint(pt).x() ) );
+                point.setY( CGAL::to_double( subject.GetPoint(pt).y() ) );
                 point.setZ( 0.0 );
-                ogr_contour.addPoint(&point);
-                
-                // get heading to next point
-//              double heading;
-//              if ( pt == subject.GetSize()-1 ) {
-//                  heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(0) );
-//              } else {
-//                  heading = SGGeodesy::courseDeg( subject.GetNode(pt), subject.GetNode(pt+1) );
-//              }
-      
-// show direction?
-#if 0
-                SGGeod left  = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading-170), 1.0 );            
-                point.setX( left.getLongitudeDeg() );
-                point.setY( left.getLatitudeDeg() );
-                point.setZ( 0.0 );
-                ogr_contour.addPoint(&point);
-                
-                SGGeod right = SGGeodesy::direct( subject.GetNode(pt), SGMiscd::normalizePeriodic(0, 360, heading+170), 1.0 );
-                point.setX( right.getLongitudeDeg() );
-                point.setY( right.getLatitudeDeg() );
-                point.setZ( 0.0 );
-                ogr_contour.addPoint(&point);
-                
-                point.setX( subject.GetNode(pt).getLongitudeDeg() );
-                point.setY( subject.GetNode(pt).getLatitudeDeg() );
-                point.setZ( 0.0 );
-                ogr_contour.addPoint(&point);
-#endif                
+                ogr_contour.addPoint(&point);                
             }
 
-            point.setX( subject.GetNode(0).getLongitudeDeg() );
-            point.setY( subject.GetNode(0).getLatitudeDeg() );
+            point.setX( CGAL::to_double( subject.GetPoint(0).x() ) );
+            point.setY( CGAL::to_double( subject.GetPoint(0).y() ) );
             point.setZ( 0.0 );
             ogr_contour.addPoint(&point);
                         
@@ -396,7 +343,7 @@ void tgShapefile::FromContourList( const std::vector<tgContour>& list, bool asPo
     if ( !list.empty() ) {    
         void* ds_id = tgShapefile::OpenDatasource( datasource.c_str() );
         if ( !ds_id ) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygonList open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
+            SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromContourList open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
         }
 
         OGRLayer* l_id;
@@ -462,12 +409,13 @@ static tgTexParams GetTPFields( tgTexMethod tm, OGRFeature* feature )
 }
 
 
-void tgShapefile::FromPolygon( void *lid, const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& description )
+void tgShapefile::FromPolygon( void *lid, void *pid, const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& description )
 {    
-    OGRLayer* l_id = (OGRLayer *)lid;
+    OGRLayer* poLayer   = (OGRLayer *)lid;
+    OGRLayer* poPtLayer = (OGRLayer *)pid;
     
     if ( asPolygon ) {
-        OGRPolygon* polygon = new OGRPolygon;
+        OGRPolygon polygon;
         
         for ( unsigned int i = 0; i < subject.Contours(); i++ ) {
             bool skip_ring=false;
@@ -483,68 +431,85 @@ void tgShapefile::FromPolygon( void *lid, const tgPolygon& subject, bool asPolyg
             //        are holes
             OGRLinearRing ring;
             OGRPoint      point;
+            
+            // make sure boundaries are clockwise, holes are counterclockwise
+            if ( (!contour.GetHole()) && (!contour.IsClockwise()) ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, " reverse boundary " );
+                contour.Reverse();
+            } else if ( contour.GetHole() && contour.IsClockwise() ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, " reverse hole " );
+                contour.Reverse();
+            }
+            
             for (unsigned int pt = 0; pt < contour.GetSize(); pt++) {
-                point.setX( contour.GetNode(pt).getLongitudeDeg() );
-                point.setY( contour.GetNode(pt).getLatitudeDeg() );
-                if ( subject.GetPreserve3D() ) {
-                    point.setZ( contour.GetNode(pt).getElevationM() );                    
-                } else {
-                    point.setZ( 0.0 );
-                }
+//              point.setX( contour.GetNode(pt).getLongitudeDeg() );
+//              point.setY( contour.GetNode(pt).getLatitudeDeg() );
+//              point.setX( contour.GetNode(pt).getLongitudeDeg() );
+//              point.setY( contour.GetNode(pt).getLatitudeDeg() );
+//              if ( subject.GetPreserve3D() ) {
+//                  point.setZ( contour.GetNode(pt).getElevationM() );                    
+//              } else {
+//                  point.setZ( 0.0 );
+//              }
+
+                point.setX( CGAL::to_double( contour.GetPoint(pt).x() ) );
+                point.setY( CGAL::to_double( contour.GetPoint(pt).y() ) );
+                point.setZ( 0.0 );
+                
                 ring.addPoint(&point);
             }
             ring.closeRings();
             
             if (!skip_ring) {
-                polygon->addRingDirectly(&ring);
+                polygon.addRing(&ring);
             }
-            
-            OGRFeature* feature = NULL;
-            feature = new OGRFeature( l_id->GetLayerDefn() );
-            
-            char id[16];
-            sprintf( id, "%06d", subject.GetId() );
-            feature->SetField("tg_id", id );
-            feature->SetField("tg_mat", subject.GetMaterial().c_str() );
-            feature->SetField("tg_texmeth", subject.GetTexMethod() );
-            feature->SetField("tg_3d", subject.GetPreserve3D() );
-            
-            switch( subject.GetTexMethod() ) {
-                case TG_TEX_BY_GEODE:
-                    feature->SetField("tg_clat", subject.GetTexParams().center_lat);
-                    break;
-                    
-                case TG_TEX_BY_TPS_NOCLIP:
-                    SetTPFields( feature, subject );
-                    break;
-                    
-                case TG_TEX_BY_TPS_CLIPU:
-                    SetTPFields( feature, subject );
-                    break;
-
-                case TG_TEX_BY_TPS_CLIPV:
-                    SetTPFields( feature, subject );
-                    break;
-
-                case TG_TEX_BY_TPS_CLIPUV:
-                    SetTPFields( feature, subject );
-                    break;
-
-                case TG_TEX_1X1_ATLAS:                    
-                    SetTPFields( feature, subject );
-                    break;
-                    
-                default:
-                    break;
-            }
-            
-            feature->SetGeometry(polygon);
-            if( l_id->CreateFeature( feature ) != OGRERR_NONE )
-            {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-            }
-            OGRFeature::DestroyFeature(feature);
         }
+        
+        OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
+        
+        char id[16];
+        sprintf( id, "%06d", subject.GetId() );
+        poFeature->SetField("tg_id", id );
+        poFeature->SetField("tg_mat", subject.GetMaterial().c_str() );
+        poFeature->SetField("tg_texmeth", subject.GetTexMethod() );
+        poFeature->SetField("tg_3d", subject.GetPreserve3D() );
+        
+        switch( subject.GetTexMethod() ) {
+            case TG_TEX_BY_GEODE:
+                poFeature->SetField("tg_clat", subject.GetTexParams().center_lat);
+                break;
+                
+            case TG_TEX_BY_TPS_NOCLIP:
+                SetTPFields( poFeature, subject );
+                break;
+                
+            case TG_TEX_BY_TPS_CLIPU:
+                SetTPFields( poFeature, subject );
+                break;
+
+            case TG_TEX_BY_TPS_CLIPV:
+                SetTPFields( poFeature, subject );
+                break;
+
+            case TG_TEX_BY_TPS_CLIPUV:
+                SetTPFields( poFeature, subject );
+                break;
+
+            case TG_TEX_1X1_ATLAS:                    
+                SetTPFields( poFeature, subject );
+                break;
+                
+            default:
+                break;
+        }
+        
+        poFeature->SetGeometry(&polygon);
+        if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
+        {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+        }
+        OGRFeature::DestroyFeature(poFeature);
+        
     } else if ( withTriangles ) {
         for ( unsigned int i = 0; i < subject.Triangles(); i++ ) {
             tgTriangle triangle = subject.GetTriangle( i );
@@ -568,10 +533,10 @@ void tgShapefile::FromPolygon( void *lid, const tgPolygon& subject, bool asPolyg
             ogr_triangle.addPoint(&point);
             
             OGRFeature* feature = NULL;
-            feature = new OGRFeature( l_id->GetLayerDefn() );
+            feature = new OGRFeature( poLayer->GetLayerDefn() );
             feature->SetField("tg_desc", description.c_str());
             feature->SetGeometry(&ogr_triangle);
-            if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+            if( poLayer->CreateFeature( feature ) != OGRERR_NONE )
             {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
             }
@@ -603,17 +568,38 @@ void tgShapefile::FromPolygon( void *lid, const tgPolygon& subject, bool asPolyg
             point.setZ( 0.0 );
             ogr_contour.addPoint(&point);
             
+            OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
+            poFeature->SetField("tg_desc", description.c_str());
+            poFeature->SetGeometry(&ogr_contour);
+            if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+            }
+            OGRFeature::DestroyFeature(poFeature);
+        }
+    }
+    
+    // then add the interior points
+    std::vector<tgPoint> interiorPoints = subject.GetInteriorPoints();
+    if ( poPtLayer && !interiorPoints.empty() ) {
+        OGRPoint point;
+
+        for ( unsigned int i=0; i<interiorPoints.size(); i++ ) {
+            point.setX( CGAL::to_double( interiorPoints[i].x() ) );
+            point.setY( CGAL::to_double( interiorPoints[i].y() ) );
+            point.setZ( 0.0 );
+    
             OGRFeature* feature = NULL;
-            feature = new OGRFeature( l_id->GetLayerDefn() );
-            feature->SetField("tg_desc", description.c_str());
-            feature->SetGeometry(&ogr_contour);
-            if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+            feature = new OGRFeature( poPtLayer->GetLayerDefn() );
+            feature->SetGeometry(&point);
+    
+            if( poPtLayer->CreateFeature( feature ) != OGRERR_NONE )
             {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
             }
             OGRFeature::DestroyFeature(feature);
         }
-    }    
+    }
 }
 
 void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description )
@@ -628,14 +614,17 @@ void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, bool wi
         SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygon open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
     }
     
-    OGRLayer* l_id;    
+    OGRLayer* pl_id;    
     if ( asPolygon ) {
-        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
+        pl_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
     } else {
-        l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+        pl_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
     }
+    char point_layer[256];
+    sprintf( point_layer, "%s_pts", layer.c_str() );
+    OGRLayer* ipl_id = (OGRLayer *)tgShapefile::OpenLayer( ds_id, point_layer, LT_POINT );
     
-    FromPolygon( l_id, subject, asPolygon, withTriangles, description );
+    FromPolygon( pl_id, ipl_id, subject, asPolygon, withTriangles, description );
     
     // close after each write
     ds_id = tgShapefile::CloseDatasource( ds_id );
@@ -644,7 +633,7 @@ void tgShapefile::FromPolygon( const tgPolygon& subject, bool asPolygon, bool wi
 void tgShapefile::FromPolygonList( const std::vector<tgPolygon>& list, bool asPolygon, bool withTriangles, const std::string& datasource, const std::string& layer, const std::string& description )
 {
     if ( asPolygon && withTriangles ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygon Can't create shapefile asPolygon with triangles" );
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygonList Can't create shapefile asPolygon with triangles" );
         return;
     }
     
@@ -654,17 +643,20 @@ void tgShapefile::FromPolygonList( const std::vector<tgPolygon>& list, bool asPo
             SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygonList open datasource failed. datasource: " << datasource << " layer: " << layer << " description: " << description );
         }
 
-        OGRLayer* l_id;
+        OGRLayer* pl_id;
         if ( asPolygon ) {
-            l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
+            pl_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_POLY );
         } else {
-            l_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
+            pl_id  = (OGRLayer *)tgShapefile::OpenLayer( ds_id, layer.c_str(), LT_LINE );
         }
+        char point_layer[256];
+        sprintf( point_layer, "%s_pts", layer.c_str() );
+        OGRLayer* ipl_id = (OGRLayer *)tgShapefile::OpenLayer( ds_id, point_layer, LT_POINT );
         
         char poly_desc[64];
         for ( unsigned int i=0; i<list.size(); i++ ) {
             sprintf(poly_desc, "%s_%d", description.c_str(), i+1);
-            tgShapefile::FromPolygon( (void *)l_id, list[i], asPolygon, withTriangles, poly_desc );
+            tgShapefile::FromPolygon( (void *)pl_id, ipl_id, list[i], asPolygon, withTriangles, poly_desc );
         }
         
         // close after each write
@@ -682,10 +674,19 @@ void tgShapefile::FromPolygonList( const std::vector<tgPolygon>& list, const std
             for ( unsigned int i=0; i<list.size(); i++ ) {
                 char poly_desc[128];
                 sprintf(poly_desc, "%s_%d", list[i].GetMaterial().c_str(), list[i].GetId() );
-
-                OGRLayer* l_id = (OGRLayer *)tgShapefile::OpenLayer( ds_id, list[i].GetMaterial().c_str(), LT_POLY );
-            
-                tgShapefile::FromPolygon( (void *)l_id, list[i], true, false, poly_desc );
+                OGRLayer* pl_id;
+                
+                if ( list[i].GetMaterial().length() == 0 ) {
+                    SG_LOG(SG_GENERAL, SG_ALERT, "tgShapefile::FromPolygonList poly has no material - skipping: " );
+                    continue;
+                } else {
+                    pl_id = (OGRLayer *)tgShapefile::OpenLayer( ds_id, list[i].GetMaterial().c_str(), LT_POLY );
+                }
+                char point_layer[256];
+                sprintf( point_layer, "%s_pts", list[i].GetMaterial().c_str() );
+                OGRLayer* ipl_id = (OGRLayer *)tgShapefile::OpenLayer( ds_id, point_layer, LT_POINT );
+                
+                tgShapefile::FromPolygon( pl_id, ipl_id, list[i], true, false, poly_desc );
             }               
         }
 
@@ -1071,6 +1072,7 @@ void tgShapefile::FromLineList( const std::vector<tgLine>& list, const std::stri
     }
 }
 
+#if 0
 void tgShapefile::FromConstraint( void* lid, const tgConstraint& subject )
 {
     OGRLayer* l_id = (OGRLayer *)lid;
@@ -1188,7 +1190,7 @@ void tgShapefile::FromConstraintList( const std::vector<tgConstraint>& list, con
         ds_id = tgShapefile::CloseDatasource( ds_id );
     }
 }
-
+#endif
 
 void tgShapefile::FromEdgeArrRay( void* lid, const edgeArrRay& subject, const std::string& description )
 {
@@ -1346,7 +1348,8 @@ tgPolygon tgShapefile::ToPolygon( const void* subject )
     tgPolygon result;
 
     for (int i = 0; i < ring->getNumPoints(); i++) {
-        contour.AddNode( SGGeod::fromDegM( ring->getX(i), ring->getY(i), ring->getZ(i)) );
+        contour.AddPoint( tgPoint(ring->getX(i), ring->getY(i)) );
+        //contour.AddNode( SGGeod::fromDegM( ring->getX(i), ring->getY(i), ring->getZ(i)) );
     }
     contour.SetHole( false );
     result.AddContour( contour );
@@ -1357,7 +1360,8 @@ tgPolygon tgShapefile::ToPolygon( const void* subject )
         contour.Erase();
 
         for (int i = 0; i < ring->getNumPoints(); i++) {
-            contour.AddNode( SGGeod::fromDegM( ring->getX(i), ring->getY(i), ring->getZ(i)) );
+            contour.AddPoint( tgPoint(ring->getX(i), ring->getY(i)) );
+            //contour.AddNode( SGGeod::fromDegM( ring->getX(i), ring->getY(i), ring->getZ(i)) );
         }
         contour.SetHole( true );
         result.AddContour( contour );
@@ -1396,6 +1400,7 @@ static void ToPolygons( const OGRFeatureDefn* poFDefn, OGRCoordinateTransformati
     switch( geoType ) {
         case wkbPolygon:
             poly = tgShapefile::ToPolygon(poGeometry);
+            SG_LOG( SG_GENERAL, SG_INFO, "loaded single poly with " << poly.Contours() << " contours" );
             poly.SetPreserve3D(preserve3D);
             poly.SetTexMethod(tmeth);
             poly.SetMaterial(material);
@@ -1405,15 +1410,14 @@ static void ToPolygons( const OGRFeatureDefn* poFDefn, OGRCoordinateTransformati
             
         case wkbMultiPolygon:
             multipoly=(OGRMultiPolygon*)poGeometry;
+            SG_LOG( SG_GENERAL, SG_INFO, "loaded multi poly with " << multipoly->getNumGeometries() << " polys" );
             for (int i=0;i<multipoly->getNumGeometries();i++) {
                 poly = tgShapefile::ToPolygon(multipoly->getGeometryRef(i));
+                SG_LOG( SG_GENERAL, SG_INFO, "   loaded poly with " << poly.Contours() << " contours" );
                 poly.SetPreserve3D(preserve3D);
                 poly.SetTexMethod(tmeth);
                 poly.SetMaterial(material);
-                poly.SetTexParams(tparams);
-                
-                SG_LOG( SG_GENERAL, SG_INFO, "material is " << poly.GetMaterial() );
-                
+                poly.SetTexParams(tparams);                
                 polys.push_back(poly);                
             }
             break;
@@ -1452,6 +1456,8 @@ void processLayer(OGRLayer* poLayer, tgpolygon_list& polys )
     
     oTargetSRS.SetWellKnownGeogCS( "WGS84" );    
     poCT = OGRCreateCoordinateTransformation(oSourceSRS, &oTargetSRS);
+
+    SG_LOG( SG_GENERAL, SG_ALERT, "Layer " << layername << " has " << poLayer->GetFeatureCount() << " features " );
     
     // Generate the work queue for this layer
     while ( ( poFeature = poLayer->GetNextFeature()) != NULL )
@@ -1480,7 +1486,7 @@ void tgShapefile::ToPolygons( const SGPath& p, tgpolygon_list& polys )
         return;
     }
     
-    SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << p.c_str() );
+    SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << p.c_str() << " with " << poDS->GetLayerCount() << " layers " );
     polys.clear();
     
     for (int i=0; i<poDS->GetLayerCount(); i++) {

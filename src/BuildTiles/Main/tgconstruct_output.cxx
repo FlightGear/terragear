@@ -63,6 +63,56 @@ void TGConstruct::AddCustomObjects( void ) {
     char token[256];
     char name[256];
 
+#if 1
+    // load The airport Objects stuff
+    SGPath base(work_base.c_str());
+    base.append("AirportObj");
+    base.append( bucket.gen_base_path() );
+    SGPath index(base);
+    index.append( bucket.gen_index_str() );
+    index.concat(".ind");
+    string index_file = index.str_native();
+
+    sg_gzifstream in( index_file );
+
+    if ( ! in.is_open() ) {
+        //No custom objects
+    } else {
+        while ( ! in.eof() ) {
+            SG_LOG( SG_GENERAL, SG_DEBUG, "Collecting custom objects from " << index_file );
+            in.getline(line, 2048);
+            SG_LOG( SG_GENERAL, SG_DEBUG, "line = " << line );
+
+            int result = sscanf( line, "%s %s", token, name );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "scanf scanned " << result << " tokens" );
+
+            if ( result > 0 ) {
+                SG_LOG( SG_GENERAL, SG_DEBUG, "token = " << token << " name = " << name );
+
+                if ( strcmp( token, "OBJECT" ) == 0 ) {
+                    SGPath srcbase(base);
+                    srcbase.append(name);
+                    srcbase.concat(".gz");
+                    string basecom = srcbase.str_native();
+#ifdef _MSC_VER
+                    string command = "copy " + basecom + " " + dest_dir;
+#else
+                    string command = "cp " + basecom + " " + dest_dir;
+#endif
+                    SG_LOG( SG_GENERAL, SG_DEBUG, "running " << command );
+                    
+                    if ( system( command.c_str() ) != -1 ) {
+                        fprintf(fp, "OBJECT %s\n", name);
+                    } else {
+                        SG_LOG( SG_GENERAL, SG_ALERT, "Could not issue command " << command ); 
+                    }
+                } else {
+                    fprintf(fp, "%s\n", line);
+                }
+            }
+        }
+    }
+#else    
     for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
         SGPath base(work_base.c_str());
         base.append(load_dirs[i]);
@@ -112,6 +162,7 @@ void TGConstruct::AddCustomObjects( void ) {
             }
         }
     }
+#endif
 
     fclose(fp);
     

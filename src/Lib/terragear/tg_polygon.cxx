@@ -210,6 +210,7 @@ bool tgPolygon::FindColinearLine( const tgPolygon& subject, SGGeod& node, SGGeod
     return found;
 }
 
+#if 0
 tgPolygon tgPolygon::AddIntersectingNodes( const tgPolygon& subject, const tgtriangle_list& mesh )
 {
     tgPolygon result;
@@ -229,6 +230,7 @@ tgPolygon tgPolygon::AddIntersectingNodes( const tgPolygon& subject, const tgtri
     
     return result;
 }
+#endif
 
 SGGeod InterpolateElevation( const SGGeod& dst_node, const SGGeod& start, const SGGeod& end )
 {

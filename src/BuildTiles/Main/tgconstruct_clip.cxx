@@ -26,7 +26,7 @@
 
 #include <simgear/debug/logstream.hxx>
 
-#include <terragear/tg_accumulator.hxx>
+#include <terragear/polygon_set/tg_polygon_accumulator.hxx>
 #include <terragear/tg_shapefile.hxx>
 #include <terragear/tg_misc.hxx>
 #include <terragear/tg_arrangement.hxx>
@@ -52,13 +52,31 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon safety_base;
     tgAccumulator accum;
     bool debug_area, debug_shape;
-
+    char debug_layer[128];
+    
+    // TEMP : Until ogr decode generates better results, shrink the safetybase slightly
+#define CORRECTION  (0.0001)
+    
+    
     // set up clipping tile
-    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_SW ) );
-    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_SE ) );
-    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_NE ) );
-    safety_base.AddNode( 0, bucket.get_corner( SG_BUCKET_NW ) );
+    tgPoint pt;
 
+    pt = tgPoint( bucket.get_corner( SG_BUCKET_NW ).getLongitudeDeg()+CORRECTION, bucket.get_corner( SG_BUCKET_NW ).getLatitudeDeg()-CORRECTION );
+    safety_base.AddPoint( 0, pt );
+    
+    pt = tgPoint( bucket.get_corner( SG_BUCKET_NE ).getLongitudeDeg()-CORRECTION, bucket.get_corner( SG_BUCKET_NE ).getLatitudeDeg()-CORRECTION );
+    safety_base.AddPoint( 0, pt );
+    
+    pt = tgPoint( bucket.get_corner( SG_BUCKET_SE ).getLongitudeDeg()-CORRECTION, bucket.get_corner( SG_BUCKET_SE ).getLatitudeDeg()+CORRECTION );
+    safety_base.AddPoint( 0, pt );
+
+    pt = tgPoint( bucket.get_corner( SG_BUCKET_SW ).getLongitudeDeg()+CORRECTION, bucket.get_corner( SG_BUCKET_SW ).getLatitudeDeg()+CORRECTION );
+    safety_base.AddPoint( 0, pt );
+    
+
+
+
+#if 0    
     // set up land mask, we clip most things to this since it is our
     // best representation of land vs. ocean.  If we have other less
     // accurate data that spills out into the ocean, we want to just
@@ -95,10 +113,12 @@ bool TGConstruct::ClipLandclassPolys( void ) {
         tgShapefile::FromPolygon( water_mask, true, false, ds_name, "water_mask", "" );
         tgShapefile::FromPolygon( island_mask, true, false, ds_name, "island_mask", "" );
     }
+#endif
 
     // process polygons in priority order
     for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
         //debug_area = IsDebugArea( i );
+        sprintf( debug_layer, "clipped_%s", area_defs.get_area_name( i ).c_str() );
         for( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
             tgPolygon& current = polys_in.get_poly(i, j);
             debug_shape = IsDebugShape( polys_in.get_poly( i, j ).GetId() );
@@ -107,6 +127,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
             tmp = current;
 
+#if 0            
             // if not a hole, clip the area to the land_mask
             if ( !ignoreLandmass && !area_defs.is_hole_area(i) ) {
                 tmp = tgPolygon::Intersect( tmp, land_mask );
@@ -117,6 +138,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 // clip against island mask
                 tmp = tgPolygon::Diff( tmp, island_mask );
             }
+#endif
+
 
             // first useage of clipping - diff against accumulator
             //accum.Diff_cgal( tmp );
@@ -126,6 +149,11 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             if ( tmp.Contours() > 0 ) {
                 // shape.sps.push_back( sp );
                 polys_clipped.add_poly( i, tmp );
+                
+                // let'sdump the clipped polys to debug
+                tgShapefile::FromPolygon( tmp, true, false, "./clipped_polys", debug_layer, "poly" );
+            } else {
+                SG_LOG( SG_CLIPPER, SG_INFO, "Clipped " << area_defs.get_area_name( i ) << "(" << i << "):" << j+1 << " of " << polys_in.area_size(i) << " and have no contours remaining" );
             }
 
             //accum.Add_cgal( current );
@@ -136,20 +164,30 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     SG_LOG( SG_CLIPPER, SG_INFO, "Clipping Complete - diff with tile" );
     
     // dump the accumulator
-    accum.ToShapefiles( "./", "accum", false );
+    // accum.ToShapefiles( "./", "accum", false );
     
     // finally, what ever is left over goes to ocean
-    accum.Diff_cgal( safety_base );    
+    accum.Diff_and_Add_cgal( safety_base );    
     if ( safety_base.Contours() > 0 ) {
         safety_base.SetMaterial( area_defs.get_sliver_area_name() );
         safety_base.SetTexMethod( TG_TEX_BY_GEODE, bucket.get_center_lat() );
 
+        SG_LOG( SG_CLIPPER, SG_ALERT, "Ocean has " << safety_base.Contours() << "contours" );
+        for ( unsigned int i=0; i<safety_base.Contours(); i++ ) {
+            SG_LOG( SG_CLIPPER, SG_ALERT, " contour " << i << " hole? :" << safety_base.GetContour(i).GetHole() );
+        }
+        
+        // let'sdump the clipped polys to debug
+        sprintf( debug_layer, "clipped_%s", area_defs.get_area_name( area_defs.get_sliver_area_priority() ).c_str() );
+        tgShapefile::FromPolygon( safety_base, true, false, "./clipped_polys", debug_layer, "poly" );
+        
         SG_LOG( SG_CLIPPER, SG_DEBUG, "Adding remains to area " << area_defs.get_sliver_area_priority() );
-        polys_clipped.add_poly( area_defs.get_sliver_area_priority(), safety_base );
+        polys_clipped.add_poly( area_defs.get_sliver_area_priority(), safety_base );        
     }
 
     SG_LOG( SG_CLIPPER, SG_INFO, "Clipping Complete" );
 
+#if 0    
     // Now make sure any newly added intersection nodes are added to the tgnodes
     for (unsigned int area = 0; area < area_defs.size(); area++) {
         bool isRoad = area_defs.is_road_area( area );
@@ -171,7 +209,8 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             }
         }
     }
-    
+#endif
+
     return true;
 }
 

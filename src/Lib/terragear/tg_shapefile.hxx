@@ -7,7 +7,7 @@
 #include "tg_misc.hxx"
 #include "clipper.hpp"
 
-#include "tg_intersection_edge.hxx"     // temp = until tg_constraint is it's own file
+#include "vector_intersections/tg_intersection_edge.hxx"     // temp = until tg_constraint is it's own file
 
 class tgShapefile
 {
@@ -32,8 +32,8 @@ public:
     static void  FromEdgeArrPoint( const edgeArrPoint& pt, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromEdgeArrPointList( const std::vector<edgeArrPoint>& list, bool show_dir, const std::string& datasource, const std::string& layer, const std::string& description );
 
-    static void  FromConstraint( const tgConstraint& subject, const std::string& datasource, const std::string& layer );
-    static void  FromConstraintList( const std::vector<tgConstraint>& list, const std::string& datasource, const std::string& layer );
+//    static void  FromConstraint( const tgConstraint& subject, const std::string& datasource, const std::string& layer );
+//    static void  FromConstraintList( const std::vector<tgConstraint>& list, const std::string& datasource, const std::string& layer );
 
     static void  FromEdgeArrRay( const edgeArrRay& ray, const std::string& datasource, const std::string& layer, const std::string& description );
     static void  FromEdgeArrRayList( const std::vector<edgeArrRay>& list, const std::string& datasource, const std::string& layer, const std::string& description );
@@ -62,8 +62,8 @@ public:
     static void  FromEdgeArrPoint( void* lid, const edgeArrPoint& subject, const std::string& description );
     static void  FromEdgeArrRay( void* lid, const edgeArrRay& ray, const std::string& description );
     static void  FromContour( void *lid, const tgContour& subject, bool asPolygon, bool withNumber, const std::string& description );
-    static void  FromPolygon( void *lid, const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& description );
-    static void  FromConstraint( void *lid, const tgConstraint& subject );
+    static void  FromPolygon( void *lid, void *pid, const tgPolygon& subject, bool asPolygon, bool withTriangles, const std::string& description );
+//    static void  FromConstraint( void *lid, const tgConstraint& subject );
     static void  FromSegment( void* lid, const tgSegment& subject, bool show_dir, const std::string& description );
     static void  FromRay( void* lid, const tgRay& subject, const std::string& description );
     static void  FromLine( void* lid, const tgLine& subject, const std::string& description );

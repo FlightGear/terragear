@@ -1,3 +1,5 @@
+#include <ogrsf_frmts.h>
+
 #include "tg_segmentnetwork.hxx"
 #include "tg_polygon.hxx"
 #include "tg_shapefile.hxx"
@@ -97,7 +99,7 @@ void tgIntersectionGenerator::Execute( void )
         void* constraints_lid  = tgShapefile::OpenLayer( dsid, "constraints", tgShapefile::LT_LINE );
         void* startv_lid       = tgShapefile::OpenLayer( dsid, "startv", tgShapefile::LT_POINT );
         for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
-            (*it)->DumpArrangement(dsid, skeleton_lid, constraints_lid, startv_lid, NULL, "Constrained");
+            (*it)->DumpArrangement( (OGRLayer*)skeleton_lid, (OGRLayer*)constraints_lid, (OGRLayer*)startv_lid, NULL );
         }
         tgShapefile::CloseDatasource( dsid );
         
@@ -111,12 +113,11 @@ void tgIntersectionGenerator::Execute( void )
         dsid                   = tgShapefile::OpenDatasource( debugDatabase );
         void* poly_lid         = tgShapefile::OpenLayer( dsid, "polys", tgShapefile::LT_POLY );
         for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
-            (*it)->DumpArrangement(dsid, NULL, NULL, NULL, poly_lid, "Constrained");
+            (*it)->DumpArrangement(NULL, NULL, NULL, (OGRLayer*)poly_lid );
         }
         tgShapefile::CloseDatasource( dsid );
         
-        return;
-        
+#if 0        
         // Remove any edges that didn't get intersected
         // verifty all edges have been intersected
         tgintersectionedge_it it = edgelist.begin();
@@ -129,24 +130,14 @@ void tgIntersectionGenerator::Execute( void )
                 it++;
             }
         }
-            
-        // fix multisegment intersections - happens when segments do not diverge from each other before the end of the edge
-        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::FixMultiSegment");
-        for (unsigned int i=0; i<nodelist.size(); i++) {
-            SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Execute: FixSpecialIntersections at node " << i << " of " << nodelist.size() );
-            nodelist[i]->CompleteSpecialIntersections();
-        }
-        
+#endif
+
+#if 0        
         // verifty all edges have been intersected
         for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
             (*it)->Verify( FLAGS_INTERSECT_CONSTRAINTS_COMPLETE);
         }
-        
-        // complete the edges
-        SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::CompletePolygon");
-        for (tgintersectionedge_it it = edgelist.begin(); it != edgelist.end(); it++) {
-            (*it)->Complete();
-        }
+#endif
         
         // to texture, start at caps, and try to cross intersections nicely ( push the start_v )
         SG_LOG(SG_GENERAL, LOG_INTERSECTION, "tgIntersectionGenerator::Texture");        

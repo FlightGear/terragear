@@ -10,6 +10,7 @@ add_executable(tg-construct
     tgconstruct_landclass.cxx
     tgconstruct_lookup.cxx
     tgconstruct_math.cxx
+    tgconstruct_mesh.cxx
     tgconstruct_output.cxx
     tgconstruct_poly.cxx
     tgconstruct_shared.cxx

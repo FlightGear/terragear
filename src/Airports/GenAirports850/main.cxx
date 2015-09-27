@@ -223,8 +223,6 @@ int main(int argc, char **argv)
         }
     }
 
-    std::string airportareadir=work_dir+"/AirportArea";
-
     // this is the main program -
     TG_LOG(SG_GENERAL, SG_INFO, "Genapts850 version " << getTGVersion() << " running with " << num_threads << " threads" );
     TG_LOG(SG_GENERAL, SG_INFO, "Launch command was " << argv[0] );
@@ -243,13 +241,6 @@ int main(int argc, char **argv)
         TG_LOG(SG_GENERAL, SG_ALERT, "Bad longitude or latitude");
         exit(1);
     }
-
-    // make work directory
-    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating AirportArea directory");
-
-    SGPath sgp( airportareadir );
-    sgp.append( "dummy" );
-    sgp.create_dir( 0755 );
 
     std::string lastaptfile = work_dir+"/last_apt";
 

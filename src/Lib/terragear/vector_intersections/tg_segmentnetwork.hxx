@@ -28,7 +28,7 @@
 #include <CGAL/Snap_rounding_traits_2.h>
 #include <CGAL/Snap_rounding_2.h>
 
-#include "tg_cgal.hxx"
+#include <terragear/tg_cgal.hxx>
 
 // the network arrangement
 class segnetEdge 

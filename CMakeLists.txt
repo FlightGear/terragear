@@ -25,6 +25,8 @@ set(CMAKE_MINSIZEREL_POSTFIX "" CACHE STRING "add a postfix, usually empty on wi
 # We have some custom .cmake scripts not in the official distribution.
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}")
 
+message(STATUS "CMAKE_MODULE_PATH is ${CMAKE_MODULE_PATH}")
+
 # Change the default build type to something fast
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING

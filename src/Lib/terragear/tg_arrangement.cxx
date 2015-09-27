@@ -16,128 +16,30 @@ void tgArrangement::Clear( void )
 
 void tgArrangement::Add( const tgPolygon& poly )
 {
-    tgContour cont;
-    std::vector<arrSegment> segs;            
-    
     for ( unsigned int i = 0; i < poly.Contours(); ++i ) {
-        arrPoint src, trg;
-        cont = poly.GetContour( i );                
-        segs.clear();
-        
-        src = arrPoint( cont.GetNode(0).getLongitudeDeg(), cont.GetNode(0).getLatitudeDeg() );
-        for ( unsigned int j = 1; j < cont.GetSize(); ++j ) {
-            trg = arrPoint( cont.GetNode(j).getLongitudeDeg(), cont.GetNode(j).getLatitudeDeg() );
-            segs.push_back( arrSegment(src, trg) );
-            src = trg;
-        }
-        trg = arrPoint( cont.GetNode(0).getLongitudeDeg(), cont.GetNode(0).getLatitudeDeg() );
-        segs.push_back( arrSegment( src, trg ) );
-        insert( arr, segs.begin(), segs.end() );
+        Add( poly.GetContour(i), NULL );
     }
 }
 
-const double isEqual2D_Epsilon = 0.0000000001;
-
-bool SGGeod_isReallyEqual2D( const SGGeod& g0, const SGGeod& g1 )
+void tgArrangement::Add( const tgContour& cont, const char* layer_prefix )
 {
-    return ( (fabs( g0.getLongitudeDeg() - g1.getLongitudeDeg() ) < isEqual2D_Epsilon) &&
-             (fabs( g0.getLatitudeDeg()  - g1.getLatitudeDeg() )  < isEqual2D_Epsilon ) );
-}
+    std::vector<tgSegment2> segs;    
+    tgPoint src,  trg;
 
-void tgArrangement::Add( const tgContour& cont )
-{
-    std::vector<arrSegment> segs;    
-    arrPoint src, trg;
-        
-    src = arrPoint( cont.GetNode(0).getLongitudeDeg(), cont.GetNode(0).getLatitudeDeg() );
+    src = cont.GetPoint(0);
     for ( unsigned int j = 1; j < cont.GetSize(); ++j ) {
-        trg = arrPoint( cont.GetNode(j).getLongitudeDeg(), cont.GetNode(j).getLatitudeDeg() );
-        segs.push_back( arrSegment(src, trg) );
-        src = trg;
+        trg = cont.GetPoint(j);    
+        if ( src != trg ) {
+            segs.push_back( tgSegment2(src, trg) );
+        }
+        src  = trg;
     }
-    trg = arrPoint( cont.GetNode(0).getLongitudeDeg(), cont.GetNode(0).getLatitudeDeg() );
-    segs.push_back( arrSegment( src, trg ) );
+    trg = cont.GetPoint(0);    
+    if ( src != trg ) {
+        segs.push_back( tgSegment2( src, trg ) );
+    }
+    
     insert( arr, segs.begin(), segs.end() );
-}
-
-void tgArrangement::Add( const tgSegment& subject )
-{
-    arrPoint src, trg;
-    
-    src = arrPoint( subject.GetGeodStart().getLongitudeDeg(), subject.GetGeodStart().getLatitudeDeg() );
-    trg = arrPoint( subject.GetGeodEnd().getLongitudeDeg(), subject.GetGeodEnd().getLatitudeDeg() );
-    insert( arr, arrSegment( src, trg ) );
-}
-
-#if 0
-double tgContour::GetArea( void ) const
-{
-double area = 0.0;
-SGVec2d a, b;
-unsigned int i, j;
-
-if ( node_list.size() >= 3 ) {
-    j = node_list.size() - 1;
-    for (i=0; i<node_list.size(); i++) {
-        a = SGGeod_ToSGVec2d( node_list[i] );
-        b = SGGeod_ToSGVec2d( node_list[j] );
-        
-        area += (b.x() + a.x()) * (b.y() - a.y());
-        j=i;
-        }
-        } else {
-            area = 0;
-            }
-            
-            return fabs(area * 0.5);
-            }
-#endif
-
-void tgArrangement::DumpPolys( void )
-{
-    arrArrangement::Face_const_iterator fit;
-    
-    for( fit = arr.faces_begin(); fit != arr.faces_end(); fit++ ) {
-        arrArrangement::Face face = (*fit);
-        if( face.has_outer_ccb() ) {
-            arrCcbHEConstCirc ccb = face.outer_ccb();
-            arrCcbHEConstCirc cur = ccb;
-            arrHEConstHand    he;
-            
-            std::vector<tgSegment>  segList;
-            double                  area = 0.0;
-            SGVec2d                 a, b;
-            
-            segList.clear();
-            do
-            {
-                he = cur;
-
-                // ignore inner antenna
-                if ( he->face() != he->twin()->face() ) {                    
-                    //std::cout << "   [" << he->curve() << "]   " << "(" << he->target()->point() << ")";
-                    SGGeod start = SGGeod::fromDeg( CGAL::to_double( he->source()->point().x() ), 
-                                                    CGAL::to_double( he->source()->point().y() ) );
-                    SGGeod end   = SGGeod::fromDeg( CGAL::to_double( he->target()->point().x() ), 
-                                                    CGAL::to_double( he->target()->point().y() ) );
-                
-                    tgSegment seg( start, end );
-                    segList.push_back( seg );
-                    
-                    a = SGGeod_ToSGVec2d( start );
-                    b = SGGeod_ToSGVec2d( end );
-                    
-                    area += (b.x() + a.x()) * (b.y() - a.y());
-                }
-                
-                ++cur;
-            } while (cur != ccb);
-            
-            if ( fabs( area ) < 0.00000000001 ) {
-                tgShapefile::FromSegmentList( segList, false, "./edge_dbg", "polys", "poly" );
-            }
-        }
-    }
 }
 
 Polygon_set tgArrangement::ToPolygonSet( int contour )
@@ -153,49 +55,32 @@ Polygon_set tgArrangement::ToPolygonSet( int contour )
     return polygons;
 }
 
-#if 0
-static tgContour ToTgContour( const Polygon& p )
+void tgArrangement::SaveFace( const arrArrangement::Face_const_handle& fh, const char* path, const char* layer )
 {
-    tgContour contour;
-    
-    Polygon::Vertex_const_iterator vit;
-    for (vit = p.vertices_begin(); vit != p.vertices_end(); ++vit) {
-        SGGeod g = SGGeod::fromDeg( CGAL::to_double( vit->x()), 
-                                    CGAL::to_double( vit->y()) );
-        contour.AddNode( g );
-    }
-    
-    return contour;
-}
-#endif
-
-#if 0
-static void ToShapefile( const Polygon_with_holes& pwh, int c )
-{
-    char layer[256];
-    
-    // Add the boundary Contour
-    if (!pwh.is_unbounded()) {
-        tgContour cont = ToTgContour( pwh.outer_boundary() );
-        sprintf( layer, "contour_%d_outer_boundary", c );
-        tgShapefile::FromContour( cont, false, false, "./clip_dbg", layer, "cont" );
-        
-        Polygon_with_holes::Hole_const_iterator hit;
-        int num_holes = 0;
-        
-        for (hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
-            cont = ToTgContour( *hit );
-            
-            sprintf( layer, "contour_%d_hole_%d", c, num_holes );
-            tgShapefile::FromContour( cont, false, false, "./clip_dbg", layer, "cont" );
-            
-            num_holes++;
-        }
+    if ( fh->has_outer_ccb() ) {
+        SaveCCB( fh->outer_ccb(), path, layer );
     } else {
-        SG_LOG(SG_GENERAL, SG_INFO, "tgArrangmentPWH to Shapefile - pwh is unbounded" );
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgArrangement::SaveFace face has no outer ccb " );
     }
 }
-#endif
+
+void tgArrangement::SaveCCB( const arrArrangement::Ccb_halfedge_const_circulator& ccb, const char* path, const char* layer )
+{
+    arrCcbHEConstCirc cur = ccb;
+    arrHEConstHand    he;
+        
+    tgContour cont;
+    cont.AddPoint( cur->source()->point() );
+        
+    do {
+        he = cur;
+        cont.AddPoint( he->target()->point() );
+            
+        ++cur;
+    } while (cur != ccb);
+        
+    tgShapefile::FromContour( cont, true, false, path, layer, "poly" );
+}
 
 #if 1
 void tgArrangement::GetPolygons( const arrArrangement::Face_const_handle& fh, Polygon_set& polygons, int c )
@@ -203,6 +88,8 @@ void tgArrangement::GetPolygons( const arrArrangement::Face_const_handle& fh, Po
     arrArrangement::Hole_const_iterator hit;
     static unsigned int num_contours = 0;
     
+    SG_LOG(SG_GENERAL, SG_ALERT, "tgArrangement::GetPolygons face has " << fh->number_of_holes() << " holes" );
+
     for( hit = fh->holes_begin(); hit != fh->holes_end(); hit++ ) {
         arrCcbHEConstCirc ccbFirst = (*hit);
         arrCcbHEConstCirc ccbCur = ccbFirst;
@@ -210,7 +97,11 @@ void tgArrangement::GetPolygons( const arrArrangement::Face_const_handle& fh, Po
         arrSegment        segCur;        
         Polygon           contour;
         arrArrangement::Face_const_handle face;
-        
+    
+        // dump the current hole
+        //char layer[128];
+        //sprintf( layer, "poly_%d_hole%d", c, num_contours );
+        //SaveCCB( *hit, "./GetPolys", layer );
         
         // Both GetPolygons and GetHoles pass a face handle of an outer boundary.
         // the inner boundaries are always holes.
@@ -226,7 +117,9 @@ void tgArrangement::GetPolygons( const arrArrangement::Face_const_handle& fh, Po
             if ( heCur->face() != heCur->twin()->face() ) {
                 segCur = heCur->curve();                    
                 contour.push_back( segCur.source() );
-            } 
+            } else {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgArrangement::GetPolygons ignoring hw " );
+            }                
 
             ccbCur++;
             
@@ -237,23 +130,15 @@ void tgArrangement::GetPolygons( const arrArrangement::Face_const_handle& fh, Po
             // we generate each contour as a boundary 
             contour.reverse_orientation();
         }
-        
-#if 0        
-        char filename[128];
-        sprintf( filename, "poly_%04d", num_contours );
-        std::ofstream output_file("filename");
-        if (!output_file.is_open()) {
-            std::cerr << "Failed to open the " << "./output_polys.txt" << std::endl;
-            exit(0);
-        }   
-        output_file << std::setprecision(16) << contour;
-        output_file.close();
-#endif
-
+    
         Polygon_with_holes pwh( contour );
-        polygons.join( contour );
-//        std::cout << "# pwhs: " << polygons.number_of_polygons_with_holes() << " valid " << polygons.is_valid() << std::endl;
 
+        //SG_LOG(SG_GENERAL, SG_ALERT, "tgArrangement::GetPolygons joining contour " );
+        polygons.join( contour );
+        //SG_LOG(SG_GENERAL, SG_ALERT, "tgArrangement::GetPolygons done " );
+        
+        //SG_LOG(SG_GENERAL, SG_ALERT, "# pwhs: " << polygons.number_of_polygons_with_holes() << " valid " << polygons.is_valid() );
+        
         num_contours++;
     }
 }

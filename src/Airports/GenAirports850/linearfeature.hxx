@@ -4,7 +4,7 @@
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_light.hxx>
-#include <terragear/tg_intersection_generator.hxx>
+#include <terragear/vector_intersections/tg_intersection_generator.hxx>
 
 #include "beznode.hxx"
 

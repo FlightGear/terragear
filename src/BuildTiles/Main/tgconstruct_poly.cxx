@@ -38,98 +38,90 @@ using std::string;
 
 static unsigned int cur_poly_id = 0;
 
-#if USE_CGAL
+#if 1
 // when do we add the nodes when using CGAL? TBD
 // maybe just keep a list of the fixed elevation nodes.
 int TGConstruct::LoadLandclassPolys( void ) {
     int i;
-
-    string base = bucket.gen_base_path();
+    
+    string base  = bucket.gen_base_path();
+    string index = bucket.gen_index_str(); 
     string poly_path;
     unsigned int total_polys_read = 0;
     tgPolygon poly;
+    tgpolygon_list polys;
     
     SGTimeStamp addnode;
     SGTimeStamp start, end;
-
+    
     // load 2D polygons from all directories provided
-    for ( i = 0; i < (int)load_dirs.size(); ++i ) {
-        poly_path = work_base + "/" + load_dirs[i] + '/' + base;
-
-        string tile_str = bucket.gen_index_str();
-        simgear::Dir d(poly_path);
-        if (!d.exists()) {
-            SG_LOG(SG_GENERAL, SG_DEBUG, "directory not found: " << poly_path);
-            continue;
-        }
-
+    poly_path = work_base + "/" + base + '/' + index;
+    
+    simgear::Dir d(poly_path);
+    if (d.exists() ) {    
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
-        SG_LOG( SG_CLIPPER, SG_DEBUG, files.size() << " Polys in " << d.path() );
-
+        SG_LOG( SG_CLIPPER, SG_INFO, files.size() << " Files in " << d.path() );
+        
         BOOST_FOREACH(const SGPath& p, files) {
-            if (p.file_base() != tile_str) {
-                continue;
-            }
-
+            //if (p.file_base() != tile_str) {
+            //    continue;
+            //}
+            
             string lext = p.complete_lower_extension();
-            if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
-                (lext == "fit") || (lext == "fit.gz") || (lext == "ind"))
-            {
-                // skipped!
-            } else {
-                int area;
-                std::string material;
-                gzFile fp = gzopen( p.c_str(), "rb" );
-                unsigned int count;
 
-                sgReadUInt( fp, &count );
-                SG_LOG( SG_GENERAL, SG_INFO, " Load " << count << " polys from " << p.realpath() );
-
-                for ( unsigned int i=0; i<count; i++ ) {
-                    poly.LoadFromGzFile( fp );
-
-                    area     = area_defs.get_area_priority( poly.GetFlag() );
-                    material = area_defs.get_area_name( area );
+            // look for .shp files to load
+            if (lext == "shp") {
+                SG_LOG(SG_GENERAL, SG_INFO, "load: " << p);
+                
+                // shapefile contains multiple polygons.
+                // read an array of them
+                polys.clear();
+                tgShapefile::ToPolygons( p, polys );
+                SG_LOG(SG_GENERAL, SG_INFO, "tgShapefile::ToPolygons returned " << polys.size() << " polygons" );
+                
+                for ( unsigned int i=0; i<polys.size(); i++ ) {
+                    int area = area_defs.get_area_priority( polys[i].GetMaterial() );
+                    if ( area != 0xFFFF ) {
+                        std::string material = area_defs.get_area_name( area );
                     
-                    if ( material.find("Road") != std::string::npos ) {
-                        material = "lftest";
-                    }
-
-                    // add the nodes
-                    for (unsigned int j=0; j<poly.Contours(); j++) {
-                        for (unsigned int k=0; k<poly.ContourSize(j); k++) {
-                            SGGeod node  = poly.GetNode( j, k );
-
-                            start.stamp();
-                            if ( poly.GetPreserve3D() ) {
-                                nodes.unique_add( node, TG_NODE_FIXED_ELEVATION );
-                            } else {
-                                nodes.unique_add( node );
+                        //if ( material.find("Road") != std::string::npos ) {
+                        //    material = "lftest";
+                        //}
+                    
+#if 0                        // TODO
+                        // add the nodes
+                        for (unsigned int j=0; j<polys[i].Contours(); j++) {
+                            for (unsigned int k=0; k<polys[i].ContourSize(j); k++) {
+                                SGGeod node  = polys[i].GetNode( j, k );
+                            
+                                start.stamp();
+                                if ( polys[i].GetPreserve3D() ) {
+                                    nodes.unique_add( node, TG_NODE_FIXED_ELEVATION );
+                                } else {
+                                    nodes.unique_add( node );
+                                }
+                                polys[i].SetNode( j, k, node );
+                                end.stamp();
+                                addnode += (end-start);
                             }
-                            poly.SetNode( j, k, node );
-                            end.stamp();
-                            addnode += (end-start);
                         }
-                    }
-                    
-                    poly = tgPolygon::RemoveCycles( poly );
-                    poly.SetMaterial( material );
-                    poly.SetId( cur_poly_id++ );
-                    
-                    polys_in.add_poly( area, poly );
-                    total_polys_read++;
-                    
-                    if ( IsDebugShape( poly.GetId() ) ) {
-                        tgShapefile::FromPolygon( poly, false, false, "./", "loaded", "poly" );
+#endif
+
+                        //polys[i] = tgPolygon::RemoveCycles( poly );
+                        polys[i].SetId( cur_poly_id++ );
+                        
+                        tgShapefile::FromPolygon( polys[i], true, false, "./loaded", material, "loaded" );
+
+                        polys_in.add_poly( area, polys[i] );
+                        total_polys_read++;
                     }
                 }
-
-                gzclose( fp );
-                SG_LOG(SG_GENERAL, SG_DEBUG, " Loaded " << p.file());
             }
-        } // of directory file children
+        }
+    } else {
+        SG_LOG(SG_GENERAL, SG_INFO, "directory not found: " << poly_path);        
     }
-
+    
     SG_LOG(SG_GENERAL, SG_DEBUG, " Total polys read in this tile: " <<  total_polys_read );
     
     return total_polys_read;
