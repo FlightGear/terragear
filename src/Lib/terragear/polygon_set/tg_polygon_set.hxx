@@ -92,8 +92,8 @@ public:
     tgTexInfo           getTi( void ) const { return ti; }
     unsigned long       getId( void ) const { return id; }
     
-    void                intersection( const cgalPoly_Polygon& other );
     tgPolygonSet        intersection( const cgalPoly_Polygon& other ) const;
+    void                intersection2( const cgalPoly_Polygon& other );
 
     void                difference( const cgalPoly_Polygon& other );
     void                join( const cgalPoly_Polygon& other );
@@ -119,7 +119,7 @@ private:
     void                      findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const;
     cgalPoly_Point            getInteriorPoint( const cgalPoly_PolygonWithHoles& pwh ) const;
     
-    cgalPoly_PolygonSet       ogrRingToPolygonSet( OGRLinearRing const *ring );
+    void                      ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<cgalPoly_Polygon>& faces );
 
     cgalPoly_Polygon          splitLongEdges( cgalPoly_Polygon& p, int maxSegmentSize );
     cgalPoly_PolygonWithHoles splitLongEdges( cgalPoly_PolygonWithHoles& pwh, int maxSegmentLength );
@@ -128,6 +128,7 @@ private:
     tgTexInfo           ti;
     unsigned long       flags;
     unsigned long       id;
+    unsigned long       fid;
 };
 
 typedef std::vector<tgPolygonSet>   tgPolygonSetList;

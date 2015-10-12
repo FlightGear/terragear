@@ -107,7 +107,7 @@ cgalPoly_Point tgPolygonSet::getInteriorPoint( const cgalPoly_PolygonWithHoles& 
 }
 
 // intersect and modify current tgPolygonSet
-void tgPolygonSet::intersection( const cgalPoly_Polygon& other )
+void tgPolygonSet::intersection2( const cgalPoly_Polygon& other )
 {    
     ps.intersection( other );    
 }

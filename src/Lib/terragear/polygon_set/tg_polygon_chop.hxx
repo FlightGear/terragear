@@ -1,7 +1,10 @@
 #include <map>
 
+#include <simgear/threads/SGThread.hxx>
+#include <simgear/timing/timestamp.hxx>
 #include <simgear/bucket/newbucket.hxx>
 
+#include <terragear/tg_dataset_protect.hxx>
 #include "tg_polygon_set.hxx"
 
 // for ogr-decode : generate a bunch of polygons, mapped by bucket id
@@ -16,15 +19,18 @@ public:
         bucket_id = bid;
     }
 
-    void Add( const tgPolygonSet& poly );
+    void Add( const tgPolygonSet& poly, SGTimeStamp& create );
     void Save( bool DebugShapes );
 
 private:
+    void PreChop( const tgPolygonSet& subject, std::vector<tgPolygonSet>& chunks );
     void ClipRow( const tgPolygonSet& subject, const double& center_lat );
     void Clip( const tgPolygonSet& subject, SGBucket& b );
     void Chop( const tgPolygonSet& subject );
 
     long int         bucket_id;     // set if we only want to save a single bucket
     std::string      root_path;
-    bucket_polys_map bp_map;
+    SGMutex          lock;
+    //bucket_polys_map bp_map;
+    tgDatasetAcess   dataset;
 };

@@ -1,7 +1,9 @@
 #ifndef __TG_POLYGON_DEF_HXX__
 #define __TG_POLYGON_DEF_HXX__
 
+//#include <CGAL/leda_rational.h>
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Filtered_kernel.h>
 
 #include <CGAL/Arr_segment_traits_2.h>
 #include <CGAL/Arrangement_2.h>
@@ -16,6 +18,9 @@
 #include <CGAL/Boolean_set_operations_2.h>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel   cgalPoly_Kernel;
+//typedef CGAL::Simple_cartesian<leda_rational> CK; 
+//typedef CGAL::Filtered_kernel<CK> 		            cgalPoly_Kernel; 
+
 typedef CGAL::Arr_segment_traits_2<cgalPoly_Kernel>         cgalPoly_Traits;
 typedef cgalPoly_Traits::Point_2                            cgalPoly_Point;
 typedef cgalPoly_Traits::Ray_2                              cgalPoly_Ray;

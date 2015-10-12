@@ -40,10 +40,24 @@ void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
 //      }
         
         long int cur_bucket = b.gen_index();
-        SG_LOG( SG_GENERAL, SG_INFO, " - poly saved in bucket " << cur_bucket << " bucket_id is " << bucket_id );
-
         if ( ( bucket_id < 0 ) || (cur_bucket == bucket_id ) ) {
-            bp_map[b.gen_index()].push_back( result );
+            std::string path = root_path + "/" + b.gen_base_path();
+            std::string polyfile = path + "/" + b.gen_index_str();
+
+            // lock mutex to simgear director creation
+            lock.lock();
+            SGPath sgp( polyfile );
+            sgp.create_dir( 0755 );
+            lock.unlock();
+
+            // now get a per dataset lock
+            dataset.Request( cur_bucket );
+
+            // save chopped polygon to a Shapefile in layer named from material
+            result.toShapefile( polyfile.c_str(), result.getMaterial().c_str() );
+
+            // Release per dataset lock
+            dataset.Release( cur_bucket );
         }
     }
 }
@@ -70,6 +84,7 @@ void tgChopper::ClipRow( const tgPolygonSet& subject, const double& center_lat )
     }
 }
 
+#if 0
 void tgChopper::Add( const tgPolygonSet& subject )
 {
     // bail out immediately if polygon is empty
@@ -91,7 +106,7 @@ void tgChopper::Add( const tgPolygonSet& subject )
     int          dx, dy;
 
     sgBucketDiff(b_min, b_max, &dx, &dy);
-    SG_LOG( SG_GENERAL, SG_INFO, "  y_min = " << bb.ymin() << " y_max = " << bb.ymax() << " dx = " <<  dx << "  dy = " << dy );
+    // SG_LOG( SG_GENERAL, SG_INFO, "  y_min = " << bb.ymin() << " y_max = " << bb.ymax() << " dx = " <<  dx << "  dy = " << dy );
 
     if ( (dx > 2880) || (dy > 1440) )
         throw sg_exception("something is really wrong in split_polygon()!!!!");
@@ -99,7 +114,7 @@ void tgChopper::Add( const tgPolygonSet& subject )
     if ( dy == 0 )
     {
         // We just have a single row - no need to intersect first
-        SG_LOG( SG_GENERAL, SG_INFO, "   UN_CLIPPED row -  center lat is " << b_min.get_center_lat() );
+        // SG_LOG( SG_GENERAL, SG_INFO, "   UN_CLIPPED row -  center lat is " << b_min.get_center_lat() );
 
         ClipRow( subject, b_min.get_center_lat() );
     }
@@ -107,7 +122,7 @@ void tgChopper::Add( const tgPolygonSet& subject )
     {
         // Multiple rows - perform row intersection to reduce the number of bucket clips we need
         // since many shapes are narraw in some places, wide in others - bb will be at the widest part
-        SG_LOG( SG_GENERAL, SG_INFO, "subject spans tile rows: bb is from lat " << bb.ymin() << " to " << bb.ymax() << " dy is " << dy );
+        // SG_LOG( SG_GENERAL, SG_INFO, "subject spans tile rows: bb is from lat " << bb.ymin() << " to " << bb.ymax() << " dy is " << dy );
 
         for ( int row = 0; row <= dy; row++ )
         {
@@ -124,7 +139,7 @@ void tgChopper::Add( const tgPolygonSet& subject )
             clip_pts[3] = cgalPoly_Point( -180.0, clip_top );
             cgalPoly_Polygon clip_row( clip_pts, clip_pts+4 );
 
-            SG_LOG( SG_GENERAL, SG_INFO, "   CLIPPED row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
+            // SG_LOG( SG_GENERAL, SG_INFO, "   CLIPPED row " << row << " center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
 
             tgPolygonSet clipped = subject.intersection( clip_row );
             if ( !clipped.isEmpty() ) {
@@ -145,6 +160,121 @@ void tgChopper::Add( const tgPolygonSet& subject )
         }
     }
 }
+
+#else
+
+void tgChopper::PreChop( const tgPolygonSet& subject, std::vector<tgPolygonSet>& chunks )
+{
+    CGAL::Bbox_2 bb   = subject.getBoundingBox();
+
+    double startx, endx, starty, endy;
+    double width, height;
+   
+    if ( bb.xmin() < 0 && bb.xmax() > 0 ) {
+        // the bounding box crosses either the Greenwich meridian, or the IDL
+        // chop the whole thing
+        startx = -180.0l;
+        endx   =  180.0l;
+        width  =  360.0l;
+    } else {
+        startx = std::ceil( bb.xmin() );
+        endx   = std::ceil( bb.xmax() );
+        width  = endx-startx;
+    }
+    
+    // chop shapes pasth the poles
+    if ( bb.ymin() < -90.0l ) {
+        starty = -90.0l;
+    } else {
+        starty = std::ceil( bb.ymin() );
+    }
+    
+    if ( bb.ymax() > 90.0l ) {
+        endy = 90.0l;
+    } else {
+        endy = std::ceil( bb.ymax() );
+    }
+    height = endy-starty;
+    
+    chunks.clear();
+    
+    if ( width > 1.0l || height > 1.0l ) {
+        // break up the geometries, and add them to the queue
+        // use exact match
+        for ( double x=startx; x<endx; x+=1.0l ) {
+            for ( double y=starty; y<endy; y+=1.0l ) {
+                // create the clipping geometry for this piece
+                cgalPoly_Point base_pts[4];
+                double minx = x, maxx = x + 1.0l;
+                double miny = y, maxy = y + 1.0l;
+                
+                base_pts[0] = cgalPoly_Point( minx, miny );
+                base_pts[1] = cgalPoly_Point( maxx, miny );
+                base_pts[2] = cgalPoly_Point( maxx, maxy );
+                base_pts[3] = cgalPoly_Point( minx, maxy );
+                
+                cgalPoly_Polygon clip( base_pts, base_pts+4 );
+                tgPolygonSet result = subject.intersection( clip );
+                
+                if ( !result.isEmpty() ) {
+                    chunks.push_back( result );
+                }
+            }
+        }
+    } else {
+        // process current geometry
+        chunks.push_back( subject );
+    }
+}
+
+void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
+{
+    // bail out immediately if polygon is empty
+    if ( subject.isEmpty() ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper::Add - subject is empty" );
+        return;
+    }
+
+    CGAL::Bbox_2 sub_bb   = subject.getBoundingBox();
+    SGGeod sub_gMin = SGGeod::fromDeg( CGAL::to_double(sub_bb.xmin()), CGAL::to_double(sub_bb.ymin()) );
+    SGGeod sub_gMax = SGGeod::fromDeg( CGAL::to_double(sub_bb.xmax()), CGAL::to_double(sub_bb.ymax()) );
+    std::vector<SGBucket> sub_buckets;
+    sgGetBuckets( sub_gMin, sub_gMax, sub_buckets );
+    
+    SGTimeStamp chop_start, chop_end;
+    SGTimeStamp pre_start,  pre_end;
+    
+    pre_start.stamp();
+    
+    // if the bounding box width or height > 1.0, pre chop into 1x1 pieces
+    std::vector<tgPolygonSet> chunks;
+    PreChop( subject, chunks);
+
+    pre_end.stamp();
+    chop_start.stamp();
+    
+    for ( unsigned int i=0; i < chunks.size(); i++ ) {
+        CGAL::Bbox_2 bb   = chunks[i].getBoundingBox();
+        
+        SGGeod       gMin = SGGeod::fromDeg( CGAL::to_double(bb.xmin()), CGAL::to_double(bb.ymin()) );
+        SGGeod       gMax = SGGeod::fromDeg( CGAL::to_double(bb.xmax()), CGAL::to_double(bb.ymax()) );
+
+        std::vector<SGBucket> buckets;
+        sgGetBuckets( gMin, gMax, buckets );
+    
+        for ( unsigned int j=0; j<buckets.size(); j++ ) {
+            Clip( chunks[i], buckets[j] );
+        }        
+    }
+    
+    chop_end.stamp();
+    
+    if ( sub_buckets.size() > 20 ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper::Chopping poly width = " << sub_bb.xmax() - sub_bb.xmin() << ", height = " << sub_bb.ymax() - sub_bb.ymin() << " into " << sub_buckets.size() << " buckets took " << create << " to create, " << pre_end - pre_start << " to prechop, and " << chop_end - chop_start << " to chop ");    
+    }
+}
+
+#endif
 
 #if 0
 long int tgChopper::GenerateIndex( std::string path )
@@ -194,6 +324,7 @@ long int tgChopper::GenerateIndex( std::string path )
 
 void tgChopper::Save( bool DebugShapefiles )
 {
+#if 0
     // traverse the bucket list
     bucket_polys_map_interator it;
     char tile_name[16];
@@ -207,12 +338,14 @@ void tgChopper::Save( bool DebugShapefiles )
 
         std::string polyfile = path + "/" + tile_name;
 
-        SGPath sgp( polyfile );
-        sgp.create_dir( 0755 );
+//        SGPath sgp( polyfile );
+//        sgp.create_dir( 0755 );
 
         // save chopped polygons to a Shapefile in layer named from material
         for ( unsigned int i=0; i<polys.size(); i++ ) {
-            polys[i].toShapefile( sgp.c_str(), polys[i].getMaterial().c_str() );
+//            polys[i].toShapefile( sgp.c_str(), polys[i].getMaterial().c_str() );
+            polys[i].toShapefile( polyfile.c_str(), polys[i].getMaterial().c_str() );        
         }
     }
+#endif
 }

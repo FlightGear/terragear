@@ -35,11 +35,14 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/timing/timestamp.hxx>
 
 #include <Include/version.h>
 
 #include <terragear/polygon_set/tg_polygon_set.hxx>
 #include <terragear/polygon_set/tg_polygon_chop.hxx>
+
+#define SUPPORT_MULTITHREADING 1
 
 using std::string;
 
@@ -78,23 +81,20 @@ inline static bool is_null_area( const std::string& area ) {
     return area == "Null";
 }
 
-#if 0
+#if SUPPORT_MULTITHREADING    
+
 class Decoder : public SGThread
 {
 public:
-    Decoder( OGRCoordinateTransformation *poct, int atf, int pwf, int lwf, tgChopper& c ) : chopper(c) {
+    Decoder( OGRCoordinateTransformation *poct, int atf, tgChopper& c ) : chopper(c) {
         poCT = poct;
         area_type_field = atf;
-        point_width_field = pwf;
-        line_width_field = lwf;
     }
 
 private:
     virtual void run();
 
-    void processPoint(OGRPoint* poGeometry, const string& area_type, int width );
-    void processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture );
-    void processPolygon(OGRPolygon* poGeometry, const string& area_type );
+    void processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string& area_type );
 
 private:
     // The transformation for each geometry object
@@ -104,10 +104,112 @@ private:
     tgChopper& chopper;
 
     int area_type_field;
-    int point_width_field;
-    int line_width_field;
 };
-#endif
+
+void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string& area_type )
+{
+    SGTimeStamp create_start, create_end, create_time;
+
+    create_start.stamp();
+    tgPolygonSet shapes( poFeature, poGeometry, area_type );
+
+//    if ( max_segment_length > 0 ) {
+//        shapes.splitLongEdges( max_segment_length );
+//    }
+    shapes.setMaterial( area_type );
+    shapes.setTexMethod( tgTexInfo::TEX_BY_GEODE );
+    create_end.stamp();
+    create_time = create_end - create_start;
+
+    chopper.Add( shapes, create_time  );
+}
+
+void Decoder::run()
+{
+    // as long as we have geometry to parse, do so
+    while (!global_workQueue.empty()) {
+        OGRFeature *poFeature = global_workQueue.pop();
+        // SG_LOG( SG_GENERAL, SG_INFO, " chopping feature with thread " << current() << " remaining features is " << global_workQueue.size() );
+
+        if ( poFeature ) {
+            OGRGeometry *poGeometry = poFeature->GetGeometryRef();
+
+            if (poGeometry==NULL) {
+                SG_LOG( SG_GENERAL, SG_INFO, "Found feature without geometry!" );
+                if (!continue_on_errors) {
+                    SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+                    exit( 1 );
+                } else {
+                    continue;
+                }
+            }
+
+            OGRwkbGeometryType geoType=wkbFlatten(poGeometry->getGeometryType());
+            if (geoType!=wkbPolygon && geoType!=wkbMultiPolygon) {
+                SG_LOG( SG_GENERAL, SG_INFO, "Unknown feature" );
+                 OGRFeature::DestroyFeature( poFeature );
+
+                continue;
+            }
+
+            string area_type_name=area_type;
+            if (area_type_field!=-1) {
+                area_type_name=poFeature->GetFieldAsString(area_type_field);
+            }
+
+            if ( is_ocean_area(area_type_name) ) {
+                // interior of polygon is ocean, holes are islands
+
+                SG_LOG(  SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!" );
+                OGRFeature::DestroyFeature( poFeature );
+                // Ocean data now comes from GSHHS so we want to ignore
+                // all other ocean data
+                continue;
+            } else if ( is_void_area(area_type_name) ) {
+                // interior is ????
+
+                // skip for now
+                SG_LOG(  SG_GENERAL, SG_ALERT, "Void area ... SKIPPING!" );
+                OGRFeature::DestroyFeature( poFeature );
+                continue;
+            } else if ( is_null_area(area_type_name) ) {
+                // interior is ????
+
+                // skip for now
+                SG_LOG(  SG_GENERAL, SG_ALERT, "Null area ... SKIPPING!" );
+                OGRFeature::DestroyFeature( poFeature );
+                continue;
+            }
+
+            poGeometry->transform( poCT );
+
+            switch (geoType) {
+            case wkbPolygon: {
+                SG_LOG( SG_GENERAL, SG_DEBUG, "Polygon feature" );
+                processPolygon(poFeature, (OGRPolygon*)poGeometry, area_type_name);
+                break;
+            }
+            case wkbMultiPolygon: {
+                SG_LOG( SG_GENERAL, SG_DEBUG, "MultiPolygon feature" );
+                OGRMultiPolygon* multipoly=(OGRMultiPolygon*)poGeometry;
+                for (int i=0;i<multipoly->getNumGeometries();i++) {
+                    processPolygon(poFeature, (OGRPolygon*)(multipoly->getGeometryRef(i)), area_type_name);
+                }
+                break;
+            }
+            default:
+                /* Ignore unhandled objects */
+                break;
+            }
+
+            OGRFeature::DestroyFeature( poFeature );
+        }
+    }
+
+    SG_LOG( SG_GENERAL, SG_INFO, " thread " << current() << " complete " );
+}
+
+#else
 
 void processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string& area_type, tgChopper& chopper )
 {
@@ -122,6 +224,7 @@ void processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string&
     chopper.Add( shapes  );
 }
 
+#endif
 
 // Main Thread
 void processLayer(OGRLayer* poLayer, tgChopper& results )
@@ -191,9 +294,33 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
         }
     }
 
-    // Generate the work queue for this layer
     OGRFeature *poFeature;
     poLayer->SetNextByIndex(start_record);
+
+#if SUPPORT_MULTITHREADING    
+
+    // Generate the work queue for this layer
+    while ( ( poFeature = poLayer->GetNextFeature()) != NULL )
+    {
+        global_workQueue.push( poFeature );
+    }
+
+    // Now process the workqueue with threads
+    // this just generates all the tgPolygons
+    std::vector<Decoder *> decoders;
+    for (int i=0; i<num_threads; i++) {
+        Decoder* decoder = new Decoder( poCT, area_type_field, results );
+        decoder->start();
+        decoders.push_back( decoder );
+    }
+
+    // Then wait until they are finished
+    for (unsigned int i=0; i<decoders.size(); i++) {
+        decoders[i]->join();
+    }
+#else
+
+    // process each feature in the main thread
     while ( ( poFeature = poLayer->GetNextFeature()) != NULL )
     {
         OGRGeometry *poGeometry = poFeature->GetGeometryRef();
@@ -261,6 +388,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
 
         OGRFeature::DestroyFeature( poFeature );
     }
+#endif
 
     OCTDestroyCoordinateTransformation ( poCT );
 }

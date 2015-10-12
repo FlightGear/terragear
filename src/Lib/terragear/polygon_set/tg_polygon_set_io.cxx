@@ -41,6 +41,10 @@
 // the second is the degenerate piece in the top right.
 tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry, const std::string& material ) : id(tgPolygonSet::cur_id++)
 {
+    std::vector<cgalPoly_Polygon>	boundaries;
+    std::vector<cgalPoly_Polygon>	holes;
+    cgalPoly_PolygonSet                 holesUnion;
+
     // generate texture info from feature
     getFeatureFields( poFeature );
 
@@ -49,40 +53,57 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry, const
 
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
-    ps = ogrRingToPolygonSet( ring );    
+    ogrRingToPolygonSet( ring, boundaries );
 
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
         ring = poGeometry->getInteriorRing( i );
-	cgalPoly_PolygonSet hole = ogrRingToPolygonSet( ring );
-
-        ps.difference( hole );
+	ogrRingToPolygonSet( ring, holes );
     }
+
+    // join all the boundaries
+    ps.join( boundaries.begin(), boundaries.end() );
+
+    // join all the holes
+    holesUnion.join( holes.begin(), holes.end() );
+
+    // perform difference
+    ps.difference( holesUnion );
 }
 
 tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry ) : id(tgPolygonSet::cur_id++)
 {
+    std::vector<cgalPoly_Polygon>	boundaries;
+    std::vector<cgalPoly_Polygon>	holes;
+    cgalPoly_PolygonSet                 holesUnion;
+
     // generate texture info from feature
     getFeatureFields( poFeature );
 
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
-    ps = ogrRingToPolygonSet( ring );    
+    ogrRingToPolygonSet( ring, boundaries );
 
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
         ring = poGeometry->getInteriorRing( i );
-	cgalPoly_PolygonSet hole = ogrRingToPolygonSet( ring );
-
-        ps.difference( hole );
+	ogrRingToPolygonSet( ring, holes );
     }
+
+    // join all the boundaries
+    ps.join( boundaries.begin(), boundaries.end() );
+
+    // join all the holes
+    holesUnion.join( holes.begin(), holes.end() );
+
+    // perform difference
+    ps.difference( holesUnion );
 }
 
-cgalPoly_PolygonSet tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring )
+void tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<cgalPoly_Polygon>& faces )
 {
     cgalPoly_Arrangement  		arr;
     std::vector<cgalPoly_Segment> 	segs;
-    cgalPoly_PolygonSet                 faces;
 
     for (int i = 0; i < ring->getNumPoints(); i++) {
         cgalPoly_Point src(ring->getX(i), ring->getY(i));
@@ -99,30 +120,10 @@ cgalPoly_PolygonSet tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring
 
         if ( src != trg ) {
             segs.push_back( cgalPoly_Segment( src, trg ) );
-        } else {
-            std::cout << " seg src == seg trg " << std::endl;
         }
     }
 
     insert( arr, segs.begin(), segs.end() );
-
-    // DEBUG DEBUG DEBUG
-    // dump the arrangement
-    char layer_id[128];
-    sprintf( layer_id, "%s_%ld", ti.material.c_str(), id );
-
-    // Open datasource and layer
-    GDALDataset* poDS = openDatasource( "./arr_dbg" );
-
-    if ( poDS ) {
-        OGRLayer* poLayer = openLayer( poDS, wkbLineString, layer_id );
-        if ( poLayer ) {
-            toShapefile( poLayer, arr );
-        }
-
-        // close datasource
-        GDALClose( poDS );
-    }
 
     // return the union of all bounded faces
     cgalPoly_FaceConstIterator fit;
@@ -148,12 +149,9 @@ cgalPoly_PolygonSet tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring
             } while (cur != ccb);
 
 	    // check the orientation - outer boundaries should be CCW
-            cgalPoly_Polygon poly( nodes.begin(), nodes.end() );
-            faces.join( poly );
+            faces.push_back( cgalPoly_Polygon( nodes.begin(), nodes.end()  ));
         }
     }
-
-    return faces;
 }
 
 
@@ -163,12 +161,9 @@ GDALDataset* tgPolygonSet::openDatasource( const char* datasource_name ) const
     GDALDriver*     poDriver = NULL;
     const char*     format_name = "ESRI Shapefile";
     
-    SG_LOG( SG_GENERAL, SG_INFO, "Open Datasource: " << datasource_name );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Open Datasource: " << datasource_name );
     
     GDALAllRegister();
-    
-    SGPath sgp( datasource_name );
-    sgp.create_dir( 0755 );
     
     poDriver = GetGDALDriverManager()->GetDriverByName( format_name );
     if ( poDriver ) {    
@@ -180,11 +175,17 @@ GDALDataset* tgPolygonSet::openDatasource( const char* datasource_name ) const
 
 OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name ) const
 {
+#if 1
     OGRLayer*           poLayer = NULL;
+ 
+    if ( !strlen( layer_name )) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSet::toShapefile: layer name is NULL material is " << ti.material );
+        exit(0);
+    }
     
     poLayer = poDS->GetLayerByName( layer_name );    
     if ( !poLayer ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSet::toShapefile: layer " << layer_name << " doesn't exist - create" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " doesn't exist - create" );
 
         OGRSpatialReference srs;
         srs.SetWellKnownGeogCS("WGS84");
@@ -202,6 +203,11 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_id' failed" );
         }
         
+        OGRFieldDefn fidField( "OGC_FID", OFTInteger );
+        if( poLayer->CreateField( &fidField ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'OGC_FID' failed" );
+        }
+
         OGRFieldDefn flagsField( "tg_flags", OFTInteger );
         if( poLayer->CreateField( &flagsField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'flags' failed" );
@@ -289,10 +295,13 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
         }
         
     } else {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
     }
    
     return poLayer;
+#else
+    return NULL;
+#endif
 }
 
 void tgPolygonSet::toShapefile( OGRLayer* layer, const char* description ) const
@@ -420,7 +429,8 @@ const char* tgPolygonSet::getFieldAsString( OGRFeature* poFeature, const char* f
 
 void tgPolygonSet::getFeatureFields( OGRFeature* poFeature )
 {
-    id          = getFieldAsInteger( poFeature, "tg_id", id );
+    id          = getFieldAsInteger( poFeature, "tg_id",   id );
+    fid         = getFieldAsInteger( poFeature, "OGC_FID", fid );
     flags       = getFieldAsInteger( poFeature, "tg_flags", 0 );
 
     ti.material = getFieldAsString( poFeature, "tg_mat", "default" );    
@@ -448,6 +458,7 @@ void tgPolygonSet::getFeatureFields( OGRFeature* poFeature )
 void tgPolygonSet::setFeatureFields( OGRFeature* poFeature ) const
 {
     poFeature->SetField("tg_id",        (int)id );
+    poFeature->SetField("OGC_FID",      (int)fid );
     poFeature->SetField("tg_flags",     (int)flags );
     
     poFeature->SetField("tg_mat",       ti.material.c_str() );
@@ -475,6 +486,7 @@ void tgPolygonSet::toShapefile( const char* datasource, const char* layer ) cons
 
     if ( poDS ) {
         OGRLayer* poLayer = openLayer( poDS, wkbPolygon25D, layer );
+
         if ( poLayer ) {
             toShapefile( poLayer, ps );
         }
@@ -490,7 +502,7 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& po
     std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
 
     polySet.polygons_with_holes( std::back_inserter(pwh_list) );
-    SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSet::toShapefile: got " << pwh_list.size() << " polys with holes ");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: got " << pwh_list.size() << " polys with holes ");
     
     // save each poly with holes to the layer
     for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {

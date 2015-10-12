@@ -508,11 +508,14 @@ int main( int argc, char **argv ) {
                 tgPolygonSet current = (*poly_it);
                 //current.RemoveDups();
 
+	        SGTimeStamp stamp;
+                stamp.stamp();
+
                 accum.Diff_and_Add_cgal( current );
                 
                 // only add to output list if the clip left us with a polygon
                 if ( !current.isEmpty() ) {
-                    results.Add( current );
+                    results.Add( current, stamp );
                 }
             }
         }

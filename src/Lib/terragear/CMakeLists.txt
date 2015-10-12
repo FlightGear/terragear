@@ -18,6 +18,7 @@ set(HEADERS
     tg_cgal_epec.hxx
     tg_cluster.hxx
     tg_contour.hxx
+    tg_dataset_protect.hxx
     tg_light.hxx
     tg_misc.hxx
     tg_nodes.hxx

@@ -19,7 +19,7 @@ cgalPoly_Polygon tgPolygonSet::splitLongEdges( cgalPoly_Polygon& p, int maxSegme
         src = *src_it;
         trg = *trg_it;
         
-        SG_LOG(SG_GENERAL, SG_INFO, "src point = " << src << " trg point = " << trg );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "src point = " << src << " trg point = " << trg );
 
         if ( CGAL::abs(src.y()) < 90.0 || CGAL::abs(trg.y()) < 90.0 )
         {
@@ -29,12 +29,12 @@ cgalPoly_Polygon tgPolygonSet::splitLongEdges( cgalPoly_Polygon& p, int maxSegme
             cgalPoly_Kernel::RT dist    = SGGeodesy::distanceM( gSrc, gTrg );
             cgalPoly_Kernel::RT maxDist = maxSegmentSize;
             
-            SG_LOG(SG_GENERAL, SG_INFO, "distance = " << dist);
+            SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << dist);
 
             if ( dist > maxDist ) {
                 unsigned int segments = (int)CGAL::to_double( (dist / maxDist) + 1 );
                 
-                SG_LOG(SG_GENERAL, SG_INFO, "brek into " << segments << " segments" );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "brek into " << segments << " segments" );
 
                 cgalPoly_Kernel::RT segs = segments;
                 cgalPoly_Kernel::RT dx = (trg.x() - src.x()) / segs;
@@ -43,7 +43,7 @@ cgalPoly_Polygon tgPolygonSet::splitLongEdges( cgalPoly_Polygon& p, int maxSegme
                 for ( unsigned int j = 0; j < segments; j++ ) {
                     cgalPoly_Kernel::RT idx = j;
                     cgalPoly_Point      tmp = cgalPoly_Point( src.x() + dx*idx, src.y() + dy*idx );
-                    SG_LOG(SG_GENERAL, SG_INFO, tmp);
+                    SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
                     nodes.push_back(tmp);
                 }
             } else {
@@ -67,11 +67,11 @@ cgalPoly_Polygon tgPolygonSet::splitLongEdges( cgalPoly_Polygon& p, int maxSegme
     cgalPoly_Kernel::RT dist    = SGGeodesy::distanceM( gSrc, gTrg );
     cgalPoly_Kernel::RT maxDist = maxSegmentSize;
             
-    SG_LOG(SG_GENERAL, SG_INFO, "distance = " << dist);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "distance = " << dist);
 
     if ( dist > maxDist ) {
         unsigned int segments = (int)CGAL::to_double( (dist / maxDist) + 1 );
-        SG_LOG(SG_GENERAL, SG_INFO, "brek into " << segments << " segments" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "brek into " << segments << " segments" );
 
         cgalPoly_Kernel::RT segs = segments;
         cgalPoly_Kernel::RT dx = (trg.x() - src.x()) / segs;
@@ -80,7 +80,7 @@ cgalPoly_Polygon tgPolygonSet::splitLongEdges( cgalPoly_Polygon& p, int maxSegme
         for ( unsigned int j = 0; j < segments; j++ ) {
             cgalPoly_Kernel::RT idx = j;
             cgalPoly_Point      tmp = cgalPoly_Point( src.x() + dx*idx, src.y() + dy*idx );
-            SG_LOG(SG_GENERAL, SG_INFO, tmp);
+            SG_LOG(SG_GENERAL, SG_DEBUG, tmp);
             nodes.push_back(tmp);
         }
     } else {
