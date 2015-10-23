@@ -12,9 +12,7 @@
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
-#include <terragear/tg_polygon.hxx>
 #include <terragear/tg_surface.hxx>
-#include <terragear/tg_chopper.hxx>
 #include <terragear/tg_rectangle.hxx>
 #include <terragear/tg_unique_geod.hxx>
 #include <terragear/tg_unique_vec3f.hxx>

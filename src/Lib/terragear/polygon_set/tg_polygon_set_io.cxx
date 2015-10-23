@@ -43,7 +43,7 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry, const
 {
     std::vector<cgalPoly_Polygon>	boundaries;
     std::vector<cgalPoly_Polygon>	holes;
-    cgalPoly_PolygonSet                 holesUnion;
+    cgalPoly_PolygonSet             holesUnion;
 
     // generate texture info from feature
     getFeatureFields( poFeature );
@@ -58,7 +58,7 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry, const
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
         ring = poGeometry->getInteriorRing( i );
-	ogrRingToPolygonSet( ring, holes );
+        ogrRingToPolygonSet( ring, holes );
     }
 
     // join all the boundaries
@@ -155,7 +155,7 @@ void tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<c
 }
 
 
-GDALDataset* tgPolygonSet::openDatasource( const char* datasource_name ) const
+GDALDataset* tgPolygonSet::openDatasource( const char* datasource_name )
 {
     GDALDataset*    poDS = NULL;
     GDALDriver*     poDriver = NULL;
@@ -173,13 +173,13 @@ GDALDataset* tgPolygonSet::openDatasource( const char* datasource_name ) const
     return poDS;
 }
 
-OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name ) const
+OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name )
 {
 #if 1
     OGRLayer*           poLayer = NULL;
  
     if ( !strlen( layer_name )) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSet::toShapefile: layer name is NULL material is " << ti.material );
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSet::toShapefile: layer name is NULL" );
         exit(0);
     }
     
@@ -225,6 +225,8 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
         }
         
         OGRFieldDefn texRefLonField( "tg_reflon", OFTReal );
+        texRefLonField.SetWidth( 12 );
+        texRefLonField.SetPrecision( 3 );        
         if( poLayer->CreateField( &texRefLonField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_ref_lon' failed" );
         }
@@ -275,6 +277,8 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
         }
         
         OGRFieldDefn texMinClipVField( "tg_mincv", OFTReal );
+        texMinClipVField.SetWidth( 12 );
+        texMinClipVField.SetPrecision( 3 );        
         if( poLayer->CreateField( &texMinClipVField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_min_clipv' failed" );
         }
@@ -293,7 +297,7 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
         if( poLayer->CreateField( &texCenterLatField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_center_lat' failed" );
         }
-        
+
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
     }
@@ -307,6 +311,11 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
 void tgPolygonSet::toShapefile( OGRLayer* layer, const char* description ) const
 {
     
+}
+
+void tgPolygonSet::toShapefile( OGRLayer* poLayer ) const
+{
+    toShapefile( poLayer, ps );
 }
 
 void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const
@@ -452,7 +461,9 @@ void tgPolygonSet::getFeatureFields( OGRFeature* poFeature )
         ti.min_clipv = getFieldAsDouble( poFeature, "tg_mincv", 0.0 );
         ti.max_clipu = getFieldAsDouble( poFeature, "tg_maxcu", 0.0 );
         ti.max_clipv = getFieldAsDouble( poFeature, "tg_maxcv", 0.0 );
-    }    
+    }
+    
+    description = getFieldAsString( poFeature, "tg_desc", "" );
 }
 
 void tgPolygonSet::setFeatureFields( OGRFeature* poFeature ) const
@@ -477,6 +488,7 @@ void tgPolygonSet::setFeatureFields( OGRFeature* poFeature ) const
     poFeature->SetField("tg_mincv",     ti.min_clipv );
     poFeature->SetField("tg_maxcu",     ti.max_clipu );
     poFeature->SetField("tg_maxcv",     ti.max_clipv );
+    poFeature->SetField("tg_desc",      description.c_str() );
 }
 
 void tgPolygonSet::toShapefile( const char* datasource, const char* layer ) const

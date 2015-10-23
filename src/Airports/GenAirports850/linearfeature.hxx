@@ -1,8 +1,7 @@
 #ifndef _LINEARFEATURE_H_
 #define _LINEARFEATURE_H_
 
-#include <terragear/tg_polygon.hxx>
-#include <terragear/tg_accumulator.hxx>
+#include <terragear/polygon_set/tg_polygon_set.hxx>
 #include <terragear/tg_light.hxx>
 #include <terragear/vector_intersections/tg_intersection_generator.hxx>
 
@@ -116,8 +115,8 @@ public:
 
     int Finish( Airport* ap, bool closed, double width = 0.0f );
     
-    void GetPolys( tgpolygon_list& polys );
-    void GetCapPolys( tgpolygon_list& polys );
+    void GetPolys( tgPolygonSetList& polys );
+    void GetCapPolys( tgPolygonSetList& polys );
     void GetLights( tglightcontour_list& lights );
     
 
@@ -142,10 +141,10 @@ private:
     BezContour  contour;
 
     // contour definition after bezier interpolation
-    tgContour   points;
+    cgalPoly_Polygon    points;
     
-    tgpolygon_list      marking_polys;
-    tgpolygon_list      cap_polys;      // lower priority than the marks themselves
+    tgPolygonSetList    marking_polys;
+    tgPolygonSetList    cap_polys;      // lower priority than the marks themselves
     tglightcontour_list lighting_polys;
 };
 

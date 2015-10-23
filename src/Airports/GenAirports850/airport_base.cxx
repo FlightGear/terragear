@@ -12,8 +12,8 @@
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
-#include <terragear/tg_polygon.hxx>
 #include <terragear/tg_surface.hxx>
+#include <terragear/polygon_set/tg_polygon_set.hxx>
 #include <terragear/polygon_set/tg_polygon_chop.hxx>
 #include <terragear/tg_rectangle.hxx>
 #include <terragear/tg_unique_geod.hxx>
@@ -29,6 +29,8 @@
 #include "helipad.hxx"
 #include "runway.hxx"
 #include "output.hxx"
+
+#define DEBUG   (1)
 
 void Airport::BuildBase( void )
 {
@@ -91,8 +93,6 @@ void Airport::BuildBase( void )
         }
     }
 
-    TG_LOG(SG_GENERAL, SG_INFO, "Build UserBoundary " );
-
     if (userBoundary)
     {
         TG_LOG(SG_GENERAL, SG_INFO, "Build " << boundary.size() << " user boundaries ");
@@ -104,63 +104,55 @@ void Airport::BuildBase( void )
         }
     }
 
-
     // DEBUG
 #if DEBUG
+    GDALDataset*    poDS = NULL;
+    OGRLayer*       poLayer = NULL;
+    char            dataset[64];
+    
+    // datasource is the ICAO, 1 layer = 1 area    
+    sprintf( dataset, "./%s", icao.c_str() );
+    poDS    = tgPolygonSet::openDatasource( dataset );
+    
+    poLayer = tgPolygonSet::openLayer( poDS, wkbPolygon25D, "runways" );
+
     TG_LOG(SG_GENERAL, SG_INFO, "Dump " << polys_built.area_size(AIRPORT_AREA_RUNWAY) << " runway polys ");
     for (unsigned int j=0; j< polys_built.area_size(AIRPORT_AREA_RUNWAY); j++)
     {
-        char layer[32];
-        tgPolygon poly;
-        sprintf(layer, "rwy_%d_poly", j );
-
-        poly = polys_built.get_poly(AIRPORT_AREA_RUNWAY, j);
-        tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
+        polys_built.get_poly(AIRPORT_AREA_RUNWAY, j).toShapefile( poLayer );
     }
 
     TG_LOG(SG_GENERAL, SG_INFO, "Dump " << polys_built.area_size(AIRPORT_AREA_RUNWAY_SHOULDER) << " runway shoulder polys ");
     for (unsigned int j=0; j< polys_built.area_size(AIRPORT_AREA_RUNWAY_SHOULDER); j++)
     {
-        char layer[32];
-        tgPolygon poly;
-        sprintf(layer, "rwy_shoulder_%d_poly", j );
-
-        poly = polys_built.get_poly(AIRPORT_AREA_RUNWAY_SHOULDER, j);
-        tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
+        polys_built.get_poly(AIRPORT_AREA_RUNWAY_SHOULDER, j).toShapefile( poLayer );
     }
 
+    poLayer = tgPolygonSet::openLayer( poDS, wkbPolygon25D, "pavement" );
+    
     TG_LOG(SG_GENERAL, SG_INFO, "Dump " << polys_built.area_size(AIRPORT_AREA_PAVEMENT) << " pavement polys ");
     for (unsigned int j=0; j< polys_built.area_size(AIRPORT_AREA_PAVEMENT); j++)
     {
-        char layer[32];
-        tgPolygon poly;
-        sprintf(layer, "pvmt_%d_poly", j );
-
-        poly = polys_built.get_poly(AIRPORT_AREA_PAVEMENT, j);
-        tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
+        polys_built.get_poly(AIRPORT_AREA_PAVEMENT, j).toShapefile( poLayer );
     }
 
+    poLayer = tgPolygonSet::openLayer( poDS, wkbPolygon25D, "innerbase" );
+    
     TG_LOG(SG_GENERAL, SG_INFO, "Dump " << polys_built.area_size(AIRPORT_AREA_INNER_BASE) << " inner base polys ");
     for (unsigned int j=0; j< polys_built.area_size(AIRPORT_AREA_INNER_BASE); j++)
     {
-        char layer[32];
-        tgPolygon poly;
-        sprintf(layer, "base_%d_poly", j );
-
-        poly = polys_built.get_poly(AIRPORT_AREA_INNER_BASE, j);
-        tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
+        polys_built.get_poly(AIRPORT_AREA_INNER_BASE, j).toShapefile( poLayer );
     }
+
+    poLayer = tgPolygonSet::openLayer( poDS, wkbPolygon25D, "outerbase" );
 
     TG_LOG(SG_GENERAL, SG_INFO, "Dump " << polys_built.area_size(AIRPORT_AREA_OUTER_BASE) << " outer base polys ");
     for (unsigned int j=0; j< polys_built.area_size(AIRPORT_AREA_OUTER_BASE); j++)
     {
-        char layer[32];
-        tgPolygon poly;
-        sprintf(layer, "clearing_%d_poly", j );
-
-        poly = polys_built.get_poly(AIRPORT_AREA_OUTER_BASE, j);
-        tgShapefile::FromPolygon( poly, debug_path, layer, poly.GetMaterial().c_str() );
+        polys_built.get_poly(AIRPORT_AREA_OUTER_BASE, j).toShapefile( poLayer );
     }
+
+    GDALClose( poDS );
 #endif
     
     TG_LOG(SG_GENERAL, SG_INFO, "done " );    
@@ -169,47 +161,43 @@ void Airport::BuildBase( void )
 void Airport::ClipBase()
 {
     tgAccumulator accum;
-    tgPolygon clipped;
 
     // first, collect all the base nodes
     TG_LOG(SG_GENERAL, SG_INFO, "Clipping Base polys" );
     for ( unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++ ) {
         for( unsigned int p = 0; p < polys_built.area_size(area); p++ ) {
-            tgPolygon& current = polys_built.get_poly(area, p);
+            tgPolygonSet& current = polys_built.get_poly(area, p);
 
-            clipped = accum.Diff( current );
+            accum.Diff_and_Add_cgal( current );
 
             // only add to output list if the clip left us with a polygon
-            if ( clipped.Contours() > 0 ) {
-                // copy all of the superpolys and texparams
-                clipped.SetId( polys_built.get_poly( area, p ).GetId() );
-                polys_clipped.add_poly( area, clipped );
+            if ( !current.isEmpty() ) {
+                polys_clipped.add_poly( area, current );
             }
-
-            accum.Add( current );
         }
     }
     
     // create the inner base poly as the union of all innerbase polys
-    inner_base = tgPolygon::Union( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );    
+    inner_base = tgPolygonSet::join( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );    
 
     // now break into max segment size
     for (unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++) {
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon& poly = polys_clipped.get_poly( area, p );
+            tgPolygonSet& poly = polys_clipped.get_poly( area, p );
 
-            poly = tgPolygon::SplitLongEdges(poly, 100);
+            //poly = tgPolygon::SplitLongEdges(poly, 100);
 
             polys_clipped.set_poly( area, p, poly );
         }
     }
-    inner_base = tgPolygon::SplitLongEdges(inner_base, 100);
+    // inner_base = tgPolygon::SplitLongEdges(inner_base, 100);
     
     
     // Now, Make sure we have all the base nodes added as smoothed elevation nodes
+#if 0 // mesg generation
     for (unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++) {
         for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon& poly = polys_clipped.get_poly( area, p );
+            tgPolygonSet& poly = polys_clipped.get_poly( area, p );
 
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {
@@ -220,7 +208,7 @@ void Airport::ClipBase()
             }
         }
     }
-    
+
     // and the inner base
     for (unsigned int con=0; con < inner_base.Contours(); con++) {
         for (unsigned int n = 0; n < inner_base.ContourSize( con ); n++) {
@@ -229,10 +217,12 @@ void Airport::ClipBase()
             base_nodes.unique_add( node, TG_NODE_SMOOTHED );
         }
     }
+#endif
 }
 
 void Airport::CleanBase()
 {
+#if 0 // MESH GENERATION
     int before, after;
     std::vector<SGGeod> points;
     tgRectangle bb;
@@ -287,10 +277,12 @@ void Airport::CleanBase()
     }
 #endif
 
+#endif
 }
 
 void Airport::TesselateBase()
 {
+#if 0 // MESH GENERATION    
     //TG_LOG(SG_GENERAL, SG_INFO, "Tesselating Base polys" );
 
     // tesselate the polygons and prepair them for final output
@@ -325,20 +317,24 @@ void Airport::TesselateBase()
             }
         }
     }
+#endif    
 }
 
 void Airport::TextureBase( void )
 {
+#if 0 // TODO    
     for ( unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& poly = polys_clipped.get_poly(area, p);
             poly.Texture( );
         }
     }
+#endif    
 }
 
 void Airport::CalcBaseElevations( const std::string& root, const string_list& elev_src )
 {
+#if 0 // In construct    
     // first, generate the bounding rect, and average elevation
     tgRectangle bounds;
 
@@ -361,10 +357,12 @@ void Airport::CalcBaseElevations( const std::string& root, const string_list& el
     // then generate the surface
     base_surf.Create(  root, elev_src, bounds, average, slope_max, slope_eps );    
     base_nodes.CalcElevations( TG_NODE_SMOOTHED, base_surf );
+#endif
 }
 
 void Airport::LookupBaseIndexes( void )
 {
+#if 0 // MESH GENERATION    
     // for each node, traverse all the triangles - and create face lists
     for ( unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
@@ -383,6 +381,7 @@ void Airport::LookupBaseIndexes( void )
             }
         }
     }
+#endif    
 }
 
 #if 0
@@ -400,6 +399,7 @@ void Airport::LookupBaseIndexes( void )
 
 void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 {
+#if 0 // output 2d format    
     if ( base_nodes.size() ) {
         //
         // first write the pavements and grass as chopped polys for undetailed LOD
@@ -546,4 +546,5 @@ void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 
         chopper.Save(false);
     }
+#endif    
 }

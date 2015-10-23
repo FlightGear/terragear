@@ -12,6 +12,7 @@ set(SOURCES
     tg_polygon_accumulator.cxx
     tg_polygon_set.cxx
     tg_polygon_set_io.cxx
+    tg_polygon_set_offset.cxx
     tg_polygon_set_sle.cxx
 
     tg_polygon_chop.cxx

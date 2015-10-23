@@ -24,6 +24,7 @@
 #define _OUTPUT_HXX
 
 #ifdef HAVE_CONFIG_H
+#undef HAVE_UNISTD_H    // resolve conflict with GDAL ( defines as 1, instead of just defining... )
 #include <config.h>
 #endif
 

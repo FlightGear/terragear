@@ -57,7 +57,7 @@ Taxiway::Taxiway(char* definition)
 }
 
 
-void Taxiway::GetPolys( tgpolygon_list& polys )
+void Taxiway::GetPolys( tgPolygonSetList& polys )
 {
     std::string material;
     
@@ -107,35 +107,30 @@ void Taxiway::GetPolys( tgpolygon_list& polys )
         throw sg_exception("unknown runway type!");
     }
     
-    tgPolygon taxiway;
-    taxiway.AddContour( taxi_contour );    
-    taxiway.SetMaterial( material );
-    taxiway.SetTexParams( taxi_contour.GetNode(0), width, 25*SG_FEET_TO_METER, heading );
-    taxiway.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
-    taxiway.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, -1.0, 1.0, 1.0 );
-    polys.push_back( taxiway );
+    tgTexInfo ti( material );
+    ti.SetRef( taxi_contour[0], width, 25*SG_FEET_TO_METER, heading );
+    ti.SetLimits( 0.0, 0.0, 1.0, 1.0 );
+    ti.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, -1.0, -1.0, 1.0, 1.0 );
+    
+    polys.push_back( tgPolygonSet( taxi_contour, ti, "taxiway" ) );
 }
 
-void Taxiway::GetInnerBasePolys( tgpolygon_list& polys )
+void Taxiway::GetInnerBasePolys( tgPolygonSetList& polys )
 {
-    tgPolygon ib;
+    tgTexInfo    ti( "Grass" );
+    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
     
-    ib.AddContour( tgContour::Expand( taxi_contour, 20.0) );
-    ib.SetMaterial( "Grass" );
-    ib.SetTexMethod( TG_TEX_BY_GEODE );
-    
-    polys.push_back( ib );
+    tgPolygonSet ps( taxi_contour, ti, "taxiway_innerbase" );    
+    polys.push_back( ps.offset( 20.0l ) );
 }
 
-void Taxiway::GetOuterBasePolys( tgpolygon_list& polys )
+void Taxiway::GetOuterBasePolys( tgPolygonSetList& polys )
 {
-    tgPolygon ob;
+    tgTexInfo    ti( "Grass" );
+    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
     
-    ob.AddContour( tgContour::Expand( taxi_contour, 50.0) );
-    ob.SetMaterial( "Grass" );
-    ob.SetTexMethod( TG_TEX_BY_GEODE );
-    
-    polys.push_back( ob );
+    tgPolygonSet ps( taxi_contour, ti, "taxiway_outerbase" );    
+    polys.push_back( ps.offset( 50.0l ) );
 }
 
 void Taxiway::GetLights(tglightcontour_list& lights)
@@ -145,17 +140,23 @@ void Taxiway::GetLights(tglightcontour_list& lights)
         // Spacing is 10m
 
         // Vector calculation
-        SGVec3f vec = normalize(SGVec3f::fromGeod(taxi_contour.GetNode(0)));
+        SGVec3f vec = normalize( SGVec3f( CGAL::to_double(taxi_contour[0].x()), CGAL::to_double(taxi_contour[0].y()), 0.0l ));
 
         tgLightContour blue;
         blue.SetType( "RWY_BLUE_TAXIWAY_LIGHTS" );
 
-        for ( unsigned int i = 0; i < taxi_contour.GetSize(); ++i ) {
+        for ( unsigned int i = 0; i < taxi_contour.size(); ++i ) {
             double dist, course, cs;
-            SGGeodesy::inverse(taxi_contour.GetNode(i), taxi_contour.GetNode(i+1), course, cs, dist );
+            unsigned int   srcIdx = i;
+            unsigned int   trgIdx = i+1;
+            SGGeod sgSrc = SGGeod::fromDeg( CGAL::to_double( taxi_contour[srcIdx].x() ), CGAL::to_double( taxi_contour[srcIdx].y() ) );
+            SGGeod sgTrg = SGGeod::fromDeg( CGAL::to_double( taxi_contour[trgIdx].x() ), CGAL::to_double( taxi_contour[trgIdx].y() ) );
+            
+            SGGeodesy::inverse(sgSrc, sgTrg, course, cs, dist );
+            
             int divs = (int)(dist / 10.0);
             double step = dist/divs;
-            SGGeod pt = taxi_contour.GetNode(i);
+            SGGeod pt = sgSrc;
             for (int j = 0; j < divs; ++j) {
                 pt = SGGeodesy::direct(pt, course, step );
                 blue.AddLight( pt, vec );

@@ -16,8 +16,7 @@
 #ifndef _HELIPAD_HXX
 #define _HELIPAD_HXX
 
-#include <terragear/tg_polygon.hxx>
-#include <terragear/tg_accumulator.hxx>
+#include <terragear/polygon_set/tg_polygon_set.hxx>
 #include <terragear/tg_light.hxx>
 
 class Helipad
@@ -38,29 +37,28 @@ public:
                    tgpolygon_list& apt_clearing_polys,
                    tgAccumulator& accum );
 #endif
-    void GetMainPolys( tgpolygon_list& polys );
-    void GetShoulderPolys( tgpolygon_list& polys );
-    void GetInnerBasePolys( tgpolygon_list& polys );
-    void GetOuterBasePolys( tgpolygon_list& polys );
+    void GetMainPolys( tgPolygonSetList& polys );
+    void GetShoulderPolys( tgPolygonSetList& polys );
+    void GetInnerBasePolys( tgPolygonSetList& polys );
+    void GetOuterBasePolys( tgPolygonSetList& polys );
     void GetLights( tglightcontour_list& lights );
     
     SGGeod GetLoc()
     {
-        return SGGeod::fromDeg(heli.lon, heli.lat);
+        return SGGeod::fromDeg(lon, lat);
     }
 
     bool GetsShoulder()
     {
-        return (heli.surface < 3) ? true : false;
+        return (surface < 3) ? true : false;
     }
 
-    void BuildShoulder( tgpolygon_list& rwy_polys,
-                        tgcontour_list& slivers,
-                        tgAccumulator& accum
-                      );
+//    void BuildShoulder( tgPolygonSetList& rwy_polys,
+//                        tgcontour_list& slivers,
+//                        tgAccumulator& accum
+//                      );
 
 private:
-    struct TGRunway {
     // data for helipad
     char    designator[16];
     double  lat;
@@ -73,29 +71,24 @@ private:
     int     shoulder;
     double  smoothness;
     int     edge_lights;
-    };
-
-    TGRunway heli;
 
     // generate an area for a runway with expansion specified in meters
     // (return result points in degrees)
-    tgContour gen_helipad_area_w_extend( double length_extend, double width_extend )
+    cgalPoly_Polygon gen_helipad_area_w_extend( double length_extend, double width_extend )
     {
-        return ( gen_wgs84_area( GetLoc(), heli.length + 2.0*length_extend, 0.0, 0.0, heli.width + 2.0*width_extend, heli.heading, false) );
+        return ( gen_wgs84_area( GetLoc(), length + 2.0*length_extend, 0.0, 0.0, width + 2.0*width_extend, heading, false) );
     }
 
     tglightcontour_list gen_helipad_lights(double maxsize);
-    void                build_helipad_shoulders( const tgContour& outer_area );
+    void                build_helipad_shoulders( const cgalPoly_Polygon& outer_area );
 
     // storage for Shoulders - The superpolys are generated during
     // helipad construction, but not clipped until shoulder construction.
-    tgpolygon_list  shoulder_polys;
+    tgPolygonSetList  shoulderPolys;
 
-    tgPolygon WriteGeom( const tgContour& area,
-                         std::string material,
-                         tgpolygon_list& rwy_polys,
-                         tgcontour_list& slivers );
-
+    tgPolygonSet WriteGeom( const cgalPoly_Polygon& area,
+                            std::string material,
+                            tgPolygonSetList& rwy_polys );
 };
 
 typedef std::vector <Helipad *> HelipadList;

@@ -131,6 +131,17 @@ void tgPolygonSet::join( const cgalPoly_Polygon& other )
     ps.join( other );    
 }
 
+tgPolygonSet tgPolygonSet::join( const tgPolygonSetList& sets )
+{
+    tgPolygonSetList::const_iterator it;
+    cgalPoly_PolygonSet              result;
+    
+    for ( it = sets.begin(); it != sets.end(); it++ ) {
+        result.join( it->getPs() );
+    }
+    
+    return tgPolygonSet( result );
+}
 
 CGAL::Bbox_2 tgPolygonSet::getBoundingBox( void ) const
 {
@@ -138,4 +149,85 @@ CGAL::Bbox_2 tgPolygonSet::getBoundingBox( void ) const
     ps.polygons_with_holes( std::back_inserter(pwh_list) );
     
     return CGAL::bbox_2( pwh_list.begin(), pwh_list.end() );
+}
+
+// where to put these...
+double DirectionToHeading( cgalPoly_Direction dir )
+{
+    double angle = SGMiscd::rad2deg( atan2( CGAL::to_double(dir.dy()), CGAL::to_double(dir.dx()) ) );
+
+    return SGMiscd::normalizePeriodic( 0, 360, -(angle-90) );   
+}
+
+cgalPoly_Transformation CreateGeodesyTranslation( const cgalPoly_Point& src, const CGAL::Vector_2<cgalPoly_Kernel>& dir, double offset )
+{
+    // get the direction of this vector in degrees
+    double h = DirectionToHeading( dir.direction() );
+
+    // use simgear Geodesy to get the second point
+    SGGeod gsrc = SGGeod::fromDeg( CGAL::to_double( src.x() ), CGAL::to_double( src.y() ) );
+    SGGeod gdst = SGGeodesy::direct( gsrc, h, offset );
+    
+    cgalPoly_Point dst = cgalPoly_Point( gdst.getLongitudeDeg(), gdst.getLatitudeDeg() );
+    CGAL::Vector_2<cgalPoly_Kernel> direct = CGAL::Vector_2<cgalPoly_Kernel>(src, dst);
+    
+    // create a transformation to translate middle point 
+    return cgalPoly_Transformation(CGAL::TRANSLATION, direct);
+}
+
+SGGeod OffsetPointMiddle( const cgalPoly_Point& pPrev, const cgalPoly_Point& pCur, const cgalPoly_Point& pNext, double offset_by )
+{
+    // Generate two unit vectors from middle to prev, and middle to next
+    CGAL::Vector_2<cgalPoly_Kernel> vecPrev;
+    vecPrev = CGAL::Vector_2<cgalPoly_Kernel>( pCur, pPrev );
+    vecPrev = vecPrev / sqrt( CGAL::to_double( vecPrev.squared_length() ) );
+    
+    CGAL::Vector_2<cgalPoly_Kernel> vecNext;
+    vecNext = CGAL::Vector_2<cgalPoly_Kernel>( pCur, pNext );
+    vecNext = vecNext / sqrt( CGAL::to_double( vecNext.squared_length() ) );
+    
+    CGAL::Vector_2<cgalPoly_Kernel> vecAvg;
+    if ( CGAL::right_turn( pPrev, pCur, pNext ) ) {
+        vecAvg = vecPrev + vecNext;
+    } else {
+        vecAvg = -(vecPrev + vecNext);
+    }
+    
+    // create a translation along vecAvg for offset_by meters
+    cgalPoly_Transformation translate = CreateGeodesyTranslation( pCur, vecAvg, offset_by );
+    cgalPoly_Point p = translate( pCur );
+    
+    return SGGeod::fromDeg( CGAL::to_double( p.x() ), CGAL::to_double( p.y() ) );
+}
+
+SGGeod OffsetPointFirst( const cgalPoly_Point& pCur, const cgalPoly_Point& pNext, double offset_by )
+{
+    // Generate vector from cur to next
+    CGAL::Vector_2<cgalPoly_Kernel> vecNext;
+    vecNext = CGAL::Vector_2<cgalPoly_Kernel>( pCur, pNext );
+    
+    // create perp to the right
+    CGAL::Vector_2<cgalPoly_Kernel> vecRight = vecNext.perpendicular( CGAL::CLOCKWISE );
+    
+    // create a translation along vecRight for offset_by meters
+    cgalPoly_Transformation translate = CreateGeodesyTranslation( pCur, vecRight, offset_by );
+    cgalPoly_Point p = translate( pCur );
+    
+    return SGGeod::fromDeg( CGAL::to_double( p.x() ), CGAL::to_double( p.y() ) );    
+}
+
+SGGeod OffsetPointLast( const cgalPoly_Point& pPrev, const cgalPoly_Point& pCur, double offset_by )
+{
+    // Generate vector from prev to cur
+    CGAL::Vector_2<cgalPoly_Kernel> vecCur;
+    vecCur = CGAL::Vector_2<cgalPoly_Kernel>( pPrev, pCur );
+    
+    // create perp to the right
+    CGAL::Vector_2<cgalPoly_Kernel> vecRight = vecCur.perpendicular( CGAL::CLOCKWISE );
+    
+    // create a translation along vecRight for offset_by meters
+    cgalPoly_Transformation translate = CreateGeodesyTranslation( pCur, vecRight, offset_by );
+    cgalPoly_Point p = translate( pCur );
+    
+    return SGGeod::fromDeg( CGAL::to_double( p.x() ), CGAL::to_double( p.y() ) );        
 }

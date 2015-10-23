@@ -12,9 +12,9 @@
 #include <simgear/io/sg_binobj.hxx>
 #include <simgear/misc/texcoord.hxx>
 
-#include <terragear/tg_polygon.hxx>
+#include <terragear/polygon_set/tg_polygon_set.hxx>
+
 #include <terragear/tg_surface.hxx>
-#include <terragear/tg_chopper.hxx>
 #include <terragear/tg_rectangle.hxx>
 #include <terragear/tg_unique_geod.hxx>
 #include <terragear/tg_unique_vec3f.hxx>
@@ -97,7 +97,7 @@ void Airport::BuildFeatures( void )
         if (lf_ig[i] ) {
             lf_ig[i]->Execute();
             for ( tgintersectionedge_it it=lf_ig[i]->edges_begin(); it != lf_ig[i]->edges_end(); it++ ) {
-                tgPolygon poly = (*it)->GetPoly("complete");
+                tgPolygonSet poly = (*it)->GetPoly("complete");
                 polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
             }            
         }
@@ -156,6 +156,7 @@ void Airport::ClipFeatures()
     // first, collect all the base nodes
     TG_LOG(SG_GENERAL, SG_INFO, "Clipping Feature polys" );
     
+#if 0 // mesh generation
     for ( unsigned int x=0; x<polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES).size(); x++ ) {
         if (polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES)[x].GetNumIntVas() != 1 ) {
             TG_LOG(SG_GENERAL, SG_ALERT, "rwy poly " << x << " dows not have int va " );
@@ -169,50 +170,39 @@ void Airport::ClipFeatures()
             exit(0);
         }
     }
-    
+#endif
+
     for( unsigned int p = 0; p < polys_built.area_size(AIRPORT_AREA_RWY_FEATURES); p++ ) {
-        tgPolygon& current = polys_built.get_poly(AIRPORT_AREA_RWY_FEATURES, p);
+        tgPolygonSet& current = polys_built.get_poly(AIRPORT_AREA_RWY_FEATURES, p);
         
-        clipped = rwy_accum.Diff( current );
+        rwy_accum.Diff_and_Add_cgal( current );
         
         // only add to output list if the clip left us with a polygon
-        if ( clipped.Contours() > 0 ) {                
-            // add the sliverless result polygon to the clipped polys list
-            if ( clipped.Contours() > 0  ) {
-                // copy all of the superpolys and texparams
-                clipped.SetId( polys_built.get_poly( AIRPORT_AREA_RWY_FEATURES, p ).GetId() );
-                polys_clipped.add_poly( AIRPORT_AREA_RWY_FEATURES, clipped );
-            }
-        }
-        
-        rwy_accum.Add( current );
+        if ( !current.isEmpty() ) {                
+            polys_clipped.add_poly( AIRPORT_AREA_RWY_FEATURES, current );
+        }        
     }
     
     for( unsigned int p = 0; p < polys_built.area_size(AIRPORT_AREA_TAXI_FEATURES); p++ ) {
-        tgPolygon& current = polys_built.get_poly(AIRPORT_AREA_TAXI_FEATURES, p);
+        tgPolygonSet& current = polys_built.get_poly(AIRPORT_AREA_TAXI_FEATURES, p);
             
 #if CLIP_INTERSECTED_FEATURES        
-        clipped = taxi_accum.Diff( current );
+        taxi_accum.Diff_and_Add_cgal( current );
             
         // only add to output list if the clip left us with a polygon
-        if ( clipped.Contours() > 0 ) {                
-            // add the sliverless result polygon to the clipped polys list
-            if ( clipped.Contours() > 0  ) {
-                // copy all of the superpolys and texparams
-                clipped.SetId( polys_built.get_poly( AIRPORT_AREA_TAXI_FEATURES, p ).GetId() );
-                polys_clipped.add_poly( AIRPORT_AREA_TAXI_FEATURES, clipped );
-            }
+        if ( !current.isEmpty() ) {                
+            polys_clipped.add_poly( AIRPORT_AREA_TAXI_FEATURES, current );
         }
         
-        taxi_accum.Add( current );
 #else
         polys_clipped.add_poly( AIRPORT_AREA_TAXI_FEATURES, current );
 #endif            
     }
-    
+
+#if 0    
     // now break into max segment size
     for (unsigned int p = 0; p < polys_clipped.area_size(AIRPORT_AREA_RWY_FEATURES); p++ ) {
-        tgPolygon& poly = polys_clipped.get_poly( AIRPORT_AREA_RWY_FEATURES, p );
+        tgPolygonSet& poly = polys_clipped.get_poly( AIRPORT_AREA_RWY_FEATURES, p );
         
         poly = tgPolygon::SplitLongEdges(poly, 100);
         
@@ -226,8 +216,9 @@ void Airport::ClipFeatures()
             
         polys_clipped.set_poly( AIRPORT_AREA_TAXI_FEATURES, p, poly );
     }
+#endif    
     
-    
+#if 0 // MESH GENERATION    
     // Now, Make sure we have all the base nodes added as smoothed elevation nodes
     for (unsigned int p = 0; p < polys_clipped.area_size(AIRPORT_AREA_RWY_FEATURES); p++ ) {
         tgPolygon& poly = polys_clipped.get_poly( AIRPORT_AREA_RWY_FEATURES, p );
@@ -252,9 +243,11 @@ void Airport::ClipFeatures()
             }
         }
     }
-   
+#endif
+
    TG_LOG(SG_GENERAL, SG_ALERT, "check all features have va attrib after clipping" );
-   
+
+#if 0 // MESH GENERATION   
    for ( unsigned int x=0; x<polys_clipped.get_polys(AIRPORT_AREA_RWY_FEATURES).size(); x++ ) {
        if (polys_clipped.get_polys(AIRPORT_AREA_RWY_FEATURES)[x].GetNumIntVas() != 1 ) {
            TG_LOG(SG_GENERAL, SG_ALERT, "rwy poly " << x << " dows not have int va " );
@@ -270,11 +263,13 @@ void Airport::ClipFeatures()
    }
 
    TG_LOG(SG_GENERAL, SG_ALERT, "after clipping, all features have va attrib " );
-   
+#endif
+
 }
 
 void Airport::CleanFeatures()
 {
+#if 0 // MESH GENERATION    
     int before, after;
     std::vector<SGGeod> points;
     tgRectangle bb;
@@ -282,7 +277,7 @@ void Airport::CleanFeatures()
     // traverse each poly, and add intermediate nodes
     for ( unsigned int area=AIRPORT_AREA_RWY_FEATURES; area<=AIRPORT_AREA_TAXI_FEATURES; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon current = polys_clipped.get_poly(area, p);
+            tgPolygonSet current = polys_clipped.get_poly(area, p);
 
             if ( current.GetNumIntVas() != 1 ) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "AddColinearNodes broken before call" );
@@ -362,11 +357,12 @@ void Airport::CleanFeatures()
     }
     
     TG_LOG(SG_GENERAL, SG_ALERT, "after cleaning, all features have va attrib " );
-    
+#endif    
 }
 
 void Airport::IntersectFeaturesWithBase(void)
 {
+#if 0 // MESH GENERATION    
     int before, after;
     SGTimeStamp intersect_start;
     SGTimeStamp intersect_end;
@@ -376,7 +372,7 @@ void Airport::IntersectFeaturesWithBase(void)
     // generate the base mesh    
     for ( unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon& poly = polys_clipped.get_poly( area, p );
+            tgPolygonSet& poly = polys_clipped.get_poly( area, p );
             
             for (unsigned int t=0; t < poly.Triangles(); t++) {
                 // triangles don't have elevation - get it from base_nodes via index
@@ -416,10 +412,12 @@ void Airport::IntersectFeaturesWithBase(void)
     intersect_end.stamp();
     
     SG_LOG( SG_GENERAL, SG_ALERT, "IntersectFeaturesWithBase time " << intersect_end - intersect_start );
+#endif    
 }
 
 void Airport::TesselateFeatures()
 {
+#if 0 // MESH GENERATION    
     //sglog().setLogLevels( SG_GENERAL, SG_INFO );
     
     char datasource[64];
@@ -487,10 +485,12 @@ void Airport::TesselateFeatures()
             }
         }
     }
+#endif    
 }
 
 void Airport::TextureFeatures( void )
 {
+#if 0 // TODO    
     for ( unsigned int area=AIRPORT_AREA_RWY_FEATURES; area<=AIRPORT_AREA_TAXI_FEATURES; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon& poly = polys_clipped.get_poly(area, p);
@@ -508,6 +508,7 @@ void Airport::TextureFeatures( void )
 //          sglog().setLogLevels( SG_GENERAL, SG_INFO );        
         }
     }
+#endif    
 }
 
 void Airport::CalcFeatureElevations( void )
@@ -528,6 +529,7 @@ void Airport::CalcFeatureElevations( void )
 
 void Airport::LookupFeatureIndexes( void )
 {
+#if 0 // MESH GENERATION    
     // for each node, traverse all the triangles - and create face lists
     for ( unsigned int area=AIRPORT_AREA_RWY_FEATURES; area<=AIRPORT_AREA_TAXI_FEATURES; area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
@@ -546,6 +548,7 @@ void Airport::LookupFeatureIndexes( void )
             }
         }
     }
+#endif    
 }
 
 // belongs in terragear lib...
@@ -595,6 +598,7 @@ unsigned int add_unique_float( std::vector<float>& vaflts, float attrib )
 
 void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
 {
+#if 0 // output    
     SG_LOG(SG_GENERAL, SG_INFO, "WriteFeatureOutput" );
     
     if ( feat_nodes.size() ) {
@@ -720,5 +724,6 @@ void Airport::WriteFeatureOutput( const std::string& root, const SGBucket& b )
         
         // write out airport object reference
         write_index_lines( objpath, b, name );
-    }        
+    }
+#endif   
 }

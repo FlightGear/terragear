@@ -1,7 +1,7 @@
 #ifndef _BEZPOLY_H_
 #define _BEZPOLY_H_
 
-#include <terragear/tg_polygon.hxx>
+#include <terragear/polygon_set/tg_polygon_set.hxx>
 
 #include "beznode.hxx"
 #include "linearfeature.hxx"
@@ -20,20 +20,20 @@ public:
     void CloseCurContour( Airport* ap );
     void Finish();
 
-    void GetPolys( tgpolygon_list& polys );
-    void GetInnerBasePolys( tgpolygon_list& polys );
-    void GetOuterBasePolys( tgpolygon_list& polys );
-    void GetInnerBoundaryPolys( tgpolygon_list& polys );
-    void GetOuterBoundaryPolys( tgpolygon_list& polys );
+    void GetPolys( tgPolygonSetList& polys );
+    void GetInnerBasePolys( tgPolygonSetList& polys );
+    void GetOuterBasePolys( tgPolygonSetList& polys );
+    void GetInnerBoundaryPolys( tgPolygonSetList& polys );
+    void GetOuterBoundaryPolys( tgPolygonSetList& polys );
     
-    void GetFeaturePolys( tgpolygon_list& polys );
-    void GetFeatureCapPolys( tgpolygon_list& polys );
+    void GetFeaturePolys( tgPolygonSetList& polys );
+    void GetFeatureCapPolys( tgPolygonSetList& polys );
     void GetFeatureLights( tglightcontour_list& lights );
     
 private:
     // convert the BezierPoly to a normal Poly (adding nodes for the curves)
-    void CreateConvexHull( void );
-    void ConvertContour( BezContour* src, tgContour& dst );
+    // void CreateConvexHull( void );
+    cgalPoly_Polygon ConvertContour( BezContour* src );
     std::string GetMaterial( int surface );
 
     bool   is_pavement;
@@ -55,10 +55,10 @@ private:
     BezContour* cur_contour;
 
     // Converted polygon after parsing complete
-    tgPolygon pre_tess;
+    cgalPoly_PolygonWithHoles pre_tess;
 
     // shoulders after BTG built
-    tgpolygon_list shoulder_polys;
+    tgPolygonSetList shoulder_polys;
 
     // pavement definitions have multiple linear features (markings and lights for each contour)
     LinearFeature* cur_feature;

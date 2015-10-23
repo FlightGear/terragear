@@ -1,9 +1,8 @@
 #ifndef _TAXIWAY_H_
 #define _TAXIWAY_H_
 
+#include <terragear/polygon_set/tg_polygon_set.hxx>
 #include <terragear/tg_light.hxx>
-#include <terragear/tg_polygon.hxx>
-#include <terragear/tg_accumulator.hxx>
 
 #include "apt_math.hxx"
 
@@ -28,9 +27,9 @@ public:
                   tgAccumulator& accum,
                   std::string& shapefile_name );
 #endif
-    void GetPolys( tgpolygon_list& polys );
-    void GetInnerBasePolys( tgpolygon_list& polys );
-    void GetOuterBasePolys( tgpolygon_list& polys );
+    void GetPolys( tgPolygonSetList& polys );
+    void GetInnerBasePolys( tgPolygonSetList& polys );
+    void GetOuterBasePolys( tgPolygonSetList& polys );
     void GetLights(tglightcontour_list& lights);
     
 private:
@@ -41,7 +40,7 @@ private:
     int     surface;
     char    lighting[6];
 
-    tgContour taxi_contour;
+    cgalPoly_Polygon taxi_contour;
 };
 
 typedef std::vector <Taxiway *> TaxiwayList;

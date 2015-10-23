@@ -63,7 +63,7 @@ tglightcontour_list Runway::gen_runway_edge_lights( bool recip )
 
     int i;
     double length_hdg;
-    double dist = rwy.length - rwy.threshold[0] - rwy.threshold[1];
+    double dist = length - threshold[0] - threshold[1];
     int divs = (int)(dist / 60.0) + 1;
     double step = dist / divs;
     SGGeod pt1, pt2;
@@ -71,24 +71,24 @@ tglightcontour_list Runway::gen_runway_edge_lights( bool recip )
     SGVec3f normal = gen_runway_light_vector( 3.0, recip );
 
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180.0);
-        pt1 = SGGeodesy::direct(GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180.0);
+        pt1 = SGGeodesy::direct(GetEnd(), length_hdg, threshold[get_thresh0(recip)]);
         pt2 = GetStart();
     } else {
-        length_hdg = rwy.heading;
-        pt1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = heading;
+        pt1 = SGGeodesy::direct(GetStart(), length_hdg, threshold[get_thresh0(recip)]);
         pt2 = GetEnd();
     }
     double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0 );
 
     int tstep;
-    double offset = 2 + rwy.width * 0.5;
+    double offset = 2 + width * 0.5;
 
     //front threshold
-    if (rwy.threshold[get_thresh0(recip)] > step )
+    if (threshold[get_thresh0(recip)] > step )
     {
         SGGeod pt0 = pt1;
-        tstep = (int)(rwy.threshold[get_thresh0(recip)] / step);
+        tstep = (int)(threshold[get_thresh0(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
             pt0 = SGGeodesy::direct(pt0, length_hdg, -step);
             r_lights.AddLight( SGGeodesy::direct(pt0, left_hdg,  offset), normal );
@@ -99,7 +99,7 @@ tglightcontour_list Runway::gen_runway_edge_lights( bool recip )
     for ( i = 0; i < divs; ++i ) {
         pt1 = SGGeodesy::direct(pt1, SGGeodesy::courseDeg(pt1, pt2), step);
         dist -= step;
-        if ( dist > 610.0 || dist > rwy.length / 2 ) {
+        if ( dist > 610.0 || dist > length / 2 ) {
             w_lights.AddLight( SGGeodesy::direct(pt1, left_hdg,  offset), normal );
             w_lights.AddLight( SGGeodesy::direct(pt1, left_hdg, -offset), normal );
         } else if (dist > 5.0) {
@@ -109,9 +109,9 @@ tglightcontour_list Runway::gen_runway_edge_lights( bool recip )
     }
 
     //back threshold
-    if (rwy.threshold[get_thresh1(recip)] > step )
+    if (threshold[get_thresh1(recip)] > step )
     {
-        tstep = (int)(rwy.threshold[get_thresh1(recip)] / step);
+        tstep = (int)(threshold[get_thresh1(recip)] / step);
         for ( i = 0; i < tstep; ++i ) {
             y_lights.AddLight( SGGeodesy::direct(pt1, left_hdg,  offset), normal );
             y_lights.AddLight( SGGeodesy::direct(pt1, left_hdg, -offset), normal );
@@ -120,17 +120,17 @@ tglightcontour_list Runway::gen_runway_edge_lights( bool recip )
     }
 
     //Different intensities
-    if (rwy.edge_lights == 3) {
+    if (edge_lights == 3) {
         w_lights.SetType( "RWY_WHITE_LIGHTS" );
         y_lights.SetType( "RWY_YELLOW_LIGHTS" );
         r_lights.SetType( "RWY_RED_LIGHTS" );
     }
-    else if (rwy.edge_lights == 2) {
+    else if (edge_lights == 2) {
         w_lights.SetType( "RWY_WHITE_MEDIUM_LIGHTS" );
         y_lights.SetType( "RWY_YELLOW_MEDIUM_LIGHTS" );
         r_lights.SetType( "RWY_RED_MEDIUM_LIGHTS" );
     }
-    else if (rwy.edge_lights == 1) {
+    else if (edge_lights == 1) {
         w_lights.SetType( "RWY_WHITE_LOW_LIGHTS" );
         y_lights.SetType( "RWY_YELLOW_LOW_LIGHTS" );
         r_lights.SetType( "RWY_RED_LOW_LIGHTS" );
@@ -156,12 +156,12 @@ tglightcontour_list Runway::gen_runway_threshold_lights( const int kind, bool re
     double length_hdg;
 
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref1 = SGGeodesy::direct(GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref1 = SGGeodesy::direct(GetEnd(), length_hdg, threshold[get_thresh0(recip)] - 1);
         ref2 = GetEnd();
     } else {
-        length_hdg = rwy.heading;
-        ref1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
+        length_hdg = heading;
+        ref1 = SGGeodesy::direct(GetStart(), length_hdg, threshold[get_thresh0(recip)] - 1);
         ref2 = GetStart();
     }
 
@@ -169,10 +169,10 @@ tglightcontour_list Runway::gen_runway_threshold_lights( const int kind, bool re
     SGVec3f normal2 = gen_runway_light_vector( 3.0, !recip );
 
     double left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
-    int divs = (int)(rwy.width + 4) / 3.0;
-    double step = (rwy.width + 4) / divs;
+    int divs = (int)(width + 4) / 3.0;
+    double step = (width + 4) / divs;
     SGGeod pt1, pt2;
-    double offset = 2 + rwy.width * 0.5;
+    double offset = 2 + width * 0.5;
 
     if ( GetsThreshold(recip) ) {
         SGGeod thresh1 = pt1 = SGGeodesy::direct(ref1, left_hdg, offset);
@@ -250,12 +250,12 @@ tglightcontour_list Runway::gen_runway_center_line_lights( bool recip )
     double length_hdg;
 
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        pt1 = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        pt1 = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)]);
         pt2 = GetStart();
     } else {
-        length_hdg = rwy.heading;
-        pt1 = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = heading;
+        pt1 = SGGeodesy::direct(GetStart(), length_hdg, threshold[get_thresh0(recip)]);
         pt2 = GetEnd();
     }
 
@@ -307,18 +307,18 @@ tgLightContour Runway::gen_touchdown_zone_lights( bool recip )
     SGGeod ref;
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)]);
     } else {
-        length_hdg = rwy.heading;
-        ref = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = heading;
+        ref = SGGeodesy::direct(GetStart(), length_hdg, threshold[get_thresh0(recip)]);
     }
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
     // calculate amount of touchdown light rows.
     // They should cover a distance of 900m or
     // half the runway length, whichever comes first. Spacing is 30m.
-    int rows = (int)(rwy.length * 0.5) / 30;
+    int rows = (int)(length * 0.5) / 30;
     if (rows > 30) rows = 30;
 
     for ( int i = 0; i < rows; ++i ) {
@@ -359,7 +359,7 @@ tgLightContour Runway::gen_touchdown_zone_lights( bool recip )
 tgLightContour Runway::gen_reil( const int kind, bool recip )
 {
     tgLightContour lights;
-    string flag = rwy.rwnum[get_thresh0(recip)];
+    string flag = rwnum[get_thresh0(recip)];
     SGVec3f normal;
 
     if (kind == 1) {
@@ -374,15 +374,15 @@ tgLightContour Runway::gen_reil( const int kind, bool recip )
     SGGeod ref;
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)] - 1);
     } else {
-        length_hdg = rwy.heading;
-        ref = SGGeodesy::direct(GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] - 1);
+        length_hdg = heading;
+        ref = SGGeodesy::direct(GetStart(), length_hdg, threshold[get_thresh0(recip)] - 1);
     }
 
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
-    double offset = rwy.width * 0.5 + 12;
+    double offset = width * 0.5 + 12;
 
     // left light
     lights.AddLight( SGGeodesy::direct( ref, left_hdg,  offset ), normal );
@@ -412,11 +412,11 @@ tglightcontour_list Runway::gen_calvert( const string &kind, bool recip )
     SGGeod ref_save, pt;
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)] );
     } else {
-        length_hdg = rwy.heading;
-        ref_save = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = heading;
+        ref_save = SGGeodesy::direct( GetStart(), length_hdg, threshold[get_thresh0(recip)] );
     }
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
@@ -590,11 +590,11 @@ tglightcontour_list Runway::gen_alsf( const string &kind, bool recip )
     SGGeod ref_save, pt;
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)]);
     } else {
-        length_hdg = rwy.heading;
-        ref_save = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)]);
+        length_hdg = heading;
+        ref_save = SGGeodesy::direct( GetStart(), length_hdg, threshold[get_thresh0(recip)]);
     }
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
@@ -866,14 +866,14 @@ tgLightContour Runway::gen_odals( const int kind, bool recip )
     double length_hdg, left_hdg;
 
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)] );
     } else {
-        length_hdg = rwy.heading;
-        ref = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = heading;
+        ref = SGGeodesy::direct( GetStart(), length_hdg, threshold[get_thresh0(recip)] );
     }
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
-    double offset = rwy.width / 2 + 14;
+    double offset = width / 2 + 14;
 
     if (kind == 0) {
         // offset 14m left of runway
@@ -913,11 +913,11 @@ tglightcontour_list Runway::gen_ssalx( const string& kind, bool recip )
     // determine the start point.
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)] );
     } else {
-        length_hdg = rwy.heading;
-        ref_save = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = heading;
+        ref_save = SGGeodesy::direct( GetStart(), length_hdg, threshold[get_thresh0(recip)] );
     }
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
 
@@ -1030,11 +1030,11 @@ tglightcontour_list Runway::gen_malsx( const string& kind, bool recip )
     SGGeod ref_save, pt;
     double length_hdg, left_hdg;
     if ( recip ) {
-        length_hdg = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
-        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = SGMiscd::normalizePeriodic(0, 360, heading + 180);
+        ref_save = SGGeodesy::direct( GetEnd(), length_hdg, threshold[get_thresh0(recip)] );
     } else {
-        length_hdg = rwy.heading;
-        ref_save = SGGeodesy::direct( GetStart(), length_hdg, rwy.threshold[get_thresh0(recip)] );
+        length_hdg = heading;
+        ref_save = SGGeodesy::direct( GetStart(), length_hdg, threshold[get_thresh0(recip)] );
     }
     left_hdg = SGMiscd::normalizePeriodic(0, 360, length_hdg - 90.0);
     SGGeod ref = ref_save;
@@ -1140,7 +1140,7 @@ void Runway::gen_runway_lights( tglightcontour_list& lights ) {
         }
 
         // Make edge lighting
-        if ( rwy.edge_lights ) {
+        if ( edge_lights ) {
             tglightcontour_list s = gen_runway_edge_lights( recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
@@ -1148,7 +1148,7 @@ void Runway::gen_runway_lights( tglightcontour_list& lights ) {
         }
 
         // Centerline lighting
-        if ( rwy.centerline_lights ) {
+        if ( centerline_lights ) {
             tglightcontour_list s = gen_runway_center_line_lights( recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
@@ -1156,54 +1156,54 @@ void Runway::gen_runway_lights( tglightcontour_list& lights ) {
         }
 
         // Touchdown zone lighting
-        if ( rwy.tz_lights[side] ) {
+        if ( tz_lights[side] ) {
             tgLightContour s = gen_touchdown_zone_lights( recip );
             lights.push_back( s );
         }
 
         // REIL lighting
-        if ( rwy.reil[side] ) {
-            tgLightContour s = gen_reil( rwy.reil[side], recip );
+        if ( reil[side] ) {
+            tgLightContour s = gen_reil( reil[side], recip );
             lights.push_back( s );
         }
 
         // Approach lighting
-        if ( rwy.approach_lights[side] == 1 /* ALSF-I */ ) {
+        if ( approach_lights[side] == 1 /* ALSF-I */ ) {
             tglightcontour_list s = gen_alsf( "1", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 2 /* ALSF-II */ ) {
+        else if ( approach_lights[side] == 2 /* ALSF-II */ ) {
             tglightcontour_list s = gen_alsf( "2", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 3  /* Calvert I */ ) {
+        else if ( approach_lights[side] == 3  /* Calvert I */ ) {
             tglightcontour_list s = gen_calvert( "1", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 4  /* Calvert II */ ) {
+        else if ( approach_lights[side] == 4  /* Calvert II */ ) {
             tglightcontour_list s = gen_calvert( "2", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 5 /* SSALR */ ) {
+        else if ( approach_lights[side] == 5 /* SSALR */ ) {
             tglightcontour_list s = gen_ssalx( "R", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 6 /* SSALF */ ) {
+        else if ( approach_lights[side] == 6 /* SSALF */ ) {
             tglightcontour_list s = gen_ssalx( "F", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
@@ -1212,54 +1212,54 @@ void Runway::gen_runway_lights( tglightcontour_list& lights ) {
 
         // SALS (Essentially ALSF-1 without the lead in rabbit lights, and
         // a shorter center bar)
-        else if ( rwy.approach_lights[side] == 7 /* SALS */ ) {
+        else if ( approach_lights[side] == 7 /* SALS */ ) {
             tglightcontour_list s = gen_alsf( "O", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 8 /* MALSR */ ) {
+        else if ( approach_lights[side] == 8 /* MALSR */ ) {
             tglightcontour_list s = gen_malsx( "R", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 9 /* MALSF */ ) {
+        else if ( approach_lights[side] == 9 /* MALSF */ ) {
             tglightcontour_list s = gen_malsx( "F", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 10 /* MALSX */ ) {
+        else if ( approach_lights[side] == 10 /* MALSX */ ) {
             tglightcontour_list s = gen_malsx( "x", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights.push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == 11 /* ODALS Omni-directional approach light system */ ) {
+        else if ( approach_lights[side] == 11 /* ODALS Omni-directional approach light system */ ) {
             tgLightContour s = gen_odals( 0, recip );
             lights.push_back( s );
         }
 
         // RAIL: Sequenced strobes with no other approach lights
-        else if ( rwy.approach_lights[side] == 12 /* RAIL Runway alignment indicator lights */ ) {
+        else if ( approach_lights[side] == 12 /* RAIL Runway alignment indicator lights */ ) {
             tgLightContour s = gen_odals( 1, recip );
             lights.push_back( s );
         }
 
 #if 0
-        else if ( rwy.approach_lights[side] == -1 /* SALSF not supported by database */ ) {
+        else if ( approach_lights[side] == -1 /* SALSF not supported by database */ ) {
             superpoly_list s = gen_alsf( "P", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights->push_back( s[i] );
             }
         }
 
-        else if ( rwy.approach_lights[side] == -1 /* SSALS not supported by database */ ) {
+        else if ( approach_lights[side] == -1 /* SSALS not supported by database */ ) {
             superpoly_list s = gen_ssalx( "S", recip );
             for ( i = 0; i < s.size(); ++i ) {
                 lights->push_back( s[i] );
@@ -1269,7 +1269,7 @@ void Runway::gen_runway_lights( tglightcontour_list& lights ) {
 
         // Approach light systems that have a threshold light bar
         // use a central routine for its creation
-        if ( rwy.approach_lights[side] > 0 && rwy.approach_lights[side] < 11)
+        if ( approach_lights[side] > 0 && approach_lights[side] < 11)
         {
             tglightcontour_list s = gen_runway_threshold_lights( 1, recip );
             for ( i = 0; i < s.size(); ++i ) {
@@ -1280,7 +1280,7 @@ void Runway::gen_runway_lights( tglightcontour_list& lights ) {
         // If the runway has edge lights but no approach lights,
         // or approach lights without a lights bar,
         // create a simple threshold lighting
-        if ( rwy.edge_lights && (rwy.approach_lights[side] == 0 || rwy.approach_lights[side] > 10))
+        if ( edge_lights && (approach_lights[side] == 0 || approach_lights[side] > 10))
         {
             tglightcontour_list s = gen_runway_threshold_lights( 0, recip );
             for ( i = 0; i < s.size(); ++i ) {

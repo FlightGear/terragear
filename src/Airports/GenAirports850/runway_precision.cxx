@@ -33,6 +33,7 @@
 
 #include <terragear/tg_shapefile.hxx>
 
+#include "airport.hxx"
 #include "global.hxx"
 #include "beznode.hxx"
 #include "runway.hxx"
@@ -109,6 +110,7 @@ static const struct rwy_sections precision[] = {
 // UK Precision runway sections from after the designation number
 // onwards to the middle (one half).
 // Set order of sections and their corresponding size
+#if 0
 static const struct sections uk_prec[] = {
     { "tz_one_a", 380 * SG_FEET_TO_METER },
     { "rest", 200 * SG_FEET_TO_METER },
@@ -155,54 +157,63 @@ static const struct sections nprec[] = {
     { "centerline", 200 * SG_FEET_TO_METER },
     { "aim", 400 * SG_FEET_TO_METER }
 };
+#endif
 
-
-tgPolygon Runway::gen_shoulder_section( SGGeod& p0, SGGeod& p1, SGGeod& t0, SGGeod& t1, int side, double heading, double width, std::string surface )
+tgPolygonSet Runway::gen_shoulder_section( Airport* ap, int rwidx, cgalPoly_Point& p0, cgalPoly_Point& p1, cgalPoly_Point& t0, cgalPoly_Point& t1, int side, double heading, double width, std::string surface )
 {
     SGGeod    s0, s1, s2, s3;
-    tgPolygon poly;
+    SGGeod    gp0, gp1, gt0, gt1;
+    cgalPoly_Polygon poly;
+    char      description[128];
 
     double wid_hdg = 0.0f;
     double az2     = 0.0f;
     double dist    = 0.0f;
 
+    gp0 = SGGeod::fromDeg( CGAL::to_double(p0.x()), CGAL::to_double(p0.y()) );
+    gp1 = SGGeod::fromDeg( CGAL::to_double(p1.x()), CGAL::to_double(p1.y()) );
+    gt0 = SGGeod::fromDeg( CGAL::to_double(t0.x()), CGAL::to_double(t0.y()) );
+    gt1 = SGGeod::fromDeg( CGAL::to_double(t1.x()), CGAL::to_double(t1.y()) );
+    
     // calc heading and distance from p0 to p1
-    SGGeodesy::inverse( p0, p1, wid_hdg, az2, dist );
+    SGGeodesy::inverse( gp0, gp1, wid_hdg, az2, dist );
 
     // s0 is width away from t1 in wid_hdg direction
-    s0 = SGGeodesy::direct( t1, wid_hdg, width );
+    s0 = SGGeodesy::direct( gt1, wid_hdg, width );
 
     // s1 is width away from t0 in wid_hdg direction
-    s1 = SGGeodesy::direct( t0, wid_hdg, width );
+    s1 = SGGeodesy::direct( gt0, wid_hdg, width );
 
     // s2 is nudge away from t0 in -wid_hdg direction
-    s2 = SGGeodesy::direct( t0, wid_hdg, -0.01 );
+    s2 = SGGeodesy::direct( gt0, wid_hdg, -0.01 );
 
     // s3 is nudge away from t1 in -wid_hdg direction
-    s3 = SGGeodesy::direct( t1, wid_hdg, -0.01 );
+    s3 = SGGeodesy::direct( gt1, wid_hdg, -0.01 );
 
     // Generate a poly
-    poly.AddNode( 0, s0 );
-    poly.AddNode( 0, s1 );
-    poly.AddNode( 0, s2 );
-    poly.AddNode( 0, s3 );
-    poly.Snap(gSnap);
+    poly.push_back( cgalPoly_Point( s0.getLongitudeDeg(), s0.getLatitudeDeg() ) );
+    poly.push_back( cgalPoly_Point( s1.getLongitudeDeg(), s1.getLatitudeDeg() ) );
+    poly.push_back( cgalPoly_Point( s2.getLongitudeDeg(), s2.getLatitudeDeg() ) );
+    poly.push_back( cgalPoly_Point( s3.getLongitudeDeg(), s3.getLatitudeDeg() ) );
 
-    poly.SetMaterial( surface );
+    tgTexInfo ti( surface );
     if (side == 0) {
-        poly.SetTexParams( poly.GetNode(0,2), width, dist, heading );
-        poly.SetTexLimits( 0,0,1,1 );
+        ti.SetRef( poly[2], width, dist, heading );
+        ti.SetLimits( 0.0l,0.0l,1.0l,1.0l );
     } else {
-        poly.SetTexParams( poly.GetNode(0,1), width, dist, heading );
-        poly.SetTexLimits( 1,0,0,1 );
+        ti.SetRef( poly[1], width, dist, heading );
+        ti.SetLimits( 1.0l,0.0l,0.0l,1.0l );
     }
-    poly.SetTexMethod( TG_TEX_BY_TPS_CLIPU, 0.0, 0.0, 1.0, 0.0 );
+    ti.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, 0.0l, 0.0l, 1.0l, 0.0l );
 
-    return poly;
+    snprintf( description, 128, "%s_%s_shoulder", ap->GetIcao().c_str(), rwnum[rwidx] );
+    
+    return tgPolygonSet( poly, ti, description );
 }
 
 // generate a section of texture with shoulders
-void Runway::gen_section( const tgPolygon& runway,
+void Runway::gen_section( Airport* ap, int rwidx,
+                          const cgalPoly_Polygon& runway,
                           double startl_pct, double endl_pct,
                           double startw_pct, double endw_pct,
                           double minu, double maxu, double minv, double maxv,
@@ -210,16 +221,17 @@ void Runway::gen_section( const tgPolygon& runway,
                           const string& material,
                           bool with_shoulders )
 {
-    //double width = rwy.width;
-    //double length = rwy.length;
+    //double width = width;
+    //double length = length;
     double lshoulder_width = 0.0f;
     double rshoulder_width = 0.0f;
     std::string shoulder_surface = "";
-
-    SGVec2d a0 = SGVec2d( runway.GetNode(0, 1).getLongitudeDeg(), runway.GetNode(0, 1).getLatitudeDeg() );
-    SGVec2d a1 = SGVec2d( runway.GetNode(0, 2).getLongitudeDeg(), runway.GetNode(0, 2).getLatitudeDeg() );
-    SGVec2d a2 = SGVec2d( runway.GetNode(0, 0).getLongitudeDeg(), runway.GetNode(0, 0).getLatitudeDeg() );
-    SGVec2d a3 = SGVec2d( runway.GetNode(0, 3).getLongitudeDeg(), runway.GetNode(0, 3).getLatitudeDeg() );
+    char description[128];
+    
+    SGVec2d a0 = SGVec2d( CGAL::to_double( runway[1].x() ), CGAL::to_double( runway[1].y() ) );
+    SGVec2d a1 = SGVec2d( CGAL::to_double( runway[2].x() ), CGAL::to_double( runway[2].y() ) );
+    SGVec2d a2 = SGVec2d( CGAL::to_double( runway[0].x() ), CGAL::to_double( runway[0].y() ) );
+    SGVec2d a3 = SGVec2d( CGAL::to_double( runway[3].x() ), CGAL::to_double( runway[3].y() ) );
 
     if ( startl_pct > 0.0 ) {
         startl_pct -= nudge * SG_EPSILON;
@@ -233,10 +245,10 @@ void Runway::gen_section( const tgPolygon& runway,
 
     if ( with_shoulders ) {
         // calculate if we are going to be creating shoulder polys
-        if ( (rwy.shoulder > 0) && (rwy.surface < 3) ){
-            if (rwy.shoulder == 1){
+        if ( (shoulder > 0) && (surface < 3) ){
+            if (shoulder == 1){
                 shoulder_surface = "pa_shoulder";
-            } else if (rwy.shoulder == 2){
+            } else if (shoulder == 2){
                 shoulder_surface = "pc_shoulder";
             }
 
@@ -248,10 +260,10 @@ void Runway::gen_section( const tgPolygon& runway,
             }
         } else {  
             // We add a fake shoulder if the runway has an asphalt or concrete surface
-            if ( (rwy.surface == 1) || (rwy.surface == 2) ) {
-                if (rwy.surface == 1) {
+            if ( (surface == 1) || (surface == 2) ) {
+                if (surface == 1) {
                     shoulder_surface = "pa_shoulder_f";
-                } else if (rwy.surface == 2){
+                } else if (surface == 2){
                     shoulder_surface = "pc_shoulder_f";
                 }
 
@@ -323,46 +335,47 @@ void Runway::gen_section( const tgPolygon& runway,
                           t3.y() + dwy * endw_pct );
 
 
-    // convert vectors back to GEOD
-    SGGeod pg0 = SGGeod::fromDeg( p0.x(), p0.y() );
-    SGGeod pg1 = SGGeod::fromDeg( p1.x(), p1.y() );
-    SGGeod pg2 = SGGeod::fromDeg( p2.x(), p2.y() );
-    SGGeod pg3 = SGGeod::fromDeg( p3.x(), p3.y() );
-    SGGeod tg0 = SGGeod::fromDeg( t0.x(), t0.y() );
-    SGGeod tg1 = SGGeod::fromDeg( t1.x(), t1.y() );
-    SGGeod tg2 = SGGeod::fromDeg( t2.x(), t2.y() );
-    SGGeod tg3 = SGGeod::fromDeg( t3.x(), t3.y() );
+    // convert vectors back cgal
+    cgalPoly_Point pg0( p0.x(), p0.y() );
+    cgalPoly_Point pg1( p1.x(), p1.y() );
+    cgalPoly_Point pg2( p2.x(), p2.y() );
+    cgalPoly_Point pg3( p3.x(), p3.y() );
+    cgalPoly_Point tg0( t0.x(), t0.y() );
+    cgalPoly_Point tg1( t1.x(), t1.y() );
+    cgalPoly_Point tg2( t2.x(), t2.y() );
+    cgalPoly_Point tg3( t3.x(), t3.y() );
 
     // check for left shoulder
     if ( lshoulder_width > 0.0f ) {
-        tgPolygon sp;
+        tgPolygonSet sp;
 
-        sp = gen_shoulder_section( pg0, pg1, tg0, tg1, 0, heading, lshoulder_width, shoulder_surface );
+        sp = gen_shoulder_section( ap, rwidx, pg0, pg1, tg0, tg1, 0, heading, lshoulder_width, shoulder_surface );
         shoulder_polys.push_back( sp );
     }
 
     // check for right shoulder
     if ( rshoulder_width > 0.0f ) {
-        tgPolygon sp;
+        tgPolygonSet sp;
 
-        sp = gen_shoulder_section( pg1, pg0, tg2, tg3, 1, heading, rshoulder_width, shoulder_surface );
+        sp = gen_shoulder_section( ap, rwidx, pg1, pg0, tg2, tg3, 1, heading, rshoulder_width, shoulder_surface );
         shoulder_polys.push_back( sp );
     }
 
-    tgPolygon section;
+    cgalPoly_Polygon section;
 
-    section.AddNode( 0, pg2 );
-    section.AddNode( 0, pg0 );
-    section.AddNode( 0, pg1 );
-    section.AddNode( 0, pg3 );
-    section.Snap( gSnap );
+    section.push_back( pg2 );
+    section.push_back( pg0 );
+    section.push_back( pg1 );
+    section.push_back( pg3 );
 
-    section.SetMaterial( "pa_tiedown" );
-    section.SetTexParams( pg0, 5.0, 5.0, heading );
-    section.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
-    section.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+    tgTexInfo ti( "pa_tiedown" );
+    ti.SetRef( pg0, 5.0, 5.0, heading );
+    ti.SetLimits( 0.0, 0.0, 1.0, 1.0 );
+    ti.SetMethod( tgTexInfo::TEX_BY_TPS_NOCLIP );
 
-    runway_polys.push_back( section );
+    snprintf( description, 128, "%s_%s_section", ap->GetIcao().c_str(), rwnum[rwidx] );
+    
+    runway_polys.push_back( tgPolygonSet( section, ti, description ) );
 }
 
 #if 0
@@ -508,17 +521,17 @@ static void SplitLongSegment( const SGGeod& p0, const SGGeod& p1,
     result.push_back( p1 );    
 }
                               
-tgContour Runway::GetSectionBB( const tgPolygon& runway,
+cgalPoly_Polygon Runway::GetSectionBB( const cgalPoly_Polygon& runway,
                                 double startl_pct, double endl_pct,
                                 double startw_pct, double endw_pct,
                                 double heading  )
 {
-    tgContour result;
+    cgalPoly_Polygon result;
     
-    SGVec2d a0 = SGVec2d( runway.GetNode(0, 1).getLongitudeDeg(), runway.GetNode(0, 1).getLatitudeDeg() );
-    SGVec2d a1 = SGVec2d( runway.GetNode(0, 2).getLongitudeDeg(), runway.GetNode(0, 2).getLatitudeDeg() );
-    SGVec2d a2 = SGVec2d( runway.GetNode(0, 0).getLongitudeDeg(), runway.GetNode(0, 0).getLatitudeDeg() );
-    SGVec2d a3 = SGVec2d( runway.GetNode(0, 3).getLongitudeDeg(), runway.GetNode(0, 3).getLatitudeDeg() );
+    SGVec2d a0 = SGVec2d( CGAL::to_double(runway[1].x()), CGAL::to_double(runway[1].y()) );
+    SGVec2d a1 = SGVec2d( CGAL::to_double(runway[2].x()), CGAL::to_double(runway[2].y()) );
+    SGVec2d a2 = SGVec2d( CGAL::to_double(runway[0].x()), CGAL::to_double(runway[0].y()) );
+    SGVec2d a3 = SGVec2d( CGAL::to_double(runway[3].x()), CGAL::to_double(runway[3].y()) );
     
     if ( startl_pct > 0.0 ) {
         startl_pct -= nudge * SG_EPSILON;
@@ -569,29 +582,29 @@ tgContour Runway::GetSectionBB( const tgPolygon& runway,
     SGVec2d p3 = SGVec2d( t3.x() + dwx * endw_pct,
                           t3.y() + dwy * endw_pct );
     
-    // convert vectors back to GEOD
-    SGGeod pg0 = SGGeod::fromDeg( p0.x(), p0.y() );
-    SGGeod pg1 = SGGeod::fromDeg( p1.x(), p1.y() );
-    SGGeod pg2 = SGGeod::fromDeg( p2.x(), p2.y() );
-    SGGeod pg3 = SGGeod::fromDeg( p3.x(), p3.y() );
+    // convert vectors back to CGAL
+    cgalPoly_Point pg0( p0.x(), p0.y() );
+    cgalPoly_Point pg1( p1.x(), p1.y() );
+    cgalPoly_Point pg2( p2.x(), p2.y() );
+    cgalPoly_Point pg3( p3.x(), p3.y() );
     
-    result.AddNode(pg0);
-    result.AddNode(pg1);
-    result.AddNode(pg3);
-    result.AddNode(pg2);
+    result.push_back(pg0);
+    result.push_back(pg1);
+    result.push_back(pg3);
+    result.push_back(pg2);
     
     return result;
 }
 
-void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, const std::string& mark )
+void Runway::gen_designation_polygon( Airport* ap, int rwidx, const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, const std::string& mark )
 {
+    char description[128];
+    
     // Atlas positions
     #define DESG_START_X    (0.0l)
     #define DESG_START_Y    (0.0l)
     #define DESG_WIDTH      (0.25l)
     #define DESG_HEIGHT     (0.25l)
-    
-    tgPolygon poly;
 
     double    offset_heading = SGMiscd::normalizePeriodic(0, 360, heading+90);
     double    minx, miny, maxx, maxy;
@@ -601,10 +614,20 @@ void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, d
     SGGeod    top_ref        = SGGeodesy::direct( bottom_ref, heading, length );
         
     // first, generate the poly
-    poly.AddNode( 0, SGGeodesy::direct( bottom_ref, offset_heading, -width/2 ));
-    poly.AddNode( 0, SGGeodesy::direct( bottom_ref, offset_heading,  width/2 ));
-    poly.AddNode( 0, SGGeodesy::direct( top_ref,    offset_heading,  width/2 ));    
-    poly.AddNode( 0, SGGeodesy::direct( top_ref,    offset_heading, -width/2 ));
+    cgalPoly_Polygon poly;
+    SGGeod           gPt;
+    
+    gPt = SGGeodesy::direct( bottom_ref, offset_heading, -width/2 );
+    poly.push_back( cgalPoly_Point(gPt.getLongitudeDeg(), gPt.getLatitudeDeg()) );
+
+    gPt = SGGeodesy::direct( bottom_ref, offset_heading,  width/2 );
+    poly.push_back( cgalPoly_Point(gPt.getLongitudeDeg(), gPt.getLatitudeDeg()) );
+
+    gPt = SGGeodesy::direct( top_ref,    offset_heading,  width/2 );    
+    poly.push_back( cgalPoly_Point(gPt.getLongitudeDeg(), gPt.getLatitudeDeg()) );
+
+    gPt = SGGeodesy::direct( top_ref,    offset_heading, -width/2 );
+    poly.push_back( cgalPoly_Point(gPt.getLongitudeDeg(), gPt.getLatitudeDeg()) );
         
     // calculate atlas tcs describing the area we want to use
     if ( mark == "0" ) {
@@ -653,14 +676,16 @@ void Runway::gen_designation_polygon( const SGGeod& start_ref, double heading, d
 
     maxx = minx + DESG_WIDTH;
     maxy = miny + DESG_HEIGHT;    
+
+    tgTexInfo ti( "rwy_designations" );
+    ti.SetRef( poly[0], width, length, heading );
+    ti.SetMethod( tgTexInfo::TEX_1X1_ATLAS );
+    ti.SetLimits( minx, miny, maxx, maxy );
+    //ti.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
     
-    poly.SetMaterial( "rwy_designations" );
-    poly.SetTexParams( poly.GetNode(0,0), width, length, heading );
-    poly.SetTexMethod( TG_TEX_1X1_ATLAS );
-    poly.SetTexLimits( minx, miny, maxx, maxy );
-    poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
+    snprintf( description, 128, "%s_%s_designator_%s", ap->GetIcao().c_str(), rwnum[rwidx], mark.c_str() );
     
-    cap_polys.push_back( poly );
+    cap_polys.push_back( tgPolygonSet( poly, ti, description ) );
 }
 
 LinearFeature* Runway::gen_perpendicular_marking_feature( Airport* ap, const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark )
@@ -764,24 +789,24 @@ LinearFeature* Runway::gen_chevron_feature( Airport* ap, const SGGeod& start_ref
     return feat;    
 }
 
-void Runway::gen_threshold( Airport* ap, const SGGeod& start, double heading )
+void Runway::gen_threshold( Airport* ap, int rwidx, const SGGeod& start, double heading )
 {
     int num_marks;
     
     // first, draw the thresholdbar
-    LinearFeature* threshold_bar = gen_perpendicular_marking_feature( ap, start, heading, 0, 10*SG_FEET_TO_METER, rwy.width, RWY_THRESH ); 
+    LinearFeature* threshold_bar = gen_perpendicular_marking_feature( ap, start, heading, 0, 10*SG_FEET_TO_METER, width, RWY_THRESH ); 
     features.push_back( threshold_bar );
     
     // then generate the threshold marking starting from 20'. 50' long
-    if ( rwy.width >= 200*SG_FEET_TO_METER ) {
+    if ( width >= 200*SG_FEET_TO_METER ) {
         num_marks = 16;
-    } else if ( rwy.width >= 150*SG_FEET_TO_METER ) {
+    } else if ( width >= 150*SG_FEET_TO_METER ) {
         num_marks = 12;
-    } else if ( rwy.width >= 100*SG_FEET_TO_METER ) {
+    } else if ( width >= 100*SG_FEET_TO_METER ) {
         num_marks = 8;
-    } else if ( rwy.width >= 75*SG_FEET_TO_METER ) {
+    } else if ( width >= 75*SG_FEET_TO_METER ) {
         num_marks = 6;
-    } else if ( rwy.width >= 60*SG_FEET_TO_METER ) {
+    } else if ( width >= 60*SG_FEET_TO_METER ) {
         num_marks = 6;
     } else {
         TG_LOG(SG_GENERAL, SG_INFO, "Runway too narrow for threshold markings ");
@@ -792,7 +817,7 @@ void Runway::gen_threshold( Airport* ap, const SGGeod& start, double heading )
         // now determine the spaceing between num_marks ( add one imaginary mark for the middle, and 1 for each side )
         num_marks += 3;
         
-        double mark_spacing = (rwy.width - (num_marks * 5.75 * SG_FEET_TO_METER) ) / num_marks;
+        double mark_spacing = (width - (num_marks * 5.75 * SG_FEET_TO_METER) ) / num_marks;
         int    center_mark = floor(num_marks/2); // mark in the center of runway
         
         // now we can start creating the mark_spacing
@@ -810,13 +835,13 @@ void Runway::gen_threshold( Airport* ap, const SGGeod& start, double heading )
     }
 }
     
-SGGeod Runway::gen_designation( const SGGeod& start_ref, int rwhalf, double heading )
+SGGeod Runway::gen_designation( Airport* ap, int rwidx, const SGGeod& start_ref, double heading )
 {
-    string rwname = rwy.rwnum[rwhalf];
+    string rwname = rwnum[rwidx];
     double numeral_dist = 0.0f;
     SGGeod end_ref;
 
-    TG_LOG(SG_GENERAL, SG_INFO, "Runway name is " << rwy.rwnum[rwhalf] );
+    TG_LOG(SG_GENERAL, SG_INFO, "Runway name is " << rwnum[rwidx] );
     
     if (rwname != "XX") { /* Do not create a designation block if the runway name is set to none */
         string letter = "";
@@ -832,7 +857,7 @@ SGGeod Runway::gen_designation( const SGGeod& start_ref, int rwhalf, double head
 
         // create runway designation letter
         if ( !letter.empty() ) {
-            gen_designation_polygon( start_ref, heading, 200*SG_FEET_TO_METER, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER, 0, letter );
+            gen_designation_polygon( ap, rwidx, start_ref, heading, 200*SG_FEET_TO_METER, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER, 0, letter );
             numeral_dist = 280*SG_FEET_TO_METER;
         } else {
             numeral_dist = 200*SG_FEET_TO_METER;
@@ -846,10 +871,10 @@ SGGeod Runway::gen_designation( const SGGeod& start_ref, int rwhalf, double head
         TG_LOG(SG_GENERAL, SG_DEBUG, "Runway designation = " << rwname);
 
         if (rwname.length() == 2) {
-            gen_designation_polygon( start_ref, heading, numeral_dist, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER, -30*SG_FEET_TO_METER, rwname.substr(0,1));
-            gen_designation_polygon( start_ref, heading, numeral_dist, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER,  30*SG_FEET_TO_METER, rwname.substr(1,1));            
+            gen_designation_polygon( ap, rwidx, start_ref, heading, numeral_dist, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER, -30*SG_FEET_TO_METER, rwname.substr(0,1));
+            gen_designation_polygon( ap, rwidx, start_ref, heading, numeral_dist, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER,  30*SG_FEET_TO_METER, rwname.substr(1,1));            
         } else if (rwname.length() == 1) {
-            gen_designation_polygon( start_ref, heading, numeral_dist, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER,   0*SG_FEET_TO_METER, rwname.substr(0,1));
+            gen_designation_polygon( ap, rwidx, start_ref, heading, numeral_dist, 60*SG_FEET_TO_METER, 60*SG_FEET_TO_METER,   0*SG_FEET_TO_METER, rwname.substr(0,1));
         }
         
         end_ref = SGGeodesy::direct( start_ref, heading, numeral_dist + 100*SG_FEET_TO_METER );
@@ -858,7 +883,7 @@ SGGeod Runway::gen_designation( const SGGeod& start_ref, int rwhalf, double head
     return end_ref;
 }
 
-void Runway::gen_border( Airport* ap, const SGGeod& start, const SGGeod& end, double heading, double dist )
+void Runway::gen_border( Airport* ap, int rwidx, const SGGeod& start, const SGGeod& end, double heading, double dist )
 {
     LinearFeature*      border;
     BezNode*            node;
@@ -870,12 +895,12 @@ void Runway::gen_border( Airport* ap, const SGGeod& start, const SGGeod& end, do
     border = new LinearFeature( (const char *)"rwy_border", 0 );
     
     // Start the contour from top left to bottom left
-    top_left  = SGGeodesy::direct( end, SGMiscd::normalizePeriodic(0, 360, heading-90), rwy.width/2 - border_offset );
-    top_right = SGGeodesy::direct( end, SGMiscd::normalizePeriodic(0, 360, heading+90), rwy.width/2 - border_offset );
+    top_left  = SGGeodesy::direct( end, SGMiscd::normalizePeriodic(0, 360, heading-90), width/2 - border_offset );
+    top_right = SGGeodesy::direct( end, SGMiscd::normalizePeriodic(0, 360, heading+90), width/2 - border_offset );
 
-    bot_left  = SGGeodesy::direct( start, SGMiscd::normalizePeriodic(0, 360, heading-90), rwy.width/2 - border_offset );
+    bot_left  = SGGeodesy::direct( start, SGMiscd::normalizePeriodic(0, 360, heading-90), width/2 - border_offset );
     bot_left  = SGGeodesy::direct( bot_left, heading, thresh_offset );
-    bot_right = SGGeodesy::direct( start, SGMiscd::normalizePeriodic(0, 360, heading+90), rwy.width/2 - border_offset );
+    bot_right = SGGeodesy::direct( start, SGMiscd::normalizePeriodic(0, 360, heading+90), width/2 - border_offset );
     bot_right = SGGeodesy::direct( bot_right, heading, thresh_offset );
     
     // Draw the left side border
@@ -919,32 +944,33 @@ void Runway::gen_border( Airport* ap, const SGGeod& start, const SGGeod& end, do
 //
 
 
-void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders )
+void Runway::gen_base( Airport* ap, int rwidx, const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders )
 {
-    tgPolygon   runway, left_shoulder, right_shoulder;
+    cgalPoly_Polygon runway, left_shoulder, right_shoulder;
     double      offset_heading;
     double      offset_width;
     double      shoulder_width = 0.0f;
     std::string shoulder_surface = "";
-    SGGeod      ref;
+    char        description[128];
+    cgalPoly_Point ref;
     
     // if we want shoulders, generate them based on input poly
     if ( with_shoulders ) {
         // calculate if we are going to be creating shoulder polys
-        if ( (rwy.shoulder > 0) && (rwy.surface < 3) ){
-            if (rwy.shoulder == 1){
+        if ( (shoulder > 0) && (surface < 3) ){
+            if (shoulder == 1){
                 shoulder_surface = "pa_shoulder";
-            } else if (rwy.shoulder == 2){
+            } else if (shoulder == 2){
                 shoulder_surface = "pc_shoulder";
             }
             
             shoulder_width = 11.0;
         } else {  
             // We add a fake shoulder if the runway has an asphalt or concrete surface
-            if ( (rwy.surface == 1) || (rwy.surface == 2) ) {
-                if (rwy.surface == 1) {
+            if ( (surface == 1) || (surface == 2) ) {
+                if (surface == 1) {
                     shoulder_surface = "pa_shoulder_f";
-                } else if (rwy.surface == 2){
+                } else if (surface == 2){
                     shoulder_surface = "pc_shoulder_f";
                 }
                 
@@ -959,32 +985,35 @@ void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, doub
     
     // Generate the runway poly
     offset_heading = SGMiscd::normalizePeriodic(0, 360, heading + 90);
-    offset_width   = rwy.width/2;
+    offset_width   = width/2;
     for ( int n=0; n<(int)midline.size(); n++) {
         SGGeod pt = SGGeodesy::direct( midline[n], offset_heading, offset_width );
-        runway.AddNode(0, pt);
+        runway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
     }
     offset_heading = SGMiscd::normalizePeriodic(0, 360, heading - 90);    
     for ( int n=midline.size()-1; n>=0; n--) {
         SGGeod pt = SGGeodesy::direct( midline[n], offset_heading, offset_width );
-        runway.AddNode(0, pt);
+        runway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
     }
-    runway.Snap( gSnap );
-    runway.SetMaterial( "pa_tiedown" );
-    runway.SetTexParams( runway.GetNode(0,0), 5.0, 5.0, heading );
-    runway.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
-    runway.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
-    runway_polys.push_back( runway );
+
+    snprintf( description, 128, "%s_%s_base", ap->GetIcao().c_str(), rwnum[rwidx] );
+    
+    tgTexInfo ti( "pa_tiedown" );
+    ti.SetRef( runway[0], 5.0, 5.0, heading );
+    ti.SetLimits( 0.0, 0.0, 1.0, 1.0 );
+    ti.SetMethod( tgTexInfo::TEX_BY_TPS_NOCLIP );
+    
+    runway_polys.push_back( tgPolygonSet( runway, ti, description ) );
     
 #if DEBUG
-    tgShapefile::FromPolygon( runway, true, false, "./dbg", "Runway", "runway" );
+//  tgShapefile::FromPolygon( runway, true, false, "./dbg", "Runway", "runway" );
 #endif
     
     /* Now add the white border around the whole runway (0.5M wide) */
     // generate right poly
 
 #if RUNWAY_FEATS
-    gen_border( ap, start, end, heading, dist );
+    gen_border( ap, rwidx, start, end, heading, dist );
 #endif
     
     if ( with_shoulders ) {
@@ -992,53 +1021,62 @@ void Runway::gen_base( Airport* ap, const SGGeod& start, const SGGeod& end, doub
         offset_heading = SGMiscd::normalizePeriodic(0, 360, heading + 90);
         for ( int n=0; n<(int)midline.size(); n++) {
             SGGeod pt = SGGeodesy::direct( midline[n], offset_heading, offset_width+shoulder_width );
-            right_shoulder.AddNode(0, pt);
+            right_shoulder.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
 
             // this is the primary texture reference point
-            if ( n == 0 ) { ref = pt; }            
+            if ( n == 0 ) {
+                ref = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ); 
+            }
         }
         for ( int n=midline.size()-1; n>=0; n--) {
             SGGeod pt = SGGeodesy::direct( midline[n], offset_heading, offset_width );
-            right_shoulder.AddNode(0, pt);
+            right_shoulder.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
         }
         
-        right_shoulder.Snap( gSnap );
-        right_shoulder.SetMaterial( shoulder_surface );
-        right_shoulder.SetTexParams( ref, shoulder_width, 5, heading );
-        right_shoulder.SetTexLimits( 0,0,1,1 );
-        right_shoulder.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
-        shoulder_polys.push_back( right_shoulder );
+        tgTexInfo tirs( shoulder_surface );
+        tirs.SetRef( ref, shoulder_width, 5.0l, heading );
+        tirs.SetLimits( 0.0, 0.0, 1.0, 1.0 );
+        tirs.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, -1.0l, 0.0l, 1.0l, 0.0l );
+
+        snprintf( description, 128, "%s_%s_rightshoulder", ap->GetIcao().c_str(), rwnum[rwidx] );
+
+        shoulder_polys.push_back( tgPolygonSet( right_shoulder, tirs, description ) );
 
 #if DEBUG
-        tgShapefile::FromPolygon( right_shoulder, true, false, "./dbg", "right_shoulder", "right_shoulder" );
+//      tgShapefile::FromPolygon( right_shoulder, true, false, "./dbg", "right_shoulder", "right_shoulder" );
 #endif
         
         // generate left shoulder
         offset_heading = SGMiscd::normalizePeriodic(0, 360, heading - 90);
         for ( int n=midline.size()-1; n>=0; n--) {
             SGGeod pt = SGGeodesy::direct( midline[n], offset_heading, offset_width+shoulder_width );
-            left_shoulder.AddNode(0, pt);
+            left_shoulder.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
         }
         for ( int n=0; n<(int)midline.size(); n++) {
             SGGeod pt = SGGeodesy::direct( midline[n], offset_heading, offset_width );
-            left_shoulder.AddNode(0, pt);
+            left_shoulder.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
             // this is the primary texture reference point
-            if ( n == (int)midline.size()-1 ) { ref = pt; }                
+            if ( n == (int)midline.size()-1 ) {
+                ref = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ); 
+            }                
         }
-        left_shoulder.Snap( gSnap );
-        left_shoulder.SetMaterial( shoulder_surface );
-        left_shoulder.SetTexParams( ref, shoulder_width, 5, SGMiscd::normalizePeriodic(0, 360, heading+180 ) );
-        left_shoulder.SetTexLimits( 0,0,1,1 );
-        left_shoulder.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
-        shoulder_polys.push_back( left_shoulder );    
+
+        tgTexInfo tils( shoulder_surface );
+        tils.SetRef( ref, shoulder_width, 5.0l, SGMiscd::normalizePeriodic(0, 360, heading+180 ) );
+        tils.SetLimits( 0.0l, 0.0l, 1.0l, 1.0l );
+        tils.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, -1.0l, 0.0l, 1.0l, 0.0l );
+
+        snprintf( description, 128, "%s_%s_leftshoulder", ap->GetIcao().c_str(), rwnum[rwidx] );
+
+        shoulder_polys.push_back( tgPolygonSet( left_shoulder, tils, description ) );
 
 #if DEBUG
-        tgShapefile::FromPolygon( left_shoulder, true, false, "./dbg", "left_shoulder", "left_shoulder" );
+//      tgShapefile::FromPolygon( left_shoulder, true, false, "./dbg", "left_shoulder", "left_shoulder" );
 #endif        
     }
 }
 
-SGGeod Runway::gen_disp_thresh( Airport* ap, const SGGeod& start, double displacement, double heading )
+SGGeod Runway::gen_disp_thresh( Airport* ap, int rwidx, const SGGeod& start, double displacement, double heading )
 {
     SGGeod thresh = SGGeodesy::direct( start, heading, displacement );
     
@@ -1046,24 +1084,24 @@ SGGeod Runway::gen_disp_thresh( Airport* ap, const SGGeod& start, double displac
     int num_chevrons;
     double chevron_spacing, border_spacing;
     
-    if ( rwy.width >= 100 ) {
+    if ( width >= 100 ) {
         num_chevrons = 4;
-        chevron_spacing = rwy.width/4;
-        border_spacing = rwy.width/8;
-    } else if ( rwy.width >= 60 ) {
+        chevron_spacing = width/4;
+        border_spacing = width/8;
+    } else if ( width >= 60 ) {
         num_chevrons = 3;
-        chevron_spacing = rwy.width/3;
-        border_spacing = rwy.width/6;
+        chevron_spacing = width/3;
+        border_spacing = width/6;
     } else {
         num_chevrons = 2;
-        chevron_spacing = rwy.width/2;
-        border_spacing = rwy.width/4;
+        chevron_spacing = width/2;
+        border_spacing = width/4;
     }
 
-    TG_LOG(SG_GENERAL, SG_INFO, "Runway is " << rwy.width << " meters wide: draw " << num_chevrons << " chevrons " << chevron_spacing << " meters apart " );
+    TG_LOG(SG_GENERAL, SG_INFO, "Runway is " << width << " meters wide: draw " << num_chevrons << " chevrons " << chevron_spacing << " meters apart " );
     
     // start on the left side (-), border spacing from the border - box is 15' wide
-    double cur_offset = -rwy.width/2 + border_spacing;
+    double cur_offset = -width/2 + border_spacing;
     
     // each chevron is painted 3' wide in a 15'x45' box 5' behind the threshold
     for ( int i=0; i<num_chevrons; i++ ) {
@@ -1099,21 +1137,22 @@ SGGeod Runway::gen_disp_thresh( Airport* ap, const SGGeod& start, double displac
     return thresh;
 }
 
-void Runway::gen_stopway( Airport* ap, const SGGeod& start, double length, double heading )
+void Runway::gen_stopway( Airport* ap, int rwidx, const SGGeod& start, double length, double heading )
 {
-    tgPolygon   stopway;
+    cgalPoly_Polygon stopway;
     double      offset_heading;
     double      offset_width;
-    double      width = rwy.width;
-
+    double      cur_width = width;
+    char        description[128];
+    
     TG_LOG(SG_GENERAL, SG_INFO, "stopway is " << length << " meters" );
     
     // first, just generate the pavement - stopway or blastpad?
     // if we have shoulders - draw a blastpad, otherwise stopway
-    if ( (rwy.shoulder > 0) && (rwy.surface < 3) ){
-        width += 22.0;
+    if ( (shoulder > 0) && (surface < 3) ){
+        cur_width += 22.0;
     } else {  
-        width += 2;
+        cur_width += 2;
     }
     
     // star the stopway length away in the opposite direction of the runway
@@ -1121,24 +1160,33 @@ void Runway::gen_stopway( Airport* ap, const SGGeod& start, double length, doubl
     
     // Generate the runway poly
     offset_heading = SGMiscd::normalizePeriodic(0, 360, heading + 90);
-    offset_width   = width/2;
+    offset_width   = cur_width/2;
 
-    stopway.AddNode(0, SGGeodesy::direct( ref,   offset_heading, -offset_width ));
-    stopway.AddNode(0, SGGeodesy::direct( ref,   offset_heading,  offset_width ));
-    stopway.AddNode(0, SGGeodesy::direct( start, offset_heading,  offset_width ));
-    stopway.AddNode(0, SGGeodesy::direct( start, offset_heading, -offset_width ));
+    SGGeod pt;
+    pt = SGGeodesy::direct( ref,   offset_heading, -offset_width );
+    stopway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
     
-    stopway.Snap( gSnap );
-    stopway.SetMaterial( "pa_tiedown" );
-    stopway.SetTexParams( stopway.GetNode(0,0), 5.0, 5.0, heading );
-    stopway.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
-    stopway.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+    pt = SGGeodesy::direct( ref,   offset_heading,  offset_width );
+    stopway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
+    
+    pt = SGGeodesy::direct( start, offset_heading,  offset_width );
+    stopway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
+    
+    pt = SGGeodesy::direct( start, offset_heading, -offset_width );
+    stopway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
+    
+    tgTexInfo ti( "pa_tiedown" );
+    ti.SetRef( stopway[0], 5.0l, 5.0l, heading );
+    ti.SetLimits( 0.0l, 0.0l, 1.0l, 1.0l );
+    ti.SetMethod( tgTexInfo::TEX_BY_TPS_NOCLIP );
     
 #if DEBUG
-    tgShapefile::FromPolygon( stopway, true, false, "./dbg", "Stopway", "stopway" );
+//  tgShapefile::FromPolygon( stopway, true, false, "./dbg", "Stopway", "stopway" );
 #endif
     
-    runway_polys.push_back( stopway );
+    snprintf( description, 128, "%s_%s_stopway", ap->GetIcao().c_str(), rwnum[rwidx] );
+    
+    runway_polys.push_back( tgPolygonSet( stopway, ti, description ) );
     
 
     // now add the chevrons
@@ -1214,64 +1262,64 @@ void Runway::gen_stopway( Airport* ap, const SGGeod& start, double length, doubl
 // document AC 150/5340-1H
 void Runway::gen_full_rwy(Airport* ap)
 {
-    TG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwy.rwnum[0] << " / " << rwy.rwnum[1]);
+    TG_LOG( SG_GENERAL, SG_DEBUG, "Building runway = " << rwnum[0] << " / " << rwnum[1]);
 
     // we really want to build runway and shoulders at the same time.  We just need 2 
     // directed line segments from each end - and end at the midpoint
-    SGGeod center = SGGeodesy::direct(GetStart(), rwy.heading, rwy.length/2 );
-    double heading;
+    SGGeod center = SGGeodesy::direct(GetStart(), heading, length/2 );
+    double cur_heading;
     SGGeod start_ref;
     
     for ( int rwhalf = 0; rwhalf < 2; ++rwhalf ) {
         if (rwhalf == 0) {
             start_ref = GetStart();
-            heading = rwy.heading;            
+            cur_heading = heading;            
         } else {
             start_ref = GetEnd();
-            heading = SGMiscd::normalizePeriodic(0, 360, rwy.heading + 180);
+            cur_heading = SGMiscd::normalizePeriodic(0, 360, heading + 180);
         }
 
         // data sanity checks
         
         // Make sure our runway is long enough for the desired marking variant
-        if ( (rwy.marking[rwhalf]==2 || rwy.marking[rwhalf]==4) && ( (rwy.length/2) < 1150 * SG_FEET_TO_METER) ) {
+        if ( (marking[rwhalf]==2 || marking[rwhalf]==4) && ( (length/2) < 1150 * SG_FEET_TO_METER) ) {
             TG_LOG( SG_GENERAL, SG_ALERT,
-                    "Runway " << rwy.rwnum[rwhalf] << " is not long enough ("
-                    << rwy.length << "m) for non-precision markings!  Setting runway markings to visual!");
-            rwy.marking[rwhalf]=1;
+                    "Runway " << rwnum[rwhalf] << " is not long enough ("
+                    << length << "m) for non-precision markings!  Setting runway markings to visual!");
+            marking[rwhalf]=1;
         }
         
-        if ( (rwy.marking[rwhalf]==3 || rwy.marking[rwhalf]==5) && ( (rwy.length/2) < 3075 * SG_FEET_TO_METER) ) {
+        if ( (marking[rwhalf]==3 || marking[rwhalf]==5) && ( (length/2) < 3075 * SG_FEET_TO_METER) ) {
             TG_LOG( SG_GENERAL, SG_ALERT,
-                    "Runway " << rwy.rwnum[rwhalf] << " is not long enough ("
-                    << rwy.length << "m) for precision markings!  Setting runway markings to visual!");
-            rwy.marking[rwhalf]=1;
+                    "Runway " << rwnum[rwhalf] << " is not long enough ("
+                    << length << "m) for precision markings!  Setting runway markings to visual!");
+            marking[rwhalf]=1;
         }
 
         // create the runway polys and borders ( simple without markings )
-        gen_base( ap, start_ref, center, heading, rwy.length/2, true );
+        gen_base( ap, rwhalf, start_ref, center, cur_heading, length/2, true );
 
 #if RUNWAY_FEATS
-        if (rwy.overrun[rwhalf] > 0.0) {
-            TG_LOG( SG_GENERAL, SG_INFO, "runway heading = " << heading << " designation " << rwy.rwnum[rwhalf] << " has overrun " << rwy.overrun[rwhalf] );
+        if (overrun[rwhalf] > 0.0) {
+            TG_LOG( SG_GENERAL, SG_INFO, "runway heading = " << cur_heading << " designation " << rwnum[rwhalf] << " has overrun " << overrun[rwhalf] );
             
-            gen_stopway( ap, start_ref, rwy.overrun[rwhalf], heading );
+            gen_stopway( ap, rwhalf, start_ref, overrun[rwhalf], cur_heading );
         }
         
-        if ( rwy.threshold[rwhalf] > 0.0 ) {
-            TG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
-            start_ref = gen_disp_thresh( ap, start_ref, rwy.threshold[rwhalf], heading );
+        if ( threshold[rwhalf] > 0.0 ) {
+            TG_LOG( SG_GENERAL, SG_INFO, "Displaced threshold for RW side " << rwhalf << " is " << threshold[rwhalf] );
+            start_ref = gen_disp_thresh( ap, rwhalf, start_ref, threshold[rwhalf], cur_heading );
         }
         
-        if ( rwy.marking[rwhalf] != 0) {                
-            gen_threshold( ap, start_ref, heading );
+        if ( marking[rwhalf] != 0) {                
+            gen_threshold( ap, rwhalf, start_ref, cur_heading );
         }
         
         // current start_ref (threshold) is the reference point for all the precision markings
-        SGGeod mark_ref = SGGeodesy::direct( start_ref, heading, (10)*SG_FEET_TO_METER );
+        SGGeod mark_ref = SGGeodesy::direct( start_ref, cur_heading, (10)*SG_FEET_TO_METER );
         
         // Runway designation markings : return is the start of the centerline 
-        start_ref = gen_designation( start_ref, rwhalf, heading );
+        start_ref = gen_designation( ap, rwhalf, start_ref, cur_heading );
 
         // draw the cenerline.  We draw each segment individually instead of on long dotted segment
         // because runways are long, the curvature of the earth has an efect, and the lines won't
@@ -1330,11 +1378,11 @@ void Runway::gen_full_rwy(Airport* ap)
         }
 
         // Draw the runway markings
-        if (rwy.marking[rwhalf] > 1) {
+        if (marking[rwhalf] > 1) {
             std::vector<rwy_sections> rw_marking_list;
             rw_marking_list.clear();
 
-            switch ( rwy.marking[rwhalf] ) {
+            switch ( marking[rwhalf] ) {
                 case 2:
                     // rw_marking_list.insert(  rw_marking_list.begin(), nprec, nprec + sizeof(nprec) / sizeof(nprec[0]) );
                     break;
@@ -1361,12 +1409,12 @@ void Runway::gen_full_rwy(Airport* ap)
                         if ( rw_marking_list[i].from_centerline ) {
                             offset_w = rw_marking_list[i].offset_w;
                         } else if ( rw_marking_list[i].offset_w > 0 ) {
-                            offset_w = (rwy.width/2) - rw_marking_list[i].offset_w;
+                            offset_w = (width/2) - rw_marking_list[i].offset_w;
                         } else {
-                            offset_w = -1 * ((rwy.width/2) - -rw_marking_list[i].offset_w);
+                            offset_w = -1 * ((width/2) - -rw_marking_list[i].offset_w);
                         }
                         
-                        LinearFeature* lf = gen_paralell_marking_feature(ap, mark_ref, heading, 
+                        LinearFeature* lf = gen_paralell_marking_feature(ap, mark_ref, cur_heading, 
                                                                         rw_marking_list[i].offset_l,
                                                                         rw_marking_list[i].length,
                                                                         offset_w,

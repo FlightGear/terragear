@@ -2,12 +2,14 @@
 #define _AIRPORT_H_
 
 #include <simgear/timing/timestamp.hxx>
-#include <simgear/math/sg_types.hxx>
 #include <simgear/threads/SGThread.hxx>
 
 #include <terragear/tg_array.hxx>
 #include <terragear/tg_areas.hxx>
 #include <terragear/tg_nodes.hxx>
+
+#include <terragear/polygon_set/tg_polygon_accumulator.hxx>
+
 
 #include "runway.hxx"
 #include "object.hxx"
@@ -299,7 +301,7 @@ private:
 
     // Base Nodes
     TGNodes base_nodes;
-    tgPolygon inner_base, outer_base;
+    tgPolygonSet inner_base, outer_base;
 
     // Feature Nodes
     TGNodes feat_nodes;

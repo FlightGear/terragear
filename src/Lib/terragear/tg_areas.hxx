@@ -38,9 +38,9 @@
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_nodes.hxx"
-#include "tg_polygon.hxx"
+#include "polygon_set/tg_polygon_set.hxx"
 
-typedef std::vector<tgpolygon_list> tgarea_list;
+typedef std::vector<tgPolygonSetList> tgarea_list;
 
 class tgAreas
 {
@@ -52,7 +52,7 @@ public:
         clear();
                 
         for (unsigned int i=0; i<num_areas; i++) {
-            tgpolygon_list lc;
+            tgPolygonSetList lc;
             lc.clear();
             polys.push_back(lc);
         }
@@ -68,15 +68,15 @@ public:
         return polys[area].size();
     }
 
-    inline tgPolygon const& get_poly( unsigned int area, unsigned int poly ) const
+    inline tgPolygonSet const& get_poly( unsigned int area, unsigned int poly ) const
     {
         return polys[area][poly];
     }
-    inline tgPolygon& get_poly( unsigned int area, unsigned int poly )
+    inline tgPolygonSet& get_poly( unsigned int area, unsigned int poly )
     {
         return polys[area][poly];
     }
-    inline void add_poly( unsigned int area, const tgPolygon& p )
+    inline void add_poly( unsigned int area, const tgPolygonSet& p )
     {
         if ( area > polys.capacity() ) {
             SG_LOG( SG_GENERAL, SG_ALERT, " area out of bounds " << area << " of " << polys.capacity() );
@@ -87,16 +87,17 @@ public:
 
     // TODO : Let's get rid of this - it was a memory leak, and the polygons should really be modified in place
     // NOTE - this will be considerable work, so leaving as is for now (but fix the leak)
-    inline void set_poly( unsigned int area, unsigned int poly, const tgPolygon& p )
+    inline void set_poly( unsigned int area, unsigned int poly, const tgPolygonSet& p )
     {
         polys[area][poly] = p;
     }
 
-    inline tgpolygon_list& get_polys( unsigned int area )
+    inline tgPolygonSetList& get_polys( unsigned int area )
     {
         return polys[area];
     }
     
+#if 0 // this should be a mesh....    
     inline const SGVec3f& get_face_normal( unsigned int area, unsigned int poly, unsigned int tri ) const
     {
         return polys[area][poly].GetTriFaceNormal( tri );
@@ -123,6 +124,7 @@ public:
 
     // Friend for output to stream
     friend std::ostream& operator<< ( std::ostream&, const tgAreas& );
+#endif
 
 private:
     tgarea_list polys;

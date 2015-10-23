@@ -2,7 +2,6 @@
 
 #include <simgear/debug/logstream.hxx>
 
-#include <terragear/tg_polygon.hxx>
 #include <terragear/tg_shapefile.hxx>
 
 #include "global.hxx"
@@ -140,7 +139,7 @@ void ClosedPoly::CloseCurContour( Airport* ap )
     }
 }
 
-void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
+cgalPoly_Polygon ClosedPoly::ConvertContour( BezContour* src )
 {
     BezNode*    curNode;
     BezNode*    nextNode;
@@ -150,6 +149,8 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
     SGGeod cp1;
     SGGeod cp2;
 
+    std::vector<cgalPoly_Point> dst_points;
+    
     int       curve_type = CURVE_LINEAR;
     double    total_dist;
     int       num_segs = BEZIER_DETAIL;
@@ -157,7 +158,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
     TG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
 
     // clear anything in this point list
-    dst.Erase();
+    // dst.clear();
 
     // iterate through each bezier node in the contour
     for (unsigned int i = 0; i <= src->size()-1; i++)
@@ -278,7 +279,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
                 // add the pavement vertex
                 // convert from lat/lon to geo
                 // (maybe later) - check some simgear objects...
-                dst.AddNode( curLoc );
+                dst_points.push_back( cgalPoly_Point(curLoc.getLongitudeDeg(), curLoc.getLatitudeDeg()) );
 
                 if (p==0)
                 {
@@ -303,7 +304,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
                     nextLoc = CalculateLinearLocation( curNode->GetLoc(), nextNode->GetLoc(), (1.0f/num_segs) * (p+1) );
 
                     // add the feature vertex
-                    dst.AddNode( curLoc );
+                    dst_points.push_back( cgalPoly_Point(curLoc.getLongitudeDeg(), curLoc.getLatitudeDeg()) );
 
                     if (p==0)
                     {
@@ -323,7 +324,7 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
                 nextLoc = nextNode->GetLoc();
 
                 // just add the one vertex - dist is small
-                dst.AddNode( curLoc );
+                dst_points.push_back( cgalPoly_Point(curLoc.getLongitudeDeg(), curLoc.getLatitudeDeg()) );
 
                 TG_LOG(SG_GENERAL, SG_DEBUG, "adding Linear Anchor node at " << curLoc );
 
@@ -331,12 +332,15 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
             }
         }
     }
+    
+    return cgalPoly_Polygon( dst_points.begin(), dst_points.end() );
 }
 
 // finish the poly - convert to TGPolygon, and tesselate
 void ClosedPoly::Finish()
 {
-    tgContour          dst_contour;
+    cgalPoly_Polygon                polyBoundary;
+    std::vector<cgalPoly_Polygon>   polyHoles;
 
     // error handling
     if (boundary == NULL)
@@ -349,24 +353,20 @@ void ClosedPoly::Finish()
     if (boundary != NULL)
     {
         // create the boundary
-        ConvertContour( boundary, dst_contour );
-        dst_contour.SetHole( false );
-
-        // and add it to the geometry
-        pre_tess.AddContour( dst_contour );
+        polyBoundary = ConvertContour( boundary );
 
         // Then convert the hole contours
         for (unsigned int i=0; i<holes.size(); i++)
         {
-            ConvertContour( holes[i], dst_contour );
-            dst_contour.SetHole( true );
-
-            pre_tess.AddContour( dst_contour );
+            polyHoles.push_back( ConvertContour( holes[i] ) );
         }
 
-        pre_tess.Snap(gSnap);
-        pre_tess.RemoveDups();
-        pre_tess.RemoveBadContours();
+//        pre_tess.Snap(gSnap);
+//        pre_tess.RemoveDups();
+//        pre_tess.RemoveBadContours();
+
+        // generate a polygon set
+        pre_tess = cgalPoly_PolygonWithHoles( polyBoundary, polyHoles.begin(), polyHoles.end());        
     }
 
     // save memory by deleting unneeded resources
@@ -437,20 +437,35 @@ std::string ClosedPoly::GetMaterial( int surface )
     return material;
 }
 
-void ClosedPoly::GetPolys( tgpolygon_list& polys )
+void ClosedPoly::GetPolys( tgPolygonSetList& polys )
 {
-    if ( is_pavement && pre_tess.Contours() )
+    if ( is_pavement && !pre_tess.is_unbounded() )
     {
-        pre_tess.SetMaterial( GetMaterial( surface_type ) );
-        pre_tess.SetTexParams( pre_tess.GetNode(0,0), 5.0, 5.0, texture_heading );
-        pre_tess.SetTexLimits( 0.0, 0.0, 1.0, 1.0 );
-        pre_tess.SetTexMethod( TG_TEX_BY_TPS_NOCLIP );
+        cgalPoly_PolygonSet ps( pre_tess );
+        tgTexInfo           ti;
+        
+        ti.material = GetMaterial( surface_type );
+        
+        cgalPoly_Polygon ob = pre_tess.outer_boundary();
+        cgalPoly_Polygon::Vertex_iterator it = ob.vertices_begin();
+        ti.ref = *it;
 
-        polys.push_back( pre_tess );
+        ti.width = 5.0l;
+        ti.length = 5.0l;
+        ti.heading = texture_heading;
+
+        ti.minu = 0.0l;
+        ti.minv = 0.0l;
+        ti.maxu = 1.0l;
+        ti.maxv = 1.0l;
+        
+        ti.method = tgTexInfo::TEX_BY_TPS_NOCLIP;
+
+        polys.push_back( tgPolygonSet( ps, ti, 0 ) );
     }
 }
 
-void ClosedPoly::GetFeaturePolys( tgpolygon_list& polys )
+void ClosedPoly::GetFeaturePolys( tgPolygonSetList& polys )
 {
     for ( unsigned int i = 0; i < features.size(); i++)
     {
@@ -458,7 +473,7 @@ void ClosedPoly::GetFeaturePolys( tgpolygon_list& polys )
     }    
 }
 
-void ClosedPoly::GetFeatureCapPolys( tgpolygon_list& polys )
+void ClosedPoly::GetFeatureCapPolys( tgPolygonSetList& polys )
 {
     for ( unsigned int i = 0; i < features.size(); i++)
     {
@@ -474,42 +489,55 @@ void ClosedPoly::GetFeatureLights( tglightcontour_list& lights )
     }    
 }
 
-void ClosedPoly::GetInnerBasePolys( tgpolygon_list& polys )
+void ClosedPoly::GetInnerBasePolys( tgPolygonSetList& polys )
 {
-    tgPolygon ib = tgPolygon::Expand( pre_tess, 20.0 );
+    cgalPoly_PolygonSet ps( pre_tess );
+    tgTexInfo           ti;
 
-    ib.SetMaterial( "Grass" );
-    ib.SetTexMethod( TG_TEX_BY_GEODE );
-
-    polys.push_back( ib );
+    ti.material = "Grass";
+    ti.method = tgTexInfo::TEX_BY_GEODE;
+    
+    tgPolygonSet b( pre_tess, ti, "pvmt_innerbase" );
+    tgPolygonSet o = b.offset( 20.0l );
+    
+    polys.push_back( o );
 }
 
-void ClosedPoly::GetOuterBasePolys( tgpolygon_list& polys )
+void ClosedPoly::GetOuterBasePolys( tgPolygonSetList& polys )
 {
-    tgPolygon ob = tgPolygon::Expand( pre_tess, 50.0 );
+    cgalPoly_PolygonSet ps( pre_tess );
+    tgTexInfo           ti;
 
-    ob.SetMaterial( "Grass" );
-    ob.SetTexMethod( TG_TEX_BY_GEODE );
+    ti.material = "Grass";
+    ti.method = tgTexInfo::TEX_BY_GEODE;
+    
+    tgPolygonSet b( ps, ti, 0 );
 
-    polys.push_back( ob );
+    polys.push_back( b.offset( 50.0l ) );
 }
 
-void ClosedPoly::GetInnerBoundaryPolys( tgpolygon_list& polys )
+void ClosedPoly::GetInnerBoundaryPolys( tgPolygonSetList& polys )
 {
-    tgPolygon ib = tgPolygon::Expand( pre_tess, 20.0 );
+    cgalPoly_PolygonSet ps( pre_tess );
+    tgTexInfo           ti;
 
-    ib.SetMaterial( "Grass" );
-    ib.SetTexMethod( TG_TEX_BY_GEODE );
+    ti.material = "Grass";
+    ti.method = tgTexInfo::TEX_BY_GEODE;
+    
+    tgPolygonSet b( ps, ti, 0 );
 
-    polys.push_back( ib );
+    polys.push_back( b.offset( 20.0l ) );
 }
 
-void ClosedPoly::GetOuterBoundaryPolys( tgpolygon_list& polys )
+void ClosedPoly::GetOuterBoundaryPolys( tgPolygonSetList& polys )
 {
-    tgPolygon ob = tgPolygon::Expand( pre_tess, 50.0 );
+    cgalPoly_PolygonSet ps( pre_tess );
+    tgTexInfo           ti;
 
-    ob.SetMaterial( "Grass" );
-    ob.SetTexMethod( TG_TEX_BY_GEODE );
+    ti.material = "Grass";
+    ti.method = tgTexInfo::TEX_BY_GEODE;
+    
+    tgPolygonSet b( ps, ti, 0 );
 
-    polys.push_back( ob );
+    polys.push_back( b.offset( 50.0l ) );
 }
