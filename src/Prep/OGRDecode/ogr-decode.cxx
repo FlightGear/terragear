@@ -652,7 +652,7 @@ int main( int argc, char **argv ) {
     GDALAllRegister();
     GDALDataset       *poDS;
 
-    poDS = (GDALDataset*) GDALOpen( datasource.c_str(), GA_ReadOnly );
+    poDS = (GDALDataset*) GDALOpenEx( datasource.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL );
     if( poDS == NULL )
     {
         SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << datasource );
