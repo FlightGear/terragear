@@ -111,13 +111,20 @@ void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, cons
     SGTimeStamp create_start, create_end, create_time;
 
     create_start.stamp();
-    tgPolygonSet shapes( poFeature, poGeometry, area_type );
+
+    // generate metadata info from GDAL feature info
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );
+    
+    SG_LOG( SG_GENERAL, SG_INFO, "Decoder::processPolygon - material before getMeta " << meta.material );
+    meta.getFeatureFields( poFeature );
+    SG_LOG( SG_GENERAL, SG_INFO, "Decoder::processPolygon - material after getMeta " << meta.material );
+
+    tgPolygonSet shapes( poGeometry, meta );
 
 //    if ( max_segment_length > 0 ) {
 //        shapes.splitLongEdges( max_segment_length );
 //    }
-    shapes.setMaterial( area_type );
-    shapes.setTexMethod( tgTexInfo::TEX_BY_GEODE );
+    
     create_end.stamp();
     create_time = create_end - create_start;
 

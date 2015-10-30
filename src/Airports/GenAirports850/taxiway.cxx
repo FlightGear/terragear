@@ -107,29 +107,29 @@ void Taxiway::GetPolys( tgPolygonSetList& polys )
         throw sg_exception("unknown runway type!");
     }
     
-    tgTexInfo ti( material );
-    ti.SetRef( taxi_contour[0], width, 25*SG_FEET_TO_METER, heading );
-    ti.SetLimits( 0.0, 0.0, 1.0, 1.0 );
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, -1.0, -1.0, 1.0, 1.0 );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, material, "taxiway" );
+    meta.setTextureRef( taxi_contour[0], width, 25*SG_FEET_TO_METER, heading );
+    meta.setTextureLimits( 0.0, 0.0, 1.0, 1.0 );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPU, -1.0, -1.0, 1.0, 1.0 );
     
-    polys.push_back( tgPolygonSet( taxi_contour, ti, "taxiway" ) );
+    polys.push_back( tgPolygonSet( taxi_contour, meta ) );
 }
 
 void Taxiway::GetInnerBasePolys( tgPolygonSetList& polys )
 {
-    tgTexInfo    ti( "Grass" );
-    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "Grass", "taxiway_innerbase" );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
     
-    tgPolygonSet ps( taxi_contour, ti, "taxiway_innerbase" );    
+    tgPolygonSet ps( taxi_contour, meta  );    
     polys.push_back( ps.offset( 20.0l ) );
 }
 
 void Taxiway::GetOuterBasePolys( tgPolygonSetList& polys )
 {
-    tgTexInfo    ti( "Grass" );
-    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "Grass", "taxiway_outerbase" );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
     
-    tgPolygonSet ps( taxi_contour, ti, "taxiway_outerbase" );    
+    tgPolygonSet ps( taxi_contour, meta  );    
     polys.push_back( ps.offset( 50.0l ) );
 }
 

@@ -235,11 +235,12 @@ private:
     void TesselateBase();
     void TextureBase();
     // Step 9 - calculate  elevations
-    void CalcBaseElevations(const std::string& root, const string_list& elev_src);    
+    void CalcSmoothingSurface( const std::string& root, const string_list& elev_src, const CGAL::Bbox_2& apt_bounds );
     void LookupBaseIndexes(void);
     // Step 10 - output
     void WriteBaseOutput( const std::string& root, const SGBucket& b );
-
+    void ChopBase( const std::string& root, const string_list& elev_src );
+    
     // Build the features (feat_construct)
     
     // Step 4 - build the linear feature polygons
@@ -301,7 +302,7 @@ private:
 
     // Base Nodes
     TGNodes base_nodes;
-    tgPolygonSet inner_base, outer_base;
+    // tgPolygonSet inner_base, outer_base;
 
     // Feature Nodes
     TGNodes feat_nodes;

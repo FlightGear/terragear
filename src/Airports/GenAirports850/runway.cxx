@@ -186,15 +186,15 @@ void Runway::GetInnerBasePolys( tgPolygonSetList& polys )
     }
 
     base_contour      = gen_runway_area_w_extend( 20.0, -overrun[0], -overrun[1], shoulder_width + 20.0 );
-    tgTexInfo ti( "Grass" );
-    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
+
+    sprintf( description, "%s-%s_inner_base", rwnum[0], rwnum[1] );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "Grass", description );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
     
     //tgShapefile::FromPolygon( base, true, false, "./dbg", "innerbase", "runway" );
     
-    sprintf( description, "%s_%s/%s_inner_base", "ICAO", rwnum[0], rwnum[1] );
-    
     // and add the clearing to the base
-    polys.push_back( tgPolygonSet( base_contour, ti, description ) );
+    polys.push_back( tgPolygonSet( base_contour, meta ) );
 }
 
 void Runway::GetOuterBasePolys( tgPolygonSetList& polys )
@@ -213,13 +213,12 @@ void Runway::GetOuterBasePolys( tgPolygonSetList& polys )
     // also clear a safe area around the runway
     base_contour = gen_runway_area_w_extend( 180.0, -overrun[0], -overrun[1], shoulder_width + 50.0 );
 
-    tgTexInfo ti( "Grass" );
-    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
-    
-    sprintf( description, "%s_%s/%s_inner_base", "ICAO", rwnum[0], rwnum[1] );
+    sprintf( description, "%s-%s_outer_base", rwnum[0], rwnum[1] );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "Grass", description );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
 
     // add this to the airport clearing
-    polys.push_back( tgPolygonSet( base_contour, ti, description ) );
+    polys.push_back( tgPolygonSet( base_contour, meta ) );
 }
 
 void Runway::GetLights( tglightcontour_list& lights )

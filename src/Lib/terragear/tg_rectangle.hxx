@@ -11,6 +11,8 @@
 # error This library requires C++
 #endif  
 
+#include <CGAL/Bbox_2.h>
+
 #include <simgear/compiler.h>
 #include <simgear/math/SGMath.hxx>
 
@@ -43,6 +45,8 @@ public:
      */
     tgRectangle (const SGGeod& min, const SGGeod& max);
 
+    tgRectangle (const CGAL::Bbox_2& bbox);
+    
     /**
      * Destructor.
      */

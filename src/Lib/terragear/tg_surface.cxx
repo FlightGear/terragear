@@ -136,7 +136,7 @@ static void tgCalcElevations( const std::string &root, const string_list elev_sr
 
                 if ( array.open(array_path) ) {
                     found_file = true;
-                    SG_LOG( SG_GENERAL, SG_DEBUG, "Using array_path = " << array_path );
+                    SG_LOG( SG_GENERAL, SG_INFO, "Using array_path = " << array_path );
                 }
                 j++;
             }
@@ -227,7 +227,7 @@ void tgSurface::Create( const std::string& path,
                    double slope_max,
                    double slope_eps
                  )
-{
+{    
     // Calculate desired size of grid
     _aptBounds = aptBounds;
     _min_deg = _aptBounds.getMin();
@@ -248,7 +248,7 @@ void tgSurface::Create( const std::string& path,
     double x_nm = x_rad * SG_RAD_TO_NM * xfact;
     double x_m = x_nm * SG_NM_TO_METER;
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Area size = " << y_m << " x " << x_m << " (m)" );
+    SG_LOG( SG_GENERAL, SG_INFO, "Area size = " << y_m << " x " << x_m << " (m)" );
 
     int xdivs = (int)(x_m / coarse_grid) + 1;
     int ydivs = (int)(y_m / coarse_grid) + 1;
@@ -258,7 +258,7 @@ void tgSurface::Create( const std::string& path,
     if ( xdivs < 8 ) { xdivs = 8; }
     if ( ydivs < 8 ) { ydivs = 8; }
 
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  M(" << ydivs << "," << xdivs << ")");
+    SG_LOG(SG_GENERAL, SG_INFO, "  M(" << ydivs << "," << xdivs << ")");
 
     double dlon = x_deg / xdivs;
     double dlat = y_deg / ydivs;
@@ -315,7 +315,7 @@ void tgSurface::Create( const std::string& path,
 
     bool slope_error = true;
     while ( slope_error ) {
-        SG_LOG( SG_GENERAL, SG_DEBUG, "start of slope processing pass" );
+        SG_LOG( SG_GENERAL, SG_INFO, "start of slope processing pass" );
         slope_error = false;
         // Add some "slope" sanity to the resulting surface grid points
         for ( int j = 0; j < Pts->rows() - 1; ++j ) {
@@ -337,12 +337,12 @@ void tgSurface::Create( const std::string& path,
     double clon = (_min_deg.getLongitudeDeg() + _max_deg.getLongitudeDeg()) / 2.0;
     double clat = (_min_deg.getLatitudeDeg() + _max_deg.getLatitudeDeg()) / 2.0;
     area_center = SGGeod::fromDegM( clon, clat, _average_elev_m );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "Central offset point = " << area_center);
+    SG_LOG(SG_GENERAL, SG_INFO, "Central offset point = " << area_center);
 
     // Create the fitted surface
-    SG_LOG(SG_GENERAL, SG_DEBUG, "ready to create fitted surface");
+    SG_LOG(SG_GENERAL, SG_INFO, "ready to create fitted surface");
     fit();
-    SG_LOG(SG_GENERAL, SG_DEBUG, "  fit process successful.");
+    SG_LOG(SG_GENERAL, SG_INFO, "  fit process successful.");
 }
 
 tgSurface::tgSurface() {
@@ -408,6 +408,8 @@ void tgSurface::fit() {
     JAMA::QR<double> qr( mat );
     // find the least squares solution using the QR factors
     surface_coefficients = qr.solve(zmat);
+    
+    SG_LOG(SG_GENERAL, SG_INFO, "tgSurface::fit - got " << surface_coefficients.dim() << " coefficients");
 }
 
 
@@ -431,13 +433,35 @@ double tgSurface::query( SGGeod query ) const {
 
     double x = query.getLongitudeDeg() - area_center.getLongitudeDeg();
     double y = query.getLatitudeDeg() - area_center.getLatitudeDeg();
+    
     TNT::Array1D<double> A = surface_coefficients;
 
-    double result = A[0] + A[1]*x + A[2]*x*y + A[3]*y + A[4]*x*x + A[5]*x*x*y
-    + A[6]*x*x*y*y + A[7]*y*y + A[8]*x*y*y + A[9]*x*x*x + A[10]*x*x*x*y
-    + A[11]*x*x*x*y*y + A[12]*x*x*x*y*y*y + A[13]*y*y*y + A[14]*x*y*y*y
-    + A[15]*x*x*y*y*y;
+    double result = A[0] + 
+                    A[1]*x + 
+                    A[2]*x*y + 
+                    A[3]*y + 
+                    A[4]*x*x + 
+                    A[5]*x*x*y + 
+                    A[6]*x*x*y*y + 
+                    A[7]*y*y + 
+                    A[8]*x*y*y + 
+                    A[9]*x*x*x + 
+                    A[10]*x*x*x*y +
+                    A[11]*x*x*x*y*y + 
+                    A[12]*x*x*x*y*y*y + 
+                    A[13]*y*y*y + 
+                    A[14]*x*y*y*y +
+                    A[15]*x*x*y*y*y;
+                    
     result += area_center.getElevationM();
 
     return result;
+}
+
+void tgSurface::getCoefficients( std::vector<double>& coeff ) const
+{
+    coeff.clear();
+    for ( unsigned int i=0; i<surface_coefficients.dim() ; i++ ) {
+        coeff.push_back( surface_coefficients[i] );
+    }
 }

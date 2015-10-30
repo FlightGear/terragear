@@ -82,6 +82,7 @@ void Helipad::build_helipad_shoulders( const cgalPoly_Polygon& outer_area )
 {
     double shoulder_width, shoulder_heading;
     std::string shoulder_mat;
+    char desc[256];
 
     // Now build the shoulders
     if (shoulder == 1) {
@@ -101,17 +102,15 @@ void Helipad::build_helipad_shoulders( const cgalPoly_Polygon& outer_area )
 
     cgalPoly_Polygon shoulderArea = gen_helipad_area_w_extend(shoulder_width, shoulder_width);
 
-    // todo : tgTexInfo needs constructors, setting functions...
-    tgTexInfo ti(shoulder_mat);
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, 0.0l, 0.0l, 1.0l, 1.0l );
-    ti.SetLimits( 1.0l, 1.0l, 0.0l, 0.0l );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, shoulder_mat );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPU, 0.0l, 0.0l, 1.0l, 1.0l );
+    meta.setTextureLimits( 1.0l, 1.0l, 0.0l, 0.0l );
     
     for (int i = 0; i < 4; ++i) {
         shoulder_heading = SGMiscd::normalizePeriodic(0,360,shoulder_heading-90);
         
         cgalPoly_Polygon shoulderCur;
         SGGeod           pt;
-        char             description[64];
 
         shoulderCur.clear();
         shoulderCur.push_back( shoulderArea[i] );
@@ -119,10 +118,12 @@ void Helipad::build_helipad_shoulders( const cgalPoly_Polygon& outer_area )
         shoulderCur.push_back( outer_area[i == 3 ? 0 : i+1] );
         shoulderCur.push_back( outer_area[i] );
 
-        ti.SetRef( shoulderCur[1], shoulder_width, 5.0l, shoulder_heading );
+        meta.setTextureRef( shoulderCur[1], shoulder_width, 5.0l, shoulder_heading );
         
-        sprintf( description, "%s_%s_shoulder_%d", "ICAO", designator, i );
-        shoulderPolys.push_back( tgPolygonSet( shoulderCur, ti, description ) );
+        snprintf( desc, 256, "%s_shoulder_%d", designator, i );
+        meta.setDescription( desc );
+        
+        shoulderPolys.push_back( tgPolygonSet( shoulderCur, meta ) );
     }
 }
 
@@ -132,6 +133,7 @@ void Helipad::GetMainPolys( tgPolygonSetList& polys )
     // Generate the basic helipad outlines
     //
     double heli_size;
+    char desc[256];
     
     // helipad constructed as a square with width or length added around it
     if ( width == length ) {
@@ -145,7 +147,7 @@ void Helipad::GetMainPolys( tgPolygonSetList& polys )
     cgalPoly_Polygon    heliPoly = gen_wgs84_area( GetLoc(), heli_size, 0, 0, heli_size, heading, false);
     cgalPoly_PolygonSet ps( heliPoly );
     
-    tgPolygonSet helipad;
+//    tgPolygonSet helipad;
         
     std::string heli_mat, extra_mat;
     if (surface == 1) {
@@ -156,12 +158,14 @@ void Helipad::GetMainPolys( tgPolygonSetList& polys )
         extra_mat = "pc_tiedown";
     }
     
-    tgTexInfo ti( heli_mat );
-    ti.SetRef( heliPoly[0], heli_size, heli_size, heading );
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPUV, -1.0l, -1.0l, 1.0l, 1.0l );
-    ti.SetLimits( 0.0l, 0.0l, 1.0l, 1.0l );
+    snprintf( desc, 256, "heli_%s", designator );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, heli_mat, desc );
+    
+    meta.setTextureRef( heliPoly[0], heli_size, heli_size, heading );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPUV, -1.0l, -1.0l, 1.0l, 1.0l );
+    meta.setTextureLimits( 0.0l, 0.0l, 1.0l, 1.0l );
 
-    polys.push_back( tgPolygonSet(ps, ti, 0) );
+    polys.push_back( tgPolygonSet(ps, meta ) );
     
     // Now generate the actual rectangle, and clip it with the square
     // need areference point at the origin of the direction, in the middle of width
@@ -174,12 +178,13 @@ void Helipad::GetMainPolys( tgPolygonSetList& polys )
     
     // Create the final output and push on to the runway super_polygon
     // list
-    ti.material = extra_mat;
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_NOCLIP );
-    ti.SetRef( tiedown_area[0], 5.0l, 5.0l, heading );
-    ti.SetLimits( 1.0l, 1.0l, 0.0l, 0.0l );
-
-    polys.push_back( tgPolygonSet(ps2, ti, 0) );
+    meta.setMaterial( extra_mat );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_NOCLIP );
+    meta.setTextureRef( tiedown_area[0], 5.0l, 5.0l, heading );
+    meta.setTextureLimits( 1.0l, 1.0l, 0.0l, 0.0l );
+    snprintf( desc, 256, "heli_extra_%s", designator );
+    
+    polys.push_back( tgPolygonSet(ps2, meta) );
     
     // and build the shoulders 
     build_helipad_shoulders( tiedown_area );   
@@ -208,13 +213,13 @@ void Helipad::GetInnerBasePolys( tgPolygonSetList& polys )
     }
     
     cgalPoly_Polygon ib = gen_helipad_area_w_extend( l * 0.25, w * 0.25 );
-    tgTexInfo         ti( "Grass" );
-    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
-    
-    sprintf( description, "%s_%s_inner_base", "ICAO", designator );
-    
+
+    sprintf( description, "%s_inner_base", designator );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "Grass", description );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
+
     // add this to the airport clearing
-    polys.push_back( tgPolygonSet( ib, ti, description ) );
+    polys.push_back( tgPolygonSet( ib, meta ) );
 }
 
 void Helipad::GetOuterBasePolys( tgPolygonSetList& polys )
@@ -233,13 +238,13 @@ void Helipad::GetOuterBasePolys( tgPolygonSetList& polys )
     }
     
     cgalPoly_Polygon ob = gen_helipad_area_w_extend( l * 0.5, w * 0.5 );
-    tgTexInfo         ti( "Grass" );
-    ti.SetMethod( tgTexInfo::TEX_BY_GEODE );
-    
-    sprintf( description, "%s_%s_outer_base", "ICAO", designator );
+
+    sprintf( description, "%s_outer_base", designator );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "Grass", description );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
     
     // add this to the airport clearing
-    polys.push_back( tgPolygonSet( ob, ti, description ) );    
+    polys.push_back( tgPolygonSet( ob, meta ) );
 }
 
 void Helipad::GetLights( tglightcontour_list& lights )

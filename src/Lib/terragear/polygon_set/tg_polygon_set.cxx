@@ -5,8 +5,8 @@
 #include <simgear/misc/sg_path.hxx> // for file i/o
 
 
-// every polygon set gets its own unique identifier
-unsigned long tgPolygonSet::cur_id = 1;
+// every polygon set (metadata) gets its own unique identifier
+unsigned long tgPolygonSetMeta::cur_id = 1;
 
 void tgPolygonSet::polygonToSegmentList( const cgalPoly_Polygon& p, std::vector<cgalPoly_Segment>& segs ) const
 {
@@ -115,10 +115,13 @@ void tgPolygonSet::intersection2( const cgalPoly_Polygon& other )
 // intersect and return a new tgPolygonSet
 tgPolygonSet tgPolygonSet::intersection( const cgalPoly_Polygon& other ) const
 {
+    // copy the geometry;
     cgalPoly_PolygonSet result = getPs();
+
     result.intersection( other );
     
-    return tgPolygonSet( result, getTi(), flags );
+    // create a new polygonSet
+    return tgPolygonSet( result, getMeta() );
 }
 
 void tgPolygonSet::difference( const cgalPoly_Polygon& other )
@@ -131,7 +134,7 @@ void tgPolygonSet::join( const cgalPoly_Polygon& other )
     ps.join( other );    
 }
 
-tgPolygonSet tgPolygonSet::join( const tgPolygonSetList& sets )
+tgPolygonSet tgPolygonSet::join( const tgPolygonSetList& sets, const tgPolygonSetMeta& m )
 {
     tgPolygonSetList::const_iterator it;
     cgalPoly_PolygonSet              result;
@@ -140,7 +143,7 @@ tgPolygonSet tgPolygonSet::join( const tgPolygonSetList& sets )
         result.join( it->getPs() );
     }
     
-    return tgPolygonSet( result );
+    return tgPolygonSet( result, m );
 }
 
 CGAL::Bbox_2 tgPolygonSet::getBoundingBox( void ) const

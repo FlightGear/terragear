@@ -455,7 +455,7 @@ bool tgIntersectionEdge::Verify( unsigned long int f )
 
 tgPolygonSet tgIntersectionEdge::GetPoly(const char* prefix)
 {    
-    return poly;
+    return tgPolygonSet( poly, meta );
 }
 
 double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersectionGeneratorTexInfoCb texInfoCb, double ratio )
@@ -476,14 +476,14 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         
         if ( originating ) {
             heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
-            poly.setTexParams( texRefBotLeft, width, 0.5, heading );
+            meta.setTextureRef( texRefBotLeft, width, 0.5, heading );
         } else {
             heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
-            poly.setTexParams( texRefTopRight, width, 0.5, heading );        
+            meta.setTextureRef( texRefTopRight, width, 0.5, heading );        
         }
-        poly.setMaterial( material );
-        poly.setTexMethod( tgTexInfo::TEX_1X1_ATLAS );
-        poly.setTexLimits( texAtlasStartU, texAtlasStartV, texAtlasEndU, texAtlasEndV );
+        meta.setMaterial( material );
+        meta.setTextureMethod( tgPolygonSetMeta::TEX_1X1_ATLAS );
+        meta.setTextureLimits( texAtlasStartU, texAtlasStartV, texAtlasEndU, texAtlasEndV );
         // poly.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
 
 #if DEBUG_TEXTURE        
@@ -499,14 +499,14 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         
         if ( originating ) {
             heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
-            poly.setTexParams( texRefBotLeft, width, 0.5, heading );
+            meta.setTextureRef( texRefBotLeft, width, 0.5, heading );
         } else {
             heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
-            poly.setTexParams( texRefTopRight, width, 0.5, heading );        
+            meta.setTextureRef( texRefTopRight, width, 0.5, heading );        
         }
-        poly.setMaterial( material );
-        poly.setTexMethod( tgTexInfo::TEX_1X1_ATLAS );
-        poly.setTexLimits( texAtlasStartU, texAtlasStartV, texAtlasEndU, texAtlasEndV );
+        meta.setMaterial( material );
+        meta.setTextureMethod( tgPolygonSetMeta::TEX_1X1_ATLAS );
+        meta.setTextureLimits( texAtlasStartU, texAtlasStartV, texAtlasEndU, texAtlasEndV );
 //      poly.setVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
         
 #if DEBUG_TEXTURE
@@ -528,17 +528,17 @@ double tgIntersectionEdge::Texture( bool originating, double v_end, tgIntersecti
         if ( originating ) {
             SG_LOG( SG_GENERAL, LOG_TEXTURE, "tgIntersectionEdge::Texture : edge " << id << " originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
             heading = SGGeodesy::courseDeg( start->GetPosition(), end->GetPosition() );
-            poly.setTexParams( texRefBotLeft, width, dist, heading );
+            meta.setTextureRef( texRefBotLeft, width, dist, heading );
         } else {
             SG_LOG( SG_GENERAL, LOG_TEXTURE, "tgIntersectionEdge::Texture : edge " << id << " NOT originating : v_start=" << v_start << " v_end= " << v_end << " dist= " << dist << " v_dist= " << v_dist );
             heading = SGGeodesy::courseDeg( end->GetPosition(), start->GetPosition() );
-            poly.setTexParams( texRefTopRight, width, dist, heading );        
+            meta.setTextureRef( texRefTopRight, width, dist, heading );        
         }    
 
-        poly.setMaterial( material );
-        poly.setTexMethod( tgTexInfo::TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
-        poly.setTexLimits( texAtlasStartU, v_start, texAtlasEndU, v_end );
-//      poly.setVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
+        meta.setMaterial( material );
+        meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+        meta.setTextureLimits( texAtlasStartU, v_start, texAtlasEndU, v_end );
+//      meta.setVertexAttributeInt(TG_VA_CONSTANT, 0, 0);
         
 #if DEBUG_TEXTURE        
         // DEBUG : add an arrow with v_start, v_end
@@ -611,7 +611,7 @@ void tgIntersectionEdge::Generate( void )
 
     // dump the face on which the start vertex lies
     // offset the start location a bit to find our face
-    poly.erase();
+    poly.clear();
     
     // Create the arrangement
     edgeArrangement     arr;
@@ -680,10 +680,7 @@ void tgIntersectionEdge::Generate( void )
     }
     
     if( valid ) {
-        cgalPoly_Polygon    p( nodes.begin(), nodes.end() );
-        cgalPoly_PolygonSet ps(p);
-        
-        poly = tgPolygonSet(ps);
+        poly = cgalPoly_Polygon( nodes.begin(), nodes.end() );
     }
 }
 
@@ -714,10 +711,11 @@ void tgIntersectionEdge::DumpArrangement( OGRLayer* skeleton_lid, OGRLayer* cons
     }
     
     // dump the poly
-    if ( poly_lid ) {
-        sprintf( description, "%06ld_poly", id );
-        poly.toShapefile( poly_lid, description );
-    }
+//    if ( poly_lid ) {
+//        sprintf( description, "%06ld_poly", id );
+//        poly.toShapefile( poly_lid, description );
+//    }
+
 }
 
 tgRay tgIntersectionEdgeInfo::GetDirectionRay(void) const

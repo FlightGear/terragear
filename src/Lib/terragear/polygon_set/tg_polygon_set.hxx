@@ -2,6 +2,10 @@
 #define __TG_POLYGON_SET_HXX__
 
 #include <ogrsf_frmts.h>
+
+#include <terragear/clipper.hpp>
+#include <terragear/tg_surface.hxx>
+
 #include "tg_polygon_def.hxx"
 
 // point offsetting...
@@ -10,10 +14,60 @@ SGGeod OffsetPointMiddle( const cgalPoly_Point& gPrev, const cgalPoly_Point& gCu
 SGGeod OffsetPointFirst( const cgalPoly_Point& cur, const cgalPoly_Point& next, double offset_by );
 SGGeod OffsetPointLast( const cgalPoly_Point& prev, const cgalPoly_Point& cur, double offset_by );
 
-
-class tgTexInfo
+class tgPolygonSetMeta
 {
-public:    
+public:
+    // what type of meta info are we saving with the geometry
+    typedef enum {
+        META_NONE,
+        META_TEXTURED,
+        META_TEXTURED_SURFACE,
+        META_CONSTRAIN
+    } MetaInfo_e;
+    
+    
+    tgPolygonSetMeta() : info(META_NONE), id(tgPolygonSetMeta::cur_id++) {}
+    tgPolygonSetMeta( MetaInfo_e i) : info(i), id(tgPolygonSetMeta::cur_id++) {}
+    tgPolygonSetMeta( MetaInfo_e i, const std::string& mat, const std::string& desc ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++), description(desc) {}
+    tgPolygonSetMeta( MetaInfo_e i, const std::string& mat ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++) {}
+    
+#if 0    
+    tgPolygonSetMeta( const tgPolygonSetMeta &src ) { 
+        id          = src.id;
+        description = src.description;
+        
+    }
+#endif
+
+
+    /* All Meta Info types */
+    void setDescription( const char* desc ) { description = desc; }
+        
+    std::string getMetaType( void ) const {
+        std::string type;
+        
+        switch( info ) {
+            case META_NONE:
+                type = "none";
+                break;
+            
+            case META_TEXTURED:
+                type = "textured";
+                break;
+                
+            case META_TEXTURED_SURFACE:
+                type = "textured_surface";
+                break;                
+                
+            case META_CONSTRAIN:
+                type = "constraint";
+                break;            
+        }
+        
+        return type;
+    }
+    
+    /* Texture Information */
     typedef enum {
         TEX_UNKNOWN,
         TEX_BY_GEODE,
@@ -22,19 +76,16 @@ public:
         TEX_BY_TPS_CLIPV,
         TEX_BY_TPS_CLIPUV,
         TEX_1X1_ATLAS
-    } method_e;
-    
-    tgTexInfo() {}
-    tgTexInfo( const std::string& mat ) : material(mat) {}
-    
-    void SetMethod( method_e m ) { 
+    } TextureMethod_e;
+
+    void setTextureMethod( TextureMethod_e m ) { 
         method     = m; 
     }
-    void SetMethod( method_e m, double cl ) { 
+    void setTextureMethod( TextureMethod_e m, double cl ) { 
         method     = m; 
         center_lat = cl;
     }
-    void SetMethod( method_e m, double min_u, double min_v, double max_u, double max_v ) { 
+    void setTextureMethod( TextureMethod_e m, double min_u, double min_v, double max_u, double max_v ) { 
         method     = m; 
         min_clipu  = min_u;
         min_clipv  = min_v;
@@ -42,24 +93,37 @@ public:
         max_clipv  = max_v;
     }
     
-    void SetRef( const cgalPoly_Point& r, double w, double l, double h ) { 
-        ref     = r;
+    void setMaterial( const std::string& mat ) { material = mat; }
+    
+    void setTextureRef( const cgalPoly_Point& r, double w, double l, double h ) { 
+        reflon  = CGAL::to_double( r.x() );
+        reflat  = CGAL::to_double( r.y() );
         width   = w;
         length  = l;
         heading = h;
     }
    
-    void SetLimits( double min_u, double min_v, double max_u, double max_v ) { 
+    void setTextureLimits( double min_u, double min_v, double max_u, double max_v ) { 
         minu  = min_u;
         minv  = min_v;
         maxu  = max_u;
         maxv  = max_v;
     }
     
-    std::string     material;
-    method_e        method;
+    // Smoothing Surface Info
+    void setSurfaceInfo( const tgSurface& base_surf );
+    
+    // I/O
+    void getFeatureFields( OGRFeature* poFeature );
+    void setFeatureFields( OGRFeature* poFeature ) const;
+    
+    MetaInfo_e      info;
 
-    cgalPoly_Point  ref;
+    std::string     material;
+    TextureMethod_e method;
+
+    double          reflon;
+    double          reflat;
     double          width;
     double          length;
     double          heading;
@@ -74,7 +138,32 @@ public:
     double          min_clipv;
     double          max_clipv;
 
-    double          center_lat;    
+    double          center_lat;
+
+    std::vector<double> surfaceCoefficients;
+    SGGeod surfaceMin, surfaceMax, surfaceCenter;
+    
+    // metadata
+    unsigned long       flags;
+    unsigned long       id;
+    unsigned long       fid;
+    std::string         description;
+    
+private:    
+    static unsigned long    cur_id;    
+
+    void                    getCommonFields( OGRFeature* poFeature );
+    void                    setCommonFields( OGRFeature* poFeature ) const;
+
+    void                    getTextureFields( OGRFeature* poFeature );
+    void                    setTextureFields( OGRFeature* poFeature ) const;
+
+    void                    getSurfaceFields( OGRFeature* poFeature );
+    void                    setSurfaceFields( OGRFeature* poFeature ) const;
+    
+    void                    getFieldAsInteger( OGRFeature* poFeature, const char* field, long unsigned int* setting );
+    void                    getFieldAsDouble( OGRFeature* poFeature, const char* field, double* setting );
+    void                    getFieldAsString( OGRFeature* poFeature, const char* field, char* setting, size_t size );    
 };
 
 class tgPolygonSet;
@@ -83,113 +172,90 @@ typedef std::vector<tgPolygonSet>   tgPolygonSetList;
 class tgPolygonSet 
 {
 public:
-    tgPolygonSet( void ) : id(tgPolygonSet::cur_id++) {}
-    tgPolygonSet( const cgalPoly_Polygon& poly ) : id(tgPolygonSet::cur_id++) {
+    //tgPolygonSet( void ) {}
+    
+    // generate new polygon sets
+    tgPolygonSet( const cgalPoly_Polygon& poly ) {
         ps = cgalPoly_PolygonSet(poly);
     }
-    tgPolygonSet( const cgalPoly_Polygon& poly, const tgTexInfo& texinfo, const char* desc ) : ti(texinfo), flags(0), id(tgPolygonSet::cur_id++) {
+    
+    tgPolygonSet( const cgalPoly_Polygon& poly, const tgPolygonSetMeta& metaInfo ) : meta(metaInfo) {
         ps = cgalPoly_PolygonSet(poly);
-        description = desc;
     }
-    tgPolygonSet( const cgalPoly_PolygonWithHoles& poly, const tgTexInfo& texinfo, const char* desc ) : ti(texinfo), flags(0), id(tgPolygonSet::cur_id++) {
-        ps = cgalPoly_PolygonSet(poly);
-        description = desc;
+    tgPolygonSet( const cgalPoly_PolygonWithHoles& polyWithHoles, const tgPolygonSetMeta& metaInfo ) : meta(metaInfo) {
+        ps = cgalPoly_PolygonSet(polyWithHoles);
     }
 
-    tgPolygonSet( const cgalPoly_PolygonSet& set ) : ps(set), id(tgPolygonSet::cur_id++) {}
-    tgPolygonSet( const cgalPoly_PolygonSet& polyset, const tgTexInfo& texinfo, unsigned long f ) : ps(polyset), ti(texinfo), flags(f), id(tgPolygonSet::cur_id++) {}
+    tgPolygonSet( const cgalPoly_PolygonSet& set ) : ps(set) {}
+    tgPolygonSet( const cgalPoly_PolygonSet& polyset, const tgPolygonSetMeta& metaInfo ) : ps(polyset), meta(metaInfo) {}
 
     tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry );
-    tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry, const std::string& material );
+    tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& metaInfo );
 
-    void                toShapefile( const char* datasource, const char* layer ) const;
-    void                toShapefile( OGRLayer* layer, const char* description ) const;
-    void                toShapefile( OGRLayer* layer ) const;
+    void                        toShapefile( const char* datasource, const char* layer ) const;
+    void                        toShapefile( OGRLayer* layer, const char* description ) const;
+    void                        toShapefile( OGRLayer* layer ) const;
 
-    CGAL::Bbox_2        getBoundingBox( void ) const;
-    bool                isEmpty( void ) const { return ps.is_empty(); }
+    static void                 toShapefile( const cgalPoly_Polygon& poly, const char* datasource, const char* layer );
 
-    void                erase( void ) { ps.clear(); }
-
-    void                splitLongEdges( int maxSegmentLength );
     
-    void                setTexParams( cgalPoly_Point& ref, double width, double length, double heading ) {
-        ti.ref     = ref;
-        ti.width   = width;
-        ti.length  = length;
-        ti.heading = heading;
-    }
-    
-    void setTexMethod( tgTexInfo::method_e method ) {
-        ti.method = method;
-    }
-    void setTexMethod( tgTexInfo::method_e method, double min_cu, double min_cv, double max_cu, double max_cv ) {
-        ti.method = method;
-        ti.min_clipu = min_cu;
-        ti.min_clipv = min_cv;
-        ti.max_clipu = max_cu;
-        ti.max_clipv = max_cv;        
-    }
-    
-    void setTexLimits( double minu, double minv, double maxu, double maxv ) {
-        ti.minu = minu;
-        ti.minv = minv;
-        ti.maxu = maxu;
-        ti.maxv = maxv;
-    }
-    
-    void                setMaterial( std::string mat ) { ti.material = mat; }
-    std::string         getMaterial( void ) const { return ti.material; }
+    CGAL::Bbox_2                getBoundingBox( void ) const;
+    bool                        isEmpty( void ) const { return ps.is_empty(); }
+    void                        erase( void ) { ps.clear(); }
 
-    void                setPs( const cgalPoly_PolygonSet& polyset ) { ps = polyset; }
-    cgalPoly_PolygonSet getPs( void ) const { return ps; }
-    tgTexInfo           getTi( void ) const { return ti; }
-    unsigned long       getId( void ) const { return id; }
+    void                        splitLongEdges( int maxSegmentLength );
     
-    tgPolygonSet        intersection( const cgalPoly_Polygon& other ) const;
-    void                intersection2( const cgalPoly_Polygon& other );
-
-    void                difference( const cgalPoly_Polygon& other );
-    void                join( const cgalPoly_Polygon& other );
-    static tgPolygonSet join( const tgPolygonSetList& sets );
-
-    tgPolygonSet        offset( double oset ) const;
+    void                        setPs( const cgalPoly_PolygonSet& polyset ) { ps = polyset; }
+    const cgalPoly_PolygonSet&  getPs( void ) const   { return ps; }
+    const tgPolygonSetMeta&     getMeta( void ) const { return meta; }
+    tgPolygonSetMeta&           getMeta( void ) { return meta; }
     
-    static GDALDataset* openDatasource( const char* datasource_name );
-    static OGRLayer*    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name );
+    tgPolygonSet                intersection( const cgalPoly_Polygon& other ) const;
+    void                        intersection2( const cgalPoly_Polygon& other );
+
+    void                        difference( const cgalPoly_Polygon& other );
+    void                        join( const cgalPoly_Polygon& other );
+    static tgPolygonSet         join( const tgPolygonSetList& sets, const tgPolygonSetMeta& meta );
+
+    tgPolygonSet                offset( double oset ) const;
     
-private:
-    static unsigned long      cur_id;
-        
-    void                      toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const;
-    void                      toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const;
-    void                      toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& arr ) const;
-
-    void                      getFeatureFields( OGRFeature* poFeature );
-    void                      setFeatureFields( OGRFeature* poFeature ) const;
-
-    int                       getFieldAsInteger( OGRFeature* poFeature, const char* field, int defValue );
-    double                    getFieldAsDouble( OGRFeature* poFeature, const char* field, double defValue );
-    const char*               getFieldAsString( OGRFeature* poFeature, const char* field, const char* defValue );
-
-    void                      polygonToSegmentList( const cgalPoly_Polygon& p, std::vector<cgalPoly_Segment>& segs ) const;
-    void                      findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const;
-    cgalPoly_Point            getInteriorPoint( const cgalPoly_PolygonWithHoles& pwh ) const;
+    static GDALDataset*         openDatasource( const char* datasource_name );
+    static OGRLayer*            openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name );
     
-    void                      ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<cgalPoly_Polygon>& faces );
+private:        
+    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const;
+    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const;
+    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const;
+    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& arr ) const;
 
-    cgalPoly_Polygon          splitLongEdges( cgalPoly_Polygon& p, int maxSegmentSize );
-    cgalPoly_PolygonWithHoles splitLongEdges( cgalPoly_PolygonWithHoles& pwh, int maxSegmentLength );
-
-    void                      contractPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_Polygon>& offsetPWHs ) const;
-    void                      expandPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_Polygon>& offsetPWHs ) const;
+    void                        polygonToSegmentList( const cgalPoly_Polygon& p, std::vector<cgalPoly_Segment>& segs ) const;
+    void                        findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const;
+    cgalPoly_Point              getInteriorPoint( const cgalPoly_PolygonWithHoles& pwh ) const;
     
-    cgalPoly_PolygonSet ps;
-    tgTexInfo           ti;
-    unsigned long       flags;
-    unsigned long       id;
-    unsigned long       fid;
-    std::string         description;
+    void                        ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<cgalPoly_Polygon>& faces );
+
+    cgalPoly_Polygon            splitLongEdges( cgalPoly_Polygon& p, int maxSegmentSize );
+    cgalPoly_PolygonWithHoles   splitLongEdges( cgalPoly_PolygonWithHoles& pwh, int maxSegmentLength );
+
+//    void                      contractPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
+//    void                      expandPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
+  
+// to / from clipper for Polygon Offsetting ( Can't get CGAL to propery shring Polygons....  TODO    
+    double                      toClipper( double dist ) const;
+    
+    ClipperLib::IntPoint        toClipper( const cgalPoly_Point& p ) const;
+    cgalPoly_Point              fromClipper( const ClipperLib::IntPoint& p ) const;
+    
+    ClipperLib::Path            toClipper( const cgalPoly_Polygon& subject, bool isHole ) const;
+    cgalPoly_Polygon            fromClipper( const ClipperLib::Path& subject ) const;
+    
+    void                        toClipper( const cgalPoly_PolygonWithHoles& pwh, ClipperLib::Paths& paths ) const;
+    ClipperLib::Paths           toClipper( const cgalPoly_PolygonSet& ps ) const;
+    
+    cgalPoly_PolygonSet         fromClipper( const ClipperLib::Paths& subject ) const;
+    
+    cgalPoly_PolygonSet         ps;
+    tgPolygonSetMeta            meta;
 };
 
 #endif /* __TG_POLYGON_SET_HXX__ */

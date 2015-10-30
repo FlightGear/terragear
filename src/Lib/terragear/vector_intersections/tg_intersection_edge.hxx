@@ -180,7 +180,9 @@ public:
     unsigned long int   flags;
     
 private:    
-    tgPolygonSet        poly;
+    cgalPoly_Polygon    poly;
+    tgPolygonSetMeta    meta;
+    
     cgalPoly_Point      vStart;    
     cgalPoly_Point      texRefTopRight;
     cgalPoly_Point      texRefBotLeft;

@@ -196,19 +196,19 @@ tgPolygonSet Runway::gen_shoulder_section( Airport* ap, int rwidx, cgalPoly_Poin
     poly.push_back( cgalPoly_Point( s2.getLongitudeDeg(), s2.getLatitudeDeg() ) );
     poly.push_back( cgalPoly_Point( s3.getLongitudeDeg(), s3.getLatitudeDeg() ) );
 
-    tgTexInfo ti( surface );
-    if (side == 0) {
-        ti.SetRef( poly[2], width, dist, heading );
-        ti.SetLimits( 0.0l,0.0l,1.0l,1.0l );
-    } else {
-        ti.SetRef( poly[1], width, dist, heading );
-        ti.SetLimits( 1.0l,0.0l,0.0l,1.0l );
-    }
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, 0.0l, 0.0l, 1.0l, 0.0l );
-
     snprintf( description, 128, "%s_%s_shoulder", ap->GetIcao().c_str(), rwnum[rwidx] );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, surface, description );
     
-    return tgPolygonSet( poly, ti, description );
+    if (side == 0) {
+        meta.setTextureRef( poly[2], width, dist, heading );
+        meta.setTextureLimits( 0.0l,0.0l,1.0l,1.0l );
+    } else {
+        meta.setTextureRef( poly[1], width, dist, heading );
+        meta.setTextureLimits( 1.0l,0.0l,0.0l,1.0l );
+    }
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPU, 0.0l, 0.0l, 1.0l, 0.0l );
+    
+    return tgPolygonSet( poly, meta );
 }
 
 // generate a section of texture with shoulders
@@ -347,17 +347,13 @@ void Runway::gen_section( Airport* ap, int rwidx,
 
     // check for left shoulder
     if ( lshoulder_width > 0.0f ) {
-        tgPolygonSet sp;
-
-        sp = gen_shoulder_section( ap, rwidx, pg0, pg1, tg0, tg1, 0, heading, lshoulder_width, shoulder_surface );
+        tgPolygonSet sp = gen_shoulder_section( ap, rwidx, pg0, pg1, tg0, tg1, 0, heading, lshoulder_width, shoulder_surface );
         shoulder_polys.push_back( sp );
     }
 
     // check for right shoulder
     if ( rshoulder_width > 0.0f ) {
-        tgPolygonSet sp;
-
-        sp = gen_shoulder_section( ap, rwidx, pg1, pg0, tg2, tg3, 1, heading, rshoulder_width, shoulder_surface );
+        tgPolygonSet sp = gen_shoulder_section( ap, rwidx, pg1, pg0, tg2, tg3, 1, heading, rshoulder_width, shoulder_surface );
         shoulder_polys.push_back( sp );
     }
 
@@ -368,14 +364,14 @@ void Runway::gen_section( Airport* ap, int rwidx,
     section.push_back( pg1 );
     section.push_back( pg3 );
 
-    tgTexInfo ti( "pa_tiedown" );
-    ti.SetRef( pg0, 5.0, 5.0, heading );
-    ti.SetLimits( 0.0, 0.0, 1.0, 1.0 );
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_NOCLIP );
-
     snprintf( description, 128, "%s_%s_section", ap->GetIcao().c_str(), rwnum[rwidx] );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "pa_tiedown", description );
+    meta.setTextureRef( pg0, 5.0, 5.0, heading );
+    meta.setTextureLimits( 0.0, 0.0, 1.0, 1.0 );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_NOCLIP );
+
     
-    runway_polys.push_back( tgPolygonSet( section, ti, description ) );
+    runway_polys.push_back( tgPolygonSet( section, meta ) );
 }
 
 #if 0
@@ -677,15 +673,15 @@ void Runway::gen_designation_polygon( Airport* ap, int rwidx, const SGGeod& star
     maxx = minx + DESG_WIDTH;
     maxy = miny + DESG_HEIGHT;    
 
-    tgTexInfo ti( "rwy_designations" );
-    ti.SetRef( poly[0], width, length, heading );
-    ti.SetMethod( tgTexInfo::TEX_1X1_ATLAS );
-    ti.SetLimits( minx, miny, maxx, maxy );
+    snprintf( description, 128, "%s_%s_designator_%s", ap->GetIcao().c_str(), rwnum[rwidx], mark.c_str() );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "rwy_designations", description );
+    meta.setTextureRef( poly[0], width, length, heading );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_1X1_ATLAS );
+    meta.setTextureLimits( minx, miny, maxx, maxy );
     //ti.SetVertexAttributeInt(TG_VA_CONSTANT, 0, 1);
     
-    snprintf( description, 128, "%s_%s_designator_%s", ap->GetIcao().c_str(), rwnum[rwidx], mark.c_str() );
     
-    cap_polys.push_back( tgPolygonSet( poly, ti, description ) );
+    cap_polys.push_back( tgPolygonSet( poly, meta ) );
 }
 
 LinearFeature* Runway::gen_perpendicular_marking_feature( Airport* ap, const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark )
@@ -996,14 +992,13 @@ void Runway::gen_base( Airport* ap, int rwidx, const SGGeod& start, const SGGeod
         runway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
     }
 
-    snprintf( description, 128, "%s_%s_base", ap->GetIcao().c_str(), rwnum[rwidx] );
+    snprintf( description, 128, "%s_%s_base", ap->GetIcao().c_str(), rwnum[rwidx] );    
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "pa_tiedown", description );
+    meta.setTextureRef( runway[0], 5.0, 5.0, heading );
+    meta.setTextureLimits( 0.0, 0.0, 1.0, 1.0 );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_NOCLIP );
     
-    tgTexInfo ti( "pa_tiedown" );
-    ti.SetRef( runway[0], 5.0, 5.0, heading );
-    ti.SetLimits( 0.0, 0.0, 1.0, 1.0 );
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_NOCLIP );
-    
-    runway_polys.push_back( tgPolygonSet( runway, ti, description ) );
+    runway_polys.push_back( tgPolygonSet( runway, meta ) );
     
 #if DEBUG
 //  tgShapefile::FromPolygon( runway, true, false, "./dbg", "Runway", "runway" );
@@ -1033,14 +1028,13 @@ void Runway::gen_base( Airport* ap, int rwidx, const SGGeod& start, const SGGeod
             right_shoulder.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
         }
         
-        tgTexInfo tirs( shoulder_surface );
-        tirs.SetRef( ref, shoulder_width, 5.0l, heading );
-        tirs.SetLimits( 0.0, 0.0, 1.0, 1.0 );
-        tirs.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, -1.0l, 0.0l, 1.0l, 0.0l );
+        snprintf( description, 128, "%s_rightshoulder", rwnum[rwidx] );
+        tgPolygonSetMeta metars( tgPolygonSetMeta::META_TEXTURED, shoulder_surface, description );
+        metars.setTextureRef( ref, shoulder_width, 5.0l, heading );
+        metars.setTextureLimits( 0.0, 0.0, 1.0, 1.0 );
+        metars.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPU, -1.0l, 0.0l, 1.0l, 0.0l );
 
-        snprintf( description, 128, "%s_%s_rightshoulder", ap->GetIcao().c_str(), rwnum[rwidx] );
-
-        shoulder_polys.push_back( tgPolygonSet( right_shoulder, tirs, description ) );
+        shoulder_polys.push_back( tgPolygonSet( right_shoulder, metars ) );
 
 #if DEBUG
 //      tgShapefile::FromPolygon( right_shoulder, true, false, "./dbg", "right_shoulder", "right_shoulder" );
@@ -1061,15 +1055,14 @@ void Runway::gen_base( Airport* ap, int rwidx, const SGGeod& start, const SGGeod
             }                
         }
 
-        tgTexInfo tils( shoulder_surface );
-        tils.SetRef( ref, shoulder_width, 5.0l, SGMiscd::normalizePeriodic(0, 360, heading+180 ) );
-        tils.SetLimits( 0.0l, 0.0l, 1.0l, 1.0l );
-        tils.SetMethod( tgTexInfo::TEX_BY_TPS_CLIPU, -1.0l, 0.0l, 1.0l, 0.0l );
-
-        snprintf( description, 128, "%s_%s_leftshoulder", ap->GetIcao().c_str(), rwnum[rwidx] );
-
-        shoulder_polys.push_back( tgPolygonSet( left_shoulder, tils, description ) );
-
+        snprintf( description, 128, "%s_leftshoulder", rwnum[rwidx] );
+        tgPolygonSetMeta metals( tgPolygonSetMeta::META_TEXTURED, shoulder_surface, description );
+        metals.setTextureRef( ref, shoulder_width, 5.0l, heading );
+        metals.setTextureLimits( 0.0, 0.0, 1.0, 1.0 );
+        metals.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPU, -1.0l, 0.0l, 1.0l, 0.0l );
+        
+        shoulder_polys.push_back( tgPolygonSet( left_shoulder, metals ) );
+        
 #if DEBUG
 //      tgShapefile::FromPolygon( left_shoulder, true, false, "./dbg", "left_shoulder", "left_shoulder" );
 #endif        
@@ -1175,18 +1168,17 @@ void Runway::gen_stopway( Airport* ap, int rwidx, const SGGeod& start, double le
     pt = SGGeodesy::direct( start, offset_heading, -offset_width );
     stopway.push_back( cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() ) );
     
-    tgTexInfo ti( "pa_tiedown" );
-    ti.SetRef( stopway[0], 5.0l, 5.0l, heading );
-    ti.SetLimits( 0.0l, 0.0l, 1.0l, 1.0l );
-    ti.SetMethod( tgTexInfo::TEX_BY_TPS_NOCLIP );
+    snprintf( description, 128, "%s_stopway", rwnum[rwidx] );
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "pa_tiedown", description );
+    meta.setTextureRef( stopway[0], 5.0l, 5.0l, heading );
+    meta.setTextureLimits( 0.0l, 0.0l, 1.0l, 1.0l );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_NOCLIP );
     
 #if DEBUG
 //  tgShapefile::FromPolygon( stopway, true, false, "./dbg", "Stopway", "stopway" );
 #endif
-    
-    snprintf( description, 128, "%s_%s_stopway", ap->GetIcao().c_str(), rwnum[rwidx] );
-    
-    runway_polys.push_back( tgPolygonSet( stopway, ti, description ) );
+        
+    runway_polys.push_back( tgPolygonSet( stopway, meta ) );
     
 
     // now add the chevrons

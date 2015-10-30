@@ -39,17 +39,11 @@
 // the final result is two polygons_with_holes.
 // the frst is a poly with a single hole.
 // the second is the degenerate piece in the top right.
-tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry, const std::string& material ) : id(tgPolygonSet::cur_id++)
+tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& metaInfo ) : meta(metaInfo)
 {
     std::vector<cgalPoly_Polygon>	boundaries;
     std::vector<cgalPoly_Polygon>	holes;
     cgalPoly_PolygonSet             holesUnion;
-
-    // generate texture info from feature
-    getFeatureFields( poFeature );
-
-    // overwrite material, as it was given
-    ti.material = material; 
 
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
@@ -71,15 +65,15 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry, const
     ps.difference( holesUnion );
 }
 
-tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry ) : id(tgPolygonSet::cur_id++)
+tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
 {
     std::vector<cgalPoly_Polygon>	boundaries;
     std::vector<cgalPoly_Polygon>	holes;
-    cgalPoly_PolygonSet                 holesUnion;
+    cgalPoly_PolygonSet             holesUnion;
 
     // generate texture info from feature
-    getFeatureFields( poFeature );
-
+    meta.getFeatureFields( poFeature );
+    
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
     ogrRingToPolygonSet( ring, boundaries );
@@ -87,7 +81,7 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry ) : id
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
         ring = poGeometry->getInteriorRing( i );
-	ogrRingToPolygonSet( ring, holes );
+        ogrRingToPolygonSet( ring, holes );
     }
 
     // join all the boundaries
@@ -107,16 +101,16 @@ void tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<c
 
     for (int i = 0; i < ring->getNumPoints(); i++) {
         cgalPoly_Point src(ring->getX(i), ring->getY(i));
-	int trgIdx ;
+        int trgIdx ;
 
         if ( i < ring->getNumPoints()-1 ) {
             // target is the next point
             trgIdx = i+1;
-	} else {
+    } else {
             // target is the first point
             trgIdx = 0;
-	}
-	cgalPoly_Point trg = cgalPoly_Point(ring->getX(trgIdx), ring->getY(trgIdx));
+    }
+    cgalPoly_Point trg = cgalPoly_Point(ring->getX(trgIdx), ring->getY(trgIdx));
 
         if ( src != trg ) {
             segs.push_back( cgalPoly_Segment( src, trg ) );
@@ -142,13 +136,13 @@ void tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<c
 
                 // ignore inner antenna
                 if ( he->face() != he->twin()->face() ) {                    
-		    nodes.push_back( he->source()->point() );
+                    nodes.push_back( he->source()->point() );
                 }
                 
                 ++cur;
             } while (cur != ccb);
 
-	    // check the orientation - outer boundaries should be CCW
+            // check the orientation - outer boundaries should be CCW
             faces.push_back( cgalPoly_Polygon( nodes.begin(), nodes.end()  ));
         }
     }
@@ -225,7 +219,7 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
         }
         
         OGRFieldDefn texRefLonField( "tg_reflon", OFTReal );
-        texRefLonField.SetWidth( 12 );
+        texRefLonField.SetWidth( 24 );
         texRefLonField.SetPrecision( 3 );        
         if( poLayer->CreateField( &texRefLonField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_ref_lon' failed" );
@@ -277,7 +271,7 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
         }
         
         OGRFieldDefn texMinClipVField( "tg_mincv", OFTReal );
-        texMinClipVField.SetWidth( 12 );
+        texMinClipVField.SetWidth( 24 );
         texMinClipVField.SetPrecision( 3 );        
         if( poLayer->CreateField( &texMinClipVField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_min_clipv' failed" );
@@ -298,6 +292,119 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_center_lat' failed" );
         }
 
+
+        // surface metadata
+        OGRFieldDefn texSurfaceMinLonField( "tgsrf_mnln", OFTReal );
+        texSurfaceMinLonField.SetWidth( 24 );
+        texSurfaceMinLonField.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceMinLonField ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mnln' failed" );
+        }
+
+        OGRFieldDefn texSurfaceMinLatField( "tgsrf_mnlt", OFTReal );
+        texSurfaceMinLatField.SetWidth( 24 );
+        texSurfaceMinLatField.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceMinLatField ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mnlt' failed" );
+        }
+
+        OGRFieldDefn texSurfaceMaxLonField( "tgsrf_mxln", OFTReal );
+        texSurfaceMaxLonField.SetWidth( 24 );
+        texSurfaceMaxLonField.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceMaxLonField ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mxln' failed" );
+        }
+
+        OGRFieldDefn texSurfaceMaxLatField( "tgsrf_mxlt", OFTReal );
+        texSurfaceMaxLatField.SetWidth( 24 );
+        texSurfaceMaxLatField.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceMaxLatField ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mxlt' failed" );
+        }
+        
+        OGRFieldDefn texSurfaceCoef00( "tgsrf_co00", OFTReal );
+        texSurfaceCoef00.SetWidth( 24 );
+        texSurfaceCoef00.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef00 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co00' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef01( "tgsrf_co01", OFTReal );
+        texSurfaceCoef01.SetWidth( 24 );
+        texSurfaceCoef01.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef01 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co01' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef02( "tgsrf_co02", OFTReal );
+        texSurfaceCoef02.SetWidth( 24 );
+        texSurfaceCoef02.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef02 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co02' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef03( "tgsrf_co03", OFTReal );
+        texSurfaceCoef03.SetWidth( 24 );
+        texSurfaceCoef03.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef03 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co03' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef04( "tgsrf_co04", OFTReal );
+        texSurfaceCoef04.SetWidth( 24 );
+        texSurfaceCoef04.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef04 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co04' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef05( "tgsrf_co05", OFTReal );        
+        texSurfaceCoef05.SetWidth( 24 );
+        texSurfaceCoef05.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef05 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co05' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef06( "tgsrf_co06", OFTReal );
+        texSurfaceCoef06.SetWidth( 24 );
+        texSurfaceCoef06.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef06 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co06' failed" );
+        }
+        
+        OGRFieldDefn texSurfaceCoef07( "tgsrf_co07", OFTReal );
+        texSurfaceCoef07.SetWidth( 24 );
+        texSurfaceCoef07.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef07 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co07' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef08( "tgsrf_co08", OFTReal );
+        texSurfaceCoef08.SetWidth( 24 );
+        texSurfaceCoef08.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef08 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co08' failed" );
+        }
+        
+        OGRFieldDefn texSurfaceCoef09( "tgsrf_co09", OFTReal );
+        texSurfaceCoef09.SetWidth( 24 );
+        texSurfaceCoef09.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef09 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co09' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef10( "tgsrf_co10", OFTReal );
+        texSurfaceCoef10.SetWidth( 24 );
+        texSurfaceCoef10.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef10 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co10' failed" );
+        }
+
+        OGRFieldDefn texSurfaceCoef11( "tgsrf_co11", OFTReal );
+        texSurfaceCoef11.SetWidth( 24 );
+        texSurfaceCoef11.SetPrecision( 3 );        
+        if( poLayer->CreateField( &texSurfaceCoef11 ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co11' failed" );
+        }
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
     }
@@ -359,8 +466,38 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHol
     }
 
     OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
+    poFeature->SetGeometry(&polygon);
+    meta.setFeatureFields( poFeature );
+    
+    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+    }
+    OGRFeature::DestroyFeature(poFeature);    
+}
+
+void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const
+{
+    OGRPolygon    polygon;
+    OGRPoint      point;
+    OGRLinearRing ring;
+    
+    // in CGAL, the outer boundary is counter clockwise - in GDAL, it's expected to be clockwise
+    cgalPoly_Polygon::Vertex_iterator it;
+    
+    for ( it = poly.vertices_begin(); it != poly.vertices_end(); it++ ) {
+        point.setX( CGAL::to_double( (*it).x() ) );
+        point.setY( CGAL::to_double( (*it).y() ) );
+        point.setZ( 0.0 );
+        
+        ring.addPoint(&point);
+    }
+    ring.closeRings();
+    polygon.addRing(&ring);
+    
+    OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
     poFeature->SetGeometry(&polygon);    
-    setFeatureFields( poFeature );
+    meta.setFeatureFields( poFeature );
     
     if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
     {
@@ -379,14 +516,14 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& a
         OGRLinearRing ring;
         OGRPoint      point;
 
-	point.setX( CGAL::to_double( seg.source().x() ) );
-	point.setY( CGAL::to_double( seg.source().y() ) );
-	point.setZ( 0 );
+        point.setX( CGAL::to_double( seg.source().x() ) );
+        point.setY( CGAL::to_double( seg.source().y() ) );
+        point.setZ( 0 );
         ring.addPoint(&point);
 
-	point.setX( CGAL::to_double( seg.target().x() ) );
-	point.setY( CGAL::to_double( seg.target().y() ) );
-	point.setZ( 0 );
+        point.setX( CGAL::to_double( seg.target().x() ) );
+        point.setY( CGAL::to_double( seg.target().y() ) );
+        point.setZ( 0 );
         ring.addPoint(&point);
 
         OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
@@ -398,97 +535,6 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& a
         }
         OGRFeature::DestroyFeature(poFeature);    
     }    
-}
-
-int tgPolygonSet::getFieldAsInteger( OGRFeature* poFeature, const char* field, int defValue )
-{
-    int fieldIdx = poFeature->GetFieldIndex( field );
-    int value = defValue;
-    
-    if ( fieldIdx >= 0 ) {
-        value = poFeature->GetFieldAsInteger(fieldIdx);
-    }
-    
-    return value;
-}
-
-double tgPolygonSet::getFieldAsDouble( OGRFeature* poFeature, const char* field, double defValue )
-{
-    int fieldIdx = poFeature->GetFieldIndex( field );
-    double value = defValue;
-    
-    if ( fieldIdx >= 0 ) {
-        value = poFeature->GetFieldAsDouble(fieldIdx);
-    }
-    
-    return value;
-}
-
-const char* tgPolygonSet::getFieldAsString( OGRFeature* poFeature, const char* field, const char* defValue )
-{
-    int fieldIdx = poFeature->GetFieldIndex( field );
-    const char* value = defValue;
-    
-    if ( fieldIdx >= 0 ) {
-        value = poFeature->GetFieldAsString(fieldIdx);
-    }
-    
-    return value;
-}
-
-void tgPolygonSet::getFeatureFields( OGRFeature* poFeature )
-{
-    id          = getFieldAsInteger( poFeature, "tg_id",   id );
-    fid         = getFieldAsInteger( poFeature, "OGC_FID", fid );
-    flags       = getFieldAsInteger( poFeature, "tg_flags", 0 );
-
-    ti.material = getFieldAsString( poFeature, "tg_mat", "default" );    
-    ti.method   = (tgTexInfo::method_e)getFieldAsInteger( poFeature, "tg_texmeth", tgTexInfo::TEX_BY_GEODE );
-    if ( ti.method == tgTexInfo::TEX_BY_GEODE ) {
-        ti.center_lat = getFieldAsDouble( poFeature, "tg_clat", 0.0 );
-    } else {
-        ti.ref = cgalPoly_Point( getFieldAsDouble( poFeature, "tg_reflon", 0.0 ), 
-                                 getFieldAsDouble( poFeature, "tg_reflat", 0.0 ) );
-        
-        ti.heading   = getFieldAsDouble( poFeature, "tg_heading", 0.0 );
-        ti.width     = getFieldAsDouble( poFeature, "tg_width", 0.0 );
-        ti.length    = getFieldAsDouble( poFeature, "tg_length", 0.0 );
-        ti.minu      = getFieldAsDouble( poFeature, "tg_minu", 0.0 );
-        ti.minv      = getFieldAsDouble( poFeature, "tg_minv", 0.0 );
-        ti.maxu      = getFieldAsDouble( poFeature, "tg_maxu", 0.0 );
-        ti.maxv      = getFieldAsDouble( poFeature, "tg_maxv", 0.0 );
-        ti.min_clipu = getFieldAsDouble( poFeature, "tg_mincu", 0.0 );
-        ti.min_clipv = getFieldAsDouble( poFeature, "tg_mincv", 0.0 );
-        ti.max_clipu = getFieldAsDouble( poFeature, "tg_maxcu", 0.0 );
-        ti.max_clipv = getFieldAsDouble( poFeature, "tg_maxcv", 0.0 );
-    }
-    
-    description = getFieldAsString( poFeature, "tg_desc", "" );
-}
-
-void tgPolygonSet::setFeatureFields( OGRFeature* poFeature ) const
-{
-    poFeature->SetField("tg_id",        (int)id );
-    poFeature->SetField("OGC_FID",      (int)fid );
-    poFeature->SetField("tg_flags",     (int)flags );
-    
-    poFeature->SetField("tg_mat",       ti.material.c_str() );
-    poFeature->SetField("tg_texmeth",   (int)ti.method );
-    
-    poFeature->SetField("tg_reflon",    CGAL::to_double(ti.ref.x()) );
-    poFeature->SetField("tg_reflat",    CGAL::to_double(ti.ref.y()) );
-    poFeature->SetField("tg_heading",   ti.heading );
-    poFeature->SetField("tg_width",     ti.width );
-    poFeature->SetField("tg_length",    ti.length );
-    poFeature->SetField("tg_minu",      ti.minu );
-    poFeature->SetField("tg_minv",      ti.minv );
-    poFeature->SetField("tg_maxu",      ti.maxu );
-    poFeature->SetField("tg_maxv",      ti.maxv );
-    poFeature->SetField("tg_mincu",     ti.min_clipu );
-    poFeature->SetField("tg_mincv",     ti.min_clipv );
-    poFeature->SetField("tg_maxcu",     ti.max_clipu );
-    poFeature->SetField("tg_maxcv",     ti.max_clipv );
-    poFeature->SetField("tg_desc",      description.c_str() );
 }
 
 void tgPolygonSet::toShapefile( const char* datasource, const char* layer ) const
@@ -522,6 +568,50 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& po
 
         toShapefile( poLayer, pwh );
     }
+}
+
+
+// static functions for arbitrary polygons and polygons with holes
+void tgPolygonSet::toShapefile( const cgalPoly_Polygon& poly, const char* datasource, const char* layer )
+{    
+    GDALDataset*  poDS = NULL;
+    OGRLayer*     poLayer = NULL;
+    OGRPolygon    polygon;
+    OGRPoint      point;
+    OGRLinearRing ring;
+
+    poDS = openDatasource( datasource );
+
+    if ( poDS ) {
+        poLayer = openLayer( poDS, wkbPolygon25D, layer );
+        
+        if ( poLayer ) {
+            // in CGAL, the outer boundary is counter clockwise - in GDAL, it's expected to be clockwise
+            cgalPoly_Polygon::Vertex_iterator it;
+            
+            for ( it = poly.vertices_begin(); it != poly.vertices_end(); it++ ) {
+                point.setX( CGAL::to_double( (*it).x() ) );
+                point.setY( CGAL::to_double( (*it).y() ) );
+                point.setZ( 0.0 );
+                
+                ring.addPoint(&point);
+            }
+            ring.closeRings();
+            polygon.addRing(&ring);
+            
+            OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
+            poFeature->SetGeometry(&polygon);    
+            
+            if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
+            {
+                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+            }
+            OGRFeature::DestroyFeature(poFeature);    
+        }
+    }
+    
+    // close datasource
+    GDALClose( poDS );
 }
 
 #if 0 // native from GDAL    

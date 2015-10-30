@@ -12,39 +12,60 @@
 
 void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
 {
-    cgalPoly_Point base_pts[4];
-    tgPolygonSet   result;
-    SGGeod         pt;
+    cgalPoly_Point    base_pts[4];
+    const std::string material = subject.getMeta().material;
+    SGGeod            pt;
+    char              layer[256];
+    // static unsigned int curClip=1;
 
-    // set up clipping tile : and remember to add the nodes!
+    // create a mutable copy.  we don't want to mess with the original geometry.
+    tgPolygonSet      result(subject);
+    
+    // set up clipping tile
     pt = b.get_corner( SG_BUCKET_SW );
     base_pts[0] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
-
     pt = b.get_corner( SG_BUCKET_SE );    
     base_pts[1] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
-    
     pt = b.get_corner( SG_BUCKET_NE );    
     base_pts[2] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
-    
     pt = b.get_corner( SG_BUCKET_NW );
     base_pts[3] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
-
     cgalPoly_Polygon base( base_pts, base_pts+4 );
 
-    result = subject.intersection( base );
+#if 0
+    
+    char layer[128];
+    sprintf( layer, "chop_%04d_original", curClip );
+    result.toShapefile( "./", layer );
+    
+    sprintf( layer, "chop_%04d_tile", curClip );
+    tgPolygonSet::toShapefile( base, "./", layer );
+#endif
+    
+    // new geometry is intersection of original geometry and tile
+    result.intersection2( base );
 
+#if 0    
+    sprintf( layer, "chop_%04d_result", curClip );
+    result.toShapefile( "./", layer );
+    
+    curClip++;
+#endif
+    
     if ( !result.isEmpty() ) {
 //      if ( subject.GetPreserve3D() ) {
 //          result.InheritElevations( subject );
 //          result.SetPreserve3D( true );
 //      }
         
+        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Clip - material is " << result.getMeta().material );
+        
         long int cur_bucket = b.gen_index();
         if ( ( bucket_id < 0 ) || (cur_bucket == bucket_id ) ) {
             std::string path = root_path + "/" + b.gen_base_path();
             std::string polyfile = path + "/" + b.gen_index_str();
 
-            // lock mutex to simgear director creation
+            // lock mutex to simgear directory creation
             lock.lock();
             SGPath sgp( polyfile );
             sgp.create_dir( 0755 );
@@ -53,8 +74,10 @@ void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
             // now get a per dataset lock
             dataset.Request( cur_bucket );
 
+            snprintf( layer, 256, "%s_%s", material.c_str(), result.getMeta().getMetaType().c_str() );
+            
             // save chopped polygon to a Shapefile in layer named from material
-            result.toShapefile( polyfile.c_str(), result.getMaterial().c_str() );
+            result.toShapefile( polyfile.c_str(), material.c_str() );
 
             // Release per dataset lock
             dataset.Release( cur_bucket );
@@ -203,6 +226,8 @@ void tgChopper::PreChop( const tgPolygonSet& subject, std::vector<tgPolygonSet>&
         // use exact match
         for ( double x=startx; x<endx; x+=1.0l ) {
             for ( double y=starty; y<endy; y+=1.0l ) {
+                tgPolygonSet result(subject);
+                
                 // create the clipping geometry for this piece
                 cgalPoly_Point base_pts[4];
                 double minx = x, maxx = x + 1.0l;
@@ -214,15 +239,21 @@ void tgChopper::PreChop( const tgPolygonSet& subject, std::vector<tgPolygonSet>&
                 base_pts[3] = cgalPoly_Point( minx, maxy );
                 
                 cgalPoly_Polygon clip( base_pts, base_pts+4 );
-                tgPolygonSet result = subject.intersection( clip );
+                result.intersection2( clip );
                 
                 if ( !result.isEmpty() ) {
+                    
+                    SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Prechop (chopped) - material is " << result.getMeta().material );
+                    
                     chunks.push_back( result );
+                    exit(-1);
                 }
             }
         }
     } else {
         // process current geometry
+        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Prechop (non chopped) - material is " << subject.getMeta().material );
+
         chunks.push_back( subject );
     }
 }
@@ -235,6 +266,8 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
         return;
     }
 
+    SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Add - material is " << subject.getMeta().material );
+    
     CGAL::Bbox_2 sub_bb   = subject.getBoundingBox();
     SGGeod sub_gMin = SGGeod::fromDeg( CGAL::to_double(sub_bb.xmin()), CGAL::to_double(sub_bb.ymin()) );
     SGGeod sub_gMax = SGGeod::fromDeg( CGAL::to_double(sub_bb.xmax()), CGAL::to_double(sub_bb.ymax()) );
@@ -262,6 +295,8 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
         std::vector<SGBucket> buckets;
         sgGetBuckets( gMin, gMax, buckets );
     
+        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper::Add poly poly traverses " << buckets.size() << " buckets " );
+
         for ( unsigned int j=0; j<buckets.size(); j++ ) {
             Clip( chunks[i], buckets[j] );
         }        

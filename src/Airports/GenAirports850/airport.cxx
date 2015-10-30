@@ -332,46 +332,49 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     TG_LOG(SG_GENERAL, SG_INFO, "ClipBase" );
 
     // 2: Clip the polys in priority order
-    ClipBase();
+    // ClipBase();
 
-    TG_LOG(SG_GENERAL, SG_INFO, "spacialquery" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "spacialquery" );
 
     // 3: Clean the polys
-    base_nodes.init_spacial_query();
+    // base_nodes.init_spacial_query();
 
-    TG_LOG(SG_GENERAL, SG_INFO, "CleanBase" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "CleanBase" );
 
-    CleanBase();
+    // CleanBase();
 
-    TG_LOG(SG_GENERAL, SG_INFO, "TesselateBase" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "TesselateBase" );
 
     // 4: Teseelate Base polys
-    TesselateBase();
+    // TesselateBase();
 
-    TG_LOG(SG_GENERAL, SG_INFO, "LookupIndexes" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "LookupIndexes" );
 
-    LookupBaseIndexes();
+    // LookupBaseIndexes();
 
-    TG_LOG(SG_GENERAL, SG_INFO, "TextureBase" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "TextureBase" );
 
     // 5: Texture Base polys
-    TextureBase();
+    // TextureBase();
 
-    TG_LOG(SG_GENERAL, SG_INFO, "CalcElevations" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "CalcElevations" );
 
-    // 6: calculate height
-    CalcBaseElevations(root, elev_src);
-
+    // 6: calculate smoothing surface for the airport
+    // CalcSmoothingSurface(root, elev_src);
+    
+    // chop and save the smoothing surface / airport base
+    ChopBase( root, elev_src );
+    
     // save Base
-    TG_LOG(SG_GENERAL, SG_INFO, "Write Base" );
-    WriteBaseOutput( root, b );
+    // TG_LOG(SG_GENERAL, SG_INFO, "Write Base" );
+    // WriteBaseOutput( root, b );
     
     // 9: Build the linear feature polygons
-    TG_LOG(SG_GENERAL, SG_INFO, "Build Features" );
-    BuildFeatures();
+    // TG_LOG(SG_GENERAL, SG_INFO, "Build Features" );
+    // BuildFeatures();
 
-    TG_LOG(SG_GENERAL, SG_INFO, "Clip Features" );
-    ClipFeatures();
+    // TG_LOG(SG_GENERAL, SG_INFO, "Clip Features" );
+    // ClipFeatures();
     
     // 3: Clean the polys
     //feat_nodes.init_spacial_query();
@@ -380,42 +383,40 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     
     //CleanFeatures();
     
-    TG_LOG(SG_GENERAL, SG_INFO, "IntersectFeaturesWithBase" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "IntersectFeaturesWithBase" );
     // we need to add nodes that intersect with the 
     // base we will drape with
-    IntersectFeaturesWithBase();
+    // IntersectFeaturesWithBase();
     
     // 4: Teseelate Base polys
-    TG_LOG(SG_GENERAL, SG_INFO, "TesselateFeatures" );
-    TesselateFeatures();
+    // TG_LOG(SG_GENERAL, SG_INFO, "TesselateFeatures" );
+    // TesselateFeatures();
     
-    TG_LOG(SG_GENERAL, SG_INFO, "LookupIndexes" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "LookupIndexes" );
+    // LookupFeatureIndexes();
     
-    LookupFeatureIndexes();
-    
-    TG_LOG(SG_GENERAL, SG_INFO, "TextureFeatures" );
-    
-    // 5: Texture Base polys
-    TextureFeatures();
+    // TG_LOG(SG_GENERAL, SG_INFO, "TextureFeatures" );
+    // 5: Texture Base poly
+    // TextureFeatures();
         
-    TG_LOG(SG_GENERAL, SG_INFO, "CalcElevations" );
+    // TG_LOG(SG_GENERAL, SG_INFO, "CalcElevations" );
     // 6: calculate height
-    CalcFeatureElevations();
+    // CalcFeatureElevations();
     
     // save Base
-    TG_LOG(SG_GENERAL, SG_INFO, "Write Features" );
-    WriteFeatureOutput( root, b );
+    // TG_LOG(SG_GENERAL, SG_INFO, "Write Features" );
+    // WriteFeatureOutput( root, b );
     
     // Build Lights
-    TG_LOG(SG_GENERAL, SG_INFO, "Build Lights" );
-    BuildLights();
+    // TG_LOG(SG_GENERAL, SG_INFO, "Build Lights" );
+    // BuildLights();
     
-    TG_LOG(SG_GENERAL, SG_INFO, "Write Lights" );
-    WriteLightsOutput( root, b );
+    // TG_LOG(SG_GENERAL, SG_INFO, "Write Lights" );
+    // WriteLightsOutput( root, b );
     
     // Generate Objects
-    TG_LOG(SG_GENERAL, SG_INFO, "Write Objects" );    
-    WriteObjects( root, b );
+    // TG_LOG(SG_GENERAL, SG_INFO, "Write Objects" );    
+    // WriteObjects( root, b );
 }
 
 void Airport::WriteObjects( const std::string& root, const SGBucket& b )

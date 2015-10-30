@@ -122,6 +122,13 @@ public:
     // proportional to u,v space on the nurbs surface which it isn't.
     double query( SGGeod query ) const;
 
+    void getCoefficients( std::vector<double>& coeff ) const;
+    void getExtents( SGGeod& surfaceMin, SGGeod& surfaceMax, SGGeod& surfaceCenter ) const {
+        surfaceMin = _min_deg;
+        surfaceMax = _max_deg;
+        surfaceCenter = area_center;
+    }
+    
 private:
     // The actual nurbs surface approximation for the airport
     tgMatrix* Pts;

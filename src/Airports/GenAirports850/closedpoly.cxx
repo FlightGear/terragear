@@ -441,27 +441,18 @@ void ClosedPoly::GetPolys( tgPolygonSetList& polys )
 {
     if ( is_pavement && !pre_tess.is_unbounded() )
     {
-        cgalPoly_PolygonSet ps( pre_tess );
-        tgTexInfo           ti;
-        
-        ti.material = GetMaterial( surface_type );
-        
+        // get texture reference point
         cgalPoly_Polygon ob = pre_tess.outer_boundary();
         cgalPoly_Polygon::Vertex_iterator it = ob.vertices_begin();
-        ti.ref = *it;
-
-        ti.width = 5.0l;
-        ti.length = 5.0l;
-        ti.heading = texture_heading;
-
-        ti.minu = 0.0l;
-        ti.minv = 0.0l;
-        ti.maxu = 1.0l;
-        ti.maxv = 1.0l;
         
-        ti.method = tgTexInfo::TEX_BY_TPS_NOCLIP;
+        tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED, "Grass", description.c_str() );    
+        meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );        
+        meta.setMaterial( GetMaterial( surface_type ) );
+        meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_NOCLIP );
+        meta.setTextureRef( *it, 5.0l, 5.0l, texture_heading );
+        meta.setTextureLimits( 0.0l, 0.0l, 1.0l, 1.0l );
 
-        polys.push_back( tgPolygonSet( ps, ti, 0 ) );
+        polys.push_back( tgPolygonSet( pre_tess, meta ) );
     }
 }
 
@@ -491,13 +482,13 @@ void ClosedPoly::GetFeatureLights( tglightcontour_list& lights )
 
 void ClosedPoly::GetInnerBasePolys( tgPolygonSetList& polys )
 {
-    cgalPoly_PolygonSet ps( pre_tess );
-    tgTexInfo           ti;
-
-    ti.material = "Grass";
-    ti.method = tgTexInfo::TEX_BY_GEODE;
+    char desc[256];
+    snprintf( desc, 256, "%s_innerbase", description.c_str() );
     
-    tgPolygonSet b( pre_tess, ti, "pvmt_innerbase" );
+    tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED, "Grass", desc );    
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
+    
+    tgPolygonSet b( pre_tess, meta );
     tgPolygonSet o = b.offset( 20.0l );
     
     polys.push_back( o );
@@ -505,39 +496,42 @@ void ClosedPoly::GetInnerBasePolys( tgPolygonSetList& polys )
 
 void ClosedPoly::GetOuterBasePolys( tgPolygonSetList& polys )
 {
-    cgalPoly_PolygonSet ps( pre_tess );
-    tgTexInfo           ti;
-
-    ti.material = "Grass";
-    ti.method = tgTexInfo::TEX_BY_GEODE;
+    char desc[256];
+    snprintf( desc, 256, "%s_outerbase", description.c_str() );
     
-    tgPolygonSet b( ps, ti, 0 );
-
-    polys.push_back( b.offset( 50.0l ) );
+    tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED, "Grass", desc );    
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
+    
+    tgPolygonSet b( pre_tess, meta );
+    tgPolygonSet o = b.offset( 50.0l );
+    
+    polys.push_back( o );
 }
 
 void ClosedPoly::GetInnerBoundaryPolys( tgPolygonSetList& polys )
 {
-    cgalPoly_PolygonSet ps( pre_tess );
-    tgTexInfo           ti;
-
-    ti.material = "Grass";
-    ti.method = tgTexInfo::TEX_BY_GEODE;
+    char desc[256];
+    snprintf( desc, 256, "%s_innerbase", description.c_str() );
     
-    tgPolygonSet b( ps, ti, 0 );
-
-    polys.push_back( b.offset( 20.0l ) );
+    tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED, "Grass", desc );
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
+    
+    tgPolygonSet b( pre_tess, meta );
+    tgPolygonSet o = b.offset( 20.0l );
+    
+    polys.push_back( o );
 }
 
 void ClosedPoly::GetOuterBoundaryPolys( tgPolygonSetList& polys )
 {
-    cgalPoly_PolygonSet ps( pre_tess );
-    tgTexInfo           ti;
-
-    ti.material = "Grass";
-    ti.method = tgTexInfo::TEX_BY_GEODE;
+    char desc[256];
+    snprintf( desc, 256, "%s_outerbase", description.c_str() );
     
-    tgPolygonSet b( ps, ti, 0 );
-
-    polys.push_back( b.offset( 50.0l ) );
+    tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED, "Grass", desc );    
+    meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
+    
+    tgPolygonSet b( pre_tess, meta );
+    tgPolygonSet o = b.offset( 50.0l );
+    
+    polys.push_back( o );
 }

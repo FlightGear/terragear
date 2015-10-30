@@ -1,4 +1,4 @@
-add_library(Terra STATIC 
+add_library(Terra SHARED 
     Array.h Geom.h 
     GreedyInsert.cc GreedyInsert.h 
     Heap.cc Heap.h 

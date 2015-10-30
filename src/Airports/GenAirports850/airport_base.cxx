@@ -178,7 +178,7 @@ void Airport::ClipBase()
     }
     
     // create the inner base poly as the union of all innerbase polys
-    inner_base = tgPolygonSet::join( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );    
+    // inner_base = tgPolygonSet::join( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );    
 
     // now break into max segment size
     for (unsigned int area = 0; area <= AIRPORT_MAX_BASE; area++) {
@@ -332,13 +332,13 @@ void Airport::TextureBase( void )
 #endif    
 }
 
-void Airport::CalcBaseElevations( const std::string& root, const string_list& elev_src )
+void Airport::CalcSmoothingSurface( const std::string& root, const string_list& elev_src, const CGAL::Bbox_2& apt_bounds )
 {
-#if 0 // In construct    
-    // first, generate the bounding rect, and average elevation
-    tgRectangle bounds;
-
     std::vector<SGGeod> geods;
+
+    tgRectangle bounds( apt_bounds);
+    
+#if 0    
     base_nodes.get_geod_nodes(geods);
 
     if ( base_nodes.size() ) {
@@ -351,13 +351,15 @@ void Airport::CalcBaseElevations( const std::string& root, const string_list& el
         SG_LOG( SG_GENERAL, SG_INFO, "ERROR NO NODES" );
         return;
     }
+#endif
 
     double average = tgAverageElevation( root, elev_src, geods );
 
     // then generate the surface
-    base_surf.Create(  root, elev_src, bounds, average, slope_max, slope_eps );    
-    base_nodes.CalcElevations( TG_NODE_SMOOTHED, base_surf );
-#endif
+    base_surf.Create(  root, elev_src, bounds, 100, 0.02, 0.00001 );
+    // base_surf.Chop( root );
+    
+    //base_nodes.CalcElevations( TG_NODE_SMOOTHED, base_surf );
 }
 
 void Airport::LookupBaseIndexes( void )
@@ -396,6 +398,27 @@ void Airport::LookupBaseIndexes( void )
 #define AIRPORT_AREA_RWY_FEATURES       (8)
 #define AIRPORT_AREA_TAXI_FEATURES      (9)
 #endif
+
+void Airport::ChopBase( const std::string& root, const string_list& elev_src )
+{
+    SGTimeStamp create_start, create_end, create_time;
+    tgChopper chopper( root );
+
+    tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED_SURFACE, "Grass", "OuterBase" );
+
+    create_start.stamp();    
+    tgPolygonSet outerBase = tgPolygonSet::join( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE), meta );
+    create_end.stamp();
+    
+    // create the smoothing surface from the bounding box
+    CGAL::Bbox_2 apt_bounds = outerBase.getBoundingBox();
+    CalcSmoothingSurface( root, elev_src, apt_bounds );
+
+    outerBase.getMeta().setSurfaceInfo( base_surf );
+    
+    create_time = create_end - create_start;
+    chopper.Add( outerBase, create_time );
+}
 
 void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )
 {
