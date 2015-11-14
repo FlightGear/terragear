@@ -5,6 +5,7 @@
 
 #include <terragear/clipper.hpp>
 #include <terragear/tg_surface.hxx>
+#include <terragear/tg_cluster.hxx>
 
 #include "tg_polygon_def.hxx"
 
@@ -172,7 +173,7 @@ typedef std::vector<tgPolygonSet>   tgPolygonSetList;
 class tgPolygonSet 
 {
 public:
-    //tgPolygonSet( void ) {}
+    tgPolygonSet( void ) {}
     
     // generate new polygon sets
     tgPolygonSet( const cgalPoly_Polygon& poly ) {
@@ -190,72 +191,80 @@ public:
     tgPolygonSet( const cgalPoly_PolygonSet& polyset, const tgPolygonSetMeta& metaInfo ) : ps(polyset), meta(metaInfo) {}
 
     tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry );
+    
     tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& metaInfo );
 
-    void                        toShapefile( const char* datasource, const char* layer ) const;
-    void                        toShapefile( OGRLayer* layer, const char* description ) const;
-    void                        toShapefile( OGRLayer* layer ) const;
-
-    static void                 toShapefile( const cgalPoly_Polygon& poly, const char* datasource, const char* layer );
-
+    void                                clusterNodes( const tgCluster& clusteredNodes );
     
-    CGAL::Bbox_2                getBoundingBox( void ) const;
-    bool                        isEmpty( void ) const { return ps.is_empty(); }
-    void                        erase( void ) { ps.clear(); }
+    void                                toShapefile( const char* datasource, const char* layer ) const;
+    void                                toShapefile( OGRLayer* layer, const char* description ) const;
+    void                                toShapefile( OGRLayer* layer ) const;
 
-    void                        splitLongEdges( int maxSegmentLength );
-    
-    void                        setPs( const cgalPoly_PolygonSet& polyset ) { ps = polyset; }
-    const cgalPoly_PolygonSet&  getPs( void ) const   { return ps; }
-    const tgPolygonSetMeta&     getMeta( void ) const { return meta; }
-    tgPolygonSetMeta&           getMeta( void ) { return meta; }
-    
-    tgPolygonSet                intersection( const cgalPoly_Polygon& other ) const;
-    void                        intersection2( const cgalPoly_Polygon& other );
+    static void                         toShapefile( const cgalPoly_Polygon& poly, const char* datasource, const char* layer );
 
-    void                        difference( const cgalPoly_Polygon& other );
-    void                        join( const cgalPoly_Polygon& other );
-    static tgPolygonSet         join( const tgPolygonSetList& sets, const tgPolygonSetMeta& meta );
+    void                                toSegments( std::vector<cgalPoly_Segment>& segs, bool withHoles ) const;
 
-    tgPolygonSet                offset( double oset ) const;
+    const std::vector<cgalPoly_Point>&  getInteriorPoints( void ) const;
+    void                                calcInteriorPoints( void );
     
-    static GDALDataset*         openDatasource( const char* datasource_name );
-    static OGRLayer*            openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name );
+    CGAL::Bbox_2                        getBoundingBox( void ) const;
+    bool                                isEmpty( void ) const { return ps.is_empty(); }
+    void                                erase( void ) { ps.clear(); }
+
+    void                                splitLongEdges( int maxSegmentLength );
+    
+    void                                setPs( const cgalPoly_PolygonSet& polyset ) { ps = polyset; }
+    const cgalPoly_PolygonSet&          getPs( void ) const   { return ps; }
+    const tgPolygonSetMeta&             getMeta( void ) const { return meta; }
+    tgPolygonSetMeta&                   getMeta( void ) { return meta; }
+    
+    tgPolygonSet                        intersection( const cgalPoly_Polygon& other ) const;
+    void                                intersection2( const cgalPoly_Polygon& other );
+
+    void                                difference( const cgalPoly_Polygon& other );
+    void                                join( const cgalPoly_Polygon& other );
+    static tgPolygonSet                 join( const tgPolygonSetList& sets, const tgPolygonSetMeta& meta );
+
+    tgPolygonSet                        offset( double oset ) const;
+    
+    static GDALDataset*                 openDatasource( const char* datasource_name );
+    static OGRLayer*                    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name );
     
 private:        
-    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const;
-    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const;
-    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const;
-    void                        toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& arr ) const;
+    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const;
+    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const;
+    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const;
+    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& arr ) const;
 
-    void                        polygonToSegmentList( const cgalPoly_Polygon& p, std::vector<cgalPoly_Segment>& segs ) const;
-    void                        findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const;
-    cgalPoly_Point              getInteriorPoint( const cgalPoly_PolygonWithHoles& pwh ) const;
+    void                                polygonToSegmentList( const cgalPoly_Polygon& p, std::vector<cgalPoly_Segment>& segs ) const;
+    void                                findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const;
+    cgalPoly_Point                      getInteriorPoint( const cgalPoly_PolygonWithHoles& pwh ) const;
     
-    void                        ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<cgalPoly_Polygon>& faces );
+    void                                facesFromUntrustedNodes( std::vector<cgalPoly_Point> nodes, std::vector<cgalPoly_Polygon>& faces );
 
-    cgalPoly_Polygon            splitLongEdges( cgalPoly_Polygon& p, int maxSegmentSize );
-    cgalPoly_PolygonWithHoles   splitLongEdges( cgalPoly_PolygonWithHoles& pwh, int maxSegmentLength );
+    cgalPoly_Polygon                    splitLongEdges( cgalPoly_Polygon& p, int maxSegmentSize );
+    cgalPoly_PolygonWithHoles           splitLongEdges( cgalPoly_PolygonWithHoles& pwh, int maxSegmentLength );
 
-//    void                      contractPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
-//    void                      expandPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
+//    void                              contractPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
+//    void                              expandPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
   
 // to / from clipper for Polygon Offsetting ( Can't get CGAL to propery shring Polygons....  TODO    
-    double                      toClipper( double dist ) const;
+    double                              toClipper( double dist ) const;
     
-    ClipperLib::IntPoint        toClipper( const cgalPoly_Point& p ) const;
-    cgalPoly_Point              fromClipper( const ClipperLib::IntPoint& p ) const;
+    ClipperLib::IntPoint                toClipper( const cgalPoly_Point& p ) const;
+    cgalPoly_Point                      fromClipper( const ClipperLib::IntPoint& p ) const;
     
-    ClipperLib::Path            toClipper( const cgalPoly_Polygon& subject, bool isHole ) const;
-    cgalPoly_Polygon            fromClipper( const ClipperLib::Path& subject ) const;
+    ClipperLib::Path                    toClipper( const cgalPoly_Polygon& subject, bool isHole ) const;
+    cgalPoly_Polygon                    fromClipper( const ClipperLib::Path& subject ) const;
     
-    void                        toClipper( const cgalPoly_PolygonWithHoles& pwh, ClipperLib::Paths& paths ) const;
-    ClipperLib::Paths           toClipper( const cgalPoly_PolygonSet& ps ) const;
+    void                                toClipper( const cgalPoly_PolygonWithHoles& pwh, ClipperLib::Paths& paths ) const;
+    ClipperLib::Paths                   toClipper( const cgalPoly_PolygonSet& ps ) const;
     
-    cgalPoly_PolygonSet         fromClipper( const ClipperLib::Paths& subject ) const;
+    cgalPoly_PolygonSet                 fromClipper( const ClipperLib::Paths& subject ) const;
     
-    cgalPoly_PolygonSet         ps;
-    tgPolygonSetMeta            meta;
+    cgalPoly_PolygonSet                 ps;
+    std::vector<cgalPoly_Point>         interiorPoints;
+    tgPolygonSetMeta                    meta;
 };
 
 #endif /* __TG_POLYGON_SET_HXX__ */

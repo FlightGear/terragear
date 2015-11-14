@@ -4,6 +4,7 @@ include( ${CGAL_USE_FILE} )
 
 add_subdirectory(polygon_set)
 add_subdirectory(vector_intersections)
+add_subdirectory(mesh)
 
 # temp - root director may no longer exist
 include (TerragearComponent)

@@ -44,15 +44,24 @@ tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& meta
     std::vector<cgalPoly_Polygon>	boundaries;
     std::vector<cgalPoly_Polygon>	holes;
     cgalPoly_PolygonSet             holesUnion;
+    std::vector<cgalPoly_Point>     nodes;
 
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
-    ogrRingToPolygonSet( ring, boundaries );
+    nodes.clear();
+    for (int i = 0; i < ring->getNumPoints(); i++) {
+        nodes.push_back( cgalPoly_Point(ring->getX(i), ring->getY(i)) );
+    }
+    facesFromUntrustedNodes( nodes, boundaries );
 
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
         ring = poGeometry->getInteriorRing( i );
-        ogrRingToPolygonSet( ring, holes );
+        nodes.clear();
+        for (int j = 0; j < ring->getNumPoints(); j++) {
+            nodes.push_back( cgalPoly_Point(ring->getX(j), ring->getY(j)) );
+        }
+        facesFromUntrustedNodes( nodes, holes );
     }
 
     // join all the boundaries
@@ -70,18 +79,27 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
     std::vector<cgalPoly_Polygon>	boundaries;
     std::vector<cgalPoly_Polygon>	holes;
     cgalPoly_PolygonSet             holesUnion;
+    std::vector<cgalPoly_Point>     nodes;
 
     // generate texture info from feature
     meta.getFeatureFields( poFeature );
     
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
-    ogrRingToPolygonSet( ring, boundaries );
+    nodes.clear();
+    for (int i = 0; i < ring->getNumPoints(); i++) {
+        nodes.push_back( cgalPoly_Point(ring->getX(i), ring->getY(i)) );
+    }
+    facesFromUntrustedNodes( nodes, boundaries );
 
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
         ring = poGeometry->getInteriorRing( i );
-        ogrRingToPolygonSet( ring, holes );
+        nodes.clear();
+        for (int j = 0; j < ring->getNumPoints(); j++) {
+            nodes.push_back( cgalPoly_Point(ring->getX(j), ring->getY(j)) );
+        }
+        facesFromUntrustedNodes( nodes, holes );
     }
 
     // join all the boundaries
@@ -93,61 +111,6 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
     // perform difference
     ps.difference( holesUnion );
 }
-
-void tgPolygonSet::ogrRingToPolygonSet( OGRLinearRing const *ring, std::vector<cgalPoly_Polygon>& faces )
-{
-    cgalPoly_Arrangement  		arr;
-    std::vector<cgalPoly_Segment> 	segs;
-
-    for (int i = 0; i < ring->getNumPoints(); i++) {
-        cgalPoly_Point src(ring->getX(i), ring->getY(i));
-        int trgIdx ;
-
-        if ( i < ring->getNumPoints()-1 ) {
-            // target is the next point
-            trgIdx = i+1;
-    } else {
-            // target is the first point
-            trgIdx = 0;
-    }
-    cgalPoly_Point trg = cgalPoly_Point(ring->getX(trgIdx), ring->getY(trgIdx));
-
-        if ( src != trg ) {
-            segs.push_back( cgalPoly_Segment( src, trg ) );
-        }
-    }
-
-    insert( arr, segs.begin(), segs.end() );
-
-    // return the union of all bounded faces
-    cgalPoly_FaceConstIterator fit;
-    for( fit = arr.faces_begin(); fit != arr.faces_end(); fit++ ) {
-        cgalPoly_Arrangement::Face face = (*fit);
-        if( face.has_outer_ccb() ) {
-            // generate Polygon from face, and join wuth polygon set
-            cgalPoly_CcbHeConstCirculator ccb = face.outer_ccb();
-            cgalPoly_CcbHeConstCirculator cur = ccb;
-            cgalPoly_HeConstHandle        he;
-            std::vector<cgalPoly_Point>   nodes;
-
-            do
-            {
-                he = cur;
-
-                // ignore inner antenna
-                if ( he->face() != he->twin()->face() ) {                    
-                    nodes.push_back( he->source()->point() );
-                }
-                
-                ++cur;
-            } while (cur != ccb);
-
-            // check the orientation - outer boundaries should be CCW
-            faces.push_back( cgalPoly_Polygon( nodes.begin(), nodes.end()  ));
-        }
-    }
-}
-
 
 GDALDataset* tgPolygonSet::openDatasource( const char* datasource_name )
 {

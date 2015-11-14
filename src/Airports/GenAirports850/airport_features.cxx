@@ -97,8 +97,7 @@ void Airport::BuildFeatures( void )
         if (lf_ig[i] ) {
             lf_ig[i]->Execute();
             for ( tgintersectionedge_it it=lf_ig[i]->edges_begin(); it != lf_ig[i]->edges_end(); it++ ) {
-                tgPolygonSet poly = (*it)->GetPoly("complete");
-                polys_built.get_polys(AIRPORT_AREA_TAXI_FEATURES).push_back(poly);
+                featMesh.addPoly( AIRPORT_AREA_TAXI_FEATURES, (*it)->GetPoly("complete") );
             }            
         }
     }
@@ -118,7 +117,8 @@ void Airport::BuildFeatures( void )
     for ( unsigned int i=0; i<runways.size(); i++ )
     {
         TG_LOG(SG_GENERAL, SG_ALERT, "Build Runway Feature Poly " << i + 1 << " of " << runways.size() );
-        runways[i]->GetCapPolys( polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES) );
+        // runways[i]->GetCapPolys( polys_built.get_polys(AIRPORT_AREA_RWY_FEATURES) );
+        featMesh.addPolys( AIRPORT_AREA_RWY_FEATURES, runways[i]->GetCapPolys() );
     }
     
     
@@ -172,6 +172,7 @@ void Airport::ClipFeatures()
     }
 #endif
 
+#if 0
     for( unsigned int p = 0; p < polys_built.area_size(AIRPORT_AREA_RWY_FEATURES); p++ ) {
         tgPolygonSet& current = polys_built.get_poly(AIRPORT_AREA_RWY_FEATURES, p);
         
@@ -182,7 +183,9 @@ void Airport::ClipFeatures()
             polys_clipped.add_poly( AIRPORT_AREA_RWY_FEATURES, current );
         }        
     }
-    
+#endif
+
+#if 0    
     for( unsigned int p = 0; p < polys_built.area_size(AIRPORT_AREA_TAXI_FEATURES); p++ ) {
         tgPolygonSet& current = polys_built.get_poly(AIRPORT_AREA_TAXI_FEATURES, p);
             
@@ -198,6 +201,7 @@ void Airport::ClipFeatures()
         polys_clipped.add_poly( AIRPORT_AREA_TAXI_FEATURES, current );
 #endif            
     }
+#endif
 
 #if 0    
     // now break into max segment size
@@ -520,7 +524,7 @@ void Airport::CalcFeatureElevations( void )
     
     // drape over the base triangle mesh
     // first, get a list of all triangles to give to CalcElevations    
-    feat_nodes.CalcElevations( TG_NODE_DRAPED, base_mesh );
+    //feat_nodes.CalcElevations( TG_NODE_DRAPED, base_mesh );
     
     drape_end.stamp();
     

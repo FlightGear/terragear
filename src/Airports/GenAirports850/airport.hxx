@@ -5,10 +5,11 @@
 #include <simgear/threads/SGThread.hxx>
 
 #include <terragear/tg_array.hxx>
-#include <terragear/tg_areas.hxx>
-#include <terragear/tg_nodes.hxx>
+//#include <terragear/tg_areas.hxx>
+//#include <terragear/tg_nodes.hxx>
 
 #include <terragear/polygon_set/tg_polygon_accumulator.hxx>
+#include <terragear/mesh/tg_mesh.hxx>
 
 
 #include "runway.hxx"
@@ -294,12 +295,14 @@ private:
     tgSurface       base_surf;
     
     // the triangles making up the base mesh
-    tgtriangle_list base_mesh;
+//  tgtriangle_list base_mesh;
     
     // area polygons
-    tgAreas polys_built;
-    tgAreas polys_clipped;
-
+//    tgAreas polys_built;
+//    tgAreas polys_clipped;
+    tgMesh  baseMesh;
+    tgMesh  featMesh;
+    
     // Base Nodes
     TGNodes base_nodes;
     // tgPolygonSet inner_base, outer_base;

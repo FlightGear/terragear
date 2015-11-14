@@ -127,7 +127,7 @@ void Helipad::build_helipad_shoulders( const cgalPoly_Polygon& outer_area )
     }
 }
 
-void Helipad::GetMainPolys( tgPolygonSetList& polys )
+tgPolygonSetList& Helipad::GetMainPolys( void )
 {
     //
     // Generate the basic helipad outlines
@@ -165,7 +165,7 @@ void Helipad::GetMainPolys( tgPolygonSetList& polys )
     meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_TPS_CLIPUV, -1.0l, -1.0l, 1.0l, 1.0l );
     meta.setTextureLimits( 0.0l, 0.0l, 1.0l, 1.0l );
 
-    polys.push_back( tgPolygonSet(ps, meta ) );
+    helipadPolys.push_back( tgPolygonSet(ps, meta ) );
     
     // Now generate the actual rectangle, and clip it with the square
     // need areference point at the origin of the direction, in the middle of width
@@ -184,20 +184,20 @@ void Helipad::GetMainPolys( tgPolygonSetList& polys )
     meta.setTextureLimits( 1.0l, 1.0l, 0.0l, 0.0l );
     snprintf( desc, 256, "heli_extra_%s", designator );
     
-    polys.push_back( tgPolygonSet(ps2, meta) );
+    helipadPolys.push_back( tgPolygonSet(ps2, meta) );
     
     // and build the shoulders 
-    build_helipad_shoulders( tiedown_area );   
+    build_helipad_shoulders( tiedown_area );
+    
+    return helipadPolys;
 }
 
-void Helipad::GetShoulderPolys( tgPolygonSetList& polys )
+tgPolygonSetList& Helipad::GetShoulderPolys( void )
 {
-    for (unsigned int i=0; i<shoulderPolys.size(); i++) {
-        polys.push_back( shoulderPolys[i] );
-    }
+    return shoulderPolys;
 }
 
-void Helipad::GetInnerBasePolys( tgPolygonSetList& polys )
+tgPolygonSetList& Helipad::GetInnerBasePolys( void )
 {
     double    l, w;
     char      description[64];
@@ -219,10 +219,12 @@ void Helipad::GetInnerBasePolys( tgPolygonSetList& polys )
     meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
 
     // add this to the airport clearing
-    polys.push_back( tgPolygonSet( ib, meta ) );
+    innerBasePolys.push_back( tgPolygonSet( ib, meta ) );
+    
+    return innerBasePolys;
 }
 
-void Helipad::GetOuterBasePolys( tgPolygonSetList& polys )
+tgPolygonSetList& Helipad::GetOuterBasePolys( void )
 {
     double    l, w;
     char      description[64];
@@ -244,7 +246,9 @@ void Helipad::GetOuterBasePolys( tgPolygonSetList& polys )
     meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
     
     // add this to the airport clearing
-    polys.push_back( tgPolygonSet( ob, meta ) );
+    outerBasePolys.push_back( tgPolygonSet( ob, meta ) );
+    
+    return outerBasePolys;
 }
 
 void Helipad::GetLights( tglightcontour_list& lights )

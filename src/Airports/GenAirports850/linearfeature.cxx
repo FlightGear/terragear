@@ -1171,20 +1171,14 @@ int LinearFeature::Finish( Airport* ap, bool closed, double def_width )
     return 1;
 }
 
-void LinearFeature::GetPolys( tgPolygonSetList& polys )
+tgPolygonSetList& LinearFeature::GetPolys( void )
 {
-    for ( unsigned int i = 0; i < marking_polys.size(); i++)
-    {
-        polys.push_back( marking_polys[i] );
-    }    
+    return marking_polys;
 }
 
-void LinearFeature::GetCapPolys( tgPolygonSetList& polys )
+tgPolygonSetList& LinearFeature::GetCapPolys( void )
 {
-    for ( unsigned int i = 0; i < cap_polys.size(); i++)
-    {
-        polys.push_back( cap_polys[i] );
-    }    
+    return cap_polys;
 }
 
 void LinearFeature::GetLights( tglightcontour_list& lights )

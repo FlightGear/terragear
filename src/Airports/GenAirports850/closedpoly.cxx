@@ -437,7 +437,7 @@ std::string ClosedPoly::GetMaterial( int surface )
     return material;
 }
 
-void ClosedPoly::GetPolys( tgPolygonSetList& polys )
+tgPolygonSetList& ClosedPoly::GetPolys( void )
 {
     if ( is_pavement && !pre_tess.is_unbounded() )
     {
@@ -452,24 +452,32 @@ void ClosedPoly::GetPolys( tgPolygonSetList& polys )
         meta.setTextureRef( *it, 5.0l, 5.0l, texture_heading );
         meta.setTextureLimits( 0.0l, 0.0l, 1.0l, 1.0l );
 
-        polys.push_back( tgPolygonSet( pre_tess, meta ) );
+        pavement_polys.push_back( tgPolygonSet( pre_tess, meta ) );
     }
+    
+    return pavement_polys;
 }
 
-void ClosedPoly::GetFeaturePolys( tgPolygonSetList& polys )
+tgPolygonSetList& ClosedPoly::GetFeaturePolys( void )
+{   
+    for ( unsigned int i = 0; i < features.size(); i++)
+    {
+        tgPolygonSetList featPolys = features[i]->GetPolys();
+        feature_polys.insert( feature_polys.end(), featPolys.begin(), featPolys.end() );
+    }
+    
+    return feature_polys;
+}
+
+tgPolygonSetList& ClosedPoly::GetFeatureCapPolys( void )
 {
     for ( unsigned int i = 0; i < features.size(); i++)
     {
-        features[i]->GetPolys( polys );
-    }    
-}
-
-void ClosedPoly::GetFeatureCapPolys( tgPolygonSetList& polys )
-{
-    for ( unsigned int i = 0; i < features.size(); i++)
-    {
-        features[i]->GetCapPolys( polys );
-    }    
+        tgPolygonSetList featCapPolys = features[i]->GetCapPolys();
+        feature_cap_polys.insert( feature_cap_polys.end(), featCapPolys.begin(), featCapPolys.end() );
+    }
+    
+    return feature_cap_polys;
 }
 
 void ClosedPoly::GetFeatureLights( tglightcontour_list& lights )
@@ -480,21 +488,23 @@ void ClosedPoly::GetFeatureLights( tglightcontour_list& lights )
     }    
 }
 
-void ClosedPoly::GetInnerBasePolys( tgPolygonSetList& polys )
+tgPolygonSetList& ClosedPoly::GetInnerBasePolys( void )
 {
     char desc[256];
     snprintf( desc, 256, "%s_innerbase", description.c_str() );
     
-    tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED, "Grass", desc );    
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, "Grass", desc );    
     meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
     
     tgPolygonSet b( pre_tess, meta );
     tgPolygonSet o = b.offset( 20.0l );
     
-    polys.push_back( o );
+    inner_base_polys.push_back( o );
+    
+    return inner_base_polys;
 }
 
-void ClosedPoly::GetOuterBasePolys( tgPolygonSetList& polys )
+tgPolygonSetList& ClosedPoly::GetOuterBasePolys( void )
 {
     char desc[256];
     snprintf( desc, 256, "%s_outerbase", description.c_str() );
@@ -505,10 +515,12 @@ void ClosedPoly::GetOuterBasePolys( tgPolygonSetList& polys )
     tgPolygonSet b( pre_tess, meta );
     tgPolygonSet o = b.offset( 50.0l );
     
-    polys.push_back( o );
+    outer_base_polys.push_back( o );
+    
+    return outer_base_polys;
 }
 
-void ClosedPoly::GetInnerBoundaryPolys( tgPolygonSetList& polys )
+tgPolygonSetList& ClosedPoly::GetInnerBoundaryPolys( void )
 {
     char desc[256];
     snprintf( desc, 256, "%s_innerbase", description.c_str() );
@@ -519,10 +531,12 @@ void ClosedPoly::GetInnerBoundaryPolys( tgPolygonSetList& polys )
     tgPolygonSet b( pre_tess, meta );
     tgPolygonSet o = b.offset( 20.0l );
     
-    polys.push_back( o );
+    inner_boundary_polys.push_back( o );
+    
+    return inner_boundary_polys;
 }
 
-void ClosedPoly::GetOuterBoundaryPolys( tgPolygonSetList& polys )
+tgPolygonSetList& ClosedPoly::GetOuterBoundaryPolys( void )
 {
     char desc[256];
     snprintf( desc, 256, "%s_outerbase", description.c_str() );
@@ -533,5 +547,7 @@ void ClosedPoly::GetOuterBoundaryPolys( tgPolygonSetList& polys )
     tgPolygonSet b( pre_tess, meta );
     tgPolygonSet o = b.offset( 50.0l );
     
-    polys.push_back( o );
+    outer_boundary_polys.push_back( o );
+    
+    return outer_boundary_polys;
 }

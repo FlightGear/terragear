@@ -20,14 +20,14 @@ public:
     void CloseCurContour( Airport* ap );
     void Finish();
 
-    void GetPolys( tgPolygonSetList& polys );
-    void GetInnerBasePolys( tgPolygonSetList& polys );
-    void GetOuterBasePolys( tgPolygonSetList& polys );
-    void GetInnerBoundaryPolys( tgPolygonSetList& polys );
-    void GetOuterBoundaryPolys( tgPolygonSetList& polys );
+    tgPolygonSetList& GetPolys( void );
+    tgPolygonSetList& GetInnerBasePolys( void );
+    tgPolygonSetList& GetOuterBasePolys( void );
+    tgPolygonSetList& GetInnerBoundaryPolys( void );
+    tgPolygonSetList& GetOuterBoundaryPolys( void );
     
-    void GetFeaturePolys( tgPolygonSetList& polys );
-    void GetFeatureCapPolys( tgPolygonSetList& polys );
+    tgPolygonSetList&  GetFeaturePolys( void );
+    tgPolygonSetList&  GetFeatureCapPolys( void );
     void GetFeatureLights( tglightcontour_list& lights );
     
 private:
@@ -58,7 +58,14 @@ private:
     cgalPoly_PolygonWithHoles pre_tess;
 
     // shoulders after BTG built
+    tgPolygonSetList feature_polys;
+    tgPolygonSetList feature_cap_polys;
+    tgPolygonSetList pavement_polys;
     tgPolygonSetList shoulder_polys;
+    tgPolygonSetList inner_base_polys;
+    tgPolygonSetList outer_base_polys;
+    tgPolygonSetList inner_boundary_polys;
+    tgPolygonSetList outer_boundary_polys;
 
     // pavement definitions have multiple linear features (markings and lights for each contour)
     LinearFeature* cur_feature;

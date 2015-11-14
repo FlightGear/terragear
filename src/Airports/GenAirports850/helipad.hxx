@@ -37,10 +37,11 @@ public:
                    tgpolygon_list& apt_clearing_polys,
                    tgAccumulator& accum );
 #endif
-    void GetMainPolys( tgPolygonSetList& polys );
-    void GetShoulderPolys( tgPolygonSetList& polys );
-    void GetInnerBasePolys( tgPolygonSetList& polys );
-    void GetOuterBasePolys( tgPolygonSetList& polys );
+    tgPolygonSetList& GetMainPolys( void );
+    tgPolygonSetList& GetShoulderPolys( void );
+    tgPolygonSetList& GetInnerBasePolys( void );
+    tgPolygonSetList& GetOuterBasePolys( void );
+    
     void GetLights( tglightcontour_list& lights );
     
     SGGeod GetLoc()
@@ -84,7 +85,10 @@ private:
 
     // storage for Shoulders - The superpolys are generated during
     // helipad construction, but not clipped until shoulder construction.
-    tgPolygonSetList  shoulderPolys;
+    tgPolygonSetList helipadPolys;
+    tgPolygonSetList shoulderPolys;
+    tgPolygonSetList innerBasePolys;
+    tgPolygonSetList outerBasePolys;
 
     tgPolygonSet WriteGeom( const cgalPoly_Polygon& area,
                             std::string material,

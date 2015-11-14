@@ -21,6 +21,129 @@ void tgPolygonSet::polygonToSegmentList( const cgalPoly_Polygon& p, std::vector<
     segs.push_back( cgalPoly_Segment(*src, *trg) );    
 }
 
+void tgPolygonSet::toSegments( std::vector<cgalPoly_Segment>& segs, bool withHoles ) const
+{
+    std::list<cgalPoly_PolygonWithHoles>                 pwh_list;
+    std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
+
+    ps.polygons_with_holes( std::back_inserter(pwh_list) );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: got " << pwh_list.size() << " polys with holes ");
+    
+    // save each poly with holes to the layer
+    for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
+        cgalPoly_PolygonWithHoles pwh = (*it);
+        polygonToSegmentList( pwh.outer_boundary(), segs );
+        
+        if ( withHoles ) {
+        }
+    }
+}
+
+void tgPolygonSet::clusterNodes( const tgCluster& clusteredNodes )
+{
+    std::list<cgalPoly_PolygonWithHoles>                    pwh_list;
+    std::list<cgalPoly_PolygonWithHoles>::const_iterator    pwhit;
+    std::vector<cgalPoly_Polygon>                           boundaries;
+    std::vector<cgalPoly_Polygon>                           holes;
+    cgalPoly_PolygonSet                                     holesUnion;
+    
+    ps.polygons_with_holes( std::back_inserter(pwh_list) );
+    SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::clusterNodes: got " << pwh_list.size() << " polys with holes ");
+
+    // create faces from boundaries and holes
+    for (pwhit = pwh_list.begin(); pwhit != pwh_list.end(); ++pwhit) {
+        cgalPoly_PolygonWithHoles                           pwh = (*pwhit);
+        cgalPoly_PolygonWithHoles::Hole_const_iterator      hit;
+        cgalPoly_Polygon::Vertex_const_iterator             vit;        
+        std::vector<cgalPoly_Point>                         nodes;
+        cgalPoly_Polygon                                    poly;
+        
+        // get boundary face(s)
+        nodes.clear();
+        poly = pwh.outer_boundary();
+        for ( vit = poly.vertices_begin(); vit != poly.vertices_end(); vit++ ) {
+            // lookup clustered location
+            nodes.push_back( clusteredNodes.Locate( *vit ) );
+        }
+        facesFromUntrustedNodes( nodes, boundaries );
+        
+        // get hole face(s)
+        for (hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+            nodes.clear();
+            poly = *hit;
+            for ( vit = poly.vertices_begin(); vit != poly.vertices_end(); vit++ ) {
+                // lookup clustered location
+                nodes.push_back( clusteredNodes.Locate( *vit ) );
+            }
+            facesFromUntrustedNodes( nodes, holes );
+        }
+    }
+
+    ps.clear();
+    
+    // join all the boundaries
+    ps.join( boundaries.begin(), boundaries.end() );
+
+    // join all the holes
+    holesUnion.join( holes.begin(), holes.end() );
+
+    // perform difference
+    ps.difference( holesUnion );
+}
+
+void tgPolygonSet::facesFromUntrustedNodes( std::vector<cgalPoly_Point> nodes, std::vector<cgalPoly_Polygon>& faces )
+{
+    cgalPoly_Arrangement            arr;
+    std::vector<cgalPoly_Segment>   segs;
+
+    for (unsigned int i = 0; i < nodes.size(); i++) {
+        cgalPoly_Point src = nodes[i];
+        cgalPoly_Point trg;
+        
+        if ( i < nodes.size()-1 ) {
+            // target is the next point
+            trg = nodes[i+1];
+        } else {
+            // target is the first point
+            trg = nodes[0];
+        }
+
+        if ( src != trg ) {
+            segs.push_back( cgalPoly_Segment( src, trg ) );
+        }
+    }
+
+    insert( arr, segs.begin(), segs.end() );
+
+    // return the union of all bounded faces
+    cgalPoly_FaceConstIterator fit;
+    for( fit = arr.faces_begin(); fit != arr.faces_end(); fit++ ) {
+        cgalPoly_Arrangement::Face face = (*fit);
+        if( face.has_outer_ccb() ) {
+            // generate Polygon from face, and join wuth polygon set
+            cgalPoly_CcbHeConstCirculator ccb = face.outer_ccb();
+            cgalPoly_CcbHeConstCirculator cur = ccb;
+            cgalPoly_HeConstHandle        he;
+            std::vector<cgalPoly_Point>   nodes;
+
+            do
+            {
+                he = cur;
+
+                // ignore inner antenna
+                if ( he->face() != he->twin()->face() ) {                    
+                    nodes.push_back( he->source()->point() );
+                }
+                
+                ++cur;
+            } while (cur != ccb);
+
+            // check the orientation - outer boundaries should be CCW
+            faces.push_back( cgalPoly_Polygon( nodes.begin(), nodes.end()  ));
+        }
+    }    
+}
+
 void tgPolygonSet::findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const
 {
     // find the intersection of all segments and sorth them from bottom to top.
@@ -50,13 +173,13 @@ static bool sortDeltaAndPosDescending(boost::tuple<cgalPoly_Kernel::RT, cgalPoly
 
 cgalPoly_Point tgPolygonSet::getInteriorPoint( const cgalPoly_PolygonWithHoles& pwh ) const
 {
-    std::vector<cgalPoly_Kernel::RT>                                      xcoords;
+    std::vector<cgalPoly_Kernel::RT>                                        xcoords;
     std::vector< boost::tuple<cgalPoly_Kernel::RT, cgalPoly_Kernel::RT> >   xbest;
     cgalPoly_Point  max_pos;
     
     // find the largest delta in x
     cgalPoly_Polygon  p  = pwh.outer_boundary();
-    CGAL::Bbox_2    bb = p.bbox();
+    CGAL::Bbox_2      bb = p.bbox();
 
     cgalPoly_PolygonWithHoles::Hole_const_iterator    hit;
     cgalPoly_Polygon::Vertex_const_iterator           vit;
@@ -77,8 +200,9 @@ cgalPoly_Point tgPolygonSet::getInteriorPoint( const cgalPoly_PolygonWithHoles& 
     std::sort( xbest.begin(), xbest.end(), sortDeltaAndPosDescending );
     
     // create a vertical line at the midpoint of the largest delta
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::getInteriorPoint: got " << xbest.size() << " x-coords " );
     for ( unsigned int i=0; i<xbest.size(); i++ ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "GetInteriorPoint: i " << i << " width " << xbest[i].get<0>() << " location " << xbest[i].get<1>() );       
+        SG_LOG(SG_GENERAL, SG_DEBUG, "GetInteriorPoint: i " << i << " width " << xbest[i].get<0>() << " location " << xbest[i].get<1>() );       
     }
     
     for ( unsigned int i=0; i<xbest.size(); i++ ) {
@@ -89,21 +213,47 @@ cgalPoly_Point tgPolygonSet::getInteriorPoint( const cgalPoly_PolygonWithHoles& 
         findIntersections( pwh, line, intersections );
         // from 0-1 IN face, 1-2 OUT of face, 2-3 IN face, etccc.
         // we want the biggest delta between 0,1 2,3 4,5, etc, and the midpoint of the biggest.
-        
+
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::getInteriorPoint: got " << intersections.size() << " intersections for x-coord " << i );
         cgalPoly_Kernel::RT max_delta = 0.0;
         for ( unsigned int i=0; i<intersections.size(); i+=2 ) {
-            if ( intersections[i+1].y() - intersections[i].y() > max_delta ) {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::getInteriorPoint: test if (" << intersections[i+1].y() << " - " << intersections[i].y() << ") > " << max_delta ); 
+            
+            if ( intersections[i+1].y() - intersections[i].y() > max_delta ) {                
                 max_delta = intersections[i+1].y()-intersections[i].y();
                 max_pos   = cgalPoly_Point( intersections[i].x(), intersections[i].y()+max_delta/2 );
+                
+                SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::getInteriorPoint: yes - new pos is " << max_pos );
             }
         }
         
         if ( max_delta > 0.000001 ) {
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::getInteriorPoint: " << max_pos << " is good enough - we're done " );
             break;
         }
     }
 
     return max_pos;
+}
+
+const std::vector<cgalPoly_Point>& tgPolygonSet::getInteriorPoints( void ) const
+{
+    return interiorPoints;
+}
+
+void tgPolygonSet::calcInteriorPoints( void )
+{
+    std::list<cgalPoly_PolygonWithHoles>                 pwh_list;
+    std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
+
+    ps.polygons_with_holes( std::back_inserter(pwh_list) );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::getInteriorPoints: got " << pwh_list.size() << " polys with holes ");
+    
+    // get an interior point for each poly with holes
+    interiorPoints.clear();
+    for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
+        interiorPoints.push_back( getInteriorPoint( (*it) ) );
+    }
 }
 
 // intersect and modify current tgPolygonSet

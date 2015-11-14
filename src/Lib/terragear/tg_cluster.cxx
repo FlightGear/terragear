@@ -17,7 +17,7 @@ std::list<EPECSegment_2>::iterator it;
 std::vector<EPECPoint_2>::iterator vfrom,vto;
 std::vector<EPECPoint_2>::iterator fcit;
 
-EPECPoint_2 tgCluster::Locate(const EPECPoint_2& point)
+EPECPoint_2 tgCluster::Locate(const EPECPoint_2& point) const
 {
     VDLocateResult lr = vd.locate(point);
     EPECPoint_2    q;
@@ -126,11 +126,13 @@ void tgCluster::computenewcentroids(void)
     }
 }
 
-tgCluster::tgCluster( std::list<EPECPoint_2>& points, double squaredError )
+tgCluster::tgCluster( std::list<EPECPoint_2>& points, double err )
 {
     int kiter = 40, iiter = 0;
     bool is_equal = false;
         
+    squaredError = err;
+    
     std::list<EPECPoint_2>::iterator lit;
     std::vector<EPECPoint_2>::iterator it;
     
@@ -158,7 +160,8 @@ tgCluster::tgCluster( std::list<EPECPoint_2>& points, double squaredError )
         std::list<EPECPoint_2> query_result;
         
         for ( it = oldcentroids.begin(); it != oldcentroids.end(); it++ ) {
-            VDnodesFuzzyCir query_circle( (*it), 0.0000025);  // approx 25 cm
+            //VDnodesFuzzyCir query_circle( (*it), 0.0000025);  // approx 25 cm
+            VDnodesFuzzyCir query_circle( (*it), squaredError);
             
             // perform the query
             query_result.clear();
@@ -220,9 +223,7 @@ tgCluster::tgCluster( std::list<EPECPoint_2>& points, double squaredError )
             if(is_equal)
             {
                 is_equal = false;
-                std::cout << "Reached Convergence.." << std::endl;
-                
-                //DumpVD(newcells);
+                std::cout << "Reached Convergence.." << std::endl;                
                 break;
             }
             else 
@@ -246,30 +247,34 @@ tgCluster::tgCluster( std::list<EPECPoint_2>& points, double squaredError )
     std::cout << "Finished" << std::endl;
 }
 
-void tgCluster::DumpVD(std::vector<tgVoronoiCell>& cells)
+void tgCluster::toShapefile( const char* datasource, const char* layer_prefix )
 {
+    char layer[256];
     char description[32];
     int  cell_id = 1;
     
-    std::vector<tgVoronoiCell>::iterator cit = newcells.begin();    
-    for(cit = cells.begin(); cit!= cells.end(); cit++, cell_id++)
+    std::vector<tgVoronoiCell>::iterator cit;
+    for(cit = newcells.begin(); cit!= newcells.end(); cit++, cell_id++)
     {
-        std::vector<tgSegment>   edges;
+        std::vector<tgSegment> edges;
         
         // label each centroid
         sprintf( description, "voronoi_cell_%04d", cell_id );
+        sprintf( layer, "%s_centroids", layer_prefix ); 
         
         // dump centroid ( only if there are more than one nodes in the cell )
         if ( (*cit).nodes.size() > 1 ) {
             SGGeod centroid = SGGeod::fromDeg( CGAL::to_double( (*cit).centroid.x() ),
                                                CGAL::to_double( (*cit).centroid.y() ) );
-            tgShapefile::FromGeod( centroid, "./edge_dbg", "centroids", description );
+            
+            tgShapefile::FromGeod( centroid, datasource, layer, description );
         }
         
         // dump edges
         VDCcbHalfedgeCirculator ec_start = (*cit).face->ccb();
         VDCcbHalfedgeCirculator ec       = ec_start;
-        
+
+        sprintf( layer, "%s_edges", layer_prefix ); 
         edges.clear();
         do
         {
@@ -284,14 +289,15 @@ void tgCluster::DumpVD(std::vector<tgVoronoiCell>& cells)
             }
             
         } while ( ++ec != ec_start );
-        tgShapefile::FromSegmentList( edges, false, "./edge_dbg", "edges", description );
+        tgShapefile::FromSegmentList( edges, false, datasource, layer, description );
 
         // generate node list
+        sprintf( layer, "%s_nodes", layer_prefix ); 
         for ( std::vector<EPECPoint_2>::iterator nit = (*cit).nodes.begin(); nit != (*cit).nodes.end(); nit++ ) 
         {
             SGGeod node = SGGeod::fromDeg( CGAL::to_double( (*nit).x() ),
                                            CGAL::to_double( (*nit).y() ) );
-            tgShapefile::FromGeod( node, "./edge_dbg", "nodes", description );            
+            tgShapefile::FromGeod( node, datasource, layer, description );            
         }    
     }
 }

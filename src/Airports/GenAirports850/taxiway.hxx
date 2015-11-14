@@ -9,38 +9,30 @@
 class Taxiway
 {
 public:
-
     Taxiway(char* def);
 
-#if 0
-    int BuildBtg( tgpolygon_list& taxi_polys,
-                  tglightcontour_list& taxi_lights,
-                  tgcontour_list& slivers,
-                  tgAccumulator& accum,
-                  std::string& shapefile_name );
-
-    int BuildBtg( tgpolygon_list& taxi_polys,
-                  tglightcontour_list& taxi_lights,
-                  tgcontour_list& slivers,
-                  tgpolygon_list& apt_base_polys,
-                  tgpolygon_list& apt_clearing_polys,
-                  tgAccumulator& accum,
-                  std::string& shapefile_name );
-#endif
-    void GetPolys( tgPolygonSetList& polys );
-    void GetInnerBasePolys( tgPolygonSetList& polys );
-    void GetOuterBasePolys( tgPolygonSetList& polys );
-    void GetLights(tglightcontour_list& lights);
+    tgPolygonSet& GetPoly( void ) {
+        return taxiwayPoly;
+    }
+    
+    tgPolygonSet& GetInnerBasePoly( void ) {
+        return innerBasePoly;
+    }
+    
+    tgPolygonSet& GetOuterBasePoly( void ) {
+        return outerBasePoly;
+    }
+    
+    void GetLights( tglightcontour_list& l ) {
+        l.insert( l.end(), lights.begin(), lights.end() );
+    }
     
 private:
-    SGGeod  origin;
-    double  heading;
-    double  length;
-    double  width;
-    int     surface;
-    char    lighting[6];
-
-    cgalPoly_Polygon taxi_contour;
+    tgPolygonSet taxiwayPoly;
+    tgPolygonSet innerBasePoly;
+    tgPolygonSet outerBasePoly;    
+    
+    tglightcontour_list  lights;
 };
 
 typedef std::vector <Taxiway *> TaxiwayList;

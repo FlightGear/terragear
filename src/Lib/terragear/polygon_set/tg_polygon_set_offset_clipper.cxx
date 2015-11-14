@@ -9,8 +9,9 @@ tgPolygonSet tgPolygonSet::offset( double oset ) const
     ClipperLib::Paths clipper_src, clipper_dst;
     clipper_src = toClipper( getPs() );
 
-    ClipperLib::ClipperOffset co(2.0, 2.0);
-    co.AddPaths(clipper_src, ClipperLib::jtSquare, ClipperLib::etClosedPolygon); 
+    ClipperLib::ClipperOffset co(2.0, 0.25);
+    //co.AddPaths(clipper_src, ClipperLib::jtSquare, ClipperLib::etClosedPolygon); 
+    co.AddPaths(clipper_src, ClipperLib::jtMiter, ClipperLib::etClosedPolygon); 
     co.Execute(clipper_dst, toClipper( oset ) );
 
     cgalPoly_PolygonSet result = fromClipper( clipper_dst );

@@ -16,7 +16,7 @@
 
 extern int nudge;
 
-Runway::Runway(char* definition)
+Runway::Runway(Airport* ap, char* definition)
 {
     double az2;
 
@@ -51,6 +51,7 @@ Runway::Runway(char* definition)
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") heading: " << heading << " length: " << length << " width: " << width );
 
+    airport = ap;
 } 
 
 
@@ -93,33 +94,35 @@ tgContour WaterRunway::GetBuoys()
     return buoys_nodes;
 }
 
-void Runway::GetMainPolys( Airport* ap, tgPolygonSetList& polys )
+tgPolygonSetList& Runway::GetMainPolys( void )
 {
+    tgPolygonSetList polys;
+    
     switch( surface ) {
         case 1:
             material_prefix = "pa_";
-            gen_full_rwy(ap);
+            gen_full_rwy();
             break;
 
         case 2:
             material_prefix = "pc_";
-            gen_full_rwy(ap);
+            gen_full_rwy();
             break;
 
         case 3:
             material_prefix = "grass_rwy";
-            gen_simple_rwy(ap);
+            gen_simple_rwy();
             break;
 
         case 4:
         case 5:
             material_prefix = "dirt_rwy";
-            gen_simple_rwy(ap);
+            gen_simple_rwy();
             break;
 
         case 12: /* Dry Lakebed */
             material_prefix = "lakebed_taxiway";
-            gen_simple_rwy(ap);
+            gen_simple_rwy();
             break;
 
         case 13: /* Water runway (buoys) */
@@ -136,43 +139,35 @@ void Runway::GetMainPolys( Airport* ap, tgPolygonSetList& polys )
             throw sg_exception("unknown runway type!");
     }
     
-    for ( unsigned int i=0; i< runway_polys.size(); i++ ) {
-        polys.push_back( runway_polys[i] );
-    }
+    return runway_polys;
 }
 
-void Runway::GetShoulderPolys( tgPolygonSetList& polys )
+tgPolygonSetList& Runway::GetShoulderPolys( void )
 {
-    for (unsigned int i=0; i<shoulder_polys.size(); i++) {
-        polys.push_back( shoulder_polys[i] );
-    }
+    return shoulder_polys;
 }
 
-void Runway::GetMarkingPolys( tgPolygonSetList& polys )
-{
+tgPolygonSetList& Runway::GetMarkingPolys( void )
+{    
     for ( unsigned int i = 0; i < features.size(); i++) {
-        features[i]->GetPolys( polys );
+        tgPolygonSetList featMarks = features[i]->GetPolys();
+        marking_polys.insert( marking_polys.end(), featMarks.begin(), featMarks.end() );
     }
     
-    // then add the marking polys we generated ourselves ( without lines )
-    for ( unsigned int i = 0; i < marking_polys.size(); i++ ) {
-        polys.push_back(marking_polys[i]);
-    }
+    return marking_polys;
 }
 
-void Runway::GetCapPolys( tgPolygonSetList& polys )
+tgPolygonSetList& Runway::GetCapPolys( void )
 {
     for ( unsigned int i = 0; i < features.size(); i++) {
-        features[i]->GetCapPolys( polys );
+        tgPolygonSetList featCaps = features[i]->GetCapPolys();
+        cap_polys.insert( cap_polys.end(), featCaps.begin(), featCaps.end() );
     }
     
-    // then add the marking polys we generated ourselves ( without lines )
-    for ( unsigned int i = 0; i < cap_polys.size(); i++ ) {
-        polys.push_back(cap_polys[i]);
-    }
+    return cap_polys;
 }
 
-void Runway::GetInnerBasePolys( tgPolygonSetList& polys )
+tgPolygonSetList& Runway::GetInnerBasePolys( void )
 {
     cgalPoly_Polygon base_contour;
     double shoulder_width = 0.0;
@@ -194,10 +189,12 @@ void Runway::GetInnerBasePolys( tgPolygonSetList& polys )
     //tgShapefile::FromPolygon( base, true, false, "./dbg", "innerbase", "runway" );
     
     // and add the clearing to the base
-    polys.push_back( tgPolygonSet( base_contour, meta ) );
+    innerbase_polys.push_back( tgPolygonSet( base_contour, meta ) );
+    
+    return innerbase_polys;
 }
 
-void Runway::GetOuterBasePolys( tgPolygonSetList& polys )
+tgPolygonSetList& Runway::GetOuterBasePolys( void )
 {
     cgalPoly_Polygon base_contour;
     double shoulder_width = 0.0;
@@ -218,7 +215,9 @@ void Runway::GetOuterBasePolys( tgPolygonSetList& polys )
     meta.setTextureMethod( tgPolygonSetMeta::TEX_BY_GEODE );
 
     // add this to the airport clearing
-    polys.push_back( tgPolygonSet( base_contour, meta ) );
+    outerbase_polys.push_back( tgPolygonSet( base_contour, meta ) );
+    
+    return outerbase_polys;
 }
 
 void Runway::GetLights( tglightcontour_list& lights )

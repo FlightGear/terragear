@@ -115,8 +115,9 @@ public:
 
     int Finish( Airport* ap, bool closed, double width = 0.0f );
     
-    void GetPolys( tgPolygonSetList& polys );
-    void GetCapPolys( tgPolygonSetList& polys );
+    tgPolygonSetList& GetPolys( void );
+    tgPolygonSetList& GetCapPolys( void );
+    
     void GetLights( tglightcontour_list& lights );
     
 
@@ -145,6 +146,7 @@ private:
     
     tgPolygonSetList    marking_polys;
     tgPolygonSetList    cap_polys;      // lower priority than the marks themselves
+    
     tglightcontour_list lighting_polys;
 };
 

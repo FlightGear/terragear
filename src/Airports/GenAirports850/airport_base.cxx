@@ -34,12 +34,12 @@
 
 void Airport::BuildBase( void )
 {
-    tgpolygon_list polys;
-    bool userBoundary = false;
+    tgPolygonSetList runwayPolys, runwayShoulderPolys;
+    tgPolygonSetList innerBasePolys, outerBasePolys;
+    bool             userBoundary = false;
 
     /* initialize tgAreas for the number of layers we have */
-    polys_built.init( AIRPORT_NUM_AREAS, area_names );
-    polys_clipped.init( AIRPORT_NUM_AREAS, area_names );
+    baseMesh.init( AIRPORT_NUM_AREAS, area_names, icao );
 
     if (boundary.size()) {
         TG_LOG(SG_GENERAL, SG_INFO, "Build Base with user defined boundary" );
@@ -52,11 +52,15 @@ void Airport::BuildBase( void )
     for ( unsigned int i=0; i<runways.size(); i++ )
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "Build Runway " << i + 1 << " of " << runways.size());
-        runways[i]->GetMainPolys( this, polys_built.get_polys(AIRPORT_AREA_RUNWAY) );
-        runways[i]->GetShoulderPolys( polys_built.get_polys(AIRPORT_AREA_RUNWAY_SHOULDER) );
+        //runways[i]->GetMainPolys( this, tgMesh.getPolys(AIRPORT_AREA_RUNWAY) );
+        baseMesh.addPolys( AIRPORT_AREA_RUNWAY, runways[i]->GetMainPolys() );
+        //runways[i]->GetShoulderPolys( tgMesh.getPolys(AIRPORT_AREA_RUNWAY_SHOULDER) );
+        baseMesh.addPolys( AIRPORT_AREA_RUNWAY_SHOULDER, runways[i]->GetShoulderPolys() );
         if (!userBoundary) {
-            runways[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
-            runways[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            //runways[i]->GetInnerBasePolys( tgMesh.getPolys(AIRPORT_AREA_INNER_BASE) );
+            //baseMesh.addPolys( AIRPORT_AREA_INNER_BASE, runways[i]->GetInnerBasePolys() );
+            //runways[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            baseMesh.addPolys( AIRPORT_AREA_OUTER_BASE, runways[i]->GetOuterBasePolys() );
         }
     }
 
@@ -64,21 +68,28 @@ void Airport::BuildBase( void )
     for ( unsigned int i=0; i<helipads.size(); i++ )
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "Build Helipad " << i + 1 << " of " << helipads.size());
-        helipads[i]->GetMainPolys( polys_built.get_polys(AIRPORT_AREA_HELIPAD) );
-        helipads[i]->GetShoulderPolys( polys_built.get_polys(AIRPORT_AREA_HELIPAD_SHOULDER) );
+        // helipads[i]->GetMainPolys( polys_built.get_polys(AIRPORT_AREA_HELIPAD) );
+        baseMesh.addPolys( AIRPORT_AREA_HELIPAD, helipads[i]->GetMainPolys() );
+        // helipads[i]->GetShoulderPolys( polys_built.get_polys(AIRPORT_AREA_HELIPAD_SHOULDER) );
+        baseMesh.addPolys( AIRPORT_AREA_HELIPAD_SHOULDER, helipads[i]->GetShoulderPolys() );
         if (!userBoundary) {
-            helipads[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
-            helipads[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            // helipads[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
+            //baseMesh.addPolys( AIRPORT_AREA_INNER_BASE, helipads[i]->GetInnerBasePolys() );
+            // helipads[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            baseMesh.addPolys( AIRPORT_AREA_OUTER_BASE, helipads[i]->GetOuterBasePolys() );
         }
     }
 
     for ( unsigned int i=0; i<pavements.size(); i++ )
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "Build Pavement " << i + 1 << " of " << pavements.size() << " : " << pavements[i]->GetDescription());
-        pavements[i]->GetPolys( polys_built.get_polys(AIRPORT_AREA_PAVEMENT) );
+        // pavements[i]->GetPolys( polys_built.get_polys(AIRPORT_AREA_PAVEMENT) );
+        baseMesh.addPolys( AIRPORT_AREA_PAVEMENT, pavements[i]->GetPolys() );
         if (!userBoundary) {
-            pavements[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
-            pavements[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            // pavements[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
+            //baseMesh.addPolys( AIRPORT_AREA_INNER_BASE, pavements[i]->GetInnerBasePolys() );
+            // pavements[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            baseMesh.addPolys( AIRPORT_AREA_OUTER_BASE, pavements[i]->GetOuterBasePolys() );
         }
     }
 
@@ -86,10 +97,13 @@ void Airport::BuildBase( void )
     for ( unsigned int i=0; i<taxiways.size(); i++ )
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "Build Taxiway " << i + 1 << " of " << taxiways.size());
-        taxiways[i]->GetPolys( polys_built.get_polys(AIRPORT_AREA_TAXIWAY) );
+        // taxiways[i]->GetPolys( polys_built.get_polys(AIRPORT_AREA_TAXIWAY) );
+        baseMesh.addPoly( AIRPORT_AREA_TAXIWAY, taxiways[i]->GetPoly() );
         if (!userBoundary) {
-            taxiways[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
-            taxiways[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            //taxiways[i]->GetInnerBasePolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
+            //baseMesh.addPoly( AIRPORT_AREA_INNER_BASE, taxiways[i]->GetInnerBasePoly() );
+            //taxiways[i]->GetOuterBasePolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            baseMesh.addPoly( AIRPORT_AREA_OUTER_BASE, taxiways[i]->GetOuterBasePoly() );
         }
     }
 
@@ -99,19 +113,27 @@ void Airport::BuildBase( void )
 
         for ( unsigned int i=0; i<boundary.size(); i++ ) {
             TG_LOG(SG_GENERAL, SG_DEBUG, "Build Userdefined boundary " << i + 1 << " of " << boundary.size());
-            boundary[i]->GetInnerBoundaryPolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
-            boundary[i]->GetOuterBoundaryPolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            //boundary[i]->GetInnerBoundaryPolys( polys_built.get_polys(AIRPORT_AREA_INNER_BASE) );
+            //baseMesh.addPolys( AIRPORT_AREA_INNER_BASE, boundary[i]->GetInnerBoundaryPolys() );
+            //boundary[i]->GetOuterBoundaryPolys( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE) );
+            baseMesh.addPolys( AIRPORT_AREA_OUTER_BASE, boundary[i]->GetOuterBoundaryPolys() );
         }
     }
 
     // DEBUG
 #if DEBUG
-    GDALDataset*    poDS = NULL;
-    OGRLayer*       poLayer = NULL;
     char            dataset[64];
     
     // datasource is the ICAO, 1 layer = 1 area    
-    sprintf( dataset, "./%s", icao.c_str() );
+    // sprintf( dataset, "./%s", icao.c_str() );
+    // baseMesh.toShapefiles( dataset );
+    
+    baseMesh.generate();
+
+#if 0    
+    GDALDataset*    poDS = NULL;
+    OGRLayer*       poLayer = NULL;
+    
     poDS    = tgPolygonSet::openDatasource( dataset );
     
     poLayer = tgPolygonSet::openLayer( poDS, wkbPolygon25D, "runways" );
@@ -153,6 +175,7 @@ void Airport::BuildBase( void )
     }
 
     GDALClose( poDS );
+#endif    
 #endif
     
     TG_LOG(SG_GENERAL, SG_INFO, "done " );    
@@ -160,6 +183,9 @@ void Airport::BuildBase( void )
 
 void Airport::ClipBase()
 {
+    baseMesh.generate();
+    
+#if 0    
     tgAccumulator accum;
 
     // first, collect all the base nodes
@@ -218,6 +244,8 @@ void Airport::ClipBase()
         }
     }
 #endif
+#endif
+
 }
 
 void Airport::CleanBase()
@@ -353,7 +381,7 @@ void Airport::CalcSmoothingSurface( const std::string& root, const string_list& 
     }
 #endif
 
-    double average = tgAverageElevation( root, elev_src, geods );
+    // double average = tgAverageElevation( root, elev_src, geods );
 
     // then generate the surface
     base_surf.Create(  root, elev_src, bounds, 100, 0.02, 0.00001 );
@@ -407,7 +435,8 @@ void Airport::ChopBase( const std::string& root, const string_list& elev_src )
     tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED_SURFACE, "Grass", "OuterBase" );
 
     create_start.stamp();    
-    tgPolygonSet outerBase = tgPolygonSet::join( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE), meta );
+    // tgPolygonSet outerBase = tgPolygonSet::join( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE), meta );
+    tgPolygonSet outerBase = baseMesh.join(AIRPORT_AREA_OUTER_BASE, meta );
     create_end.stamp();
     
     // create the smoothing surface from the bounding box

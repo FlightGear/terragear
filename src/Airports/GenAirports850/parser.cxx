@@ -534,7 +534,7 @@ int Parser::ParseLine(char* line)
                 case LAND_RUNWAY_CODE:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing runway: " << line);
-                    cur_runway = new Runway(line);
+                    cur_runway = new Runway( cur_airport, line);
                     if (cur_airport)
                     {
                         cur_airport->AddRunway( cur_runway );

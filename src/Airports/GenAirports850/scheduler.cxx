@@ -400,7 +400,7 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
                     // if the the runway start / end  coords are within the rect,
                     // we have a winner
                     {
-                        Runway* runway = new Runway(def);
+                        Runway* runway = new Runway(NULL, def);
                         if ( boundingBox->isInside(runway->GetStart()) ) {
                             match = true;
                         }

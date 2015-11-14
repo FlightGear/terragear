@@ -66,13 +66,18 @@ public:
 class tgCluster 
 {
 public:
-    tgCluster( std::list<EPECPoint_2>& points, double squaredError );
-    EPECPoint_2 Locate( const EPECPoint_2& point );
+    tgCluster( std::list<EPECPoint_2>& points, double err );
+    // tgCluster( std::list<EPECPoint_2>&, meshArr.vertices_end(), 0.0000025 );
+
+    EPECPoint_2 Locate( const EPECPoint_2& point ) const;
+    
+    void toShapefile( const char* datasource, const char* layer );
     
 private:
     void computenewcentroids(void);
     
     std::list<EPECPoint_2> nodes;
+    double squaredError;
     int numcentroids;
     
     std::vector<tgsegment_list>  v_faces;       // segments making up the face
@@ -83,9 +88,7 @@ private:
     std::vector<tgVoronoiCell> oldcells, newcells;
     
     VDnodesTree tree;
-    VD          vd;
-    
-    void DumpVD( std::vector<tgVoronoiCell>& cells );
+    VD          vd;    
 };
 
 #endif /* __TG_CLUSTER_HXX__ */

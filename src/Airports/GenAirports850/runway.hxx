@@ -12,7 +12,7 @@ class Runway
 {
 public:
 
-    Runway(char* def);
+    Runway(Airport* ap, char* def);
 
     SGGeod GetStart()
     {
@@ -34,12 +34,12 @@ public:
         return (surface < 3) ? true : false;
     }
 
-    void GetMainPolys( Airport* ap, tgPolygonSetList& polys );
-    void GetMarkingPolys(tgPolygonSetList& polys );
-    void GetCapPolys(tgPolygonSetList& polys );
-    void GetShoulderPolys( tgPolygonSetList& polys );
-    void GetInnerBasePolys( tgPolygonSetList& polys );
-    void GetOuterBasePolys( tgPolygonSetList& polys );
+    tgPolygonSetList& GetMainPolys( void );
+    tgPolygonSetList& GetMarkingPolys( void );
+    tgPolygonSetList& GetCapPolys( void );
+    tgPolygonSetList& GetShoulderPolys( void );
+    tgPolygonSetList& GetInnerBasePolys( void );
+    tgPolygonSetList& GetOuterBasePolys( void );
 
     void GetLights( tglightcontour_list& lights );
     
@@ -80,6 +80,9 @@ private:
     // but not clipped until shoulder construction.
     tgPolygonSetList shoulder_polys;
 
+    tgPolygonSetList innerbase_polys;
+    tgPolygonSetList outerbase_polys;
+
     // Build Helpers:
     // generate an area for a runway and include midpoints
     cgalPoly_Polygon gen_runway_w_mid( double length_extend_m, double width_extend_m )
@@ -98,21 +101,21 @@ private:
     cgalPoly_Polygon GetSectionBB( const cgalPoly_Polygon& runway, double startl_pct, double endl_pct, double startw_pct, double endw_pct, double heading  );
 
     
-    LinearFeature* gen_perpendicular_marking_feature( Airport* ap, const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark );
-    LinearFeature* gen_paralell_marking_feature( Airport* ap, const SGGeod& start_ref, double heading, double start_dist, double length, double offset, int mark );
-    LinearFeature* gen_chevron_feature( Airport* ap, const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, int mark );
+    LinearFeature* gen_perpendicular_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, int mark );
+    LinearFeature* gen_paralell_marking_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double offset, int mark );
+    LinearFeature* gen_chevron_feature( const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, int mark );
     
-    void   gen_designation_polygon( Airport* ap, int rwidx, const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, const std::string& mark );
+    void   gen_designation_polygon( int rwidx, const SGGeod& start_ref, double heading, double start_dist, double length, double width, double offset, const std::string& mark );
     
-    void   gen_base( Airport* ap, int rwidx, const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders );
-    void   gen_border( Airport* ap, int rwidx, const SGGeod& start, const SGGeod& end, double heading, double dist );
-    SGGeod gen_disp_thresh( Airport* ap, int rwidx, const SGGeod& start, double length, double heading );
-    void   gen_threshold( Airport* ap, int rwidx, const SGGeod& start, double heading  );
-    void   gen_stopway( Airport* ap, int rwidx, const SGGeod& start, double length, double heading );
-    SGGeod gen_designation( Airport* ap, int rwidx, const SGGeod& start, double heading );
-    double gen_centerline( Airport* ap, int rwidx, const cgalPoly_Polygon& runway, double start_pct, double heading );
+    void   gen_base( int rwidx, const SGGeod& start, const SGGeod& end, double heading, double dist, bool with_shoulders );
+    void   gen_border( int rwidx, const SGGeod& start, const SGGeod& end, double heading, double dist );
+    SGGeod gen_disp_thresh( int rwidx, const SGGeod& start, double length, double heading );
+    void   gen_threshold( int rwidx, const SGGeod& start, double heading  );
+    void   gen_stopway( int rwidx, const SGGeod& start, double length, double heading );
+    SGGeod gen_designation( int rwidx, const SGGeod& start, double heading );
+    double gen_centerline( int rwidx, const cgalPoly_Polygon& runway, double start_pct, double heading );
     
-    void   gen_feature( Airport* ap, int rwidx, 
+    void   gen_feature( int rwidx, 
                         const cgalPoly_Polygon& runway,
                         double startl_pct, double endl_pct,
                         double startw_pct, double endw_pct,
@@ -121,7 +124,7 @@ private:
                         const std::string& material );
                              
     // generate a section of runway without shoulders
-    void gen_section( Airport* ap, int rwidx, 
+    void gen_section( int rwidx, 
                       const cgalPoly_Polygon& runway,
                       double startl_pct, double endl_pct,
                       double startw_pct, double endw_pct,
@@ -131,7 +134,7 @@ private:
                       bool with_shoulders );
     
     // generate a section of shoulder
-    tgPolygonSet gen_shoulder_section( Airport* ap, int rwidx, 
+    tgPolygonSet gen_shoulder_section( int rwidx, 
                                        cgalPoly_Point& p0, cgalPoly_Point& p1,
                                        cgalPoly_Point& t0, cgalPoly_Point& t1, 
                                        int side,
@@ -139,8 +142,8 @@ private:
                                        double width,
                                        std::string surface );
 
-    void gen_simple_rwy(Airport* ap);
-    void gen_full_rwy(Airport* ap);
+    void gen_simple_rwy( void );
+    void gen_full_rwy( void );
 
     void gen_runway_lights( tglightcontour_list& lights );
 
@@ -170,6 +173,8 @@ private:
     tgLightContour      gen_odals( const int kind, bool recip );
     tglightcontour_list gen_ssalx( const std::string& kind, bool recip );
     tglightcontour_list gen_malsx( const std::string& kind, bool recip );
+    
+    Airport* airport;
     
     // Runway Marking Polys
     FeatureList features;    

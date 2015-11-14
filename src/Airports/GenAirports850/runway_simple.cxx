@@ -30,7 +30,7 @@
 using std::string;
 
 // generate a simple runway
-void Runway::gen_simple_rwy(Airport* ap)
+void Runway::gen_simple_rwy(void)
 {
     cgalPoly_Polygon runway = gen_runway_w_mid( 0.0, 0.0 );
     cgalPoly_Polygon runway_half;
@@ -73,7 +73,7 @@ void Runway::gen_simple_rwy(Airport* ap)
 
             start_pct = end_pct;
             end_pct = start_pct + ( threshold[rwhalf] / cur_length );
-            Runway::gen_section( ap, rwhalf,
+            Runway::gen_section( rwhalf,
                                  runway_half,
                                  start_pct, end_pct,
                                  0.0, 1.0,
@@ -84,7 +84,7 @@ void Runway::gen_simple_rwy(Airport* ap)
         }
 
         // Generate runway
-        Runway::gen_section( ap, rwhalf, 
+        Runway::gen_section( rwhalf, 
                              runway_half,
                              end_pct, 1.0,
                              0.0, 1.0,
