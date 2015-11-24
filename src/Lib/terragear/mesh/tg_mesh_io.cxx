@@ -72,7 +72,7 @@ void tgMesh::toShapefile( const char* datasource, const char* layer, const meshA
     GDALClose( poDS );    
 }
 
-void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, char* desc )
+void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc )
 {    
     OGRPoint      point;
     OGRLineString line;
@@ -98,7 +98,7 @@ void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, char* de
     OGRFeature::DestroyFeature(poFeature);        
 }
 
-void tgMesh::toShapefile( const char* datasource, const char* layer, const meshCDTPlus& triangulation, bool marked )
+void tgMesh::toShapefile( const char* datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked )
 {
     GDALDataset*  poDS = NULL;
     OGRLayer*     poLayer = NULL;
@@ -107,7 +107,7 @@ void tgMesh::toShapefile( const char* datasource, const char* layer, const meshC
     if ( poDS ) {
         poLayer = openLayer( poDS, wkbLineString25D, layer );
         if ( poLayer ) {
-            for (meshCDTPlus::Finite_faces_iterator fit=triangulation.finite_faces_begin(); fit!=triangulation.finite_faces_end(); ++fit) {
+            for (meshTriCDTPlus::Finite_faces_iterator fit=triangulation.finite_faces_begin(); fit!=triangulation.finite_faces_end(); ++fit) {
                 if ( marked ) {
                     if ( fit->info().hasFace() ) {
                         meshTriangle tri = meshTriangulation.triangle(fit);

@@ -1,11 +1,19 @@
 #ifndef __TG_MESH_DEF_HXX__
 #define __TG_MESH_DEF_HXX__
 
-// mesh class contains two man cgal features
+// the tg mesh class utilizes two main cgal features
+
 // an arrangement ( with exact constructions ) 
-// to define face - polygon meta info, and provides
-// cleanup capabilities
-// the other is the constrained triangulation
+// This defines faces from segments.
+// Note that this automatically handles clipped polygon colinear nodes.
+// as all of the individual polygon segments are added to the arrangement,
+// a segment may be broken into many, as adjacent polys may touch our segment.
+// We also modify the arrangement by clustering nodes within a certain radius.
+// this is similar ( but better than ) snapping.  snapping may sometimes make
+// nodes further away from one another, and can modify topology in unexpected 
+// ways. clustering pulls nodes together at their centroid.
+
+// The other is the constrained triangulation
 // with required inexact constructions ( for refining )
 // it MAY be possible to use exact constructions ( with square root ),
 // but it is really slow...
@@ -71,24 +79,30 @@ private:
     bool                   visited;
 };
 
-typedef CGAL::Exact_predicates_inexact_constructions_kernel                         meshTriKernel;
-typedef meshTriKernel::Point_2                                                      meshTriPoint;
-typedef meshTriKernel::Segment_2                                                    meshTriSegment;
+typedef CGAL::Exact_predicates_inexact_constructions_kernel                                 meshTriKernel;
+typedef meshTriKernel::Point_2                                                              meshTriPoint;
+typedef meshTriKernel::Segment_2                                                            meshTriSegment;
 
-typedef CGAL::Triangulation_vertex_base_2<meshTriKernel>                            Vb;
-typedef CGAL::Constrained_triangulation_face_base_2<meshTriKernel>                  Fbbb;
-typedef CGAL::Triangulation_face_base_with_info_2<tgMeshArrFaceInfo, meshTriKernel, Fbbb> Fbb;
-typedef CGAL::Delaunay_mesh_face_base_2<meshTriKernel,Fbb>                          Fb;
+typedef CGAL::Triangulation_vertex_base_2<meshTriKernel>                                    meshTriVertexBase;
+// The meshTriFaceBase template is a bit complex.
+// It needs to be refinable (Delaunay_mesh_face_base_2) 
+// with info (Triangulation_face_base_with_info_2), and of course
+// derived from plain face base (Constrained_triangulation_face_base_2)
+// I found this in a forum - not in any of the CGAL examples.
+typedef CGAL::Constrained_triangulation_face_base_2<meshTriKernel>                          Fbbb;
+typedef CGAL::Triangulation_face_base_with_info_2<tgMeshArrFaceInfo, meshTriKernel, Fbbb>   Fbb;
+typedef CGAL::Delaunay_mesh_face_base_2<meshTriKernel,Fbb>                                  meshTriFaceBase;
 
-typedef CGAL::Triangulation_data_structure_2<Vb,Fb>                                 TDS;
-typedef CGAL::Exact_intersections_tag                                               Itag;
-typedef CGAL::Constrained_Delaunay_triangulation_2<meshTriKernel, TDS, Itag>        CDT;
-typedef CGAL::Constrained_triangulation_plus_2<CDT>                                 meshCDTPlus;
+typedef CGAL::Triangulation_data_structure_2<meshTriVertexBase,meshTriFaceBase>             meshTriTDS;
+typedef CGAL::Exact_intersections_tag                                                       meshTriItag;
+typedef CGAL::Constrained_Delaunay_triangulation_2<meshTriKernel, meshTriTDS, meshTriItag>  meshTriCDT;
+typedef CGAL::Constrained_triangulation_plus_2<meshTriCDT>                                  meshTriCDTPlus;
 
-typedef meshCDTPlus::Face_handle                                                    meshTriFaceHandle;
-typedef CGAL::Triangle_2<meshTriKernel>                                             meshTriangle;
+typedef meshTriCDTPlus::Edge                                                                meshTriEdge;
+typedef meshTriCDTPlus::Face_handle                                                         meshTriFaceHandle;
+typedef CGAL::Triangle_2<meshTriKernel>                                                     meshTriangle;
 
-typedef CGAL::Delaunay_mesh_size_criteria_2<meshCDTPlus>                            meshCriteria;
-typedef CGAL::Delaunay_mesher_2<meshCDTPlus, meshCriteria>                          meshRefiner;
+typedef CGAL::Delaunay_mesh_size_criteria_2<meshTriCDTPlus>                                 meshCriteria;
+typedef CGAL::Delaunay_mesher_2<meshTriCDTPlus, meshCriteria>                               meshRefiner;
 
 #endif

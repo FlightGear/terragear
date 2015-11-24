@@ -36,32 +36,19 @@ void tgMesh::generate( void )
     // Step 1 - clip polys against one another - highest priority first ( on top )
     clipPolys();
     
-    // Step 2 - insert clipped polys into an arrangement.  from now on, we will
-    // use faces of the arrangement to identify polygon info
+    // Step 2 - insert clipped polys into an arrangement.  
+    // From this point on, we don't need the individual polygons.
     arrangePolys();
     
-//    toShapefile( datasource, "arr_raw", meshArr );
-
-//    constrainedTriangulate( "tri_raw" );
-//    meshTriangulation.clear();
-    
-    // step 2 - clean up the polys by clustering the nodes ( use arrangement )
-    cleanPolys();
-
-    // step 3 - add the polys to an arrangement to handle colinear nodes
-    //          for each non hole face in resulting poly, add an internal ref point
-    //          Then add each face to an arrangment.  lookup the face via ref point
-    //          link original poly meta data to the arrangement face handle
-    //
-//    toShapefile( datasource, "arr_clean", meshArr );
+    // step 3 - clean up the arrangement - cluster nodes that are too close - don't want
+    // really small triangles blowing up the refined mesh.
+    // NOTE / TODO: 
+    // The cluster size MUST be smaller than the minimum distance of interiorPoints.
+    // we should remember be checking the delta in interiorPoints to see if we have 
+    // polys that don't meat this criteria.
+    // and if it doesn't - what do we do?
+    cleanArrangement();
     
     // step 4 - create constrained triangulation with arrangement edges as the constraints
-    //
-    constrainedTriangulate( "tri_clean" );
-    
-    // step 5 - meshify the triangulation to produce good triangles
-    // 
-    // step 6 - for each triangle, calc centroid, and lookup meta data
-    //          create triangle - metadata linkage
-    // step 7 - test the mesh    
+    constrainedTriangulate();    
 }

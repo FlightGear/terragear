@@ -25,21 +25,11 @@ public:
         META_TEXTURED_SURFACE,
         META_CONSTRAIN
     } MetaInfo_e;
-    
-    
+
     tgPolygonSetMeta() : info(META_NONE), id(tgPolygonSetMeta::cur_id++) {}
     tgPolygonSetMeta( MetaInfo_e i) : info(i), id(tgPolygonSetMeta::cur_id++) {}
     tgPolygonSetMeta( MetaInfo_e i, const std::string& mat, const std::string& desc ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++), description(desc) {}
     tgPolygonSetMeta( MetaInfo_e i, const std::string& mat ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++) {}
-    
-#if 0    
-    tgPolygonSetMeta( const tgPolygonSetMeta &src ) { 
-        id          = src.id;
-        description = src.description;
-        
-    }
-#endif
-
 
     /* All Meta Info types */
     void setDescription( const char* desc ) { description = desc; }
@@ -244,11 +234,8 @@ private:
 
     cgalPoly_Polygon                    splitLongEdges( cgalPoly_Polygon& p, int maxSegmentSize );
     cgalPoly_PolygonWithHoles           splitLongEdges( cgalPoly_PolygonWithHoles& pwh, int maxSegmentLength );
-
-//    void                              contractPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
-//    void                              expandPolygon( double oset, const cgalPoly_Polygon& poly, std::vector<cgalPoly_PolygonWithHoles>& offsetPWHs, OGRLayer* poDebug ) const;
   
-// to / from clipper for Polygon Offsetting ( Can't get CGAL to propery shring Polygons....  TODO    
+// to / from clipper for Polygon Offsetting ( Can't get CGAL to propery shrink Polygons....  TODO, maybe
     double                              toClipper( double dist ) const;
     
     ClipperLib::IntPoint                toClipper( const cgalPoly_Point& p ) const;

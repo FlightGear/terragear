@@ -32,7 +32,7 @@ public:
 
 private:
     void clipPolys( void );
-    void cleanPolys( void );
+    void cleanArrangement( void );
     void arrangePolys( void );
     void arrangementInsert( std::vector<tgPolygonSet>::iterator pit );
     
@@ -40,10 +40,10 @@ private:
     meshArrFaceConstHandle findMeshFace( const meshArrPoint& pt);
     meshArrFaceConstHandle findMeshFace( const meshTriPoint& pt);
     
-    void constrainedTriangulate( const char* layer );
+    void constrainedTriangulate(void);
     void clearDomains(void);
     void markDomains(void);
-    void markDomains(meshTriFaceHandle start, meshArrFaceConstHandle face, std::list<meshCDTPlus::Edge>& border );
+    void markDomains(meshTriFaceHandle start, meshArrFaceConstHandle face, std::list<meshTriCDTPlus::Edge>& border );
     
     GDALDataset* openDatasource( const char* datasource_name );
     OGRLayer*    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name );
@@ -56,9 +56,9 @@ private:
     }
     
     void toShapefile( const char* datasource, const char* layer, const meshArrangement& arr );
-    void toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, char* desc );
+    void toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc );
     
-    void toShapefile( const char* datasource, const char* layer, const meshCDTPlus& triangulation, bool marked );
+    void toShapefile( const char* datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked );
     void toShapefile( OGRLayer* poLayer, const meshTriangle& tri );
     
     unsigned int                    numPriorities;
@@ -66,7 +66,7 @@ private:
     std::vector<tgPolygonSetList>   sourcePolys;
     meshArrangement                 meshArr;
     meshArrLandmarks_pl             meshPointLocation;
-    meshCDTPlus                     meshTriangulation;
+    meshTriCDTPlus                  meshTriangulation;
     std::vector<tgMeshFaceMeta>     metaLookup;
     char datasource[128];
 };
