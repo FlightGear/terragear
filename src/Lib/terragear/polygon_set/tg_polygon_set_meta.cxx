@@ -19,18 +19,22 @@ void tgPolygonSetMeta::getFeatureFields( OGRFeature* poFeature )
     
     switch( info ) {
         case META_NONE:
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_NONE" );
             break;
         
         case META_TEXTURED:
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_TEXTURED" );
             getTextureFields( poFeature );
             break;
             
         case META_TEXTURED_SURFACE:
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_TEXTURED_SURFACE" );
             getTextureFields( poFeature );
             getSurfaceFields( poFeature );
             break;                
             
         case META_CONSTRAIN:
+            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_CONSTRAIN" );
             break;               
     }
 }
@@ -62,6 +66,7 @@ void tgPolygonSetMeta::getCommonFields( OGRFeature* poFeature )
     char strbuff[256];
 
     getFieldAsInteger( poFeature, "tg_id",   &id );
+    getFieldAsInteger( poFeature, "tg_meta", (unsigned long int *)&info );
     getFieldAsInteger( poFeature, "OGC_FID", &fid );
     getFieldAsInteger( poFeature, "tg_flags", &flags );    
 
@@ -108,6 +113,7 @@ void tgPolygonSetMeta::getSurfaceFields( OGRFeature* poFeature )
 void tgPolygonSetMeta::setCommonFields( OGRFeature* poFeature ) const
 {
     poFeature->SetField("tg_id",        (int)id );
+    poFeature->SetField("tg_meta",      (int)info );
     poFeature->SetField("OGC_FID",      (int)fid );
     poFeature->SetField("tg_flags",     (int)flags );
 

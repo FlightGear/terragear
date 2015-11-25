@@ -27,14 +27,15 @@
 #endif
 
 #include <simgear/debug/logstream.hxx>
-#include <terragear/tg_polygon.hxx>
-#include <terragear/tg_shapefile.hxx>
-#include <terragear/tg_shapefile.hxx>
-#include <terragear/tg_cgal.hxx>
 
-#include "tgconstruct_mesh.hxx"
+//#include <terragear/tg_polygon.hxx>
+//#include <terragear/tg_shapefile.hxx>
+//#include <terragear/tg_shapefile.hxx>
+//#include <terragear/tg_cgal.hxx>
 
+//#include "tgconstruct_mesh.hxx"
 
+#if 0
 tgMesh::tgMesh( const TGAreaDefinitions& ad, const tgAreas& p ) : area_defs(ad), polys(p)
 {
     meshObserver obs(mesh, this);
@@ -183,3 +184,4 @@ void tgMesh::ToShapefile( const char* path )
         SaveFace( materialLookup[i].face, path, materialLookup[i].material.c_str() );
     }
 }
+#endif

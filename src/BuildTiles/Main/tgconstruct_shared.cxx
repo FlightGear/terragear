@@ -27,14 +27,15 @@
 #include <iomanip>
 
 #include <simgear/misc/sg_dir.hxx>
-#include <simgear/io/sg_binobj.hxx>
+//#include <simgear/io/sg_binobj.hxx>
 #include <simgear/debug/logstream.hxx>
-#include <simgear/io/lowlevel.hxx>
+//#include <simgear/io/lowlevel.hxx>
 
 #include "tgconstruct.hxx"
 
-using std::string;
+//using std::string;
 
+#if 0
 void TGConstruct::CreateMatchedEdgeFiles( std::vector<SGBucket>& bucketList )
 {
     // todo - add to work queue
@@ -116,7 +117,9 @@ void TGConstruct::CreateMatchedEdgeFiles( std::vector<SGBucket>& bucketList )
         lock->unlock();
     }
 }
+#endif
 
+#if 0
 void TGConstruct::LoadMatchedEdgeFiles()
 {
     // try to load matched edges - on successful load, the edge is marked immutable
@@ -174,7 +177,9 @@ void TGConstruct::LoadMatchedEdgeFiles()
         }
     }
 }
+#endif
 
+#if 0
 void TGConstruct::SaveSharedEdgeData( int stage )
 {
     switch( stage ) {
@@ -333,7 +338,9 @@ void TGConstruct::SaveSharedEdgeData( int stage )
         break;
     }
 }
+#endif
 
+#if 0
 void TGConstruct::LoadSharedEdgeData( int stage )
 {
     switch( stage ) {
@@ -428,7 +435,9 @@ void TGConstruct::LoadSharedEdgeData( int stage )
         break;
     }
 }
+#endif
 
+#if 0
 // Neighbor faces
 void TGConstruct::WriteNeighborFaces( gzFile& fp, const SGGeod& pt ) const
 {
@@ -461,7 +470,9 @@ void TGConstruct::WriteNeighborFaces( gzFile& fp, const SGGeod& pt ) const
         sgWriteVec3( fp, face_normal );
     }
 }
+#endif
 
+#if 0
 TGNeighborFaces* TGConstruct::FindNeighborFaces( const SGGeod& node )
 {
     TGNeighborFaces* faces = NULL;
@@ -475,7 +486,9 @@ TGNeighborFaces* TGConstruct::FindNeighborFaces( const SGGeod& node )
 
     return faces;
 }
+#endif
 
+#if 0
 TGNeighborFaces* TGConstruct::AddNeighborFaces( const SGGeod& node )
 {
     TGNeighborFaces faces;
@@ -485,7 +498,9 @@ TGNeighborFaces* TGConstruct::AddNeighborFaces( const SGGeod& node )
 
     return &neighbor_faces[neighbor_faces.size()-1];
 }
+#endif
 
+#if 0
 void TGConstruct::ReadNeighborFaces( gzFile& fp )
 {
     int count;
@@ -532,8 +547,10 @@ void TGConstruct::ReadNeighborFaces( gzFile& fp )
         }
     }
 }
+#endif
 
 
+#if 0
 // Tile data
 void TGConstruct::SaveToIntermediateFiles( int stage )
 {
@@ -613,7 +630,9 @@ void TGConstruct::SaveToIntermediateFiles( int stage )
         }
     }
 }
+#endif
 
+#if 0
 void TGConstruct::LoadNeighboorEdgeDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west )
 {
     string dir;
@@ -667,7 +686,9 @@ void TGConstruct::LoadNeighboorEdgeDataStage1( SGBucket& b, std::vector<SGGeod>&
         gzclose( fp );
     }
 }
+#endif
 
+#if 0
 void TGConstruct::LoadNeighboorMatchDataStage1( SGBucket& b, std::vector<SGGeod>& north, std::vector<SGGeod>& south, std::vector<SGGeod>& east, std::vector<SGGeod>& west )
 {
     string dir;
@@ -721,7 +742,9 @@ void TGConstruct::LoadNeighboorMatchDataStage1( SGBucket& b, std::vector<SGGeod>
         gzclose( fp );
     }
 }
+#endif
 
+#if 0
 void TGConstruct::LoadFromIntermediateFiles( int stage )
 {
     string dir;
@@ -783,3 +806,4 @@ void TGConstruct::LoadFromIntermediateFiles( int stage )
         isOcean = true;
     }
 }
+#endif

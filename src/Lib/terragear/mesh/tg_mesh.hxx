@@ -20,7 +20,10 @@ public:
 class tgMesh
 {
 public:
-    void init( unsigned int numPriorities, const std::vector<std::string>& priorityNames, const std::string& dbgRoot );
+    void initDebug( const std::string& dbgRoot );
+    void initPriorities( const std::vector<std::string>& priorityNames );
+    void clear( void );
+    
     void addPoly( unsigned int priority, const tgPolygonSet& poly );
     void addPolys( unsigned int priority, const tgPolygonSetList& polys );
     

@@ -84,6 +84,8 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
     // generate texture info from feature
     meta.getFeatureFields( poFeature );
     
+    SG_LOG( SG_GENERAL, SG_INFO, "got material: " << meta.getMaterial() );
+    
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
     nodes.clear();
@@ -159,7 +161,12 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
         if( poLayer->CreateField( &idField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_id' failed" );
         }
-        
+
+        OGRFieldDefn metaField( "tg_meta", OFTInteger );
+        if( poLayer->CreateField( &metaField ) != OGRERR_NONE ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'meta' failed" );
+        }
+
         OGRFieldDefn fidField( "OGC_FID", OFTInteger );
         if( poLayer->CreateField( &fidField ) != OGRERR_NONE ) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'OGC_FID' failed" );
@@ -577,205 +584,122 @@ void tgPolygonSet::toShapefile( const cgalPoly_Polygon& poly, const char* dataso
     GDALClose( poDS );
 }
 
-#if 0 // native from GDAL    
-tgPolygonSet tgPolygonSet::fromGDAL( OGRPolygon* poGeometry )
+
+
+
+
+
+void tgPolygonSet::fromShapefile( const OGRFeatureDefn* poFDefn, OGRCoordinateTransformation* poCT, OGRFeature* poFeature, tgPolygonSetList& polys )
 {
-    cgalPoly_Arrangement  arr;
-    cgalPoly_PolygonSet   boundaries;
-    cgalPoly_PolygonSet   holes;
+    OGRGeometry *poGeometry = poFeature->GetGeometryRef();
+    if (poGeometry == NULL) {
+        SG_LOG( SG_GENERAL, SG_INFO, "Found feature without geometry!" );
+        return;
+    }
     
-    // for each boundary contour, we add it to its own arrangement
-    // then read the resulting faces as a list of polygons with holes
-    // note that a self intersecting face ( like a donut ) will generate
-    // more than one face.  We need to determine for each face wether it is a 
-    // hole or not.
-    // ___________
-    // | ______  |
-    // | \    /  |
-    // |  \  /   |
-    // |___\/____|
-    //
-    // Example of a single self intersecting contour that should be represented by a polygon 
-    for (unsigned int i=0; i<subject.Contours(); i++ ) {
-        char layer[128];
+    OGRwkbGeometryType geoType = wkbFlatten(poGeometry->getGeometryType());
+    if (geoType != wkbPolygon && geoType != wkbMultiPolygon) {
+        SG_LOG( SG_GENERAL, SG_INFO, "Unknown feature" << geoType );
+        return;
+    }
 
-        //sprintf( layer, "%04u_original_contour_%d", subject.GetId(), i );
-        //tgShapefile::FromContour( subject.GetContour(i), false, true, "./clip_dbg", layer, "cont" );
-    
-        arr.Clear();
-        arr.Add( subject.GetContour(i), layer );
-    
-        // retreive the new Contour(s) from traversing the outermost face first
-        // any holes in this face are individual polygons
-        // any holes in those faces are holes, etc...
-        
-        // dump the arrangement to see what we have.
-        //sprintf( layer, "%04u_Arrangement_contour_%d", subject.GetId(), i );
-        //arr.ToShapefiles( "./clip_dbg", layer );
-
-        // Combine boundaries and holes into their sets
-        Polygon_set face = arr.ToPolygonSet( i );
-        //sprintf( layer, "%04u_face_contour_%d", subject.GetId(), i );
-        //ToShapefile( face, layer );
-        
-        if ( subject.GetContour(i).GetHole() ) {
-            //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Join with holes"  );
+    // now the geometry(s)
+    poGeometry->transform( poCT );
             
-            //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : before - face_valid " << face.is_valid() << " holes_valid " << holes.is_valid()  );
-            holes.join( face );
-            //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : after - face_valid " << face.is_valid() << " holes_valid " << holes.is_valid()  );
-        } else {
-            //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Join with boundaries"  );
+    switch( geoType ) {
+        case wkbPolygon:
+        {
+            tgPolygonSet poly( poFeature, (OGRPolygon *)poGeometry );
+            polys.push_back(poly);
+            break;
+        }
+        
+        case wkbMultiPolygon:
+        {
+            OGRMultiPolygon* multipoly = (OGRMultiPolygon*)poGeometry;
+            SG_LOG( SG_GENERAL, SG_INFO, "loaded multi poly with " << multipoly->getNumGeometries() << " polys" );
             
-            //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : before - face_valid " << face.is_valid() << " boundaries_valid " << boundaries.is_valid()  );
-            boundaries.join( face );            
-            //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : after - face_valid " << face.is_valid() << " boundaries_valid " << boundaries.is_valid()  );
+            for (int i=0;i<multipoly->getNumGeometries();i++) {
+                tgPolygonSet poly( poFeature, (OGRPolygon *)multipoly->getGeometryRef(i) );
+                polys.push_back(poly);
+            }
+            break;
         }
-        //SG_LOG(SG_GENERAL, SG_ALERT, "ToCgalPolyWithHoles : Join complete"  );
-    }
-
-    // now, generate the result
-    boundaries.difference( holes );
-    
-    // dump to shapefile
-    if ( boundaries.is_valid() ) {
-        return tgPolygonSet( boundaries );
-    } else {
-        return tgPolygonSet();
-    }
-}
-#endif
-
-
-// this needs some more thought - static constructor?  do projection?
-// texture info? flags?, identifier?
-
-// We want feature and geometry - geometry should be projected already.
-// constructor - return new object. - no longer a static function
-    
-typedef CGAL::Bbox_2    BBox;
-
-#if 0
-void tgAccumulator::Diff_cgal( tgPolygon& subject )
-{   
-    // static int savepoly = 0;
-    // char filename[32];
-    
-    Polygon_set  cgalSubject;
-    CGAL::Bbox_2 cgalBbox;
-    
-    Polygon_set diff = accum_cgal;
-
-    if ( ToCgalPolyWithHoles( subject, cgalSubject, cgalBbox ) ) {
-        if ( !accumEmpty ) {
-            cgalSubject.difference( diff );
-        }
-
-        ToTgPolygon( cgalSubject, subject );
-    }
-}
-
-void tgAccumulator::Add_cgal( const tgPolygon& subject )
-{
-    // just add the converted cgalPoly_PolygonWithHoles to the Polygon set
-    Polygon_set  cgalSubject;
-    CGAL::Bbox_2 cgalBbox;
-    
-    if ( ToCgalPolyWithHoles( subject, cgalSubject, cgalBbox ) ) {
-        accum_cgal.join(cgalSubject);
-        accumEmpty = false;
-    }
-}
-
-// rewrite to use bounding boxes, and lists of polygons with holes 
-// need a few functions:
-// 1) generate a Polygon_set from the Polygons_with_holes in the list that intersect subject bounding box
-// 2) Add to the Polygons_with_holes list with a Polygon set ( and the bounding boxes )
-    
-Polygon_set tgAccumulator::GetAccumPolygonSet( const CGAL::Bbox_2& bbox ) 
-{
-    std::list<tgAccumEntry>::const_iterator it;
-    std::list<Polygon_with_holes> accum;
-    Polygon_set ps;
-    
-    // traverse all of the Polygon_with_holes and accumulate their union
-    for ( it=accum_cgal_list.begin(); it!=accum_cgal_list.end(); it++ ) {
-        if ( CGAL::do_overlap( bbox, (*it).bbox ) ) {
-            accum.push_back( (*it).pwh );
-        }
-    }
-    
-    ps.join( accum.begin(), accum.end() );
-    
-    return ps;
-}
-
-void tgAccumulator::AddAccumPolygonSet( const Polygon_set& ps )
-{
-    std::list<Polygon_with_holes> pwh_list;
-    std::list<Polygon_with_holes>::const_iterator it;
-    CGAL::Bbox_2 bbox;
-    
-    ps.polygons_with_holes( std::back_inserter(pwh_list) );
-    for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
-        tgAccumEntry entry;
-        entry.pwh  = (*it);
-        entry.bbox =  entry.pwh.outer_boundary().bbox();
-
-        accum_cgal_list.push_back( entry );
-    }    
-}
-
-#define DEBUG_DIFF_AND_ADD 1
-void tgAccumulator::Diff_and_Add_cgal( tgPolygon& subject )
-{
-    Polygon_set     cgSubject;
-    CGAL::Bbox_2    cgBoundingBox;
-
-#if DEBUG_DIFF_AND_ADD    
-    char            layer[128];
-#endif
-    
-    if ( ToCgalPolyWithHoles( subject, cgSubject, cgBoundingBox ) ) {
-        Polygon_set add  = cgSubject;
-        Polygon_set diff = GetAccumPolygonSet( cgBoundingBox );
-
-#if DEBUG_DIFF_AND_ADD    
-        sprintf( layer, "clip_%03d_pre_subject", subject.GetId() );
-        ToShapefile( add, layer );
         
-        tgContour bb;
-        bb.AddPoint( cgalPoly_Point( cgBoundingBox.xmin(), cgBoundingBox.ymin() ) );
-        bb.AddPoint( cgalPoly_Point( cgBoundingBox.xmin(), cgBoundingBox.ymax() ) );
-        bb.AddPoint( cgalPoly_Point( cgBoundingBox.xmax(), cgBoundingBox.ymax() ) );
-        bb.AddPoint( cgalPoly_Point( cgBoundingBox.xmax(), cgBoundingBox.ymin() ) );
-        
-        sprintf( layer, "clip_%03d_bbox", subject.GetId() );
-        tgShapefile::FromContour( bb, false, false, "./clip_dbg", layer, "bbox" );
-        
-        sprintf( layer, "clip_%03d_pre_accum", subject.GetId() );
-        ToShapefile( diff, layer );
-#endif
+        default:
+            break;
+    }
+    
+    return;
+}
 
-        if ( diff.number_of_polygons_with_holes() ) {
-            cgSubject.difference( diff );
+void tgPolygonSet::processLayer(OGRLayer* poLayer, tgPolygonSetList& polys )
+{
+    OGRFeatureDefn*                 poFDefn = NULL;
+    OGRCoordinateTransformation*    poCT = NULL;
+    char*                           srsWkt;
+    OGRSpatialReference*            oSourceSRS;
+    OGRSpatialReference             oTargetSRS;
+    OGRFeature*                     poFeature = NULL;
+    std::string                     layername;
+        
+    /* determine the indices of the required columns */
+    poFDefn = poLayer->GetLayerDefn();
+    layername = poFDefn->GetName();
+    
+    /* setup a transformation to WGS84 */
+    oSourceSRS = poLayer->GetSpatialRef();
+    if (oSourceSRS == NULL) {
+        SG_LOG( SG_GENERAL, SG_ALERT, "Layer " << layername << " has no defined spatial reference system" );
+        exit( 1 );
+    }
+    
+    oSourceSRS->exportToWkt(&srsWkt);
+    SG_LOG( SG_GENERAL, SG_INFO, "Layer: " << layername << " spatial reference system: " << srsWkt );
+    OGRFree(srsWkt);
+    
+    oTargetSRS.SetWellKnownGeogCS( "WGS84" );    
+    poCT = OGRCreateCoordinateTransformation(oSourceSRS, &oTargetSRS);
+
+    SG_LOG( SG_GENERAL, SG_ALERT, "Layer " << layername << " has " << poLayer->GetFeatureCount() << " features " );
+    
+    // Generate the work queue for this layer
+    while ( ( poFeature = poLayer->GetNextFeature()) != NULL )
+    {
+        fromShapefile( poFDefn, poCT, poFeature, polys );
+        OGRFeature::DestroyFeature( poFeature );
+    }
+    
+    OCTDestroyCoordinateTransformation ( poCT );
+}
+
+void tgPolygonSet::fromShapefile( const SGPath& p, tgPolygonSetList& polys )
+{
+    GDALDataset* poDS = NULL;
+    OGRLayer*    poLayer = NULL;
+        
+    GDALAllRegister();
+    
+    poDS = (GDALDataset*)GDALOpenEx( p.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL );
+    if( poDS == NULL )
+    {
+        SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << p.c_str() );
+        return;
+    }
+    
+    SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << p.c_str() << " with " << poDS->GetLayerCount() << " layers " );
+    polys.clear();
+    
+    for (int i=0; i<poDS->GetLayerCount(); i++) {
+        poLayer = poDS->GetLayer(i);
             
-#if DEBUG_DIFF_AND_ADD    
-            sprintf( layer, "clip_%03d_post_subject", subject.GetId() );
-            ToShapefile( cgSubject, layer );            
-#endif
-
-        }
-
-        // add the polygons_with_holes to the accumulator list
-        AddAccumPolygonSet( add );
-        
-        // when we convert back to poly, insert face_location points for each face
-        ToTgPolygon( cgSubject, subject );        
-    } else {
-        tgcontour_list contours;
-        contours.clear();
-        subject.SetContours( contours );
-    }    
+        assert(poLayer != NULL);
+        processLayer(poLayer, polys );
+    }
+    
+    GDALClose( poDS );    
+    
+    for ( unsigned int i=0; i<polys.size(); i++ ) {
+        SG_LOG( SG_GENERAL, SG_ALERT, "return poly " << i << " with material " << polys[i].getMeta().getMaterial() );
+    }        
 }
-#endif

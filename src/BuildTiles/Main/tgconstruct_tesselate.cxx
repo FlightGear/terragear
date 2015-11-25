@@ -27,10 +27,11 @@
 
 #include <simgear/debug/logstream.hxx>
 
-#include <terragear/tg_shapefile.hxx>
+//#include <terragear/tg_shapefile.hxx>
 
 #include "tgconstruct.hxx"
 
+#if 0
 void TGConstruct::TesselatePolys( void )
 {
     // tesselate the polygons and prepair them for final output
@@ -67,3 +68,4 @@ void TGConstruct::TesselatePolys( void )
         }
     }
 }
+#endif

@@ -30,26 +30,68 @@
 #include <simgear/debug/logstream.hxx>
 #include <simgear/timing/timestamp.hxx>
 
-#include <terragear/tg_shapefile.hxx>
+// #include <terragear/tg_shapefile.hxx>
 
 #include "tgconstruct.hxx"
 
-using std::string;
+int TGConstruct::LoadLandclassPolys( void )
+{
+    std::string base  = bucket.gen_base_path();
+    std::string index = bucket.gen_index_str(); 
+    std::string poly_path;
+    tgPolygonSetList polys;
+    unsigned int total_polys_read = 0;
+    
+    // load 2D polygons from correct path
+    poly_path = work_base + "/" + base + '/' + index;
+    simgear::Dir d(poly_path);
+    if (d.exists() ) {    
+        simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
+        SG_LOG( SG_CLIPPER, SG_INFO, files.size() << " Files in " << d.path() );
+        
+        BOOST_FOREACH(const SGPath& p, files) {
+            std::string lext = p.complete_lower_extension();
 
-static unsigned int cur_poly_id = 0;
+            // look for .shp files to load
+            if (lext == "shp") {
+                SG_LOG(SG_GENERAL, SG_INFO, "load: " << p);
+                
+                // shapefile contains multiple polygons.
+                // read an array of them
+                tgPolygonSet::fromShapefile( p, polys );
+                
+                SG_LOG(SG_GENERAL, SG_INFO, "tgShapefile::ToPolygons returned " << polys.size() << " polygons" );
+                
+                for ( unsigned int i=0; i<polys.size(); i++ ) {
+                    std::string material = polys[i].getMeta().getMaterial();
 
-#if 1
+                    SG_LOG(SG_GENERAL, SG_INFO, "tgShapefile::ToPolygons poly " << i << " material is " << material );
+
+                    int area = area_defs.get_area_priority( material );
+
+                    SG_LOG(SG_GENERAL, SG_INFO, "tgShapefile::ToPolygons poly " << i << " area is " << area );
+                    
+                    tileMesh.addPoly( area, polys[i] );
+                }
+            }
+        }
+    }
+    
+    return 0;
+}
+
+#if 0
 // when do we add the nodes when using CGAL? TBD
 // maybe just keep a list of the fixed elevation nodes.
 int TGConstruct::LoadLandclassPolys( void ) {
     int i;
     
-    string base  = bucket.gen_base_path();
-    string index = bucket.gen_index_str(); 
-    string poly_path;
+    std::string base  = bucket.gen_base_path();
+    std::string index = bucket.gen_index_str(); 
+    std::string poly_path;
     unsigned int total_polys_read = 0;
-    tgPolygon poly;
-    tgpolygon_list polys;
+    //tgPolygon poly;
+    //tgpolygon_list polys;
     
     SGTimeStamp addnode;
     SGTimeStamp start, end;
@@ -126,7 +168,9 @@ int TGConstruct::LoadLandclassPolys( void ) {
     
     return total_polys_read;
 }
-#else
+#endif
+
+#if 0
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
 int TGConstruct::LoadLandclassPolys( void ) {
@@ -227,6 +271,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
 }
 #endif
 
+#if 0
 bool TGConstruct::CheckMatchingNode( SGGeod& node, bool road, bool fixed )
 {
     bool   matched = false;
@@ -302,7 +347,9 @@ bool TGConstruct::CheckMatchingNode( SGGeod& node, bool road, bool fixed )
     
     return added;
 }
+#endif
 
+#if 0
 SGGeod TGConstruct::GetNearestNodeLongitude( const SGGeod& node, const std::vector<SGGeod>& selection )
 {
     double       min_dist = std::numeric_limits<double>::infinity();
@@ -319,7 +366,9 @@ SGGeod TGConstruct::GetNearestNodeLongitude( const SGGeod& node, const std::vect
     
     return selection[min_idx];
 }
+#endif
 
+#if 0
 SGGeod TGConstruct::GetNearestNodeLatitude( const SGGeod& node, const std::vector<SGGeod>& selection )
 {
     double       min_dist = std::numeric_limits<double>::infinity();
@@ -336,3 +385,4 @@ SGGeod TGConstruct::GetNearestNodeLatitude( const SGGeod& node, const std::vecto
     
     return selection[min_idx];
 }
+#endif

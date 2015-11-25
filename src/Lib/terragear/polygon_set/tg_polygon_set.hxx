@@ -84,6 +84,7 @@ public:
         max_clipv  = max_v;
     }
     
+    const std::string& getMaterial( void ) { return material; }
     void setMaterial( const std::string& mat ) { material = mat; }
     
     void setTextureRef( const cgalPoly_Point& r, double w, double l, double h ) { 
@@ -191,6 +192,7 @@ public:
     void                                toShapefile( OGRLayer* layer ) const;
 
     static void                         toShapefile( const cgalPoly_Polygon& poly, const char* datasource, const char* layer );
+    static void                         fromShapefile( const SGPath& p, tgPolygonSetList& polys );
 
     void                                toSegments( std::vector<cgalPoly_Segment>& segs, bool withHoles ) const;
 
@@ -225,6 +227,9 @@ private:
     void                                toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const;
     void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const;
     void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& arr ) const;
+
+    static void                         fromShapefile( const OGRFeatureDefn* poFDefn, OGRCoordinateTransformation* poCT, OGRFeature* poFeature, tgPolygonSetList& polys );
+    static void                         processLayer( OGRLayer* poLayer, tgPolygonSetList& polys );
 
     void                                polygonToSegmentList( const cgalPoly_Polygon& p, std::vector<cgalPoly_Segment>& segs ) const;
     void                                findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const;

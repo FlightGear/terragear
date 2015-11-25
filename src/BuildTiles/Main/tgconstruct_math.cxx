@@ -28,6 +28,7 @@
 
 #include "tgconstruct.hxx"
 
+#if 0
 SGVec3f TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d& p2, const SGVec3d& p3 ) const {
     SGVec3f v1, v2;
     SGVec3f normal;
@@ -65,7 +66,9 @@ SGVec3f TGConstruct::calc_normal( double area, const SGVec3d& p1, const SGVec3d&
 
     return normal;
 }
+#endif
 
+#if 0
 void TGConstruct::calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGVec3d>& wgs84_nodes, tgPolygon& poly ) {
     // for each face in the superpoly, calculate a face normal
     SGVec3f     normal;
@@ -87,7 +90,9 @@ void TGConstruct::calc_normals( std::vector<SGGeod>& geod_nodes, std::vector<SGV
         poly.SetTriFaceNormal( tri, normal );
     }
 }
+#endif
 
+#if 0
 void TGConstruct::CalcFaceNormals( void )
 {
     // traverse the superpols, and calc normals for each tri within
@@ -104,7 +109,9 @@ void TGConstruct::CalcFaceNormals( void )
         }
     }
 }
+#endif
 
+#if 0
 void TGConstruct::CalcPointNormals( void )
 {
     // traverse triangle structure building the face normal table
@@ -163,3 +170,4 @@ void TGConstruct::CalcPointNormals( void )
         nodes.SetNormal( i, average );
     }
 }
+#endif

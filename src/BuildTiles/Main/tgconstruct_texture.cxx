@@ -28,6 +28,7 @@
 #include <simgear/debug/logstream.hxx>
 #include "tgconstruct.hxx"
 
+#if 0
 void TGConstruct::CalcTextureCoordinates( void )
 {
     for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
@@ -41,3 +42,4 @@ void TGConstruct::CalcTextureCoordinates( void )
         }
     }
 }
+#endif

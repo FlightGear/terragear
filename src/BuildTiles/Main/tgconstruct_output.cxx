@@ -24,29 +24,29 @@
 #  include <config.h>
 #endif
 
-#include <simgear/math/SGGeometry.hxx>
+//#include <simgear/math/SGGeometry.hxx>
 #include <simgear/misc/sg_dir.hxx>
-#include <simgear/io/sg_binobj.hxx>
-#include <simgear/structure/exception.hxx>
+//#include <simgear/io/sg_binobj.hxx>
+//#include <simgear/structure/exception.hxx>
 #include <simgear/debug/logstream.hxx>
 
-#include <terragear/tg_unique_vec3f.hxx>
-#include <terragear/tg_unique_vec2f.hxx>
+//#include <terragear/tg_unique_vec3f.hxx>
+//#include <terragear/tg_unique_vec2f.hxx>
 
 #include "tgconstruct.hxx"
 
-using std::string;
+//using std::string;
 
 // collect custom objects and move to scenery area
 void TGConstruct::AddCustomObjects( void ) {
     // Create/open the output .stg file for writing
     SGPath dest_d(output_base.c_str());
     dest_d.append(bucket.gen_base_path().c_str());
-    string dest_dir = dest_d.str_native();
+    std::string dest_dir = dest_d.str_native();
     SGPath dest_i(dest_d);
     dest_i.append(bucket.gen_index_str());
     dest_i.concat(".stg");
-    string dest_ind = dest_i.str_native();
+    std::string dest_ind = dest_i.str_native();
 
     FILE *fp;
     
@@ -71,7 +71,7 @@ void TGConstruct::AddCustomObjects( void ) {
     SGPath index(base);
     index.append( bucket.gen_index_str() );
     index.concat(".ind");
-    string index_file = index.str_native();
+    std::string index_file = index.str_native();
 
     sg_gzifstream in( index_file );
 
@@ -93,11 +93,11 @@ void TGConstruct::AddCustomObjects( void ) {
                     SGPath srcbase(base);
                     srcbase.append(name);
                     srcbase.concat(".gz");
-                    string basecom = srcbase.str_native();
+                    std::string basecom = srcbase.str_native();
 #ifdef _MSC_VER
-                    string command = "copy " + basecom + " " + dest_dir;
+                    std::string command = "copy " + basecom + " " + dest_dir;
 #else
-                    string command = "cp " + basecom + " " + dest_dir;
+                    std::string command = "cp " + basecom + " " + dest_dir;
 #endif
                     SG_LOG( SG_GENERAL, SG_DEBUG, "running " << command );
                     
@@ -120,7 +120,7 @@ void TGConstruct::AddCustomObjects( void ) {
         SGPath index(base);
         index.append( bucket.gen_index_str() );
         index.concat(".ind");
-        string index_file = index.str_native();
+        std::string index_file = index.str_native();
 
         sg_gzifstream in( index_file );
 
@@ -142,11 +142,11 @@ void TGConstruct::AddCustomObjects( void ) {
                         SGPath srcbase(base);
                         srcbase.append(name);
                         srcbase.concat(".gz");
-                        string basecom = srcbase.str_native();
+                        std::string basecom = srcbase.str_native();
 #ifdef _MSC_VER
-                        string command = "copy " + basecom + " " + dest_dir;
+                        std::string command = "copy " + basecom + " " + dest_dir;
 #else
-                        string command = "cp " + basecom + " " + dest_dir;
+                        std::string command = "cp " + basecom + " " + dest_dir;
 #endif
                         SG_LOG( SG_GENERAL, SG_DEBUG, "running " << command );
                         
@@ -169,6 +169,7 @@ void TGConstruct::AddCustomObjects( void ) {
     lock->unlock();
 }
 
+#if 0
 void TGConstruct::WriteBtgFile( void )
 {
     UniqueSGVec3fSet normals;
@@ -262,9 +263,11 @@ void TGConstruct::WriteBtgFile( void )
         }
     }
 }
+#endif
 
+#if 0
 void TGConstruct::WriteMeshFile( void )
 {
     
 }
-
+#endif

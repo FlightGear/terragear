@@ -27,9 +27,9 @@
 #include <simgear/debug/logstream.hxx>
 
 #include <terragear/polygon_set/tg_polygon_accumulator.hxx>
-#include <terragear/tg_shapefile.hxx>
-#include <terragear/tg_misc.hxx>
-#include <terragear/tg_arrangement.hxx>
+//#include <terragear/tg_shapefile.hxx>
+//#include <terragear/tg_misc.hxx>
+//#include <terragear/tg_arrangement.hxx>
 
 #include "tgconstruct.hxx"
 
@@ -43,8 +43,7 @@
 //    The polygon is now a valid Polygon_2_with_holes.  
 //    It should always be able to clip against the others.
 
-using std::string;
-
+#if 0
 #if USE_CGAL
 bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon clipped, tmp;
@@ -483,4 +482,6 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     return true;
 }
+#endif
+
 #endif

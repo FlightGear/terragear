@@ -38,8 +38,9 @@ void Airport::BuildBase( void )
     tgPolygonSetList innerBasePolys, outerBasePolys;
     bool             userBoundary = false;
 
-    /* initialize tgAreas for the number of layers we have */
-    baseMesh.init( AIRPORT_NUM_AREAS, area_names, icao );
+    /* initialize tgMesh for the number of layers we have */
+    baseMesh.initPriorities( area_names );
+    baseMesh.initDebug( icao );
 
     if (boundary.size()) {
         TG_LOG(SG_GENERAL, SG_INFO, "Build Base with user defined boundary" );

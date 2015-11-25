@@ -38,11 +38,11 @@
 #include "priorities.hxx"
 #include "usgs.hxx"
 
-using std::string;
-using std::vector;
+//using std::string;
+//using std::vector;
 
 // display usage and exit
-static void usage( const string name ) {
+static void usage( const std::string& name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << name);
     SG_LOG(SG_GENERAL, SG_ALERT, "[ --output-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --work-dir=<directory>");
@@ -76,24 +76,24 @@ void RemoveDuplicateBuckets( std::vector<SGBucket>& keep, std::vector<SGBucket>&
 }
 
 int main(int argc, char **argv) {
-    string output_dir = ".";
-    string work_dir = ".";
-    string share_dir = "";
-    string match_dir = "";
-    string cover = "";
-    string priorities_file = DEFAULT_PRIORITIES_FILE;
-    string usgs_map_file = DEFAULT_USGS_MAPFILE;
+    std::string output_dir = ".";
+    std::string work_dir = ".";
+    std::string share_dir = "";
+    std::string match_dir = "";
+    std::string cover = "";
+    std::string priorities_file = DEFAULT_PRIORITIES_FILE;
+    std::string usgs_map_file = DEFAULT_USGS_MAPFILE;
     SGGeod min, max;
     long tile_id = -1;
     int num_threads = 1;
 
-    vector<string> load_dirs;
+    std::vector<std::string> load_dirs;
     bool ignoreLandmass = false;
     double nudge=0.0;
 
-    string debug_dir = ".";
-    vector<string> debug_shape_defs;
-    vector<string> debug_area_defs;
+    std::string debug_dir = ".";
+    std::vector<std::string> debug_shape_defs;
+    std::vector<std::string> debug_area_defs;
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
     //
     int arg_pos;
     for (arg_pos = 1; arg_pos < argc; arg_pos++) {
-        string arg = argv[arg_pos];
+        std::string arg = argv[arg_pos];
 
         if (arg.find("--output-dir=") == 0) {
             output_dir = arg.substr(13);
@@ -218,7 +218,7 @@ int main(int argc, char **argv) {
         TGConstruct* construct = new TGConstruct( areas, 1, wq, &filelock );
         //construct->set_cover( cover );
         construct->set_paths( work_dir, share_dir, match_dir, output_dir, load_dirs );        
-        construct->CreateMatchedEdgeFiles( matchList );
+        //construct->CreateMatchedEdgeFiles( matchList );
         delete construct;
     }
     

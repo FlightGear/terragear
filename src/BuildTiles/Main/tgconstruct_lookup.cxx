@@ -29,6 +29,7 @@
 
 #include "tgconstruct.hxx"
 
+#if 0
 void TGConstruct::LookupUnusedNodes( void )
 {
     // for each node, traverse all the triangles - and create face lists
@@ -47,7 +48,9 @@ void TGConstruct::LookupUnusedNodes( void )
     
     nodes.DeleteUnused();
 }
+#endif
 
+#if 0
 // This function populates the Superpoly tri_idx polygon.
 // This polygon is a mirror of tris, except the verticies are
 // indexes into the node array (cast as unsigned long)
@@ -72,7 +75,9 @@ void TGConstruct::LookupNodesPerVertex( void )
         }
     }
 }
+#endif
 
+#if 0
 void TGConstruct::LookupFacesPerNode( void )
 {
     // Add each face that includes a node to the node's face list
@@ -89,3 +94,4 @@ void TGConstruct::LookupFacesPerNode( void )
         }
     }
 }
+#endif

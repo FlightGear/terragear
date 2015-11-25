@@ -28,8 +28,9 @@
 
 #include "tgconstruct.hxx"
 
-using std::string;
+//using std::string;
 
+#if 0
 // Load elevation data from an Array file (a regular grid of elevation data)
 // and return list of fitted nodes.
 void TGConstruct::LoadElevationArray( bool add_nodes ) {
@@ -62,7 +63,9 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
         }
     }
 }
+#endif
 
+#if 0
 // fix the elevations of the geodetic nodes
 // This should be done in the nodes class itself, except for the need for the triangle type
 // hopefully, this will get better when we have the area lookup via superpoly...
@@ -214,3 +217,4 @@ void TGConstruct::CalcElevations( void )
         }
     }
 }
+#endif

@@ -25,35 +25,37 @@
 #  include <config.h>
 #endif
 
-#include <iomanip>
+//#include <iomanip>
 
 #include <simgear/debug/logstream.hxx>
 #include "tgconstruct.hxx"
-#include "tgconstruct_mesh.hxx"
+//#include "tgconstruct_mesh.hxx"
 
-const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
+// const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
 
 // Constructor
 TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q, SGMutex* l) :
         area_defs(areas),
-        workQueue(q),
-        stage(s),
-        ignoreLandmass(false),
-        debug_all(false),
-        ds_id((void*)-1),
-        isOcean(false)
+        workQueue(q)
+        //stage(s),
+        //ignoreLandmass(false),
+        //debug_all(false),
+        //ds_id((void*)-1),
+        //isOcean(false)
 {
-    total_tiles = q.size();
-    num_areas = areas.size();
-    
+    total_tiles = q.size();   
     lock = l;
+    
+    /* initialize tgMesh for the number of layers we have */
+    std::vector<std::string> area_names = area_defs.get_name_array();
+    tileMesh.initPriorities( area_names );    
 }
 
 
 // Destructor
 TGConstruct::~TGConstruct() { 
     // All Nodes
-    nodes.clear();
+    //nodes.clear();
 }
 
 // TGConstruct: Setup
@@ -68,8 +70,8 @@ void TGConstruct::set_paths( const std::string work, const std::string share,
 }
                              
 void TGConstruct::set_options( bool ignore_lm, double n ) {
-    ignoreLandmass = ignore_lm;
-    nudge          = n;
+    //ignoreLandmass = ignore_lm;
+    //nudge          = n;
 }
 
 void TGConstruct::run()
@@ -84,40 +86,54 @@ void TGConstruct::run()
         // assume non ocean tile until proven otherwise
         isOcean = false;
 
+        tileMesh.initDebug( bucket.gen_index_str() );
+        
         // Initialize the landclass lists with the number of area definitions
-        polys_in.init( num_areas, area_defs.get_name_array() );        
-        polys_clipped.init( num_areas, area_defs.get_name_array() );
+        //polys_in.init( num_areas, area_defs.get_name_array() );        
+        //polys_clipped.init( num_areas, area_defs.get_name_array() );
 
         SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tiles_complete << " of " << total_tiles << " using thread " << current() );
 
         // Init debug shapes and area for this bucket
-        get_debug();
-        if ( debug_shapes.size() || debug_all ) {
-            sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
-        } else {
-            strcpy( ds_name, "" );
-        }
+        //get_debug();
+        //if ( debug_shapes.size() || debug_all ) {
+        //    sprintf(ds_name, "%s/constructdbg_%s", debug_path.c_str(), bucket.gen_index_str().c_str() );
+        //} else {
+        //    strcpy( ds_name, "" );
+        //}
 
-        if ( stage > 1 ) {
-            LoadFromIntermediateFiles( stage-1 );
-            LoadSharedEdgeData( stage-1 );
-        }
+        // STEP 1 - read in the polygon soup for this tile
+        LoadLandclassPolys();
+        
+        // Step 2 - add the fitted nodes ( important elevation points )
+        // add them to the mesh - which adds them in triangulation
+        // LoadElevation();
+        
+        // generate the tile
+        tileMesh.generate();
 
-        switch( stage ) {
-            case 1:
-                // STEP 1)
-                // Load grid of elevation data (Array), and add the nodes
-                LoadElevationArray( true );
+        tileMesh.clear();
+        
+        //if ( stage > 1 ) {
+        //    LoadFromIntermediateFiles( stage-1 );
+        //    LoadSharedEdgeData( stage-1 );
+        //}
+
+        //switch( stage ) {
+        //    case 1:
+        //        // STEP 1)
+        //        // Load grid of elevation data (Array), and add the nodes
+        //        LoadElevationArray( true );
 
                 // STEP 2)
                 // Clip 2D polygons against one another
-                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Loading landclass polys" );
-                if ( LoadLandclassPolys() == 0 ) {
-                    // don't build the tile if there is no 2d data ... it *must*
-                    // be ocean and the sim can build the tile on the fly.
-                    isOcean = true;
-                    break;
-                }
+        //        SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Loading landclass polys" );
+        //        if ( LoadLandclassPolys() == 0 ) {
+        //            // don't build the tile if there is no 2d data ... it *must*
+        //            // be ocean and the sim can build the tile on the fly.
+        //            isOcean = true;
+        //            break;
+        //        }
 
 #if 0
                 // STEP 3)
@@ -128,17 +144,17 @@ void TGConstruct::run()
                 }
 #endif
 
-                // STEP 4)
-                // Clip the Landclass polygons
-                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Clipping landclass polys" );
-                ClipLandclassPolys();
-                {
-                    // TEST TEST TEST Generate a mesh from the clipped polys
-                    tgMesh  mesh(area_defs, polys_clipped);
-                    mesh.ToShapefile("./mesh");
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Saved mesh" );
-                    exit(0);
-                }
+        //        // STEP 4)
+        //        // Clip the Landclass polygons
+        //        SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Clipping landclass polys" );
+        //        ClipLandclassPolys();
+        //        {
+        //            // TEST TEST TEST Generate a mesh from the clipped polys
+        //            tgMesh  mesh(area_defs, polys_clipped);
+        //            mesh.ToShapefile("./mesh");
+        //            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Saved mesh" );
+        //            exit(0);
+        //        }
                 // Now make sure any newly added intersection nodes are added to the tgnodes
                 // polys_clipped.SyncNodes( nodes );
                 
@@ -151,32 +167,32 @@ void TGConstruct::run()
                 // Now make sure any newly added intersection nodes are added to the tgnodes
                 //SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Syn nodes" );
                 //polys_clipped.SyncNodes( nodes );                
-                break;
+        //        break;
 
-            case 2:
-                if ( !IsOceanTile() ) {
-                    // STEP 6)
-                    // Need the array of elevation data for stage 2, but don't add the nodes - we already have them
-                    LoadElevationArray( false );
+        //    case 2:
+        //        if ( !IsOceanTile() ) {
+        //            // STEP 6)
+        //            // Need the array of elevation data for stage 2, but don't add the nodes - we already have them
+        //            LoadElevationArray( false );
 
                     // STEP 7)
                     // Fix T-Junctions by finding nodes that lie close to polygon edges, and
                     // inserting them into the edge
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Fix T-Junctions" );
-                    nodes.init_spacial_query();
-                    FixTJunctions();
+        //            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Fix T-Junctions" );
+        //            nodes.init_spacial_query();
+        //            FixTJunctions();
 
-                    // Now make sure any newly added intersection nodes are added to the tgnodes
-                    polys_clipped.SyncNodes( nodes );
+        //            // Now make sure any newly added intersection nodes are added to the tgnodes
+        //            polys_clipped.SyncNodes( nodes );
                     
                     // STEP 8)
                     // Generate triangles - we can't generate the node-face lookup table
                     // until all polys are tesselated, as extra nodes can still be generated
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Tesselate" );
-                    TesselatePolys();
+        //            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Tesselate" );
+        //            TesselatePolys();
 
                     // Now make sure any newly added intersection nodes are added to the tgnodes
-                    polys_clipped.SyncNodes( nodes );
+        //            polys_clipped.SyncNodes( nodes );
                     
                     // STEP 9)
                     // We have all the nodes we need (plus extra that were clipped away)
@@ -186,13 +202,13 @@ void TGConstruct::run()
                     // STEP 10)
                     // Generate triangle vertex coordinates to node index lists
                     // NOTE: After this point, no new nodes can be added
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Nodes Per Vertex");
-                    LookupNodesPerVertex();
+        //            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Nodes Per Vertex");
+        //            LookupNodesPerVertex();
 
                     // STEP 11)
                     // Interpolate elevations, and flatten stuff
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Elevation Per Node");
-                    CalcElevations();
+        //            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Elevation Per Node");
+        //            CalcElevations();
 #if 0  // ROADS ON AIRPORT DEBUGGING
                     // debug : dump the nodes
                     nodes.ToShapefile( bucket.gen_index_str() );
@@ -202,34 +218,34 @@ void TGConstruct::run()
                     // ONLY do this when saving edge nodes...
                     // STEP 11)
                     // Generate face-connected list - needed for saving the edge data
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Faces Per Node");
-                    LookupFacesPerNode();
-                }
-                break;
+      //              SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Faces Per Node");
+      //              LookupFacesPerNode();
+      //          }
+      //          break;
 
-            case 3:
-                if ( !IsOceanTile() ) {
+      //      case 3:
+      //          if ( !IsOceanTile() ) {
                     // STEP 12
                     // Generate face-connectd list (again) - it was needed to save faces of the
                     // edge nodes, but saving the entire tile is i/o intensive - it's faster
                     // too just recompute the list
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Faces Per Node (again)");
-                    LookupFacesPerNode();
+      //              SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Lookup Faces Per Node (again)");
+      //              LookupFacesPerNode();
 
                     // STEP 13)
                     // Average out the elevation for nodes on tile boundaries
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Average Edge Node Elevations");
-                    AverageEdgeElevations();
+      //              SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Average Edge Node Elevations");
+      //              AverageEdgeElevations();
 
                     // STEP 14)
                     // Calculate Face Normals
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Face Normals");
-                    CalcFaceNormals();
+      //              SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Face Normals");
+      //              CalcFaceNormals();
 
                     // STEP 15)
                     // Calculate Point Normals
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Point Normals");
-                    CalcPointNormals();
+      //              SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Point Normals");
+      //              CalcPointNormals();
 
 #if 0
                     // STEP 16)
@@ -243,43 +259,43 @@ void TGConstruct::run()
 
                     // STEP 17)
                     // Calculate Texture Coordinates
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Texture Coordinates");
-                    CalcTextureCoordinates();
+     //               SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Calculate Texture Coordinates");
+     //               CalcTextureCoordinates();
 
                     // STEP 18)
                     // Generate the mesh file for LOD
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Mesh File");
-                    WriteMeshFile();
+    //                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Mesh File");
+    //                WriteMeshFile();
                     
                     // STEP 19)
                     // Generate the btg file
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate BTG File");
-                    WriteBtgFile();
+    //                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate BTG File");
+     //               WriteBtgFile();
 
                     // STEP 20)
                     // Write Custom objects to .stg file
-                    SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Custom Objects");
-                    AddCustomObjects();
-                }
-                break;
-        }
+   //                 SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Generate Custom Objects");
+   //                 AddCustomObjects();
+   //             }
+   //             break;
+   //     }
 
-        if ( ( stage < 3 ) && ( !IsOceanTile() ) ) {
-            // Save data for next stage
-            if ( stage == 2 ) {
-                nodes.init_spacial_query(); // for stage 2 only...
-            }
-            SaveSharedEdgeData( stage );
-            SaveToIntermediateFiles( stage );
-        }
+   //     if ( ( stage < 3 ) && ( !IsOceanTile() ) ) {
+   //         // Save data for next stage
+   //         if ( stage == 2 ) {
+   //             nodes.init_spacial_query(); // for stage 2 only...
+   //         }
+    //        SaveSharedEdgeData( stage );
+    //        SaveToIntermediateFiles( stage );
+    //    }
 
         // Clean up for next work queue item
-        array.unload();
-        polys_in.clear();
-        polys_clipped.clear();
-        nodes.clear();
-        neighbor_faces.clear();
-        debug_shapes.clear();
-        debug_areas.clear();
+   //     array.unload();
+   //     polys_in.clear();
+   //     polys_clipped.clear();
+   //     nodes.clear();
+   //     neighbor_faces.clear();
+   //     debug_shapes.clear();
+   //     debug_areas.clear();
     }
 }

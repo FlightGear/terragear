@@ -2,16 +2,39 @@
 
 #include "tg_mesh.hxx"
 
-void tgMesh::init( unsigned int pris, const std::vector<std::string>& names, const std::string& dbgRoot )
+void tgMesh::initPriorities( const std::vector<std::string>& names )
 {
-    numPriorities = pris;
     priorityNames = names;
-    snprintf(datasource, sizeof(datasource), "./%s", dbgRoot.c_str() );
+    numPriorities = names.size();
    
     for ( unsigned int i=0; i<numPriorities; i++ ) {
         tgPolygonSetList lc;
         sourcePolys.push_back( lc );
     }
+}
+
+void tgMesh::initDebug( const std::string& dbgRoot )
+{
+    snprintf(datasource, sizeof(datasource), "./%s", dbgRoot.c_str() );
+   
+    sourcePolys.clear();
+    for ( unsigned int i=0; i<numPriorities; i++ ) {
+        tgPolygonSetList lc;
+        sourcePolys.push_back( lc );
+    }
+}
+
+void tgMesh::clear( void )
+{
+    // clear source polys
+    for ( unsigned int i=0; i<numPriorities; i++ ) {
+        sourcePolys.clear();
+    }
+    
+    meshPointLocation.detach();
+    meshArr.clear();
+    meshTriangulation.clear();
+    metaLookup.clear();    
 }
 
 void tgMesh::addPoly( unsigned int priority, const tgPolygonSet& poly )
@@ -31,24 +54,38 @@ tgPolygonSet tgMesh::join( unsigned int priority, const tgPolygonSetMeta& meta )
 
 void tgMesh::generate( void )
 {    
-    // mesh generation from polygon soup :)
+    bool havePolys = false;
 
-    // Step 1 - clip polys against one another - highest priority first ( on top )
-    clipPolys();
+    for ( unsigned int i=0; i<numPriorities && !havePolys; i++ ) {
+        std::vector<tgPolygonSet>::iterator poly_it;
+        if ( !sourcePolys[i].empty() ) {
+            havePolys = true;
+        }
+    }
     
-    // Step 2 - insert clipped polys into an arrangement.  
-    // From this point on, we don't need the individual polygons.
-    arrangePolys();
+    // mesh generation from polygon soup :)
+    if ( havePolys ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "have source polys" );
+
+        // Step 1 - clip polys against one another - highest priority first ( on top )
+        clipPolys();
     
-    // step 3 - clean up the arrangement - cluster nodes that are too close - don't want
-    // really small triangles blowing up the refined mesh.
-    // NOTE / TODO: 
-    // The cluster size MUST be smaller than the minimum distance of interiorPoints.
-    // we should remember be checking the delta in interiorPoints to see if we have 
-    // polys that don't meat this criteria.
-    // and if it doesn't - what do we do?
-    cleanArrangement();
+        // Step 2 - insert clipped polys into an arrangement.  
+        // From this point on, we don't need the individual polygons.
+        arrangePolys();
     
-    // step 4 - create constrained triangulation with arrangement edges as the constraints
-    constrainedTriangulate();    
+        // step 3 - clean up the arrangement - cluster nodes that are too close - don't want
+        // really small triangles blowing up the refined mesh.
+        // NOTE / TODO: 
+        // The cluster size MUST be smaller than the minimum distance of interiorPoints.
+        // we should remember be checking the delta in interiorPoints to see if we have 
+        // polys that don't meat this criteria.
+        // and if it doesn't - what do we do?
+        cleanArrangement();
+    
+        // step 4 - create constrained triangulation with arrangement edges as the constraints
+        constrainedTriangulate();
+    } else {
+        SG_LOG(SG_GENERAL, SG_ALERT, "no source polys" );        
+    }
 }

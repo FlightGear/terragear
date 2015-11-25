@@ -32,6 +32,7 @@
 
 #include "tgconstruct.hxx"
 
+#if 0
 void TGConstruct::FixTJunctions( void ) {
     int before, after;
     std::vector<TGNode*> points;
@@ -57,6 +58,7 @@ void TGConstruct::FixTJunctions( void ) {
         }
     }
 }
+#endif
 
 #if 0
 // Attempt to merge slivers into a list of polygons.
@@ -81,6 +83,7 @@ void TGConstruct::merge_slivers( TGLandclass& clipped,  tgcontour_list& sliver_l
 }
 #endif
 
+#if 0
 void TGConstruct::CleanClippedPolys() {
     // Clean the polys
     for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
@@ -121,7 +124,9 @@ void TGConstruct::CleanClippedPolys() {
         }
     }
 }
+#endif
 
+#if 0
 void TGConstruct::AverageEdgeElevations( void )
 {
     for ( unsigned int i = 0; i < neighbor_faces.size(); i++ ) {
@@ -148,3 +153,4 @@ void TGConstruct::AverageEdgeElevations( void )
         }
     }
 }
+#endif

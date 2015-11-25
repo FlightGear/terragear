@@ -36,10 +36,11 @@ void TGConstruct::set_debug( std::string path, std::vector<string> a_defs, std::
 {
     debug_path = path;
 
-    debug_area_defs = a_defs;
-    debug_shape_defs = s_defs;
+    //debug_area_defs = a_defs;
+    //debug_shape_defs = s_defs;
 }
 
+#if 0
 void TGConstruct::get_debug( void )
 {
     // clear out any previous entries
@@ -101,7 +102,9 @@ void TGConstruct::get_debug( void )
         }
     }
 }
+#endif
 
+#if 0
 bool TGConstruct::IsDebugShape( unsigned int id )
 {
     bool is_debug = false;
@@ -120,7 +123,9 @@ bool TGConstruct::IsDebugShape( unsigned int id )
 
     return is_debug;
 }
+#endif
 
+#if 0
 bool TGConstruct::IsDebugArea( unsigned int area )
 {
     bool is_debug = false;
@@ -139,3 +144,4 @@ bool TGConstruct::IsDebugArea( unsigned int area )
 
     return is_debug;
 }
+#endif
