@@ -33,7 +33,6 @@ Canal			stream
 Glacier			other	# Solid ice/snow
 PackIce			other	# Water with ice packs
 PolarIce		other
-Ocean			ocean
 Urban			other	# Densely-populated city or large town
 SubUrban		other	# Densely-populated city or large town
 Town			other	# Small town or village
@@ -101,3 +100,5 @@ Default			landmass # any land area not covered otherwise
 Void			other
 Null			other
 Unknown			other
+
+Ocean           ocean

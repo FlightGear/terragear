@@ -7,18 +7,33 @@
 #include <terragear/tg_cluster.hxx>
 
 #include "tg_mesh.hxx"
+#include "../polygon_set/tg_polygon_set.hxx"
 
 // perform polygon clipping ( the soup )
 void tgMesh::clipPolys( void )
 {
     tgAccumulator accum;
+    cgalPoly_Polygon bucketPoly;
+    
+    if ( clipBucket ) {
+        // create exact bucket
+        bucketPoly.push_back( cgalPoly_Point( b.get_corner( SG_BUCKET_SW ).getLongitudeDeg(), b.get_corner( SG_BUCKET_SW ).getLatitudeDeg() ) );
+        bucketPoly.push_back( cgalPoly_Point( b.get_corner( SG_BUCKET_SE ).getLongitudeDeg(), b.get_corner( SG_BUCKET_SE ).getLatitudeDeg() ) );
+        bucketPoly.push_back( cgalPoly_Point( b.get_corner( SG_BUCKET_NE ).getLongitudeDeg(), b.get_corner( SG_BUCKET_NE ).getLatitudeDeg() ) );
+        bucketPoly.push_back( cgalPoly_Point( b.get_corner( SG_BUCKET_NW ).getLongitudeDeg(), b.get_corner( SG_BUCKET_NW ).getLatitudeDeg() ) );
+    }
     
     for ( unsigned int i=0; i<numPriorities; i++ ) {
         std::vector<tgPolygonSet>::iterator poly_it;
         for ( poly_it = sourcePolys[i].begin(); poly_it != sourcePolys[i].end(); poly_it++ ) {
             tgPolygonSet current = (*poly_it);
 
-            accum.Diff_and_Add_cgal( current );
+            accum.Diff_and_Add_cgal( current );                        
+            if ( clipBucket ) {                
+                // then clip against bucket
+                current.intersection2( bucketPoly );
+            }
+            
             poly_it->setPs( current.getPs() );
         }
     }    
@@ -36,14 +51,18 @@ void tgMesh::cleanArrangement( void )
     }
 
     // create the cluster
-    tgCluster cluster( nodes, 0.0000050 );
-  //tgCluster cluster( nodes, 0.0000025 );
+  //tgCluster cluster( nodes, 0.0001000 );    
+  //tgCluster cluster( nodes, 0.0000050 );
+    tgCluster cluster( nodes, 0.0000025 );
   //tgCluster cluster( nodes, 0.0000010 );
-    cluster.toShapefile( datasource, "cluster" );
+  //cluster.toShapefile( datasource, "cluster" );
 
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::cleanArrangment create new segments" );
+    
     // collect the original segment list, and generate a new list
     // with clustered source / target points.
     // just add the segments that still exist
+#if 1
     meshArrEdgeConstIterator eit;
     std::vector<cgalPoly_Segment> segs;
     for (eit = meshArr.edges_begin(); eit != meshArr.edges_end(); eit++) {
@@ -57,11 +76,14 @@ void tgMesh::cleanArrangement( void )
         }
     }
 
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::cleanArrangment clear old arr, and recreate" );
+    
     // wipe the original arrangement clean and regenerate with the new segment 
     // list
     meshArr.clear();
     CGAL::insert( meshArr, segs.begin(), segs.end() );
-    
+#endif
+
     // now attach the point locater to quickly find faces from points
     meshPointLocation.attach( meshArr );
     
@@ -69,6 +91,8 @@ void tgMesh::cleanArrangement( void )
     // TODO error if a face is added twice
     // this can happen if the topology is altered too much 
     // ( an interior point is no longer interior to the original poly )
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::cleanArrangment create face lookup" );
+    
     for ( unsigned int i=0; i<numPriorities; i++ ) {
         std::vector<tgPolygonSet>::iterator pit;
         for ( pit = sourcePolys[i].begin(); pit != sourcePolys[i].end(); pit++ ) {
@@ -99,6 +123,9 @@ void tgMesh::cleanArrangement( void )
             }
         }
     }
+    
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::cleanArrangment Complete" );
+    toShapefile( datasource, "arr_clean", meshArr );    
 }
 
 // insert the polygon segments into an arrangement
@@ -170,11 +197,11 @@ meshArrFaceConstHandle tgMesh::findMeshFace( const meshTriPoint& tPt )
 
 
 void tgMesh::arrangementInsert( const std::vector<tgPolygonSet>::iterator pit )
-{
+{    
     // insert the polygon boundaries ( not holes ) 
     // TODO - maybe we need holes, too?  - Haven't seen a need yet.
     std::vector<cgalPoly_Segment> segs;
-    pit->toSegments( segs, false );
+    pit->toSegments( segs, false );    
     
     CGAL::insert( meshArr, segs.begin(), segs.end() );
 }

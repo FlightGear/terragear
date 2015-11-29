@@ -86,8 +86,7 @@ public:
 #endif
 
     // paths
-    void set_paths( const std::string work, const std::string share, const std::string match, 
-                    const std::string output, const std::vector<std::string> load_dirs );    
+    void set_paths( const std::string work, const std::string dem, const std::string share, const std::string match, const std::string output );
     void set_options( bool ignore_lm, double n );
 
     // TODO : REMOVE
@@ -111,11 +110,13 @@ private:
     bool IsOceanTile()  { return isOcean; }
 
     // Load Data
-    void LoadElevationArray( bool add_nodes );
+    //void LoadElevationArray( bool add_nodes );
+    void LoadElevation( void );
     
     int  LoadLandclassPolys( void );
     void processLayer(OGRLayer* poLayer);
     int  addShape(OGRFeature *poFeature, OGRPolygon* poGeometry);
+    void addOceanPoly( void );
     
     //bool CheckMatchingNode( SGGeod& node, bool road, bool fixed );
     
@@ -191,11 +192,10 @@ private:
     
     // paths
     std::string work_base;
+    std::string dem_base;
     std::string output_base;
     std::string share_base;
     std::string match_base;
-
-    std::vector<std::string> load_dirs;
 
     //const static double gSnap;      // approx 1 mm
 
@@ -231,8 +231,10 @@ private:
     // Elevation data
     tgArray array;
 
+    std::vector<meshTriPoint>     elevationPoints;
     tgMesh  tileMesh;
 
+    
     // land class polygons
     //tgAreas polys_in;
     //tgAreas polys_clipped;

@@ -11,17 +11,19 @@ void tgMesh::initPriorities( const std::vector<std::string>& names )
         tgPolygonSetList lc;
         sourcePolys.push_back( lc );
     }
+    
+    clipBucket = false;
 }
 
 void tgMesh::initDebug( const std::string& dbgRoot )
 {
-    snprintf(datasource, sizeof(datasource), "./%s", dbgRoot.c_str() );
-   
-    sourcePolys.clear();
-    for ( unsigned int i=0; i<numPriorities; i++ ) {
-        tgPolygonSetList lc;
-        sourcePolys.push_back( lc );
-    }
+    datasource = dbgRoot;
+}
+
+void tgMesh::clipAgainstBucket( const SGBucket& bucket ) 
+{
+    clipBucket = true;
+    b = bucket;
 }
 
 void tgMesh::clear( void )
@@ -30,11 +32,24 @@ void tgMesh::clear( void )
     for ( unsigned int i=0; i<numPriorities; i++ ) {
         sourcePolys.clear();
     }
+    sourcePoints.clear();
     
     meshPointLocation.detach();
     meshArr.clear();
     meshTriangulation.clear();
     metaLookup.clear();    
+}
+
+bool tgMesh::empty( void )
+{
+    bool empty = true;
+    
+    // check source polys
+    for ( unsigned int i=0; empty && i<numPriorities; i++ ) {
+        empty = sourcePolys.empty();
+    }
+    
+    return empty;
 }
 
 void tgMesh::addPoly( unsigned int priority, const tgPolygonSet& poly )
@@ -45,6 +60,11 @@ void tgMesh::addPoly( unsigned int priority, const tgPolygonSet& poly )
 void tgMesh::addPolys( unsigned int priority, const tgPolygonSetList& polys )
 {
     sourcePolys[priority].insert( sourcePolys[priority].end(), polys.begin(), polys.end() );
+}
+
+void tgMesh::addPoints( const std::vector<meshTriPoint>& points )
+{
+    sourcePoints.insert( sourcePoints.end(), points.begin(), points.end() );    
 }
 
 tgPolygonSet tgMesh::join( unsigned int priority, const tgPolygonSetMeta& meta )
@@ -88,4 +108,10 @@ void tgMesh::generate( void )
     } else {
         SG_LOG(SG_GENERAL, SG_ALERT, "no source polys" );        
     }
+}
+
+void tgMesh::save( const std::string& path )
+{
+    toShapefile( path, "stage1_arrangement", meshArr );
+    toShapefile( path, "stage1_triangles", meshTriangulation, true );
 }

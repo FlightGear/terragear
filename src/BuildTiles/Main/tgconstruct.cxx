@@ -59,14 +59,13 @@ TGConstruct::~TGConstruct() {
 }
 
 // TGConstruct: Setup
-void TGConstruct::set_paths( const std::string work, const std::string share, 
-                             const std::string match, const std::string output, 
-                             const std::vector<std::string> load ) {
+void TGConstruct::set_paths( const std::string work, const std::string dem, const std::string share, 
+                             const std::string match, const std::string output ) {
     work_base   = work;
+    dem_base    = dem;
     share_base  = share;
     match_base  = match;
     output_base = output;
-    load_dirs   = load;
 }
                              
 void TGConstruct::set_options( bool ignore_lm, double n ) {
@@ -87,6 +86,7 @@ void TGConstruct::run()
         isOcean = false;
 
         tileMesh.initDebug( bucket.gen_index_str() );
+        tileMesh.clipAgainstBucket( bucket );
         
         // Initialize the landclass lists with the number of area definitions
         //polys_in.init( num_areas, area_defs.get_name_array() );        
@@ -107,7 +107,7 @@ void TGConstruct::run()
         
         // Step 2 - add the fitted nodes ( important elevation points )
         // add them to the mesh - which adds them in triangulation
-        // LoadElevation();
+        LoadElevation();
         
         // generate the tile
         tileMesh.generate();

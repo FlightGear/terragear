@@ -22,16 +22,22 @@ class tgMesh
 public:
     void initDebug( const std::string& dbgRoot );
     void initPriorities( const std::vector<std::string>& priorityNames );
+    void clipAgainstBucket( const SGBucket& bucket );
+
     void clear( void );
+    bool empty( void );
     
     void addPoly( unsigned int priority, const tgPolygonSet& poly );
     void addPolys( unsigned int priority, const tgPolygonSetList& polys );
+    void addPoints( const std::vector<meshTriPoint>& points );
     
     tgPolygonSet join( unsigned int priority, const tgPolygonSetMeta& meta );
     
     void generate( void );
     
     void toShapefiles( const char* dataset );
+    
+    void save( const std::string& path );
 
 private:
     void clipPolys( void );
@@ -48,7 +54,7 @@ private:
     void markDomains(void);
     void markDomains(meshTriFaceHandle start, meshArrFaceConstHandle face, std::list<meshTriCDTPlus::Edge>& border );
     
-    GDALDataset* openDatasource( const char* datasource_name );
+    GDALDataset* openDatasource( const std::string& datasource_name );
     OGRLayer*    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name );
     
     meshTriPoint toMeshTriPoint( const meshArrPoint& aPoint ) {
@@ -58,20 +64,24 @@ private:
         return meshArrPoint( tPoint.x(), tPoint.y() );
     }
     
-    void toShapefile( const char* datasource, const char* layer, const meshArrangement& arr );
+    void toShapefile( const std::string& datasource, const char* layer, const meshArrangement& arr );
     void toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc );
     
-    void toShapefile( const char* datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked );
+    void toShapefile( const std::string& datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked );
     void toShapefile( OGRLayer* poLayer, const meshTriangle& tri );
     
     unsigned int                    numPriorities;
     std::vector<std::string>        priorityNames;
     std::vector<tgPolygonSetList>   sourcePolys;
+    std::vector<meshTriPoint>       sourcePoints;
+
     meshArrangement                 meshArr;
     meshArrLandmarks_pl             meshPointLocation;
     meshTriCDTPlus                  meshTriangulation;
     std::vector<tgMeshFaceMeta>     metaLookup;
-    char datasource[128];
+    SGBucket                        b;
+    bool                            clipBucket;
+    std::string                     datasource;
 };
 
 #endif /* __TG_MESH_HXX__ */

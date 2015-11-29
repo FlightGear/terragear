@@ -2,7 +2,7 @@
 
 #include "tg_mesh.hxx"
 
-GDALDataset* tgMesh::openDatasource( const char* datasource_name )
+GDALDataset* tgMesh::openDatasource( const std::string& datasource_name )
 {
     GDALDataset*    poDS = NULL;
     GDALDriver*     poDriver = NULL;
@@ -14,7 +14,7 @@ GDALDataset* tgMesh::openDatasource( const char* datasource_name )
     
     poDriver = GetGDALDriverManager()->GetDriverByName( format_name );
     if ( poDriver ) {    
-        poDS = poDriver->Create( datasource_name, 0, 0, 0, GDT_Unknown, NULL );
+        poDS = poDriver->Create( datasource_name.c_str(), 0, 0, 0, GDT_Unknown, NULL );
     }
     
     return poDS;
@@ -51,7 +51,7 @@ OGRLayer* tgMesh::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const cha
     return poLayer;
 }
 
-void tgMesh::toShapefile( const char* datasource, const char* layer, const meshArrangement& arr )
+void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshArrangement& arr )
 {
     GDALDataset*  poDS = NULL;
     OGRLayer*     poLayer = NULL;
@@ -98,7 +98,7 @@ void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const ch
     OGRFeature::DestroyFeature(poFeature);        
 }
 
-void tgMesh::toShapefile( const char* datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked )
+void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked )
 {
     GDALDataset*  poDS = NULL;
     OGRLayer*     poLayer = NULL;

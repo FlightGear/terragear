@@ -165,19 +165,19 @@ public:
         return names;
     }
 
-    std::string const& get_sliver_area_name( void ) const {
-        return sliver_area_name;
+    std::string const& get_ocean_area_name( void ) const {
+        return ocean_area_name;
     }
 
-    unsigned int get_sliver_area_priority( void ) const {
-        return sliver_area_priority;
+    unsigned int get_ocean_area_priority( void ) const {
+        return ocean_area_priority;
     }
 
 
 private:
     area_definition_list area_defs;
-    std::string  sliver_area_name;
-    unsigned int sliver_area_priority;
+    std::string  ocean_area_name;
+    unsigned int ocean_area_priority;
 };
 
 #endif // _PRIORITIES_HXX

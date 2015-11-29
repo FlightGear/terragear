@@ -123,13 +123,13 @@ void Airport::BuildBase( void )
 
     // DEBUG
 #if DEBUG
-    char            dataset[64];
+    // char            dataset[64];
     
     // datasource is the ICAO, 1 layer = 1 area    
     // sprintf( dataset, "./%s", icao.c_str() );
     // baseMesh.toShapefiles( dataset );
     
-    baseMesh.generate();
+    // baseMesh.generate();
 
 #if 0    
     GDALDataset*    poDS = NULL;

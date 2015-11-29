@@ -516,6 +516,11 @@ void tgAccumulator::AddAccumPolygonSet( const cgalPoly_PolygonSet& ps )
     }    
 }
 
+void tgAccumulator::add( const tgPolygonSet& ps )
+{
+    AddAccumPolygonSet( ps.getPs() );
+}
+
 #define DEBUG_DIFF_AND_ADD 0
 void tgAccumulator::Diff_and_Add_cgal( tgPolygonSet& subject )
 {
@@ -556,6 +561,14 @@ void tgAccumulator::Diff_and_Add_cgal( tgPolygonSet& subject )
 
     // add the polygons_with_holes to the accumulator list
     AddAccumPolygonSet( subPs );
+}
+
+void tgAccumulator::toShapefile( const char* ds, const char* layer )
+{
+    CGAL::Bbox_2 bbox;
+    tgPolygonSet all = GetAccumPolygonSet( bbox );
+    
+    all.toShapefile( ds, layer );    
 }
 
 #if 0

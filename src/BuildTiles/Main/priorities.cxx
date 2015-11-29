@@ -58,8 +58,8 @@ int TGAreaDefinitions::init( const std::string& filename )
         in >> skipcomment;
 
         if ( name == sa_name ) {
-            sliver_area_name     = sa_name;
-            sliver_area_priority = cur_priority;
+            ocean_area_name     = sa_name;
+            ocean_area_priority = cur_priority;
         }
 
         area_defs.push_back( TGAreaDefinition( name, category, cur_priority++ ) );

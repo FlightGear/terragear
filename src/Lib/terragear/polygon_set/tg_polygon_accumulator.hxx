@@ -15,7 +15,11 @@ class tgAccumulator
 public:
     tgAccumulator() { accumEmpty = true; }
 
+    void      add(const tgPolygonSet& subject);
     void      Diff_and_Add_cgal( tgPolygonSet& subject );
+    
+    void      toShapefile( const char* datasource, const char* layer );
+    
     
 private:
     cgalPoly_PolygonSet         GetAccumPolygonSet( const CGAL::Bbox_2& bb );

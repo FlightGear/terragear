@@ -6,10 +6,10 @@ void tgPolygonSetMeta::setSurfaceInfo(tgSurface const& surf)
     surf.getCoefficients( surfaceCoefficients );
     surf.getExtents( surfaceMin, surfaceMax, surfaceCenter );
     
-    SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::setSurfaceInfo - got " << surfaceCoefficients.size() << " coeffs" );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "tgPolygonSetMeta::setSurfaceInfo - got " << surfaceCoefficients.size() << " coeffs" );
     
     for ( unsigned int i=0; i<surfaceCoefficients.size(); i++ ) {
-        SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::setSurfaceInfo - coeff[" << i << "] = " <<  surfaceCoefficients[i] );
+        SG_LOG( SG_GENERAL, SG_DEBUG, "tgPolygonSetMeta::setSurfaceInfo - coeff[" << i << "] = " <<  surfaceCoefficients[i] );
     }        
 }
 
@@ -19,22 +19,22 @@ void tgPolygonSetMeta::getFeatureFields( OGRFeature* poFeature )
     
     switch( info ) {
         case META_NONE:
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_NONE" );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "tgPolygonSetMeta::getFeatureFields - info is META_NONE" );
             break;
         
         case META_TEXTURED:
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_TEXTURED" );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "tgPolygonSetMeta::getFeatureFields - info is META_TEXTURED" );
             getTextureFields( poFeature );
             break;
             
         case META_TEXTURED_SURFACE:
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_TEXTURED_SURFACE" );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "tgPolygonSetMeta::getFeatureFields - info is META_TEXTURED_SURFACE" );
             getTextureFields( poFeature );
             getSurfaceFields( poFeature );
             break;                
             
         case META_CONSTRAIN:
-            SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSetMeta::getFeatureFields - info is META_CONSTRAIN" );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "tgPolygonSetMeta::getFeatureFields - info is META_CONSTRAIN" );
             break;               
     }
 }

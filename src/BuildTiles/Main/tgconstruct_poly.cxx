@@ -40,7 +40,7 @@ int TGConstruct::LoadLandclassPolys( void )
     std::string index = bucket.gen_index_str(); 
     std::string poly_path;
     tgPolygonSetList polys;
-    unsigned int total_polys_read = 0;
+    //unsigned int total_polys_read = 0;
     
     // load 2D polygons from correct path
     poly_path = work_base + "/" + base + '/' + index;
@@ -75,9 +75,31 @@ int TGConstruct::LoadLandclassPolys( void )
                 }
             }
         }
+        
+        if ( !tileMesh.empty() ) {
+            // add pcean polygon
+            addOceanPoly();
+        }
     }
     
     return 0;
+}
+
+#define CORRECTION  (0.0005)
+void TGConstruct::addOceanPoly( void )
+{
+    // set up clipping tile
+    cgalPoly_Point pt[4];
+    
+    pt[0] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_SW ).getLongitudeDeg()-CORRECTION, bucket.get_corner( SG_BUCKET_SW ).getLatitudeDeg()-CORRECTION );
+    pt[1] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_SE ).getLongitudeDeg()+CORRECTION, bucket.get_corner( SG_BUCKET_SE ).getLatitudeDeg()-CORRECTION );
+    pt[2] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_NE ).getLongitudeDeg()+CORRECTION, bucket.get_corner( SG_BUCKET_NE ).getLatitudeDeg()+CORRECTION );
+    pt[3] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_NW ).getLongitudeDeg()-CORRECTION, bucket.get_corner( SG_BUCKET_NW ).getLatitudeDeg()+CORRECTION );    
+    
+    cgalPoly_Polygon poly( pt, pt+4 );
+    tgPolygonSetMeta meta(tgPolygonSetMeta::META_TEXTURED, area_defs.get_ocean_area_name() );
+    
+    tileMesh.addPoly( area_defs.get_ocean_area_priority(), tgPolygonSet( poly, meta ) );
 }
 
 #if 0

@@ -65,7 +65,7 @@ public:
 
     // whenever you want to write to a tile, you need to Request it
     void Request( unsigned long tileId ) {
-	mutex.lock();
+        mutex.lock();
 
         tile_map::iterator it = waitingTasks.find( tileId );
         if ( it == waitingTasks.end() ) {
@@ -91,7 +91,7 @@ public:
 
     // whenever you finish writing to a tile, you need to Release it
     void Release( unsigned long tileId ) {
-	SGGuard<SGMutex> g(mutex);
+        SGGuard<SGMutex> g(mutex);
 
         tile_map::iterator it = waitingTasks.find( tileId );
         if ( it != waitingTasks.end() ) {

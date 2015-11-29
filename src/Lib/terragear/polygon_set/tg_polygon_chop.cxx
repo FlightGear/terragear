@@ -10,6 +10,8 @@
 #include "tg_shapefile.hxx"
 #include "tg_misc.hxx"
 
+
+#define CORRECTION  (0.0005)
 void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
 {
     cgalPoly_Point    base_pts[4];
@@ -23,13 +25,13 @@ void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
     
     // set up clipping tile
     pt = b.get_corner( SG_BUCKET_SW );
-    base_pts[0] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
-    pt = b.get_corner( SG_BUCKET_SE );    
-    base_pts[1] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
-    pt = b.get_corner( SG_BUCKET_NE );    
-    base_pts[2] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
+    base_pts[0] = cgalPoly_Point( pt.getLongitudeDeg()-CORRECTION, pt.getLatitudeDeg()-CORRECTION );
+    pt = b.get_corner( SG_BUCKET_SE );
+    base_pts[1] = cgalPoly_Point( pt.getLongitudeDeg()+CORRECTION, pt.getLatitudeDeg()-CORRECTION );
+    pt = b.get_corner( SG_BUCKET_NE );
+    base_pts[2] = cgalPoly_Point( pt.getLongitudeDeg()+CORRECTION, pt.getLatitudeDeg()+CORRECTION );
     pt = b.get_corner( SG_BUCKET_NW );
-    base_pts[3] = cgalPoly_Point( pt.getLongitudeDeg(), pt.getLatitudeDeg() );
+    base_pts[3] = cgalPoly_Point( pt.getLongitudeDeg()-CORRECTION, pt.getLatitudeDeg()+CORRECTION );
     cgalPoly_Polygon base( base_pts, base_pts+4 );
 
 #if 0
@@ -58,7 +60,7 @@ void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
 //          result.SetPreserve3D( true );
 //      }
         
-        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Clip - material is " << result.getMeta().material );
+        SG_LOG( SG_GENERAL, SG_DEBUG, "tgChopper Clip - material is " << result.getMeta().material );
         
         long int cur_bucket = b.gen_index();
         if ( ( bucket_id < 0 ) || (cur_bucket == bucket_id ) ) {
@@ -242,18 +244,12 @@ void tgChopper::PreChop( const tgPolygonSet& subject, std::vector<tgPolygonSet>&
                 result.intersection2( clip );
                 
                 if ( !result.isEmpty() ) {
-                    
-                    SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Prechop (chopped) - material is " << result.getMeta().material );
-                    
                     chunks.push_back( result );
-                    exit(-1);
                 }
             }
         }
     } else {
         // process current geometry
-        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Prechop (non chopped) - material is " << subject.getMeta().material );
-
         chunks.push_back( subject );
     }
 }
@@ -266,7 +262,7 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
         return;
     }
 
-    SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Add - material is " << subject.getMeta().material );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "tgChopper Add - material is " << subject.getMeta().material );
     
     CGAL::Bbox_2 sub_bb   = subject.getBoundingBox();
     SGGeod sub_gMin = SGGeod::fromDeg( CGAL::to_double(sub_bb.xmin()), CGAL::to_double(sub_bb.ymin()) );
@@ -295,8 +291,6 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
         std::vector<SGBucket> buckets;
         sgGetBuckets( gMin, gMax, buckets );
     
-        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper::Add poly poly traverses " << buckets.size() << " buckets " );
-
         for ( unsigned int j=0; j<buckets.size(); j++ ) {
             Clip( chunks[i], buckets[j] );
         }        
@@ -305,7 +299,7 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
     chop_end.stamp();
     
     if ( sub_buckets.size() > 20 ) {
-        SG_LOG( SG_GENERAL, SG_INFO, "tgChopper::Chopping poly width = " << sub_bb.xmax() - sub_bb.xmin() << ", height = " << sub_bb.ymax() - sub_bb.ymin() << " into " << sub_buckets.size() << " buckets took " << create << " to create, " << pre_end - pre_start << " to prechop, and " << chop_end - chop_start << " to chop ");    
+        SG_LOG( SG_GENERAL, SG_DEBUG, "tgChopper::Chopping poly width = " << sub_bb.xmax() - sub_bb.xmin() << ", height = " << sub_bb.ymax() - sub_bb.ymin() << " into " << sub_buckets.size() << " buckets took " << create << " to create, " << pre_end - pre_start << " to prechop, and " << chop_end - chop_start << " to chop ");    
     }
 }
 

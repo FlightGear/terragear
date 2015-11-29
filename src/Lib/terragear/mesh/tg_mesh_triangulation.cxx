@@ -8,7 +8,10 @@ void tgMesh::constrainedTriangulate( void )
     // just insert all segments as constraints
     meshArrEdgeConstIterator eit;
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "tgMesh::constrainedTriangulate - insert constraints " );    
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - insert " << sourcePoints.size() << " points " );    
+    meshTriangulation.insert(sourcePoints.begin(), sourcePoints.end() );
+    
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - insert constraints " );    
     for ( eit = meshArr.edges_begin(); eit != meshArr.edges_end(); ++eit ) {        
         meshTriPoint source = toMeshTriPoint( eit->curve().source() );
         meshTriPoint target = toMeshTriPoint( eit->curve().target() );
@@ -20,7 +23,7 @@ void tgMesh::constrainedTriangulate( void )
         }
     }
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "tgMesh::constrainedTriangulate - valid? " << 
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - valid? " << 
                                  (meshTriangulation.is_valid() ? "yes, and has " : "no, and has ") << 
                                  meshTriangulation.number_of_faces() << " faces ");
 
@@ -32,14 +35,13 @@ void tgMesh::constrainedTriangulate( void )
         // 0.125 is the default shape bound. It corresponds to abound 20.6 degree.
         // 0.5 is the upper bound on the length of the longuest edge.
         // See reference manual for Delaunay_mesh_size_traits_2<K>.        
+        // mesher.set_criteria(meshCriteria(0.125, 0.5));
         mesher.set_criteria(meshCriteria(0.125, 0.5));
         mesher.refine_mesh();
         SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - refined mesh number of faces: " << meshTriangulation.number_of_faces() );
         
         // set arrangement face info for looking up metadata of original polygons
         markDomains();
-
-        toShapefile( datasource, "refined_triangulation", meshTriangulation, true );
     }
 }
 

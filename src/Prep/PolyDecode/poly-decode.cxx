@@ -62,7 +62,7 @@ bool use_attribute_query=false;
 string attribute_query;
 bool use_spatial_query=false;
 double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
-int num_threads = 1;
+int num_threads = 8;
 bool save_shapefiles=false;
 std::string ds_name=".";
 
@@ -115,9 +115,7 @@ void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, cons
     // generate metadata info from GDAL feature info
     tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );
     
-    SG_LOG( SG_GENERAL, SG_INFO, "Decoder::processPolygon - material before getMeta " << meta.material );
     meta.getFeatureFields( poFeature );
-    SG_LOG( SG_GENERAL, SG_INFO, "Decoder::processPolygon - material after getMeta " << meta.material );
 
     tgPolygonSet shapes( poGeometry, meta );
 

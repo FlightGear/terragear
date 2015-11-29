@@ -65,6 +65,31 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
 }
 #endif
 
+void TGConstruct::LoadElevation( void ) {
+    
+    std::string array_path = dem_base + "/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
+    if ( array.open(array_path) ) {
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Opened Array file " << array_path);
+
+        array.parse( bucket );
+        array.remove_voids( );
+        
+        std::vector<SGGeod> const& corner_list = array.get_corner_list();
+        for (unsigned int i=0; i<corner_list.size(); i++) {
+            elevationPoints.push_back( meshTriPoint(corner_list[i].getLongitudeDeg(), corner_list[i].getLatitudeDeg()) );
+        }
+        
+        std::vector<SGGeod> const& fit_list = array.get_fitted_list();
+        for (unsigned int i=0; i<fit_list.size(); i++) {
+            elevationPoints.push_back( meshTriPoint(fit_list[i].getLongitudeDeg(), fit_list[i].getLatitudeDeg()) );
+        }
+        
+        tileMesh.addPoints( elevationPoints );        
+    } else {
+        SG_LOG(SG_GENERAL, SG_INFO, "Failed to open Array file " << array_path);
+    }    
+}
+
 #if 0
 // fix the elevations of the geodetic nodes
 // This should be done in the nodes class itself, except for the need for the triangle type

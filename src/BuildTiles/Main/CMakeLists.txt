@@ -1,24 +1,10 @@
 include_directories(${GDAL_INCLUDE_DIR})
 
 add_executable(tg-construct
-    tgconstruct.hxx
-    tgconstruct.cxx
-    tgconstruct_cleanup.cxx
-    tgconstruct_clip.cxx
-    tgconstruct_debug.cxx
-    tgconstruct_elevation.cxx
-    tgconstruct_landclass.cxx
-    tgconstruct_lookup.cxx
-    tgconstruct_math.cxx
-    tgconstruct_mesh.cxx
-    tgconstruct_output.cxx
-    tgconstruct_poly.cxx
-    tgconstruct_shared.cxx
-    tgconstruct_tesselate.cxx
-    tgconstruct_texture.cxx
+    tgconstruct_stage1.hxx
+    tgconstruct_stage1.cxx
     priorities.cxx
     priorities.hxx
-    usgs.cxx 
     main.cxx)
 
 set_target_properties(tg-construct PROPERTIES
