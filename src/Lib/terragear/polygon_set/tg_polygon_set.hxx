@@ -210,13 +210,16 @@ public:
     const tgPolygonSetMeta&             getMeta( void ) const { return meta; }
     tgPolygonSetMeta&                   getMeta( void ) { return meta; }
     
+    // TODO : organize what types of booleans we want/need
+    // static vs member vs meta / no meta...
     tgPolygonSet                        intersection( const cgalPoly_Polygon& other ) const;
     void                                intersection2( const cgalPoly_Polygon& other );
 
     void                                difference( const cgalPoly_Polygon& other );
     void                                join( const cgalPoly_Polygon& other );
     static tgPolygonSet                 join( const tgPolygonSetList& sets, const tgPolygonSetMeta& meta );
-
+    static tgPolygonSet                 symmetricDifference( const tgPolygonSet& a, const tgPolygonSet& b, const tgPolygonSetMeta& meta );
+    
     tgPolygonSet                        offset( double oset ) const;
     
     static GDALDataset*                 openDatasource( const char* datasource_name );

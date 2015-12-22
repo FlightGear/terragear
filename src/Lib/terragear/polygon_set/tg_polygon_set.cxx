@@ -296,6 +296,15 @@ tgPolygonSet tgPolygonSet::join( const tgPolygonSetList& sets, const tgPolygonSe
     return tgPolygonSet( result, m );
 }
 
+tgPolygonSet tgPolygonSet::symmetricDifference( const tgPolygonSet& a, const tgPolygonSet& b, const tgPolygonSetMeta& m )
+{
+    cgalPoly_PolygonSet result;
+    
+    result.symmetric_difference( a.getPs(), b.getPs() );
+    
+    return tgPolygonSet( result, m );
+}
+
 CGAL::Bbox_2 tgPolygonSet::getBoundingBox( void ) const
 {
     std::list<cgalPoly_PolygonWithHoles> pwh_list;    

@@ -54,8 +54,8 @@ SGLockedQueue<OGRFeature *> global_workQueue;
 class Decoder : public SGThread
 {
 public:
-    Decoder( OGRCoordinateTransformation *poct, tgChopper& c ) : chopper(c) {
-        poCT = poct;
+    Decoder( OGRCoordinateTransformation *poct, tgChopper& c, tgPolygonSetList& all, SGMutex& l ) : chopper(c), allPolys(all), lock(l) {
+        poCT      = poct;
     }
 
 private:
@@ -68,27 +68,32 @@ private:
     OGRCoordinateTransformation *poCT;
 
     // Store the reults per tile
-    tgChopper& chopper;
+    tgChopper&          chopper;
+    
+    // and in an array
+    tgPolygonSetList&   allPolys; 
 
-    int area_type_field;
+    int                 area_type_field;
+    SGMutex&            lock;
 };
 
 void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string& area_type )
 {
     SGTimeStamp create_start, create_end, create_time;
-
     create_start.stamp();
 
     // generate metadata info from GDAL feature info
     tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );
-    
-    meta.getFeatureFields( poFeature );
-
     tgPolygonSet shapes( poGeometry, meta );
+    
+    // add the shape to allPolys
+    lock.lock();
+    allPolys.push_back( shapes );
+    lock.unlock();
     
     create_end.stamp();
     create_time = create_end - create_start;
-
+    
     chopper.Add( shapes, create_time  );
 }
 
@@ -143,7 +148,7 @@ void Decoder::run()
 }
 
 // Main Thread
-void processLayer(OGRLayer* poLayer, tgChopper& results )
+void processLayer(OGRLayer* poLayer, tgChopper& chopped, std::vector<SGBucket>& bucketList, tgPolygonSetList& all, SGMutex& l  )
 {
     /* determine the indices of the required columns */
     OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
@@ -169,12 +174,11 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     OGRFeature *poFeature;
     poLayer->SetNextByIndex(0);
     
-    // get the extents of the layer    
+    // get the extents of the layer
     OGREnvelope extents;
     poLayer->GetExtent(&extents);
     SGGeod gMin = SGGeod::fromDeg( extents.MinX, extents.MinY );
     SGGeod gMax = SGGeod::fromDeg( extents.MaxX, extents.MaxY );
-    
     sgGetBuckets( gMin, gMax, bucketList );
     
     // Generate the work queue for this layer
@@ -187,7 +191,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     // this just generates all the tgPolygons
     std::vector<Decoder *> decoders;
     for (int i=0; i<num_threads; i++) {
-        Decoder* decoder = new Decoder( poCT, results );
+        Decoder* decoder = new Decoder( poCT, chopped, all, l );
         decoder->start();
         decoders.push_back( decoder );
     }
@@ -195,7 +199,9 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     // Then wait until they are finished
     for (unsigned int i=0; i<decoders.size(); i++) {
         decoders[i]->join();
-    }    
+    }
+    
+    // now we have all of the shapes.
     
     OCTDestroyCoordinateTransformation ( poCT );
 }
@@ -216,8 +222,11 @@ void usage(char* progname) {
 }
 
 int main( int argc, char **argv ) {
-    char* progname=argv[0];
-    string datasource,work_dir;
+    char*                   progname=argv[0];
+    string                  datasource,work_dir;
+    std::vector<SGBucket>   bucketList;
+    tgPolygonSetList        shapefilePolys;
+    SGMutex                 lock;
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
@@ -274,7 +283,7 @@ int main( int argc, char **argv ) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
                 exit( 1 );
             }
-            processLayer(poLayer, results );
+            processLayer(poLayer, results, bucketList, shapefilePolys, lock );
         }
     } else {
         for (int i=0;i<poDS->GetLayerCount();i++) {
@@ -282,32 +291,44 @@ int main( int argc, char **argv ) {
 
             assert(poLayer != NULL);
 
-            processLayer(poLayer, results );
+            processLayer(poLayer, results, bucketList, shapefilePolys, lock );
         }
     }
 
     GDALClose(poDS);
 
+    // first, join all the polys
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );
+    tgPolygonSet     allShapefilePolys = tgPolygonSet::join( shapefilePolys, meta );
+    
     // now load the chopped shapefiles into a new shape
-    // tgAccumulator accum;
-        
+    tgPolygonSetList choppedPolys;
+    
     for ( unsigned int i=0; i<bucketList.size(); i++ ) {
         // open the shapefile in the bucket
         std::string poly_path;
         SGBucket    bucket = bucketList[i];
+        tgPolygonSetList polys;
         
         // load 2D polygons from correct path
         poly_path = work_dir + "/" + bucket.gen_base_path() + '/' + bucket.gen_index_str() + '/' + area_type + ".shp";
-        
-        tgPolygonSetList polys;
         tgPolygonSet::fromShapefile( poly_path, polys );
         
-        for ( unsigned int j=0; j<polys.size(); j++ ) {            
-            polys[j].toShapefile( "./result", "accum" );
+        for ( unsigned int j=0; j<polys.size(); j++ ) {
+            choppedPolys.push_back( polys[j] );
         }
     }
     
-    // accum.toShapefile( "./result", "accum" );
+    tgPolygonSet allChoppedPolys = tgPolygonSet::join( choppedPolys, meta );
+    
+    // allChoppedPolys should be equal to allShapefilePolys
+    // i.e. the symetric difference should be empty
+    tgPolygonSet resultPolys = tgPolygonSet::symmetricDifference( allChoppedPolys, allShapefilePolys, meta );
+    
+    if ( !resultPolys.isEmpty() ) {
+        resultPolys.toShapefile( "./result", "difference" );
+    }
+    
     
     return 0;
 }
