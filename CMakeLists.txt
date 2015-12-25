@@ -113,6 +113,11 @@ if (CGAL_FOUND)
   endif(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
 endif (CGAL_FOUND)
 
+# When including CGAL, it changes compile flags.
+# on Fedora 23, it does this in such a way in that the static simger library 
+# cannot be linked.  
+SET(CGAL_DONT_OVERRIDE_CMAKE_FLAGS ON CACHE BOOL "Don't override CMAKE_*_FLAGS.")
+SET(CGAL_SHARED_LINKER_FLAGS "" CACHE STRING "Don't add shared library flags.")
 include ( ${CGAL_USE_FILE} )
 
 if (CMAKE_CL_64)
