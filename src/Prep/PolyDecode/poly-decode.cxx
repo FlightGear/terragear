@@ -119,6 +119,8 @@ void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, cons
 
     tgPolygonSet shapes( poGeometry, meta );
 
+    SG_LOG( SG_GENERAL, SG_INFO, " shape enpty: " << shapes.isEmpty() );
+    
 //    if ( max_segment_length > 0 ) {
 //        shapes.splitLongEdges( max_segment_length );
 //    }

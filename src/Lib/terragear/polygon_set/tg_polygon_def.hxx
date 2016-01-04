@@ -32,10 +32,14 @@ typedef CGAL::Arrangement_2<cgalPoly_Traits>                cgalPoly_Arrangement
 
 typedef CGAL::Aff_transformation_2<cgalPoly_Kernel>         cgalPoly_Transformation; 
 
+typedef cgalPoly_Arrangement::Vertex_const_handle           cgalPoly_VertexConstHandle;
+typedef cgalPoly_Arrangement::Face_const_handle             cgalPoly_FaceConstHandle;
 typedef cgalPoly_Arrangement::Face_const_iterator           cgalPoly_FaceConstIterator;
+typedef cgalPoly_Arrangement::Hole_const_iterator           cgalPoly_HoleConstIterator;
 typedef cgalPoly_Arrangement::Edge_const_iterator           cgalPoly_EdgeConstIterator;
 typedef cgalPoly_Arrangement::Ccb_halfedge_circulator       cgalPoly_CcbHeCirculator;
 typedef cgalPoly_Arrangement::Ccb_halfedge_const_circulator cgalPoly_CcbHeConstCirculator;
+typedef cgalPoly_Arrangement::Halfedge                      cgalPoly_He;
 typedef cgalPoly_Arrangement::Halfedge_handle               cgalPoly_HeHandle;
 typedef cgalPoly_Arrangement::Halfedge_const_handle         cgalPoly_HeConstHandle;
 

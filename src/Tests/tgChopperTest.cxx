@@ -319,7 +319,10 @@ int main( int argc, char **argv ) {
         }
     }
     
+    
     tgPolygonSet allChoppedPolys = tgPolygonSet::join( choppedPolys, meta );
+    allChoppedPolys.toShapefile( "./result", "chopped_polys" );
+    allShapefilePolys.toShapefile( "./result", "shapefile_polys" );
     
     // allChoppedPolys should be equal to allShapefilePolys
     // i.e. the symetric difference should be empty

@@ -46,13 +46,17 @@ tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& meta
     cgalPoly_PolygonSet             holesUnion;
     std::vector<cgalPoly_Point>     nodes;
 
+    SG_LOG( SG_GENERAL, SG_INFO, "Geometry has : " <<  poGeometry->getNumInteriorRings() << " rings" );
+    
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
     nodes.clear();
     for (int i = 0; i < ring->getNumPoints(); i++) {
         nodes.push_back( cgalPoly_Point(ring->getX(i), ring->getY(i)) );
     }
-    facesFromUntrustedNodes( nodes, boundaries );
+    facesFromUntrustedNodes( nodes, boundaries, holes );
+
+    SG_LOG( SG_GENERAL, SG_INFO, "Outer boundary complete : boundaries: " <<  boundaries.size() << " holes: " << holes.size() );
 
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
@@ -61,17 +65,23 @@ tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& meta
         for (int j = 0; j < ring->getNumPoints(); j++) {
             nodes.push_back( cgalPoly_Point(ring->getX(j), ring->getY(j)) );
         }
-        facesFromUntrustedNodes( nodes, holes );
+        facesFromUntrustedNodes( nodes, holes, boundaries );
+        
+        SG_LOG( SG_GENERAL, SG_INFO, "hole " << i << " complete : boundaries: " <<  boundaries.size() << " holes: " << holes.size() );        
     }
-
+    
     // join all the boundaries
     ps.join( boundaries.begin(), boundaries.end() );
-
+    
     // join all the holes
     holesUnion.join( holes.begin(), holes.end() );
-
+    
     // perform difference
     ps.difference( holesUnion );
+
+    if ( ps.is_empty() ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "DIFF is empty" );
+    }
 }
 
 tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
@@ -446,7 +456,25 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHol
     OGRFeature::DestroyFeature(poFeature);    
 }
 
-void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const
+void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Point& pt, const char* desc ) const
+{
+    OGRPoint point;
+    
+    point.setX( CGAL::to_double(pt.x() ));
+    point.setY( CGAL::to_double(pt.y() ));
+    point.setZ( 0.0 );
+    
+    OGRFeature* feature = new OGRFeature( poLayer->GetLayerDefn() );
+    feature->SetGeometry(&point);
+    
+    if( poLayer->CreateFeature( feature ) != OGRERR_NONE )
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+    }
+    OGRFeature::DestroyFeature(feature);
+}
+
+void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly, bool bFill ) const
 {
     OGRPolygon    polygon;
     OGRPoint      point;
