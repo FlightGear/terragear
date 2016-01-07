@@ -1,6 +1,9 @@
 #include <simgear/debug/logstream.hxx>
 #include "tg_polygon_set.hxx"
 
+// every polygon set (metadata) gets its own unique identifier
+unsigned long tgPolygonSetMeta::cur_id = 1;
+
 void tgPolygonSetMeta::setSurfaceInfo(tgSurface const& surf)
 {    
     surf.getCoefficients( surfaceCoefficients );

@@ -3,6 +3,7 @@ include (TerragearComponent)
 
 set(HEADERS 
     tg_polygon_set.hxx
+    tg_polygon_set_paths.hxx
     tg_polygon_def.hxx
 
     tg_polygon_accumulator.hxx
@@ -12,8 +13,10 @@ set(HEADERS
 set(SOURCES 
     tg_polygon_set.cxx
     tg_polygon_set_io.cxx
+    tg_polygon_set_io_debug.cxx
     tg_polygon_set_meta.cxx
     tg_polygon_set_offset_clipper.cxx
+    tg_polygon_set_paths.cxx
     tg_polygon_set_sle.cxx
 
     tg_polygon_accumulator.cxx

@@ -102,7 +102,7 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
     for (int i = 0; i < ring->getNumPoints(); i++) {
         nodes.push_back( cgalPoly_Point(ring->getX(i), ring->getY(i)) );
     }
-    facesFromUntrustedNodes( nodes, boundaries );
+    facesFromUntrustedNodes( nodes, boundaries, holes );
 
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
@@ -111,7 +111,7 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
         for (int j = 0; j < ring->getNumPoints(); j++) {
             nodes.push_back( cgalPoly_Point(ring->getX(j), ring->getY(j)) );
         }
-        facesFromUntrustedNodes( nodes, holes );
+        facesFromUntrustedNodes( nodes, holes, boundaries );
     }
 
     // join all the boundaries
@@ -142,9 +142,8 @@ GDALDataset* tgPolygonSet::openDatasource( const char* datasource_name )
     return poDS;
 }
 
-OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name )
+OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, PolygonSetLayerFields lf, const char* layer_name )
 {
-#if 1
     OGRLayer*           poLayer = NULL;
  
     if ( !strlen( layer_name )) {
@@ -172,237 +171,269 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, con
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_id' failed" );
         }
 
-        OGRFieldDefn metaField( "tg_meta", OFTInteger );
-        if( poLayer->CreateField( &metaField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'meta' failed" );
-        }
+        if ( lf == LF_ALL ) {
+            OGRFieldDefn metaField( "tg_meta", OFTInteger );
+            if( poLayer->CreateField( &metaField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'meta' failed" );
+            }
 
-        OGRFieldDefn fidField( "OGC_FID", OFTInteger );
-        if( poLayer->CreateField( &fidField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'OGC_FID' failed" );
-        }
+            OGRFieldDefn fidField( "OGC_FID", OFTInteger );
+            if( poLayer->CreateField( &fidField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'OGC_FID' failed" );
+            }
 
-        OGRFieldDefn flagsField( "tg_flags", OFTInteger );
-        if( poLayer->CreateField( &flagsField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'flags' failed" );
-        }
-        
-        OGRFieldDefn materialField( "tg_mat", OFTString );
-        materialField.SetWidth( 32 );
-        if( poLayer->CreateField( &materialField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_material' failed" );
-        }
-        
-        OGRFieldDefn texMethodField( "tg_texmeth", OFTInteger );
-        if( poLayer->CreateField( &texMethodField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tex_method' failed" );
-        }
-        
-        OGRFieldDefn texRefLonField( "tg_reflon", OFTReal );
-        texRefLonField.SetWidth( 24 );
-        texRefLonField.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texRefLonField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_ref_lon' failed" );
-        }
-        
-        OGRFieldDefn texRefLatField( "tg_reflat", OFTReal );
-        if( poLayer->CreateField( &texRefLatField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_ref_lat' failed" );
-        }
-        
-        OGRFieldDefn texHeadingField( "tg_heading", OFTReal );
-        if( poLayer->CreateField( &texHeadingField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_heading' failed" );
-        }
-        
-        OGRFieldDefn texWidthField( "tg_width", OFTReal );
-        if( poLayer->CreateField( &texWidthField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_width' failed" );
-        }
-        
-        OGRFieldDefn texLengthField( "tg_length", OFTReal );
-        if( poLayer->CreateField( &texLengthField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_length' failed" );
-        }
-        
-        OGRFieldDefn texMinUField( "tg_minu", OFTReal );
-        if( poLayer->CreateField( &texMinUField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_minu' failed" );
-        }
-        
-        OGRFieldDefn texMinVField( "tg_minv", OFTReal );
-        if( poLayer->CreateField( &texMinVField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_minv' failed" );
-        }
-        
-        OGRFieldDefn texMaxUField( "tg_maxu", OFTReal );
-        if( poLayer->CreateField( &texMaxUField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_maxu' failed" );
-        }
-        
-        OGRFieldDefn texMaxVField( "tg_maxv", OFTReal );
-        if( poLayer->CreateField( &texMaxVField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_maxv' failed" );
-        }
-        
-        OGRFieldDefn texMinClipUField( "tg_mincu", OFTReal );
-        if( poLayer->CreateField( &texMinClipUField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_min_clipu' failed" );
-        }
-        
-        OGRFieldDefn texMinClipVField( "tg_mincv", OFTReal );
-        texMinClipVField.SetWidth( 24 );
-        texMinClipVField.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texMinClipVField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_min_clipv' failed" );
-        }
-        
-        OGRFieldDefn texMaxClipUField( "tg_maxcu", OFTReal );
-        if( poLayer->CreateField( &texMaxClipUField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_max_clipu' failed" );
-        }
-        
-        OGRFieldDefn texMaxClipVField( "tg_maxcv", OFTReal );
-        if( poLayer->CreateField( &texMaxClipVField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_max_clipv' failed" );
-        }
-        
-        OGRFieldDefn texCenterLatField( "tg_clat", OFTReal );
-        if( poLayer->CreateField( &texCenterLatField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_center_lat' failed" );
-        }
+            OGRFieldDefn flagsField( "tg_flags", OFTInteger );
+            if( poLayer->CreateField( &flagsField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'flags' failed" );
+            }
+            
+            OGRFieldDefn materialField( "tg_mat", OFTString );
+            materialField.SetWidth( 32 );
+            if( poLayer->CreateField( &materialField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_material' failed" );
+            }
+            
+            OGRFieldDefn texMethodField( "tg_texmeth", OFTInteger );
+            if( poLayer->CreateField( &texMethodField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tex_method' failed" );
+            }
+            
+            OGRFieldDefn texRefLonField( "tg_reflon", OFTReal );
+            texRefLonField.SetWidth( 24 );
+            texRefLonField.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texRefLonField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_ref_lon' failed" );
+            }
+            
+            OGRFieldDefn texRefLatField( "tg_reflat", OFTReal );
+            if( poLayer->CreateField( &texRefLatField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_ref_lat' failed" );
+            }
+            
+            OGRFieldDefn texHeadingField( "tg_heading", OFTReal );
+            if( poLayer->CreateField( &texHeadingField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_heading' failed" );
+            }
+            
+            OGRFieldDefn texWidthField( "tg_width", OFTReal );
+            if( poLayer->CreateField( &texWidthField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_width' failed" );
+            }
+            
+            OGRFieldDefn texLengthField( "tg_length", OFTReal );
+            if( poLayer->CreateField( &texLengthField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_length' failed" );
+            }
+            
+            OGRFieldDefn texMinUField( "tg_minu", OFTReal );
+            if( poLayer->CreateField( &texMinUField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_minu' failed" );
+            }
+            
+            OGRFieldDefn texMinVField( "tg_minv", OFTReal );
+            if( poLayer->CreateField( &texMinVField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_minv' failed" );
+            }
+            
+            OGRFieldDefn texMaxUField( "tg_maxu", OFTReal );
+            if( poLayer->CreateField( &texMaxUField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_maxu' failed" );
+            }
+            
+            OGRFieldDefn texMaxVField( "tg_maxv", OFTReal );
+            if( poLayer->CreateField( &texMaxVField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_maxv' failed" );
+            }
+            
+            OGRFieldDefn texMinClipUField( "tg_mincu", OFTReal );
+            if( poLayer->CreateField( &texMinClipUField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_min_clipu' failed" );
+            }
+            
+            OGRFieldDefn texMinClipVField( "tg_mincv", OFTReal );
+            texMinClipVField.SetWidth( 24 );
+            texMinClipVField.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texMinClipVField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_min_clipv' failed" );
+            }
+            
+            OGRFieldDefn texMaxClipUField( "tg_maxcu", OFTReal );
+            if( poLayer->CreateField( &texMaxClipUField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_max_clipu' failed" );
+            }
+            
+            OGRFieldDefn texMaxClipVField( "tg_maxcv", OFTReal );
+            if( poLayer->CreateField( &texMaxClipVField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_max_clipv' failed" );
+            }
+            
+            OGRFieldDefn texCenterLatField( "tg_clat", OFTReal );
+            if( poLayer->CreateField( &texCenterLatField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_tp_center_lat' failed" );
+            }
 
 
-        // surface metadata
-        OGRFieldDefn texSurfaceMinLonField( "tgsrf_mnln", OFTReal );
-        texSurfaceMinLonField.SetWidth( 24 );
-        texSurfaceMinLonField.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceMinLonField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mnln' failed" );
-        }
+            // surface metadata
+            OGRFieldDefn texSurfaceMinLonField( "tgsrf_mnln", OFTReal );
+            texSurfaceMinLonField.SetWidth( 24 );
+            texSurfaceMinLonField.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceMinLonField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mnln' failed" );
+            }
 
-        OGRFieldDefn texSurfaceMinLatField( "tgsrf_mnlt", OFTReal );
-        texSurfaceMinLatField.SetWidth( 24 );
-        texSurfaceMinLatField.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceMinLatField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mnlt' failed" );
-        }
+            OGRFieldDefn texSurfaceMinLatField( "tgsrf_mnlt", OFTReal );
+            texSurfaceMinLatField.SetWidth( 24 );
+            texSurfaceMinLatField.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceMinLatField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mnlt' failed" );
+            }
 
-        OGRFieldDefn texSurfaceMaxLonField( "tgsrf_mxln", OFTReal );
-        texSurfaceMaxLonField.SetWidth( 24 );
-        texSurfaceMaxLonField.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceMaxLonField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mxln' failed" );
-        }
+            OGRFieldDefn texSurfaceMaxLonField( "tgsrf_mxln", OFTReal );
+            texSurfaceMaxLonField.SetWidth( 24 );
+            texSurfaceMaxLonField.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceMaxLonField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mxln' failed" );
+            }
 
-        OGRFieldDefn texSurfaceMaxLatField( "tgsrf_mxlt", OFTReal );
-        texSurfaceMaxLatField.SetWidth( 24 );
-        texSurfaceMaxLatField.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceMaxLatField ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mxlt' failed" );
-        }
-        
-        OGRFieldDefn texSurfaceCoef00( "tgsrf_co00", OFTReal );
-        texSurfaceCoef00.SetWidth( 24 );
-        texSurfaceCoef00.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef00 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co00' failed" );
-        }
+            OGRFieldDefn texSurfaceMaxLatField( "tgsrf_mxlt", OFTReal );
+            texSurfaceMaxLatField.SetWidth( 24 );
+            texSurfaceMaxLatField.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceMaxLatField ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_mxlt' failed" );
+            }
+            
+            OGRFieldDefn texSurfaceCoef00( "tgsrf_co00", OFTReal );
+            texSurfaceCoef00.SetWidth( 24 );
+            texSurfaceCoef00.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef00 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co00' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef01( "tgsrf_co01", OFTReal );
-        texSurfaceCoef01.SetWidth( 24 );
-        texSurfaceCoef01.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef01 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co01' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef01( "tgsrf_co01", OFTReal );
+            texSurfaceCoef01.SetWidth( 24 );
+            texSurfaceCoef01.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef01 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co01' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef02( "tgsrf_co02", OFTReal );
-        texSurfaceCoef02.SetWidth( 24 );
-        texSurfaceCoef02.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef02 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co02' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef02( "tgsrf_co02", OFTReal );
+            texSurfaceCoef02.SetWidth( 24 );
+            texSurfaceCoef02.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef02 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co02' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef03( "tgsrf_co03", OFTReal );
-        texSurfaceCoef03.SetWidth( 24 );
-        texSurfaceCoef03.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef03 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co03' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef03( "tgsrf_co03", OFTReal );
+            texSurfaceCoef03.SetWidth( 24 );
+            texSurfaceCoef03.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef03 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co03' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef04( "tgsrf_co04", OFTReal );
-        texSurfaceCoef04.SetWidth( 24 );
-        texSurfaceCoef04.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef04 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co04' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef04( "tgsrf_co04", OFTReal );
+            texSurfaceCoef04.SetWidth( 24 );
+            texSurfaceCoef04.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef04 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co04' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef05( "tgsrf_co05", OFTReal );        
-        texSurfaceCoef05.SetWidth( 24 );
-        texSurfaceCoef05.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef05 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co05' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef05( "tgsrf_co05", OFTReal );        
+            texSurfaceCoef05.SetWidth( 24 );
+            texSurfaceCoef05.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef05 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co05' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef06( "tgsrf_co06", OFTReal );
-        texSurfaceCoef06.SetWidth( 24 );
-        texSurfaceCoef06.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef06 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co06' failed" );
-        }
-        
-        OGRFieldDefn texSurfaceCoef07( "tgsrf_co07", OFTReal );
-        texSurfaceCoef07.SetWidth( 24 );
-        texSurfaceCoef07.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef07 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co07' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef06( "tgsrf_co06", OFTReal );
+            texSurfaceCoef06.SetWidth( 24 );
+            texSurfaceCoef06.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef06 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co06' failed" );
+            }
+            
+            OGRFieldDefn texSurfaceCoef07( "tgsrf_co07", OFTReal );
+            texSurfaceCoef07.SetWidth( 24 );
+            texSurfaceCoef07.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef07 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co07' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef08( "tgsrf_co08", OFTReal );
-        texSurfaceCoef08.SetWidth( 24 );
-        texSurfaceCoef08.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef08 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co08' failed" );
-        }
-        
-        OGRFieldDefn texSurfaceCoef09( "tgsrf_co09", OFTReal );
-        texSurfaceCoef09.SetWidth( 24 );
-        texSurfaceCoef09.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef09 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co09' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef08( "tgsrf_co08", OFTReal );
+            texSurfaceCoef08.SetWidth( 24 );
+            texSurfaceCoef08.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef08 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co08' failed" );
+            }
+            
+            OGRFieldDefn texSurfaceCoef09( "tgsrf_co09", OFTReal );
+            texSurfaceCoef09.SetWidth( 24 );
+            texSurfaceCoef09.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef09 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co09' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef10( "tgsrf_co10", OFTReal );
-        texSurfaceCoef10.SetWidth( 24 );
-        texSurfaceCoef10.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef10 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co10' failed" );
-        }
+            OGRFieldDefn texSurfaceCoef10( "tgsrf_co10", OFTReal );
+            texSurfaceCoef10.SetWidth( 24 );
+            texSurfaceCoef10.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef10 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co10' failed" );
+            }
 
-        OGRFieldDefn texSurfaceCoef11( "tgsrf_co11", OFTReal );
-        texSurfaceCoef11.SetWidth( 24 );
-        texSurfaceCoef11.SetPrecision( 3 );        
-        if( poLayer->CreateField( &texSurfaceCoef11 ) != OGRERR_NONE ) {
-            SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co11' failed" );
+            OGRFieldDefn texSurfaceCoef11( "tgsrf_co11", OFTReal );
+            texSurfaceCoef11.SetWidth( 24 );
+            texSurfaceCoef11.SetPrecision( 3 );        
+            if( poLayer->CreateField( &texSurfaceCoef11 ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tgsrf_co11' failed" );
+            }
         }
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
     }
    
     return poLayer;
-#else
-    return NULL;
-#endif
 }
 
-void tgPolygonSet::toShapefile( OGRLayer* layer, const char* description ) const
+//void tgPolygonSet::toShapefile( OGRLayer* layer, const char* description ) const
+//{
+//    
+//}
+
+void tgPolygonSet::toShapefile( const char* datasource, const char* layer ) const
 {
+    // Open datasource and layer
+    GDALDataset* poDS = openDatasource( datasource );
+
+    if ( poDS ) {
+        OGRLayer* poLayer = openLayer( poDS, wkbPolygon25D, LF_ALL, layer );
+
+        if ( poLayer ) {
+            toShapefile( poLayer, ps );
+        }
+    }
     
+    // close datasource
+    GDALClose( poDS );
 }
 
 void tgPolygonSet::toShapefile( OGRLayer* poLayer ) const
 {
     toShapefile( poLayer, ps );
+}
+
+void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const
+{
+    std::list<cgalPoly_PolygonWithHoles>                 pwh_list;
+    std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
+
+    polySet.polygons_with_holes( std::back_inserter(pwh_list) );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: got " << pwh_list.size() << " polys with holes ");
+    
+    // save each poly with holes to the layer
+    for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
+        cgalPoly_PolygonWithHoles pwh = (*it);
+
+        toShapefile( poLayer, pwh );
+    }
 }
 
 void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const
@@ -456,25 +487,7 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHol
     OGRFeature::DestroyFeature(poFeature);    
 }
 
-void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Point& pt, const char* desc ) const
-{
-    OGRPoint point;
-    
-    point.setX( CGAL::to_double(pt.x() ));
-    point.setY( CGAL::to_double(pt.y() ));
-    point.setZ( 0.0 );
-    
-    OGRFeature* feature = new OGRFeature( poLayer->GetLayerDefn() );
-    feature->SetGeometry(&point);
-    
-    if( poLayer->CreateFeature( feature ) != OGRERR_NONE )
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-    }
-    OGRFeature::DestroyFeature(feature);
-}
-
-void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly, bool bFill ) const
+void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const
 {
     OGRPolygon    polygon;
     OGRPoint      point;
@@ -503,6 +516,7 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly,
     }
     OGRFeature::DestroyFeature(poFeature);    
 }
+
 
 void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& arr ) const
 {    
@@ -534,88 +548,6 @@ void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& a
         OGRFeature::DestroyFeature(poFeature);    
     }    
 }
-
-void tgPolygonSet::toShapefile( const char* datasource, const char* layer ) const
-{
-    // Open datasource and layer
-    GDALDataset* poDS = openDatasource( datasource );
-
-    if ( poDS ) {
-        OGRLayer* poLayer = openLayer( poDS, wkbPolygon25D, layer );
-
-        if ( poLayer ) {
-            toShapefile( poLayer, ps );
-        }
-    }
-    
-    // close datasource
-    GDALClose( poDS );
-}
-
-void tgPolygonSet::toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const
-{
-    std::list<cgalPoly_PolygonWithHoles>                 pwh_list;
-    std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
-
-    polySet.polygons_with_holes( std::back_inserter(pwh_list) );
-    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: got " << pwh_list.size() << " polys with holes ");
-    
-    // save each poly with holes to the layer
-    for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
-        cgalPoly_PolygonWithHoles pwh = (*it);
-
-        toShapefile( poLayer, pwh );
-    }
-}
-
-
-// static functions for arbitrary polygons and polygons with holes
-void tgPolygonSet::toShapefile( const cgalPoly_Polygon& poly, const char* datasource, const char* layer )
-{    
-    GDALDataset*  poDS = NULL;
-    OGRLayer*     poLayer = NULL;
-    OGRPolygon    polygon;
-    OGRPoint      point;
-    OGRLinearRing ring;
-
-    poDS = openDatasource( datasource );
-
-    if ( poDS ) {
-        poLayer = openLayer( poDS, wkbPolygon25D, layer );
-        
-        if ( poLayer ) {
-            // in CGAL, the outer boundary is counter clockwise - in GDAL, it's expected to be clockwise
-            cgalPoly_Polygon::Vertex_iterator it;
-            
-            for ( it = poly.vertices_begin(); it != poly.vertices_end(); it++ ) {
-                point.setX( CGAL::to_double( (*it).x() ) );
-                point.setY( CGAL::to_double( (*it).y() ) );
-                point.setZ( 0.0 );
-                
-                ring.addPoint(&point);
-            }
-            ring.closeRings();
-            polygon.addRing(&ring);
-            
-            OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
-            poFeature->SetGeometry(&polygon);    
-            
-            if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
-            {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-            }
-            OGRFeature::DestroyFeature(poFeature);    
-        }
-    }
-    
-    // close datasource
-    GDALClose( poDS );
-}
-
-
-
-
-
 
 void tgPolygonSet::fromShapefile( const OGRFeatureDefn* poFDefn, OGRCoordinateTransformation* poCT, OGRFeature* poFeature, tgPolygonSetList& polys )
 {

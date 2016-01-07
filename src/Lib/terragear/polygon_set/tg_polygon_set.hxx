@@ -8,6 +8,7 @@
 #include <terragear/tg_cluster.hxx>
 
 #include "tg_polygon_def.hxx"
+#include "tg_polygon_set_paths.hxx"
 
 // point offsetting...
 #include <simgear/math/SGMath.hxx>
@@ -158,60 +159,6 @@ private:
     void                    getFieldAsString( OGRFeature* poFeature, const char* field, char* setting, size_t size );    
 };
 
-class tgPSFaceType {
-public:
-    tgPSFaceType( cgalPoly_FaceConstHandle h, bool ih ) : face(h), isHole(ih) {}
-    tgPSFaceType() {};
-    
-    cgalPoly_FaceConstHandle    face;
-    bool                        isHole;
-};
-
-class tgPSFaceID {
-public:
-    tgPSFaceID( cgalPoly_FaceConstHandle h, unsigned long i ) : face(h), id(i) {}
-    tgPSFaceID() {};
-    
-    cgalPoly_FaceConstHandle    face;
-    unsigned long               id;
-};
-
-class tgPSPath {
-public:
-    tgPSPath( cgalPoly_CcbHeConstCirculator sccb, bool isHole );
-    
-    cgalPoly_CcbHeConstCirculator   startCcb;   // starting ccb
-    cgalPoly_VertexConstHandle      endVertex;  // end condition
-    tgPSFaceType                    inner;      // the incident face
-    tgPSFaceType                    outer;      // the outer face ( MUST be the same throughout )
-    std::vector<cgalPoly_Point>     nodes;      // nodes making up the path
-    std::vector<cgalPoly_Point>     junctions;  // junction Nodes ( for debugging )
-    bool                            complete;   // path forms a loop
-    unsigned long                   id;         // for debugging
-    
-    void toShapefile( const char* ds );
-    
-private:
-    static unsigned long            cur_id;
-};
-
-class tgPSPathJunction {
-public:
-    typedef enum {
-        UNKNOWN,
-        SAME_OUT,
-        SAME_IN,
-        SAME_IN_AND_OUT
-    } pathPriority_e;
-    
-    tgPSPathJunction( cgalPoly_HeConstHandle h, pathPriority_e p ) : priority(p) 
-    {
-        startCcb = h->ccb();
-    }
-    
-    cgalPoly_CcbHeConstCirculator startCcb;
-    pathPriority_e                priority;
-};
 
 class tgPolygonSet;
 typedef std::vector<tgPolygonSet>   tgPolygonSetList;
@@ -242,12 +189,35 @@ public:
 
     void                                clusterNodes( const tgCluster& clusteredNodes );
     
+    // Shapefile Generation:
+    // There are three use cases for shapefiles
+    // 1) intermediate file output - These are member functions to save the PolygonSet to disk
+    // 2) intermediate file input
+    // 2) debug ouput - These are static functions to save differnt types of data for debugging
+    typedef enum {
+        LF_DEBUG,
+        LF_ALL
+    } PolygonSetLayerFields;
+    
+    static GDALDataset*                 openDatasource( const char* datasource_name );
+    static OGRLayer*                    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, PolygonSetLayerFields lf, const char* layer_name );
+    
+    // Intermediate data file output
     void                                toShapefile( const char* datasource, const char* layer ) const;
-    void                                toShapefile( OGRLayer* layer, const char* description ) const;
-    void                                toShapefile( OGRLayer* layer ) const;
 
-    static void                         toShapefile( const cgalPoly_Polygon& poly, const char* datasource, const char* layer );
+    void                                toShapefile( OGRLayer* poLayer ) const;
+    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const;
+    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const;
+    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly ) const;
+
+    // Intermediate file input
     static void                         fromShapefile( const SGPath& p, tgPolygonSetList& polys );
+
+    // Static Debug functions
+    static void                         toDebugShapefile( OGRLayer* poLayer, const cgalPoly_Point& point, const char* desc );
+    static void                         toDebugShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet, const char* desc );
+    static void                         toDebugShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh, const char* desc );
+    static void                         toDebugShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly, const char* desc );
 
     void                                toSegments( std::vector<cgalPoly_Segment>& segs, bool withHoles ) const;
 
@@ -276,15 +246,8 @@ public:
     static tgPolygonSet                 symmetricDifference( const tgPolygonSet& a, const tgPolygonSet& b, const tgPolygonSetMeta& meta );
     
     tgPolygonSet                        offset( double oset ) const;
-    
-    static GDALDataset*                 openDatasource( const char* datasource_name );
-    static OGRLayer*                    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name );
-    
+        
 private:
-    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Point& point, const char* desc ) const;
-    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonSet& polySet ) const;
-    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_PolygonWithHoles& pwh ) const;
-    void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& poly, bool bFill=true ) const;
     void                                toShapefile( OGRLayer* poLayer, const cgalPoly_Arrangement& arr ) const;
 
     static void                         fromShapefile( const OGRFeatureDefn* poFDefn, OGRCoordinateTransformation* poCT, OGRFeature* poFeature, tgPolygonSetList& polys );
@@ -294,25 +257,8 @@ private:
     void                                findIntersections( const cgalPoly_PolygonWithHoles& pwh, const cgalPoly_Line& line, std::vector<cgalPoly_Point>& intersections ) const;
     cgalPoly_Point                      getInteriorPoint( const cgalPoly_PolygonWithHoles& pwh ) const;
     
-    void                                printFace( const char* layer, cgalPoly_FaceConstHandle fh );
-    
-    void                                addBoundary( cgalPoly_FaceConstHandle& curFace, std::vector<cgalPoly_Polygon>& boundaries );    
-    void                                addHole( cgalPoly_FaceConstHandle& curFace, std::vector<cgalPoly_Polygon>& holes );
-    void                                addBoundaries( cgalPoly_FaceConstHandle& curFace, std::vector<cgalPoly_Polygon>& boundaries, std::vector<cgalPoly_Polygon>& holes );
-    void                                addHoles( cgalPoly_FaceConstHandle& curFace, std::vector<cgalPoly_Polygon>& boundaries, std::vector<cgalPoly_Polygon>& holes );
     void                                facesFromUntrustedNodes( const std::vector<cgalPoly_Point>& nodes, std::vector<cgalPoly_Polygon>& boundaries, std::vector<cgalPoly_Polygon>& holes );
-    cgalPoly_CcbHeConstCirculator       addPolys( const cgalPoly_Arrangement& arr, bool isHole,
-                                                  cgalPoly_FaceConstHandle insideFaceH, cgalPoly_CcbHeConstCirculator insideCcb, 
-                                                  std::vector<cgalPoly_Polygon>& boundaries, std::vector<cgalPoly_Polygon>& holes,
-                                                  GDALDataset* poDS );
-    
-    void                                setVisited(cgalPoly_HeConstHandle he, std::vector<cgalPoly_HeConstHandle>& visited);
-    bool                                isVisited(cgalPoly_HeConstHandle he, std::vector<cgalPoly_HeConstHandle>& visited);
-    void                                traversePaths( std::list<tgPSPath *>& paths, const std::vector<tgPSFaceID>& faces );
-    void                                facesFromUntrustedNodes( std::vector<cgalPoly_Point> nodes, std::vector<cgalPoly_Polygon>& faces );
-    void                                identifyFaces( const cgalPoly_Arrangement& arr, std::vector<tgPSFaceID>& faces );
-    void                                dumpFaces( std::vector<tgPSFaceID>& faces );
-    
+        
     cgalPoly_Polygon                    splitLongEdges( cgalPoly_Polygon& p, int maxSegmentSize );
     cgalPoly_PolygonWithHoles           splitLongEdges( cgalPoly_PolygonWithHoles& pwh, int maxSegmentLength );
   
