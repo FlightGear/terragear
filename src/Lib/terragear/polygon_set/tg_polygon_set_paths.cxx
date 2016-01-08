@@ -1,5 +1,7 @@
 #include "tg_polygon_set.hxx"
 
+#define DEBUG_PATHS 0
+
 tgPolygonSetPaths::tgPolygonSetPaths( const cgalPoly_Arrangement& arr )
 {
     identifyFaces( arr  );
@@ -172,7 +174,6 @@ void tgPolygonSetPaths::traversePaths( void )
         if ( curPath ) {
             cgalPoly_CcbHeConstCirculator curCcb = curPath->startCcb;
             cgalPoly_HeConstHandle        curHe  = curCcb;
-            char datasetname[128];
 
             // get inner and outer face IDs
             unsigned long innerId = lookupFace( curPath->inner.face );
@@ -183,8 +184,10 @@ void tgPolygonSetPaths::traversePaths( void )
                 SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths IGNORE/REMOVE duplicate path " << curPath->id << " at " << curHe->source()->point() << " inner: " << innerId << ", outer: " << outerId );
                 curPath->nodes.clear();
                 curPath->complete = true;
-            } else {            
+            } else {
+#if DEBUG_PATHS                
                 // open a datasource for the path debug
+                char datasetname[128];
                 sprintf(datasetname, "./Paths/path_%03lu", curPath->id );
                 GDALDataset* poDS = tgPolygonSet::openDatasource(datasetname);
             
@@ -193,17 +196,20 @@ void tgPolygonSetPaths::traversePaths( void )
             
                 // save start node
                 tgPolygonSet::toDebugShapefile( poNodeLayer, curHe->source()->point(), "start" );
-            
+#endif
+                
                 SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths Start path " << curPath->id << " at " << curHe->source()->point() << " inner: " << innerId << ", outer: " << outerId );
 
                 do
                 {
                     // ignore inner antenna
                     if ( curHe->face() != curHe->twin()->face() ) { 
+#if DEBUG_PATHS                
                         // add the node
                         char nodelabel[32];
                         sprintf( nodelabel, "node_%04lu", curPath->nodes.size() );
                         tgPolygonSet::toDebugShapefile( poNodeLayer, curHe->source()->point(), nodelabel );
+#endif
 
                         setVisited( curHe );
                         curPath->nodes.push_back( curHe->source()->point() );
@@ -281,9 +287,11 @@ void tgPolygonSetPaths::traversePaths( void )
                                     curCcb = validPaths[i].startCcb;
                                     curHe = curCcb;
 
+#if DEBUG_PATHS                
                                     char nodelabel[32];
                                     sprintf( nodelabel, "node_%04lu", curPath->nodes.size() );
                                     tgPolygonSet::toDebugShapefile( poNodeLayer, curHe->source()->point(), nodelabel );
+#endif
 
                                     setVisited( curHe  );
                                     curPath->nodes.push_back( curHe->source()->point() );
@@ -301,8 +309,11 @@ void tgPolygonSetPaths::traversePaths( void )
                         curPath->complete = true;
                     }
                 } while ( !curPath->complete );
-                
+
+#if DEBUG_PATHS                                
                 GDALClose( poDS );
+#endif
+                
             }
         }
     } while( curPath != NULL );
@@ -362,6 +373,7 @@ void tgPolygonSetPaths::identifyFaces( const cgalPoly_Arrangement& arr )
 
 void tgPolygonSetPaths::dumpFaces( void ) const
 {
+#if DEBUG_PATHS
     std::vector<tgPathsFaceID>::const_iterator fit;
     char faceId[32];
 
@@ -369,6 +381,7 @@ void tgPolygonSetPaths::dumpFaces( void ) const
         sprintf( faceId, "face_%03lu", fit->id );
         printFace( faceId, fit->face );
     }
+#endif
 }
 
 void tgPolygonSetPaths::printFace( const char* layer, cgalPoly_FaceConstHandle fh ) const

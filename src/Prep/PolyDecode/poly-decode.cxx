@@ -62,7 +62,7 @@ bool use_attribute_query=false;
 string attribute_query;
 bool use_spatial_query=false;
 double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
-int num_threads = 8;
+int num_threads = 1;
 bool save_shapefiles=false;
 std::string ds_name=".";
 

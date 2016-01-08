@@ -12,13 +12,15 @@
 
 
 #define CORRECTION  (0.0005)
+
+#define DEBUG_CHOPPER   0
+
 void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
 {
     cgalPoly_Point    base_pts[4];
     const std::string material = subject.getMeta().material;
     SGGeod            pt;
     char              layer[256];
-    // static unsigned int curClip=1;
 
     // create a mutable copy.  we don't want to mess with the original geometry.
     tgPolygonSet      result(subject);
@@ -34,24 +36,36 @@ void tgChopper::Clip( const tgPolygonSet& subject, SGBucket& b )
     base_pts[3] = cgalPoly_Point( pt.getLongitudeDeg()-CORRECTION, pt.getLatitudeDeg()+CORRECTION );
     cgalPoly_Polygon base( base_pts, base_pts+4 );
 
-#if 0
+#if DEBUG_CHOPPER
+    static unsigned int curClip=1;
+    char debugDatasetName[128];
     
-    char layer[128];
-    sprintf( layer, "chop_%04d_original", curClip );
-    result.toShapefile( "./", layer );
+    sprintf(debugDatasetName, "./Chopper/tile_%s_%s", b.gen_index_str().c_str(), material.c_str() );
+
+    SG_LOG( SG_GENERAL, SG_INFO, "tgChopper Clip saving debug to " << debugDatasetName );
+
+    SGPath sgp( debugDatasetName );
+    sgp.create_dir( 0755 );
+            
+    GDALDataset* poDS = tgPolygonSet::openDatasource(debugDatasetName);
+
+    // open Point layer
+    OGRLayer* poLayerSubject = tgPolygonSet::openLayer(poDS, wkbPolygon25D, tgPolygonSet::LF_DEBUG, "subject");
+    OGRLayer* poLayerTile    = tgPolygonSet::openLayer(poDS, wkbPolygon25D, tgPolygonSet::LF_DEBUG, "tile");
+    OGRLayer* poLayerResult  = tgPolygonSet::openLayer(poDS, wkbPolygon25D, tgPolygonSet::LF_DEBUG, "result");
     
-    sprintf( layer, "chop_%04d_tile", curClip );
-    tgPolygonSet::toShapefile( base, "./", layer );
+    tgPolygonSet::toDebugShapefile( poLayerSubject, subject.getPs(), "subject" );
+    tgPolygonSet::toDebugShapefile( poLayerTile, base, "tile" );
 #endif
     
     // new geometry is intersection of original geometry and tile
     result.intersection2( base );
 
-#if 0    
-    sprintf( layer, "chop_%04d_result", curClip );
-    result.toShapefile( "./", layer );
+#if DEBUG_CHOPPER
+    tgPolygonSet::toDebugShapefile( poLayerResult, result.getPs(), "result" );
     
     curClip++;
+    GDALClose( poDS );
 #endif
     
     if ( !result.isEmpty() ) {
@@ -268,7 +282,7 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
     SGGeod sub_gMin = SGGeod::fromDeg( CGAL::to_double(sub_bb.xmin()), CGAL::to_double(sub_bb.ymin()) );
     SGGeod sub_gMax = SGGeod::fromDeg( CGAL::to_double(sub_bb.xmax()), CGAL::to_double(sub_bb.ymax()) );
     std::vector<SGBucket> sub_buckets;
-    sgGetBuckets( sub_gMin, sub_gMax, sub_buckets );
+    sgGetBuckets( sub_gMin, sub_gMax, sub_buckets );    
     
     SGTimeStamp chop_start, chop_end;
     SGTimeStamp pre_start,  pre_end;
@@ -277,8 +291,12 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
     
     // if the bounding box width or height > 1.0, pre chop into 1x1 pieces
     std::vector<tgPolygonSet> chunks;
+#if DO_PRECHOP    
     PreChop( subject, chunks);
-
+#else
+    chunks.push_back( subject );
+#endif
+    
     pre_end.stamp();
     chop_start.stamp();
     
@@ -289,8 +307,7 @@ void tgChopper::Add( const tgPolygonSet& subject, SGTimeStamp& create )
         SGGeod       gMax = SGGeod::fromDeg( CGAL::to_double(bb.xmax()), CGAL::to_double(bb.ymax()) );
 
         std::vector<SGBucket> buckets;
-        sgGetBuckets( gMin, gMax, buckets );
-    
+        sgGetBuckets( gMin, gMax, buckets );        
         for ( unsigned int j=0; j<buckets.size(); j++ ) {
             Clip( chunks[i], buckets[j] );
         }        

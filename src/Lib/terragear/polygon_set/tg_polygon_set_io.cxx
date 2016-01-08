@@ -153,7 +153,7 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, Pol
     
     poLayer = poDS->GetLayerByName( layer_name );    
     if ( !poLayer ) {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " doesn't exist - create" );
+        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::toShapefile: layer " << layer_name << " doesn't exist - create" );
 
         OGRSpatialReference srs;
         srs.SetWellKnownGeogCS("WGS84");
@@ -387,7 +387,7 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, Pol
             }
         }
     } else {
-        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
+        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
     }
    
     return poLayer;
