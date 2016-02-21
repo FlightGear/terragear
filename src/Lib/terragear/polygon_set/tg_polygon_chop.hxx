@@ -7,9 +7,21 @@
 #include <terragear/tg_dataset_protect.hxx>
 #include "tg_polygon_set.hxx"
 
-// for ogr-decode : generate a bunch of polygons, mapped by bucket id
-typedef std::map<long int, tgPolygonSetList> bucket_polys_map;
-typedef bucket_polys_map::iterator bucket_polys_map_interator;
+class tgChopperChunk
+{
+public:
+    tgChopperChunk( const tgPolygonSet& subject ) {
+        chunk = subject;
+    }
+    
+    void setBuckets( const SGGeod& min, const SGGeod& max, bool checkBorders );
+    
+    void clip( long int bucket_id, std::string& rootPath, SGMutex* lock );
+    
+private:
+    std::vector<SGBucket>   buckets;
+    tgPolygonSet            chunk;
+};
 
 class tgChopper
 {
@@ -19,18 +31,13 @@ public:
         bucket_id = bid;
     }
 
-    void Add( const tgPolygonSet& poly, SGTimeStamp& create );
-    void Save( bool DebugShapes );
+    void Add( const tgPolygonSet& poly );
 
 private:
-    void PreChop( const tgPolygonSet& subject, std::vector<tgPolygonSet>& chunks );
-    void ClipRow( const tgPolygonSet& subject, const double& center_lat );
-    void Clip( const tgPolygonSet& subject, SGBucket& b );
-    void Chop( const tgPolygonSet& subject );
+    void PreChop( const tgPolygonSet& subject, std::vector<tgChopperChunk>& chunks );
 
     long int         bucket_id;     // set if we only want to save a single bucket
     std::string      root_path;
     SGMutex          lock;
-    //bucket_polys_map bp_map;
     tgDatasetAcess   dataset;
 };

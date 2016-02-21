@@ -46,7 +46,7 @@ void tgPolygonSet::clusterNodes( const tgCluster& clusteredNodes )
     cgalPoly_PolygonSet                                     holesUnion;
     
     ps.polygons_with_holes( std::back_inserter(pwh_list) );
-    SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::clusterNodes: got " << pwh_list.size() << " polys with holes ");
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::clusterNodes: got " << pwh_list.size() << " polys with holes ");
 
     // create faces from boundaries and holes
     for (pwhit = pwh_list.begin(); pwhit != pwh_list.end(); ++pwhit) {
@@ -175,7 +175,7 @@ void tgPolygonSet::facesFromUntrustedNodes(
     
     paths.traversePaths();
     
-    SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSet::facesFromUntrustedNodes - found " << paths.numPaths() << "paths" );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::facesFromUntrustedNodes - found " << paths.numPaths() << "paths" );
     
     paths.getPolys( boundaries, holes );
 }
@@ -296,9 +296,16 @@ void tgPolygonSet::calcInteriorPoints( void )
 }
 
 // intersect and modify current tgPolygonSet
-void tgPolygonSet::intersection2( const cgalPoly_Polygon& other )
+void tgPolygonSet::intersection2( const tgPolygonSet& subject, const cgalPoly_Polygon& diff )
 {    
-    ps.intersection( other );    
+    cgalPoly_PolygonSet psDiff(diff);
+    ps.intersection( subject.getPs(), psDiff );
+    meta = subject.getMeta();
+}
+
+void tgPolygonSet::intersection2( const cgalPoly_Polygon& diff )
+{    
+    ps.intersection( diff );
 }
 
 // intersect and return a new tgPolygonSet
@@ -431,4 +438,35 @@ SGGeod OffsetPointLast( const cgalPoly_Point& pPrev, const cgalPoly_Point& pCur,
     cgalPoly_Point p = translate( pCur );
     
     return SGGeod::fromDeg( CGAL::to_double( p.x() ), CGAL::to_double( p.y() ) );        
+}
+
+double tgPolygonSet::totalArea( void ) const
+{
+    std::list<cgalPoly_PolygonWithHoles>                 pwh_list;
+    std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
+    
+    cgalPoly_FT area(0.0);
+    
+    ps.polygons_with_holes( std::back_inserter(pwh_list) );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::totalArea: got " << pwh_list.size() << " polys with holes ");
+    
+    // save each poly with holes to the layer
+    for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
+        cgalPoly_PolygonWithHoles pwh = (*it);
+        
+        // for each poly with holes, add boundary area, and subtract hole area
+        area += pwh.outer_boundary().area();
+        
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::boundary area is " << pwh.outer_boundary().area() );
+        
+        cgalPoly_PolygonWithHoles::Hole_const_iterator hit;
+        for (hit = pwh.holes_begin(); hit != pwh.holes_end(); ++hit) {
+            cgalPoly_Polygon p = (*hit);
+            area += p.area();            
+            
+            SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::hole area is " << p.area() );
+        }
+    }
+    
+    return CGAL::to_double( area );
 }

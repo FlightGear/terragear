@@ -46,11 +46,11 @@
 using std::string;
 
 string area_type="Default";
-int num_threads = 1;
+int num_threads = 4;
 
 std::vector<SGBucket> bucketList;
 SGLockedQueue<OGRFeature *> global_workQueue;
-
+//
 class Decoder : public SGThread
 {
 public:
@@ -79,22 +79,16 @@ private:
 
 void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string& area_type )
 {
-    SGTimeStamp create_start, create_end, create_time;
-    create_start.stamp();
-
     // generate metadata info from GDAL feature info
     tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );
     tgPolygonSet shapes( poGeometry, meta );
     
     // add the shape to allPolys
     lock.lock();
-    allPolys.push_back( shapes );
-    lock.unlock();
-    
-    create_end.stamp();
-    create_time = create_end - create_start;
-    
-    chopper.Add( shapes, create_time  );
+    allPolys.push_back( shapes );    
+    lock.unlock();    
+
+    chopper.Add( shapes );
 }
 
 void Decoder::run()
@@ -223,7 +217,7 @@ void usage(char* progname) {
 
 int main( int argc, char **argv ) {
     char*                   progname=argv[0];
-    string                  datasource,work_dir;
+    string                  datasource,work_dir,resultname;
     std::vector<SGBucket>   bucketList;
     tgPolygonSetList        shapefilePolys;
     SGMutex                 lock;
@@ -247,11 +241,12 @@ int main( int argc, char **argv ) {
 
     SG_LOG( SG_GENERAL, SG_ALERT, "\npoly-decode version " << getTGVersion() );
 
-    if (argc<3) {
+    if (argc<4) {
         usage(progname);
     }
     work_dir=argv[1];
     datasource=argv[2];
+    resultname=argv[3];
 
     SGPath sgp( work_dir );
     sgp.append( "dummy" );
@@ -259,7 +254,7 @@ int main( int argc, char **argv ) {
 
     tgChopper results( work_dir );
 
-    SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
+    SG_LOG( SG_GENERAL, SG_INFO, "Opening datasource " << datasource << " for reading." );
 
     GDALAllRegister();
     GDALDataset       *poDS;
@@ -274,7 +269,7 @@ int main( int argc, char **argv ) {
     SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << datasource );
 
     OGRLayer  *poLayer;
-    if (argc>3) {
+    if (argc>4) {
         for (int i=3;i<argc;i++) {
             poLayer = poDS->GetLayerByName( argv[i] );
 
@@ -297,13 +292,24 @@ int main( int argc, char **argv ) {
 
     GDALClose(poDS);
 
+    char resDatasource[64];
+    sprintf(resDatasource, "./%s", resultname.c_str() );
+    
+    SG_LOG( SG_GENERAL, SG_ALERT, "reassemble datasource allShapefilePolys " << datasource << " from " << shapefilePolys.size() << " polys " );
+    
     // first, join all the polys
     tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );
     tgPolygonSet     allShapefilePolys = tgPolygonSet::join( shapefilePolys, meta );
+
+    double total_sp_area = allShapefilePolys.totalArea();
+    allShapefilePolys.toShapefile( resDatasource, "shapefile_polys" );
+    
+    allShapefilePolys.erase();
+    shapefilePolys.clear();
     
     // now load the chopped shapefiles into a new shape
-    tgPolygonSetList choppedPolys;
-    
+    tgPolygonSetList choppedPolys;    
+    SG_LOG( SG_GENERAL, SG_ALERT, "gather allChoppedPolys " << datasource );
     for ( unsigned int i=0; i<bucketList.size(); i++ ) {
         // open the shapefile in the bucket
         std::string poly_path;
@@ -318,20 +324,14 @@ int main( int argc, char **argv ) {
             choppedPolys.push_back( polys[j] );
         }
     }
-    
-    
+
+    SG_LOG( SG_GENERAL, SG_ALERT, "reassemble datasource allChoppedPolys " << datasource << " from " << choppedPolys.size() << " polys ");   
     tgPolygonSet allChoppedPolys = tgPolygonSet::join( choppedPolys, meta );
-    allChoppedPolys.toShapefile( "./result", "chopped_polys" );
-    allShapefilePolys.toShapefile( "./result", "shapefile_polys" );
+ 
+    double total_cp_area = allChoppedPolys.totalArea();
+    allChoppedPolys.toShapefile( resDatasource, "chopped_polys" );
     
-    // allChoppedPolys should be equal to allShapefilePolys
-    // i.e. the symetric difference should be empty
-    tgPolygonSet resultPolys = tgPolygonSet::symmetricDifference( allChoppedPolys, allShapefilePolys, meta );
-    
-    if ( !resultPolys.isEmpty() ) {
-        resultPolys.toShapefile( "./result", "difference" );
-    }
-    
-    
+    SG_LOG( SG_GENERAL, SG_ALERT, "total area of difference for " << resultname << " is " << total_sp_area - total_cp_area );
+
     return 0;
 }

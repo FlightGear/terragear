@@ -430,15 +430,12 @@ void Airport::LookupBaseIndexes( void )
 
 void Airport::ChopBase( const std::string& root, const string_list& elev_src )
 {
-    SGTimeStamp create_start, create_end, create_time;
     tgChopper chopper( root );
 
     tgPolygonSetMeta    meta( tgPolygonSetMeta::META_TEXTURED_SURFACE, "Grass", "OuterBase" );
 
-    create_start.stamp();    
     // tgPolygonSet outerBase = tgPolygonSet::join( polys_built.get_polys(AIRPORT_AREA_OUTER_BASE), meta );
     tgPolygonSet outerBase = baseMesh.join(AIRPORT_AREA_OUTER_BASE, meta );
-    create_end.stamp();
     
     // create the smoothing surface from the bounding box
     CGAL::Bbox_2 apt_bounds = outerBase.getBoundingBox();
@@ -446,8 +443,7 @@ void Airport::ChopBase( const std::string& root, const string_list& elev_src )
 
     outerBase.getMeta().setSurfaceInfo( base_surf );
     
-    create_time = create_end - create_start;
-    chopper.Add( outerBase, create_time );
+    chopper.Add( outerBase );
 }
 
 void Airport::WriteBaseOutput( const std::string& root, const SGBucket& b )

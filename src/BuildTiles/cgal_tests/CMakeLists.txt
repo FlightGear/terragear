@@ -13,6 +13,19 @@ target_link_libraries(cgalcliptest
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 
+add_executable(cgaljointest
+    jointest.cxx
+)
+
+target_link_libraries(cgaljointest
+    terragear
+    ${Boost_LIBRARIES}
+    ${GDAL_LIBRARY}    
+    ${ZLIB_LIBRARY}
+    ${SIMGEAR_CORE_LIBRARIES}
+    ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+)
+
 add_executable(cgaltritest
     tritest.cxx
 )
@@ -40,5 +53,6 @@ target_link_libraries(cgalarrtest
 )
 
 install(TARGETS cgalcliptest RUNTIME DESTINATION bin)
+install(TARGETS cgaljointest RUNTIME DESTINATION bin)
 install(TARGETS cgaltritest RUNTIME DESTINATION bin)
 install(TARGETS cgalarrtest RUNTIME DESTINATION bin)

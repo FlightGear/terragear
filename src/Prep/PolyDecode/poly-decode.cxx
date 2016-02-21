@@ -62,7 +62,7 @@ bool use_attribute_query=false;
 string attribute_query;
 bool use_spatial_query=false;
 double spat_min_x, spat_min_y, spat_max_x, spat_max_y;
-int num_threads = 1;
+int num_threads = 16;
 bool save_shapefiles=false;
 std::string ds_name=".";
 
@@ -86,7 +86,7 @@ inline static bool is_null_area( const std::string& area ) {
 class Decoder : public SGThread
 {
 public:
-    Decoder( OGRCoordinateTransformation *poct, int atf, tgChopper& c ) : chopper(c) {
+    Decoder( OGRCoordinateTransformation *poct, int atf, tgChopper& c, SGMutex& l ) : chopper(c), lock(l) {
         poCT = poct;
         area_type_field = atf;
     }
@@ -102,33 +102,28 @@ private:
 
     // Store the reults per tile
     tgChopper& chopper;
-
-    int area_type_field;
+    SGMutex&   lock;
+    int        area_type_field;
 };
 
 void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string& area_type )
 {
-    SGTimeStamp create_start, create_end, create_time;
-
-    create_start.stamp();
-
     // generate metadata info from GDAL feature info
-    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );
-    
+    tgPolygonSetMeta meta( tgPolygonSetMeta::META_TEXTURED, area_type );    
     meta.getFeatureFields( poFeature );
 
     tgPolygonSet shapes( poGeometry, meta );
-
-    SG_LOG( SG_GENERAL, SG_INFO, " shape enpty: " << shapes.isEmpty() );
+    if ( shapes.isEmpty() ) {
+        SG_LOG( SG_GENERAL, SG_INFO, "Decoder::processPolygon shape enpty " );
+    }
     
 //    if ( max_segment_length > 0 ) {
 //        shapes.splitLongEdges( max_segment_length );
 //    }
-    
-    create_end.stamp();
-    create_time = create_end - create_start;
 
-    chopper.Add( shapes, create_time  );
+    //lock.lock();
+    chopper.Add( shapes );
+    //lock.unlock();
 }
 
 void Decoder::run()
@@ -234,7 +229,7 @@ void processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string&
 #endif
 
 // Main Thread
-void processLayer(OGRLayer* poLayer, tgChopper& results )
+void processLayer(OGRLayer* poLayer, tgChopper& results, SGMutex& l )
 {
     int feature_count=poLayer->GetFeatureCount();
 
@@ -316,7 +311,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     // this just generates all the tgPolygons
     std::vector<Decoder *> decoders;
     for (int i=0; i<num_threads; i++) {
-        Decoder* decoder = new Decoder( poCT, area_type_field, results );
+        Decoder* decoder = new Decoder( poCT, area_type_field, results, l );
         decoder->start();
         decoders.push_back( decoder );
     }
@@ -447,9 +442,10 @@ void usage(char* progname) {
 }
 
 int main( int argc, char **argv ) {
-    char* progname=argv[0];
-    string datasource,work_dir;
-
+    char*   progname=argv[0];
+    string  datasource,work_dir;
+    SGMutex lock;
+    
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
     while (argc>1) {
@@ -476,6 +472,13 @@ int main( int argc, char **argv ) {
                 usage(progname);
             }
             max_segment_length=atoi(argv[2]);
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--num-threads")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            num_threads=atoi(argv[2]);
             argv+=2;
             argc-=2;
         } else if (!strcmp(argv[1],"--start-record")) {
@@ -549,7 +552,7 @@ int main( int argc, char **argv ) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
                 exit( 1 );
             }
-            processLayer(poLayer, results );
+            processLayer(poLayer, results, lock );
         }
     } else {
         for (int i=0;i<poDS->GetLayerCount();i++) {
@@ -557,14 +560,11 @@ int main( int argc, char **argv ) {
 
             assert(poLayer != NULL);
 
-            processLayer(poLayer, results );
+            processLayer(poLayer, results, lock );
         }
     }
 
     GDALClose(poDS);
-
-    SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
-    results.Save( save_shapefiles );
 
     return 0;
 }

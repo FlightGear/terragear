@@ -2,7 +2,7 @@
 
 #include "tg_mesh.hxx"
 
-GDALDataset* tgMesh::openDatasource( const std::string& datasource_name )
+GDALDataset* tgMesh::openDatasource( const std::string& datasource_name ) const
 {
     GDALDataset*    poDS = NULL;
     GDALDriver*     poDriver = NULL;
@@ -20,7 +20,7 @@ GDALDataset* tgMesh::openDatasource( const std::string& datasource_name )
     return poDS;
 }
 
-OGRLayer* tgMesh::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name )
+OGRLayer* tgMesh::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name ) const
 {
     OGRLayer*           poLayer = NULL;
  
@@ -51,28 +51,44 @@ OGRLayer* tgMesh::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const cha
     return poLayer;
 }
 
-void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshArrangement& arr )
+void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshArrangement& arr ) const
 {
     GDALDataset*  poDS = NULL;
-    OGRLayer*     poLayer = NULL;
+    OGRLayer*     poLineLayer = NULL;
+    OGRLayer*     poPointLayer = NULL;
+    char          layerName[256];
     
     poDS = openDatasource( datasource );
     if ( poDS ) {
-        poLayer = openLayer( poDS, wkbLineString25D, layer );
-        if ( poLayer ) {
+        sprintf( layerName, "%s_segs", layer );
+        poLineLayer = openLayer( poDS, wkbLineString25D, layerName );
+        
+        if ( poLineLayer ) {
             meshArrangement::Edge_const_iterator eit;
             
             for ( eit = arr.edges_begin(); eit != arr.edges_end(); ++eit ) {        
-                toShapefile( poLayer, eit->curve(), "edge" );
-            }            
+                toShapefile( poLineLayer, eit->curve(), "edge" );
+            }
         }
+        
+        sprintf( layerName, "%s_pts", layer );
+        poPointLayer = openLayer( poDS, wkbPoint25D, layerName );
+
+        if ( poPointLayer ) {
+            meshArrangement::Vertex_const_iterator vit;
+            
+            for ( vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit ) {        
+                toShapefile( poPointLayer, vit->point(), "pt" );
+            }
+        }
+        
     }
     
     // close datasource
     GDALClose( poDS );    
 }
 
-void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc )
+void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc ) const
 {    
     OGRPoint      point;
     OGRLineString line;
@@ -98,7 +114,65 @@ void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const ch
     OGRFeature::DestroyFeature(poFeature);        
 }
 
-void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked )
+void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrPoint& pt, const char* desc ) const
+{    
+    OGRPoint      point;
+    
+    point.setZ( 0.0 );    
+    point.setX( CGAL::to_double( pt.x() ) );
+    point.setY( CGAL::to_double( pt.y() ) );
+    
+    OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
+    poFeature->SetGeometry(&point);    
+    poFeature->SetField("tg_desc", desc );
+    
+    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+    }
+    OGRFeature::DestroyFeature(poFeature);        
+}
+
+void tgMesh::toShapefile( OGRLayer* poLayer, const meshTriPoint& pt, const char* desc ) const
+{    
+    OGRPoint      point;
+    
+    point.setZ( 0.0 );    
+    point.setX( pt.x() );
+    point.setY( pt.y() );
+    
+    OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
+    poFeature->SetGeometry(&point);    
+    poFeature->SetField("tg_desc", desc );
+    
+    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
+    {
+        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
+    }
+    OGRFeature::DestroyFeature(poFeature);        
+}
+
+void tgMesh::toShapefile( const std::string& datasource, const char* layer, const std::vector<meshTriPoint>& points ) const
+{
+    GDALDataset*  poDS = NULL;
+    OGRLayer*     poPointLayer = NULL;
+    
+    poDS = openDatasource( datasource );
+    if ( poDS ) {
+        poPointLayer = openLayer( poDS, wkbPoint25D, layer );
+        
+        if ( poPointLayer ) {            
+            for ( unsigned int i=0; i < points.size(); i++ ) {
+                toShapefile( poPointLayer, points[i], "pt" );
+            }
+        }
+    }
+    
+    // close datasource
+    GDALClose( poDS );        
+}
+
+void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked ) const
 {
     GDALDataset*  poDS = NULL;
     OGRLayer*     poLayer = NULL;
@@ -108,11 +182,11 @@ void tgMesh::toShapefile( const std::string& datasource, const char* layer, cons
         poLayer = openLayer( poDS, wkbLineString25D, layer );
         if ( poLayer ) {
             for (meshTriCDTPlus::Finite_faces_iterator fit=triangulation.finite_faces_begin(); fit!=triangulation.finite_faces_end(); ++fit) {
-                if ( marked ) {
-                    if ( fit->info().hasFace() ) {
+                if ( marked ) {                    
+//                    if ( fit->info().hasFace() ) {
                         meshTriangle tri = meshTriangulation.triangle(fit);
                         toShapefile( poLayer, tri );
-                    }
+//                    }
                 } else {
                     meshTriangle tri = meshTriangulation.triangle(fit);
                     toShapefile( poLayer, tri );                    
@@ -125,7 +199,7 @@ void tgMesh::toShapefile( const std::string& datasource, const char* layer, cons
     GDALClose( poDS );    
 }
 
-void tgMesh::toShapefile( OGRLayer* poLayer, const meshTriangle& tri )
+void tgMesh::toShapefile( OGRLayer* poLayer, const meshTriangle& tri ) const
 {    
     OGRPolygon    polygon;
     OGRPoint      point;
@@ -150,7 +224,7 @@ void tgMesh::toShapefile( OGRLayer* poLayer, const meshTriangle& tri )
     OGRFeature::DestroyFeature(poFeature);        
 }
 
-void tgMesh::toShapefiles( const char* dataset )
+void tgMesh::toShapefiles( const char* dataset ) const
 {
     
 }

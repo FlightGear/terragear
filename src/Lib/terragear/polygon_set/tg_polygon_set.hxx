@@ -27,10 +27,10 @@ public:
         META_CONSTRAIN
     } MetaInfo_e;
 
-    tgPolygonSetMeta() : info(META_NONE), id(tgPolygonSetMeta::cur_id++) {}
-    tgPolygonSetMeta( MetaInfo_e i) : info(i), id(tgPolygonSetMeta::cur_id++) {}
-    tgPolygonSetMeta( MetaInfo_e i, const std::string& mat, const std::string& desc ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++), description(desc) {}
-    tgPolygonSetMeta( MetaInfo_e i, const std::string& mat ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++) {}
+    tgPolygonSetMeta() : info(META_NONE), material(""), id(tgPolygonSetMeta::cur_id++), description("") { initFields(); }
+    tgPolygonSetMeta( MetaInfo_e i) : info(i), material(""), id(tgPolygonSetMeta::cur_id++), description("") { initFields(); }
+    tgPolygonSetMeta( MetaInfo_e i, const std::string& mat, const std::string& desc ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++), description(desc) { initFields(); }
+    tgPolygonSetMeta( MetaInfo_e i, const std::string& mat ) : info(i), material(mat), id(tgPolygonSetMeta::cur_id++), description("") { initFields(); }
 
     /* All Meta Info types */
     void setDescription( const char* desc ) { description = desc; }
@@ -145,6 +145,7 @@ public:
 private:    
     static unsigned long    cur_id;    
 
+    void                    initFields( void );
     void                    getCommonFields( OGRFeature* poFeature );
     void                    setCommonFields( OGRFeature* poFeature ) const;
 
@@ -226,6 +227,7 @@ public:
     
     CGAL::Bbox_2                        getBoundingBox( void ) const;
     bool                                isEmpty( void ) const { return ps.is_empty(); }
+    double                              totalArea( void ) const;
     void                                erase( void ) { ps.clear(); }
 
     void                                splitLongEdges( int maxSegmentLength );
@@ -238,8 +240,9 @@ public:
     // TODO : organize what types of booleans we want/need
     // static vs member vs meta / no meta...
     tgPolygonSet                        intersection( const cgalPoly_Polygon& other ) const;
-    void                                intersection2( const cgalPoly_Polygon& other );
-
+    void                                intersection2( const tgPolygonSet& subject, const cgalPoly_Polygon& diff );
+    void                                intersection2( const cgalPoly_Polygon& diff );
+    
     void                                difference( const cgalPoly_Polygon& other );
     void                                join( const cgalPoly_Polygon& other );
     static tgPolygonSet                 join( const tgPolygonSetList& sets, const tgPolygonSetMeta& meta );

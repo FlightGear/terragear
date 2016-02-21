@@ -1,3 +1,5 @@
+add_subdirectory(testgetbuckets)
+
 include_directories(${GDAL_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/Lib)
 add_executable(tgChopperTest tgChopperTest.cxx)

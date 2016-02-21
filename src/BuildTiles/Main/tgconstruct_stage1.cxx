@@ -48,7 +48,8 @@ tgConstructFirst::tgConstructFirst( const std::string& pfile, SGLockedQueue<SGBu
     }
 
     std::vector<std::string> area_names = areaDefs.get_name_array();
-    tileMesh.initPriorities( area_names );    
+    tileMesh.initPriorities( area_names );  
+    tileMesh.setLock( lock );
 }
 
 
@@ -76,40 +77,61 @@ void tgConstructFirst::run()
         // assume non ocean tile until proven otherwise
         isOcean = false;
 
-        if ( !debugBase.empty() ) {
-            std::string debugPath = debugBase + "/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
+#if 0        
+        if (   ( bucket.gen_index() != 3006851 )
+            && ( bucket.gen_index() != 3023235 )
+            && ( bucket.gen_index() != 3039619 )
+            && ( bucket.gen_index() != 3056003 )
+            && ( bucket.gen_index() != 3072387 )
+            && ( bucket.gen_index() != 3105155 )
+            && ( bucket.gen_index() != 3121539 )
+#else
+        if ( true
+#endif            
+        ) {       
+            if ( !debugBase.empty() ) {
+                std::string debugPath = debugBase + "/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
 
+                lock->lock();
+                std::string dummy = debugPath + "/dummy";
+                SGPath sgp( dummy );
+                sgp.create_dir( 0755 );            
+                lock->unlock();
+                
+                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tilesComplete << " of " << totalTiles << " debug path is " << debugPath );
+                tileMesh.initDebug( debugPath );
+            }
+            
+            std::string sharedPath = shareBase + "/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
+                
             lock->lock();
-            std::string dummy = debugPath + "/dummy";
+            std::string dummy = sharedPath + "/dummy";
             SGPath sgp( dummy );
             sgp.create_dir( 0755 );            
             lock->unlock();
             
-            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tilesComplete << " of " << totalTiles << " debug path is " << debugPath );
-            tileMesh.initDebug( debugPath );
+            tileMesh.clipAgainstBucket( bucket );
+            
+            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tilesComplete << " of " << totalTiles << " using thread " << current() );
+
+            // STEP 1 - read in the polygon soup for this tile
+            loadLandclassPolys( workBase );
+            
+            // Step 2 - add the fitted nodes ( important elevation points )
+            // add them to the mesh - which adds them in triangulation
+            loadElevation( demBase );
+            
+            // generate the tile
+            tileMesh.generate();
+
+            // save the intermediate data
+            lock->lock();
+            tileMesh.save( sharedPath );
+            lock->unlock();
+            
+            // and clear
+            tileMesh.clear();
         }
-        
-        tileMesh.clipAgainstBucket( bucket );
-        
-        SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tilesComplete << " of " << totalTiles << " using thread " << current() );
-
-        // STEP 1 - read in the polygon soup for this tile
-        loadLandclassPolys( workBase );
-        
-        // Step 2 - add the fitted nodes ( important elevation points )
-        // add them to the mesh - which adds them in triangulation
-        loadElevation( demBase );
-        
-        // generate the tile
-        tileMesh.generate();
-
-        // save the intermediate data
-        lock->lock();
-        tileMesh.save( shareBase );
-        lock->unlock();
-        
-        // and clear
-        tileMesh.clear();    
     }
 }
 
@@ -135,17 +157,10 @@ int tgConstructFirst::loadLandclassPolys( const std::string& path )
                 // shapefile contains multiple polygons.
                 // read an array of them
                 tgPolygonSet::fromShapefile( p, polys );                
-                SG_LOG(SG_GENERAL, SG_INFO, "tgShapefile::ToPolygons returned " << polys.size() << " polygons" );
-                
                 for ( unsigned int i=0; i<polys.size(); i++ ) {
                     std::string material = polys[i].getMeta().getMaterial();
-                    
-                    SG_LOG(SG_GENERAL, SG_INFO, "tgShapefile::ToPolygons poly " << i << " material is " << material );
-                    
-                    int area = areaDefs.get_area_priority( material );
-                    
-                    SG_LOG(SG_GENERAL, SG_INFO, "tgShapefile::ToPolygons poly " << i << " area is " << area );
-                    
+                                        
+                    int area = areaDefs.get_area_priority( material );                    
                     tileMesh.addPoly( area, polys[i] );
                 }
             }
@@ -165,6 +180,8 @@ void tgConstructFirst::loadElevation( const std::string& path ) {
     tgArray     array;
     
     if ( array.open(array_path) ) {
+        std::vector<cgalPoly_Point>  elevationPoints;
+        
         SG_LOG(SG_GENERAL, SG_DEBUG, "Opened Array file " << array_path);
         
         array.parse( bucket );
@@ -172,12 +189,12 @@ void tgConstructFirst::loadElevation( const std::string& path ) {
         
         std::vector<SGGeod> const& corner_list = array.get_corner_list();
         for (unsigned int i=0; i<corner_list.size(); i++) {
-            elevationPoints.push_back( meshTriPoint(corner_list[i].getLongitudeDeg(), corner_list[i].getLatitudeDeg()) );
+            elevationPoints.push_back( cgalPoly_Point(corner_list[i].getLongitudeDeg(), corner_list[i].getLatitudeDeg()) );
         }
         
         std::vector<SGGeod> const& fit_list = array.get_fitted_list();
         for (unsigned int i=0; i<fit_list.size(); i++) {
-            elevationPoints.push_back( meshTriPoint(fit_list[i].getLongitudeDeg(), fit_list[i].getLatitudeDeg()) );
+            elevationPoints.push_back( cgalPoly_Point(fit_list[i].getLongitudeDeg(), fit_list[i].getLatitudeDeg()) );
         }
         
         tileMesh.addPoints( elevationPoints );        

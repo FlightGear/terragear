@@ -31,9 +31,9 @@ tgPolygonSetPaths::tgPolygonSetPaths( const cgalPoly_Arrangement& arr )
     cgalPoly_FaceConstHandle      insideFaceH = (cgalPoly_FaceConstHandle)he.twin()->face();    
 
     if ( insideFaceH == outsideFaceH ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSetPaths::tgPolygonSetPaths - insideFH == ousideFH" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSetPaths::tgPolygonSetPaths - insideFH == ousideFH" );
     } else {
-        SG_LOG(SG_GENERAL, SG_ALERT, "tgPolygonSetPaths::tgPolygonSetPaths - insideFH != ousideFH" );        
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSetPaths::tgPolygonSetPaths - insideFH != ousideFH" );        
     }
 
     // create the primary path
@@ -198,7 +198,7 @@ void tgPolygonSetPaths::traversePaths( void )
                 tgPolygonSet::toDebugShapefile( poNodeLayer, curHe->source()->point(), "start" );
 #endif
                 
-                SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths Start path " << curPath->id << " at " << curHe->source()->point() << " inner: " << innerId << ", outer: " << outerId );
+                SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::traversePaths Start path " << curPath->id << " at " << curHe->source()->point() << " inner: " << innerId << ", outer: " << outerId );
 
                 do
                 {
@@ -218,7 +218,7 @@ void tgPolygonSetPaths::traversePaths( void )
                         // NOTE: if we contiue working on a path, it's always the case that we are at a junction.just pick the next route
  
                         if ( (curHe->target()->degree() > 2) ) {
-                            SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths Path " << curPath->id << " found a junction at " << curHe->target()->point() );
+                            SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::traversePaths Path " << curPath->id << " found a junction at " << curHe->target()->point() );
                         
                             // 1.  find all valid HEs
                             // ( same inner or outer face, and is NOT in visited list )
@@ -242,20 +242,20 @@ void tgPolygonSetPaths::traversePaths( void )
                                         // same inner and outer face
                                         validPaths.push_back( tgPathsJunction(curChildHe, tgPathsJunction::SAME_IN_AND_OUT) );
 
-                                        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has valid path to " << curChildHe->target()->point() << " with same inside and outside faces - in: " << curInnerId << " out: " << curOuterId );
+                                        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has valid path to " << curChildHe->target()->point() << " with same inside and outside faces - in: " << curInnerId << " out: " << curOuterId );
                                     } else if ( curHe->face() == curChildHe->face() ) {
                                         // same inner face
                                         validPaths.push_back( tgPathsJunction(curChildHe, tgPathsJunction::SAME_IN) );
 
-                                        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has valid path to " << curChildHe->target()->point() << " with same inside face: " << curInnerId << " but different out - cur: " << curOuterId << ", path: " << childOuterId );
+                                        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has valid path to " << curChildHe->target()->point() << " with same inside face: " << curInnerId << " but different out - cur: " << curOuterId << ", path: " << childOuterId );
                                     } else if ( curHe->twin()->face() == curChildHe->twin()->face() ) {
                                         // same outer face
                                         validPaths.push_back( tgPathsJunction(curChildHe, tgPathsJunction::SAME_OUT) );
                                         
-                                        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has valid path to " << curChildHe->target()->point() << " with same outside face: " << curOuterId << " but different in - cur: " << curInnerId << ", path: " << childInnerId );
+                                        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has valid path to " << curChildHe->target()->point() << " with same outside face: " << curOuterId << " but different in - cur: " << curInnerId << ", path: " << childInnerId );
                                     }
                                 } else {
-                                    SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has path to already visited halfedge to " << curChildHe->target()->point() );
+                                    SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::traversePaths Path " << curPath->id << " junction has path to already visited halfedge to " << curChildHe->target()->point() );
                                 }
 
                                 vCurCirc++;
@@ -411,14 +411,12 @@ void tgPolygonSetPaths::printFace( const char* layer, cgalPoly_FaceConstHandle f
             // ignore inner antenna
             if ( he->face() != he->twin()->face() ) { 
                 if ( he->source()->degree() > 2 ) {
-                    SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::addBoundary - uhoh - we have a node with degree > 2" );
-                    
                     // dump the bad nodes to a shapefile
                     tgPolygonSet::toDebugShapefile( poLayerNodes, he->source()->point(), "node" );
                 }
                 nodes.push_back( he->source()->point() );
             } else {
-                SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::addBoundary - drop antenna node  " );                            
+                SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::printFace - drop antenna node  " );                            
             }
             
             ++cur;
@@ -430,7 +428,7 @@ void tgPolygonSetPaths::printFace( const char* layer, cgalPoly_FaceConstHandle f
         GDALClose( poDS );
         
     } else {
-        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::addBoundary - face has no outer ccb " );
+        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::printFace - face has no outer ccb " );
     }    
 }
 

@@ -21,31 +21,53 @@
 
 #include <fstream>
 
+// source data ( an epec arrangement is used to 'clean' the input )
 #include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/Arrangement_2.h>
+#include <CGAL/Arr_segment_traits_2.h>
+
+// triangulation
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Constrained_Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_face_base_with_info_2.h>
 #include <CGAL/Constrained_triangulation_plus_2.h>
 
-/* determining if a face is within the reulting poly */
-struct FaceInfo2
-{
-    FaceInfo2() {}
-    int nesting_level;
-    
-    bool in_domain(){
-        return nesting_level%2 == 1;
-    }
-};
+// mesh refinement
+#include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesh_face_base_2.h>
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
 
-typedef CGAL::Exact_predicates_exact_constructions_kernel         K;
-typedef CGAL::Triangulation_vertex_base_2<K>                      Vb;
-typedef CGAL::Triangulation_face_base_with_info_2<FaceInfo2,K>    Fbb;
-typedef CGAL::Constrained_triangulation_face_base_2<K,Fbb>        Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb,Fb>               TDS;
-typedef CGAL::Exact_intersections_tag                             Itag;
-typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag>  CDT;
-typedef CGAL::Constrained_triangulation_plus_2<CDT>               CDTPlus;
-typedef CDTPlus::Point                                            Point;
+
+typedef CGAL::Exact_predicates_exact_constructions_kernel                                   meshArrKernel;
+typedef CGAL::Arr_segment_traits_2<meshArrKernel>                                           meshArrTraits;
+typedef meshArrTraits::Point_2                                                              meshArrPoint;
+typedef meshArrTraits::Curve_2                                                              meshArrSegment;
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel                                 meshTriKernel;
+typedef meshTriKernel::Point_2                                                              meshTriPoint;
+typedef meshTriKernel::Segment_2                                                            meshTriSegment;
+
+typedef CGAL::Triangulation_vertex_base_2<meshTriKernel>                                    meshTriVertexBase;
+
+typedef CGAL::Constrained_triangulation_face_base_2<meshTriKernel>                          Fbb;
+typedef CGAL::Delaunay_mesh_face_base_2<meshTriKernel,Fbb>                                  meshTriFaceBase;
+
+typedef CGAL::Triangulation_data_structure_2<meshTriVertexBase,meshTriFaceBase>             meshTriTDS;
+typedef CGAL::Exact_intersections_tag                                                       meshTriItag;
+typedef CGAL::Constrained_Delaunay_triangulation_2<meshTriKernel, meshTriTDS, meshTriItag>  meshTriCDT;
+typedef CGAL::Constrained_triangulation_plus_2<meshTriCDT>                                  meshTriCDTPlus;
+
+typedef meshTriCDTPlus::Edge                                                                meshTriEdge;
+typedef meshTriCDTPlus::Face_handle                                                         meshTriFaceHandle;
+typedef meshTriCDTPlus::Finite_faces_iterator                                               meshTriFaceIterator;
+typedef CGAL::Triangle_2<meshTriKernel>                                                     meshTriangle;
+
+typedef CGAL::Delaunay_mesh_size_criteria_2<meshTriCDTPlus>                                 meshCriteria;
+typedef CGAL::Delaunay_mesher_2<meshTriCDTPlus, meshCriteria>                               meshRefiner;
+
+meshTriPoint toMeshTriPoint( const meshArrPoint& aPoint ) {
+    return meshTriPoint ( CGAL::to_double( aPoint.x() ), CGAL::to_double(aPoint.y()) );
+}
 
 int main(int argc, char* argv[])
 {
@@ -56,31 +78,33 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    CDTPlus                               cdt;
-    std::vector<CDTPlus::Vertex_handle>   handles;
-    CDTPlus::Vertex_handle                h;
-    size_t                                num_points;
-    size_t                                num_constraints;
+    meshTriCDTPlus                              cdt;
+    size_t                                      num_points;
+    size_t                                      num_constraints;
   
     input_file >> num_points;
     for ( unsigned int i=0; i<num_points; i++ ) {
-        Point pt;
+        meshArrPoint pt;
         input_file >> pt;
       
-        h = cdt.insert( pt );
-        handles.push_back(h);
+        cdt.insert( toMeshTriPoint(pt) );
     }
   
     input_file >> num_constraints;
     for ( unsigned int i=0; i<num_constraints; i++ ) {
-        int s, t;
+        meshArrPoint s, t;
         input_file >> s >> t;
       
-        std::cout << " inserting constraint " << i << std::endl;
-        cdt.insert_constraint( handles[s], handles[t] );      
-    }
-
+        cdt.insert_constraint( toMeshTriPoint(s), toMeshTriPoint(t) );      
+    }    
     input_file.close();
-  
+    
+    meshRefiner mesher(cdt);
+    mesher.set_criteria(meshCriteria(0.125));
+    
+    std::cout << "refine mesh" << std::endl;    
+    mesher.refine_mesh();
+    std::cout << "complete" << std::endl;    
+    
     return 0;
 }

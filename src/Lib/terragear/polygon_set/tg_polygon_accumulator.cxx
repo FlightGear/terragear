@@ -481,23 +481,79 @@ void tgAccumulator::Add_cgal( const tgPolygon& subject )
 // need a few functions:
 // 1) generate a Polygon_set from the Polygons_with_holes in the list that intersect subject bounding box
 // 2) Add to the Polygons_with_holes list with a Polygon set ( and the bounding boxes )
-    
-cgalPoly_PolygonSet tgAccumulator::GetAccumPolygonSet( const CGAL::Bbox_2& bbox ) 
+void tgAccumulator::GetAccumPolygonSet( const CGAL::Bbox_2& bbox, cgalPoly_PolygonSet& accumPs ) 
 {
     std::list<tgAccumEntry>::const_iterator it;
     std::list<cgalPoly_PolygonWithHoles> accum;
-    cgalPoly_PolygonSet ps;
+//  static int num_iter = 1;
     
     // traverse all of the Polygon_with_holes and accumulate their union
     for ( it=accum_cgal_list.begin(); it!=accum_cgal_list.end(); it++ ) {
         if ( CGAL::do_overlap( bbox, (*it).bbox ) ) {
+#if 0
+            if ( (*it).pwh.is_unbounded() ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::GetAccumPolygonSet - pwh is unbounded" );
+            } else {
+                SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::GetAccumPolygonSet - pwh is bounded" );
+            }
+#endif            
             accum.push_back( (*it).pwh );
         }
     }
     
-    ps.join( accum.begin(), accum.end() );
-    
-    return ps;
+#if 0
+    if ( num_iter == 44 ) {
+        GDALDataset* pDS    = tgPolygonSet::openDatasource( "./joinDbg" );
+        char layer[128];
+        int  poly = 1;
+        
+        std::list<cgalPoly_PolygonWithHoles>::const_iterator pwhit = accum.begin();
+        while ( pwhit != accum.end() ) {
+            sprintf( layer, "poly_%04d", poly++ );
+            OGRLayer* pLayer = tgPolygonSet::openLayer( pDS, wkbLineString25D, tgPolygonSet::LF_DEBUG, layer );
+            tgPolygonSet::toDebugShapefile( pLayer, (*pwhit), "poly" );
+     
+            pwhit++;
+        }
+        GDALClose( pDS );        
+    }
+#endif
+
+#if 0  
+    if ( num_iter == 44 ) {
+        std::ofstream output_file("./output_polys.txt");
+        if (!output_file.is_open()) {
+            std::cerr << "Failed to open the " << "./output_polys.txt" << std::endl;
+            exit(0);
+        }
+        
+        std::list<cgalPoly_PolygonWithHoles>::const_iterator pwhit = accum.begin();
+
+//      CGAL::set_pretty_mode(output_file);
+        output_file << std::setprecision(64);
+        output_file << accum.size() << "\n";
+        while ( pwhit != accum.end() ) {
+            output_file << (*pwhit);
+            pwhit++;
+        }
+        output_file.close();
+    }
+#endif
+
+//  SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::GetAccumPolygonSet " << num_iter << " join " << accum.size() << " Polygon_with_holes ");
+    accumPs.join( accum.begin(), accum.end() );
+
+#if 0    
+    std::list<cgalPoly_PolygonWithHoles>::const_iterator pwhit = accum.begin();
+    int joinNum = 1;
+    while ( pwhit != accum.end() ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::GetAccumPolygonSet " << num_iter << " join " << joinNum++ );
+        ps.join( (*pwhit) );
+        pwhit++;
+    }
+#endif
+
+//  SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::GetAccumPolygonSet " << num_iter++ << " complete" );
 }
 
 void tgAccumulator::AddAccumPolygonSet( const cgalPoly_PolygonSet& ps )
@@ -505,7 +561,13 @@ void tgAccumulator::AddAccumPolygonSet( const cgalPoly_PolygonSet& ps )
     std::list<cgalPoly_PolygonWithHoles> pwh_list;
     std::list<cgalPoly_PolygonWithHoles>::const_iterator it;
     CGAL::Bbox_2 bbox;
-    
+
+    // make sure polygonSet is valid
+    cgalPoly_PolygonSet tmp(ps);
+    if ( !tmp.is_valid() ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::AddAccumPolygonSet - polygonSet is invalid" );
+    }
+
     ps.polygons_with_holes( std::back_inserter(pwh_list) );
     for (it = pwh_list.begin(); it != pwh_list.end(); ++it) {
         tgAccumEntry entry;
@@ -529,8 +591,15 @@ void tgAccumulator::Diff_and_Add_cgal( tgPolygonSet& subject )
 #endif
     
     cgalPoly_PolygonSet subPs  = subject.getPs();
-    cgalPoly_PolygonSet difPs = GetAccumPolygonSet( subject.getBoundingBox() );
-
+    
+    // verify subject is valid
+    if ( !subPs.is_valid() ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "tgAccumulator::Diff_and_Add_cgal - subject is INVALID" );
+    }
+    
+    cgalPoly_PolygonSet difPs;
+    GetAccumPolygonSet( subject.getBoundingBox(), difPs );
+    
 #if DEBUG_DIFF_AND_ADD    
     sprintf( layer, "clip_%03ld_pre_subject", subject.getId() );
     toShapefile( add, layer );
@@ -566,9 +635,10 @@ void tgAccumulator::Diff_and_Add_cgal( tgPolygonSet& subject )
 void tgAccumulator::toShapefile( const char* ds, const char* layer )
 {
     CGAL::Bbox_2 bbox;
-    tgPolygonSet all = GetAccumPolygonSet( bbox );
+    cgalPoly_PolygonSet all;
+    GetAccumPolygonSet( bbox, all );
     
-    all.toShapefile( ds, layer );    
+    //all.toShapefile( ds, layer );    
 }
 
 #if 0

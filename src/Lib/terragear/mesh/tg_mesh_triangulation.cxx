@@ -2,49 +2,127 @@
 
 #include "tg_mesh.hxx"
 
+#include <CGAL/Triangulation_conformer_2.h>
+
+#define DEBUG_MESH_TRIANGULATION            (1)     // Generate intermediate shapefiles during triangulation and refinement
+#define DEBUG_MESH_TRIANGULATION_DATAFILE   (1)     // generate text file readable by cgal_tri_test - for generating CGAL bug reports
+#define DEBUG_MESH_TRIANGULATION_DATAFILE_2 (0)     // alternative file for saving the cdt mesh natively - for generating CGAL bug reports
+
+void tgMesh::writeCdtFile( const char* filename, std::vector<meshTriPoint>& points,  std::vector<meshTriSegment>& constraints ) const
+{
+    std::ofstream output_file(filename);
+    if (!output_file.is_open()) {
+        std::cerr << "Failed to open " << filename << std::endl;
+    } else {
+        output_file << std::setprecision(64);
+        
+        output_file << points.size() << "\n";
+        for ( unsigned int i = 0; i < points.size(); i++ ) {
+            output_file << points[i] << "\n";
+        }
+    }
+    output_file << "\n";
+    
+    output_file << constraints.size() << "\n";
+    for ( unsigned int i = 0; i < constraints.size(); i++ ) {        
+        output_file << constraints[i].source() << "\t" << constraints[i].target() << "\n";            
+    }
+    output_file.close();
+}
+
+void tgMesh::writeCdtFile2( const char* filename, const meshTriCDTPlus& cdt) const
+{
+    std::ofstream output_file(filename);
+    if (!output_file.is_open()) {
+        std::cerr << "Failed to open " << filename << std::endl;
+        exit(0);
+    }
+    
+    output_file << std::setprecision(64);
+    output_file << cdt;
+    output_file.close();    
+}
+
 void tgMesh::constrainedTriangulate( void )
 {
-    // generate a triangulation from the arrangement.
-    // just insert all segments as constraints
-    meshArrEdgeConstIterator eit;
+    // use int indicies to aid in debugging - we may not want to insert them all
+    unsigned int                start_point = 7550;
+    unsigned int                end_point   = 7600;
+    meshArrEdgeConstIterator    eit;
 
-    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - insert " << sourcePoints.size() << " points " );    
-    meshTriangulation.insert(sourcePoints.begin(), sourcePoints.end() );
+    std::vector<meshTriPoint>   points;
+    std::vector<meshTriSegment> constraints; 
+    
+    // generate a triangulation from the arrangement.
+    // insert all segments as constraints
+    // and all elevations as points    
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - insert points from " << start_point << " to " << end_point );    
+    for ( unsigned int i = start_point; i < end_point; i++ ) {
+        points.push_back( meshTriPoint( CGAL::to_double(sourcePoints[i].x()), CGAL::to_double(sourcePoints[i].y()) ) );
+    }
+#if DEBUG_MESH_TRIANGULATION    
+    toShapefile( datasource, "elevation_points", points );
+#endif
     
     SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - insert constraints " );    
-    for ( eit = meshArr.edges_begin(); eit != meshArr.edges_end(); ++eit ) {        
+    for ( eit = meshArr.edges_begin(); eit != meshArr.edges_end(); ++eit ) {
         meshTriPoint source = toMeshTriPoint( eit->curve().source() );
         meshTriPoint target = toMeshTriPoint( eit->curve().target() );
         
         if ( source != target ) {
-            meshTriangulation.insert_constraint( source, target );
+            constraints.push_back( meshTriSegment(source, target ) );
         } else {
             SG_LOG( SG_GENERAL, SG_INFO, "meshTriangulation : found segment with source == target" );
         }
-    }
+    }    
+    
+#if DEBUG_MESH_TRIANGULATION_DATAFILE
+    writeCdtFile( "./output_cdt.txt", points, constraints );
+#endif
 
+    // insert the points, then the constraints
+    meshTriangulation.insert_constraints( constraints.begin(), constraints.end() );
+    meshTriangulation.insert(points.begin(), points.end());
+    
     SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - valid? " << 
                                  (meshTriangulation.is_valid() ? "yes, and has " : "no, and has ") << 
-                                 meshTriangulation.number_of_faces() << " faces ");
+                                  meshTriangulation.number_of_faces() << " faces ");
 
-    if ( meshTriangulation.is_valid() ) {
-
+#if DEBUG_MESH_TRIANGULATION    
+    toShapefile( datasource, "pre_refined_triangulation", meshTriangulation, false );
+#endif
+    
+    if ( meshTriangulation.is_valid() ) {        
+#if DEBUG_MESH_TRIANGULATION_DATAFILE_2 
+        writeCdtFile2( "./output_cdt2.txt", meshTriangulation );
+#endif        
+        
         // create a mesh from the triangulation
+        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - create mesher" );
         meshRefiner mesher(meshTriangulation);
         
         // 0.125 is the default shape bound. It corresponds to abound 20.6 degree.
         // 0.5 is the upper bound on the length of the longuest edge.
         // See reference manual for Delaunay_mesh_size_traits_2<K>.        
         // mesher.set_criteria(meshCriteria(0.125, 0.5));
+        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - set criteria" );
         mesher.set_criteria(meshCriteria(0.125, 0.5));
+        
+        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - refine mesh" );
         mesher.refine_mesh();
+
         SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - refined mesh number of faces: " << meshTriangulation.number_of_faces() );
         
         // set arrangement face info for looking up metadata of original polygons
-        markDomains();
+        // markDomains();
+        
+#if DEBUG_MESH_TRIANGULATION    
+        toShapefile( datasource, "refined_triangulation", meshTriangulation, true );
+#endif        
     }
 }
 
+#if 0
 // given a mesh face - mark all triangle faces within the constrained boundaries with the face handle from the arrangement
 void tgMesh::markDomains(meshTriFaceHandle start, meshArrFaceConstHandle face, std::list<meshTriEdge>& border )
 {    
@@ -140,3 +218,4 @@ void tgMesh::markDomains(void)
         }
     }
 }
+#endif

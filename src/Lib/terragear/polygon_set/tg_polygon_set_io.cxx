@@ -46,7 +46,7 @@ tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& meta
     cgalPoly_PolygonSet             holesUnion;
     std::vector<cgalPoly_Point>     nodes;
 
-    SG_LOG( SG_GENERAL, SG_INFO, "Geometry has : " <<  poGeometry->getNumInteriorRings() << " rings" );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Geometry has : " <<  poGeometry->getNumInteriorRings() << " rings" );
     
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
@@ -56,7 +56,7 @@ tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& meta
     }
     facesFromUntrustedNodes( nodes, boundaries, holes );
 
-    SG_LOG( SG_GENERAL, SG_INFO, "Outer boundary complete : boundaries: " <<  boundaries.size() << " holes: " << holes.size() );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Outer boundary complete : boundaries: " <<  boundaries.size() << " holes: " << holes.size() );
 
     // then a PolygonSet from each interior ring
     for ( int i = 0 ; i < poGeometry->getNumInteriorRings(); i++ ) {
@@ -67,7 +67,7 @@ tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& meta
         }
         facesFromUntrustedNodes( nodes, holes, boundaries );
         
-        SG_LOG( SG_GENERAL, SG_INFO, "hole " << i << " complete : boundaries: " <<  boundaries.size() << " holes: " << holes.size() );        
+        SG_LOG( SG_GENERAL, SG_DEBUG, "hole " << i << " of " << poGeometry->getNumInteriorRings() << " complete : boundaries: " <<  boundaries.size() << " holes: " << holes.size() );        
     }
     
     // join all the boundaries
@@ -80,7 +80,7 @@ tgPolygonSet::tgPolygonSet( OGRPolygon* poGeometry, const tgPolygonSetMeta& meta
     ps.difference( holesUnion );
 
     if ( ps.is_empty() ) {
-        SG_LOG( SG_GENERAL, SG_INFO, "DIFF is empty" );
+        SG_LOG( SG_GENERAL, SG_ALERT, "tgPolygonSet::tgPolygonSet DIFF between boundaries and holes is empty" );
     }
 }
 
@@ -94,7 +94,7 @@ tgPolygonSet::tgPolygonSet( OGRFeature* poFeature, OGRPolygon* poGeometry )
     // generate texture info from feature
     meta.getFeatureFields( poFeature );
     
-    SG_LOG( SG_GENERAL, SG_INFO, "got material: " << meta.getMaterial() );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "got material: " << meta.getMaterial() );
     
     // create PolygonSet from the outer ring
     OGRLinearRing const *ring = poGeometry->getExteriorRing();
@@ -153,7 +153,7 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, Pol
     
     poLayer = poDS->GetLayerByName( layer_name );    
     if ( !poLayer ) {
-        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::toShapefile: layer " << layer_name << " doesn't exist - create" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " doesn't exist - create" );
 
         OGRSpatialReference srs;
         srs.SetWellKnownGeogCS("WGS84");
@@ -387,7 +387,7 @@ OGRLayer* tgPolygonSet::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, Pol
             }
         }
     } else {
-        SG_LOG(SG_GENERAL, SG_INFO, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
+        SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::toShapefile: layer " << layer_name << " already exists - open" );        
     }
    
     return poLayer;
@@ -405,7 +405,8 @@ void tgPolygonSet::toShapefile( const char* datasource, const char* layer ) cons
 
     if ( poDS ) {
         OGRLayer* poLayer = openLayer( poDS, wkbPolygon25D, LF_ALL, layer );
-
+        //OGRLayer* poLayer = openLayer( poDS, wkbLineString25D, LF_ALL, layer );
+        
         if ( poLayer ) {
             toShapefile( poLayer, ps );
         }
@@ -577,7 +578,7 @@ void tgPolygonSet::fromShapefile( const OGRFeatureDefn* poFDefn, OGRCoordinateTr
         case wkbMultiPolygon:
         {
             OGRMultiPolygon* multipoly = (OGRMultiPolygon*)poGeometry;
-            SG_LOG( SG_GENERAL, SG_INFO, "loaded multi poly with " << multipoly->getNumGeometries() << " polys" );
+            SG_LOG( SG_GENERAL, SG_DEBUG, "loaded multi poly with " << multipoly->getNumGeometries() << " polys" );
             
             for (int i=0;i<multipoly->getNumGeometries();i++) {
                 tgPolygonSet poly( poFeature, (OGRPolygon *)multipoly->getGeometryRef(i) );
@@ -615,13 +616,13 @@ void tgPolygonSet::processLayer(OGRLayer* poLayer, tgPolygonSetList& polys )
     }
     
     oSourceSRS->exportToWkt(&srsWkt);
-    SG_LOG( SG_GENERAL, SG_INFO, "Layer: " << layername << " spatial reference system: " << srsWkt );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Layer: " << layername << " spatial reference system: " << srsWkt );
     OGRFree(srsWkt);
     
     oTargetSRS.SetWellKnownGeogCS( "WGS84" );    
     poCT = OGRCreateCoordinateTransformation(oSourceSRS, &oTargetSRS);
 
-    SG_LOG( SG_GENERAL, SG_ALERT, "Layer " << layername << " has " << poLayer->GetFeatureCount() << " features " );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Layer " << layername << " has " << poLayer->GetFeatureCount() << " features " );
     
     // Generate the work queue for this layer
     while ( ( poFeature = poLayer->GetNextFeature()) != NULL )
@@ -643,11 +644,11 @@ void tgPolygonSet::fromShapefile( const SGPath& p, tgPolygonSetList& polys )
     poDS = (GDALDataset*)GDALOpenEx( p.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL );
     if( poDS == NULL )
     {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << p.c_str() );
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Failed opening datasource " << p.c_str() );
         return;
     }
     
-    SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << p.c_str() << " with " << poDS->GetLayerCount() << " layers " );
+    SG_LOG( SG_GENERAL, SG_DEBUG, "Processing datasource " << p.c_str() << " with " << poDS->GetLayerCount() << " layers " );
     polys.clear();
     
     for (int i=0; i<poDS->GetLayerCount(); i++) {
@@ -660,6 +661,6 @@ void tgPolygonSet::fromShapefile( const SGPath& p, tgPolygonSetList& polys )
     GDALClose( poDS );    
     
     for ( unsigned int i=0; i<polys.size(); i++ ) {
-        SG_LOG( SG_GENERAL, SG_ALERT, "return poly " << i << " with material " << polys[i].getMeta().getMaterial() );
+        SG_LOG( SG_GENERAL, SG_DEBUG, "return poly " << i << " with material " << polys[i].getMeta().getMaterial() );
     }        
 }

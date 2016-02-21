@@ -20,6 +20,7 @@
 #include <CGAL/Boolean_set_operations_2.h>
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel   cgalPoly_Kernel;
+typedef cgalPoly_Kernel::FT                                 cgalPoly_FT;
 typedef cgalPoly_Kernel::Direction_2                        cgalPoly_Direction;
 
 typedef CGAL::Arr_segment_traits_2<cgalPoly_Kernel>         cgalPoly_Traits;

@@ -146,7 +146,7 @@ tgCluster::tgCluster( std::list<EPECPoint_2>& points, double err )
     
     do {
         // move new centroids into kd-tree
-        std::cout << "Find centroids iteration " << tree_iter << " num_centroids is " << oldcentroids.size() << std::endl;
+        //std::cout << "Find centroids iteration " << tree_iter << " num_centroids is " << oldcentroids.size() << std::endl;
         
         tree.clear();
         for ( it = oldcentroids.begin(); it != oldcentroids.end(); it++ ) {
@@ -244,7 +244,7 @@ tgCluster::tgCluster( std::list<EPECPoint_2>& points, double err )
             std::cout << "Reached maximum number of iterations - Exiting..." << std::endl;
         }	
     }
-    std::cout << "Finished" << std::endl;
+    //std::cout << "Finished" << std::endl;
 }
 
 void tgCluster::toShapefile( const char* datasource, const char* layer_prefix )

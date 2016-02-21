@@ -78,7 +78,6 @@ private:
     // this bucket
     SGBucket                    bucket;
 
-    std::vector<meshTriPoint>   elevationPoints;
     tgMesh                      tileMesh;
 
     // ocean tile?

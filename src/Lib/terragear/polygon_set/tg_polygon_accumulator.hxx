@@ -22,8 +22,8 @@ public:
     
     
 private:
-    cgalPoly_PolygonSet         GetAccumPolygonSet( const CGAL::Bbox_2& bb );
-    void                        AddAccumPolygonSet( const cgalPoly_PolygonSet& ps );
+    void                    GetAccumPolygonSet( const CGAL::Bbox_2& bb, cgalPoly_PolygonSet& accumPs );
+    void                    AddAccumPolygonSet( const cgalPoly_PolygonSet& ps );
 
     bool                        accumEmpty;
     cgalPoly_PolygonSet         accum_cgal;

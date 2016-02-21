@@ -4,6 +4,29 @@
 // every polygon set (metadata) gets its own unique identifier
 unsigned long tgPolygonSetMeta::cur_id = 1;
 
+void tgPolygonSetMeta::initFields( void )
+{
+    reflon  = 0.0l;
+    reflat  = 0.0l;
+    width   = 0.0;
+    length  = 0.0;
+    heading = 0.0;
+    
+    minu = 0.0;
+    maxu = 0.0;
+    minv = 0.0;
+    maxv = 0.0;
+    
+    min_clipu = 0.0;
+    max_clipu = 0.0;
+    min_clipv = 0.0;
+    max_clipv = 0.0;
+    
+    center_lat = 0.0;
+    
+    flags = 0;
+}
+
 void tgPolygonSetMeta::setSurfaceInfo(tgSurface const& surf)
 {    
     surf.getCoefficients( surfaceCoefficients );

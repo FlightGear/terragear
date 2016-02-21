@@ -9,6 +9,7 @@ set(HEADERS
 set(SOURCES 
     tg_mesh.cxx
     tg_mesh_arrangement.cxx
+    tg_mesh_arrangement_cleaning.cxx
     tg_mesh_triangulation.cxx
     tg_mesh_io.cxx
 )

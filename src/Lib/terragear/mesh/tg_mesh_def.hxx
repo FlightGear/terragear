@@ -38,6 +38,7 @@
 // the arrangement uses EPECK, the triangulation is EPICK
 typedef CGAL::Exact_predicates_exact_constructions_kernel   meshArrKernel;
 typedef CGAL::Arr_segment_traits_2<meshArrKernel>           meshArrTraits;
+typedef meshArrKernel::FT                                   meshArr_FT;
 
 typedef meshArrTraits::Point_2                              meshArrPoint;
 typedef meshArrTraits::Curve_2                              meshArrSegment;
@@ -45,10 +46,11 @@ typedef CGAL::Arrangement_2<meshArrTraits>                  meshArrangement;
 typedef meshArrangement::Face_handle                        meshArrFaceHandle;
 typedef meshArrangement::Face_const_handle                  meshArrFaceConstHandle;
 typedef meshArrangement::Halfedge_const_handle              meshArrHalfedgeConstHandle;
+typedef meshArrangement::Ccb_halfedge_const_circulator      meshArrHalfedgeConstCirculator;
+typedef meshArrangement::Edge_iterator                      meshArrEdgeIterator;
 typedef meshArrangement::Edge_const_iterator                meshArrEdgeConstIterator;
 typedef meshArrangement::Vertex_const_handle                meshArrVertexConstHandle;
 typedef meshArrangement::Vertex_const_iterator              meshArrVertexConstIterator;
-typedef meshArrangement::Edge_const_iterator                meshArrEdgeConstIterator;
 typedef CGAL::Arr_landmarks_point_location<meshArrangement> meshArrLandmarks_pl;
 
 // face info for providing a link back to an arrangement face per triangle
@@ -89,8 +91,11 @@ typedef CGAL::Triangulation_vertex_base_2<meshTriKernel>                        
 // with info (Triangulation_face_base_with_info_2), and of course
 // derived from plain face base (Constrained_triangulation_face_base_2)
 // I found this in a forum - not in any of the CGAL examples.
-typedef CGAL::Constrained_triangulation_face_base_2<meshTriKernel>                          Fbbb;
-typedef CGAL::Triangulation_face_base_with_info_2<tgMeshArrFaceInfo, meshTriKernel, Fbbb>   Fbb;
+
+//typedef CGAL::Constrained_triangulation_face_base_2<meshTriKernel>                          Fbbb;
+//typedef CGAL::Triangulation_face_base_with_info_2<tgMeshArrFaceInfo, meshTriKernel, Fbbb>   Fbb;
+typedef CGAL::Constrained_triangulation_face_base_2<meshTriKernel>                          Fbb;
+
 typedef CGAL::Delaunay_mesh_face_base_2<meshTriKernel,Fbb>                                  meshTriFaceBase;
 
 typedef CGAL::Triangulation_data_structure_2<meshTriVertexBase,meshTriFaceBase>             meshTriTDS;
@@ -100,6 +105,7 @@ typedef CGAL::Constrained_triangulation_plus_2<meshTriCDT>                      
 
 typedef meshTriCDTPlus::Edge                                                                meshTriEdge;
 typedef meshTriCDTPlus::Face_handle                                                         meshTriFaceHandle;
+typedef meshTriCDTPlus::Finite_faces_iterator                                               meshTriFaceIterator;
 typedef CGAL::Triangle_2<meshTriKernel>                                                     meshTriangle;
 
 typedef CGAL::Delaunay_mesh_size_criteria_2<meshTriCDTPlus>                                 meshCriteria;
