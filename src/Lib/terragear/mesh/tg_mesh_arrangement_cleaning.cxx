@@ -35,13 +35,14 @@ void tgMesh::doClusterEdges( const tgCluster& cluster )
 
 typedef CGAL::Snap_rounding_traits_2<meshArrKernel> srTraits;
 typedef std::list<meshArrSegment>                   srSegmentList;
+typedef std::vector<meshArrPoint>                   srPointList;
 typedef std::list<meshArrPoint>                     srPolyline;
 typedef std::list<srPolyline>                       srPolylineList;
 
 tgMesh::SrcPointOp_e tgMesh::checkPointNearEdge( const cgalPoly_Point& pt, meshArrFaceConstHandle fh, cgalPoly_Point& projPt )
 {
-    //    const meshArr_FT distThreshSq(0.0000000005);
-    const meshArr_FT distThreshSq(0.00000002);
+    const meshArr_FT distThreshSq(0.0000000005);
+    //const meshArr_FT distThreshSq(0.00000002);
     static unsigned int ptKeep = 0;
     static unsigned int ptDelete = 0;
     static unsigned int ptProject = 0;
@@ -72,6 +73,7 @@ tgMesh::SrcPointOp_e tgMesh::checkPointNearEdge( const cgalPoly_Point& pt, meshA
         
         if ( closestDistSq < distThreshSq ) {
             // project the point onto the line - if it is outside the bb, remove it
+            // ( it's projection is really the endpoint of the segment )
             cgalPoly_Line    edgeLine( closestHe->source()->point(), closestHe->target()->point() );
             cgalPoly_Segment edgeSegment( closestHe->source()->point(), closestHe->target()->point() );
             cgalPoly_Point   ptProj = edgeLine.projection( pt );
@@ -139,12 +141,20 @@ void tgMesh::doRemoveAntenna( void )
 
 void tgMesh::doSnapRound( void )
 {
-    srSegmentList  srInput;
-    srPolylineList srOutput;
+    srSegmentList  srInputSegs;
+    srPolylineList srOutputSegs;
+    srPointList    srInputPoints;
     
     meshArrEdgeIterator eit;
     for ( eit = meshArr.edges_begin(); eit != meshArr.edges_end(); ++eit ) {
-        srInput.push_back( eit->curve() );
+        srInputSegs.push_back( eit->curve() );
+    }
+    
+    meshArrVertexIterator vit;
+    for ( vit = meshArr.vertices_begin(); vit != meshArr.vertices_end(); ++vit ) {
+        if ( vit->is_isolated() ) {
+            srInputPoints.push_back( vit->point() );
+        }
     }
     
     // snap rounding notes:
@@ -154,13 +164,13 @@ void tgMesh::doSnapRound( void )
     
     lock->lock();
     CGAL::snap_rounding_2<srTraits, srSegmentList::const_iterator, srPolylineList>
-    (srInput.begin(), srInput.end(), srOutput, 0.0000002, true, false, 5);
+    (srInputSegs.begin(), srInputSegs.end(), srOutputSegs, 0.0000002, true, false, 5);
     lock->unlock();
     
     std::vector<cgalPoly_Segment> segs;
     
     srPolylineList::const_iterator iter1;
-    for (iter1 = srOutput.begin(); iter1 != srOutput.end(); ++iter1) {
+    for (iter1 = srOutputSegs.begin(); iter1 != srOutputSegs.end(); ++iter1) {
         srPolyline::const_iterator itSrc = iter1->begin();
         srPolyline::const_iterator itTrg = itSrc; itTrg++;
         while (itTrg != iter1->end()) {
@@ -175,15 +185,13 @@ void tgMesh::doSnapRound( void )
     meshArr.clear();
     CGAL::insert( meshArr, segs.begin(), segs.end() );
     
-    // snap round the elevation point, too
+    // snap round the isolated vertices, too
     srTraits srT;
-    
-    for ( unsigned int i=0; i<sourcePoints.size(); i++ ) {
+    for ( unsigned int i=0; i<srInputPoints.size(); i++ ) {
         meshArr_FT x, y;
-        
-        srT.snap_2_object()(sourcePoints[i], 0.0000002, x, y);
-        
-        sourcePoints[i] = meshArrPoint( x - 0.0000001, y - 0.0000001 );
+        srT.snap_2_object()(srInputPoints[i], 0.0000002, x, y);
+
+        CGAL::insert_point( meshArr, meshArrPoint( x - 0.0000001, y - 0.0000001 ) );
     }
 }
 
@@ -193,48 +201,54 @@ void tgMesh::doProjectPointsToEdges( const tgCluster& cluster )
     // the distance to the face edge is below a threshold.
     // if elevation point is really close to a constraint, the mesh
     // blows up with tiny triangles...
-    std::vector<cgalPoly_Point>::iterator pit = sourcePoints.begin();
-    while( pit != sourcePoints.end() ) {        
-        *pit = cluster.Locate( *pit );
+    std::vector<meshArrPoint>        addList;
+    std::vector<meshArrVertexHandle> removeList;
+    std::vector<meshArrVertexHandle>::iterator rlit;
+    
+    for( meshArrVertexIterator vit = meshArr.vertices_begin(); vit != meshArr.vertices_end(); vit++ ) {
+        if ( vit->is_isolated() ) {        
+            CGAL::Object obj = meshPointLocation.locate(vit->point());
+            meshArrFaceConstHandle f;
         
-        CGAL::Object obj = meshPointLocation.locate(*pit);
-        
-        meshArrFaceConstHandle      f;
-        meshArrHalfedgeConstHandle  e;
-        meshArrVertexConstHandle    v;
-        
-        if (CGAL::assign(e, obj)) {
-            SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT found on edge!" );
-            pit = sourcePoints.erase(pit);
-        } else if (CGAL::assign(v, obj)) {
-            SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT found on vertex!" );
-            pit = sourcePoints.erase(pit);
-        } else if (CGAL::assign(f, obj)) {
-            if ( !f->is_unbounded() ) {
-                cgalPoly_Point newPt;
-                
-                // check if the point is near a face edge
-                switch( checkPointNearEdge( *pit, f, newPt ) ) {
-                    case SRC_POINT_OK:
-                        pit++;
-                        break;
-                        
-                    case SRC_POINT_DELETED:
-                        pit = sourcePoints.erase(pit);
-                        break;
+            if ( CGAL::assign(f, obj) ) {
+                if ( !f->is_unbounded() ) {
+                    cgalPoly_Point newPt;
+
+                    // check if the point is near a face edge
+                    switch( checkPointNearEdge( vit->point(), f, newPt ) ) {
+                        case SRC_POINT_OK:
+                            break;
+
+                        case SRC_POINT_DELETED:
+                            // add this vertex to the remove list
+                            removeList.push_back( vit );
+                            break;
                         
                     case SRC_POINT_PROJECTED:
-                        *pit = newPt;
-                        pit++;
+                        removeList.push_back( vit );
+                        addList.push_back( newPt );
                         break;
+                    }
+                } else {
+                    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - Elevation POINT found on unbounded FACE! - erasing" );
+                    removeList.push_back( vit );
                 }
             } else {
-                SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - Elevation POINT found on unbounded FACE! - erasing" );
-                pit++;
+                SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT not found!" );
+                removeList.push_back( vit );
             }
         } else {
-            SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT not found!" );
-            pit = sourcePoints.erase(pit);            
-        }        
+            // non-isolated 
+        }
+    }
+    
+    // remove 
+    for( rlit = removeList.begin(); rlit != removeList.end(); rlit++ ) {
+        CGAL::remove_vertex( meshArr, *rlit );
+    }
+    
+    // add new
+    for( unsigned int i=0; i<addList.size(); i++ ) {
+        CGAL::insert_point( meshArr, addList[i] );
     }
 }

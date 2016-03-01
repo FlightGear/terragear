@@ -31,9 +31,10 @@
 #include <CGAL/Constrained_triangulation_plus_2.h>
 
 // mesh refinement
-#include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Delaunay_mesh_face_base_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Delaunay_mesher_2.h>
+#include <CGAL/Delaunay_mesher_no_edge_refinement_2.h>
 
 // the arrangement uses EPECK, the triangulation is EPICK
 typedef CGAL::Exact_predicates_exact_constructions_kernel   meshArrKernel;
@@ -49,7 +50,9 @@ typedef meshArrangement::Halfedge_const_handle              meshArrHalfedgeConst
 typedef meshArrangement::Ccb_halfedge_const_circulator      meshArrHalfedgeConstCirculator;
 typedef meshArrangement::Edge_iterator                      meshArrEdgeIterator;
 typedef meshArrangement::Edge_const_iterator                meshArrEdgeConstIterator;
+typedef meshArrangement::Vertex_handle                      meshArrVertexHandle;
 typedef meshArrangement::Vertex_const_handle                meshArrVertexConstHandle;
+typedef meshArrangement::Vertex_iterator                    meshArrVertexIterator;
 typedef meshArrangement::Vertex_const_iterator              meshArrVertexConstIterator;
 typedef CGAL::Arr_landmarks_point_location<meshArrangement> meshArrLandmarks_pl;
 
@@ -109,6 +112,12 @@ typedef meshTriCDTPlus::Finite_faces_iterator                                   
 typedef CGAL::Triangle_2<meshTriKernel>                                                     meshTriangle;
 
 typedef CGAL::Delaunay_mesh_size_criteria_2<meshTriCDTPlus>                                 meshCriteria;
-typedef CGAL::Delaunay_mesher_2<meshTriCDTPlus, meshCriteria>                               meshRefiner;
+
+// we perform 2 triangulations for the entire tile ( goes back all the way to Curt's original design )
+// 1st triangulation adds steiner points to edges - so we end up with extra nodes on boundaries.
+// once we generate two tiles, and match their boundaries, we need to retriangulate.
+// But this time, we only add nodes in faces, not on edges, so we maintain our matched edges.
+typedef CGAL::Delaunay_mesher_2<meshTriCDTPlus, meshCriteria>                               meshRefinerWithEdgeModification;
+typedef CGAL::Delaunay_mesher_no_edge_refinement_2<meshTriCDTPlus, meshCriteria>            meshRefinerWithoutEdgeModification;
 
 #endif

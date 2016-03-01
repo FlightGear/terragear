@@ -10,7 +10,7 @@
 #include "../polygon_set/tg_polygon_set.hxx"
 
 #define DEBUG_MESH_CLIPPING (0)
-#define DEBUG_MESH_CLEANING (1)
+#define DEBUG_MESH_CLEANING (0)
 
 // perform polygon clipping ( the soup )
 void tgMesh::clipPolys( void )
@@ -104,26 +104,24 @@ void tgMesh::cleanArrangement( void )
     // with clustered source / target points.
     // just add the segments that still exist
     doClusterEdges( cluster );
-#if DEBUG_MESH_CLEANING
-    toShapefile( datasource, "arr_clustered", meshArr );
-#endif
     
     // clean 2
     doRemoveAntenna();
 #if DEBUG_MESH_CLEANING
-    toShapefile( datasource, "arr_noantenna", meshArr );
+    toShapefile( datasource, "arr_clustered", meshArr );
 #endif
     
     // clean 3
     // clustering may have moved an edge too close to a vertex - 
     doSnapRound();
-#if DEBUG_MESH_CLEANING
-    toShapefile( datasource, "arr_snapround", meshArr );    
-#endif
     
     // clean 4
     doRemoveAntenna();
 
+#if DEBUG_MESH_CLEANING
+    toShapefile( datasource, "arr_snapround", meshArr );    
+#endif
+    
     // now attach the point locater to quickly find faces from points
     meshPointLocation.attach( meshArr );
 
@@ -131,6 +129,10 @@ void tgMesh::cleanArrangement( void )
     doProjectPointsToEdges( cluster );
     
     // cleaning done
+#if DEBUG_MESH_CLEANING
+    toShapefile( datasource, "arr_projected", meshArr );    
+#endif
+    
     
     // traverse the original polys, and add the metadata / arrangement face lookups
     // TODO error if a face is added twice
@@ -215,7 +217,7 @@ void tgMesh::arrangePolys( void )
         }
     }
     
-    // then add the source points
+    // then add the elevation points
     std::vector<cgalPoly_Point>::iterator spit;
     for ( spit = sourcePoints.begin(); spit != sourcePoints.end(); spit++ ) {
         CGAL::insert_point( meshArr, *spit );

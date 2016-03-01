@@ -42,6 +42,13 @@ tgPolygonSetPaths::tgPolygonSetPaths( const cgalPoly_Arrangement& arr )
     paths.push_back( path );
 };
 
+tgPolygonSetPaths::~tgPolygonSetPaths()
+{
+    for( unsigned int i=0; i<paths.size(); i++ ) {
+        delete paths[i];
+    }
+}
+
 // when we hit a junction, we can add a child ( or children ) and continue
 // with the current face.
 
@@ -97,7 +104,7 @@ tgPolygonSetPaths::tgPolygonSetPaths( const cgalPoly_Arrangement& arr )
 
 /* the algorith is as follows:
  *
- * 1) from start, create a new path with inner face F1, and outer face F2
+ * 1) from start, create a new path with inner face F1, and outer face as the unbounded face
  * 2) traverse and add all points until hitting Junction J1
  * 3) two ( of four ) incident halfedges are valid:
  *    First at 12:00 - same inner and outer faces, so we'll continue with that one
@@ -105,7 +112,7 @@ tgPolygonSetPaths::tgPolygonSetPaths( const cgalPoly_Arrangement& arr )
  *                     path for that one with inner face F1 and outer face H1.
  *                     Because the inner face is not a hole, the outer face MUST be. 
  * 4) continue to traverse from J1 at 12:00 and reach the CCB end == start condition.  
- *    This path is complete.  Find an incomplete 1 - we just have the one at 7:30
+ *    This path is complete.  Find an incomplete one - we just have the one at 7:30
  *    at J1.
  * 5) traverse new path to J2.
  * 6) Again, we have 2 ( of four ) valid incident halfedges.

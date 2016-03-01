@@ -82,6 +82,7 @@ class tgPolygonSetPaths
 {
 public:
     tgPolygonSetPaths(const cgalPoly_Arrangement& arr);
+    ~tgPolygonSetPaths();
     
     unsigned int                        numPaths( void ) const { return paths.size(); } 
     void                                traversePaths( void  );

@@ -62,7 +62,7 @@ private:
     meshArrFaceConstHandle findMeshFace( const meshArrPoint& pt) const;
     meshArrFaceConstHandle findMeshFace( const meshTriPoint& pt) const;
     
-    void constrainedTriangulate(void);
+    void constrainedTriangulateWithEdgeModification(void);
     void clearDomains(void);
     void markDomains(void);
     void markDomains(meshTriFaceHandle start, meshArrFaceConstHandle face, std::list<meshTriCDTPlus::Edge>& border );

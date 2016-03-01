@@ -104,7 +104,7 @@ void tgMesh::generate( void )
         cleanArrangement();
     
         // step 4 - create constrained triangulation with arrangement edges as the constraints
-        constrainedTriangulate();
+        constrainedTriangulateWithEdgeModification();
     } else {
         SG_LOG(SG_GENERAL, SG_ALERT, "no source polys" );        
     }

@@ -2,10 +2,10 @@
 
 #include "tg_mesh.hxx"
 
-#include <CGAL/Triangulation_conformer_2.h>
+//#include <CGAL/Triangulation_conformer_2.h>
 
-#define DEBUG_MESH_TRIANGULATION            (1)     // Generate intermediate shapefiles during triangulation and refinement
-#define DEBUG_MESH_TRIANGULATION_DATAFILE   (1)     // generate text file readable by cgal_tri_test - for generating CGAL bug reports
+#define DEBUG_MESH_TRIANGULATION            (0)     // Generate intermediate shapefiles during triangulation and refinement
+#define DEBUG_MESH_TRIANGULATION_DATAFILE   (0)     // generate text file readable by cgal_tri_test - for generating CGAL bug reports
 #define DEBUG_MESH_TRIANGULATION_DATAFILE_2 (0)     // alternative file for saving the cdt mesh natively - for generating CGAL bug reports
 
 void tgMesh::writeCdtFile( const char* filename, std::vector<meshTriPoint>& points,  std::vector<meshTriSegment>& constraints ) const
@@ -43,12 +43,11 @@ void tgMesh::writeCdtFile2( const char* filename, const meshTriCDTPlus& cdt) con
     output_file.close();    
 }
 
-void tgMesh::constrainedTriangulate( void )
+void tgMesh::constrainedTriangulateWithEdgeModification( void )
 {
-    // use int indicies to aid in debugging - we may not want to insert them all
-    unsigned int                start_point = 7550;
-    unsigned int                end_point   = 7600;
+    // use int indicies to aid in debugging - we may not want to insert them all    
     meshArrEdgeConstIterator    eit;
+    meshArrVertexConstIterator  vit;
 
     std::vector<meshTriPoint>   points;
     std::vector<meshTriSegment> constraints; 
@@ -56,9 +55,11 @@ void tgMesh::constrainedTriangulate( void )
     // generate a triangulation from the arrangement.
     // insert all segments as constraints
     // and all elevations as points    
-    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - insert points from " << start_point << " to " << end_point );    
-    for ( unsigned int i = start_point; i < end_point; i++ ) {
-        points.push_back( meshTriPoint( CGAL::to_double(sourcePoints[i].x()), CGAL::to_double(sourcePoints[i].y()) ) );
+    SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - insert points " );
+    for ( vit = meshArr.vertices_begin(); vit != meshArr.vertices_end(); vit++ ) {
+        if ( vit->is_isolated() ) {
+            points.push_back( meshTriPoint( CGAL::to_double(vit->point().x()), CGAL::to_double(vit->point().y()) ) );
+        }
     }
 #if DEBUG_MESH_TRIANGULATION    
     toShapefile( datasource, "elevation_points", points );
@@ -99,14 +100,14 @@ void tgMesh::constrainedTriangulate( void )
         
         // create a mesh from the triangulation
         SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - create mesher" );
-        meshRefiner mesher(meshTriangulation);
+        meshRefinerWithEdgeModification mesher(meshTriangulation);
         
         // 0.125 is the default shape bound. It corresponds to abound 20.6 degree.
         // 0.5 is the upper bound on the length of the longuest edge.
         // See reference manual for Delaunay_mesh_size_traits_2<K>.        
         // mesher.set_criteria(meshCriteria(0.125, 0.5));
-        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - set criteria" );
-        mesher.set_criteria(meshCriteria(0.125, 0.5));
+        //SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - set criteria" );
+        mesher.set_criteria(meshCriteria(0.1, 0.5));
         
         SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::constrainedTriangulate - refine mesh" );
         mesher.refine_mesh();

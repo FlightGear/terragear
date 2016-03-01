@@ -178,6 +178,9 @@ void tgPolygonSet::facesFromUntrustedNodes(
     SG_LOG(SG_GENERAL, SG_DEBUG, "tgPolygonSet::facesFromUntrustedNodes - found " << paths.numPaths() << "paths" );
     
     paths.getPolys( boundaries, holes );
+    
+    //arr.clear();
+    //segs.clear();
 }
 
 

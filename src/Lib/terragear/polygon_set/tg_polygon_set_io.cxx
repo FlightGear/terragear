@@ -33,7 +33,7 @@
 // 2) the three remaining rings are unioned together as holes
 //    a boolean difference is performed to make them holes.
 //
-// NOTE: the first two self intersecting holes become a single hole.
+// NOTE: the first two intersecting holes become a single hole.
 //       the third ring decreases the boundary of the polygon
 //
 // the final result is two polygons_with_holes.

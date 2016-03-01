@@ -68,10 +68,15 @@ void tgConstructFirst::setPaths( const std::string& work, const std::string& dem
 void tgConstructFirst::run()
 {
     unsigned int tilesComplete;
+
+    SG_LOG(SG_GENERAL, SG_ALERT, " - Construct thread started " );
     
     // as long as we have feometry to parse, do so
     while ( !workQueue.empty() ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, " - workqueue not empty " );
+        
         bucket = workQueue.pop();
+
         tilesComplete = totalTiles - workQueue.size();
 
         // assume non ocean tile until proven otherwise
@@ -90,6 +95,8 @@ void tgConstructFirst::run()
 #endif            
         ) {       
             if ( !debugBase.empty() ) {
+                SG_LOG(SG_GENERAL, SG_ALERT, " - Generate debug " );
+                
                 std::string debugPath = debugBase + "/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
 
                 lock->lock();
@@ -141,11 +148,20 @@ int tgConstructFirst::loadLandclassPolys( const std::string& path )
     tgPolygonSetList polys;
     
     // load 2D polygons from correct path
+    SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - polypath" );
+    
     poly_path = path + "/" + bucket.gen_base_path() + '/' + bucket.gen_index_str();
+    SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - 2" );
+
     simgear::Dir d(poly_path);
+    SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - 3" );
+
     if (d.exists() ) {    
+        SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - 4" << poly_path );
+        
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
-        SG_LOG( SG_CLIPPER, SG_INFO, files.size() << " Files in " << d.path() );
+
+        SG_LOG( SG_GENERAL, SG_ALERT, files.size() << " Files in " << d.path() );
         
         BOOST_FOREACH(const SGPath& p, files) {
             std::string lext = p.complete_lower_extension();

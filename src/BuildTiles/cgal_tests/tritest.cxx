@@ -93,9 +93,15 @@ int main(int argc, char* argv[])
     input_file >> num_constraints;
     for ( unsigned int i=0; i<num_constraints; i++ ) {
         meshArrPoint s, t;
+        meshTriPoint ts, tt;
+        
         input_file >> s >> t;
-      
-        cdt.insert_constraint( toMeshTriPoint(s), toMeshTriPoint(t) );      
+        ts = toMeshTriPoint(s);
+        tt = toMeshTriPoint(t);
+        
+        if ( ts != tt ) {
+            cdt.insert_constraint( ts, tt );
+        }
     }    
     input_file.close();
     
