@@ -12,8 +12,78 @@
 #define DEBUG_MESH_CLIPPING (0)
 #define DEBUG_MESH_CLEANING (0)
 
+void tgMeshArrangement::initPriorities( const std::vector<std::string>& names )
+{
+    priorityNames = names;
+    numPriorities = names.size();
+
+    for ( unsigned int i=0; i<numPriorities; i++ ) {
+        tgPolygonSetList lc;
+        sourcePolys.push_back( lc );
+    }
+}
+
+bool tgMeshArrangement::empty( void )
+{
+    bool empty = true;
+    
+    // check source polys
+    for ( unsigned int i=0; empty && i<numPriorities; i++ ) {
+        empty = sourcePolys.empty();
+    }
+    
+    return empty;
+}
+
+void tgMeshArrangement::addPoly( unsigned int priority, const tgPolygonSet& poly )
+{
+    sourcePolys[priority].push_back( poly );
+}
+
+void tgMeshArrangement::addPolys( unsigned int priority, const tgPolygonSetList& polys )
+{
+    sourcePolys[priority].insert( sourcePolys[priority].end(), polys.begin(), polys.end() );
+}
+
+void tgMeshArrangement::addPoints( const std::vector<cgalPoly_Point>& points )
+{
+    sourcePoints.insert( sourcePoints.end(), points.begin(), points.end() );    
+}
+
+tgPolygonSet tgMeshArrangement::join( unsigned int priority, const tgPolygonSetMeta& meta )
+{
+    return tgPolygonSet::join( sourcePolys[priority], meta );    
+}
+
+void tgMeshArrangement::getPoints( std::vector<meshTriPoint>& points ) const
+{
+    meshArrVertexConstIterator  vit;
+    
+    for ( vit = meshArr.vertices_begin(); vit != meshArr.vertices_end(); vit++ ) {
+        if ( vit->is_isolated() ) {
+            points.push_back( toMeshTriPoint( vit->point() ) );
+        }
+    }
+}
+
+void tgMeshArrangement::getSegments( std::vector<meshTriSegment>& constraints  ) const
+{
+    meshArrEdgeConstIterator    eit;
+
+    for ( eit = meshArr.edges_begin(); eit != meshArr.edges_end(); ++eit ) {
+        meshTriPoint source = toMeshTriPoint( eit->curve().source() );
+        meshTriPoint target = toMeshTriPoint( eit->curve().target() );
+        
+        if ( source != target ) {
+            constraints.push_back( meshTriSegment(source, target ) );
+        } else {
+            SG_LOG( SG_GENERAL, SG_INFO, "tgMeshArrangement : found segment with source == target" );
+        }
+    }
+}
+
 // perform polygon clipping ( the soup )
-void tgMesh::clipPolys( void )
+void tgMeshArrangement::clipPolys( const SGBucket& b, bool clipBucket )
 {
     tgAccumulator    accum;
     cgalPoly_Polygon bucketPoly;
@@ -83,7 +153,7 @@ void tgMesh::clipPolys( void )
 
 // Use Lloyd Voronoi relaxation to cluster and 
 // remove nodes too close to one another.
-void tgMesh::cleanArrangement( void )
+void tgMeshArrangement::cleanArrangement( SGMutex* lock )
 {        
     // create the point list from the arrangement
     meshArrVertexConstIterator vit;
@@ -113,7 +183,7 @@ void tgMesh::cleanArrangement( void )
     
     // clean 3
     // clustering may have moved an edge too close to a vertex - 
-    doSnapRound();
+    doSnapRound( lock );
     
     // clean 4
     doRemoveAntenna();
@@ -154,9 +224,9 @@ void tgMesh::cleanArrangement( void )
                     meshArrVertexConstHandle    v;
         
                     if (CGAL::assign(f, obj)) {
-                        // point is in face - set the material
+                        // point is in face - set the material, and the query point, so we can save it
                         if ( !f->is_unbounded() ) {
-                            metaLookup.push_back( tgMeshFaceMeta(f, pit->getMeta() ) );
+                            metaLookup.push_back( tgMeshFaceMeta(f, queryPoints[i], pit->getMeta() ) );
                         } else {
                             SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT " << i << " queryPoint found on unbounded FACE!" );
                         }
@@ -204,7 +274,7 @@ void tgMesh::cleanArrangement( void )
 }
 
 // insert the polygon segments into an arrangement
-void tgMesh::arrangePolys( void )
+void tgMeshArrangement::arrangePolys( void )
 {
     for ( unsigned int i=0; i<numPriorities; i++ ) {
         std::vector<tgPolygonSet>::iterator poly_it;
@@ -233,7 +303,7 @@ void tgMesh::arrangePolys( void )
 // lookup a face in the arrangement from a face in the arrangement
 // seems silly, but we are looking for just faces that are in the 
 // lookup table.
-meshArrFaceConstHandle tgMesh::findPolyFace( meshArrFaceConstHandle f ) const
+meshArrFaceConstHandle tgMeshArrangement::findPolyFace( meshArrFaceConstHandle f ) const
 {
     meshArrFaceConstHandle face = (meshArrFaceConstHandle)NULL;
     bool found = false;
@@ -250,7 +320,7 @@ meshArrFaceConstHandle tgMesh::findPolyFace( meshArrFaceConstHandle f ) const
 
 // lookup a face in the arrangement from a point in the triangulation
 // need to convert the point from EPICK to EPECK
-meshArrFaceConstHandle tgMesh::findMeshFace( const meshTriPoint& tPt ) const
+meshArrFaceConstHandle tgMeshArrangement::findMeshFace( const meshTriPoint& tPt ) const
 {
     meshArrPoint aPt = toMeshArrPoint( tPt );
     
@@ -281,7 +351,7 @@ meshArrFaceConstHandle tgMesh::findMeshFace( const meshTriPoint& tPt ) const
 }
 
 
-void tgMesh::arrangementInsert( const std::vector<tgPolygonSet>::iterator pit )
+void tgMeshArrangement::arrangementInsert( const std::vector<tgPolygonSet>::iterator pit )
 {    
     //static unsigned int num_poly = 1;
     //char layername[64];
@@ -296,4 +366,22 @@ void tgMesh::arrangementInsert( const std::vector<tgPolygonSet>::iterator pit )
     CGAL::insert( meshArr, segs.begin(), segs.end() );
     
     //toShapefile( datasource, layername, meshArr );
+}
+
+void tgMeshArrangement::loadArrangement( const std::string& path )
+{
+    // the arrangement is a set of polygons - with a query point so we can find the face 
+    // once the arrangement is set.
+    std::vector<meshArrSegment> edgelist;
+    std::string filePath;
+    
+    filePath = path + "/stage1_arrangement_faces.shp";     
+    fromShapefile( filePath, edgelist );
+    
+    // add edges to arrangement
+    meshArr.clear();
+    CGAL::insert( meshArr, edgelist.begin(), edgelist.end() );
+    
+    // save it so we can see it...
+    toShapefile( mesh->getDebugPath(), "stage2_arrangement" );
 }

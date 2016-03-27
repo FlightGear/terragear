@@ -12,7 +12,7 @@
 #include "tg_mesh.hxx"
 #include "../polygon_set/tg_polygon_set.hxx"
 
-void tgMesh::doClusterEdges( const tgCluster& cluster )
+void tgMeshArrangement::doClusterEdges( const tgCluster& cluster )
 {
     meshArrEdgeConstIterator eit;
     std::vector<cgalPoly_Segment> segs;
@@ -39,7 +39,7 @@ typedef std::vector<meshArrPoint>                   srPointList;
 typedef std::list<meshArrPoint>                     srPolyline;
 typedef std::list<srPolyline>                       srPolylineList;
 
-tgMesh::SrcPointOp_e tgMesh::checkPointNearEdge( const cgalPoly_Point& pt, meshArrFaceConstHandle fh, cgalPoly_Point& projPt )
+tgMeshArrangement::SrcPointOp_e tgMeshArrangement::checkPointNearEdge( const cgalPoly_Point& pt, meshArrFaceConstHandle fh, cgalPoly_Point& projPt )
 {
     const meshArr_FT distThreshSq(0.0000000005);
     //const meshArr_FT distThreshSq(0.00000002);
@@ -84,15 +84,15 @@ tgMesh::SrcPointOp_e tgMesh::checkPointNearEdge( const cgalPoly_Point& pt, meshA
                 OGRLayer*     poLineLayer = NULL;
                 OGRLayer*     poPointLayer = NULL;
                 
-                poDS = openDatasource( datasource );
+                poDS = mesh->openDatasource( mesh->getDebugPath() );
                 if ( poDS ) {
-                    poLineLayer = openLayer( poDS, wkbLineString25D, "closest Egde" );
+                    poLineLayer = mesh->openLayer( poDS, wkbLineString25D, tgMesh::LAYER_FIELDS_NONE, "closest Egde" );
                     
                     if ( poLineLayer ) {
                         toShapefile( poLineLayer, closestHe->curve(), "closest" );
                     }
                     
-                    poPointLayer = openLayer( poDS, wkbPoint25D, "point" );
+                    poPointLayer = mesh->openLayer( poDS, wkbPoint25D, tgMesh::LAYER_FIELDS_NONE, "point" );
                     if ( poPointLayer ) {
                         toShapefile( poPointLayer, pt, "point" );
                     }
@@ -121,7 +121,7 @@ tgMesh::SrcPointOp_e tgMesh::checkPointNearEdge( const cgalPoly_Point& pt, meshA
     return retVal;
 }
 
-void tgMesh::doRemoveAntenna( void )
+void tgMeshArrangement::doRemoveAntenna( void )
 {
     // remove all edges that have the same face on both sides
     bool edgeRemoved;
@@ -139,7 +139,7 @@ void tgMesh::doRemoveAntenna( void )
     } while (edgeRemoved);
 }
 
-void tgMesh::doSnapRound( void )
+void tgMeshArrangement::doSnapRound( SGMutex* lock )
 {
     srSegmentList  srInputSegs;
     srPolylineList srOutputSegs;
@@ -195,7 +195,7 @@ void tgMesh::doSnapRound( void )
     }
 }
 
-void tgMesh::doProjectPointsToEdges( const tgCluster& cluster )
+void tgMeshArrangement::doProjectPointsToEdges( const tgCluster& cluster )
 {
     // This function projects elevation points onto face edges when 
     // the distance to the face edge is below a threshold.

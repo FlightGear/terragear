@@ -1,5 +1,7 @@
 #include <simgear/debug/logstream.hxx>
 
+#include <CGAL/Bbox_2.h>
+
 #include "tg_mesh.hxx"
 
 GDALDataset* tgMesh::openDatasource( const std::string& datasource_name ) const
@@ -20,7 +22,7 @@ GDALDataset* tgMesh::openDatasource( const std::string& datasource_name ) const
     return poDS;
 }
 
-OGRLayer* tgMesh::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name ) const
+OGRLayer* tgMesh::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, MeshLayerFields lf, const char* layer_name ) const
 {
     OGRLayer*           poLayer = NULL;
  
@@ -44,187 +46,53 @@ OGRLayer* tgMesh::openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const cha
             SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_desc' failed" );
         }
         
+        if ( lf == LAYER_FIELDS_ARR ) {
+            OGRFieldDefn qp_lon( "qp_lon", OFTReal );
+            qp_lon.SetWidth( 24 );
+            qp_lon.SetPrecision( 3 );        
+            if( poLayer->CreateField( &qp_lon ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'qp_lon' failed" );
+            }
+
+            OGRFieldDefn qp_lat( "qp_lat", OFTReal );
+            qp_lat.SetWidth( 24 );
+            qp_lat.SetPrecision( 3 );        
+            if( poLayer->CreateField( &qp_lat ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'qp_lat' failed" );
+            }
+        } else if ( lf == LAYER_FIELDS_TDS_VERTEX ) {
+            OGRFieldDefn vertex( "tg_vert", OFTInteger );
+            if( poLayer->CreateField( &vertex ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tg_vert' failed" );
+            }
+        } else if ( lf == LAYER_FIELDS_TDS_FACE ) {
+            // when saving / loading TDS, we need constraint, vertex, and neighbor indices
+            OGRFieldDefn fid( "tds_fid", OFTInteger );
+            if( poLayer->CreateField( &fid ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tds_fid' failed" );
+            }
+            
+            OGRFieldDefn constrained( "tds_cons", OFTString );
+            descriptionField.SetWidth( 8 );
+            if( poLayer->CreateField( &constrained ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tds_cons' failed" );
+            }
+
+            OGRFieldDefn vindex( "tds_vidx", OFTString );
+            descriptionField.SetWidth( 32 );
+            if( poLayer->CreateField( &vindex ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tds_vidx' failed" );
+            }
+            
+            OGRFieldDefn nindex( "tds_nidx", OFTString );
+            descriptionField.SetWidth( 32 );
+            if( poLayer->CreateField( &nindex ) != OGRERR_NONE ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Creation of field 'tds_nidx' failed" );
+            }
+        }
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "tgMesh::toShapefile: layer " << layer_name << " already exists - open" );        
     }
    
     return poLayer;
-}
-
-void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshArrangement& arr ) const
-{
-    GDALDataset*  poDS = NULL;
-    OGRLayer*     poLineLayer = NULL;
-    OGRLayer*     poPointLayer = NULL;
-    char          layerName[256];
-    
-    poDS = openDatasource( datasource );
-    if ( poDS ) {
-        sprintf( layerName, "%s_segs", layer );
-        poLineLayer = openLayer( poDS, wkbLineString25D, layerName );
-        
-        if ( poLineLayer ) {
-            meshArrangement::Edge_const_iterator eit;
-            
-            for ( eit = arr.edges_begin(); eit != arr.edges_end(); ++eit ) {        
-                toShapefile( poLineLayer, eit->curve(), "edge" );
-            }
-        }
-        
-        sprintf( layerName, "%s_pts", layer );
-        poPointLayer = openLayer( poDS, wkbPoint25D, layerName );
-
-        if ( poPointLayer ) {
-            meshArrangement::Vertex_const_iterator vit;
-            
-            for ( vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit ) {        
-                toShapefile( poPointLayer, vit->point(), "pt" );
-            }
-        }
-        
-    }
-    
-    // close datasource
-    GDALClose( poDS );    
-}
-
-void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc ) const
-{    
-    OGRPoint      point;
-    OGRLineString line;
-    
-    point.setZ( 0.0 );
-
-    point.setX( CGAL::to_double( seg.source().x() ) );
-    point.setY( CGAL::to_double( seg.source().y() ) );
-    line.addPoint(&point);
-
-    point.setX( CGAL::to_double( seg.target().x() ) );
-    point.setY( CGAL::to_double( seg.target().y() ) );
-    line.addPoint(&point);
-    
-    OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
-    poFeature->SetGeometry(&line);    
-    poFeature->SetField("tg_desc", desc );
-
-    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-    }
-    OGRFeature::DestroyFeature(poFeature);        
-}
-
-void tgMesh::toShapefile( OGRLayer* poLayer, const meshArrPoint& pt, const char* desc ) const
-{    
-    OGRPoint      point;
-    
-    point.setZ( 0.0 );    
-    point.setX( CGAL::to_double( pt.x() ) );
-    point.setY( CGAL::to_double( pt.y() ) );
-    
-    OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
-    poFeature->SetGeometry(&point);    
-    poFeature->SetField("tg_desc", desc );
-    
-    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-    }
-    OGRFeature::DestroyFeature(poFeature);        
-}
-
-void tgMesh::toShapefile( OGRLayer* poLayer, const meshTriPoint& pt, const char* desc ) const
-{    
-    OGRPoint      point;
-    
-    point.setZ( 0.0 );    
-    point.setX( pt.x() );
-    point.setY( pt.y() );
-    
-    OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
-    poFeature->SetGeometry(&point);    
-    poFeature->SetField("tg_desc", desc );
-    
-    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-    }
-    OGRFeature::DestroyFeature(poFeature);        
-}
-
-void tgMesh::toShapefile( const std::string& datasource, const char* layer, const std::vector<meshTriPoint>& points ) const
-{
-    GDALDataset*  poDS = NULL;
-    OGRLayer*     poPointLayer = NULL;
-    
-    poDS = openDatasource( datasource );
-    if ( poDS ) {
-        poPointLayer = openLayer( poDS, wkbPoint25D, layer );
-        
-        if ( poPointLayer ) {            
-            for ( unsigned int i=0; i < points.size(); i++ ) {
-                toShapefile( poPointLayer, points[i], "pt" );
-            }
-        }
-    }
-    
-    // close datasource
-    GDALClose( poDS );        
-}
-
-void tgMesh::toShapefile( const std::string& datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked ) const
-{
-    GDALDataset*  poDS = NULL;
-    OGRLayer*     poLayer = NULL;
-    
-    poDS = openDatasource( datasource );
-    if ( poDS ) {
-        poLayer = openLayer( poDS, wkbLineString25D, layer );
-        if ( poLayer ) {
-            for (meshTriCDTPlus::Finite_faces_iterator fit=triangulation.finite_faces_begin(); fit!=triangulation.finite_faces_end(); ++fit) {
-                if ( marked ) {                    
-//                    if ( fit->info().hasFace() ) {
-                        meshTriangle tri = meshTriangulation.triangle(fit);
-                        toShapefile( poLayer, tri );
-//                    }
-                } else {
-                    meshTriangle tri = meshTriangulation.triangle(fit);
-                    toShapefile( poLayer, tri );                    
-                }
-            }
-        }
-    }
-    
-    // close datasource
-    GDALClose( poDS );    
-}
-
-void tgMesh::toShapefile( OGRLayer* poLayer, const meshTriangle& tri ) const
-{    
-    OGRPolygon    polygon;
-    OGRPoint      point;
-    OGRLinearRing ring;
-    
-    for ( unsigned int i=0; i<3; i++ ) {
-        point.setX( CGAL::to_double( tri[i].x() ) );
-        point.setY( CGAL::to_double( tri[i].y() ) );
-        point.setZ( 0.0 );
-        
-        ring.addPoint(&point);
-    }
-    ring.closeRings();
-    polygon.addRing(&ring);
-    
-    OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
-    poFeature->SetGeometry(&polygon);    
-    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
-    {
-        SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
-    }
-    OGRFeature::DestroyFeature(poFeature);        
-}
-
-void tgMesh::toShapefiles( const char* dataset ) const
-{
-    
 }

@@ -3,6 +3,10 @@ include_directories(${GDAL_INCLUDE_DIR})
 add_executable(tg-construct
     tgconstruct_stage1.hxx
     tgconstruct_stage1.cxx
+    tgconstruct_stage2.hxx
+    tgconstruct_stage2.cxx
+    tgconstruct_stage3.hxx
+    tgconstruct_stage3.cxx    
     priorities.cxx
     priorities.hxx
     main.cxx)

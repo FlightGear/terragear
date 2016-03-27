@@ -126,13 +126,14 @@ tgArray::unload( void ) {
 // parse Array file, pass in the bucket so we can make up values when
 // the file wasn't found.
 bool
-tgArray::parse( SGBucket& b ) {
+tgArray::parse( const SGBucket& b ) {
     // Parse/load the array data file
+    SG_LOG(SG_GENERAL, SG_INFO, " Parse bucket centered at " << b.get_center() );
+    
     if ( array_in ) {
         parse_bin();
     } else {
-        // file not open (not found?), fill with zero'd data
-
+        // file not open (not found?), fill with zero'd data        
         originx = ( b.get_center_lon() - 0.5 * b.get_width() ) * 3600.0;
         originy = ( b.get_center_lat() - 0.5 * b.get_height() ) * 3600.0;
 
@@ -144,14 +145,14 @@ tgArray::parse( SGBucket& b ) {
         rows = 3;
         row_step = (max_y - originy) / (rows - 1);
 
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
+        SG_LOG(SG_GENERAL, SG_INFO, "    origin  = " << originx << "  " << originy );
+        SG_LOG(SG_GENERAL, SG_INFO, "    cols = " << cols << "  rows = " << rows );
+        SG_LOG(SG_GENERAL, SG_INFO, "    col_step = " << col_step << "  row_step = " << row_step );
 
 
         in_data = new short[cols * rows];
         memset(in_data, 0, sizeof(short) * cols * rows);
-        SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
+        SG_LOG(SG_GENERAL, SG_INFO, "    File not open, so using zero'd data" );
     }
 
     // Parse/load the fitted data file
@@ -195,6 +196,11 @@ void tgArray::parse_bin()
 
     in_data = new short[cols * rows];
     sgReadShort(array_in, cols * rows, in_data);
+    
+    SG_LOG(SG_GENERAL, SG_INFO, "    origin  = " << originx << "  " << originy );
+    SG_LOG(SG_GENERAL, SG_INFO, "    cols = " << cols << "  rows = " << rows );
+    SG_LOG(SG_GENERAL, SG_INFO, "    col_step = " << col_step << "  row_step = " << row_step );
+    
 }
 
 // write an Array file
@@ -380,8 +386,11 @@ double tgArray::altitude_from_grid( double lon, double lat ) const {
 
     if ( (xindex < 0) || (xindex + 1 >= cols) ||
 	 (yindex < 0) || (yindex + 1 >= rows) ) {
-	SG_LOG(SG_GENERAL, SG_DEBUG, "WARNING: Attempt to interpolate value outside of array!!!" );
-	return -9999;
+	SG_LOG(SG_GENERAL, SG_ALERT, "WARNING: Attempt to interpolate value outside of array!!!" << lon << ", " << lat );
+    SG_LOG(SG_GENERAL, SG_ALERT, " originx: " << originx << " originy: " << originy );    
+    SG_LOG(SG_GENERAL, SG_ALERT, " xindex: " << xindex << " cols: " << cols );
+    SG_LOG(SG_GENERAL, SG_ALERT, " yindex: " << yindex << " rows: " << rows );
+    return -9999;
     }
 
     dx = xlocal - xindex;

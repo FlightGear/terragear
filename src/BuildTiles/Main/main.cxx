@@ -35,6 +35,8 @@
 #include <Include/version.h>
 
 #include "tgconstruct_stage1.hxx"
+#include "tgconstruct_stage2.hxx"
+#include "tgconstruct_stage3.hxx"
 #include "priorities.hxx"
 
 // display usage and exit
@@ -92,6 +94,91 @@ std::vector<SGBucket> fillBucketList( long tile_id, const SGGeod& min, const SGG
     return bucketList;
 }
 
+void doStage3( int num_threads, std::vector<SGBucket>& bucketList, 
+               const std::string& priorities_file,
+               const std::string& work_base, const std::string& dem_base, 
+               const std::string& share_base, const std::string& debug_base, 
+               const std::string& output_base )
+{
+    SGLockedQueue<SGBucket> wq;
+    
+    /* fill the workqueue */
+    for (unsigned int i=0; i<bucketList.size(); i++) {
+        wq.push( bucketList[i] );
+    }
+    
+    // now create the worker threads for stage 1
+    std::vector<tgConstructThird *> constructs;    
+    SGMutex filelock;
+    
+    for (int i=0; i<num_threads; i++) {
+        tgConstructThird* construct = new tgConstructThird( priorities_file, wq, &filelock );
+        construct->setPaths( work_base, dem_base, share_base, debug_base, output_base );
+        constructs.push_back( construct );
+    }
+    
+    // start all threads
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->start();
+    }
+    // wait for workqueue to empty
+    while( wq.size() ) {
+        tgSleep( 5 );
+    }
+    // wait for all threads to complete
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->join();
+    }
+    
+    // delete the stage 1 construct objects
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        delete constructs[i];
+    }
+    constructs.clear();    
+}
+
+void doStage2( int num_threads, std::vector<SGBucket>& bucketList, 
+               const std::string& priorities_file,
+               const std::string& work_base, const std::string& dem_base, 
+               const std::string& share_base, const std::string& debug_base )
+{
+    SGLockedQueue<SGBucket> wq;
+    
+    /* fill the workqueue */
+    for (unsigned int i=0; i<bucketList.size(); i++) {
+        wq.push( bucketList[i] );
+    }
+    
+    // now create the worker threads for stage 1
+    std::vector<tgConstructSecond *> constructs;    
+    SGMutex filelock;
+    
+    for (int i=0; i<num_threads; i++) {
+        tgConstructSecond* construct = new tgConstructSecond( priorities_file, wq, &filelock );
+        construct->setPaths( work_base, dem_base, share_base, debug_base );
+        constructs.push_back( construct );
+    }
+    
+    // start all threads
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->start();
+    }
+    // wait for workqueue to empty
+    while( wq.size() ) {
+        tgSleep( 5 );
+    }
+    // wait for all threads to complete
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        constructs[i]->join();
+    }
+    
+    // delete the stage 1 construct objects
+    for (unsigned int i=0; i<constructs.size(); i++) {
+        delete constructs[i];
+    }
+    constructs.clear();    
+}
+
 void doStage1( int num_threads, std::vector<SGBucket>& bucketList, 
                const std::string& priorities_file,
                const std::string& work_base, const std::string& dem_base, 
@@ -147,6 +234,8 @@ int main(int argc, char **argv) {
     SGGeod min, max;
     long   tile_id = -1;
     int    num_threads = 1;
+    int    start_stage = 1;
+    int    end_stage   = 2;
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
@@ -185,6 +274,9 @@ int main(int argc, char **argv) {
             num_threads = atoi( arg.substr(10).c_str() );
         } else if (arg.find("--threads") == 0) {
             num_threads = boost::thread::hardware_concurrency();
+        } else if (arg.find("--stage=") == 0) {
+            start_stage = atoi( arg.substr(8).c_str() );
+            end_stage   = start_stage;
         } else if (arg.find("--") == 0) {
             usage(argv[0]);
         } else {
@@ -239,7 +331,13 @@ int main(int argc, char **argv) {
 #endif
 
 // STAGE 1
-    doStage1( num_threads, bucketList, priorities_file, work_dir, dem_dir, share_dir, debug_dir );
+    if ( ( start_stage <= 1 ) && ( end_stage >= 1 ) ) {
+        doStage1( num_threads, bucketList, priorities_file, work_dir, dem_dir, share_dir, debug_dir );
+    }
+    
+    if ( ( start_stage <= 2 ) && ( end_stage >= 2 ) ) {
+        doStage2( num_threads, bucketList, priorities_file, work_dir, dem_dir, share_dir, debug_dir );
+    }
     
 // STAGE 2    
 #if 0    

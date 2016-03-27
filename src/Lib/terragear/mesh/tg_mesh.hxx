@@ -5,21 +5,29 @@
 
 #include <terragear/polygon_set/tg_polygon_def.hxx>
 #include <terragear/polygon_set/tg_polygon_set.hxx>
+#include <terragear/tg_array.hxx>
 
 #include "tg_mesh_def.hxx"
 
-struct tgMeshFaceMeta
-{
-public:
-    tgMeshFaceMeta( meshArrFaceConstHandle h, const tgPolygonSetMeta& m ) : face(h), meta(m) {}
-    
-    meshArrFaceConstHandle  face;
-    tgPolygonSetMeta        meta;
-};
+#include "tg_mesh_arrangement.hxx"
+#include "tg_mesh_triangulation.hxx"
+#include "tg_mesh_polyhedral_surface.hxx"
+
+// next steps :
+//
+// 1) tg-construct stage3
+// 2) load stage 2 & arrangement stage1
+// 3) face normals
+// 4) point normals
+// 5) texture
+// 6) output
+// 7) yay
 
 class tgMesh
 {
 public:
+    tgMesh() : meshArrangement(this), meshTriangulation(this), meshSurface(this) {};
+    
     void initDebug( const std::string& dbgRoot );
     void initPriorities( const std::vector<std::string>& priorityNames );
     void setLock( SGMutex* l ) { lock = l; }
@@ -36,74 +44,45 @@ public:
     
     void generate( void );
     
+    void loadStage1( const std::string& path, const SGBucket& b );
+    void calcElevation( const std::string& basePath );
+    
+    void loadStage2( const std::string& path, const SGBucket& b );
+    void calcFaceNormals( void );
+    
     void toShapefiles( const char* dataset ) const;
     
     void save( const std::string& path ) const;
-
-private:
+    void save2( const std::string& path ) const;
+    
+    std::string getDebugPath( void ) { return debugPath; }
+    SGBucket    getBucket( void )    { return b; }
+    
+    friend class tgMeshArrangement;
+    friend class tgMeshTriangulation;
+    
+private:            
+    tgArray* loadElevationArray( const std::string& demBase, const SGBucket& bucket );
+    
+    void saveIncidentFaces( const std::string& path, const char* layer, const std::vector<meshTriVertexHandle>& vertexes ) const;
+            
     typedef enum {
-        SRC_POINT_OK        = 0,
-        SRC_POINT_PROJECTED = 1,
-        SRC_POINT_DELETED   = 2
-    } SrcPointOp_e;
+        LAYER_FIELDS_NONE,
+        LAYER_FIELDS_ARR,
+        LAYER_FIELDS_TDS_VERTEX,
+        LAYER_FIELDS_TDS_FACE
+    } MeshLayerFields;  
     
-    void clipPolys( void );
-    void cleanArrangement( void );
-    void arrangePolys( void );
-    void arrangementInsert( std::vector<tgPolygonSet>::iterator pit );
-    
-    void doClusterEdges( const tgCluster& cluster );    
-    SrcPointOp_e checkPointNearEdge( const cgalPoly_Point& pt, meshArrFaceConstHandle fh, cgalPoly_Point& projPt );
-    void doProjectPointsToEdges( const tgCluster& cluster );
-    void doRemoveAntenna( void );
-    void doSnapRound( void );
-    
-    meshArrFaceConstHandle findPolyFace( meshArrFaceConstHandle f ) const;
-    meshArrFaceConstHandle findMeshFace( const meshArrPoint& pt) const;
-    meshArrFaceConstHandle findMeshFace( const meshTriPoint& pt) const;
-    
-    void constrainedTriangulateWithEdgeModification(void);
-    void clearDomains(void);
-    void markDomains(void);
-    void markDomains(meshTriFaceHandle start, meshArrFaceConstHandle face, std::list<meshTriCDTPlus::Edge>& border );
-    
-    void getEdgeNodes( std::vector<meshTriPoint>& north, std::vector<meshTriPoint>& south, std::vector<meshTriPoint>& east, std::vector<meshTriPoint>& west ) const;
-        
     GDALDataset* openDatasource( const std::string& datasource_name ) const;
-    OGRLayer*    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, const char* layer_name ) const;
-    
-    meshTriPoint toMeshTriPoint( const meshArrPoint& aPoint ) const {
-        return meshTriPoint ( CGAL::to_double( aPoint.x() ), CGAL::to_double(aPoint.y()) );
-    }
-    meshArrPoint toMeshArrPoint( const meshTriPoint& tPoint ) const {
-        return meshArrPoint( tPoint.x(), tPoint.y() );
-    }
-    
-    void toShapefile( const std::string& datasource, const char* layer, const meshArrangement& arr ) const;
-    void toShapefile( const std::string& datasource, const char* layer, const std::vector<meshTriPoint>& points ) const;
-    void toShapefile( const std::string& datasource, const char* layer, const meshTriCDTPlus& triangulation, bool marked ) const;
+    OGRLayer*    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, MeshLayerFields lf, const char* layer_name ) const;
 
-    void toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc ) const;
-    void toShapefile( OGRLayer* poLayer, const meshArrPoint& pt, const char* desc ) const;
-    void toShapefile( OGRLayer* poLayer, const meshTriPoint& pt, const char* desc ) const;
-    void toShapefile( OGRLayer* poLayer, const meshTriangle& tri ) const;
-    
-    void writeCdtFile(  const char* filename, std::vector<meshTriPoint>& points,  std::vector<meshTriSegment>& constraints ) const;
-    void writeCdtFile2( const char* filename, const meshTriCDTPlus& cdt) const;
-    
-    unsigned int                    numPriorities;
-    std::vector<std::string>        priorityNames;
-    std::vector<tgPolygonSetList>   sourcePolys;
-    std::vector<cgalPoly_Point>     sourcePoints;
-
-    meshArrangement                 meshArr;
-    meshArrLandmarks_pl             meshPointLocation;
-    meshTriCDTPlus                  meshTriangulation;
-    std::vector<tgMeshFaceMeta>     metaLookup;
+    tgMeshArrangement               meshArrangement;
+    tgMeshTriangulation             meshTriangulation;
+    tgMeshPolyhedralSurface         meshSurface;
     SGBucket                        b;
     bool                            clipBucket;
     SGMutex*                        lock;
-    std::string                     datasource;
+    std::string                     debugPath;
 };
 
 #endif /* __TG_MESH_HXX__ */

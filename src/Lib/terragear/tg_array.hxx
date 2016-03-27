@@ -72,7 +72,7 @@ public:
     bool close();
 
     // parse a Array file
-    bool parse( SGBucket& b );
+    bool parse( const SGBucket& b );
 
     // write an Array file
     bool write( const std::string root_dir, SGBucket& b );

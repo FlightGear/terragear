@@ -4,20 +4,13 @@
 
 void tgMesh::initPriorities( const std::vector<std::string>& names )
 {
-    priorityNames = names;
-    numPriorities = names.size();
-   
-    for ( unsigned int i=0; i<numPriorities; i++ ) {
-        tgPolygonSetList lc;
-        sourcePolys.push_back( lc );
-    }
-    
+    meshArrangement.initPriorities( names );    
     clipBucket = false;
 }
 
 void tgMesh::initDebug( const std::string& dbgRoot )
 {
-    datasource = dbgRoot;
+    debugPath = dbgRoot;
 }
 
 void tgMesh::clipAgainstBucket( const SGBucket& bucket ) 
@@ -27,72 +20,46 @@ void tgMesh::clipAgainstBucket( const SGBucket& bucket )
 }
 
 void tgMesh::clear( void )
-{
-    // clear source polys
-    for ( unsigned int i=0; i<numPriorities; i++ ) {
-        sourcePolys[i].clear();
-    }
-    sourcePoints.clear();
-    
-    meshPointLocation.detach();
-    meshArr.clear();
+{    
+    meshArrangement.clear();
     meshTriangulation.clear();
-    metaLookup.clear();    
 }
 
 bool tgMesh::empty( void )
 {
-    bool empty = true;
-    
-    // check source polys
-    for ( unsigned int i=0; empty && i<numPriorities; i++ ) {
-        empty = sourcePolys.empty();
-    }
-    
-    return empty;
+    return meshArrangement.empty();
 }
 
 void tgMesh::addPoly( unsigned int priority, const tgPolygonSet& poly )
 {
-    sourcePolys[priority].push_back( poly );
+    meshArrangement.addPoly( priority, poly );
 }
 
 void tgMesh::addPolys( unsigned int priority, const tgPolygonSetList& polys )
 {
-    sourcePolys[priority].insert( sourcePolys[priority].end(), polys.begin(), polys.end() );
+    meshArrangement.addPolys( priority, polys );
 }
 
 void tgMesh::addPoints( const std::vector<cgalPoly_Point>& points )
 {
-    sourcePoints.insert( sourcePoints.end(), points.begin(), points.end() );    
+    meshArrangement.addPoints( points );
 }
 
 tgPolygonSet tgMesh::join( unsigned int priority, const tgPolygonSetMeta& meta )
 {
-    return tgPolygonSet::join( sourcePolys[priority], meta );    
+    return meshArrangement.join( priority, meta );
 }
 
 void tgMesh::generate( void )
 {    
-    bool havePolys = false;
-
-    for ( unsigned int i=0; i<numPriorities && !havePolys; i++ ) {
-        std::vector<tgPolygonSet>::iterator poly_it;
-        if ( !sourcePolys[i].empty() ) {
-            havePolys = true;
-        }
-    }
-    
     // mesh generation from polygon soup :)
-    if ( havePolys ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, "have source polys" );
-
+    if ( !meshArrangement.empty() ) {
         // Step 1 - clip polys against one another - highest priority first ( on top )
-        clipPolys();
+        meshArrangement.clipPolys( b, clipBucket );
     
         // Step 2 - insert clipped polys into an arrangement.  
         // From this point on, we don't need the individual polygons.
-        arrangePolys();
+        meshArrangement.arrangePolys();
     
         // step 3 - clean up the arrangement - cluster nodes that are too close - don't want
         // really small triangles blowing up the refined mesh.
@@ -101,110 +68,189 @@ void tgMesh::generate( void )
         // we should remember be checking the delta in interiorPoints to see if we have 
         // polys that don't meat this criteria.
         // and if it doesn't - what do we do?
-        cleanArrangement();
+        meshArrangement.cleanArrangement( lock );
     
         // step 4 - create constrained triangulation with arrangement edges as the constraints
-        constrainedTriangulateWithEdgeModification();
+        meshTriangulation.constrainedTriangulateWithEdgeModification( meshArrangement );
+        
+        // step 5 - prepare for erialization
+        meshTriangulation.prepareTds();
     } else {
         SG_LOG(SG_GENERAL, SG_ALERT, "no source polys" );        
     }
 }
 
-#include <CGAL/Fuzzy_iso_box.h>
+void tgMesh::loadStage1( const std::string& basePath, const SGBucket& bucket )
+{
+    std::string bucketPath = basePath + "/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
+    b = bucket;
 
-typedef CGAL::Search_traits_2<meshTriKernel>        cgalPoly_SearchTraits;
-typedef CGAL::Fuzzy_iso_box<cgalPoly_SearchTraits>  cgalPoly_FuzzyBox;
-typedef CGAL::Kd_tree<cgalPoly_SearchTraits>        cgalPoly_SearchTree;
+    // now load the stage1 triangulation ( and lookup locations on the edges )
+    meshTriangulation.loadTriangulation( basePath, bucket );
+    meshTriangulation.prepareTds();
+    
+    // load the arrangement so we know what material each triangle is.
+    meshArrangement.loadArrangement( bucketPath );    
+}
 
-const double fgPoint3_Epsilon = 0.00000001;
-void tgMesh::getEdgeNodes( std::vector<meshTriPoint>& north, std::vector<meshTriPoint>& south, std::vector<meshTriPoint>& east, std::vector<meshTriPoint>& west ) const {
-    double north_compare = b.get_center_lat() + 0.5 * b.get_height();
-    double south_compare = b.get_center_lat() - 0.5 * b.get_height();
-    double east_compare  = b.get_center_lon() + 0.5 * b.get_width();
-    double west_compare  = b.get_center_lon() - 0.5 * b.get_width();
+tgArray* tgMesh::loadElevationArray( const std::string& demBase, const SGBucket& bucket )
+{
+    std::string arrayPath = demBase + "/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
+    tgArray* array = new tgArray();
     
-    meshTriPoint        ll;
-    meshTriPoint        ur;
-    cgalPoly_FuzzyBox   exact_bb;
-    
-    std::list<meshTriPoint> result;
-    std::list<meshTriPoint>::iterator it;
-    
-    north.clear();
-    south.clear();
-    east.clear();
-    west.clear();
-    
-    // generate the search tree
-    cgalPoly_SearchTree tree;    
-    for (meshTriCDTPlus::All_vertices_iterator vit=meshTriangulation.all_vertices_begin(); vit!=meshTriangulation.all_vertices_end(); ++vit) {
-        tree.insert( vit->point() );
+    if ( array->open(arrayPath) ) {
+        SG_LOG(SG_GENERAL, SG_INFO, "Opened Array file " << arrayPath);
+        
+        array->parse( bucket );
+        array->remove_voids( );
+        array->close();
+    } else {
+        SG_LOG(SG_GENERAL, SG_INFO, "Could not open Array file " << arrayPath);        
     }
     
-    // find northern points
-    ll = meshTriPoint( west_compare - fgPoint3_Epsilon, north_compare - fgPoint3_Epsilon );
-    ur = meshTriPoint( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
-    exact_bb = cgalPoly_FuzzyBox(ll, ur);
+    return array;
+}
 
-    result.clear();
-    tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
-        north.push_back(*it);
+
+void tgMesh::calcElevation( const std::string& basePath )
+{    
+    // load this, and surrounding tile elevation data
+    std::vector<tgArray*> northArrays;
+    std::vector<SGBucket> northBuckets;
+    b.siblings( -1, 1, northBuckets );
+    b.siblings(  0, 1, northBuckets );
+    b.siblings(  1, 1, northBuckets );
+    for ( unsigned int i=0; i<northBuckets.size(); i++ ) {
+        northArrays.push_back( loadElevationArray( basePath, northBuckets[i] ) );
+    }
+    
+    std::vector<tgArray*> southArrays;
+    std::vector<SGBucket> southBuckets;
+    b.siblings( -1, -1, southBuckets );
+    b.siblings(  0, -1, southBuckets );
+    b.siblings(  1, -1, southBuckets );
+    for ( unsigned int i=0; i<southBuckets.size(); i++ ) {
+        southArrays.push_back( loadElevationArray( basePath, southBuckets[i] ) );
     }
 
-    // find southern points
-    ll = meshTriPoint( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = meshTriPoint( east_compare + fgPoint3_Epsilon, south_compare + fgPoint3_Epsilon );
-    exact_bb = cgalPoly_FuzzyBox(ll, ur);
-    result.clear();
-
-    tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
-        south.push_back(*it);
+    tgArray* eastArray;
+    SGBucket eastBucket = b.sibling( 1, 0);
+    eastArray = loadElevationArray( basePath, eastBucket );
+    
+    tgArray* westArray;
+    SGBucket westBucket = b.sibling(-1, 0);
+    westArray = loadElevationArray( basePath, westBucket );
+    
+    tgArray* tileArray = loadElevationArray( basePath, b );
+    
+    // first calc the elevation of all nodes in this tile.
+    meshTriangulation.calcTileElevations( tileArray );
+    
+    
+#if 0 // shared edges - is it needed?    
+    
+    
+    // first, calc the average at the 4 corners - 
+    // each corner has 3 contributing tiles
+    // on the north and south borders, we can get different sized arrays of 
+    // buckets, depending on the widths
+    // east and west are constant.
+    unsigned int nwIndexes[2], neIndexes[2], swIndexes[2], seIndexes[2];
+    switch( northArrays.size() ) {
+        // north buckets are the same width as us
+        case 3:
+            nwIndexes[0] = 0;
+            nwIndexes[1] = 1;
+            neIndexes[0] = 1;
+            neIndexes[1] = 2;
+            break;
+            
+        default:
+            SG_LOG(SG_GENERAL, SG_ALERT, "Unhandled array size " << northArrays.size() );
+            exit(0);
+            break;
     }
-
-    // find eastern points
-    ll = meshTriPoint( east_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = meshTriPoint( east_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
-    exact_bb = cgalPoly_FuzzyBox(ll, ur);
-    result.clear();
-
-    tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
-        east.push_back(*it);
+    
+    switch( southArrays.size() ) {
+        // north buckets are the same width as us
+        case 3:
+            swIndexes[0] = 0;
+            swIndexes[1] = 1;
+            seIndexes[0] = 1;
+            seIndexes[1] = 2;
+            break;
+            
+        default:
+            SG_LOG(SG_GENERAL, SG_ALERT, "Unhandled array size " << northArrays.size() );
+            exit(0);
+            break;
     }
+    
+    #define SG_BUCKET_SW    (0)
+    #define SG_BUCKET_SE    (1)
+    #define SG_BUCKET_NE    (2)
+    #define SG_BUCKET_NW    (3)    
+    SGGeod nwCorner = b.get_corner( SG_BUCKET_NW );
+    SGGeod neCorner = b.get_corner( SG_BUCKET_NE );
+    SGGeod seCorner = b.get_corner( SG_BUCKET_SE );
+    SGGeod swCorner = b.get_corner( SG_BUCKET_SW );
+    
+    double elv1, elv2, elv3, elv4;
+    elv1 = northArrays[nwIndexes[0]]->altitude_from_grid( nwCorner.getLongitudeDeg() * 3600.0, nwCorner.getLatitudeDeg() * 3600.0 );
+    elv2 = northArrays[nwIndexes[1]]->altitude_from_grid( nwCorner.getLongitudeDeg() * 3600.0, nwCorner.getLatitudeDeg() * 3600.0 );
+    elv3 = westArray->altitude_from_grid( nwCorner.getLongitudeDeg() * 3600.0, nwCorner.getLatitudeDeg() * 3600.0 ); 
+    elv4 = tileArray->altitude_from_grid( nwCorner.getLongitudeDeg() * 3600.0, nwCorner.getLatitudeDeg() * 3600.0 );
+    
+    SG_LOG(SG_GENERAL, SG_ALERT, "4 elevations calculated: " << elv1 << ", " << elv2 << ", " << elv3 << ", " << elv4 << ", "  );
+    
+    // then the shared edges
+    
+    
+    // then the interior
+#endif
+    
+    // now we can calc the face normals
+    
+    // save as 3d
+    meshTriangulation.toShapefile( debugPath, "stage2_triangles", true );
+    
+    // also save the triangles on the edge for stage3 shared edge matching
+    
+}
 
-    // find western points
-    ll = meshTriPoint( west_compare - fgPoint3_Epsilon, south_compare - fgPoint3_Epsilon );
-    ur = meshTriPoint( west_compare + fgPoint3_Epsilon, north_compare + fgPoint3_Epsilon );
-    exact_bb = cgalPoly_FuzzyBox(ll, ur);
-    result.clear();
+void tgMesh::loadStage2( const std::string& basePath, const SGBucket& bucket )
+{
+    // load the stage2 triangulation as a mesh
+    std::string bucketPath = basePath + "/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
+    b = bucket;
+    
+    // now load the stage1 triangulation ( and lookup locations on the edges )
+    meshSurface.loadTriangulation( basePath, bucket );
+}
 
-    tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
-        west.push_back(*it);
-    }
+void tgMesh::calcFaceNormals( void )
+{
+    
 }
 
 
 void tgMesh::save( const std::string& path ) const
 {
-    toShapefile( path, "stage1_arrangement", meshArr );
-    toShapefile( path, "stage1_triangles", meshTriangulation, true );
+    meshArrangement.toShapefile( path, "stage1_arrangement" );
+    //meshTriangulation.toShapefile( path, "stage1_triangles", true );
+    //if ( clipBucket ) {
+    //    meshTriangulation.saveSharedEdgeNodes( path );
+    //}
+    meshTriangulation.saveTds( path, "stage1_triangles" );
+}
+
+void tgMesh::save2( const std::string& path ) const
+{
+    SG_LOG(SG_GENERAL, SG_INFO, "tgMesh::save2 " << path );
+
+    meshTriangulation.saveAscii( path, "stage2_triangles.txt" );
+    meshTriangulation.saveTds( path, "stage2_triangles" );
     
     // generate edge node list
-    if ( clipBucket ) {
-        std::vector<meshTriPoint> north;
-        std::vector<meshTriPoint> south;
-        std::vector<meshTriPoint> east;
-        std::vector<meshTriPoint> west;
-        
-        getEdgeNodes( north, south, east, west );
-        
-        // save these arrays in a point layer
-        toShapefile( path, "stage1_north", north );
-        toShapefile( path, "stage1_south", south );
-        toShapefile( path, "stage1_east",  east );
-        toShapefile( path, "stage1_west",  west );
-    }
+    // meshTriangulation.saveSharedEdgeFaces( path );
 }
