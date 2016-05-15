@@ -36,7 +36,7 @@
 #include "tgconstruct_stage3.hxx"
 
 // Constructor
-tgConstructThird::tgConstructThird( const std::string& pfile, SGLockedQueue<SGBucket>& q, SGMutex* l) :
+tgConstructThird::tgConstructThird( const std::string& pfile, SGLockedQueue<SGBucket>& q, tgMutex* l) :
         workQueue(q)
 {
     totalTiles = q.size();   

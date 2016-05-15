@@ -96,10 +96,10 @@ void tgMeshArrangement::toShapefile( OGRLayer* poLayer, const meshArrFaceConstHa
 }
 
 void tgMeshArrangement::toShapefile( OGRLayer* poLayer, const meshArrSegment& seg, const char* desc ) const
-{    
+{
     OGRPoint      point;
     OGRLineString line;
-    
+
     point.setZ( 0.0 );
 
     point.setX( CGAL::to_double( seg.source().x() ) );
@@ -162,11 +162,10 @@ void tgMeshArrangement::fromShapefile( const OGRFeatureDefn* poFDefn, OGRCoordin
         case wkbPolygon:
         {
             tgPolygonSet polySet( poFeature, (OGRPolygon *)poGeometry );
-            std::vector<cgalPoly_Segment> segs; 
-            polySet.toSegments( segs, false );
-            for ( unsigned int i=0; i<segs.size(); i++ ) {
-                segments.push_back( meshArrSegment(segs[i].source(), segs[i].target() ) );
-            }
+            std::vector<cgalPoly_Segment> cpSegs;
+
+            polySet.toSegments( cpSegs, false );
+            toMeshArrSegs(cpSegs, segments);
             break;
         }
         

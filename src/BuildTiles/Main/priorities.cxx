@@ -40,7 +40,7 @@ int TGAreaDefinitions::init( const std::string& filename )
         SG_LOG(SG_GENERAL, SG_ALERT, "Unable to open priorities file " << filename);
         return 0;
     }
-    SG_LOG(SG_GENERAL, SG_ALERT, "Priorities file is " << filename);
+    SG_LOG(SG_GENERAL, SG_DEBUG, "Using priorities file is " << filename);
 
     in >> skipcomment;
     std::string sa_name, da_name;

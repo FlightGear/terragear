@@ -32,6 +32,7 @@
 #include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGQueue.hxx>
 
+#include <terragear/tg_mutex.hxx>
 #include <terragear/mesh/tg_mesh.hxx>
 
 #include "priorities.hxx"
@@ -40,14 +41,14 @@ class tgConstructFirst : public SGThread
 {
 public:
     // Constructor
-    tgConstructFirst( const std::string& priorities_file, SGLockedQueue<SGBucket>& q, SGMutex* l );
+    tgConstructFirst( const std::string& priorities_file, SGLockedQueue<SGBucket>& q, tgMutex* l );
 
     // Destructor
     ~tgConstructFirst();
 
     // paths
     void setPaths( const std::string& work, const std::string& dem, const std::string& share, const std::string& debug );
-    
+
 private:
     virtual void run();
 
@@ -61,7 +62,9 @@ private:
     void processLayer(OGRLayer* poLayer);
     int  addShape(OGRFeature *poFeature, OGRPolygon* poGeometry);
     void addOceanPoly( void );
-    
+
+    void safeMakeDirectory( const std::string& directory );
+
 private:
     TGAreaDefinitions           areaDefs;
     
@@ -83,7 +86,7 @@ private:
     // ocean tile?
     bool                        isOcean;
 
-    SGMutex*                    lock;
+    tgMutex*                    lock;
 };
 
 #endif // _CONSTRUCT_HXX

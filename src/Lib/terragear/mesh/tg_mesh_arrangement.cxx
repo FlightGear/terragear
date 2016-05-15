@@ -2,15 +2,10 @@
 
 #include <terragear/polygon_set/tg_polygon_accumulator.hxx>
 
-// TODO - cluster used by vector intersection code, and mesh - let's clean it up
-// to show how generic it is.
-#include <terragear/tg_cluster.hxx>
-
 #include "tg_mesh.hxx"
 #include "../polygon_set/tg_polygon_set.hxx"
 
 #define DEBUG_MESH_CLIPPING (0)
-#define DEBUG_MESH_CLEANING (0)
 
 void tgMeshArrangement::initPriorities( const std::vector<std::string>& names )
 {
@@ -26,12 +21,12 @@ void tgMeshArrangement::initPriorities( const std::vector<std::string>& names )
 bool tgMeshArrangement::empty( void )
 {
     bool empty = true;
-    
+
     // check source polys
     for ( unsigned int i=0; empty && i<numPriorities; i++ ) {
-        empty = sourcePolys.empty();
+        empty = sourcePolys[i].empty();
     }
-    
+
     return empty;
 }
 
@@ -47,18 +42,18 @@ void tgMeshArrangement::addPolys( unsigned int priority, const tgPolygonSetList&
 
 void tgMeshArrangement::addPoints( const std::vector<cgalPoly_Point>& points )
 {
-    sourcePoints.insert( sourcePoints.end(), points.begin(), points.end() );    
+    sourcePoints.insert( sourcePoints.end(), points.begin(), points.end() );
 }
 
 tgPolygonSet tgMeshArrangement::join( unsigned int priority, const tgPolygonSetMeta& meta )
 {
-    return tgPolygonSet::join( sourcePolys[priority], meta );    
+    return tgPolygonSet::join( sourcePolys[priority], meta );
 }
 
 void tgMeshArrangement::getPoints( std::vector<meshTriPoint>& points ) const
 {
     meshArrVertexConstIterator  vit;
-    
+
     for ( vit = meshArr.vertices_begin(); vit != meshArr.vertices_end(); vit++ ) {
         if ( vit->is_isolated() ) {
             points.push_back( toMeshTriPoint( vit->point() ) );
@@ -73,7 +68,7 @@ void tgMeshArrangement::getSegments( std::vector<meshTriSegment>& constraints  )
     for ( eit = meshArr.edges_begin(); eit != meshArr.edges_end(); ++eit ) {
         meshTriPoint source = toMeshTriPoint( eit->curve().source() );
         meshTriPoint target = toMeshTriPoint( eit->curve().target() );
-        
+
         if ( source != target ) {
             constraints.push_back( meshTriSegment(source, target ) );
         } else {
@@ -87,11 +82,13 @@ void tgMeshArrangement::clipPolys( const SGBucket& b, bool clipBucket )
 {
     tgAccumulator    accum;
     cgalPoly_Polygon bucketPoly;
-    
-#if DEBUG_MESH_CLIPPING            
+
+#if DEBUG_MESH_CLIPPING
     static int polyNum = 1;
 #endif
-    
+
+    SG_LOG( SG_GENERAL, SG_DEBUG, "tgMeshArrangement::clipPolys : start" );
+
     if ( clipBucket ) {
         // create exact bucket
         bucketPoly.push_back( cgalPoly_Point( b.get_corner( SG_BUCKET_SW ).getLongitudeDeg(), b.get_corner( SG_BUCKET_SW ).getLatitudeDeg() ) );
@@ -99,179 +96,58 @@ void tgMeshArrangement::clipPolys( const SGBucket& b, bool clipBucket )
         bucketPoly.push_back( cgalPoly_Point( b.get_corner( SG_BUCKET_NE ).getLongitudeDeg(), b.get_corner( SG_BUCKET_NE ).getLatitudeDeg() ) );
         bucketPoly.push_back( cgalPoly_Point( b.get_corner( SG_BUCKET_NW ).getLongitudeDeg(), b.get_corner( SG_BUCKET_NW ).getLatitudeDeg() ) );
     }
-    
+
     for ( unsigned int i=0; i<numPriorities; i++ ) {
         std::vector<tgPolygonSet>::iterator poly_it;
         for ( poly_it = sourcePolys[i].begin(); poly_it != sourcePolys[i].end(); poly_it++ ) {
             tgPolygonSet current = (*poly_it);
-    
-#if DEBUG_MESH_CLIPPING            
+
+#if DEBUG_MESH_CLIPPING
             char layerName[64];
-            GDALDataset* poDs = tgPolygonSet::openDatasource( datasource.c_str() );
+            GDALDataset* poDs = tgPolygonSet::openDatasource( mesh->getDebugPath().c_str() );
 
             sprintf( layerName, "%s_%s_%d_orig", b.gen_index_str().c_str(), current.getMeta().material.c_str(), polyNum );
-            OGRLayer*    poLayerOrig = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );            
+            OGRLayer*    poLayerOrig = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );
             tgPolygonSet::toDebugShapefile( poLayerOrig, current.getPs(), "orig" );
 #endif
-            
-            accum.Diff_and_Add_cgal( current );                        
 
-#if DEBUG_MESH_CLIPPING            
+            accum.Diff_and_Add_cgal( current );
+
+#if DEBUG_MESH_CLIPPING
             sprintf( layerName, "%s_%s_%d_clip", b.gen_index_str().c_str(), current.getMeta().material.c_str(), polyNum );
-            OGRLayer*    poLayerClip = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );            
+            OGRLayer*    poLayerClip = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );
             tgPolygonSet::toDebugShapefile( poLayerClip, current.getPs(), "clip" );
 #endif
-            
+
             if ( clipBucket ) { 
-                
-#if DEBUG_MESH_CLIPPING                            
+
+#if DEBUG_MESH_CLIPPING
                 sprintf( layerName, "%s_%s_%d_bucket", b.gen_index_str().c_str(), current.getMeta().material.c_str(), polyNum );
-                OGRLayer*    poLayerBucket = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );            
+                OGRLayer*    poLayerBucket = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );
                 tgPolygonSet::toDebugShapefile( poLayerBucket, bucketPoly, "bucket" );
 #endif
-                
+
                 // then clip against bucket
                 current.intersection2( bucketPoly );
-                
-#if DEBUG_MESH_CLIPPING            
+
+#if DEBUG_MESH_CLIPPING
                 sprintf( layerName, "%s_%s_%d_clip_bucket", b.gen_index_str().c_str(), current.getMeta().material.c_str(), polyNum );
-                OGRLayer*    poLayerClipBucket = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );            
-                tgPolygonSet::toDebugShapefile( poLayerClipBucket, current.getPs(), "clipBucket" );                
+                OGRLayer*    poLayerClipBucket = tgPolygonSet::openLayer( poDs, wkbLineString25D, tgPolygonSet::LF_DEBUG, layerName );
+                tgPolygonSet::toDebugShapefile( poLayerClipBucket, current.getPs(), "clipBucket" );
 #endif
 
             }
 
-#if DEBUG_MESH_CLIPPING            
+#if DEBUG_MESH_CLIPPING
             GDALClose( poDs );
 #endif
-            
+
             poly_it->setPs( current.getPs() );
         }
     }
 }
 
 
-// Use Lloyd Voronoi relaxation to cluster and 
-// remove nodes too close to one another.
-void tgMeshArrangement::cleanArrangement( SGMutex* lock )
-{        
-    // create the point list from the arrangement
-    meshArrVertexConstIterator vit;
-    std::list<cgalPoly_Point>  nodes;
-    for ( vit = meshArr.vertices_begin(); vit != meshArr.vertices_end(); vit++ ) {
-        nodes.push_back( vit->point() );
-    }
-
-    // create the cluster
-    tgCluster cluster( nodes, 0.0000025 );
-    //cluster.toShapefile( datasource, "cluster" );
-
-    SG_LOG( SG_GENERAL, SG_DEBUG, "tgMesh::cleanArrangment create new segments" );
-    
-    
-    // CLEAN 1
-    // collect the original segment list, and generate a new list
-    // with clustered source / target points.
-    // just add the segments that still exist
-    doClusterEdges( cluster );
-    
-    // clean 2
-    doRemoveAntenna();
-#if DEBUG_MESH_CLEANING
-    toShapefile( datasource, "arr_clustered", meshArr );
-#endif
-    
-    // clean 3
-    // clustering may have moved an edge too close to a vertex - 
-    doSnapRound( lock );
-    
-    // clean 4
-    doRemoveAntenna();
-
-#if DEBUG_MESH_CLEANING
-    toShapefile( datasource, "arr_snapround", meshArr );    
-#endif
-    
-    // now attach the point locater to quickly find faces from points
-    meshPointLocation.attach( meshArr );
-
-    // clean 5
-    doProjectPointsToEdges( cluster );
-    
-    // cleaning done
-#if DEBUG_MESH_CLEANING
-    toShapefile( datasource, "arr_projected", meshArr );    
-#endif
-    
-    
-    // traverse the original polys, and add the metadata / arrangement face lookups
-    // TODO error if a face is added twice
-    // this can happen if the topology is altered too much 
-    // ( an interior point is no longer interior to the original poly )
-    SG_LOG( SG_GENERAL, SG_DEBUG, "tgMesh::cleanArrangment create face lookup" );
-    
-    // face lookup function...
-    for ( unsigned int i=0; i<numPriorities; i++ ) {
-        std::vector<tgPolygonSet>::iterator pit;
-        for ( pit = sourcePolys[i].begin(); pit != sourcePolys[i].end(); pit++ ) {
-            if ( !pit->isEmpty() ) {
-                const std::vector<cgalPoly_Point>& queryPoints = pit->getInteriorPoints();
-                for ( unsigned int i=0; i<queryPoints.size(); i++ ) {
-                    CGAL::Object obj = meshPointLocation.locate(queryPoints[i]);
-                
-                    meshArrFaceConstHandle      f;
-                    meshArrHalfedgeConstHandle  e;
-                    meshArrVertexConstHandle    v;
-        
-                    if (CGAL::assign(f, obj)) {
-                        // point is in face - set the material, and the query point, so we can save it
-                        if ( !f->is_unbounded() ) {
-                            metaLookup.push_back( tgMeshFaceMeta(f, queryPoints[i], pit->getMeta() ) );
-                        } else {
-                            SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT " << i << " queryPoint found on unbounded FACE!" );
-                        }
-                    } else if (CGAL::assign(e, obj)) {
-                        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT " << i << " found on edge!" );                    
-                    } else if (CGAL::assign(v, obj)) {
-                        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT " << i << " found on vertex!" );                    
-                    } else {
-                        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::tgMesh - POINT " << i << " not found!" );                    
-                    }        
-                }
-            }
-        }
-    }    
-    
-    SG_LOG( SG_GENERAL, SG_DEBUG, "tgMesh::cleanArrangment Complete" );
-
-#if DEBUG_MESH_CLEANING
-    // debug function...
-    toShapefile( datasource, "arr_clean", meshArr );
-        
-    GDALDataset*  poDS = NULL;
-    OGRLayer*     poPointLayer = NULL;
-    
-    poDS = openDatasource( datasource );
-    if ( poDS ) {        
-        poPointLayer = openLayer( poDS, wkbPoint25D, "arr_queryPoints" );
-        
-        for ( unsigned int i=0; i<numPriorities; i++ ) {
-            std::vector<tgPolygonSet>::iterator pit;
-            for ( pit = sourcePolys[i].begin(); pit != sourcePolys[i].end(); pit++ ) {
-                if ( !pit->isEmpty() ) {
-                    const std::vector<cgalPoly_Point>& queryPoints = pit->getInteriorPoints();
-                    for ( unsigned int i=0; i<queryPoints.size(); i++ ) {
-                        toShapefile( poPointLayer, queryPoints[i], "qp" );
-                    }
-                }
-            }
-        }    
-        
-        // close datasource
-        GDALClose( poDS );    
-    }    
-#endif    
-}
 
 // insert the polygon segments into an arrangement
 void tgMeshArrangement::arrangePolys( void )
@@ -286,17 +162,20 @@ void tgMeshArrangement::arrangePolys( void )
             }
         }
     }
-    
+
     // then add the elevation points
+    //mesh->lock->lock();
     std::vector<cgalPoly_Point>::iterator spit;
     for ( spit = sourcePoints.begin(); spit != sourcePoints.end(); spit++ ) {
-        CGAL::insert_point( meshArr, *spit );
+        CGAL::insert_point( meshArr, toMeshArrPoint(*spit) );
+        //CGAL::insert_point( meshArr, *spit );
     }
-    
+    //mesh->lock->unlock();
+
 #if DEBUG_MESH_CLEANING    
-    toShapefile( datasource, "arr_raw", meshArr );
+    toShapefile( mesh->getDebugPath(), "arr_raw" );
 #endif
-    
+
     meshPointLocation.attach( meshArr );
 }
 
@@ -307,7 +186,7 @@ meshArrFaceConstHandle tgMeshArrangement::findPolyFace( meshArrFaceConstHandle f
 {
     meshArrFaceConstHandle face = (meshArrFaceConstHandle)NULL;
     bool found = false;
-    
+
     for ( unsigned int i=0; i<metaLookup.size() && !found; i++ ) {
         if ( metaLookup[i].face == f ) {
             face = f;
@@ -323,9 +202,9 @@ meshArrFaceConstHandle tgMeshArrangement::findPolyFace( meshArrFaceConstHandle f
 meshArrFaceConstHandle tgMeshArrangement::findMeshFace( const meshTriPoint& tPt ) const
 {
     meshArrPoint aPt = toMeshArrPoint( tPt );
-    
+
     CGAL::Object obj = meshPointLocation.locate(aPt);
-    
+
     meshArrFaceConstHandle      f, result;
     meshArrHalfedgeConstHandle  e;
     meshArrVertexConstHandle    v;
@@ -340,32 +219,41 @@ meshArrFaceConstHandle tgMeshArrangement::findMeshFace( const meshTriPoint& tPt 
             }
         }
     } else if (CGAL::assign(e, obj)) {
-        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::findMeshFace - POINT " << tPt << " found on edge!" );                    
+        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::findMeshFace - POINT " << tPt << " found on edge!" );
     } else if (CGAL::assign(v, obj)) {
-        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::findMeshFace - POINT " << tPt << " found on vertex!" );                    
+        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::findMeshFace - POINT " << tPt << " found on vertex!" );
     } else {
-        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::findMeshFace - POINT " << tPt << " not found!" );                    
+        SG_LOG( SG_GENERAL, SG_INFO, "tgMesh::findMeshFace - POINT " << tPt << " not found!" );
     }
-    
+
     return result;
 }
 
+void tgMeshArrangement::toMeshArrSegs( const std::vector<cgalPoly_Segment>& inSegs, std::vector<meshArrSegment>& outSegs ) const
+{
+    for (unsigned int i=0; i<inSegs.size(); i++) {
+        meshArrPoint srcPoint = toMeshArrPoint( inSegs[i].source() );
+        meshArrPoint trgPoint = toMeshArrPoint( inSegs[i].target() );
+
+        outSegs.push_back( meshArrSegment(srcPoint, trgPoint) );
+    }
+}
 
 void tgMeshArrangement::arrangementInsert( const std::vector<tgPolygonSet>::iterator pit )
-{    
-    //static unsigned int num_poly = 1;
-    //char layername[64];
-    
-    //sprintf( layername, "arr_raw_%04d", num_poly++ );
-    
+{
     // insert the polygon boundaries ( not holes ) 
     // TODO - maybe we need holes, too?  - Haven't seen a need yet.
     std::vector<cgalPoly_Segment> segs;
-    pit->toSegments( segs, false );    
-    
-    CGAL::insert( meshArr, segs.begin(), segs.end() );
-    
-    //toShapefile( datasource, layername, meshArr );
+    std::vector<meshArrSegment>   arrSegs;
+
+    pit->toSegments( segs, false );
+
+    // convert poly segs to arr segs
+    toMeshArrSegs( segs, arrSegs );
+
+    mesh->lock->lock();
+    CGAL::insert( meshArr, arrSegs.begin(), arrSegs.end() );
+    mesh->lock->unlock();
 }
 
 void tgMeshArrangement::loadArrangement( const std::string& path )
@@ -374,14 +262,17 @@ void tgMeshArrangement::loadArrangement( const std::string& path )
     // once the arrangement is set.
     std::vector<meshArrSegment> edgelist;
     std::string filePath;
-    
-    filePath = path + "/stage1_arrangement_faces.shp";     
+
+    filePath = path + "/stage1_arrangement_faces.shp";
     fromShapefile( filePath, edgelist );
-    
+
     // add edges to arrangement
     meshArr.clear();
+
+    mesh->lock->lock();
     CGAL::insert( meshArr, edgelist.begin(), edgelist.end() );
-    
+    mesh->lock->unlock();
+
     // save it so we can see it...
-    toShapefile( mesh->getDebugPath(), "stage2_arrangement" );
+    // toShapefile( mesh->getDebugPath(), "stage2_arrangement" );
 }

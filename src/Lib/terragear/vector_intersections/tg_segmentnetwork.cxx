@@ -24,16 +24,16 @@
 tgSegmentNetwork::tgSegmentNetwork( unsigned int cf, const std::string debugRoot ) : invalid_vh()
 {
     clean_flags = cf;
-    
+
     sprintf( datasource, "./edge_dbg/%s", debugRoot.c_str() );
 }
 
 void tgSegmentNetwork::Add( const SGGeod& source, const SGGeod& target, double width, int zorder, unsigned int type )
 {
-#if DEBUG_STAGES    
+#if DEBUG_STAGES
     static int input_count = 1;
     char feat[16];    
-    
+
     tgSegment input(s, e);
     sprintf( feat, "input_%05d", input_count++ );
     tgShapefile::FromSegment( input, true, datasource, "input", feat );
@@ -287,16 +287,17 @@ void tgSegmentNetwork::ModifyEdges( segnetVertexHandle oldTarget, segnetPoint ne
 void tgSegmentNetwork::Cluster( void )
 {
     // create the point list
-    std::list<EPECPoint_2> nodes;
-    segnetArrangement      tmp;
-    
+    std::list<tgClusterNode> nodes;
+    segnetArrangement        tmp;
+
     segnetArrangement::Vertex_const_iterator vit;
     for ( vit = arr.vertices_begin(); vit != arr.vertices_end(); ++vit ) {        
-        nodes.push_back( vit->point() );
+        nodes.push_back( tgClusterNode( vit->point(), false ) );
     }
-    
-    tgCluster cluster( nodes, 0.0000025 );
-    
+
+    std::string debug(datasource);
+    tgCluster cluster( nodes, 0.0000025, debug );
+
     // traverse all edges in arr, and add as new clusterd edges in tmp;
     segnetArrangement::Edge_const_iterator eit;
     for ( eit = arr.edges_begin(); eit != arr.edges_end(); ++eit ) {

@@ -6,6 +6,7 @@
 #include <terragear/polygon_set/tg_polygon_def.hxx>
 #include <terragear/polygon_set/tg_polygon_set.hxx>
 #include <terragear/tg_array.hxx>
+#include <terragear/tg_mutex.hxx>
 
 #include "tg_mesh_def.hxx"
 
@@ -27,52 +28,52 @@ class tgMesh
 {
 public:
     tgMesh() : meshArrangement(this), meshTriangulation(this), meshSurface(this) {};
-    
+
     void initDebug( const std::string& dbgRoot );
     void initPriorities( const std::vector<std::string>& priorityNames );
-    void setLock( SGMutex* l ) { lock = l; }
+    void setLock( tgMutex* l ) { lock = l; }
     void clipAgainstBucket( const SGBucket& bucket );
 
     void clear( void );
     bool empty( void );
-    
+
     void addPoly( unsigned int priority, const tgPolygonSet& poly );
     void addPolys( unsigned int priority, const tgPolygonSetList& polys );
     void addPoints( const std::vector<cgalPoly_Point>& points );
-    
+
     tgPolygonSet join( unsigned int priority, const tgPolygonSetMeta& meta );
-    
+
     void generate( void );
-    
-    void loadStage1( const std::string& path, const SGBucket& b );
+
+    bool loadStage1( const std::string& path, const SGBucket& b );
     void calcElevation( const std::string& basePath );
-    
+
     void loadStage2( const std::string& path, const SGBucket& b );
     void calcFaceNormals( void );
-    
+
     void toShapefiles( const char* dataset ) const;
-    
+
     void save( const std::string& path ) const;
     void save2( const std::string& path ) const;
-    
+
     std::string getDebugPath( void ) { return debugPath; }
     SGBucket    getBucket( void )    { return b; }
-    
+
     friend class tgMeshArrangement;
     friend class tgMeshTriangulation;
-    
-private:            
+
+private:
     tgArray* loadElevationArray( const std::string& demBase, const SGBucket& bucket );
-    
+
     void saveIncidentFaces( const std::string& path, const char* layer, const std::vector<meshTriVertexHandle>& vertexes ) const;
-            
+
     typedef enum {
         LAYER_FIELDS_NONE,
         LAYER_FIELDS_ARR,
         LAYER_FIELDS_TDS_VERTEX,
         LAYER_FIELDS_TDS_FACE
-    } MeshLayerFields;  
-    
+    } MeshLayerFields;
+
     GDALDataset* openDatasource( const std::string& datasource_name ) const;
     OGRLayer*    openLayer( GDALDataset* poDS, OGRwkbGeometryType lt, MeshLayerFields lf, const char* layer_name ) const;
 
@@ -81,7 +82,7 @@ private:
     tgMeshPolyhedralSurface         meshSurface;
     SGBucket                        b;
     bool                            clipBucket;
-    SGMutex*                        lock;
+    tgMutex*                        lock;
     std::string                     debugPath;
 };
 

@@ -71,46 +71,35 @@ meshTriPoint toMeshTriPoint( const meshArrPoint& aPoint ) {
 
 int main(int argc, char* argv[])
 {
-    const char* filename = (argc > 1) ? argv[1] : "tri_test.txt";
-    std::ifstream input_file(filename);
-    if (!input_file.is_open()) {
+    const char* filename = (argc > 1) ? argv[1] : "cdt.txt";
+    std::ifstream cdt_file(filename);
+    if (!cdt_file.is_open()) {
         std::cerr << "Failed to open the " << filename <<std::endl;
         return -1;
     }
 
-    meshTriCDTPlus                              cdt;
-    size_t                                      num_points;
-    size_t                                      num_constraints;
-  
-    input_file >> num_points;
-    for ( unsigned int i=0; i<num_points; i++ ) {
-        meshArrPoint pt;
-        input_file >> pt;
-      
-        cdt.insert( toMeshTriPoint(pt) );
+    meshTriCDTPlus  cdt;
+
+    cdt_file >> cdt;
+    cdt_file.close();
+
+    std::cout << "CDT valid? " << cdt.is_valid() << std::endl;
+    
+    filename = (argc > 2) ? argv[2] : "add_point.txt";
+    std::ifstream pt_file(filename);
+    if (!pt_file.is_open()) {
+        std::cerr << "Failed to open the " << filename <<std::endl;
+        return -1;
     }
-  
-    input_file >> num_constraints;
-    for ( unsigned int i=0; i<num_constraints; i++ ) {
-        meshArrPoint s, t;
-        meshTriPoint ts, tt;
-        
-        input_file >> s >> t;
-        ts = toMeshTriPoint(s);
-        tt = toMeshTriPoint(t);
-        
-        if ( ts != tt ) {
-            cdt.insert_constraint( ts, tt );
-        }
-    }    
-    input_file.close();
+
+    meshTriPoint    pt;
     
-    meshRefiner mesher(cdt);
-    mesher.set_criteria(meshCriteria(0.125));
+    pt_file >> pt;
+    pt_file.close();
     
-    std::cout << "refine mesh" << std::endl;    
-    mesher.refine_mesh();
-    std::cout << "complete" << std::endl;    
+    cdt.insert(pt);
+
+    std::cout << "Success" << std::endl;
     
     return 0;
 }

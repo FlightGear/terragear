@@ -128,7 +128,7 @@ tgArray::unload( void ) {
 bool
 tgArray::parse( const SGBucket& b ) {
     // Parse/load the array data file
-    SG_LOG(SG_GENERAL, SG_INFO, " Parse bucket centered at " << b.get_center() );
+    SG_LOG(SG_GENERAL, SG_DEBUG, " Parse bucket centered at " << b.get_center() );
     
     if ( array_in ) {
         parse_bin();
@@ -145,14 +145,14 @@ tgArray::parse( const SGBucket& b ) {
         rows = 3;
         row_step = (max_y - originy) / (rows - 1);
 
-        SG_LOG(SG_GENERAL, SG_INFO, "    origin  = " << originx << "  " << originy );
-        SG_LOG(SG_GENERAL, SG_INFO, "    cols = " << cols << "  rows = " << rows );
-        SG_LOG(SG_GENERAL, SG_INFO, "    col_step = " << col_step << "  row_step = " << row_step );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
 
         in_data = new short[cols * rows];
         memset(in_data, 0, sizeof(short) * cols * rows);
-        SG_LOG(SG_GENERAL, SG_INFO, "    File not open, so using zero'd data" );
+        SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
     }
 
     // Parse/load the fitted data file
@@ -197,9 +197,9 @@ void tgArray::parse_bin()
     in_data = new short[cols * rows];
     sgReadShort(array_in, cols * rows, in_data);
     
-    SG_LOG(SG_GENERAL, SG_INFO, "    origin  = " << originx << "  " << originy );
-    SG_LOG(SG_GENERAL, SG_INFO, "    cols = " << cols << "  rows = " << rows );
-    SG_LOG(SG_GENERAL, SG_INFO, "    col_step = " << col_step << "  row_step = " << row_step );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "    origin  = " << originx << "  " << originy );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
+    SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
     
 }
 

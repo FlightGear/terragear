@@ -40,7 +40,7 @@ class tgConstructThird : public SGThread
 {
 public:
     // Constructor
-    tgConstructThird( const std::string& priorities_file, SGLockedQueue<SGBucket>& q, SGMutex* l );
+    tgConstructThird( const std::string& priorities_file, SGLockedQueue<SGBucket>& q, tgMutex* l );
 
     // Destructor
     ~tgConstructThird();
@@ -81,7 +81,7 @@ private:
     // ocean tile?
     bool                        isOcean;
 
-    SGMutex*                    lock;
+    tgMutex*                    lock;
 };
 
 #endif // _TGCONSTRUCT_THIRD_HXX

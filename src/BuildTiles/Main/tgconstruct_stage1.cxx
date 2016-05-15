@@ -36,12 +36,12 @@
 #include "tgconstruct_stage1.hxx"
 
 // Constructor
-tgConstructFirst::tgConstructFirst( const std::string& pfile, SGLockedQueue<SGBucket>& q, SGMutex* l) :
+tgConstructFirst::tgConstructFirst( const std::string& pfile, SGLockedQueue<SGBucket>& q, tgMutex* l) :
         workQueue(q)
 {
     totalTiles = q.size();   
     lock = l;
-    
+
     /* initialize tgMesh for the number of layers we have */
     if ( areaDefs.init( pfile ) ) {
         exit( -1 );
@@ -65,158 +65,134 @@ void tgConstructFirst::setPaths( const std::string& work, const std::string& dem
     debugBase  = debug;
 }
 
+void tgConstructFirst::safeMakeDirectory( const std::string& directory )
+{
+    lock->lock();
+    std::string dummy = directory + "/dummy";
+    SGPath sgp( dummy );
+    sgp.create_dir( 0755 );
+    lock->unlock();
+}
+
 void tgConstructFirst::run()
 {
     unsigned int tilesComplete;
 
-    SG_LOG(SG_GENERAL, SG_ALERT, " - Construct thread started " );
-    
     // as long as we have feometry to parse, do so
     while ( !workQueue.empty() ) {
-        SG_LOG(SG_GENERAL, SG_ALERT, " - workqueue not empty " );
-        
         bucket = workQueue.pop();
-
         tilesComplete = totalTiles - workQueue.size();
+
+        SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Stage1 Construct in " << bucket.gen_base_path() << " tile " << tilesComplete << " of " << totalTiles << " using thread " << current() );
 
         // assume non ocean tile until proven otherwise
         isOcean = false;
 
-#if 0        
-        if (   ( bucket.gen_index() != 3006851 )
-            && ( bucket.gen_index() != 3023235 )
-            && ( bucket.gen_index() != 3039619 )
-            && ( bucket.gen_index() != 3056003 )
-            && ( bucket.gen_index() != 3072387 )
-            && ( bucket.gen_index() != 3105155 )
-            && ( bucket.gen_index() != 3121539 )
-#else
-        if ( true
-#endif            
-        ) {       
-            if ( !debugBase.empty() ) {
-                SG_LOG(SG_GENERAL, SG_ALERT, " - Generate debug " );
-                
-                std::string debugPath = debugBase + "/tgconstruct_debug/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();                
-                
-                lock->lock();
-                std::string dummy = debugPath + "/dummy";
-                SGPath sgp( dummy );
-                sgp.create_dir( 0755 );            
-                lock->unlock();
-                
-                SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tilesComplete << " of " << totalTiles << " debug path is " << debugPath );
-                tileMesh.initDebug( debugPath );
-            }
-            
-            std::string sharedPath = shareBase + "/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
-                
-            lock->lock();
-            std::string dummy = sharedPath + "/dummy";
-            SGPath sgp( dummy );
-            sgp.create_dir( 0755 );            
-            lock->unlock();
-            
-            tileMesh.clipAgainstBucket( bucket );
-            
-            SG_LOG(SG_GENERAL, SG_ALERT, bucket.gen_index_str() << " - Construct in " << bucket.gen_base_path() << " tile " << tilesComplete << " of " << totalTiles << " using thread " << current() );
+        // clear mesh
+        tileMesh.clear();
 
-            // STEP 1 - read in the polygon soup for this tile
-            loadLandclassPolys( workBase );
-            
-            // Step 2 - add the fitted nodes ( important elevation points )
-            // add them to the mesh - which adds them in triangulation
-            loadElevation( demBase );
-            
-            // generate the tile
-            tileMesh.generate();
+        if ( !debugBase.empty() ) {
+            std::string debugPath = debugBase + "/tgconstruct_debug/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();                
+            safeMakeDirectory( debugPath );
 
-            // save the intermediate data
-            lock->lock();
-            tileMesh.save( sharedPath );
-            lock->unlock();
-            
-            // and clear
-            tileMesh.clear();
+            tileMesh.initDebug( debugPath );
         }
+
+        tileMesh.clipAgainstBucket( bucket );
+
+        // STEP 1 - read in the polygon soup for this tile
+        loadLandclassPolys( workBase );
+
+        // Step 2 - add the fitted nodes ( important elevation points )
+        // add them to the mesh - which adds them in triangulation
+        loadElevation( demBase );
+
+        // generate the tile
+        tileMesh.generate();
+
+        // save the intermediate data
+        std::string sharedPath = shareBase + "/stage1/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
+        safeMakeDirectory( sharedPath );
+
+        lock->lock();
+        tileMesh.save( sharedPath );
+        lock->unlock();
     }
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, bucket.gen_index_str() << " Thread " << current() << " finished");
 }
 
 int tgConstructFirst::loadLandclassPolys( const std::string& path )
 {
-    std::string poly_path;
-    tgPolygonSetList polys;
-    
+    std::string         poly_path;
+    tgPolygonSetList    polys;
+    unsigned int        numPolys = 0;
+
     // load 2D polygons from correct path
-    SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - polypath" );
-    
     poly_path = path + "/" + bucket.gen_base_path() + '/' + bucket.gen_index_str();
-    SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - 2" );
 
     simgear::Dir d(poly_path);
-    SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - 3" );
-
-    if (d.exists() ) {    
-        SG_LOG(SG_GENERAL, SG_ALERT, " - loadLandclassPolys - 4" << poly_path );
-        
+    if (d.exists() ) {
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
+        SG_LOG( SG_GENERAL, SG_DEBUG, files.size() << " Files in " << d.path() );
 
-        SG_LOG( SG_GENERAL, SG_ALERT, files.size() << " Files in " << d.path() );
-        
         BOOST_FOREACH(const SGPath& p, files) {
             std::string lext = p.complete_lower_extension();
-            
+
             // look for .shp files to load
             if (lext == "shp") {
-                SG_LOG(SG_GENERAL, SG_INFO, "load: " << p);
-                
+                SG_LOG(SG_GENERAL, SG_DEBUG, "load: " << p);
+
                 // shapefile contains multiple polygons.
                 // read an array of them
-                tgPolygonSet::fromShapefile( p, polys );                
+                tgPolygonSet::fromShapefile( p, polys );
+                numPolys += polys.size();
                 for ( unsigned int i=0; i<polys.size(); i++ ) {
                     std::string material = polys[i].getMeta().getMaterial();
-                                        
+
                     int area = areaDefs.get_area_priority( material );                    
                     tileMesh.addPoly( area, polys[i] );
                 }
             }
         }
-        
+
         if ( !tileMesh.empty() ) {
             // add pcean polygon
             addOceanPoly();
         }
     }
-    
-    return 0;
+
+    SG_LOG(SG_GENERAL, SG_DEBUG, "loadLandclassPolys - loaded " << numPolys << " polys.  mesh is empty: " << tileMesh.empty() );
+
+    return numPolys;
 }
 
 void tgConstructFirst::loadElevation( const std::string& path ) {        
     std::string array_path = path + "/" + bucket.gen_base_path() + "/" + bucket.gen_index_str();
     tgArray     array;
-    
+
     if ( array.open(array_path) ) {
         std::vector<cgalPoly_Point>  elevationPoints;
-        
+
         SG_LOG(SG_GENERAL, SG_DEBUG, "Opened Array file " << array_path);
-        
+
         array.parse( bucket );
         array.remove_voids( );
-        
+
         std::vector<SGGeod> const& corner_list = array.get_corner_list();
         for (unsigned int i=0; i<corner_list.size(); i++) {
             elevationPoints.push_back( cgalPoly_Point(corner_list[i].getLongitudeDeg(), corner_list[i].getLatitudeDeg()) );
         }
-        
+
         std::vector<SGGeod> const& fit_list = array.get_fitted_list();
         for (unsigned int i=0; i<fit_list.size(); i++) {
             elevationPoints.push_back( cgalPoly_Point(fit_list[i].getLongitudeDeg(), fit_list[i].getLatitudeDeg()) );
         }
-        
-        tileMesh.addPoints( elevationPoints );        
+
+        tileMesh.addPoints( elevationPoints );
     } else {
         SG_LOG(SG_GENERAL, SG_INFO, "Failed to open Array file " << array_path);
-    }    
+    }
 }
 
 #define CORRECTION  (0.0005)
@@ -224,14 +200,14 @@ void tgConstructFirst::addOceanPoly( void )
 {
     // set up clipping tile
     cgalPoly_Point pt[4];
-    
+
     pt[0] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_SW ).getLongitudeDeg()-CORRECTION, bucket.get_corner( SG_BUCKET_SW ).getLatitudeDeg()-CORRECTION );
     pt[1] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_SE ).getLongitudeDeg()+CORRECTION, bucket.get_corner( SG_BUCKET_SE ).getLatitudeDeg()-CORRECTION );
     pt[2] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_NE ).getLongitudeDeg()+CORRECTION, bucket.get_corner( SG_BUCKET_NE ).getLatitudeDeg()+CORRECTION );
     pt[3] = cgalPoly_Point( bucket.get_corner( SG_BUCKET_NW ).getLongitudeDeg()-CORRECTION, bucket.get_corner( SG_BUCKET_NW ).getLatitudeDeg()+CORRECTION );    
-    
+
     cgalPoly_Polygon poly( pt, pt+4 );
     tgPolygonSetMeta meta(tgPolygonSetMeta::META_TEXTURED, areaDefs.get_ocean_area_name() );
-    
+
     tileMesh.addPoly( areaDefs.get_ocean_area_priority(), tgPolygonSet( poly, meta ) );
 }

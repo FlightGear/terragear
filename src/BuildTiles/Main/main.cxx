@@ -34,6 +34,8 @@
 #include <simgear/debug/logstream.hxx>
 #include <Include/version.h>
 
+#include <terragear/tg_mutex.hxx>
+
 #include "tgconstruct_stage1.hxx"
 #include "tgconstruct_stage2.hxx"
 #include "tgconstruct_stage3.hxx"
@@ -109,7 +111,7 @@ void doStage3( int num_threads, std::vector<SGBucket>& bucketList,
     
     // now create the worker threads for stage 1
     std::vector<tgConstructThird *> constructs;    
-    SGMutex filelock;
+    tgMutex filelock;
     
     for (int i=0; i<num_threads; i++) {
         tgConstructThird* construct = new tgConstructThird( priorities_file, wq, &filelock );
@@ -143,16 +145,16 @@ void doStage2( int num_threads, std::vector<SGBucket>& bucketList,
                const std::string& share_base, const std::string& debug_base )
 {
     SGLockedQueue<SGBucket> wq;
-    
+
     /* fill the workqueue */
     for (unsigned int i=0; i<bucketList.size(); i++) {
         wq.push( bucketList[i] );
     }
-    
+
     // now create the worker threads for stage 1
     std::vector<tgConstructSecond *> constructs;    
-    SGMutex filelock;
-    
+    tgMutex filelock;
+
     for (int i=0; i<num_threads; i++) {
         tgConstructSecond* construct = new tgConstructSecond( priorities_file, wq, &filelock );
         construct->setPaths( work_base, dem_base, share_base, debug_base );
@@ -185,22 +187,22 @@ void doStage1( int num_threads, std::vector<SGBucket>& bucketList,
                const std::string& share_base, const std::string& debug_base )
 {
     SGLockedQueue<SGBucket> wq;
-    
+
     /* fill the workqueue */
     for (unsigned int i=0; i<bucketList.size(); i++) {
         wq.push( bucketList[i] );
     }
-    
+
     // now create the worker threads for stage 1
     std::vector<tgConstructFirst *> constructs;    
-    SGMutex filelock;
-    
+    tgMutex filelock;
+
     for (int i=0; i<num_threads; i++) {
         tgConstructFirst* construct = new tgConstructFirst( priorities_file, wq, &filelock );
         construct->setPaths( work_base, dem_base, share_base, debug_base );
         constructs.push_back( construct );
     }
-    
+
     // start all threads
     for (unsigned int i=0; i<constructs.size(); i++) {
         constructs[i]->start();
@@ -213,7 +215,7 @@ void doStage1( int num_threads, std::vector<SGBucket>& bucketList,
     for (unsigned int i=0; i<constructs.size(); i++) {
         constructs[i]->join();
     }
-    
+
     // delete the stage 1 construct objects
     for (unsigned int i=0; i<constructs.size(); i++) {
         delete constructs[i];

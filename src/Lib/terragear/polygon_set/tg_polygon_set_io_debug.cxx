@@ -104,7 +104,8 @@ void tgPolygonSet::toDebugShapefile( OGRLayer* poLayer, const cgalPoly_Polygon& 
         
         OGRFeature* poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
         poFeature->SetGeometry(&polygon);    
-        
+        poFeature->SetField("tg_desc",  desc );
+
         if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
         {
             SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");

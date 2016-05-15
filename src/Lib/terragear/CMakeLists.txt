@@ -22,6 +22,7 @@ set(HEADERS
     tg_dataset_protect.hxx
     tg_light.hxx
     tg_misc.hxx
+    tg_mutex.hxx
     tg_nodes.hxx
     tg_polygon.hxx
     tg_rectangle.hxx

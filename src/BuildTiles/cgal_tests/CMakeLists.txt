@@ -52,6 +52,19 @@ target_link_libraries(cgalarrtest
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 
+add_executable(extended_kernel
+    extended_kernel.cxx
+)
+
+target_link_libraries(extended_kernel
+    terragear
+    ${Boost_LIBRARIES}
+    ${GDAL_LIBRARY}    
+    ${ZLIB_LIBRARY}
+    ${SIMGEAR_CORE_LIBRARIES}
+    ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+)
+
 install(TARGETS cgalcliptest RUNTIME DESTINATION bin)
 install(TARGETS cgaljointest RUNTIME DESTINATION bin)
 install(TARGETS cgaltritest RUNTIME DESTINATION bin)

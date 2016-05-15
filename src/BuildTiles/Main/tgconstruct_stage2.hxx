@@ -40,7 +40,7 @@ class tgConstructSecond : public SGThread
 {
 public:
     // Constructor
-    tgConstructSecond( const std::string& priorities_file, SGLockedQueue<SGBucket>& q, SGMutex* l );
+    tgConstructSecond( const std::string& priorities_file, SGLockedQueue<SGBucket>& q, tgMutex* l );
 
     // Destructor
     ~tgConstructSecond();
@@ -56,8 +56,8 @@ private:
 
     // Load Data
     void loadElevation( const std::string& path );
-    
-    int loadMesh( const std::string& path );
+
+    void safeMakeDirectory( const std::string& directory );
 
 private:
     TGAreaDefinitions           areaDefs;
@@ -80,7 +80,7 @@ private:
     // ocean tile?
     bool                        isOcean;
 
-    SGMutex*                    lock;
+    tgMutex*                    lock;
 };
 
 #endif // _TGCONSTRUCT_SECOND_HXX
