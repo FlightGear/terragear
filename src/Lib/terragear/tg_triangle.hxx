@@ -32,7 +32,9 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <zlib.h> 
+#include <zlib.h>
+
+#include <boost/array.hpp>
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
