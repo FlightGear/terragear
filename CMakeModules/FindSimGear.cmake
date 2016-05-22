@@ -51,10 +51,10 @@ macro(find_sg_library libName varName libs)
       /usr
       /opt
     )
-    
+
    # message(STATUS "before: Simgear ${${libVarName}_RELEASE} ")
   #  message(STATUS "before: Simgear ${${libVarName}_DEBUG} ")
-    
+
     select_library_configurations( ${varName} )
 
   #  message(STATUS "after:Simgear ${${libVarName}_RELEASE} ")
@@ -64,7 +64,7 @@ macro(find_sg_library libName varName libs)
   #  message(STATUS "Simgear ${libVarName}_RELEASE ${componentLibRelease}")
     set(componentLibDebug ${${libVarName}_DEBUG})
    # message(STATUS "Simgear ${libVarName}_DEBUG ${componentLibDebug}")
-    
+
     if (NOT ${libVarName}_DEBUG)
         if (NOT ${libVarName}_RELEASE)
             #message(STATUS "found ${componentLib}")
@@ -114,7 +114,7 @@ if(NOT SIMGEAR_VERSION)
             "to select the SimGear library location to be used.")
 endif()
 
-message(STATUS "found SimGear version: ${SIMGEAR_VERSION} (needed ${SimGear_FIND_VERSION} or higher)")
+message(STATUS "found SimGear version: ${SIMGEAR_VERSION} (needed ${SimGear_FIND_VERSION})")
 
 if(${SIMGEAR_VERSION} VERSION_LESS ${SimGear_FIND_VERSION})
     message(FATAL_ERROR "You have installed a mismatching SimGear version ${SIMGEAR_VERSION} "
@@ -133,11 +133,10 @@ if(SIMGEAR_SHARED)
     find_sg_library(SimGearCore SIMGEAR_CORE SIMGEAR_CORE_LIBRARIES)
     find_sg_library(SimGearScene SIMGEAR_SCENE SIMGEAR_LIBRARIES)
 
- 
     list(APPEND SIMGEAR_LIBRARIES ${SIMGEAR_CORE_LIBRARIES})
     set(SIMGEAR_CORE_LIBRARY_DEPENDENCIES "")
     set(SIMGEAR_SCENE_LIBRARY_DEPENDENCIES "")
-    
+
    # message(STATUS "core lib ${SIMGEAR_CORE_LIBRARIES}")
   #  message(STATUS "all libs ${SIMGEAR_LIBRARIES}")
 else(SIMGEAR_SHARED)
@@ -145,16 +144,25 @@ else(SIMGEAR_SHARED)
     set(SIMGEAR_LIBRARIES "") # clear value
     set(SIMGEAR_CORE_LIBRARIES "") # clear value
     message(STATUS "looking for static SimGear libraries")
-    
+
     find_sg_library(SimGearCore SIMGEAR_CORE SIMGEAR_CORE_LIBRARIES)
     find_sg_library(SimGearScene SIMGEAR_SCENE SIMGEAR_LIBRARIES)
 
     # again link order matters - scene libraries depend on core ones
     list(APPEND SIMGEAR_LIBRARIES ${SIMGEAR_CORE_LIBRARIES})
-    
+
     set(SIMGEAR_CORE_LIBRARY_DEPENDENCIES
         ${CMAKE_THREAD_LIBS_INIT}
-        ${ZLIB_LIBRARY})
+        ${ZLIB_LIBRARY}
+        ${WINMM_LIBRARY})
+
+    set(SIMGEAR_SCENE_LIBRARY_DEPENDENCIES
+        ${OPENAL_LIBRARY})
+
+    if(APPLE)
+        find_library(COCOA_LIBRARY Cocoa)
+        list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES ${COCOA_LIBRARY})
+    endif()
 
     if(WIN32)
         list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES ws2_32.lib)
@@ -179,8 +187,13 @@ endif()
 
 # now we've found SimGear, try test-compiling using its includes
 include(CheckCXXSourceRuns)
+include(CheckCXXSourceCompiles)
 
-SET(CMAKE_REQUIRED_INCLUDES ${SIMGEAR_INCLUDE_DIR})
+set(SIMGEAR_INCLUDE_DIRS
+  ${SIMGEAR_INCLUDE_DIR}
+  ${SIMGEAR_INCLUDE_DIR}/simgear/3rdparty/utf8
+)
+SET(CMAKE_REQUIRED_INCLUDES ${SIMGEAR_INCLUDE_DIRS})
 
 # clear cache, run a fresh compile test every time
 unset(SIMGEAR_COMPILE_TEST CACHE)
@@ -224,7 +237,9 @@ if(NOT SIMGEAR_COMPILE_TEST)
 endif()
 unset(CMAKE_REQUIRED_DEFINITIONS)
 
+find_package(CURL REQUIRED)
+list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES ${CURL_LIBRARIES})
+
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(SimGear DEFAULT_MSG
-     SIMGEAR_LIBRARIES SIMGEAR_CORE_LIBRARIES SIMGEAR_INCLUDE_DIR SIMGEAR_COMPILE_TEST)
-
+     SIMGEAR_LIBRARIES SIMGEAR_CORE_LIBRARIES SIMGEAR_INCLUDE_DIRS SIMGEAR_COMPILE_TEST)
