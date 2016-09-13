@@ -178,7 +178,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         // theat close to 180 at the control point to the cur node and next node
         if ( curve_type == CURVE_QUADRATIC )
         {
-            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
+            if ( (std::abs(theta1 - 180.0) < 5.0 ) || (std::abs(theta1) < 5.0 ) || (std::isnan(theta1)) )
             {
                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Quadtratic curve with cp in line : convert to linear: " << description << ": theta is " << theta1 );
                 curve_type = CURVE_LINEAR;
@@ -191,11 +191,11 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
 
         if ( curve_type == CURVE_CUBIC )
         {
-            if ( (abs(theta1 - 180.0) < 5.0 ) || (abs(theta1) < 5.0 ) || (isnan(theta1)) )
+            if ( (std::abs(theta1 - 180.0) < 5.0 ) || (std::abs(theta1) < 5.0 ) || (std::isnan(theta1)) )
             {
                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve with cp1 in line : " << description << ": theta is " << theta1 );
 
-                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
+                if ( (std::abs(theta2 - 180.0) < 5.0 ) || (std::abs(theta2) < 5.0 ) || (std::isnan(theta2)) )
                 {
                     TG_LOG(SG_GENERAL, SG_DEBUG, "\n               and cp2 in line : " << description << ": theta is " << theta2 << " CONVERTING TO LINEAR" );
 
@@ -210,7 +210,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
             {
                 TG_LOG(SG_GENERAL, SG_DEBUG, "\nLinearFeature: Cubic curve withOUT cp1 in line : keep quadtratic: " << description << ": theta is " << theta1 );
 
-                if ( (abs(theta2 - 180.0) < 5.0 ) || (abs(theta2) < 5.0 ) || (isnan(theta2)) )
+                if ( (std::abs(theta2 - 180.0) < 5.0 ) || (std::abs(theta2) < 5.0 ) || (std::isnan(theta2)) )
                 {
                     TG_LOG(SG_GENERAL, SG_DEBUG, "\n               BUT cp2 IS in line : " << description << ": theta is " << theta2 );
                 }
