@@ -8,6 +8,7 @@ target_link_libraries(ogr-decode
     ${CMAKE_THREAD_LIBS_INIT}
     ${SIMGEAR_CORE_LIBRARIES}
     ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
+    ${Boost_LIBRARIES}
 )
 
 install(TARGETS ogr-decode RUNTIME DESTINATION bin)
