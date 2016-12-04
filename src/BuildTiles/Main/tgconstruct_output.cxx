@@ -42,11 +42,11 @@ void TGConstruct::AddCustomObjects( void ) {
     // Create/open the output .stg file for writing
     SGPath dest_d(output_base.c_str());
     dest_d.append(bucket.gen_base_path().c_str());
-    string dest_dir = dest_d.str_native();
+    string dest_dir = dest_d.utf8Str();
     SGPath dest_i(dest_d);
     dest_i.append(bucket.gen_index_str());
     dest_i.concat(".stg");
-    string dest_ind = dest_i.str_native();
+    string dest_ind = dest_i.utf8Str();
 
     FILE *fp;
     
@@ -70,7 +70,7 @@ void TGConstruct::AddCustomObjects( void ) {
         SGPath index(base);
         index.append( bucket.gen_index_str() );
         index.concat(".ind");
-        string index_file = index.str_native();
+        string index_file = index.utf8Str();
 
         sg_gzifstream in( index_file );
 
@@ -92,7 +92,7 @@ void TGConstruct::AddCustomObjects( void ) {
                         SGPath srcbase(base);
                         srcbase.append(name);
                         srcbase.concat(".gz");
-                        string basecom = srcbase.str_native();
+                        string basecom = srcbase.utf8Str();
 #ifdef _MSC_VER
                         string command = "copy " + basecom + " " + dest_dir;
 #else
