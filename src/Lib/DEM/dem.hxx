@@ -34,7 +34,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
-#include <simgear/misc/sgstream.hxx>
+#include <simgear/io/iostreams/sgstream.hxx>
 
 #define DEM_SIZE 1200
 #define DEM_SIZE_1 1201
