@@ -174,13 +174,11 @@ void fit_file(const SGPath& path) {
     inarray.parse(bucket);
     inarray.close();
 
-    ArrayMap *DEM=new ArrayMap(inarray);
+    ArrayMap DEM(inarray);
 
-    Terra::GreedySubdivision *mesh;
+    Terra::GreedySubdivision mesh(&DEM);
 
-    mesh=new Terra::GreedySubdivision(DEM);
-
-    greedy_insertion(mesh);
+    greedy_insertion(&mesh);
 
     gzFile fp;
     if ( (fp = gzopen( outPath.c_str(), "wb9" )) == NULL ) {
@@ -188,22 +186,19 @@ void fit_file(const SGPath& path) {
         return;
     }
 
-    gzprintf(fp,"%d\n",mesh->pointCount());
+    gzprintf(fp,"%d\n",mesh.pointCount());
 
-    for (int x=0;x<DEM->width;x++) {
-        for (int y=0;y<DEM->height;y++) {
-            if (mesh->is_used(x,y) != DATA_POINT_USED)
+    for (int x=0;x<DEM.width;x++) {
+        for (int y=0;y<DEM.height;y++) {
+            if (mesh.is_used(x,y) != DATA_POINT_USED)
                 continue;
             double vx,vy,vz;
             vx=(inarray.get_originx()+x*inarray.get_col_step())/3600.0;
             vy=(inarray.get_originy()+y*inarray.get_row_step())/3600.0;
-            vz=DEM->eval(x,y);
+            vz=DEM.eval(x,y);
             gzprintf(fp,"%+03.8f %+02.8f %0.2f\n",vx,vy,vz);
         }
     }
-
-    delete mesh;
-    delete DEM;
 
     gzclose(fp);
 }
@@ -352,9 +347,9 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    std::vector<FitThread*> threads;
+    std::vector<std::shared_ptr<FitThread> > threads;
     for (unsigned int t=0; t<num_threads; ++t) {
-        FitThread* thread = new FitThread;
+        std::shared_ptr<FitThread> thread(new FitThread);
         thread->start();
         threads.push_back(thread);
     }
