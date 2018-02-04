@@ -26,7 +26,7 @@
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/sg_types.hxx>
-#include <simgear/misc/sgstream.hxx>
+#include <simgear/io/iostreams/sgstream.hxx>
 
 class tgArray {
 
