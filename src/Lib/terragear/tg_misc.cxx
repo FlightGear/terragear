@@ -70,18 +70,18 @@ double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext )
 
 ClipperLib::IntPoint SGGeod_ToClipper( const SGGeod& p )
 {
-    ClipperLib::cUInt x, y;
+    ClipperLib::cInt x, y;
 
     if ( p.getLongitudeDeg() > 0 ) {
-        x = (ClipperLib::cUInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) + 0.5  );
+        x = (ClipperLib::cInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) + 0.5  );
     } else {
-        x = (ClipperLib::cUInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) - 0.5  );
+        x = (ClipperLib::cInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) - 0.5  );
     }
     
     if ( p.getLatitudeDeg() > 0 ) {
-        y = (ClipperLib::cUInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) + 0.5  );
+        y = (ClipperLib::cInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) + 0.5  );
     } else {
-        y = (ClipperLib::cUInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) - 0.5  );
+        y = (ClipperLib::cInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) - 0.5  );
     }
     
     return ClipperLib::IntPoint( x, y );
