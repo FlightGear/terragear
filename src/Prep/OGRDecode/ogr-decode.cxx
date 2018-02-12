@@ -222,7 +222,7 @@ void Decoder::run()
     // as long as we have geometry to parse, do so
     while (!global_workQueue.empty()) {
         OGRFeature *poFeature = global_workQueue.pop();
-        // SG_LOG( SG_GENERAL, SG_INFO, " remaining features is " << global_workQueue.size() );
+        SG_LOG( SG_GENERAL, SG_BULK, " remaining features is " << global_workQueue.size() );
 
         if ( poFeature ) {
             OGRGeometry *poGeometry = poFeature->GetGeometryRef();
@@ -471,6 +471,8 @@ void usage(char* progname) {
     SG_LOG( SG_GENERAL, SG_ALERT, "Usage: " <<
               progname << " [options...] <work_dir> <datasource> [<layername>...]" );
     SG_LOG( SG_GENERAL, SG_ALERT, "Options:" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--log-level priority" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Width in priority being bulk|debug|info|warn|alert" );
     SG_LOG( SG_GENERAL, SG_ALERT, "--line-width width" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        Width in meters for the lines" );
     SG_LOG( SG_GENERAL, SG_ALERT, "--line-width-column colname" );
@@ -513,6 +515,27 @@ void usage(char* progname) {
     exit(-1);
 }
 
+void
+setLoggingPriority (const char * p)
+{
+  if (p == 0)
+      return;
+  string priority = p;
+  if (priority == "bulk") {
+    sglog().set_log_priority(SG_BULK);
+  } else if (priority == "debug") {
+    sglog().set_log_priority(SG_DEBUG);
+  } else if (priority.empty() || priority == "info") { // default
+    sglog().set_log_priority(SG_INFO);
+  } else if (priority == "warn") {
+    sglog().set_log_priority(SG_WARN);
+  } else if (priority == "alert") {
+    sglog().set_log_priority(SG_ALERT);
+  } else {
+    SG_LOG(SG_GENERAL, SG_WARN, "Unknown logging priority " << priority);
+  }
+}
+
 int main( int argc, char **argv ) {
     char* progname=argv[0];
     string datasource,work_dir;
@@ -520,7 +543,14 @@ int main( int argc, char **argv ) {
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
     while (argc>1) {
-        if (!strcmp(argv[1],"--line-width")) {
+        if (!strcmp(argv[1],"--log-level")) {
+            if (argc<3) {
+                usage(progname);
+            }
+            setLoggingPriority(argv[2]);
+            argv+=2;
+            argc-=2;
+        } else if (!strcmp(argv[1],"--line-width")) {
             if (argc<3) {
                 usage(progname);
             }
