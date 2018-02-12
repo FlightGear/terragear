@@ -1,16 +1,14 @@
-#include <math.h>
 #include <limits.h>
 
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <CGAL/intersections.h>
 
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_polygon.hxx"
 #include "tg_misc.hxx"
-#include "tg_cgal_epec.hxx"
-#include "tg_shapefile.hxx"
 
-const double isEqual2D_Epsilon = 0.000001;
+const double isEqual2D_Epsilon = 0.000000001;
 
 #define CLIPPER_FIXEDPT           (1000000000000)
 #define CLIPPER_METERS_PER_DEGREE (111000)
@@ -26,23 +24,6 @@ bool SGGeod_isEqual2D( const SGGeod& g0, const SGGeod& g1 )
 {
     return ( (fabs( g0.getLongitudeDeg() - g1.getLongitudeDeg() ) < isEqual2D_Epsilon) &&
              (fabs( g0.getLatitudeDeg()  - g1.getLatitudeDeg() )  < isEqual2D_Epsilon ) );
-}
-
-bool SGGeod_isLessThan2D( const SGGeod& g0, const SGGeod& g1 )
-{
-    bool lessThan = false;
-    
-    // if x == x, then y MUST be < y
-    if ( (fabs( g0.getLongitudeDeg() - g1.getLongitudeDeg() ) < isEqual2D_Epsilon) ) {
-        if ( ( g1.getLatitudeDeg() - g0.getLatitudeDeg() ) > isEqual2D_Epsilon ) {
-            lessThan = true;
-        }
-    // otherwise, just check if x < x
-    } else if ( ( g1.getLongitudeDeg() - g0.getLongitudeDeg() ) > isEqual2D_Epsilon ) {
-       lessThan = true;
-    }
-    
-    return lessThan;
 }
 
 SGVec2d SGGeod_ToSGVec2d( const SGGeod& p )
@@ -89,18 +70,18 @@ double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext )
 
 ClipperLib::IntPoint SGGeod_ToClipper( const SGGeod& p )
 {
-    ClipperLib::cUInt x, y;
+    ClipperLib::cInt x, y;
 
     if ( p.getLongitudeDeg() > 0 ) {
-        x = (ClipperLib::cUInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) + 0.5  );
+        x = (ClipperLib::cInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) + 0.5  );
     } else {
-        x = (ClipperLib::cUInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) - 0.5  );
+        x = (ClipperLib::cInt)( (p.getLongitudeDeg() * CLIPPER_FIXEDPT) - 0.5  );
     }
     
     if ( p.getLatitudeDeg() > 0 ) {
-        y = (ClipperLib::cUInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) + 0.5  );
+        y = (ClipperLib::cInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) + 0.5  );
     } else {
-        y = (ClipperLib::cUInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) - 0.5  );
+        y = (ClipperLib::cInt)( (p.getLatitudeDeg()  * CLIPPER_FIXEDPT) - 0.5  );
     }
     
     return ClipperLib::IntPoint( x, y );
@@ -368,129 +349,26 @@ SGGeod midpoint( const SGGeod& p0, const SGGeod& p1 )
                              (p0.getElevationM()   + p1.getElevationM()) / 2 );
 }
 
-#if 0
-void Bisect( const SGGeod& gCenter, double heading1, double heading2, bool right )
-{
-    double  courseCur, courseNext, courseAvg, theta;
-    SGVec3d dirCur, dirNext, dirAvg, cp;
-    double  courseOffset, distOffsetInner, distOffsetOuter;
-    SGGeod  pt;
-    
-    // first, find if the line turns left or right ar src
-    // for this, take the cross product of the vectors from prev to src, and src to next.
-    // if the cross product is negetive, we've turned to the left
-    // if the cross product is positive, we've turned to the right
-    dirCur  = SGVec3d( sin( heading1*SGD_DEGREES_TO_RADIANS ), cos( heading1*SGD_DEGREES_TO_RADIANS ), 0.0f );
-    dirNext = SGVec3d( sin( heading2*SGD_DEGREES_TO_RADIANS ), cos( heading2*SGD_DEGREES_TO_RADIANS ), 0.0f );
-    
-    // Now find the average
-    dirAvg = normalize( dirCur + dirNext );
-    courseAvg = SGMiscd::rad2deg( atan( dirAvg.x()/dirAvg.y() ) );
-    if (courseAvg < 0) {
-        courseAvg += 180.0f;
-    }
-    
-    // check the turn direction
-    cp    = cross( dirCur, dirNext );
-    theta = SGMiscd::rad2deg(CalculateTheta( dirCur, dirNext ) );
-    
-    if ( (abs(theta - 180.0) < 0.1) || (abs(theta) < 0.1) || (isnan(theta)) ) {
-        // straight line blows up math - offset 90 degree and dist is as given
-        courseOffset = SGMiscd::normalizePeriodic(0, 360, heading2-90.0);
-    }  else  {
-        // calculate correct distance for the offset point
-        if (cp.z() < 0.0f) {
-            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg+180);
-            turn_dir = 0;
-        } else {
-            courseOffset = SGMiscd::normalizePeriodic(0, 360, courseAvg);
-            turn_dir = 1;
-        }
-    }
-    return courseOffset;
-}
-#else
-double Bisect( const SGGeod& center, double heading1, double heading2, bool right )
-{   
-    // convert starting point to CGAL
-    EPECSRPoint_2 pt2( center.getLongitudeDeg(), center.getLatitudeDeg() );
-    
-    // we need two lines for the bisector function
-    EPECSRLine_2 line1( pt2, tgCgalBase::HeadingToDirection( heading1 ) );
-    EPECSRLine_2 line2( pt2, tgCgalBase::HeadingToDirection( heading2 ) );
-
-    // we need two vectors for orientation
-    EPECSRVector_2  vec1( line1 );
-    EPECSRVector_2  vec2( line2 );
-
-    EPECSRLine_2      bisect = CGAL::bisector( line1, line2 );
-    EPECSRDirection_2 dir = bisect.direction();
-
-    // if we pass right as true, we want the heading of a right turn.
-    // CGAL returns heading as if we add unit vectors, so heading always follows the
-    // turn.
-    if ( right ) {
-        switch( CGAL::orientation( vec1, vec2 ) ) {
-            case CGAL::LEFT_TURN:
-                break;
-                
-            case CGAL::RIGHT_TURN:
-            case CGAL::COLLINEAR:
-                dir = -dir;
-                break;
-        }
-    }
-    
-    return tgCgalBase::DirectionToHeading( dir );
-}
-#endif
-
-tgRay Bisect( const tgRay& r1, const tgRay& r2, bool right )
-{
-    EPECSRLine_2      line1( r1.toCgal() );
-    EPECSRLine_2      line2( r2.toCgal() );
-
-    // we need two vectors for orientation
-    EPECSRVector_2    vec1( line1 );
-    EPECSRVector_2    vec2( line2 );
-    
-    EPECSRLine_2      bisect = CGAL::bisector( line1, line2 );
-    EPECSRDirection_2 dir = bisect.direction();
-    
-    // if we pass right as true, we want the heading of a right turn.
-    // CGAL returns heading as if we add unit vectors, so heading always follows the
-    // turn.
-    if ( right ) {
-        switch( CGAL::orientation( vec1, vec2 ) ) {
-            case CGAL::LEFT_TURN:
-                break;
-                
-            case CGAL::RIGHT_TURN:
-            case CGAL::COLLINEAR:
-                dir = -dir;
-                break;
-        }
-    }
-    
-    return tgRay( r1.GetCGALStart(), dir );
-}
-
 bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SGGeod& p3, SGGeod& intersection)
 {
-    EPECSRPoint_2 a1( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
-    EPECSRPoint_2 b1( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
-    EPECSRPoint_2 a2( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
-    EPECSRPoint_2 b2( p3.getLongitudeDeg(), p3.getLatitudeDeg() );
+    typedef CGAL::Exact_predicates_exact_constructions_kernel         Kernel;
+    typedef Kernel::Point_2                                           Point_2;
+    typedef CGAL::Segment_2<Kernel>                                   Segment_2;
 
-    EPECSRSegment_2 seg1( a1, b1 );
-    EPECSRSegment_2 seg2( a2, b2 );
+    Point_2 a1( p0.getLongitudeDeg(), p0.getLatitudeDeg() );
+    Point_2 b1( p1.getLongitudeDeg(), p1.getLatitudeDeg() );
+    Point_2 a2( p2.getLongitudeDeg(), p2.getLatitudeDeg() );
+    Point_2 b2( p3.getLongitudeDeg(), p3.getLatitudeDeg() );
+
+    Segment_2 seg1( a1, b1 );
+    Segment_2 seg2( a2, b2 );
 
     CGAL::Object result = CGAL::intersection(seg1, seg2);
-    const EPECSRPoint_2     *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result);
-    const EPECSRSegment_2   *iseg   = CGAL::object_cast<EPECSRSegment_2>(&result);
+    const CGAL::Point_2<Kernel> *ipoint = CGAL::object_cast<CGAL::Point_2<Kernel> >(&result);
+    const CGAL::Segment_2<Kernel> *iseg = CGAL::object_cast<CGAL::Segment_2<Kernel> >(&result);
     
     if (ipoint) {
-        intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
+        // handle the point intersection case with *ipoint.
         return true;
     } else if (iseg ) {
         // handle the segment intersection case with *iseg.
@@ -500,60 +378,3 @@ bool intersection(const SGGeod &p0, const SGGeod &p1, const SGGeod& p2, const SG
         return false;
     }
 }
-
-bool FindIntersections( const tgSegment& s1, const tgSegment& s2, std::vector<SGGeod>& ints )
-{
-    EPECSRPoint_2 a1 = s1.GetCGALStart();
-    EPECSRPoint_2 b1 = s1.GetCGALEnd();
-    EPECSRPoint_2 a2 = s2.GetCGALStart();
-    EPECSRPoint_2 b2 = s2.GetCGALEnd();
-
-    EPECSRSegment_2 seg1( a1, b1 );
-    EPECSRSegment_2 seg2( a2, b2 );
-
-    CGAL::Object result = CGAL::intersection(seg1, seg2);
-    SGGeod pt;
-    if (const EPECSRPoint_2 *ipoint = CGAL::object_cast<EPECSRPoint_2>(&result)) {
-        // handle the point intersection case with *ipoint.
-        pt = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
-        ints.push_back( pt );
-        return true;
-    } else {
-        if (const EPECSRSegment_2 *iseg = CGAL::object_cast<EPECSRSegment_2>(&result)) {
-            // handle the segment intersection case with *iseg.
-            ints.push_back( tgCgalBase::EPECSRPointToGeod( iseg->source() ) );
-            ints.push_back( tgCgalBase::EPECSRPointToGeod( iseg->target() ) );
-            return true;
-        } else {
-            // handle the no intersection case.
-            return false;
-        }
-    }
-}
-
-#if 0
-bool FindPointIntersection( const tgSegment& s1, const tgSegment& s2, SGGeod& intersection )
-{
-    typedef CGAL::Exact_predicates_exact_constructions_kernel_with_sqrt Kernel;
-    typedef Kernel::Point_2                                             Point_2;
-    typedef CGAL::Segment_2<Kernel>                                     Segment_2;
-    
-    Point_2 a1( s1.start.getLongitudeDeg(), s1.start.getLatitudeDeg() );
-    Point_2 b1( s1.end.getLongitudeDeg(), s1.end.getLatitudeDeg() );
-    Point_2 a2( s2.start.getLongitudeDeg(), s2.start.getLatitudeDeg() );
-    Point_2 b2( s2.end.getLongitudeDeg(), s2.end.getLatitudeDeg() );
-    
-    Segment_2 seg1( a1, b1 );
-    Segment_2 seg2( a2, b2 );
-    
-    CGAL::Object result = CGAL::intersection(seg1, seg2);
-    SGGeod pt;
-    if (const CGAL::Point_2<Kernel> *ipoint = CGAL::object_cast<CGAL::Point_2<Kernel> >(&result)) {
-        // handle the point intersection case with *ipoint.
-        intersection = SGGeod::fromDeg( CGAL::to_double(ipoint->x()), CGAL::to_double(ipoint->y()) );
-        return true;
-    } else {
-        return false;
-    }
-}
-#endif
