@@ -40,7 +40,7 @@ static void usage( int argc, char **argv ) {
     << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
     << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
     << "[ --airport=abcd ] [--max-slope=<decimal>] [--tile=<tile>] [--threads] [--threads=x]"
-    << "[--chunk=<chunk>] [--clear-dem-path] [--dem-path=<path>] [--verbose] [--help]");
+    << "[--chunk=<chunk>] [--clear-dem-path] [--dem-path=<path>] [--verbose] [--help] [--log-level=bulk|info|debug|warn|alert]");
 }
 
 
@@ -97,6 +97,26 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
     usage( argc, argv );
 }
 
+void
+setLoggingPriority (const string & priority )
+{
+  SG_LOG(SG_ALL,SG_ALERT,"setting log level to " << priority );
+  if (priority == "bulk") {
+    sglog().set_log_priority(SG_BULK);
+  } else if (priority == "debug") {
+    sglog().set_log_priority(SG_DEBUG);
+  } else if (priority.empty() || priority == "info") { // default
+    sglog().set_log_priority(SG_INFO);
+  } else if (priority == "warn") {
+    sglog().set_log_priority(SG_WARN);
+  } else if (priority == "alert") {
+    sglog().set_log_priority(SG_ALERT);
+  } else {
+    SG_LOG(SG_GENERAL, SG_WARN, "Unknown logging priority " << priority);
+  }
+}
+
+
 // TODO: where do these belong
 int nudge = 10;
 double gSnap = 0.00000001;      // approx 1 mm
@@ -137,7 +157,11 @@ int main(int argc, char **argv)
     for (arg_pos = 1; arg_pos < argc; arg_pos++)
     {
         string arg = argv[arg_pos];
-        if ( arg.find("--work=") == 0 )
+        if ( arg.find("--log-level=") == 0 )
+        {
+            setLoggingPriority(arg.substr(12));
+        }
+        else if ( arg.find("--work=") == 0 )
         {
             work_dir = arg.substr(7);
         }
