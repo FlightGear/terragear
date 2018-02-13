@@ -110,7 +110,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
             double    clip_top    = b_clip.get_center_lat() + 0.0630;
             tgPolygon clip_row, clipped;
 
-            SG_LOG( SG_GENERAL, SG_DEBUG, "   CLIPPED row " << row << " of " << dy << ", center lat is " << b_clip.get_center_lat() << " clip_botton is " << clip_bottom << " clip_top is " << clip_top );
+            SG_LOG( SG_GENERAL, SG_INFO, "   CLIPPED row " << row << " of " << dy << " - center lat is " << b_clip.get_center_lat() );
 
             clip_row.AddNode( 0, SGGeod::fromDeg(-180.0, clip_bottom) );
             clip_row.AddNode( 0, SGGeod::fromDeg( 180.0, clip_bottom) );
