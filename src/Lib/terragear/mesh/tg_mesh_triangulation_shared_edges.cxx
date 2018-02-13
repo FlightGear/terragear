@@ -474,12 +474,12 @@ void tgMeshTriangulation::getEdgeNodes( std::vector<const meshVertexInfo *>& nor
     }
 }
 
-static bool lessLatitude(meshVertexInfo& a, meshVertexInfo& b)
+static bool lessLatitude(const meshVertexInfo& a, const meshVertexInfo& b)
 {
     return a.getY() < b.getY();
 }
 
-static bool lessLongitude(meshVertexInfo& a, meshVertexInfo& b)
+static bool lessLongitude(const meshVertexInfo& a, const meshVertexInfo& b)
 {
     return a.getX() < b.getX();
 }
