@@ -492,7 +492,7 @@ void tgPolygon::Tesselate( const std::vector<SGGeod>& extra, bool debug )
 {
     CDTPlus cdt;
     std::vector<SGGeod> geods;
-    char layer[256];
+    // char layer[256];
     
     SG_LOG( SG_GENERAL, SG_DEBUG, "Tess " << id );
         

@@ -461,7 +461,7 @@ double tgSurface::query( SGGeod query ) const {
 void tgSurface::getCoefficients( std::vector<double>& coeff ) const
 {
     coeff.clear();
-    for ( unsigned int i=0; i<surface_coefficients.dim() ; i++ ) {
+    for ( int i=0; i<surface_coefficients.dim() ; i++ ) {
         coeff.push_back( surface_coefficients[i] );
     }
 }

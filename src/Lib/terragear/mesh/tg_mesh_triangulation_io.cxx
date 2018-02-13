@@ -289,7 +289,7 @@ void tgMeshTriangulation::toShapefile( OGRLayer* poLayer, const meshFaceInfo& fi
     OGRLinearRing ring;
     char          constrained[8];
     char          indices[32];
-    bool          isFinite = true;
+    // bool          isFinite = true;
 
     // we really don't need to save the face geometry - it is determined by the vertex
     // indices saved in the point layer, along with the metadata.  But it helps to
@@ -306,7 +306,7 @@ void tgMeshTriangulation::toShapefile( OGRLayer* poLayer, const meshFaceInfo& fi
                 ring.addPoint(&point);
             } else {
                 SG_LOG(SG_GENERAL, SG_ALERT, "infinite face");
-                isFinite = false;
+                // isFinite = false;
             }
         }
     }

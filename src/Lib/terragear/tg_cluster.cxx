@@ -126,7 +126,7 @@ tgCluster::tgCluster( std::list<tgClusterNode>& points, double err, const std::s
 #endif
 
     // remove dups
-    char layer[256];
+    // char layer[256];
 
     tree.clear();
     for ( it = oldcentroids.begin(); it != oldcentroids.end(); it++ ) {

@@ -139,13 +139,11 @@ void tgMesh::calcElevation( const std::string& basePath )
         southArrays.push_back( loadElevationArray( basePath, southBuckets[i] ) );
     }
 
-    tgArray* eastArray;
-    SGBucket eastBucket = b.sibling( 1, 0);
-    eastArray = loadElevationArray( basePath, eastBucket );
+    // SGBucket eastBucket = b.sibling( 1, 0);
+    // tgArray* eastArray = loadElevationArray( basePath, eastBucket );
 
-    tgArray* westArray;
-    SGBucket westBucket = b.sibling(-1, 0);
-    westArray = loadElevationArray( basePath, westBucket );
+    // SGBucket westBucket = b.sibling(-1, 0);
+    // tgArray* westArray = loadElevationArray( basePath, westBucket );
 
     tgArray* tileArray = loadElevationArray( basePath, b );
 
