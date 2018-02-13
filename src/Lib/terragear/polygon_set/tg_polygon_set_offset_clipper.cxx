@@ -26,18 +26,18 @@ double tgPolygonSet::toClipper( double dist ) const
 
 ClipperLib::IntPoint tgPolygonSet::toClipper( const cgalPoly_Point& p ) const
 {
-    ClipperLib::cUInt x, y;
+    ClipperLib::cInt x, y;
     
     if ( p.x() > 0 ) {
-        x = (ClipperLib::cUInt)( ( CGAL::to_double(p.x()) * CLIPPER_FIXEDPT ) + 0.5  );
+        x = (ClipperLib::cInt)( ( CGAL::to_double(p.x()) * CLIPPER_FIXEDPT ) + 0.5  );
     } else {
-        x = (ClipperLib::cUInt)( ( CGAL::to_double(p.x()) * CLIPPER_FIXEDPT ) - 0.5  );
+        x = (ClipperLib::cInt)( ( CGAL::to_double(p.x()) * CLIPPER_FIXEDPT ) - 0.5  );
     }
     
     if ( p.y() > 0 ) {
-        y = (ClipperLib::cUInt)( ( CGAL::to_double(p.y()) * CLIPPER_FIXEDPT ) + 0.5  );
+        y = (ClipperLib::cInt)( ( CGAL::to_double(p.y()) * CLIPPER_FIXEDPT ) + 0.5  );
     } else {
-        y = (ClipperLib::cUInt)( ( CGAL::to_double(p.y()) * CLIPPER_FIXEDPT ) - 0.5  );
+        y = (ClipperLib::cInt)( ( CGAL::to_double(p.y()) * CLIPPER_FIXEDPT ) - 0.5  );
     }
     
     return ClipperLib::IntPoint( x, y );

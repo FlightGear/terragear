@@ -409,7 +409,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     char* srsWkt;
     oSourceSRS->exportToWkt(&srsWkt);
     SG_LOG( SG_GENERAL, SG_DEBUG, "Source spatial reference system: " << srsWkt );
-    OGRFree(srsWkt);
+    CPLFree(srsWkt);
 
     oTargetSRS.SetWellKnownGeogCS( "WGS84" );
 

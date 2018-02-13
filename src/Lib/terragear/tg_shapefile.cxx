@@ -1452,7 +1452,7 @@ void processLayer(OGRLayer* poLayer, tgpolygon_list& polys )
     
     oSourceSRS->exportToWkt(&srsWkt);
     SG_LOG( SG_GENERAL, SG_INFO, "Source spatial reference system: " << srsWkt );
-    OGRFree(srsWkt);
+    CPLFree(srsWkt);
     
     oTargetSRS.SetWellKnownGeogCS( "WGS84" );    
     poCT = OGRCreateCoordinateTransformation(oSourceSRS, &oTargetSRS);
