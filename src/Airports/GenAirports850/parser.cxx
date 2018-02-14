@@ -1,7 +1,7 @@
 #include <ctime>
 
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/sgstream.hxx>
+#include <simgear/io/iostreams/sgstream.hxx>
 #include <simgear/timing/timestamp.hxx>
 
 #include "parser.hxx"

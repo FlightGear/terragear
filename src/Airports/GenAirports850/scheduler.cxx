@@ -6,7 +6,7 @@
 #include <cstring>
 
 #include <simgear/debug/logstream.hxx>
-#include <simgear/misc/sgstream.hxx>
+#include <simgear/io/iostreams/sgstream.hxx>
 
 #include "airport.hxx"
 #include "parser.hxx"
