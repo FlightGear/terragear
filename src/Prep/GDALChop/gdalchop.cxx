@@ -26,6 +26,8 @@
 //#  include <config.h>
 //#endif
 
+#include <algorithm>
+
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/debug/logstream.hxx>
