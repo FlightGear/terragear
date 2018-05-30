@@ -165,7 +165,7 @@ else(SIMGEAR_SHARED)
     endif()
 
     if(WIN32)
-        list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES ws2_32.lib)
+        list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES ws2_32.lib Shlwapi.lib )
     endif(WIN32)
 
     if(NOT MSVC)
