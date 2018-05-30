@@ -8,3 +8,6 @@ target_link_libraries(gdalchop
         ${SIMGEAR_CORE_LIBRARY_DEPENDENCIES}
 )
 install(TARGETS gdalchop RUNTIME DESTINATION bin)
+if (MSVC)
+    set_target_properties( gdalchop PROPERTIES DEBUG_POSTFIX d )
+endif ()
