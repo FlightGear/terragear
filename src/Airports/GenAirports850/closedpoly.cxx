@@ -48,7 +48,7 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
     smoothness   = s;
     texture_heading = th;
 
-    is_pavement = (surface_type != 15) ? true : false;
+    is_pavement = (surface_type != 15) ? true : false;	// wrong??
     is_border   = false;
     has_feature = true;
     

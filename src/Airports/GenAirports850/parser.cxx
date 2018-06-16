@@ -203,7 +203,7 @@ void Parser::run()
         // get a line
         in.getline(line, 2048);
 
-        // Verify this is and airport definition and get the icao
+        // Verify this is an airport definition and get the icao
         if( GetAirportDefinition( line, icao ) ) {
             TG_LOG( SG_GENERAL, SG_INFO, "Found airport " << icao << " at " << pos );
 
@@ -402,7 +402,7 @@ LinearFeature* Parser::ParseFeature( char* line )
         feature = new LinearFeature(NULL, 0.0f);
     }
 
-    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Linear Feature with desription \"" << line << "\"");
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Linear Feature with description \"" << line << "\"");
 
     return feature;
 }
@@ -410,10 +410,10 @@ LinearFeature* Parser::ParseFeature( char* line )
 ClosedPoly* Parser::ParsePavement( char* line )
 {
     ClosedPoly* poly;
-    int   st = 0;
-    float s = 0.0f;
-    float th = 0.0f;
-    char  desc[256];
+    int   st = 0;       // surface type
+    float s = 0.0f;     // smoothness
+    float th = 0.0f;    // texture heading
+    char  desc[256];    // description
     char  *d = NULL;
     int   numParams;
 
@@ -422,11 +422,11 @@ ClosedPoly* Parser::ParsePavement( char* line )
     if (numParams == 4)
     {
         d = strstr(line,desc);
-        TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " thexture heading " << th << " and description " << d);
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " texture heading " << th << " and description " << d);
     }
     else
     {
-        TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " thexture heading " << th );
+        TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " texture heading " << th);
     }
 
     poly = new ClosedPoly(st, s, th, d);
@@ -580,7 +580,7 @@ int Parser::ParseLine(char* line)
                     cur_feat = ParseFeature( line );
                     break;
     
-                case BOUNDRY_CODE:
+                case BOUNDARY_CODE:
                     SetState( STATE_PARSE_BOUNDARY );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing Boundary: " << line);
                     cur_boundary = ParseBoundary( line ); 

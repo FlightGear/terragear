@@ -55,19 +55,25 @@ Airport::Airport( int c, char* def)
             switch( numParams )
             {
                 case 0:
+                    // airport elevation (feet MSL)
                     altitude = atoi(tok);
                     break;
 
                 case 1:
-                    ct = atoi(tok);
+                    // Airport has a control tower (1=yes, 0=no)
+                    // deprecated v10.00
+                    // ct = atoi(tok);
                     break;
 
                 case 2:
-                    // deprecated - ignore
+                    // default airport buildings (1=yes, 0=no)
+                    // deprecated v8.50
                     break;
 
                 case 3:
+                    // ICAO code (FAA code when ICAO doesn't exist)
                     icao = tok;
+                    // tok-4 = airport name
                     description = def;
                     done = true;
                     break;
@@ -78,7 +84,7 @@ Airport::Airport( int c, char* def)
 
     altitude *= SG_FEET_TO_METER;
 
-    TG_LOG( SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", control tower " << ct << ", and description " << description );
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Read airport with icao " << icao << ", and description " << description);
 }
 
 Airport::~Airport()
