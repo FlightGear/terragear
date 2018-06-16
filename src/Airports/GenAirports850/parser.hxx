@@ -34,7 +34,7 @@
 
 #define PAVEMENT_CODE                   (110)
 #define LINEAR_FEATURE_CODE             (120)
-#define BOUNDRY_CODE                    (130)
+#define BOUNDARY_CODE                   (130)
 
 #define NODE_CODE                       (111)
 #define BEZIER_NODE_CODE                (112)
@@ -59,6 +59,31 @@
 #define COMM_FREQ7_CODE                 (56)               
 
 #define END_OF_FILE                     (99)
+
+#define AIRPORT_TRAFFIC_FLOW                    (1000)
+#define TRAFFIC_FLOW_WIND_RULE                  (1001)
+#define TRAFFIC_FLOW_MIN_CEILING_RULE           (1002)
+#define TRAFFIC_FLOW_MIN_VISIBILITY_RULE        (1003)
+#define TRAFFIC_FLOW_TIME_RULE                  (1004)
+
+#define RWY_ARR_DEP_CONSTRAINTS                 (1100)
+#define VFR_TRAFFIC_PATTERN                     (1101)
+
+#define TAXI_ROUTE_NETWORK_HEADER               (1200)
+#define TAXI_ROUTE_NETWORK_NODE                 (1201)
+#define TAXI_ROUTE_NETWORK_EDGE                 (1202)
+#define TAXI_ROUTE_NETWORK_OBSOLETE             (1203)
+#define TAXI_ROUTE_EDGE_ACTIVE_ZONE             (1204)
+#define TAXI_ROUTE_EDGE_CONTROL                 (1205)
+#define TAXI_ROUTE_EDGE_GROUND_VEHICLES         (1206)
+
+#define START_UP_LOCATION                       (1300)
+#define START_UP_LOCATION_METADATA              (1301)
+#define AIRPORT_IDENTIFICATION_METADATA         (1302)
+
+#define TRUCK_PARKING_LOCATION                  (1400)
+#define TRUCK_DESTINATION_LOCATION              (1401)
+
 
 class Parser : public SGThread
 {
