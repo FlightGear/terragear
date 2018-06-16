@@ -1,4 +1,16 @@
-cmake_minimum_required (VERSION 2.6.4)
+cmake_minimum_required (VERSION 3.0)
+
+if (COMMAND cmake_policy)
+   if (POLICY CMP0054)
+       cmake_policy(SET CMP0054 NEW)
+   endif ()
+   if(POLICY CMP0042)
+       cmake_policy(SET CMP0042 NEW)
+   endif ()
+   if(POLICY CMP0071)
+       cmake_policy(SET CMP0071 NEW)
+   endif ()
+endif ()
 
 include (CheckFunctionExists)
 include (CheckCSourceCompiles)
@@ -33,46 +45,52 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}")
 message(STATUS "CMAKE_MODULE_PATH is ${CMAKE_MODULE_PATH}")
 
 # Change the default build type to something fast
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING
-      "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
       FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+endif ()
 
 if (MSVC)
   GET_FILENAME_COMPONENT(PARENT_DIR ${PROJECT_SOURCE_DIR} PATH)
+  
   if (CMAKE_CL_64)
     SET(TEST_3RDPARTY_DIR "${PARENT_DIR}/3rdparty.x64")
-  else (CMAKE_CL_64)
+  else ()
     SET(TEST_3RDPARTY_DIR "${PARENT_DIR}/3rdparty")
-  endif (CMAKE_CL_64)
+  endif ()
+  
   if (EXISTS ${TEST_3RDPARTY_DIR})
     set(MSVC_3RDPARTY_ROOT ${PARENT_DIR} CACHE PATH "Location where the third-party dependencies are extracted")
-  else (EXISTS ${TEST_3RDPARTY_DIR})
-    set(MSVC_3RDPARTY_ROOT NOT_FOUND CACHE PATH "Location where the third-party dependencies are extracted")
-  endif (EXISTS ${TEST_3RDPARTY_DIR})
+  else ()
+    set(MSVC_3RDPARTY_ROOT)
+  endif ()
+  
   set( RT_LIBRARY "winmm.lib" )
-else (MSVC)
-  set(MSVC_3RDPARTY_ROOT NOT_FOUND CACHE PATH "Location where the third-party dependencies are extracted")
-endif (MSVC)
+else ()
+  set(MSVC_3RDPARTY_ROOT)
+endif ()
 
 if (MSVC AND MSVC_3RDPARTY_ROOT)
   message(STATUS "3rdparty files located in ${MSVC_3RDPARTY_ROOT}")
+  
   set( OSG_MSVC "msvc" )
   if (${MSVC_VERSION} EQUAL 1600)
       set( OSG_MSVC ${OSG_MSVC}100 )
-  else (${MSVC_VERSION} EQUAL 1600)
+  else ()
       set( OSG_MSVC ${OSG_MSVC}90 )
-  endif (${MSVC_VERSION} EQUAL 1600)
+  endif ()
+  
   if (CMAKE_CL_64)
       set( OSG_MSVC ${OSG_MSVC}-64 )
 	  set( MSVC_3RDPARTY_DIR 3rdParty.x64 )
-  else (CMAKE_CL_64)
+  else ()
 	  set( MSVC_3RDPARTY_DIR 3rdParty )
-  endif (CMAKE_CL_64)
+  endif ()
 
   set (CMAKE_LIBRARY_PATH ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/lib ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/OpenScenegraph/lib ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/SimGear/lib )
   set (CMAKE_INCLUDE_PATH ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/include ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/OpenScenegraph/include ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/SimGear/include)
+  
   find_path(BOOST_ROOT boost/version.hpp
 			${MSVC_3RDPARTY_ROOT}/boost
 			${MSVC_3RDPARTY_ROOT}/boost_1_52_0
@@ -86,18 +104,35 @@ if (MSVC AND MSVC_3RDPARTY_ROOT)
 			${MSVC_3RDPARTY_ROOT}/boost_1_45_0
 			${MSVC_3RDPARTY_ROOT}/boost_1_44_0
 			)
-  # set (BOOST_ROOT ${MSVC_3RDPARTY_ROOT}/boost_1_44_0)
+
   message(STATUS "BOOST_ROOT is ${BOOST_ROOT}")
+  
   if (CMAKE_CL_64)
 	  set( BOOST_LIBRARYDIR "${BOOST_ROOT}/lib64" )
-  else (CMAKE_CL_64)
+  else ()
 	  set( BOOST_LIBRARYDIR "${BOOST_ROOT}/lib" )
-  endif (CMAKE_CL_64)
+  endif ()
+  
   set (Boost_USE_STATIC_LIBS 1)
   set (OPENAL_INCLUDE_DIR ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/include)
   set (ALUT_INCLUDE_DIR ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/include)
   set (OPENAL_LIBRARY_DIR ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/lib)
-endif (MSVC AND MSVC_3RDPARTY_ROOT)
+endif ()
+
+# CGAL will reset Boost_LIBRARIES, so ensure we do this first to avoid breaking boost linking
+set (CGAL_MINIMUM 4.0)
+set (CGAL_OLD 0)
+find_package(CGAL COMPONENTS Core REQUIRED)
+if (CGAL_FOUND)
+  if (${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
+    message(FATAL_ERROR "CGAL >= ${CGAL_MINIMUM} is required. Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
+  else ()
+    message(STATUS "Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
+    if (${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.5)
+      set (CGAL_OLD 1)
+    endif ()
+  endif ())
+endif ()
 
 # check required dependencies
 find_package(Boost COMPONENTS system thread REQUIRED)
@@ -106,27 +141,10 @@ find_package(Threads REQUIRED)
 find_package(SimGear 3.1.0 REQUIRED)
 find_package(GDAL 2.0.0 REQUIRED)
 find_package(TIFF REQUIRED) # needed for SRTM
-set (CGAL_MINIMUM 4.5)
-
-find_package(CGAL COMPONENTS Core REQUIRED)
-if (CGAL_FOUND)
-  if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
-        message(FATAL_ERROR "CGAL >= ${CGAL_MINIMUM} is required. Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-  else(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
-        message(STATUS "Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-  endif(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
-endif (CGAL_FOUND)
-
-# When including CGAL, it changes compile flags.
-# on Fedora 23, it does this in such a way in that the static simger library 
-# cannot be linked.  
-SET(CGAL_DONT_OVERRIDE_CMAKE_FLAGS ON CACHE BOOL "Don't override CMAKE_*_FLAGS.")
-SET(CGAL_SHARED_LINKER_FLAGS "" CACHE STRING "Don't add shared library flags.")
-include ( ${CGAL_USE_FILE} )
 
 if (CMAKE_CL_64)
 	find_package(JPEG) # needed for SRTM
-endif (CMAKE_CL_64)
+endif ()
 
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
@@ -136,17 +154,16 @@ check_function_exists (rint HAVE_RINT)
 
 set(PKGDATADIR ${CMAKE_INSTALL_PREFIX}/share/TerraGear)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+if (CMAKE_COMPILER_IS_GNUCXX)
     set(WARNING_FLAGS -Wall)
 
     if (CMAKE_VERSION VERSION_LESS 3.1)
        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-    endif()
-endif(CMAKE_COMPILER_IS_GNUCXX)
+    endif ()
+endif ()
 
-if(WIN32)
-
-    if(MSVC)
+if (WIN32)
+    if (MSVC)
         # turn off various warnings
         # foreach(warning 4244 4251 4267 4275 4290 4786 4305 4996)
         #     SET(WARNING_FLAGS "${WARNING_FLAGS} /wd${warning}")
@@ -154,12 +171,12 @@ if(WIN32)
 
         set(MSVC_FLAGS "-DNOMINMAX -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -D__CRT_NONSTDC_NO_WARNINGS -DNO_TIMER")
         if (${MSVC_VERSION} EQUAL 1600)
-		  set( MSVC_LD_FLAGS "/FORCE:MULTIPLE" )
-        endif (${MSVC_VERSION} EQUAL 1600)
-    endif(MSVC)
+          set( MSVC_LD_FLAGS "/FORCE:MULTIPLE" )
+        endif ()
+    endif ()
 
     set(NOMINMAX 1)
-endif(WIN32)
+endif ()
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT -DNO_OPENSCENEGRAPH_INTERFACE")
