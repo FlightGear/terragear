@@ -1,4 +1,16 @@
-cmake_minimum_required (VERSION 2.6.4)
+cmake_minimum_required (VERSION 3.0)
+
+if(COMMAND cmake_policy)
+   if(POLICY CMP0054)
+       cmake_policy(SET CMP0054 NEW)
+   endif()
+   if(POLICY CMP0042)
+       cmake_policy(SET CMP0042 NEW)
+   endif()
+   if(POLICY CMP0071)
+       cmake_policy(SET CMP0071 NEW)
+   endif()
+endif()
 
 include (CheckFunctionExists)
 include (CheckCSourceCompiles)
@@ -28,35 +40,40 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH}")
 # Change the default build type to something fast
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING
-      "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel"
       FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 if (MSVC)
   GET_FILENAME_COMPONENT(PARENT_DIR ${PROJECT_SOURCE_DIR} PATH)
+  
   if (CMAKE_CL_64)
     SET(TEST_3RDPARTY_DIR "${PARENT_DIR}/3rdparty.x64")
   else (CMAKE_CL_64)
     SET(TEST_3RDPARTY_DIR "${PARENT_DIR}/3rdparty")
   endif (CMAKE_CL_64)
+  
   if (EXISTS ${TEST_3RDPARTY_DIR})
     set(MSVC_3RDPARTY_ROOT ${PARENT_DIR} CACHE PATH "Location where the third-party dependencies are extracted")
   else (EXISTS ${TEST_3RDPARTY_DIR})
     set(MSVC_3RDPARTY_ROOT NOT_FOUND CACHE PATH "Location where the third-party dependencies are extracted")
   endif (EXISTS ${TEST_3RDPARTY_DIR})
+  
   set( RT_LIBRARY "winmm.lib" )
 else (MSVC)
-  set(MSVC_3RDPARTY_ROOT NOT_FOUND CACHE PATH "Location where the third-party dependencies are extracted")
+  set(MSVC_3RDPARTY_ROOT)
 endif (MSVC)
 
-if (MSVC AND MSVC_3RDPARTY_ROOT)
+if (MSVC AND NOT MSVC_3RDPARTY_ROOT STREQUAL "NOT_FOUND")
   message(STATUS "3rdparty files located in ${MSVC_3RDPARTY_ROOT}")
+  
   set( OSG_MSVC "msvc" )
   if (${MSVC_VERSION} EQUAL 1600)
       set( OSG_MSVC ${OSG_MSVC}100 )
   else (${MSVC_VERSION} EQUAL 1600)
       set( OSG_MSVC ${OSG_MSVC}90 )
   endif (${MSVC_VERSION} EQUAL 1600)
+  
   if (CMAKE_CL_64)
       set( OSG_MSVC ${OSG_MSVC}-64 )
 	  set( MSVC_3RDPARTY_DIR 3rdParty.x64 )
@@ -66,6 +83,7 @@ if (MSVC AND MSVC_3RDPARTY_ROOT)
 
   set (CMAKE_LIBRARY_PATH ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/lib ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/OpenScenegraph/lib ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/SimGear/lib )
   set (CMAKE_INCLUDE_PATH ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/include ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/OpenScenegraph/include ${MSVC_3RDPARTY_ROOT}/install/${OSG_MSVC}/SimGear/include)
+  
   find_path(BOOST_ROOT boost/version.hpp
 			${MSVC_3RDPARTY_ROOT}/boost
 			${MSVC_3RDPARTY_ROOT}/boost_1_52_0
@@ -79,18 +97,37 @@ if (MSVC AND MSVC_3RDPARTY_ROOT)
 			${MSVC_3RDPARTY_ROOT}/boost_1_45_0
 			${MSVC_3RDPARTY_ROOT}/boost_1_44_0
 			)
-  # set (BOOST_ROOT ${MSVC_3RDPARTY_ROOT}/boost_1_44_0)
+
   message(STATUS "BOOST_ROOT is ${BOOST_ROOT}")
+  
   if (CMAKE_CL_64)
 	  set( BOOST_LIBRARYDIR "${BOOST_ROOT}/lib64" )
   else (CMAKE_CL_64)
 	  set( BOOST_LIBRARYDIR "${BOOST_ROOT}/lib" )
   endif (CMAKE_CL_64)
+  
   set (Boost_USE_STATIC_LIBS 1)
   set (OPENAL_INCLUDE_DIR ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/include)
   set (ALUT_INCLUDE_DIR ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/include)
   set (OPENAL_LIBRARY_DIR ${MSVC_3RDPARTY_ROOT}/${MSVC_3RDPARTY_DIR}/lib)
-endif (MSVC AND MSVC_3RDPARTY_ROOT)
+endif (MSVC AND NOT MSVC_3RDPARTY_ROOT STREQUAL "NOT_FOUND")
+
+# CGAL will reset Boost_LIBRARIES, so ensure we do this first to avoid breaking boost linking
+set (CGAL_MINIMUM 4.0)
+set (CGAL_OLD 0)
+find_package(CGAL COMPONENTS Core REQUIRED)
+if (CGAL_FOUND)
+	if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
+        message(FATAL_ERROR "CGAL >= ${CGAL_MINIMUM} is required. Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
+	else(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
+        message(STATUS "Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
+		if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.5)
+			set (CGAL_OLD 1)
+		endif()
+	endif(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
+
+	include ( ${CGAL_USE_FILE} )
+endif (CGAL_FOUND)
 
 # check required dependencies
 find_package(Boost COMPONENTS system thread REQUIRED)
@@ -99,22 +136,6 @@ find_package(Threads REQUIRED)
 find_package(SimGear 3.1.0 REQUIRED)
 find_package(GDAL 2.0.0 REQUIRED)
 find_package(TIFF REQUIRED) # needed for SRTM
-
-set (CGAL_MINIMUM 4.0)
-set (CGAL_OLD 0)
-find_package(CGAL COMPONENTS Core REQUIRED)
-if (CGAL_FOUND)
-  if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
-        message(FATAL_ERROR "CGAL >= ${CGAL_MINIMUM} is required. Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-  else(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
-        message(STATUS "Found CGAL ${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION}")
-	if(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.5)
-		set (CGAL_OLD 1)
-	endif()
-  endif(${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS ${CGAL_MINIMUM})
-endif (CGAL_FOUND)
-
-include ( ${CGAL_USE_FILE} )
 
 if (CMAKE_CL_64)
 	find_package(JPEG) # needed for SRTM
@@ -136,9 +157,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     endif()
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
-if(WIN32)
-
-    if(MSVC)
+if (WIN32)
+    if (MSVC)
         # turn off various warnings
         # foreach(warning 4244 4251 4267 4275 4290 4786 4305 4996)
         #     SET(WARNING_FLAGS "${WARNING_FLAGS} /wd${warning}")
@@ -148,10 +168,10 @@ if(WIN32)
         if (${MSVC_VERSION} EQUAL 1600)
 		  set( MSVC_LD_FLAGS "/FORCE:MULTIPLE" )
         endif (${MSVC_VERSION} EQUAL 1600)
-    endif(MSVC)
-
+    endif (MSVC)
+	
     set(NOMINMAX 1)
-endif(WIN32)
+endif (WIN32)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT -DNO_OPENSCENEGRAPH_INTERFACE")
