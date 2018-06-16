@@ -26,6 +26,7 @@
 
 #include <simgear/compiler.h>
 
+#include <cstdlib>
 #include <string>
 #include <iostream>
 
@@ -37,8 +38,6 @@
 #include <Include/version.h>
 #include <HGT/hgt.hxx>
 
-#include <stdlib.h>
-
 using std::cout;
 using std::endl;
 using std::string;
@@ -49,22 +48,21 @@ int main(int argc, char **argv) {
     SG_LOG( SG_GENERAL, SG_ALERT, "hgtchop version " << getTGVersion() << "\n" );
 
     if ( argc != 4 ) {
-	cout << "Usage " << argv[0] << " <resolution> <hgt_file> <work_dir>"
-             << endl;
+        cout << "Usage " << argv[0] << " <resolution> <hgt_file> <work_dir>" << endl;
         cout << endl;
- 	cout << "\tresolution must be either 1 or 3 for 1arcsec or 3arcsec"
-             << endl;       
-	exit(-1);
+        cout << "\tresolution must be either 1 or 3 (1-arc-sec or 3-arc-sec)" << endl;
+
+        return EXIT_FAILURE;
     }
 
-    int resolution = atoi( argv[1] );
-    string hgt_name = argv[2];
-    string work_dir = argv[3];
+    int resolution = std::stoi(string(argv[1]));
+    string hgt_name = string(argv[2]);
+    string work_dir = string(argv[3]);
 
-    // determine if file is 1arcsec or 3arcsec variety
+    // determine if file is 1arc-sec or 3arc-sec variety
     if ( resolution != 1 && resolution != 3 ) {
         cout << "ERROR: resolution must be 1 or 3." << endl;
-        exit( -1 );
+        return EXIT_FAILURE;
     }
 
     SGPath sgp( work_dir );
@@ -86,24 +84,25 @@ int main(int argc, char **argv) {
         hgt.write_area( work_dir, b_min );
     } else {
         SGBucket b_cur;
-        int dx, dy, i, j;
 
+        int dx, dy;
         sgBucketDiff(b_min, b_max, &dx, &dy);
+
         cout << "HGT file spans tile boundaries (ok)" << endl;
         cout << "  dx = " << dx << "  dy = " << dy << endl;
 
         if ( (dx > 20) || (dy > 20) ) {
             cout << "somethings really wrong!!!!" << endl;
-            exit(-1);
+            return EXIT_FAILURE;
         }
 
-        for ( j = 0; j <= dy; j++ ) {
-            for ( i = 0; i <= dx; i++ ) {
+        for ( int j = 0; j <= dy; ++j ) {
+            for ( int i = 0; i <= dx; ++i ) {
                 b_cur = b_min.sibling(i, j);
                 hgt.write_area( work_dir, b_cur );
             }
         }
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
