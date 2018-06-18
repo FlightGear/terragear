@@ -131,7 +131,7 @@ if (CGAL_FOUND)
     if (${CGAL_MAJOR_VERSION}.${CGAL_MINOR_VERSION} VERSION_LESS 4.5)
       set (CGAL_OLD 1)
     endif ()
-  endif ())
+  endif ()
 endif ()
 
 # check required dependencies
