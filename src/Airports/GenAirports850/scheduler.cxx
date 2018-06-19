@@ -208,7 +208,7 @@ bool Scheduler::IsAirportDefinition( char* line, std::string icao )
             case HELIPAD_CODE:
             case PAVEMENT_CODE:
             case LINEAR_FEATURE_CODE:
-            case BOUNDARY_CODE:
+            case BOUNDRY_CODE:
             case NODE_CODE:
             case BEZIER_NODE_CODE:
             case CLOSE_NODE_CODE:
@@ -259,7 +259,7 @@ void Scheduler::AddAirport( std::string icao )
         // get a line
     	in.getline(line, 2048);
 
-        // this is an airport definition - remember it
+        // this is and airport definition - remember it
         if ( IsAirportDefinition( line, icao ) )
         {
             TG_LOG( SG_GENERAL, SG_DEBUG, "Found airport " << icao << " at " << cur_pos );
@@ -441,7 +441,7 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
                 case TAXIWAY_CODE:
                 case PAVEMENT_CODE:
                 case LINEAR_FEATURE_CODE:
-                case BOUNDARY_CODE:
+                case BOUNDRY_CODE:
                 case NODE_CODE:
                 case BEZIER_NODE_CODE:
                 case CLOSE_NODE_CODE:

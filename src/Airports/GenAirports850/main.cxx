@@ -13,7 +13,6 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 
 
-#include <memory>
 #include <string>
 #include <iostream>
 
@@ -63,12 +62,12 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
     cout << "or by area.  By airport, either one airport can be specified using --airport=abcd, where abcd is \n";
     cout << "a valid airport code eg. --airport-id=KORD, or a starting airport can be specified using --start-id=abcd \n";
     cout << "where once again abcd is a valid airport code.  In this case, all airports in the file subsequent to the \n";
-    cout << "start-id are done.  This is convenient when re-starting after a previous error.  \n";
-    cout << "If you want to restart with the airport after a problem icao, use --restart-id=abcd, as this works the same as\n";
+    cout << "start-id are done.  This is convienient when re-starting after a previous error.  \n";
+    cout << "If you want to restart with the airport after a problam icao, use --restart-id=abcd, as this works the same as\n";
     cout << " with the exception that the airport abcd is skipped \n";
     cout << "\nAn input area may be specified by lat and lon extent using min and max lat and lon.  \n";
-    //cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string \n";
-    //cout << "such as eg. w080n40, e000s27.  \n";
+    cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string \n";
+    cout << "such as eg. w080n40, e000s27.  \n";
     cout << "\nAn input file containing only a subset of the world's \n";
     cout << "airports may of course be used.\n";
     cout << "\n\n";
@@ -279,14 +278,13 @@ int main(int argc, char **argv)
     in.getline(line, 20);
     in.close();
     int code = atoi(line);
-    if (code == 810 || code > 1100) {
-        TG_LOG(SG_GENERAL, SG_ALERT, "ERROR: This genapts version does not support apt.data version " << code << " files.");
-        exit(-1);
+    if (code == 810) {
+      TG_LOG( SG_GENERAL, SG_ALERT, "ERROR: This version of genapts does not support version 810 apt.dat files." );
+      exit(-1);
     }
 
     // Create the scheduler
     Scheduler* scheduler = new Scheduler(input_file, work_dir, elev_src);
-	// auto scheduler = std::unique_ptr<Scheduler>(new Scheduler(input_file, work_dir, elev_src));
 
     // Add any debug 
     scheduler->set_debug( debug_dir, debug_runway_defs, debug_pavement_defs, debug_taxiway_defs, debug_feature_defs );
