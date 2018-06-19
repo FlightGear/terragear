@@ -40,6 +40,8 @@
 #  include <direct.h>
 #endif
 
+#include <boost/foreach.hpp>
+
 #include <simgear/constants.h>
 #include <simgear/io/lowlevel.hxx>
 #include <simgear/misc/sg_dir.hxx>
@@ -95,7 +97,7 @@ TGHgt::open ( const SGPath &f ) {
             if ( system( command.c_str() ) != -1 )
             {
                 simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
-                for (const SGPath& file : files) {
+                BOOST_FOREACH(const SGPath& file, files) {
                     string ext = file.lower_extension();
                     if ( ext == "hgt" ) {
                         file_name = file;
