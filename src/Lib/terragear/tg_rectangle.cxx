@@ -24,10 +24,8 @@ tgRectangle::tgRectangle (const SGGeod &min, const SGGeod &max)
 
 tgRectangle::tgRectangle(const CGAL::Bbox_2& bbox)
 {
-    _min = SGGeod::fromDeg( CGAL::to_double( bbox.xmin() ),
-                            CGAL::to_double( bbox.ymin() ) );
-    _max = SGGeod::fromDeg( CGAL::to_double( bbox.xmax() ),
-                            CGAL::to_double( bbox.ymax() ) );
+    _min = SGGeod::fromDeg( bbox.xmin(), bbox.ymin() );
+    _max = SGGeod::fromDeg( bbox.xmax(), bbox.ymax() );
 }
 
 tgRectangle::~tgRectangle ()
