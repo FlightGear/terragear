@@ -42,7 +42,12 @@ void TGConstruct::AddCustomObjects( void ) {
     // Create/open the output .stg file for writing
     SGPath dest_d(output_base.c_str());
     dest_d.append(bucket.gen_base_path().c_str());
+#ifdef _MSC_VER
+    string dest_dir = dest_d.str_native();
+#else
     string dest_dir = dest_d.utf8Str();
+#endif
+
     SGPath dest_i(dest_d);
     dest_i.append(bucket.gen_index_str());
     dest_i.concat(".stg");
@@ -92,10 +97,11 @@ void TGConstruct::AddCustomObjects( void ) {
                         SGPath srcbase(base);
                         srcbase.append(name);
                         srcbase.concat(".gz");
-                        string basecom = srcbase.utf8Str();
 #ifdef _MSC_VER
-                        string command = "copy " + basecom + " " + dest_dir;
+                        string basecom = srcbase.str_native();
+                        string command = "copy /Y " + basecom + " " + dest_dir;
 #else
+                        string basecom = srcbase.utf8Str();
                         string command = "cp " + basecom + " " + dest_dir;
 #endif
                         SG_LOG( SG_GENERAL, SG_DEBUG, "running " << command );
