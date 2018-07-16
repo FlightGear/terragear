@@ -27,6 +27,7 @@
 
 #include <simgear/compiler.h>
 
+#include <chrono>
 #include <iostream>
 #include <string>
 
@@ -47,10 +48,11 @@ int main(int argc, char **argv) {
     sglog().setLogLevels( SG_ALL, SG_WARN );
 
     if ( argc != 3 ) {
-	SG_LOG( SG_GENERAL, SG_ALERT, 
-		"Usage " << argv[0] << " <dem_file> <work_dir>" );
-	exit(-1);
+        SG_LOG( SG_GENERAL, SG_ALERT, "Usage " << argv[0] << " <dem_file> <work_dir>" );
+        return EXIT_FAILURE;
     }
+
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     string dem_name = argv[1];
     string work_dir = argv[2];
@@ -72,29 +74,31 @@ int main(int argc, char **argv) {
     SGBucket b_max( max );
 
     if ( b_min == b_max ) {
-	dem.write_area( work_dir, b_min );
+        dem.write_area( work_dir, b_min );
     } else {
-	SGBucket b_cur;
-	int dx, dy, i, j;
+        SGBucket b_cur;
+        int dx, dy, i, j;
 
-	sgBucketDiff(b_min, b_max, &dx, &dy);
-	cout << "DEM file spans tile boundaries" << endl;
-	cout << "  dx = " << dx << "  dy = " << dy << endl;
+        sgBucketDiff(b_min, b_max, &dx, &dy);
+        cout << "DEM file spans tile boundaries" << endl;
+        cout << "  dx = " << dx << "  dy = " << dy << endl;
 
-	if ( (dx > 20) || (dy > 20) ) {
-	    cout << "somethings really wrong!!!!" << endl;
-	    exit(-1);
-	}
+        if ( (dx > 20) || (dy > 20) ) {
+            cout << "somethings really wrong!!!!" << endl;
+            return EXIT_FAILURE;
+        }
 
-	for ( j = 0; j <= dy; j++ ) {
-	    for ( i = 0; i <= dx; i++ ) {
-		b_cur = b_min.sibling(i, j);
-		dem.write_area( work_dir, b_cur );
-	    }
-	}
+        for ( j = 0; j <= dy; j++ ) {
+            for ( i = 0; i <= dx; i++ ) {
+                b_cur = b_min.sibling(i, j);
+                dem.write_area( work_dir, b_cur );
+            }
+        }
     }
 
-    return 0;
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+    return EXIT_SUCCESS;
 }
-
-

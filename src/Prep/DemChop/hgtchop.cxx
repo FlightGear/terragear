@@ -26,6 +26,7 @@
 
 #include <simgear/compiler.h>
 
+#include <chrono>
 #include <cstdlib>
 #include <string>
 #include <iostream>
@@ -54,6 +55,8 @@ int main(int argc, char **argv) {
 
         return EXIT_FAILURE;
     }
+
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     int resolution = std::stoi(string(argv[1]));
     string hgt_name = string(argv[2]);
@@ -103,6 +106,10 @@ int main(int argc, char **argv) {
             }
         }
     }
+
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
 
     return EXIT_SUCCESS;
 }

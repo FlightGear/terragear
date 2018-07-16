@@ -23,6 +23,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <chrono>
 #include <string>
 #include <stdio.h>
 #include <errno.h>
@@ -301,6 +302,8 @@ int main(int argc, char** argv) {
     sglog().setLogLevels( SG_ALL, SG_INFO );
     int option;
 
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     while ((option=getopt_long(argc,argv,"hm:x:e:fvj:",options,NULL))!=-1) {
         switch (option) {
             case 'h':
@@ -362,4 +365,10 @@ int main(int argc, char** argv) {
     }
 
     SG_LOG(SG_GENERAL, SG_INFO, "Work queue is empty\n");
+
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+    return EXIT_SUCCESS;
 }

@@ -29,6 +29,9 @@
 #  define tgSleep(x) sleep(x)
 #endif
 
+#include <chrono>
+#include <iostream>
+
 #include <boost/thread.hpp>
 
 #include <simgear/debug/logstream.hxx>
@@ -95,6 +98,8 @@ int main(int argc, char **argv) {
     string debug_dir = ".";
     vector<string> debug_shape_defs;
     vector<string> debug_area_defs;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
@@ -181,7 +186,7 @@ int main(int argc, char **argv) {
 
     TGAreaDefinitions areas;
     if ( areas.init( priorities_file ) ) {
-        exit( -1 );
+        return EXIT_FAILURE;
     }
 
     // tile work queue 
@@ -336,5 +341,10 @@ int main(int argc, char **argv) {
     constructs.clear();
 
     SG_LOG(SG_GENERAL, SG_ALERT, "[Finished successfully]");
-    return 0;
+    
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+    return EXIT_SUCCESS;
 }

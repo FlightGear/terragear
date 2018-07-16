@@ -27,6 +27,7 @@
 
 #include <simgear/compiler.h>
 
+#include <chrono>
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -331,11 +332,12 @@ int main(int argc, char **argv) {
     sglog().setLogLevels( SG_ALL, SG_WARN );
 
     if ( argc != 3 ) {
-        cout << "Usage " << argv[0] << " <hgt_file> <work_dir>"
-             << endl;
+        cout << "Usage " << argv[0] << " <hgt_file> <work_dir>" << endl;
         cout << endl;
-        exit(-1);
+        return EXIT_FAILURE;
     }
+
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     string hgt_name = argv[1];
     string work_dir = argv[2];
@@ -368,7 +370,7 @@ int main(int argc, char **argv) {
 
         if ( (dx > 50) || (dy > 50) ) {
             cout << "somethings really wrong!!!!" << endl;
-            exit(-1);
+            return EXIT_FAILURE;
         }
 
         for ( j = 0; j <= dy; j++ ) {
@@ -379,5 +381,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    return 0;
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+    return EXIT_SUCCESS;
 }

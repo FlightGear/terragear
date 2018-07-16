@@ -23,6 +23,8 @@
 //
 
 #include <algorithm>
+#include <chrono>
+#include <iostream>
 
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
@@ -426,8 +428,10 @@ int main(int argc, const char **argv)
     if ( argc < 3 ) {
         SG_LOG(SG_GENERAL, SG_ALERT,
                "Usage " << argv[0] << " <work_dir> <datasetname...> [-- <bucket-idx> ...]");
-        exit(-1);
+        return EXIT_FAILURE;
     }
+
+    auto start_time = std::chrono::high_resolution_clock::now();
 
     SGPath work_dir(argv[1]);
     work_dir.create_dir( 0755 );
@@ -471,7 +475,7 @@ int main(int argc, const char **argv)
             SG_LOG(SG_GENERAL, SG_ALERT,
                    "Could not open dataset '" << datasetnames[i] << "'"
                    ":" << CPLGetLastErrorMsg());
-            exit(1);
+            return EXIT_FAILURE;
         }
 
         images[i] = new ImageInfo(dataset);
@@ -528,5 +532,9 @@ int main(int argc, const char **argv)
         }
     }
 
-    return 0;
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+    return EXIT_SUCCESS;
 }

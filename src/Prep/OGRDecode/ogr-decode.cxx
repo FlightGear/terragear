@@ -22,6 +22,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
 
+#include <chrono>
 #include <string>
 #include <map>
 
@@ -536,6 +537,8 @@ int main( int argc, char **argv ) {
     char* progname=argv[0];
     string datasource,work_dir;
 
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
     while (argc>1) {
@@ -718,5 +721,9 @@ int main( int argc, char **argv ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
     results.Save( save_shapefiles );
 
-    return 0;
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+    return EXIT_SUCCESS;
 }

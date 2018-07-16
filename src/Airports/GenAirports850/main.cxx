@@ -13,6 +13,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 
 
+#include <chrono>
 #include <memory>
 #include <string>
 #include <iostream>
@@ -126,6 +127,8 @@ double slope_eps = 0.00001;
 
 int main(int argc, char **argv)
 {
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     SGGeod min = SGGeod::fromDeg( -180, -90 );
     SGGeod max = SGGeod::fromDeg( 180, 90 );
     long  position = 0;
@@ -277,7 +280,7 @@ int main(int argc, char **argv)
         else 
         {
     	    usage( argc, argv );
-    	    exit(-1);
+    	    return EXIT_FAILURE;
     	}
     }
 
@@ -318,20 +321,20 @@ int main(int argc, char **argv)
     {
     	TG_LOG( SG_GENERAL, SG_ALERT, "Error: no work directory specified." );
     	usage( argc, argv );
-	    exit(-1);
+	    return EXIT_FAILURE;
     }
 
     if ( input_file == "" ) 
     {
     	TG_LOG( SG_GENERAL, SG_ALERT,  "Error: no input file." );
-    	exit(-1);
+    	return EXIT_FAILURE;
     }
 
     sg_gzifstream in( input_file );
     if ( !in.is_open() ) 
     {
         TG_LOG( SG_GENERAL, SG_ALERT, "Cannot open file: " << input_file );
-        exit(-1);
+        return EXIT_FAILURE;
     }
 
     // try to figure out which apt.dat version we are reading and bail if version is unsupported
@@ -342,7 +345,7 @@ int main(int argc, char **argv)
     int code = atoi(line);
     if (code == 810 || code > 1100) {
         TG_LOG(SG_GENERAL, SG_ALERT, "ERROR: This genapts version does not support apt.data version " << code << " files.");
-        exit(-1);
+        return EXIT_FAILURE;
     }
 
     // Create the scheduler
@@ -390,5 +393,9 @@ int main(int argc, char **argv)
 
     TG_LOG(SG_GENERAL, SG_INFO, "Genapts finished successfully");
 
-    return 0;
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+    return EXIT_SUCCESS;
 }
