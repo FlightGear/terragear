@@ -71,7 +71,7 @@ public:
     virtual short height( int x, int y ) const { return data[x][y]; }
 
 private:
-    enum LoadKind { BottomLeft, BottomRight, TopLeft, TopRight };
+    enum class LoadKind { BottomLeft, BottomRight, TopLeft, TopRight };
     TGSrtmTiff( const SGPath &file, LoadKind lk );
     bool pos_from_name( string name, string &pfx, int &x, int &y );
 
@@ -87,7 +87,7 @@ private:
 };
 
 TGSrtmTiff::TGSrtmTiff( const SGPath &file ) {
-    lkind = BottomLeft;
+    lkind = LoadKind::BottomLeft;
     tif = 0;
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
@@ -98,14 +98,14 @@ TGSrtmTiff::TGSrtmTiff( const SGPath &file, LoadKind lk ) {
     lkind = lk;
     tif = 0;
     output_data = 0;
-    if ( lkind == BottomLeft ) {
+    if ( lkind == LoadKind::BottomLeft ) {
         data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
         output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-    } else if ( lkind == TopLeft ) {
+    } else if ( lkind == LoadKind::TopLeft ) {
         data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-    } else if ( lkind == BottomRight ) {
+    } else if ( lkind == LoadKind::BottomRight ) {
         data = new short int[1][MAX_HGT_SIZE];
-    } else /* if ( lkind == TopRight ) */ {
+    } else /* if ( lkind == LoadKind::TopRight ) */ {
         data = new short int[1][MAX_HGT_SIZE];
     }
     TGSrtmTiff::open( file );
@@ -198,7 +198,7 @@ bool TGSrtmTiff::load() {
     TIFFGetField( tif, TIFFTAG_DATATYPE, &dataType );
 
     tdata_t buf = _TIFFmalloc( TIFFScanlineSize( tif ) );
-    if ( lkind == BottomLeft ) {
+    if ( lkind == LoadKind::BottomLeft ) {
         uint32 row = 0;
         for ( ; row < h; row++ ) {
             TIFFReadScanline( tif, buf, row );
@@ -231,7 +231,7 @@ bool TGSrtmTiff::load() {
             SGPath f = dir;
             f.append( name.str() );
             if ( f.exists() ) {
-                TGSrtmTiff s( f.str(), BottomRight );
+                TGSrtmTiff s( f.str(), LoadKind::BottomRight );
                 s.load();
                 s.close();
                 for ( int i = 0; i < 6000; ++i ) {
@@ -249,7 +249,7 @@ bool TGSrtmTiff::load() {
             SGPath f = dir;
             f.append( name.str() );
             if ( f.exists() ) {
-                TGSrtmTiff s( f.str(), TopLeft );
+                TGSrtmTiff s( f.str(), LoadKind::TopLeft );
                 s.load();
                 s.close();
                 for ( int i = 0; i < 6000; ++i ) {
@@ -271,7 +271,7 @@ bool TGSrtmTiff::load() {
             SGPath f = dir;
             f.append( name.str() );
             if ( f.exists() ) {
-                TGSrtmTiff s( f.str(), TopRight );
+                TGSrtmTiff s( f.str(), LoadKind::TopRight );
                 s.load();
                 s.close();
                 data[6000][6000] = s.data[0][0];
@@ -281,7 +281,7 @@ bool TGSrtmTiff::load() {
         } else {
             data[6000][6000] = data[6000][6000-1];
         }
-    } else if ( lkind == TopLeft ) {
+    } else if ( lkind == LoadKind::TopLeft ) {
         TIFFReadScanline( tif, buf, 0 );
         uint32 col = 0;
         for ( ; col < w; col++ ) {
@@ -293,7 +293,7 @@ bool TGSrtmTiff::load() {
         for ( ; col < 6000; col++ ) {
             data[col][0] = 0;
         }
-    } else if ( lkind == BottomRight ) {
+    } else if ( lkind == LoadKind::BottomRight ) {
         uint32 row = 0;
         for ( ; row < h; row++ ) {
             TIFFReadScanline( tif, buf, row );
@@ -305,7 +305,7 @@ bool TGSrtmTiff::load() {
         for ( ; row < 6000; row++ ) {
             data[0][6000-1-row] = 0;
         }
-    } else /* if ( lkind == TopRight ) */ {
+    } else /* if ( lkind == LoadKind::TopRight ) */ {
         if ( h == 6000 ) {
             TIFFReadScanline( tif, buf, h-1 );
             int16 v = ((int16*)buf)[0];

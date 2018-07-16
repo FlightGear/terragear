@@ -117,10 +117,10 @@ tgPolygon tgPolygon::StripHoles( const tgPolygon& subject )
     for ( unsigned int i = 0; i < subject.Contours(); i++ ) {
         tgContour contour = subject.GetContour( i );
         if ( !contour.GetHole() ) {
-            c.AddPath( tgContour::ToClipper( contour ), ClipperLib::ptClip, true );
+            c.AddPath( tgContour::ToClipper( contour ), ClipperLib::PolyType::Clip, true );
         }
     }
-    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.Execute(ClipperLib::ClipType::Union, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );

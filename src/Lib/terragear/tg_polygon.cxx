@@ -54,7 +54,7 @@ tgPolygon tgPolygon::Expand( const tgPolygon& subject, double offset )
     tgPolygon result;
 
     ClipperLib::ClipperOffset co(2.0, 2.0);
-    co.AddPaths(clipper_src, ClipperLib::jtSquare, ClipperLib::etClosedPolygon); 
+    co.AddPaths(clipper_src, ClipperLib::JoinType::Square, ClipperLib::EndType::ClosedPolygon);
     co.Execute(clipper_dst, Dist_ToClipper(offset) );
 
     result = tgPolygon::FromClipper( clipper_dst );

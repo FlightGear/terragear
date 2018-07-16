@@ -47,9 +47,9 @@ tgPolygon tgPolygon::Union( const tgPolygon& subject, tgPolygon& clip )
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
-    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
-    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
+    c.Execute(ClipperLib::ClipType::Union, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     if ( clipper_dump ) {
         dmpfile.open ("result.txt");
@@ -87,9 +87,9 @@ tgPolygon tgPolygon::Union( const tgpolygon_list& polys )
     c.Clear();
     for (unsigned int i=0; i<polys.size(); i++) {
         ClipperLib::Paths clipper_clip = tgPolygon::ToClipper( polys[i] );
-        c.AddPaths(clipper_clip, ClipperLib::ptSubject, true);
+        c.AddPaths(clipper_clip, ClipperLib::PolyType::Subject, true);
     }
-    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero);
+    c.Execute(ClipperLib::ClipType::Union, clipper_result, ClipperLib::PolyFillType::NonZero, ClipperLib::PolyFillType::NonZero);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
@@ -121,9 +121,9 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
-    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
-    c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
+    c.Execute(ClipperLib::ClipType::Difference, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
@@ -160,9 +160,9 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
-    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
-    c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
+    c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
@@ -238,9 +238,9 @@ tgPolygon tgTriangle::Intersect( const tgTriangle& subject, const tgTriangle& cl
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
-    c.AddPath(clipper_clip, ClipperLib::ptClip, true);
-    c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.AddPath(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPath(clipper_clip, ClipperLib::PolyType::Clip, true);
+    c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );

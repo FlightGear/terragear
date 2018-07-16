@@ -469,9 +469,9 @@ tgPolygon tgContour::Union( const tgContour& subject, tgPolygon& clip )
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
-    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
-    c.Execute(ClipperLib::ctUnion, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.AddPath(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
+    c.Execute(ClipperLib::ClipType::Union, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
@@ -501,9 +501,9 @@ tgPolygon tgContour::Diff( const tgContour& subject, tgPolygon& clip )
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
-    c.AddPaths(clipper_clip, ClipperLib::ptClip, true);
-    c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.AddPath(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
+    c.Execute(ClipperLib::ClipType::Difference, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
@@ -531,9 +531,9 @@ tgPolygon tgContour::Intersect( const tgContour& subject, const tgContour& clip 
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
-    c.AddPath(clipper_clip, ClipperLib::ptClip, true);
-    c.Execute(ClipperLib::ctIntersection, clipper_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+    c.AddPath(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPath(clipper_clip, ClipperLib::PolyType::Clip, true);
+    c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
 
     result = tgPolygon::FromClipper( clipper_result );
     result = tgPolygon::AddColinearNodes( result, all_nodes );
@@ -894,7 +894,7 @@ tgContour tgContour::Expand( const tgContour& subject, double offset )
     clipper_src = tgPolygon::ToClipper( poly );
 
     ClipperLib::ClipperOffset co(2.0, 2.0);
-    co.AddPaths(clipper_src, ClipperLib::jtSquare, ClipperLib::etClosedPolygon); 
+    co.AddPaths(clipper_src, ClipperLib::JoinType::Square, ClipperLib::EndType::ClosedPolygon);
     co.Execute(clipper_dst, Dist_ToClipper(offset) );
   
     poly = tgPolygon::FromClipper( clipper_dst );

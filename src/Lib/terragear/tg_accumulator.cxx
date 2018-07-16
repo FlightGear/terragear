@@ -35,7 +35,7 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
         ClipperLib::Clipper c;
         c.Clear();
 
-        c.AddPath(clipper_subject, ClipperLib::ptSubject, true);
+        c.AddPath(clipper_subject, ClipperLib::PolyType::Subject, true);
 
         // clip result against all polygons in the accum that intersect our bb
         for (unsigned int i=0; i < accum.size(); i++) {
@@ -44,14 +44,14 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
             if ( box2.intersects(box1) )
             {
                 if ( num_hits < max_hits ) {
-                    c.AddPaths(accum[i], ClipperLib::ptClip, true);
+                    c.AddPaths(accum[i], ClipperLib::PolyType::Clip, true);
                     num_hits++;
                 }
             }
         }
 
         if (num_hits) {
-            if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+            if ( !c.Execute(ClipperLib::ClipType::Difference, clipper_result, ClipperLib::PolyFillType::NonZero, ClipperLib::PolyFillType::NonZero) ) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE - reducing accumulator" );
                 max_hits = num_hits-1;
 
@@ -100,7 +100,7 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
         ClipperLib::Clipper c;
         c.Clear();
 
-        c.AddPaths(clipper_subject, ClipperLib::ptSubject, true);
+        c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, true);
 
         // clip result against all polygons in the accum that intersect our bb
         for (unsigned int i=0; i < accum.size(); i++) {
@@ -108,13 +108,13 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
 
             if ( box2.intersects(box1) )
             {
-                c.AddPaths(accum[i], ClipperLib::ptClip, true);
+                c.AddPaths(accum[i], ClipperLib::PolyType::Clip, true);
                 num_hits++;
             }
         }
 
         if (num_hits) {
-            if ( !c.Execute(ClipperLib::ctDifference, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+            if ( !c.Execute(ClipperLib::ClipType::Difference, clipper_result, ClipperLib::PolyFillType::NonZero, ClipperLib::PolyFillType::NonZero) ) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Diff With Accumulator returned FALSE - reducing accumulator" );
                 max_hits = num_hits-1;
 
@@ -189,10 +189,10 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
             c.Clear();
 
             for ( unsigned int i=0; i<accum.size(); i++ ) {
-                c.AddPaths(accum[i], ClipperLib::ptSubject, true);
+                c.AddPaths(accum[i], ClipperLib::PolyType::Subject, true);
             }
         
-            if ( c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+            if ( c.Execute( ClipperLib::ClipType::Union, clipper_result, ClipperLib::PolyFillType::NonZero, ClipperLib::PolyFillType::NonZero) ) {
                 tgShapefile::FromClipper( clipper_result, path, layer_prefix, "accum" );
             } else {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Clipper Failure in tgAccumulator::ToShapefiles()" );
@@ -221,10 +221,10 @@ void tgAccumulator::ToClipperfiles( const std::string& path, const std::string& 
             c.Clear();
             
             for ( unsigned int i=0; i<accum.size(); i++ ) {
-                c.AddPaths(accum[i], ClipperLib::ptSubject, true);
+                c.AddPaths(accum[i], ClipperLib::PolyType::Subject, true);
             }
             
-            if ( c.Execute( ClipperLib::ctUnion, clipper_result, ClipperLib::pftNonZero, ClipperLib::pftNonZero) ) {
+            if ( c.Execute( ClipperLib::ClipType::Union, clipper_result, ClipperLib::PolyFillType::NonZero, ClipperLib::PolyFillType::NonZero) ) {
                 sprintf( filename, "%s/%s", path.c_str(), layer_prefix.c_str() );
                 
                 file.open (filename);

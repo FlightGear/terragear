@@ -40,7 +40,7 @@
 //improve performance but coordinate values are limited to the range +/- 46340
 //#define use_int32
 
-//use_xyz: adds a Z member to IntPoint. Adds a minor cost to perfomance.
+//use_xyz: adds a Z member to IntPoint. Adds a minor cost to performance.
 //#define use_xyz
 
 //use_lines: Enables line clipping. Adds a very minor cost to performance.
@@ -61,13 +61,13 @@
 
 namespace ClipperLib {
 
-enum ClipType { ctIntersection, ctUnion, ctDifference, ctXor };
-enum PolyType { ptSubject, ptClip };
+enum class ClipType { Intersection, Union, Difference, Xor };
+enum class PolyType { Subject, Clip };
 //By far the most widely used winding rules for polygon filling are
 //EvenOdd & NonZero (GDI, GDI+, XLib, OpenGL, Cairo, AGG, Quartz, SVG, Gr32)
 //Others rules include Positive, Negative and ABS_GTR_EQ_TWO (only in OpenGL)
 //see http://glprogramming.com/red/chapter11.html
-enum PolyFillType { pftEvenOdd, pftNonZero, pftPositive, pftNegative };
+enum class PolyFillType { EvenOdd, NonZero, Positive, Negative };
 
 #ifdef use_int32
   typedef int cInt;
@@ -126,9 +126,9 @@ struct DoublePoint
 typedef void (*ZFillCallback)(IntPoint& e1bot, IntPoint& e1top, IntPoint& e2bot, IntPoint& e2top, IntPoint& pt);
 #endif
 
-enum InitOptions {ioReverseSolution = 1, ioStrictlySimple = 2, ioPreserveCollinear = 4};
-enum JoinType {jtSquare, jtRound, jtMiter};
-enum EndType {etClosedPolygon, etClosedLine, etOpenButt, etOpenSquare, etOpenRound};
+enum class InitOptions {ReverseSolution = 1, StrictlySimple = 2, PreserveCollinear = 4};
+enum class JoinType {Square, Round, Miter};
+enum class EndType {ClosedPolygon, ClosedLine, OpenButt, OpenSquare, OpenRound};
 
 class PolyNode;
 typedef std::vector< PolyNode* > PolyNodes;
@@ -174,9 +174,9 @@ bool Orientation(const Path &poly);
 double Area(const Path &poly);
 int PointInPolygon(const IntPoint &pt, const Path &path);
 
-void SimplifyPolygon(const Path &in_poly, Paths &out_polys, PolyFillType fillType = pftEvenOdd);
-void SimplifyPolygons(const Paths &in_polys, Paths &out_polys, PolyFillType fillType = pftEvenOdd);
-void SimplifyPolygons(Paths &polys, PolyFillType fillType = pftEvenOdd);
+void SimplifyPolygon(const Path &in_poly, Paths &out_polys, PolyFillType fillType = PolyFillType::EvenOdd);
+void SimplifyPolygons(const Paths &in_polys, Paths &out_polys, PolyFillType fillType = PolyFillType::EvenOdd);
+void SimplifyPolygons(Paths &polys, PolyFillType fillType = PolyFillType::EvenOdd);
 
 void CleanPolygon(const Path& in_poly, Path& out_poly, double distance = 1.415);
 void CleanPolygon(Path& poly, double distance = 1.415);
@@ -197,7 +197,7 @@ void ReversePaths(Paths& p);
 struct IntRect { cInt left; cInt top; cInt right; cInt bottom; };
 
 //enums that are used internally ...
-enum EdgeSide { esLeft = 1, esRight = 2};
+enum class EdgeSide { Left = 1, Right = 2};
 
 //forward declarations (for stuff used internally) ...
 struct TEdge;
@@ -266,14 +266,14 @@ public:
   Clipper(int initOptions = 0);
   bool Execute(ClipType clipType,
       Paths &solution,
-      PolyFillType fillType = pftEvenOdd);
+      PolyFillType fillType = PolyFillType::EvenOdd);
   bool Execute(ClipType clipType,
       Paths &solution,
       PolyFillType subjFillType,
       PolyFillType clipFillType);
   bool Execute(ClipType clipType,
       PolyTree &polytree,
-      PolyFillType fillType = pftEvenOdd);
+      PolyFillType fillType = PolyFillType::EvenOdd);
   bool Execute(ClipType clipType,
       PolyTree &polytree,
       PolyFillType subjFillType,

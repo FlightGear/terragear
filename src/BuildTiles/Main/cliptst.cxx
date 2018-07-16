@@ -266,23 +266,23 @@ int main(int argc, char* argv[])
   
   ClipType clipType;
   switch (toupper(argv[3][0])) {
-    case 'X': clipType = ctXor; break;
-    case 'U': clipType = ctUnion; break;
-    case 'D': clipType = ctDifference; break;
-    default: clipType = ctIntersection;
+    case 'X': clipType = ClipType::Xor; break;
+    case 'U': clipType = ClipType::Union; break;
+    case 'D': clipType = ClipType::Difference; break;
+    default: clipType = ClipType::Intersection;
   }
 
-  PolyFillType subj_pft = pftNonZero, clip_pft = pftNonZero;
+  PolyFillType subj_pft = PolyFillType::NonZero, clip_pft = PolyFillType::NonZero;
   if (argc > 4&& strcasecmp(argv[4], "EVENODD") == 0)
-      subj_pft = pftEvenOdd;
+      subj_pft = PolyFillType::EvenOdd;
   if (argc > 5 && strcasecmp(argv[5], "EVENODD") == 0)
-      clip_pft = pftEvenOdd;
+      clip_pft = PolyFillType::EvenOdd;
 
   cout << "\nclipping ... \n";
 
   Clipper c;
-  c.AddPolygons(subject, ptSubject);
-  c.AddPolygons(clip, ptClip);
+  c.AddPolygons(subject, PolyType::Subject);
+  c.AddPolygons(clip, PolyType::Clip);
   Polygons solution;
 
 //  double elapsed = 0;
