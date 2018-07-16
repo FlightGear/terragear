@@ -33,7 +33,9 @@ Airport::Airport( int c, char* def)
 {
     int   numParams;
     char* tok;
+#if 0  // temporary until we can confirm that this isn't still being used.
     int   ct = 0;
+#endif
 
     code = c;
 
@@ -62,7 +64,9 @@ Airport::Airport( int c, char* def)
                 case 1:
                     // Airport has a control tower (1=yes, 0=no)
                     // deprecated v10.00
-                    // ct = atoi(tok);
+#if 0  // temporary until we can confirm that this isn't still being used.
+                    ct = atoi(tok);
+#endif
                     break;
 
                 case 2:
