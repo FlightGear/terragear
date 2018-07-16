@@ -41,8 +41,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/foreach.hpp>
-
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sg_dir.hxx>
@@ -222,7 +220,7 @@ static bool must_generate( const SGBucket& b ) {
             continue;
         }
         
-        BOOST_FOREACH(const SGPath& c, loadDir.children(simgear::Dir::TYPE_FILE)) {
+        for (const SGPath& c : loadDir.children(simgear::Dir::TYPE_FILE)) {
             if (!simgear::strutils::starts_with(c.file(), prefix)) {
                 continue;
             }

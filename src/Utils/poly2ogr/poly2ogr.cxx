@@ -35,7 +35,6 @@
 #  include <unistd.h>
 #endif
 
-#include <boost/foreach.hpp>
 #include <ogrsf_frmts.h>
 
 #include <simgear/debug/logstream.hxx>
@@ -415,7 +414,7 @@ void process_file(const SGPath& path)
         simgear::Dir d(path);
         int flags = simgear::Dir::TYPE_FILE | simgear::Dir::TYPE_DIR |
             simgear::Dir::NO_DOT_OR_DOTDOT;
-        BOOST_FOREACH(const SGPath& c, d.children(flags)) {
+        for (const SGPath& c : d.children(flags)) {
             process_file(c);
         }
 

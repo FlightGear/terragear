@@ -42,7 +42,6 @@
 #include <simgear/misc/sg_path.hxx>
 #include <simgear/misc/sg_dir.hxx>
 
-#include <boost/foreach.hpp>
 #include <tiffio.h>
 #include <zlib.h>
 #include <Lib/HGT/srtmbase.hxx>
@@ -150,7 +149,7 @@ bool TGSrtmTiff::open( const SGPath &f ) {
         string command = "unzip -d \"" + tmp_dir.path().str() + "\" " + file_name.base();
         if ( system( command.c_str() ) != -1 ) {
             simgear::PathList files = tmp_dir.children(simgear::Dir::TYPE_FILE | simgear::Dir::NO_DOT_OR_DOTDOT);
-            BOOST_FOREACH(const SGPath& file, files) {
+            for (const SGPath& file : files) {
                 string ext = file.lower_extension();
                 if ( (ext == "tif") || (ext == "tiff") ) {
                     file_name = file;

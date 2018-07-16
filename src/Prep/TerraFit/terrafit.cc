@@ -43,7 +43,6 @@
 #endif
 
 #include <zlib.h>
-#include <boost/foreach.hpp>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/bucket/newbucket.hxx>
@@ -245,7 +244,7 @@ void walk_path(const SGPath& path) {
     } else if (path.isDir()) {
         Dir d(path);
         int flags = Dir::TYPE_DIR | Dir::TYPE_FILE | Dir::NO_DOT_OR_DOTDOT;
-        BOOST_FOREACH(const SGPath& p, d.children(flags)) {
+        for (const SGPath& p : d.children(flags)) {
             walk_path(p);
         }
     }

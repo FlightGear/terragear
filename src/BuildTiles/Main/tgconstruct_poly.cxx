@@ -24,8 +24,6 @@
 #  include <config.h>
 #endif
 
-#include <boost/foreach.hpp>
-
 #include <simgear/misc/sg_dir.hxx>
 #include <simgear/debug/logstream.hxx>
 
@@ -61,7 +59,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
         simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
         SG_LOG( SG_CLIPPER, SG_DEBUG, files.size() << " Polys in " << d.path() );
 
-        BOOST_FOREACH(const SGPath& p, files) {
+        for (const SGPath& p : files) {
             if (p.file_base() != tile_str) {
                 continue;
             }
