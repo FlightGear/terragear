@@ -24,19 +24,20 @@
 #include <config.h>
 #endif
 
-#include <stdio.h>
+#include <cstdio>
 #include <cstdlib>
+#include <fstream>
+#include <set>
+#include <string>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
 
-#include "output.hxx"
-
 using std::string;
 
 // update index file (list of objects to be included in final scenery build)
-void write_index( const string& base, const SGBucket& b, const string& name )
+void write_index_object( const string& base, const SGBucket& b, const string& name )
 {
     string dir = base + "/" + b.gen_base_path();
     SGPath sgp( dir );
@@ -57,9 +58,8 @@ void write_index( const string& base, const SGBucket& b, const string& name )
 }
 
 
-// update index file (list of shared objects to be included in final
-// scenery build)
-void write_index_shared( const string &base, const SGBucket &b,
+// update index file (list of shared objects to be included in final scenery build)
+void write_index_object_shared( const string &base, const SGBucket &b,
                          const SGGeod &p, const string& name,
                          const double &heading )
 {
@@ -82,7 +82,9 @@ void write_index_shared( const string &base, const SGBucket &b,
     fclose( fp );
 }
 
-void write_object_sign( const string &base, const SGBucket &b,
+
+// update index file (list of shared objects to be included in final scenery build)
+void write_index_object_sign( const string &base, const SGBucket &b,
                         const SGGeod &p, const string& sign,
                         const double &heading, const int &size)
 {
@@ -103,4 +105,18 @@ void write_object_sign( const string &base, const SGBucket &b,
     fprintf( fp, "OBJECT_SIGN %s %.6f %.6f %.1f %.2f %u\n", sign.c_str(),
              p.getLongitudeDeg(), p.getLatitudeDeg(), p.getElevationM(), heading, size );
     fclose( fp );
+}
+
+
+// purge the existing index file when it already exists
+void truncate_index_file( const std::string& fileName )
+{
+    if (static_cast<bool>(std::ifstream(fileName)))
+    {
+        SG_LOG( SG_GENERAL, SG_DEBUG, "Truncating file " << fileName );
+
+        std::ofstream fsIndex;
+        fsIndex.open(fileName, std::ofstream::out | std::ofstream::trunc);
+        fsIndex.close();
+    }
 }

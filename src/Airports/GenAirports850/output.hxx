@@ -27,21 +27,23 @@
 #include <config.h>
 #endif
 
-#include <string>
-
 // update index file (list of objects to be included in final scenery build)
-void write_index( const std::string& base, const SGBucket& b, const std::string& name );
+void write_index_object( const std::string& base, const SGBucket& b, const std::string& name );
 
-// update index file (list of shared objects to be included in final
-// scenery build)
-void write_index_shared( const std::string &base, const SGBucket &b,
+// update index file (list of shared objects to be included in final scenery build)
+void write_index_object_shared( const std::string &base, const SGBucket &b,
                          const SGGeod &p, const std::string& name,
                          const double &heading );
 
-// update index file (list of shared objects to be included in final
-// scenery build)
-void write_object_sign( const std::string &base, const SGBucket &b,
+// update index file (list of shared objects to be included in final scenery build)
+void write_index_object_sign( const std::string &base, const SGBucket &b,
                         const SGGeod &p, const std::string& sign,
                         const double &heading, const int &size );
+
+// purge the existing index file when it already exists
+void truncate_index_file( const std::string& fileName );
+
+// record index files that have been cleaned
+std::set<std::string> cleanIndexFiles;
 
 #endif

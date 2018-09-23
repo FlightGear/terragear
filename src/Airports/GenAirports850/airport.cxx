@@ -1137,16 +1137,23 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         throw sg_exception("error writing file. :-(");
     }
 
+    std::string indexFileName = objpath + "/" + b.gen_base_path() + "/" + b.gen_index_str() + ".ind";
+    if (cleanIndexFiles.find(indexFileName) == cleanIndexFiles.end())
+    {
+        truncate_index_file(indexFileName);
+        cleanIndexFiles.insert(indexFileName);
+    }
+
     // write out airport object reference
-    write_index( objpath, b, name );
+    write_index_object( objpath, b, name );
 
 #if 0 // TODO : along with taxiway signs
     // write out tower references
     for ( i = 0; i < (int)tower_nodes.size(); ++i )
     {
-        write_index_shared( objpath, b, tower_nodes[i],
-                            "Models/Airport/tower.xml",
-                            0.0 );
+        write_index_object_shared( objpath, b, tower_nodes[i],
+                                  "Models/Airport/tower.xml",
+                                  0.0 );
     }
 #endif
 
@@ -1161,13 +1168,13 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
 
         if ( windsocks[i]->IsLit() )
         {
-            write_index_shared( objpath, b, ref_geod,
-                                "Models/Airport/windsock_lit.xml", 0.0 );
+            write_index_object_shared( objpath, b, ref_geod,
+                                      "Models/Airport/windsock_lit.xml", 0.0 );
         }
         else
         {
-            write_index_shared( objpath, b, ref_geod,
-                                "Models/Airport/windsock.xml", 0.0 );
+            write_index_object_shared( objpath, b, ref_geod,
+                                      "Models/Airport/windsock.xml", 0.0 );
         }
     }
 
@@ -1177,9 +1184,9 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         ref_geod = beacons[i]->GetLoc();
         ref_geod.setElevationM( apt_surf.calc_elevation( ref_geod, 0.0 ) );
 
-        write_index_shared( objpath, b, ref_geod,
-                            "Models/Airport/beacon.xml",
-                            0.0 );
+        write_index_object_shared( objpath, b, ref_geod,
+                                  "Models/Airport/beacon.xml",
+                                  0.0 );
     }
 
     // write out taxiway signs references
@@ -1187,10 +1194,10 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     {
         ref_geod = signs[i]->GetLoc();
         ref_geod.setElevationM( apt_surf.calc_elevation( ref_geod, 0.0 ) );
-        write_object_sign( objpath, b, ref_geod,
-                            signs[i]->GetDefinition(),
-                            signs[i]->GetHeading(),
-                            signs[i]->GetSize() );
+        write_index_object_sign( objpath, b, ref_geod,
+                                signs[i]->GetDefinition(),
+                                signs[i]->GetHeading(),
+                                signs[i]->GetSize() );
     }
 
     // write out water buoys
@@ -1202,9 +1209,9 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         {
             ref_geod = buoys.GetNode(j);
             ref_geod.setElevationM( apt_surf.calc_elevation( ref_geod, 0.0 ) );
-            write_index_shared( objpath, b, ref_geod,
-                                "Models/Airport/water_rw_buoy.xml",
-                                0.0 );
+            write_index_object_shared( objpath, b, ref_geod,
+                                      "Models/Airport/water_rw_buoy.xml",
+                                      0.0 );
         }
     }
 
