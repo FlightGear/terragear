@@ -74,6 +74,51 @@ double tgContour::GetArea( void ) const
     return fabs(area * 0.5);
 }
 
+// Check that the two supplied points are on the same side of the contour
+bool tgContour::AreSameSide( const SGGeod& firstpt, const SGGeod& secondpt) const
+{
+  //Find equation of line segment joining the points
+  double x1 = firstpt.getLatitudeDeg();
+  double x2 = secondpt.getLatitudeDeg();
+  double y1 = firstpt.getLongitudeDeg();
+  double y2 = secondpt.getLongitudeDeg();
+  //Store differences for later
+  double xdif = x1-x2;
+  double ydif = y1-y2;
+  /*We describe a line parametrically:
+
+       x1        (x2-x1)
+ L =        + t 
+       y1        (y2-y1)
+
+with u the parametric coefficient for the second line.
+Then the line segments intersect if 0 <= t,u <= 1.
+
+  */
+  //Now cycle over all nodes and count how many times we intersect
+  int intersect_ct = 0;
+  if (node_list.size()) {
+    int j = node_list.size() - 1;
+    for (int i=0;i<node_list.size()-1;i++) {
+      double nx1 = node_list[i].getLatitudeDeg();
+      double ny1 = node_list[i].getLongitudeDeg();
+      double nx2 = node_list[i+1].getLatitudeDeg();
+      double ny2 = node_list[i+1].getLongitudeDeg();
+      double nydif = ny1-ny2;
+      double nxdif = nx1-nx2;
+      double denom = xdif*nydif - ydif*nxdif;
+      if (denom != 0) {     //Not parallel
+        double crossx = x1-nx1; double crossy = y1-ny1;
+        double t = (crossx*nydif - crossy*nxdif)/denom;
+        double u = -1*(xdif*crossy - ydif*crossx)/denom;
+        if (t >= 0.0 && t <= 1.0 && u >= 0.0 && u <= 1.0) intersect_ct++;
+      }
+    }
+  }
+  bool isinter = (intersect_ct%2 == 0);
+  return isinter;
+}
+          
 bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
 {
     // first contour is inside second if the intersection of first with second is == first

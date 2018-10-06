@@ -3,6 +3,9 @@
 add_library(Array STATIC 
     array.cxx array.hxx
 )
+
+include_directories(${PROJECT_SOURCE_DIR}/src/Lib/terragear)
+
 install( TARGETS Array
          RUNTIME DESTINATION bin
          LIBRARY DESTINATION lib
@@ -14,6 +17,7 @@ add_executable(test_array testarray.cxx)
 
 target_link_libraries(test_array 
     Array
+    terragear
 	${ZLIB_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})

@@ -30,6 +30,7 @@ River			stream
 IntermittentStream	stream
 Watercourse		stream
 Canal			stream
+Cliff                   cliff   # A cliff face
 Glacier			other	# Solid ice/snow
 PackIce			other	# Water with ice packs
 PolarIce		other

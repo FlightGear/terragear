@@ -56,6 +56,7 @@ TGArray::TGArray( const string &file ):
 
 
 // open an Array file (and fitted file if it exists)
+// Also open cliffs file if it exists
 bool TGArray::open( const string& file_base ) {
     // open array data file
     string array_name = file_base + ".arr.gz";
@@ -79,7 +80,8 @@ bool TGArray::open( const string& file_base ) {
     } else {
         SG_LOG(SG_GENERAL, SG_DEBUG, "  Opening fitted data file: " << fitted_name );
     }
-
+    // open any cliffs data file
+    load_cliffs(file_base);
     return (array_in != NULL) ? true : false;
 }
 
@@ -101,6 +103,47 @@ TGArray::close() {
     return true;
 }
 
+//This code adapted from tgconstruct::LoadLandclassPolys
+//All polys in the bucket should be contours which we load
+//into our contour list.
+
+bool TGArray::load_cliffs(const string & height_base)
+{
+  //Get the directory so we can list the children
+  tgPolygon poly;   //actually a contour but whatever...
+  int total_contours_read = 0;
+  SGPath b(height_base);
+  simgear::Dir d(b.dir());
+  simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
+  BOOST_FOREACH(const SGPath& p, files) {
+    if (p.file_base() != b.file_base()) {
+      continue;
+    }
+
+    string lext = p.complete_lower_extension();
+    if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
+        (lext == "fit") || (lext == "fit.gz") || (lext == "ind"))
+      {
+        // skipped!
+      } else {
+      gzFile fp = gzopen( p.c_str(), "rb" );
+      unsigned int count;
+      sgReadUInt( fp, &count );
+      SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " contours from " << p.realpath() );
+      
+      for ( unsigned int i=0; i<count; i++ ) {
+        poly.LoadFromGzFile( fp );
+        if ( poly.Contours()==1 ) {  //should always have one contour
+          cliffs_list.push_back(poly.GetContour(0));
+        } else {
+          SG_LOG( SG_GENERAL, SG_WARN, " Found " << poly.Contours() << " contours in " << p.realpath() );
+        }
+      }
+    }
+  }
+}
+
+  
 void
 TGArray::unload( void ) {
     if (array_in) {
@@ -316,14 +359,15 @@ void TGArray::remove_voids( ) {
 
 
 // Return the elevation of the closest non-void grid point to lon, lat
+// Lon, lat in arcsec
 double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
     double mindist = 99999999999.9;
     double minelev = -9999.0;
-    SGGeod p0 = SGGeod::fromDeg( lon, lat );
+    SGGeod p0 = SGGeod::fromDeg( lon/3600.0, lat/3600.0 );
 
     for ( int row = 0; row < rows; row++ ) {
         for ( int col = 0; col < cols; col++ ) {
-            SGGeod p1 = SGGeod::fromDeg( originx + col * col_step, originy + row * row_step );
+          SGGeod p1 = SGGeod::fromDeg( (originx + col * col_step)/3600.0, (originy + row * row_step)/3600.0 );
             double dist = SGGeodesy::distanceM( p0, p1 );
             double elev = get_array_elev(col, row);
             if ( dist < mindist && elev > -9000 ) {
@@ -362,6 +406,9 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
        then calculate our end points
      */
 
+    // Store in degrees for later
+    double londeg = lon/3600;
+    double latdeg = lat/3600;
     xlocal = (lon - originx) / col_step;
     ylocal = (lat - originy) / row_step;
 
@@ -384,70 +431,231 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
 	return -9999;
     }
 
-    dx = xlocal - xindex;
-    dy = ylocal - yindex;
+    // Now check if we are on the same side of any cliffs
 
-    if ( dx > dy ) {
-	// lower triangle
+    // Collect lat,long at corners of area
+    // remember the missing corner if three found
+    // Go around the rectangle clockwise from SW corner
+    int corners[4][2];
+    int ccnt = 0;
+    int missing = -1;  //the missing point when 3 available
+    double lon1 = (originx+(xindex*col_step))/3600;
+    double lat1 = (originy+(yindex*row_step))/3600;
+    double lon2 = lon1 + col_step/3600;
+    double lat2 = lat1 + row_step/3600;
+    if (check_points(lon1,lat1,londeg,latdeg)) {
+        corners[ccnt][0] = xindex;
+        corners[ccnt][1] = yindex;
+        ccnt++;
+      } else missing = 0;
+    if (check_points(lon1,lat2,londeg,latdeg)) {
+        corners[ccnt][0] = xindex;
+        corners[ccnt][1] = yindex+1;
+        ccnt++;
+      } else missing = 1;
+    if (check_points(lon2,lat2,londeg,latdeg)) {
+        corners[ccnt][0] = xindex+1;
+        corners[ccnt][1] = yindex+1;
+        ccnt++;
+      } else missing = 2;
+    if (check_points(lon2,lat1,londeg,latdeg)) {
+        corners[ccnt][0] = xindex+1;
+        corners[ccnt][1] = yindex;
+        ccnt++;
+      } else missing = 3;
+    
+      switch (ccnt) {
+      case 3:    //3 points are corners of a rectangle
+        // choose the points so that x2 is the right angle
+        // and x1-x2 is the x arm of the triangle
+        // dx,dy are the (positive) distances from the x1 corner
+        SG_LOG(SG_GENERAL, SG_DEBUG, "3 points, missing #" << missing);
+        dx = xlocal -xindex;
+        dy = ylocal -yindex;
+        switch (missing) {
+        case 0:                 //SW corner missing
+          x1 = corners[0][0];
+          y1 = corners[0][1];
 
-	x1 = xindex;
-	y1 = yindex;
-	z1 = get_array_elev(x1, y1);
+          x2 = corners[1][0];
+          y2 = corners[1][1];
 
-	x2 = xindex + 1;
-	y2 = yindex;
-	z2 = get_array_elev(x2, y2);
+          x3 = corners[2][0];
+          y3 = corners[2][1];
 
-	x3 = xindex + 1;
-	y3 = yindex + 1;
-	z3 = get_array_elev(x3, y3);
+          dy = 1 - dy;
+          break;
+        case 1:                 //NW corner missing
+          x1 = corners[0][0];  
+          y1 = corners[0][1];
 
-        if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
+          x2 = corners[2][0];
+          y2 = corners[2][1];
+
+          x3 = corners[1][0];
+          y3 = corners[1][1];
+
+          break;
+        case 2:                  //NE corner missing
+          x1 = corners[2][0];
+          y1 = corners[2][1];
+
+          x2 = corners[0][0];
+          y2 = corners[0][1];
+ 
+          x3 = corners[1][0];
+          y3 = corners[1][1];
+
+          dx = 1 - dx;            //x1 is SE corner
+          break;
+
+        case 3:                   //SE corner missing
+          x1 = corners[2][0];
+          y1 = corners[2][1];
+
+          x2 = corners[1][0];
+          y2 = corners[1][1];
+ 
+          x3 = corners[0][0];
+          y3 = corners[0][1];
+ 
+          dx = 1 - dx;            //x1 is NE corner
+          dy = 1 - dy;
+          break;
+
+        }
+        // Now do the calcs on the triangle
+        // We interpolate on height along x1-x2 and
+        // x1 - x3. Then interpolate between these
+        // two points along y.
+        z1 = get_array_elev(x1,y1);
+        z2 = get_array_elev(x2,y2);
+        z3 = get_array_elev(x3,y3);
+        zA = dx * (z2 - z1) + z1;
+        zB = dx * (z3 - z1) + z1;
+        
+        if ( dx > SG_EPSILON ) {
+          elev = dy * (zB - zA) / dx + zA;
+        } else {
+          elev = zA;
+        }
+        
+        break;
+      case 2:    //project onto line connecting two points
+        x1 = corners[0][0];
+        y1 = corners[0][1];
+        z1 = get_array_elev(x1,y1);
+
+        x2 = corners[1][0];
+        y2 = corners[1][1];
+        z2 = get_array_elev(x2,y2);
+
+        //two points are either a side of the rectangle, or
+        //else the diagonal
+        dx = xlocal - x1;
+        dy = ylocal - y1;
+        if (x1==x2) {
+          elev = z1+dy*(z2-z1);
+        }
+        else if (y1==y2) {
+          elev = z1+dx*(z2-z1);
+        }
+        else {     //diagonal: project onto 45 degree line
+          int comp1 = x2-x1;
+          int comp2 = y2-y1;
+          double dotprod = (dx*comp1 + dy*comp2)/sqrt(2);
+          double projlen = sqrt(dx*dx+dy*dy)*dotprod;
+          elev = (z2-z1)*projlen/sqrt(2);
+        }
+            break;
+      case 1:    //only one point found
+        elev = get_array_elev(corners[0][0],corners[0][1]);
+        break;
+      case 0:    // all points on wrong side, fall through to normal calc
+        SG_LOG(SG_GENERAL, SG_WARN, "All elevation grid points on wrong side of cliff for " << londeg << "," << latdeg );
+      default:                // all corners
+        dx = xlocal - xindex;
+        dy = ylocal - yindex;
+
+        if ( dx > dy ) {
+          // lower triangle
+
+          x1 = xindex;
+          y1 = yindex;
+          z1 = get_array_elev(x1, y1);
+
+          x2 = xindex + 1;
+          y2 = yindex;
+          z2 = get_array_elev(x2, y2);
+
+          x3 = xindex + 1;
+          y3 = yindex + 1;
+          z3 = get_array_elev(x3, y3);
+
+          if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
             // don't interpolate off a void
             return closest_nonvoid_elev( lon, lat );
-        }
+          }
 
-	zA = dx * (z2 - z1) + z1;
-	zB = dx * (z3 - z1) + z1;
+          zA = dx * (z2 - z1) + z1;
+          zB = dx * (z3 - z1) + z1;
 
-	if ( dx > SG_EPSILON ) {
+          if ( dx > SG_EPSILON ) {
 	    elev = dy * (zB - zA) / dx + zA;
-	} else {
+          } else {
 	    elev = zA;
-	}
-    } else {
-	// upper triangle
+          }
+        } else {
+          // upper triangle
 
-	x1 = xindex;
-	y1 = yindex;
-	z1 = get_array_elev(x1, y1);
+          x1 = xindex;
+          y1 = yindex;
+          z1 = get_array_elev(x1, y1);
 
-	x2 = xindex;
-	y2 = yindex + 1;
-	z2 = get_array_elev(x2, y2);
+          x2 = xindex;
+          y2 = yindex + 1;
+          z2 = get_array_elev(x2, y2);
 
-	x3 = xindex + 1;
-	y3 = yindex + 1;
-	z3 = get_array_elev(x3, y3);
+          x3 = xindex + 1;
+          y3 = yindex + 1;
+          z3 = get_array_elev(x3, y3);
 
-        if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
+          if ( z1 < -9000 || z2 < -9000 || z3 < -9000 ) {
             // don't interpolate off a void
             return closest_nonvoid_elev( lon, lat );
-        }
+          }
 
-	zA = dy * (z2 - z1) + z1;
-	zB = dy * (z3 - z1) + z1;
+          zA = dy * (z2 - z1) + z1;
+          zB = dy * (z3 - z1) + z1;
 
-	if ( dy > SG_EPSILON ) {
+          if ( dy > SG_EPSILON ) {
 	    elev = dx * (zB - zA) / dy    + zA;
-	} else {
+          } else {
 	    elev = zA;
-	}
-    }
-
+          }
+        }
+      }
     return elev;
 }
 
+// Check that two points are on the same side of all cliff contours
+// Could speed up by checking bounding box first
+bool TGArray::check_points (const double lon1, const double lat1, const double lon2, const double lat2) const {
+  if (cliffs_list.size()==0) return true;
+  if (fabs(lon1-lon2)<SG_EPSILON && fabs(lat1-lat2)<SG_EPSILON) return true; 
+  SGGeod pt1 = SGGeod::fromDeg(lon1,lat1);
+  SGGeod pt2 = SGGeod::fromDeg(lon2,lat2);
+  bool same_side = true;
+  for (int i=0;i<cliffs_list.size();i++) {
+    bool check_result = cliffs_list[i].AreSameSide(pt1,pt2);
+    if(!check_result) {
+      SG_LOG(SG_GENERAL, SG_DEBUG, "Cliff " << i <<":" <<pt1 << " and " << pt2 << " on opposite sides");
+      same_side = false;
+      break;
+    }
+  }
+  return same_side;
+}
 
 TGArray::~TGArray( void )
 {
@@ -486,3 +694,4 @@ bool TGArray::is_open() const
       return false;
   }
 }
+

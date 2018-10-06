@@ -101,6 +101,9 @@ public:
     }
 
 
+  // Return true if the two points are on the same side of the contour
+  bool AreSameSide(const SGGeod& firstpt, const SGGeod& secondpt) const;
+  
     static tgContour Snap( const tgContour& subject, double snap );
     static tgContour RemoveDups( const tgContour& subject );
     static tgContour SplitLongEdges( const tgContour& subject, double dist );

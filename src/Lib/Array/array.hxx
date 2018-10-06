@@ -27,6 +27,11 @@
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/io/iostreams/sgstream.hxx>
+#include <simgear/misc/sg_dir.hxx>
+#include <boost/foreach.hpp>
+
+#include "tg_contour.hxx"
+#include "tg_polygon.hxx"
 
 class TGArray {
 
@@ -52,6 +57,8 @@ private:
     std::vector<SGGeod> corner_list;
     std::vector<SGGeod> fitted_list;
 
+  // list of cliff contours
+  tgcontour_list cliffs_list;
     void parse_bin();
 public:
 
@@ -65,6 +72,9 @@ public:
     // open an Array file (use "-" if input is coming from stdin)
     bool open ( const std::string& file_base );
 
+  // Load contours from polygon files delineating height discontinuities
+  bool load_cliffs(const std::string & height_base);
+      
     // return if array was successfully opened or not
     bool is_open() const;
 
@@ -103,6 +113,8 @@ public:
     int get_array_elev( int col, int row ) const;
     void set_array_elev( int col, int row, int val );
 
+  // Check whether or not two points are on the same side of contour
+  bool check_points (const double a,const double b, const double c, const double d) const;
     // reset Array to initial state - ready to load another elevation file
     void unload( void );
 };

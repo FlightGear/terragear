@@ -1,4 +1,5 @@
 include_directories(${GDAL_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/src/Lib/terragear)
 
 include( ${CGAL_USE_FILE} )
 

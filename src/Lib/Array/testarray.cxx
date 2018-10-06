@@ -7,6 +7,7 @@
 #include <simgear/compiler.h>
 #include <simgear/bucket/newbucket.hxx>
 #include <simgear/misc/sg_path.hxx>
+#include <simgear/debug/logstream.hxx>
 
 #include <sys/types.h>
 #include <iostream>
@@ -42,6 +43,9 @@ int main( int argc, char **argv ) {
     double lon, lat;
 
     check_for_help(argc, argv);
+
+    sglog().setLogLevels(SG_ALL,SG_INFO);
+    sglog().set_log_priority(SG_DEBUG);
     
     if ( argc != 4 ) {
         cout << "ERROR: Needs 3 arguments!" << endl;
