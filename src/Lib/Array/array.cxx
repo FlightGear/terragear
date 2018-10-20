@@ -24,6 +24,7 @@
 #endif
 
 #include <cstring>
+#include <iomanip>   //for setprecision
 
 #include <simgear/compiler.h>
 #include <simgear/io/iostreams/sgstream.hxx>
@@ -120,12 +121,8 @@ bool TGArray::load_cliffs(const string & height_base)
       continue;
     }
 
-    string lext = p.complete_lower_extension();
-    if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
-        (lext == "fit") || (lext == "fit.gz") || (lext == "ind"))
-      {
-        // skipped!
-      } else {
+    string lext = p.lower_extension();
+    if (lext == "cliffs") {
       gzFile fp = gzopen( p.c_str(), "rb" );
       unsigned int count;
       sgReadUInt( fp, &count );
@@ -572,7 +569,8 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
         elev = get_array_elev(corners[0][0],corners[0][1]);
         break;
       case 0:    // all points on wrong side, fall through to normal calc
-        SG_LOG(SG_GENERAL, SG_WARN, "All elevation grid points on wrong side of cliff for " << londeg << "," << latdeg );
+        SG_LOG(SG_GENERAL, SG_WARN, "All elevation grid points on wrong side of cliff for " << std::setprecision(10) << londeg << "," << latdeg );
+        SG_LOG(SG_GENERAL, SG_WARN, "Grid points ("<< std::setprecision(9) << lon1 << "," << lat1 << "),("<<lon2<<","<<lat2<<")");
       default:                // all corners
         dx = xlocal - xindex;
         dy = ylocal - yindex;

@@ -29,6 +29,7 @@ class tgContour
 public:
     tgContour() {
         hole = false;
+        keep_open = false;
     }
 
     void Erase() {
@@ -38,9 +39,18 @@ public:
     void SetHole( bool h ) {
         hole = h;
     }
+  
     bool GetHole( void ) const {
         return hole;
     }
+
+  bool GetOpen(void) const {
+    return keep_open;
+  }
+
+  void SetOpen(bool o) {
+    keep_open = o;
+  }
 
     unsigned int GetSize( void ) const {
         return node_list.size();
@@ -138,6 +148,7 @@ public:
 private:
     std::vector<SGGeod>  node_list;
     bool hole;
+  bool keep_open;  //If non-closed contour, keep open
 };
 
 typedef std::vector <tgContour>  tgcontour_list;

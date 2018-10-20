@@ -111,7 +111,11 @@ Then the line segments intersect if 0 <= t,u <= 1.
         double crossx = x1-nx1; double crossy = y1-ny1;
         double t = (crossx*nydif - crossy*nxdif)/denom;
         double u = -1*(xdif*crossy - ydif*crossx)/denom;
-        if (t >= 0.0 && t <= 1.0 && u >= 0.0 && u <= 1.0) intersect_ct++;
+        // We consider that an intersection at the edge of the line have
+        // not crossed
+        // over, that is, they lie on the same side, so we do not
+        // include equality in the comparisons
+        if (t > 0.0 && t < 1.0 && u > 0.0 && u < 1.0) intersect_ct++;
       }
     }
   }
@@ -848,14 +852,16 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, std::vector<SGG
     p0 = subject.GetNode( subject.GetSize() - 1 );
     p1 = subject.GetNode( 0 );
 
-    // add start of segment
-    result.AddNode( p0 );
-
-    // add intermediate points
-    AddIntermediateNodes( p0, p1, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
-
-    // maintain original hole flag setting
+    if (!subject.GetOpen()) {
+      // add start of segment
+      result.AddNode( p0 );
+      
+      // add intermediate points
+      AddIntermediateNodes( p0, p1, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
+    }
+    // maintain original hole and openness flag setting
     result.SetHole( subject.GetHole() );
+    result.SetOpen( subject.GetOpen() );
 
     return result;
 }
@@ -878,15 +884,17 @@ tgContour tgContour::AddColinearNodes( const tgContour& subject, bool preserve3d
     
     p0 = subject.GetNode( subject.GetSize() - 1 );
     p1 = subject.GetNode( 0 );
-    
-    // add start of segment
-    result.AddNode( p0 );
-    
-    // add intermediate points
-    AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
-    
-    // maintain original hole flag setting
+
+    if(!subject.GetOpen()) {
+      // add start of segment
+      result.AddNode( p0 );
+      
+      // add intermediate points
+      AddIntermediateNodes( p0, p1, preserve3d, nodes, result, SG_EPSILON*10, SG_EPSILON*4 );
+    }
+    // maintain original hole and open flag settings
     result.SetHole( subject.GetHole() );
+    result.SetOpen( subject.GetOpen() );
     
     return result;
 }
