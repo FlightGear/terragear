@@ -206,6 +206,9 @@ TGArray::parse( SGBucket& b ) {
         }
     }
 
+    // Fix heights near cliffs
+    if(cliffs_list.size()>0) rectify_heights(); 
+
     return true;
 }
 
@@ -381,7 +384,115 @@ double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
     }
 }
 
+std::vector<int> TGArray::collect_bad_points() {
+  //Find and remember all points that are bad because they are
+  //too close to a cliff
+  std::vector<int> bad_points;  //local to avoid multi-thread issues
+  for(int horiz=0;horiz<cols;horiz++) {
+    double lon = (originx + col_step*horiz)/3600;
+    for(int vert=0;vert<rows;vert++) {
+      double lat = (originy + row_step*vert)/3600;
+      if(is_near_cliff(lon,lat)) {
+          bad_points.push_back(horiz+vert*cols);
+        }
+    }
+  }
+  return bad_points;
+}
 
+// Check to see if the specified grid point is bad
+bool TGArray::is_bad_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const {
+  int grididx;
+  grididx = xgrid+ygrid*cols;
+  auto result = std::find(std::begin(bad_points),std::end(bad_points),grididx);
+  if (result != std::end(bad_points)) return true;
+  return false;
+  }
+
+
+//This may collide with other threads, but as they will both be writing
+//the correct height, this is harmless.
+void TGArray::rectify_heights() {
+  double new_ht;
+  std::vector<int> rectified,bad_points;
+  bad_points = collect_bad_points();
+  while(1) {
+  for (auto pt : bad_points) {
+    int ygrid = pt/cols;
+    int xgrid = pt - ygrid*cols;
+    new_ht = rectify_point(xgrid,ygrid,bad_points);
+    if (new_ht > -9999) {
+      rectified.push_back(pt);
+      set_array_elev(xgrid,ygrid,(int) new_ht);
+      }
+  }
+  std::cout << "Rectified " << rectified.size() << " points " << std::endl; 
+  if(rectified.size()>0) {
+    for(auto r : rectified) {
+      bad_points.erase(std::remove(std::begin(bad_points),std::end(bad_points),r));
+    }
+    rectified.clear();
+  } else {
+    break;
+  }
+  }
+}
+
+/* If we have cliffs, it is possible that a grid point will be too close
+to the cliff. In this case, the SRTM-3 data appears to average the height
+in the region of the point, which makes the height unreliable. This routine
+searches for three neighbouring points that are reliable, and form a rectangle
+with the target point, and calculates the height from the plane passing
+through the three known points.
+
+*     *     *
+
+*     x     *
+
+*     *     *
+
+TODO: Handle points on the boundaries. */
+double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const {
+  //xgrid: grid units horizontally
+  //ygrid: grid units vertically
+  //Loop over corner points, if no points available, give up
+  int corners[4][2];     //possible corners
+  int final_pts[3][2];     // rectangle corners
+  int pt_cnt = 0;
+  double centre_long, centre_lat;
+  double cliff_error = col_step;  //Assume row step, col step the same
+  int original_height = get_array_elev(xgrid,ygrid);
+  centre_long = (originx + col_step*xgrid)/3600;
+  centre_lat = (originy + row_step*ygrid)/3600;
+  for (int horiz = -1; horiz <= 1; horiz+=2) {
+    double test_long = centre_long + (col_step*horiz)/3600;
+    for (int vert = -1; vert <= 1; vert+=2) {
+      double test_lat = centre_lat + (row_step*vert)/3600;
+      if (!is_bad_point(xgrid+horiz,ygrid+vert,bad_points) &&      //can trust height
+          check_points(test_long,test_lat,centre_long,centre_lat)) { //same side
+          corners[pt_cnt][0] = horiz;
+          corners[pt_cnt][1] = vert;
+          pt_cnt++;
+        }
+    }
+  }  // end of search for corners
+  if (pt_cnt == 0) return -9999;   // no corners found
+  // Find two points that form a rectangle with a corner
+  int pt;
+  for (pt = 0; pt < pt_cnt; pt++) {
+    if (!is_bad_point(xgrid+corners[pt][0],ygrid,bad_points) &&
+        !is_bad_point(xgrid, ygrid+corners[pt][1],bad_points)) break;
+  }
+  if (pt == pt_cnt) return -9999;   // not found
+  // We have three points, calculate the height
+  double corner = get_array_elev(xgrid+corners[pt][0],ygrid+corners[pt][1]);
+  double horiz = get_array_elev(xgrid,ygrid+corners[pt][1]);
+  double vert = get_array_elev(xgrid+corners[pt][0],ygrid);
+  double height = horiz + (vert - corner);
+  std::cout << xgrid << "," << ygrid << ": was " << original_height << " , now " << height << std::endl;
+  return height;
+}
+  
 // return the current altitude based on grid data.
 // TODO: We should rewrite this to interpolate exact values, but for now this is good enough
 double TGArray::altitude_from_grid( double lon, double lat ) const {
@@ -655,6 +766,19 @@ bool TGArray::check_points (const double lon1, const double lat1, const double l
   return same_side;
 }
 
+//Check that a point is more than given distance from any cliff
+//Could speed up by checking bounding box
+bool TGArray::is_near_cliff(const double lon1, const double lat1) const {
+  if (cliffs_list.size()==0) return false;
+  SGGeod pt1 = SGGeod::fromDeg(lon1,lat1);
+  double mindist = 30; // 1 arcsec
+  for (int i=0;i<cliffs_list.size();i++) {
+    double dist = cliffs_list[i].MinDist(pt1);
+    if (dist < mindist) return true;
+  }
+  return false;
+}
+      
 TGArray::~TGArray( void )
 {
     if (in_data) {

@@ -7,6 +7,8 @@
 
 #include <simgear/compiler.h>
 #include <simgear/math/sg_types.hxx>
+#include <simgear/math/SGLineSegment.hxx>
+#include <simgear/math/SGGeodesy.hxx>
 #include <boost/concept_check.hpp>
 
 #include "tg_unique_geod.hxx"
@@ -113,7 +115,8 @@ public:
 
   // Return true if the two points are on the same side of the contour
   bool AreSameSide(const SGGeod& firstpt, const SGGeod& secondpt) const;
-  
+  // Return minimum distance of point from contour
+  double MinDist(const SGGeod& probe) const;  
     static tgContour Snap( const tgContour& subject, double snap );
     static tgContour RemoveDups( const tgContour& subject );
     static tgContour SplitLongEdges( const tgContour& subject, double dist );

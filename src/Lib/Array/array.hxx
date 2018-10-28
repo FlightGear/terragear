@@ -60,6 +60,13 @@ private:
   // list of cliff contours
   tgcontour_list cliffs_list;
     void parse_bin();
+
+  // Routines for height rectification
+  void rectify_heights();
+  std::vector<int> collect_bad_points();
+  bool is_bad_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const;
+  double rectify_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const;
+  bool is_near_cliff(const double lon1,const double lon2) const;
 public:
 
     // Constructor

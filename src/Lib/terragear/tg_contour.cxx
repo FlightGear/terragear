@@ -1,4 +1,5 @@
 #include <simgear/math/sg_geodesy.hxx>
+#include <simgear/math/SGGeometry.hxx>
 #include <simgear/io/lowlevel.hxx>
 #include <simgear/debug/logstream.hxx>
 
@@ -60,12 +61,11 @@ double tgContour::GetArea( void ) const
     SGVec2d a, b;
     unsigned int i, j;
 
-    if ( node_list.size() ) {
+    if  (node_list.size() ) {
         j = node_list.size() - 1;
         for (i=0; i<node_list.size(); i++) {
             a = SGGeod_ToSGVec2d( node_list[i] );
             b = SGGeod_ToSGVec2d( node_list[j] );
-
             area += (b.x() + a.x()) * (b.y() - a.y());
             j=i;
         }
@@ -122,7 +122,27 @@ Then the line segments intersect if 0 <= t,u <= 1.
   bool isinter = (intersect_ct%2 == 0);
   return isinter;
 }
-          
+
+double tgContour::MinDist(const SGGeod& probe) const
+{
+  SGVec3d probexyz;
+  SGGeodesy::SGGeodToCart(probe,probexyz);
+  double mindist = 100000.0;
+  double dist;
+  if (node_list.size()) {
+    int j = node_list.size() - 1;
+    for (int i=0;i<j;i++) {
+      SGVec3d start,end;
+      SGGeodesy::SGGeodToCart(node_list[i],start);
+      SGGeodesy::SGGeodToCart(node_list[i+1],end);
+      SGLineSegment<double> piece = SGLineSegment<double>(start,end);
+      dist = distSqr(piece,probexyz);
+      if (dist < mindist) mindist = dist;
+    }
+  }
+  return sqrt(mindist);
+}
+
 bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )
 {
     // first contour is inside second if the intersection of first with second is == first
@@ -472,6 +492,7 @@ tgContour tgContour::FromClipper( const ClipperLib::Path& subject )
 
     return result;
 }
+
 
 tgRectangle tgContour::GetBoundingBox( void ) const
 {
