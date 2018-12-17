@@ -83,8 +83,8 @@ bool tgContour::AreSameSide( const SGGeod& firstpt, const SGGeod& secondpt) cons
   double y1 = firstpt.getLongitudeDeg();
   double y2 = secondpt.getLongitudeDeg();
   //Store differences for later
-  double xdif = x1-x2;
-  double ydif = y1-y2;
+  double xdif = x2-x1;
+  double ydif = y2-y1;
   /*We describe a line parametrically:
 
        x1        (x2-x1)
@@ -94,6 +94,16 @@ bool tgContour::AreSameSide( const SGGeod& firstpt, const SGGeod& secondpt) cons
 with u the parametric coefficient for the second line.
 Then the line segments intersect if 0 <= t,u <= 1.
 
+To determine t and u we use the approach of Goldman ("Graphics
+Gems" as described in Stack Overflow question 563198).
+
+if r x s = r_x * s_y - r_y * s_x, then
+
+t = (q - p) x s / (r x s)
+and 
+u = (q - p) x r / (r x s)
+
+for line 1 = p + t r, line 2 = q + u s
   */
   //Now cycle over all nodes and count how many times we intersect
   int intersect_ct = 0;
@@ -104,11 +114,11 @@ Then the line segments intersect if 0 <= t,u <= 1.
       double ny1 = node_list[i].getLongitudeDeg();
       double nx2 = node_list[i+1].getLatitudeDeg();
       double ny2 = node_list[i+1].getLongitudeDeg();
-      double nydif = ny1-ny2;
-      double nxdif = nx1-nx2;
+      double nydif = ny2-ny1;
+      double nxdif = nx2-nx1;
       double denom = xdif*nydif - ydif*nxdif;
       if (denom != 0) {     //Not parallel
-        double crossx = x1-nx1; double crossy = y1-ny1;
+        double crossx = nx1-x1; double crossy = ny1-y1;
         double t = (crossx*nydif - crossy*nxdif)/denom;
         double u = -1*(xdif*crossy - ydif*crossx)/denom;
         // We consider that an intersection at the edge of the line have

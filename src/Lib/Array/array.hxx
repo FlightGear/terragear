@@ -47,6 +47,8 @@ private:
     // number of columns and rows
     int cols, rows;
 
+  // Whether or not the input data have been rectified
+  bool rectified;
     // Distance between column and row data points (in arc seconds)
     double col_step, row_step;
 
@@ -62,11 +64,10 @@ private:
     void parse_bin();
 
   // Routines for height rectification
-  void rectify_heights();
-  std::vector<int> collect_bad_points();
+  std::vector<int> collect_bad_points(const double bad_zone);
   bool is_bad_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const;
   double rectify_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const;
-  bool is_near_cliff(const double lon1,const double lon2) const;
+  bool is_near_cliff(const double lon1,const double lon2, const double bad_zone) const;
 public:
 
     // Constructor
@@ -94,9 +95,15 @@ public:
     // write an Array file
     bool write( const std::string root_dir, SGBucket& b );
 
+  // write an Array file in binary format. If ht_rect is true,
+  // the file will have extension 'arr.rectified.gz'
+  void write_bin(const std::string root_dir, bool ht_rect, SGBucket& b);
+  
     // do our best to remove voids by picking data from the nearest
     // neighbor.
     void remove_voids();
+
+    void rectify_heights(const double bad_zone);
 
     // Return the elevation of the closest non-void grid point to lon, lat
     double closest_nonvoid_elev( double lon, double lat ) const;

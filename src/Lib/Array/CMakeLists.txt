@@ -15,6 +15,8 @@ install( FILES array.hxx DESTINATION include/tg )
 
 add_executable(test_array testarray.cxx)
 
+add_executable(rectify_height rectify_height.cxx)
+
 target_link_libraries(test_array 
     Array
     terragear
@@ -22,7 +24,14 @@ target_link_libraries(test_array
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
 
-install(TARGETS test_array RUNTIME DESTINATION bin)
+target_link_libraries(rectify_height 
+    Array
+    terragear
+	${ZLIB_LIBRARY}
+	${SIMGEAR_CORE_LIBRARIES}
+	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
+
+install(TARGETS test_array rectify_height RUNTIME DESTINATION bin)
 if (MSVC)
     set_target_properties( test_array PROPERTIES DEBUG_POSTFIX d )
 endif ()

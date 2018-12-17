@@ -57,16 +57,27 @@ TGArray::TGArray( const string &file ):
 
 
 // open an Array file (and fitted file if it exists)
-// Also open cliffs file if it exists
+// Also open cliffs file if it exists. By default a
+// rectified file is searched for, if it doesn't exist
+// we load the unrectified version.
 bool TGArray::open( const string& file_base ) {
     // open array data file
-    string array_name = file_base + ".arr.gz";
-
+    string array_name = file_base + ".arr.rectified.gz";
+    rectified = true;
+    
     array_in = gzopen( array_name.c_str(), "rb" );
     if (array_in == NULL) {
+      // try unrectified
+      array_name = file_base + ".arr.gz";
+      array_in = gzopen(array_name.c_str(), "rb");
+      if (array_in == NULL) {
         return false;
-    }
+      } else {
+        rectified = false;
+      }
+    } 
 
+    SG_LOG(SG_GENERAL,SG_DEBUG,"Loaded height array " << array_name);
     // open fitted data file
     string fitted_name = file_base + ".fit.gz";
     fitted_in = new sg_gzifstream( fitted_name );
@@ -206,10 +217,7 @@ TGArray::parse( SGBucket& b ) {
         }
     }
 
-    // Fix heights near cliffs
-    if(cliffs_list.size()>0) rectify_heights(); 
-
-    return true;
+   return true;
 }
 
 void TGArray::parse_bin()
@@ -238,6 +246,40 @@ void TGArray::parse_bin()
 
     in_data = new short[cols * rows];
     sgReadShort(array_in, cols * rows, in_data);
+}
+
+// Write out an array. If rectified is true, the heights have been adjusted
+// for discontinuities.
+void TGArray::write_bin(const string root_dir, bool rectified, SGBucket& b) {
+  // generate output file name
+  string base = b.gen_base_path();
+  string path = root_dir + "/" + base;
+  string extension = ".arr.new.gz";
+  if (rectified) extension = ".arr.rectified.gz";
+  SGPath sgp( path );
+  sgp.append( "dummy" );
+  sgp.create_dir( 0755 );
+  
+  string array_file = path + "/" + b.gen_index_str() + extension;
+  SG_LOG(SG_GENERAL, SG_DEBUG, "array_file = " << array_file );
+  
+  // write the file
+  gzFile fp;
+  if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
+    SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
+    return;
+  }
+
+  int32_t header = 0x54474152; //'TGAR'
+  sgWriteLong(fp,header);
+  sgWriteInt(fp,originx);
+  sgWriteInt(fp,originy);
+  sgWriteInt(fp,cols);
+  sgWriteInt(fp,col_step);
+  sgWriteInt(fp,rows);
+  sgWriteInt(fp,row_step);
+  sgWriteShort(fp, rows*cols, in_data);
+  gzclose(fp);
 }
 
 // write an Array file
@@ -272,7 +314,6 @@ bool TGArray::write( const string root_dir, SGBucket& b ) {
 
     return true;
 }
-
 
 // do our best to remove voids by picking data from the nearest neighbor.
 void TGArray::remove_voids( ) {
@@ -384,7 +425,7 @@ double TGArray::closest_nonvoid_elev( double lon, double lat ) const {
     }
 }
 
-std::vector<int> TGArray::collect_bad_points() {
+std::vector<int> TGArray::collect_bad_points(const double bad_zone) {
   //Find and remember all points that are bad because they are
   //too close to a cliff
   std::vector<int> bad_points;  //local to avoid multi-thread issues
@@ -392,7 +433,7 @@ std::vector<int> TGArray::collect_bad_points() {
     double lon = (originx + col_step*horiz)/3600;
     for(int vert=0;vert<rows;vert++) {
       double lat = (originy + row_step*vert)/3600;
-      if(is_near_cliff(lon,lat)) {
+      if(is_near_cliff(lon,lat,bad_zone)) {
           bad_points.push_back(horiz+vert*cols);
         }
     }
@@ -412,10 +453,10 @@ bool TGArray::is_bad_point(const int xgrid, const int ygrid, const std::vector<i
 
 //This may collide with other threads, but as they will both be writing
 //the correct height, this is harmless.
-void TGArray::rectify_heights() {
+void TGArray::rectify_heights(const double bad_zone) {
   double new_ht;
   std::vector<int> rectified,bad_points;
-  bad_points = collect_bad_points();
+  bad_points = collect_bad_points(bad_zone);
   while(1) {
   for (auto pt : bad_points) {
     int ygrid = pt/cols;
@@ -433,7 +474,10 @@ void TGArray::rectify_heights() {
     }
     rectified.clear();
   } else {
-    break;
+    if(bad_points.size() > 0) {
+    std::cout << "Failed to rectify " << bad_points.size() << " points" << std::endl;
+    }
+    break;   // Cant do any more
   }
   }
 }
@@ -465,8 +509,10 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
   centre_long = (originx + col_step*xgrid)/3600;
   centre_lat = (originy + row_step*ygrid)/3600;
   for (int horiz = -1; horiz <= 1; horiz+=2) {
+    if (xgrid + horiz >= cols || xgrid + horiz < 0) continue; //edge of bucket
     double test_long = centre_long + (col_step*horiz)/3600;
     for (int vert = -1; vert <= 1; vert+=2) {
+      if (ygrid + vert >= rows || ygrid + vert < 0) continue; //edge of bucket
       double test_lat = centre_lat + (row_step*vert)/3600;
       if (!is_bad_point(xgrid+horiz,ygrid+vert,bad_points) &&      //can trust height
           check_points(test_long,test_lat,centre_long,centre_lat)) { //same side
@@ -479,16 +525,36 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
   if (pt_cnt == 0) return -9999;   // no corners found
   // Find two points that form a rectangle with a corner
   int pt;
+  double height = 0;
   for (pt = 0; pt < pt_cnt; pt++) {
     if (!is_bad_point(xgrid+corners[pt][0],ygrid,bad_points) &&
-        !is_bad_point(xgrid, ygrid+corners[pt][1],bad_points)) break;
-  }
-  if (pt == pt_cnt) return -9999;   // not found
+        !is_bad_point(xgrid, ygrid+corners[pt][1],bad_points)) {
+          double test_horiz = centre_long + corners[pt][0]*col_step/3600;
+          double test_vert = centre_lat + corners[pt][1]*row_step/3600;
+          if (check_points(test_horiz,centre_lat,centre_long,centre_lat) &&
+              check_points(centre_long,test_vert,centre_long,centre_lat)) break;
+        }
+    }
+  
+  if (pt == pt_cnt) { // perhaps we are in a bay, just take the
+                      // average of the known points
+    double totht = 0;
+    for(int pti = 0; pti <pt_cnt; pti++) {
+      totht = totht + get_array_elev(xgrid+corners[pti][0],ygrid+corners[pti][1]);
+    }
+    height = totht/pt_cnt;
+  } else {
+  
   // We have three points, calculate the height
+  // Set anything very negative to zero
   double corner = get_array_elev(xgrid+corners[pt][0],ygrid+corners[pt][1]);
   double horiz = get_array_elev(xgrid,ygrid+corners[pt][1]);
   double vert = get_array_elev(xgrid+corners[pt][0],ygrid);
-  double height = horiz + (vert - corner);
+  if (corner < -9000) corner = 0;
+  if (horiz < -9000) horiz = 0;
+  if (vert < -9000) vert = 0;
+  height = horiz + (vert - corner);
+  }
   std::cout << xgrid << "," << ygrid << ": was " << original_height << " , now " << height << std::endl;
   return height;
 }
@@ -768,13 +834,12 @@ bool TGArray::check_points (const double lon1, const double lat1, const double l
 
 //Check that a point is more than given distance from any cliff
 //Could speed up by checking bounding box
-bool TGArray::is_near_cliff(const double lon1, const double lat1) const {
+bool TGArray::is_near_cliff(const double lon1, const double lat1, const double bad_zone) const {
   if (cliffs_list.size()==0) return false;
   SGGeod pt1 = SGGeod::fromDeg(lon1,lat1);
-  double mindist = 30; // 1 arcsec
   for (int i=0;i<cliffs_list.size();i++) {
     double dist = cliffs_list[i].MinDist(pt1);
-    if (dist < mindist) return true;
+    if (dist < bad_zone) return true;
   }
   return false;
 }

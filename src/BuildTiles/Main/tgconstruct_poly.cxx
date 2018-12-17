@@ -70,7 +70,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
             string lastext = p.extension();
             if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
                 (lext == "fit") || (lext == "fit.gz") || (lext == "ind") ||
-                (lastext == "cliffs"))
+                (lastext == "cliffs") || (lext == "arr.rectified.gz") || (lext == "arr.new.gz"))
             {
                 // skipped!
             } else {

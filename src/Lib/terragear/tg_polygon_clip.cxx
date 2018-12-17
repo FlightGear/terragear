@@ -178,7 +178,11 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip)
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
     result.SetPreserve3D( subject.GetPreserve3D() );
-    
+    if(subject.IsClosed()) {
+      result.SetClosed();
+    } else {
+      result.SetOpen();
+    }
     return result;
 }
 
