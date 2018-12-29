@@ -121,11 +121,11 @@ for line 1 = p + t r, line 2 = q + u s
         double crossx = nx1-x1; double crossy = ny1-y1;
         double t = (crossx*nydif - crossy*nxdif)/denom;
         double u = -1*(xdif*crossy - ydif*crossx)/denom;
-        // We consider that an intersection at the edge of the line have
-        // not crossed
-        // over, that is, they lie on the same side, so we do not
-        // include equality in the comparisons
-        if (t > 0.0 && t < 1.0 && u > 0.0 && u < 1.0) intersect_ct++;
+        // We consider that an intersection at the edge of the line has
+        // crossed
+        // over, that is, they lie on opposite sides. This way we capture
+        // places where the chopper has clipped a cliff on the tile edge
+        if (t > -0.0001 && t < 1.0001 && u > -0.0001 && u < 1.0001) intersect_ct++;
       }
     }
   }
