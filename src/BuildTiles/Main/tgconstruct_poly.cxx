@@ -65,8 +65,10 @@ int TGConstruct::LoadLandclassPolys( void ) {
             }
 
             string lext = p.complete_lower_extension();
+            string lastext = p.extension();
             if ((lext == "arr") || (lext == "arr.gz") || (lext == "btg.gz") ||
-                (lext == "fit") || (lext == "fit.gz") || (lext == "ind"))
+                (lext == "fit") || (lext == "fit.gz") || (lext == "ind") ||
+                (lastext == "cliffs") || (lext == "arr.rectified.gz") || (lext == "arr.new.gz"))
             {
                 // skipped!
             } else {

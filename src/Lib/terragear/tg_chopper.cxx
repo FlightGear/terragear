@@ -11,8 +11,7 @@
 #include "tg_misc.hxx"
 
 tgPolygon tgChopper::Clip( const tgPolygon& subject,
-                      const std::string& type,
-                      SGBucket& b )
+                      const std::string& type, SGBucket& b)
 {
     tgPolygon base, result;
 
@@ -22,8 +21,18 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
     base.AddNode( 0, b.get_corner( SG_BUCKET_NE ) );
     base.AddNode( 0, b.get_corner( SG_BUCKET_NW ) );
 
-    result = tgPolygon::Intersect( subject, base );    
+    result = tgPolygon::Intersect( subject, base);
+    // Debug: See if numbers of nodes have changed
     if ( result.Contours() > 0 ) {
+      /*if (result.ContourSize(0) != subject.ContourSize(0)) {
+        tgRectangle rr = subject.GetBoundingBox();
+        SG_LOG(SG_GENERAL,SG_INFO,"---- Bucket ID " << b.gen_index() << " ------- " );
+        SG_LOG(SG_GENERAL,SG_INFO,"A contour has changed size");
+        SG_LOG(SG_GENERAL,SG_INFO,"Bounding box " << rr.getMin() << " , " << rr.getMax() );
+        SG_LOG(SG_GENERAL,SG_INFO,"Old size " << subject.ContourSize(0) << " New size " << result.ContourSize(0));
+        SG_LOG(SG_GENERAL,SG_INFO,"Old: First node " << subject.GetNode(0,0) << " New: First node " << result.GetNode(0,0));
+        SG_LOG(SG_GENERAL,SG_INFO,"Clipping rectangle: " << base.GetContour(0));
+        }*/
         if ( subject.GetPreserve3D() ) {
             result.InheritElevations( subject );
             result.SetPreserve3D( true );
@@ -34,6 +43,9 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
             result.SetTexMethod( TG_TEX_BY_GEODE, b.get_center_lat() );
         }
         result.SetFlag(type);
+        if (!subject.IsClosed()) {
+            result.SetOpen();
+          }
 
         lock.lock();
         bp_map[b.gen_index()].push_back( result );
@@ -63,7 +75,8 @@ void tgChopper::ClipRow( const tgPolygon& subject, const double& center_lat, con
     }
 }
 
-void tgChopper::Add( const tgPolygon& subject, const std::string& type )
+
+void tgChopper::Add( const tgPolygon& subject, const std::string& type)
 {
     // bail out immediately if polygon is empty
     if ( subject.Contours() == 0 )
@@ -90,7 +103,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
         // We just have a single row - no need to intersect first
         SG_LOG( SG_GENERAL, SG_DEBUG, "   UN_CLIPPED row -  center lat is " << b_min.get_center_lat() );
 
-        ClipRow( subject, b_min.get_center_lat(), type );
+        ClipRow( subject, b_min.get_center_lat(), type);
     }
     else
     {
@@ -117,7 +130,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
             clip_row.AddNode( 0, SGGeod::fromDeg( 180.0, clip_top)    );
             clip_row.AddNode( 0, SGGeod::fromDeg(-180.0, clip_top)    );
 
-            clipped = tgPolygon::Intersect( subject, clip_row );
+            clipped = tgPolygon::Intersect( subject, clip_row);
             if ( clipped.TotalNodes() > 0 ) {
 
                 if ( subject.GetPreserve3D() ) {
@@ -205,7 +218,7 @@ void tgChopper::Save( bool DebugShapefiles )
         long int poly_index = GenerateIndex( path );
 
         sprintf( poly_ext, "%ld", poly_index );
-        polyfile = polyfile + "." + poly_ext;
+        polyfile = polyfile + "." + poly_ext + "." + extra_extension;
 
         gzFile fp;
         if ( (fp = gzopen( polyfile.c_str(), "wb9" )) == NULL ) {

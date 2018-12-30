@@ -140,6 +140,14 @@ public:
         }
     }
 
+    bool is_cliff_area( unsigned int p ) const {
+	    if (area_defs[p].GetCategory() == "cliff" ) {
+		    return true;
+            } else {
+		    return false;
+            }
+    }	
+
     std::string const& get_area_name( unsigned int p ) const {
         return area_defs[p].GetName();
     }

@@ -11,10 +11,14 @@ class tgChopper
 public:
     tgChopper( const std::string& path ) {
         root_path = path;
+        extra_extension = "";
     }
 
     void Add( const tgPolygon& poly, const std::string& type );
     void Save( bool DebugShapes );
+  void Add_Extension( const std::string& extension) {
+    extra_extension = extension;
+  }
 
 private:
     long int GenerateIndex( std::string path );
@@ -25,4 +29,5 @@ private:
     std::string      root_path;
     bucket_polys_map bp_map;
     SGMutex          lock;
+    std::string      extra_extension; //add at end of file name
 };

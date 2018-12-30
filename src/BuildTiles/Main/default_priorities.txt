@@ -30,6 +30,7 @@ River			stream
 IntermittentStream	stream
 Watercourse		stream
 Canal			stream
+Cliffs                  cliff   # A cliff face
 Glacier			other	# Solid ice/snow
 PackIce			other	# Water with ice packs
 PolarIce		other
@@ -85,7 +86,9 @@ ShrubGrassCover		other	# Mixed Shrubland/Grassland
 SavannaCover		other	# Savanna
 Orchard			other	# Orchard
 DeciduousForest		other	# Deciduous Forest
+DeciduousBroadCover	other	# Deciduous Forest
 EvergreenForest		other	# Evergreen Forest
+EvergreenBroadCover	other	# Evergreen Forest
 MixedForest		other	# Mixed Forest
 RainForest		other	# Rain Forest
 BarrenCover		other	# Barren or Sparsely Vegetated
