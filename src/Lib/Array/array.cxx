@@ -119,7 +119,7 @@ TGArray::close() {
 //All polys in the bucket should be contours which we load
 //into our contour list.
 
-bool TGArray::load_cliffs(const string & height_base)
+void TGArray::load_cliffs(const string & height_base)
 {
   //Get the directory so we can list the children
   tgPolygon poly;   //actually a contour but whatever...
@@ -467,7 +467,7 @@ void TGArray::rectify_heights(const double bad_zone) {
       set_array_elev(xgrid,ygrid,(int) new_ht);
       }
   }
-  std::cout << "Rectified " << rectified.size() << " points " << std::endl; 
+  SG_LOG(SG_GENERAL, SG_DEBUG, "Rectified " << rectified.size() << " points ");
   if(rectified.size()>0) {
     for(auto r : rectified) {
       bad_points.erase(std::remove(std::begin(bad_points),std::end(bad_points),r));
@@ -475,7 +475,7 @@ void TGArray::rectify_heights(const double bad_zone) {
     rectified.clear();
   } else {
     if(bad_points.size() > 0) {
-    std::cout << "Failed to rectify " << bad_points.size() << " points" << std::endl;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "Failed to rectify " << bad_points.size() << " points");
     }
     break;   // Cant do any more
   }
@@ -536,7 +536,7 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
         }
     }
   
-  if (pt == pt_cnt) { // perhaps we are in a bay, just take the
+  if (pt == pt_cnt) { // perhaps we have a concave cliff, just take the
                       // average of the known points
     double totht = 0;
     for(int pti = 0; pti <pt_cnt; pti++) {
@@ -555,7 +555,7 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
   if (vert < -9000) vert = 0;
   height = horiz + (vert - corner);
   }
-  std::cout << xgrid << "," << ygrid << ": was " << original_height << " , now " << height << std::endl;
+  SG_LOG(SG_GENERAL, SG_DEBUG, xgrid << "," << ygrid << ": was " << original_height << " , now " << height);
   return height;
 }
   

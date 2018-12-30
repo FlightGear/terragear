@@ -81,7 +81,7 @@ public:
     bool open ( const std::string& file_base );
 
   // Load contours from polygon files delineating height discontinuities
-  bool load_cliffs(const std::string & height_base);
+  void load_cliffs(const std::string & height_base);
       
     // return if array was successfully opened or not
     bool is_open() const;

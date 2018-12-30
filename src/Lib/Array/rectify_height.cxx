@@ -1,4 +1,25 @@
-//rectify_height.cxx
+// rectify_height.cxx -- Correct height grid for incorrect heights near
+//                       discontinuities included in cliff files
+//
+// Written by James Hester 2018
+//
+// Copyright (C) 2018 James Hester 
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
+//
+
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
@@ -16,7 +37,7 @@
 
 /* This program will find all height files in the directory provided,
 and if they have an associated cliff file, will adjust and then output
-the heights. Single threaded to avoid reading/writing the same file. */
+the heights. */
 
 // display usage and exit
 static void usage( const std::string name ) {
@@ -38,7 +59,7 @@ int main( int argc, char **argv) {
   std::string height_dir = "";
   SGGeod min,max;
   long tile_id = -1;
-  double bad_zone = 30;   //distance in m from cliff to rectify
+  double bad_zone = 100;   //distance in m from cliff to rectify
 
   sglog().setLogLevels(SG_ALL,SG_INFO);
   sglog().set_log_priority(SG_DEBUG);
@@ -122,6 +143,7 @@ int main( int argc, char **argv) {
       SG_LOG(SG_GENERAL,SG_DEBUG, "Failed to open array file " << array_path);
       continue;
     }
+    SG_LOG(SG_GENERAL,SG_DEBUG, "Successfully opened array file");
     array.parse(bucket);
     array.close();
     array.remove_voids();
