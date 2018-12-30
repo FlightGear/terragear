@@ -164,11 +164,12 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip)
     c.Clear();
     c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, subject.IsClosed());
     c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
+    if(subject.IsClosed()) {
     c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
       result = tgPolygon::FromClipper( clipper_result );
     }
     else {
-      c.Execute(ClipperLib::ctIntersection, clipper_tree_result, ClipperLib::pftEvenOdd, ClipperLib::pftEvenOdd);
+      c.Execute(ClipperLib::ClipType::Intersection, clipper_tree_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
       result = tgPolygon::FromClipper( clipper_tree_result );
     }
     result = tgPolygon::AddColinearNodes( result, all_nodes );

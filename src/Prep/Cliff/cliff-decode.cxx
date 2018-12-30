@@ -3,9 +3,9 @@
 //                   against and sorting
 //                   them into the relevant tiles.
 //
-// Written by James Hester starting 2018
+// Written by James Hester 2018
 //
-// Based on ogr-decode by Ralf Gerlich.
+// Largely copied from ogr-decode by Ralf Gerlich.
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 // along with this program; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA.
 //
+#include <chrono>
 #include <string>
 #include <map>
 
@@ -100,9 +101,9 @@ void Decoder::processLineString(OGRLineString* poGeometry)
     // Do not close this contour
     line.SetOpen(true);
     
-    // clip the contour. Do not use usual clipper, as we wish to preserve the
-    // whole contour, even if it goes outside the bounding box, as height
-    // calculations along the boundary might be affected by it.
+    // clip the contour.
+    // TODO: don't bother clipping, as the contour is informational
+    // only, and simply output to all relevant buckets instead.
     tgPolygon open_poly;
     open_poly.SetOpen();   //do not try to close this one up
     open_poly.AddContour(line);
@@ -299,6 +300,8 @@ int main( int argc, char **argv ) {
     char* progname=argv[0];
     string datasource,work_dir;
 
+    auto start_time = std::chrono::high_resolution_clock::now();
+
     sglog().setLogLevels( SG_ALL, SG_INFO );
 
     while (argc>1) {
@@ -379,14 +382,6 @@ int main( int argc, char **argv ) {
 
     tgChopper results( work_dir );
 
-    // initialize persistant polygon counter
-    //string counter_file = work_dir + "/poly_counter";
-    //poly_index_init( counter_file );
-
-    // new chop api
-    //std::string counter_file2 = work_dir + "/poly_counter2";
-    //tgPolygon::ChopIdxInit( counter_file );
-
     SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
 
     GDALAllRegister();
@@ -428,6 +423,12 @@ int main( int argc, char **argv ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
     results.Add_Extension("cliffs");
     results.Save( save_shapefiles );
+
+    auto finish_time = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish_time - start_time;
+    std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
+
+ 
     return 0;
 }
 
