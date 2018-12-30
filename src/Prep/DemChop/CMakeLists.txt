@@ -1,3 +1,4 @@
+include_directories(${PROJECT_SOURCE_DIR}/src/Lib/terragear)
 
 add_executable(demchop demchop.cxx)
 
@@ -49,6 +50,7 @@ endif(TIFF_FOUND)
 add_executable(fillvoids fillvoids.cxx)
 target_link_libraries(fillvoids 
     Array
+    terragear
 	${ZLIB_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
@@ -58,6 +60,7 @@ install(TARGETS fillvoids RUNTIME DESTINATION bin)
 add_executable(testassem testassem.cxx)
 target_link_libraries(testassem 
     Array
+    terragear
     ${ZLIB_LIBRARY}
 	${SIMGEAR_CORE_LIBRARIES}
 	${SIMGEAR_CORE_LIBRARY_DEPENDENCIES})
