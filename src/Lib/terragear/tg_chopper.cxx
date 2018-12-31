@@ -24,15 +24,7 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
     result = tgPolygon::Intersect( subject, base);
     // Debug: See if numbers of nodes have changed
     if ( result.Contours() > 0 ) {
-      /*if (result.ContourSize(0) != subject.ContourSize(0)) {
-        tgRectangle rr = subject.GetBoundingBox();
-        SG_LOG(SG_GENERAL,SG_INFO,"---- Bucket ID " << b.gen_index() << " ------- " );
-        SG_LOG(SG_GENERAL,SG_INFO,"A contour has changed size");
-        SG_LOG(SG_GENERAL,SG_INFO,"Bounding box " << rr.getMin() << " , " << rr.getMax() );
-        SG_LOG(SG_GENERAL,SG_INFO,"Old size " << subject.ContourSize(0) << " New size " << result.ContourSize(0));
-        SG_LOG(SG_GENERAL,SG_INFO,"Old: First node " << subject.GetNode(0,0) << " New: First node " << result.GetNode(0,0));
-        SG_LOG(SG_GENERAL,SG_INFO,"Clipping rectangle: " << base.GetContour(0));
-        }*/
+
         if ( subject.GetPreserve3D() ) {
             result.InheritElevations( subject );
             result.SetPreserve3D( true );
