@@ -9,25 +9,25 @@ bool tgShapefile::initialized = false;
 
 void* tgShapefile::OpenDatasource( const char* datasource_name )
 {
-    OGRDataSource*  datasource;
-    OGRSFDriver*    ogrdriver;
-    const char*     format_name = "ESRI Shapefile";
+    GDALDataset*  datasource;
+    GDALDriver*     ogrdriver;
+    GDALDriverManager* drivermanager;
+    const std::string   format_name = "ESRI Shapefile";
 
     if (!tgShapefile::initialized) {
-        OGRRegisterAll();
+        GDALAllRegister();
         tgShapefile::initialized = true;
     }
 
-    ogrdriver = (OGRSFDriver*) OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName( format_name );
-
-    if ( !ogrdriver ) {
-        SG_LOG( SG_GENERAL, SG_ALERT, "Unknown datasource format driver: " << format_name );
-        exit(1);
-    }
-
-    datasource = ogrdriver->Open( datasource_name, TRUE );
+    datasource = (GDALDataset *) GDALOpenEx(datasource_name,GDAL_OF_VECTOR|GDAL_OF_UPDATE, NULL ,NULL,NULL);
     if ( !datasource ) {
-        datasource = ogrdriver->CreateDataSource( datasource_name, NULL );
+          drivermanager = GetGDALDriverManager();
+          ogrdriver = drivermanager->GetDriverByName( format_name.c_str() );
+          if ( !ogrdriver ) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Unknown datasource format driver: " << format_name );
+            exit(1);
+          }
+          datasource = ogrdriver->Create(datasource_name,0,0,0,GDT_Unknown,NULL);
     }
 
     if ( !datasource ) {
@@ -39,7 +39,7 @@ void* tgShapefile::OpenDatasource( const char* datasource_name )
 }
 
 void* tgShapefile::OpenLayer( void* ds_id, const char* layer_name ) {
-    OGRDataSource* datasource = ( OGRDataSource * )ds_id;
+    GDALDataset* datasource = ( GDALDataset * )ds_id;
     OGRLayer* layer;
 
     OGRSpatialReference srs;
@@ -67,7 +67,7 @@ void* tgShapefile::OpenLayer( void* ds_id, const char* layer_name ) {
 }
 
 void* tgShapefile::OpenLineLayer( void* ds_id, const char* layer_name ) {
-    OGRDataSource* datasource = ( OGRDataSource * )ds_id;
+    GDALDataset* datasource = ( GDALDataset * )ds_id;
     OGRLayer* layer;
 
     OGRSpatialReference srs;
@@ -96,9 +96,8 @@ void* tgShapefile::OpenLineLayer( void* ds_id, const char* layer_name ) {
 
 void* tgShapefile::CloseDatasource( void* ds_id )
 {
-    OGRDataSource* datasource = ( OGRDataSource * )ds_id;
-    OGRDataSource::DestroyDataSource( datasource );
-
+    GDALDataset* datasource = ( GDALDataset * )ds_id;
+    GDALClose((GDALDatasetH) datasource );
     return (void *)-1;
 }
 
