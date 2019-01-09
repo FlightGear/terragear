@@ -28,7 +28,7 @@ Subdivision::~Subdivision()
     }
 }
 
-Edge *Subdivision::makeEdge(Vec2& org, Vec2& dest)
+Edge *Subdivision::makeEdge(const Vec2& org, const Vec2& dest)
 {
     Edge *e = new Edge();
     edges.push_back(e);
@@ -54,31 +54,26 @@ Edge *Subdivision::makeEdge()
 void Subdivision::initMesh(const Vec2& A,const Vec2& B,
 			   const Vec2& C,const Vec2& D)
 {
-    Vec2& a = A.clone();
-    Vec2& b = B.clone();
-    Vec2& c = C.clone();
-    Vec2& d = D.clone();
-
     Edge *ea = makeEdge();
-    ea->EndPoints(a, b);
+    ea->EndPoints(A, B);
 
     Edge *eb = makeEdge();
     splice(ea->Sym(), eb);
-    eb->EndPoints(b, c);
+    eb->EndPoints(B, C);
 
     Edge *ec = makeEdge();
     splice(eb->Sym(), ec);
-    ec->EndPoints(c, d);
+    ec->EndPoints(C, D);
 
     Edge *ed = makeEdge();
     splice(ec->Sym(), ed);
-    ed->EndPoints(d, a);
+    ed->EndPoints(D, A);
     splice(ed->Sym(), ea);
 
     Edge *diag = makeEdge();
     splice(ed->Sym(),diag);
     splice(eb->Sym(),diag->Sym());
-    diag->EndPoints(a,c);
+    diag->EndPoints(A,C);
 
     startingEdge = ea;
 
@@ -334,7 +329,7 @@ Edge *Subdivision::spoke(Vec2& x, Edge *e)
 	// x lies within the Lface of e
     }
 
-    Edge *base = makeEdge(e->Org(), x.clone());
+    Edge *base = makeEdge(e->Org(), x );
 
     splice(base, e);
 

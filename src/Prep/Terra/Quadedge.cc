@@ -63,6 +63,7 @@ Edge::~Edge()
 	e2->qnext = NULL;
 	e3->qnext = NULL;
 
+//FIXME: who deletes the edges allocated in ctor? (Torsten Dreyer 01/2019)
 	//delete e1;
 	//delete e2;
 	//delete e3;

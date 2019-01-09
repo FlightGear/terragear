@@ -16,7 +16,6 @@ public:
     Vec2(real x=0, real y=0) { elt[0]=x; elt[1]=y; }
     Vec2(const Vec2& v) { copy(v); }
     Vec2(const real *v) { elt[0]=v[0]; elt[1]=v[1]; }
-    Vec2& clone() const { return *(new Vec2(elt[0], elt[1])); }
 
     // Access methods
     real& operator()(int i)             { return elt[i]; }

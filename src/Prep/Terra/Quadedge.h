@@ -15,8 +15,8 @@ private:
 
     Edge(Edge *prev);
 
-protected:
-    Vec2 *data;
+//protected:
+    Vec2 data;
     Edge *next;
 
     Triangle *lface;
@@ -47,16 +47,16 @@ public:
     Edge *Rprev() const { return Sym()->Onext(); }
 
 
-    Vec2& Org() const { return *data; }
-    Vec2& Dest() const { return *Sym()->data; }
+    const Vec2& Org() const { return data; }
+    const Vec2& Dest() const { return Sym()->data; }
 
     Triangle *Lface() const { return lface; }
     void set_Lface(Triangle *t) { lface = t; }
 
-    void EndPoints(Vec2& org, Vec2& dest)
+    void EndPoints(const Vec2& org, const Vec2& dest)
     {
-	data = &org;
-	Sym()->data = &dest;
+	data = org;
+	Sym()->data = dest;
     }
 
     //
