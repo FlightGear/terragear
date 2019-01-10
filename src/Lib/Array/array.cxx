@@ -729,10 +729,10 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
         dx = xlocal - x1;
         dy = ylocal - y1;
         if (x1==x2) {
-          elev = z1+dy*(z2-z1);
+          elev = z1+dy*(z2-z1)/(y2-y1);
         }
         else if (y1==y2) {
-          elev = z1+dx*(z2-z1);
+          elev = z1+dx*(z2-z1)/(x2-x1);
         }
         else {     //diagonal: project onto 45 degree line
           int comp1 = x2-x1;
