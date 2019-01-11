@@ -64,11 +64,8 @@ TGDted::TGDted( int _res )
 }
 
 
-TGDted::TGDted( int _res, const SGPath &file )
+TGDted::TGDted( int _res, const SGPath &file ):TGDted(_res)
 {
-    dted_resolution = _res;
-    data = new short int[MAX_DTED_SIZE][MAX_DTED_SIZE];
-    output_data = new short int[MAX_DTED_SIZE][MAX_DTED_SIZE];
 
     TGDted::open( file );
 }
@@ -109,7 +106,7 @@ TGDted::open ( const SGPath &f ) {
                 cout << "Proceeding with " << file_name.str() << endl;
             } else {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Failed to issue system call " << command );
-                exit(1);
+                return EXIT_FAILURE;
             }
         }
 
@@ -168,6 +165,7 @@ TGDted::close () {
 bool
 TGDted::load( ) {
     int size;
+    bool little_endian = sgIsLittleEndian();
     if ( dted_resolution == 1 ) {
         cols = rows = size = 3601;
         col_step = row_step = 1;
@@ -179,7 +177,7 @@ TGDted::load( ) {
         cout << " are supported!" << endl;
         return false;
     }
-    if (sgIsLittleEndian()) {
+    if (little_endian) {
 	    cout << "Little Endian: swapping input values" << endl;
     }
 
@@ -200,7 +198,7 @@ TGDted::load( ) {
 	    gzread(fd,&dummy,3);   //block count
 	    gzread(fd,&longct,2);   //Longitude count
 	    gzread(fd,&latct,2);   //Latitude count
-            if ( sgIsLittleEndian() ) {
+            if ( little_endian ) {
 	        sgEndianSwap(&longct);
 	    }
 	    // cout << "Longitude count " << longct << endl;
@@ -209,7 +207,7 @@ TGDted::load( ) {
                 if ( gzread ( fd, var, 2 ) != sizeof(short) ) {
                 return false;
                 }
-                if ( sgIsLittleEndian() ) { 
+                if ( little_endian ) { 
 		    sgEndianSwap( (unsigned short int*)var); 
 	        }
             }
