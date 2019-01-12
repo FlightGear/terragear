@@ -61,7 +61,7 @@ double tgContour::GetArea( void ) const
     SGVec2d a, b;
     unsigned int i, j;
 
-    if  (node_list.size() ) {
+    if ( node_list.size() ) {
         j = node_list.size() - 1;
         for (i=0; i<node_list.size(); i++) {
             a = SGGeod_ToSGVec2d( node_list[i] );
@@ -77,80 +77,88 @@ double tgContour::GetArea( void ) const
 // Check that the two supplied points are on the same side of the contour
 bool tgContour::AreSameSide( const SGGeod& firstpt, const SGGeod& secondpt) const
 {
-  //Find equation of line segment joining the points
-  double x1 = firstpt.getLatitudeDeg();
-  double x2 = secondpt.getLatitudeDeg();
-  double y1 = firstpt.getLongitudeDeg();
-  double y2 = secondpt.getLongitudeDeg();
-  //Store differences for later
-  double xdif = x2-x1;
-  double ydif = y2-y1;
-  /*We describe a line parametrically:
+    //Find equation of line segment joining the points
+    double x1 = firstpt.getLatitudeDeg();
+    double x2 = secondpt.getLatitudeDeg();
+    double y1 = firstpt.getLongitudeDeg();
+    double y2 = secondpt.getLongitudeDeg();
+    
+    //Store differences for later
+    double xdif = x2-x1;
+    double ydif = y2-y1;
+    
+    /*We describe a line parametrically:
 
-       x1        (x2-x1)
- L =        + t 
-       y1        (y2-y1)
+      x1        (x2-x1)
+      L =        + t 
+      y1        (y2-y1)
 
-with u the parametric coefficient for the second line.
-Then the line segments intersect if 0 <= t,u <= 1.
+      with u the parametric coefficient for the second line.
+      Then the line segments intersect if 0 <= t,u <= 1.
 
-To determine t and u we use the approach of Goldman ("Graphics
-Gems" as described in Stack Overflow question 563198).
+      To determine t and u we use the approach of Goldman ("Graphics
+      Gems" as described in Stack Overflow question 563198).
 
-if r x s = r_x * s_y - r_y * s_x, then
+      if r x s = r_x * s_y - r_y * s_x, then
 
-t = (q - p) x s / (r x s)
-and 
-u = (q - p) x r / (r x s)
+      t = (q - p) x s / (r x s)
+      and 
+      u = (q - p) x r / (r x s)
 
-for line 1 = p + t r, line 2 = q + u s
-  */
-  //Now cycle over all nodes and count how many times we intersect
-  int intersect_ct = 0;
-  if (node_list.size()) {
-    int j = node_list.size() - 1;
-    for (int i=0;i<node_list.size()-1;i++) {
-      double nx1 = node_list[i].getLatitudeDeg();
-      double ny1 = node_list[i].getLongitudeDeg();
-      double nx2 = node_list[i+1].getLatitudeDeg();
-      double ny2 = node_list[i+1].getLongitudeDeg();
-      double nydif = ny2-ny1;
-      double nxdif = nx2-nx1;
-      double denom = xdif*nydif - ydif*nxdif;
-      if (denom != 0) {     //Not parallel
-        double crossx = nx1-x1; double crossy = ny1-y1;
-        double t = (crossx*nydif - crossy*nxdif)/denom;
-        double u = -1*(xdif*crossy - ydif*crossx)/denom;
-        // We consider that an intersection at the edge of the line has
-        // crossed
-        // over, that is, they lie on opposite sides. This way we capture
-        // places where the chopper has clipped a cliff on the tile edge
-        if (t > -0.0001 && t < 1.0001 && u > -0.0001 && u < 1.0001) intersect_ct++;
-      }
+      for line 1 = p + t r, line 2 = q + u s
+    */
+    
+    //Now cycle over all nodes and count how many times we intersect
+    int intersect_ct = 0;
+    if (node_list.size()) {
+        int j = node_list.size() - 1;
+        for (int i=0;i<node_list.size()-1;i++) {
+            double nx1 = node_list[i].getLatitudeDeg();
+            double ny1 = node_list[i].getLongitudeDeg();
+            double nx2 = node_list[i+1].getLatitudeDeg();
+            double ny2 = node_list[i+1].getLongitudeDeg();
+            double nydif = ny2-ny1;
+            double nxdif = nx2-nx1;
+            double denom = xdif*nydif - ydif*nxdif;
+            
+            if (denom != 0) {     //Not parallel
+                double crossx = nx1-x1; double crossy = ny1-y1;
+                double t = (crossx*nydif - crossy*nxdif)/denom;
+                double u = -1*(xdif*crossy - ydif*crossx)/denom;
+                // We consider that an intersection at the edge of the line has
+                // crossed
+                // over, that is, they lie on opposite sides. This way we capture
+                // places where the chopper has clipped a cliff on the tile edge
+                if (t > -0.0001 && t < 1.0001 && u > -0.0001 && u < 1.0001) intersect_ct++;
+            }
+        }
     }
-  }
-  bool isinter = (intersect_ct%2 == 0);
-  return isinter;
+    
+    bool isinter = (intersect_ct%2 == 0);
+    return isinter;
 }
 
-double tgContour::MinDist(const SGGeod& probe) const
-{
-  SGVec3d probexyz;
-  SGGeodesy::SGGeodToCart(probe,probexyz);
-  double mindist = 100000.0;
-  double dist;
-  if (node_list.size()) {
-    int j = node_list.size() - 1;
-    for (int i=0;i<j;i++) {
-      SGVec3d start,end;
-      SGGeodesy::SGGeodToCart(node_list[i],start);
-      SGGeodesy::SGGeodToCart(node_list[i+1],end);
-      SGLineSegment<double> piece = SGLineSegment<double>(start,end);
-      dist = distSqr(piece,probexyz);
-      if (dist < mindist) mindist = dist;
+double tgContour::MinDist(const SGGeod& probe) const {
+    SGVec3d probexyz;
+    SGGeodesy::SGGeodToCart( probe,probexyz );
+    double mindist = 100000.0;
+    double dist;
+    
+    if ( node_list.size() ) {
+        
+        int j = node_list.size() - 1;
+        
+        for (int i=0;i<j;i++) {
+            SGVec3d start,end;
+            SGGeodesy::SGGeodToCart( node_list[i],start );
+            SGGeodesy::SGGeodToCart( node_list[i+1],end );
+            SGLineSegment<double> piece = SGLineSegment<double>(start,end);
+            dist = distSqr( piece,probexyz );
+            if (dist < mindist) mindist = dist;
+        }
     }
-  }
-  return sqrt(mindist);
+    
+    return sqrt(mindist);
 }
 
 bool tgContour::IsInside( const tgContour& inside, const tgContour& outside )

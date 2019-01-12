@@ -137,7 +137,7 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
 }
 
 //Intersect will keep open paths open
-tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip)
+tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip )
 {
     tgPolygon result;
     UniqueSGGeodSet all_nodes;
@@ -162,14 +162,14 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip)
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, subject.IsClosed());
+    c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, subject.IsClosed() );
     c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
     if(subject.IsClosed()) {
-    c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
+      c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd );
       result = tgPolygon::FromClipper( clipper_result );
     }
     else {
-      c.Execute(ClipperLib::ClipType::Intersection, clipper_tree_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
+      c.Execute(ClipperLib::ClipType::Intersection, clipper_tree_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd );
       result = tgPolygon::FromClipper( clipper_tree_result );
     }
     result = tgPolygon::AddColinearNodes( result, all_nodes );
