@@ -11,7 +11,7 @@
 #include "tg_misc.hxx"
 
 tgPolygon tgChopper::Clip( const tgPolygon& subject,
-                      const std::string& type, SGBucket& b)
+                      const std::string& type, SGBucket& b )
 {
     tgPolygon base, result;
 
@@ -21,8 +21,7 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
     base.AddNode( 0, b.get_corner( SG_BUCKET_NE ) );
     base.AddNode( 0, b.get_corner( SG_BUCKET_NW ) );
 
-    result = tgPolygon::Intersect( subject, base);
-    // Debug: See if numbers of nodes have changed
+    result = tgPolygon::Intersect( subject, base );
     if ( result.Contours() > 0 ) {
 
         if ( subject.GetPreserve3D() ) {
@@ -68,7 +67,7 @@ void tgChopper::ClipRow( const tgPolygon& subject, const double& center_lat, con
 }
 
 
-void tgChopper::Add( const tgPolygon& subject, const std::string& type)
+void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 {
     // bail out immediately if polygon is empty
     if ( subject.Contours() == 0 )
@@ -95,7 +94,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type)
         // We just have a single row - no need to intersect first
         SG_LOG( SG_GENERAL, SG_DEBUG, "   UN_CLIPPED row -  center lat is " << b_min.get_center_lat() );
 
-        ClipRow( subject, b_min.get_center_lat(), type);
+        ClipRow( subject, b_min.get_center_lat(), type );
     }
     else
     {
@@ -122,7 +121,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type)
             clip_row.AddNode( 0, SGGeod::fromDeg( 180.0, clip_top)    );
             clip_row.AddNode( 0, SGGeod::fromDeg(-180.0, clip_top)    );
 
-            clipped = tgPolygon::Intersect( subject, clip_row);
+            clipped = tgPolygon::Intersect( subject, clip_row );
             if ( clipped.TotalNodes() > 0 ) {
 
                 if ( subject.GetPreserve3D() ) {

@@ -391,7 +391,7 @@ int main( int argc, char **argv ) {
     if( poDS == NULL )
     {
         SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << datasource );
-        exit( 1 );
+        return EXIT_FAILURE;
     }
 
     SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << datasource );
@@ -404,7 +404,7 @@ int main( int argc, char **argv ) {
             if (poLayer == NULL )
             {
                 SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
-                exit( 1 );
+                return EXIT_FAILURE;
             }
             processLayer(poLayer, results );
         }
