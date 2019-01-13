@@ -53,7 +53,7 @@ private:
     
     // pointers to the actual grid data allocated here
     short int (*data)[MAX_HGT_SIZE];
-    short int (*output_data)[MAX_HGT_SIZE];
+    short int *read_buffer;
 
 public:
 
