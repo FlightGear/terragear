@@ -243,6 +243,7 @@ class tgPolygon
 public:
     tgPolygon() {
         preserve3d = false;
+        closed = true;
     }
     ~tgPolygon() {
         contours.clear();
@@ -351,6 +352,18 @@ public:
         flag = f;
     }
 
+  void SetOpen( void ) {   //Do not try to close the contours
+    closed = false;
+  }
+
+  void SetClosed (void) {
+    closed = true;
+  }
+
+  bool IsClosed( void ) const {
+    return closed;
+  }   
+
     bool GetPreserve3D( void ) const {
         return preserve3d;
     }
@@ -436,6 +449,7 @@ public:
     // Conversions
     static ClipperLib::Paths ToClipper( const tgPolygon& subject );
     static tgPolygon FromClipper( const ClipperLib::Paths& subject );
+    static tgPolygon FromClipper( const ClipperLib::PolyTree& subject );
     static void ToClipperFile( const tgPolygon& subject, const std::string& path, const std::string& filename );
     
     // T-Junctions and segment search
@@ -460,6 +474,7 @@ private:
     bool            preserve3d;
     unsigned int    id;         // unique polygon id for debug
     tgTexParams     tp;
+  bool            closed;       // if we treat it as a closed shape
 };
 
 #endif // _POLYGON_HXX

@@ -11,8 +11,7 @@
 #include "tg_misc.hxx"
 
 tgPolygon tgChopper::Clip( const tgPolygon& subject,
-                      const std::string& type,
-                      SGBucket& b )
+                      const std::string& type, SGBucket& b )
 {
     tgPolygon base, result;
 
@@ -22,8 +21,9 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
     base.AddNode( 0, b.get_corner( SG_BUCKET_NE ) );
     base.AddNode( 0, b.get_corner( SG_BUCKET_NW ) );
 
-    result = tgPolygon::Intersect( subject, base );    
+    result = tgPolygon::Intersect( subject, base );
     if ( result.Contours() > 0 ) {
+
         if ( subject.GetPreserve3D() ) {
             result.InheritElevations( subject );
             result.SetPreserve3D( true );
@@ -34,6 +34,9 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
             result.SetTexMethod( TG_TEX_BY_GEODE, b.get_center_lat() );
         }
         result.SetFlag(type);
+        if (!subject.IsClosed()) {
+            result.SetOpen();
+          }
 
         lock.lock();
         bp_map[b.gen_index()].push_back( result );
@@ -62,6 +65,7 @@ void tgChopper::ClipRow( const tgPolygon& subject, const double& center_lat, con
         Clip( subject, type, b_cur );
     }
 }
+
 
 void tgChopper::Add( const tgPolygon& subject, const std::string& type )
 {
@@ -205,7 +209,7 @@ void tgChopper::Save( bool DebugShapefiles )
         long int poly_index = GenerateIndex( path );
 
         sprintf( poly_ext, "%ld", poly_index );
-        polyfile = polyfile + "." + poly_ext;
+        polyfile = polyfile + "." + poly_ext + "." + extra_extension;
 
         gzFile fp;
         if ( (fp = gzopen( polyfile.c_str(), "wb9" )) == NULL ) {

@@ -1,4 +1,5 @@
 include_directories(${GDAL_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/src/Lib/terragear)
 
 add_executable(tg-construct
     tgconstruct.hxx

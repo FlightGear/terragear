@@ -136,6 +136,7 @@ tgPolygon tgPolygon::Diff( const tgPolygon& subject, tgPolygon& clip )
     return result;
 }
 
+//Intersect will keep open paths open
 tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip )
 {
     tgPolygon result;
@@ -156,22 +157,31 @@ tgPolygon tgPolygon::Intersect( const tgPolygon& subject, const tgPolygon& clip 
 
     ClipperLib::Paths clipper_subject = tgPolygon::ToClipper( subject );
     ClipperLib::Paths clipper_clip    = tgPolygon::ToClipper( clip );
-    ClipperLib::Paths clipper_result;
+    ClipperLib::Paths clipper_result;   // for closed polygons
+    ClipperLib::PolyTree clipper_tree_result; //for open polygons
 
     ClipperLib::Clipper c;
     c.Clear();
-    c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, true);
+    c.AddPaths(clipper_subject, ClipperLib::PolyType::Subject, subject.IsClosed() );
     c.AddPaths(clipper_clip, ClipperLib::PolyType::Clip, true);
-    c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd);
-
-    result = tgPolygon::FromClipper( clipper_result );
+    if(subject.IsClosed()) {
+      c.Execute(ClipperLib::ClipType::Intersection, clipper_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd );
+      result = tgPolygon::FromClipper( clipper_result );
+    }
+    else {
+      c.Execute(ClipperLib::ClipType::Intersection, clipper_tree_result, ClipperLib::PolyFillType::EvenOdd, ClipperLib::PolyFillType::EvenOdd );
+      result = tgPolygon::FromClipper( clipper_tree_result );
+    }
     result = tgPolygon::AddColinearNodes( result, all_nodes );
-
     result.SetMaterial( subject.GetMaterial() );
     result.SetTexParams( subject.GetTexParams() );
     result.SetId( subject.GetId() );
     result.SetPreserve3D( subject.GetPreserve3D() );
-    
+    if(subject.IsClosed()) {
+      result.SetClosed();
+    } else {
+      result.SetOpen();
+    }
     return result;
 }
 
@@ -198,6 +208,17 @@ tgPolygon tgPolygon::FromClipper( const ClipperLib::Paths& subject )
 
     return result;
 }
+
+// A polytree is returned when an open polygon has been clipped
+tgPolygon tgPolygon::FromClipper( const ClipperLib::PolyTree& subject )
+{
+  ClipperLib::Paths path_result;
+    tgPolygon result;
+    ClipperLib::PolyTreeToPaths(subject,path_result);
+    result = FromClipper(path_result);
+    return result;
+}
+
 
 ClipperLib::Path tgTriangle::ToClipper( const tgTriangle& subject )
 {

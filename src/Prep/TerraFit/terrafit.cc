@@ -239,7 +239,8 @@ void walk_path(const SGPath& path) {
         return;
     }
 
-    if ((path.lower_extension() == "arr") || (path.complete_lower_extension() == "arr.gz")) {
+    if ((path.lower_extension() == "arr") || (path.complete_lower_extension() == "arr.rectified.gz") ||
+		    (path.complete_lower_extension() == "arr.gz")) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "will queue " << path);
         queue_fit_file(path);
     } else if (path.isDir()) {

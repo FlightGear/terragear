@@ -1,5 +1,6 @@
 Original version by Alexei Novikov <anovikov@heron.itep.ru> Sep. 3, 1999
 Updates by Curtis Olson <http://www.flightgear.org/~curt>
+Cliff description by James Hester 2018
 
 
 Overview
@@ -120,3 +121,56 @@ tg-construct-client in rude mode.  After a while scenery is ready.
 
 	That's all folks,
 		Alexei.
+
+Addendum: Adding cliffs
+=======================
+
+Cliffs represent discontinuities in the height array described above. This
+is problematic because:
+(1) Most height grids will give an average height in the area around the
+grid
+(2) Interpolation between grid points to get the local height will convert
+a cliff into a much more gentle slope.
+
+To add cliffs into the scenery using OpenStreetMap data, the following
+approach can be used:
+
+(1) Extract cliffs from the OSM datafile using your favourite
+tool, for example for all cliffs near Sydney, Australia:
+
+osmosis --read-pbf australia-latest.osm.pbf --bounding-box top=-33 left=150
+bottom=-35 right=152 completeWays=yes --lp --tf accept-ways 'natural=cliff'
+--tf reject-relations --used-node --write-xml file='my_cliffs.osm'
+
+(2) Convert the XML above to Shapefiles:
+
+ogr2ogr -where "OGR_GEOMETRY='LineString'" -f 'ESRI shapefile' -lco SHPT=ARC
+cs_cliffs my_cliffs.osm
+
+(3) Run cliff-decode to place cliff information into the height grid working
+directory created previously (<data>/cs_cliffs in the example below):
+
+cliff-decode <work_base>/SRTM-3 <data>/cs_cliffs
+
+(4) Optionally run rectify_height to fix grid heights. This is recommended
+as otherwise cliffs will have uneven edges and bases as the grid points
+vary in distance from the cliff:
+
+rectify_height --work-dir=<work_base> --height-dir=SRTM-3 --min-lon=151.0
+--max-lon=152.0 --min-lat=-34.0 --max-lat=-33.0 --min-dist=100
+
+The min-dist parameter sets the distance from the cliff beyond which points
+are trustworthy. 100m is the default.
+
+(5) Place the cliffs into the scenery. This is identical to the process for
+rivers and roads and uses the same cliff information from step (2):
+
+ogr-decode --line-width 5 --area-type Rock <work_base>/Cliffs <data>/cs_cliffs"
+
+Note that an area-type of Cliffs will allow custom cliff texturing, if this
+effect is available.  This command places a 5m wide strip of rock at the
+position of the cliffs. One side of this strip will have a calculated elevation
+at the top of the cliff, and the other will be at the bottom.
+
+(6) Run tg-construct as usual, including 'Rock' or 'Cliffs' polygon types to
+make sure that cliffs appear.

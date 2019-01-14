@@ -1,5 +1,6 @@
 include_directories(${GDAL_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src/Lib)
+include_directories(${PROJECT_SOURCE_DIR}/src/Lib/terragear)
 
 add_executable(genapts850
     airport.hxx airport.cxx
