@@ -111,8 +111,7 @@ bool tgContour::AreSameSide( const SGGeod& firstpt, const SGGeod& secondpt) cons
     //Now cycle over all nodes and count how many times we intersect
     int intersect_ct = 0;
     if (node_list.size()) {
-        int j = node_list.size() - 1;
-        for (int i=0;i<node_list.size()-1;i++) {
+        for (int i = 0; i < static_cast<int>(node_list.size()) - 1; ++i) {
             double nx1 = node_list[i].getLatitudeDeg();
             double ny1 = node_list[i].getLongitudeDeg();
             double nx2 = node_list[i+1].getLatitudeDeg();

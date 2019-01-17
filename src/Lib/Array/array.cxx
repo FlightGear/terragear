@@ -123,7 +123,6 @@ void TGArray::load_cliffs(const string & height_base)
 {
     //Get the directory so we can list the children
     tgPolygon poly;   //actually a contour but whatever...
-    int total_contours_read = 0;
     SGPath b(height_base);
     simgear::Dir d(b.dir());
     simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
@@ -509,10 +508,8 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
     //ygrid: grid units vertically
     //Loop over corner points, if no points available, give up
     int corners[4][2];     //possible corners
-    int final_pts[3][2];     // rectangle corners
     int pt_cnt = 0;
     double centre_long, centre_lat;
-    double cliff_error = col_step;  //Assume row step, col step the same
     int original_height = get_array_elev(xgrid,ygrid);
     centre_long = (originx + col_step*xgrid)/3600;
     centre_lat = (originy + row_step*ygrid)/3600;
@@ -587,7 +584,8 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     // we expect incoming (lon,lat) to be in arcsec for now
 
     double xlocal, ylocal, dx, dy, zA, zB, elev;
-    int x1, x2, x3, y1, y2, y3;
+    int x1 = 0, x2 = 0, x3 = 0;
+    int y1 = 0, y2 = 0, y3 = 0;
     float z1, z2, z3;
     int xindex, yindex;
 
@@ -858,10 +856,10 @@ bool TGArray::check_points( const double lon1, const double lat1, const double l
     SGGeod pt2 = SGGeod::fromDeg( lon2,lat2 );
     bool same_side = true;
     
-    for ( int i=0;i<cliffs_list.size();i++ ) {
+    for ( int i = 0; i < static_cast<int>(cliffs_list.size()); ++i ) {
         bool check_result = cliffs_list[i].AreSameSide( pt1,pt2 );
         
-        if(!check_result) {
+        if (!check_result) {
             
             SG_LOG(SG_GENERAL, SG_DEBUG, "Cliff " << i <<":" <<pt1 << " and " << pt2 << " on opposite sides");
             
@@ -881,7 +879,7 @@ bool TGArray::is_near_cliff( const double lon1, const double lat1, const double 
     
     SGGeod pt1 = SGGeod::fromDeg(lon1,lat1);
     
-    for ( int i=0;i<cliffs_list.size();i++ ) {
+    for ( int i = 0; i < static_cast<int>(cliffs_list.size()); ++i ) {
         double dist = cliffs_list[i].MinDist(pt1);
         if (dist < bad_zone) return true;
     }

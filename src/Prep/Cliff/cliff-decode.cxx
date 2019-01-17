@@ -80,9 +80,7 @@ void Decoder::processLineString(OGRLineString* poGeometry)
     tgContour line;
 
     SGGeod p0, p1;
-    double heading, dist, az2;
-    int i, j, numPoints, numSegs;
-    double max_dist;
+    int i, numPoints;
 
     numPoints = poGeometry->getNumPoints();
     if (numPoints < 2) {
@@ -90,7 +88,7 @@ void Decoder::processLineString(OGRLineString* poGeometry)
         return;
     }
 
-    heading = SGGeodesy::courseDeg( p1, p0 );
+    SGGeodesy::courseDeg( p1, p0 );
 
     // now add the middle points : if they are too far apart, add intermediate nodes
     for ( i=0;i<numPoints;i++) {
