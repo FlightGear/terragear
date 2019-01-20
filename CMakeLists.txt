@@ -18,9 +18,9 @@ include (CheckCXXSourceCompiles)
 include (CheckIncludeFile)
 include (CPack)
 
-# let's use & require C++11 - note these are only functional with CMake 3.1
+# let's use & require C++14 - note these are only functional with CMake 3.1
 # we do manual fallbacks for CMake 3.0 in the compilers section
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 project(TerraGear)
@@ -153,9 +153,11 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(WARNING_FLAGS -Wall)
 
     if (CMAKE_VERSION VERSION_LESS 3.1)
-       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
     endif()
-endif(CMAKE_COMPILER_IS_GNUCXX)
+elseif (MSVC AND CMAKE_VERSION VERSION_LESS 3.1)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std=c++14")
+endif()
 
 if (WIN32)
     if (MSVC)
