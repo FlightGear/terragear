@@ -39,18 +39,18 @@ using std::string;
 
 
 TGArray::TGArray( void ):
-  array_in(NULL),
-  fitted_in(NULL),
-  in_data(NULL)
+    array_in(NULL),
+    fitted_in(NULL),
+    in_data(NULL)
 {
 
 }
 
 
 TGArray::TGArray( const string &file ):
-  array_in(NULL),
-  fitted_in(NULL),
-      in_data(NULL)
+    array_in(NULL),
+    fitted_in(NULL),
+    in_data(NULL)
 {
     TGArray::open(file);
 }
@@ -198,7 +198,6 @@ TGArray::parse( SGBucket& b ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
         SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
-
         in_data = new short[cols * rows];
         memset(in_data, 0, sizeof(short) * cols * rows);
         SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
@@ -250,35 +249,36 @@ void TGArray::parse_bin()
 // Write out an array. If rectified is true, the heights have been adjusted
 // for discontinuities.
 void TGArray::write_bin(const string root_dir, bool rectified, SGBucket& b) {
-  // generate output file name
-  string base = b.gen_base_path();
-  string path = root_dir + "/" + base;
-  string extension = ".arr.new.gz";
-  if (rectified) extension = ".arr.rectified.gz";
-  SGPath sgp( path );
-  sgp.append( "dummy" );
-  sgp.create_dir( 0755 );
-  
-  string array_file = path + "/" + b.gen_index_str() + extension;
-  SG_LOG(SG_GENERAL, SG_DEBUG, "array_file = " << array_file );
-  
-  // write the file
-  gzFile fp;
-  if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
-    SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
-    return;
-  }
+    // generate output file name
+    string base = b.gen_base_path();
+    string path = root_dir + "/" + base;
+    string extension = ".arr.new.gz";
+    if (rectified)
+        extension = ".arr.rectified.gz";
+    SGPath sgp( path );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
-  int32_t header = 0x54474152; //'TGAR'
-  sgWriteLong(fp,header);
-  sgWriteInt(fp,originx);
-  sgWriteInt(fp,originy);
-  sgWriteInt(fp,cols);
-  sgWriteInt(fp,col_step);
-  sgWriteInt(fp,rows);
-  sgWriteInt(fp,row_step);
-  sgWriteShort(fp, rows*cols, in_data);
-  gzclose(fp);
+    string array_file = path + "/" + b.gen_index_str() + extension;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "array_file = " << array_file );
+
+    // write the file
+    gzFile fp;
+    if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
+        return;
+    }
+
+    int32_t header = 0x54474152; //'TGAR'
+    sgWriteLong(fp,header);
+    sgWriteInt(fp,originx);
+    sgWriteInt(fp,originy);
+    sgWriteInt(fp,cols);
+    sgWriteInt(fp,col_step);
+    sgWriteInt(fp,rows);
+    sgWriteInt(fp,row_step);
+    sgWriteShort(fp, rows*cols, in_data);
+    gzclose(fp);
 }
 
 // write an Array file
@@ -296,18 +296,18 @@ bool TGArray::write( const string root_dir, SGBucket& b ) {
     // write the file
     gzFile fp;
     if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
-	SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
-	return false;
+        SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
+        return false;
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "origin = " << originx << ", " << originy );
     gzprintf( fp, "%d %d\n", (int)originx, (int)originy );
     gzprintf( fp, "%d %d %d %d\n", cols, (int)col_step, rows, (int)row_step );
     for ( int i = 0; i < cols; ++i ) {
-	for ( int j = 0; j < rows; ++j ) {
-	    gzprintf( fp, "%d ", get_array_elev(i, j) );
-	}
-	gzprintf( fp, "\n" );
+        for ( int j = 0; j < rows; ++j ) {
+            gzprintf( fp, "%d ", get_array_elev(i, j) );
+        }
+        gzprintf( fp, "\n" );
     }
     gzclose(fp);
 
@@ -610,19 +610,19 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     yindex = (int)(ylocal);
 
     if ( xindex + 1 == cols ) {
-	xindex--;
+        xindex--;
     }
 
     if ( yindex + 1 == rows ) {
-	yindex--;
+        yindex--;
     }
 
     if ( (xindex < 0) || (xindex + 1 >= cols) ||
 	 (yindex < 0) || (yindex + 1 >= rows) ) {
         
-	SG_LOG(SG_GENERAL, SG_DEBUG, "WARNING: Attempt to interpolate value outside of array!!!" );
-        
-	return -9999;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "WARNING: Attempt to interpolate value outside of array!!!" );
+            
+        return -9999;
     }
 
     // Now check if we are on the same side of any cliffs
@@ -924,4 +924,3 @@ bool TGArray::is_open() const
         return false;
     }
 }
-

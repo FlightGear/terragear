@@ -812,7 +812,7 @@ extern SGGeod InterpolateElevation( const SGGeod& dst_node, const SGGeod& start,
 
 static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, bool preserve3d, std::vector<TGNode*>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
 {
-    TGNode* new_pt;
+    TGNode* new_pt = nullptr;
     SGGeod new_geode;
     
     SG_LOG(SG_GENERAL, SG_BULK, "   " << p0 << " <==> " << p1 );
