@@ -157,7 +157,7 @@ else(SIMGEAR_SHARED)
         ${ZLIB_LIBRARY})
 
     if(WIN32)
-        list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES ws2_32.lib Shlwapi.lib )
+        list(APPEND SIMGEAR_CORE_LIBRARY_DEPENDENCIES ws2_32.lib Shlwapi.lib Winmm.lib)
     endif(WIN32)
 
     if(NOT MSVC)
