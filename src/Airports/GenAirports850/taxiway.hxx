@@ -1,6 +1,8 @@
 #ifndef _TAXIWAY_H_
 #define _TAXIWAY_H_
 
+#include <memory>
+
 #include <terragear/tg_light.hxx>
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
@@ -39,6 +41,6 @@ private:
     void GenLights(tglightcontour_list& rwy_lights);
 };
 
-typedef std::vector <Taxiway *> TaxiwayList;
+typedef std::vector<std::shared_ptr<Taxiway>> TaxiwayList;
 
 #endif

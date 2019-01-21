@@ -1,6 +1,8 @@
 #ifndef _RUNWAY_H_
 #define _RUNWAY_H_
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_light.hxx>
@@ -176,7 +178,7 @@ private:
     tglightcontour_list gen_malsx( const std::string& kind, bool recip );
 };
 
-typedef std::vector <Runway *> RunwayList;
+typedef std::vector <std::shared_ptr<Runway>> RunwayList;
 
 
 class WaterRunway
@@ -203,6 +205,6 @@ private:
     double  lat[2];
     double  lon[2];
 };
-typedef std::vector <WaterRunway *> WaterRunwayList;
+typedef std::vector <std::shared_ptr<WaterRunway>> WaterRunwayList;
 
 #endif

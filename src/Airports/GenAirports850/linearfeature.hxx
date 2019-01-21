@@ -1,6 +1,8 @@
 #ifndef _LINEARFEATURE_H_
 #define _LINEARFEATURE_H_
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_light.hxx>
@@ -46,7 +48,7 @@ public:
     unsigned int start_idx;
     unsigned int end_idx;
 };
-typedef std::vector <Marking*> MarkingList;
+typedef std::vector<Marking*> MarkingList;
 
 struct Lighting
 {
@@ -65,7 +67,7 @@ public:
         return 0;
     }
 };
-typedef std::vector <Lighting*> LightingList;
+typedef std::vector<Lighting*> LightingList;
 
 class LinearFeature
 {
@@ -93,7 +95,7 @@ public:
 
     inline std::string GetDescription() { return description; }
 
-    void AddNode( BezNode* b )
+    void AddNode( std::shared_ptr<BezNode> b )
     {
         contour.push_back( b );
     }
@@ -111,7 +113,7 @@ private:
     LightingList    lights;
     Lighting*       cur_light;
 
-    void ConvertContour( BezContour* src, bool closed );
+    void ConvertContour( const BezContour& src, bool closed );
 
     // text description
     std::string description;
@@ -126,6 +128,6 @@ private:
     tglightcontour_list lighting_polys;
 };
 
-typedef std::vector <LinearFeature *> FeatureList;
+typedef std::vector<std::shared_ptr<LinearFeature>> FeatureList;
 
 #endif

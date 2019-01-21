@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 #include <simgear/threads/SGThread.hxx>
 
@@ -94,19 +95,19 @@ public:
         work_dir        = root;
         elevation       = elev_src;
 
-        cur_airport     = NULL;
-        cur_runway      = NULL;
-        cur_waterrunway = NULL;
-        cur_helipad     = NULL;
-        cur_taxiway     = NULL;
-        cur_pavement    = NULL;
-        cur_boundary    = NULL;
-        cur_feat        = NULL;
-        cur_object      = NULL;
-        cur_windsock    = NULL;
-        cur_beacon      = NULL;
-        cur_sign        = NULL;
-        prev_node       = NULL;
+        cur_airport     = nullptr;
+        cur_runway      = nullptr;
+        cur_waterrunway = nullptr;
+        cur_helipad     = nullptr;
+        cur_taxiway     = nullptr;
+        cur_pavement    = nullptr;
+        cur_boundary    = nullptr;
+        cur_feat        = nullptr;
+        cur_object      = nullptr;
+        cur_windsock    = nullptr;
+        cur_beacon      = nullptr;
+        cur_sign        = nullptr;
+        prev_node       = nullptr;
         cur_state       = STATE_NONE;
     }
 
@@ -124,14 +125,14 @@ private:
 
     int             SetState( int state );
 
-    BezNode*        ParseNode( int type, char* line, BezNode* prevNode );
-    LinearFeature*  ParseFeature( char* line );
-    ClosedPoly*     ParsePavement( char* line );
-    ClosedPoly*     ParseBoundary( char* line );
+    std::shared_ptr<BezNode>        ParseNode( int type, char* line, std::shared_ptr<BezNode> prevNode );
+    std::shared_ptr<LinearFeature>  ParseFeature( char* line );
+    std::shared_ptr<ClosedPoly>     ParsePavement( char* line );
+    std::shared_ptr<ClosedPoly>     ParseBoundary( char* line );
 
     int             ParseLine( char* line );
 
-    BezNode*        prev_node;
+    std::shared_ptr<BezNode>        prev_node;
     int             cur_state;
     std::string     filename;
     string_list     elevation;
@@ -139,18 +140,18 @@ private:
 
     // a polygon conists of an array of contours 
     // (first is outside boundry, remaining are holes)
-    Airport*        cur_airport;
-    Taxiway*        cur_taxiway;
-    Runway*         cur_runway;
-    WaterRunway*    cur_waterrunway;
-    Helipad*        cur_helipad;
-    ClosedPoly*     cur_pavement;
-    ClosedPoly*     cur_boundary;
-    LinearFeature*  cur_feat;
-    LightingObj*    cur_object;
-    Windsock*       cur_windsock;
-    Beacon*         cur_beacon;
-    Sign*           cur_sign;
+    std::shared_ptr<Airport>        cur_airport;
+    std::shared_ptr<Taxiway>        cur_taxiway;
+    std::shared_ptr<Runway>         cur_runway;
+    std::shared_ptr<WaterRunway>    cur_waterrunway;
+    std::shared_ptr<Helipad>        cur_helipad;
+    std::shared_ptr<ClosedPoly>     cur_pavement;
+    std::shared_ptr<ClosedPoly>     cur_boundary;
+    std::shared_ptr<LinearFeature>  cur_feat;
+    std::shared_ptr<LightingObj>    cur_object;
+    std::shared_ptr<Windsock>       cur_windsock;
+    std::shared_ptr<Beacon>         cur_beacon;
+    std::shared_ptr<Sign>           cur_sign;
 
     // debug
     std::string     debug_path;

@@ -236,8 +236,7 @@ void Parser::run()
                 cur_airport->GetCleanupTime( clean_time );
                 cur_airport->GetTriangulationTime( triangulation_time );
 
-                delete cur_airport;
-                cur_airport = NULL;
+                cur_airport = nullptr;
             }
 
             log_time = time(0);
@@ -250,12 +249,12 @@ void Parser::run()
     }
 }
 
-BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
+std::shared_ptr<BezNode> Parser::ParseNode( int type, char* line, std::shared_ptr<BezNode> prevNode )
 {
     double lat, lon;
     double ctrl_lat, ctrl_lon;
     int feat_type1, feat_type2;
-    BezNode *curNode = NULL;
+    std::shared_ptr<BezNode> curNode = nullptr;
 
     bool hasCtrl = false;
     bool close = false;
@@ -347,15 +346,15 @@ BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
     }
 
     // if this is a new node, add it - as first part never has prev cp
-    if (curNode == NULL)
+    if (curNode == nullptr)
     {
         if (hasCtrl)
         {
-            curNode = new BezNode(lat, lon, ctrl_lat, ctrl_lon);
+            curNode = std::make_shared<BezNode>(lat, lon, ctrl_lat, ctrl_lon);
         }
         else
         {
-            curNode = new BezNode(lat, lon);
+            curNode = std::make_shared<BezNode>(lat, lon);
         }
     }
 
@@ -386,35 +385,35 @@ BezNode* Parser::ParseNode( int type, char* line, BezNode* prevNode )
     curNode->SetTerm( term );
     curNode->SetClose( close );
 
-    return curNode;
+    return std::move(curNode);
 }
 
-LinearFeature* Parser::ParseFeature( char* line )
+std::shared_ptr<LinearFeature> Parser::ParseFeature( char* line )
 {
-    LinearFeature* feature;
+    std::shared_ptr<LinearFeature> feature;
 
     if (strlen( line ))
     {
-        feature = new LinearFeature(line, 0.0f);
+        feature = std::make_shared<LinearFeature>(line, 0.0f);
     }
     else
     {
-        feature = new LinearFeature(NULL, 0.0f);
+        feature = std::make_shared<LinearFeature>(nullptr, 0.0f);
     }
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Linear Feature with description \"" << line << "\"");
 
-    return feature;
+    return std::move(feature);
 }
 
-ClosedPoly* Parser::ParsePavement( char* line )
+std::shared_ptr<ClosedPoly> Parser::ParsePavement( char* line )
 {
-    ClosedPoly* poly;
+    std::shared_ptr<ClosedPoly> poly;
     int   st = 0;       // surface type
     float s = 0.0f;     // smoothness
     float th = 0.0f;    // texture heading
     char  desc[256];    // description
-    char  *d = NULL;
+    char  *d = nullptr;
     int   numParams;
 
     numParams = sscanf(line, "%d %f %f %s", &st, &s, &th, desc);
@@ -429,16 +428,16 @@ ClosedPoly* Parser::ParsePavement( char* line )
         TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly with st " << st << " smoothness " << s << " texture heading " << th);
     }
 
-    poly = new ClosedPoly(st, s, th, d);
+    poly = std::make_shared<ClosedPoly>(st, s, th, d);
 
-    return poly;
+    return std::move(poly);
 }
 
-ClosedPoly* Parser::ParseBoundary( char* line )
+std::shared_ptr<ClosedPoly> Parser::ParseBoundary( char* line )
 {
-    ClosedPoly* poly;
+    std::shared_ptr<ClosedPoly> poly;
     char  desc[256];
-    char  *d = NULL;
+    char  *d = nullptr;
     int   numParams;
 
     numParams = sscanf(line, "%s", desc);
@@ -453,9 +452,9 @@ ClosedPoly* Parser::ParseBoundary( char* line )
     }
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Creating Closed Poly for airport boundary : " << d);
-    poly = new ClosedPoly(d);
+    poly = std::make_shared<ClosedPoly>(d);
 
-    return poly;
+    return std::move(poly);
 }
 
 int Parser::SetState( int state )
@@ -467,7 +466,7 @@ int Parser::SetState( int state )
         TG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding pavement");
         cur_pavement->Finish();
         cur_airport->AddPavement( cur_pavement );
-        cur_pavement = NULL;
+        cur_pavement = nullptr;
     } 
 
     if ( cur_airport && cur_state == STATE_PARSE_BOUNDARY )
@@ -475,7 +474,7 @@ int Parser::SetState( int state )
         TG_LOG(SG_GENERAL, SG_DEBUG, "Closing and Adding boundary");
         cur_boundary->Finish();
         cur_airport->AddBoundary( cur_boundary );
-        cur_boundary = NULL;
+        cur_boundary = nullptr;
     } 
 
     cur_state = state;
@@ -489,7 +488,7 @@ int Parser::ParseLine(char* line)
     char*  tok;
     int    code;
 
-    BezNode* cur_node = NULL;
+    std::shared_ptr<BezNode> cur_node = nullptr;
 
     if (*line != '#')
     {
@@ -509,7 +508,7 @@ int Parser::ParseLine(char* line)
                     {
                         SetState( STATE_PARSE_SIMPLE );
                         TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing land airport: " << line);
-                        cur_airport = new Airport( code, line );
+                        cur_airport = std::make_shared<Airport>( code, line );
                     }
                     else
                     {
@@ -521,7 +520,7 @@ int Parser::ParseLine(char* line)
                     {
                         SetState( STATE_PARSE_SIMPLE );
                         TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing heliport: " << line);
-                        cur_airport = new Airport( code, line );
+                        cur_airport = std::make_shared<Airport>( code, line );
                     }
                     else
                     {
@@ -532,7 +531,7 @@ int Parser::ParseLine(char* line)
                 case LAND_RUNWAY_CODE:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing runway: " << line);
-                    cur_runway = new Runway(line);
+                    cur_runway = std::make_shared<Runway>(line);
                     if (cur_airport)
                     {
                         cur_airport->AddRunway( cur_runway );
@@ -542,7 +541,7 @@ int Parser::ParseLine(char* line)
                 case WATER_RUNWAY_CODE:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing water runway: " << line);
-                    cur_waterrunway = new WaterRunway(line);
+                    cur_waterrunway = std::make_shared<WaterRunway>(line);
                     if (cur_airport)
                     {
                         cur_airport->AddWaterRunway( cur_waterrunway );
@@ -551,7 +550,7 @@ int Parser::ParseLine(char* line)
                 case HELIPAD_CODE:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing helipad: " << line);
-                    cur_helipad = new Helipad(line);
+                    cur_helipad = std::make_shared<Helipad>(line);
                     if (cur_airport)
                     {
                         cur_airport->AddHelipad( cur_helipad );
@@ -561,7 +560,7 @@ int Parser::ParseLine(char* line)
                 case TAXIWAY_CODE:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway: " << line);
-                    cur_taxiway = new Taxiway(line);
+                    cur_taxiway = std::make_shared<Taxiway>(line);
                     if (cur_airport)
                     {
                         cur_airport->AddTaxiway( cur_taxiway );
@@ -658,11 +657,11 @@ int Parser::ParseLine(char* line)
                             cur_feat->Finish( true, cur_airport->NumFeatures() );
                             cur_airport->AddFeature( cur_feat );
                         }
-                        cur_feat = NULL;
+                        cur_feat = nullptr;
                         SetState( STATE_PARSE_SIMPLE );
                     }
-                    prev_node = NULL;
-                    cur_node  = NULL;
+                    prev_node = nullptr;
+                    cur_node  = nullptr;
                     break;
     
                 case TERM_NODE_CODE:
@@ -696,15 +695,13 @@ int Parser::ParseLine(char* line)
                         else
                         {
                             TG_LOG(SG_GENERAL, SG_ALERT, "Parsing termination node with no previous nodes!!!" );
-    
-                            // this feature is bogus...
-                            delete cur_feat;
                         }
-                        cur_feat = NULL;
+                        
+                        cur_feat = nullptr;
                         SetState( STATE_PARSE_SIMPLE );
                     }
-                    prev_node = NULL;
-                    cur_node  = NULL;
+                    prev_node = nullptr;
+                    cur_node  = nullptr;
                     break;
     
                 case AIRPORT_VIEWPOINT_CODE:
@@ -718,25 +715,25 @@ int Parser::ParseLine(char* line)
                 case LIGHT_BEACON_CODE:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing light beacon: " << line);
-                    cur_beacon = new Beacon(line);
+                    cur_beacon = std::make_shared<Beacon>(line);
                     cur_airport->AddBeacon( cur_beacon );                                
                     break;
                 case WINDSOCK_CODE:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing windsock: " << line);
-                    cur_windsock = new Windsock(line);
+                    cur_windsock = std::make_shared<Windsock>(line);
                     cur_airport->AddWindsock( cur_windsock );                                
                     break;
                 case TAXIWAY_SIGN:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing taxiway sign: " << line);
-                    cur_sign = new Sign(line);
+                    cur_sign = std::make_shared<Sign>(line);
                     cur_airport->AddSign( cur_sign );                                
                     break;
                 case LIGHTING_OBJECT:
                     SetState( STATE_PARSE_SIMPLE );
                     TG_LOG(SG_GENERAL, SG_DEBUG, "Parsing lighting object: " << line);
-                    cur_object = new LightingObj(line);
+                    cur_object = std::make_shared<LightingObj>(line);
                     cur_airport->AddObj( cur_object );
                     break;
                 case COMM_FREQ1_CODE:

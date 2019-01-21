@@ -16,6 +16,8 @@
 #ifndef _HELIPAD_HXX
 #define _HELIPAD_HXX
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_light.hxx>
@@ -91,6 +93,6 @@ private:
 
 };
 
-typedef std::vector <Helipad *> HelipadList;
+typedef std::vector<std::shared_ptr<Helipad>> HelipadList;
 
 #endif

@@ -37,9 +37,8 @@ ClosedPoly::ClosedPoly( char* desc )
         description = "none";
     }
 
-    boundary = NULL;
-    cur_contour = NULL;
-    cur_feature = NULL;
+    boundary.clear();
+    cur_contour.clear();
 }
 
 ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
@@ -62,9 +61,8 @@ ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
         description = "none";
     }
 
-    boundary = NULL;
-    cur_contour = NULL;
-    cur_feature = NULL;
+    boundary.clear();
+    cur_contour.clear();
 }
 
 ClosedPoly::~ClosedPoly()
@@ -72,14 +70,9 @@ ClosedPoly::~ClosedPoly()
     TG_LOG( SG_GENERAL, SG_DEBUG, "Deleting ClosedPoly " << description );
 }
 
-void ClosedPoly::AddNode( BezNode* node )
+void ClosedPoly::AddNode( std::shared_ptr<BezNode> node )
 {
-    // if this is the first node of the contour - create a new contour
-    if (!cur_contour)
-    {
-        cur_contour = new BezContour;
-    }
-    cur_contour->push_back( node );
+    cur_contour.push_back( node );
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "CLOSEDPOLY::ADDNODE : " << node->GetLoc() );
 
@@ -89,7 +82,7 @@ void ClosedPoly::AddNode( BezNode* node )
         if (!cur_feature)
         {
             std::string feature_desc = description + " - ";
-            if (boundary)
+            if (boundary.size() == 0)
             {
                 feature_desc += "hole";
             }
@@ -99,7 +92,7 @@ void ClosedPoly::AddNode( BezNode* node )
             }
 
             TG_LOG(SG_GENERAL, SG_DEBUG, "   Adding node " << node->GetLoc() << " to current linear feature " << cur_feature);
-            cur_feature = new LinearFeature(feature_desc, 1.0f );
+            cur_feature = std::make_shared<LinearFeature>(feature_desc, 1.0f);
         }
         cur_feature->AddNode( node );
     }
@@ -122,26 +115,26 @@ void ClosedPoly::CloseCurContour()
 
     // add the contour to the poly - first one is the outer boundary
     // subsequent contours are holes
-    if ( boundary == NULL )
+    if ( boundary.size() == 0 )
     {
         boundary = cur_contour;
 
         // generate the convex hull from the bezcontour node locations
         // CreateConvexHull();
 
-        cur_contour = NULL;
+        cur_contour.clear();
     }
     else
     {
         holes.push_back( cur_contour );
-        cur_contour = NULL;
+        cur_contour.clear();
     }
 }
 
-void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
+void ClosedPoly::ConvertContour( const BezContour& src, tgContour& dst )
 {
-    BezNode*    curNode;
-    BezNode*    nextNode;
+    std::shared_ptr<BezNode>    curNode;
+    std::shared_ptr<BezNode>    nextNode;
 
     SGGeod curLoc;
     SGGeod nextLoc;
@@ -152,25 +145,25 @@ void ClosedPoly::ConvertContour( BezContour* src, tgContour& dst )
     double    total_dist;
     int       num_segs = BEZIER_DETAIL;
 
-    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src->size() << " nodes");
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src.size() << " nodes");
 
     // clear anything in this point list
     dst.Erase();
 
     // iterate through each bezier node in the contour
-    for (unsigned int i = 0; i <= src->size()-1; i++)
+    for (unsigned int i = 0; i <= src.size()-1; i++)
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "\nHandling Node " << i << "\n\n");
 
-        curNode = src->at(i);
-        if (i < src->size() - 1)
+        curNode = src.at(i);
+        if (i < src.size() - 1)
         {
-            nextNode = src->at(i+1);
+            nextNode = src.at(i + 1);
         }
         else
         {
             // for the last node, next is the first. as all contours are closed
-            nextNode = src->at(0);
+            nextNode = src.at(0);
         }
 
         // now determine how we will iterate from current node to next node
@@ -337,14 +330,14 @@ void ClosedPoly::Finish()
     tgContour          dst_contour;
 
     // error handling
-    if (boundary == NULL)
+    if (boundary.size() == 0)
     {
         TG_LOG(SG_GENERAL, SG_ALERT, "no boundary");
     }
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Converting a poly with " << holes.size() << " holes");
 
-    if (boundary != NULL)
+    if (boundary.size() != 0)
     {
         // create the boundary
         ConvertContour( boundary, dst_contour );
@@ -367,22 +360,9 @@ void ClosedPoly::Finish()
     }
 
     // save memory by deleting unneeded resources
-    for (unsigned int i=0; i<boundary->size(); i++)
-    {
-        delete boundary->at(i);
-    }
-    delete boundary;
-    boundary = NULL;
+    boundary.clear();
 
     // and the hole contours
-    for (unsigned int i=0; i<holes.size(); i++)
-    {
-        for (unsigned int j=0; j<holes[i]->size(); j++)
-        {
-            delete holes[i]->at(j);
-        }
-    }
-
     holes.clear();
 }
 

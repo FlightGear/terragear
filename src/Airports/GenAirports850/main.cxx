@@ -57,6 +57,8 @@ void setup_default_elevation_sources(string_list& elev_src) {
     elev_src.push_back( "SRTM-1" );
     elev_src.push_back( "SRTM-3" );
     elev_src.push_back( "SRTM-30" );
+    elev_src.push_back( "SRTMGL1" );
+    elev_src.push_back( "SRTMGL3" );
 }
 
 // Display help and usage
@@ -349,7 +351,7 @@ int main(int argc, char **argv)
     }
 
     // Create the scheduler
-    Scheduler* scheduler = new Scheduler(input_file, work_dir, elev_src);
+    auto scheduler = std::make_unique<Scheduler>(input_file, work_dir, elev_src);
 	// auto scheduler = std::unique_ptr<Scheduler>(new Scheduler(input_file, work_dir, elev_src));
 
     // Add any debug 

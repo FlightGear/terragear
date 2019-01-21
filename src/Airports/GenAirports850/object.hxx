@@ -1,6 +1,8 @@
 #ifndef _OBJECT_H_
 #define _OBJECT_H_
 
+#include <memory>
+
 #include <terragear/tg_light.hxx>
 #include <terragear/tg_polygon.hxx>
 
@@ -20,6 +22,6 @@ public:
 void BuildBtg( tglightcontour_list& lights );
 
 };
-typedef std::vector <LightingObj *> LightingObjList;
+typedef std::vector<std::shared_ptr<LightingObj>> LightingObjList;
 
 #endif

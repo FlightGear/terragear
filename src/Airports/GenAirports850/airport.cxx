@@ -93,59 +93,59 @@ Airport::Airport( int c, char* def)
 
 Airport::~Airport()
 {
-    for (unsigned int i=0; i<features.size(); i++)
+    for (auto feature : features)
     {
-        delete features[i];
+        feature = nullptr;
     }
 
-    for (unsigned int i=0; i<helipads.size(); i++)
+    for (auto helipad : helipads)
     {
-        delete helipads[i];
+        helipad = nullptr;
     }
 
-    for (unsigned int i=0; i<runways.size(); i++)
+    for (auto runway : runways)
     {
-        delete runways[i];
+        runway = nullptr;
     }
 
-    for (unsigned int i=0; i<waterrunways.size(); i++)
+    for (auto waterrunway : waterrunways)
     {
-        delete waterrunways[i];
+        waterrunway = nullptr;
     }
 
-    for (unsigned int i=0; i<pavements.size(); i++)
+    for (auto pavement : pavements)
     {
-        delete pavements[i];
+        pavement = nullptr;
     }
 
-    for (unsigned int i=0; i<taxiways.size(); i++)
+    for (auto taxiway : taxiways)
     {
-        delete taxiways[i];
+        taxiway = nullptr;
     }
 
-    for (unsigned int i=0; i<lightobjects.size(); i++)
+    for (auto lightobject : lightobjects)
     {
-        delete lightobjects[i];
+        lightobject = nullptr;
     }
 
-    for (unsigned int i=0; i<windsocks.size(); i++)
+    for (auto windsock : windsocks)
     {
-        delete windsocks[i];
+        windsock = nullptr;
     }
 
-    for (unsigned int i=0; i<beacons.size(); i++)
+    for (auto beacon : beacons)
     {
-        delete beacons[i];
+        beacon = nullptr;
     }
 
-    for (unsigned int i=0; i<signs.size(); i++)
+    for (auto sign : signs)
     {
-        delete signs[i];
+        sign = nullptr;
     }
 
-    for (unsigned int i=0; i<boundary.size(); i++)
+    for (auto boundaryItem : boundary)
     {
-        delete boundary[i];
+        boundaryItem = nullptr;
     }
 }
 

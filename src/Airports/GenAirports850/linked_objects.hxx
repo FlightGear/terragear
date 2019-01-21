@@ -1,6 +1,8 @@
 #ifndef _LINKED_OBJECTS_H_
 #define _LINKED_OBJECTS_H_
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 
 class Windsock
@@ -23,7 +25,7 @@ public:
     }
 };
 
-typedef std::vector <Windsock *> WindsockList;
+typedef std::vector<std::shared_ptr<Windsock>> WindsockList;
 
 
 class Beacon
@@ -46,7 +48,7 @@ public:
     }
 };
 
-typedef std::vector <Beacon *> BeaconList;
+typedef std::vector<std::shared_ptr<Beacon>> BeaconList;
 
 class Sign
 {
@@ -81,6 +83,6 @@ public:
     }
 };
 
-typedef std::vector <Sign *> SignList;
+typedef std::vector<std::shared_ptr<Sign>> SignList;
 
 #endif

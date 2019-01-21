@@ -4,6 +4,7 @@
 #include <vector>
 #include <string.h>
 #include <float.h>
+#include <memory>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/SGMath.hxx>
@@ -282,8 +283,8 @@ private:
 
 
 // array of BezNodes make a contour
-typedef std::vector <BezNode *> BezContour;
-typedef std::vector <BezContour *> BezContourArray;
+typedef std::vector<std::shared_ptr<BezNode>> BezContour;
+typedef std::vector<BezContour> BezContourArray;
 
 #endif
 

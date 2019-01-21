@@ -168,7 +168,7 @@ static void tgCalcElevations( const std::string &root, const string_list elev_sr
                 }
             }
 
-            array.close();
+            array.unload();
 
         } else {
             done = true;

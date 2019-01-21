@@ -109,7 +109,7 @@ double tgAverageElevation( const std::string &root, const string_list elev_src,
                 }
             }
 
-            array.close();
+            array.unload();
         } else {
             done = true;
         }

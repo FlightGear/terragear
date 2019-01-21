@@ -4,6 +4,7 @@
 #endif
 
 #include <cstring>
+#include <memory>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/io/iostreams/sgstream.hxx>
@@ -370,7 +371,7 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
                 case SEA_AIRPORT_CODE:
                 case HELIPORT_CODE:
                 {
-                    Airport* airport = new Airport( code, def );
+                    auto airport = std::make_unique<Airport>( code, def );
                     if (match)
                     {
                         // Start off with given snap value
@@ -380,7 +381,6 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
                     // remember this new apt pos and name, and clear match
                     cur_apt_pos  = cur_pos;
                     cur_apt_name = airport->GetIcao();
-                    delete airport;
 
                     match = false;
                 }
@@ -400,14 +400,13 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
                     // if the the runway start / end  coords are within the rect,
                     // we have a winner
                     {
-                        Runway* runway = new Runway(def);
+                        auto runway = std::make_unique<Runway>(def);
                         if ( boundingBox->isInside(runway->GetStart()) ) {
                             match = true;
                         }
                         else if ( boundingBox->isInside(runway->GetEnd()) ) {
                             match = true;
                         }
-                        delete runway;
                     }
                     break;
 
@@ -415,14 +414,13 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
                     // if the the runway start / end  coords are within the rect,
                     // we have a winner
                     {
-                        WaterRunway* runway = new WaterRunway(def);
+                        auto runway = std::make_unique<WaterRunway>(def);
                         if ( boundingBox->isInside(runway->GetStart()) ) {
                             match = true;
                         }
                         else if ( boundingBox->isInside(runway->GetEnd()) ) {
                             match = true;
                         }
-                        delete runway;
                     }
                     break;
 
@@ -430,11 +428,10 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
                     // if the heliport coords are within the rect, we have
                     // a winner
                     {
-                        Helipad* helipad = new Helipad(def);
+                        auto helipad = std::make_unique<Helipad>(def);
                         if ( boundingBox->isInside(helipad->GetLoc()) ) {
                             match = true;
                         }
-                        delete helipad;
                     }
                     break;
 
@@ -496,9 +493,9 @@ void Scheduler::Schedule( int num_threads, std::string& summaryfile )
 //    csvfile.open( summaryfile.c_str(), std::ios_base::out | std::ios_base::trunc );
 //    csvfile.close();
 
-    std::vector<Parser *> parsers;
+    std::vector<std::shared_ptr<Parser>> parsers;
     for (int i=0; i<num_threads; i++) {
-        Parser* parser = new Parser( filename, work_dir, elevation );
+        auto parser = std::make_shared<Parser>( filename, work_dir, elevation );
         // parser->set_debug();
         parser->start();
         parsers.push_back( parser );
@@ -511,6 +508,6 @@ void Scheduler::Schedule( int num_threads, std::string& summaryfile )
     // Then wait until they are finished
     for (unsigned int i=0; i<parsers.size(); i++) {
         parsers[i]->join();
-        delete parsers[i];
+        parsers[i] = nullptr;
     }
 }

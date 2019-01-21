@@ -4,10 +4,10 @@
 #include "beznode.hxx"
 #include "linearfeature.hxx"
 
-void LinearFeature::ConvertContour( BezContour* src, bool closed )
+void LinearFeature::ConvertContour( const BezContour& src, bool closed )
 {
-    BezNode*  curNode;
-    BezNode*  nextNode;
+    std::shared_ptr<BezNode>  curNode;
+    std::shared_ptr<BezNode>  nextNode;
 
     SGGeod    curLoc;
     SGGeod    nextLoc;
@@ -22,24 +22,24 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
 
-    TG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
+    TG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src.size() << " nodes");
 
     // clear anything in the point list
     points.Erase();
 
     // iterate through each bezier node in the contour
-    for (unsigned int i=0; i <= src->size()-1; i++)
+    for (unsigned int i = 0; i <= src.size() - 1; ++i)
     {
-        curNode = src->at(i);
+        curNode = src.at(i);
 
-        if (i < src->size() - 1)
+        if (i < src.size() - 1)
         {
-            nextNode = src->at(i+1);
+            nextNode = src.at(i+1);
         }
         else
         {
             // for the last node, next is the first. as all contours are closed
-            nextNode = src->at(0);
+            nextNode = src.at(0);
         }
 
         ////////////////////////////////////////////////////////////////////////////////////
@@ -380,7 +380,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
-    ConvertContour( &contour, closed );
+    ConvertContour( contour, closed );
 
     // now generate the supoerpoly and texparams lists for markings
     for (unsigned int i=0; i<marks.size(); i++)
