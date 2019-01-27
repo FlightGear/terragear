@@ -356,11 +356,16 @@ void Decoder::run()
 // Main Thread
 void processLayer(OGRLayer* poLayer, tgChopper& results )
 {
-    int feature_count=poLayer->GetFeatureCount();
+    int feature_count = poLayer->GetFeatureCount();
 
-    if (feature_count!=-1 && start_record>0 && start_record>=feature_count) {
+    if (feature_count != -1 && start_record > 0 && start_record >= feature_count) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Layer has only " << feature_count << " records, but start record is set to " << start_record );
-        exit( 1 );
+        if (!continue_on_errors) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+            exit( 1 );
+        }
+        else
+            return;
     }
 
     /* determine the indices of the required columns */
@@ -372,8 +377,12 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
         point_width_field=poFDefn->GetFieldIndex(point_width_col.c_str());
         if (point_width_field==-1) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Field " << point_width_col << " for point-width not found in layer" );
-	    if (!continue_on_errors)
-		    exit( 1 );
+            if (!continue_on_errors) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+                exit( 1 );
+            }
+            else
+                return;
         }
     }
 
@@ -381,8 +390,12 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
         line_width_field=poFDefn->GetFieldIndex(line_width_col.c_str());
         if (line_width_field==-1) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Field " << line_width_col << " for line-width not found in layer" );
-	    if (!continue_on_errors)
-		    exit( 1 );
+            if (!continue_on_errors) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+                exit( 1 );
+            }
+            else
+                return;
         }
     }
 
@@ -390,8 +403,12 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
         area_type_field=poFDefn->GetFieldIndex(area_type_col.c_str());
         if (area_type_field==-1) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Field " << area_type_col << " for area type not found in layer" );
-	    if (!continue_on_errors)
-		    exit( 1 );
+            if (!continue_on_errors) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+                exit( 1 );
+            }
+            else
+                return;
         }
     }
 
@@ -400,42 +417,52 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     oSourceSRS=poLayer->GetSpatialRef();
     if (oSourceSRS == NULL) {
         SG_LOG( SG_GENERAL, SG_ALERT, "Layer " << layername << " has no defined spatial reference system" );
-        exit( 1 );
+        if (!continue_on_errors) {
+            SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+            exit( 1 );
+        }
+        else
+            return;
     }
 
     char* srsWkt;
     oSourceSRS->exportToWkt(&srsWkt);
     SG_LOG( SG_GENERAL, SG_DEBUG, "Source spatial reference system: " << srsWkt );
-    OGRFree(srsWkt);
+    CPLFree(srsWkt);
 
     oTargetSRS.SetWellKnownGeogCS( "WGS84" );
 
-    OGRCoordinateTransformation *poCT = OGRCreateCoordinateTransformation(oSourceSRS, &oTargetSRS);
+    auto poCT = OGRCreateCoordinateTransformation(oSourceSRS, &oTargetSRS);
 
     /* setup attribute and spatial queries */
     if (use_spatial_query) {
-        double trans_min_x,trans_min_y,trans_max_x,trans_max_y;
+        double trans_min_x, trans_min_y, trans_max_x, trans_max_y;
         /* do a simple reprojection of the source SRS */
-        OGRCoordinateTransformation *poCTinverse;
+        auto poCTinverse = OGRCreateCoordinateTransformation(&oTargetSRS, oSourceSRS);
 
-        poCTinverse = OGRCreateCoordinateTransformation(&oTargetSRS, oSourceSRS);
+        trans_min_x = spat_min_x;
+        trans_min_y = spat_min_y;
+        trans_max_x = spat_max_x;
+        trans_max_y = spat_max_y;
 
-        trans_min_x=spat_min_x;
-        trans_min_y=spat_min_y;
-        trans_max_x=spat_max_x;
-        trans_max_y=spat_max_y;
-
-        poCTinverse->Transform(1,&trans_min_x,&trans_min_y);
-        poCTinverse->Transform(1,&trans_max_x,&trans_max_y);
+        poCTinverse->Transform(1, &trans_min_x, &trans_min_y);
+        poCTinverse->Transform(1, &trans_max_x, &trans_max_y);
 
         poLayer->SetSpatialFilterRect(trans_min_x, trans_min_y,
                                       trans_max_x, trans_max_y);
+
+        OCTDestroyCoordinateTransformation ( poCTinverse );
     }
 
     if (use_attribute_query) {
         if (poLayer->SetAttributeFilter(attribute_query.c_str()) != OGRERR_NONE) {
             SG_LOG( SG_GENERAL, SG_ALERT, "Error in query expression '" << attribute_query << "'" );
-            exit( 1 );
+            if (!continue_on_errors) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+                exit( 1 );
+            }
+            else
+                return;
         }
     }
 
@@ -449,16 +476,16 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
 
     // Now process the workqueue with threads
     // this just generates all the tgPolygons
-    std::vector<Decoder *> decoders;
+    std::vector<std::shared_ptr<Decoder>> decoders;
     for (int i=0; i<num_threads; i++) {
-        Decoder* decoder = new Decoder( poCT, area_type_field, point_width_field, line_width_field, results );
+        auto decoder = std::make_shared<Decoder>( poCT, area_type_field, point_width_field, line_width_field, results );
         decoder->start();
         decoders.push_back( decoder );
     }
 
     // Then wait until they are finished
-    for (unsigned int i=0; i<decoders.size(); i++) {
-        decoders[i]->join();
+    for (auto decoder : decoders) {
+        decoder->join();
     }
 
     OCTDestroyCoordinateTransformation ( poCT );
@@ -683,27 +710,30 @@ int main( int argc, char **argv ) {
     SG_LOG( SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading." );
 
     GDALAllRegister();
-    GDALDataset       *poDS;
+    GDALDataset *poDS;
 
     poDS = (GDALDataset*) GDALOpenEx( datasource.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL );
-    if( poDS == NULL )
+    if ( poDS == NULL )
     {
         SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening datasource " << datasource );
-        exit( 1 );
+
+        GDALDestroyDriverManager();
+
+        return EXIT_FAILURE;
     }
 
     SG_LOG( SG_GENERAL, SG_ALERT, "Processing datasource " << datasource );
 
-    OGRLayer  *poLayer;
-    if (argc>3) {
-        for (int i=3;i<argc;i++) {
+    OGRLayer *poLayer;
+    if (argc > 3) {
+        for (int i = 3; i < argc; ++i) {
             poLayer = poDS->GetLayerByName( argv[i] );
-
             if (poLayer == NULL )
             {
                 SG_LOG( SG_GENERAL, SG_ALERT, "Failed opening layer " << argv[i] << " from datasource " << datasource );
-                exit( 1 );
+                return EXIT_FAILURE;
             }
+
             processLayer(poLayer, results );
         }
     } else {
@@ -717,6 +747,7 @@ int main( int argc, char **argv ) {
     }
 
     GDALClose(poDS);
+    GDALDestroyDriverManager();
 
     SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
     results.Save( save_shapefiles );

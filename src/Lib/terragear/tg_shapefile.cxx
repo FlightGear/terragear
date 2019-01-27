@@ -98,6 +98,10 @@ void* tgShapefile::CloseDatasource( void* ds_id )
 {
     GDALDataset* datasource = ( GDALDataset * )ds_id;
     GDALClose((GDALDatasetH) datasource );
+
+    GDALDestroyDriverManager();
+    tgShapefile::initialized = false;
+
     return (void *)-1;
 }
 
