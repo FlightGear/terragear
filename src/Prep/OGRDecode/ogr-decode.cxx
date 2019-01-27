@@ -459,6 +459,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
             SG_LOG( SG_GENERAL, SG_ALERT, "Error in query expression '" << attribute_query << "'" );
             if (!continue_on_errors) {
                 SG_LOG( SG_GENERAL, SG_ALERT, "Aborting!" );
+                OCTDestroyCoordinateTransformation ( poCT );
                 exit( 1 );
             }
             else

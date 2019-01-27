@@ -532,6 +532,8 @@ int main(int argc, const char **argv)
         }
     }
 
+    GDALDestroyDriverManager();
+
     auto finish_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish_time - start_time;
     std::cout << std::endl << "Elapsed time: " << elapsed.count() << " seconds" << std::endl << std::endl;
