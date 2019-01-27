@@ -184,7 +184,7 @@ def usage(msg=''):
     sys.stderr.write("will produce a better surface approximation.\n")
     sys.stderr.write("\n")
     sys.stderr.write("The input file must be a .arr.gz file such as that produced\n")
-    sys.stderr.write("by demchop or hgtchop utils.\n")
+    sys.stderr.write("by the hgtchop utility.\n")
     sys.stderr.write("\n")
     sys.stderr.write("**** NOTE ****:\n")
     sys.stderr.write("If a directory is input all .arr files in directory will be\n")

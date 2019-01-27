@@ -275,7 +275,7 @@ void usage(char* progname, const std::string& msg) {
     SG_LOG(SG_GENERAL,SG_INFO, "will produce a better surface approximation.");
     SG_LOG(SG_GENERAL,SG_INFO, "");
     SG_LOG(SG_GENERAL,SG_INFO, "The input file must be a .arr.gz file such as that produced");
-    SG_LOG(SG_GENERAL,SG_INFO, "by demchop or hgtchop utils.");
+    SG_LOG(SG_GENERAL,SG_INFO, "by the hgtchop utility.");
     SG_LOG(SG_GENERAL,SG_INFO, "");
     SG_LOG(SG_GENERAL,SG_INFO, "Force will overwrite existing .arr.gz files, even if the input is older");
     SG_LOG(SG_GENERAL,SG_INFO, "");
