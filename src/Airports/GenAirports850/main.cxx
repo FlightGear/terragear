@@ -39,7 +39,7 @@ using namespace std;
 // Display usage
 static void usage( int argc, char **argv ) {
     TG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << argv[0] << "\n--input=<apt_file>"
-    << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
+    << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --nudge=n ] "
     << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
     << "[ --airport=abcd ] [--max-slope=<decimal>] [--tile=<tile>] [--threads] [--threads=x]"
     << "[--chunk=<chunk>] [--clear-dem-path] [--dem-path=<path>] [--verbose] [--help] [--log-level=bulk|info|debug|warn|alert]");
@@ -81,8 +81,6 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
     cout << "a valid airport code eg. --airport-id=KORD, or a starting airport can be specified using --start-id=abcd \n";
     cout << "where once again abcd is a valid airport code.  In this case, all airports in the file subsequent to the \n";
     cout << "start-id are done.  This is convenient when re-starting after a previous error.  \n";
-    cout << "If you want to restart with the airport after a problem icao, use --restart-id=abcd, as this works the same as\n";
-    cout << " with the exception that the airport abcd is skipped \n";
     cout << "\nAn input area may be specified by lat and lon extent using min and max lat and lon.  \n";
     //cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string \n";
     //cout << "such as eg. w080n40, e000s27.  \n";
@@ -154,9 +152,7 @@ int main(int argc, char **argv)
     std::string input_file = "";
     std::string summary_file = "./genapt850.csv";
     std::string start_id = "";
-    std::string restart_id = "";
     std::string airport_id = "";
-    std::string last_apt_file = "./last_apt.txt";
     int         num_threads    =  1;
 
     int arg_pos;
@@ -179,10 +175,6 @@ int main(int argc, char **argv)
         {
             start_id = arg.substr(11);
         }
-        else if ( arg.find("--restart-id=") == 0 )
-        {
-            restart_id = arg.substr(13);
-        }
         else if ( arg.find("--nudge=") == 0 )
         {
             nudge = atoi( arg.substr(8).c_str() );
@@ -190,10 +182,6 @@ int main(int argc, char **argv)
         else if ( arg.find("--snap=") == 0 )
         {
             gSnap = atof( arg.substr(7).c_str() );
-        }
-        else if ( arg.find("--last_apt_file=") == 0 )
-        {
-            last_apt_file = arg.substr(16);
         }
         else if ( arg.find("--min-lon=") == 0 )
         {
@@ -313,8 +301,6 @@ int main(int argc, char **argv)
     SGPath sgp( airportareadir );
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
-
-    std::string lastaptfile = work_dir+"/last_apt";
 
     tgRectangle boundingBox(min, max);
     boundingBox.sanify();
