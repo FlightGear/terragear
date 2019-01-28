@@ -13,7 +13,7 @@ class Taxiway
 {
 public:
 
-    Taxiway(char* def);
+    explicit Taxiway(char* def);
 
     int BuildBtg( tgpolygon_list& taxi_polys,
                   tglightcontour_list& taxi_lights,

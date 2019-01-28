@@ -11,7 +11,7 @@
 class ClosedPoly
 {
 public:
-    ClosedPoly( char* desc );
+    explicit ClosedPoly( char* desc );
     ClosedPoly( int st, float s, float th, char* desc );
 	~ClosedPoly();
 

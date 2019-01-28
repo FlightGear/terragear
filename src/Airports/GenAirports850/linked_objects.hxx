@@ -8,7 +8,7 @@
 class Windsock
 {
 public:
-    Windsock(char* def);
+    explicit Windsock(char* def);
 
     double lat;
     double lon;
@@ -31,7 +31,7 @@ typedef std::vector<std::shared_ptr<Windsock>> WindsockList;
 class Beacon
 {
 public:
-    Beacon(char* def);
+    explicit Beacon(char* def);
 
     double lat;
     double lon;
@@ -53,7 +53,7 @@ typedef std::vector<std::shared_ptr<Beacon>> BeaconList;
 class Sign
 {
 public:
-    Sign(char* def);
+    explicit Sign(char* def);
 
     double lat;
     double lon;

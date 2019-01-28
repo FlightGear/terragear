@@ -13,7 +13,7 @@ class Runway
 {
 public:
 
-    Runway(char* def);
+    explicit Runway(char* def);
 
     SGGeod GetStart()
     {
@@ -184,7 +184,7 @@ typedef std::vector <std::shared_ptr<Runway>> RunwayList;
 class WaterRunway
 {
 public:
-    WaterRunway(char* def);
+    explicit WaterRunway(char* def);
 
     tgContour GetBuoys();
 

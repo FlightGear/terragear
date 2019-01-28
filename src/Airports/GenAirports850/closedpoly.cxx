@@ -21,48 +21,33 @@ static void stringPurifier( std::string& s )
     }
 }
 
-ClosedPoly::ClosedPoly( char* desc )
+ClosedPoly::ClosedPoly( char* desc ) :
+    is_pavement(false),
+    is_border(false),
+    has_feature(false),
+    surface_type(0),
+    smoothness(0.0),
+    texture_heading(0.0),
+    description(std::string(desc ? desc : "none"))
 {
-    is_pavement = false;
-    is_border   = true;
-    has_feature = false;
-    
-    if ( desc )
-    {
-        description = desc;
-        stringPurifier(description);
-    }
-    else
-    {
-        description = "none";
-    }
+    is_border = true;
+
+    stringPurifier(description);
 
     boundary.clear();
     cur_contour.clear();
 }
 
-ClosedPoly::ClosedPoly( int st, float s, float th, char* desc )
+ClosedPoly::ClosedPoly( int st, float s, float th, char* desc ) :
+    ClosedPoly( desc )
 {
     surface_type = st;
     smoothness   = s;
     texture_heading = th;
 
     is_pavement = (surface_type != 15) ? true : false;	// wrong??
-    is_border   = false;
+    is_border = false;
     has_feature = true;
-    
-    if ( desc )
-    {
-        description = desc;
-        stringPurifier(description);
-    }
-    else
-    {
-        description = "none";
-    }
-
-    boundary.clear();
-    cur_contour.clear();
 }
 
 ClosedPoly::~ClosedPoly()
@@ -438,10 +423,10 @@ int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tg
 
 int ClosedPoly::BuildBtg( tgpolygon_list& rwy_polys, tgcontour_list& slivers, tgAccumulator& accum, std::string& shapefile_name )
 {
-    char layer[128];
-    
     if ( is_pavement && pre_tess.Contours() )
     {
+        char layer[128];
+    
         if(  shapefile_name.size() ) {
             sprintf( layer, "%s_preclip", shapefile_name.c_str() );
             tgShapefile::FromPolygon( pre_tess, "./airport_dbg", layer, std::string("preclip") );

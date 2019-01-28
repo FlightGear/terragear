@@ -243,7 +243,6 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     // runway lights
     tglightcontour_list rwy_lights;
 
-    bool make_shapefiles = false;
     char debug_root[32];
     sprintf(debug_root, "./airport_dbg/%s/", icao.c_str() );
 
@@ -305,6 +304,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
         {
             TG_LOG(SG_GENERAL, SG_DEBUG, "Build Feature Poly " << i + 1 << " of " << features.size() << " : " << features[i]->GetDescription() );
 
+            bool make_shapefiles = false;
             features[i]->BuildBtg( line_polys, rwy_lights, lf_accum, make_shapefiles );
         }
 
@@ -327,7 +327,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             //slivers.clear();
 
             if ( isDebugRunway(i) ) {
-                sprintf( shapefile_name, "runway_%d", i );
+                sprintf( shapefile_name, "runway_%u", i );
             } else {
                 strcpy( shapefile_name, "" );
             }
@@ -393,7 +393,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             //slivers.clear();
 
             if ( isDebugPavement(i) ) {
-                sprintf( shapefile_name, "pvmnt_%d", i );
+                sprintf( shapefile_name, "pvmnt_%u", i );
             } else {
                 strcpy( shapefile_name, "" );
             }
@@ -427,7 +427,7 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
             //slivers.clear();
 
             if ( isDebugTaxiway(i) ) {
-                sprintf( shapefile_name, "taxiway_%d", i );
+                sprintf( shapefile_name, "taxiway_%u", i );
             } else {
                 strcpy( shapefile_name, "" );
             }
@@ -1106,10 +1106,10 @@ void Airport::BuildBtg(const std::string& root, const string_list& elev_src )
     }
 
     SGVec3d gbs_center = SGVec3d::fromGeod( b.get_center() );
-    double dist_squared, radius_squared = 0;
+    double radius_squared = 0;
     for ( unsigned int i = 0; i < wgs84_nodes.size(); ++i )
     {
-        dist_squared = distSqr(gbs_center, wgs84_nodes[i]);
+        double dist_squared = distSqr(gbs_center, wgs84_nodes[i]);
         if ( dist_squared > radius_squared ) {
             radius_squared = dist_squared;
         }
@@ -1258,7 +1258,7 @@ bool Airport::CheckZFightingTriangles( const char* prefix, const char* debug_roo
                                 tgContour intContour = intersection.GetContour( m );
                                 if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {                        
                                     TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between runway poly " << i << " and pavement poly " << k << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
-                                    sprintf( desc, "rwy_%06d_pvmt_%06d", i, j );
+                                    sprintf( desc, "rwy_%06u_pvmt_%06u", i, j );
                                     tgShapefile::FromContour( intContour, debug_root, layer, desc );
                                     zfighting = true;
                                 }
@@ -1292,7 +1292,7 @@ bool Airport::CheckZFightingTriangles( const char* prefix, const char* debug_roo
                                 tgContour intContour = intersection.GetContour( m );
                                 if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {                        
                                     TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between pavement poly " << i << " and runway poly " << k << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
-                                    sprintf( desc, "pvmt_%06d_rwy_%06d", i, j );
+                                    sprintf( desc, "pvmt_%06u_rwy_%06u", i, j );
                                     tgShapefile::FromContour( intContour, debug_root, layer, desc );
                                     zfighting = true;
                                 }
@@ -1325,7 +1325,7 @@ bool Airport::CheckZFightingTriangles( const char* prefix, const char* debug_roo
                         tgContour intContour = intersection.GetContour( m );
                         if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {
                             TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between base poly and runway poly " << j << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
-                            sprintf( desc, "base_rwy_%06d", j );
+                            sprintf( desc, "base_rwy_%06u", j );
                             tgShapefile::FromContour( intContour, debug_root, layer, desc );
                             zfighting = true;
                         }
@@ -1353,7 +1353,7 @@ bool Airport::CheckZFightingTriangles( const char* prefix, const char* debug_roo
                         tgContour intContour = intersection.GetContour( m );
                         if ( (intContour.GetSize() > 2) && (intContour.GetArea() > min_area_thresh) ) {                        
                             TG_LOG( SG_GENERAL, SG_ALERT, prefix << "Z-FIGHTING between base poly and pavement poly " << j << " contour has " << intContour.GetSize() << " nodes " << " area is " << intContour.GetArea() );
-                            sprintf( desc, "base_pvmt_%06d", j );
+                            sprintf( desc, "base_pvmt_%06u", j );
                             tgShapefile::FromContour( intContour, debug_root, layer, desc );
                             zfighting = true;
                         }

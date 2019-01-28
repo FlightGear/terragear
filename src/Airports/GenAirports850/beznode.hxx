@@ -120,7 +120,7 @@ inline double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, con
 class BezNode 
 {
 public:
-    BezNode( SGGeod l )
+    explicit BezNode( SGGeod l )
     {
         loc   = l;
 

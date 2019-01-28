@@ -25,7 +25,7 @@
 class Helipad
 {
 public:
-    Helipad(char* def);
+    explicit Helipad(char* def);
 
     void BuildBtg( tgpolygon_list& heli_polys,
                    tglightcontour_list& heli_lights,

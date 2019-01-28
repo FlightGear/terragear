@@ -72,23 +72,18 @@ typedef std::vector<Lighting*> LightingList;
 class LinearFeature
 {
 public:
-    LinearFeature( char* desc, double o )
+    LinearFeature( char* desc, double o ) :
+        LinearFeature(std::string(desc ? desc : "none"), o)
     {
-        if ( desc )
-        {
-            description = desc;
-        }
-        else
-        {
-            description = "none";
-        }
-        offset = o;
     }
 
-    LinearFeature( std::string desc, double o )
+    LinearFeature( const std::string& desc, double o ) :
+        offset(o),
+        width(0),
+        cur_mark(nullptr),
+        cur_light(nullptr),
+        description(desc)
     {
-        description = desc;
-        offset = o;
     }
 
     ~LinearFeature();

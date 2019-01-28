@@ -24,7 +24,6 @@
 #include <config.h>
 #endif
 
-#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <set>

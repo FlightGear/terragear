@@ -9,7 +9,7 @@
 class LightingObj
 {
 public:
-    LightingObj(char* def);
+    explicit LightingObj(char* def);
 
     double lat;
     double lon;

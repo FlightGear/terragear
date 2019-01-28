@@ -23,19 +23,26 @@
 #include "runway.hxx"
 #include "debug.hxx"
 
-#include <cstdio>
-#include <stdlib.h>
 
 Helipad::Helipad(char* definition)
 {
+    // helipad format:
+    //      designator   lat  lon  heading      length   width  surface     markings    shoulder    smoothness    edge-lighting
+    // example:
+    //      "H1  21.30433555 -157.85586778   0.00 10.70 10.70 2 0 0 0.25 0\r"
 
-    // format:
-    // helipad  designator   lat  lon  heading      length   width  surface     markings    shoulder    smoothness    edge lighting
-
-    // int fscanf(FILE *stream, const char *format, ...);
-    sscanf(definition, "%s %lf %lf %lf %lf %lf %d %d %d %lf %d",
-        heli.designator, &heli.lat, &heli.lon, &heli.heading, &heli.length, &heli.width, &heli.surface,
-        &heli.marking, &heli.shoulder, &heli.smoothness, &heli.edge_lights);
+    std::istringstream ss(definition);
+    ss  >> heli.designator
+        >> heli.lat
+        >> heli.lon
+        >> heli.heading
+        >> heli.length
+        >> heli.width
+        >> heli.surface
+        >> heli.marking
+        >> heli.shoulder
+        >> heli.smoothness
+        >> heli.edge_lights;
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Read helipad: (" << heli.lon << "," << heli.lat << ") heading: " << heli.heading << " length: " << heli.length << " width: " << heli.width );
 }

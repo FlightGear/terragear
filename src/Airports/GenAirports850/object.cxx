@@ -1,12 +1,18 @@
 #include <simgear/math/SGMathFwd.hxx>
 #include <simgear/debug/logstream.hxx>
+
 #include "object.hxx"
 #include "debug.hxx"
-#include <cstdio>
 
 LightingObj::LightingObj( char* definition )
 {
-    sscanf(definition, "%lf %lf %d %lf %lf %s", &lat, &lon, &type, &heading, &glideslope, &assoc_rw);
+    std::istringstream ss(definition);
+    ss  >> lat
+        >> lon
+        >> type
+        >> heading
+        >> glideslope
+        >> assoc_rw;
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Read lighting object: (" << lon << "," << lat << ") heading: " << heading << " type: " << type  );
 }

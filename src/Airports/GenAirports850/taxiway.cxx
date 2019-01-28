@@ -6,8 +6,6 @@
 
 #include <terragear/tg_shapefile.hxx>
 
-#include <cstdio>
-
 #include "global.hxx"
 #include "apt_math.hxx"
 #include "beznode.hxx"
@@ -29,20 +27,31 @@ Taxiway::Taxiway(char* definition)
     double smoothness;
     int    signs;
 
-    // format:
-    // taxiway  lat         lon           designation  heading  length      threshold   overrun
-    // 10       44.38085600 -074.20606200 xxx          79.29    3384        0.0         0.0
+    // taxiway format:
+    //      lat         lon           designation  heading  length      threshold   overrun
+    //      44.38085600 -074.20606200 xxx          79.29    3384        0.0         0.0
     //
-    // width    lighting    surface       shoulder     markings smoothness  dist remain
-    // 60       161161      1             0            0        0.35        0
+    //      width    lighting    surface       shoulder     markings smoothness  dist remain
+    //      60       161161      1             0            0        0.35        0
 
     // Parse the line
-    // 44.38085600 -074.20606200 xxx  79.29  3384 0.0 0.0    60 161161  1 0 0 0.35 0
+    //      44.38085600 -074.20606200 xxx  79.29  3384 0.0 0.0    60 161161  1 0 0 0.35 0
 
-    // int fscanf(FILE *stream, const char *format, ...);
-    sscanf(definition, "%lf %lf %s %lf %lf %lf %lf %lf %s %d %d %d %lf %d",
-        &lat, &lon, designation, &heading, &length, &threshold, &overrun,
-        &width, lighting, &surface, &shoulder, &markings, &smoothness, &signs);
+    std::istringstream ss(definition);
+    ss  >> lat
+        >> lon
+        >> designation
+        >> heading
+        >> length
+        >> threshold
+        >> overrun
+        >> width
+        >> lighting
+        >> surface
+        >> shoulder
+        >> markings
+        >> smoothness
+        >> signs;
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Read taxiway: (" << lon << "," << lat << ") heading: " << heading << " length: " << length << " width: " << width );
 
