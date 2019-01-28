@@ -59,7 +59,7 @@ using std::ios;
 #define MAX_HGT_SIZE 6001
 class TGSrtmTiff : public TGSrtmBase {
 public:
-    TGSrtmTiff( const SGPath &file );
+    explicit TGSrtmTiff( const SGPath &file );
     ~TGSrtmTiff();
     bool open( const SGPath &f );
     bool close();
@@ -181,8 +181,7 @@ bool TGSrtmTiff::open( const SGPath &f ) {
 }
 
 bool TGSrtmTiff::load() {
-    int size;
-    cols = rows = size = 6000;
+    cols = rows = 6000;
     col_step = row_step = 3;
 
     uint32 w, h, d;

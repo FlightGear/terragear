@@ -67,15 +67,15 @@ private:
 
     // Routines for height rectification
     std::vector<int> collect_bad_points(const double bad_zone);
-    bool is_bad_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const;
-    double rectify_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const;
+    bool is_bad_point(const int xgrid, const int ygrid, const std::vector<int>& bad_points) const;
+    double rectify_point(const int xgrid, const int ygrid, const std::vector<int>& bad_points) const;
     bool is_near_cliff(const double lon1,const double lon2, const double bad_zone) const;
 
 public:
 
     // Constructor
     TGArray( void );
-    TGArray( const std::string& file );
+    explicit TGArray( const std::string& file );
 
     // Destructor
     ~TGArray( void );
@@ -96,11 +96,11 @@ public:
     bool parse( SGBucket& b );
 
     // write an Array file
-    bool write( const std::string root_dir, SGBucket& b );
+    bool write( const std::string& root_dir, SGBucket& b );
 
     // write an Array file in binary format. If ht_rect is true,
     // the file will have extension 'arr.rectified.gz'
-    void write_bin(const std::string root_dir, bool ht_rect, SGBucket& b);
+    void write_bin(const std::string& root_dir, bool ht_rect, SGBucket& b);
   
     // do our best to remove voids by picking data from the nearest
     // neighbor.

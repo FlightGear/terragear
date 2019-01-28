@@ -40,7 +40,7 @@ and if they have an associated cliff file, will adjust and then output
 the heights. */
 
 // display usage and exit
-static void usage( const std::string name ) {
+static void usage( const std::string& name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << name);
     SG_LOG(SG_GENERAL, SG_ALERT, "  --work-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --height-dir=<directory>");
@@ -69,26 +69,26 @@ int main( int argc, char **argv) {
   //
   int arg_pos;
   for (arg_pos = 1; arg_pos < argc; arg_pos++) {
-    std::string arg = argv[arg_pos];
+        std::string arg = argv[arg_pos];
     
-        if (arg.find("--work-dir=") == 0) {
+        if (arg.compare(0, 11, "--work-dir=") == 0) {
             work_dir = arg.substr(11);
-        } else if (arg.find("--height-dir=") == 0) {
-          height_dir = arg.substr(13);
-        } else if (arg.find("--tile-id=") == 0) {
+        } else if (arg.compare(0, 13, "--height-dir=") == 0) {
+            height_dir = arg.substr(13);
+        } else if (arg.compare(0, 10, "--tile-id=") == 0) {
             tile_id = atol(arg.substr(10).c_str());
-        } else if ( arg.find("--min-lon=") == 0 ) {
+        } else if ( arg.compare(0, 10, "--min-lon=") == 0 ) {
             min.setLongitudeDeg(atof( arg.substr(10).c_str() ));
-        } else if ( arg.find("--max-lon=") == 0 ) {
+        } else if ( arg.compare(0, 10, "--max-lon=") == 0 ) {
             max.setLongitudeDeg(atof( arg.substr(10).c_str() ));
-        } else if ( arg.find("--min-lat=") == 0 ) {
+        } else if ( arg.compare(0, 10, "--min-lat=") == 0 ) {
             min.setLatitudeDeg(atof( arg.substr(10).c_str() ));
-        } else if ( arg.find("--max-lat=") == 0 ) {
+        } else if ( arg.compare(0, 10, "--max-lat=") == 0 ) {
             max.setLatitudeDeg(atof( arg.substr(10).c_str() ));
-        } else if ( arg.find("--min-dist=") == 0) {
-          bad_zone = atof(arg.substr(11).c_str());
-        } else if (arg.find("--") == 0) {
-          usage(argv[0]);
+        } else if ( arg.compare(0, 11, "--min-dist=") == 0) {
+            bad_zone = atof(arg.substr(11).c_str());
+        } else if (arg.compare(0, 2, "--") == 0) {
+            usage(argv[0]);
         } else {
             break;
         }

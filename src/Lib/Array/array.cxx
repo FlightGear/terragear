@@ -38,19 +38,20 @@
 using std::string;
 
 
-TGArray::TGArray( void ):
+TGArray::TGArray() :
     array_in(NULL),
     fitted_in(NULL),
+    originx(0.0), originy(0.0),
+    cols(0), rows(0),
+    rectified(false),
+    col_step(0.0), row_step(0.0),
     in_data(NULL)
 {
-
 }
 
 
-TGArray::TGArray( const string &file ):
-    array_in(NULL),
-    fitted_in(NULL),
-    in_data(NULL)
+TGArray::TGArray( const string &file ) :
+    TGArray()
 {
     TGArray::open(file);
 }
@@ -248,7 +249,7 @@ void TGArray::parse_bin()
 
 // Write out an array. If rectified is true, the heights have been adjusted
 // for discontinuities.
-void TGArray::write_bin(const string root_dir, bool rectified, SGBucket& b) {
+void TGArray::write_bin(const string& root_dir, bool rectified, SGBucket& b) {
     // generate output file name
     string base = b.gen_base_path();
     string path = root_dir + "/" + base;
@@ -282,7 +283,7 @@ void TGArray::write_bin(const string root_dir, bool rectified, SGBucket& b) {
 }
 
 // write an Array file
-bool TGArray::write( const string root_dir, SGBucket& b ) {
+bool TGArray::write( const string& root_dir, SGBucket& b ) {
     // generate output file name
     string base = b.gen_base_path();
     string path = root_dir + "/" + base;
@@ -444,7 +445,7 @@ std::vector<int> TGArray::collect_bad_points(const double bad_zone) {
 }
 
 // Check to see if the specified grid point is bad
-bool TGArray::is_bad_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const {
+bool TGArray::is_bad_point(const int xgrid, const int ygrid, const std::vector<int>& bad_points) const {
     int grididx;
     grididx = xgrid+ygrid*cols;
     auto result = std::find( std::begin(bad_points),std::end(bad_points),grididx );
@@ -503,7 +504,7 @@ through the three known points.
 
 TODO: Handle points on the boundaries. */
 
-double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const {
+double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vector<int>& bad_points) const {
     //xgrid: grid units horizontally
     //ygrid: grid units vertically
     //Loop over corner points, if no points available, give up

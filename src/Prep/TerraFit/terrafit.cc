@@ -75,7 +75,7 @@ SGLockedQueue<SGPath> global_workQueue;
  */
 class ArrayMap: public Terra::Map {
 public:
-        ArrayMap(TGArray& array): array(array) {
+        explicit ArrayMap(TGArray& array): array(array) {
                 width=array.get_cols();
                 height=array.get_rows();
                 min=30000;

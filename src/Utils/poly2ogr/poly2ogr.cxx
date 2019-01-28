@@ -147,10 +147,12 @@ OGRLayer* get_layer_for_material(const std::string& material) {
 OGRLinearRing* make_ring_from_fan(const int_list& fan, const std::vector<SGGeod>& nodes) {
         OGRLinearRing* ring = new OGRLinearRing();
         int_list::const_iterator vertex = fan.begin();
+        
         if (fan[1]==fan[fan.size()-1]) {
                 /* The fan is closed, so the first vertex is in the interior */
-                vertex++;
+                ++vertex;
         }
+
         for (;vertex!=fan.end();++vertex) {
                 OGRPoint *point=new OGRPoint();
                 const SGGeod& node = nodes[*vertex];
@@ -347,12 +349,13 @@ void process_polygon_file(const std::string& path) {
 
                         for (int pt=0;pt<count;pt++) {
                                 OGRPoint *point=new OGRPoint();
-                                double x,y,z;
-
+                                double x, y;
                                 in >> x >> y;
                                 point->setX(x);
                                 point->setY(y);
+
                                 if (poly3d) {
+                                        double z;
                                         in >> z;
                                         point->setZ(z);
                                 } else {
