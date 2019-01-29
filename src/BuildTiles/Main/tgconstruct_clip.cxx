@@ -40,7 +40,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon safety_base;
     tgcontour_list slivers;
     SGGeod p;
-    bool debug_area, debug_shape;
+    bool debug_shape;
     tgAccumulator accum(bucket.gen_index_str());
     unsigned int accum_idx = 0;
 
@@ -102,7 +102,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // process polygons in priority order
     for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
-        debug_area = IsDebugArea( i );
+        bool debug_area = IsDebugArea( i );
         for( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
             tgPolygon& current = polys_in.get_poly(i, j);
             debug_shape = IsDebugShape( polys_in.get_poly( i, j ).GetId() );
@@ -127,7 +127,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 char name[32];
 
                 sprintf(layer, "pre_clip_%d", polys_in.get_poly( i, j ).GetId() );
-                sprintf(name, "shape %d,%d", i,j);
+                sprintf(name, "shape %u,%u", i,j);
                 tgShapefile::FromPolygon( tmp, ds_name, layer, name );
                 tgPolygon::ToClipperFile( tmp, ds_name, layer );
                 
@@ -159,7 +159,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                         char name[32];
 
                         sprintf(layer, "post_clip_%d", polys_in.get_poly( i, j ).GetId() );
-                        sprintf(name, "shape %d,%d", i,j);
+                        sprintf(name, "shape %u,%u", i,j);
 
                         tgShapefile::FromPolygon( clipped, ds_name, layer, name );
                     }
@@ -175,7 +175,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             accum.Add( tmp );
             if ( debug_area || debug_shape ) {
                 char layer[32];
-                sprintf(layer, "post_clip_accum_%d_%d", accum_idx++, polys_in.get_poly( i, j ).GetId() );
+                sprintf(layer, "post_clip_accum_%u_%u", accum_idx++, polys_in.get_poly( i, j ).GetId() );
                 
                 accum.ToShapefiles( ds_name, layer, false );
                 accum.ToClipperfiles( ds_name, layer, false );

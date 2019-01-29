@@ -140,8 +140,7 @@ int make_socket (char *host, unsigned short int port) {
 
 // connect to the server and get the next task
 long int get_next_task( const string& host, int port, long int last_tile ) {
-    long int tile;
-    int sock, len;
+    int sock;
     fd_set ready;
     char message[MAXBUF];
 
@@ -172,17 +171,17 @@ long int get_next_task( const string& host, int port, long int last_tile ) {
     cout << " received reply" << endl;
 
     if ( FD_ISSET(sock, &ready) ) {
-	/* input coming from socket */
-	if ( (len = read(sock, message, MAXBUF)) > 0 ) {
-	    message[len] = '\0';
-	    tile = atoi(message);
-	    cout << "  tile to construct = " << tile << endl;
-	    close(sock);
-	    return tile;
-	} else {
-	    close(sock);
-	    return -1;
-	}
+        /* input coming from socket */
+        if ( (int len = read(sock, message, MAXBUF)) > 0 ) {
+            message[len] = '\0';
+            long int tile = atoi(message);
+            cout << "  tile to construct = " << tile << endl;
+            close(sock);
+            return tile;
+        } else {
+            close(sock);
+            return -1;
+        }
     }
 
     close(sock);

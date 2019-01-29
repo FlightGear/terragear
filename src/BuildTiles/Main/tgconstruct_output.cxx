@@ -87,7 +87,7 @@ void TGConstruct::AddCustomObjects( void ) {
                 in.getline(line, 2048);
                 SG_LOG( SG_GENERAL, SG_DEBUG, "line = " << line );
 
-                int result = sscanf( line, "%s %s", token, name );
+                int result = sscanf( line, "%255s %255s", token, name );
                 SG_LOG( SG_GENERAL, SG_DEBUG, "scanf scanned " << result << " tokens" );
 
                 if ( result > 0 ) {
@@ -133,10 +133,10 @@ void TGConstruct::WriteBtgFile( void )
     nodes.get_wgs84_nodes( wgs84_nodes );
  
     SGVec3d gbs_center = SGVec3d::fromGeod( bucket.get_center() );
-    double dist_squared, radius_squared = 0;
+    double radius_squared = 0;
     for (int i = 0; i < (int)wgs84_nodes.size(); ++i)
     {
-        dist_squared = distSqr(gbs_center, wgs84_nodes[i]);
+        double dist_squared = distSqr(gbs_center, wgs84_nodes[i]);
         if ( dist_squared > radius_squared ) {
             radius_squared = dist_squared;
         }

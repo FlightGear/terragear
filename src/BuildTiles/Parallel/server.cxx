@@ -171,56 +171,56 @@ long int get_next_tile() {
 
     // first time this routine is called, init counters
     if ( first_time ) {
-	first_time = false;
-	start_seconds = seconds = time(NULL);
-	counter = global_counter = 0;
+        first_time = false;
+        start_seconds = seconds = time(NULL);
+        counter = global_counter = 0;
     }
 
     // cout << "lon = " << lon << " lat = " << lat << endl;
     // cout << "start_lat = " << start_lat << endl;
 
     if ( lon > start_lon + area_width ) {
-	// increment to next row
-	// skip every other row (to avoid two clients working on
-	// adjacent tiles)
-	lat += 2.0 * dy;
+        // increment to next row
+        // skip every other row (to avoid two clients working on
+        // adjacent tiles)
+        lat += 2.0 * dy;
 
-	SGBucket tmp( SGGeod::fromDeg(0.0, lat) );
-	double dx = tmp.get_width();
-	lon = start_lon + (shift_over*dx) + (dx*0.5);
+        SGBucket tmp( SGGeod::fromDeg(0.0, lat) );
+        double dx = tmp.get_width();
+        lon = start_lon + (shift_over*dx) + (dx*0.5);
     }
 
     if ( lat > start_lat + area_height ) {
-	++pass;
-	if ( pass == 1 ) {
-	    shift_over = 0.0;
-	    shift_up = 0.0;
-	} else if ( pass == 2 ) {
-	    shift_over = 1.0;
-	    shift_up = 0.0;
-	} else if ( pass == 3 ) {
-	    shift_over = 0.0;
-	    shift_up = 1.0;
-	} else if ( pass == 4 ) {
-	    shift_over = 1.0;
-	    shift_up = 1.0;
-	} else {
-	    return -1;
-	}
+        ++pass;
+        if ( pass == 1 ) {
+            shift_over = 0.0;
+            shift_up = 0.0;
+        } else if ( pass == 2 ) {
+            shift_over = 1.0;
+            shift_up = 0.0;
+        } else if ( pass == 3 ) {
+            shift_over = 0.0;
+            shift_up = 1.0;
+        } else if ( pass == 4 ) {
+            shift_over = 1.0;
+            shift_up = 1.0;
+        } else {
+            return -1;
+        }
 
-	// reset lat
-	// lat = -89.0 + (shift_up*dy) - (dy*0.5);
-	// lat = 27.0 + (0*dy) + (dy*0.5);
-	lat = start_lat + (shift_up*dy) + (dy*0.5);
+        // reset lat
+        // lat = -89.0 + (shift_up*dy) - (dy*0.5);
+        // lat = 27.0 + (0*dy) + (dy*0.5);
+        lat = start_lat + (shift_up*dy) + (dy*0.5);
 
-	// reset lon
-	SGBucket tmp( SGGeod::fromDeg(0.0, lat) );
-	double dx = tmp.get_width();
-	// lon = -82 + (shift_over*dx) + (dx*0.5);
-	lon = start_lon + (shift_over*dx) + (dx*0.5);
+        // reset lon
+        SGBucket tmp( SGGeod::fromDeg(0.0, lat) );
+        double dx = tmp.get_width();
+        // lon = -82 + (shift_over*dx) + (dx*0.5);
+        lon = start_lon + (shift_over*dx) + (dx*0.5);
 
-	cout << "starting pass = " << pass
-	     << " with lat = " << lat << " lon = " << lon << endl;
+        cout << "starting pass = " << pass
+            << " with lat = " << lat << " lon = " << lon << endl;
     }
 
     // if ( ! start_lon ) {

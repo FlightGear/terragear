@@ -66,12 +66,11 @@ void TGLandclass::LoadFromGzFile(gzFile& fp)
 
 std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 {
-    unsigned int count;
     tgPolygon poly;
 
     // Save all landclass shapes
     for (unsigned int i=0; i<lc.polys.size(); i++) {
-        count = lc.polys[i].size();
+        unsigned int count = lc.polys[i].size();
         out << count << "\n";
         for (unsigned int j=0; j<count; j++) {
             out << lc.polys[i][j] << " ";
@@ -84,14 +83,14 @@ std::ostream& operator<< ( std::ostream& out, const TGLandclass& lc )
 
 void TGLandclass::SaveToGzFile(gzFile& fp)
 {
-    int i, j, num_layers, num_polys;
+    int i, j, num_layers;
     tgPolygon shape;
 
     // Save all landclass shapes
     num_layers = polys.size();
     sgWriteInt( fp, num_layers );
     for (i=0; i<num_layers; i++) {
-        num_polys = polys[i].size();
+        int num_polys = polys[i].size();
         sgWriteInt( fp, num_polys );
 
         for (j=0; j<num_polys; j++) {

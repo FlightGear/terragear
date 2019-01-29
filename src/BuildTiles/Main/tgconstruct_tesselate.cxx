@@ -43,7 +43,7 @@ void TGConstruct::TesselatePolys( void )
 
             if ( IsDebugShape( poly.GetId() ) ) {
                 char layer[32];
-                sprintf(layer, "pretess_%d_%d", area, p );
+                sprintf(layer, "pretess_%u_%u", area, p );
                 tgShapefile::FromPolygon( poly, ds_name, layer, "poly" );
             }
 

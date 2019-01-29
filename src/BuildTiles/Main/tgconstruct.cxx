@@ -40,11 +40,13 @@ TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLock
         ignoreLandmass(false),
         debug_all(false),
         ds_id((void*)-1),
+        l_id(nullptr),
         isOcean(false)
 {
     total_tiles = q.size();
     num_areas = areas.size();
     lock = l;
+    nudge = 0.0;
 }
 
 
@@ -55,9 +57,9 @@ TGConstruct::~TGConstruct() {
 }
 
 // TGConstruct: Setup
-void TGConstruct::set_paths( const std::string work, const std::string share, 
-                             const std::string match, const std::string output, 
-                             const std::vector<std::string> load ) {
+void TGConstruct::set_paths( const std::string& work, const std::string& share, 
+                             const std::string& match, const std::string& output, 
+                             const std::vector<std::string>& load ) {
     work_base   = work;
     share_base  = share;
     match_base  = match;
@@ -72,12 +74,10 @@ void TGConstruct::set_options( bool ignore_lm, double n ) {
 
 void TGConstruct::run()
 {
-    unsigned int tiles_complete;
-
     // as long as we have feometry to parse, do so
     while ( !workQueue.empty() ) {
         bucket = workQueue.pop();
-        tiles_complete = total_tiles - workQueue.size();
+        unsigned int tiles_complete = total_tiles - workQueue.size();
 
         // assume non ocean tile until proven otherwise
         isOcean = false;

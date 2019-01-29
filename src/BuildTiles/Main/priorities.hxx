@@ -33,10 +33,14 @@
 
 class TGAreaDefinition {
 public:
-    TGAreaDefinition( const std::string& n, const std::string& c, unsigned int p ) {
-        name     = n;
-        category = c;
+    TGAreaDefinition( const std::string& n, const std::string& c, unsigned int p ) :
+        name(n),
+        category(c)
+    {
         priority = p;
+        smooth_method = 0;
+        layered = false;
+        default_layer = 0;
     };
 
     std::string const& GetName() const {
@@ -68,7 +72,12 @@ typedef area_definition_list::const_iterator area_definition_iterator;
 
 class TGAreaDefinitions {
 public:
-    TGAreaDefinitions() {};
+    TGAreaDefinitions() :
+        sliver_area_name("<unnamed>")
+    {
+        sliver_area_priority = 0;
+    };
+
     int init( const std::string& filename );
     unsigned int size() const {
         return area_defs.size();

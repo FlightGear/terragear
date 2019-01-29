@@ -83,8 +83,8 @@ public:
 #endif
 
     // paths
-    void set_paths( const std::string work, const std::string share, const std::string match, 
-                    const std::string output, const std::vector<std::string> load_dirs );
+    void set_paths( const std::string& work, const std::string& share, const std::string& match, 
+                    const std::string& output, const std::vector<std::string>& load_dirs );
     void set_options( bool ignore_lm, double n );
 
     // TODO : REMOVE

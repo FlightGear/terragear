@@ -72,7 +72,6 @@ int TGConstruct::LoadLandclassPolys( void ) {
             {
                 // skipped!
             } else {
-                int area;
                 std::string material;
                 gzFile fp = gzopen( p.c_str(), "rb" );
                 unsigned int count;
@@ -80,9 +79,9 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 sgReadUInt( fp, &count );
                 SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
 
-                for ( unsigned int i=0; i<count; i++ ) {
+                for ( unsigned int i = 0; i < count; ++i ) {
                     poly.LoadFromGzFile( fp );
-                    area     = area_defs.get_area_priority( poly.GetFlag() );
+                    int area = area_defs.get_area_priority( poly.GetFlag() );
                     material = area_defs.get_area_name( area );
                     bool isRoad = area_defs.is_road_area( area );
                     
@@ -212,11 +211,10 @@ bool TGConstruct::CheckMatchingNode( SGGeod& node, bool road, bool fixed )
 SGGeod TGConstruct::GetNearestNodeLongitude( const SGGeod& node, const std::vector<SGGeod>& selection )
 {
     double       min_dist = std::numeric_limits<double>::infinity();
-    double       cur_dist;
     unsigned int min_idx = 0;
     
-    for ( unsigned int i=0; i<selection.size(); i++ ) {
-        cur_dist = fabs( node.getLongitudeDeg() - selection[i].getLongitudeDeg() );
+    for ( unsigned int i = 0; i < selection.size(); ++i ) {
+        double cur_dist = fabs( node.getLongitudeDeg() - selection[i].getLongitudeDeg() );
         if ( cur_dist < min_dist ) {
             min_dist = cur_dist;
             min_idx = i;
@@ -229,11 +227,10 @@ SGGeod TGConstruct::GetNearestNodeLongitude( const SGGeod& node, const std::vect
 SGGeod TGConstruct::GetNearestNodeLatitude( const SGGeod& node, const std::vector<SGGeod>& selection )
 {
     double       min_dist = std::numeric_limits<double>::infinity();
-    double       cur_dist;
     unsigned int min_idx = 0;
     
-    for ( unsigned int i=0; i<selection.size(); i++ ) {
-        cur_dist = fabs( node.getLatitudeDeg() - selection[i].getLatitudeDeg() );
+    for ( unsigned int i = 0; i < selection.size(); ++i ) {
+        double cur_dist = fabs( node.getLatitudeDeg() - selection[i].getLatitudeDeg() );
         if ( cur_dist < min_dist ) {
             min_dist = cur_dist;
             min_idx = i;
