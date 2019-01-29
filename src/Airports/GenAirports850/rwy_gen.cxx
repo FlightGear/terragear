@@ -832,19 +832,16 @@ void Runway::gen_rwy( tgpolygon_list& rwy_polys,
         start1_pct = 0.0;
         end1_pct = 0.0;
         
-        double part_len = 0.0;
-        int count=0;
-
         if (rwy.overrun[rwhalf] > 0.0) {
             /* Generate approach end overrun */
-            count = (int) (rwy.overrun[rwhalf] * 2.0/ rwy.width);
-            if(count < 1) {
+            int count = (int) (rwy.overrun[rwhalf] * 2.0/ rwy.width);
+            if (count < 1) {
                 count = 1;
             }
 
-            part_len = rwy.overrun[rwhalf] / (double)count;
-            for(int i=0; i<count; i++) {
-                start1_pct=end1_pct;
+            double part_len = rwy.overrun[rwhalf] / (double)count;
+            for (int i = 0; i < count; ++i) {
+                start1_pct = end1_pct;
                 end1_pct = start1_pct + ( part_len / length );
                 if ( debug ) { section_name = shapefile_name + "stopway"; }
                 gen_runway_section( runway_half,

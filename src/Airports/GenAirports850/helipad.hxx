@@ -56,18 +56,18 @@ public:
 
 private:
     struct TGRunway {
-    // data for helipad
-    char    designator[16];
-    double  lat;
-    double  lon;
-    double  heading;
-    double  length;
-    double  width;
-    int     surface;
-    int     marking;
-    int     shoulder;
-    double  smoothness;
-    int     edge_lights;
+        // data for helipad
+        char    designator[16];
+        double  lat;
+        double  lon;
+        double  heading;
+        double  length;
+        double  width;
+        int     surface;
+        int     marking;
+        int     shoulder;
+        double  smoothness;
+        int     edge_lights;
     };
 
     TGRunway heli;

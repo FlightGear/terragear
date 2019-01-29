@@ -22,6 +22,7 @@
 
 #include <simgear/compiler.h>
 #include <simgear/debug/logstream.hxx>
+
 #include "runway.hxx"
 #include "debug.hxx"
 
@@ -37,9 +38,7 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
     std::string empty = "";
 
     for ( int rwhalf=0; rwhalf<2; ++rwhalf ) {
-
         double length = rwy.length / 2.0;
-        double start_pct = 0.0;
         double end_pct = 0.0;
         double heading = 0.0;
 
@@ -53,7 +52,6 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
             runway_half.AddNode( 0, runway.GetNode(5) );
             runway_half.AddNode( 0, runway.GetNode(2) );
         }
-
         else {
             heading = rwy.heading;
 
@@ -71,7 +69,7 @@ void Runway::gen_simple_rwy( tgpolygon_list& rwy_polys,
         if ( rwy.threshold[rwhalf] > 0.0 ) {
             TG_LOG( SG_GENERAL, SG_DEBUG, "Displaced threshold for RW side " << rwhalf << " is " << rwy.threshold[rwhalf] );
 
-            start_pct = end_pct;
+            double start_pct = end_pct;
             end_pct = start_pct + ( rwy.threshold[rwhalf] / length );
             Runway::gen_runway_section( runway_half,
                                         start_pct, end_pct,

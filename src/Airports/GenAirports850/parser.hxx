@@ -89,30 +89,29 @@
 class Parser : public SGThread
 {
 public:
-    Parser(const std::string& datafile, const std::string& root, const string_list& elev_src )
+    Parser(const std::string& datafile, const std::string& root, const string_list& elev_src ) :
+        prev_node(nullptr),
+        filename(datafile),
+        elevation(elev_src),
+        work_dir(root),
+        cur_airport(nullptr),
+        cur_taxiway(nullptr),
+        cur_runway(nullptr),
+        cur_waterrunway(nullptr),
+        cur_helipad(nullptr),
+        cur_pavement(nullptr),
+        cur_boundary(nullptr),
+        cur_feat(nullptr),
+        cur_object(nullptr),
+        cur_windsock(nullptr),
+        cur_beacon(nullptr),
+        cur_sign(nullptr)
     {
-        filename        = datafile;
-        work_dir        = root;
-        elevation       = elev_src;
-
-        cur_airport     = nullptr;
-        cur_runway      = nullptr;
-        cur_waterrunway = nullptr;
-        cur_helipad     = nullptr;
-        cur_taxiway     = nullptr;
-        cur_pavement    = nullptr;
-        cur_boundary    = nullptr;
-        cur_feat        = nullptr;
-        cur_object      = nullptr;
-        cur_windsock    = nullptr;
-        cur_beacon      = nullptr;
-        cur_sign        = nullptr;
-        prev_node       = nullptr;
-        cur_state       = STATE_NONE;
+        cur_state = STATE_NONE;
     }
 
     // Debug
-    void            set_debug( std::string path, std::vector<std::string> runway_defs,
+    void            set_debug( const std::string& path, std::vector<std::string> runway_defs,
                                                  std::vector<std::string> pavement_defs,
                                                  std::vector<std::string> taxiway_defs,
                                                  std::vector<std::string> feature_defs );

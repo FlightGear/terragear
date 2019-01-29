@@ -55,7 +55,7 @@ public:
 
 private:
     struct TGRunway {
-    // data for whole runway
+        // data for whole runway
         int     surface;
         int     shoulder;
         int     centerline_lights;

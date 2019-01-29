@@ -370,10 +370,8 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     double      heading;
     double      dist;
     double      az2;
-    double      last_end_v;
     double      width = 0;
     std::string material;
-    double      cur_light_dist = 0.0f;
     double      light_delta = 0;
     bool        markStarted;
 
@@ -386,7 +384,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     for (unsigned int i=0; i<marks.size(); i++)
     {
         markStarted = false;
-        last_end_v   = 0.0f;
+        double last_end_v = 0.0;
 
         // which material for this mark?
         switch( marks[i]->type )
@@ -568,7 +566,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     for (unsigned int i=0; i<lights.size(); i++)
     {
         markStarted = false;
-        cur_light_dist = 0.0f;
+        double cur_light_dist = 0.0;
         int light_direction = lights[i]->LightDirection();
         bool alternate = false;
 
@@ -637,7 +635,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
                 while (cur_light_dist < dist)
                 {
-                    if (cur_light_dist == 0.0f)
+                    if (cur_light_dist == 0.0)
                     {
                         tmp = prev_outer;
                     }

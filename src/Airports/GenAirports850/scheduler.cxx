@@ -49,7 +49,7 @@ std::ostream& operator<< (std::ostream &out, const AirportInfo &ai)
     return out;  // MSVC
 }
 
-void Scheduler::set_debug( std::string path, std::vector<std::string> runway_defs,
+void Scheduler::set_debug( const std::string& path, std::vector<std::string> runway_defs,
                                              std::vector<std::string> pavement_defs,
                                              std::vector<std::string> taxiway_defs,
                                              std::vector<std::string> feature_defs )
@@ -176,32 +176,31 @@ void Scheduler::set_debug( std::string path, std::vector<std::string> runway_def
     }
 }
 
-bool Scheduler::IsAirportDefinition( char* line, std::string icao )
+bool Scheduler::IsAirportDefinition( char* line, const std::string& icao )
 {
-    char*    tok;
-    int      code;
-    bool     match = false;
+    bool match = false;
 
     // Get the number code
-    tok = strtok(line, " \t\r\n");
+    char* tok = strtok(line, " \t\r\n");
 
     if (tok)
     {
         line += strlen(tok)+1;
-        code = atoi(tok);
+        int code = atoi(tok);
 
         switch(code)
         {
             case LAND_AIRPORT_CODE:
             case SEA_AIRPORT_CODE:
             case HELIPORT_CODE:
-            {
-                Airport ap( code, line );
-                if ( ap.GetIcao() == icao )
                 {
-                    match = true;
+                    Airport ap( code, line );
+
+                    if ( ap.GetIcao() == icao )
+                    {
+                        match = true;
+                    }
                 }
-            }
                 break;
 
             case LAND_RUNWAY_CODE:
@@ -240,7 +239,6 @@ bool Scheduler::IsAirportDefinition( char* line, std::string icao )
 void Scheduler::AddAirport( std::string icao )
 {
     char            line[2048];
-    long            cur_pos;
     bool            found = false;
     AirportInfo     ai;
 
@@ -255,7 +253,7 @@ void Scheduler::AddAirport( std::string icao )
     while ( !in.eof() && !found )
     {
         // remember the position of this line
-        cur_pos = in.tellg();
+        long cur_pos = in.tellg();
 
         // get a line
     	in.getline(line, 2048);
@@ -273,7 +271,7 @@ void Scheduler::AddAirport( std::string icao )
     }
 }
 
-long Scheduler::FindAirport( std::string icao )
+long Scheduler::FindAirport( const std::string& icao )
 {
     char line[2048];
     long cur_pos = 0;
@@ -321,11 +319,8 @@ void Scheduler::RetryAirport( AirportInfo* pai )
 bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
 {
     char 	 line[2048];
-    char*	 def;
-    long 	 cur_pos;
     long	 cur_apt_pos = 0;
     std::string  cur_apt_name;
-    char*    tok;
     int      code;
     bool 	 match;
     bool 	 done;
@@ -351,14 +346,14 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
     while (!done)
     {
         // remember the position of this line
-        cur_pos = in.tellg();
+        long cur_pos = in.tellg();
 
         // get a line
         in.getline(line, 2048);
-        def = &line[0];
+        char* def = &line[0];
 
         // Get the number code
-        tok = strtok(def, " \t\r\n");
+        char* tok = strtok(def, " \t\r\n");
 
         if (tok)
         {
@@ -471,12 +466,11 @@ bool Scheduler::AddAirports( long start_pos, tgRectangle* boundingBox )
     }
 }
 
-Scheduler::Scheduler(std::string& datafile, const std::string& root, const string_list& elev_src)
+Scheduler::Scheduler(std::string& datafile, const std::string& root, const string_list& elev_src) :
+    filename(datafile),
+    elevation(elev_src),
+    work_dir(root)
 {
-    filename        = datafile;
-    work_dir        = root;
-    elevation       = elev_src;
-
     std::ifstream in( filename.c_str() );
     if ( !in.is_open() )
     {
@@ -487,16 +481,9 @@ Scheduler::Scheduler(std::string& datafile, const std::string& root, const strin
 
 void Scheduler::Schedule( int num_threads, std::string& summaryfile )
 {
-//    std::ofstream   csvfile;
-
-    // open and truncate the summary file : monitor only appends
-//    csvfile.open( summaryfile.c_str(), std::ios_base::out | std::ios_base::trunc );
-//    csvfile.close();
-
     std::vector<std::shared_ptr<Parser>> parsers;
     for (int i=0; i<num_threads; i++) {
         auto parser = std::make_shared<Parser>( filename, work_dir, elevation );
-        // parser->set_debug();
         parser->start();
         parsers.push_back( parser );
     }
