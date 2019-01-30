@@ -78,12 +78,12 @@ public:
     }
 
     LinearFeature( const std::string& desc, double o ) :
-        offset(o),
-        width(0),
         cur_mark(nullptr),
         cur_light(nullptr),
         description(desc)
     {
+        offset = o;
+        width = 0;
     }
 
     ~LinearFeature();

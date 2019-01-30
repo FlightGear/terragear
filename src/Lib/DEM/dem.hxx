@@ -95,7 +95,7 @@ public:
 
     // Constructor
     TGDem();
-    TGDem( const std::string& file );
+    explicit TGDem( const std::string& file );
 
     // Destructor
     ~TGDem();

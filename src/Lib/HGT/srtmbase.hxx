@@ -24,10 +24,6 @@
 #ifndef _SRTMBASE_HXX
 #define _SRTMBASE_HXX
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #include <simgear/compiler.h>
 
 #include <simgear/bucket/newbucket.hxx>
@@ -36,8 +32,13 @@
 class TGSrtmBase {
 
 protected:
-    TGSrtmBase() : remove_tmp_file(false)
-    {}
+    TGSrtmBase() :
+        remove_tmp_file(false)
+    {
+        originx = originy = 0.0;
+        cols = rows = 0;
+        col_step = row_step = 0.0;
+    }
 
     ~TGSrtmBase();
 
@@ -83,5 +84,3 @@ public:
 
 
 #endif // _SRTMBASE_HXX
-
-

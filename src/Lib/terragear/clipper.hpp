@@ -118,7 +118,7 @@ struct DoublePoint
   double X;
   double Y;
   DoublePoint(double x = 0, double y = 0) : X(x), Y(y) {}
-  DoublePoint(IntPoint ip) : X((double)ip.X), Y((double)ip.Y) {}
+  explicit DoublePoint(const IntPoint& ip) : X(ip.X), Y(ip.Y) {}
 };
 //------------------------------------------------------------------------------
 
@@ -263,7 +263,7 @@ protected:
 class Clipper : public virtual ClipperBase
 {
 public:
-  Clipper(int initOptions = 0);
+  explicit Clipper(int initOptions = 0);
   bool Execute(ClipType clipType,
       Paths &solution,
       PolyFillType fillType = PolyFillType::EvenOdd);
@@ -391,7 +391,7 @@ private:
 class clipperException : public std::exception
 {
   public:
-    clipperException(const char* description): m_descr(description) {}
+    explicit clipperException(const char* description): m_descr(description) {}
     virtual ~clipperException() throw() {}
     virtual const char* what() const throw() {return m_descr.c_str();}
   private:

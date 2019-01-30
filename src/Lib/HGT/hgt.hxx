@@ -59,7 +59,7 @@ public:
 
     // Constructor, _res must be either "1" for the 1arcsec data or
     // "3" for the 3arcsec data.
-    TGHgt( int _res );
+    explicit TGHgt( int _res );
     TGHgt( int _res, const SGPath &file );
 
     // Destructor

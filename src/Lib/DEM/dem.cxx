@@ -38,19 +38,33 @@ using std::string;
 
 
 TGDem::TGDem() :
-    z_units(2)                  // meters
+    in(nullptr),
+    dem_data(new float[DEM_SIZE_1][DEM_SIZE_1]),
+    output_data(new float[DEM_SIZE_1][DEM_SIZE_1]),
+    dem_description(""),
+    dem_quadrangle(""),
+    option_name("")
 {
-    // cout << "class TGDem CONstructor called." << endl;
-    dem_data = new float[DEM_SIZE_1][DEM_SIZE_1];
-    output_data = new float[DEM_SIZE_1][DEM_SIZE_1];
+    originx = originy = 0.0;
+    cols =rows = 0;
+    col_step = row_step = 0.0;
+    dem_x1 = dem_x2 = dem_x3 = dem_x4 = 0.0;
+    dem_y1 = dem_y2 = dem_y3 = dem_y4 = 0.0;
+    dem_z1 = dem_z2 = 0.0;
+    dem_resolution = dem_num_profiles = 0;
+    prof_col = prof_row = 0;
+    prof_num_cols = prof_num_rows = 0;
+    prof_x1 = prof_y1 = 0.0;
+    prof_data = 0.0;
+    do_data = 0;
+    cur_col = cur_row = 0;
+    z_units = 2;    // meters
 }
 
 
-TGDem::TGDem( const string &file ) {
-    // cout << "class TGDem CONstructor called." << endl;
-    dem_data = new float[DEM_SIZE_1][DEM_SIZE_1];
-    output_data = new float[DEM_SIZE_1][DEM_SIZE_1];
-
+TGDem::TGDem( const string &file ) :
+    TGDem::TGDem()
+{
     TGDem::open(file);
 }
 
@@ -150,7 +164,6 @@ TGDem::next_exp() {
 bool
 TGDem::read_a_record() {
     int i, inum;
-    double dnum;
     string name, token, buf;
     char c;
 
@@ -187,7 +200,7 @@ TGDem::read_a_record() {
 
     // Map projection parameters (ignored)
     for ( i = 0; i < 15; i++ ) {
-        dnum = next_exp();
+        double dnum = next_exp();
         SG_LOG(SG_GENERAL, SG_DEBUG, i << ": "  << dnum);
     }
 

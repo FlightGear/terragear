@@ -163,7 +163,7 @@ inline std::ostream& operator<<(std::ostream& out, const Vec2& v)
 
 inline std::istream& operator>>(std::istream& in, Vec2& v)
 {
-    char c;
+    char c = '\0';
     return in >> c >> v[0] >> v[1] >> c;
 }
 

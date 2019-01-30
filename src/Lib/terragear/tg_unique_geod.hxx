@@ -27,7 +27,7 @@
 
 class SGGeodIndex {
 public:
-    SGGeodIndex( SGGeod g ) {
+    explicit SGGeodIndex( SGGeod g ) {
         geod = g;
 
         std::size_t FNV_prime;

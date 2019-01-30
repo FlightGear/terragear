@@ -28,17 +28,17 @@ void LinearFeature::ConvertContour( const BezContour& src, bool closed )
     points.Erase();
 
     // iterate through each bezier node in the contour
-    for (unsigned int i = 0; i <= src.size() - 1; ++i)
+    for (unsigned int i = 0; i < src.size(); ++i)
     {
         curNode = src.at(i);
 
         if (i < src.size() - 1)
         {
-            nextNode = src.at(i+1);
+            nextNode = src.at(i + 1);
         }
         else
         {
-            // for the last node, next is the first. as all contours are closed
+            // for the last node, next is the first node, as all contours are closed
             nextNode = src.at(0);
         }
 

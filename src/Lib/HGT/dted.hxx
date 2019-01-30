@@ -60,7 +60,7 @@ public:
 
     // Constructor, _res must be either "1" for the 1arcsec data or
     // "3" for the 3arcsec data.
-    TGDted( int _res );
+    explicit TGDted( int _res );
     TGDted( int _res, const SGPath &file );
 
     // Destructor

@@ -47,7 +47,6 @@
 #include <simgear/misc/sg_dir.hxx>
 #include <simgear/debug/logstream.hxx>
 
-
 #include "dted.hxx"
 
 using std::cout;
@@ -64,9 +63,9 @@ TGDted::TGDted( int _res )
 }
 
 
-TGDted::TGDted( int _res, const SGPath &file ):TGDted(_res)
+TGDted::TGDted( int _res, const SGPath &file ) :
+    TGDted(_res)
 {
-
     TGDted::open( file );
 }
 
@@ -222,7 +221,6 @@ TGDted::load( ) {
 
     return true;
 }
-
 
 
 TGDted::~TGDted() {

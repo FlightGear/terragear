@@ -181,6 +181,8 @@ int PolyTree::Total() const
 
 PolyNode::PolyNode(): Parent(0), Index(0), m_IsOpen(false)
 {
+  m_jointype = JoinType::Square;
+  m_endtype = EndType::ClosedPolygon;
 }
 //------------------------------------------------------------------------------
 
@@ -718,7 +720,10 @@ void DisposeOutPts(OutPt*& pp)
 
 inline void InitEdge(TEdge* e, TEdge* eNext, TEdge* ePrev, const IntPoint& Pt)
 {
+  // Dx is explicitly being set due to memset not being portable for floating-point values
   std::memset(e, 0, sizeof(TEdge));
+  e->Dx = 0.0;
+
   e->Next = eNext;
   e->Prev = ePrev;
   e->Curr = Pt;
@@ -880,10 +885,13 @@ bool HorzSegmentsOverlap(cInt seg1a, cInt seg1b, cInt seg2a, cInt seg2b)
 // ClipperBase class methods ...
 //------------------------------------------------------------------------------
 
-ClipperBase::ClipperBase() //constructor
+ClipperBase::ClipperBase() :
+  m_ActiveEdges(nullptr)
 {
   m_CurrentLM = m_MinimaList.begin(); //begin() == end() here
   m_UseFullRange = false;
+  m_PreserveCollinear = false;
+  m_HasOpenPaths = false; 
 }
 //------------------------------------------------------------------------------
 
@@ -4199,13 +4207,13 @@ void ClipperOffset::DoRound(int j, int k)
   m_normals[k].X * m_normals[j].X + m_normals[k].Y * m_normals[j].Y);
   int steps = std::max((int)Round(m_StepsPerRad * std::fabs(a)), 1);
 
-  double X = m_normals[k].X, Y = m_normals[k].Y, X2;
+  double X = m_normals[k].X, Y = m_normals[k].Y;
   for (int i = 0; i < steps; ++i)
   {
     m_destPoly.push_back(IntPoint(
         Round(m_srcPoly[j].X + X * m_delta),
         Round(m_srcPoly[j].Y + Y * m_delta)));
-    X2 = X;
+    double X2 = X;
     X = X * m_cos - m_sin * Y;
     Y = X2 * m_sin + Y * m_cos;
   }

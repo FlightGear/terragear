@@ -62,7 +62,8 @@ TGHgt::TGHgt( int _res )
 }
 
 
-TGHgt::TGHgt( int _res, const SGPath &file ) : TGHgt( _res )
+TGHgt::TGHgt( int _res, const SGPath &file ) :
+    TGHgt( _res )
 {
     TGHgt::open( file );
 }

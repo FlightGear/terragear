@@ -61,7 +61,7 @@ class LandCover {
 
 public:
 
-  LandCover( const std::string &filename );
+  explicit LandCover( const std::string &filename );
   virtual ~LandCover ();
 
   virtual int getValue (long x, long y) const;

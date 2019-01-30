@@ -136,7 +136,7 @@ void ClosedPoly::ConvertContour( const BezContour& src, tgContour& dst )
     dst.Erase();
 
     // iterate through each bezier node in the contour
-    for (unsigned int i = 0; i <= src.size()-1; i++)
+    for (unsigned int i = 0; i < src.size(); ++i)
     {
         TG_LOG(SG_GENERAL, SG_DEBUG, "\nHandling Node " << i << "\n\n");
 
@@ -147,7 +147,7 @@ void ClosedPoly::ConvertContour( const BezContour& src, tgContour& dst )
         }
         else
         {
-            // for the last node, next is the first. as all contours are closed
+            // for the last node, next is the first node, as all contours are closed
             nextNode = src.at(0);
         }
 
