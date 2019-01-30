@@ -14,10 +14,10 @@ void LinearFeature::ConvertContour( const BezContour& src, bool closed )
     SGGeod    cp1;
     SGGeod    cp2;
 
-    int       curve_type = CURVE_LINEAR;
+    int       curve_type;
     double    total_dist;
     double    theta1, theta2;
-    int       num_segs = BEZIER_DETAIL;
+    int       num_segs;
 
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
@@ -161,7 +161,7 @@ void LinearFeature::ConvertContour( const BezContour& src, bool closed )
         // Sometimes, the control point lies just beyond the final point.  We try to make a 'hook' at the end, which makes some really bad polys
         // Just convert the entire segment to linear
         // this can be detected in quadratic curves (current issue in LFKJ) when the contol point lies within the line generated from point 1 to point 2
-        // theat close to 180 at the control point to the cur node and next node
+        // at close to 180 at the control point to the cur node and next node
         if ( curve_type == CURVE_QUADRATIC )
         {
             if ( (std::abs(theta1 - 180.0) < 5.0 ) || (std::abs(theta1) < 5.0 ) || (std::isnan(theta1)) )

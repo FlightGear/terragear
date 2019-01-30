@@ -129,7 +129,6 @@ int main(int argc, char **argv)
 
     SGGeod min = SGGeod::fromDeg( -180, -90 );
     SGGeod max = SGGeod::fromDeg( 180, 90 );
-    long  position = 0;
 
     // Setup elevation directories
     string_list elev_src;
@@ -344,7 +343,7 @@ int main(int argc, char **argv)
         TG_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
 
         // scroll forward in datafile
-        position = scheduler->FindAirport( start_id );
+        long position = scheduler->FindAirport( start_id );
 
         // add remaining airports within boundary
         if ( scheduler->AddAirports( position, &boundingBox ) )

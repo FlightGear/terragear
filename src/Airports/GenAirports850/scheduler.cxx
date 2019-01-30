@@ -73,13 +73,12 @@ void Scheduler::set_debug( const std::string& path, std::vector<std::string> run
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << idx << " for " << icao );
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();
@@ -102,13 +101,12 @@ void Scheduler::set_debug( const std::string& path, std::vector<std::string> run
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << idx << " for " << icao );
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();
@@ -131,13 +129,12 @@ void Scheduler::set_debug( const std::string& path, std::vector<std::string> run
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << idx << " for " << icao );
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();
@@ -160,13 +157,12 @@ void Scheduler::set_debug( const std::string& path, std::vector<std::string> run
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i << " for " << icao );
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << idx << " for " << icao );
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();

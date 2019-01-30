@@ -126,9 +126,9 @@ void ClosedPoly::ConvertContour( const BezContour& src, tgContour& dst )
     SGGeod cp1;
     SGGeod cp2;
 
-    int       curve_type = CURVE_LINEAR;
+    int       curve_type;
     double    total_dist;
-    int       num_segs = BEZIER_DETAIL;
+    int       num_segs;
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Creating a contour with " << src.size() << " nodes");
 

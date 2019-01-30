@@ -62,13 +62,12 @@ void Parser::set_debug( const std::string& path, std::vector<std::string> runway
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug runway " << idx);
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();
@@ -91,13 +90,12 @@ void Parser::set_debug( const std::string& path, std::vector<std::string> runway
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug pavement " << idx);
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();
@@ -120,13 +118,12 @@ void Parser::set_debug( const std::string& path, std::vector<std::string> runway
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug taxiway " << idx);
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();
@@ -149,13 +146,12 @@ void Parser::set_debug( const std::string& path, std::vector<std::string> runway
             shapes.push_back( std::numeric_limits<int>::max() );
         } else {
             std::stringstream ss(dsd);
-            int i;
-
-            while (ss >> i)
+            int idx;
+            while (ss >> idx)
             {
-                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << i);
+                TG_LOG(SG_GENERAL, SG_ALERT, "Adding debug feature " << idx);
 
-                shapes.push_back(i);
+                shapes.push_back(idx);
 
                 if (ss.peek() == ',')
                     ss.ignore();
