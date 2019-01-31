@@ -28,8 +28,6 @@ mkdir -p ${DUMPDIR}
 export LD_LIBRARY_PATH=/opt/GRASS.32/lib
 OGR2OGR=/opt/GRASS.32/bin/ogr2ogr
 OGRINFO=/opt/GRASS.32/bin/ogrinfo
-#OGR2OGR=/usr/local/bin/ogr2ogr
-#OGRINFO=/usr/local/bin/ogrinfo
 
 AREAS="v0eur_5/vmaplv0/eurnasia v0noa_5/vmaplv0/noamer v0sas_5/vmaplv0/sasaus v0soa_5/vmaplv0/soamafr"
 
@@ -46,7 +44,6 @@ GetFeatureNames () {
 ConvertToSHapefiles () {
     for VMAP_URL in ${AREAS}; do
         ZONE=`echo ${VMAP_URL} | cut -f 1 -d \/ | sed -e 's/^v0//g' -e 's/_5\$//g'`
-#        for FEATURE in `GetFeatureNames`; do
         for FEATURE in `${OGRINFO} gltp:/vrf/home/martin/live/vmap0/${VMAP_URL} 2>&1 | egrep \^"[0-9].*@" | awk '{print $2}' | sort | uniq`; do
             CATEGORY=`echo ${FEATURE} | cut -f 1 -d \@`
             DIR=`echo ${FEATURE} | cut -f 1 -d \( | cut -f 2 -d \@`

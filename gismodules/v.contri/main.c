@@ -33,6 +33,7 @@
 
 #include "triangle.h"
 
+
 void build_segments(struct triangulateio* tri, struct Map_info* map)
 {
 	plus_t node_idx, line_idx;

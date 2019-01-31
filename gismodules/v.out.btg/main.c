@@ -21,10 +21,11 @@
 #include <grass/glocale.h>
 #include <grass/vector.h>
 
+
 int main(int argc, char *argv[])
 {
 	struct GModule *module;	/* GRASS module for parsing arguments */
-	struct Option *old, *new;
+	struct Option *old;
 	struct Map_info oldmap;
 	
 	G_gisinit(argv[0]);
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
 	/* Define the different options as defined in gis.h */
 	old = G_define_standard_option(G_OPT_V_INPUT);
 	
-	new = G_define_standard_option(G_OPT_F_OUTPUT);
+	G_define_standard_option(G_OPT_F_OUTPUT);
 	
 	/* options and flags parser */
 	if (G_parser(argc, argv))
