@@ -13,15 +13,18 @@
 #include "tg_polygon.hxx"
 #include "tg_misc.hxx"
 
-/* determining if a face is within the reulting poly */
+/* determining if a face is within the resulting poly */
 struct FaceInfo2
 {
-  FaceInfo2() {}
-  int nesting_level;
+    FaceInfo2() {
+        nesting_level = 0;
+    }
 
-  bool in_domain(){
-    return nesting_level%2 == 1;
-  }
+    int nesting_level;
+
+    bool in_domain() {
+        return nesting_level % 2 == 1;
+    }
 };
 
 typedef CGAL::Exact_predicates_exact_constructions_kernel         K;

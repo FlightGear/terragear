@@ -258,7 +258,7 @@ class Int128
 
     Int128(long64 _lo = 0)
     {
-      lo = (ulong64)_lo;   
+      lo = (ulong64)_lo;
       if (_lo < 0)  hi = -1; else hi = 0; 
     }
 
@@ -553,8 +553,8 @@ bool SlopesEqual(const TEdge &e1, const TEdge &e2, bool UseFullInt64Range)
 }
 //------------------------------------------------------------------------------
 
-bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
-  const IntPoint pt3, bool UseFullInt64Range)
+bool SlopesEqual(const IntPoint& pt1, const IntPoint& pt2,
+  const IntPoint& pt3, bool UseFullInt64Range)
 {
 #ifndef use_int32
   if (UseFullInt64Range)
@@ -565,8 +565,8 @@ bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
 }
 //------------------------------------------------------------------------------
 
-bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
-  const IntPoint pt3, const IntPoint pt4, bool UseFullInt64Range)
+bool SlopesEqual(const IntPoint& pt1, const IntPoint& pt2,
+  const IntPoint& pt3, const IntPoint& pt4, bool UseFullInt64Range)
 {
 #ifndef use_int32
   if (UseFullInt64Range)
@@ -583,7 +583,7 @@ inline bool IsHorizontal(TEdge &e)
 }
 //------------------------------------------------------------------------------
 
-inline double GetDx(const IntPoint pt1, const IntPoint pt2)
+inline double GetDx(const IntPoint& pt1, const IntPoint& pt2)
 {
   return (pt1.Y == pt2.Y) ?
     HORIZONTAL : (double)(pt2.X - pt1.X) / (pt2.Y - pt1.Y);
@@ -862,8 +862,8 @@ OutPt* GetBottomPt(OutPt *pp)
 }
 //------------------------------------------------------------------------------
 
-bool Pt2IsBetweenPt1AndPt3(const IntPoint pt1,
-  const IntPoint pt2, const IntPoint pt3)
+bool Pt2IsBetweenPt1AndPt3(const IntPoint& pt1,
+  const IntPoint& pt2, const IntPoint& pt3)
 {
   if ((pt1 == pt3) || (pt1 == pt2) || (pt3 == pt2))
     return false;
@@ -1480,6 +1480,11 @@ bool ClipperBase::LocalMinimaPending()
 
 Clipper::Clipper(int initOptions) : ClipperBase() //constructor
 {
+  m_ClipType = ClipType::Intersection;
+  m_SortedEdges = 0;
+  m_ClipFillType = PolyFillType::EvenOdd;
+  m_SubjFillType = PolyFillType::EvenOdd;
+  m_UsingPolyTree = false;
   m_ExecuteLocked = false;
   m_UseFullRange = false;
   m_ReverseOutput = ((initOptions & static_cast<int>(InitOptions::ReverseSolution)) != 0);
@@ -1946,7 +1951,7 @@ void Clipper::CopyAELToSEL()
 }
 //------------------------------------------------------------------------------
 
-void Clipper::AddJoin(OutPt *op1, OutPt *op2, const IntPoint OffPt)
+void Clipper::AddJoin(OutPt *op1, OutPt *op2, const IntPoint& OffPt)
 {
   Join* j = new Join;
   j->OutPt1 = op1;
@@ -1972,7 +1977,7 @@ void Clipper::ClearGhostJoins()
 }
 //------------------------------------------------------------------------------
 
-void Clipper::AddGhostJoin(OutPt *op, const IntPoint OffPt)
+void Clipper::AddGhostJoin(OutPt *op, const IntPoint& OffPt)
 {
   Join* j = new Join;
   j->OutPt1 = op;
@@ -3383,7 +3388,7 @@ OutPt* DupOutPt(OutPt* outPt, bool InsertAfter)
 //------------------------------------------------------------------------------
 
 bool JoinHorz(OutPt* op1, OutPt* op1b, OutPt* op2, OutPt* op2b,
-  const IntPoint Pt, bool DiscardLeft)
+  const IntPoint& Pt, bool DiscardLeft)
 {
   Direction Dir1 = (op1->Pt.X > op1b->Pt.X ? Direction::RightToLeft : Direction::LeftToRight);
   Direction Dir2 = (op2->Pt.X > op2b->Pt.X ? Direction::RightToLeft : Direction::LeftToRight);
@@ -3802,6 +3807,8 @@ ClipperOffset::ClipperOffset(double miterLimit, double arcTolerance)
   this->MiterLimit = miterLimit;
   this->ArcTolerance = arcTolerance;
   m_lowest.X = -1;
+  m_delta = m_sinA = m_sin = m_cos = 0.0;
+  m_miterLim = m_StepsPerRad = 0.0;
 }
 //------------------------------------------------------------------------------
 
@@ -4534,7 +4541,7 @@ void MinkowskiSum(const Path& pattern, const Path& path, Paths& solution, bool p
 }
 //------------------------------------------------------------------------------
 
-void TranslatePath(const Path& input, Path& output, const IntPoint delta)
+void TranslatePath(const Path& input, Path& output, const IntPoint& delta)
 {
   //precondition: input != output
   output.resize(input.size());

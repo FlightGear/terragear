@@ -141,7 +141,7 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
     }
 }
 
-long int tgChopper::GenerateIndex( std::string path )
+long int tgChopper::GenerateIndex( const std::string& path )
 {
     std::string index_file = path + "/chop.idx";
     long int index = 0;
@@ -194,7 +194,7 @@ void tgChopper::Save( bool DebugShapefiles )
     char layer[32];
     char ds_name[64];
 
-    for (it=bp_map.begin(); it != bp_map.end(); it++) {
+    for (it=bp_map.begin(); it != bp_map.end(); ++it) {
         SGBucket b( (*it).first );
         tgpolygon_list const& polys = (*it).second;
 
@@ -226,7 +226,7 @@ void tgChopper::Save( bool DebugShapefiles )
 
             if ( DebugShapefiles )
             {
-                sprintf(layer, "poly_%s-%d", b.gen_index_str().c_str(), i );
+                sprintf(layer, "poly_%s-%u", b.gen_index_str().c_str(), i );
                 tgShapefile::FromPolygon( polys[i], ds_name, layer, "poly" );
             }
         }

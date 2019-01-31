@@ -211,8 +211,6 @@ void tgPolygon::Texture( void )
 {
     SGGeod  p;
     SGVec2f t;
-    double  x, y;
-    float   tx, ty;
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Texture Poly with material " << material << " method " << tp.method << " tpref " << tp.ref << " heading " << tp.heading );
 
@@ -272,8 +270,8 @@ void tgPolygon::Texture( void )
                     // 3. Convert from polar to cartesian coordinates
                     //
 
-                    x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
-                    y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
+                    double x = sin( course * SGD_DEGREES_TO_RADIANS ) * dist;
+                    double y = cos( course * SGD_DEGREES_TO_RADIANS ) * dist;
                     SG_LOG(SG_GENERAL, SG_DEBUG, "  x = " << x << " y = " << y);
 
                     //
@@ -282,7 +280,7 @@ void tgPolygon::Texture( void )
                     float tmp;
 
                     tmp = (float)x / (float)tp.width;
-                    tx = tmp * (float)(tp.maxu - tp.minu) + (float)tp.minu;
+                    float tx = tmp * (float)(tp.maxu - tp.minu) + (float)tp.minu;
                     SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
 
                     // clip u?
@@ -292,7 +290,7 @@ void tgPolygon::Texture( void )
                     }
 
                     tmp = (float)y / (float)tp.length;
-                    ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
+                    float ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
                     SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
 
                     // clip v?

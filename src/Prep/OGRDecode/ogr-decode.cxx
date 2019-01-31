@@ -135,7 +135,7 @@ void Decoder::processLineString(OGRLineString* poGeometry, const string& area_ty
 
     SGGeod p0, p1;
     double heading, dist, az2;
-    int i, j, numPoints, numSegs;
+    int j, numPoints, numSegs;
     double max_dist;
 
     numPoints = poGeometry->getNumPoints();
@@ -154,7 +154,7 @@ void Decoder::processLineString(OGRLineString* poGeometry, const string& area_ty
     line.AddNode( SGGeodesy::direct( p0, heading, EP_STRETCH ) );
 
     // now add the middle points : if they are too far apart, add intermediate nodes
-    for ( i=1;i<numPoints-1;i++) {
+    for ( int i = 1; i < numPoints - 1; ++i) {
         p0 = SGGeod::fromDeg( poGeometry->getX(i-1), poGeometry->getY(i-1) );
         p1 = SGGeod::fromDeg( poGeometry->getX(i  ), poGeometry->getY(i  ) );
         SGGeodesy::inverse( p0, p1, heading, az2, dist );
@@ -185,7 +185,7 @@ void Decoder::processLineString(OGRLineString* poGeometry, const string& area_ty
 
     // make a plygons from the line segments
     segments = tgContour::ExpandToPolygons( line, width );
-    for ( unsigned int i=0; i<segments.size(); i++ ) {
+    for ( unsigned int i = 0; i < segments.size(); ++i ) {
         segments[i].SetPreserve3D( false );
         if (with_texture) {
             segments[i].SetTexMethod( TG_TEX_BY_TPS_CLIPU );
@@ -296,7 +296,7 @@ void Decoder::run()
                     }
                 }
                 OGRMultiPoint* multipt=(OGRMultiPoint*)poGeometry;
-                for (int i=0;i<multipt->getNumGeometries();i++) {
+                for (int i = 0; i < multipt->getNumGeometries(); ++i) {
                     processPoint((OGRPoint*)(multipt->getGeometryRef(i)), area_type_name, width);
                 }
                 break;
@@ -325,7 +325,7 @@ void Decoder::run()
                 }
 
                 OGRMultiLineString* multilines=(OGRMultiLineString*)poGeometry;
-                for (int i=0;i<multilines->getNumGeometries();i++) {
+                for (int i = 0; i < multilines->getNumGeometries(); ++i) {
                     processLineString((OGRLineString*)(multilines->getGeometryRef(i)), area_type_name, width, texture_lines);
                 }
                 break;
@@ -338,7 +338,7 @@ void Decoder::run()
             case wkbMultiPolygon: {
                 SG_LOG( SG_GENERAL, SG_DEBUG, "MultiPolygon feature" );
                 OGRMultiPolygon* multipoly=(OGRMultiPolygon*)poGeometry;
-                for (int i=0;i<multipoly->getNumGeometries();i++) {
+                for (int i = 0; i < multipoly->getNumGeometries(); ++i) {
                     processPolygon((OGRPolygon*)(multipoly->getGeometryRef(i)), area_type_name);
                 }
                 break;
@@ -478,7 +478,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     // Now process the workqueue with threads
     // this just generates all the tgPolygons
     std::vector<std::shared_ptr<Decoder>> decoders;
-    for (int i=0; i<num_threads; i++) {
+    for (int i = 0; i < num_threads; ++i) {
         auto decoder = std::make_shared<Decoder>( poCT, area_type_field, point_width_field, line_width_field, results );
         decoder->start();
         decoders.push_back( decoder );
@@ -738,7 +738,7 @@ int main( int argc, char **argv ) {
             processLayer(poLayer, results );
         }
     } else {
-        for (int i=0;i<poDS->GetLayerCount();i++) {
+        for (int i = 0; i < poDS->GetLayerCount(); ++i) {
             poLayer = poDS->GetLayer(i);
 
             assert(poLayer != NULL);

@@ -148,7 +148,7 @@ bool TGNodes::get_geod_inside( const SGGeod& min, const SGGeod& max, std::vector
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
 
     // and convert the tuples back into SGGeod
-    for ( it = result.begin(); it != result.end(); it++ ) {
+    for ( it = result.begin(); it != result.end(); ++it ) {
         points.push_back( SGGeod::fromDegM( boost::get<0>(*it).x(), boost::get<0>(*it).y(), boost::get<1>(*it) ) );
     }
 
@@ -178,7 +178,7 @@ bool TGNodes::get_nodes_inside( const SGGeod& min, const SGGeod& max, std::vecto
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
     
     // and convert the tuples back into SGGeod
-    for ( it = result.begin(); it != result.end(); it++ ) {
+    for ( it = result.begin(); it != result.end(); ++it ) {
         points.push_back( boost::get<2>(*it) );
     }
     
@@ -217,7 +217,7 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     exact_bb = Fuzzy_bb(ll, ur);
     result.clear();
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
+    for ( it = result.begin(); it != result.end(); ++it ) {
         north.push_back( SGGeod::fromDegM( boost::get<0>(*it).x(), boost::get<0>(*it).y(), boost::get<1>(*it) ) );
     }
 
@@ -228,7 +228,7 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     result.clear();
 
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
+    for ( it = result.begin(); it != result.end(); ++it ) {
         south.push_back( SGGeod::fromDegM( boost::get<0>(*it).x(), boost::get<0>(*it).y(), boost::get<1>(*it) ) );
     }
 
@@ -239,7 +239,7 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     result.clear();
 
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
+    for ( it = result.begin(); it != result.end(); ++it ) {
         east.push_back( SGGeod::fromDegM( boost::get<0>(*it).x(), boost::get<0>(*it).y(), boost::get<1>(*it) ) );
     }
 
@@ -250,7 +250,7 @@ bool TGNodes::get_geod_edge( const SGBucket& b, std::vector<SGGeod>& north, std:
     result.clear();
 
     tg_kd_tree.search(std::back_inserter( result ), exact_bb);
-    for ( it = result.begin(); it != result.end(); it++ ) {
+    for ( it = result.begin(); it != result.end(); ++it ) {
         west.push_back( SGGeod::fromDegM( boost::get<0>(*it).x(), boost::get<0>(*it).y(), boost::get<1>(*it) ) );
     }
 

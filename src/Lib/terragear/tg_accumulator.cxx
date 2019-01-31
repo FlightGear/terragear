@@ -56,7 +56,7 @@ tgPolygon tgAccumulator::Diff( const tgContour& subject )
                 max_hits = num_hits-1;
 
                 FILE* fp = fopen( "./accumulator_fail.log", "a" );
-                fprintf( fp, "%s : reduce from %d to %d\n", debugstr.c_str(), num_hits, max_hits );
+                fprintf( fp, "%s : reduce from %u to %u\n", debugstr.c_str(), num_hits, max_hits );
                 fclose(fp);
             } else {
                 result = tgPolygon::FromClipper( clipper_result );
@@ -119,7 +119,7 @@ tgPolygon tgAccumulator::Diff( const tgPolygon& subject )
                 max_hits = num_hits-1;
 
                 FILE* fp = fopen( "./accumulator_fail.log", "a" );
-                fprintf( fp, "%s : reduce from %d to %d\n", debugstr.c_str(), num_hits, max_hits );
+                fprintf( fp, "%s : reduce from %u to %u\n", debugstr.c_str(), num_hits, max_hits );
                 fclose(fp);                
             } else {
                 result = tgPolygon::FromClipper( clipper_result );
@@ -173,14 +173,14 @@ void tgAccumulator::Add( const tgPolygon& subject )
 
 void tgAccumulator::ToShapefiles( const std::string& path, const std::string& layer_prefix, bool individual )
 {
-    char shapefile[32];
-    char layer[32];
-
     if ( accum.size() ) {
         if ( individual ) {
             for (unsigned int i=0; i < accum.size(); i++) {
-                sprintf( layer, "%s_%d", layer_prefix.c_str(), i );
-                sprintf( shapefile, "accum_%d", i );
+                char layer[32];
+                sprintf( layer, "%s_%u", layer_prefix.c_str(), i );
+                
+                char shapefile[32];
+                sprintf( shapefile, "accum_%u", i );
                 tgShapefile::FromClipper( accum[i], path, layer, std::string(shapefile) );
             }
         } else {
@@ -204,13 +204,13 @@ void tgAccumulator::ToShapefiles( const std::string& path, const std::string& la
 void tgAccumulator::ToClipperfiles( const std::string& path, const std::string& layer_prefix, bool individual )
 {
     std::ofstream file;
-    char filename[256];
     
     if ( accum.size() ) {
         if ( individual ) {
+            char filename[256];
             for (unsigned int i=0; i < accum.size(); i++) {
-                sprintf( filename, "%s/%s_%d", path.c_str(), layer_prefix.c_str(), i );
-                                
+                sprintf( filename, "%s/%s_%u", path.c_str(), layer_prefix.c_str(), i );
+
                 file.open (filename);
                 file << accum[i];
                 file.close();
@@ -225,6 +225,7 @@ void tgAccumulator::ToClipperfiles( const std::string& path, const std::string& 
             }
             
             if ( c.Execute( ClipperLib::ClipType::Union, clipper_result, ClipperLib::PolyFillType::NonZero, ClipperLib::PolyFillType::NonZero) ) {
+                char filename[256];
                 sprintf( filename, "%s/%s", path.c_str(), layer_prefix.c_str() );
                 
                 file.open (filename);

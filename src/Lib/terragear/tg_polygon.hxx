@@ -244,7 +244,9 @@ public:
     tgPolygon() {
         preserve3d = false;
         closed = true;
+        id = 0;
     }
+
     ~tgPolygon() {
         contours.clear();
         triangles.clear();

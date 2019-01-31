@@ -53,7 +53,7 @@ typedef std::map<std::string,OGRLayer*> LayerMap;
 const char* format_name="ESRI Shapefile";
 bool do_split=false;
 
-OGRDataSource *datasource;
+GDALDataset *datasource;
 OGRLayer *defaultLayer;
 OGRLayer *pointsLayer=NULL;
 LayerMap layerMap;
@@ -530,7 +530,7 @@ int main(int argc, char** argv) {
         }
 
         const char* dst_datasource = argv[optind++];
-        auto datasource = gdalDriver->Create(dst_datasource, 0, 0, 0, GDALDataType::GDT_Unknown, NULL);
+        datasource = gdalDriver->Create(dst_datasource, 0, 0, 0, GDALDataType::GDT_Unknown, NULL);
         if (!datasource) {
                 usage(argv[0],std::string("Unable to create datasource:") + dst_datasource);
                 exit(1);

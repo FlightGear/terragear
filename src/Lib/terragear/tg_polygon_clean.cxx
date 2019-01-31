@@ -213,21 +213,19 @@ void tgPolygon::RemoveSlivers( tgPolygon& subject, tgcontour_list& slivers )
 
     double angle_cutoff = 10.0 * SGD_DEGREES_TO_RADIANS;
     double area_cutoff = 0.000000001;
-    double min_angle;
-    double area;
 
     // process contours in reverse order so deleting a contour doesn't
     // foul up our sequence
     for ( i = subject.Contours() - 1; i >= 0; --i ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "contour " << i );
 
-        contour   = subject.GetContour(i);
+        contour = subject.GetContour(i);
 
         SG_LOG(SG_GENERAL, SG_DEBUG, "  calc min angle for contour " << i);
-        min_angle = contour.GetMinimumAngle();
+        double min_angle = contour.GetMinimumAngle();
         SG_LOG(SG_GENERAL, SG_DEBUG, "  min_angle (rad) = " << min_angle );
 
-        area      = contour.GetArea();
+        double area = contour.GetArea();
         SG_LOG(SG_GENERAL, SG_DEBUG, "  area = " << area );
 
         if ( ((min_angle < angle_cutoff) && (area < area_cutoff)) ||
@@ -262,7 +260,6 @@ tgcontour_list tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& s
     tgContour contour;
     tgcontour_list unmerged;
     unsigned int original_contours, result_contours;
-    bool done;
 
     for ( unsigned int i = 0; i < sliver_list.size(); i++ ) {
         sliver = sliver_list[i];
@@ -270,7 +267,7 @@ tgcontour_list tgPolygon::MergeSlivers( tgpolygon_list& polys, tgcontour_list& s
 
         sliver.SetHole( false );
 
-        done = false;
+        bool done = false;
 
         // try to merge the slivers with the list of clipped polys
         for ( unsigned int j = 0; j < polys.size() && !done; j++ ) {

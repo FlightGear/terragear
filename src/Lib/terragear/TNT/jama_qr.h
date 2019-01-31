@@ -60,13 +60,13 @@ public:
 
 	@param A rectangular (m>=n) matrix.
 */
-	QR(const TNT::Array2D<Real> &A)		/* constructor */
-	{
-      QR_ = A.copy();
+	explicit QR(const TNT::Array2D<Real> &A) :		/* constructor */
+      QR_(A.copy())
+   {
       m = A.dim1();
       n = A.dim2();
       Rdiag = TNT::Array1D<Real>(n);
-	  int i=0, j=0, k=0;
+	  int i, j, k;
 
       // Main loop.
       for (k = 0; k < n; k++) {
@@ -182,7 +182,7 @@ public:
 
 	TNT::Array2D<Real> getQ() const
 	{
-	  int i=0, j=0, k=0;
+	  int i, j, k;
 
 	  TNT::Array2D<Real> Q(m,n);
       for (k = n-1; k >= 0; k--) {
@@ -277,7 +277,7 @@ public:
 
       int nx = B.dim2(); 
 	  TNT::Array2D<Real> X = B.copy();
-	  int i=0, j=0, k=0;
+	  int i, j, k;
 
       // Compute Y = transpose(Q)*B
       for (k = 0; k < n; k++) {

@@ -9,9 +9,10 @@ typedef bucket_polys_map::iterator bucket_polys_map_interator;
 class tgChopper
 {
 public:
-    tgChopper( const std::string& path ) {
-        root_path = path;
-        extra_extension = "";
+    explicit tgChopper( const std::string& path ) :
+        root_path(path),
+        extra_extension("")
+    {
     }
 
     void Add( const tgPolygon& poly, const std::string& type );
@@ -21,7 +22,7 @@ public:
   }
 
 private:
-    long int GenerateIndex( std::string path );
+    long int GenerateIndex( const std::string& path );
     void ClipRow( const tgPolygon& subject, const double& center_lat, const std::string& type );
     tgPolygon Clip( const tgPolygon& subject, const std::string& type, SGBucket& b );
     void Chop( const tgPolygon& subject, const std::string& type );
