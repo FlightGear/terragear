@@ -38,7 +38,7 @@ using std::string;
 void TGConstruct::CreateMatchedEdgeFiles( std::vector<SGBucket>& bucketList )
 {
     // todo - add to work queue
-    for ( unsigned int i=0; i<bucketList.size(); i++ ) {
+    for ( unsigned int i = 0; i < bucketList.size(); ++i ) {
         SGBucket b = bucketList[i];
         nodes.clear();
         
@@ -54,7 +54,7 @@ void TGConstruct::CreateMatchedEdgeFiles( std::vector<SGBucket>& bucketList )
         int nCount;
 
         // read in all of the .btg nodes
-        for ( unsigned int j=0; j<wgs84_nodes.size(); j++ ) {
+        for ( unsigned int j = 0; j < wgs84_nodes.size(); ++j ) {
             SGGeod pos = SGGeod::fromCart( wgs84_nodes[j] + obj.get_gbs_center() );
             nodes.unique_add( pos );
         }
@@ -83,32 +83,32 @@ void TGConstruct::CreateMatchedEdgeFiles( std::vector<SGBucket>& bucketList )
         nCount = north.size();
         SG_LOG( SG_GENERAL, SG_DEBUG, "write " << north.size() << " northern nodes to file " << filepath.c_str()  );
         sgWriteInt( fp, nCount );
-        for (int i=0; i<nCount; i++) {
-            sgWriteGeod( fp, north[i] );
+        for (int j = 0; j < nCount; ++j) {
+            sgWriteGeod( fp, north[j] );
         }
 
         // south
         nCount = south.size();
         SG_LOG( SG_GENERAL, SG_DEBUG, "write " << south.size() << " southern nodes to file " << filepath.c_str()  );
         sgWriteInt( fp, nCount );
-        for (int i=0; i<nCount; i++) {
-            sgWriteGeod( fp, south[i] );
+        for (int j = 0; j < nCount; ++j) {
+            sgWriteGeod( fp, south[j] );
         }
 
         // east
         nCount = east.size();
         SG_LOG( SG_GENERAL, SG_DEBUG, "write " << east.size() << " eastern nodes to file " << filepath.c_str()  );
         sgWriteInt( fp, nCount );
-        for (int i=0; i<nCount; i++) {
-            sgWriteGeod( fp, east[i] );
+        for (int j = 0; j < nCount; ++j) {
+            sgWriteGeod( fp, east[j] );
         }
 
         // west
         nCount = west.size();
         SG_LOG( SG_GENERAL, SG_DEBUG, "write " << west.size() << " western nodes to file " << filepath.c_str()  );
         sgWriteInt( fp, nCount );
-        for (int i=0; i<nCount; i++) {
-            sgWriteGeod( fp, west[i] );
+        for (int j = 0; j < nCount; ++j) {
+            sgWriteGeod( fp, west[j] );
         }        
 
         gzclose(fp);

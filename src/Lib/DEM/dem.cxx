@@ -59,6 +59,13 @@ TGDem::TGDem() :
     do_data = 0;
     cur_col = cur_row = 0;
     z_units = 2;    // meters
+
+    for (int x = 0; x < DEM_SIZE_1; ++x) {
+        for (int y = 0; y < DEM_SIZE_1; ++y) {
+            dem_data[x][y] = 0.0;
+            output_data[x][y] = 0.0;
+        }
+    }
 }
 
 
@@ -66,6 +73,13 @@ TGDem::TGDem( const string &file ) :
     TGDem::TGDem()
 {
     TGDem::open(file);
+}
+
+
+TGDem::~TGDem() {
+    // printf("class TGDem DEstructor called.\n");
+    delete [] dem_data;
+    delete [] output_data;
 }
 
 
@@ -470,12 +484,6 @@ TGDem::write_area( const string& root, SGBucket& b ) {
     gzclose(fp);
 
     return true;
-}
-
-TGDem::~TGDem() {
-    // printf("class TGDem DEstructor called.\n");
-    delete [] dem_data;
-    delete [] output_data;
 }
 
 

@@ -76,7 +76,6 @@ int make_socket (unsigned short int* port) {
 
     // Give the socket a name.
     name.sin_family = AF_INET;
-    name.sin_addr.s_addr = INADDR_ANY;
     name.sin_port = 0 /* htons (port) */;
     name.sin_addr.s_addr = htonl (INADDR_ANY);
     if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0) {

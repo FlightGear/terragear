@@ -59,6 +59,14 @@ TGHgt::TGHgt( int _res )
 
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
     read_buffer = new short int[MAX_HGT_SIZE];
+
+    for (int x = 0; x < MAX_HGT_SIZE; ++x) {
+        for (int y = 0; y < MAX_HGT_SIZE; ++y) {
+            data[x][y] = 0;
+        }
+
+        read_buffer[x] = 0;
+    }
 }
 
 
@@ -66,6 +74,13 @@ TGHgt::TGHgt( int _res, const SGPath &file ) :
     TGHgt( _res )
 {
     TGHgt::open( file );
+}
+
+
+TGHgt::~TGHgt() {
+    // printf("class TGSrtmBase DEstructor called.\n");
+    delete [] data;
+    delete [] read_buffer;
 }
 
 
@@ -161,7 +176,6 @@ TGHgt::load( ) {
         return false;
     }
 
-    
     for ( int row = size - 1; row >= 0; --row ) {
         if ( gzfread( (voidp)read_buffer, 2, size, fd ) != (unsigned)size ) {
             return false;
@@ -180,11 +194,4 @@ TGHgt::load( ) {
     }
 
     return true;
-}
-
-
-TGHgt::~TGHgt() {
-    // printf("class TGSrtmBase DEstructor called.\n");
-    delete [] data;
-    delete [] read_buffer;
 }

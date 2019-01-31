@@ -936,7 +936,6 @@ TEdge* FindNextLocMin(TEdge* E)
 TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
 {
   TEdge *Result = E;
-  TEdge *Horz = 0;
 
   if (E->OutIdx == Skip)
   {
@@ -1008,7 +1007,7 @@ TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
       //nb: at the top of a bound, horizontals are added to the bound
       //only when the preceding edge attaches to the horizontal's left vertex
       //unless a Skip edge is encountered when that becomes the top divide
-      Horz = Result;
+      TEdge *Horz = Result;
       while (IsHorizontal(*Horz->Prev)) Horz = Horz->Prev;
       if (Horz->Prev->Top.X > Result->Next->Top.X) Result = Horz->Prev;
     }
@@ -1028,7 +1027,7 @@ TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
       Result = Result->Prev;
     if (IsHorizontal(*Result) && Result->Prev->OutIdx != Skip)
     {
-      Horz = Result;
+      TEdge *Horz = Result;
       while (IsHorizontal(*Horz->Next)) Horz = Horz->Next;
       if (Horz->Next->Top.X == Result->Prev->Top.X ||
           Horz->Next->Top.X > Result->Prev->Top.X) Result = Horz->Next;
@@ -2663,14 +2662,14 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
       if (dir == Direction::LeftToRight)
       {
           maxIt = m_Maxima.begin();
-          while (maxIt != m_Maxima.end() && *maxIt <= horzEdge->Bot.X) maxIt++;
+          while (maxIt != m_Maxima.end() && *maxIt <= horzEdge->Bot.X) ++maxIt;
           if (maxIt != m_Maxima.end() && *maxIt >= eLastHorz->Top.X)
               maxIt = m_Maxima.end();
       }
       else
       {
           maxRit = m_Maxima.rbegin();
-          while (maxRit != m_Maxima.rend() && *maxRit > horzEdge->Bot.X) maxRit++;
+          while (maxRit != m_Maxima.rend() && *maxRit > horzEdge->Bot.X) ++maxRit;
           if (maxRit != m_Maxima.rend() && *maxRit <= eLastHorz->Top.X)
               maxRit = m_Maxima.rend();
       }
@@ -2697,7 +2696,7 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
                 {
                   if (horzEdge->OutIdx >= 0 && !IsOpen)
                     AddOutPt(horzEdge, IntPoint(*maxIt, horzEdge->Bot.Y));
-                  maxIt++;
+                  ++maxIt;
                 }
             }
             else
@@ -2706,7 +2705,7 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
                 {
                   if (horzEdge->OutIdx >= 0 && !IsOpen)
                     AddOutPt(horzEdge, IntPoint(*maxRit, horzEdge->Bot.Y));
-                  maxRit++;
+                  ++maxRit;
                 }
             }
         };
@@ -2988,7 +2987,7 @@ void Clipper::DoMaxima(TEdge *e)
   }
   else if( e->OutIdx >= 0 && eMaxPair->OutIdx >= 0 )
   {
-    if (e->OutIdx >= 0) AddLocalMaxPoly(e, eMaxPair, e->Top);
+    AddLocalMaxPoly(e, eMaxPair, e->Top);
     DeleteFromAEL(e);
     DeleteFromAEL(eMaxPair);
   }
@@ -3207,19 +3206,26 @@ int PointCount(OutPt *Pts)
 void Clipper::BuildResult(Paths &polys)
 {
   polys.reserve(m_PolyOuts.size());
+
   for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
   {
-    if (!m_PolyOuts[i]->Pts) continue;
-    Path pg;
+    if (!m_PolyOuts[i]->Pts)
+      continue;
+    
     OutPt* p = m_PolyOuts[i]->Pts->Prev;
+    
     int cnt = PointCount(p);
-    if (cnt < 2) continue;
+    if (cnt < 2)
+      continue;
+    
+    Path pg;
     pg.reserve(cnt);
-    for (int i = 0; i < cnt; ++i)
+    for (int j = 0; j < cnt; ++j)
     {
       pg.push_back(p->Pt);
       p = p->Prev;
     }
+
     polys.push_back(pg);
   }
 }

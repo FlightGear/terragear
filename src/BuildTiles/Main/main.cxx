@@ -51,7 +51,7 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "  --work-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --share-dir=<directory>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --match-dir=<directory>");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --cover=<path to land-cover raster>");
+    // unused: SG_LOG(SG_GENERAL, SG_ALERT, "  --cover=<path to land-cover raster>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --tile-id=<id>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --min-lon=<degrees>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --max-lon=<degrees>");
@@ -59,7 +59,7 @@ static void usage( const string name ) {
     SG_LOG(SG_GENERAL, SG_ALERT, "  --max-lat=<degrees>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --nudge=<float>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --priorities=<filename>");
-    SG_LOG(SG_GENERAL, SG_ALERT, "  --usgs-map=<filename>");
+    // unused: SG_LOG(SG_GENERAL, SG_ALERT, "  --usgs-map=<filename>");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --ignore-landmass");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --threads");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --threads=<numthreads>");
@@ -84,9 +84,9 @@ int main(int argc, char **argv) {
     string work_dir = ".";
     string share_dir = "";
     string match_dir = "";
-    string cover = "";
+    // unused: string cover = "";
     string priorities_file = DEFAULT_PRIORITIES_FILE;
-    string usgs_map_file = DEFAULT_USGS_MAPFILE;
+    // unused: string usgs_map_file = DEFAULT_USGS_MAPFILE;
     SGGeod min, max;
     long tile_id = -1;
     int num_threads = 1;
@@ -130,12 +130,12 @@ int main(int argc, char **argv) {
             max.setLatitudeDeg(atof( arg.substr(10).c_str() ));
         } else if (arg.find("--nudge=") == 0) {
             nudge = atof(arg.substr(8).c_str())*SG_EPSILON;
-        } else if (arg.find("--cover=") == 0) {
-            cover = arg.substr(8);
+        // } else if (arg.find("--cover=") == 0) {
+        // unused:    cover = arg.substr(8);
         } else if (arg.find("--priorities=") == 0) {
             priorities_file = arg.substr(13);
-        } else if (arg.find("--usgs-map=") == 0) {
-            usgs_map_file = arg.substr(11);
+        // } else if (arg.find("--usgs-map=") == 0) {
+        // unused:    usgs_map_file = arg.substr(11);
         } else if (arg.find("--ignore-landmass") == 0) {
             ignoreLandmass = true;
         } else if (arg.find("--threads=") == 0) {

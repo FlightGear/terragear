@@ -59,7 +59,10 @@ public:
 
     void AddFeatures( FeatureList feature_list )
     {
-        std::copy( feature_list.begin(), feature_list.end(), features.begin() );
+        for (auto feature : feature_list)
+        {
+            features.push_back( feature );
+        }
     }
 
     int NumFeatures( void )

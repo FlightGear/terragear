@@ -39,13 +39,12 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon remains;
     tgPolygon safety_base;
     tgcontour_list slivers;
-    SGGeod p;
     bool debug_shape;
     tgAccumulator accum(bucket.gen_index_str());
     unsigned int accum_idx = 0;
 
     // set up clipping tile : and remember to add the nodes!
-    p = bucket.get_corner( SG_BUCKET_SW );
+    SGGeod p = bucket.get_corner( SG_BUCKET_SW );
     p.setElevationM( -9999.0 );
     safety_base.AddNode( 0, p );
     nodes.unique_add( p );
@@ -281,10 +280,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     // Now make sure any newly added intersection nodes are added to the tgnodes
     for (unsigned int area = 0; area < area_defs.size(); area++) {
         bool isRoad = area_defs.is_road_area( area );
-        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon& poly = polys_clipped.get_poly( area, p );
+        for (unsigned int idxPoly = 0; idxPoly < polys_clipped.area_size(area); ++idxPoly ) {
+            tgPolygon& poly = polys_clipped.get_poly( area, idxPoly );
 
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << idxPoly + 1 << " of " << polys_clipped.area_size(area) );
 
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {

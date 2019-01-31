@@ -38,15 +38,13 @@ static unsigned int cur_poly_id = 0;
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
 int TGConstruct::LoadLandclassPolys( void ) {
-    int i;
-
     string base = bucket.gen_base_path();
     string poly_path;
     int    total_polys_read = 0;
     tgPolygon poly;
 
     // load 2D polygons from all directories provided
-    for ( i = 0; i < (int)load_dirs.size(); ++i ) {
+    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
         poly_path = work_base + "/" + load_dirs[i] + '/' + base;
 
         string tile_str = bucket.gen_index_str();
@@ -79,7 +77,7 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 sgReadUInt( fp, &count );
                 SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
 
-                for ( unsigned int i = 0; i < count; ++i ) {
+                for ( unsigned int idx = 0; idx < count; ++idx ) {
                     poly.LoadFromGzFile( fp );
                     int area = area_defs.get_area_priority( poly.GetFlag() );
                     material = area_defs.get_area_name( area );

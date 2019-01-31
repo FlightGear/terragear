@@ -74,7 +74,7 @@ public:
     // load an hgt file
     bool load();
 
-    virtual short height( int x, int y ) const { return data[x][y]; }
+    virtual short height( int x, int y ) const override { return data[x][y]; }
 };
 
 

@@ -47,25 +47,24 @@ void TGConstruct::get_debug( void )
     debug_shapes.clear();
 
     /* Find any ids for our tile */
-    for (unsigned int i=0; i< debug_area_defs.size(); i++) {
+    for (unsigned int i = 0; i < debug_area_defs.size(); ++i) {
         string dsd     = debug_area_defs[i];
         size_t d_pos   = dsd.find(":");
         string tile    = dsd.substr(0, d_pos);
 
-        if( tile == bucket.gen_index_str() ) {
-            dsd.erase(0, d_pos+1);
+        if ( tile == bucket.gen_index_str() ) {
+            dsd.erase(0, d_pos + 1);
 
             if ( dsd == "all" ) {
                 debug_all = true;
             } else {
                 std::stringstream ss(dsd);
-                int i;
-
-                while (ss >> i)
+                int idx;
+                while (ss >> idx)
                 {
-                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug area " << i);
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug area " << idx);
 
-                    debug_areas.push_back(i);
+                    debug_areas.push_back(idx);
 
                     if (ss.peek() == ',')
                         ss.ignore();
@@ -74,25 +73,24 @@ void TGConstruct::get_debug( void )
         }
     }
 
-    for (unsigned int i=0; i< debug_shape_defs.size(); i++) {
+    for (unsigned int i = 0; i < debug_shape_defs.size(); ++i) {
         string dsd     = debug_shape_defs[i];
         size_t d_pos   = dsd.find(":");
         string tile    = dsd.substr(0, d_pos);
 
-        if( tile == bucket.gen_index_str() ) {
-            dsd.erase(0, d_pos+1);
+        if ( tile == bucket.gen_index_str() ) {
+            dsd.erase(0, d_pos + 1);
 
             if ( dsd == "all" ) {
                 debug_all = true;
             } else {
                 std::stringstream ss(dsd);
-                int i;
-
-                while (ss >> i)
+                int idx;
+                while (ss >> idx)
                 {
-                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug shape " << i);
+                    SG_LOG(SG_GENERAL, SG_ALERT, "Adding debug shape " << idx);
 
-                    debug_shapes.push_back(i);
+                    debug_shapes.push_back(idx);
 
                     if (ss.peek() == ',')
                         ss.ignore();

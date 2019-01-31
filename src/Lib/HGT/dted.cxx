@@ -60,6 +60,13 @@ TGDted::TGDted( int _res )
 
     data = new short int[MAX_DTED_SIZE][MAX_DTED_SIZE];
     output_data = new short int[MAX_DTED_SIZE][MAX_DTED_SIZE];
+
+    for (int x = 0; x < MAX_DTED_SIZE; ++x) {
+        for (int y = 0; y < MAX_DTED_SIZE; ++y) {
+            data[x][y] = 0;
+            output_data[x][y] = 0;
+        }
+    }
 }
 
 
@@ -67,6 +74,13 @@ TGDted::TGDted( int _res, const SGPath &file ) :
     TGDted(_res)
 {
     TGDted::open( file );
+}
+
+
+TGDted::~TGDted() {
+    // printf("class TGSrtmBase DEstructor called.\n");
+    delete [] data;
+    delete [] output_data;
 }
 
 
@@ -220,11 +234,4 @@ TGDted::load( ) {
     }
 
     return true;
-}
-
-
-TGDted::~TGDted() {
-    // printf("class TGSrtmBase DEstructor called.\n");
-    delete [] data;
-    delete [] output_data;
 }

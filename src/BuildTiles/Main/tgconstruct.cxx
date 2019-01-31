@@ -36,17 +36,20 @@ const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
 TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q, SGMutex* l) :
         area_defs(areas),
         workQueue(q),
-        stage(s),
-        ignoreLandmass(false),
-        debug_all(false),
         ds_id((void*)-1),
         l_id(nullptr),
-        isOcean(false)
+        ds_name(""),
+        layer_name(""),
+        feature_name(""),
+        lock(l)
 {
     total_tiles = q.size();
-    num_areas = areas.size();
-    lock = l;
+    stage = s;
+    ignoreLandmass = false;
     nudge = 0.0;
+    debug_all = false;
+    isOcean = false;
+    num_areas = areas.size();
 }
 
 
