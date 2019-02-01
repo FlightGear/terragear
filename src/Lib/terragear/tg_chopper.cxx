@@ -152,7 +152,7 @@ uint32_t tgChopper::GenerateIndex(const std::string& path)
         boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex);
 
         // first, read the current index
-        FILE* fp = fopen(index_file.c_str(), "r");
+        FILE* fp = fopen(index_file.c_str(), "rb");
         if (fp != NULL) {
             if (fread((void*)&index, sizeof(uint32_t), 1, fp) != 1) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Error reading Index file " << index_file << " abort");
@@ -166,7 +166,7 @@ uint32_t tgChopper::GenerateIndex(const std::string& path)
         }
 
         // overwrite the existing file - or create if it doesn't already exist
-        fp = fopen(index_file.c_str(), "w");
+        fp = fopen(index_file.c_str(), "wb");
         if (fp == NULL) {
             SG_LOG(SG_GENERAL, SG_ALERT, "Error cannot open Index file " << index_file << " for writing");
 
