@@ -420,7 +420,7 @@ int main( int argc, char **argv ) {
     GDALDestroyDriverManager();
 
     SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
-    results.Add_Extension("cliffs");
+    results.Add_Extension(".cliffs");
     results.Save( save_shapefiles );
 
     auto finish_time = std::chrono::high_resolution_clock::now();
