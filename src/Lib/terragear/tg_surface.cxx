@@ -168,7 +168,7 @@ static void tgCalcElevations( const std::string &root, const string_list elev_sr
                 }
             }
 
-            array.close();
+            array.unload();
 
         } else {
             done = true;
@@ -226,10 +226,10 @@ tgSurface::tgSurface( const std::string& path,
                       double average_elev_m,
                       double slope_max,
                       double slope_eps
-                    )
+                    ) :
+    _aptBounds(aptBounds)
 {
     // Calculate desired size of grid
-    _aptBounds = aptBounds;
     _min_deg = _aptBounds.getMin();
     _max_deg = _aptBounds.getMax();
     _average_elev_m = average_elev_m;

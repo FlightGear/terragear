@@ -39,10 +39,10 @@ using namespace std;
 // Display usage
 static void usage( int argc, char **argv ) {
     TG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << argv[0] << "\n--input=<apt_file>"
-    << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --restart-id=abcd ] [ --nudge=n ] "
+    << "\n--work=<work_dir>\n[ --start-id=abcd ] [ --nudge=n ] "
     << "[--min-lon=<deg>] [--max-lon=<deg>] [--min-lat=<deg>] [--max-lat=<deg>] "
-    << "[ --airport=abcd ] [--max-slope=<decimal>] [--tile=<tile>] [--threads] [--threads=x]"
-    << "[--chunk=<chunk>] [--clear-dem-path] [--dem-path=<path>] [--verbose] [--help] [--log-level=bulk|info|debug|warn|alert]");
+    << "[ --airport=abcd ] [--max-slope=<decimal>] [--threads] [--threads=x]"
+    << "[--clear-dem-path] [--dem-path=<path>] [--verbose] [--help] [--log-level=bulk|info|debug|warn|alert]");
 }
 
 
@@ -57,6 +57,8 @@ void setup_default_elevation_sources(string_list& elev_src) {
     elev_src.push_back( "SRTM-1" );
     elev_src.push_back( "SRTM-3" );
     elev_src.push_back( "SRTM-30" );
+    elev_src.push_back( "SRTMGL1" );
+    elev_src.push_back( "SRTMGL3" );
 }
 
 // Display help and usage
@@ -79,11 +81,7 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
     cout << "a valid airport code eg. --airport-id=KORD, or a starting airport can be specified using --start-id=abcd \n";
     cout << "where once again abcd is a valid airport code.  In this case, all airports in the file subsequent to the \n";
     cout << "start-id are done.  This is convenient when re-starting after a previous error.  \n";
-    cout << "If you want to restart with the airport after a problem icao, use --restart-id=abcd, as this works the same as\n";
-    cout << " with the exception that the airport abcd is skipped \n";
     cout << "\nAn input area may be specified by lat and lon extent using min and max lat and lon.  \n";
-    //cout << "Alternatively, you may specify a chunk (10 x 10 degrees) or tile (1 x 1 degree) using a string \n";
-    //cout << "such as eg. w080n40, e000s27.  \n";
     cout << "\nAn input file containing only a subset of the world's \n";
     cout << "airports may of course be used.\n";
     cout << "\n\n";
@@ -92,7 +90,7 @@ static void help( int argc, char **argv, const string_list& elev_src ) {
     cout << "The following subdirectories of the work-dir will be searched for elevation files:\n\n";
     
     string_list::const_iterator elev_src_it;
-    for (elev_src_it = elev_src.begin(); elev_src_it != elev_src.end(); elev_src_it++) {
+    for (elev_src_it = elev_src.begin(); elev_src_it != elev_src.end(); ++elev_src_it) {
     	    cout << *elev_src_it << "\n";
     }
     cout << "\n";
@@ -131,7 +129,6 @@ int main(int argc, char **argv)
 
     SGGeod min = SGGeod::fromDeg( -180, -90 );
     SGGeod max = SGGeod::fromDeg( 180, 90 );
-    long  position = 0;
 
     // Setup elevation directories
     string_list elev_src;
@@ -152,127 +149,103 @@ int main(int argc, char **argv)
     std::string input_file = "";
     std::string summary_file = "./genapt850.csv";
     std::string start_id = "";
-    std::string restart_id = "";
     std::string airport_id = "";
-    std::string last_apt_file = "./last_apt.txt";
     int         num_threads    =  1;
 
     int arg_pos;
     for (arg_pos = 1; arg_pos < argc; arg_pos++)
     {
         string arg = argv[arg_pos];
-        if ( arg.find("--log-level=") == 0 )
+        if (arg.compare(0, 12, "--log-level=") == 0)
         {
             setLoggingPriority(arg.substr(12));
         }
-        else if ( arg.find("--work=") == 0 )
+        else if (arg.compare(0, 7, "--work=") == 0)
         {
             work_dir = arg.substr(7);
         }
-        else if ( arg.find("--input=") == 0 )
+        else if (arg.compare(0, 8, "--input=") == 0)
         {
             input_file = arg.substr(8);
         }
-        else if ( arg.find("--start-id=") == 0 )
+        else if (arg.compare(0, 11, "--start-id=") == 0)
         {
             start_id = arg.substr(11);
         }
-        else if ( arg.find("--restart-id=") == 0 )
-        {
-            restart_id = arg.substr(13);
-        }
-        else if ( arg.find("--nudge=") == 0 )
+        else if (arg.compare(0, 8, "--nudge=") == 0)
         {
             nudge = atoi( arg.substr(8).c_str() );
         }
-        else if ( arg.find("--snap=") == 0 )
+        else if (arg.compare(0, 7, "--snap=") == 0)
         {
             gSnap = atof( arg.substr(7).c_str() );
         }
-        else if ( arg.find("--last_apt_file=") == 0 )
-        {
-            last_apt_file = arg.substr(16);
-        }
-        else if ( arg.find("--min-lon=") == 0 )
+        else if (arg.compare(0, 10, "--min-lon=") == 0)
         {
             min.setLongitudeDeg(atof( arg.substr(10).c_str() ));
         }
-        else if ( arg.find("--max-lon=") == 0 )
+        else if (arg.compare(0, 10, "--max-lon=") == 0)
         {
             max.setLongitudeDeg(atof( arg.substr(10).c_str() ));
         }
-        else if ( arg.find("--min-lat=") == 0 )
+        else if (arg.compare(0, 10, "--min-lat=") == 0)
         {
             min.setLatitudeDeg(atof( arg.substr(10).c_str() ));
         }
-        else if ( arg.find("--max-lat=") == 0 )
+        else if (arg.compare(0, 10, "--max-lat=") == 0)
         {
             max.setLatitudeDeg(atof( arg.substr(10).c_str() ));
         }
-#if 0 // relly? - do we need this?
-        else if ( arg.find("--chunk=") == 0 )
-        {
-            tg::Rectangle rectangle = tg::parseChunk(arg.substr(8).c_str(), 10.0);
-            min = rectangle.getMin();
-            max = rectangle.getMax();
-        }
-        else if ( arg.find("--tile=") == 0 )
-        {
-            tg::Rectangle rectangle = tg::parseTile(arg.substr(7).c_str());
-            min = rectangle.getMin();
-            max = rectangle.getMax();
-        }
-#endif
-        else if ( arg.find("--airport=") == 0 ) 
+        else if (arg.compare(0, 10, "--airport=") == 0)
         {
             airport_id = simgear::strutils::uppercase( arg.substr(10).c_str() );
     	} 
-        else if ( arg == "--clear-dem-path" ) 
+        else if (arg.compare(0, 16, "--clear-dem-path") == 0)
         {
     	    elev_src.clear();
     	} 
-        else if ( arg.find("--dem-path=") == 0 ) 
+        else if (arg.compare(0, 11, "--dem-path=") == 0)
         {
     	    elev_src.push_back( arg.substr(11) );
     	} 
-        else if ( (arg.find("--verbose") == 0) || (arg.find("-v") == 0) ) 
+        else if (arg.compare(0, 9, "--verbose") == 0 || arg.compare(0, 2, "-v") == 0) 
         {
     	    sglog().setLogLevels( SG_GENERAL, SG_BULK );
     	}
-        else if ( (arg.find("--max-slope=") == 0) ) 
+        else if (arg.compare(0, 12, "--max-slope=") == 0)
         {
     	    slope_max = atof( arg.substr(12).c_str() );
         }
-        else if ( (arg.find("--threads=") == 0) )
+        else if (arg.compare(0, 10, "--threads=") == 0)
         {
             num_threads = atoi( arg.substr(10).c_str() );
         }
-        else if ( (arg.find("--threads") == 0) )
+        else if (arg.compare(0, 9, "--threads") == 0)
         {
             num_threads = boost::thread::hardware_concurrency();
         }
-        else if (arg.find("--debug-dir=") == 0)
+        else if (arg.compare(0, 12, "--debug-dir=") == 0)
         {
             debug_dir = arg.substr(12);
         }
-        else if (arg.find("--debug-runways=") == 0)
+        else if (arg.compare(0, 16, "--debug-runways=") == 0)
         {
             debug_runway_defs.push_back( arg.substr(16) );
         }
-        else if (arg.find("--debug-pavements=") == 0)
+        else if (arg.compare(0, 18, "--debug-pavements=") == 0)
         {
             debug_pavement_defs.push_back( arg.substr(18) );
         }
-        else if (arg.find("--debug-taxiways=") == 0)
+        else if (arg.compare(0, 17, "--debug-taxiways=") == 0)
         {
             TG_LOG(SG_GENERAL, SG_INFO, "add debug taxiway " << arg.substr(17) );
             debug_taxiway_defs.push_back( arg.substr(17) );
         }
-        else if (arg.find("--debug-features=") == 0)
+        else if (arg.compare(0, 17, "--debug-features=") == 0)
         {
             debug_feature_defs.push_back( arg.substr(17) );
         }
-        else if ( (arg.find("--help") == 0) || (arg.find("-h") == 0) )
+        else if (arg.compare(0, 6, "--help") == 0 || arg.compare(0, 2, "-h") == 0)
         {
     	    help( argc, argv, elev_src );
     	    exit(-1);
@@ -312,8 +285,6 @@ int main(int argc, char **argv)
     sgp.append( "dummy" );
     sgp.create_dir( 0755 );
 
-    std::string lastaptfile = work_dir+"/last_apt";
-
     tgRectangle boundingBox(min, max);
     boundingBox.sanify();
 
@@ -349,7 +320,7 @@ int main(int argc, char **argv)
     }
 
     // Create the scheduler
-    Scheduler* scheduler = new Scheduler(input_file, work_dir, elev_src);
+    auto scheduler = std::make_unique<Scheduler>(input_file, work_dir, elev_src);
 	// auto scheduler = std::unique_ptr<Scheduler>(new Scheduler(input_file, work_dir, elev_src));
 
     // Add any debug 
@@ -372,7 +343,7 @@ int main(int argc, char **argv)
         TG_LOG(SG_GENERAL, SG_INFO, "move forward to " << start_id );
 
         // scroll forward in datafile
-        position = scheduler->FindAirport( start_id );
+        long position = scheduler->FindAirport( start_id );
 
         // add remaining airports within boundary
         if ( scheduler->AddAirports( position, &boundingBox ) )

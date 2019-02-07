@@ -39,8 +39,9 @@ public:
         // constructor for serialization only
     }
 
-    TGNode( SGGeod p ) {
-        position    = p;
+    explicit TGNode( SGGeod p ) :
+        position(p)
+    {
         CalcWgs84();
 
         fixed_position  = false;        // no matter what - don't move x, y, or z (likely a hole around an airport generated ny genapts)
@@ -131,9 +132,9 @@ private:
 
 class TGNodeIndex {
 public:
-    TGNodeIndex( SGGeod g ) {
-        geod = g;
-
+    explicit TGNodeIndex( SGGeod g ) :
+        geod(g)
+    {
         std::size_t FNV_prime;
         std::size_t offset_basis;
 

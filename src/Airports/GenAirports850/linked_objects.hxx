@@ -1,12 +1,14 @@
 #ifndef _LINKED_OBJECTS_H_
 #define _LINKED_OBJECTS_H_
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 
 class Windsock
 {
 public:
-    Windsock(char* def);
+    explicit Windsock(char* def);
 
     double lat;
     double lon;
@@ -23,13 +25,13 @@ public:
     }
 };
 
-typedef std::vector <Windsock *> WindsockList;
+typedef std::vector<std::shared_ptr<Windsock>> WindsockList;
 
 
 class Beacon
 {
 public:
-    Beacon(char* def);
+    explicit Beacon(char* def);
 
     double lat;
     double lon;
@@ -46,12 +48,12 @@ public:
     }
 };
 
-typedef std::vector <Beacon *> BeaconList;
+typedef std::vector<std::shared_ptr<Beacon>> BeaconList;
 
 class Sign
 {
 public:
-    Sign(char* def);
+    explicit Sign(char* def);
 
     double lat;
     double lon;
@@ -81,6 +83,6 @@ public:
     }
 };
 
-typedef std::vector <Sign *> SignList;
+typedef std::vector<std::shared_ptr<Sign>> SignList;
 
 #endif

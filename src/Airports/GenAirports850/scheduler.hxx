@@ -44,9 +44,9 @@ public:
     {
     }
 
-    AirportInfo( std::string id, long p, double s )
+    AirportInfo( const std::string& id, long p, double s ) :
+        icao(id)
     {
-        icao = id;
         pos  = p;
         snap = s;
 
@@ -99,7 +99,7 @@ class Scheduler
 public:
     Scheduler(std::string& datafile, const std::string& root, const string_list& elev_src);
 
-    long            FindAirport( std::string icao );
+    long            FindAirport( const std::string& icao );
     void            AddAirport(  std::string icao );
     bool            AddAirports( long start_pos, tgRectangle* boundingBox );
     void            RetryAirport( AirportInfo* pInfo );
@@ -107,13 +107,13 @@ public:
     void            Schedule( int num_threads, std::string& summaryfile );
 
     // Debug
-    void            set_debug( std::string path, std::vector<std::string> runway_defs,
+    void            set_debug( const std::string& path, std::vector<std::string> runway_defs,
                                                  std::vector<std::string> pavement_defs,
                                                  std::vector<std::string> taxiway_defs,
                                                  std::vector<std::string> feature_defs );
 
 private:
-    bool            IsAirportDefinition( char* line, std::string icao );
+    bool            IsAirportDefinition( char* line, const std::string& icao );
 
     std::string     filename;
     string_list     elevation;

@@ -75,7 +75,7 @@ SGLockedQueue<SGPath> global_workQueue;
  */
 class ArrayMap: public Terra::Map {
 public:
-        ArrayMap(TGArray& array): array(array) {
+        explicit ArrayMap(TGArray& array): array(array) {
                 width=array.get_cols();
                 height=array.get_rows();
                 min=30000;
@@ -91,9 +91,10 @@ public:
                 }
                 depth=32;
         }
+
         virtual ~ArrayMap() {}
         
-        virtual Terra::real eval(int i, int j) {
+        virtual Terra::real eval(int i, int j) override {
                 return (Terra::real)array.get_array_elev(i,j);
         }
 
@@ -275,7 +276,7 @@ void usage(char* progname, const std::string& msg) {
     SG_LOG(SG_GENERAL,SG_INFO, "will produce a better surface approximation.");
     SG_LOG(SG_GENERAL,SG_INFO, "");
     SG_LOG(SG_GENERAL,SG_INFO, "The input file must be a .arr.gz file such as that produced");
-    SG_LOG(SG_GENERAL,SG_INFO, "by demchop or hgtchop utils.");
+    SG_LOG(SG_GENERAL,SG_INFO, "by the hgtchop utility.");
     SG_LOG(SG_GENERAL,SG_INFO, "");
     SG_LOG(SG_GENERAL,SG_INFO, "Force will overwrite existing .arr.gz files, even if the input is older");
     SG_LOG(SG_GENERAL,SG_INFO, "");

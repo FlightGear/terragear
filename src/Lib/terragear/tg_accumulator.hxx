@@ -8,7 +8,7 @@
 class tgAccumulator
 {
 public:
-    tgAccumulator( const std::string& d ) : debugstr(d) {}
+    explicit tgAccumulator( const std::string& d ) : debugstr(d) {}
     
     tgPolygon Diff( const tgContour& subject );
     tgPolygon Diff( const tgPolygon& subject );

@@ -25,8 +25,8 @@ tgContour tgContour::Snap( const tgContour& subject, double snap )
 
 double tgContour::GetMinimumAngle( void ) const
 {
-    unsigned int p1_index, p2_index, p3_index;
-    double       angle, min_angle = 2.0 * SGD_PI;
+    unsigned int p1_index, p3_index;
+    double       min_angle = 2.0 * SGD_PI;
     unsigned int size = node_list.size();
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "  tgContour::GetMinimumAngle() : contour size is " << size );
@@ -38,7 +38,7 @@ double tgContour::GetMinimumAngle( void ) const
             p1_index = i - 1;
         }
 
-        p2_index = i;
+        unsigned p2_index = i;
 
         if ( i == size - 1 ) {
             p3_index = 0;
@@ -46,7 +46,7 @@ double tgContour::GetMinimumAngle( void ) const
             p3_index = i + 1;
         }
 
-        angle = SGGeod_CalculateTheta( node_list[p1_index], node_list[p2_index], node_list[p3_index] );
+        double angle = SGGeod_CalculateTheta( node_list[p1_index], node_list[p2_index], node_list[p3_index] );
         if ( angle < min_angle ) {
             min_angle = angle;
         }
@@ -58,16 +58,14 @@ double tgContour::GetMinimumAngle( void ) const
 double tgContour::GetArea( void ) const
 {
     double area = 0.0;
-    SGVec2d a, b;
-    unsigned int i, j;
 
     if ( node_list.size() ) {
-        j = node_list.size() - 1;
-        for (i=0; i<node_list.size(); i++) {
-            a = SGGeod_ToSGVec2d( node_list[i] );
-            b = SGGeod_ToSGVec2d( node_list[j] );
+        unsigned j = node_list.size() - 1;
+        for (unsigned i = 0; i < node_list.size(); ++i) {
+            SGVec2d a = SGGeod_ToSGVec2d( node_list[i] );
+            SGVec2d b = SGGeod_ToSGVec2d( node_list[j] );
             area += (b.x() + a.x()) * (b.y() - a.y());
-            j=i;
+            j = i;
         }
     }
 
@@ -111,8 +109,7 @@ bool tgContour::AreSameSide( const SGGeod& firstpt, const SGGeod& secondpt) cons
     //Now cycle over all nodes and count how many times we intersect
     int intersect_ct = 0;
     if (node_list.size()) {
-        int j = node_list.size() - 1;
-        for (int i=0;i<node_list.size()-1;i++) {
+        for (int i = 0; i < static_cast<int>(node_list.size()) - 1; ++i) {
             double nx1 = node_list[i].getLatitudeDeg();
             double ny1 = node_list[i].getLongitudeDeg();
             double nx2 = node_list[i+1].getLatitudeDeg();
@@ -140,20 +137,18 @@ bool tgContour::AreSameSide( const SGGeod& firstpt, const SGGeod& secondpt) cons
 
 double tgContour::MinDist(const SGGeod& probe) const {
     SGVec3d probexyz;
-    SGGeodesy::SGGeodToCart( probe,probexyz );
+    SGGeodesy::SGGeodToCart( probe, probexyz );
     double mindist = 100000.0;
-    double dist;
     
     if ( node_list.size() ) {
-        
         int j = node_list.size() - 1;
         
-        for (int i=0;i<j;i++) {
+        for (int i = 0; i < j; ++i) {
             SGVec3d start,end;
             SGGeodesy::SGGeodToCart( node_list[i],start );
             SGGeodesy::SGGeodToCart( node_list[i+1],end );
             SGLineSegment<double> piece = SGLineSegment<double>(start,end);
-            dist = distSqr( piece,probexyz );
+            double dist = distSqr( piece,probexyz );
             if (dist < mindist) mindist = dist;
         }
     }
@@ -634,7 +629,6 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
                                   double bbEpsilon, double errEpsilon )
 {
     bool found_node = false;
-    double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
 
     SGGeod p0 = start;
     SGGeod p1 = end;
@@ -642,8 +636,8 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
     double xdist = fabs(p0.getLongitudeDeg() - p1.getLongitudeDeg());
     double ydist = fabs(p0.getLatitudeDeg()  - p1.getLatitudeDeg());
 
-    x_err_min = xdist + 1.0;
-    y_err_min = ydist + 1.0;
+    double x_err_min = xdist + 1.0;
+    double y_err_min = ydist + 1.0;
 
     if ( xdist > ydist ) {
         // sort these in a sensible order
@@ -656,15 +650,15 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
             p_max = p0;
         }
 
-        m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
-        b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
+        double m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
+        double b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
 
         for ( int i = 0; i < (int)nodes.size(); ++i ) {
             // cout << i << endl;
             SGGeod current = nodes[i];
 
             if ( (current.getLongitudeDeg() > (p_min.getLongitudeDeg() + (bbEpsilon))) && (current.getLongitudeDeg() < (p_max.getLongitudeDeg() - (bbEpsilon))) ) {
-                y_err = fabs(current.getLatitudeDeg() - (m * current.getLongitudeDeg() + b));
+                double y_err = fabs(current.getLatitudeDeg() - (m * current.getLongitudeDeg() + b));
 
                 if ( y_err < errEpsilon ) {
                     found_node = true;
@@ -686,15 +680,15 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
             p_max = p0;
         }
 
-        m1 = (p_min.getLongitudeDeg() - p_max.getLongitudeDeg()) / (p_min.getLatitudeDeg() - p_max.getLatitudeDeg());
-        b1 = p_max.getLongitudeDeg() - m1 * p_max.getLatitudeDeg();
+        double m1 = (p_min.getLongitudeDeg() - p_max.getLongitudeDeg()) / (p_min.getLatitudeDeg() - p_max.getLatitudeDeg());
+        double b1 = p_max.getLongitudeDeg() - m1 * p_max.getLatitudeDeg();
 
         for ( int i = 0; i < (int)nodes.size(); ++i ) {
             SGGeod current = nodes[i];
 
             if ( (current.getLatitudeDeg() > (p_min.getLatitudeDeg() + (bbEpsilon))) && (current.getLatitudeDeg() < (p_max.getLatitudeDeg() - (bbEpsilon))) ) {
 
-                x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
+                double x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
 
                 if ( x_err < errEpsilon ) {
                     found_node = true;
@@ -715,7 +709,6 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
                                   double bbEpsilon, double errEpsilon )
 {
     bool found_node = false;
-    double m, m1, b, b1, y_err, x_err, y_err_min, x_err_min;
     
     SGGeod p0 = start;
     SGGeod p1 = end;
@@ -723,8 +716,8 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
     double xdist = fabs(p0.getLongitudeDeg() - p1.getLongitudeDeg());
     double ydist = fabs(p0.getLatitudeDeg()  - p1.getLatitudeDeg());
     
-    x_err_min = xdist + 1.0;
-    y_err_min = ydist + 1.0;
+    double x_err_min = xdist + 1.0;
+    double y_err_min = ydist + 1.0;
     
     if ( xdist > ydist ) {
         // sort these in a sensible order
@@ -737,15 +730,15 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
             p_max = p0;
         }
         
-        m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
-        b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
+        double m = (p_min.getLatitudeDeg() - p_max.getLatitudeDeg()) / (p_min.getLongitudeDeg() - p_max.getLongitudeDeg());
+        double b = p_max.getLatitudeDeg() - m * p_max.getLongitudeDeg();
         
         for ( int i = 0; i < (int)nodes.size(); ++i ) {
             // cout << i << endl;
             SGGeod current = nodes[i]->GetPosition();
             
             if ( (current.getLongitudeDeg() > (p_min.getLongitudeDeg() + (bbEpsilon))) && (current.getLongitudeDeg() < (p_max.getLongitudeDeg() - (bbEpsilon))) ) {
-                y_err = fabs(current.getLatitudeDeg() - (m * current.getLongitudeDeg() + b));
+                double y_err = fabs(current.getLatitudeDeg() - (m * current.getLongitudeDeg() + b));
                 
                 if ( y_err < errEpsilon ) {
                     found_node = true;
@@ -767,15 +760,15 @@ static bool FindIntermediateNode( const SGGeod& start, const SGGeod& end,
             p_max = p0;
         }
         
-        m1 = (p_min.getLongitudeDeg() - p_max.getLongitudeDeg()) / (p_min.getLatitudeDeg() - p_max.getLatitudeDeg());
-        b1 = p_max.getLongitudeDeg() - m1 * p_max.getLatitudeDeg();
+        double m1 = (p_min.getLongitudeDeg() - p_max.getLongitudeDeg()) / (p_min.getLatitudeDeg() - p_max.getLatitudeDeg());
+        double b1 = p_max.getLongitudeDeg() - m1 * p_max.getLatitudeDeg();
         
         for ( int i = 0; i < (int)nodes.size(); ++i ) {
             SGGeod current = nodes[i]->GetPosition();
             
             if ( (current.getLatitudeDeg() > (p_min.getLatitudeDeg() + (bbEpsilon))) && (current.getLatitudeDeg() < (p_max.getLatitudeDeg() - (bbEpsilon))) ) {
                 
-                x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
+                double x_err = fabs(current.getLongitudeDeg() - (m1 * current.getLatitudeDeg() + b1));
                 
                 if ( x_err < errEpsilon ) {
                     found_node = true;
@@ -813,7 +806,7 @@ extern SGGeod InterpolateElevation( const SGGeod& dst_node, const SGGeod& start,
 
 static void AddIntermediateNodes( const SGGeod& p0, const SGGeod& p1, bool preserve3d, std::vector<TGNode*>& nodes, tgContour& result, double bbEpsilon, double errEpsilon )
 {
-    TGNode* new_pt;
+    TGNode* new_pt = nullptr;
     SGGeod new_geode;
     
     SG_LOG(SG_GENERAL, SG_BULK, "   " << p0 << " <==> " << p1 );
@@ -1003,16 +996,12 @@ tgContour tgContour::Expand( const tgContour& subject, double offset )
 
 tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double width )
 {
-    int turn_dir;
-
     SGGeod cur_inner;
     SGGeod cur_outer;
     SGGeod prev_inner;
     SGGeod prev_outer;
     SGGeod calc_inner;
     SGGeod calc_outer;
-
-    double last_end_v = 0.0f;
 
     tgContour      expanded;
     tgPolygon      segment;
@@ -1022,8 +1011,7 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
     // generate poly and texparam lists for each line segment
     for (unsigned int i = 0; i < subject.GetSize(); i++)
     {
-        last_end_v = 0.0f;
-        turn_dir   = 0;
+        int turn_dir = 0;
 
         sglog().setLogLevels( SG_ALL, SG_INFO );
 
@@ -1034,8 +1022,8 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
         if (i == 0)
         {
             // first point on the list - offset heading is 90deg
-            cur_outer = OffsetPointFirst( subject.GetNode(i), subject.GetNode(i+1), -width/2.0f );
-            cur_inner = OffsetPointFirst( subject.GetNode(i), subject.GetNode(i+1),  width/2.0f );
+            cur_outer = OffsetPointFirst( subject.GetNode(i), subject.GetNode(1), -width/2.0f );
+            cur_inner = OffsetPointFirst( subject.GetNode(i), subject.GetNode(1),  width/2.0f );
         }
         else if (i == subject.GetSize()-1)
         {
@@ -1099,6 +1087,8 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
                 }
             }
 
+            double last_end_v = 0.0;
+
             expanded.SetHole(false);
             segment.AddContour(expanded);
             segment.SetTexParams( prev_inner, width, 20.0f, heading );
@@ -1106,6 +1096,7 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
             segment.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
             result.push_back( segment );
 
+            // BUG??: value will never be utilized
             last_end_v = 1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
         }
 

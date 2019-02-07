@@ -23,7 +23,6 @@ under Windows.  If running the tools from the standard Win32 command
 prompt a lot of the tools have problems with directory creation - with
 the tools that try to create many subdirectories this can be a major
 problem.  It is much better to run the tools from a Cygwin bash shell
-- in this case only raw2ascii has a directory creation problem - the
-output directory specified on the command line needs to be manually
-created.
+- the output directory specified on the command line needs to be
+manually created.
 

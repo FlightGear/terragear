@@ -141,40 +141,43 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
     }
 }
 
-long int tgChopper::GenerateIndex( std::string path )
+uint32_t tgChopper::GenerateIndex(const std::string& path)
 {
     std::string index_file = path + "/chop.idx";
-    long int index = 0;
+    uint32_t index = 0;
 
     //Open or create the named mutex
     boost::interprocess::named_mutex mutex(boost::interprocess::open_or_create, "tgChopper_index2");
     {
         boost::interprocess::scoped_lock<boost::interprocess::named_mutex> lock(mutex);
 
-        /* first try to read the file */
-        FILE *fp = fopen( index_file.c_str(), "r+" );
-        if ( fp == NULL ) {
-            /* doesn't exist - create it */
-            fp = fopen( index_file.c_str(), "w" );
-            if ( fp == NULL ) {
-                SG_LOG(SG_GENERAL, SG_ALERT, "Error cannot open Index file " << index_file << " for writing");
-                boost::interprocess::named_mutex::remove("tgChopper_index2");
-                exit( 0 );
-            }
-        } else {
-            if ( fread( (void*)&index, sizeof(long int), 1, fp ) != 1 )
-            {
+        // first, read the current index
+        FILE* fp = fopen(index_file.c_str(), "rb");
+        if (fp != NULL) {
+            if (fread((void*)&index, sizeof(uint32_t), 1, fp) != 1) {
                 SG_LOG(SG_GENERAL, SG_ALERT, "Error reading Index file " << index_file << " abort");
+                fclose(fp);
+
                 boost::interprocess::named_mutex::remove("tgChopper_index2");
                 exit(0);
             }
+
+            fclose(fp);
         }
 
-        index++;
+        // overwrite the existing file - or create if it doesn't already exist
+        fp = fopen(index_file.c_str(), "wb");
+        if (fp == NULL) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Error cannot open Index file " << index_file << " for writing");
 
-        rewind( fp );
-        fwrite( (void*)&index, sizeof(long int), 1, fp );
-        fclose( fp );
+            boost::interprocess::named_mutex::remove("tgChopper_index2");
+            exit(0);
+        }
+
+        ++index;
+        fwrite((void*)&index, sizeof(uint32_t), 1, fp);
+
+        fclose(fp);
     }
 
     boost::interprocess::named_mutex::remove("tgChopper_index2");
@@ -182,53 +185,51 @@ long int tgChopper::GenerateIndex( std::string path )
     return index;
 }
 
-void tgChopper::Save( bool DebugShapefiles )
+void tgChopper::Save(bool DebugShapefiles)
 {
     // traverse the bucket list
     bucket_polys_map_interator it;
     char tile_name[16];
-    char poly_ext[16];
 
     char layer[32];
     char ds_name[64];
 
-    for (it=bp_map.begin(); it != bp_map.end(); it++) {
-        SGBucket b( (*it).first );
+    for (it = bp_map.begin(); it != bp_map.end(); ++it) {
+        SGBucket b((*it).first);
         tgpolygon_list const& polys = (*it).second;
 
-        sprintf(ds_name, "./bucket_%s", b.gen_index_str().c_str() );
+        sprintf(ds_name, "./bucket_%s", b.gen_index_str().c_str());
 
         std::string path = root_path + "/" + b.gen_base_path();
-        sprintf( tile_name, "%ld", b.gen_index() );
+        sprintf(tile_name, "%ld", b.gen_index());
 
         std::string polyfile = path + "/" + tile_name;
 
-        SGPath sgp( polyfile );
-        sgp.create_dir( 0755 );
+        SGPath sgp(polyfile);
+        sgp.create_dir(0755);
 
-        long int poly_index = GenerateIndex( path );
-
-        sprintf( poly_ext, "%ld", poly_index );
-        polyfile = polyfile + "." + poly_ext + "." + extra_extension;
+        uint32_t poly_index = GenerateIndex(path);
+        char poly_ext[32];
+        sprintf(poly_ext, "%u%.25s", poly_index, extra_extension.c_str());
+        polyfile = polyfile + "." + poly_ext;
 
         gzFile fp;
-        if ( (fp = gzopen( polyfile.c_str(), "wb9" )) == NULL ) {
-            SG_LOG( SG_GENERAL, SG_INFO, "ERROR: opening " << polyfile.c_str() << " for writing!" );
+        if ((fp = gzopen(polyfile.c_str(), "wb9")) == NULL) {
+            SG_LOG(SG_GENERAL, SG_INFO, "ERROR: opening " << polyfile.c_str() << " for writing!");
             return;
         }
 
         /* Write polys to the file */
-        sgWriteUInt( fp, polys.size() );
-        for ( unsigned int i=0; i<polys.size(); i++ ) {
-            polys[i].SaveToGzFile( fp );
+        sgWriteUInt(fp, polys.size());
+        for (unsigned int i = 0; i < polys.size(); i++) {
+            polys[i].SaveToGzFile(fp);
 
-            if ( DebugShapefiles )
-            {
-                sprintf(layer, "poly_%s-%d", b.gen_index_str().c_str(), i );
-                tgShapefile::FromPolygon( polys[i], ds_name, layer, "poly" );
+            if (DebugShapefiles) {
+                sprintf(layer, "poly_%s-%u", b.gen_index_str().c_str(), i);
+                tgShapefile::FromPolygon(polys[i], ds_name, layer, "poly");
             }
         }
 
-        gzclose( fp );
+        gzclose(fp);
     }
 }

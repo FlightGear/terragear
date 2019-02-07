@@ -1,6 +1,8 @@
 #ifndef _AIRPORT_H_
 #define _AIRPORT_H_
 
+#include <memory>
+
 #include <simgear/timing/timestamp.hxx>
 #include <simgear/math/sg_types.hxx>
 #include <simgear/threads/SGThread.hxx>
@@ -20,46 +22,46 @@ public:
     Airport( int c, char* def);
     ~Airport();
 
-    void AddRunway( Runway* runway )
+    void AddRunway( std::shared_ptr<Runway> runway )
     {
         runways.push_back( runway );
     }
 
-    void AddWaterRunway( WaterRunway* waterrunway )
+    void AddWaterRunway( std::shared_ptr<WaterRunway> waterrunway )
     {
         waterrunways.push_back( waterrunway );
     }
 
-    void AddObj( LightingObj* lightobj )
+    void AddObj( std::shared_ptr<LightingObj> lightobj )
     {
         lightobjects.push_back( lightobj );
     }
 
-    void AddHelipad( Helipad* helipad )
+    void AddHelipad( std::shared_ptr<Helipad> helipad )
     {
         helipads.push_back( helipad );
     }
 
-    void AddTaxiway( Taxiway* taxiway )
+    void AddTaxiway( std::shared_ptr<Taxiway> taxiway )
     {
         taxiways.push_back( taxiway );
     }
 
-    void AddPavement( ClosedPoly* pavement )
+    void AddPavement( std::shared_ptr<ClosedPoly> pavement )
     {
         pavements.push_back( pavement );
     }
 
-    void AddFeature( LinearFeature* feature )
+    void AddFeature( std::shared_ptr<LinearFeature> feature )
     {
         features.push_back( feature );
     }
 
-    void AddFeatures( FeatureList* feature_list )
+    void AddFeatures( FeatureList feature_list )
     {
-        for (unsigned int i=0; i<feature_list->size(); i++)
+        for (auto feature : feature_list)
         {
-            features.push_back( feature_list->at(i) );
+            features.push_back( feature );
         }
     }
 
@@ -68,22 +70,22 @@ public:
         return features.size();
     }
 
-    void AddBoundary( ClosedPoly* bndry )
+    void AddBoundary( std::shared_ptr<ClosedPoly> bndry )
     {
         boundary.push_back( bndry );
     }
 
-    void AddWindsock( Windsock* windsock )
+    void AddWindsock( std::shared_ptr<Windsock> windsock )
     {
         windsocks.push_back( windsock );
     }
 
-    void AddBeacon( Beacon* beacon )
+    void AddBeacon( std::shared_ptr<Beacon> beacon )
     {
         beacons.push_back( beacon );
     }
 
-    void AddSign( Sign* sign )
+    void AddSign( std::shared_ptr<Sign> sign )
     {
         signs.push_back( sign );
     }
@@ -163,6 +165,6 @@ private:
     debug_map       debug_features;
 };
 
-typedef std::vector <Airport *> AirportList;
+typedef std::vector<std::shared_ptr<Airport>> AirportList;
 
 #endif

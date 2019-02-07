@@ -76,7 +76,7 @@ int SimpleRasterTransformer(void *pTransformerArg,
                             int bDstToSrc, int nPointCount,
                             double *x, double *y, double *z, int *panSuccess )
 {
-    SimpleRasterTransformerInfo* info = (SimpleRasterTransformerInfo*)pTransformerArg;
+    SimpleRasterTransformerInfo* info = static_cast<SimpleRasterTransformerInfo*>(pTransformerArg);
     int success;
 
     if (bDstToSrc) {
@@ -105,7 +105,7 @@ int SimpleRasterTransformer(void *pTransformerArg,
 
 class ImageInfo {
 public:
-    ImageInfo(GDALDataset *dataset);
+    explicit ImageInfo(GDALDataset *dataset);
 
     void GetBounds(double &n, double &s, double &e, double &w) const {
         n = north;
@@ -531,6 +531,8 @@ int main(int argc, const char **argv)
             process_bucket(work_dir, bucket, images.get(), datasetcount, true);
         }
     }
+
+    GDALDestroyDriverManager();
 
     auto finish_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish_time - start_time;

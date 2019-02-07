@@ -25,7 +25,7 @@
 // lookup node elevations for each point in the SGGeod list.  Returns
 // average of all points.  Doesn't modify the original list.
 double tgAverageElevation( const std::string &root, const string_list elev_src,
-                           const std::vector<SGGeod> points_source );
+                           const std::vector<SGGeod>& points_source );
 
 // lookup node elevations for each point in the specified nurbs++
 // matrix.

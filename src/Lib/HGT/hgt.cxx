@@ -58,17 +58,29 @@ TGHgt::TGHgt( int _res )
     hgt_resolution = _res;
 
     data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-    output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
+    read_buffer = new short int[MAX_HGT_SIZE];
+
+    for (int x = 0; x < MAX_HGT_SIZE; ++x) {
+        for (int y = 0; y < MAX_HGT_SIZE; ++y) {
+            data[x][y] = 0;
+        }
+
+        read_buffer[x] = 0;
+    }
 }
 
 
-TGHgt::TGHgt( int _res, const SGPath &file )
+TGHgt::TGHgt( int _res, const SGPath &file ) :
+    TGHgt( _res )
 {
-    hgt_resolution = _res;
-    data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-    output_data = new short int[MAX_HGT_SIZE][MAX_HGT_SIZE];
-
     TGHgt::open( file );
+}
+
+
+TGHgt::~TGHgt() {
+    // printf("class TGSrtmBase DEstructor called.\n");
+    delete [] data;
+    delete [] read_buffer;
 }
 
 
@@ -164,26 +176,22 @@ TGHgt::load( ) {
         return false;
     }
 
-    short int *var;
     for ( int row = size - 1; row >= 0; --row ) {
-        for ( int col = 0; col < size; ++col ) {
-            var = &data[col][row];
-            if ( gzread ( fd, var, sizeof(short) ) != sizeof(short) ) {
-                return false;
-            }
-            if ( sgIsLittleEndian() ) {
-                sgEndianSwap( (unsigned short int*)var);
-            }
+        if ( gzfread( (voidp)read_buffer, 2, size, fd ) != (unsigned)size ) {
+            return false;
+        }
+
+        // convert to column-major
+        for ( int col = 0; col < size; ++col )
+            data[col][row] = *(read_buffer + col);
+    }
+
+    if (sgIsLittleEndian()) {
+        auto pData = (unsigned short *)data;
+        for (int i = 0; i < rows * cols; ++i) {
+            sgEndianSwap(pData++);
         }
     }
 
     return true;
-}
-
-
-
-TGHgt::~TGHgt() {
-    // printf("class TGSrtmBase DEstructor called.\n");
-    delete [] data;
-    delete [] output_data;
 }

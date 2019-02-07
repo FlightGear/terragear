@@ -4,6 +4,7 @@
 #include <vector>
 #include <string.h>
 #include <float.h>
+#include <memory>
 
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/SGMath.hxx>
@@ -119,10 +120,9 @@ inline double CalculateTheta( const SGVec3d& dirCur, const SGVec3d& dirNext, con
 class BezNode 
 {
 public:
-    BezNode( SGGeod l )
+    explicit BezNode( SGGeod l ) :
+        loc(l)
     {
-        loc   = l;
-
         has_prev_cp = false;
         has_next_cp = false;
 
@@ -132,28 +132,18 @@ public:
         close = false;
     }
 
-    BezNode( double lat, double lon )
+    BezNode( double lat, double lon ) :
+        BezNode(SGGeod::fromDeg(lon, lat))
     {
-        loc   = SGGeod::fromDeg( lon, lat );
-
-        has_prev_cp = false;
-        has_next_cp = false;
-
-        mark  = 0;
-        light = 0;
-        term  = false;
-        close = false;
     }
 
-    BezNode( SGGeod l, SGGeod cp )
+    BezNode( SGGeod l, SGGeod cp ) :
+        loc(l),
+        prev_cp(Mirror(cp)),
+        next_cp(cp)
     {
-        loc     = l;
-
-        next_cp = cp;
-        has_next_cp = true;
-
-        prev_cp = Mirror(cp);
         has_prev_cp = true;
+        has_next_cp = true;
 
         mark    = 0;
         light   = 0;
@@ -161,20 +151,9 @@ public:
         close   = false;
     }
 
-    BezNode( double lat, double lon, double cp_lat, double cp_lon )
+    BezNode( double lat, double lon, double cp_lat, double cp_lon ) :
+        BezNode(SGGeod::fromDeg(lon, lat), SGGeod::fromDeg(cp_lon, cp_lat))
     {
-        loc     = SGGeod::fromDeg( lon, lat );
-
-        next_cp = SGGeod::fromDeg( cp_lon, cp_lat );
-        has_next_cp = true;
-
-        prev_cp = Mirror( next_cp );
-        has_prev_cp = true;
-
-        mark    = 0;
-        light   = 0;
-        term    = false;
-        close   = false;
     }
 
     SGGeod Mirror( const SGGeod& pt )
@@ -282,8 +261,8 @@ private:
 
 
 // array of BezNodes make a contour
-typedef std::vector <BezNode *> BezContour;
-typedef std::vector <BezContour *> BezContourArray;
+typedef std::vector<std::shared_ptr<BezNode>> BezContour;
+typedef std::vector<BezContour> BezContourArray;
 
 #endif
 

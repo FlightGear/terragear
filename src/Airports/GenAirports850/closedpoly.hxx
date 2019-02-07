@@ -1,6 +1,8 @@
 #ifndef _BEZPOLY_H_
 #define _BEZPOLY_H_
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 
 #include "beznode.hxx"
@@ -9,12 +11,12 @@
 class ClosedPoly
 {
 public:
-    ClosedPoly( char* desc );
+    explicit ClosedPoly( char* desc );
     ClosedPoly( int st, float s, float th, char* desc );
 	~ClosedPoly();
 
     inline std::string GetDescription() { return description; }
-    void AddNode( BezNode* node );
+    void AddNode( std::shared_ptr<BezNode> node );
     void CloseCurContour();
     void Finish();
 
@@ -36,15 +38,15 @@ public:
                    tgAccumulator& accum,
                    std::string& shapefile_name );
 
-    FeatureList* GetFeatures()
+    FeatureList& GetFeatures()
     {
-        return &features;
+        return features;
     }
 
 private:
     // convert the BezierPoly to a normal Poly (adding nodes for the curves)
     void CreateConvexHull( void );
-    void ConvertContour( BezContour* src, tgContour& dst );
+    void ConvertContour( const BezContour& src, tgContour& dst );
     std::string GetMaterial( int surface );
 
 
@@ -58,13 +60,13 @@ private:
     std::string description;
 
     // outer boundary definition as bezier nodes
-    BezContour* boundary;
+    BezContour boundary;
 
     // holes
     BezContourArray holes;
 
     // contour that nodes will be added until done
-    BezContour* cur_contour;
+    BezContour cur_contour;
 
     // Converted polygon after parsing complete
     tgPolygon pre_tess;
@@ -73,10 +75,10 @@ private:
     tgpolygon_list shoulder_polys;
 
     // pavement definitions have multiple linear features (markings and lights for each contour)
-    LinearFeature* cur_feature;
+    std::shared_ptr<LinearFeature> cur_feature;
     FeatureList features;
 };
 
-typedef std::vector <ClosedPoly *> PavementList;
+typedef std::vector<std::shared_ptr<ClosedPoly>> PavementList;
 
 #endif

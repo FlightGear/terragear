@@ -7,8 +7,6 @@
 
 #include <terragear/tg_polygon.hxx>
 
-#include <cstdio>
-
 #include "global.hxx"
 #include "apt_math.hxx"
 #include "beznode.hxx"
@@ -20,43 +18,74 @@ Runway::Runway(char* definition)
 {
     double az2;
 
-    // format:
-    // runway   width   surface  shoulder  smoothness centerline lights  edge lighting distance remaining signs
-    // 100      46.02   2        1         0.00       1                  2             1 
+    // runway format:
+    //      width   surface  shoulder  smoothness centerline lights  edge lighting distance remaining signs
+    //      46.02   2        1         0.00       1                  2             1 
     //     
-    //          runway number  runway end lat runway end long   threshold  overrun  markings  approach lighting
-    //          09L            33.63470475     -084.44798671    0.00       120.09   3         7 
+    //      runway number  runway end lat runway end long   threshold  overrun  markings  approach lighting
+    //      09L            33.63470475     -084.44798671    0.00       120.09   3         7 
     // 
-    //          touchdown zone lighting  runway end identifier lights
-    //          0                        1                              
+    //      touchdown zone lighting  runway end identifier lights
+    //      0                        1                              
     //
-    //          runway number  runway end lat runway end long   threshold  overrun  markings  approach lighting
-    //          27R             33.63469907   -084.40893004     0.00       120.09   3         6 
+    //      runway number  runway end lat runway end long   threshold  overrun  markings  approach lighting
+    //      27R             33.63469907   -084.40893004     0.00       120.09   3         6 
     //
-    //          touchdown zone lighting  runway end identifier lights
-    //          0                        1
+    //      touchdown zone lighting  runway end identifier lights
+    //      0                        1
 
     // Parse the line
-    // 46.02   2   1 0.00 1 2 1 09L  33.63470475 -084.44798671    0.00  120.09 3  7 0 1 27R  33.63469907 -084.40893004    0.00  120.09 3  6 0 1
+    //      46.02   2   1 0.00 1 2 1 09L  33.63470475 -084.44798671    0.00  120.09 3  7 0 1 27R  33.63469907 -084.40893004    0.00  120.09 3  6 0 1
 
-    // int fscanf(FILE *stream, const char *format, ...);
-    sscanf(definition, "%lf %d %d %lf %d %d %d %s %lf %lf %lf %lf %d %d %d %d %s %lf %lf %lf %lf %d %d %d %d", 
-        &rwy.width,  &rwy.surface, &rwy.shoulder, &rwy.smoothness, &rwy.centerline_lights, &rwy.edge_lights, &rwy.dist_remain_signs,
-        rwy.rwnum[0], &rwy.lat[0], &rwy.lon[0], &rwy.threshold[0], &rwy.overrun[0], &rwy.marking[0], &rwy.approach_lights[0], &rwy.tz_lights[0], &rwy.reil[0],
-        rwy.rwnum[1], &rwy.lat[1], &rwy.lon[1], &rwy.threshold[1], &rwy.overrun[1], &rwy.marking[1], &rwy.approach_lights[1], &rwy.tz_lights[1], &rwy.reil[1]
-    );
+    std::istringstream ss(definition);
+    ss  >> rwy.width
+        >> rwy.surface
+        >> rwy.shoulder
+        >> rwy.smoothness
+        >> rwy.centerline_lights
+        >> rwy.edge_lights
+        >> rwy.dist_remain_signs
+        >> rwy.rwnum[0]
+        >> rwy.lat[0]
+        >> rwy.lon[0]
+        >> rwy.threshold[0]
+        >> rwy.overrun[0]
+        >> rwy.marking[0]
+        >> rwy.approach_lights[0]
+        >> rwy.tz_lights[0]
+        >> rwy.reil[0]
+        >> rwy.rwnum[1]
+        >> rwy.lat[1]
+        >> rwy.lon[1]
+        >> rwy.threshold[1]
+        >> rwy.overrun[1]
+        >> rwy.marking[1]
+        >> rwy.approach_lights[1]
+        >> rwy.tz_lights[1]
+        >> rwy.reil[1];
 
     // calculate runway heading and length (used a lot)
     SGGeodesy::inverse( GetStart(), GetEnd(), rwy.heading, az2, rwy.length );
 
-    TG_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << rwy.lon[0] << "," << rwy.lat[0] << ") to (" << rwy.lon[1] << "," << rwy.lat[1] << ") heading: " << rwy.heading << " length: " << rwy.length << " width: " << rwy.width );
-
+    TG_LOG(SG_GENERAL, SG_DEBUG, "Read runway: (" << rwy.lon[0] << "," << rwy.lat[0] <<
+            ") to (" << rwy.lon[1] << "," << rwy.lat[1] <<
+            ") heading: " << rwy.heading <<
+            " length: " << rwy.length <<
+            " width: " << rwy.width );
 } 
 
 
 WaterRunway::WaterRunway(char* definition)
 {
-    sscanf(definition, "%lf %d %s %lf %lf %s %lf %lf", &width, &buoys, rwnum[0], &lat[0], &lon[0], rwnum[1], &lat[1], &lon[1]);
+    std::istringstream ss(definition);
+    ss  >> width
+        >> buoys
+        >> rwnum[0]
+        >> lat[0]
+        >> lon[0]
+        >> rwnum[1]
+        >> lat[1]
+        >> lon[1];
 
     TG_LOG(SG_GENERAL, SG_DEBUG, "Read water runway: (" << lon[0] << "," << lat[0] << ") to (" << lon[1] << "," << lat[1] << ") width: " << width << " buoys = " << buoys );
 }
@@ -85,6 +114,7 @@ tgContour WaterRunway::GetBuoys()
             }
         }
     }
+
     return buoys_nodes;
 }
 

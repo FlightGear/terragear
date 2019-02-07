@@ -36,15 +36,20 @@ const double TGConstruct::gSnap = 0.00000001;      // approx 1 mm
 TGConstruct::TGConstruct( const TGAreaDefinitions& areas, unsigned int s, SGLockedQueue<SGBucket>& q, SGMutex* l) :
         area_defs(areas),
         workQueue(q),
-        stage(s),
-        ignoreLandmass(false),
-        debug_all(false),
         ds_id((void*)-1),
-        isOcean(false)
+        l_id(nullptr),
+        ds_name(""),
+        layer_name(""),
+        feature_name(""),
+        lock(l)
 {
     total_tiles = q.size();
+    stage = s;
+    ignoreLandmass = false;
+    nudge = 0.0;
+    debug_all = false;
+    isOcean = false;
     num_areas = areas.size();
-    lock = l;
 }
 
 
@@ -55,9 +60,9 @@ TGConstruct::~TGConstruct() {
 }
 
 // TGConstruct: Setup
-void TGConstruct::set_paths( const std::string work, const std::string share, 
-                             const std::string match, const std::string output, 
-                             const std::vector<std::string> load ) {
+void TGConstruct::set_paths( const std::string& work, const std::string& share, 
+                             const std::string& match, const std::string& output, 
+                             const std::vector<std::string>& load ) {
     work_base   = work;
     share_base  = share;
     match_base  = match;
@@ -72,12 +77,10 @@ void TGConstruct::set_options( bool ignore_lm, double n ) {
 
 void TGConstruct::run()
 {
-    unsigned int tiles_complete;
-
     // as long as we have feometry to parse, do so
     while ( !workQueue.empty() ) {
         bucket = workQueue.pop();
-        tiles_complete = total_tiles - workQueue.size();
+        unsigned int tiles_complete = total_tiles - workQueue.size();
 
         // assume non ocean tile until proven otherwise
         isOcean = false;

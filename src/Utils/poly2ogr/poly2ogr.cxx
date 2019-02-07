@@ -53,7 +53,7 @@ typedef std::map<std::string,OGRLayer*> LayerMap;
 const char* format_name="ESRI Shapefile";
 bool do_split=false;
 
-OGRDataSource *datasource;
+GDALDataset *datasource;
 OGRLayer *defaultLayer;
 OGRLayer *pointsLayer=NULL;
 LayerMap layerMap;
@@ -147,10 +147,12 @@ OGRLayer* get_layer_for_material(const std::string& material) {
 OGRLinearRing* make_ring_from_fan(const int_list& fan, const std::vector<SGGeod>& nodes) {
         OGRLinearRing* ring = new OGRLinearRing();
         int_list::const_iterator vertex = fan.begin();
+        
         if (fan[1]==fan[fan.size()-1]) {
                 /* The fan is closed, so the first vertex is in the interior */
-                vertex++;
+                ++vertex;
         }
+
         for (;vertex!=fan.end();++vertex) {
                 OGRPoint *point=new OGRPoint();
                 const SGGeod& node = nodes[*vertex];
@@ -347,12 +349,13 @@ void process_polygon_file(const std::string& path) {
 
                         for (int pt=0;pt<count;pt++) {
                                 OGRPoint *point=new OGRPoint();
-                                double x,y,z;
-
+                                double x, y;
                                 in >> x >> y;
                                 point->setX(x);
                                 point->setY(y);
+
                                 if (poly3d) {
+                                        double z;
                                         in >> z;
                                         point->setZ(z);
                                 } else {
@@ -456,10 +459,13 @@ void usage(const char* progname, const std::string& msg) {
         SG_LOG(SG_GENERAL, SG_INFO, "\t--format format");
         SG_LOG(SG_GENERAL, SG_INFO, "\t\tSpecify the output format");
         SG_LOG(SG_GENERAL, SG_INFO, "\t\tAvailable formats:");
-        OGRSFDriverRegistrar* registrar=OGRSFDriverRegistrar::GetRegistrar();
-        for (int i=0;i<registrar->GetDriverCount();i++) {
-                SG_LOG(SG_GENERAL, SG_INFO, "\t\t\t-f \"" << registrar->GetDriver(i)->GetDescription() << "\"");
+
+        auto driverManager = GetGDALDriverManager();
+        for (int i = 0; i < driverManager->GetDriverCount(); ++i) {
+            auto ogrDriver = driverManager->GetDriver(i);
+            SG_LOG(SG_GENERAL, SG_INFO, "\t\t\t-f \"" << ogrDriver->GetDescription() << "\"");
         }
+
         SG_LOG(SG_GENERAL, SG_INFO, "\t\tDefault: ESRI Shapefile");
         SG_LOG(SG_GENERAL, SG_INFO, "");
         SG_LOG(SG_GENERAL, SG_INFO, "The polygons from the given paths are read and transferred");
@@ -480,7 +486,7 @@ struct option options[]={
 int main(int argc, char** argv) {
         sglog().setLogLevels( SG_ALL, SG_DEBUG );
 
-        OGRRegisterAll();
+        GDALAllRegister();
 
         int option;
 
@@ -515,18 +521,18 @@ int main(int argc, char** argv) {
                 exit(1);
         }
 
-        const char* dst_datasource=argv[optind++];
-        OGRSFDriver *ogrdriver;
+        auto driverManager = GetGDALDriverManager();
 
-        ogrdriver = (OGRSFDriver*) OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(format_name);
-        if (!ogrdriver) {
-                usage(argv[0],std::string("Unknown datasource format driver:")+format_name);
+        auto gdalDriver = driverManager->GetDriverByName(format_name);
+        if (!gdalDriver) {
+                usage(argv[0], std::string("Unknown datasource format driver:") + format_name);
                 exit(1);
         }
 
-        datasource = ogrdriver->CreateDataSource(dst_datasource,NULL);
+        const char* dst_datasource = argv[optind++];
+        datasource = gdalDriver->Create(dst_datasource, 0, 0, 0, GDALDataType::GDT_Unknown, NULL);
         if (!datasource) {
-                usage(argv[0],std::string("Unable to create datasource:")+dst_datasource);
+                usage(argv[0],std::string("Unable to create datasource:") + dst_datasource);
                 exit(1);
         }
 
@@ -534,7 +540,8 @@ int main(int argc, char** argv) {
                 process_file(SGPath(argv[i]));
         }
 
-        OGRDataSource::DestroyDataSource( datasource );
+        GDALClose((GDALDatasetH) datasource );
+        GDALDestroyDriverManager();
 
         return 0;
 }

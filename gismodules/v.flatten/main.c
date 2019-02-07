@@ -24,7 +24,8 @@
 #include <grass/dbmi.h>
 #include <grass/vector.h>
 
-void apply_setz_operator( struct Map_info* map, double z, int* cats, int ncats, int layer)
+
+void apply_setz_operator(struct Map_info* map, double z, int* cats, int ncats, int layer)
 {
     const plus_t area_count = Vect_get_num_areas( map );
     plus_t area_idx;
@@ -42,7 +43,7 @@ void apply_setz_operator( struct Map_info* map, double z, int* cats, int ncats, 
     }
 }
 
-void apply_mean_operator( struct Map_info* map, int* cats, int ncats, int layer )
+void apply_mean_operator(struct Map_info* map, int* cats, int ncats, int layer)
 {
     if (ncats > 0) {
         /* We have to greedily collect adjacent selected areas */
@@ -53,7 +54,7 @@ void apply_mean_operator( struct Map_info* map, int* cats, int ncats, int layer 
     }
 }
 
-void apply_slope_operator( struct Map_info* map, double slope, int* cats, int ncats, int layer)
+void apply_slope_operator(struct Map_info* map, double slope, int* cats, int ncats, int layer)
 {
     if (ncats > 0) {
         /* We apply slope to individual areas */
@@ -73,9 +74,7 @@ int main(int argc, char *argv[])
 	struct Option *fieldopt;
 	int field;
 	struct Map_info oldmap, newmap;
-	struct field_info* fieldinfo;
-	dbDriver* driver;
-	int i, ncats, *cats;
+	int ncats, *cats;
 	
 	G_gisinit(argv[0]);
 	
@@ -131,36 +130,36 @@ int main(int argc, char *argv[])
 	Vect_close(&oldmap);
 
 	if (whereopt->answer!=NULL) {
-            field = Vect_get_field_number( &newmap, fieldopt->answer );
-            fieldinfo = Vect_get_field( &newmap, field );
-            if (!fieldinfo) {
-                G_fatal_error(_("Database connection not defined for layer <%s>"),
-                              fieldopt->answer);
-            }
-    
-            G_debug(1, "Loading categories from table <%s>", fieldinfo->table);
-    
-            driver = db_start_driver_open_database(fieldinfo->driver, fieldinfo->database);
-            if (driver == NULL) {
-                G_fatal_error(_("Unable to open database <%s> by driver <%s>"),
-                              fieldinfo->database, fieldinfo->driver);
-            }
-            
-            ncats = db_select_int(driver, fieldinfo->table, fieldinfo->key, whereopt->answer,
-                                  &cats);
-            if (ncats == -1) {
-                    G_fatal_error(_("Unable select records from table <%s>"), fieldinfo->table);
-            }
-            G_message(_("%d categories loaded from table <%s>"), ncats,
-                      fieldinfo->table);
-    
-            db_close_database(driver);
-            db_shutdown_driver(driver);
-        } else {
-            field = -1;
-            cats = NULL;
-            ncats = -1;
-        }
+		field = Vect_get_field_number( &newmap, fieldopt->answer );
+		struct field_info* fieldinfo = Vect_get_field( &newmap, field );
+		if (!fieldinfo) {
+			G_fatal_error(_("Database connection not defined for layer <%s>"),
+							fieldopt->answer);
+		}
+
+		G_debug(1, "Loading categories from table <%s>", fieldinfo->table);
+
+		dbDriver* driver = db_start_driver_open_database(fieldinfo->driver, fieldinfo->database);
+		if (driver == NULL) {
+			G_fatal_error(_("Unable to open database <%s> by driver <%s>"),
+							fieldinfo->database, fieldinfo->driver);
+		}
+		
+		ncats = db_select_int(driver, fieldinfo->table, fieldinfo->key, whereopt->answer,
+								&cats);
+		if (ncats == -1) {
+				G_fatal_error(_("Unable select records from table <%s>"), fieldinfo->table);
+		}
+		G_message(_("%d categories loaded from table <%s>"), ncats,
+					fieldinfo->table);
+
+		db_close_database(driver);
+		db_shutdown_driver(driver);
+	} else {
+		field = -1;
+		cats = NULL;
+		ncats = -1;
+	}
 	
 	if (!strcmp(operator->answer, "setz")) {
 	    apply_setz_operator( &newmap, atof(value->answer), cats, ncats, field );
@@ -172,9 +171,10 @@ int main(int argc, char *argv[])
 
 	Vect_build(&newmap);
 
-        if (cats != NULL) {
-            G_free(cats);
-        }
+	if (cats != NULL) {
+		G_free(cats);
+	}
+
 	Vect_close(&newmap);
 	
 	/* Don't forget to report to caller sucessful end of data processing :) */

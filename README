@@ -46,56 +46,26 @@ Preprocessing Terrain
 
 TerraGear supports several terrain data sources:
 
-1. 30-arcsec SRTM based terrain data covering the world (recommended
-   over other 30-arcsec data sources):
+1. [Preferred] SRTM (version 3):
+   Void filled, 1-arc-sec and 3-arc-sec, near worldwide coverage.
 
-   ftp://edcsgs9.cr.usgs.gov/pub/data/srtm/SRTM30/
+   https://e4ftl01.cr.usgs.gov/MEASURES/SRTMGL1.003/
 
-   I don't recall the details at the moment for processing this data.
-   Probably similar to the processing of the GLOBE data.
-
-2. 30-arcsec world wide data: GLOBE project:
-
-   http://www.ngdc.noaa.gov/seg/topo/globe.shtml
-
-   a) First convert the "bin" DEM format to "ascii" DEM format using
-      "Prep/DemRaw2ascii/raw2ascii"
-
-   b) Then process the resulting files with "Prep/DemChop/demchop"
+   a) Chop up each .zip files using "Prep/DemChop/hgtchop"
 
 
-3. 30-arcsec world wide data: GTOPO30 data:
-
-   http://edcwww.cr.usgs.gov/landdaac/gtopo30/gtopo30.html
-
-   a) First convert the "bin" DEM format to "ascii" DEM format using
-      "Prep/DemRaw2ascii/raw2ascii"
-
-   b) Then process the resulting files with "Prep/DemChop/demchop"
-
-
-4. SRTM (version 1 & 2) (1 and 3-arcsec nearly world wide coverage):
+2. SRTM (version 1 & 2):
+   May contain voids, 1-arc-sec and 3-arc-sec, near worldwide coverage.
 
    ftp://edcsgs9.cr.usgs.gov/pub/data/srtm/
 
    a) Chop up each .zip files using "Prep/DemChop/hgtchop"
 
 
-5. 3-arcsec ASCII DEM files:
-
-   Generally, I recommend using the SRTM data over this older data
-   set, however in places like Alaska, there is no SRTM coverage so
-   this data is better than the 30 arcsec data.
-
-       http://edcwww.cr.usgs.gov/doc/edchome/ndcdb/ndcdb.html
-
-   a) Create the .arr.gz files using the "Prep/DemChop/demchop" utility.
-
-
 The result for any of these terrain sources should be a "work" tree
 with a .arr.gz file for each FG tile.
 
-6. SRTM data comes with 'voids'.  These are areas where their
+3. SRTM versions 1 & 2 come with 'voids'.  These are areas where their
    automated data processing system could not reliably determine the
    elevation.  Often this happens over water, or over mountain peaks.
    There is a big chunk of the Grand Canyon missing, a big chunk of
@@ -106,13 +76,13 @@ with a .arr.gz file for each FG tile.
    I half trust is the USGS 3 arcsec DEM data for the USA.  So we
    can't fix voids outside the USA right now.
 
-   In the same directory as DemChop and HgtChop there is a "fillvoids"
+   In the same directory as HgtChop there is a "fillvoids"
    program.  You might wish to run it with something like the
    following command line:
 
      find /export/fgfs05/curt/Work/SRTM2-North_America3 -name '*.arr.gz' -exec ./fillvoids {} /stage/fgfs05/curt/Work/USGS-DEM-USA-3 \;
 
-7. After you create the .arr.gz files you have to create a
+4. After you create the .arr.gz files you have to create a
    corresponding .fit.gz file for each of these.  This is a data
    reduction step which fits a set of polygons to the raw terrain with
    a set of constraints on the maximum error allowed relative to the

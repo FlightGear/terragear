@@ -34,9 +34,8 @@ using std::string;
 // and return list of fitted nodes.
 void TGConstruct::LoadElevationArray( bool add_nodes ) {
     string base = bucket.gen_base_path();
-    int i;
 
-    for ( i = 0; i < (int)load_dirs.size(); ++i ) {
+    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
         string array_path = work_base + "/" + load_dirs[i] + "/" + base + "/" + bucket.gen_index_str();
 
         if ( array.open(array_path) ) {
@@ -48,14 +47,15 @@ void TGConstruct::LoadElevationArray( bool add_nodes ) {
 
     array.parse( bucket );
     array.remove_voids( );
+
     if ( add_nodes ) {
         std::vector<SGGeod> const& corner_list = array.get_corner_list();
-        for (unsigned int i=0; i<corner_list.size(); i++) {
+        for (unsigned int i = 0; i < corner_list.size(); ++i) {
             nodes.unique_add( corner_list[i] );
         }
 
         std::vector<SGGeod> const& fit_list = array.get_fitted_list();
-        for (unsigned int i=0; i<fit_list.size(); i++) {
+        for (unsigned int i = 0; i < fit_list.size(); ++i) {
             SGGeod node = fit_list[i];
             if ( CheckMatchingNode( node, false, false ) ) {
                 nodes.unique_add( node );

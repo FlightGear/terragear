@@ -66,7 +66,7 @@ protected:
     ~Subdivision();
 
     Edge *makeEdge();
-    Edge *makeEdge(Vec2& org, Vec2& dest);
+    Edge *makeEdge(const Vec2& org, const Vec2& dest);
 
     virtual Triangle *allocFace(Edge *e);
     Triangle& makeFace(Edge *e);

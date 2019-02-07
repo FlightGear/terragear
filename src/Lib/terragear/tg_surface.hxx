@@ -53,10 +53,11 @@ public:
         //int index = ( row * _cols ) + col;
         if ( col < 0 || col >= _cols ) {
             SG_LOG(SG_GENERAL, SG_WARN, "column out of bounds on read (" << col << " >= " << _cols << ")");
-            int *p = 0; *p = 1; // force crash
-        } else if ( row < 0 || row >= _rows ) {
+            col = col < 0 ? 0 : _cols - 1;
+        }
+        else if ( row < 0 || row >= _rows ) {
             SG_LOG(SG_GENERAL, SG_WARN, "row out of bounds on read (" << row << " >= " << _rows << ")");
-            int *p = 0; *p = 1; // force crash
+            row = row < 0 ? 0 : _rows - 1;
         }
 
         return m[row][col];
@@ -66,10 +67,11 @@ public:
         //int index = ( row * _cols ) + col;
         if ( col < 0 || col >= _cols ) {
             SG_LOG(SG_GENERAL, SG_WARN,"column out of bounds on set (" << col << " >= " << _cols << ")");
-            int *p = 0; *p = 1; // force crash
-        } else if ( row < 0 || row >= _rows ) {
+            col = col < 0 ? 0 : _cols - 1;
+        }
+        else if ( row < 0 || row >= _rows ) {
             SG_LOG(SG_GENERAL, SG_WARN,"row out of bounds on set (" << row << " >= " << _rows << ")");
-            int *p = 0; *p = 1; // force crash
+            row = row < 0 ? 0 : _rows - 1;
         }
         m[row][col] = p;
     }

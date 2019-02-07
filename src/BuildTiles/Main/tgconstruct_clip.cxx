@@ -39,13 +39,12 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     tgPolygon remains;
     tgPolygon safety_base;
     tgcontour_list slivers;
-    SGGeod p;
-    bool debug_area, debug_shape;
+    bool debug_shape;
     tgAccumulator accum(bucket.gen_index_str());
     unsigned int accum_idx = 0;
 
     // set up clipping tile : and remember to add the nodes!
-    p = bucket.get_corner( SG_BUCKET_SW );
+    SGGeod p = bucket.get_corner( SG_BUCKET_SW );
     p.setElevationM( -9999.0 );
     safety_base.AddNode( 0, p );
     nodes.unique_add( p );
@@ -102,7 +101,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
 
     // process polygons in priority order
     for ( unsigned int i = 0; i < area_defs.size(); i++ ) {
-        debug_area = IsDebugArea( i );
+        bool debug_area = IsDebugArea( i );
         for( unsigned int j = 0; j < polys_in.area_size(i); ++j ) {
             tgPolygon& current = polys_in.get_poly(i, j);
             debug_shape = IsDebugShape( polys_in.get_poly( i, j ).GetId() );
@@ -127,7 +126,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                 char name[32];
 
                 sprintf(layer, "pre_clip_%d", polys_in.get_poly( i, j ).GetId() );
-                sprintf(name, "shape %d,%d", i,j);
+                sprintf(name, "shape %u,%u", i,j);
                 tgShapefile::FromPolygon( tmp, ds_name, layer, name );
                 tgPolygon::ToClipperFile( tmp, ds_name, layer );
                 
@@ -159,7 +158,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
                         char name[32];
 
                         sprintf(layer, "post_clip_%d", polys_in.get_poly( i, j ).GetId() );
-                        sprintf(name, "shape %d,%d", i,j);
+                        sprintf(name, "shape %u,%u", i,j);
 
                         tgShapefile::FromPolygon( clipped, ds_name, layer, name );
                     }
@@ -175,7 +174,7 @@ bool TGConstruct::ClipLandclassPolys( void ) {
             accum.Add( tmp );
             if ( debug_area || debug_shape ) {
                 char layer[32];
-                sprintf(layer, "post_clip_accum_%d_%d", accum_idx++, polys_in.get_poly( i, j ).GetId() );
+                sprintf(layer, "post_clip_accum_%u_%u", accum_idx++, polys_in.get_poly( i, j ).GetId() );
                 
                 accum.ToShapefiles( ds_name, layer, false );
                 accum.ToClipperfiles( ds_name, layer, false );
@@ -281,10 +280,10 @@ bool TGConstruct::ClipLandclassPolys( void ) {
     // Now make sure any newly added intersection nodes are added to the tgnodes
     for (unsigned int area = 0; area < area_defs.size(); area++) {
         bool isRoad = area_defs.is_road_area( area );
-        for (unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
-            tgPolygon& poly = polys_clipped.get_poly( area, p );
+        for (unsigned int idxPoly = 0; idxPoly < polys_clipped.area_size(area); ++idxPoly ) {
+            tgPolygon& poly = polys_clipped.get_poly( area, idxPoly );
 
-            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << p+1 << " of " << polys_clipped.area_size(area) );
+            SG_LOG( SG_CLIPPER, SG_DEBUG, "Collecting nodes for " << area_defs.get_area_name(area) << ":" << idxPoly + 1 << " of " << polys_clipped.area_size(area) );
 
             for (unsigned int con=0; con < poly.Contours(); con++) {
                 for (unsigned int n = 0; n < poly.ContourSize( con ); n++) {

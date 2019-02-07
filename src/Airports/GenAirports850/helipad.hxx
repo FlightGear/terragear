@@ -16,6 +16,8 @@
 #ifndef _HELIPAD_HXX
 #define _HELIPAD_HXX
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_light.hxx>
@@ -23,7 +25,7 @@
 class Helipad
 {
 public:
-    Helipad(char* def);
+    explicit Helipad(char* def);
 
     void BuildBtg( tgpolygon_list& heli_polys,
                    tglightcontour_list& heli_lights,
@@ -54,18 +56,18 @@ public:
 
 private:
     struct TGRunway {
-    // data for helipad
-    char    designator[16];
-    double  lat;
-    double  lon;
-    double  heading;
-    double  length;
-    double  width;
-    int     surface;
-    int     marking;
-    int     shoulder;
-    double  smoothness;
-    int     edge_lights;
+        // data for helipad
+        char    designator[16];
+        double  lat;
+        double  lon;
+        double  heading;
+        double  length;
+        double  width;
+        int     surface;
+        int     marking;
+        int     shoulder;
+        double  smoothness;
+        int     edge_lights;
     };
 
     TGRunway heli;
@@ -91,6 +93,6 @@ private:
 
 };
 
-typedef std::vector <Helipad *> HelipadList;
+typedef std::vector<std::shared_ptr<Helipad>> HelipadList;
 
 #endif

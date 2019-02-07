@@ -40,7 +40,7 @@ main (int ac, const char * av[])
     int value = lu.getValue(lon, lat);
     cout << "Value is " << value 
 	 << " \"" << lu.getDescUSGS(value) << '"' << endl;
-  } catch (string e) {
+  } catch (const string& e) {
     cerr << "Died with exception: " << e << endl;
     return 1;
   }

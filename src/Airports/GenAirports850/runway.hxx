@@ -1,6 +1,8 @@
 #ifndef _RUNWAY_H_
 #define _RUNWAY_H_
 
+#include <memory>
+
 #include <terragear/tg_polygon.hxx>
 #include <terragear/tg_accumulator.hxx>
 #include <terragear/tg_light.hxx>
@@ -11,7 +13,7 @@ class Runway
 {
 public:
 
-    Runway(char* def);
+    explicit Runway(char* def);
 
     SGGeod GetStart()
     {
@@ -53,7 +55,7 @@ public:
 
 private:
     struct TGRunway {
-    // data for whole runway
+        // data for whole runway
         int     surface;
         int     shoulder;
         int     centerline_lights;
@@ -176,13 +178,13 @@ private:
     tglightcontour_list gen_malsx( const std::string& kind, bool recip );
 };
 
-typedef std::vector <Runway *> RunwayList;
+typedef std::vector <std::shared_ptr<Runway>> RunwayList;
 
 
 class WaterRunway
 {
 public:
-    WaterRunway(char* def);
+    explicit WaterRunway(char* def);
 
     tgContour GetBuoys();
 
@@ -203,6 +205,6 @@ private:
     double  lat[2];
     double  lon[2];
 };
-typedef std::vector <WaterRunway *> WaterRunwayList;
+typedef std::vector <std::shared_ptr<WaterRunway>> WaterRunwayList;
 
 #endif

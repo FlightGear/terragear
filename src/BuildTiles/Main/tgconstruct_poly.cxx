@@ -38,15 +38,13 @@ static unsigned int cur_poly_id = 0;
 // load all 2d polygons from the specified load disk directories and
 // clip against each other to resolve any overlaps
 int TGConstruct::LoadLandclassPolys( void ) {
-    int i;
-
     string base = bucket.gen_base_path();
     string poly_path;
     int    total_polys_read = 0;
     tgPolygon poly;
 
     // load 2D polygons from all directories provided
-    for ( i = 0; i < (int)load_dirs.size(); ++i ) {
+    for ( int i = 0; i < (int)load_dirs.size(); ++i ) {
         poly_path = work_base + "/" + load_dirs[i] + '/' + base;
 
         string tile_str = bucket.gen_index_str();
@@ -72,7 +70,6 @@ int TGConstruct::LoadLandclassPolys( void ) {
             {
                 // skipped!
             } else {
-                int area;
                 std::string material;
                 gzFile fp = gzopen( p.c_str(), "rb" );
                 unsigned int count;
@@ -80,9 +77,9 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 sgReadUInt( fp, &count );
                 SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
 
-                for ( unsigned int i=0; i<count; i++ ) {
+                for ( unsigned int idx = 0; idx < count; ++idx ) {
                     poly.LoadFromGzFile( fp );
-                    area     = area_defs.get_area_priority( poly.GetFlag() );
+                    int area = area_defs.get_area_priority( poly.GetFlag() );
                     material = area_defs.get_area_name( area );
                     bool isRoad = area_defs.is_road_area( area );
                     
@@ -212,11 +209,10 @@ bool TGConstruct::CheckMatchingNode( SGGeod& node, bool road, bool fixed )
 SGGeod TGConstruct::GetNearestNodeLongitude( const SGGeod& node, const std::vector<SGGeod>& selection )
 {
     double       min_dist = std::numeric_limits<double>::infinity();
-    double       cur_dist;
     unsigned int min_idx = 0;
     
-    for ( unsigned int i=0; i<selection.size(); i++ ) {
-        cur_dist = fabs( node.getLongitudeDeg() - selection[i].getLongitudeDeg() );
+    for ( unsigned int i = 0; i < selection.size(); ++i ) {
+        double cur_dist = fabs( node.getLongitudeDeg() - selection[i].getLongitudeDeg() );
         if ( cur_dist < min_dist ) {
             min_dist = cur_dist;
             min_idx = i;
@@ -229,11 +225,10 @@ SGGeod TGConstruct::GetNearestNodeLongitude( const SGGeod& node, const std::vect
 SGGeod TGConstruct::GetNearestNodeLatitude( const SGGeod& node, const std::vector<SGGeod>& selection )
 {
     double       min_dist = std::numeric_limits<double>::infinity();
-    double       cur_dist;
     unsigned int min_idx = 0;
     
-    for ( unsigned int i=0; i<selection.size(); i++ ) {
-        cur_dist = fabs( node.getLatitudeDeg() - selection[i].getLatitudeDeg() );
+    for ( unsigned int i = 0; i < selection.size(); ++i ) {
+        double cur_dist = fabs( node.getLatitudeDeg() - selection[i].getLatitudeDeg() );
         if ( cur_dist < min_dist ) {
             min_dist = cur_dist;
             min_idx = i;

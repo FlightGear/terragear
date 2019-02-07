@@ -35,9 +35,22 @@ int PrecisionFirstValue(const char * filename)
   char line[80];
   FILE *f = fopen(filename, "r");
   if (!f) return 0;
-  if (fgets(line, 80, f) == 0) return 0; //skip poly count
-  if (fgets(line, 80, f) == 0) return 0; //skip length first polygon
-  if (fgets(line, 80, f) == 0) return 0; //get coords first vertex
+
+  if (fgets(line, 80, f) == 0) {
+    fclose(f);
+    return 0; //skip poly count
+  }
+
+  if (fgets(line, 80, f) == 0) {
+    fclose(f);
+    return 0; //skip length first polygon
+  }
+
+  if (fgets(line, 80, f) == 0) {
+    fclose(f);
+    return 0; //get coords first vertex
+  }
+  
   fclose(f);
 
   int i = 0;
@@ -66,7 +79,6 @@ bool LoadFromFile(Polygons &ppg, char * filename, double scale)
   FILE *f = fopen(filename, "r");
   if (!f) return false;
   int polyCnt, vertCnt;
-  char junk [80];
   double X, Y;
 
   if (fscanf(f, "%d", &polyCnt) == 1 && polyCnt > 0)
@@ -79,6 +91,8 @@ bool LoadFromFile(Polygons &ppg, char * filename, double scale)
         if (fscanf(f, "%lf%*[, ]%lf", &X, &Y) != 2) break;
         ppg[i][j].X = Round(X * scale);
         ppg[i][j].Y = Round(Y * scale);
+        
+        char junk [80];
         fgets(junk, 80, f);
       }
     }

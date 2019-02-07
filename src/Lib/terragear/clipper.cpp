@@ -181,6 +181,8 @@ int PolyTree::Total() const
 
 PolyNode::PolyNode(): Parent(0), Index(0), m_IsOpen(false)
 {
+  m_jointype = JoinType::Square;
+  m_endtype = EndType::ClosedPolygon;
 }
 //------------------------------------------------------------------------------
 
@@ -256,7 +258,7 @@ class Int128
 
     Int128(long64 _lo = 0)
     {
-      lo = (ulong64)_lo;   
+      lo = (ulong64)_lo;
       if (_lo < 0)  hi = -1; else hi = 0; 
     }
 
@@ -551,8 +553,8 @@ bool SlopesEqual(const TEdge &e1, const TEdge &e2, bool UseFullInt64Range)
 }
 //------------------------------------------------------------------------------
 
-bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
-  const IntPoint pt3, bool UseFullInt64Range)
+bool SlopesEqual(const IntPoint& pt1, const IntPoint& pt2,
+  const IntPoint& pt3, bool UseFullInt64Range)
 {
 #ifndef use_int32
   if (UseFullInt64Range)
@@ -563,8 +565,8 @@ bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
 }
 //------------------------------------------------------------------------------
 
-bool SlopesEqual(const IntPoint pt1, const IntPoint pt2,
-  const IntPoint pt3, const IntPoint pt4, bool UseFullInt64Range)
+bool SlopesEqual(const IntPoint& pt1, const IntPoint& pt2,
+  const IntPoint& pt3, const IntPoint& pt4, bool UseFullInt64Range)
 {
 #ifndef use_int32
   if (UseFullInt64Range)
@@ -581,7 +583,7 @@ inline bool IsHorizontal(TEdge &e)
 }
 //------------------------------------------------------------------------------
 
-inline double GetDx(const IntPoint pt1, const IntPoint pt2)
+inline double GetDx(const IntPoint& pt1, const IntPoint& pt2)
 {
   return (pt1.Y == pt2.Y) ?
     HORIZONTAL : (double)(pt2.X - pt1.X) / (pt2.Y - pt1.Y);
@@ -718,7 +720,10 @@ void DisposeOutPts(OutPt*& pp)
 
 inline void InitEdge(TEdge* e, TEdge* eNext, TEdge* ePrev, const IntPoint& Pt)
 {
+  // Dx is explicitly being set due to memset not being portable for floating-point values
   std::memset(e, 0, sizeof(TEdge));
+  e->Dx = 0.0;
+
   e->Next = eNext;
   e->Prev = ePrev;
   e->Curr = Pt;
@@ -857,8 +862,8 @@ OutPt* GetBottomPt(OutPt *pp)
 }
 //------------------------------------------------------------------------------
 
-bool Pt2IsBetweenPt1AndPt3(const IntPoint pt1,
-  const IntPoint pt2, const IntPoint pt3)
+bool Pt2IsBetweenPt1AndPt3(const IntPoint& pt1,
+  const IntPoint& pt2, const IntPoint& pt3)
 {
   if ((pt1 == pt3) || (pt1 == pt2) || (pt3 == pt2))
     return false;
@@ -880,10 +885,13 @@ bool HorzSegmentsOverlap(cInt seg1a, cInt seg1b, cInt seg2a, cInt seg2b)
 // ClipperBase class methods ...
 //------------------------------------------------------------------------------
 
-ClipperBase::ClipperBase() //constructor
+ClipperBase::ClipperBase() :
+  m_ActiveEdges(nullptr)
 {
   m_CurrentLM = m_MinimaList.begin(); //begin() == end() here
   m_UseFullRange = false;
+  m_PreserveCollinear = false;
+  m_HasOpenPaths = false; 
 }
 //------------------------------------------------------------------------------
 
@@ -928,7 +936,6 @@ TEdge* FindNextLocMin(TEdge* E)
 TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
 {
   TEdge *Result = E;
-  TEdge *Horz = 0;
 
   if (E->OutIdx == Skip)
   {
@@ -1000,7 +1007,7 @@ TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
       //nb: at the top of a bound, horizontals are added to the bound
       //only when the preceding edge attaches to the horizontal's left vertex
       //unless a Skip edge is encountered when that becomes the top divide
-      Horz = Result;
+      TEdge *Horz = Result;
       while (IsHorizontal(*Horz->Prev)) Horz = Horz->Prev;
       if (Horz->Prev->Top.X > Result->Next->Top.X) Result = Horz->Prev;
     }
@@ -1020,7 +1027,7 @@ TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
       Result = Result->Prev;
     if (IsHorizontal(*Result) && Result->Prev->OutIdx != Skip)
     {
-      Horz = Result;
+      TEdge *Horz = Result;
       while (IsHorizontal(*Horz->Next)) Horz = Horz->Next;
       if (Horz->Next->Top.X == Result->Prev->Top.X ||
           Horz->Next->Top.X > Result->Prev->Top.X) Result = Horz->Next;
@@ -1473,6 +1480,11 @@ bool ClipperBase::LocalMinimaPending()
 
 Clipper::Clipper(int initOptions) : ClipperBase() //constructor
 {
+  m_ClipType = ClipType::Intersection;
+  m_SortedEdges = 0;
+  m_ClipFillType = PolyFillType::EvenOdd;
+  m_SubjFillType = PolyFillType::EvenOdd;
+  m_UsingPolyTree = false;
   m_ExecuteLocked = false;
   m_UseFullRange = false;
   m_ReverseOutput = ((initOptions & static_cast<int>(InitOptions::ReverseSolution)) != 0);
@@ -1939,7 +1951,7 @@ void Clipper::CopyAELToSEL()
 }
 //------------------------------------------------------------------------------
 
-void Clipper::AddJoin(OutPt *op1, OutPt *op2, const IntPoint OffPt)
+void Clipper::AddJoin(OutPt *op1, OutPt *op2, const IntPoint& OffPt)
 {
   Join* j = new Join;
   j->OutPt1 = op1;
@@ -1965,7 +1977,7 @@ void Clipper::ClearGhostJoins()
 }
 //------------------------------------------------------------------------------
 
-void Clipper::AddGhostJoin(OutPt *op, const IntPoint OffPt)
+void Clipper::AddGhostJoin(OutPt *op, const IntPoint& OffPt)
 {
   Join* j = new Join;
   j->OutPt1 = op;
@@ -2655,14 +2667,14 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
       if (dir == Direction::LeftToRight)
       {
           maxIt = m_Maxima.begin();
-          while (maxIt != m_Maxima.end() && *maxIt <= horzEdge->Bot.X) maxIt++;
+          while (maxIt != m_Maxima.end() && *maxIt <= horzEdge->Bot.X) ++maxIt;
           if (maxIt != m_Maxima.end() && *maxIt >= eLastHorz->Top.X)
               maxIt = m_Maxima.end();
       }
       else
       {
           maxRit = m_Maxima.rbegin();
-          while (maxRit != m_Maxima.rend() && *maxRit > horzEdge->Bot.X) maxRit++;
+          while (maxRit != m_Maxima.rend() && *maxRit > horzEdge->Bot.X) ++maxRit;
           if (maxRit != m_Maxima.rend() && *maxRit <= eLastHorz->Top.X)
               maxRit = m_Maxima.rend();
       }
@@ -2689,7 +2701,7 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
                 {
                   if (horzEdge->OutIdx >= 0 && !IsOpen)
                     AddOutPt(horzEdge, IntPoint(*maxIt, horzEdge->Bot.Y));
-                  maxIt++;
+                  ++maxIt;
                 }
             }
             else
@@ -2698,7 +2710,7 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge)
                 {
                   if (horzEdge->OutIdx >= 0 && !IsOpen)
                     AddOutPt(horzEdge, IntPoint(*maxRit, horzEdge->Bot.Y));
-                  maxRit++;
+                  ++maxRit;
                 }
             }
         };
@@ -2980,7 +2992,7 @@ void Clipper::DoMaxima(TEdge *e)
   }
   else if( e->OutIdx >= 0 && eMaxPair->OutIdx >= 0 )
   {
-    if (e->OutIdx >= 0) AddLocalMaxPoly(e, eMaxPair, e->Top);
+    AddLocalMaxPoly(e, eMaxPair, e->Top);
     DeleteFromAEL(e);
     DeleteFromAEL(eMaxPair);
   }
@@ -3199,19 +3211,26 @@ int PointCount(OutPt *Pts)
 void Clipper::BuildResult(Paths &polys)
 {
   polys.reserve(m_PolyOuts.size());
+
   for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
   {
-    if (!m_PolyOuts[i]->Pts) continue;
-    Path pg;
+    if (!m_PolyOuts[i]->Pts)
+      continue;
+    
     OutPt* p = m_PolyOuts[i]->Pts->Prev;
+    
     int cnt = PointCount(p);
-    if (cnt < 2) continue;
+    if (cnt < 2)
+      continue;
+    
+    Path pg;
     pg.reserve(cnt);
-    for (int i = 0; i < cnt; ++i)
+    for (int j = 0; j < cnt; ++j)
     {
       pg.push_back(p->Pt);
       p = p->Prev;
     }
+
     polys.push_back(pg);
   }
 }
@@ -3369,7 +3388,7 @@ OutPt* DupOutPt(OutPt* outPt, bool InsertAfter)
 //------------------------------------------------------------------------------
 
 bool JoinHorz(OutPt* op1, OutPt* op1b, OutPt* op2, OutPt* op2b,
-  const IntPoint Pt, bool DiscardLeft)
+  const IntPoint& Pt, bool DiscardLeft)
 {
   Direction Dir1 = (op1->Pt.X > op1b->Pt.X ? Direction::RightToLeft : Direction::LeftToRight);
   Direction Dir2 = (op2->Pt.X > op2b->Pt.X ? Direction::RightToLeft : Direction::LeftToRight);
@@ -3788,6 +3807,8 @@ ClipperOffset::ClipperOffset(double miterLimit, double arcTolerance)
   this->MiterLimit = miterLimit;
   this->ArcTolerance = arcTolerance;
   m_lowest.X = -1;
+  m_delta = m_sinA = m_sin = m_cos = 0.0;
+  m_miterLim = m_StepsPerRad = 0.0;
 }
 //------------------------------------------------------------------------------
 
@@ -4199,13 +4220,13 @@ void ClipperOffset::DoRound(int j, int k)
   m_normals[k].X * m_normals[j].X + m_normals[k].Y * m_normals[j].Y);
   int steps = std::max((int)Round(m_StepsPerRad * std::fabs(a)), 1);
 
-  double X = m_normals[k].X, Y = m_normals[k].Y, X2;
+  double X = m_normals[k].X, Y = m_normals[k].Y;
   for (int i = 0; i < steps; ++i)
   {
     m_destPoly.push_back(IntPoint(
         Round(m_srcPoly[j].X + X * m_delta),
         Round(m_srcPoly[j].Y + Y * m_delta)));
-    X2 = X;
+    double X2 = X;
     X = X * m_cos - m_sin * Y;
     Y = X2 * m_sin + Y * m_cos;
   }
@@ -4520,7 +4541,7 @@ void MinkowskiSum(const Path& pattern, const Path& path, Paths& solution, bool p
 }
 //------------------------------------------------------------------------------
 
-void TranslatePath(const Path& input, Path& output, const IntPoint delta)
+void TranslatePath(const Path& input, Path& output, const IntPoint& delta)
 {
   //precondition: input != output
   output.resize(input.size());

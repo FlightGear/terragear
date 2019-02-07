@@ -38,19 +38,20 @@
 using std::string;
 
 
-TGArray::TGArray( void ):
-  array_in(NULL),
-  fitted_in(NULL),
-  in_data(NULL)
+TGArray::TGArray() :
+    array_in(NULL),
+    fitted_in(NULL),
+    originx(0.0), originy(0.0),
+    cols(0), rows(0),
+    rectified(false),
+    col_step(0.0), row_step(0.0),
+    in_data(NULL)
 {
-
 }
 
 
-TGArray::TGArray( const string &file ):
-  array_in(NULL),
-  fitted_in(NULL),
-      in_data(NULL)
+TGArray::TGArray( const string &file ) :
+    TGArray()
 {
     TGArray::open(file);
 }
@@ -123,7 +124,6 @@ void TGArray::load_cliffs(const string & height_base)
 {
     //Get the directory so we can list the children
     tgPolygon poly;   //actually a contour but whatever...
-    int total_contours_read = 0;
     SGPath b(height_base);
     simgear::Dir d(b.dir());
     simgear::PathList files = d.children(simgear::Dir::TYPE_FILE);
@@ -199,7 +199,6 @@ TGArray::parse( SGBucket& b ) {
         SG_LOG(SG_GENERAL, SG_DEBUG, "    cols = " << cols << "  rows = " << rows );
         SG_LOG(SG_GENERAL, SG_DEBUG, "    col_step = " << col_step << "  row_step = " << row_step );
 
-
         in_data = new short[cols * rows];
         memset(in_data, 0, sizeof(short) * cols * rows);
         SG_LOG(SG_GENERAL, SG_DEBUG, "    File not open, so using zero'd data" );
@@ -250,40 +249,41 @@ void TGArray::parse_bin()
 
 // Write out an array. If rectified is true, the heights have been adjusted
 // for discontinuities.
-void TGArray::write_bin(const string root_dir, bool rectified, SGBucket& b) {
-  // generate output file name
-  string base = b.gen_base_path();
-  string path = root_dir + "/" + base;
-  string extension = ".arr.new.gz";
-  if (rectified) extension = ".arr.rectified.gz";
-  SGPath sgp( path );
-  sgp.append( "dummy" );
-  sgp.create_dir( 0755 );
-  
-  string array_file = path + "/" + b.gen_index_str() + extension;
-  SG_LOG(SG_GENERAL, SG_DEBUG, "array_file = " << array_file );
-  
-  // write the file
-  gzFile fp;
-  if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
-    SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
-    return;
-  }
+void TGArray::write_bin(const string& root_dir, bool rectified, SGBucket& b) {
+    // generate output file name
+    string base = b.gen_base_path();
+    string path = root_dir + "/" + base;
+    string extension = ".arr.new.gz";
+    if (rectified)
+        extension = ".arr.rectified.gz";
+    SGPath sgp( path );
+    sgp.append( "dummy" );
+    sgp.create_dir( 0755 );
 
-  int32_t header = 0x54474152; //'TGAR'
-  sgWriteLong(fp,header);
-  sgWriteInt(fp,originx);
-  sgWriteInt(fp,originy);
-  sgWriteInt(fp,cols);
-  sgWriteInt(fp,col_step);
-  sgWriteInt(fp,rows);
-  sgWriteInt(fp,row_step);
-  sgWriteShort(fp, rows*cols, in_data);
-  gzclose(fp);
+    string array_file = path + "/" + b.gen_index_str() + extension;
+    SG_LOG(SG_GENERAL, SG_DEBUG, "array_file = " << array_file );
+
+    // write the file
+    gzFile fp;
+    if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
+        SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
+        return;
+    }
+
+    int32_t header = 0x54474152; //'TGAR'
+    sgWriteLong(fp,header);
+    sgWriteInt(fp,originx);
+    sgWriteInt(fp,originy);
+    sgWriteInt(fp,cols);
+    sgWriteInt(fp,col_step);
+    sgWriteInt(fp,rows);
+    sgWriteInt(fp,row_step);
+    sgWriteShort(fp, rows*cols, in_data);
+    gzclose(fp);
 }
 
 // write an Array file
-bool TGArray::write( const string root_dir, SGBucket& b ) {
+bool TGArray::write( const string& root_dir, SGBucket& b ) {
     // generate output file name
     string base = b.gen_base_path();
     string path = root_dir + "/" + base;
@@ -297,18 +297,18 @@ bool TGArray::write( const string root_dir, SGBucket& b ) {
     // write the file
     gzFile fp;
     if ( (fp = gzopen( array_file.c_str(), "wb9" )) == NULL ) {
-	SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
-	return false;
+        SG_LOG(SG_GENERAL, SG_ALERT, "ERROR:  cannot open " << array_file << " for writing!" );
+        return false;
     }
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "origin = " << originx << ", " << originy );
     gzprintf( fp, "%d %d\n", (int)originx, (int)originy );
     gzprintf( fp, "%d %d %d %d\n", cols, (int)col_step, rows, (int)row_step );
     for ( int i = 0; i < cols; ++i ) {
-	for ( int j = 0; j < rows; ++j ) {
-	    gzprintf( fp, "%d ", get_array_elev(i, j) );
-	}
-	gzprintf( fp, "\n" );
+        for ( int j = 0; j < rows; ++j ) {
+            gzprintf( fp, "%d ", get_array_elev(i, j) );
+        }
+        gzprintf( fp, "\n" );
     }
     gzclose(fp);
 
@@ -445,7 +445,7 @@ std::vector<int> TGArray::collect_bad_points(const double bad_zone) {
 }
 
 // Check to see if the specified grid point is bad
-bool TGArray::is_bad_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const {
+bool TGArray::is_bad_point(const int xgrid, const int ygrid, const std::vector<int>& bad_points) const {
     int grididx;
     grididx = xgrid+ygrid*cols;
     auto result = std::find( std::begin(bad_points),std::end(bad_points),grididx );
@@ -504,15 +504,13 @@ through the three known points.
 
 TODO: Handle points on the boundaries. */
 
-double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vector<int> bad_points) const {
+double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vector<int>& bad_points) const {
     //xgrid: grid units horizontally
     //ygrid: grid units vertically
     //Loop over corner points, if no points available, give up
     int corners[4][2];     //possible corners
-    int final_pts[3][2];     // rectangle corners
     int pt_cnt = 0;
     double centre_long, centre_lat;
-    double cliff_error = col_step;  //Assume row step, col step the same
     int original_height = get_array_elev(xgrid,ygrid);
     centre_long = (originx + col_step*xgrid)/3600;
     centre_lat = (originy + row_step*ygrid)/3600;
@@ -587,7 +585,8 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     // we expect incoming (lon,lat) to be in arcsec for now
 
     double xlocal, ylocal, dx, dy, zA, zB, elev;
-    int x1, x2, x3, y1, y2, y3;
+    int x1 = 0, x2 = 0, x3 = 0;
+    int y1 = 0, y2 = 0, y3 = 0;
     float z1, z2, z3;
     int xindex, yindex;
 
@@ -612,19 +611,19 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
     yindex = (int)(ylocal);
 
     if ( xindex + 1 == cols ) {
-	xindex--;
+        xindex--;
     }
 
     if ( yindex + 1 == rows ) {
-	yindex--;
+        yindex--;
     }
 
     if ( (xindex < 0) || (xindex + 1 >= cols) ||
 	 (yindex < 0) || (yindex + 1 >= rows) ) {
         
-	SG_LOG(SG_GENERAL, SG_DEBUG, "WARNING: Attempt to interpolate value outside of array!!!" );
-        
-	return -9999;
+        SG_LOG(SG_GENERAL, SG_DEBUG, "WARNING: Attempt to interpolate value outside of array!!!" );
+            
+        return -9999;
     }
 
     // Now check if we are on the same side of any cliffs
@@ -858,10 +857,10 @@ bool TGArray::check_points( const double lon1, const double lat1, const double l
     SGGeod pt2 = SGGeod::fromDeg( lon2,lat2 );
     bool same_side = true;
     
-    for ( int i=0;i<cliffs_list.size();i++ ) {
+    for ( int i = 0; i < static_cast<int>(cliffs_list.size()); ++i ) {
         bool check_result = cliffs_list[i].AreSameSide( pt1,pt2 );
         
-        if(!check_result) {
+        if (!check_result) {
             
             SG_LOG(SG_GENERAL, SG_DEBUG, "Cliff " << i <<":" <<pt1 << " and " << pt2 << " on opposite sides");
             
@@ -881,7 +880,7 @@ bool TGArray::is_near_cliff( const double lon1, const double lat1, const double 
     
     SGGeod pt1 = SGGeod::fromDeg(lon1,lat1);
     
-    for ( int i=0;i<cliffs_list.size();i++ ) {
+    for ( int i = 0; i < static_cast<int>(cliffs_list.size()); ++i ) {
         double dist = cliffs_list[i].MinDist(pt1);
         if (dist < bad_zone) return true;
     }
@@ -926,4 +925,3 @@ bool TGArray::is_open() const
         return false;
     }
 }
-

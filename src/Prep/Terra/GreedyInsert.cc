@@ -24,7 +24,7 @@ void TrackedTriangle::update(Subdivision& s)
 GreedySubdivision::GreedySubdivision(Map *map)
 {
     H = map;
-    heap = new Heap(128);
+    heap = new Heap(16384);
 
     int w = H->width;
     int h = H->height;

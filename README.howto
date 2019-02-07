@@ -21,24 +21,18 @@ Preparation and Preprocessing
 1) DEM data.
 
 As the first step you have to download DEM for the area you need. (You
-can get them from USGS site). If this is a 30 arc sec DEM (which is most
-probable) you need to transfer this file into ASCII format using
-raw2ascii 
+can get them from USGS site).
 
-Usage: ./raw2ascii <input_file_basename> <output_dir>
-
-Here output dir is quite arbitrary as we will remove all the files from
-it later.
 Then you have to chop files that we got into the tiles used for the
-scenery generation. You should use demchop for this. As we already have
+scenery generation. You should use hgtchop for this. As we already have
 a number of files I'm using the following Perl script
 
 #--------------------------------------------------------------------------
 #!/usr/bin/perl
-my @files=glob("./*.dem");
+my @files=glob("./*.hgt");
 my $size=@files;
 for (my $i=0;$i<$size;$i++) {
-        system("demchop $files[$i] /home/anovikov/w020n90/Work/DEM-30");
+        system("hgtchop $files[$i] /home/anovikov/w020n90/Work/SRTM-3");
 }
 #--------------------------------------------------------------------------
 

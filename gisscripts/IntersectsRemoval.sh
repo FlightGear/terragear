@@ -39,13 +39,6 @@ MODE="testing"  # production, testing
 
 InitCutoutTable () {
     ${PSQL} "DROP TABLE ${CUTLAYER}"
-#    ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
-#                 wkb_geometry geometry, \
-#                 CONSTRAINT enforce_dims_wkb_geometry CHECK (ST_NDims(wkb_geometry) = 2), \
-#                 CONSTRAINT enforce_geotype_wkb_geometry CHECK ((ST_GeometryType(wkb_geometry) = 'ST_Polygon'::text) \
-#                     OR  (ST_GeometryType(wkb_geometry) = 'ST_MultiPolygon'::text)), \
-#                 CONSTRAINT enforce_srid_wkb_geometry CHECK (ST_SRID(wkb_geometry) = 4326) \
-#                 )"
     ${PSQL} "CREATE TABLE ${CUTLAYER} (ogc_fid serial NOT NULL, \
                  wkb_geometry geometry, \
                  CONSTRAINT enforce_dims_wkb_geometry CHECK (ST_NDims(wkb_geometry) = 2), \

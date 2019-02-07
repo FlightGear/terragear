@@ -53,13 +53,13 @@ private:
     
     // pointers to the actual grid data allocated here
     short int (*data)[MAX_HGT_SIZE];
-    short int (*output_data)[MAX_HGT_SIZE];
+    short int *read_buffer;
 
 public:
 
     // Constructor, _res must be either "1" for the 1arcsec data or
     // "3" for the 3arcsec data.
-    TGHgt( int _res );
+    explicit TGHgt( int _res );
     TGHgt( int _res, const SGPath &file );
 
     // Destructor
@@ -74,7 +74,7 @@ public:
     // load an hgt file
     bool load();
 
-    virtual short height( int x, int y ) const { return data[x][y]; }
+    virtual short height( int x, int y ) const override { return data[x][y]; }
 };
 
 

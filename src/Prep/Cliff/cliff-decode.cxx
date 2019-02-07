@@ -80,9 +80,7 @@ void Decoder::processLineString(OGRLineString* poGeometry)
     tgContour line;
 
     SGGeod p0, p1;
-    double heading, dist, az2;
-    int i, j, numPoints, numSegs;
-    double max_dist;
+    int i, numPoints;
 
     numPoints = poGeometry->getNumPoints();
     if (numPoints < 2) {
@@ -90,7 +88,7 @@ void Decoder::processLineString(OGRLineString* poGeometry)
         return;
     }
 
-    heading = SGGeodesy::courseDeg( p1, p0 );
+    SGGeodesy::courseDeg( p1, p0 );
 
     // now add the middle points : if they are too far apart, add intermediate nodes
     for ( i=0;i<numPoints;i++) {
@@ -187,7 +185,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results )
     char* srsWkt;
     oSourceSRS->exportToWkt(&srsWkt);
     SG_LOG( SG_GENERAL, SG_DEBUG, "Source spatial reference system: " << srsWkt );
-    OGRFree(srsWkt);
+    CPLFree(srsWkt);
 
     oTargetSRS.SetWellKnownGeogCS( "WGS84" );
 
@@ -419,9 +417,10 @@ int main( int argc, char **argv ) {
     }
 
     GDALClose(poDS);
+    GDALDestroyDriverManager();
 
     SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
-    results.Add_Extension("cliffs");
+    results.Add_Extension(".cliffs");
     results.Save( save_shapefiles );
 
     auto finish_time = std::chrono::high_resolution_clock::now();

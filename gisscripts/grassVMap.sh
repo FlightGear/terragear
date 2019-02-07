@@ -25,10 +25,11 @@ date
 DUMPDIR=${HOME}/shp
 mkdir -p ${DUMPDIR}
 RUNDIR=`pwd`
+
 cd `dirname ${0}` && export BASEDIR=`pwd`
+
 cd ${RUNDIR}
 CALLNAME=`basename ${0}`
-#
 MAPPINGFILE=${BASEDIR}/CORINEtoCS.txt
 
 if [ ${CALLNAME} = "grassVMap.sh" ]; then
@@ -50,33 +51,24 @@ elif [ ${CALLNAME} = "grassCLC06.sh" ]; then
 else
     SRCID=0
 fi
+
 PREFIX=${TYPE}${YEAR}
-#PREFIX=nl
-#PREFIX=clc${YEAR}_nl
 CLEANMAP=cleanmap
 
 if [ ${TYPE} = "v0" ]; then
     SRCKBS=nad83
-    #SNAP=0.00001
     SNAP=0.000001
-    #MIN_AREA1=1
     MIN_AREA1=0.0000001
     MIN_AREA=100
-    #MIN_AREA=0.000000001
 elif [ ${TYPE} = "cs" ]; then
     SRCKBS=wgs84
     SNAP=0.000001
-    #MIN_AREA1=1
     MIN_AREA1=0.0000001
     MIN_AREA=1
 elif [ ${TYPE} = "clc" ]; then
     SRCKBS=laea
     SNAP=0.01
-    #SNAP=0.001
-    #SNAP=0.0001
-    #SNAP=0.000001
     MIN_AREA=1
-    #MIN_AREA=0.000000001
 fi
 
 ########################################################################
@@ -148,7 +140,6 @@ fn_importVMap() {
         LAYER=`basename ${SHAPEFILE} | cut -f 1 -d \.`
         MAP=`echo ${LAYER} | sed -e 's/-/_/g'`
         g.remove vect=${MAP}
-#        v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} snap=${SNAP} --verbose
         v.in.ogr dsn="${LOADDIR}" layer=${LAYER} output=${MAP} --verbose
     done
 }
@@ -238,11 +229,9 @@ fn_split() {
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_mixedcrop_${ZONE} where="f_code NOT LIKE 'BH135' and veg = 0"
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_drycrop_${ZONE} where="f_code NOT LIKE 'BH135' and veg = 1"
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_irrcrop_${ZONE} where="f_code NOT LIKE 'BH135' and veg > 1"
-#                    v.extract -t input=${LAYER} type=area output=${PREFIX}_rice_${ZONE} where="f_code LIKE 'BH135'"
                 ;;
                 "grassa@veg(*)_area")
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_grassland_${ZONE} where="f_code LIKE 'EB010'"
-#                    v.extract -t input=${LAYER} type=area output=${PREFIX}_bamboo_${ZONE} where="f_code LIKE 'EC010'"
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_scrub_${ZONE} where="f_code NOT LIKE 'EB010' AND f_code NOT LIKE 'EC010'"
                 ;;
                 "oasisa@veg(*)_area")
@@ -257,7 +246,6 @@ fn_split() {
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_marsh_${ZONE} where="f_code NOT LIKE 'BH015'"
                 ;;
                 "treesa@veg(*)_area")
-#                    v.extract -t input=${LAYER} type=area output=${PREFIX}_mangrove_${ZONE} where="veg = 19"
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_deciduousforest_${ZONE} where="veg = 24"
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_evergreenforest_${ZONE} where="veg = 25"
                     v.extract -t input=${LAYER} type=area output=${PREFIX}_mixedforest_${ZONE} where="veg != 19 AND veg != 24 AND veg != 25"
@@ -292,7 +280,6 @@ fn_reclass() {
         done
         g.remove vect=${OUTPUT}_patched
         v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${OUTPUT}_patched
-#        v.patch input=`g.mlist type=vect pattern="${OUTPUT}_[a-z][a-z][a-z]_lcclass" separator=,` output=${INTMAP}
 
         g.remove vect=${OUTPUT}_bpol,${OUTPUT}_snap,${OUTPUT}_split,${OUTPUT}_rmsa,${OUTPUT}_rmdangle,${OUTPUT}_rmarea,${OUTPUT}_prune
         v.clean input=${OUTPUT}_patched output=${OUTPUT}_bpol -c tool=bpol type=boundary --verbose
@@ -451,7 +438,6 @@ fn_export() {
     #
     SELECTION=`v.category input=${CLEANMAP} type=centroid option=print | sort -n | uniq`
     for CATEGORY in ${SELECTION}; do
-#        LAYER=${PREFIX}_${CATEGORY}
         LAYER=`grep \^${CATEGORY} ${MAPPINGFILE} | awk '{print $2}' | sed -e "s/^cs_/${PREFIX}_/g"`
         g.remove vect=${LAYER}
         v.extract cats=${CATEGORY} input=${CLEANMAP} output=${LAYER} type=area
@@ -461,7 +447,6 @@ fn_export() {
             g.rename vect=${LAYER},${NEWLAYER}
             LAYER=${NEWLAYER}
         fi
-#        v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${PREFIX}_c${CATEGORY}.shp  # For CLC
         v.out.ogr input=${LAYER} type=area dsn=${DUMPDIR}/${LAYER}.shp  # For VMap0/CS
         fn_topostgis ${LAYER}
     done

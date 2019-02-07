@@ -21,10 +21,6 @@
 // $Id: hgt.cxx,v 1.7 2005-12-19 16:06:45 curt Exp $
 
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
-
 #include <iostream>
 #include <stdlib.h>
 #include <zlib.h>

@@ -402,7 +402,6 @@ tglightcontour_list Runway::gen_calvert( const string &kind, bool recip )
 {
     tgLightContour w_lights;
     tgLightContour r_lights;
-    int i, j;
     string flag;
 
     SGVec3f normal = gen_runway_light_vector( 3.0, recip );
@@ -438,9 +437,7 @@ tglightcontour_list Runway::gen_calvert( const string &kind, bool recip )
 
     // first set of single lights
     pt = ref;
-    for ( i = 0; i < count; ++i ) {
-
-
+    for ( int i = 0; i < count; ++i ) {
         // centre lights
         pt = SGGeodesy::direct(pt, length_hdg, -vert_space);
 
@@ -529,7 +526,7 @@ tglightcontour_list Runway::gen_calvert( const string &kind, bool recip )
     int num_lights = 0;
 
     // draw nice crossbars
-    for ( i = 0; i < 5; i++ ) {
+    for ( int i = 0; i < 5; ++i ) {
         switch ( i ) {
             case 0:
                 num_lights = 4;
@@ -549,14 +546,14 @@ tglightcontour_list Runway::gen_calvert( const string &kind, bool recip )
         }
 
         pt = crossbar[i];
-        for ( j = 0 ; j < num_lights; j++ ) {
+        for ( int j = 0 ; j < num_lights; ++j ) {
             // left side lights
             pt = SGGeodesy::direct(pt, left_hdg, horiz_space);
             w_lights.AddLight(pt, normal);
         }
 
         pt = crossbar[i];
-        for ( j = 0; j < num_lights; j++ ) {
+        for ( int j = 0; j < num_lights; ++j ) {
             // right side lights
             pt = SGGeodesy::direct(pt, left_hdg, -horiz_space);
             w_lights.AddLight(pt, normal);

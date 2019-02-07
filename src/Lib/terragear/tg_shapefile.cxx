@@ -98,6 +98,10 @@ void* tgShapefile::CloseDatasource( void* ds_id )
 {
     GDALDataset* datasource = ( GDALDataset * )ds_id;
     GDALClose((GDALDatasetH) datasource );
+
+    GDALDestroyDriverManager();
+    tgShapefile::initialized = false;
+
     return (void *)-1;
 }
 
@@ -112,7 +116,7 @@ void tgShapefile::FromClipper( const ClipperLib::Paths& subject, const std::stri
     OGRPolygon*    polygon = new OGRPolygon();
     SG_LOG(SG_GENERAL, SG_DEBUG, "subject has " << subject.size() << " contours ");
 
-    for ( unsigned int i = 0; i < subject.size(); i++ ) {
+    for ( unsigned int i = 0; i < subject.size(); ++i ) {
         ClipperLib::Path const& contour = subject[i];
 
         if (contour.size() < 3) {
@@ -142,7 +146,8 @@ void tgShapefile::FromClipper( const ClipperLib::Paths& subject, const std::stri
 
         feature->SetField("ID", description.c_str());
         feature->SetGeometry(polygon);
-        if( l_id->CreateFeature( feature ) != OGRERR_NONE )
+
+        if ( l_id->CreateFeature( feature ) != OGRERR_NONE )
         {
             SG_LOG(SG_GENERAL, SG_ALERT, "Failed to create feature in shapefile");
         }
@@ -151,9 +156,7 @@ void tgShapefile::FromClipper( const ClipperLib::Paths& subject, const std::stri
     }
 
     // close after each write
-    if ( ds_id >= 0 ) {
-        ds_id = tgShapefile::CloseDatasource( ds_id );
-    }
+    tgShapefile::CloseDatasource( ds_id );
 }
 
 void tgShapefile::FromContour( const tgContour& subject, const std::string& datasource, const std::string& layer, const std::string& description )
@@ -197,7 +200,7 @@ void tgShapefile::FromContour( const tgContour& subject, const std::string& data
     }
 
     // close after each write
-    ds_id = tgShapefile::CloseDatasource( ds_id );
+    tgShapefile::CloseDatasource( ds_id );
 }
 
 void tgShapefile::FromTriangles( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )
@@ -237,7 +240,7 @@ void tgShapefile::FromTriangles( const tgPolygon& subject, const std::string& da
     }
 
     // close after each write
-    ds_id = tgShapefile::CloseDatasource( ds_id );    
+    tgShapefile::CloseDatasource( ds_id );    
 }
 
 void tgShapefile::FromPolygon( const tgPolygon& subject, const std::string& datasource, const std::string& layer, const std::string& description )
@@ -291,7 +294,7 @@ void tgShapefile::FromPolygon( const tgPolygon& subject, const std::string& data
     }
 
     // close after each write
-    ds_id = tgShapefile::CloseDatasource( ds_id );
+    tgShapefile::CloseDatasource( ds_id );
 }
 
 tgPolygon tgShapefile::ToPolygon( const void* subject )

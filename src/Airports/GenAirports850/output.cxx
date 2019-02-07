@@ -24,7 +24,6 @@
 #include <config.h>
 #endif
 
-#include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <set>
@@ -102,7 +101,7 @@ void write_index_object_sign( const string &base, const SGBucket &b,
         exit(-1);
     }
 
-    fprintf( fp, "OBJECT_SIGN %s %.6f %.6f %.1f %.2f %u\n", sign.c_str(),
+    fprintf( fp, "OBJECT_SIGN %s %.6f %.6f %.1f %.2f %d\n", sign.c_str(),
              p.getLongitudeDeg(), p.getLatitudeDeg(), p.getElevationM(), heading, size );
     fclose( fp );
 }

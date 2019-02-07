@@ -4,42 +4,42 @@
 #include "beznode.hxx"
 #include "linearfeature.hxx"
 
-void LinearFeature::ConvertContour( BezContour* src, bool closed )
+void LinearFeature::ConvertContour( const BezContour& src, bool closed )
 {
-    BezNode*  curNode;
-    BezNode*  nextNode;
+    std::shared_ptr<BezNode>  curNode;
+    std::shared_ptr<BezNode>  nextNode;
 
     SGGeod    curLoc;
     SGGeod    nextLoc;
     SGGeod    cp1;
     SGGeod    cp2;
 
-    int       curve_type = CURVE_LINEAR;
+    int       curve_type;
     double    total_dist;
     double    theta1, theta2;
-    int       num_segs = BEZIER_DETAIL;
+    int       num_segs;
 
     Marking*  cur_mark = NULL;
     Lighting* cur_light = NULL;
 
-    TG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src->size() << " nodes");
+    TG_LOG(SG_GENERAL, SG_DEBUG, " LinearFeature::ConvertContour - Creating a contour with " << src.size() << " nodes");
 
     // clear anything in the point list
     points.Erase();
 
     // iterate through each bezier node in the contour
-    for (unsigned int i=0; i <= src->size()-1; i++)
+    for (unsigned int i = 0; i < src.size(); ++i)
     {
-        curNode = src->at(i);
+        curNode = src.at(i);
 
-        if (i < src->size() - 1)
+        if (i < src.size() - 1)
         {
-            nextNode = src->at(i+1);
+            nextNode = src.at(i + 1);
         }
         else
         {
-            // for the last node, next is the first. as all contours are closed
-            nextNode = src->at(0);
+            // for the last node, next is the first node, as all contours are closed
+            nextNode = src.at(0);
         }
 
         ////////////////////////////////////////////////////////////////////////////////////
@@ -161,7 +161,7 @@ void LinearFeature::ConvertContour( BezContour* src, bool closed )
         // Sometimes, the control point lies just beyond the final point.  We try to make a 'hook' at the end, which makes some really bad polys
         // Just convert the entire segment to linear
         // this can be detected in quadratic curves (current issue in LFKJ) when the contol point lies within the line generated from point 1 to point 2
-        // theat close to 180 at the control point to the cur node and next node
+        // at close to 180 at the control point to the cur node and next node
         if ( curve_type == CURVE_QUADRATIC )
         {
             if ( (std::abs(theta1 - 180.0) < 5.0 ) || (std::abs(theta1) < 5.0 ) || (std::isnan(theta1)) )
@@ -370,23 +370,21 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     double      heading;
     double      dist;
     double      az2;
-    double      last_end_v;
     double      width = 0;
     std::string material;
-    double      cur_light_dist = 0.0f;
     double      light_delta = 0;
     bool        markStarted;
 
     // create the inner and outer boundaries to generate polys
     // this generates 2 point lists for the contours, and remembers
     // the start stop points for markings and lights
-    ConvertContour( &contour, closed );
+    ConvertContour( contour, closed );
 
     // now generate the supoerpoly and texparams lists for markings
     for (unsigned int i=0; i<marks.size(); i++)
     {
         markStarted = false;
-        last_end_v   = 0.0f;
+        double last_end_v = 0.0;
 
         // which material for this mark?
         switch( marks[i]->type )
@@ -568,7 +566,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
     for (unsigned int i=0; i<lights.size(); i++)
     {
         markStarted = false;
-        cur_light_dist = 0.0f;
+        double cur_light_dist = 0.0;
         int light_direction = lights[i]->LightDirection();
         bool alternate = false;
 
@@ -637,7 +635,7 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
                 while (cur_light_dist < dist)
                 {
-                    if (cur_light_dist == 0.0f)
+                    if (cur_light_dist == 0.0)
                     {
                         tmp = prev_outer;
                     }
