@@ -57,6 +57,7 @@ string area_type="Default";
 string area_type_col;
 int continue_on_errors=0;
 bool texture_lines = false;
+bool texture_cliffs = false;
 int seperate_segments = 0;
 int max_segment_length=0; // ==0 => don't split
 int start_record=0;
@@ -99,7 +100,7 @@ private:
     virtual void run();
 
     void processPoint(OGRPoint* poGeometry, const string& area_type, int width );
-    void processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture );
+    void processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture, bool texture_cliffs );
     void processPolygon(OGRPolygon* poGeometry, const string& area_type );
 
 private:
@@ -128,7 +129,7 @@ void Decoder::processPoint(OGRPoint* poGeometry, const string& area_type, int wi
     chopper.Add( shape, area_type );
 }
 
-void Decoder::processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture )
+void Decoder::processLineString(OGRLineString* poGeometry, const string& area_type, int width, int with_texture, bool texture_cliffs )
 {
     tgpolygon_list segments;
     tgContour line;
@@ -184,15 +185,17 @@ void Decoder::processLineString(OGRLineString* poGeometry, const string& area_ty
     line.AddNode( SGGeodesy::direct(p1, heading, EP_STRETCH) );
 
     // make a plygons from the line segments
-    segments = tgContour::ExpandToPolygons( line, width );
+    int texturing;
+    if ( with_texture ) {
+        texturing = TG_TEX_BY_TPS_CLIPU;
+    }
+    else {
+        texturing = TG_TEX_BY_GEODE;
+    }
+    if ( texture_cliffs ) texturing = TG_TEX_BY_HORIZ_REF;
+    segments = tgContour::ExpandToPolygons( line, width, texturing );
     for ( unsigned int i = 0; i < segments.size(); ++i ) {
         segments[i].SetPreserve3D( false );
-        if (with_texture) {
-            segments[i].SetTexMethod( TG_TEX_BY_TPS_CLIPU );
-        } else {
-            segments[i].SetTexMethod( TG_TEX_BY_GEODE );
-        }
-
         chopper.Add( segments[i], area_type );
     }
 }
@@ -311,7 +314,8 @@ void Decoder::run()
                     }
                 }
 
-                processLineString((OGRLineString*)poGeometry, area_type_name, width, texture_lines);
+                processLineString((OGRLineString*)poGeometry, area_type_name, width, texture_lines,
+                                 texture_cliffs);
                 break;
             }
             case wkbMultiLineString: {
@@ -326,7 +330,7 @@ void Decoder::run()
 
                 OGRMultiLineString* multilines=(OGRMultiLineString*)poGeometry;
                 for (int i = 0; i < multilines->getNumGeometries(); ++i) {
-                    processLineString((OGRLineString*)(multilines->getGeometryRef(i)), area_type_name, width, texture_lines);
+                    processLineString((OGRLineString*)(multilines->getGeometryRef(i)), area_type_name, width, texture_lines, texture_cliffs);
                 }
                 break;
             }
@@ -525,6 +529,8 @@ void usage(char* progname) {
     SG_LOG( SG_GENERAL, SG_ALERT, "        spatial query extents" );
     SG_LOG( SG_GENERAL, SG_ALERT, "--texture-lines" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        Enable textured lines" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "--texture-cliffs" );
+    SG_LOG( SG_GENERAL, SG_ALERT, "        Generate texture coordinates for cliff faces" );
     SG_LOG( SG_GENERAL, SG_ALERT, "--threads" );
     SG_LOG( SG_GENERAL, SG_ALERT, "        Enable multithreading with user specified number of threads" );
     SG_LOG( SG_GENERAL, SG_ALERT, "--all-threads" );
@@ -623,6 +629,10 @@ int main( int argc, char **argv ) {
             argv++;
             argc--;
             texture_lines=true;
+        } else if (!strcmp(argv[1],"--texture-cliffs")) {
+              argv++;
+              argc--;
+              texture_cliffs=true;
         } else if (!strcmp(argv[1],"--seperate-segments")) {
             argv++;
             argc--;

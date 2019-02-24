@@ -75,14 +75,21 @@ int TGConstruct::LoadLandclassPolys( void ) {
                 unsigned int count;
 
                 sgReadUInt( fp, &count );
+                if ( count > 1000000 ) {
+                    SG_LOG( SG_GENERAL, SG_ALERT, " Too many polys in " << p.realpath() << ":" << count );
+                    exit( EXIT_FAILURE );
+                }
                 SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
 
                 for ( unsigned int idx = 0; idx < count; ++idx ) {
-                    poly.LoadFromGzFile( fp );
+                    if ( poly.LoadFromGzFile( fp ) == EXIT_FAILURE ) {
+                        SG_LOG( SG_GENERAL, SG_DEBUG, "Failed to load from " << p.realpath() );
+                        return EXIT_FAILURE;
+                    }
                     int area = area_defs.get_area_priority( poly.GetFlag() );
                     material = area_defs.get_area_name( area );
                     bool isRoad = area_defs.is_road_area( area );
-                    
+
                     poly.SetMaterial( material );
                     poly.SetId( cur_poly_id++ );
 

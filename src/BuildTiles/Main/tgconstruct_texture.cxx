@@ -30,14 +30,18 @@
 
 void TGConstruct::CalcTextureCoordinates( void )
 {
+    std::vector<SGGeod>  geod_nodes;
+    nodes.get_geod_nodes( geod_nodes );
+
     for ( unsigned int area = 0; area < area_defs.size(); area++ ) {
         for( unsigned int p = 0; p < polys_clipped.area_size(area); p++ ) {
             tgPolygon poly = polys_clipped.get_poly(area, p);
             SG_LOG( SG_CLIPPER, SG_DEBUG, "Texturing " << area_defs.get_area_name(area) << "(" << area << "): " <<
                     p+1 << " of " << polys_clipped.area_size(area) << " with " << poly.GetMaterial() );
 
-            poly.Texture( );
+            poly.Texture( geod_nodes );
             polys_clipped.set_poly(area, p, poly);
         }
     }
 }
+

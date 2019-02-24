@@ -46,13 +46,13 @@ public:
         return hole;
     }
 
-  bool GetOpen(void) const {
-    return keep_open;
-  }
+    bool GetOpen(void) const {
+        return keep_open;
+    }
 
-  void SetOpen(bool o) {
-    keep_open = o;
-  }
+    void SetOpen(bool o) {
+        keep_open = o;
+    }
 
     unsigned int GetSize( void ) const {
         return node_list.size();
@@ -65,15 +65,19 @@ public:
     void AddNode( SGGeod n ) {
         node_list.push_back( n );
     }
+
     void SetNode( unsigned int i, SGGeod n ) {
         node_list[i] = n;
     }
+
     void DelNode( unsigned int i ) {
         node_list.erase( node_list.begin()+i);
     }
+
     SGGeod GetNode( unsigned int i ) const {
         return node_list[i];
     }
+
     SGGeod const& operator[]( int index ) const {
         return node_list[index];
     }
@@ -83,6 +87,7 @@ public:
             node_list.erase( node_list.begin() + idx );
         }
     }
+
     void RemoveNodeRange( unsigned int from, unsigned int to ) {
         if ( ( from < to ) && ( to < node_list.size() ) ) {
             node_list.erase( node_list.begin()+from,node_list.begin()+to );
@@ -139,6 +144,7 @@ public:
 
     static tgContour Expand( const tgContour& subject, double offset );
     static tgpolygon_list ExpandToPolygons( const tgContour& subject, double width );
+    static tgpolygon_list ExpandToPolygons( const tgContour& subject, double width, int texturing );
 
     static void ToShapefile( const tgContour& subject, const std::string& datasource, const std::string& layer, const std::string& feature );
 
@@ -151,7 +157,7 @@ public:
 private:
     std::vector<SGGeod>  node_list;
     bool hole;
-  bool keep_open;  //If non-closed contour, keep open
+    bool keep_open;  //If non-closed contour, keep open
 };
 
 typedef std::vector <tgContour>  tgcontour_list;

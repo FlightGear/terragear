@@ -137,10 +137,18 @@ void TGArray::load_cliffs(const string & height_base)
             gzFile fp = gzopen( p.c_str(), "rb" );
             unsigned int count;
             sgReadUInt( fp, &count );
-            SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " contours from " << p.realpath() );
+            // Sanity check
+            if ( count > 100000 ) {
+                SG_LOG( SG_GENERAL, SG_ALERT, "Too many polys (" << count << ") in " << p.realpath() );
+                exit(EXIT_FAILURE);
+            }
+            SG_LOG( SG_GENERAL, SG_DEBUG, " Load " << count << " polys from " << p.realpath() );
       
             for ( unsigned int i=0; i<count; i++ ) {
-                poly.LoadFromGzFile( fp );
+                if ( poly.LoadFromGzFile( fp ) == EXIT_FAILURE ) {
+                    SG_LOG( SG_GENERAL, SG_ALERT, "Error in file " << p.realpath() );
+                    exit(EXIT_FAILURE);
+                }
                 if ( poly.Contours()==1 ) {  //should always have one contour
                     cliffs_list.push_back(poly.GetContour(0));
                 } else {

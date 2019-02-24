@@ -33,6 +33,11 @@ tgPolygon tgChopper::Clip( const tgPolygon& subject,
             // need to set center latitude for geodetic texturing
             result.SetTexMethod( TG_TEX_BY_GEODE, b.get_center_lat() );
         }
+        if ( subject.GetTexMethod() == TG_TEX_BY_HORIZ_REF ) {
+            // need to preserve reference point and coord
+            result.SetTexReference( subject.GetTexRefPt(), subject.GetRefTexCoord() );
+        }
+
         result.SetFlag(type);
         if (!subject.IsClosed()) {
             result.SetOpen();
@@ -133,6 +138,11 @@ void tgChopper::Add( const tgPolygon& subject, const std::string& type )
                     // need to set center latitude for geodetic texturing
                     clipped.SetTexMethod( TG_TEX_BY_GEODE, b_clip.get_center_lat() );
                 }
+                if ( subject.GetTexMethod() == TG_TEX_BY_HORIZ_REF ) {
+                    // need to preserve reference point and coord
+                  clipped.SetTexReference( subject.GetTexRefPt(), subject.GetRefTexCoord() );
+                }
+
                 clipped.SetFlag(type);
 
                 ClipRow( clipped, b_clip.get_center_lat(), type );

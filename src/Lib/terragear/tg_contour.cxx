@@ -996,6 +996,11 @@ tgContour tgContour::Expand( const tgContour& subject, double offset )
 
 tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double width )
 {
+    return ExpandToPolygons(subject,width,TG_TEX_BY_TPS_CLIPU);
+}
+
+tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double width, int texturing )
+{
     SGGeod cur_inner;
     SGGeod cur_outer;
     SGGeod prev_inner;
@@ -1007,6 +1012,7 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
     tgPolygon      segment;
     tgAccumulator  accum("ExpandToPolygons");
     tgpolygon_list result;
+    double total_length = 0;    //Will become texture cooordinate
 
     // generate poly and texparam lists for each line segment
     for (unsigned int i = 0; i < subject.GetSize(); i++)
@@ -1055,46 +1061,57 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
             expanded.AddNode( prev_inner );
             expanded.AddNode( prev_outer );
 
-            // we need to extend one of the points so we're sure we don't create adjacent edges
-            if (turn_dir == 0)
-            {
-                // turned right - offset outer
-                if ( intersection( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
-                {
-                    // yes - make a triangle with inner edge = 0
-                    expanded.AddNode( cur_outer );
-                    cur_inner = prev_inner;
-                }
-                else
-                {
-                    expanded.AddNode( cur_outer );
-                    expanded.AddNode( cur_inner );
-                }
-            }
-            else
-            {
-                // turned left - offset inner
-                if ( intersection( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
-                {
-                    // yes - make a triangle with outer edge = 0
-                    expanded.AddNode( cur_inner );
-                    cur_outer = prev_outer;
-                }
-                else
-                {
-                    expanded.AddNode( cur_outer );
-                    expanded.AddNode( cur_inner );
-                }
-            }
+	    // we need to extend one of the points so we're sure we don't create adjacent edges
+	    if (turn_dir == 0)
+	    {
+		// turned right - offset outer
+		if ( intersection( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
+		{
+		    // yes - make a triangle with inner edge = 0
+		    expanded.AddNode( cur_outer );
+		    cur_inner = prev_inner;
+		}
+		else
+		{
+		    expanded.AddNode( cur_outer );
+		    expanded.AddNode( cur_inner );
+		}
+	    }
+	    else
+	    {
+		// turned left - offset inner
+		if ( intersection( prev_inner, prev_outer, cur_inner, cur_outer, intersect ) )
+		{
+		    // yes - make a triangle with outer edge = 0
+		    expanded.AddNode( cur_inner );
+		    cur_outer = prev_outer;
+		}
+		else
+		{
+		    expanded.AddNode( cur_outer );
+		    expanded.AddNode( cur_inner );
+		}
+	    }
 
             double last_end_v = 0.0;
 
             expanded.SetHole(false);
             segment.AddContour(expanded);
             segment.SetTexParams( prev_inner, width, 20.0f, heading );
-            segment.SetTexLimits( 0, last_end_v, 1, 1 );
-            segment.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+	    if( texturing == TG_TEX_BY_TPS_CLIPU )
+	    {
+		segment.SetTexLimits( 0, last_end_v, 1, 1 );
+		segment.SetTexMethod( TG_TEX_BY_TPS_CLIPU, -1.0, 0.0, 1.0, 0.0 );
+	    }
+	    else
+	    {
+		segment.SetTexMethod( TG_TEX_BY_HORIZ_REF );
+		segment.SetTexReference( prev_mp, total_length ); //Ref is midpoint
+                SG_LOG(SG_GENERAL, SG_DEBUG, "HORIZ_REF " << total_length);
+	    }
             result.push_back( segment );
+
+	    total_length = total_length + dist; //Total length of line
 
             // BUG??: value will never be utilized
             last_end_v = 1.0f - (fmod( (double)(dist - last_end_v), (double)1.0f ));
@@ -1131,6 +1148,11 @@ void tgContour::LoadFromGzFile( gzFile& fp )
 
     // Load the nodelist
     sgReadUInt( fp, &count );
+    // Sanity check
+    if ( count > 1000000 ) {
+      SG_LOG(SG_GENERAL,SG_ALERT, "Got bad contour count " << count);
+      exit(1);
+    }
     for (unsigned int i = 0; i < count; i++) {
         sgReadGeod( fp, node );
         node_list.push_back( node );

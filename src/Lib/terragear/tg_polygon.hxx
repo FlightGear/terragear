@@ -206,7 +206,8 @@ typedef enum {
     TG_TEX_BY_TPS_NOCLIP,
     TG_TEX_BY_TPS_CLIPU,
     TG_TEX_BY_TPS_CLIPV,
-    TG_TEX_BY_TPS_CLIPUV
+    TG_TEX_BY_TPS_CLIPUV,
+    TG_TEX_BY_HORIZ_REF     //Tex coord calculated from ht and horiz reference
 } tgTexMethod;
 
 class tgTexParams
@@ -227,12 +228,14 @@ public:
     double min_clipv;
     double max_clipv;
 
+    double custom_s;
+
     tgTexMethod method;
 
     double center_lat;
 
     void SaveToGzFile( gzFile& fp ) const;
-    void LoadFromGzFile( gzFile& fp );
+    int LoadFromGzFile( gzFile& fp );
 
     // Friend for output
     friend std::ostream& operator<< ( std::ostream&, const tgTexParams& );
@@ -245,6 +248,7 @@ public:
         preserve3d = false;
         closed = true;
         id = 0;
+        tp.method = TG_TEX_BY_GEODE;
     }
 
     ~tgPolygon() {
@@ -405,6 +409,7 @@ public:
     void SetTexMethod( tgTexMethod m ) {
         tp.method = m;
     }
+
     void SetTexMethod( tgTexMethod m, double min_cu, double min_cv, double max_cu, double max_cv ) {
         tp.method = m;
         tp.min_clipu = min_cu;
@@ -416,10 +421,24 @@ public:
         tp.method = m;
         tp.center_lat = cl;
     }
+
+    void SetTexReference( SGGeod g, double tex_coord ) {
+        tp.ref = g;
+        tp.custom_s = tex_coord;
+    }
+
+    SGGeod GetTexRefPt() const {
+        return tp.ref;
+    }
+
+    double GetRefTexCoord() const {
+        return tp.custom_s;
+    }
+
     tgTexMethod GetTexMethod( void ) const {
         return tp.method;
     }
-    void Texture( void );
+    void Texture( const std::vector<SGGeod>& geod_nodes );
 
     // Tesselation
     void Tesselate( void );
@@ -463,7 +482,7 @@ public:
     
     // IO
     void SaveToGzFile( gzFile& fp ) const;
-    void LoadFromGzFile( gzFile& fp );
+    int LoadFromGzFile( gzFile& fp );
 
     friend std::ostream& operator<< ( std::ostream&, const tgPolygon& );
 
@@ -476,7 +495,7 @@ private:
     bool            preserve3d;
     unsigned int    id;         // unique polygon id for debug
     tgTexParams     tp;
-  bool            closed;       // if we treat it as a closed shape
+    bool            closed;       // if we treat it as a closed shape
 };
 
 #endif // _POLYGON_HXX

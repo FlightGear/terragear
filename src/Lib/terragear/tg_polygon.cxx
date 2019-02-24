@@ -207,7 +207,7 @@ void tgPolygon::InheritElevations( const tgPolygon& source )
     }
 }
 
-void tgPolygon::Texture( void )
+void tgPolygon::Texture( const std::vector<SGGeod>& geod_nodes )
 {
     SGGeod  p;
     SGVec2f t;
@@ -240,8 +240,10 @@ void tgPolygon::Texture( void )
         case TG_TEX_BY_TPS_CLIPU:
         case TG_TEX_BY_TPS_CLIPV:
         case TG_TEX_BY_TPS_CLIPUV:
+        case TG_TEX_BY_HORIZ_REF:
         {
             for ( unsigned int i = 0; i < triangles.size(); i++ ) {
+                SG_LOG(SG_GENERAL, SG_DEBUG, "Triangle " << i);
                 for ( unsigned int j = 0; j < 3; j++ ) {
                     p = triangles[i].GetNode( j );
                     SG_LOG(SG_GENERAL, SG_DEBUG, "point = " << p);
@@ -277,28 +279,42 @@ void tgPolygon::Texture( void )
                     //
                     // 4. Map x, y point into texture coordinates
                     //
-                    float tmp;
-
-                    tmp = (float)x / (float)tp.width;
-                    float tx = tmp * (float)(tp.maxu - tp.minu) + (float)tp.minu;
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
-
-                    // clip u?
-                    if ( (tp.method == TG_TEX_BY_TPS_CLIPU) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
-                        if ( tx < (float)tp.min_clipu ) { tx = (float)tp.min_clipu; }
-                        if ( tx > (float)tp.max_clipu ) { tx = (float)tp.max_clipu; }
+                    float tmp,tx,ty;
+                    if ( tp.method == TG_TEX_BY_HORIZ_REF ) {
+                        // The horizontal coordinate is textured as a continuous
+                        // coordinate through all polygons, the vertical coordinate
+                        // is based on (geodetic) height only
+                        SGGeod fullpt = geod_nodes[ GetTriIdx(i,j) ];
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "full pt = " << fullpt);
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "texture start = " << tp.custom_s);
+                        ty = fullpt.getElevationM();
+                        tx = tp.custom_s - (float) y;
+                        // and scale...we assume a 1000m x 1000m scale
+                        tx = tx / 1000.0;
+                        ty = ty / 1000.0;
                     }
+                    else
+                    {
+                        tmp = (float)x / (float)tp.width;
+                        tx = tmp * (float)(tp.maxu - tp.minu) + (float)tp.minu;
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ")");
 
-                    tmp = (float)y / (float)tp.length;
-                    float ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
-                    SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
+                        // clip u?
+                        if ( (tp.method == TG_TEX_BY_TPS_CLIPU) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
+                            if ( tx < (float)tp.min_clipu ) { tx = (float)tp.min_clipu; }
+                            if ( tx > (float)tp.max_clipu ) { tx = (float)tp.max_clipu; }
+                        }
 
-                    // clip v?
-                    if ( (tp.method == TG_TEX_BY_TPS_CLIPV) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
-                        if ( ty < (float)tp.min_clipv ) { ty = (float)tp.min_clipv; }
-                        if ( ty > (float)tp.max_clipv ) { ty = (float)tp.max_clipv; }
+                        tmp = (float)y / (float)tp.length;
+                        ty = tmp * (float)(tp.maxv - tp.minv) + (float)tp.minv;
+                        SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << ty << ")");
+
+                        // clip v?
+                        if ( (tp.method == TG_TEX_BY_TPS_CLIPV) || (tp.method == TG_TEX_BY_TPS_CLIPUV) ) {
+                            if ( ty < (float)tp.min_clipv ) { ty = (float)tp.min_clipv; }
+                            if ( ty > (float)tp.max_clipv ) { ty = (float)tp.max_clipv; }
+                        }
                     }
-
                     t = SGVec2f( tx, ty );
                     SG_LOG(SG_GENERAL, SG_DEBUG, "  (" << tx << ", " << ty << ")");
 
@@ -333,7 +349,7 @@ void tgPolygon::SaveToGzFile( gzFile& fp ) const
     sgWriteInt( fp, (int)preserve3d );
 }
 
-void tgPolygon::LoadFromGzFile( gzFile& fp )
+int tgPolygon::LoadFromGzFile( gzFile& fp )
 {
     unsigned int count;
     tgContour contour;
@@ -345,6 +361,12 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
 
     // Load the contours
     sgReadUInt( fp, &count );
+
+    // Sanity check
+    if ( count > 100000 ) {
+      SG_LOG(SG_GENERAL,SG_ALERT, "Got bad contour count " << count);
+      return EXIT_FAILURE;
+    }
     for (unsigned int i = 0; i < count; i++) {
         contour.LoadFromGzFile( fp );
         AddContour(contour);
@@ -352,13 +374,20 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
 
     // load the triangles
     sgReadUInt( fp, &count );
+    // Sanity check
+    if ( count > 1000000 ) {
+      SG_LOG(SG_GENERAL,SG_ALERT, "Got bad triangle count " << count);
+      return EXIT_FAILURE;
+    }
     for (unsigned int i = 0; i < count; i++) {
         triangle.LoadFromGzFile( fp );
         AddTriangle(triangle);
     }
 
     // Load the tex params
-    tp.LoadFromGzFile( fp );
+    if ( tp.LoadFromGzFile( fp ) == EXIT_FAILURE ) {
+      return EXIT_FAILURE;
+    }
 
     // and the rest
     sgReadString( fp, &strbuff );
@@ -374,6 +403,7 @@ void tgPolygon::LoadFromGzFile( gzFile& fp )
     }
 
     sgReadInt( fp, (int *)&preserve3d );
+    return EXIT_SUCCESS;
 }
 
 void tgPolygon::ToClipperFile( const tgPolygon& subject, const std::string& path, const std::string& filename )
@@ -513,14 +543,22 @@ void tgTexParams::SaveToGzFile( gzFile& fp ) const
             sgWriteDouble( fp, min_clipv );
             sgWriteDouble( fp, max_clipv );
         }
+        if ( method == TG_TEX_BY_HORIZ_REF ) {
+          sgWriteDouble( fp, custom_s );
+        }
     }
 }
 
-void tgTexParams::LoadFromGzFile( gzFile& fp )
+int tgTexParams::LoadFromGzFile( gzFile& fp )
 {
     // Load the parameters
     sgReadInt( fp, (int*)&method );
 
+    // Sanity check
+    if ( method > 100 ) {
+      SG_LOG( SG_GENERAL,SG_ALERT, "Got bad texture method " << method );
+      return EXIT_FAILURE;
+    }
     if ( method == TG_TEX_BY_GEODE ) {
         sgReadDouble( fp, &center_lat );
     } else {
@@ -545,5 +583,10 @@ void tgTexParams::LoadFromGzFile( gzFile& fp )
             sgReadDouble( fp, &min_clipv );
             sgReadDouble( fp, &max_clipv );
         }
+
+        if ( method == TG_TEX_BY_HORIZ_REF) {
+          sgReadDouble( fp, &custom_s );
+        }
     }
+    return EXIT_SUCCESS;
 }
