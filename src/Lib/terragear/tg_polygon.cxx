@@ -207,6 +207,11 @@ void tgPolygon::InheritElevations( const tgPolygon& source )
     }
 }
 
+void tgPolygon::Texture()
+{
+    tgPolygon::Texture(std::vector<SGGeod>());
+}
+
 void tgPolygon::Texture( const std::vector<SGGeod>& geod_nodes )
 {
     SGGeod  p;

@@ -438,6 +438,7 @@ public:
     tgTexMethod GetTexMethod( void ) const {
         return tp.method;
     }
+    void Texture();
     void Texture( const std::vector<SGGeod>& geod_nodes );
 
     // Tesselation
