@@ -20,12 +20,11 @@ add_executable(tg-construct
     tglandclass.hxx
     priorities.cxx
     priorities.hxx
-    usgs.cxx 
     main.cxx)
 
 set_target_properties(tg-construct PROPERTIES
         COMPILE_DEFINITIONS 
-        "DEFAULT_USGS_MAPFILE=\"${PKGDATADIR}/usgsmap.txt\";DEFAULT_PRIORITIES_FILE=\"${PKGDATADIR}/default_priorities.txt\"" )
+        "DEFAULT_PRIORITIES_FILE=\"${PKGDATADIR}/default_priorities.txt\"" )
 
 target_link_libraries(tg-construct
     terragear
@@ -39,5 +38,4 @@ target_link_libraries(tg-construct
 
 install(TARGETS tg-construct RUNTIME DESTINATION bin)
 
-INSTALL(FILES usgsmap.txt DESTINATION ${PKGDATADIR} )
 INSTALL(FILES default_priorities.txt DESTINATION ${PKGDATADIR} )

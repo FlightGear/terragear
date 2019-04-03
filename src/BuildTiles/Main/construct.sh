@@ -65,7 +65,6 @@ ${CONSTRUCT} \
     --output-dir=${OUTPUTDIR} \
     --work-dir=${WORKBASE} \
     --share-dir=${SHAREDIR} \
-    --usgs-map=${HOME}/terragear/share/TerraGear/usgsmap.txt \
     --priorities=${HOME}/terragear/share/TerraGear/default_priorities.txt \
     ${NUDGE} ${SPAT} --ignore-landmass \
     --debug-dir=/home/martin/scenery/Debug \

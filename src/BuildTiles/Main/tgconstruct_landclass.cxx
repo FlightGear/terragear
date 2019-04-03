@@ -31,7 +31,6 @@
 #include <simgear/math/SGMath.hxx>
 
 #include "tgconstruct.hxx"
-#include "usgs.hxx"
 
 using std::string;
 

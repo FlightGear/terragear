@@ -91,7 +91,7 @@ New in 0.0.4
 * Added a new library for reading ArcInfo e00 files (DCW, GeoGratis).
 * Added a new prep util for creating textured polygons from e00 line
   data (i.e. for roads, railroads, streams, utility lines, etc.)
-* Added support for the USGS global land use / loand cover raster data base.
+* Added support for the USGS global land use / land cover raster data base.
 * Better MSVC support.
 * Better Cygwin support.
 * Weight face normals by triangle area when calculating terrain node normals.
