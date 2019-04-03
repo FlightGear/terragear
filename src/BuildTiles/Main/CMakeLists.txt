@@ -8,7 +8,6 @@ add_executable(tg-construct
     tgconstruct_clip.cxx
     tgconstruct_debug.cxx
     tgconstruct_elevation.cxx
-    tgconstruct_landclass.cxx
     tgconstruct_lookup.cxx
     tgconstruct_math.cxx
     tgconstruct_output.cxx
