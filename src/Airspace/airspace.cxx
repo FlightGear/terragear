@@ -123,36 +123,32 @@ const string airspace_texture_path = "/usr/local/share/FlightGear/data/Textures/
 
 // return the horizontal tile span factor based on latitude
 double sg_bucket_span( double l ) {
-    if ( l >= 89.0 ) {
-	return 360.0;
-    } else if ( l >= 88.0 ) {
-	return 8.0;
-    } else if ( l >= 86.0 ) {
-	return 4.0;
-    } else if ( l >= 83.0 ) {
-	return 2.0;
-    } else if ( l >= 76.0 ) {
-	return 1.0;
-    } else if ( l >= 62.0 ) {
-	return 0.5;
-    } else if ( l >= 22.0 ) {
-	return 0.25;
-    } else if ( l >= -22.0 ) {
-	return 0.125;
-    } else if ( l >= -62.0 ) {
-	return 0.25;
-    } else if ( l >= -76.0 ) {
-	return 0.5;
-    } else if ( l >= -83.0 ) {
-	return 1.0;
-    } else if ( l >= -86.0 ) {
-	return 2.0;
-    } else if ( l >= -88.0 ) {
-	return 4.0;
-    } else if ( l >= -89.0 ) {
-	return 8.0;
+    if (l >= 89.0) {
+        return 12.0;
+    } else if (l >= 86.0) {
+        return 4.0;
+    } else if (l >= 83.0) {
+        return 2.0;
+    } else if (l >= 76.0) {
+        return 1.0;
+    } else if (l >= 62.0) {
+        return 0.5;
+    } else if (l >= 22.0) {
+        return 0.25;
+    } else if (l >= -22.0) {
+        return 0.125;
+    } else if (l >= -62.0) {
+        return 0.25;
+    } else if (l >= -76.0) {
+        return 0.5;
+    } else if (l >= -83.0) {
+        return 1.0;
+    } else if (l >= -86.0) {
+        return 2.0;
+    } else if (l >= -89.0) {
+        return 4.0;
     } else {
-	return 360.0;
+        return 12.0;
     }
 }
 

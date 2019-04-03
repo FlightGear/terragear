@@ -30,9 +30,7 @@ my $DIRSEP = '/';
 sub bucket_span {
   my ($lat) = (@_);
   if ($lat>= 89.0 ) {
-    return 360.0;
-  } elsif ($lat>= 88.0 ) {
-    return 8.0;
+    return 12.0;
   } elsif ($lat>= 86.0 ) {
     return 4.0;
   } elsif ($lat>= 83.0 ) {
@@ -53,12 +51,10 @@ sub bucket_span {
     return 1.0;
   } elsif ($lat>= -86.0 ) {
     return 2.0;
-  } elsif ($lat>= -88.0 ) {
-    return 4.0;
   } elsif ($lat>= -89.0 ) {
-    return 8.0;
+    return 4.0;
   } else {
-    return 360.0;
+    return 12.0;
   }
 }
 
