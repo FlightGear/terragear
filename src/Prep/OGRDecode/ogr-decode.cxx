@@ -192,7 +192,7 @@ void Decoder::processLineString(OGRLineString* poGeometry, const string& area_ty
         texturing = TG_TEX_BY_GEODE;
     }
 
-    if (texture_cliffs)
+    if (texture_cliffs && area_type == "Cliffs")
         texturing = TG_TEX_BY_HORIZ_REF;
 
     segments = tgContour::ExpandToPolygons(line, width, texturing);
@@ -242,7 +242,7 @@ void Decoder::run()
             OGRwkbGeometryType geoType = wkbFlatten(poGeometry->getGeometryType());
             if (geoType != wkbPoint && geoType != wkbMultiPoint && geoType != wkbLineString &&
                     geoType != wkbMultiLineString && geoType != wkbPolygon && geoType != wkbMultiPolygon) {
-                SG_LOG(SG_GENERAL, SG_INFO, "Unknown feature");
+                SG_LOG(SG_GENERAL, SG_WARN, "Unknown feature");
                 continue;
             }
 
@@ -253,8 +253,7 @@ void Decoder::run()
 
             if (is_ocean_area(area_type_name)) {
                 // interior of polygon is ocean, holes are islands
-
-                SG_LOG(SG_GENERAL, SG_ALERT, "Ocean area ... SKIPPING!");
+                SG_LOG(SG_GENERAL, SG_INFO, "Ocean area ... SKIPPING!");
 
                 // Ocean data now comes from GSHHS so we want to ignore
                 // all other ocean data
@@ -491,7 +490,7 @@ void processLayer(OGRLayer* poLayer, tgChopper& results)
     OCTDestroyCoordinateTransformation(poCT);
 }
 
-void usage(char* progname)
+int usage(char* progname)
 {
     SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << progname << " [options...] <work_dir> <datasource> [<layername>...]");
     SG_LOG(SG_GENERAL, SG_ALERT, "Options:");
@@ -539,7 +538,7 @@ void usage(char* progname)
     SG_LOG(SG_GENERAL, SG_ALERT, "        The layers to process.");
     SG_LOG(SG_GENERAL, SG_ALERT, "        If no layer is given, all layers in the datasource are used");
 
-    exit(-1);
+    return EXIT_FAILURE;
 }
 
 void setLoggingPriority(const char* p)
@@ -575,96 +574,96 @@ int main(int argc, char** argv)
 
     while (argc > 1) {
         if (!strcmp(argv[1], "--log-level")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             setLoggingPriority(argv[2]);
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--line-width")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             line_width = atoi(argv[2]);
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--line-width-column")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             line_width_col = argv[2];
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--point-width")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             point_width = atoi(argv[2]);
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--point-width-column")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             point_width_col = argv[2];
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--area-type")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             area_type = argv[2];
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--area-type-column")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             area_type_col = argv[2];
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--texture-lines")) {
-            argv++;
-            argc--;
             texture_lines = true;
+            argv++;
+            argc--;
         } else if (!strcmp(argv[1], "--texture-cliffs")) {
-            argv++;
-            argc--;
             texture_cliffs = true;
+            argv++;
+            argc--;
         } else if (!strcmp(argv[1], "--seperate-segments")) {
-            argv++;
-            argc--;
             seperate_segments = 1;
-        } else if (!strcmp(argv[1], "--continue-on-errors")) {
             argv++;
             argc--;
+        } else if (!strcmp(argv[1], "--continue-on-errors")) {
             continue_on_errors = 1;
+            argv++;
+            argc--;
         } else if (!strcmp(argv[1], "--max-segment")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             max_segment_length = atoi(argv[2]);
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--start-record")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             start_record = atoi(argv[2]);
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--where")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             use_attribute_query = true;
             attribute_query = argv[2];
             argv += 2;
             argc -= 2;
         } else if (!strcmp(argv[1], "--spat")) {
-            if (argc < 6) {
-                usage(progname);
-            }
+            if (argc < 6)
+                return usage(progname);
+
             use_spatial_query = true;
             spat_min_x = atof(argv[2]);
             spat_min_y = atof(argv[3]);
@@ -673,9 +672,9 @@ int main(int argc, char** argv)
             argv += 5;
             argc -= 5;
         } else if (!strcmp(argv[1], "--threads")) {
-            if (argc < 3) {
-                usage(progname);
-            }
+            if (argc < 3)
+                return usage(progname);
+
             num_threads = atoi(argv[2]);
             argv += 2;
             argc -= 2;
@@ -684,21 +683,21 @@ int main(int argc, char** argv)
             argv += 1;
             argc -= 1;
         } else if (!strcmp(argv[1], "--debug")) {
+            save_shapefiles = true;
             argv++;
             argc--;
-            save_shapefiles = true;
         } else if (!strcmp(argv[1], "--help")) {
-            usage(progname);
+            return usage(progname);
         } else {
             break;
         }
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "\nogr-decode version " << getTGVersion());
+    SG_LOG(SG_GENERAL, SG_INFO, "ogr-decode version " << getTGVersion());
 
-    if (argc < 3) {
-        usage(progname);
-    }
+    if (argc < 3)
+        return usage(progname);
+
     work_dir = argv[1];
     datasource = argv[2];
 
@@ -707,14 +706,6 @@ int main(int argc, char** argv)
     sgp.create_dir(0755);
 
     tgChopper results(work_dir);
-
-    // initialize persistant polygon counter
-    //string counter_file = work_dir + "/poly_counter";
-    //poly_index_init( counter_file );
-
-    // new chop api
-    //std::string counter_file2 = work_dir + "/poly_counter2";
-    //tgPolygon::ChopIdxInit( counter_file );
 
     SG_LOG(SG_GENERAL, SG_DEBUG, "Opening datasource " << datasource << " for reading.");
 
@@ -730,7 +721,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Processing datasource " << datasource);
+    SG_LOG(SG_GENERAL, SG_INFO, "Processing datasource " << datasource);
 
     OGRLayer* poLayer;
     if (argc > 3) {
@@ -756,7 +747,7 @@ int main(int argc, char** argv)
     GDALClose(poDS);
     GDALDestroyDriverManager();
 
-    SG_LOG(SG_GENERAL, SG_ALERT, "Saving to buckets");
+    SG_LOG(SG_GENERAL, SG_INFO, "Saving to buckets");
     results.Save(save_shapefiles);
 
     auto finish_time = std::chrono::high_resolution_clock::now();
