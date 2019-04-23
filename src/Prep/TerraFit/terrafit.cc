@@ -77,8 +77,10 @@ public:
     explicit ArrayMap(TGArray& array)
         : array(array)
     {
+        depth = 32;
         width = array.get_cols();
         height = array.get_rows();
+
         min = 30000;
         max = -30000;
         for (int i = 0; i < width; i++) {
@@ -90,7 +92,6 @@ public:
                     max = v;
             }
         }
-        depth = 32;
     }
 
     virtual ~ArrayMap() {}
@@ -190,14 +191,21 @@ void fit_file(const SGPath& path)
 
     gzprintf(fp, "%d\n", mesh.pointCount());
 
-    for (int x = 0; x < DEM.width; x++) {
-        for (int y = 0; y < DEM.height; y++) {
+    double origin_x = inarray.get_originx();
+    double origin_y = inarray.get_originy();
+    double col_step = inarray.get_col_step();
+    double row_step = inarray.get_row_step();
+
+    for (int x = 0; x < DEM.width; ++x) {
+        double vx = (origin_x + x * col_step) / 3600.0;
+
+        for (int y = 0; y < DEM.height; ++y) {
             if (mesh.is_used(x, y) != DATA_POINT_USED)
                 continue;
-            double vx, vy, vz;
-            vx = (inarray.get_originx() + x * inarray.get_col_step()) / 3600.0;
-            vy = (inarray.get_originy() + y * inarray.get_row_step()) / 3600.0;
-            vz = DEM.eval(x, y);
+
+            double vy = (origin_y + y * row_step) / 3600.0;
+            double vz = DEM.eval(x, y);
+
             gzprintf(fp, "%+03.8f %+02.8f %0.2f\n", vx, vy, vz);
         }
     }
