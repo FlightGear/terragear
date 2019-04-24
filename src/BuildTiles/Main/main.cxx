@@ -44,7 +44,7 @@ using std::string;
 using std::vector;
 
 // display usage and exit
-static void usage(const string name)
+static int usage(const string name)
 {
     SG_LOG(SG_GENERAL, SG_ALERT, "Usage: " << name);
     SG_LOG(SG_GENERAL, SG_ALERT, "[ --output-dir=<directory>");
@@ -62,7 +62,8 @@ static void usage(const string name)
     SG_LOG(SG_GENERAL, SG_ALERT, "  --threads");
     SG_LOG(SG_GENERAL, SG_ALERT, "  --threads=<numthreads>");
     SG_LOG(SG_GENERAL, SG_ALERT, " ] <load directory...>");
-    exit(-1);
+
+    return EXIT_FAILURE;
 }
 
 void RemoveDuplicateBuckets(std::vector<SGBucket>& keep, std::vector<SGBucket>& remove)
@@ -83,7 +84,6 @@ int main(int argc, char** argv)
     string work_dir = ".";
     string share_dir = "";
     string match_dir = "";
-    // unused: string cover = "";
     string priorities_file = DEFAULT_PRIORITIES_FILE;
     SGGeod min, max;
     long tile_id = -1;
@@ -121,11 +121,11 @@ int main(int argc, char** argv)
         } else if (arg.find("--min-lon=") == 0) {
             min.setLongitudeDeg(atof(arg.substr(10).c_str()));
         } else if (arg.find("--max-lon=") == 0) {
-            max.setLongitudeDeg(atof(arg.substr(10).c_str()));
+            max.setLongitudeDeg(atof(arg.substr(10).c_str()) - 0.005);
         } else if (arg.find("--min-lat=") == 0) {
             min.setLatitudeDeg(atof(arg.substr(10).c_str()));
         } else if (arg.find("--max-lat=") == 0) {
-            max.setLatitudeDeg(atof(arg.substr(10).c_str()));
+            max.setLatitudeDeg(atof(arg.substr(10).c_str()) - 0.005);
         } else if (arg.find("--nudge=") == 0) {
             nudge = atof(arg.substr(8).c_str()) * SG_EPSILON;
         } else if (arg.find("--priorities=") == 0) {
@@ -143,7 +143,7 @@ int main(int argc, char** argv)
         } else if (arg.find("--debug-shapes=") == 0) {
             debug_shape_defs.push_back(arg.substr(15));
         } else if (arg.find("--") == 0) {
-            usage(argv[0]);
+            return usage(argv[0]);
         } else {
             break;
         }
@@ -162,14 +162,16 @@ int main(int argc, char** argv)
     if (tile_id > 0) {
         SG_LOG(SG_GENERAL, SG_ALERT, "Tile id is " << tile_id);
     } else {
-        if (min.isValid() && max.isValid() && (min != max)) {
-            SG_LOG(SG_GENERAL, SG_ALERT, "Longitude = " << min.getLongitudeDeg() << ':' << max.getLongitudeDeg());
-            SG_LOG(SG_GENERAL, SG_ALERT, "Latitude = " << min.getLatitudeDeg() << ':' << max.getLatitudeDeg());
+        // syntax intentional.  Only operator== has been overloaded.
+        if (min.isValid() && max.isValid() && ((min == max) == false)) {
+            SG_LOG(SG_GENERAL, SG_ALERT, "Longitude = " << min.getLongitudeDeg() << ':' << (max.getLongitudeDeg() + 0.005));
+            SG_LOG(SG_GENERAL, SG_ALERT, "Latitude = " << min.getLatitudeDeg() << ':' << (max.getLatitudeDeg() + 0.005));
         } else {
             SG_LOG(SG_GENERAL, SG_ALERT, "Lon/Lat unset or wrong");
-            exit(1);
+            return EXIT_FAILURE;
         }
     }
+
     SG_LOG(SG_GENERAL, SG_ALERT, "Nudge is " << nudge);
     for (int i = arg_pos; i < argc; ++i) {
         load_dirs.push_back(argv[i]);
