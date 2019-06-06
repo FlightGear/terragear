@@ -604,6 +604,11 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 cur_light_contour.SetType( "RWY_RED_LIGHTS" );
                 light_delta = 10.0f;
                 break;
+            
+            default:
+                // catch unknown lighting type. Allows TerraGear to exit cleanly when it comes across new light features 107 and 108
+                TG_LOG(SG_GENERAL, SG_ALERT, "LinearFeature::Finish: unknown lighting feature " << lights[i]->type );
+                exit(1);
         }
 
         for (unsigned int j = lights[i]->start_idx; j <= lights[i]->end_idx; j++)
