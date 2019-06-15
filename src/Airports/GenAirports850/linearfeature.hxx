@@ -40,8 +40,8 @@
 #define LF_UNIDIR_CLOSE_AMBER_PULSE (104)
 #define LF_BIDIR_GREEN_AMBER        (105)
 #define LF_OMNIDIR_RED              (106)
-#define LF_OMNIDIR_GREEN            (107)
-#define LF_OMNIDIR_GREEN_AMBER      (108)
+#define LF_UNIDIR_GREEN             (107)
+#define LF_UNIDIR_GREEN_AMBER       (108)
 
 struct Marking
 {
