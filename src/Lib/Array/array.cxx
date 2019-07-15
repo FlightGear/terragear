@@ -775,7 +775,7 @@ double TGArray::altitude_from_grid( double lon, double lat ) const {
             int comp2 = y2-y1;
             double dotprod = (dx*comp1 + dy*comp2)/sqrt(2);
             double projlen = sqrt(dx*dx+dy*dy)*dotprod;
-            elev = (z2-z1)*projlen/sqrt(2);
+            elev = z1+(z2-z1)*projlen/sqrt(2);
         }
         break;
         
