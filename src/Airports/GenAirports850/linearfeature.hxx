@@ -19,6 +19,27 @@
 #define LF_SAFETYZONE_CENTERLINE    (7)
 #define LF_SINGLE_LANE_QUEUE        (8)
 #define LF_DOUBLE_LANE_QUEUE        (9)
+#define LF_SOLID_YELLOW_WIDE        (10)
+#define LF_TAXI_HOLD_WIDE           (11)
+#define LF_DOUBLE_HOLD_WIDE         (12)
+#define LF_OTHER_HOLD_WIDE          (13)
+#define LF_ILS_HOLD_WIDE            (14)
+#define LF_SOLID_YELLOW_HATCH       (19)
+
+#define LF_SOLID_WHITE              (20)
+#define LF_CHECKERBOARD_WHITE       (21)
+#define LF_BROKEN_WHITE             (22)
+#define LF_BROKEN_ROAD              (23)
+#define LF_SOLID_ROAD_WIDE          (24)
+#define LF_BROKEN_ROAD_WIDE         (25)
+
+#define LF_SOLID_RED                (30)
+#define LF_BROKEN_RED               (31)
+#define LF_SOLID_RED_WIDE           (32)
+
+#define LF_SOLID_ORANGE             (40)
+#define LF_SOLID_BLUE               (41)
+#define LF_SOLID_GREEN              (42)
 
 #define LF_B_SOLID_YELLOW           (51)
 #define LF_B_BROKEN_YELLOW          (52)
@@ -30,9 +51,26 @@
 #define LF_B_SINGLE_LANE_QUEUE      (58)
 #define LF_B_DOUBLE_LANE_QUEUE      (59)
 
-#define LF_SOLID_WHITE              (20)
-#define LF_CHECKERBOARD_WHITE       (21)
-#define LF_BROKEN_WHITE             (22)
+#define LF_B_SOLID_YELLOW_WIDE      (60)
+#define LF_B_TAXI_HOLD_WIDE         (61)
+#define LF_B_RUNWAY_HOLD_WIDE       (62)
+#define LF_B_OTHER_HOLD_WIDE        (63)
+#define LF_B_ILS_HOLD_WIDE          (64)
+
+#define LF_B_ROAD_EDGE_SOLID        (70)
+#define LF_B_ROAD_EDGE_ZIPPER       (71)
+#define LF_B_ROAD_EDGE_DASH         (72)
+#define LF_B_ROAD_DASH              (73)
+#define LF_B_ROAD_EDGE_WIDE         (74)
+#define LF_B_ROAD_DASH_WIDE         (75)
+
+#define LF_B_SOLID_RED              (80)
+#define LF_B_BROKEN_RED             (81)
+#define LF_B_SOLID_RED_WIDE         (82)
+
+#define LF_B_SOLID_ORANGE           (90)
+#define LF_B_SOLID_BLUE             (91)
+#define LF_B_SOLID_GREEN            (92)
 
 #define LF_BIDIR_GREEN              (101)
 #define LF_OMNIDIR_BLUE             (102)

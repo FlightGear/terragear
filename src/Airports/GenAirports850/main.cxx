@@ -314,7 +314,7 @@ int main(int argc, char **argv)
     in.getline(line, 20);
     in.close();
     int code = atoi(line);
-    if (code == 810 || code > 1100) {
+    if (code == 810 || code > 1200) {
         TG_LOG(SG_GENERAL, SG_ALERT, "ERROR: This genapts version does not support apt.data version " << code << " files.");
         return EXIT_FAILURE;
     }

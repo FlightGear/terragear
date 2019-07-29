@@ -392,9 +392,49 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
             case LF_NONE:
                 break;
 
+            case LF_SOLID_RED:
+                material = "lf_sng_solid_red";
+                width = 0.25f;
+                break;
+		
+            case LF_BROKEN_RED:
+                material = "lf_sng_broken_red";
+                width = 0.25f;
+                break;
+		
+            case LF_SOLID_RED_WIDE:
+                material = "lf_sng_solid_red";
+                width = 0.5f;
+                break;
+
+            case LF_SOLID_ORANGE:
+                material = "lf_sng_solid_orange";
+                width = 0.25f;
+                break;
+
+            case LF_SOLID_BLUE:
+                material = "lf_sng_solid_blue";
+                width = 0.25f;
+                break;
+
+            case LF_SOLID_GREEN:
+                material = "lf_sng_solid_green";
+                width = 0.25f;
+                break;
+
             case LF_SOLID_YELLOW:
                 material = "lf_sng_solid_yellow";
                 width = 0.25f;
+                break;
+
+            case LF_SOLID_YELLOW_WIDE:
+                material = "lf_sng_solid_yellow";
+                width = 0.5f;
+                break;
+
+            case LF_SOLID_YELLOW_HATCH:
+                material = "lf_sng_solid_yellow";
+                width = 1.0f;
                 break;
 
             case LF_BROKEN_YELLOW:
@@ -412,9 +452,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 width = 1.0f;
                 break;
 
+            case LF_DOUBLE_HOLD_WIDE:
+                material = "lf_runway_hold";
+                width = 2.0f;
+                break;
+
             case LF_OTHER_HOLD:
                 material = "lf_other_hold";
                 width = 0.5f;
+                break;
+
+            case LF_OTHER_HOLD_WIDE:
+                material = "lf_other_hold";
+                width = 1.0f;
                 break;
 
             case LF_ILS_HOLD:
@@ -422,9 +472,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 width = 1.0f;
                 break;
 
+            case LF_ILS_HOLD_WIDE:
+                material = "lf_ils_hold";
+                width = 2.0f;
+                break;
+
             case LF_SAFETYZONE_CENTERLINE:
                 material = "lf_safetyzone_centerline";
                 width = 0.75f;
+                break;
+
+            case LF_TAXI_HOLD_WIDE:
+                material = "lf_safetyzone_centerline";
+                width = 1.5f;
                 break;
 
             case LF_SINGLE_LANE_QUEUE:
@@ -442,6 +502,11 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 width = 0.25f;
                 break;
 
+            case LF_B_SOLID_YELLOW_WIDE:
+                material = "lf_sng_solid_yellow_border";
+                width = 0.5f;
+                break;
+
             case LF_B_BROKEN_YELLOW:
                 material = "lf_sng_broken_yellow_border";
                 width = 0.25f;
@@ -457,9 +522,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 width = 1.0f;
                 break;
 
+            case LF_B_RUNWAY_HOLD_WIDE:
+                material = "lf_runway_hold_border";
+                width = 2.0f;
+                break;
+
             case LF_B_OTHER_HOLD:
                 material = "lf_other_hold_border";
                 width = 0.5f;
+                break;
+
+            case LF_B_OTHER_HOLD_WIDE:
+                material = "lf_other_hold_border";
+                width = 1.0f;
                 break;
 
             case LF_B_ILS_HOLD:
@@ -467,9 +542,19 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 width = 1.0f;
                 break;
 
+	    case LF_B_ILS_HOLD_WIDE:
+                material = "lf_ils_hold_border";
+                width = 2.0f;
+                break;
+
             case LF_B_SAFETYZONE_CENTERLINE:
                 material = "lf_safetyzone_centerline_border";
                 width = 0.75f;
+                break;
+
+	    case LF_B_TAXI_HOLD_WIDE:
+                material = "lf_safetyzone_centerline_border";
+                width = 1.5f;
                 break;
 
             case LF_B_SINGLE_LANE_QUEUE:
@@ -487,6 +572,11 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
                 width = 0.25f;
                 break;
 
+            case LF_SOLID_ROAD_WIDE:
+                material = "lf_sng_solid_white";
+                width = 0.5f;
+                break;
+
             case LF_CHECKERBOARD_WHITE:
                 material = "lf_checkerboard_white";
                 width = 0.5f;
@@ -494,6 +584,76 @@ int LinearFeature::Finish( bool closed, unsigned int idx )
 
             case LF_BROKEN_WHITE:
                 material = "lf_broken_white";
+                width = 0.25f;
+                break;
+
+            case LF_BROKEN_ROAD:
+                material = "lf_broken_white";
+                width = 0.25f;
+                break;
+
+            case LF_BROKEN_ROAD_WIDE:
+                material = "lf_broken_white";
+                width = 0.5f;
+                break;
+
+            case LF_B_ROAD_EDGE_SOLID:
+                material = "lf_solid_white_border";
+                width = 0.25f;
+                break;
+		
+            case LF_B_ROAD_EDGE_ZIPPER:
+                material = "lf_broken_white_border"; //TODO
+                width = 0.5f;
+                break;
+		
+            case LF_B_ROAD_EDGE_DASH:
+                material = "lf_broken_white_border";
+                width = 0.25f;
+                break;
+		
+            case LF_B_ROAD_DASH:
+                material = "lf_broken_white_border";
+                width = 0.25f;
+                break;
+		
+            case LF_B_ROAD_DASH_WIDE:
+                material = "lf_broken_white_border";
+                width = 0.5f;
+                break;
+		
+            case LF_B_ROAD_EDGE_WIDE:
+                material = "lf_solid_white_border";
+                width = 0.5f;
+                break;
+		
+            case LF_B_SOLID_RED:
+                material = "lf_solid_red_border";
+                width = 0.25f;
+                break;
+		
+            case LF_B_BROKEN_RED:
+                material = "lf_broken_red_border";
+                width = 0.25f;
+                break;
+		
+            case LF_B_SOLID_RED_WIDE:
+                material = "lf_solid_red_border";
+                width = 0.5f;
+                break;
+		
+            case LF_B_SOLID_ORANGE:
+                material = "lf_solid_orange_border";
+                width = 0.25f;
+                break;
+		
+            case LF_B_SOLID_BLUE:
+                material = "lf_solid_blue_border";
+                width = 0.25f;
+                break;
+		
+            case LF_B_SOLID_GREEN:
+                material = "lf_solid_green_border";
                 width = 0.25f;
                 break;
 
