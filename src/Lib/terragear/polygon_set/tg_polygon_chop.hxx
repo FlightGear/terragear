@@ -1,6 +1,6 @@
 #include <map>
+#include <mutex>
 
-#include <simgear/threads/SGThread.hxx>
 #include <simgear/timing/timestamp.hxx>
 #include <simgear/bucket/newbucket.hxx>
 
@@ -16,7 +16,7 @@ public:
     
     void setBuckets( const SGGeod& min, const SGGeod& max, bool checkBorders );
     
-    void clip( long int bucket_id, std::string& rootPath, SGMutex* lock );
+    void clip( long int bucket_id, std::string& rootPath, std::mutex* lock );
     
 private:
     std::vector<SGBucket>   buckets;
@@ -38,6 +38,6 @@ private:
 
     long int         bucket_id;     // set if we only want to save a single bucket
     std::string      root_path;
-    SGMutex          lock;
+    std::mutex          lock;
     tgDatasetAcess   dataset;
 };

@@ -23,8 +23,6 @@
 #include <fstream>
 
 #include <simgear/constants.h>
-#include <simgear/threads/SGThread.hxx>
-#include <simgear/threads/SGGuard.hxx>
 #include <simgear/math/sg_geodesy.hxx>
 #include <simgear/io/lowlevel.hxx>
 #include <simgear/misc/texcoord.hxx>

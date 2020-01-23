@@ -23,6 +23,7 @@
 //
 
 #include <string>
+#include <mutex>
 #include <map>
 
 #include <boost/thread.hpp>
@@ -30,7 +31,6 @@
 #include <gdal_priv.h>
 
 #include <simgear/compiler.h>
-#include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGQueue.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
@@ -54,7 +54,7 @@ SGLockedQueue<OGRFeature *> global_workQueue;
 class Decoder : public SGThread
 {
 public:
-    Decoder( OGRCoordinateTransformation *poct, tgChopper& c, tgPolygonSetList& all, SGMutex& l ) : chopper(c), allPolys(all), lock(l) {
+    Decoder( OGRCoordinateTransformation *poct, tgChopper& c, tgPolygonSetList& all, std::mutex& l ) : chopper(c), allPolys(all), lock(l) {
         poCT      = poct;
     }
 
@@ -74,7 +74,7 @@ private:
     tgPolygonSetList&   allPolys; 
 
     int                 area_type_field;
-    SGMutex&            lock;
+    std::mutex&            lock;
 };
 
 void Decoder::processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string& area_type )
@@ -142,7 +142,7 @@ void Decoder::run()
 }
 
 // Main Thread
-void processLayer(OGRLayer* poLayer, tgChopper& chopped, std::vector<SGBucket>& bucketList, tgPolygonSetList& all, SGMutex& l  )
+void processLayer(OGRLayer* poLayer, tgChopper& chopped, std::vector<SGBucket>& bucketList, tgPolygonSetList& all, std::mutex& l  )
 {
     /* determine the indices of the required columns */
     OGRFeatureDefn *poFDefn = poLayer->GetLayerDefn();
@@ -220,7 +220,7 @@ int main( int argc, char **argv ) {
     string                  datasource,work_dir,resultname;
     std::vector<SGBucket>   bucketList;
     tgPolygonSetList        shapefilePolys;
-    SGMutex                 lock;
+    std::mutex                 lock;
 
     sglog().setLogLevels( SG_ALL, SG_INFO );
 

@@ -1,14 +1,14 @@
 #ifndef __TG_MUTEX_H__
 #define __TG_MUTEX_H__
 
-#include <simgear/threads/SGThread.hxx>
+#include <mutex>
 
 #define DEBUG_LOCKS (0)
 
-class tgMutex : public SGMutex
+class tgMutex : public std::mutex
 {
 public:
-    tgMutex() : SGMutex()
+    tgMutex() : std::mutex()
     {
         held = 0;
     }
@@ -23,7 +23,7 @@ public:
         }
 #endif
 
-        SGMutex::lock();
+        std::mutex::lock();
 
 #if DEBUG_LOCKS
         held = SGThread::current();
@@ -41,7 +41,7 @@ public:
         }
 #endif
 
-        SGMutex::unlock();
+        std::mutex::unlock();
 
 #if DEBUG_LOCKS
         held = 0;

@@ -1,6 +1,8 @@
 #include <CGAL/Snap_rounding_traits_2.h>
 #include <CGAL/Snap_rounding_2.h>
 
+#include <mutex>
+
 #include <simgear/debug/logstream.hxx>
 
 #include "tg_mesh.hxx"
@@ -27,7 +29,7 @@ typedef std::vector<meshArrPoint>                   srPointList;
 typedef std::list<meshArrPoint>                     srPolyline;
 typedef std::list<srPolyline>                       srPolylineList;
 
-void tgMeshArrangement::doSnapRound( SGMutex* lock )
+void tgMeshArrangement::doSnapRound( std::mutex* lock )
 {
     srSegmentList  srInputSegs;
     srPolylineList srOutputSegs;

@@ -30,7 +30,6 @@
 #include <gdal_priv.h>
 
 #include <simgear/compiler.h>
-#include <simgear/threads/SGThread.hxx>
 #include <simgear/threads/SGQueue.hxx>
 #include <simgear/debug/logstream.hxx>
 #include <simgear/math/sg_geodesy.hxx>
@@ -86,7 +85,7 @@ inline static bool is_null_area( const std::string& area ) {
 class Decoder : public SGThread
 {
 public:
-    Decoder( OGRCoordinateTransformation *poct, int atf, tgChopper& c, SGMutex& l ) : chopper(c), lock(l) {
+    Decoder( OGRCoordinateTransformation *poct, int atf, tgChopper& c, std::mutex& l ) : chopper(c), lock(l) {
         poCT = poct;
         area_type_field = atf;
     }
@@ -102,7 +101,7 @@ private:
 
     // Store the reults per tile
     tgChopper& chopper;
-    SGMutex&   lock;
+    std::mutex&   lock;
     int        area_type_field;
 };
 
@@ -229,7 +228,7 @@ void processPolygon(OGRFeature *poFeature, OGRPolygon* poGeometry, const string&
 #endif
 
 // Main Thread
-void processLayer(OGRLayer* poLayer, tgChopper& results, SGMutex& l )
+void processLayer(OGRLayer* poLayer, tgChopper& results, std::mutex& l )
 {
     int feature_count=poLayer->GetFeatureCount();
 
@@ -444,7 +443,7 @@ void usage(char* progname) {
 int main( int argc, char **argv ) {
     char*   progname=argv[0];
     string  datasource,work_dir;
-    SGMutex lock;
+    std::mutex lock;
     
     sglog().setLogLevels( SG_ALL, SG_INFO );
 

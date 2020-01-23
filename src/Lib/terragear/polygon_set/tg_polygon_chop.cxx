@@ -163,7 +163,7 @@ void tgChopper::PreChop( const tgPolygonSet& subject, std::vector<tgChopperChunk
     }
 }
 
-void tgChopperChunk::clip( long int bucket_id, std::string& rootPath, SGMutex* lock )
+void tgChopperChunk::clip( long int bucket_id, std::string& rootPath, std::mutex* lock )
 {
     for ( unsigned int i=0; i<buckets.size(); i++ ) {
         cgalPoly_Point    base_pts[4];

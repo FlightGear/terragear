@@ -1,6 +1,8 @@
 #ifndef __TG_MESH_ARRANGEMENT_HXX__
 #define __TG_MESH_ARRANGEMENT_HXX__
 
+#include <mutex>
+
 #include "tg_mesh.hxx"
 
 // forward declarations
@@ -69,7 +71,7 @@ public:
     tgPolygonSet join( unsigned int priority, const tgPolygonSetMeta& meta );
 
     void clipPolys( const SGBucket& b, bool clipBucket );
-    void cleanArrangement( SGMutex* lock );
+    void cleanArrangement( std::mutex* lock );
     void arrangePolys( void );
 
     void loadArrangement( const std::string& path );
@@ -96,12 +98,12 @@ private:
     void doRemoveSmallAreas( void );
 
     void doRemoveAntenna( void );
-    void doRemoveSpikes( SGMutex* lock );
+    void doRemoveSpikes( std::mutex* lock );
     void insertAngleIntoSeries( tgSharpAngleSeriesList& saSeriesList, const tgSharpAngle& a );
     void addSharpAngle( std::vector<tgSharpAngle>& angles, meshArrVertexHandle v1, meshArrVertexHandle v2, meshArrVertexHandle v3, double angle );
     void findSpikes( meshArrFaceHandle f, std::vector<tgSharpAngle>& angles, std::vector<meshArrHalfedgeHandle>& dups );
 
-    void doSnapRound( SGMutex* lock );
+    void doSnapRound( std::mutex* lock );
 
     meshArrPoint toMeshArrPoint( const meshTriPoint& tPoint ) const {
         return meshArrPoint( tPoint.x(), tPoint.y() );

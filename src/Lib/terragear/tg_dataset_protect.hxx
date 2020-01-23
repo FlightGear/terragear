@@ -1,7 +1,7 @@
 #include <map>
+#include <mutex>
 
 #include <simgear/threads/SGThread.hxx>
-#include <simgear/threads/SGGuard.hxx>
 #include <simgear/debug/logstream.hxx>
 
 // This file is used to serialize access to GDAL DataSets.
@@ -29,8 +29,8 @@ struct tileInfo {
 public:
     tileInfo( unsigned long id ) : tid( id ), numWaiting(1), inUse( true ) {}
 
-    void AddWaiter( SGMutex& m ) {
-        //SGGuard<SGMutex> g(mutex);
+    void AddWaiter( std::mutex& m ) {
+        //std::lock_guard<std::mutex> g(mutex);
 
         SG_LOG(SG_GENERAL, SG_INFO, "tgDataSetProtect task " << SGThread::current() << " waiting on tile " << tid << " num ahead is " << numWaiting );
         
@@ -42,7 +42,7 @@ public:
     }
 
     bool RemoveWaiter( void ) {
-        //SGGuard<SGMutex> g(mutex);
+        //std::lock_guard<std::mutex> g(mutex);
 
         SG_LOG(SG_GENERAL, SG_INFO, "tgDataSetProtect task " << SGThread::current() << " finished with tile " << tid << " num waiting is " << numWaiting );
         
@@ -57,7 +57,7 @@ public:
     }
 
     SGWaitCondition available;
-    //SGMutex         mutex;
+    //std::mutex         mutex;
 
     unsigned long   tid;
     int             numWaiting;     // when this is 0, we can remove tileInfo from the map
@@ -73,7 +73,7 @@ public:
 
     // whenever you want to write to a tile, you need to Request it
     void Request( unsigned long tileId ) {
-        SGGuard<SGMutex> g(mutex);
+        std::lock_guard<std::mutex> g(mutex);
         
         tile_map::iterator it = waitingTasks.find( tileId );
         if ( it == waitingTasks.end() ) {
@@ -93,7 +93,7 @@ public:
 
     // whenever you finish writing to a tile, you need to Release it
     void Release( unsigned long tileId ) {
-        SGGuard<SGMutex> g(mutex);
+        std::lock_guard<std::mutex> g(mutex);
 
         tile_map::iterator it = waitingTasks.find( tileId );
         if ( it != waitingTasks.end() ) {
@@ -115,6 +115,6 @@ public:
     }
 
 private:
-    SGMutex  mutex;
+    std::mutex  mutex;
     tile_map waitingTasks;
 };

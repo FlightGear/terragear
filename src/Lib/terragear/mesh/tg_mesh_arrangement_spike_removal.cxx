@@ -1,5 +1,7 @@
 #include <simgear/debug/logstream.hxx>
 
+#include <mutex>
+
 #include "tg_mesh.hxx"
 
 #define DEBUG_SPIKES    (1)
@@ -147,7 +149,7 @@ void tgMeshArrangement::insertAngleIntoSeries( tgSharpAngleSeriesList& saSeriesL
     }
 }
 
-void tgMeshArrangement::doRemoveSpikes( SGMutex* lock )
+void tgMeshArrangement::doRemoveSpikes( std::mutex* lock )
 {
     std::vector<tgSharpAngle>           angles;
     std::vector<meshArrHalfedgeHandle>  dups;

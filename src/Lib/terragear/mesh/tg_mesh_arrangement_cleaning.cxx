@@ -1,5 +1,7 @@
 #include <simgear/debug/logstream.hxx>
 
+#include <mutex>
+
 // TODO - cluster used by vector intersection code, and mesh - let's clean it up
 // to show how generic it is.
 #include <terragear/tg_cluster.hxx>
@@ -60,7 +62,7 @@ bool tgMeshArrangement::isEdgeVertex( meshArrVertexConstHandle v )
 
 // Use Lloyd Voronoi relaxation to cluster and 
 // remove nodes too close to one another.
-void tgMeshArrangement::cleanArrangement( SGMutex* lock )
+void tgMeshArrangement::cleanArrangement( std::mutex* lock )
 {
     SG_LOG( SG_GENERAL, SG_DEBUG, "tgMeshArrangement::cleanArrangment : start" );
 
