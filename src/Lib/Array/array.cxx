@@ -517,7 +517,9 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
     //ygrid: grid units vertically
     //Loop over corner points, if no points available, give up
     int corners[4][2];     //possible corners
+    int sides[4][2];       //possible sides
     int pt_cnt = 0;
+    int side_cnt = 0;      //how many side points
     double centre_long, centre_lat;
     int original_height = get_array_elev(xgrid,ygrid);
     centre_long = (originx + col_step*xgrid)/3600;
@@ -538,10 +540,22 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
                 corners[pt_cnt][1] = vert;
                 pt_cnt++;
             }
+            if ( !is_bad_point( xgrid+horiz,ygrid,bad_points ) && //can trust height
+                 check_points( test_long,centre_lat,centre_long,centre_lat ) ) { //same side
+              sides[side_cnt][0] = horiz;
+              sides[side_cnt][1] = 0;
+              side_cnt++;
+            }
+            if ( !is_bad_point( xgrid,ygrid+vert,bad_points ) && //can trust height
+                 check_points( centre_long,test_lat,centre_long,centre_lat ) ) { //same side
+              sides[side_cnt][0] = 0;
+              sides[side_cnt][1] = vert;
+              side_cnt++;
+            }
         }
     }  // end of search for corners
     
-    if (pt_cnt == 0) return -9999;   // no corners found
+    if ((pt_cnt == 0 ) && (side_cnt == 0)) return -9999;   // no neighbouring good points
     
     // Find two points that form a rectangle with a corner
     int pt;
@@ -563,11 +577,17 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
         // perhaps we have a concave cliff, just take the
         // average of the known points
         double totht = 0;
-        for( int pti = 0; pti <pt_cnt; pti++ ) {
+        if (pt > 0) {  // corner points available
+          for( int pti = 0; pti <pt_cnt; pti++ ) {
             totht = totht + get_array_elev( xgrid+corners[pti][0],ygrid+corners[pti][1] );
+          }
+          height = totht/pt_cnt;
+        } else {
+          for( int pti = 0; pti <side_cnt; pti++ ) {
+            totht = totht + get_array_elev( xgrid+sides[pti][0],ygrid+sides[pti][1] );
+          }
+          height = totht/side_cnt;
         }
-        
-        height = totht/pt_cnt;
         
     } else {
   
