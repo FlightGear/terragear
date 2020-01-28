@@ -541,16 +541,18 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
                 pt_cnt++;
             }
             if ( !is_bad_point( xgrid+horiz,ygrid,bad_points ) && //can trust height
-                 check_points( test_long,centre_lat,centre_long,centre_lat ) ) { //same side
-              sides[side_cnt][0] = horiz;
-              sides[side_cnt][1] = 0;
-              side_cnt++;
+                check_points( test_long,centre_lat,centre_long,centre_lat ) ) { //same side
+                
+                sides[side_cnt][0] = horiz;
+                sides[side_cnt][1] = 0;
+                side_cnt++;
             }
             if ( !is_bad_point( xgrid,ygrid+vert,bad_points ) && //can trust height
-                 check_points( centre_long,test_lat,centre_long,centre_lat ) ) { //same side
-              sides[side_cnt][0] = 0;
-              sides[side_cnt][1] = vert;
-              side_cnt++;
+                check_points( centre_long,test_lat,centre_long,centre_lat ) ) { //same side
+                
+                sides[side_cnt][0] = 0;
+                sides[side_cnt][1] = vert;
+                side_cnt++;
             }
         }
     }  // end of search for corners
@@ -578,15 +580,15 @@ double TGArray::rectify_point(const int xgrid, const int ygrid, const std::vecto
         // average of the known points
         double totht = 0;
         if (pt > 0) {  // corner points available
-          for( int pti = 0; pti <pt_cnt; pti++ ) {
-            totht = totht + get_array_elev( xgrid+corners[pti][0],ygrid+corners[pti][1] );
-          }
-          height = totht/pt_cnt;
+            for( int pti = 0; pti <pt_cnt; pti++ ) {
+                totht = totht + get_array_elev( xgrid+corners[pti][0],ygrid+corners[pti][1] );
+            }
+            height = totht/pt_cnt;
         } else {
-          for( int pti = 0; pti <side_cnt; pti++ ) {
-            totht = totht + get_array_elev( xgrid+sides[pti][0],ygrid+sides[pti][1] );
-          }
-          height = totht/side_cnt;
+            for( int pti = 0; pti <side_cnt; pti++ ) {
+                totht = totht + get_array_elev( xgrid+sides[pti][0],ygrid+sides[pti][1] );
+            }
+            height = totht/side_cnt;
         }
         
     } else {
