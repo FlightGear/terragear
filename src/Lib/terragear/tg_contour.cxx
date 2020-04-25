@@ -1019,8 +1019,6 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
     {
         int turn_dir = 0;
 
-        sglog().setLogLevels( SG_ALL, SG_INFO );
-
         SG_LOG(SG_GENERAL, SG_DEBUG, "makePolygonsTP: calculating offsets for segment " << i);
 
         // for each point on the PointsList, generate a quad from
@@ -1120,8 +1118,6 @@ tgpolygon_list tgContour::ExpandToPolygons( const tgContour& subject, double wid
         prev_outer = cur_outer;
         prev_inner = cur_inner;
     }
-
-    sglog().setLogLevels( SG_ALL, SG_INFO );
 
     return result;
 }
