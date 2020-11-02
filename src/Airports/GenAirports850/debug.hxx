@@ -21,10 +21,10 @@ extern void DebugRegisterPrefix( const std::string& prefix );
 extern std::string DebugTimeToString(time_t& tt);
 
 #define TG_LOG(C,P,M)  do {                                         \
-    if(sglog().would_log(C,P)) {                                    \
+    if(sglog().would_log(C,P, __FILE__, __LINE__, __FUNCTION__)) {                                    \
         std::ostringstream os;                                      \
         os << thread_prefix_map[SGThread::current()] << ":" << M;   \
-        sglog().log(C, P, __FILE__, __LINE__, os.str());            \
+        sglog().log(C, P, __FILE__, __LINE__, __FUNCTION__, os.str());            \
     }                                                               \
 } while(0)
 #endif
