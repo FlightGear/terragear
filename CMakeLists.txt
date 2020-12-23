@@ -129,9 +129,9 @@ endif (CGAL_FOUND)
 
 # check required dependencies
 find_package(Boost COMPONENTS system thread REQUIRED)
-find_package(ZLIB REQUIRED)
+find_package(ZLIB 1.2.9 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(SimGear 3.1.0 REQUIRED)
+find_package(SimGear 2020.1.0 REQUIRED)
 find_package(GDAL 2.0.0 REQUIRED)
 find_package(TIFF REQUIRED) # needed for SRTM
 
