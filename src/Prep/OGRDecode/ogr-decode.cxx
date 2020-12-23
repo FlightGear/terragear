@@ -432,6 +432,11 @@ void processLayer(OGRLayer* poLayer, tgChopper& results)
 
     oTargetSRS.SetWellKnownGeogCS("WGS84");
 
+#if GDAL_VERSION_MAJOR >= 3
+    oSourceSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+    oTargetSRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+#endif
+
     auto poCT = OGRCreateCoordinateTransformation(oSourceSRS, &oTargetSRS);
 
     /* setup attribute and spatial queries */
