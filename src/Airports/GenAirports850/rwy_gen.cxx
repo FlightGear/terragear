@@ -183,10 +183,10 @@ void Runway::gen_runway_section( const tgPolygon& runway,
         }
 
         if ( startw_pct == 0.0f ) {
-            lshoulder_width = 11.0;
+            lshoulder_width = width/4.0;
         }
         if ( endw_pct == 1.0f ) {
-            rshoulder_width = 11.0;
+            rshoulder_width = width/4.0;
         }
     } else {  
         // We add a fake shoulder if the runway has an asphalt or concrete surface
